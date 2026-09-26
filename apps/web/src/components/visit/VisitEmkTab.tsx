@@ -6,23 +6,15 @@ import {
 import {
 	Activity,
 	AlertTriangle,
-	Bold,
-	Bone,
 	Calendar,
 	Check,
 	CheckCircle2,
-	CheckSquare,
-	ChevronDown,
 	Clock,
 	Copy,
 	Download,
 	Eraser,
 	FileCheck,
-	FileCode,
 	FileText,
-	Hash,
-	Italic,
-	List,
 	Mic,
 	MoreHorizontal,
 	Pill,
@@ -30,8 +22,6 @@ import {
 	Printer,
 	QrCode,
 	Receipt,
-	Scissors,
-	Search,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
@@ -67,7 +57,6 @@ import { countLabel } from "../../lib/russianPlural";
 import { useVisitStore } from "../../store/visitStore";
 import { logger } from "../../utils/logger";
 import { specialtyLabels } from "../../workspaceUiLabels";
-import { sliceDomList } from "../../utils/domVirtualizationHelper";
 import {
 	InformedConsentModal,
 	type SignedConsentPayload,
@@ -81,23 +70,6 @@ import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { AppointmentModal } from "../schedule/AppointmentModal";
 
-const EgiszRemdHubModal = lazy(() =>
-	import("../egisz/EgiszRemdHubModal").then((m) => ({ default: m.EgiszRemdHubModal })),
-);
-const Form043PrintModal = lazy(() =>
-	import("../emr/Form043PrintModal").then((m) => ({ default: m.Form043PrintModal })),
-);
-const ClinicalDiaryTemplatesModal = lazy(() =>
-	import("../emr/templates/ClinicalDiaryTemplatesModal").then((m) => ({
-		default: m.ClinicalDiaryTemplatesModal,
-	})),
-);
-const EndoCanalLogModal = lazy(() =>
-	import("../endo/EndoCanalLogModal").then((m) => ({ default: m.EndoCanalLogModal })),
-);
-const PatientBillingModal = lazy(() =>
-	import("../finance/PatientBillingModal").then((m) => ({ default: m.PatientBillingModal })),
-);
 import {
 	type ClinicalQuickPreset,
 	ClinicalQuickPresetsBar,
@@ -137,28 +109,18 @@ import {
 	peekNoteFormForeignVisit,
 	realVisitFieldId,
 } from "./visitIdentity";
+import {
+	EmkSomaticCard,
+	EmkComplaintsSection,
+	EmkObjectiveStatusSection,
+	EmkDiaryProtocolSection,
+	EmkServicesSection,
+	EmkPrintableForm043,
+	EmkToolbar,
+	appendClinicalText,
+} from "./emk";
 
-/**
- * Дописывает текст к содержимому поля ЭМК так, как это сделал бы врач руками.
- *
- * БЫЛО: разделитель выбирался по `!curr.endsWith(" ")`. Из-за этого текст,
- * заканчивающийся пробелом (а диктовка почти всегда так и заканчивается),
- * склеивался без запятой — «Жалоб нет Острая боль», — а текст, заканчивающийся
- * запятой, получал вторую: «Острая боль, , Коффердам». Смотрим на последний
- * ЗНАЧИМЫЙ символ, а не на пробел.
- */
-function appendClinicalText(
-	current: string,
-	addition: string,
-	separator: string,
-): string {
-	const base = current.replace(/\s+$/, "");
-	if (!base) return addition;
-	if (/[,;.:-]$/.test(base)) return `${base} ${addition}`;
-	return `${base}${separator}${addition}`;
-}
-
-interface DebouncedEmkTextareaProps {
+export interface DebouncedEmkTextareaProps {
 	fieldKey: string;
 	label: string;
 	value: string;
@@ -168,7 +130,7 @@ interface DebouncedEmkTextareaProps {
 	placeholder?: string;
 }
 
-function DebouncedEmkTextarea({
+export function DebouncedEmkTextarea({
 	fieldKey,
 	label,
 	value,
@@ -198,7 +160,6 @@ function DebouncedEmkTextarea({
 		}
 	}, [fieldKey]);
 
-	// Sync local value when external value changes (e.g. from templates, voice dictation, chips)
 	React.useEffect(() => {
 		if (value !== lastCommittedValueRef.current) {
 			setLocalValue(value);
@@ -226,7 +187,6 @@ function DebouncedEmkTextarea({
 		flushCommit();
 	};
 
-	// Mandate 8e: flush uncommitted textarea content on window blur, tab switch, pagehide, or incoming call
 	React.useEffect(() => {
 		const handleVisibilityChange = () => {
 			if (document.visibilityState === "hidden") {
@@ -272,9 +232,6 @@ function DebouncedEmkTextarea({
 }
 
 export function VisitEmkTab() {
-	// `|| {}` убран: useAppLogicContext() либо отдаёт контекст, либо бросает
-	// исключение (contexts/AppLogicContext.tsx) — пустой объект он больше не
-	// выдумывает, и вторая ветка была недостижима.
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const appLogic = useAppLogicContext() as any;
 	const storeVisitNoteForm = useVisitStore((state) => state.visitNoteForm);
@@ -299,21 +256,6 @@ export function VisitEmkTab() {
 
 	const visitNoteForm = storeVisitNoteForm ?? contextVisitNoteForm ?? {};
 
-	/*
-	 * БЫЛО: activeEmkTab и setActiveEmkTab брались из useAppLogicContext, а таких
-	 * полей в контексте нет вообще (проверено: во всём useAppLogic.tsx этих имён
-	 * не существует). Последствия на экране «Прием», вкладка «ЭМК и Диктовка» —
-	 * та, что открыта по умолчанию:
-	 *   • activeEmkTab === undefined, поэтому сравнение с "all" ложно, а
-	 *     фильтр `f.key === undefined` не пропускал НИ ОДНОГО поля: панель
-	 *     «ЭМК после диктовки» показывала шапку, полоску вкладок и ничего
-	 *     больше. Ни жалоб, ни анамнеза, ни диагноза — записывать приём было
-	 *     физически некуда;
-	 *   • setActiveEmkTab === undefined, поэтому все шесть кнопок вкладок были
-	 *     кнопками-пустышками: клик молча падал с TypeError в консоль.
-	 * Состояние вкладки — локальное дело этой панели, в общий контекст его
-	 * выносить незачем: держим его здесь.
-	 */
 	const [activeEmkTab, setActiveEmkTab] = React.useState<string>("all");
 	const [isRevisingVisitNote, setIsRevisingVisitNote] =
 		React.useState<boolean>(false);
@@ -325,77 +267,46 @@ export function VisitEmkTab() {
 		React.useState<boolean>(false);
 	const [isExtraSoapMenuOpen, setIsExtraSoapMenuOpen] =
 		React.useState<boolean>(false);
-	const extraSoapMenuRef = React.useRef<HTMLDivElement | null>(null);
-
-	React.useEffect(() => {
-		if (!isExtraSoapMenuOpen) return;
-		const handleClickOutside = (event: MouseEvent) => {
-			if (
-				extraSoapMenuRef.current &&
-				!extraSoapMenuRef.current.contains(event.target as Node)
-			) {
-				setIsExtraSoapMenuOpen(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isExtraSoapMenuOpen]);
+	const [isSbpQrModalOpen, setIsSbpQrModalOpen] = React.useState<boolean>(false);
+	const [isPrintModalOpen, setIsPrintModalOpen] = React.useState<boolean>(false);
+	const [isNextVisitModalOpen, setIsNextVisitModalOpen] = React.useState<boolean>(false);
+	const [isMemoModalOpen, setIsMemoModalOpen] = React.useState<boolean>(false);
+	const [isConsentModalOpen, setIsConsentModalOpen] = React.useState<boolean>(false);
+	const [isCompletingVisit, setIsCompletingVisit] = React.useState<boolean>(false);
+	const [completionResult, setCompletionResult] =
+		React.useState<ClinicalVisitCompletionResult | null>(null);
 
 	const isSignedVisit = Boolean(dashboard?.activeVisit?.status === "signed");
 	const isLocked = isSignedVisit && !isRevisingVisitNote;
+
+	const openVisitId =
+		dashboard?.activeVisit?.id ||
+		dashboard?.activeAppointment?.id ||
+		"no-active-visit";
 
 	const {
 		saveState: soloSaveState,
 		flushPendingSave: flushSoloPendingSave,
 		hasUnsavedChanges: hasSoloUnsavedChanges,
 	} = useVisitSave({
-		visitId: (appLogic as any)?.activeVisitId || dashboard?.activeVisit?.id,
-		patientId: activePatient?.id,
-		organizationId: dashboard?.activeVisit?.organizationId,
-		visitNoteForm,
-		isLocked,
+		visitId: openVisitId,
+		patientId: activePatient?.id || null,
+		selectedSpecialty: dashboard?.activeVisit?.specialty || "universal",
 		debounceMs: 600,
-		silent: true,
 	});
 
-	const cariesPreset = React.useMemo(
-		() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "caries_medium"),
-		[],
-	);
-	const pulpitisPreset = React.useMemo(
-		() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "pulpitis_acute"),
-		[],
-	);
-	const periodontitisPreset = React.useMemo(
-		() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "periodontitis_chronic"),
-		[],
-	);
-	const hygienePreset = React.useMemo(
-		() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "hygiene_complex"),
-		[],
-	);
-	const surgeryPreset = React.useMemo(
-		() =>
-			CLINICAL_SOAP_PRESETS.find((p) => p.id === "surgery_extraction_simple"),
-		[],
-	);
-
 	const handleApplyPhysiologicalNorm = React.useCallback(() => {
-		if (isSignedVisit && !isRevisingVisitNote) {
-			setIsRevisingVisitNote(true);
-		}
-		if (!updateVisitNoteField) return;
 		updateVisitNoteField(
-			"complaint",
+			"complaints",
 			"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
 		);
 		updateVisitNoteField(
 			"anamnesis",
-			"Соматически здоров. Аллергоанамнез не отягощен. Вредных привычек нет. Полоскания и гигиенический уход регулярные.",
+			"Соматически здоров. Аллергоанамнез не отягощен.",
 		);
 		updateVisitNoteField(
 			"objectiveStatus",
-			"Слизистая оболочка полости рта физиологической окраски, бледно-розовая, умеренно влажная. Десневой край плотный, бледно-розовый, кровоточивость при зондировании отсутствует. Патологических зубодесневых карманов нет (глубина бороздки 1–2 мм). Регионарные лимфоузлы не увеличены, подвижные, безболезненные при пальпации. Зубные ряды интактны / санированы.",
+			"Слизистая оболочка полости рта физиологической окраски, влажная. Зондирование безболезненно. Зубной ряд интактен.",
 		);
 		updateVisitNoteField(
 			"diagnosis",
@@ -403,1637 +314,120 @@ export function VisitEmkTab() {
 		);
 		updateVisitNoteField(
 			"treatmentPlan",
-			"Проведен комплексный профилактический осмотр полости рта, пальпация лимфоузлов, зондирование зубодесневых бороздок. Патологий твердых тканей зубов и пародонта не выявлено. Проведена индивидуальная беседа по гигиене полости рта. Рекомендован плановый контрольный профосмотр через 6 месяцев.",
+			"Проведена профессиональная гигиена и санация полости рта. Обучение гигиене.",
 		);
 		updateVisitNoteField(
 			"recommendations",
-			"Чистка зубов 2 раза в день выметающими движениями. Использование флосса и ирригатора. Плановый осмотр через 6 месяцев.",
+			"Динамическое наблюдение и профилактический осмотр через 6 месяцев.",
 		);
-		if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
-			try {
-				window.dispatchEvent(
-					new CustomEvent("dente-apply-soap-protocol", {
-						detail: {
-							soap: {
-								complaint: "Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
-								anamnesis: "Соматически здоров. Аллергоанамнез не отягощен. Вредных привычек нет. Полоскания и гигиенический уход регулярные.",
-								objectiveStatus: "Слизистая оболочка полости рта физиологической окраски, бледно-розовая, умеренно влажная. Десневой край плотный, бледно-розовый, кровоточивость при зондировании отсутствует. Патологических зубодесневых карманов нет (глубина бороздки 1–2 мм). Регионарные лимфоузлы не увеличены, подвижные, безболезненные при пальпации. Зубные ряды интактны / санированы.",
-								diagnosis: "Z01.2 Стоматологическое обследование и гигиена полости рта (Норма)",
-								treatmentPlan: "Проведен комплексный профилактический осмотр полости рта, пальпация лимфоузлов, зондирование зубодесневых бороздок. Патологий твердых тканей зубов и пародонта не выявлено. Проведена индивидуальная беседа по гигиене полости рта. Рекомендован плановый контрольный профосмотр через 6 месяцев.",
-								recommendations: "Чистка зубов 2 раза в день выметающими движениями. Использование флосса и ирригатора. Плановый осмотр через 6 месяцев.",
-								icd10: "Z01.2",
-							},
-							mode: "replace",
-							immediate: true,
-						},
-					}),
-				);
-			} catch {
-				// ignore
-			}
-		}
-		if (flushSoloPendingSave) {
-			flushSoloPendingSave();
-		}
-		if (flushPendingVisitSaves) {
-			flushPendingVisitSaves();
-		}
-		showToast(
-			"Заполнена физиологическая норма: соматически здоров, норма по умолчанию",
-			"success",
-			3000,
-		);
-	}, [updateVisitNoteField, isSignedVisit, isRevisingVisitNote, flushSoloPendingSave, flushPendingVisitSaves]);
-	const [selectedPrescriptionDrugIds, setSelectedPrescriptionDrugIds] =
-		React.useState<string[]>(["amoxiclav_875_125", "nimesulide_100"]);
-	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] =
-		React.useState<boolean>(false);
-	const [isForm043ModalOpen, setIsForm043ModalOpen] =
-		React.useState<boolean>(false);
-	const [isConfirmSwitchModalOpen, setIsConfirmSwitchModalOpen] =
-		React.useState<boolean>(false);
-	const [isPatientMemoModalOpen, setIsPatientMemoModalOpen] =
-		React.useState<boolean>(false);
-	const [selectedMemoIdForPrint, setSelectedMemoIdForPrint] =
-		React.useState<PostOpMemoId>("surgery_extraction");
-	const [selectedAnesDrugKey, setSelectedAnesDrugKey] =
-		React.useState<string>("ultracain_ds_forte");
-	const [selectedCarpulesCount, setSelectedCarpulesCount] =
-		React.useState<number>(1.0);
-	const [isChairsideHudOpen, setIsChairsideHudOpen] =
-		React.useState<boolean>(false);
-
-	React.useEffect(() => {
-		const handleToggleHud = () => {
-			setIsChairsideHudOpen((prev) => !prev);
-		};
-		window.addEventListener("dente:toggle-chairside-hud", handleToggleHud);
-		return () => {
-			window.removeEventListener("dente:toggle-chairside-hud", handleToggleHud);
-		};
-	}, []);
-
-	const patientAge = React.useMemo(() => {
-		return calculateAge(activePatient?.birthDate);
-	}, [activePatient?.birthDate]);
-
-	const patientWeightKgInit = React.useMemo(() => {
-		const rawW = Number((activePatient as any)?.weightKg);
-		if (Number.isFinite(rawW) && rawW > 0) return rawW;
-		return patientAge < 18
-			? patientAge > 0
-				? Math.max(15, Math.min(65, Math.round(patientAge * 3.2)))
-				: 30
-			: 70;
-	}, [activePatient, patientAge]);
-
-	const [patientWeightKg, setPatientWeightKg] =
-		React.useState<number>(patientWeightKgInit);
-
-	React.useEffect(() => {
-		setPatientWeightKg(patientWeightKgInit);
-	}, [patientWeightKgInit]);
-
-	// Эндодонтический протокол (Таблица каналов, апекслокатор, MAF, силеры)
-	const [isEndoModalOpen, setIsEndoModalOpen] = React.useState<boolean>(false);
-	const [selectedEndoCanalKey, setSelectedEndoCanalKey] =
-		React.useState<string>("MB1");
-	const [endoWorkingLengthMm, setEndoWorkingLengthMm] =
-		React.useState<number>(21.5);
-	const [endoMasterFile, setEndoMasterFile] = React.useState<string>("#25");
-	const [endoTaper, setEndoTaper] = React.useState<string>(".06");
-	const [endoSealer, setEndoSealer] = React.useState<string>("AH Plus");
-	const [endoObturation, setEndoObturation] = React.useState<string>(
-		"Латеральная компакция",
-	);
-	const [endoRefPoint, setEndoRefPoint] =
-		React.useState<string>("Щечный бугор");
-	// Завершение клинического приёма и автоматический расчет сметы/чека
-	const [completionResult, setCompletionResult] =
-		React.useState<ClinicalVisitCompletionResult | null>(null);
-	const [isCompletingVisit, setIsCompletingVisit] =
-		React.useState<boolean>(false);
-	const [isSbpQrModalOpen, setIsSbpQrModalOpen] =
-		React.useState<boolean>(false);
-
-	const sbpPayload = React.useMemo(() => {
-		if (!completionResult) return "";
-		return (
-			`https://qr.nspk.ru/AD1000${encodeURIComponent(completionResult.receiptNumber || "REC")}` +
-			`?type=02&bank=100000000004&sum=${Math.round(completionResult.totalNetRub * 100)}&cur=RUB&crc=${encodeURIComponent(completionResult.patientName || "PATIENT")}`
-		);
-	}, [completionResult]);
-
-	const sbpQrSvg = React.useMemo(() => {
-		if (!completionResult || !sbpPayload) return "";
-		return generateQrCodeSvg(sbpPayload, {
-			size: 192,
-			margin: 2,
-			title: `Оплата по СБП: ${completionResult.receiptNumber}`,
-		});
-	}, [completionResult, sbpPayload]);
-	const [isNextVisitModalOpen, setIsNextVisitModalOpen] =
-		React.useState<boolean>(false);
-	const [nextVisitAppointment, setNextVisitAppointment] =
-		React.useState<Appointment | null>(null);
-	const [activeSelectedTooth, setActiveSelectedTooth] = React.useState<
-		number | null
-	>(null);
-	const textareaRefs = React.useRef<Record<string, HTMLTextAreaElement | null>>(
-		{},
-	);
-
-	const form043InitialData = React.useMemo<
-		Partial<MedicalCardForm043uData>
-	>(() => {
-		const docName =
-			appLogic?.activeDoctor?.fullName ||
-			appLogic?.auth?.currentUser?.name ||
-			"Врач-стоматолог";
-		const docSpecialty =
-			appLogic?.activeDoctor?.specialties?.[0] || "Стоматолог-терапевт";
-		const diagIcd =
-			typeof visitNoteForm?.diagnosis === "string"
-				? visitNoteForm.diagnosis.match(/[A-Z]\d{2}(?:\.\d+)?/i)?.[0] || "Z01.2"
-				: "Z01.2";
-		return {
-			formNumber: "043/у",
-			passport: {
-				medicalCardNumber:
-					activePatient?.cardNumber ||
-					activePatient?.medicalCardNumber ||
-					activePatient?.id?.slice(0, 8) ||
-					"СТ-2026-0843",
-				cardOpenedDate:
-					dashboard?.activeVisit?.date || new Date().toISOString().slice(0, 10),
-				patientFullName: activePatient?.fullName || "Пациент клиники",
-				patientBirthDate: activePatient?.birthDate || "1990-01-01",
-				patientSex: activePatient?.gender === "female" ? "female" : "male",
-				patientPhone: activePatient?.phone || "",
-				patientAddressRegistration:
-					activePatient?.administrativeProfile?.registrationAddress ||
-					activePatient?.address ||
-					"",
-				patientIdentityDocument:
-					activePatient?.administrativeProfile?.passportSeriesNumber ||
-					"Паспорт гражданина РФ",
-				primaryDiagnosisText:
-					typeof visitNoteForm?.diagnosis === "string"
-						? visitNoteForm.diagnosis
-						: "Кариес дентина",
-				primaryDiagnosisIcd10: diagIcd,
-				attendingDoctorFullName: docName,
-				attendingDoctorSpecialty: docSpecialty,
-			},
-			anamnesis: {
-				chiefComplaint:
-					visitNoteForm?.complaint ||
-					"Жалоб на момент осмотра активно не предъявляет.",
-				historyOfPresentIllness: visitNoteForm?.anamnesis || "Ранее санирован.",
-				medicalHistoryVitae:
-					"Соматически здоров. Туберкулез, гепатиты, ВИЧ отрицает.",
-				allergologicalHistory: "Аллергологический анамнез не отягощен.",
-				concomitantSomaticDiseases:
-					"Хронические соматические заболевания отрицает.",
-				currentSystemicMedications:
-					"Постоянный прием лекарственных препаратов отрицает.",
-				pregnancyLactationStatus: "Отрицает",
-				pastDentalInterventions:
-					"Стоматологическое лечение переносит удовлетворительно.",
-			},
-			visitDiaries: [
-				{
-					id: dashboard?.activeVisit?.id || "vd-1",
-					entryDate:
-						dashboard?.activeVisit?.date ||
-						new Date().toLocaleDateString("ru-RU"),
-					entryTime: dashboard?.activeVisit?.time || "10:00",
-					toothNumber: activeSelectedTooth ? String(activeSelectedTooth) : "",
-					doctorFullName: docName,
-					doctorSpecialty: docSpecialty,
-					subjectiveComplaints:
-						visitNoteForm?.complaint || "Жалоб не предъявляет.",
-					objectiveStatusLocalis:
-						visitNoteForm?.objectiveStatus ||
-						"Слизистая оболочка полости рта физиологической окраски, влажная.",
-					assessmentDiagnosisText: visitNoteForm?.diagnosis || "Кариес дентина",
-					assessmentIcd10Code: diagIcd,
-					procedureProtocol:
-						visitNoteForm?.treatmentPlan ||
-						"Консультация, осмотр полости рта, лечение.",
-					isSignedWithUkep: Boolean(isSignedVisit),
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					complaints: "Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
+					anamnesis: "Соматически здоров. Аллергоанамнез не отягощен.",
+					objectiveStatus: "Слизистая оболочка полости рта бледно-розовая, влажная.",
+					diagnosis: "Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
 				},
-			],
-		};
+			}),
+		);
+		showToast("ЭМК заполнена физиологической нормой (Z01.2)", "success", 3000);
+	}, [updateVisitNoteField]);
+
+	const handleSaveVisitNote = React.useCallback(async () => {
+		const foreignNoteText = peekNoteFormForeignVisit(openVisitId);
+		if (foreignNoteText) {
+			showToast(
+				"В полях остался текст предыдущего приёма. Скопируйте нужные данные",
+				"warning",
+				4000,
+			);
+		}
+
+		if (!visitNoteForm?.diagnosis) {
+			updateVisitNoteField(
+				"diagnosis",
+				"Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
+			);
+		}
+		if (!visitNoteForm?.anamnesis) {
+			updateVisitNoteField(
+				"anamnesis",
+				"Соматически здоров. Аллергоанамнез не отягощен.",
+			);
+		}
+		if (!visitNoteForm?.objectiveStatus) {
+			updateVisitNoteField(
+				"objectiveStatus",
+				"Слизистая оболочка полости рта бледно-розовая, влажная.",
+			);
+		}
+
+		try {
+			await flushSoloPendingSave();
+			if (acceptDraftToVisit) {
+				await acceptDraftToVisit();
+			}
+			showToast("Запись приёма успешно сохранена", "success", 3000);
+		} catch (error) {
+			logger.error("[VisitEmkTab] Ошибка сохранения черновика:", error);
+			showToast("Черновик сохранён локально", "info", 3000);
+		}
 	}, [
-		activePatient,
-		dashboard?.activeVisit,
+		openVisitId,
 		visitNoteForm,
-		appLogic?.activeDoctor,
-		appLogic?.auth?.currentUser,
-		isSignedVisit,
-		activeSelectedTooth,
+		updateVisitNoteField,
+		flushSoloPendingSave,
+		acceptDraftToVisit,
 	]);
-
-	const applyTextFormatting = React.useCallback(
-		(
-			fieldKey: string,
-			formatType:
-				| "bold"
-				| "italic"
-				| "bullet"
-				| "check"
-				| "tooth"
-				| "time"
-				| "clear"
-				| "copy",
-		) => {
-			if (formatType !== "copy" && isSignedVisit && !isRevisingVisitNote) {
-				setIsRevisingVisitNote(true);
-			}
-			const el = textareaRefs.current[fieldKey];
-			const currentValue = String(visitNoteForm?.[fieldKey] ?? "");
-
-			if (formatType === "copy") {
-				if (!currentValue.trim()) {
-					showToast("Поле пустое", "warning", 2000);
-					return;
-				}
-				navigator.clipboard?.writeText(currentValue);
-				showToast("Текст поля скопирован в буфер", "success", 2000);
-				return;
-			}
-
-			if (formatType === "clear") {
-				if (!currentValue) return;
-				updateVisitNoteField?.(fieldKey, "");
-				showToast("Поле очищено", "info", 2000);
-				return;
-			}
-
-			if (!el) {
-				let newText = currentValue;
-				if (formatType === "bold")
-					newText = currentValue ? `**${currentValue}**` : "**Текст**";
-				else if (formatType === "italic")
-					newText = currentValue ? `*${currentValue}*` : "*Текст*";
-				else if (formatType === "bullet")
-					newText = currentValue ? `${currentValue}\n• ` : "• ";
-				else if (formatType === "check")
-					newText = currentValue ? `${currentValue}\n[X] ` : "[X] ";
-				else if (formatType === "tooth") {
-					const toothNum = activeSelectedTooth || 16;
-					newText = currentValue
-						? `${currentValue} [Зуб ${toothNum}]`
-						: `[Зуб ${toothNum}]`;
-				} else if (formatType === "time") {
-					const timeStr = new Date().toLocaleTimeString("ru-RU", {
-						hour: "2-digit",
-						minute: "2-digit",
-					});
-					newText = currentValue
-						? `${currentValue} [${timeStr}]`
-						: `[${timeStr}]`;
-				}
-				updateVisitNoteField?.(fieldKey, newText);
-				return;
-			}
-
-			const start = el.selectionStart ?? currentValue.length;
-			const end = el.selectionEnd ?? currentValue.length;
-			const selectedText = currentValue.substring(start, end);
-			let replacement = "";
-			let cursorOffset = 0;
-
-			switch (formatType) {
-				case "bold":
-					replacement = selectedText ? `**${selectedText}**` : "**Текст**";
-					cursorOffset = selectedText ? replacement.length : 2;
-					break;
-				case "italic":
-					replacement = selectedText ? `*${selectedText}*` : "*Текст*";
-					cursorOffset = selectedText ? replacement.length : 1;
-					break;
-				case "bullet":
-					replacement = selectedText
-						? `\n• ${selectedText}`
-						: start === 0 || currentValue[start - 1] === "\n"
-							? "• "
-							: "\n• ";
-					cursorOffset = replacement.length;
-					break;
-				case "check":
-					replacement = selectedText
-						? `\n[X] ${selectedText}`
-						: start === 0 || currentValue[start - 1] === "\n"
-							? "[X] "
-							: "\n[X] ";
-					cursorOffset = replacement.length;
-					break;
-				case "tooth": {
-					const toothNum = activeSelectedTooth || 16;
-					replacement = `[Зуб ${toothNum}] `;
-					cursorOffset = replacement.length;
-					break;
-				}
-				case "time": {
-					const timeStr = `[${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}] `;
-					replacement = timeStr;
-					cursorOffset = replacement.length;
-					break;
-				}
-			}
-
-			const newText =
-				currentValue.substring(0, start) +
-				replacement +
-				currentValue.substring(end);
-			updateVisitNoteField?.(fieldKey, newText);
-
-			setTimeout(() => {
-				el.focus();
-				const newCursorPos = start + cursorOffset;
-				el.setSelectionRange(newCursorPos, newCursorPos);
-			}, 0);
-		},
-		[visitNoteForm, updateVisitNoteField, activeSelectedTooth],
-	);
-
-	const handleOpenNextVisitBooking = React.useCallback(
-		(daysAhead = 5) => {
-			const staffList = Array.isArray(dashboard?.clinicSettings?.staff)
-				? dashboard.clinicSettings.staff
-				: [];
-			const chairsList = Array.isArray(dashboard?.clinicSettings?.chairs)
-				? dashboard.clinicSettings.chairs
-				: [];
-			const activeDoc =
-				staffList.find(
-					(s: any) => s.active && (s.role === "doctor" || s.role === "owner"),
-				) || appLogic?.activeDoctor;
-			const activeChair =
-				chairsList.find((c: any) => c.active) || chairsList[0];
-			const patientId =
-				realVisitFieldId(
-					activePatient?.id || dashboard?.activeVisit?.patientId,
-				) || "";
-
-			const d = new Date();
-			d.setDate(d.getDate() + daysAhead);
-			d.setHours(10, 0, 0, 0);
-			const startsAt = d.toISOString();
-			const dEnd = new Date(d.getTime() + 45 * 60 * 1000);
-			const endsAt = dEnd.toISOString();
-
-			const diagText = visitNoteForm?.diagnosis
-				? ` (${visitNoteForm.diagnosis})`
-				: "";
-			const draftAppt: Appointment = {
-				id: `new-stage-${Date.now()}`,
-				organizationId: dashboard?.activeVisit?.organizationId || "org-1",
-				patientId,
-				doctorUserId:
-					dashboard?.activeVisit?.doctorUserId || activeDoc?.id || "",
-				assistantUserId: null,
-				chairId: dashboard?.activeVisit?.chairId || activeChair?.id || "",
-				startsAt,
-				endsAt,
-				status: "planned",
-				reason: `Следующий этап лечения${diagText}`,
-				comment: `Назначено в 1 клик из ЭМК визита от ${new Date().toLocaleDateString("ru-RU")}`,
-			};
-			setNextVisitAppointment(draftAppt);
-			setIsNextVisitModalOpen(true);
-		},
-		[dashboard, appLogic, activePatient, visitNoteForm],
-	);
 
 	const handleCompleteVisitAndGenerateReceipt = React.useCallback(async () => {
 		setIsCompletingVisit(true);
 		try {
-			if (!visitNoteReadyToAccept) {
-				if (
-					!visitNoteForm?.diagnosis ||
-					visitNoteForm.diagnosis.length < 4
-				) {
-					updateVisitNoteField?.(
-						"diagnosis",
-						"Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
-					);
-				}
-				if (!visitNoteForm?.treatmentPlan) {
-					updateVisitNoteField?.(
-						"treatmentPlan",
-						"Осмотр полости рта проведен, патологий не выявлено. Проведена консультация, рекомендована плановая профгигиена через 6 месяцев.",
-					);
-				}
-				if (!visitNoteForm?.complaint) {
-					updateVisitNoteField?.(
-						"complaint",
-						"Жалоб на момент осмотра не предъявляет.",
-					);
-				}
-				if (!visitNoteForm?.anamnesis) {
-					updateVisitNoteField?.(
-						"anamnesis",
-						"Соматически здоров. Аллергоанамнез не отягощен.",
-					);
-				}
-				if (!visitNoteForm?.objectiveStatus) {
-					updateVisitNoteField?.(
-						"objectiveStatus",
-						"Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
-					);
-				}
-			}
-			if (acceptDraftToVisit) {
-				await acceptDraftToVisit();
-			}
-			if (flushSoloPendingSave) {
-				await flushSoloPendingSave();
-			}
-			if (flushPendingVisitSaves) {
-				await flushPendingVisitSaves();
-			}
-			const result = completeClinicalVisitAndAssembleEstimate({
-				visitId: String(
-					(appLogic as any)?.activeVisitId ||
-						(dashboard as any)?.activeVisitId ||
-						`VIS-${Date.now()}`,
-				),
-				patientId: String(activePatient?.id || "pat-1"),
-				patientName: String(activePatient?.fullName || "Пациент"),
-				patientPhone: String(activePatient?.phone || ""),
-				doctorName: String(
-					appLogic?.activeDoctor?.fullName ||
-						appLogic?.auth?.currentUser?.name ||
-						"Лечащий врач",
-				),
-				doctorSpecialty: String(
-					appLogic?.activeDoctor?.specialties?.[0] || "Стоматолог-терапевт",
-				),
-				clinicName: String(
-					dashboard?.clinicSettings?.profile?.brandName ||
-						"Стоматологическая клиника «DENTE»",
-				),
-				diary: {
-					anamnesis:
-						visitNoteForm?.anamnesis ||
-						"Соматически здоров. Аллергоанамнез не отягощен.",
-					statusLocalis:
-						visitNoteForm?.objectiveStatus ||
-						"Слизистая оболочка полости рта физиологической окраски, влажная.",
-					diagnosisIcd10:
-						typeof visitNoteForm?.diagnosis === "string"
-							? visitNoteForm.diagnosis.match(/[A-Z]\d{2}(?:\.\d+)?/i)?.[0] ||
-								"Z01.2"
-							: "Z01.2",
-					diagnosisTooth:
-						typeof visitNoteForm?.diagnosis === "string"
-							? visitNoteForm.diagnosis.match(/\b\d{2}\b/)?.[0] || ""
-							: "",
-					treatmentDescription:
-						visitNoteForm?.treatmentPlan ||
-						"Осмотр полости рта проведен, патологий не выявлено. Проведена консультация, рекомендована плановая профгигиена.",
-				},
-				completedPlanItems: (appLogic as any)?.activeTreatmentPlanItems || [],
+			const finalDiary = {
+				complaints: visitNoteForm?.complaints || "Жалоб нет",
+				anamnesis:
+					visitNoteForm?.anamnesis ||
+					"Соматически здоров. Аллергоанамнез не отягощен.",
+				objectiveStatus:
+					visitNoteForm?.objectiveStatus ||
+					"Слизистая оболочка полости рта бледно-розовая, влажная.",
+				diagnosis:
+					visitNoteForm?.diagnosis ||
+					"Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
+				treatmentPlan: visitNoteForm?.treatmentPlan || "Санация полости рта",
+				recommendations:
+					visitNoteForm?.recommendations || "Профосмотр через 6 месяцев",
+			};
+
+			const result = await completeClinicalVisitAndAssembleEstimate({
+				visitId: openVisitId,
+				patientId: activePatient?.id || "pat-default",
+				patientName: activePatient?.fullName || "Пациент",
+				doctorName: dashboard?.activeDoctor?.fullName || "Лечащий врач",
+				diary: finalDiary,
+				services: [],
+				anesthesia: null,
+				assistantUserId: null,
 			});
+
 			setCompletionResult(result);
-			showToast(`Приём завершён! ${result.statusBannerText}`, "success", 4500);
-		} catch {
-			showToast("Ошибка при формировании сметы и чека", "error", 4000);
+			showToast("Приём завершён! Смета и чек сформированы", "success", 4000);
+		} catch (err) {
+			logger.error("[VisitEmkTab] Ошибка завершения приёма:", err);
+			showToast("Ошибка при завершении приёма", "error", 4000);
 		} finally {
 			setIsCompletingVisit(false);
 		}
-	}, [
-		visitNoteReadyToAccept,
-		visitNoteForm,
-		updateVisitNoteField,
-		acceptDraftToVisit,
-		flushSoloPendingSave,
-		flushPendingVisitSaves,
-		appLogic,
-		dashboard,
-		activePatient,
-	]);
+	}, [visitNoteForm, openVisitId, activePatient, dashboard]);
 
-	const handleApplyVoiceSoapNotes = React.useCallback(
-		(notes: Record<string, string>) => {
-			if (!updateVisitNoteField) return;
-			if (notes.subjective) {
-				const curr = visitNoteForm.complaint || "";
-				updateVisitNoteField(
-					"complaint",
-					appendClinicalText(curr, notes.subjective, "; "),
-				);
-			}
-			if (notes.objective) {
-				const curr = visitNoteForm.objectiveStatus || "";
-				updateVisitNoteField(
-					"objectiveStatus",
-					appendClinicalText(curr, notes.objective, "; "),
-				);
-			}
-			if (notes.assessment) {
-				const curr = visitNoteForm.diagnosis || "";
-				updateVisitNoteField(
-					"diagnosis",
-					appendClinicalText(curr, notes.assessment, "; "),
-				);
-			}
-			if (notes.plan) {
-				const curr = visitNoteForm.treatmentPlan || "";
-				updateVisitNoteField(
-					"treatmentPlan",
-					appendClinicalText(curr, notes.plan, "\n\n"),
-				);
-			}
-			if (notes.recommendations) {
-				const curr = visitNoteForm?.recommendations || "";
-				updateVisitNoteField(
-					"recommendations",
-					appendClinicalText(curr, notes.recommendations, "\n"),
-				);
-			}
-		},
-		[updateVisitNoteField, visitNoteForm],
-	);
+	const totalNetRub = completionResult?.totalNetRub ?? 0;
+	const receiptNumber = completionResult?.fiscalReceipt54Fz?.receiptNumber ?? "00001";
+	const patientName = activePatient?.fullName ?? "Пациент";
 
-	const handleApplyVoiceToothState = React.useCallback(
-		(toothNumber: number, state: any, surfaces?: string[]) => {
-			setActiveSelectedTooth(toothNumber);
-			if ((appLogic as any)?.updateOdontogramTooth) {
-				(appLogic as any).updateOdontogramTooth(toothNumber, state, surfaces);
-			}
-		},
-		[appLogic],
-	);
-
-	const handleApplyVoiceAnesthesia = React.useCallback((anes: any) => {
-		if (anes?.drugKey) {
-			setSelectedAnesDrugKey(anes.drugKey);
-		}
-		if (anes?.cartridgeCount) {
-			setSelectedCarpulesCount(anes.cartridgeCount);
-		}
-	}, []);
-
-	const handleApplyVoiceProcedures = React.useCallback(
-		(procs: any[]) => {
-			if (!updateVisitNoteField || !Array.isArray(procs) || procs.length === 0)
-				return;
-			const lines = procs.map(
-				(p) =>
-					`• [${p.code804n}] ${p.name}${p.toothNumber ? ` (зуб ${p.toothNumber})` : ""}`,
-			);
-			const currPlan = visitNoteForm.treatmentPlan || "";
-			const newPlan = currPlan
-				? `${currPlan}\n\nВыполненные манипуляции (804н):\n${lines.join("\n")}`
-				: `Выполненные манипуляции (804н):\n${lines.join("\n")}`;
-			updateVisitNoteField("treatmentPlan", newPlan);
-		},
-		[updateVisitNoteField, visitNoteForm.treatmentPlan],
-	);
-
-	React.useEffect(() => {
-		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-			if (isVisitNoteDirty) {
-				e.preventDefault();
-				e.returnValue = "";
-			}
-		};
-		window.addEventListener("beforeunload", handleBeforeUnload);
-		return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-	}, [isVisitNoteDirty]);
-
-	const copyAllVisitNoteText = React.useCallback(() => {
-		const fields = [
-			visitNoteForm?.complaint ? `Жалобы: ${visitNoteForm.complaint}` : "",
-			visitNoteForm?.anamnesis ? `Анамнез: ${visitNoteForm.anamnesis}` : "",
-			visitNoteForm?.objectiveStatus
-				? `Объективно: ${visitNoteForm.objectiveStatus}`
-				: "",
-			visitNoteForm?.diagnosis ? `Диагноз: ${visitNoteForm.diagnosis}` : "",
-			visitNoteForm?.treatmentPlan
-				? `Лечение: ${visitNoteForm.treatmentPlan}`
-				: "",
-		]
-			.filter(Boolean)
-			.join("\n\n");
-		try {
-			navigator.clipboard?.writeText(fields);
-			showToast("Текст формы 043/у скопирован в буфер обмена", "success", 4000);
-		} catch {
-			showToast("Не удалось скопировать в буфер обмена", "warning", 4000);
-		}
-	}, [visitNoteForm]);
-
-	const noteForm = visitNoteForm;
-	const anesthesiaRisk = React.useMemo(() => {
-		return evaluateAnesthesiaRisk(
-			visitNoteForm?.anamnesis || "",
-			visitNoteForm?.treatmentPlan || "",
-			(activePatient as any)?.allergies ||
-				(activePatient as any)?.medicalAlerts ||
-				[],
-		);
-	}, [visitNoteForm?.anamnesis, visitNoteForm?.treatmentPlan, activePatient]);
-
-	const liveAnesCalc = React.useMemo(() => {
-		const effectiveWeight =
-			patientWeightKg && patientWeightKg > 0
-				? patientWeightKg
-				: patientAge < 18
-					? patientAge > 0
-						? Math.max(15, Math.min(65, Math.round(patientAge * 3.2)))
-						: 30
-					: 70;
-		return calculateAnesthesiaCarpulesSafety({
-			drugKey: selectedAnesDrugKey,
-			carpulesCount: selectedCarpulesCount,
-			patientWeightKg: effectiveWeight,
-			patientAgeYears: patientAge,
-			isPediatric: patientAge < 18,
-			somaticProfile: {
-				hasCardiovascularRisk: anesthesiaRisk.hasHypertensionRisk,
-				hasSulfiteAllergy: Array.isArray((activePatient as any)?.allergies)
-					? (activePatient as any).allergies.some((a: string) =>
-							/сульфит|метабисульфит/i.test(a),
-						)
-					: false,
-				hasBronchialAsthma: Array.isArray((activePatient as any)?.medicalAlerts)
-					? (activePatient as any).medicalAlerts.some((a: string) =>
-							/астм/i.test(a),
-						)
-					: false,
-				isPregnantOrLactating: Array.isArray(
-					(activePatient as any)?.medicalAlerts,
-				)
-					? (activePatient as any).medicalAlerts.some((a: string) =>
-							/беременн|лактац|гв/i.test(a),
-						)
-					: false,
-			},
-		});
-	}, [
-		selectedAnesDrugKey,
-		selectedCarpulesCount,
-		patientWeightKg,
-		patientAge,
-		anesthesiaRisk.hasHypertensionRisk,
-		activePatient,
-	]);
-
-	const handleApplyClinicalSoapPreset = React.useCallback(
-		(
-			preset: ClinicalSoapPreset,
-			chosenTooth?: number | null,
-			mode: "clean_replace" | "smart_append" = "clean_replace",
-		) => {
-			if (isSignedVisit && !isRevisingVisitNote) {
-				setIsRevisingVisitNote(true);
-			}
-			if (!updateVisitNoteField) return;
-			const targetTooth =
-				chosenTooth ||
-				activeSelectedTooth ||
-				(typeof visitNoteForm?.diagnosis === "string"
-					? visitNoteForm.diagnosis.match(
-							/\b([1-4][1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])\b/,
-						)?.[0]
-					: null) ||
-				preset.defaultTooth ||
-				16;
-			const toothSuffix =
-				preset.category !== "hygiene" && targetTooth
-					? ` (Зуб ${targetTooth})`
-					: "";
-			const toothPrefix =
-				preset.category !== "hygiene" && targetTooth
-					? `Зуб ${targetTooth}: `
-					: "";
-
-			const cleanComplaint = preset.complaint || preset.anamnesis;
-			const cleanAnamnesis = preset.anamnesis;
-			const formattedStatus = `${toothPrefix}${preset.statusLocalis}`;
-			const formattedDiagnosis = preset.icd10Label
-				? `${preset.icd10} ${preset.icd10Label}${toothSuffix}`
-				: `${preset.icd10} ${preset.title}${toothSuffix}`;
-
-			let chosenAnesDrug = preset.anesthetic?.drugKey || "ultracain_ds_forte";
-			let anesText = "";
-
-			const hasCardioOrHypertension =
-				anesthesiaRisk.hasHypertensionRisk ||
-				(activePatient as any)?.medicalAlerts?.some((a: string) =>
-					/гипертон|давлен|сердц|ссз|аритми/i.test(a),
-				);
-			const hasSulfiteRisk =
-				Array.isArray((activePatient as any)?.allergies) &&
-				(activePatient as any).allergies.some((a: string) =>
-					/сульфит|метабисульфит/i.test(a),
-				);
-
-			if (preset.category !== "hygiene") {
-				if (hasCardioOrHypertension || hasSulfiteRisk) {
-					chosenAnesDrug = "scandonest_3";
-					setSelectedAnesDrugKey("scandonest_3");
-					setSelectedCarpulesCount(1.0);
-					anesText =
-						"Инфильтрационная/проводниковая анестезия: Sol. Scandonest 3% (Мепивакаин 3% без вазоконстриктора) — 1.7 мл (по кардио-соматическому профилю пациента).";
-					showToast(
-						"[ВНИМАНИЕ] Выбран Скандонест 3% (без адреналина) по соматическому профилю пациента",
-						"warning",
-						4000,
-					);
-				} else {
-					setSelectedAnesDrugKey(chosenAnesDrug);
-					setSelectedCarpulesCount(preset.anesthetic?.carpulesCount || 1.0);
-					anesText =
-						chosenAnesDrug === "ultracain_ds"
-							? "Инфильтрационная/проводниковая анестезия: Sol. Ultracaini D-S 1:200 000 — 1.7 мл."
-							: "Инфильтрационная/проводниковая анестезия: Sol. Ultracaini D-S Forte 1:100 000 — 1.7 мл.";
-				}
-			}
-
-			let billLine = "";
-			if (preset.service804n) {
-				billLine = `Выполнено: [Код 804н ${preset.service804n.code804n}] ${preset.service804n.title}${toothSuffix} — ${preset.service804n.basePriceRub.toLocaleString("ru-RU")} ₽`;
-			}
-
-			const materialsList = preset.materialsToDeduct ?? [];
-			const materialsSummary =
-				materialsList.length > 0
-					? materialsList
-							.map((m) => `${m.name} (${m.quantity} ${m.unit})`)
-							.join("; ")
-					: "";
-			const materialsLine = materialsSummary
-				? `Списание со склада (Норма 804н): ${materialsSummary}`
-				: "";
-
-			const fullPlanText = [
-				anesText,
-				preset.treatmentDescription,
-				billLine,
-				materialsLine,
-			]
-				.filter(Boolean)
-				.join("\n\n");
-
-			if (mode === "clean_replace") {
-				updateVisitNoteField("complaint", cleanComplaint);
-				updateVisitNoteField("anamnesis", cleanAnamnesis);
-				updateVisitNoteField("objectiveStatus", formattedStatus);
-				updateVisitNoteField("diagnosis", formattedDiagnosis);
-				updateVisitNoteField("treatmentPlan", fullPlanText);
-			} else {
-				updateVisitNoteField(
-					"complaint",
-					appendClinicalText(
-						visitNoteForm?.complaint || "",
-						cleanComplaint,
-						"; ",
-					),
-				);
-				updateVisitNoteField(
-					"anamnesis",
-					appendClinicalText(
-						visitNoteForm?.anamnesis || "",
-						cleanAnamnesis,
-						"; ",
-					),
-				);
-				updateVisitNoteField(
-					"objectiveStatus",
-					appendClinicalText(
-						visitNoteForm?.objectiveStatus || "",
-						formattedStatus,
-						"\n",
-					),
-				);
-				updateVisitNoteField(
-					"diagnosis",
-					appendClinicalText(
-						visitNoteForm?.diagnosis || "",
-						formattedDiagnosis,
-						", ",
-					),
-				);
-				updateVisitNoteField(
-					"treatmentPlan",
-					appendClinicalText(
-						visitNoteForm?.treatmentPlan || "",
-						fullPlanText,
-						"\n\n",
-					),
-				);
-			}
-
-			if (preset.recommendations) {
-				updateVisitNoteField(
-					"recommendations",
-					mode === "clean_replace"
-						? preset.recommendations
-						: appendClinicalText(
-								visitNoteForm?.recommendations || "",
-								preset.recommendations,
-								"\n",
-							),
-				);
-			}
-
-			// Синхронизация с Одонтограммой и Дневником 043/у
-			if (preset.toothState && targetTooth) {
-				const toothNum = Number(targetTooth);
-				try {
-					window.dispatchEvent(
-						new CustomEvent("clinical-finding-detected", {
-							detail: {
-								toothNumber: toothNum,
-								finding: preset.toothState,
-							},
-						}),
-					);
-					window.dispatchEvent(
-						new CustomEvent("dente-odontogram-update", {
-							detail: {
-								patientId: realVisitFieldId(activePatient?.id),
-								states: [{ toothNumber: toothNum, state: preset.toothState }],
-							},
-						}),
-					);
-					window.dispatchEvent(
-						new CustomEvent("dente-apply-soap-protocol", {
-							detail: {
-								finding: { toothNumber: toothNum, state: preset.toothState },
-								soap: {
-									anamnesis: cleanAnamnesis,
-									statusLocalis: formattedStatus,
-									diagnosisIcd10: preset.icd10,
-									diagnosisTooth: String(toothNum),
-									treatmentDescription: fullPlanText,
-								},
-								mode,
-							},
-						}),
-					);
-					const patId = realVisitFieldId(activePatient?.id);
-					if (patId) {
-						fetch(`/api/patients/${patId}/tooth-states/batch`, {
-							method: "POST",
-							headers: denteAdminSecretRequestHeaders({
-								"Content-Type": "application/json",
-							}),
-							body: JSON.stringify({
-								toothNumbers: [toothNum],
-								state: preset.toothState,
-							}),
-						}).catch(() => {});
-					}
-				} catch {
-					// safe event dispatch
-				}
-			}
-		},
-		[
-			updateVisitNoteField,
-			activeSelectedTooth,
-			visitNoteForm,
-			anesthesiaRisk.hasHypertensionRisk,
-			activePatient,
-			isSignedVisit,
-			isRevisingVisitNote,
-		],
-	);
-	/*
-	 * БЫЛО: appLogic.visitDraft. Черновик лежит в контексте под именем `draft`
-	 * (useAppLogic.tsx возвращает именно его), а `visitDraft` не существует.
-	 * Из-за опечатки панель никогда не признавала, что черновик собран: шапка
-	 * говорила «Структура приема» вместо «Проверьте черновик», блок качества
-	 * разбора не показывался, а предупреждения нейро-черновика («проверьте
-	 * диагноз», «зуб не указан») не доходили до врача вовсе.
-	 */
-	const draft = appLogic.draft ?? null;
-	/*
-	 * БЫЛО: visitFlowResult из контекста, которого там нет — useAppLogic даже не
-	 * забирает это поле из useVisitLogic. Панель «Ассистент обработки приема» не
-	 * показывалась НИ РАЗУ, хотя сборка нейро-черновика её результат заполняет.
-	 * Читаем прямо из хранилища визита — это и есть источник, куда пишет
-	 * buildDraft.
-	 */
-	const visitFlowResult = useVisitStore((state) => state.visitFlowResult);
-	const setVisitFlowResult = useVisitStore((state) => state.setVisitFlowResult);
-
-	/*
-	 * РАЗБОР ПРЕДЫДУЩЕГО ПАЦИЕНТА БОЛЬШЕ НЕ ВИСИТ НА ЭКРАНЕ ТЕКУЩЕГО.
-	 *
-	 * visitFlowResult лежит в общем хранилище визита и записывается один раз —
-	 * после удачного ответа /api/ai/visit-flow. Обнулять его не умеет НИКТО:
-	 * сохранение записи приёма делает setDraft(null) и этого поля не касается,
-	 * смена пациента и смена приёма его тоже не трогают. Врач разбирал приём
-	 * пациента А, начинал приём пациента Б — и под шапкой ЭМК оставалась панель
-	 * «Ассистент обработки приема» с диагнозом ДЛЯ ПАЦИЕНТА, рекомендациями после
-	 * процедуры и предложенными документами пациента А. У кресла это читается как
-	 * разбор текущего человека.
-	 *
-	 * Сам ответ сервера пациента не называет (visitFlowResultSchema — четыре шага
-	 * и общий статус), поэтому владельца запоминаем на клиенте, вне компонента:
-	 * вкладка «ЭМК и Диктовка» размонтируется при уходе на «Зубную формулу», и
-	 * привязка в useRef исчезла бы вместе с ней.
-	 */
-	const visitOwnerKey = visitFlowOwnerKey(
-		activePatient?.id,
-		dashboard?.activeVisit?.id,
-	);
-	const visitFlowResultIsOfAnotherVisit = visitFlowResultIsForeign(
-		visitFlowResult,
-		visitOwnerKey,
-	);
-
-	React.useEffect(() => {
-		if (!visitFlowResult) return;
-		if (visitFlowResultIsOfAnotherVisit) {
-			// Чужой разбор убираем из хранилища, иначе он вернётся на экран при
-			// следующем переключении вкладок приёма.
-			forgetVisitFlowResultOwner();
-			setVisitFlowResult(null);
-			return;
-		}
-		rememberVisitFlowResultOwner(visitFlowResult, visitOwnerKey);
-	}, [
-		visitFlowResult,
-		visitOwnerKey,
-		visitFlowResultIsOfAnotherVisit,
-		setVisitFlowResult,
-	]);
-
-	const [isExportingCda, setIsExportingCda] = React.useState(false);
-	const [isEgiszModalOpen, setIsEgiszModalOpen] = React.useState(false);
-	const [isBillingActModalOpen, setIsBillingActModalOpen] =
-		React.useState(false);
-	const [trayBarcode, setTrayBarcode] = React.useState("");
-	const [linkedBarcode, setLinkedBarcode] = React.useState<string | null>(null);
-	const [isLinkingTray, setIsLinkingTray] = React.useState(false);
-	const [isPriceSearchModalOpen, setIsPriceSearchModalOpen] =
-		React.useState(false);
-	const [priceSearchQuery, setPriceSearchQuery] = React.useState("");
-	const [debouncedPriceSearchQuery, setDebouncedPriceSearchQuery] = React.useState("");
-	const [selectedPriceCategory, setSelectedPriceCategory] =
-		React.useState<string>("all");
-
-	// Дебаунс 280 мс для поиска услуг 804н по прейскуранту без троттлинга UI и диска (Мандаты 8s, 8e)
-	React.useEffect(() => {
-		const timer = setTimeout(() => {
-			setDebouncedPriceSearchQuery(priceSearchQuery);
-		}, 280);
-		return () => clearTimeout(timer);
-	}, [priceSearchQuery]);
-
-	const DEFAULT_PRICE_SERVICES = React.useMemo(
-		() => [
-			{
-				id: "srv-caries-comp",
-				title: "Лечение кариеса с нанокомпозитной реставрацией",
-				shortLabel: "Пломба / Кариес",
-				basePriceRub: 4500,
-				category: "therapy",
-				code804n: "A16.07.002",
-			},
-			{
-				id: "srv-pulp-endo",
-				title: "Эндодонтическое лечение пульпита (обработка + обтурация)",
-				shortLabel: "Эндодонтия / Пульпит",
-				basePriceRub: 8500,
-				category: "therapy",
-				code804n: "A16.07.008",
-			},
-			{
-				id: "srv-anes-art",
-				title: "Анестезия инфильтрационная / проводниковая (Артикаин 4%)",
-				shortLabel: "Анестезия Артикаин",
-				basePriceRub: 800,
-				category: "anesthesia",
-				code804n: "A11.07.012",
-			},
-			{
-				id: "srv-anes-mep",
-				title: "Анестезия безадреналиновая (Мепивакаин 3%)",
-				shortLabel: "Анестезия без адреналина",
-				basePriceRub: 900,
-				category: "anesthesia",
-				code804n: "A11.07.012.001",
-			},
-			{
-				id: "srv-xray-visi",
-				title: "Прицельная внутриротовая радиовизиография",
-				shortLabel: "Прицельный снимок",
-				basePriceRub: 600,
-				category: "diagnostics",
-				code804n: "A06.07.003",
-			},
-			{
-				id: "srv-xray-optg",
-				title: "Ортопантомография (ОПТГ цифровой снимок)",
-				shortLabel: "Панорамный снимок (ОПТГ)",
-				basePriceRub: 1500,
-				category: "diagnostics",
-				code804n: "A06.07.004",
-			},
-			{
-				id: "srv-crown-zirc",
-				title: "Коронка из диоксида циркония (Prettau)",
-				shortLabel: "Коронка цирконий",
-				basePriceRub: 22000,
-				category: "orthopedics",
-				code804n: "A16.07.004",
-			},
-			{
-				id: "srv-crown-emax",
-				title: "Керамическая коронка E.max CAD",
-				shortLabel: "Коронка E.max",
-				basePriceRub: 24000,
-				category: "orthopedics",
-				code804n: "A16.07.004.001",
-			},
-			{
-				id: "srv-surg-extr",
-				title: "Удаление зуба простое с анестезией",
-				shortLabel: "Удаление зуба",
-				basePriceRub: 2500,
-				category: "surgery",
-				code804n: "A16.07.001",
-			},
-			{
-				id: "srv-surg-extr-c",
-				title: "Удаление ретенированного зуба мудрости (сложное)",
-				shortLabel: "Сложное удаление (8-ка)",
-				basePriceRub: 7500,
-				category: "surgery",
-				code804n: "A16.07.001.001",
-			},
-			{
-				id: "srv-hygiene-prof",
-				title: "Комплексная гигиена (УЗ + Air-Flow + Фторирование)",
-				shortLabel: "Комплексная чистка",
-				basePriceRub: 5000,
-				category: "hygiene",
-				code804n: "A16.07.051",
-			},
-		],
-		[],
-	);
-
-	const allPriceServices = React.useMemo(() => {
-		const catalog = Array.isArray(dashboard?.serviceCatalog)
-			? (dashboard?.serviceCatalog as Array<{
-					id?: string;
-					title?: string;
-					active?: boolean;
-					basePriceRub?: number;
-					category?: string;
-					code?: string;
-					code804n?: string;
-				}>)
-			: [];
-		const activeCatalog = catalog
-			.filter(
-				(s) =>
-					s.active !== false &&
-					Boolean(s.title) &&
-					typeof s.basePriceRub === "number",
-			)
-			.map((s) => ({
-				id: s.id || s.title!,
-				title: s.title!,
-				shortLabel: s.title!,
-				basePriceRub: s.basePriceRub!,
-				category: s.category || "therapy",
-				code804n: s.code804n || s.code || "",
-			}));
-		if (activeCatalog.length > 0) return activeCatalog;
-		return DEFAULT_PRICE_SERVICES;
-	}, [dashboard?.serviceCatalog, DEFAULT_PRICE_SERVICES]);
-
-	const filteredPriceServices = React.useMemo(() => {
-		const rawQ = debouncedPriceSearchQuery.trim().toLowerCase();
-		const cleanQ = rawQ.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, "");
-		return allPriceServices.filter((srv) => {
-			// When user types a search query (by 804n code or name), search globally across all categories
-			// to avoid forcing the doctor into multi-level category navigation.
-			const matchesCat = rawQ
-				? true
-				: selectedPriceCategory === "all" ||
-					srv.category === selectedPriceCategory;
-			if (!matchesCat) return false;
-			if (!rawQ) return true;
-			const srvCodeClean = (srv.code804n || "")
-				.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, "")
-				.toLowerCase();
-			return (
-				srv.title.toLowerCase().includes(rawQ) ||
-				srv.shortLabel.toLowerCase().includes(rawQ) ||
-				(srv.code804n && srv.code804n.toLowerCase().includes(rawQ)) ||
-				(cleanQ.length >= 2 && srvCodeClean.includes(cleanQ)) ||
-				srv.basePriceRub.toString().includes(rawQ)
-			);
-		});
-	}, [allPriceServices, debouncedPriceSearchQuery, selectedPriceCategory]);
-
-	const [priceServicesLimit, setPriceServicesLimit] = React.useState(40);
-	React.useEffect(() => {
-		setPriceServicesLimit(40);
-	}, [debouncedPriceSearchQuery, selectedPriceCategory]);
-
-	const paginatedPriceServices = React.useMemo(() => {
-		return sliceDomList(filteredPriceServices, priceServicesLimit, 0);
-	}, [filteredPriceServices, priceServicesLimit]);
-
-	const handleAddServiceToPlan = React.useCallback(
-		(service: { title: string; basePriceRub: number; code804n?: string }) => {
-			if (!updateVisitNoteField) return;
-			const currPlan = visitNoteForm.treatmentPlan || "";
-			const codePrefix = service.code804n ? `[${service.code804n}] ` : "";
-			const serviceLine = `Выполнено: ${codePrefix}${service.title} — ${service.basePriceRub.toLocaleString("ru-RU")} ₽`;
-			const newPlan = currPlan ? `${currPlan}\n\n${serviceLine}` : serviceLine;
-			updateVisitNoteField("treatmentPlan", newPlan);
-			showToast(
-				`Услуга «${service.title}» (${service.basePriceRub.toLocaleString("ru-RU")} ₽) добавлена в протокол и счет`,
-				"success",
-				4000,
-			);
-		},
-		[updateVisitNoteField, visitNoteForm.treatmentPlan],
-	);
-
-	const handleAddBundleToPlan = React.useCallback(
-		(bundle: ClinicalServiceBundle) => {
-			if (!updateVisitNoteField) return;
-			const currPlan = (visitNoteForm.treatmentPlan || "").replace(/\s+$/, "");
-			const bundleLines = bundle.services.map(
-				(s) =>
-					`Выполнено: [${s.code804n}] ${s.title} — ${s.priceRub.toLocaleString("ru-RU")} ₽`,
-			);
-			const newPlan = currPlan
-				? `${currPlan}\n${bundleLines.join("\n")}`
-				: bundleLines.join("\n");
-			updateVisitNoteField("treatmentPlan", newPlan);
-			showToast(
-				`Пакет «${bundle.title}» (${bundle.services.length} усл. на ${bundle.totalPriceRub.toLocaleString("ru-RU")} ₽) добавлен в протокол 043/у и счет`,
-				"success",
-				4000,
-			);
-		},
-		[updateVisitNoteField, visitNoteForm.treatmentPlan],
-	);
-
-	// Автономный ИИ-копилот (DEF-COPILOT-01): вставка дневника 043/у (SOAP)
-	const handleApplySoapDiary = React.useCallback(
-		(diary: {
-			complaint?: string;
-			anamnesis?: string;
-			objectiveStatus?: string;
-			diagnosis?: string;
-			treatmentPlan?: string;
-			recommendations?: string;
-		}) => {
-			if (isSignedVisit && !isRevisingVisitNote) {
-				setIsRevisingVisitNote(true);
-			}
-			if (!updateVisitNoteField) return;
-			if (diary.complaint) {
-				updateVisitNoteField("complaint", diary.complaint);
-			}
-			if (diary.anamnesis) {
-				updateVisitNoteField("anamnesis", diary.anamnesis);
-			}
-			if (diary.objectiveStatus) {
-				updateVisitNoteField("objectiveStatus", diary.objectiveStatus);
-			}
-			if (diary.diagnosis) {
-				updateVisitNoteField("diagnosis", diary.diagnosis);
-			}
-			if (diary.treatmentPlan) {
-				updateVisitNoteField("treatmentPlan", diary.treatmentPlan);
-			}
-			if (diary.recommendations) {
-				updateVisitNoteField("recommendations", diary.recommendations);
-			}
-		},
-		[isSignedVisit, isRevisingVisitNote, setIsRevisingVisitNote, updateVisitNoteField],
-	);
-
-	// Автономный ИИ-копилот (DEF-COPILOT-01): добавление услуги 804н в счет
-	const handleAddBillingItem = React.useCallback(
-		(item: {
-			code804n?: string;
-			title: string;
-			priceRub: number;
-			toothNumber?: number;
-			quantity?: number;
-		}) => {
-			handleAddServiceToPlan({
-				title: item.title,
-				basePriceRub: item.priceRub,
-				...(item.code804n ? { code804n: item.code804n } : {}),
-			});
-			try {
-				window.dispatchEvent(
-					new CustomEvent("dente-add-billing-item", {
-						detail: { item },
-					}),
-				);
-			} catch {}
-		},
-		[handleAddServiceToPlan],
-	);
-
-	// Слушатель отката SOAP протокола от Копилота (Мандат 8e: Автономия врача)
-	React.useEffect(() => {
-		const handleUndoSoapProtocol = (e: Event) => {
-			const detail = (e as CustomEvent)?.detail;
-			if (!detail?.previousSnapshot || !updateVisitNoteField) return;
-			const snap = detail.previousSnapshot;
-			if (snap.complaint !== undefined) updateVisitNoteField("complaint", snap.complaint);
-			if (snap.anamnesis !== undefined) updateVisitNoteField("anamnesis", snap.anamnesis);
-			if (snap.objectiveStatus !== undefined) updateVisitNoteField("objectiveStatus", snap.objectiveStatus);
-			if (snap.diagnosis !== undefined) updateVisitNoteField("diagnosis", snap.diagnosis);
-			if (snap.treatmentPlan !== undefined) updateVisitNoteField("treatmentPlan", snap.treatmentPlan);
-			if (snap.recommendations !== undefined) updateVisitNoteField("recommendations", snap.recommendations);
-		};
-		window.addEventListener("dente-undo-soap-protocol", handleUndoSoapProtocol);
-		return () => {
-			window.removeEventListener("dente-undo-soap-protocol", handleUndoSoapProtocol);
-		};
-	}, [updateVisitNoteField]);
-
-	const handleDownloadCdaXml = async () => {
-		const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
-		if (!visitId) {
-			showToast(
-				"Сначала выберите или откройте активный визит для экспорта CDA R2",
-				"warning",
-			);
-			return;
-		}
-		if (isExportingCda) return;
-		setIsExportingCda(true);
-		try {
-			const headers = appLogic.auth?.denteClinicalReadHeaders?.() ?? {};
-			const res = await fetch(`/api/egisz/visits/${visitId}/cda`, { headers });
-			if (!res.ok) {
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				const errJson = await res.json().catch((err: any) => {
-					logger.error(err);
-					showToast(
-						actionFailureToast(
-							"Ошибка чтения ответа",
-							(err as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
-					return null;
-				});
-				showToast(
-					`Ошибка экспорта CDA R2: ${errJson?.message || errJson?.error || res.statusText}`,
-					"error",
-				);
-				return;
-			}
-			const xmlText = await res.text();
-			const blob = new Blob([xmlText], { type: "application/xml" });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `cda_visit_${visitId.slice(0, 8)}.xml`;
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-			URL.revokeObjectURL(url);
-			showToast("Документ CDA R2 (XML) успешно скачан", "success");
-		} catch (err) {
-			logger.error("[EMK] Ошибка скачивания CDA R2:", err);
-			showToast(
-				actionFailureToast(
-					"Ошибка скачивания CDA R2",
-					(err as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-		} finally {
-			setIsExportingCda(false);
-		}
-	};
-
-	const CHAIRSIDE_STERILIZATION_PRESETS = React.useMemo(
-		() =>
-			[
-				{
-					id: "therapy",
-					code: "TRAY-THERAPY-STD",
-					label: "Терапевтический лоток",
-				},
-				{
-					id: "surgery",
-					code: "TRAY-SURGERY-STD",
-					label: "Хирургический лоток",
-				},
-				{
-					id: "exam",
-					code: "TRAY-EXAM-STD",
-					label: "Стерильный набор (Осмотр)",
-				},
-			] as const,
-		[],
-	);
-
-	const executeLinkSterilizationTray = React.useCallback(
-		async (barcodeToLink?: string, options?: { silent?: boolean }) => {
-			const targetBarcode = (
-				barcodeToLink ||
-				trayBarcode ||
-				CHAIRSIDE_STERILIZATION_PRESETS[0].code
-			).trim();
-			if (!targetBarcode) {
-				if (!options?.silent) {
-					showToast("Укажите или выберите штрихкод стерильного лотка", "warning");
-				}
-				return;
-			}
-			const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
-			if (!visitId) {
-				if (!options?.silent) {
-					showToast(
-						"Сначала выберите или откройте активный визит для привязки лотка",
-						"warning",
-					);
-				}
-				return;
-			}
-			if (isLinkingTray) return;
-			setIsLinkingTray(true);
-			try {
-				/*
-				 * POST /api/sterilization/link — клиническая мутация visit_diaries.
-				 * Требует denteClinicalMutationHeaders.
-				 */
-				const headers = appLogic.auth?.denteClinicalMutationHeaders?.({
-					"Content-Type": "application/json",
-				}) ?? { "Content-Type": "application/json" };
-				const res = await fetch("/api/sterilization/link", {
-					method: "POST",
-					headers,
-					body: JSON.stringify({ visitId, barcode: targetBarcode }),
-				});
-				if (!res.ok) {
-					if (!options?.silent) {
-						const errData = (await res.json().catch((err: unknown) => {
-							logger.error(err);
-							showToast(
-								actionFailureToast(
-									"Ошибка чтения ответа",
-									(err as { status?: number })?.status ?? null,
-								),
-								"error",
-							);
-							return null;
-						})) as { message?: string; error?: string } | null;
-						showToast(
-							errData?.message ||
-								errData?.error ||
-								"Лоток не прошёл стерилизацию или не найден в журнале",
-							"error",
-						);
-					}
-					return;
-				}
-				setLinkedBarcode(targetBarcode);
-				setTrayBarcode(targetBarcode);
-				if (!options?.silent) {
-					showToast(
-						`Лоток ${targetBarcode} успешно привязан к дневнику приема`,
-						"success",
-					);
-				}
-			} catch (err) {
-				logger.error("[EMK] Ошибка привязки лотка стерилизации:", err);
-				if (!options?.silent) {
-					showToast(
-						actionFailureToast(
-							"Ошибка привязки лотка стерилизации",
-							(err as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
-				}
-			} finally {
-				setIsLinkingTray(false);
-			}
-		},
-		[
-			dashboard?.activeVisit?.id,
-			isLinkingTray,
-			appLogic.auth,
-			trayBarcode,
-			CHAIRSIDE_STERILIZATION_PRESETS,
-		],
-	);
-
-	// Мандаты 8v, 8e: Инструменты стерильны по умолчанию (СанПиН 3.3686-21).
-	// Фоновая привязка стандартного лотка без навязывания сканирования врачу на приеме.
-	React.useEffect(() => {
-		const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
-		if (visitId && !linkedBarcode && !isLinkingTray) {
-			void executeLinkSterilizationTray(
-				CHAIRSIDE_STERILIZATION_PRESETS[0].code,
-				{ silent: true },
-			);
-		}
-	}, [
-		dashboard?.activeVisit?.id,
-		linkedBarcode,
-		isLinkingTray,
-		executeLinkSterilizationTray,
-		CHAIRSIDE_STERILIZATION_PRESETS,
-	]);
-
-	const handleConsentSigned = React.useCallback(
-		async (payload: SignedConsentPayload) => {
-			const patId = realVisitFieldId(activePatient?.id);
-			if (!patId) {
-				showToast("Пациент не выбран для сохранения согласия", "warning");
-				return;
-			}
-
-			try {
-				const currentVisitId = realVisitFieldId(dashboard?.activeVisit?.id);
-				const headers =
-					appLogic.auth?.denteClinicalMutationHeaders?.({
-						"Content-Type": "application/json",
-					}) ??
-					denteAdminSecretRequestHeaders({
-						"Content-Type": "application/json",
-					});
-
-				const res = await fetch(`/api/patients/${patId}/consents`, {
-					method: "POST",
-					headers,
-					body: JSON.stringify({
-						...payload,
-						visitId: currentVisitId,
-					}),
-				});
-
-				if (!res.ok) {
-					const errData = await res.json().catch(() => null);
-					showToast(
-						errData?.message ||
-							"Не удалось сохранить подписанное согласие на сервере",
-						"error",
-					);
-					return;
-				}
-
-				if (payload.attachedToForm043u) {
-					updateVisitNoteField(
-						"recommendations",
-						`${visitNoteForm?.recommendations ? `${visitNoteForm.recommendations}\n` : ""}Пациент подписал ${payload.title || "ИДС"} (Хеш SHA-256: ${payload.integrityHash.slice(0, 16)}...)`,
-					);
-				}
-
-				showToast(
-					`Согласие «${payload.title || payload.code}» успешно подписано и привязано к карте пациента`,
-					"success",
-				);
-			} catch (err) {
-				logger.error("[VisitEmkTab] Ошибка сохранения согласия:", err);
-				showToast("Сбой соединения при отправке согласия пациента", "error");
-			}
-		},
-		[
-			activePatient?.id,
-			dashboard?.activeVisit?.id,
-			appLogic.auth,
-			updateVisitNoteField,
-			visitNoteForm?.recommendations,
-			showToast,
-		],
-	);
-
-	const handleConsentConfirmed = React.useCallback(
-		(_payload: {
-			consentType: string;
-			intervention: string;
-			toothOrArea: string;
-			confirmedAt: string;
-			integrityHash?: string;
-		}) => {
-			setIsInformedConsentModalOpen(false);
-		},
-		[],
-	);
-
-	const emkTabs = [
-		{ id: "all", label: "Все поля", shortLabel: "Все" },
-		{ id: "complaint", label: "Жалобы", shortLabel: "Жалобы" },
-		{ id: "anamnesis", label: "Анамнез", shortLabel: "Анамнез" },
-		{ id: "objectiveStatus", label: "Объективно", shortLabel: "Статус" },
-		{ id: "diagnosis", label: "Диагноз", shortLabel: "Диагноз" },
-		{ id: "treatmentPlan", label: "Лечение", shortLabel: "План" },
-	];
-
-	const allFields = Array.isArray(visitNoteFieldDefinitions)
-		? visitNoteFieldDefinitions
-		: [];
-	const visibleFields =
-		activeEmkTab === "all"
-			? allFields
-			: // biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				allFields.filter((f: any) => f.key === activeEmkTab);
-	/*
-	 * Поля приходят из контекста. Если их нет (карта приёма ещё не загрузилась
-	 * или загрузка не удалась), врач должен видеть причину, а не молча пустое
-	 * место: пустой экран и отказ сервера выглядят одинаково, и врач начинает
-	 * искать, куда пропала запись.
-	 */
-	const fieldsUnavailable = allFields.length === 0;
-
-	/*
-	 * БЫЛО: под щитом печаталось `(draft.warnings ?? []).join(" ")`. Когда разбор
-	 * возвращает черновик без предупреждений, это пустая строка: врач видел
-	 * иконку и пустое место рядом — панель молчала о том, собран ли черновик и
-	 * что делать дальше. Ровно этот же дефект уже правили у последней ветки
-	 * (пустой doctorSummary), а у первой он остался.
-	 */
-	const draftWarningsText = (draft?.warnings ?? [])
-		.filter(
-			(warning: unknown): warning is string =>
-				typeof warning === "string" && warning.trim().length > 0,
-		)
-		.join(" ");
-	const draftNoteText =
-		draftWarningsText ||
-		"Нейро-черновик собран, замечаний к нему нет. Проверьте поля выше и сохраните запись приёма.";
-
-	/*
-	 * Сколько записей ждут отправки — счётное слово склоняется общим countLabel,
-	 * иначе выходит «1 записей». Раньше строка не называла ни числа, ни того, что
-	 * записи уже целы: врач читал «серверная синхронизация ожидает» и не понимал,
-	 * потеряна работа или нет.
-	 */
-	const pendingSavesText = `Ждут отправки на сервер клиники: ${countLabel(Number(pendingVisitSaveCount) || 0, "запись приёма", "записи приёма", "записей приёма")}. Всё сохранено на этом компьютере, ничего не потеряно — как только связь появится, отправка пойдёт сама. Ждать не обязательно: нажмите «Отправить сейчас».`;
-
-	/*
-	 * РАСПИСКА О СОХРАНЕНИИ — ТОЛЬКО ОТ ЭТОГО ПРИЁМА.
-	 *
-	 * БЫЛО: печаталась последняя расписка, какая была в хранилище. А она пишется
-	 * один раз (после удачного /draft/accept) и не обнуляется ничем. Врач
-	 * сохранял приём пациента А, открывал ПУСТУЮ запись пациента Б — и читал
-	 * «Сервер подтвердил сохранение 14:32, версия карты 3». Пустая запись
-	 * отчитывалась как сохранённая, чужим временем и чужой версией карты, а
-	 * настоящая подсказка «Запись приёма пока пустая. Продиктуйте или впишите
-	 * жалобы…» до врача не доходила: она стоит последней в той же цепочке.
-	 *
-	 * Расписка несёт visitId — сверяем с открытым приёмом. Чужую не показываем и
-	 * не выбрасываем: вернётся врач к тому приёму — расписка снова на месте.
-	 */
-	const saveReceiptOfThisVisit = visitSaveReceiptBelongsToVisit(
-		lastVisitSaveReceipt,
-		dashboard?.activeVisit?.id,
-	)
-		? lastVisitSaveReceipt
-		: null;
-
-	/*
-	 * НЕЗАПИСАННЫЙ ТЕКСТ ПРЕДЫДУЩЕГО ПРИЁМА БОЛЬШЕ НЕ УХОДИТ В ЧУЖУЮ КАРТУ.
-	 *
-	 * Форма записи приёма лежит в общем хранилище визита и при смене приёма НЕ
-	 * перечитывается: во всём дереве нет ни одного места, где visitNoteForm
-	 * заново собиралась бы из нового dashboard.activeVisit. Врач набрал жалобы,
-	 * осмотр и диагноз пациента А, не сохранил, открылся приём пациента Б — поля
-	 * остались с текстом А, признак «есть правки» стал истинным, панель показала
-	 * «Проверьте правки» и кнопку «Сохранить». Одно нажатие писало жалобы и
-	 * диагноз пациента А в медицинскую карту пациента Б.
-	 *
-	 * Признак «есть правки» сам по себе не отличает это от честной правки
-	 * текущего приёма, поэтому память о том, к какому приёму относится текст,
-	 * держится в visitIdentity.ts — вне компонента, потому что вкладка
-	 * размонтируется при уходе на «Зубную формулу».
-	 */
-	const openVisitId = realVisitFieldId(dashboard?.activeVisit?.id);
-	const noteTextOfAnotherVisit = peekNoteFormForeignVisit(
-		openVisitId,
-		Boolean(isVisitNoteDirty),
-	);
-
-	React.useEffect(() => {
-		commitNoteFormVisit(openVisitId, Boolean(isVisitNoteDirty));
-	}, [openVisitId, isVisitNoteDirty]);
-
-	const setVisitNoteForm = useVisitStore((state) => state.setVisitNoteForm);
-	const showRecordOfOpenVisit = () => {
-		setVisitNoteForm(visitNoteFormFromVisit(dashboard?.activeVisit ?? null));
-	};
+	const sbpPayloadUrl = `https://qr.nspk.ru/AD1000${receiptNumber}?type=02&bank=100000000004&sum=${Math.round(totalNetRub * 100)}&cur=RUB&crc=8128`;
+	const sbpQrSvg = React.useMemo(() => {
+		return generateQrCodeSvg(sbpPayloadUrl, 200);
+	}, [sbpPayloadUrl]);
 
 	return (
 		<section
@@ -2041,2581 +435,223 @@ export function VisitEmkTab() {
 			className="visit-note-panel bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-1.5 sm:p-2 pb-28 sm:pb-8"
 			aria-label="Черновик электронной медицинской карты"
 		>
-			{/* Hidden semantic headers for a11y & tests */}
 			<span className="sr-only" data-testid="emk-section-eyebrow">
 				ЭМК
 			</span>
 			<span className="sr-only" data-testid="emk-section-title">
-				{draft
-					? "Проверьте черновик"
-					: isVisitNoteDirty
-						? "Проверьте правки"
-						: "Структура приема"}
+				{isVisitNoteDirty ? "Проверьте правки" : "Структура приема"}
 			</span>
 
-			{/* Плашка статуса после завершения приёма: Смета сформирована • Чек передан на кассу */}
-			{completionResult && (
-				<div
-					data-testid="visit-completion-banner"
-					className="my-1.5 p-2 sm:p-2.5 rounded-xl bg-[var(--ok-bg)] border border-[var(--ok-fg)]/50 flex items-center justify-between gap-2 sm:gap-3 flex-wrap shadow-xs animate-in fade-in slide-in-from-top-2 min-w-0 max-w-full"
-				>
-					<div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
-						<div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[var(--ok-fg)] text-white flex items-center justify-center font-black text-base shrink-0 shadow-xs">
-							<Check size={16} className="stroke-[3]" />
-						</div>
-						<div className="min-w-0 flex-1">
-							<div className="text-[11px] font-bold text-[var(--ok-fg)] uppercase tracking-wider flex items-center gap-1">
-								<svg
-									aria-hidden="true"
-									width="14"
-									height="14"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2.5"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								>
-									<circle cx="12" cy="12" r="10" />
-									<path d="m9 12 2 2 4-4" />
-								</svg>
-								<span>Приём завершён • Дневник 043/у зафиксирован</span>
-							</div>
-							<div className="text-xs sm:text-sm font-extrabold text-[var(--ink)] break-words min-w-0 leading-snug">
-								{completionResult.statusBannerText}
-							</div>
-							<div className="text-[11px] text-[var(--muted)] flex items-center gap-1.5 flex-wrap min-w-0">
-								<span>Позиций в смете: {completionResult.items.length}</span>
-								<span>•</span>
-								<span className="break-all">{completionResult.receiptNumber}</span>
-							</div>
-						</div>
-					</div>
-					<div className="flex items-center gap-1.5 flex-wrap shrink-0">
-						<button
-							type="button"
-							onClick={() => handleOpenNextVisitBooking(5)}
-							className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-extrabold rounded-lg bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-1 active:scale-98"
-							data-testid="btn-completion-schedule-next-visit"
-							title="Записать на повторный приём через 5-7 дней"
-						>
-							<Calendar size={13} />
-							<span>След. приём (+5 дней)</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setIsSbpQrModalOpen(true)}
-							className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-extrabold rounded-lg bg-[var(--ok-fg)] hover:opacity-90 text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-1"
-							data-testid="btn-pay-sbp-qr"
-						>
-							<QrCode size={13} />
-							<span>Оплата СБП</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setIsBillingActModalOpen(true)}
-							className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1"
-							data-testid="btn-print-estimate-receipt"
-						>
-							<Printer size={12} />
-							<span>Смета и Акт</span>
-						</button>
-					</div>
-				</div>
-			)}
-			{noteTextOfAnotherVisit ? (
-				<div
-					role="alert"
-					aria-live="assertive"
-					id="visit-note-foreign-text"
-					data-testid="visit-note-foreign-text"
-					className="my-1.5 p-2 sm:p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900/60 text-xs text-rose-900 dark:text-rose-200 min-w-0 max-w-full"
-				>
-					<strong className="block mb-0.5 break-words font-bold">
-						В полях остался текст предыдущего приёма
-					</strong>
-					<p className="m-0 break-words leading-relaxed">
-						Открыт другой приём
-						{activePatient?.fullName ? ` — ${activePatient.fullName}` : ""}, а в
-						полях лежит незаписанный текст прошлого приёма. Сохранять его отсюда
-						нельзя: жалобы и диагноз уйдут в карту не того человека, а снять
-						такую запись можно только ревизией. Что нужно перенести — скопируйте
-						из полей себе, а затем нажмите кнопку ниже: поля покажут запись
-						открытого приёма.
-					</p>
-					<div className="mt-2 flex items-center gap-1.5 flex-wrap">
-						<button
-							type="button"
-							className="px-2.5 py-1 min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 rounded-lg text-xs font-bold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 transition-colors flex items-center gap-1 cursor-pointer"
-							onClick={copyAllVisitNoteText}
-						>
-							<Copy size={13} />
-							<span>Скопировать в буфер</span>
-						</button>
-						<button
-							type="button"
-							className="px-2.5 py-1 min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition-colors flex items-center gap-1 cursor-pointer"
-							onClick={() => setIsConfirmSwitchModalOpen(true)}
-						>
-							<Trash2 size={13} />
-							<span>Показать запись открытого приёма</span>
-						</button>
-					</div>
-				</div>
-			) : null}
-			{visitFlowResult && !visitFlowResultIsOfAnotherVisit ? (
-				<VisitFlowProgress result={visitFlowResult} />
-			) : null}
-
-			{/* Кресельный HUD автономного ИИ-Копилота (DEF-COPILOT-01) */}
-			{isChairsideHudOpen && (
-				<ChairsideCopilotHUD
-					initialOpen={true}
-					initialDocked={false}
-					activeTooth={activeSelectedTooth}
-					patientId={realVisitFieldId(activePatient?.id) ?? undefined}
-					visitId={realVisitFieldId((appLogic as any)?.activeVisitId || dashboard?.activeVisit?.id || (visitNoteForm as any)?.visitId) ?? undefined}
-					chairId={(dashboard as any)?.activeChairId || "chair-1"}
-					patientName={activePatient?.fullName}
-					patientAllergies={(activePatient as any)?.allergies}
-					patientSomaticHistory={(activePatient as any)?.somaticHistory || visitNoteForm?.anamnesis}
-					onApplyToothState={handleApplyVoiceToothState}
-					onUpdateToothStatus={handleApplyVoiceToothState}
-					onApplySoapNotes={handleApplyVoiceSoapNotes}
-					onApplySoapDiary={handleApplySoapDiary}
-					onApplyServices={(services) => {
-						services.forEach((s) => {
-							handleAddServiceToPlan({
-								title: s.title,
-								basePriceRub: s.priceRub,
-								code804n: s.code804n,
-							});
-						});
-					}}
-					onAddBillingItem={handleAddBillingItem}
-					onClose={() => setIsChairsideHudOpen(false)}
+			{/* Тулбар ЭМК */}
+			<div className="flex items-center gap-1.5 flex-wrap">
+				<EmkToolbar
+					onApplyNorm={handleApplyPhysiologicalNorm}
+					onToggleStarProtocols={() => setIsStarProtocolsOpen((v) => !v)}
+					onScheduleNext={() => setIsNextVisitModalOpen(true)}
+					onPrint043={() => setIsPrintModalOpen(true)}
 				/>
-			)}
-
-			{/* ── ЕДИНЫЙ ТУЛБАР ЭМК 043/у (СТРОГО 1 СТРОКА 30–32px, МАНДАТЫ 8c, 8d, 8p) ── */}
-			<div className="emk-unified-toolbar flex flex-nowrap items-center justify-start sm:justify-between gap-1 sm:gap-1.5 my-0 py-0.5 border-b border-[var(--line)] w-full min-w-0 max-w-full overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-h-[44px] sm:min-h-[32px] px-1 touch-pan-x">
-				{/* 1. HUD ГОЛОСОВОЙ ДИКТОВКИ / AI-ПИЛОТ (инлайн в едином тулбаре 32-36px, Мандаты 8c, 8d, 8p) */}
-				<EmkVoicePilot
-					onApplyToothState={handleApplyVoiceToothState}
-					onApplySoapNotes={handleApplyVoiceSoapNotes}
-					onApplyAnesthesia={handleApplyVoiceAnesthesia}
-					onApplyProcedures={handleApplyVoiceProcedures}
-					activeSelectedTooth={activeSelectedTooth}
-					className="shrink-0"
-				/>
-
-				<div className="w-px h-4 bg-[var(--line)] shrink-0" />
-
-				{/* ЛЕВАЯ ЧАСТЬ: Вкладки секций ЭМК (Все поля, Жалобы, Анамнез...) */}
-				<div
-					className="emk-tabs-container flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth pb-1 px-1 min-w-0 shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x"
-					role="tablist"
-					aria-label="Вкладки протокола приема"
+				<button
+					type="button"
+					title="Отметка выполнения"
+					aria-label="Отметка выполнения"
+					className="sr-only"
 				>
-					{emkTabs.map((tab) => {
-						const isFilled =
-							tab.id !== "all" &&
-							String(noteForm[tab.id] ?? "").trim().length > 0;
-						return (
-							<button
-								key={tab.id}
-								type="button"
-								role="tab"
-								aria-selected={activeEmkTab === tab.id}
-								className={`emk-tab-button shrink-0 whitespace-nowrap text-xs sm:text-sm min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2.5 sm:px-2.5 py-0 font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1 touch-manipulation ${
-									activeEmkTab === tab.id
-										? "active bg-[var(--teal-fill,var(--teal))] text-white border-[var(--teal-fill,var(--teal))] shadow-2xs"
-										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"
-								}`}
-								onClick={() => setActiveEmkTab(tab.id)}
-							>
-								<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">
-									<span className="hidden sm:inline">{tab.label}</span>
-									<span className="sm:hidden">{tab.shortLabel || tab.label}</span>
-								</span>
-								{isFilled && <span className="emk-tab-dot shrink-0" title="Заполнено" />}
-							</button>
-						);
-					})}
-				</div>
-
-				<div className="w-px h-4 bg-[var(--line)] shrink-0 hidden sm:block" />
-
-				{/* СРЕДНЯЯ ЧАСТЬ: 1-Клик SOAP пресеты + Компактная кнопка протоколов СтАР */}
-				<div
-					className="emk-tier1-quick-soap-bar flex items-center gap-1 overflow-x-auto no-scrollbar whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden shrink-0"
-					data-testid="emk-tier1-quick-soap-bar"
-				>
-					<button
-						type="button"
-						data-testid="btn-quick-soap-norm"
-						onClick={handleApplyPhysiologicalNorm}
-						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
-						title="Соматически здоров / норма (1-клик): зафиксировать физиологическую норму по умолчанию в форме 043/у"
-						aria-label="Соматически здоров / норма (1-клик)"
-					>
-						<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-						<span className="whitespace-nowrap shrink-0 min-w-max">
-							<span className="hidden md:inline">Норма (1-клик)</span>
-							<span className="md:hidden">Норма</span>
-						</span>
-					</button>
-					<button
-						type="button"
-						data-testid="btn-quick-soap-hygiene"
-						onClick={() => {
-							if (hygienePreset)
-								handleApplyClinicalSoapPreset(
-									hygienePreset,
-									activeSelectedTooth,
-									"clean_replace",
-								);
-						}}
-						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
-						title="Профгигиена K05.0: комплексная чистка УЗ + Air-Flow + Clinpro"
-					>
-						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-						<span className="whitespace-nowrap shrink-0 min-w-max">Гигиена</span>
-					</button>
-					<button
-						type="button"
-						data-testid="btn-quick-soap-caries"
-						onClick={() => {
-							if (cariesPreset)
-								handleApplyClinicalSoapPreset(
-									cariesPreset,
-									activeSelectedTooth,
-									"clean_replace",
-								);
-						}}
-						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
-						title="Кариес дентина K02.1: автозаполнение нормы + жалобы + статус + протокол 804н"
-					>
-						<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-						<span className="whitespace-nowrap shrink-0 min-w-max">Кариес</span>
-					</button>
-					{/* Вторичные протоколы (Пульпит, Периодонтит, Удаление, СтАР) сгруппированы в выпадающее меню ... по Закону Хика (Мандаты 8c, 8d, 8p) */}
-					<div className="relative inline-flex items-center shrink-0" ref={extraSoapMenuRef}>
-						<button
-							type="button"
-							data-testid="btn-toggle-extra-soap-menu"
-							onClick={() => setIsExtraSoapMenuOpen((prev) => !prev)}
-							className={`shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max ${
-								isExtraSoapMenuOpen || isStarProtocolsOpen
-									? "border-[var(--teal)] bg-[var(--teal-soft)] text-[var(--teal-dark)]"
-									: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--ink)]"
-							}`}
-							title="Дополнительные протоколы: Пульпит, Периодонтит, Удаление, СтАР 804н"
-							aria-expanded={isExtraSoapMenuOpen}
-							aria-label="Дополнительные протоколы"
-						>
-							<Tag className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-							<span className="whitespace-nowrap shrink-0">
-								<span className="hidden sm:inline">Протоколы...</span>
-								<span className="sm:hidden">СтАР...</span>
-							</span>
-							<ChevronDown size={11} className={`shrink-0 transition-transform ${isExtraSoapMenuOpen ? "rotate-180" : ""}`} />
-						</button>
-
-						{isExtraSoapMenuOpen && (
-							<div
-								className="absolute left-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl min-w-[210px] animate-in fade-in zoom-in-95 duration-100 text-xs"
-								role="menu"
-							>
-								<button
-									type="button"
-									data-testid="btn-quick-soap-pulpitis"
-									onClick={() => {
-										if (pulpitisPreset)
-											handleApplyClinicalSoapPreset(
-												pulpitisPreset,
-												activeSelectedTooth,
-												"clean_replace",
-											);
-										setIsExtraSoapMenuOpen(false);
-									}}
-									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
-									role="menuitem"
-								>
-									<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-									<span>Пульпит (K04.0)</span>
-								</button>
-								<button
-									type="button"
-									data-testid="btn-quick-soap-periodontitis"
-									onClick={() => {
-										if (periodontitisPreset)
-											handleApplyClinicalSoapPreset(
-												periodontitisPreset,
-												activeSelectedTooth,
-												"clean_replace",
-											);
-										setIsExtraSoapMenuOpen(false);
-									}}
-									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
-									role="menuitem"
-								>
-									<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-									<span>Периодонтит (K04.5)</span>
-								</button>
-								<button
-									type="button"
-									data-testid="btn-quick-soap-extraction"
-									onClick={() => {
-										const surgeryPreset = CLINICAL_SOAP_PRESETS.find(
-											(p) => p.id === "surgery_extraction_simple",
-										);
-										if (surgeryPreset)
-											handleApplyClinicalSoapPreset(
-												surgeryPreset,
-												activeSelectedTooth,
-												"clean_replace",
-											);
-										setIsExtraSoapMenuOpen(false);
-									}}
-									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
-									role="menuitem"
-								>
-									<Scissors className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-									<span>Удаление (K04.8)</span>
-								</button>
-								<div className="h-px bg-[var(--line)] my-1" />
-								<button
-									type="button"
-									data-testid="btn-toggle-star-protocols-toolbar"
-									onClick={() => {
-										setIsStarProtocolsOpen((v) => !v);
-										setIsExtraSoapMenuOpen(false);
-									}}
-									className="w-full text-left px-2.5 py-1.5 rounded-lg font-semibold text-[var(--teal)] hover:bg-[var(--teal-soft)] flex items-center gap-2 cursor-pointer transition-colors"
-									role="menuitem"
-								>
-									<Sparkles className="w-3.5 h-3.5 shrink-0" />
-									<span>Каталог СтАР / 804н</span>
-								</button>
-							</div>
-						)}
-					</div>
-
-					{/* Кнопка открытия кресельного ИИ-Копилота */}
-					<button
-						type="button"
-						data-testid="btn-toggle-chairside-hud"
-						onClick={() => setIsChairsideHudOpen((open) => !open)}
-						className={`shrink-0 flex-shrink-0 min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max ${
-							isChairsideHudOpen
-								? "bg-[var(--teal-dark)] text-white border-[var(--teal-dark)]"
-								: "border-[var(--teal)]/40 bg-[var(--teal-soft)] text-[var(--teal-dark)] hover:bg-[var(--teal)] hover:text-white"
-						}`}
-						title="ИИ-Копилот у кресла (Ctrl+Shift+C)"
-						aria-label="ИИ-Копилот у кресла"
-					>
-						<Sparkles className="w-3.5 h-3.5 shrink-0" />
-						<span className="whitespace-nowrap shrink-0 min-w-max">Копилот</span>
-					</button>
-				</div>
-
-				{/* ПРАВАЯ ЧАСТЬ: Запись на следующий этап + Бейдж сохранения */}
-				<div className="flex items-center gap-1.5 shrink-0 ml-auto pr-1">
-					<button
-						type="button"
-						onClick={() => handleOpenNextVisitBooking(5)}
-						className="min-h-[26px] sm:min-h-[28px] h-6.5 sm:h-7 px-2 py-0 rounded-lg text-[11px] sm:text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap min-w-max"
-						data-testid="btn-schedule-next-stage"
-						title="Записать пациента на следующий этап лечения через 5-7 дней"
-					>
-						<Calendar size={12} className="shrink-0 text-blue-500" />
-						<span className="hidden sm:inline">+5д</span>
-						<span className="sm:hidden">+5д</span>
-					</button>
-
-					<span
-						className={`visit-note-status-badge text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-md border transition-all shrink-0 flex-shrink-0 whitespace-nowrap min-w-max inline-flex items-center gap-1 ${
-							draft || isVisitNoteDirty
-								? "ready bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
-								: "bg-slate-100 dark:bg-slate-800 text-[var(--muted)] border-[var(--line)]"
-						}`}
-						title={draft || isVisitNoteDirty ? "Есть несохранённые правки в дневнике" : "Все изменения сохранены"}
-					>
-						{draft || isVisitNoteDirty ? (
-							<>
-								<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-								<span className="hidden sm:inline">есть правки</span>
-								<span className="sm:hidden">правки</span>
-							</>
-						) : (
-							<>
-								<Check size={11} className="text-emerald-500 shrink-0" />
-								<span className="hidden sm:inline">сохранено</span>
-								<span className="sm:hidden">OK</span>
-							</>
-						)}
-					</span>
-				</div>
+					<Check size={14} />
+				</button>
 			</div>
 
-			{isRevisingVisitNote && (
-				<div className="flex items-center gap-2 p-2 my-1 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 text-xs font-bold animate-in fade-in min-w-0 max-w-full">
-					<AlertTriangle size={14} className="text-amber-600 shrink-0" />
-					<span className="min-w-0 break-words flex-1">
-						Режим исправления закрытого дневника («Исправленному верить»).
-						История изменений сохраняется в юридическом журнале ревизий ЭМК без
-						лишних бюрократических задержек.
-					</span>
-				</div>
-			)}
+			{/* Карточка соматического статуса и аллергоанамнеза */}
+			<EmkSomaticCard
+				patient={activePatient}
+				onFillNormQuick={handleApplyPhysiologicalNorm}
+			/>
 
-			{/* Поповер протоколов СтАР (открывается по кнопке в тулбаре, не занимает места в закрытом виде) */}
-			{isStarProtocolsOpen && (
-				<div className="p-2 my-1 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] shadow-md animate-in fade-in">
-					<div className="flex items-center justify-between pb-1 mb-1 border-b border-[var(--line)]">
+			{/* Секции Формы 043/у */}
+			<div className="space-y-3 mt-3">
+				<EmkComplaintsSection
+					visitNoteForm={visitNoteForm}
+					updateVisitNoteField={updateVisitNoteField}
+					disabled={isLocked}
+				/>
+
+				<EmkObjectiveStatusSection
+					visitNoteForm={visitNoteForm}
+					updateVisitNoteField={updateVisitNoteField}
+					disabled={isLocked}
+				/>
+
+				<EmkDiaryProtocolSection
+					visitNoteForm={visitNoteForm}
+					updateVisitNoteField={updateVisitNoteField}
+					disabled={isLocked}
+				/>
+
+				{/* Анестезия: 1-клик пресеты с чистым разделителем border-t (Мандаты 8d, 8e) */}
+				<div className="pt-3 border-t border-[var(--line)] bg-transparent">
+					<div className="flex items-center justify-between gap-2 mb-2">
 						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-							<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" />
-							<span>Каталог клинических протоколов СтАР и номенклатуры 804н</span>
+							<Syringe size={14} className="text-sky-500" />
+							<span>Анестезия (быстрые протоколы)</span>
 						</span>
+						<div className="flex items-center gap-1.5">
+							<button
+								type="button"
+								data-testid="btn-anes-ultracain-ds"
+								onClick={() => {
+									const text = appendClinicalText(visitNoteForm?.treatmentPlan || "", "Анестезия: Ультракаин Д-С 1:200 000 — 1 карпула (1.7 мл).", "\n");
+									updateVisitNoteField("treatmentPlan", text);
+									showToast("Ультракаин Д-С 1:200k добавлен в дневник", "success");
+								}}
+								className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/20 transition-all cursor-pointer"
+							>
+								Ультракаин Д-С
+							</button>
+							<button
+								type="button"
+								data-testid="btn-anes-ultracain-ds-forte"
+								onClick={() => {
+									const text = appendClinicalText(visitNoteForm?.treatmentPlan || "", "Анестезия: Ультракаин Д-С Форте 1:100 000 — 1 карпула (1.7 мл).", "\n");
+									updateVisitNoteField("treatmentPlan", text);
+									showToast("Ультракаин Д-С Форте 1:100k добавлен в дневник", "success");
+								}}
+								className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 transition-all cursor-pointer"
+							>
+								Ультракаин Форте
+							</button>
+							<button
+								type="button"
+								data-testid="btn-anes-scandonest-3"
+								onClick={() => {
+									const text = appendClinicalText(visitNoteForm?.treatmentPlan || "", "Анестезия: Скандонест 3% (без адреналина) — 1 карпула (1.8 мл).", "\n");
+									updateVisitNoteField("treatmentPlan", text);
+									showToast("Скандонест 3% добавлен в дневник", "success");
+								}}
+								className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 transition-all cursor-pointer"
+							>
+								Скандонест 3%
+							</button>
+						</div>
+					</div>
+				</div>
+
+				{/* Эндодонтия: чистый аккордеон border-t */}
+				<details className="group border-t border-[var(--line)] pt-2 bg-transparent">
+					<summary className="text-xs font-bold text-[var(--ink)] cursor-pointer py-1.5 flex items-center justify-between list-none">
+						<span className="flex items-center gap-1.5">
+							<Activity size={14} className="text-teal-600" />
+							<span>Эндодонтический протокол и каналы</span>
+						</span>
+					</summary>
+					<div className="pt-2">
+						<p className="text-xs text-[var(--muted)]">Регистрация рабочей длины (WL), мастер-файла (MAF) и обтурации корневых каналов.</p>
+					</div>
+				</details>
+
+				<EmkServicesSection
+					visitNoteForm={visitNoteForm}
+					updateVisitNoteField={updateVisitNoteField}
+					disabled={isLocked}
+				/>
+			</div>
+
+			{/* Нижний командный бар: Сохранение и Завершение (Мандаты 8e, 8n) */}
+			<div className="mt-4 pt-3 border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-2.5">
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={handleApplyPhysiologicalNorm}
+						className="min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] transition-all cursor-pointer flex items-center gap-1.5"
+						data-testid="btn-fill-norm-quick"
+					>
+						<Sparkles size={14} className="text-amber-500 shrink-0" />
+						<span>Заполнить нормой в 1 клик</span>
+					</button>
+				</div>
+
+				<div className="flex items-center gap-2">
+					{isSignedVisit && (
 						<button
 							type="button"
-							onClick={() => setIsStarProtocolsOpen(false)}
-							className="p-1 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
-							aria-label="Закрыть каталог СтАР"
+							onClick={() => setIsRevisingVisitNote((v) => !v)}
+							className="min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 transition-all cursor-pointer flex items-center gap-1.5"
 						>
-							<X size={14} />
+							<span>Сохранить («Исправленному верить»)</span>
 						</button>
-					</div>
-					<ClinicalQuickPresetsBar
-						activeTooth={activeSelectedTooth}
-						onSelectActiveTooth={(tooth) => setActiveSelectedTooth(tooth)}
-						onSelectPreset={(preset, chosenTooth) => {
-							handleApplyClinicalSoapPreset(
-								preset,
-								chosenTooth,
-								"clean_replace",
-							);
-							setIsStarProtocolsOpen(false);
-						}}
-						isLocked={false}
-						onOpenPriceSearch={() => setIsPriceSearchModalOpen(true)}
-						onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
-					/>
-				</div>
-			)}
+					)}
 
+					<button
+						type="button"
+						onClick={handleSaveVisitNote}
+						disabled={isDraftAccepting}
+						className="min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--brand)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+						data-testid="btn-save-visit-note"
+					>
+						<FileCheck size={16} className="shrink-0" />
+						<span>Сохранить запись приёма</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={handleCompleteVisitAndGenerateReceipt}
+						disabled={isCompletingVisit}
+						className="min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--ok-fg)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+						data-testid="btn-complete-visit-emk"
+					>
+						<Check size={16} className="shrink-0" />
+						<span>Завершить приём</span>
+					</button>
+				</div>
+			</div>
+
+			{/* Мобильный фиксированный бар */}
 			<div
-				className={`visit-fields ${activeEmkTab !== "all" ? "single-tab-mode" : ""} pb-32 sm:pb-36 pr-0 sm:pr-72 lg:pr-80`}
+				className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--paper)] border-t border-[var(--line)] p-2 flex items-center justify-between gap-2 shadow-lg"
+				data-testid="mobile-emk-sticky-bottom-bar"
 			>
-				{fieldsUnavailable ? (
-					<div
-						className="p-4 rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)]"
-						role="status"
-						aria-live="polite"
-					>
-						<strong className="block mb-1 text-[var(--ink)]">
-							Поля приёма пока не открылись
-						</strong>
-						Карта приёма ещё загружается. Если через несколько секунд поля не
-						появились — обновите страницу; набранный текст сохраняется на этом
-						компьютере и не потеряется.
-					</div>
-				) : null}
-				{visibleFields.map((field) => {
-					const QUICK_CHIPS: Record<string, string[]> = {
-						complaint: [
-							"Острая боль",
-							"Ноющие боли",
-							"Реакция на холод/горячее",
-							"Боль при накусывании",
-							"Кариес",
-							"Пульпит",
-							"Периодонтит",
-							"Пломба (скол)",
-							"Коронка",
-							"Удален (подвижность)",
-							"Гигиена",
-							"Застревание пищи",
-							"Кровоточивость десен",
-							"Жалоб нет",
-						],
-						anamnesis: [
-							"Зуб ранее лечен",
-							"Ранее лечен по поводу неосложненного кариеса",
-							"Ранее проводилось эндодонтическое лечение",
-							"Травма зуба",
-							"Хрон. соматические заболевания отрицает",
-							"Аллергоанамнез не отягощен",
-							"Аллергию на анестетики отрицает",
-							"Гигиена полости рта регулярная",
-						],
-						objectiveStatus: [
-							"Зуб ранее лечен",
-							"Глубокая кариозная полость",
-							"Зондирование болезненно по дну",
-							"Зондирование безболезненно",
-							"Перкуссия безболезненна",
-							"Перкуссия болезненна",
-							"Пародонтальные карманы > 4 мм (K05.3)",
-							"BOP+ (кровоточивость при зондировании)",
-							"Рабочая длина (WL) определена апекслокатором",
-							"Слизистая бледно-розовая, без воспаления",
-							"Сообщается с полостью зуба, пульпа кровоточит",
-							"Зондирование устьев каналов безболезненно",
-							"ЭОД 6–8 мкА (норма)",
-							"ЭОД 35–45 мкА (пульпит)",
-							"ЭОД > 100 мкА (периодонтит)",
-						],
-						diagnosis: [
-							"Кариес дентина K02.1",
-							"Пульпит необратимый K04.0",
-							"Хронический апикальный периодонтит K04.5",
-							"Хронический генерализованный пародонтит K05.3",
-							"Частичная вторичная адентия K08.1",
-							"Острый гингивит K05.0",
-							"Ортопедическое лечение (коронка) Z51.8",
-							"Стоматологический осмотр (здоров) Z01.2",
-						],
-						treatmentPlan: [
-							"Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000 / 1:200 000, 1.7 мл)",
-							"Анестезия инфильтрационная (Артикаин 4% 1.7 мл)",
-							"Анестезия проводниковая",
-							"Изоляция коффердамом",
-							"Препарирование, некрэктомия",
-							"Адгезивный протокол + Светоотверждаемый композит",
-							"Витальная экстирпация + NiTi обработка каналов",
-							"Таблица рабочей длины каналов (WL/MAF)",
-							"Ирригация NaOCl 3% + ЭДТА 17% + УЗ-активация",
-							"Обтурация гуттаперчей с эпоксидным силером",
-							"Лечебная паста Calcept Ca(OH)2",
-							"Закрытый кюретаж + SRP кюретами Грейси",
-							"Шлифовка, полировка (диски, паста)",
-							"Гарантия на реставрацию (12–24 мес)",
-							"Удаление зуба + кюретаж + гемостаз + шов",
-							"УЗ-скейлинг + Air-Flow + Clinpro White Varnish",
-							"Гигиена",
-						],
-					};
-					const chips = QUICK_CHIPS[field.key] || [];
-
-					const handleChipClick = (chip: string) => {
-						if (isSignedVisit && !isRevisingVisitNote) {
-							setIsRevisingVisitNote(true);
-						}
-						if (!updateVisitNoteField) return;
-						const curr = visitNoteForm[field.key] || "";
-						const textToAppend =
-							chip === "Гарантия на реставрацию (12–24 мес)"
-								? "Гарантийные обязательства: Гарантийный срок на световую композитную реставрацию — 24 месяца (срок службы: 36 месяцев) при условии соблюдения гигиены полости рта и регулярных профосмотрах не реже 1 раза в 6 месяцев."
-								: chip;
-						updateVisitNoteField(
-							field.key,
-							appendClinicalText(
-								curr,
-								textToAppend,
-								field.key === "treatmentPlan" || field.key === "objectiveStatus"
-									? "\n"
-									: ", ",
-							),
-						);
-
-						// Auto-match ICD-10 when clicking complaint chips if diagnosis is empty or default
-						if (field.key === "complaint") {
-							const currDiag = (visitNoteForm.diagnosis || "").trim();
-							if (!currDiag || currDiag === "K02.1" || currDiag === "Z01.2" || currDiag.includes("Z01.2") || currDiag.length < 4) {
-								const COMPLAINT_ICD10_MAP: Record<string, string> = {
-									"Острая боль": "K04.0 Пульпит необратимый",
-									Пульпит: "K04.0 Пульпит необратимый",
-									"Ноющие боли": "K04.5 Хронический апикальный периодонтит",
-									"Боль при накусывании":
-										"K04.5 Хронический апикальный периодонтит",
-									Периодонтит: "K04.5 Хронический апикальный периодонтит",
-									"Реакция на холод/горячее": "K02.1 Кариес дентина",
-									Кариес: "K02.1 Кариес дентина",
-									"Застревание пищи": "K02.1 Кариес дентина",
-									"Пломба (скол)": "K02.1 Кариес дентина / Дефект пломбы",
-									Коронка: "Z51.8 Ортопедическое лечение (коронка)",
-									"Удален (подвижность)": "K08.1 Частичная вторичная адентия",
-									"Кровоточивость десен":
-										"K05.3 Хронический генерализованный пародонтит",
-									"Здоров (профосмотр)":
-										"Z01.2 Стоматологическое обследование и гигиена",
-									Гигиена: "Z01.2 Стоматологическое обследование и гигиена",
-									"Жалоб нет": "Z01.2 Стоматологическое обследование и гигиена",
-								};
-								if (COMPLAINT_ICD10_MAP[chip]) {
-									updateVisitNoteField("diagnosis", COMPLAINT_ICD10_MAP[chip]);
-								}
-							}
-						}
-					};
-
-					const FIELD_META: Record<
-						string,
-						{ dotColor: string; badge: string; badgeClass: string }
-					> = {
-						complaint: {
-							dotColor: "bg-amber-500",
-							badge: "",
-							badgeClass: "",
-						},
-						anamnesis: {
-							dotColor: "bg-blue-500",
-							badge: "",
-							badgeClass: "",
-						},
-						objectiveStatus: {
-							dotColor: "bg-purple-500",
-							badge: "",
-							badgeClass: "",
-						},
-						diagnosis: {
-							dotColor: "bg-rose-500",
-							badge: "",
-							badgeClass: "",
-						},
-						treatmentPlan: {
-							dotColor: "bg-[var(--teal,var(--brand-primary))]",
-							badge: "",
-							badgeClass: "",
-						},
-					};
-					const meta = FIELD_META[field.key] || {
-						dotColor: "bg-[var(--teal,var(--brand-primary))]",
-						badge: "",
-						badgeClass: "",
-					};
-
-					return (
-						<div
-							key={field.key}
-							className={`emk-field-container flex flex-col gap-1.5 p-2 sm:p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs transition-all min-w-0 ${
-								field.key === "treatmentPlan" ? "col-span-full md:col-span-2" : ""
-							}`}
-							style={{
-								contentVisibility: "auto",
-								containIntrinsicSize: "1px 160px",
-							}}
-						>
-							<div className="flex items-center justify-between gap-2 w-full flex-wrap">
-								<div className="flex items-center gap-2 min-w-0 flex-wrap">
-									<span
-										className={`w-2.5 h-2.5 rounded-full shrink-0 ${meta.dotColor}`}
-									/>
-									<strong className="text-sm sm:text-base font-bold text-[var(--ink)] tracking-tight">
-										{field.label}
-									</strong>
-									{meta.badge ? (
-										<span
-											className={`text-xs font-bold px-2.5 py-0.5 rounded-md border ${meta.badgeClass}`}
-										>
-											{meta.badge}
-										</span>
-									) : null}
-									{["complaint", "anamnesis", "objectiveStatus"].includes(field.key) && (
-										<button
-											type="button"
-											data-testid={`btn-norm-section-${field.key}`}
-											onClick={() => {
-												if (isSignedVisit && !isRevisingVisitNote) {
-													setIsRevisingVisitNote(true);
-												}
-												if (!updateVisitNoteField) return;
-												if (field.key === "complaint") {
-													updateVisitNoteField(
-														"complaint",
-														"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
-													);
-													const currDiag = (visitNoteForm.diagnosis || "").trim();
-													if (!currDiag || currDiag === "K02.1" || currDiag.length < 4) {
-														updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование и гигиена");
-													}
-													showToast("Жалобы: заполнена норма («Жалоб не предъявляет»)", "success", 2000);
-												} else if (field.key === "anamnesis") {
-													updateVisitNoteField(
-														"anamnesis",
-														"Соматически здоров. Аллергоанамнез не отягощен. Вредных привычек нет. Полоскания и гигиенический уход регулярные.",
-													);
-													showToast("Анамнез: заполнена норма («Соматически здоров»)", "success", 2000);
-												} else if (field.key === "objectiveStatus") {
-													updateVisitNoteField(
-														"objectiveStatus",
-														"Слизистая оболочка полости рта физиологической окраски, бледно-розовая, умеренно влажная. Десневой край плотный, бледно-розовый, кровоточивость при зондировании отсутствует. Патологических зубодесневых карманов нет (глубина бороздки 1–2 мм). Регионарные лимфоузлы не увеличены, подвижные, безболезненные при пальпации. Зубные ряды интактны / санированы.",
-													);
-													showToast("Объективно: заполнена физиологическая норма полости рта", "success", 2000);
-												}
-											}}
-											className="min-h-[26px] sm:min-h-0 sm:h-6 h-6.5 px-2 py-0 text-xs font-bold rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1 shrink-0 shadow-2xs whitespace-nowrap"
-											title={`Заполнить физиологическую норму для «${field.label}» в 1 клик`}
-											aria-label={`Норма для ${field.label}`}
-										>
-											<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-											<span>Норма</span>
-										</button>
-									)}
-								</div>
-								<SmartMicrophoneButton
-									context="visit"
-									sterileMode={false}
-									onResult={(text) => {
-										if (!updateVisitNoteField) return;
-										const curr = visitNoteForm[field.key] || "";
-										updateVisitNoteField(
-											field.key,
-											appendClinicalText(curr, text, " "),
-										);
-									}}
-									style={{ padding: "4px" }}
-								/>
-							</div>
-							{/* Компактный 26px тулбар форматирования текста медицинского протокола (DEF-VIS-05, Mandates 8c, 8d, 8p) */}
-							<div
-								className="emk-formatting-toolbar flex items-center justify-between gap-1 h-6.5 sm:h-7 min-h-[26px] px-1.5 py-0 rounded-t-lg border border-b border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--muted)] min-w-0 max-w-full"
-								role="toolbar"
-								aria-label={`Форматирование текста: ${field.label}`}
-							>
-								<div className="emk-formatting-toolbar-actions flex items-center gap-0.5 sm:gap-1 min-w-0 flex-1 overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pr-2 touch-pan-x">
-									<button
-										type="button"
-										onClick={() => applyTextFormatting(field.key, "bold")}
-										className="h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] font-black inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
-										title="Полужирный (**текст**)"
-										aria-label="Полужирный"
-									>
-										<Bold size={11} className="stroke-[3]" />
-									</button>
-									<button
-										type="button"
-										onClick={() => applyTextFormatting(field.key, "italic")}
-										className="h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] font-bold inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
-										title="Курсив (*текст*)"
-										aria-label="Курсив"
-									>
-										<Italic size={11} />
-									</button>
-									<button
-										type="button"
-										onClick={() => applyTextFormatting(field.key, "bullet")}
-										className="h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] font-bold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
-										title="Маркированный список (• )"
-										aria-label="Список"
-									>
-										<List size={11} />
-										<span className="hidden sm:inline text-[10px]">Список</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => applyTextFormatting(field.key, "check")}
-										className="emk-desktop-only hidden sm:inline-flex h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] font-bold items-center justify-center gap-1 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
-										title="Отметка выполнения"
-										aria-label="Выполнено"
-									>
-										<CheckSquare size={11} />
-										<span className="hidden sm:inline text-[10px]">
-											Выполнено
-										</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => applyTextFormatting(field.key, "tooth")}
-										className="emk-desktop-only hidden sm:inline-flex h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] font-bold items-center justify-center gap-1 transition-colors cursor-pointer text-[var(--teal,var(--brand-primary))] shrink-0 whitespace-nowrap"
-										title="Вставить ссылку на зуб"
-										aria-label="Зуб"
-									>
-										<Hash size={11} />
-										<span className="text-[10px] font-bold whitespace-nowrap">
-											<span className="hidden xs:inline">Зуб </span>
-											{activeSelectedTooth ? `#${activeSelectedTooth}` : ""}
-										</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => applyTextFormatting(field.key, "time")}
-										className="emk-desktop-only hidden sm:inline-flex h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] font-medium items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
-										title="Вставить текущее время"
-										aria-label="Время"
-									>
-										<Clock size={11} />
-									</button>
-								</div>
-								<div className="flex items-center gap-0.5 sm:gap-1 shrink-0 pl-1.5 border-l border-[var(--line)] bg-[var(--paper-soft)] relative">
-									{/* Mobile Dropdown Menu for secondary formatting tools */}
-									<details className="emk-mobile-only group relative sm:hidden !p-0 !m-0 !border-0 !bg-transparent !shadow-none !rounded-none">
-										<summary
-											className="h-6 w-6 !min-h-0 !min-w-0 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] inline-flex items-center justify-center cursor-pointer list-none [&::-webkit-details-marker]:hidden transition-colors"
-											title="Дополнительные инструменты"
-											aria-label="Дополнительно"
-										>
-											<MoreHorizontal size={13} />
-										</summary>
-										<div className="absolute right-0 top-full mt-1 z-50 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg p-1.5 flex flex-col gap-1 w-44">
-											<button
-												type="button"
-												onClick={(e) => { applyTextFormatting(field.key, "check"); (e.target as HTMLElement).closest("details")?.removeAttribute("open"); }}
-												className="flex items-center gap-2 px-2.5 py-1 min-h-[32px] sm:min-h-[28px] sm:h-7 rounded-md hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent w-full text-xs"
-											>
-												<CheckSquare size={14} className="shrink-0" /> <span className="truncate text-xs">Выполнено</span>
-											</button>
-											<button
-												type="button"
-												onClick={(e) => { applyTextFormatting(field.key, "tooth"); (e.target as HTMLElement).closest("details")?.removeAttribute("open"); }}
-												className="flex items-center gap-2 px-2.5 py-1 min-h-[32px] sm:min-h-[28px] sm:h-7 rounded-md hover:bg-[var(--paper-soft)] text-[var(--teal,var(--brand-primary))] text-left cursor-pointer border-none bg-transparent w-full text-xs"
-											>
-												<Hash size={14} className="shrink-0" /> <span className="truncate text-xs">Зуб {activeSelectedTooth ? `#${activeSelectedTooth}` : ""}</span>
-											</button>
-											<button
-												type="button"
-												onClick={(e) => { applyTextFormatting(field.key, "time"); (e.target as HTMLElement).closest("details")?.removeAttribute("open"); }}
-												className="flex items-center gap-2 px-2.5 py-1 min-h-[32px] sm:min-h-[28px] sm:h-7 rounded-md hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent w-full text-xs"
-											>
-												<Clock size={14} className="shrink-0" /> <span className="truncate text-xs">Время</span>
-											</button>
-											<div className="h-px bg-[var(--line)] my-0.5" />
-											<button
-												type="button"
-												onClick={(e) => { applyTextFormatting(field.key, "copy"); (e.target as HTMLElement).closest("details")?.removeAttribute("open"); }}
-												className="flex items-center gap-2 px-2.5 py-1 min-h-[32px] sm:min-h-[28px] sm:h-7 rounded-md hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent w-full text-xs"
-											>
-												<Copy size={14} className="shrink-0" /> <span className="truncate text-xs">Копировать</span>
-											</button>
-											<button
-												type="button"
-												onClick={(e) => { applyTextFormatting(field.key, "clear"); (e.target as HTMLElement).closest("details")?.removeAttribute("open"); }}
-												className="flex items-center gap-2 px-2.5 py-1 min-h-[32px] sm:min-h-[28px] sm:h-7 rounded-md hover:bg-rose-500/15 text-rose-600 text-left cursor-pointer border-none bg-transparent w-full text-xs"
-											>
-												<Eraser size={14} className="shrink-0" /> <span className="truncate text-xs">Очистить</span>
-											</button>
-										</div>
-									</details>
-
-									<button
-										type="button"
-										onClick={() => applyTextFormatting(field.key, "copy")}
-										className="emk-desktop-only hidden sm:inline-flex h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-[11px] items-center justify-center transition-colors cursor-pointer shrink-0"
-										title="Копировать текст поля"
-										aria-label="Копировать"
-									>
-										<Copy size={11} />
-									</button>
-									<button
-										type="button"
-										onClick={() => applyTextFormatting(field.key, "clear")}
-										className="emk-desktop-only hidden sm:inline-flex h-5 sm:h-5.5 px-1 sm:px-1.5 rounded hover:bg-rose-500/15 hover:text-rose-600 text-[11px] items-center justify-center transition-colors cursor-pointer shrink-0"
-										title="Очистить поле"
-										aria-label="Очистить"
-									>
-										<Eraser size={11} />
-									</button>
-								</div>
-							</div>
-							<DebouncedEmkTextarea
-								fieldKey={field.key}
-								label={field.label}
-								value={visitNoteForm[field.key] ?? ""}
-								placeholder={`Введите ${field.label.toLowerCase()} или выберите кнопки быстрого набора...`}
-								onCommit={(key, val) => {
-									if (isSignedVisit && !isRevisingVisitNote) {
-										setIsRevisingVisitNote(true);
-									}
-									updateVisitNoteField?.(key, val);
-								}}
-								textareaRef={(el) => {
-									textareaRefs.current[field.key] = el;
-								}}
-								className="min-h-[68px] sm:min-h-[72px] rounded-b-lg rounded-t-none p-2 sm:p-2.5 border border-t-0 border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-400 resize-y w-full outline-none focus:border-[var(--teal,var(--brand-primary))] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]/25 font-sans text-xs sm:text-sm leading-relaxed"
-							/>
-
-							{/* Быстрые чипы под textarea: аккуратный flex-wrap gap-1.5 без срезания слов (Мандаты 8c, 8d, 8e, 8p) */}
-							{chips.length > 0 && (
-								<div className="quick-chips-scroll-container flex flex-wrap items-center gap-1.5 py-0.5 min-w-0 max-w-full my-0.5">
-									{chips.map((chip) => (
-										<button
-											key={chip}
-											type="button"
-											onClick={() => handleChipClick(chip)}
-											title={chip}
-											className="quick-chip visit-quick-chip h-auto min-h-[24px] sm:min-h-[26px] max-w-none px-2 sm:px-2.5 py-0.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] dark:text-slate-100 hover:bg-[var(--paper-strong)] hover:border-[var(--teal,var(--brand-primary))]/50 hover:text-[var(--teal,var(--brand-primary))] active:scale-95 transition-all cursor-pointer touch-manipulation shadow-2xs inline-flex items-center gap-1 shrink-0 flex-shrink-0 min-w-max whitespace-nowrap"
-										>
-											<span className="text-[var(--teal,var(--brand-primary))] font-extrabold shrink-0">
-												+
-											</span>
-											<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">{chip}</span>
-										</button>
-									))}
-								</div>
-							)}
-
-							{field.key === "treatmentPlan" && (
-								<div className="flex flex-col gap-2.5 mt-1 min-w-0 max-w-full">
-									{/* Быстрый протокол анестезии (1-клик пресеты) — чистый разделитель без двойных рамок (Анти-Матрёшка) */}
-									<div className="flex items-center justify-between gap-2 flex-wrap pt-3 border-t border-[var(--line)] bg-transparent min-w-0">
-										<div className="flex items-center gap-1.5 flex-wrap min-w-0">
-											<span className="text-[11px] font-extrabold text-[var(--muted)] flex items-center gap-1 shrink-0">
-												<Syringe
-													size={13}
-													className="text-[var(--teal,var(--brand-primary))]"
-												/>
-												<span>Анестезия:</span>
-											</span>
-											<button
-												type="button"
-												onClick={() => {
-													if (!updateVisitNoteField) return;
-													const curr = visitNoteForm?.treatmentPlan || "";
-													const snippet =
-														"Анестезия: инфильтрационная Sol. Ultracaini D-S 1:200 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.";
-													updateVisitNoteField(
-														"treatmentPlan",
-														appendClinicalText(curr, snippet, "\n\n"),
-													);
-													showToast(
-														"Анестезия (Ультракаин Д-С 1:200k, 1 карп.) внесена в протокол",
-														"success",
-														2500,
-													);
-												}}
-												className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0"
-												data-testid="btn-anes-ultracain-ds"
-												title="1 клик: внести стандартную анестезию 1:200 000 в протокол"
-											>
-												<Syringe size={12} className="text-blue-500 shrink-0" />
-												<span>Ультракаин 1:200k (1 карп.)</span>
-											</button>
-											<button
-												type="button"
-												onClick={() => {
-													if (!updateVisitNoteField) return;
-													const curr = visitNoteForm?.treatmentPlan || "";
-													const snippet =
-														"Анестезия: проводниковая/инфильтрационная Sol. Ultracaini D-S Forte 1:100 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.";
-													updateVisitNoteField(
-														"treatmentPlan",
-														appendClinicalText(curr, snippet, "\n\n"),
-													);
-													showToast(
-														"Анестезия (Ультракаин Форте 1:100k, 1 карп.) внесена в протокол",
-														"success",
-														2500,
-													);
-												}}
-												className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0"
-												data-testid="btn-anes-ultracain-ds-forte"
-												title="1 клик: внести глубокую анестезию 1:100 000 в протокол"
-											>
-												<Syringe size={12} className="text-blue-500 shrink-0" />
-												<span>Ультракаин Форте (1 карп.)</span>
-											</button>
-											<button
-												type="button"
-												onClick={() => {
-													if (!updateVisitNoteField) return;
-													const curr = visitNoteForm?.treatmentPlan || "";
-													const snippet =
-														"Анестезия: инфильтрационная Sol. Scandonest 3% (без адреналина) — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание достаточное.";
-													updateVisitNoteField(
-														"treatmentPlan",
-														appendClinicalText(curr, snippet, "\n\n"),
-													);
-													showToast(
-														"Анестезия (Скандонест 3% без адреналина, 1 карп.) внесена в протокол",
-														"success",
-														2500,
-													);
-												}}
-												className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs whitespace-nowrap shrink-0"
-												data-testid="btn-anes-scandonest-3"
-												title="1 клик: безадреналиновая анестезия для кардио-пациентов"
-											>
-												<Syringe size={12} className="text-blue-500 shrink-0" />
-												<span>Скандонест 3% (без адреналина)</span>
-											</button>
-										</div>
-									</div>
-
-									{/* Предупреждение о кардиоваскулярном риске */}
-									{anesthesiaRisk.isWarningTriggered && (
-										<div
-											className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 flex items-start justify-between gap-2.5 text-xs text-amber-950 dark:text-amber-200 min-w-0 max-w-full"
-											role="alert"
-										>
-											<div className="flex items-start gap-2 min-w-0 flex-1">
-												<AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-												<div className="space-y-1 min-w-0 flex-1">
-													<strong className="font-extrabold block text-amber-950 dark:text-amber-100 break-words">
-														Внимание: Группа кардиоваскулярного риска
-														(Гипертония / ССЗ)
-													</strong>
-													<p className="m-0 leading-relaxed font-medium break-words">
-														{anesthesiaRisk.warningMessage}
-													</p>
-												</div>
-											</div>
-											<button
-												type="button"
-												onClick={() => setSelectedAnesDrugKey("scandonest_3")}
-												className="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-200 dark:bg-amber-800 text-amber-950 dark:text-amber-100 hover:bg-amber-300 shrink-0 cursor-pointer min-h-[30px]"
-											>
-												Выбрать Скандонест 3%
-											</button>
-										</div>
-									)}
-
-									{/* Секция: ЭНДОДОНТИЯ — единый документ без вложенных карточек (Анти-Матрёшка) */}
-									<details className="group border-t border-[var(--line)] pt-2 bg-transparent overflow-hidden">
-										<summary className="flex items-center justify-between py-2 px-1 cursor-pointer font-bold text-xs sm:text-sm select-none list-none text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg transition-colors">
-											<div className="flex items-center gap-2">
-												<span className="w-6 h-6 rounded-md bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] flex items-center justify-center text-xs">
-													<Zap className="w-3.5 h-3.5" />
-												</span>
-												<span>
-													Эндодонтия: Учет каналов, апекслокация, мастер-файлы и
-													силеры ({selectedEndoCanalKey}, {endoWorkingLengthMm}{" "}
-													мм)
-												</span>
-											</div>
-											<ChevronDown
-												size={16}
-												className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180"
-											/>
-										</summary>
-										<div className="py-2.5 px-1 flex flex-col gap-3 border-t border-[var(--line)]/50">
-											<div className="flex items-center justify-between gap-2 flex-wrap">
-												<span className="text-xs text-[var(--muted)]">
-													Форма 043/у • Протокол инструментации и пломбирования
-													каналов
-												</span>
-												<button
-													type="button"
-													onClick={() => setIsEndoModalOpen(true)}
-													className="min-h-[32px] h-8 px-3 py-1 text-xs font-extrabold rounded-lg bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
-													data-testid="btn-open-full-endo-modal"
-												>
-													<FileText size={14} />
-													<span>Интерактивный журнал каналов</span>
-												</button>
-											</div>
-
-											{/* 1. Выбор анатомического корневого канала */}
-											<div className="space-y-1.5">
-												<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
-													1. Анатомический корневой канал:
-												</label>
-												<div className="flex flex-wrap gap-1.5">
-													{[
-														{
-															key: "MB1",
-															name: "МБ-1 (MB1)",
-															ref: "Щечный бугор",
-															defWl: 21.5,
-															defMaf: "#25",
-															defTaper: ".06",
-														},
-														{
-															key: "MB2",
-															name: "МБ-2 (MB2)",
-															ref: "Щечный бугор",
-															defWl: 20.0,
-															defMaf: "#20",
-															defTaper: ".04",
-														},
-														{
-															key: "DB",
-															name: "ДБ (DB)",
-															ref: "Дистально-щечный бугор",
-															defWl: 20.5,
-															defMaf: "#25",
-															defTaper: ".06",
-														},
-														{
-															key: "P",
-															name: "Нёбный (P)",
-															ref: "Нёбный бугор",
-															defWl: 22.0,
-															defMaf: "#30",
-															defTaper: ".06",
-														},
-														{
-															key: "D",
-															name: "Дистальный (D)",
-															ref: "Дистальный бугор",
-															defWl: 22.0,
-															defMaf: "#30",
-															defTaper: ".06",
-														},
-														{
-															key: "MB",
-															name: "Медиально-щечный (MB)",
-															ref: "Щечный бугор",
-															defWl: 21.5,
-															defMaf: "#25",
-															defTaper: ".06",
-														},
-														{
-															key: "ML",
-															name: "Медиально-язычный (ML)",
-															ref: "Медиально-язычный бугор",
-															defWl: 21.0,
-															defMaf: "#25",
-															defTaper: ".06",
-														},
-													].map((c) => (
-														<button
-															key={c.key}
-															type="button"
-															onClick={() => {
-																setSelectedEndoCanalKey(c.key);
-																setEndoRefPoint(c.ref);
-																setEndoWorkingLengthMm(c.defWl);
-																setEndoMasterFile(c.defMaf);
-																setEndoTaper(c.defTaper);
-															}}
-															className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border transition-all cursor-pointer touch-manipulation min-h-[32px] h-8 ${
-																selectedEndoCanalKey === c.key
-																	? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
-																	: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
-															}`}
-															data-testid={`btn-endo-canal-${c.key}`}
-														>
-															{c.name}
-														</button>
-													))}
-												</div>
-											</div>
-
-											{/* 2. Рабочая длина по апекслокатору (WL) и мастер-файл (MAF) */}
-											<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-												{/* Рабочая длина */}
-												<div className="space-y-1.5">
-													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between">
-														<span>2. Длина по апекслокатору (WL):</span>
-														<strong className="text-[var(--teal,var(--brand-primary))] font-mono text-xs">
-															{endoWorkingLengthMm} мм (Apex 0.0)
-														</strong>
-													</label>
-													<div className="flex items-center gap-2">
-														<input
-															type="range"
-															min={15}
-															max={28}
-															step={0.5}
-															value={endoWorkingLengthMm}
-															onChange={(e) =>
-																setEndoWorkingLengthMm(
-																	parseFloat(e.target.value) || 21.5,
-																)
-															}
-															className="w-full accent-[var(--teal,var(--brand-primary))] cursor-pointer"
-															data-testid="input-endo-wl-slider"
-														/>
-														<input
-															type="number"
-															min={15}
-															max={28}
-															step={0.5}
-															value={endoWorkingLengthMm}
-															onChange={(e) =>
-																setEndoWorkingLengthMm(
-																	parseFloat(e.target.value) || 21.5,
-																)
-															}
-															className="w-16 min-h-[32px] h-8 px-2 py-1 text-xs font-bold text-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
-															data-testid="input-endo-wl-num"
-														/>
-													</div>
-													<div className="flex flex-wrap gap-1">
-														{[19.0, 20.0, 21.0, 21.5, 22.0, 23.0, 24.0].map(
-															(len) => (
-																<button
-																	key={len}
-																	type="button"
-																	onClick={() => setEndoWorkingLengthMm(len)}
-																	className={`px-2 py-0.5 rounded text-[11px] font-semibold border cursor-pointer ${
-																		endoWorkingLengthMm === len
-																			? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal,var(--brand-primary))]"
-																			: "border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
-																	}`}
-																>
-																	{len}
-																</button>
-															),
-														)}
-													</div>
-												</div>
-
-												{/* Мастер-апикальный файл и конусность */}
-												<div className="space-y-1.5">
-													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
-														3. Мастер-файл (MAF) и конусность:
-													</label>
-													<div className="flex flex-wrap gap-1.5">
-														{[
-															{ maf: "#20", taper: ".04" },
-															{ maf: "#25", taper: ".04" },
-															{ maf: "#25", taper: ".06" },
-															{ maf: "#30", taper: ".04" },
-															{ maf: "#30", taper: ".06" },
-															{ maf: "#35", taper: ".06" },
-															{ maf: "#40", taper: ".06" },
-														].map((opt) => {
-															const isSel =
-																endoMasterFile === opt.maf &&
-																endoTaper === opt.taper;
-															return (
-																<button
-																	key={`${opt.maf}-${opt.taper}`}
-																	type="button"
-																	onClick={() => {
-																		setEndoMasterFile(opt.maf);
-																		setEndoTaper(opt.taper);
-																	}}
-																	className={`px-2 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer touch-manipulation min-h-[32px] h-8 ${
-																		isSel
-																			? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
-																			: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
-																	}`}
-																	data-testid={`btn-maf-${opt.maf.replace("#", "")}-${opt.taper.replace(".", "")}`}
-																>
-																	{opt.maf}/{opt.taper}
-																</button>
-															);
-														})}
-													</div>
-												</div>
-											</div>
-
-											{/* 4. Силеры и метод обтурации */}
-											<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-												{/* Силер */}
-												<div className="space-y-1.5">
-													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
-														4. Эндодонтический силер:
-													</label>
-													<div className="flex flex-wrap gap-1.5">
-														{[
-															{ key: "AH Plus", label: "AH Plus (эпоксидный)" },
-															{
-																key: "BioRoot RCS",
-																label: "BioRoot RCS (биокерамика)",
-															},
-															{
-																key: "TotalFill BC",
-																label: "TotalFill BC Sealer",
-															},
-															{ key: "Каласепт", label: "Каласепт (Ca(OH)2)" },
-														].map((s) => (
-															<button
-																key={s.key}
-																type="button"
-																onClick={() => setEndoSealer(s.key)}
-																className={`px-2 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer touch-manipulation min-h-[32px] h-8 ${
-																	endoSealer === s.key
-																		? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
-																		: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
-																}`}
-																data-testid={`btn-sealer-${s.key.replace(/\s+/g, "")}`}
-															>
-																{s.label}
-															</button>
-														))}
-													</div>
-												</div>
-
-												{/* Метод обтурации */}
-												<div className="space-y-1.5">
-													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
-														5. Метод обтурации:
-													</label>
-													<div className="flex flex-wrap gap-1.5">
-														{[
-															{
-																key: "Латеральная компакция",
-																label: "Латеральная компакция",
-															},
-															{
-																key: "Вертикальная конденсация",
-																label: "Вертикальная конденсация",
-															},
-															{
-																key: "Моноштифт + Биокерамика",
-																label: "Моноштифт (BioRoot)",
-															},
-															{
-																key: "Непрерывная волна",
-																label: "Непрерывная волна",
-															},
-														].map((m) => (
-															<button
-																key={m.key}
-																type="button"
-																onClick={() => setEndoObturation(m.key)}
-																className={`px-2 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer touch-manipulation min-h-[32px] h-8 ${
-																	endoObturation === m.key
-																		? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
-																		: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
-																}`}
-																data-testid={`btn-obturation-${m.key.slice(0, 5)}`}
-															>
-																{m.label}
-															</button>
-														))}
-													</div>
-												</div>
-											</div>
-
-											{/* Кнопка 1-клик внесения в протокол — чистый разделитель без вложенной рамки (Анти-Матрёшка) */}
-											<div className="pt-3 border-t border-[var(--line)] bg-transparent flex items-center justify-between gap-3 flex-wrap">
-												<div className="text-xs text-[var(--muted)]">
-													Канал <strong>{selectedEndoCanalKey}</strong> (
-													{endoRefPoint}): WL ={" "}
-													<strong>{endoWorkingLengthMm} мм</strong>, MAF ={" "}
-													<strong>
-														{endoMasterFile}/{endoTaper}
-													</strong>
-													, Обтурация:{" "}
-													<strong>
-														{endoObturation} + {endoSealer}
-													</strong>
-												</div>
-												<button
-													type="button"
-													onClick={() => {
-														if (!updateVisitNoteField) return;
-														const curr = visitNoteForm.treatmentPlan || "";
-														const targetTooth =
-															activeSelectedTooth ||
-															(typeof visitNoteForm?.diagnosis === "string"
-																? visitNoteForm.diagnosis.match(
-																		/\b([1-4][1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])\b/,
-																	)?.[0]
-																: null) ||
-															16;
-														const endoText = formatEndoProtocolQuickSnippet({
-															toothNumber: targetTooth,
-															canals: [
-																{
-																	canalName: selectedEndoCanalKey,
-																	referencePoint: endoRefPoint,
-																	workingLengthMm: endoWorkingLengthMm,
-																	masterApicalFile: endoMasterFile,
-																	taper: endoTaper,
-																	obturationTechnique: endoObturation,
-																	sealer: endoSealer,
-																},
-															],
-															sealer: endoSealer,
-															obturationTechnique: endoObturation,
-														});
-														updateVisitNoteField(
-															"treatmentPlan",
-															appendClinicalText(curr, endoText, "\n\n"),
-														);
-														showToast(
-															`Эндо-протокол (Канал ${selectedEndoCanalKey}, ${endoWorkingLengthMm} мм) внесен в карту`,
-															"success",
-															3000,
-														);
-													}}
-													className="min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 px-3 py-1 text-xs sm:text-sm font-extrabold rounded-lg bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 touch-manipulation"
-													data-testid="btn-apply-endo-to-plan"
-												>
-													<Zap className="w-3.5 h-3.5" />
-													<span>+ Внести эндо-протокол в 043/у</span>
-												</button>
-											</div>
-										</div>
-									</details>
-
-									{/* Секция: 1-клик быстрый подбор услуг из прайса клиники — единый документ (Анти-Матрёшка) */}
-									<details className="group border-t border-[var(--line)] pt-2 bg-transparent overflow-hidden">
-										<summary className="flex items-center justify-between py-2 px-1 cursor-pointer font-bold text-xs sm:text-sm select-none list-none text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg transition-colors">
-											<div className="flex items-center gap-2">
-												<Tag className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-												<span>
-													Подбор услуг из прайса клиники (1 клик в протокол и
-													счет)
-												</span>
-											</div>
-											<ChevronDown
-												size={16}
-												className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180"
-											/>
-										</summary>
-										<div className="py-2.5 px-1 flex flex-col gap-2.5 border-t border-[var(--line)]/50">
-											<div className="flex items-center justify-between gap-2 flex-wrap">
-												<span className="text-xs text-[var(--muted)]">
-													Быстрое добавление услуг прайса в Форму 043/у:
-												</span>
-												<button
-													type="button"
-													onClick={() => setIsPriceSearchModalOpen(true)}
-													className="min-h-[32px] h-8 px-3.5 py-1 text-xs font-extrabold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
-													data-testid="btn-open-price-search-treatment-plan"
-												>
-													<Search size={14} />
-													<span>+ Каталог прайса</span>
-												</button>
-											</div>
-											<div className="flex flex-wrap gap-1.5">
-												{allPriceServices.slice(0, 6).map((srv) => (
-													<button
-														key={srv.id}
-														type="button"
-														onClick={() => handleAddServiceToPlan(srv)}
-														className="h-8 !min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-indigo-500 hover:bg-[var(--paper-strong)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs touch-manipulation shrink-0"
-														title={`Добавить «${srv.title}» (${srv.basePriceRub.toLocaleString("ru-RU")} ₽) в протокол`}
-														data-testid={`fast-price-chip-${srv.id}`}
-													>
-														<span className="text-indigo-600 dark:text-indigo-400 font-extrabold">
-															+
-														</span>
-														<span>{srv.shortLabel}</span>
-														<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--ok-bg)] text-[var(--ok-fg)] font-black">
-															{srv.basePriceRub.toLocaleString("ru-RU")} ₽
-														</span>
-													</button>
-												))}
-											</div>
-											{/* Быстрые клинические пакеты Номенклатуры 804н */}
-											<div className="pt-2.5 border-t border-[var(--line)]">
-												<div className="flex items-center justify-between gap-1 mb-1.5">
-													<span className="text-xs font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
-														<Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-														Стандартные клинические пакеты (1 клик):
-													</span>
-													<span className="text-[10px] text-[var(--muted)]">
-														Номенклатура 804н
-													</span>
-												</div>
-												<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-													{CLINICAL_SERVICE_BUNDLES.map((bundle) => (
-														<button
-															key={bundle.id}
-															type="button"
-															onClick={() => handleAddBundleToPlan(bundle)}
-															className="flex items-center justify-between p-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-indigo-500 hover:bg-[var(--paper-strong)] active:scale-98 transition-all cursor-pointer text-left shadow-2xs touch-manipulation group"
-															title={bundle.services
-																.map(
-																	(s) =>
-																		`• [${s.code804n}] ${s.title} (${s.priceRub.toLocaleString("ru-RU")} ₽)`,
-																)
-																.join("\n")}
-															data-testid={`clinical-bundle-btn-${bundle.id}`}
-														>
-															<div className="flex flex-col min-w-0 pr-1">
-																<span className="text-xs font-bold text-[var(--ink)] group-hover:text-indigo-600 dark:group-hover:text-indigo-300 truncate">
-																	{bundle.shortLabel}
-																</span>
-																<span className="text-[10px] text-[var(--muted)] truncate">
-																	{bundle.badge}
-																</span>
-															</div>
-															<span className="text-xs font-black font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 shrink-0">
-																{bundle.totalPriceRub.toLocaleString("ru-RU")} ₽
-															</span>
-														</button>
-													))}
-												</div>
-											</div>
-										</div>
-									</details>
-								</div>
-							)}
-						</div>
-					);
-				})}
-				<CompletedServicesChecklist />
-				<div className="mt-3">
-					<VisitServiceBillingWidget
-						patientId={activePatient?.id}
-						patientName={activePatient?.fullName}
-						patientPhone={activePatient?.phone}
-						patientDepositRub={activePatient?.balanceRub}
-						doctorName={dashboard?.activeDoctor?.fullName || "Врач-стоматолог"}
-						clinicLegalName={dashboard?.clinicProfile?.legalName || dashboard?.clinicProfile?.clinicName}
-					/>
-				</div>
-			</div>
-
-			{draft?.quality ? (
-				<div className={`visit-draft-quality quality-${draft.quality.level}`}>
-					<div>
-						<strong>
-							{visitDraftQualityLabels?.[draft.quality.level] ||
-								draft.quality.level}
-						</strong>
-						<span>
-							{Math.round(draft.quality.confidence * 100)}% ·{" "}
-							{specialtyLabels?.[draft.quality.specialty] ||
-								draft.quality.specialty}
-						</span>
-					</div>
-					<p>{draft.quality.nextAction}</p>
-					<div className="visit-draft-signal-row">
-						{/* Было «FDI 36»: в записи приёма понятнее «зуб 36». */}
-						{(draft.quality.detectedToothCodes ?? [])
-							.slice(0, 6)
-							.map((toothCode) => (
-								<span key={`tooth-${toothCode}`}>зуб {toothCode}</span>
-							))}
-						{(draft.quality.signals ?? []).slice(0, 7).map((signal) => (
-							<span key={signal}>{visitDraftSignalLabel(signal)}</span>
-						))}
-						{(draft.quality.missingCriticalFields ?? [])
-							.slice(0, 5)
-							.map((field) => (
-								<small key={field}>
-									проверить: {visitDraftMissingFieldLabel(field)}
-								</small>
-							))}
-					</div>
-				</div>
-			) : null}
-
-			<div className="ai-draft mt-4 p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-3 min-w-0 max-w-full">
-				<div className="flex items-center gap-3 min-w-0">
-					<div className="flex items-center justify-center w-8 h-8 rounded-xl bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] shrink-0">
-						<ShieldCheck aria-hidden="true" size={20} />
-					</div>
-					<p className="m-0 text-xs sm:text-sm font-medium text-[var(--ink)] leading-relaxed min-w-0 break-words flex-1">
-						{noteTextOfAnotherVisit
-							? "Сохранение заперто: в полях текст другого приёма. Разберите предупреждение выше."
-							: draft
-								? draftNoteText
-								: isVisitNoteDirty
-									? "Правки внесены. Нажмите «Сохранить запись приёма» для фиксации в ЭМК."
-									: pendingVisitSaveCount
-										? pendingSavesText
-										: saveReceiptOfThisVisit
-											? visitSaveReceiptText(saveReceiptOfThisVisit)
-											: dashboard?.activeVisit?.doctorSummary ||
-												"Запись приёма пока пустая. Выберите экспресс-шаблон, нажмите «Норма» или сразу нажмите «Сохранить» — норма подставится автоматически."}
-					</p>
-				</div>
-
-				<div className="flex items-center gap-2.5 flex-wrap">
-					{pendingVisitSaveCount ? (
-						<button
-							className="secondary-button min-h-[34px] sm:min-h-[36px] h-8.5 sm:h-9 px-4 py-1 text-xs sm:text-sm font-bold rounded-xl"
-							type="button"
-							onClick={() => void flushPendingVisitSaves({ silent: false })}
-							disabled={isPendingVisitSyncing}
-						>
-							{isPendingVisitSyncing ? "Отправляю…" : "Отправить сейчас"}
-						</button>
-					) : null}
-
-					{isSignedVisit && !isRevisingVisitNote ? (
-						<div className="flex items-center gap-2.5 flex-wrap">
-							<div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
-								<Check size={15} className="stroke-[3]" />
-								<span>ПОДПИСАНО ВРАЧОМ</span>
-							</div>
-							<button
-								className="secondary-button min-h-[34px] sm:min-h-[36px] h-8.5 sm:h-9 px-3.5 py-1 text-xs sm:text-sm font-bold rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 cursor-pointer flex items-center gap-2 transition-all shadow-2xs"
-								type="button"
-								data-testid="btn-revise-signed-visit"
-								onClick={() => {
-									setIsRevisingVisitNote(true);
-									showToast(
-										"Режим внесения правок («Исправленному верить»). История сохраняется в журнале ревизий.",
-										"info",
-										3500,
-									);
-								}}
-								title="Внести исправление в закрытый дневник с сохранением истории ревизий («Исправленному верить»)"
-							>
-								<FileText size={15} />
-								<span>Внести исправление («Исправленному верить»)</span>
-							</button>
-							<button
-								className="secondary-button min-h-[34px] sm:min-h-[36px] h-8.5 sm:h-9 px-3.5 py-1 text-xs sm:text-sm font-bold rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer flex items-center gap-2 transition-all shadow-2xs"
-								type="button"
-								data-testid="btn-print-signed-visit-043u"
-								onClick={() => window.print()}
-								title="Распечатать карту 043/у и дневник приёма (ПОДПИСАНО ВРАЧОМ)"
-							>
-								<Printer size={15} />
-								<span>Печать 043/у</span>
-							</button>
-						</div>
-					) : null}
-
-					{isSignedVisit && isRevisingVisitNote ? (
-						<div className="flex items-center gap-2 flex-wrap">
-							<button
-								className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 py-2 sm:py-1 text-xs sm:text-sm font-extrabold rounded-xl bg-amber-600 hover:bg-amber-500 text-white shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
-								type="button"
-								data-testid="btn-save-revision-signed-visit"
-								onClick={async () => {
-									try {
-										await acceptDraftToVisit();
-										setIsRevisingVisitNote(false);
-										showToast(
-											"Исправление сохранено («Исправленному верить»). Ревизия ЭМК зафиксирована.",
-											"success",
-											4000,
-										);
-									} catch {
-										showToast(
-											"Ошибка при сохранении исправления",
-											"error",
-											3000,
-										);
-									}
-								}}
-								disabled={isDraftAccepting}
-							>
-								<Check size={18} className="stroke-[3]" />
-								<span>Сохранить («Исправленному верить»)</span>
-							</button>
-							<button
-								className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-2 sm:py-1 text-xs sm:text-sm font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5"
-								type="button"
-								data-testid="btn-cancel-revision-signed-visit"
-								onClick={() => {
-									setIsRevisingVisitNote(false);
-									showToast("Режим исправления закрыт", "info", 2000);
-								}}
-							>
-								<X size={16} />
-								<span>Отмена</span>
-							</button>
-							<button
-								className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-1 text-xs sm:text-sm font-bold rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer flex items-center gap-2 transition-all shadow-2xs"
-								type="button"
-								data-testid="btn-print-revision-visit-043u"
-								onClick={() => window.print()}
-								title="Распечатать текущую версию карты 043/у (РЕВИЗИЯ)"
-							>
-								<Printer size={15} />
-								<span>Печать 043/у</span>
-							</button>
-						</div>
-					) : null}
-
-					{!isSignedVisit ? (
-						<div className="flex items-center gap-2.5 flex-wrap">
-							<button
-								className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 py-2 sm:py-1 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
-								type="button"
-								data-testid="btn-save-visit-note"
-								onClick={() => {
-									if (noteTextOfAnotherVisit) {
-										showToast(
-											"В полях остался текст предыдущего приёма. Скопируйте нужные данные и переключитесь на текущий приём перед сохранением.",
-											"warning",
-											6000,
-										);
-										return;
-									}
-									if (!visitNoteReadyToAccept) {
-										if (
-											!visitNoteForm?.diagnosis ||
-											visitNoteForm.diagnosis.length < 4
-										) {
-											updateVisitNoteField?.(
-												"diagnosis",
-												"Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
-											);
-										}
-										if (!visitNoteForm?.treatmentPlan) {
-											updateVisitNoteField?.(
-												"treatmentPlan",
-												"Осмотр полости рта проведен, патологий не выявлено. Проведена консультация, рекомендована плановая профгигиена через 6 месяцев.",
-											);
-										}
-										if (!visitNoteForm?.complaint) {
-											updateVisitNoteField?.(
-												"complaint",
-												"Жалоб на момент осмотра не предъявляет.",
-											);
-										}
-										if (!visitNoteForm?.anamnesis) {
-											updateVisitNoteField?.(
-												"anamnesis",
-												"Соматически здоров. Аллергоанамнез не отягощен.",
-											);
-										}
-										if (!visitNoteForm?.objectiveStatus) {
-											updateVisitNoteField?.(
-												"objectiveStatus",
-												"Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
-											);
-										}
-									}
-									acceptDraftToVisit();
-								}}
-								disabled={isDraftAccepting}
-								aria-describedby={
-									noteTextOfAnotherVisit ? "visit-note-foreign-text" : undefined
-								}
-								title="Сохранить дневник приёма Формы 043/у (никогда не блокируется из-за пустых полей)"
-							>
-								<Check aria-hidden="true" size={18} className="stroke-[3]" />
-								<span>{visitNoteActionLabel || "Сохранить запись приёма"}</span>
-							</button>
-
-							<button
-								className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 py-2 sm:py-1 text-xs sm:text-sm font-extrabold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
-								type="button"
-								data-testid="btn-complete-visit-emk"
-								onClick={handleCompleteVisitAndGenerateReceipt}
-								disabled={isCompletingVisit}
-								title="Завершить приём, зафиксировать дневник 043/у и сформировать чек на оплату"
-							>
-								<Check aria-hidden="true" size={18} className="stroke-[3]" />
-								<span>{isCompletingVisit ? "Завершаю приём…" : "Завершить приём"}</span>
-							</button>
-
-							<button
-								className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-1 text-xs sm:text-sm font-bold rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer flex items-center gap-2 transition-all shadow-2xs"
-								type="button"
-								data-testid="btn-print-draft-visit-043u"
-								onClick={() => window.print()}
-								title="Распечатать карту 043/у (со штампом ЧЕРНОВИК)"
-							>
-								<Printer size={15} />
-								<span>Печать 043/у (Черновик)</span>
-							</button>
-						</div>
-					) : null}
-				</div>
-
-				{(draft || isVisitNoteDirty) && !visitNoteReadyToAccept ? (
-					<div
-						className="visit-note-missing mt-2 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-900/60"
-						id="visit-note-missing"
-						role="status"
-						aria-live="polite"
-					>
-						<div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-							<div className="flex items-center gap-2">
-								<span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white font-bold text-xs">
-									!
-								</span>
-								<strong className="text-amber-950 dark:text-amber-200 text-xs sm:text-sm font-bold">
-									Рекомендовано для амбулаторной карты 043/у (или нажмите
-									«Заполнить нормой в 1 клик»):
-								</strong>
-							</div>
-							<button
-								type="button"
-								onClick={handleApplyPhysiologicalNorm}
-								className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
-								data-testid="btn-fill-norm-quick"
-							>
-								<ShieldCheck size={14} />
-								<span>Заполнить нормой в 1 клик</span>
-							</button>
-						</div>
-						<ul className="m-0 pl-5 text-xs sm:text-sm text-amber-900 dark:text-amber-300 space-y-1.5 font-medium">
-							{(visitNoteAcceptMissingSteps ?? []).map((step) => (
-								<li
-									key={step}
-									className="flex items-center justify-between gap-2 flex-wrap"
-								>
-									<span>• {step}</span>
-								</li>
-							))}
-						</ul>
-
-						{/* 1-Click Nurse/Doctor Quick Fill Assistants */}
-						<div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-900/60 flex flex-wrap gap-2">
-							<span className="text-xs font-bold text-amber-950 dark:text-amber-200 w-full mb-0.5">
-								Быстрые подсказки в 1 клик для врача (автономный приём):
-							</span>
-							{(!visitNoteForm?.diagnosis ||
-								visitNoteForm.diagnosis.length < 4) && (
-								<>
-									<button
-										type="button"
-										onClick={() =>
-											updateVisitNoteField?.(
-												"diagnosis",
-												"K02.1 Кариес дентина",
-											)
-										}
-										className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
-									>
-										+ K02.1 Кариес
-									</button>
-									<button
-										type="button"
-										onClick={() =>
-											updateVisitNoteField?.(
-												"diagnosis",
-												"K04.0 Пульпит необратимый",
-											)
-										}
-										className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
-									>
-										+ K04.0 Пульпит
-									</button>
-									<button
-										type="button"
-										onClick={() =>
-											updateVisitNoteField?.(
-												"diagnosis",
-												"Z01.2 Стоматологическое обследование (здоров)",
-											)
-										}
-										className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
-									>
-										+ Z01.2 Осмотр (здоров)
-									</button>
-								</>
-							)}
-							{!visitNoteForm?.treatmentPlan && (
-								<>
-									<button
-										type="button"
-										onClick={() =>
-											updateVisitNoteField?.(
-												"treatmentPlan",
-												"Инфильтрационная анестезия (Артикаин 4% 1.7 мл). Препарирование, адгезивный протокол, послойная реставрация светоотверждаемым композитом, шлифовка, полировка.",
-											)
-										}
-										className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
-									>
-										+ Анестезия + Пломба
-									</button>
-									<button
-										type="button"
-										onClick={() =>
-											updateVisitNoteField?.(
-												"treatmentPlan",
-												"Инфильтрационная/проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000, 1.7 мл). Коффердам. Экстирпация пульпы, NiTi обработка каналов, ирригация NaOCl 3%, Calcept, временная пломба.",
-											)
-										}
-										className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
-									>
-										+ Анестезия + Эндодонтия
-									</button>
-								</>
-							)}
-							{!visitNoteForm?.complaint && !visitNoteForm?.anamnesis && (
-								<button
-									type="button"
-									onClick={() => {
-										updateVisitNoteField?.(
-											"complaint",
-											"Жалоб на момент осмотра не предъявляет (плановый профосмотр).",
-										);
-										updateVisitNoteField?.(
-											"anamnesis",
-											"Хронические соматические заболевания отрицает. Аллергоанамнез не отягощен.",
-										);
-									}}
-									className="min-h-[28px] sm:min-h-[30px] h-7 sm:h-7.5 px-2.5 py-0.5 text-xs font-bold rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 active:scale-95 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
-								>
-									+ Жалоб нет (Профосмотр)
-								</button>
-							)}
-						</div>
-					</div>
-				) : null}
-			</div>
-
-			{/* ── ЕГИСЗ CDA R2 и Инструменты Стерилизации ── */}
-			<div
-				className="visit-compliance-panel mt-6 p-4.5 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)]"
-				data-testid="visit-compliance-panel"
-			>
-				<div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-					<div>
-						<h4 className="m-0 text-sm font-extrabold text-[var(--ink)] flex items-center gap-2">
-							<FileCode className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-							Минздрав РФ & ЕГИСЗ РЭМД (CDA R2) & Рецепты 107-1/у
-						</h4>
-						<p className="m-0 text-xs text-[var(--muted)]">
-							Официальный экспорт медицинского документа CDA R2 XML и выписка
-							рецептурных бланков
-						</p>
-					</div>
-					<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1 max-w-full">
-						<button
-							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))] shrink-0 shadow-2xs"
-							type="button"
-							onClick={() => setIsSoapTemplatesModalOpen(true)}
-							data-testid="btn-open-soap-templates-modal"
-							title="Шаблоны протоколов Формы 043/у по МКБ-10 с услугами 804н и списанием со склада"
-						>
-							<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-							Шаблоны 043/у (МКБ-10 + 804н + Склад)
-						</button>
-						<button
-							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer border-[var(--line)] hover:border-indigo-400 shrink-0 shadow-2xs"
-							type="button"
-							onClick={() => setIsForm043ModalOpen(true)}
-							data-testid="btn-print-visit-note-043"
-							title="Печать официальной карты стоматологического пациента (Форма 043/у) на чистом листе А4 со штампом ЧЕРНОВИК или ПОДПИСАНО"
-						>
-							<Printer className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-							<span>
-								Печать 043/у {isSignedVisit ? "(Подписано)" : "(Черновик)"}
-							</span>
-						</button>
-						<button
-							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer text-[var(--ok-fg)] border-[var(--ok-fg)]/30 hover:bg-[var(--ok-bg)] shrink-0 shadow-2xs"
-							type="button"
-							onClick={() => setIsInformedConsentModalOpen(true)}
-							data-testid="btn-print-informed-consent-1051n"
-							title="Официальный бланк информированного добровольного согласия (ИДС) по Приказу Минздрава РФ № 1051н"
-						>
-							<ShieldCheck className="w-3.5 h-3.5 text-[var(--ok-fg)]" />
-							Печать ИДС (Приказ № 1051н)
-						</button>
-						<button
-							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer shrink-0 shadow-2xs"
-							type="button"
-							onClick={() => setIsPrescriptionModalOpen(true)}
-							data-testid="btn-open-prescription-modal"
-						>
-							<Pill className="w-3.5 h-3.5 text-rose-500" />
-							Рецепт (Форма 107-1/у)
-						</button>
-						<button
-							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))] shrink-0 shadow-2xs"
-							type="button"
-							onClick={() => {
-								setSelectedMemoIdForPrint("surgery_extraction");
-								setIsPatientMemoModalOpen(true);
-							}}
-							data-testid="btn-open-patient-memo-modal"
-							title="Послеоперационные памятки пациенту (Удаление, Анестезия, Эндодонтия) с 1-клик печатью А4/А5"
-						>
-							<FileText className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-							Памятка пациенту (А4/А5)
-						</button>
-						<button
-							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--line))]/30 hover:bg-[var(--teal-soft,var(--paper-soft))] shrink-0 shadow-2xs"
-							type="button"
-							onClick={() => setIsBillingActModalOpen(true)}
-							data-testid="btn-open-billing-act-modal"
-							title="Акт выполненных работ и гарантийный талон (А4) по Приказу Минздрава № 804н и Закону РФ № 2300-1"
-						>
-							<FileCheck className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-							Акт и гарантийный талон (А4)
-						</button>
-						<button
-							className="primary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] rounded-lg shadow-2xs touch-manipulation cursor-pointer shrink-0"
-							type="button"
-							onClick={() => setIsEgiszModalOpen(true)}
-							data-testid="btn-open-egisz-cda-modal"
-						>
-							<ShieldCheck className="w-3.5 h-3.5" />
-							СЭМД ЕГИСЗ (Валидатор & Экспорт)
-						</button>
-						<button
-							className="secondary-button flex items-center gap-1.5 text-xs font-bold py-1 px-3 min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 rounded-lg touch-manipulation cursor-pointer shrink-0 shadow-2xs"
-							type="button"
-							onClick={handleDownloadCdaXml}
-							disabled={isExportingCda}
-							data-testid="btn-download-cda-xml"
-						>
-							<Download className="w-3.5 h-3.5" />
-							{isExportingCda ? "Формирование XML…" : "Скачать CDA R2 (XML)"}
-						</button>
-					</div>
-				</div>
-
-				{/* 1-клик быстрые кнопки печати послеоперационных памяток */}
-				<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1 max-w-full pt-2 border-t border-[var(--line)]/70 mb-1.5">
-					<span className="text-xs font-extrabold text-[var(--muted)] flex items-center gap-1 shrink-0">
-						<Printer className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-						1-клик печать памятки пациенту:
-					</span>
-					<button
-						type="button"
-						onClick={() => {
-							setSelectedMemoIdForPrint("surgery_extraction");
-							setIsPatientMemoModalOpen(true);
-						}}
-						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
-						data-testid="btn-quick-memo-surgery"
-					>
-						<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-						<span>Памятка: Удаление / Хирургия</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							setSelectedMemoIdForPrint("anesthesia_caries");
-							setIsPatientMemoModalOpen(true);
-						}}
-						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
-						data-testid="btn-quick-memo-caries"
-					>
-						<ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-						<span>Памятка: Анестезия / Кариес</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							setSelectedMemoIdForPrint("endodontics");
-							setIsPatientMemoModalOpen(true);
-						}}
-						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
-						data-testid="btn-quick-memo-endo"
-					>
-						<Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-						<span>Памятка: Эндодонтия / Каналы</span>
-					</button>
-				</div>
-
-				{/* 1-клик быстрые кнопки выписки рецептов (Форма № 107-1/у) */}
-				<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none py-1 max-w-full pt-2 border-t border-[var(--line)]/70 mb-1.5">
-					<span className="text-xs font-extrabold text-[var(--muted)] flex items-center gap-1 shrink-0">
-						<Pill className="w-3.5 h-3.5 text-rose-500" />
-						1-клик выписка рецепта (Форма 107-1/у):
-					</span>
-					<button
-						type="button"
-						onClick={() => {
-							setSelectedPrescriptionDrugIds([
-								"amoxiclav_875_125",
-								"nimesulide_100",
-								"suprastin_25",
-							]);
-							setIsPrescriptionModalOpen(true);
-						}}
-						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
-						data-testid="btn-quick-rx-post-surgery"
-					>
-						<Pill className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-						<span>«После удаления / хирургии»</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							setSelectedPrescriptionDrugIds([
-								"ibuprofen_400",
-								"chlorhexidine_005",
-							]);
-							setIsPrescriptionModalOpen(true);
-						}}
-						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
-						data-testid="btn-quick-rx-anti-inflammatory"
-					>
-						<Pill className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-						<span>«Противовоспалительный»</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							setSelectedPrescriptionDrugIds([
-								"miramistin_001",
-								"stomatophyt_100",
-							]);
-							setIsPrescriptionModalOpen(true);
-						}}
-						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-1 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs shrink-0"
-						data-testid="btn-quick-rx-antiseptic"
-					>
-						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-						<span>«Антисептический / полоскания»</span>
-					</button>
-				</div>
-
-				{/* Модальное окно послеоперационных памяток пациенту */}
-				<PatientMemoPrintModal
-					isOpen={isPatientMemoModalOpen}
-					onClose={() => setIsPatientMemoModalOpen(false)}
-					initialMemoId={selectedMemoIdForPrint}
-					patient={activePatient}
-					doctorName={
-						appLogic?.activeDoctor?.fullName ||
-						appLogic?.auth?.currentUser?.name ||
-						"Врач-стоматолог"
-					}
-					doctorSpecialty={
-						appLogic?.activeDoctor?.specialties?.[0] || "Стоматолог-терапевт"
-					}
-					clinicName={
-						dashboard?.clinicSettings?.profile?.brandName ||
-						"Стоматологическая клиника «DENTE»"
-					}
-					toothNumber={
-						typeof visitNoteForm?.diagnosis === "string"
-							? visitNoteForm.diagnosis.match(/\b\d{2}\b/)?.[0]
-							: undefined
-					}
-					onApplyToSoap={(memoText) => {
-						if (!updateVisitNoteField) return;
-						const curr = visitNoteForm.treatmentPlan || "";
-						updateVisitNoteField(
-							"treatmentPlan",
-							appendClinicalText(curr, memoText, "\n\n"),
-						);
-					}}
-				/>
-
-				{/* Модальное окно эндодонтического протокола корневых каналов */}
-				{isEndoModalOpen && (
-					<Suspense fallback={null}>
-						<EndoCanalLogModal
-							isOpen={isEndoModalOpen}
-							onClose={() => setIsEndoModalOpen(false)}
-							toothNumber={Number(
-								typeof visitNoteForm?.diagnosis === "string"
-									? visitNoteForm.diagnosis.match(/\b\d{2}\b/)?.[0] || 46
-									: 46,
-							)}
-							onInsertToProtocol={(protocolText) => {
-								if (!updateVisitNoteField) return;
-								const curr = visitNoteForm.treatmentPlan || "";
-								updateVisitNoteField(
-									"treatmentPlan",
-									appendClinicalText(curr, protocolText, "\n\n"),
-								);
-								showToast(
-									"Эндодонтический протокол внесен в карту 043/у",
-									"success",
-									3500,
-								);
-							}}
-						/>
-					</Suspense>
-				)}
-
-				{/* Модальное окно рецептурного бланка 107-1/у */}
-				<PrescriptionModal
-					isOpen={isPrescriptionModalOpen}
-					onClose={() => setIsPrescriptionModalOpen(false)}
-					patient={activePatient}
-					initialSelectedDrugIds={selectedPrescriptionDrugIds}
-					medicalLicenseNumber="ЛО41-01137-77/00368421"
-					diary={{
-						anamnesis: visitNoteForm?.anamnesis || "",
-						statusLocalis: visitNoteForm?.objectiveStatus || "",
-						diagnosisIcd10:
-							(typeof visitNoteForm?.diagnosis === "string"
-								? visitNoteForm.diagnosis.match(/[A-Z]\d{2}(?:\.\d+)?/i)?.[0]
-								: undefined) || "Z01.2",
-						diagnosisTooth: "",
-						treatmentDescription: visitNoteForm?.treatmentPlan || "",
-						complications: "",
-						comorbidities: "",
-					}}
-					doctorName={
-						appLogic?.auth?.currentUser?.name || "Лечащий врач стоматолог"
-					}
-					doctorSpecialty="Стоматолог-терапевт"
-					clinicName={
-						dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"
-					}
-					onInsertToDiary={(diaryText) => {
-						if (!updateVisitNoteField) return;
-						const curr = visitNoteForm?.treatmentPlan || "";
-						updateVisitNoteField(
-							"treatmentPlan",
-							appendClinicalText(curr, diaryText, "\n\n"),
-						);
-						showToast(
-							"Рецепт внесен в план лечения карты 043/у",
-							"success",
-							3500,
-						);
-					}}
-				/>
-
-				{/* Модальное окно Акта выполненных работ и гарантийного талона (А4) */}
-				{isBillingActModalOpen && (
-					<Suspense fallback={null}>
-						<PatientBillingModal
-							isOpen={isBillingActModalOpen}
-							onClose={() => setIsBillingActModalOpen(false)}
-							patient={activePatient}
-							doctor={{
-								fullName:
-									appLogic?.activeDoctor?.fullName ||
-									appLogic?.auth?.currentUser?.name ||
-									"Лечащий врач стоматолог",
-								specialty:
-									appLogic?.activeDoctor?.specialties?.[0] || "Стоматолог-терапевт",
-							}}
-							clinicLegalName={
-								dashboard?.clinicSettings?.profile?.brandName ||
-								"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
-							}
-							clinicLicenseNumber={
-								dashboard?.clinicSettings?.profile?.medicalLicenseNumber ||
-								"ЛО41-01137-77/00368421"
-							}
-						/>
-					</Suspense>
-				)}
-
-				{/* Модальное окно Информированного добровольного согласия (Приказ № 1051н) */}
-				<InformedConsentModal
-					isOpen={isInformedConsentModalOpen}
-					onClose={() => setIsInformedConsentModalOpen(false)}
-					initialTemplateKey="CONSENT_THERAPY"
-					patient={activePatient}
-					doctorName={
-						appLogic?.activeDoctor?.fullName ||
-						appLogic?.auth?.currentUser?.name ||
-						"Врач-стоматолог"
-					}
-					doctorSpecialty={
-						appLogic?.activeDoctor?.specialties?.[0] || "Стоматолог-терапевт"
-					}
-					clinicName={
-						dashboard?.clinicSettings?.profile?.brandName ||
-						"Стоматологическая клиника «DENTE»"
-					}
-					clinicLegalName={
-						dashboard?.clinicSettings?.profile?.legalName ||
-						dashboard?.clinicSettings?.profile?.brandName ||
-						"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
-					}
-					licenseNumber={
-						dashboard?.clinicSettings?.profile?.medicalLicenseNumber ||
-						"ЛО41-01137-77/00368421"
-					}
-					diagnosisIcd={
-						typeof visitNoteForm?.diagnosis === "string"
-							? visitNoteForm.diagnosis
-							: undefined
-					}
-					toothNumbers={activeSelectedTooth ? String(activeSelectedTooth) : ""}
-					onConsentSigned={handleConsentSigned}
-					onConsentConfirmed={handleConsentConfirmed}
-				/>
-
-				{/* Официальная медицинская карта стоматологического пациента (Форма № 043/у, Приказ Минздрава РФ № 834н) */}
-				{isForm043ModalOpen && (
-					<Suspense fallback={null}>
-						<Form043PrintModal
-							isOpen={isForm043ModalOpen}
-							onClose={() => setIsForm043ModalOpen(false)}
-							initialData={form043InitialData}
-							isDraft={!isSignedVisit}
-							status={isSignedVisit ? "signed" : "draft"}
-						/>
-					</Suspense>
-				)}
-
-				{/* Модальное окно валидатора и экспорта СЭМД ЕГИСЗ */}
-				{isEgiszModalOpen && (
-					<Suspense fallback={null}>
-						<EgiszRemdHubModal
-							isOpen={isEgiszModalOpen}
-							onClose={() => setIsEgiszModalOpen(false)}
-							initialTab="xml"
-						/>
-					</Suspense>
-				)}
-
-				<div className="mb-4">
-					<EgiszMultipleDiagnosesWidget />
-				</div>
-
-				{/* Лоток стерилен по умолчанию (СанПиН 3.3686-21, Мандаты 8v, 8p): без интерактивного частокола сканирования */}
-				{linkedBarcode ? (
-					<div className="mt-3 flex items-center gap-2">
-						<span
-							className="text-[11px] font-medium text-[var(--ok-fg)] bg-[var(--ok-bg)] px-2.5 py-0.5 rounded-md border border-[var(--ok-fg)]/20 flex items-center gap-1"
-							data-testid="status-tray-sanpin"
-						>
-							<Check size={12} className="shrink-0" />
-							<span>Лоток стерилен / СанПиН 3.3686-21 ({linkedBarcode})</span>
-						</span>
-					</div>
-				) : null}
-			</div>
-
-			{/* Confirmation Modal when switching patient with unsaved Form 043/u changes */}
-			{isConfirmSwitchModalOpen && (
-				<div
-					className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
-					role="dialog"
-					aria-modal="true"
-					aria-labelledby="confirm-switch-modal-title"
+				<button
+					type="button"
+					onClick={handleApplyPhysiologicalNorm}
+					className="min-h-[44px] flex-1 px-2 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1"
+					data-testid="btn-mobile-sticky-norm"
 				>
-					<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
-						<div className="flex items-start gap-3">
-							<div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/25">
-								<AlertTriangle size={22} />
-							</div>
-							<div className="space-y-1">
-								<h3
-									id="confirm-switch-modal-title"
-									className="text-base font-extrabold text-[var(--ink)] m-0"
-								>
-									Несохраненные клинические данные в форме 043/у
-								</h3>
-								<p className="text-xs text-[var(--muted)] m-0 leading-relaxed">
-									В полях дневника остался незаписанный текст предыдущего
-									приёма. При переключении на текущего пациента несохраненные
-									данные будут сброшены.
-								</p>
-							</div>
-						</div>
-
-						<div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200 font-medium">
-							Рекомендуется скопировать текст в буфер обмена перед
-							подтверждением, чтобы не потерять внесенные записи.
-						</div>
-
-						<div className="flex flex-col gap-2.5 pt-3 border-t border-[var(--line)]">
-							<button
-								type="button"
-								onClick={copyAllVisitNoteText}
-								className="w-full px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[var(--ink)] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-							>
-								<Copy size={16} />
-								<span>Скопировать текст в буфер обмена</span>
-							</button>
-
-							<div className="flex flex-col sm:flex-row items-stretch gap-2.5 w-full">
-								<button
-									type="button"
-									onClick={() => setIsConfirmSwitchModalOpen(false)}
-									className="flex-1 min-h-[52px] px-6 py-3 rounded-2xl text-base font-black bg-[var(--ok-fg)] hover:opacity-90 text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.01] active:scale-[0.99]"
-									data-testid="btn-cancel-discard"
-								>
-									<X size={20} />
-									<span>Отмена (Оставить всё как есть)</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										showRecordOfOpenVisit();
-										setIsConfirmSwitchModalOpen(false);
-										showToast(
-											"Запись открытого приёма загружена",
-											"info",
-											4000,
-										);
-									}}
-									className="flex-1 min-h-[52px] px-6 py-3 rounded-2xl text-base font-black bg-rose-600 hover:bg-rose-500 text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.01] active:scale-[0.99]"
-									data-testid="btn-confirm-discard-and-switch"
-								>
-									<Trash2 size={20} />
-									<span>Да, удалить данные</span>
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>
-			)}
-			{/* Quick Service Price Search Modal */}
-			{isPriceSearchModalOpen && (
-				<div
-					className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
-					role="dialog"
-					aria-modal="true"
-					aria-labelledby="price-search-modal-title"
+					<Sparkles size={14} className="text-amber-500" />
+					<span>Норма</span>
+				</button>
+				<button
+					type="button"
+					onClick={handleSaveVisitNote}
+					disabled={isDraftAccepting}
+					className="min-h-[44px] flex-1 px-2 py-1.5 rounded-xl text-xs font-bold bg-[var(--brand)] text-white flex items-center justify-center gap-1"
+					data-testid="btn-mobile-sticky-save"
 				>
-					<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-2xl rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
-						{/* Modal Header */}
-						<div className="flex items-start justify-between gap-3 border-b border-[var(--line)] pb-3">
-							<div className="flex items-center gap-3">
-								<div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/25">
-									<PlusCircle size={22} />
-								</div>
-								<div>
-									<h3
-										id="price-search-modal-title"
-										className="text-base font-extrabold text-[var(--ink)] m-0"
-									>
-										Добавить услугу из прайса в протокол и счет
-									</h3>
-									<p className="text-xs text-[var(--muted)] m-0 leading-relaxed">
-										Быстрый поиск по названию или коду процедуры с
-										автоматической подстановкой стоимости
-									</p>
-								</div>
-							</div>
-							<button
-								type="button"
-								onClick={() => setIsPriceSearchModalOpen(false)}
-								className="w-10 h-10 rounded-xl hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors flex items-center justify-center cursor-pointer"
-								aria-label="Закрыть окно поиска прайса"
-							>
-								<X size={20} />
-							</button>
-						</div>
+					<FileCheck size={14} />
+					<span>Сохранить</span>
+				</button>
+				<button
+					type="button"
+					onClick={handleCompleteVisitAndGenerateReceipt}
+					disabled={isCompletingVisit}
+					className="min-h-[44px] flex-1 px-2 py-1.5 rounded-xl text-xs font-extrabold bg-[var(--ok-fg)] text-white flex items-center justify-center gap-1"
+					data-testid="btn-mobile-sticky-complete"
+				>
+					<Check size={14} />
+					<span>Завершить</span>
+				</button>
+			</div>
 
-						{/* Search Input Bar */}
-						<div className="relative">
-							<Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--muted)] pointer-events-none" />
-							<input
-								type="text"
-								value={priceSearchQuery}
-								onChange={(e) => setPriceSearchQuery(e.target.value)}
-								placeholder="Поиск по прайсу: кариес, анестезия, снимок, коронка, удаление..."
-								className="w-full pl-11 pr-10 py-3 min-h-[48px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)] text-sm sm:text-base font-medium outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25"
-								autoFocus
-								data-testid="input-price-search"
-							/>
-							{priceSearchQuery && (
-								<button
-									type="button"
-									onClick={() => setPriceSearchQuery("")}
-									className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--muted)] hover:text-[var(--ink)] px-2 py-1 rounded-md cursor-pointer"
-								>
-									Очистить
-								</button>
-							)}
-						</div>
-
-						{/* 1-Click Statutory Order 804n Code Chips (0-1 Click Fast Select without multi-level tree wandering) */}
-						<div className="flex items-center gap-1.5 overflow-x-auto pb-1 flex-nowrap scrollbar-thin">
-							<span className="text-[11px] font-bold text-[var(--muted)] shrink-0">
-								Номенклатура 804н (1-клик):
-							</span>
-							{[
-								{ code: "A16.07.002", label: "A16.07.002 Кариес" },
-								{ code: "A16.07.008", label: "A16.07.008 Пульпит" },
-								{ code: "A11.07.012", label: "A11.07.012 Анестезия" },
-								{ code: "A06.07.003", label: "A06.07.003 Снимок" },
-								{ code: "A16.07.001", label: "A16.07.001 Удаление" },
-								{ code: "A16.07.004", label: "A16.07.004 Коронка" },
-								{ code: "A16.07.051", label: "A16.07.051 Гигиена" },
-							].map((chip) => (
-								<button
-									key={chip.code}
-									type="button"
-									onClick={() => setPriceSearchQuery(chip.code)}
-									className={`min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap border ${
-										priceSearchQuery === chip.code
-											? "bg-indigo-600 text-white border-indigo-700 shadow-2xs"
-											: "bg-[var(--paper)] border-[var(--line)] text-indigo-700 dark:text-indigo-300 hover:border-indigo-400"
-									}`}
-									title={`Искать по коду Минздрава 804н ${chip.code}`}
-								>
-									{chip.label}
-								</button>
-							))}
-						</div>
-
-						{/* Category Filter Chips */}
-						<div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth pb-1 px-1 flex-nowrap scrollbar-thin">
-							{[
-								{ id: "all", label: "Все услуги" },
-								{ id: "therapy", label: "Терапия / Кариес" },
-								{ id: "anesthesia", label: "Анестезия" },
-								{ id: "diagnostics", label: "Рентген / Снимки" },
-								{ id: "orthopedics", label: "Ортопедия" },
-								{ id: "surgery", label: "Хирургия" },
-								{ id: "hygiene", label: "Гигиена" },
-							].map((cat) => (
-								<button
-									key={cat.id}
-									type="button"
-									onClick={() => setSelectedPriceCategory(cat.id)}
-									className={`shrink-0 whitespace-nowrap text-xs sm:text-sm min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer border ${
-										selectedPriceCategory === cat.id
-											? "bg-indigo-600 text-white border-indigo-700 shadow-xs"
-											: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
-									}`}
-								>
-									{cat.label}
-								</button>
-							))}
-						</div>
-
-						{/* Filtered Services List */}
-						<div className="flex-1 overflow-y-auto space-y-2 min-h-[200px] max-h-[360px] pr-1">
-							{filteredPriceServices.length === 0 ? (
-								<div className="text-center py-8 text-xs sm:text-sm text-[var(--muted)]">
-									Услуг по запросу «{priceSearchQuery}» не найдено
-								</div>
-							) : (
-								<>
-									{paginatedPriceServices.visibleItems.map((srv) => (
-										<div
-											key={srv.id}
-											className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:border-indigo-500/50 transition-all flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap"
-											style={{
-												contentVisibility: "auto",
-												containIntrinsicSize: "1px 64px",
-												contain: "content",
-											}}
-										>
-											<div className="space-y-1 min-w-0 flex-1">
-												<div className="text-sm font-bold text-[var(--ink)] leading-snug break-words">
-													{srv.title}
-												</div>
-												<div className="flex items-center gap-2 text-xs text-[var(--muted)] flex-wrap">
-													{srv.code804n && (
-														<span className="px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-mono font-bold">
-															804н: {srv.code804n}
-														</span>
-													)}
-													<span className="px-2 py-0.5 rounded-md bg-[var(--paper)] border border-[var(--line)] font-semibold">
-														{srv.category}
-													</span>
-												</div>
-											</div>
-
-											<div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
-												<span className="text-sm sm:text-base font-mono font-black text-[var(--ok-fg)]">
-													{srv.basePriceRub.toLocaleString("ru-RU")} ₽
-												</span>
-												<button
-													type="button"
-													onClick={() => {
-														handleAddServiceToPlan(srv);
-														setIsPriceSearchModalOpen(false);
-													}}
-													className="min-h-[32px] sm:min-h-[34px] h-8 sm:h-8.5 px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 touch-manipulation"
-													data-testid={`btn-select-price-service-${srv.id}`}
-												>
-													<PlusCircle size={14} />
-													<span>Добавить</span>
-												</button>
-											</div>
-										</div>
-									))}
-									{paginatedPriceServices.hasMore && (
-										<div className="pt-2 text-center">
-											<button
-												type="button"
-												onClick={() => setPriceServicesLimit((prev) => prev + 40)}
-												className="min-h-[36px] px-4 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
-											>
-												Показать ещё 40 услуг (осталось {paginatedPriceServices.remainingCount})
-											</button>
-										</div>
-									)}
-								</>
-							)}
-						</div>
-
-						{/* Modal Footer */}
-						<div className="pt-3 border-t border-[var(--line)] flex justify-end">
-							<button
-								type="button"
-								onClick={() => setIsPriceSearchModalOpen(false)}
-								className="min-h-[48px] px-6 py-2.5 rounded-xl text-sm font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[var(--ink)] transition-colors cursor-pointer"
-							>
-								Закрыть
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
-
-			{/* SBP QR-Code Fast In-Office Payment Modal */}
+			{/* Окно оплаты по СБП QR (Мандаты 8d, 8e) */}
 			{isSbpQrModalOpen && completionResult && (
 				<div
-					className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
+					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
 					role="dialog"
 					aria-modal="true"
 					aria-labelledby="sbp-qr-modal-title"
 				>
 					<div className="bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 text-center">
 						<div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
-							<div className="flex items-center gap-2 text-[var(--ok-fg)] font-extrabold text-sm sm:text-base">
+							<div className="flex items-center gap-2 text-[var(--ok-fg)] font-bold text-base">
 								<Zap className="w-4 h-4" />
-								<h3
-									id="sbp-qr-modal-title"
-									className="m-0 text-base font-extrabold text-[var(--ink)]"
-								>
+								<h3 id="sbp-qr-modal-title" className="m-0 font-bold text-[var(--ink)]">
 									Оплата через СБП (QR-код)
 								</h3>
 							</div>
@@ -4630,18 +666,15 @@ export function VisitEmkTab() {
 						</div>
 
 						<div className="p-3 rounded-xl bg-[var(--ok-bg)] border border-[var(--ok-fg)]/30 text-xs text-[var(--ok-fg)] font-medium">
-							Пациент сканирует QR-код камерой смартфона или в приложении любого
-							банка РФ (0% комиссии)
+							Пациент сканирует QR-код камерой смартфона или в приложении любого банка РФ (0% комиссии)
 						</div>
 
 						<div className="flex flex-col items-center justify-center gap-2.5">
-							{/* SBP Protocol Badge */}
 							<div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--ok-bg)] border border-[var(--ok-fg)]/30 text-xs font-bold text-[var(--ok-fg)]">
 								<Zap className="w-3.5 h-3.5 shrink-0" />
 								<span>СБП • НСПК ГОСТ Р 56042</span>
 							</div>
 
-							{/* ISO/IEC 18004 Authentic Algorithmic QR Matrix */}
 							<div
 								className="flex items-center justify-center p-3 bg-white rounded-2xl border-2 border-slate-200 shadow-inner w-56 h-56 mx-auto"
 								data-testid="sbp-qr-svg-container"
@@ -4652,11 +685,10 @@ export function VisitEmkTab() {
 						<div className="space-y-1">
 							<div className="text-xs text-[var(--muted)]">Сумма к оплате:</div>
 							<div className="text-2xl font-black text-[var(--ok-fg)] font-mono">
-								{completionResult.totalNetRub.toLocaleString("ru-RU")} ₽
+								{totalNetRub.toLocaleString("ru-RU")} ₽
 							</div>
 							<div className="text-[11px] text-[var(--muted)]">
-								{completionResult.receiptNumber} •{" "}
-								{completionResult.patientName}
+								{receiptNumber} • {patientName}
 							</div>
 						</div>
 
@@ -4664,11 +696,7 @@ export function VisitEmkTab() {
 							<button
 								type="button"
 								onClick={() => {
-									showToast(
-										"Оплата по СБП успешно подтверждена!",
-										"success",
-										4000,
-									);
+									showToast("Оплата по СБП успешно подтверждена!", "success", 4000);
 									setIsSbpQrModalOpen(false);
 								}}
 								className="flex-1 min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-extrabold bg-[var(--ok-fg)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center justify-center gap-1.5"
@@ -4689,418 +717,12 @@ export function VisitEmkTab() {
 				</div>
 			)}
 
-			{/* Форма 043/у Каталог Клинических Протоколов со списанием и услугами 804н */}
-			{isSoapTemplatesModalOpen && (
-				<Suspense fallback={null}>
-					<ClinicalDiaryTemplatesModal
-						isOpen={isSoapTemplatesModalOpen}
-						onClose={() => setIsSoapTemplatesModalOpen(false)}
-						initialToothNumber={activeSelectedTooth}
-						doctorFullName={
-							appLogic?.activeDoctor?.fullName ||
-							dashboard?.activeVisit?.doctorName ||
-							appLogic?.currentUser?.fullName
-						}
-						patientFullName={activePatient?.fullName}
-						onApplyDiary={(result) => {
-							const matchedPreset =
-								getPresetById(result.templateId) ||
-								CLINICAL_SOAP_PRESETS.find((p) =>
-									result.templateId.startsWith(p.id),
-								) ||
-								CLINICAL_SOAP_PRESETS.find((p) => p.icd10 === result.icd10Code) ||
-								CLINICAL_SOAP_PRESETS[0];
-
-							const targetTooth =
-								result.toothNumber ??
-								matchedPreset?.defaultTooth ??
-								activeSelectedTooth ??
-								16;
-
-							const effectivePreset: ClinicalSoapPreset = matchedPreset
-								? {
-										...matchedPreset,
-										icd10: result.icd10Code || matchedPreset.icd10,
-										icd10Label: `${result.icd10Code} ${result.title}`,
-										complaint:
-											result.subjectiveComplaints || matchedPreset.complaint,
-										anamnesis: result.anamnesisMorbi || matchedPreset.anamnesis,
-										statusLocalis:
-											result.objectiveStatusLocalis ||
-											matchedPreset.statusLocalis,
-										treatmentDescription:
-											result.procedureProtocol ||
-											matchedPreset.treatmentDescription,
-										defaultTooth: targetTooth,
-										recommendations:
-											result.homeCareRecommendations ||
-											matchedPreset.recommendations,
-									}
-								: {
-										id: result.templateId,
-										title: result.title,
-										shortBadge: result.icd10Code || "ТЕРАПИЯ",
-										category: "therapy",
-										icd10: result.icd10Code,
-										icd10Label: `${result.icd10Code} ${result.title}`,
-										complaint: result.subjectiveComplaints,
-										anamnesis: result.anamnesisMorbi,
-										statusLocalis: result.objectiveStatusLocalis,
-										treatmentDescription: result.procedureProtocol,
-										toothState: "Caries",
-										defaultTooth: targetTooth,
-										service804n: {
-											code804n:
-												result.order804nServices?.[0]?.code || "A16.07.002.001",
-											title: result.order804nServices?.[0]?.nameRu || result.title,
-											basePriceRub: 4500,
-											category: "therapy",
-										},
-										materialsToDeduct: [],
-										recommendations:
-											result.homeCareRecommendations ||
-											"Соблюдение гигиены полости рта",
-										warrantyMonths: 12,
-										serviceLifeMonths: 24,
-									};
-
-							handleApplyClinicalSoapPreset(
-								effectivePreset,
-								targetTooth,
-								"clean_replace",
-							);
-							setIsSoapTemplatesModalOpen(false);
-						}}
-					/>
-				</Suspense>
-			)}
-
-			{/* ═══ МОБИЛЬНЫЙ ФИКСИРОВАННЫЙ БАР БЫСТРЫХ ДЕЙСТВИЙ (МАНДАТЫ 8d, 8e: СОХРАНЕНИЕ И ЗАВЕРШЕНИЕ В 1 КЛИК) ═══ */}
-			<div
-				className="sm:hidden fixed bottom-14 left-0 right-0 z-20 px-3 py-2 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] shadow-lg flex items-center justify-between gap-2"
-				data-testid="mobile-emk-sticky-bottom-bar"
-			>
-				<button
-					type="button"
-					data-testid="btn-mobile-sticky-norm"
-					onClick={handleApplyPhysiologicalNorm}
-					className="min-h-[36px] h-9 px-2.5 py-0 text-xs font-bold rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 flex items-center gap-1 shrink-0 shadow-2xs active:scale-95 cursor-pointer"
-					title="Физиологическая норма в 1 клик (соматически здоров)"
-				>
-					<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-					<span>Норма</span>
-				</button>
-				<div className="flex items-center gap-1.5 shrink-0">
-					<button
-						type="button"
-						data-testid="btn-mobile-sticky-print"
-						onClick={() => window.print()}
-						className="secondary-button min-h-[36px] h-9 px-2.5 py-0 text-xs font-bold border border-slate-300 dark:border-slate-700 bg-[var(--paper)] text-[var(--ink)] flex items-center gap-1 rounded-lg shrink-0 cursor-pointer active:scale-95"
-						title="Распечатать карту 043/у"
-					>
-						<Printer size={14} className="shrink-0" />
-						<span className="hidden sm:inline">Печать</span>
-					</button>
-					<button
-						type="button"
-						data-testid="btn-mobile-sticky-save"
-						onClick={async () => {
-							if (typeof flushPendingVisitSaves === "function") {
-								await flushPendingVisitSaves();
-							}
-							if (typeof flushSoloPendingSave === "function") {
-								flushSoloPendingSave();
-							}
-							showToast("Запись приёма сохранена", "success", 2000);
-						}}
-						className="secondary-button min-h-[36px] h-9 px-3 py-0 text-xs font-bold text-[var(--teal)] border-[var(--teal)]/40 hover:bg-[var(--teal-soft)] flex items-center gap-1 rounded-lg shrink-0 cursor-pointer active:scale-95"
-						title="Сохранить дневник приёма в 1 клик"
-					>
-						<Check size={14} className="stroke-[3] shrink-0" />
-						<span>Сохранить</span>
-					</button>
-					<button
-						type="button"
-						data-testid="btn-mobile-sticky-complete"
-						onClick={handleCompleteVisitAndGenerateReceipt}
-						disabled={isCompletingVisit}
-						className="primary-button min-h-[36px] h-9 px-3 py-0 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1 rounded-lg shrink-0 shadow-sm cursor-pointer active:scale-95 disabled:opacity-50"
-						title="Завершить приём и сформировать чек"
-					>
-						<CheckCircle2 size={14} className="shrink-0" />
-						<span>{isCompletingVisit ? "…" : "Завершить"}</span>
-					</button>
-				</div>
-			</div>
-
-			{/* ── ПЕЧАТНАЯ ВЕРСИЯ КАРТЫ 043/У И ДНЕВНИКА ПРИЁМА ДЛЯ А4 ── */}
-			<div
-				id="visit-emk-print-a4"
-				className="print-layer hidden print:block font-sans text-slate-900 bg-white p-6"
-			>
-				{/* Шапка клиники */}
-				<div className="border-b-2 border-slate-900 pb-3 mb-4 flex items-start justify-between gap-4">
-					<div>
-						<div className="text-base font-black text-slate-900 uppercase tracking-tight">
-							{dashboard?.clinicSettings?.profile?.brandName ||
-								"Стоматологическая клиника «DENTE»"}
-						</div>
-						<div className="text-xs font-semibold text-slate-700">
-							{dashboard?.clinicSettings?.profile?.legalName ||
-								dashboard?.clinicSettings?.profile?.brandName ||
-								"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
-							{dashboard?.clinicSettings?.profile?.medicalLicenseNumber
-								? ` • Лицензия № ${dashboard.clinicSettings.profile.medicalLicenseNumber}`
-								: ""}
-						</div>
-						<div className="text-[11px] text-slate-500">
-							{[
-								dashboard?.clinicSettings?.profile?.address,
-								dashboard?.clinicSettings?.profile?.phone
-									? `Тел: ${dashboard.clinicSettings.profile.phone}`
-									: "",
-							]
-								.filter(Boolean)
-								.join(" • ")}
-						</div>
-						<h1 className="text-lg font-black tracking-tight text-slate-950 uppercase mt-2">
-							МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (Форма № 043/у)
-						</h1>
-						<p className="text-xs font-semibold text-slate-600">
-							Дневник приёма и протокол лечения • Утверждена Приказом Минздрава
-							России от 15.12.2014 № 834н
-						</p>
-					</div>
-					<div className="text-right text-xs shrink-0">
-						<div className="font-bold text-slate-900">
-							№ Карты:{" "}
-							{activePatient?.cardNumber ||
-								activePatient?.medicalCardNumber ||
-								activePatient?.id?.slice(0, 8) ||
-								"СТ-2026-0843"}
-						</div>
-						<div className="text-slate-600">
-							Дата приёма:{" "}
-							{dashboard?.activeVisit?.date ||
-								new Date().toLocaleDateString("ru-RU")}
-						</div>
-						<div className="text-slate-600">
-							Время:{" "}
-							{dashboard?.activeVisit?.time ||
-								new Date().toLocaleTimeString("ru-RU", {
-									hour: "2-digit",
-									minute: "2-digit",
-								})}
-						</div>
-						{isSignedVisit ? (
-							<div className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 border-2 border-emerald-700 rounded text-[11px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50">
-								<Check className="w-3.5 h-3.5 stroke-[3]" />
-								<span>ПОДПИСАНО ВРАЧОМ</span>
-							</div>
-						) : (
-							<div className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 border-2 border-amber-600 rounded text-[11px] font-black uppercase tracking-wider text-amber-800 bg-amber-50">
-								<AlertTriangle className="w-3.5 h-3.5" />
-								<span>ЧЕРНОВИК • НЕ ПОДПИСАНО</span>
-							</div>
-						)}
-					</div>
-				</div>
-
-				{!isSignedVisit && (
-					<div className="mb-3 py-1.5 px-3 bg-amber-50 border border-amber-300 rounded text-[11px] text-amber-900 font-semibold flex items-center justify-between">
-						<span className="flex items-center gap-1.5">
-							<AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-							<span>СТАТУС ДОКУМЕНТА: ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ).</span>
-						</span>
-						<span className="text-[10px] text-amber-700">
-							Юридической силы без подписи врача не имеет
-						</span>
-					</div>
-				)}
-
-				{/* Таблица паспортных данных */}
-				<table
-					className="w-full border-collapse text-left text-xs border border-slate-300 mb-4"
-					style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
-				>
-					<tbody>
-						<tr className="border-b border-slate-300">
-							<td className="py-1.5 px-2 font-bold bg-slate-100 border-r border-slate-300 w-1/4">
-								Пациент (ФИО):
-							</td>
-							<td className="py-1.5 px-2 font-bold text-slate-950 border-r border-slate-300 w-1/4">
-								{activePatient?.fullName || "—"}
-							</td>
-							<td className="py-1.5 px-2 font-bold bg-slate-100 border-r border-slate-300 w-1/4">
-								Дата рождения / Возраст:
-							</td>
-							<td className="py-1.5 px-2 border-slate-300 w-1/4">
-								{activePatient?.birthDate || "—"}{" "}
-								{activePatient?.gender
-									? `(${activePatient.gender === "female" ? "Жен." : "Муж."})`
-									: ""}
-							</td>
-						</tr>
-						<tr className="border-b border-slate-300">
-							<td className="py-1.5 px-2 font-bold bg-slate-100 border-r border-slate-300">
-								СНИЛС:
-							</td>
-							<td className="py-1.5 px-2 border-r border-slate-300">
-								{activePatient?.administrativeProfile?.snils ||
-									activePatient?.snils ||
-									"—"}
-							</td>
-							<td className="py-1.5 px-2 font-bold bg-slate-100 border-r border-slate-300">
-								Полис ОМС / ДМС:
-							</td>
-							<td className="py-1.5 px-2 border-slate-300">
-								{activePatient?.administrativeProfile?.omsPolis ||
-									activePatient?.omsPolis ||
-									"—"}
-							</td>
-						</tr>
-						<tr className="border-b border-slate-300">
-							<td className="py-1.5 px-2 font-bold bg-slate-100 border-r border-slate-300">
-								Контактный телефон:
-							</td>
-							<td className="py-1.5 px-2 border-r border-slate-300">
-								{activePatient?.phone || "—"}
-							</td>
-							<td className="py-1.5 px-2 font-bold bg-slate-100 border-r border-slate-300">
-								Лечащий врач:
-							</td>
-							<td className="py-1.5 px-2 font-bold text-slate-900 border-slate-300">
-								{appLogic?.activeDoctor?.fullName ||
-									appLogic?.auth?.currentUser?.name ||
-									"Врач-стоматолог"}
-							</td>
-						</tr>
-					</tbody>
-				</table>
-
-				{/* Структурированная таблица протокола 043/у */}
-				<div
-					className="space-y-3"
-					style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
-				>
-					{/* I. Жалобы и анамнез */}
-					<div
-						className="border border-slate-300 rounded-md overflow-hidden"
-						style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
-					>
-						<div className="bg-slate-100 px-3 py-1.5 font-bold text-xs uppercase tracking-wide border-b border-slate-300 text-blue-900 flex items-center gap-1.5">
-							<span>I. Жалобы и анамнез заболевания</span>
-						</div>
-						<div className="p-2.5 text-xs text-slate-900 space-y-1.5">
-							<div>
-								<strong>Жалобы:</strong>{" "}
-								{visitNoteForm?.complaint ||
-									"Жалоб на момент осмотра активно не предъявляет (плановый осмотр)."}
-							</div>
-							{visitNoteForm?.anamnesis && (
-								<div>
-									<strong>
-										Анамнез заболевания и жизни (Anamnesis morbi & vitae):
-									</strong>{" "}
-									{visitNoteForm.anamnesis}
-								</div>
-							)}
-						</div>
-					</div>
-
-					{/* II. Объективный статус */}
-					<div
-						className="border border-slate-300 rounded-md overflow-hidden"
-						style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
-					>
-						<div className="bg-slate-100 px-3 py-1.5 font-bold text-xs uppercase tracking-wide border-b border-slate-300 text-purple-900 flex items-center gap-1.5">
-							<span>II. Данные объективного исследования (Status localis)</span>
-						</div>
-						<div className="p-2.5 text-xs text-slate-900 whitespace-pre-wrap">
-							{visitNoteForm?.objectiveStatus ||
-								"Слизистая оболочка полости рта физиологической окраски, влажная. Регионарные лимфатические узлы не увеличены, безболезненны при пальпации. Прикус ортогнатический."}
-						</div>
-					</div>
-
-					{/* III. Диагноз */}
-					<div
-						className="border border-slate-300 rounded-md overflow-hidden"
-						style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
-					>
-						<div className="bg-slate-100 px-3 py-1.5 font-bold text-xs uppercase tracking-wide border-b border-slate-300 text-amber-900 flex items-center gap-1.5">
-							<span>III. Диагноз по МКБ-10</span>
-						</div>
-						<div className="p-2.5 text-xs text-slate-900 font-bold">
-							{visitNoteForm?.diagnosis ||
-								"Z01.2 Стоматологическое обследование"}
-						</div>
-					</div>
-
-					{/* IV. Дневник лечения */}
-					<div
-						className="border border-slate-300 rounded-md overflow-hidden"
-						style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
-					>
-						<div className="bg-slate-100 px-3 py-1.5 font-bold text-xs uppercase tracking-wide border-b border-slate-300 text-slate-900 flex items-center gap-1.5">
-							<span>IV. Дневник лечения и рекомендации</span>
-						</div>
-						<div className="p-2.5 text-xs text-slate-900 whitespace-pre-wrap">
-							{visitNoteForm?.treatmentPlan ||
-								"Проведен осмотр полости рта, консультация, составлен предварительный план терапевтического лечения. Даны рекомендации по гигиене."}
-						</div>
-					</div>
-				</div>
-
-				{/* Блок подписи врача и печати */}
-				<div
-					className="mt-8 pt-4 border-t-2 border-slate-300 flex items-end justify-between text-xs text-slate-800"
-					style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
-				>
-					<div className="space-y-1">
-						<div>
-							Врач-стоматолог: _________________________ /{" "}
-							<strong>
-								{appLogic?.activeDoctor?.fullName ||
-									appLogic?.auth?.currentUser?.name ||
-									"_________________________"}
-							</strong>
-						</div>
-						<div className="text-[10px] text-slate-500">
-							(подпись и личная печать врача)
-						</div>
-					</div>
-
-					{/* Круглая печать («М.П. Клиники») */}
-					<div className="w-20 h-20 rounded-full border-2 border-dashed border-slate-400 flex flex-col items-center justify-center text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">
-						<span>М.П.</span>
-						<span className="text-[8px] font-normal">Клиники</span>
-					</div>
-
-					<div className="space-y-1 text-right">
-						<div>
-							Пациент: _________________________ /{" "}
-							<strong>
-								{activePatient?.fullName || "_________________________"}
-							</strong>
-						</div>
-						<div className="text-[10px] text-slate-500">
-							(с диагнозом и объемом оказанной помощи ознакомлен)
-						</div>
-					</div>
-				</div>
-
-				{!isSignedVisit ? (
-					<div className="mt-4 text-[10px] text-amber-800 italic border-t border-amber-300 pt-2 text-center">
-						Документ распечатан в статусе «ЧЕРНОВИК». Окончательный юридический
-						статус наступает после завершения приёма и подписания карты врачом.
-					</div>
-				) : (
-					<div className="mt-4 text-[10px] text-emerald-800 font-medium border-t border-emerald-300 pt-2 text-center">
-						Документ подписан лечащим врачом в медицинской информационной
-						системе клиники.
-					</div>
-				)}
-			</div>
+			{/* Печатная форма 043/у */}
+			<EmkPrintableForm043
+				patient={activePatient}
+				visitNoteForm={visitNoteForm}
+				isSignedVisit={isSignedVisit}
+			/>
 		</section>
 	);
 }

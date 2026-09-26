@@ -1,984 +1,175 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import { ChevronDown, ChevronUp, Mic as LucideMic, XCircle } from "lucide-react";
-import { countLabel } from "./AppHelpers";
-import { EmptyState } from "./components/EmptyState";
-import { showToast } from "./components/GlobalToast";
-import { PatientAvatar } from "./components/PatientAvatar";
-import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
-import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
-import { VisitEmkTab } from "./components/visit/VisitEmkTab";
-import { VisitMainTabs, type VisitSubViewTab } from "./components/visit/VisitMainTabs";
-import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
-import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
-import { VisitTimer } from "./components/visit/VisitTimer";
-import { DoctorShiftEarningsWidget } from "./components/doctor/DoctorShiftEarningsWidget";
-import { DictationHints } from "./DictationHints";
-import { AiOrchestrator } from "./lib/aiOrchestrator";
-import { SmartParsePreview } from "./SmartParsePreview";
-import { useAppStore } from "./store/appStore";
-import { usePatientStore } from "./store/patientStore";
-import { useVisitStore } from "./store/visitStore";
-import { getToothConfig, getToothPath } from "./utils/math/toothGeometry";
-// Список разделов роли и их названия берём из реестра разделов, а не переписываем
-// рядом: разъехавшаяся копия — это ровно тот случай, когда шаг закрытия приёма
-// уводит врача на «Смену».
-import { getFilteredAppViews, viewLabels } from "./workspaceShell";
-import "./styles/VisitView.css";
-export interface VisitViewProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	AlertTriangle: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	Bot: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	Check: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	CheckCircle2: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	ClinicalRulePanel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	ClipboardCheck: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	Mic: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	Sparkles: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	acceptDraftToVisit: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeAppointment: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeChair: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeDoctor: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeImagingStudies: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activePatient: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activePatientInsight: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeUsableDocuments: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeVisitClinicalRuleEvaluations: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	polishingField: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	polishSingleField: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	selectedWorkspaceRole: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeVisitClinicalRuleSummary: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	appendToTranscript: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	applyProtocolTemplate: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	buildDraft: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	buildOfflineDraft: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clearTranscriptWithUndo: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clearedTranscriptSnapshot: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clinicalRuleActionLabels: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clinicalRuleSeverityLabels: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dashboard: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dictationQuickPhrases: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	draft: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	emptyDictationVoiceActionLabel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	flushPendingSpeechChunks: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	flushPendingVisitSaves: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	formatTime: any;
-	handleApplySomaticNormQuick?: any;
-	handlePolishTranscriptWithAi?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	hasVisitTranscriptText: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	imagingKindLabels: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isDraftAccepting: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isDraftLoading: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isOnline: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isPendingVisitSyncing: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isServerVoiceRecording: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isTranscriptPolishing: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isVisitDictating: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	isVisitNoteDirty: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	lastLocalSavedAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	lastPendingVisitSaveAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	lastServerDraftSavedAt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	lastVisitSaveReceipt: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	localDraftWasRestored: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	openVisitWarningAction: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pendingSpeechChunkCount: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pendingSpeechFlushActionLabel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pendingSpeechFlushActionTitle: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	pendingVisitSaveCount: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	polishTranscript: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	primaryVisitWarning: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	scrollToVisitArea: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	selectedProtocolTemplate: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	selectedSpecialty: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	serverDraftSyncState: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	serviceTitle: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setClearedTranscriptSnapshot: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSelectedProtocolId: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSelectedSpecialty: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setTranscript: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	specialtiesWithTemplates: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	specialtyLabels: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	specialtyProtocolTemplates: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechGatewayActiveProviderIsLocal: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechGatewayStatus: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechRecognitionReady: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechStatusNote: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	speechTranscriptionBusy: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	staffRoleLabels: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	startServerVoiceRecording: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	startVisitDictation: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	stopServerVoiceRecording: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	toothRows: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	toothStateByCode: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	transcript: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	undoTranscriptClear: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	updateVisitNoteField: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visibleVisitSpecialtyFocusOptions: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitCloseChecklist: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitDraftBuildMissingSteps: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitDraftMissingFieldLabel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitDraftQualityLabels: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitDraftReadyToBuild: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitDraftSignalLabel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitDraftUserEditedRef: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitNoteAcceptMissingSteps: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitNoteActionLabel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitNoteFieldDefinitions: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitNoteForm: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitNoteReadyToAccept: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitNoteStatusLabel: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitPrimaryAction: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitSafetyCards: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitSaveReceiptText: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitWarnings: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	visitWorkflowSteps: any;
-	setToothState: (code: string, state: string) => void;
-}
-
-import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
-import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
-import { ClinicalRulePanel as DefaultClinicalRulePanel } from "./ClinicalRulePanel";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { EndoCanalLogModal } from "./components/endo/EndoCanalLogModal";
-import { DentalLabOrderModal } from "./components/lab/DentalLabOrderModal";
-import { StagePaymentPlanModal } from "./components/treatment-plans/stagePayment/StagePaymentPlanModal";
-import { TreatmentPlanPriceValidatorModal } from "./components/treatment-plans/validation/TreatmentPlanPriceValidatorModal";
 import {
-	type CatalogServiceItem,
-	SAMPLE_CURRENT_PRICELIST,
-	SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
-	type TreatmentPlanValidationPayload,
-} from "./components/treatment-plans/validation/planPriceValidationPresets";
-import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
-import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
-import { VisitSoapEditor, type VisitSoapNoteValues } from "./components/visit/VisitSoapEditor";
-import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
-import {
-	type PatientClinicalSafetyProfile,
-	parseSafetyProfileFromText,
-	isNegativeAllergyStatement,
-} from "./components/patients/safetyMath";
-import { EmergencyRescueModal } from "./components/emergency/EmergencyRescueModal";
-import { VoiceDictationAssistantModal, type DictationCommand } from "./components/voice/VoiceDictationAssistantModal";
-import { WarrantyPassportModal } from "./components/warranty/WarrantyPassportModal";
-import { InformedConsentModal } from "./components/consents/InformedConsentModal";
-import { generateInformedConsent1051nHtml } from "./lib/clinicalProtocols043";
-import { renderForm043uHtml } from "@dental/shared";
-import {
-	Activity,
-	AlertCircle,
 	AlertOctagon,
-	AlertTriangle as DefaultAlertTriangle,
-	Anchor,
-	Ban,
-	Bot as DefaultBot,
-	Check as DefaultCheck,
-	CheckCircle2 as DefaultCheckCircle2,
-	CircleDot,
-	ClipboardCheck as DefaultClipboardCheck,
-	ClipboardList,
+	Check,
+	CheckCircle2,
 	Clock,
-	Compass,
-	Crown,
-	Edit3,
-	Eye,
-	FileCheck2,
-	FileText,
-	Flame,
-	HeartPulse,
-	Layers,
 	Lock,
 	MoreHorizontal,
 	Printer,
-	Scissors,
-	Shield,
 	ShieldCheck,
-	Sparkles as DefaultSparkles,
-	Stethoscope,
-	Syringe,
-	CalendarCheck,
-	UserCheck,
-	Zap,
 } from "lucide-react";
+import { EmptyState } from "./components/EmptyState";
+import { showToast } from "./components/GlobalToast";
+import { PatientAvatar } from "./components/PatientAvatar";
+import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
+import { VisitEmkTab } from "./components/visit/VisitEmkTab";
+import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
+import { VisitTimer } from "./components/visit/VisitTimer";
+import { DoctorShiftEarningsWidget } from "./components/doctor/DoctorShiftEarningsWidget";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { isNegativeAllergyStatement } from "./components/patients/safetyMath";
+import "./styles/VisitView.css";
 
-export async function executePolishTranscriptAutonomy({
-	hasVisitTranscriptText,
-	setTranscript,
-	updateVisitNoteField,
-	visitNoteForm,
-	polishTranscript,
-	showToastFn = showToast,
-}: {
-	hasVisitTranscriptText: boolean;
-	setTranscript?: (val: string) => void;
-	updateVisitNoteField?: (field: string, val: string) => void;
-	visitNoteForm?: { anamnesis?: string; objectiveInspection?: string; objectiveStatus?: string } | null;
-	polishTranscript?: () => Promise<void> | void;
-	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
-}) {
-	if (!hasVisitTranscriptText) {
-		const standardClinicalDraft =
-			"Осмотр полости рта проведен. Слизистая оболочка розовая, влажная. Соматически здоров";
-		if (typeof setTranscript === "function") {
-			setTranscript(standardClinicalDraft);
-		}
-		if (typeof updateVisitNoteField === "function") {
-			const currentObj = visitNoteForm?.objectiveInspection || (visitNoteForm as any)?.objectiveStatus || "";
-			if (!currentObj) {
-				const objNorm = "Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.";
-				updateVisitNoteField("objectiveInspection", objNorm);
-				updateVisitNoteField("objectiveStatus", objNorm);
-			}
-			const currentAnamnesis = visitNoteForm?.anamnesis || "";
-			if (!currentAnamnesis) {
-				updateVisitNoteField(
-					"anamnesis",
-					"Соматически здоров. Аллергологический и соматический анамнез не отягощен.",
-				);
-			}
-		}
-		showToastFn("Подставлен стандартный клинический осмотр (норма)", "info");
-		return { executed: true, populatedNorm: true };
-	}
-	if (typeof polishTranscript === "function") {
-		await polishTranscript();
-		return { executed: true, populatedNorm: false };
-	}
-	return { executed: false, populatedNorm: false };
-}
+import {
+	type VisitViewProps,
+	executePolishTranscriptAutonomy,
+	executeApplySomaticNormAutonomy,
+	executeApplyHygienePresetAutonomy,
+	executeApplyAnesthesiaPresetAutonomy,
+	executeFastPrint043u,
+	executeFastPrintInformedConsent,
+	VisitEmbeddedOdontogram,
+	VisitSecondaryPanelsInner,
+	VisitClinicalToothModal,
+	VisitViewModals,
+} from "./components/visit/view";
 
-export function executeApplySomaticNormAutonomy({
-	updateVisitNoteField,
-	visitNoteForm,
-	showToastFn = showToast,
-}: {
-	updateVisitNoteField?: (field: string, val: string) => void;
-	visitNoteForm?: { anamnesis?: string; objectiveInspection?: string; objectiveStatus?: string } | null;
-	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
-}) {
-	const normText =
-		"Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания (гепатит B/C, ВИЧ, сифилис) со слов отрицает. Физиологическая норма.";
-	const objNorm =
-		"Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.";
-	if (typeof updateVisitNoteField === "function") {
-		updateVisitNoteField("anamnesis", normText);
-		const currentObj = visitNoteForm?.objectiveInspection || (visitNoteForm as any)?.objectiveStatus || "";
-		if (!currentObj) {
-			updateVisitNoteField("objectiveInspection", objNorm);
-			updateVisitNoteField("objectiveStatus", objNorm);
-		}
-	}
-	if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
-		try {
-			window.dispatchEvent(
-				new CustomEvent("dente-apply-soap-protocol", {
-					detail: {
-						soap: {
-							anamnesis: normText,
-							statusLocalis: objNorm,
-						},
-						mode: "smart_append",
-						immediate: true,
-					},
-				}),
-			);
-		} catch {
-			// ignore in SSR or test environments
-		}
-	}
-	showToastFn("Применена норма: соматически здоров (1 клик)", "success");
-	return { executed: true, normText };
-}
-
-export function executeApplyHygienePresetAutonomy({
-	updateVisitNoteField,
-	visitNoteForm,
-	showToastFn = showToast,
-}: {
-	updateVisitNoteField?: (field: string, val: string) => void;
-	visitNoteForm?: {
-		complaints?: string;
-		objectiveInspection?: string;
-		treatment?: string;
-		recommendations?: string;
-		diagnosis?: string;
-	} | null;
-	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
-}) {
-	if (typeof updateVisitNoteField === "function") {
-		if (!visitNoteForm?.diagnosis) {
-			updateVisitNoteField("diagnosis", "K03.6 Отложения [наросты] на зубах (зубной камень, пигментированный налёт)");
-		}
-		if (!visitNoteForm?.complaints) {
-			updateVisitNoteField("complaints", "Жалобы на наличие мягкого и твёрдого зубного налёта, шероховатость зубов, косметический дефект.");
-		}
-		const hygieneObj = "Индекс гигиены OHI-S = 1.8. Обильный пигментированный налёт и наддесневой зубной камень во фронтальном отделе нижней челюсти. Слизистая десны умеренно гиперемирована в области десневых сосочков.";
-		if (!visitNoteForm?.objectiveInspection) {
-			updateVisitNoteField("objectiveInspection", hygieneObj);
-		}
-		const hygieneTreatment = "Проведена комплексная профессиональная гигиена полости рта: ультразвуковое удаление над- и поддесневых зубных отложений (скалер Woodpecker), воздушно-абразивная полировка Air-Flow (порошок на основе глицина), полировка пастой Kerr Cleanic. Антисептическая обработка десневого края 0.05% раствором хлоргексидина. Глубокое фторирование эмали фторлаком Bifluorid 12.";
-		const currentTreatment = visitNoteForm?.treatment || "";
-		updateVisitNoteField("treatment", currentTreatment ? `${currentTreatment}\n\n${hygieneTreatment}` : hygieneTreatment);
-
-		const hygieneRec = "Щадящая чистка зубов мягкой щёткой в течение 2 дней. Исключить красящие продукты (кофе, чай, ягоды) на 48 часов. Контрольный осмотр через 6 месяцев.";
-		if (!visitNoteForm?.recommendations) {
-			updateVisitNoteField("recommendations", hygieneRec);
-		}
-	}
-	showToastFn("Применён протокол: Профгигиена выполнена (1 клик)", "success");
-	return { executed: true };
-}
-
-export function executeApplyAnesthesiaPresetAutonomy({
-	updateVisitNoteField,
-	visitNoteForm,
-	showToastFn = showToast,
-}: {
-	updateVisitNoteField?: (field: string, val: string) => void;
-	visitNoteForm?: { treatment?: string } | null;
-	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
-}) {
-	const anesthesiaText = "Анестезия: инфильтрационная / проводниковая Sol. Articaini 4% с эпинефрином 1:100 000 — 1.7 мл (Артикаин). Анестезия наступила через 3 минуты, глубокая, достаточная для безболезненного вмешательства. Без осложнений.";
-	if (typeof updateVisitNoteField === "function") {
-		const current = visitNoteForm?.treatment || "";
-		updateVisitNoteField(
-			"treatment",
-			current ? `${current}\n\n${anesthesiaText}` : anesthesiaText,
-		);
-	}
-	showToastFn("Добавлена стандартная анестезия: Sol. Articaini 4% (1 клик)", "success");
-	return { executed: true, anesthesiaText };
-}
+export type { VisitViewProps };
+export {
+	executePolishTranscriptAutonomy,
+	executeApplySomaticNormAutonomy,
+	executeApplyHygienePresetAutonomy,
+	executeApplyAnesthesiaPresetAutonomy,
+};
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
-	const logicContext = useAppLogicContext();
-	const props = { ...logicContext, ...rawProps } as ReturnType<
-		typeof useAppLogicContext
-	> &
-		Partial<VisitViewProps>;
+	// biome-ignore lint/suspicious/noExplicitAny: app logic fallback
+	const appLogic = (useAppLogicContext() as any) || {};
+	const props = { ...appLogic, ...(rawProps || {}) } as VisitViewProps;
+
 	const {
-		AlertTriangle = DefaultAlertTriangle,
-		Bot = DefaultBot,
-		Check = DefaultCheck,
-		CheckCircle2 = DefaultCheckCircle2,
-		ClinicalRulePanel = DefaultClinicalRulePanel,
-		ClipboardCheck = DefaultClipboardCheck,
-		Mic = LucideMic,
-		Sparkles = DefaultSparkles,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		acceptDraftToVisit,
+		activePatient,
 		activeAppointment,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		activeChair,
 		activeDoctor,
-		activeImagingStudies,
-		activePatient: rawActivePatient,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		activePatientInsight,
-		activeUsableDocuments,
-		activeVisitClinicalRuleEvaluations,
-		activeVisitClinicalRuleSummary,
-		appendToTranscript,
-		applyProtocolTemplate,
-		buildDraft,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		buildOfflineDraft,
-		clearTranscriptWithUndo,
-		clearedTranscriptSnapshot,
-		clinicalRuleActionLabels,
-		clinicalRuleSeverityLabels,
 		dashboard,
-		dictationQuickPhrases,
-		draft,
-		emptyDictationVoiceActionLabel,
-		flushPendingSpeechChunks,
-		flushPendingVisitSaves,
-		formatTime,
-		handleApplySomaticNormQuick: propHandleApplySomaticNormQuick,
-		handlePolishTranscriptWithAi: propHandlePolishTranscriptWithAi,
-		hasVisitTranscriptText,
-		imagingKindLabels,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		isDraftAccepting,
-		isDraftLoading,
-		isOnline,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		isPendingVisitSyncing,
-		isServerVoiceRecording,
-		isTranscriptPolishing,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		isVisitDictating,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		isVisitNoteDirty,
-		lastLocalSavedAt,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		lastPendingVisitSaveAt,
-		lastServerDraftSavedAt,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		lastVisitSaveReceipt,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		localDraftWasRestored,
-		openVisitWarningAction,
-		pendingSpeechChunkCount,
-		pendingSpeechFlushActionLabel,
-		pendingSpeechFlushActionTitle,
-		pendingVisitSaveCount,
-		polishTranscript,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		polishingField,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		polishSingleField,
-		primaryVisitWarning,
-		scrollToVisitArea,
-		selectedProtocolTemplate,
-		selectedSpecialty,
-		selectedWorkspaceRole,
-		serverDraftSyncState,
-		serviceTitle,
-		setClearedTranscriptSnapshot,
-		setSelectedProtocolId,
-		setSelectedSpecialty,
+		transcript = "",
 		setTranscript,
-		specialtiesWithTemplates,
-		specialtyLabels,
-		specialtyProtocolTemplates,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		speechGatewayActiveProviderIsLocal,
-		speechGatewayStatus,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		speechRecognitionReady,
-		speechStatusNote,
-		speechTranscriptionBusy,
-		staffRoleLabels,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		startServerVoiceRecording,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		startVisitDictation,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		stopServerVoiceRecording,
-		toothRows,
-		toothStateByCode,
-		setToothState,
-		transcript,
-		undoTranscriptClear,
+		hasVisitTranscriptText,
+		isTranscriptPolishing,
+		polishTranscript,
 		updateVisitNoteField,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		visibleVisitSpecialtyFocusOptions,
-		visitCloseChecklist,
-		visitDraftBuildMissingSteps,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		visitDraftMissingFieldLabel,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		visitDraftQualityLabels,
-		visitDraftReadyToBuild,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		visitDraftSignalLabel,
-		visitDraftUserEditedRef,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		visitNoteAcceptMissingSteps,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		visitNoteActionLabel,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		visitNoteFieldDefinitions,
 		visitNoteForm,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		visitNoteReadyToAccept,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		visitNoteStatusLabel,
-		visitPrimaryAction,
-		visitSafetyCards,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		visitSaveReceiptText,
+		flushPendingVisitSaves,
+		toothRows = [
+			["18", "17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "28"],
+			["48", "47", "46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36", "37", "38"],
+		],
+		toothStateByCode = {},
+		setToothState = () => {},
+		draft,
 		visitWarnings,
-		visitWorkflowSteps,
+		visitPrimaryAction,
 	} = props;
 
-	// БЫЛО: если пациент не выбран, подставлялся ПЕРВЫЙ пациент клиники, а если
-	// и его нет — вымышленный «Смирнов Алексей Петрович». Врач открывал «Текущий
-	// приём», видел в шапке реального, но постороннего пациента, и диктовал приём,
-	// считая, что запись идёт этому человеку, — тогда как сохранение уходило
-	// в dashboard.activeVisit, то есть совсем другому пациенту.
-	// Проверка «if (!activePatient)» ниже из-за этого была недостижима.
-	const activePatient = rawActivePatient ?? null;
+	const [visitSubViewTab, setVisitSubViewTab] = useState<string>("emk");
+	const [activeQuadrant, setActiveQuadrant] = useState<number | null>(null);
+	const [activeStamp, setActiveStamp] = useState<string>("watch");
+	const activeStampRef = React.useRef<string>("watch");
+	const [selectedToothForMenu, setSelectedToothForMenu] = useState<any>(null);
+	const [materialCategory, setMaterialCategory] = useState<string | null>(null);
+	const [selectedSurfaces, setSelectedSurfaces] = useState<string[]>([]);
+	const [isSurfaceMode, setIsSurfaceMode] = useState<boolean>(false);
 
-	const safeVisitPrimaryAction = visitPrimaryAction || {
-		label: "Сохранить прием",
-		detail: "Готово к сохранению в историю",
-		disabled: false,
-		kind: "save",
-		onClick: flushPendingVisitSaves,
-	};
-	const safeVisitWorkflowSteps = Array.isArray(visitWorkflowSteps)
-		? visitWorkflowSteps
-		: [];
-	const safeVisitSafetyCards = Array.isArray(visitSafetyCards)
-		? visitSafetyCards
-		: [];
-	const safeSpecialtyLabels = specialtyLabels || {
-		universal: "Универсальный прием",
-	};
+	// Modals state
+	const [endoModalToothNumber, setEndoModalToothNumber] = useState<any>(null);
+	const [endoModalToothState, setEndoModalToothState] = useState<string>("idle");
+	const [isEndoModalOpen, setIsEndoModalOpen] = useState(false);
+	const [isLabOrderModalOpen, setIsLabOrderModalOpen] = useState(false);
+	const [labOrderModalToothNumber, setLabOrderModalToothNumber] = useState<any>(null);
+	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = useState(false);
+	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = useState(false);
+	const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
+	const [isVoiceDictationModalOpen, setIsVoiceDictationModalOpen] = useState(false);
+	const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false);
+	const [isDoctorShiftModalOpen, setIsDoctorShiftModalOpen] = useState(false);
+	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] = useState(false);
+	const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = useState(false);
 
-	const [visitSubViewTab, setVisitSubViewTab] = useState<VisitSubViewTab>("odontogram");
-	const [showHints, setShowHints] = useState(false);
-	const [showSmartPreview, setShowSmartPreview] = useState(false);
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const [smartParsedData, setSmartParsedData] = useState<any>(null);
+	const headerMoreMenuRef = React.useRef<HTMLDivElement | null>(null);
 
-	const setVisitNoteForm = useVisitStore((state) => state.setVisitNoteForm);
-	const _visitAiDiagnosesByCode = useVisitStore(
-		(state) => state.visitAiDiagnosesByCode,
-	);
-	const [activeQuadrant, setActiveQuadrant] = React.useState<number | null>(
-		null,
-	);
-	const [activeStamp, setActiveStamp] = React.useState<string | null>(null);
-	const activeStampRef = React.useRef<string | null>(null);
-	activeStampRef.current = activeStamp;
+	const patientAge = useMemo(() => {
+		if (!activePatient?.birthDate) return null;
+		const diff = Date.now() - new Date(activePatient.birthDate).getTime();
+		const years = Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+		return `${years} лет`;
+	}, [activePatient?.birthDate]);
 
-	// ── Clinical Context Modal state ─────────────────────────────
-	const [selectedToothForMenu, setSelectedToothForMenu] = React.useState<{
-		code: string;
-		state: string;
-	} | null>(null);
-	const [materialCategory, setMaterialCategory] = React.useState<
-		"filling" | "crown" | "implant" | "veneer" | null
-	>(null);
-	const [isEndoModalOpen, setIsEndoModalOpen] = React.useState(false);
-	const [endoModalToothNumber, setEndoModalToothNumber] = React.useState<number | null>(null);
-	const [endoModalToothState, setEndoModalToothState] = React.useState<string | undefined>(undefined);
-	const [isLabOrderModalOpen, setIsLabOrderModalOpen] = React.useState(false);
-	const [labOrderModalToothNumber, setLabOrderModalToothNumber] = React.useState<number | string | null>(null);
-	const [isStagePaymentModalOpen, setIsStagePaymentModalOpen] = React.useState(false);
-	const [isPriceValidatorModalOpen, setIsPriceValidatorModalOpen] = React.useState(false);
-	const [isDoctorCockpitModalOpen, setIsDoctorCockpitModalOpen] = React.useState(false);
-	const [isEmergencyModalOpen, setIsEmergencyModalOpen] = React.useState(false);
-	const [isVoiceDictationModalOpen, setIsVoiceDictationModalOpen] = React.useState(false);
-	const [isWarrantyModalOpen, setIsWarrantyModalOpen] = React.useState(false);
-	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] = React.useState(false);
-	const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = React.useState(false);
-	const headerMoreMenuRef = React.useRef<HTMLDivElement>(null);
-
-	React.useEffect(() => {
-		if (!isHeaderMoreMenuOpen) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			if (
-				headerMoreMenuRef.current &&
-				!headerMoreMenuRef.current.contains(e.target as Node)
-			) {
-				setIsHeaderMoreMenuOpen(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isHeaderMoreMenuOpen]);
-
-	const [isQueueLobbyDropdownOpen, setIsQueueLobbyDropdownOpen] = React.useState(false);
-	const queueLobbyDropdownRef = React.useRef<HTMLDivElement>(null);
-
-	React.useEffect(() => {
-		if (!isQueueLobbyDropdownOpen) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			if (
-				queueLobbyDropdownRef.current &&
-				!queueLobbyDropdownRef.current.contains(e.target as Node)
-			) {
-				setIsQueueLobbyDropdownOpen(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isQueueLobbyDropdownOpen]);
-
-	const shiftDayQueue = React.useMemo(() => {
-		// biome-ignore lint/suspicious/noExplicitAny: dashboard appointments
-		const appointments: any[] = Array.isArray(dashboard?.appointments) ? dashboard.appointments : [];
-		const todayIso = new Date().toISOString().slice(0, 10);
-		let arrived = 0;
-		let inTreatment = 0;
-		let awaitingPayment = 0;
-		const arrivedPatients: Array<{ id: string; patientId: string; name: string; time: string }> = [];
-
-		for (const appt of appointments) {
-			const apptDate = String(appt?.startsAt || appt?.startTime || "").slice(0, 10);
-			if (apptDate && apptDate !== todayIso) continue;
-			if (activeDoctor?.id && appt?.doctorUserId && appt.doctorUserId !== activeDoctor.id) continue;
-
-			const s = String(appt?.status || "").toLowerCase();
-			if (s === "arrived") {
-				arrived++;
-				const pName = appt?.patientName || appt?.patient?.fullName || "Пациент";
-				const t = String(appt?.startsAt || appt?.startTime || "").slice(11, 16);
-				arrivedPatients.push({ id: appt?.id || String(Math.random()), patientId: appt?.patientId || "", name: pName, time: t });
-			} else if (s === "in_treatment" || s === "in_progress") {
-				inTreatment++;
-			} else if (s === "completed") {
-				awaitingPayment++;
-			}
+	// Tier 1 Critical Badges & Autonomy (Mandates 8e, 8i)
+	const activePatientCriticalBadges = useMemo(() => {
+		if (!activePatient) return [];
+		const badges: any[] = [];
+		const rawAllergies = activePatient.allergies || "";
+		if (rawAllergies && !isNegativeAllergyStatement(rawAllergies)) {
+			badges.push({
+				id: "allergy",
+				testId: "visit-focus-allergy-alert",
+				title: `Аллергоанамнез: ${rawAllergies}`,
+				shortLabel: "АЛЛЕРГИЯ",
+				fullLabel: `Аллергия: ${rawAllergies}`,
+			});
 		}
-
-		return {
-			arrived,
-			inTreatment,
-			awaitingPayment,
-			arrivedPatients,
-		};
-	}, [dashboard?.appointments, activeDoctor?.id]);
-
-	const priceValidatorCatalogList = React.useMemo<readonly CatalogServiceItem[]>(() => {
-		const rawCatalog = (dashboard as { serviceCatalog?: unknown[] } | null)?.serviceCatalog;
-		if (Array.isArray(rawCatalog) && rawCatalog.length > 0) {
-			return rawCatalog.map((item: any) => ({
-				id: String(item.id || item.code || ""),
-				code804n: String(item.code || item.code804n || "A16.07.001"),
-				title: String(item.title || item.name || "Медицинская услуга"),
-				category: String(item.category || "Терапия"),
-				basePriceRub: Number(item.basePriceRub) || 0,
-				active: Boolean(item.active ?? true),
-				isArchived: Boolean(item.isArchived ?? false),
-			}));
+		const somaticNotes = `${activePatient.somaticNotes || ""} ${activePatient.concomitantDiseases || ""} ${visitNoteForm?.anamnesis || ""}`.toLowerCase();
+		if (somaticNotes.includes("кардиостимулятор") || somaticNotes.includes("экс")) {
+			badges.push({
+				id: "pacemaker",
+				testId: "visit-focus-pacemaker-alert",
+				title: "Наличие ЭКС: ЗАПРЕТ УЗ-скейлера и электрокоагулятора!",
+				shortLabel: "ЭКС",
+				fullLabel: "ЭКС (кардиостимулятор) — ЗАПРЕТ УЗ!",
+			});
 		}
-		return SAMPLE_CURRENT_PRICELIST;
-	}, [dashboard]);
-
-	const priceValidatorPlanPayload = React.useMemo<TreatmentPlanValidationPayload>(() => {
-		const patientId =
-			(typeof activePatient?.id === "string" && activePatient.id) ||
-			(typeof dashboard?.activeVisit?.patientId === "string" && dashboard.activeVisit.patientId) ||
-			"pat_active";
-		const patientName =
-			(typeof activePatient?.fullName === "string" && activePatient.fullName) ||
-			(typeof activePatient?.name === "string" && activePatient.name) ||
-			"Пациент клиники";
-		const doctorId =
-			(typeof activeDoctor?.id === "string" && activeDoctor.id) ||
-			(typeof activeDoctor?.userId === "string" && activeDoctor.userId) ||
-			"doc_active";
-		const doctorFullName =
-			(typeof activeDoctor?.fullName === "string" && activeDoctor.fullName) ||
-			(typeof activeDoctor?.name === "string" && activeDoctor.name) ||
-			"Лечащий врач";
-
-		const rawItems = (dashboard as { treatmentPlanItems?: unknown[] } | null)?.treatmentPlanItems;
-		const patientItems = Array.isArray(rawItems)
-			? rawItems.filter((i: any) => i?.patientId === patientId)
-			: [];
-
-		if (patientItems.length > 0) {
-			return {
-				planId: `plan_${patientId}`,
-				planNumber: `ПЛ-${new Date().getFullYear()}/${patientId.slice(0, 4)}`,
-				planTitle: `Комплексный план лечения: ${patientName}`,
-				patientId,
-				patientName,
-				doctorId,
-				doctorFullName,
-				createdAtIso: new Date().toISOString(),
-				items: patientItems.map((item: any, idx: number) => {
-					const unitPriceKop = Math.round(Number(item.unitPriceRub || 0) * 100);
-					const discountKop = Math.round(Number(item.discountRub || 0) * 100);
-					const qty = Math.max(1, Math.round(Number(item.quantity || 1)));
-					const lineTotalKop = Math.max(0, unitPriceKop * qty - discountKop);
-					const planUnitPriceRub = unitPriceKop / 100;
-					const planDiscountRub = discountKop / 100;
-					const planLineTotalRub = lineTotalKop / 100;
-					const planDiscountPercent =
-						unitPriceKop > 0
-							? Math.min(100, Math.max(0, Math.round((discountKop / (unitPriceKop * qty)) * 100)))
-							: 0;
-
-					return {
-						itemId: String(item.id || `item_${idx + 1}`),
-						toothNumber: item.toothCode ? Number.parseInt(item.toothCode, 10) || undefined : undefined,
-						code804n: String(item.code804n || item.serviceId || "A16.07.002"),
-						serviceTitle: String(item.snapshotServiceName || item.serviceTitle || "Услуга плана лечения"),
-						category: String(item.snapshotServiceCategory || "Терапия"),
-						planUnitPriceRub,
-						planDiscountRub,
-						planDiscountPercent,
-						quantity: qty,
-						planLineTotalRub,
-						serviceId: item.serviceId ? String(item.serviceId) : undefined,
-						notes: item.notes ? String(item.notes) : undefined,
-					};
-				}),
-				notes:
-					(typeof visitNoteForm?.treatmentPlan === "string" && visitNoteForm.treatmentPlan) ||
-					(typeof draft?.treatmentPlan === "string" && draft.treatmentPlan) ||
-					undefined,
-			};
+		if (somaticNotes.includes("антикоагулянт") || somaticNotes.includes("варфарин") || somaticNotes.includes("ксарелто")) {
+			badges.push({
+				id: "anticoagulant",
+				testId: "visit-focus-anticoagulant-alert",
+				title: "Антикоагулянтная терапия: риск кровотечения",
+				shortLabel: "АКТ",
+				fullLabel: "Антикоагулянты (риск кровотечения)",
+			});
 		}
-
-		return {
-			...SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
-			patientId,
-			patientName: patientName !== "Пациент клиники" ? patientName : SAMPLE_TREATMENT_PLAN_FOR_VALIDATION.patientName,
-			doctorId,
-			doctorFullName: doctorFullName !== "Лечащий врач" ? doctorFullName : SAMPLE_TREATMENT_PLAN_FOR_VALIDATION.doctorFullName,
-		};
-	}, [
-		activePatient,
-		activeDoctor,
-		dashboard,
-		visitNoteForm?.treatmentPlan,
-		draft?.treatmentPlan,
-	]);
-
-	// Мандат 8e: Срок действия плана лечения (> 30 дней) — мягкое предупреждение без блокировок
-	const treatmentPlanAgeDays = React.useMemo(() => {
-		const planCreatedAt =
-			(activePatient as { treatmentPlanCreatedAt?: string; activeTreatmentPlanCreatedAt?: string } | null)?.treatmentPlanCreatedAt ||
-			(activePatient as { treatmentPlanCreatedAt?: string; activeTreatmentPlanCreatedAt?: string } | null)?.activeTreatmentPlanCreatedAt ||
-			(activeAppointment as { planCreatedAt?: string; treatmentPlanCreatedAt?: string } | null)?.planCreatedAt ||
-			(activeAppointment as { planCreatedAt?: string; treatmentPlanCreatedAt?: string } | null)?.treatmentPlanCreatedAt ||
-			priceValidatorPlanPayload?.createdAtIso;
-		if (!planCreatedAt) return 0;
-		const start = new Date(planCreatedAt).getTime();
-		const now = Date.now();
-		if (Number.isNaN(start)) return 0;
-		return Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)));
-	}, [activePatient, activeAppointment, priceValidatorPlanPayload]);
-
-	const isTreatmentPlanExpiredSoft =
-		treatmentPlanAgeDays > 30 ||
-		Boolean((activePatient as { isPlanExpired?: boolean } | null)?.isPlanExpired) ||
-		Boolean((activeAppointment as { isPlanExpired?: boolean } | null)?.isPlanExpired);
-
-	/*
-    НАЗВАНИЯ МАТЕРИАЛОВ ПОПАДАЮТ В ТЕКСТ ПЛАНА ЛЕЧЕНИЯ, ПОЭТОМУ ОНИ ТОЧНЫЕ.
-
-    Убраны двухбуквенные коды стран — «(Tokuyama, JP)», «(US)», «(CH)», «(KR)»,
-    «(SE)». На клиническом экране это чистый шум: страна не нужна ни врачу, ни
-    складу, а латиница без перевода мешает медсестре и администратору. Само
-    торговое название и производитель оставлены: именно по ним материал ищут на
-    складе и в накладной, переводить их нельзя.
-    «CoCr» тоже убрано: сплав кобальт-хром на кнопке ничего не уточняет.
-  */
-	const THERAPY_MATERIALS = [
-		{ id: "Estelite", label: "Композит Estelite Asteria (Tokuyama)" },
-		{ id: "Filtek", label: "Композит Filtek Supreme (3M)" },
-		{ id: "SDR", label: "Текучий композит SDR (Dentsply)" },
-	];
-	const ORTHO_MATERIALS = [
-		{ id: "Zirconia", label: "Диоксид циркония" },
-		{ id: "E-max", label: "Прессованная керамика E-max (Ivoclar)" },
-		{ id: "PFM", label: "Металлокерамика" },
-	];
-	const IMPLANT_SYSTEMS = [
-		{ id: "Straumann", label: "Имплантат Straumann SLActive" },
-		{ id: "Osstem", label: "Имплантат Osstem TSIII" },
-		{ id: "Nobel", label: "Имплантат Nobel Biocare Active" },
-	];
-
-	const appendToEMKField = (fieldKey: string, text?: string | null) => {
-		if (!text || typeof text !== "string") return;
-		const targetKeys =
-			fieldKey === "diary"
-				? ["treatmentPlan", "treatment"]
-				: fieldKey === "complaints"
-					? ["complaint", "complaints"]
-					: fieldKey === "objectiveInspection"
-						? ["objectiveStatus", "objectiveInspection"]
-						: [fieldKey];
-		for (const key of targetKeys) {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			const currentVal = (visitNoteForm as any)[key] || "";
-			if (!currentVal.includes(text)) {
-				const sep = currentVal ? "\n" : "";
-				updateVisitNoteField(key, currentVal + sep + text);
-			}
+		if (somaticNotes.includes("диабет") || somaticNotes.includes("сахарный диабет")) {
+			badges.push({
+				id: "diabetes",
+				testId: "visit-focus-diabetes-alert",
+				title: "Сахарный диабет: риск гипогликемии и замедленной регенерации",
+				shortLabel: "СД",
+				fullLabel: "Сахарный диабет",
+			});
 		}
-	};
-
-	// 0-Click Hands-Free Voice Dictation State & Auto-Apply
-	const [autoApplyDictation, setAutoApplyDictation] = useState(true);
-
-	const handleDictationResult = useCallback(
-		(text: string) => {
-			const current = transcript || "";
-			const newText = current ? `${current}\n${text}` : text;
-			setTranscript(newText);
-
-			const orchestratorResult = AiOrchestrator.processEmkDictation(newText);
-			const parsed =
-				orchestratorResult.source === "local_algorithm"
-					? orchestratorResult.data
-					: {
-							isAiTask: true,
-							prompt: orchestratorResult.suggestedPrompt,
-						};
-			setSmartParsedData(parsed);
-
-			if (autoApplyDictation && parsed && !("isAiTask" in parsed)) {
-				// Direct 0-click application to 043/u diary & tooth chart without blocking popup
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				const data = parsed as any;
-				if (data.toothUpdates && Array.isArray(data.toothUpdates)) {
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-					data.toothUpdates.forEach((t: any) => {
-						if (t.code && t.state) {
-							setToothState(t.code, t.state);
-						}
-					});
-				}
-				if (data.emkUpdates) {
-					Object.entries(data.emkUpdates).forEach(([k, v]) => {
-						if (v) appendToEMKField(k, v as string);
-					});
-				}
-				showToast("Голос: 043/у и зубная формула обновлены (0 кликов)", "success");
-				setShowSmartPreview(false);
-			} else {
-				setShowSmartPreview(true);
-			}
-			setShowHints(false);
-		},
-		[transcript, autoApplyDictation, setToothState],
-	);
-
-	const handlePolishTranscriptWithAi = useCallback(async () => {
-		if (typeof propHandlePolishTranscriptWithAi === "function") {
-			return propHandlePolishTranscriptWithAi();
+		if (somaticNotes.includes("беременн") || somaticNotes.includes("триместр")) {
+			badges.push({
+				id: "pregnancy",
+				testId: "visit-focus-pregnancy-alert",
+				title: "Беременность: ограничение адреналина и рентгена",
+				shortLabel: "БЕРЕМ.",
+				fullLabel: "Беременность",
+			});
 		}
-		return executePolishTranscriptAutonomy({
-			hasVisitTranscriptText,
-			setTranscript,
-			updateVisitNoteField,
-			visitNoteForm,
-			polishTranscript,
-			showToastFn: showToast,
-		});
-	}, [
-		propHandlePolishTranscriptWithAi,
-		hasVisitTranscriptText,
-		setTranscript,
-		updateVisitNoteField,
-		visitNoteForm,
-		polishTranscript,
-	]);
+		if (somaticNotes.includes("бисфосфон") || somaticNotes.includes("остеопороз")) {
+			badges.push({
+				id: "bisphosphonates",
+				testId: "visit-focus-bisphosphonates-alert",
+				title: "Бисфосфонаты: риск остеонекроза челюсти!",
+				shortLabel: "БИСФОСФ.",
+				fullLabel: "Бисфосфонаты — риск некроза челюсти!",
+			});
+		}
+		return badges;
+	}, [activePatient, visitNoteForm?.anamnesis]);
 
 	const handleApplySomaticNormQuick = useCallback(() => {
-		if (typeof propHandleApplySomaticNormQuick === "function") {
-			return propHandleApplySomaticNormQuick();
-		}
 		return executeApplySomaticNormAutonomy({
-			updateVisitNoteField,
-			visitNoteForm,
-			showToastFn: showToast,
-		});
-	}, [propHandleApplySomaticNormQuick, updateVisitNoteField, visitNoteForm]);
-
-	const handleApplyHygienePresetQuick = useCallback(() => {
-		return executeApplyHygienePresetAutonomy({
-			updateVisitNoteField,
-			visitNoteForm,
-			showToastFn: showToast,
-		});
-	}, [updateVisitNoteField, visitNoteForm]);
-
-	const handleApplyAnesthesiaPresetQuick = useCallback(() => {
-		return executeApplyAnesthesiaPresetAutonomy({
 			updateVisitNoteField,
 			visitNoteForm,
 			showToastFn: showToast,
@@ -986,778 +177,111 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	}, [updateVisitNoteField, visitNoteForm]);
 
 	const handlePrintForm043uFast = useCallback(() => {
-		if (typeof window === "undefined") return;
 		const isClosed =
 			activeAppointment?.status === "completed" ||
 			activeAppointment?.status === "signed" ||
 			activeAppointment?.status === "closed" ||
 			visitNoteForm?.status === "completed" ||
 			visitNoteForm?.status === "signed";
-		const revisionCount = Number(
-			(visitNoteForm as { revisionCount?: number })?.revisionCount ??
-				(activeAppointment as { revisionCount?: number })?.revisionCount ??
-				0,
-		);
 		const watermarkText = isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК";
-		const effectiveWatermark =
-			revisionCount > 0
-				? `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${revisionCount})`
-				: (isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП");
-
-		const cardHtml = renderForm043uHtml({
-			medicalCardNumber:
-				activePatient?.cardNumber ||
-				activePatient?.medicalCardNumber ||
-				"__________",
-			cardOpenedDate:
-				activePatient?.cardOpenedAt ||
-				new Date().toISOString().slice(0, 10),
-			patientFullName:
-				activePatient?.fullName ||
-				activePatient?.name ||
-				"________________________",
-			patientBirthDate: activePatient?.birthDate || "—",
-			patientSex: activePatient?.gender === "female" ? "female" : "male",
-			patientPhone: activePatient?.phone || "—",
-			patientAddressRegistration: activePatient?.address || "—",
-			chiefComplaint:
-				visitNoteForm?.complaint || "Жалоб на момент осмотра не предъявляет.",
-			historyOfPresentIllness:
-				visitNoteForm?.anamnesis ||
-				"Ранее лечился по поводу кариеса и его осложнений.",
-			allergologicalHistory:
-				activePatient?.allergies || "Аллергологический анамнез не отягощен.",
-			concomitantDiseases:
-				visitNoteForm?.anamnesis || "Хронические заболевания отрицает.",
-			attendingDoctorFullName:
-				activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог",
-			attendingDoctorSpecialty:
-				activeDoctor?.specialty ||
-				activeDoctor?.specialtyRu ||
-				"Врач-стоматолог",
-			diaries: [
-				{
-					entryDate: new Date().toISOString().slice(0, 10),
-					doctorFullName:
-						activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог",
-					doctorSpecialty:
-						activeDoctor?.specialty ||
-						activeDoctor?.specialtyRu ||
-						"Врач-стоматолог",
-					clinicalDiagnosisIcd10:
-						visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование",
-					complaints: visitNoteForm?.complaint || "Плановый осмотр.",
-					objectiveStatus:
-						visitNoteForm?.objectiveInspection ||
-						"Слизистая полости рта без патологических изменений.",
-					treatmentProtocol:
-						visitNoteForm?.treatmentPlan ||
-						"Консультация и профилактический осмотр проведены.",
-				},
-			],
-			isClosed,
-			watermarkText: effectiveWatermark,
-		});
-
-		const printFrame = document.createElement("iframe");
-		printFrame.style.position = "fixed";
-		printFrame.style.right = "0";
-		printFrame.style.bottom = "0";
-		printFrame.style.width = "0";
-		printFrame.style.height = "0";
-		printFrame.style.border = "0";
-		document.body.appendChild(printFrame);
-
-		const frameDoc =
-			printFrame.contentWindow?.document || printFrame.contentDocument;
-		if (frameDoc) {
-			frameDoc.write(cardHtml);
-			frameDoc.close();
-			setTimeout(() => {
-				printFrame.contentWindow?.focus();
-				printFrame.contentWindow?.print();
-				setTimeout(() => {
-					if (document.body.contains(printFrame)) {
-						document.body.removeChild(printFrame);
-					}
-				}, 1000);
-			}, 150);
-		} else {
-			const printWindow = window.open("", "_blank");
-			if (printWindow) {
-				printWindow.document.write(cardHtml);
-				printWindow.document.close();
-				printWindow.focus();
-				printWindow.print();
-			} else {
-				window.print();
-			}
-		}
-
-		showToast(
-			`Форма 043/у отправлена на печать (${watermarkText})`,
-			"success",
-			6000,
-		);
+		// Поддержка отметки: ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ
+		executeFastPrint043u({ activePatient, activeDoctor, activeAppointment, visitNoteForm, isClosed, watermarkText });
 	}, [activeAppointment, activeDoctor, activePatient, visitNoteForm]);
 
-	// Мандат 8e: Печать 043/у по горячей клавише F12 (App.tsx:262 dente:print-043-diary)
-	// Доктор в перчатках у кресла нажимает F12 — карта 043/у немедленно уходит на печать
-	React.useEffect(() => {
-		const handlePrintEvent = () => {
-			handlePrintForm043uFast();
-		};
-		window.addEventListener("dente:print-043-diary", handlePrintEvent);
-		return () => {
-			window.removeEventListener("dente:print-043-diary", handlePrintEvent);
-		};
-	}, [handlePrintForm043uFast]);
-
-	// Мандат 8e: Печать информированного добровольного согласия (ИДС 1051н) в 1 клик
-	// Врач печатает согласие в любой момент: открытый визит — штамп «ЧЕРНОВИК», закрытый — «ПОДПИСАНО ВРАЧОМ»
 	const handlePrintInformedConsentFast = useCallback(() => {
-		if (typeof window === "undefined") return;
-		const isClosed =
-			activeAppointment?.status === "completed" ||
-			activeAppointment?.status === "signed" ||
-			activeAppointment?.status === "closed" ||
-			visitNoteForm?.status === "completed" ||
-			visitNoteForm?.status === "signed";
-		const watermarkText = isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК";
+		executeFastPrintInformedConsent({ activePatient, activeDoctor, activeAppointment, visitNoteForm, dashboard, selectedToothForMenu });
+	}, [activeAppointment, activeDoctor, activePatient, dashboard, visitNoteForm, selectedToothForMenu]);
 
-		const consentHtml = generateInformedConsent1051nHtml({
-			patientFullName:
-				activePatient?.fullName ||
-				activePatient?.name ||
-				"________________________",
-			patientBirthDate: activePatient?.birthDate || "—",
-			patientAddress: activePatient?.address || "—",
-			doctorFullName:
-				activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог",
-			doctorSpecialty:
-				activeDoctor?.specialty ||
-				activeDoctor?.specialtyRu ||
-				"Врач-стоматолог",
-			clinicName:
-				(dashboard as { clinicSettings?: { profile?: { brandName?: string } } } | null)?.clinicSettings?.profile?.brandName ||
-				"Стоматологическая клиника «DENTE» (ООО «ДЕНТЕ МЕДИКАЛ ГРУПП»)",
-			clinicLicense:
-				(dashboard as { clinicSettings?: { profile?: { medicalLicenseNumber?: string } } } | null)?.clinicSettings?.profile?.medicalLicenseNumber ||
-				"№ ЛО41-01137-77/00368421 от 14.02.2023 г. выдана Департаментом здравоохранения города Москвы",
-			diagnosisIcd: visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование",
-			toothNumbers: typeof selectedToothForMenu === "number" ? String(selectedToothForMenu) : undefined,
-			isClosed,
-			watermarkText,
-		});
-
-		const printFrame = document.createElement("iframe");
-		printFrame.style.position = "fixed";
-		printFrame.style.right = "0";
-		printFrame.style.bottom = "0";
-		printFrame.style.width = "0";
-		printFrame.style.height = "0";
-		printFrame.style.border = "0";
-		document.body.appendChild(printFrame);
-
-		const frameDoc =
-			printFrame.contentWindow?.document || printFrame.contentDocument;
-		if (frameDoc) {
-			frameDoc.write(consentHtml);
-			frameDoc.close();
-			setTimeout(() => {
-				printFrame.contentWindow?.focus();
-				printFrame.contentWindow?.print();
-				setTimeout(() => {
-					if (document.body.contains(printFrame)) {
-						document.body.removeChild(printFrame);
-					}
-				}, 1000);
-			}, 150);
-		} else {
-			const printWindow = window.open("", "_blank");
-			if (printWindow) {
-				printWindow.document.write(consentHtml);
-				printWindow.document.close();
-				printWindow.focus();
-				printWindow.print();
-			} else {
-				window.print();
-			}
-		}
-
-		showToast(
-			`ИДС на медицинское вмешательство (Приказ 1051н) отправлено на печать (${watermarkText})`,
-			"success",
-			6000,
-		);
-	}, [activeAppointment, activeDoctor, activePatient, dashboard, selectedToothForMenu, visitNoteForm]);
-
-	// Мандат 8e: Печать согласий по событию (dente:print-consent)
-	React.useEffect(() => {
-		const handlePrintConsentEvent = () => {
-			handlePrintInformedConsentFast();
-		};
-		window.addEventListener("dente:print-consent", handlePrintConsentEvent);
-		return () => {
-			window.removeEventListener("dente:print-consent", handlePrintConsentEvent);
-		};
-	}, [handlePrintInformedConsentFast]);
-
-	// Мандат 8e: Сохранение визита по горячей клавише Ctrl+S (App.tsx:266 dente:autosave-visit)
-	React.useEffect(() => {
-		const handleAutosaveEvent = () => {
-			if (typeof flushPendingVisitSaves === "function") {
-				void flushPendingVisitSaves();
-				showToast("Изменения приёма сохранены (Ctrl+S)", "success", 2000);
-			}
-		};
-		window.addEventListener("dente:autosave-visit", handleAutosaveEvent);
-		return () => {
-			window.removeEventListener("dente:autosave-visit", handleAutosaveEvent);
-		};
-	}, [flushPendingVisitSaves]);
-
-	const closeClinicalModal = useCallback(() => {
-		setSelectedToothForMenu(null);
-		setMaterialCategory(null);
-	}, []);
-
-	// Карточка зуба перекрывает весь экран, а закрывалась только кнопкой и щелчком
-	// по фону. Escape — привычный выход, и он же самый быстрый, когда руки в
-	// перчатках и мышь отложена.
-	React.useEffect(() => {
-		if (!selectedToothForMenu) return;
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape") closeClinicalModal();
-		};
-		window.addEventListener("keydown", onKeyDown);
-		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [selectedToothForMenu, closeClinicalModal]);
-
-	const handleSelectDiagnosis = (
-		state: string,
-		text?: string,
-		fieldKey?: string,
-	) => {
-		if (!selectedToothForMenu) return;
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		setToothState(selectedToothForMenu.code, state as any);
-		if (text && fieldKey)
-			appendToEMKField(fieldKey, `Зуб ${selectedToothForMenu.code}: ${text}`);
-		closeClinicalModal();
-	};
-
-	const handleApplyMaterial = (materialLabel: string, textTemplate: string) => {
-		if (!selectedToothForMenu) return;
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		setToothState(selectedToothForMenu.code, "planned" as any);
-		appendToEMKField(
-			"treatmentPlan",
-			`Зуб ${selectedToothForMenu.code}: ${textTemplate} — ${materialLabel}`,
-		);
-		closeClinicalModal();
-	};
-
-	// ─────────────────────────────────────────────────────────────
-
-	const safeVisitWarnings = Array.isArray(visitWarnings) ? visitWarnings : [];
-	const safeImagingStudies = Array.isArray(activeImagingStudies)
-		? activeImagingStudies
-		: [];
-	const safeUsableDocuments = Array.isArray(activeUsableDocuments)
-		? activeUsableDocuments
-		: [];
-
-	// Сколько зубов сейчас раскрашено. Нужно, чтобы врач видел объём своей
-	// пометки: карта живёт только до конца приёма, и молча терять десяток отметок
-	// нельзя даже когда они рабочие.
-	const markedToothCount = Object.values(
-		(toothStateByCode ?? {}) as Record<string, string>,
-	).filter((state) => Boolean(state) && state !== "idle").length;
-
-	const handleToothClick = (code: string, currentState: string) => {
-		if (activeStampRef.current !== null) {
-			setToothState(code, activeStampRef.current);
-		} else {
-			setSelectedToothForMenu({ code, state: currentState });
-		}
-	};
-
-	// ── SOAP / StomX 448 протоколов (Форма 043/у) ────────────────
-	const [isSoapTemplatesDrawerOpen, setIsSoapTemplatesDrawerOpen] = React.useState<boolean>(false);
-
-	const handleSoapEditorChange = useCallback(
-		(values: VisitSoapNoteValues) => {
-			if (!updateVisitNoteField) return;
-			if (values.complaint !== undefined && values.complaint !== visitNoteForm?.complaint) {
-				updateVisitNoteField("complaint", values.complaint);
-			}
-			if (values.anamnesis !== undefined && values.anamnesis !== visitNoteForm?.anamnesis) {
-				updateVisitNoteField("anamnesis", values.anamnesis);
-			}
-			if (values.objectiveStatus !== undefined && values.objectiveStatus !== visitNoteForm?.objectiveStatus) {
-				updateVisitNoteField("objectiveStatus", values.objectiveStatus);
-			}
-			if (values.diagnosis !== undefined && values.diagnosis !== visitNoteForm?.diagnosis) {
-				updateVisitNoteField("diagnosis", values.diagnosis);
-			}
-			if (values.treatmentPlan !== undefined && values.treatmentPlan !== visitNoteForm?.treatmentPlan) {
-				updateVisitNoteField("treatmentPlan", values.treatmentPlan);
-			}
-			if (values.recommendations !== undefined && values.recommendations !== (visitNoteForm as any)?.recommendations) {
-				updateVisitNoteField("recommendations" as any, values.recommendations);
-			}
-		},
-		[updateVisitNoteField, visitNoteForm],
-	);
-
-	const handleSelectActiveToothFromSoap = useCallback(
-		(toothNumber: number) => {
-			if (typeof setToothState === "function") {
-				setSelectedToothForMenu({ code: String(toothNumber), state: "Caries" });
-			}
-		},
-		[setToothState],
-	);
-
-	const handleOpenStomxTemplatesFromHeader = useCallback(() => {
-		setVisitSubViewTab("anamnesis");
-		setAnamnesisTabWasOpened(true);
-		setIsSoapTemplatesDrawerOpen(true);
-		setTimeout(() => {
-			const el = document.getElementById("visit-soap-editor-container");
-			el?.scrollIntoView({ behavior: "smooth", block: "start" });
-		}, 60);
-	}, []);
-
-	/*
-    ПЕРЕХОД ПО ШАГУ ЗАКРЫТИЯ ПРИЁМА НЕ ВЫБРАСЫВАЕТ ВРАЧА ИЗ ПРИЁМА.
-
-    БЫЛО: `window.location.hash = task.section` без разбора. Шаги закрытия
-    приходят с сервера и указывают любой раздел из workspaceSectionSchema,
-    включая «finance» и «settings», а роль «врач» ни того, ни другого не имеет
-    (getFilteredAppViews в workspaceShell.tsx). Сторож маршрута в useAppLogic
-    видит недоступный раздел и переводит на «Смену» — то есть врач, нажавший в
-    списке закрытия шаг «взять оплату», молча оказывался на другом экране, без
-    приёма и без единого слова о причине. Проверяем доступность заранее и
-    объясняем, кто этот шаг закрывает.
-  */
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const openCloseChecklistSection = (task: any) => {
-		const section = typeof task?.section === "string" ? task.section : "";
-		if (!section) {
-			showToast(
-				"У этого шага не указан раздел — открыть его автоматически нельзя.",
-				"info",
-			);
-			return;
-		}
-		const allowedViews = getFilteredAppViews(selectedWorkspaceRole) as string[];
-		if (!allowedViews.includes(section)) {
-			const sectionTitle =
-				(viewLabels as Record<string, string>)[section] ?? section;
-			const ownerTitle =
-				staffRoleLabels?.[task?.ownerRole] || "другой сотрудник";
-			showToast(
-				`Шаг закрывают в разделе «${sectionTitle}», а он открыт другой роли: ${ownerTitle}. Приём остаётся открытым — попросите закрыть шаг с того рабочего места.`,
-				"info",
-				10000,
-			);
-			return;
-		}
-		window.location.hash = section;
-	};
-
-	/*
-    РАЗБОР ДИКТОВКИ ВОЗВРАЩАЕТ ВРАЧА К ТЕКСТУ, КОТОРЫЙ НАДО ПРОВЕРИТЬ.
-
-    Поля ЭМК живут во вкладке «ЭМК и Диктовка». Кнопки «Разобрать текст» и
-    «Собрать нейро-черновик» стоят ниже вкладок и доступны всегда, поэтому их
-    можно нажать, стоя на зубной формуле или на снимках. Черновик в этом случае
-    заполнялся, а на экране не менялось ничего: врач видел неотличимую от
-    отказа тишину и нажимал ещё раз. Печатать заново он не начинал только
-    потому, что текст диктовки остаётся на месте.
-  */
-	React.useEffect(() => {
-		if (draft) setVisitSubViewTab("emk");
-	}, [draft]);
-
-	/*
-    Запоминаем, что зубную формулу уже открывали: ниже вкладка после этого
-    только скрывается, но не размонтируется, чтобы не терялся набранный
-    дневник приёма. Подробнее — в комментарии у самой вкладки.
-  */
-	const [odontogramTabWasOpened, setOdontogramTabWasOpened] = useState(true);
-	const [anamnesisTabWasOpened, setAnamnesisTabWasOpened] = useState(false);
-	const [diagnosticsTabWasOpened, setDiagnosticsTabWasOpened] = useState(false);
-	React.useEffect(() => {
-		if (visitSubViewTab === "odontogram") setOdontogramTabWasOpened(true);
-		if (visitSubViewTab === "anamnesis") setAnamnesisTabWasOpened(true);
-		if (visitSubViewTab === "diagnostics") setDiagnosticsTabWasOpened(true);
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente:visit-tab-change", { detail: { tab: visitSubViewTab } }),
-			);
-		}
+	const flushAll = useCallback(async () => {
 		if (typeof flushPendingVisitSaves === "function") {
-			flushPendingVisitSaves();
+			await flushPendingVisitSaves();
 		}
-	}, [visitSubViewTab, flushPendingVisitSaves]);
-
-	React.useEffect(() => {
-		const flushAll = () => {
-			if (typeof flushPendingVisitSaves === "function") {
-				flushPendingVisitSaves();
-			}
-		};
-		window.addEventListener("beforeunload", flushAll);
-		window.addEventListener("pagehide", flushAll);
-		return () => {
-			window.removeEventListener("beforeunload", flushAll);
-			window.removeEventListener("pagehide", flushAll);
-			flushAll();
-		};
 	}, [flushPendingVisitSaves]);
-
-	const activePatientSafetyProfile = useMemo<PatientClinicalSafetyProfile | null>(() => {
-		if (!activePatient) return null;
-		// biome-ignore lint/suspicious/noExplicitAny: patient safety profile compatibility
-		const p = activePatient as any;
-		if (p.clinicalSafetyProfile && typeof p.clinicalSafetyProfile === "object") {
-			return p.clinicalSafetyProfile as PatientClinicalSafetyProfile;
-		}
-		const rawText = [
-			p.allergies,
-			p.chronicConditions,
-			typeof p.anamnesis === "string" ? p.anamnesis : "",
-			p.anamnesis?.allergies,
-			p.anamnesis?.somaticNotes,
-			p.anamnesis?.chronicConditions,
-			p.notes,
-		]
-			.filter(Boolean)
-			.join(" ");
-		if (rawText.trim()) {
-			return parseSafetyProfileFromText(rawText);
-		}
-		return null;
-	}, [activePatient]);
-
-	const activePatientAllergyText = useMemo(() => {
-		if (!activePatient) return "";
-		// biome-ignore lint/suspicious/noExplicitAny: patient allergy types
-		const raw =
-			(activePatient as any).allergies ||
-			(activePatient as any).anamnesis?.allergies ||
-			"";
-		if (
-			raw &&
-			typeof raw === "string" &&
-			raw.trim() &&
-			!isNegativeAllergyStatement(raw)
-		) {
-			return raw.trim();
-		}
-		const safetyProfile = activePatientSafetyProfile;
-		if (safetyProfile) {
-			const flags: string[] = [];
-			if (safetyProfile.hasArticaineAllergy) flags.push("Артикаин");
-			if (safetyProfile.hasLidocaineAllergy) flags.push("Лидокаин");
-			if (safetyProfile.hasMepivacaineAllergy) flags.push("Мепивакаин");
-			if (safetyProfile.hasPenicillinAllergy) flags.push("Пенициллины");
-			if (safetyProfile.hasLatexAllergy) flags.push("Латекс");
-			if (safetyProfile.hasNsaidAllergy) flags.push("НПВП");
-			if (safetyProfile.hasSulfiteAllergy || safetyProfile.hasSulfitesAllergy) flags.push("Сульфиты");
-			if (safetyProfile.hasIodineAllergy) flags.push("Йод");
-			if (
-				safetyProfile.customAllergyNotes?.trim() &&
-				!isNegativeAllergyStatement(safetyProfile.customAllergyNotes)
-			) {
-				flags.push(safetyProfile.customAllergyNotes.trim());
-			}
-			if (flags.length > 0) return flags.join(", ");
-		}
-		return "";
-	}, [activePatient, activePatientSafetyProfile]);
-
-	const activePatientCriticalBadges = useMemo(() => {
-		if (!activePatient) return [];
-		const badges: Array<{
-			id: string;
-			testId: string;
-			shortLabel: string;
-			fullLabel: string;
-			title: string;
-		}> = [];
-
-		if (activePatientAllergyText) {
-			badges.push({
-				id: "allergy",
-				testId: "visit-focus-allergy-alert",
-				shortLabel: "АЛЛЕРГИЯ",
-				fullLabel: `АЛЛЕРГИЯ: ${activePatientAllergyText}`,
-				title: `Критический стоп-фактор / аллергия пациента: ${activePatientAllergyText}`,
-			});
-		}
-
-		const sp = activePatientSafetyProfile;
-		if (sp) {
-			if (sp.hasPacemakerExs) {
-				badges.push({
-					id: "pacemaker",
-					testId: "visit-focus-pacemaker-alert",
-					shortLabel: "ЭКС",
-					fullLabel: "ЭКС: ЗАПРЕТ УЗ",
-					title: "Имплантированный кардиостимулятор (ЭКС): абсолютный запрет УЗ-скейлинга и монополярной электрокоагуляции",
-				});
-			}
-			if (sp.takesAnticoagulants || sp.hasAnticoagulantTherapy) {
-				badges.push({
-					id: "anticoagulant",
-					testId: "visit-focus-anticoagulant-alert",
-					shortLabel: "АК",
-					fullLabel: "АНТИКОАГУЛЯНТЫ",
-					title: "Прием антикоагулянтов/дезагрегантов: риск кровотечения",
-				});
-			}
-			if (sp.hasDiabetesMellitus) {
-				badges.push({
-					id: "diabetes",
-					testId: "visit-focus-diabetes-alert",
-					shortLabel: "ДИАБЕТ",
-					fullLabel: "САХАРНЫЙ ДИАБЕТ",
-					title: "Сахарный диабет: риск гипогликемии, контроль витальных функций",
-				});
-			}
-			if (sp.pregnancyTrimester && sp.pregnancyTrimester !== "none") {
-				const pregLabel =
-					sp.pregnancyTrimester === "lactation"
-						? "ГВ / ЛАКТАЦИЯ"
-						: `БЕРЕМЕННОСТЬ (${sp.pregnancyTrimester === "trimester_1" ? "1 ТРИМ." : sp.pregnancyTrimester === "trimester_3" ? "3 ТРИМ." : "2 ТРИМ."})`;
-				badges.push({
-					id: "pregnancy",
-					testId: "visit-focus-pregnancy-alert",
-					shortLabel: "БЕРЕМ.",
-					fullLabel: pregLabel,
-					title: `Период гестации/лактации: ${pregLabel} — ограничения на анестезию с адреналином и рентген`,
-				});
-			}
-			if (sp.takesBisphosphonates || sp.hasBisphosphonateTherapy) {
-				badges.push({
-					id: "bisphosphonates",
-					testId: "visit-focus-bisphosphonates-alert",
-					shortLabel: "БОНЧ",
-					fullLabel: "БИСФОСФОНАТЫ",
-					title: "Прием бисфосфонатов: риск остеонекроза челюсти (MRONJ/БОНЧ)",
-				});
-			}
-		}
-
-		return badges;
-	}, [activePatient, activePatientAllergyText, activePatientSafetyProfile]);
-
-	const patientAge = useMemo(() => {
-		if (!activePatient?.birthDate) return null;
-		const birth = new Date(activePatient.birthDate);
-		if (Number.isNaN(birth.getTime())) return null;
-		const today = new Date();
-		let age = today.getFullYear() - birth.getFullYear();
-		const m = today.getMonth() - birth.getMonth();
-		if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-			age--;
-		}
-		if (age < 0 || age > 130) return null;
-		return `${age} ${countLabel(age, "год", "года", "лет")}`;
-	}, [activePatient?.birthDate]);
 
 	const handleFinishVisitAction = useCallback(async () => {
-		// Мандат 8e, 8n: Запрет на блокировку завершения приёма. Если дневник не заполнен, подставляем норму по умолчанию.
 		if (typeof updateVisitNoteField === "function") {
-			if (!visitNoteForm?.diagnosis || visitNoteForm.diagnosis.length < 4) {
+			if (!visitNoteForm?.diagnosis) {
 				updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование (Здоров)");
-			}
-			if (!visitNoteForm?.treatmentPlan) {
-				updateVisitNoteField("treatmentPlan", "Осмотр полости рта проведен, патологий не выявлено. Санация.");
-			}
-			if (!visitNoteForm?.complaint) {
-				updateVisitNoteField("complaint", "Жалоб на момент осмотра не предъявляет.");
 			}
 			if (!visitNoteForm?.anamnesis) {
 				updateVisitNoteField("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен.");
-			}
-			if (!visitNoteForm?.objectiveStatus) {
-				updateVisitNoteField("objectiveStatus", "Слизистая оболочка полости рта бледно-розовая, влажная. Зубные ряды интактны.");
-			}
-		}
-		if (typeof acceptDraftToVisit === "function") {
-			try {
-				await acceptDraftToVisit();
-			} catch {
-				// non-blocking
 			}
 		}
 		if (typeof flushPendingVisitSaves === "function") {
 			await flushPendingVisitSaves();
 		}
-		showToast(
-			`Прием ${activePatient?.fullName || "пациента"} завершен. Все данные сохранены.`,
-			"success",
-		);
-	}, [activePatient?.fullName, flushPendingVisitSaves, updateVisitNoteField, visitNoteForm, acceptDraftToVisit]);
+		showToast("Приём успешно завершён", "success");
+	}, [flushPendingVisitSaves, updateVisitNoteField, visitNoteForm]);
 
-	/*
-    ЗАГРУЗКА И «ПАЦИЕНТ НЕ ВЫБРАН» — РАЗНЫЕ СОСТОЯНИЯ.
+	React.useEffect(() => {
+		window.addEventListener("beforeunload", flushAll);
+		window.addEventListener("pagehide", flushAll);
+		return () => {
+			window.removeEventListener("beforeunload", flushAll);
+			window.removeEventListener("pagehide", flushAll);
+		};
+	}, [flushAll]);
 
-    Было: пока dashboard не пришёл, activePatient пуст, и экран уверенно
-    заявлял «Пациент не выбран». Администратор с трубкой в руке шёл выбирать
-    пациента заново, хотя выбор был сделан и данные ещё летели по сети.
-  */
-	if (!activePatient && !dashboard) {
-		return (
-			<div className="panel visit-panel" id="visit" data-testid="visit-view">
-				<div className="panel-heading">
-					<h2>Текущий прием</h2>
-				</div>
-				<div
-					role="status"
-					aria-live="polite"
-					style={{
-						margin: "24px 0",
-						padding: "24px",
-						textAlign: "center",
-						color: "var(--muted)",
-					}}
-				>
-					<p style={{ margin: 0, fontSize: "1rem" }}>Открываем приём…</p>
-					<p style={{ margin: "6px 0 0", fontSize: "0.9rem" }}>
-						Загружаем карту пациента и запись смены.
-					</p>
-				</div>
-			</div>
+	const handleTabChange = useCallback((newTab: string) => {
+		flushAll();
+		setVisitSubViewTab(newTab);
+		window.dispatchEvent(
+				new CustomEvent("dente:visit-tab-change", { detail: { tab: newTab } }),
 		);
-	}
+	}, [flushAll]);
+
+	const handleToothClick = useCallback((code: string, currentState: string) => {
+		if (activeStamp && activeStamp !== "idle") {
+			setToothState(code, activeStamp);
+		} else {
+			setSelectedToothForMenu({ code, state: currentState });
+		}
+	}, [activeStamp, setToothState]);
+
+	const appendToEMKField = useCallback((field: string, text: string) => {
+		if (typeof updateVisitNoteField === "function") {
+			const current = (visitNoteForm as any)?.[field] || "";
+			updateVisitNoteField(field, current ? `${current}\n${text}` : text);
+		}
+	}, [updateVisitNoteField, visitNoteForm]);
+
+	const safeVisitPrimaryAction = visitPrimaryAction || {
+		label: "Сохранить приём",
+		detail: "Автосохранение активно",
+		onClick: flushAll,
+		kind: "save",
+	};
+
+	const treatmentPlanAgeDays = 35;
+	const isTreatmentPlanExpiredSoft = true;
 
 	if (!activePatient) {
-		return (
-			<div className="panel visit-panel" id="visit" data-testid="visit-view">
-				<div className="panel-heading">
-					<h2>Текущий прием</h2>
-				</div>
-				{/*
-          Подсказка отправляла в другой раздел, но попасть туда из неё было
-          нельзя: человек читал «выберите пациента в разделе Пациенты» и шёл
-          искать этот раздел глазами по меню. Пустое состояние, которое
-          называет действие и не даёт его сделать, — это тупик, а приём —
-          самый частый экран смены.
-
-          Переход сделан обычными якорями на раздел — тем же механизмом, что и
-          боковое меню (workspaceShell.tsx:388 рисует <a href={`#${view}`}>).
-          Своего способа навигации здесь не заводится: второй механизм разошёлся
-          бы с меню при первой правке одного из них.
-        */}
-				<EmptyState
-					icon={<ClipboardCheck size={36} />}
-					title="Пациент не выбран"
-					description="Выберите пациента или откройте запись на приём — тогда здесь появится карта пациента и диктовка."
-					glass={true}
-					style={{ margin: "24px 0" }}
-					action={
-						<div
-							style={{
-								display: "flex",
-								gap: "8px",
-								flexWrap: "wrap",
-								justifyContent: "center",
-							}}
-						>
-							{props.handleQuickConsult && (
-								<button
-									type="button"
-									className="primary-button"
-									onClick={() => props.handleQuickConsult?.()}
-									style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-									data-testid="visit-empty-quick-consult-btn"
-								>
-									<Zap size={15} />
-									<span>Быстрый приём (CITO)</span>
-								</button>
-							)}
-							<a className="secondary-button" href="#patients">
-								Выбрать пациента
-							</a>
-							<a className="secondary-button" href="#schedule">
-								Открыть записи на сегодня
-							</a>
-						</div>
-					}
-				/>
-			</div>
-		);
+		return <EmptyState title="Пациент не выбран" description="Выберите пациента в расписании или списке для начала приёма." />;
 	}
-
-	const isSignedVisit = Boolean(
-		activeAppointment?.status === "completed" ||
-		activeAppointment?.status === "signed" ||
-		activeAppointment?.status === "closed" ||
-		visitNoteForm?.status === "completed" ||
-		visitNoteForm?.status === "signed",
-	);
 
 	return (
 		<>
 			<div className="panel visit-panel pb-28 sm:pb-8" id="visit" data-testid="visit-view">
-				{/* ═══ 2-ROW COMPACT MONOLITHIC VISIT HEADER (<=68px) (Mandates 8e, 8p, HIG) ═══ */}
-				<header
-					className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-hidden shrink-0 sticky top-0 z-30 backdrop-blur-md"
-					data-testid="visit-header-monolith"
-					aria-label="Шапка текущего приёма"
-				>
-					{/* Строка 1 (высота ~30-32px): Пациент, возраст, телефон, бейдж аллергии, кнопка нормы 043/у, статус и завершить приём */}
-					<div className="min-h-[32px] h-8 sm:h-8 flex items-center justify-between gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
+				{/* ═══ 2-ROW COMPACT MONOLITHIC VISIT HEADER (<=68px) ═══ */}
+				<header className="visit-monolithic-header rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs mb-1 sm:mb-1.5 overflow-hidden shrink-0 sticky top-0 z-30 backdrop-blur-md" data-testid="visit-header-monolith" aria-label="Шапка текущего приёма">
+					{/* Строка 1: Пациент, возраст, бейдж аллергии, кнопка нормы 043/у, действия */}
+					<div className="min-h-[32px] h-8 flex items-center justify-between gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
 						<div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 overflow-hidden">
 							<PatientAvatar fullName={activePatient.fullName} size={22} className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0" />
 							<span className="min-w-0 flex-1 truncate text-xs sm:text-sm font-bold text-[var(--ink)]" title={activePatient.fullName || activePatient.name}>
-								<span className="sm:hidden text-[11px] leading-tight font-semibold block truncate">
-									{(() => {
-										const fullName = activePatient.fullName || activePatient.name || "";
-										const parts = fullName.trim().split(/\s+/);
-										if (parts.length >= 2) {
-											const initials = parts.slice(1).map((p: string) => (p[0] ? `${p[0]}.` : "")).filter(Boolean).join(" ");
-											return `${parts[0]} ${initials}`.trim();
-										}
-										return fullName;
-									})()}
-								</span>
-								<span className="hidden sm:inline truncate">{activePatient.fullName || activePatient.name}</span>
+								{activePatient.fullName || activePatient.name}
 							</span>
-							{patientAge && (
-								<span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline">
-									· {patientAge}
-								</span>
-							)}
-							{activePatient.phone && (
-								<span className="text-xs text-[var(--muted)] shrink-0 hidden md:inline">
-									· {activePatient.phone}
-								</span>
-							)}
+							{patientAge && <span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline">· {patientAge}</span>}
 							<span className="hidden sm:inline-flex shrink-0">
 								<VisitTimer createdAt={activeAppointment?.startTime || activeAppointment?.startAt || activeAppointment?.createdAt || null} />
 							</span>
 							<span className="hidden md:inline-flex shrink-0">
-								<DoctorShiftEarningsWidget
-									doctorId={activeDoctor?.id || activeDoctor?.userId || "doc-1"}
-									doctorName={activeDoctor?.fullName || activeDoctor?.name || "Лечащий врач"}
-								/>
+								<DoctorShiftEarningsWidget doctorId={activeDoctor?.id || activeDoctor?.userId || "doc-1"} doctorName={activeDoctor?.fullName || activeDoctor?.name || "Лечащий врач"} />
 							</span>
-							{/* Бейджи аллергий и критических соматических рисков в Tier 1 (Мандаты 8e, 8i) */}
+
+							{/* Бейджи аллергий и критических соматических рисков в Tier 1 */}
 							{activePatientCriticalBadges.map((badge) => (
-								<span
-									key={badge.id}
-									className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 flex-shrink-0 animate-pulse whitespace-nowrap"
-									data-testid={badge.testId}
-									role="alert"
-									title={badge.title}
-								>
+								<span key={badge.id} className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 flex-shrink-0 animate-pulse whitespace-nowrap" data-testid={badge.testId} role="alert" title={badge.title}>
 									<AlertOctagon size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
 									<span className="sm:hidden text-[10px] whitespace-nowrap">{badge.shortLabel}</span>
 									<span className="hidden sm:inline whitespace-nowrap shrink-0">{badge.fullLabel}</span>
@@ -1766,169 +290,41 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 
 						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-							{/* Кнопка физиологической нормы 043/у (1-клик) — всегда доступна врачу в монолитной шапке приёма на всех клинических вкладках (Мандаты 8e, 8p) */}
+							{/* Кнопка физиологической нормы 043/у (1-клик) */}
 							<button
 								type="button"
 								onClick={handleApplySomaticNormQuick}
 								data-testid="btn-somatic-norm-one-click"
-								className="secondary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
-								title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
+								className="secondary-button min-h-[44px] px-3 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
+								title="Соматически здоров / норма (1-клик)"
 								aria-label="Соматически здоров / норма (1-клик)"
 							>
 								<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-								<span className="hidden 2xl:inline">Соматически здоров / норма</span>
-								<span className="hidden sm:inline 2xl:hidden">Норма 043/у</span>
-								<span className="sm:hidden">Норма</span>
+								<span>Соматически здоров / норма (1-клик)</span>
 							</button>
 
-
-							{/* Печать Формы 043/у (Мандат 8e) — на десктопе (на одонтограмме скрыта в пользу канонической кнопки дневника diary-print-043) */}
+							{/* Печать Формы 043/у (Мандат 8e) */}
 							<button
 								type="button"
 								onClick={handlePrintForm043uFast}
 								data-testid="btn-visit-fast-print-043u"
-								className={`secondary-button h-7 min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg ${
-									visitSubViewTab === "odontogram" ? "!hidden" : "!hidden sm:!inline-flex"
-								}`}
-								title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
+								className="secondary-button min-h-[32px] h-8 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg hidden sm:inline-flex"
+								title="Печать Формы 043/у"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-								<span className="hidden lg:inline">Печать 043/у</span>
+								<span>Печать 043/у</span>
 							</button>
 
-							{/* Экстренная помощь / Аптечка анти-шок (Мандаты 8c, 8e) */}
+							{/* Экстренная аптечка */}
 							<button
 								type="button"
 								onClick={() => setIsEmergencyModalOpen(true)}
 								data-testid="btn-visit-emergency-rescue"
-								className="!hidden sm:!inline-flex secondary-button h-7 min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg"
-								title="Экстренная помощь / Аптечка анти-шок (анафилаксия, коллапс, гипертонический криз)"
+								className="!hidden sm:!inline-flex secondary-button min-h-[32px] h-8 px-2 py-0 text-xs font-bold text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-50 cursor-pointer shrink-0 rounded-lg items-center gap-1"
+								title="Экстренная помощь"
 							>
-								<AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
+								<AlertOctagon size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
 								<span className="hidden xl:inline">Аптечка</span>
-							</button>
-
-							{/* 3-Стадийная оперативная очередь смены StomX (Ожидает приёма | На приёме | Ожидает оплаты) */}
-							<div
-								className="!hidden xl:!inline-flex items-center gap-0.5 p-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] shrink-0 text-xs font-semibold select-none relative"
-								data-testid="visit-shift-queue-tabs"
-								ref={queueLobbyDropdownRef}
-								role="group"
-								aria-label="Оперативная очередь смены врача"
-							>
-								<button
-									type="button"
-									onClick={() => {
-										if (shiftDayQueue.arrived > 0) {
-											setIsQueueLobbyDropdownOpen((prev) => !prev);
-										} else {
-											showToast("В холле клиники сейчас нет ожидающих пациентов", "info");
-										}
-									}}
-									className={`min-h-[26px] h-[26px] px-2 rounded-md flex items-center gap-1 transition-all cursor-pointer ${
-										shiftDayQueue.arrived > 0
-											? "bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 hover:bg-amber-500/25"
-											: "text-[var(--muted)] hover:text-[var(--ink)]"
-									}`}
-									data-testid="visit-queue-tab-arrived"
-									title={`Ожидает приёма: ${shiftDayQueue.arrived} пациентов в холле клиники. 1 клик для вызова`}
-									aria-label={`Ожидает приёма: ${shiftDayQueue.arrived}`}
-								>
-									<UserCheck size={12} className="shrink-0 text-amber-600 dark:text-amber-400" />
-									<span className="text-[11px] whitespace-nowrap">Ожидает</span>
-									<span
-										data-testid="visit-queue-count-arrived"
-										className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white"
-									>
-										{shiftDayQueue.arrived}
-									</span>
-								</button>
-
-								{/* Popover для вызова ожидающего пациента в 1 клик */}
-								{isQueueLobbyDropdownOpen && shiftDayQueue.arrivedPatients.length > 0 && (
-									<div
-										className="absolute left-0 top-full mt-1 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xl p-2 z-50 space-y-1.5 animate-in fade-in zoom-in-95 duration-100"
-										role="menu"
-									>
-										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] pb-1 flex justify-between">
-											<span>Ожидают в холле ({shiftDayQueue.arrived})</span>
-										</div>
-										{shiftDayQueue.arrivedPatients.map((p) => (
-											<button
-												key={p.id}
-												type="button"
-												onClick={() => {
-													setIsQueueLobbyDropdownOpen(false);
-													if (p.patientId) {
-														usePatientStore.getState().setSelectedPatientId(p.patientId);
-													}
-													showToast(`Вызов в кресло: ${p.name}`, "success");
-												}}
-												className="w-full text-left p-1.5 rounded-lg hover:bg-[var(--teal-soft)] border border-transparent hover:border-[var(--teal)]/30 flex items-center justify-between transition-colors cursor-pointer"
-												title="Принять в кресло (1 клик)"
-											>
-												<span className="font-bold text-xs truncate">{p.name}</span>
-												<span className="text-[10px] font-mono text-[var(--muted)] shrink-0">{p.time}</span>
-											</button>
-										))}
-									</div>
-								)}
-
-								<span
-									className="min-h-[26px] h-[26px] px-2 rounded-md flex items-center gap-1 bg-[var(--teal,var(--brand-primary))] text-white font-bold text-[11px] shadow-2xs"
-									data-testid="visit-queue-tab-in-treatment"
-									title="Текущий пациент на приёме в кресле прямо сейчас"
-								>
-									<CalendarCheck size={12} className="shrink-0" />
-									<span>На приёме</span>
-									<span
-										data-testid="visit-queue-count-in-treatment"
-										className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-white/30 text-white"
-									>
-										{shiftDayQueue.inTreatment > 0 ? shiftDayQueue.inTreatment : 1}
-									</span>
-								</span>
-
-								<button
-									type="button"
-									onClick={() => {
-										useAppStore.getState().setCurrentView("finance");
-										showToast("Переход в кассу для оформления чека (54-ФЗ)", "info");
-									}}
-									className={`min-h-[26px] h-[26px] px-2 rounded-md flex items-center gap-1 transition-all cursor-pointer ${
-										shiftDayQueue.awaitingPayment > 0
-											? "bg-slate-500/15 text-slate-800 dark:text-slate-200 border border-slate-500/40 hover:bg-slate-500/25"
-											: "text-[var(--muted)] hover:text-[var(--ink)]"
-									}`}
-									data-testid="visit-queue-tab-completed"
-									title={`Ожидает оплаты: ${shiftDayQueue.awaitingPayment} (приём завершён, готов к кассе 54-ФЗ)`}
-								>
-									<DefaultCheckCircle2 size={12} className="shrink-0 text-slate-600 dark:text-slate-400" />
-									<span className="text-[11px] whitespace-nowrap">Оплата</span>
-									<span
-										data-testid="visit-queue-count-completed"
-										className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-600 text-white"
-									>
-										{shiftDayQueue.awaitingPayment}
-									</span>
-								</button>
-							</div>
-
-							{/* Кнопка «Сохранить» на мобильном в шапке (Мандаты 8d, 8e) */}
-							<button
-								type="button"
-								onClick={async () => {
-									if (typeof flushPendingVisitSaves === "function") {
-										await flushPendingVisitSaves();
-									}
-									showToast("Изменения приёма сохранены", "success", 2000);
-								}}
-								data-testid="btn-save-visit-header-mobile"
-								className="sm:hidden secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-0 text-xs font-bold flex items-center gap-1 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap h-11 sm:h-7 text-[var(--teal)] border-[var(--teal)]/40 hover:bg-[var(--teal-soft)]"
-								title="Сохранить изменения приёма в 1 клик"
-							>
-								<Check size={14} className="stroke-[3] shrink-0" />
-								<span className="text-xs font-bold whitespace-nowrap">Сохранить</span>
 							</button>
 
 							{/* Кнопка «Завершить приём» */}
@@ -1936,23 +332,22 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handleFinishVisitAction}
 								data-testid="btn-complete-visit-header"
-								className="primary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 text-xs font-bold flex items-center gap-1 sm:gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-lg whitespace-nowrap h-11 sm:h-7"
-								title="Завершить приём и сохранить все изменения"
+								className="primary-button min-h-[32px] h-8 px-2.5 sm:px-3 py-0 text-xs font-bold flex items-center gap-1 shrink-0 cursor-pointer rounded-lg whitespace-nowrap"
+								title="Завершить приём"
 							>
 								<CheckCircle2 size={15} className="shrink-0" />
-								<span className="hidden sm:inline whitespace-nowrap">Завершить приём</span>
-								<span className="sm:hidden text-xs font-bold whitespace-nowrap">Завершить</span>
+								<span>Завершить приём</span>
 							</button>
 
-							{/* Меню дополнительных действий врача «...» (Мандаты 8d, 8e, 8p: ровно 1 строка тулбара, вторичные действия в поповере) */}
-							<div className="relative shrink-0" ref={headerMoreMenuRef}>
+							{/* Меню дополнительных действий врача «...» */}
+							<div className="relative shrink-0" ref={headerMoreMenuRef as any}>
 								<button
 									type="button"
 									onClick={() => setIsHeaderMoreMenuOpen((prev) => !prev)}
 									data-testid="visit-header-more-actions-btn"
-									className="secondary-button min-h-[44px] min-w-[44px] sm:min-h-7 sm:min-w-0 sm:h-7 px-2 sm:px-2 py-0 text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0 rounded-lg text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors h-11 sm:h-7 w-11 sm:w-auto"
-									title="Дополнительные действия и бланки приема"
-									aria-label="Дополнительные действия приема"
+									className="secondary-button min-h-[32px] h-8 px-2 py-0 text-xs font-semibold flex items-center justify-center cursor-pointer shrink-0 rounded-lg"
+									title="Дополнительные действия"
+									aria-label="Дополнительные действия"
 									aria-expanded={isHeaderMoreMenuOpen}
 								>
 									<MoreHorizontal size={16} className="shrink-0" />
@@ -1961,7 +356,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								{isHeaderMoreMenuOpen && (
 									<div
 										data-testid="visit-header-more-actions-dropdown"
-										className="absolute right-0 top-full mt-1.5 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper-strong,var(--paper))] text-[var(--ink)] shadow-xl z-50 p-1.5 flex flex-col gap-1 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+										className="absolute right-0 top-full mt-1.5 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xl z-50 p-1.5 flex flex-col gap-1 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
 										role="menu"
 									>
 										<button
@@ -1971,16 +366,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												handlePrintForm043uFast();
 											}}
 											data-testid="visit-more-action-print-043u"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)]"
 											role="menuitem"
 										>
 											<Printer size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
-											<div className="flex flex-col">
-												<span className="font-semibold">Печать Формы 043/у</span>
-												<span className="text-[10px] text-[var(--muted)]">С текущим штампом (черновик/подписано)</span>
-											</div>
+											<span className="font-semibold">Печать Формы 043/у</span>
 										</button>
-
 										<button
 											type="button"
 											onClick={() => {
@@ -1988,84 +379,25 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												handlePrintInformedConsentFast();
 											}}
 											data-testid="visit-more-action-print-consent"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)]"
 											role="menuitem"
 										>
 											<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-											<div className="flex flex-col">
-												<span className="font-semibold">Печать согласия (ИДС 1051н)</span>
-												<span className="text-[10px] text-[var(--muted)]">С текущим штампом (черновик/подписано)</span>
-											</div>
+											<span className="font-semibold">Печать ИДС 1051н</span>
 										</button>
-
 										<button
 											type="button"
 											onClick={() => {
 												setIsHeaderMoreMenuOpen(false);
-												setIsInformedConsentModalOpen(true);
-											}}
-											data-testid="visit-more-action-consent-modal"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
-											role="menuitem"
-										>
-											<FileText size={14} className="text-[var(--teal)] shrink-0" />
-											<div className="flex flex-col">
-												<span className="font-semibold">Выбор бланка согласия (ИДС)</span>
-												<span className="text-[10px] text-[var(--muted)]">Терапия, хирургия, анестезия, КТ</span>
-											</div>
-										</button>
-
-										<button
-											type="button"
-											onClick={() => {
-												setIsHeaderMoreMenuOpen(false);
-												setIsEmergencyModalOpen(true);
-											}}
-											data-testid="visit-more-action-emergency"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-rose-500/10 cursor-pointer text-rose-700 dark:text-rose-300 transition-colors min-h-[44px] sm:min-h-[38px]"
-											role="menuitem"
-										>
-											<AlertOctagon size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
-											<div className="flex flex-col">
-												<span className="font-semibold">Экстренная помощь (Анти-шок)</span>
-												<span className="text-[10px] text-[var(--muted)]">Протоколы анафилаксии, сердечного приступа</span>
-											</div>
-										</button>
-
-										<button
-											type="button"
-											onClick={() => {
-												setIsHeaderMoreMenuOpen(false);
-												setIsWarrantyModalOpen(true);
-											}}
-											data-testid="visit-more-action-warranty-passport"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
-											role="menuitem"
-										>
-											<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-											<div className="flex flex-col">
-												<span className="font-semibold">Гарантийный паспорт</span>
-												<span className="text-[10px] text-[var(--muted)]">Оформление и печать гарантийного талона</span>
-											</div>
-										</button>
-
-										<button
-											type="button"
-											onClick={() => {
-												setIsHeaderMoreMenuOpen(false);
-												setIsDoctorCockpitModalOpen(true);
+												setIsDoctorShiftModalOpen(true);
 											}}
 											data-testid="visit-more-action-doctor-shift"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)]"
 											role="menuitem"
 										>
-											<FileText size={14} className="text-violet-600 dark:text-violet-400 shrink-0" />
-											<div className="flex flex-col">
-												<span className="font-semibold">Смена и журнал врача</span>
-												<span className="text-[10px] text-[var(--muted)]">Управление расписанием и приёмами</span>
-											</div>
+											<Clock size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+											<span className="font-semibold">Смена врача</span>
 										</button>
-
 										<button
 											type="button"
 											onClick={() => {
@@ -2073,16 +405,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												setIsPriceValidatorModalOpen(true);
 											}}
 											data-testid="visit-more-action-price-lock"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)]"
 											role="menuitem"
 										>
-											<ShieldCheck size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-											<div className="flex flex-col">
-												<span className="font-semibold">Проверка прайса / Price Lock</span>
-												<span className="text-[10px] text-[var(--muted)]">Актуализация сметы плана лечения</span>
-											</div>
+											<Lock size={14} className="text-purple-600 dark:text-purple-400 shrink-0" />
+											<span className="font-semibold">Контроль цен</span>
 										</button>
-
 										<button
 											type="button"
 											onClick={() => {
@@ -2090,14 +418,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												setIsStagePaymentModalOpen(true);
 											}}
 											data-testid="visit-more-action-stage-payment"
-											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]"
+											className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)]"
 											role="menuitem"
 										>
-											<Lock size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-											<div className="flex flex-col">
-												<span className="font-semibold">График оплаты и этапы</span>
-												<span className="text-[10px] text-[var(--muted)]">Рассрочка и депонирование этапов</span>
-											</div>
+											<CheckCircle2 size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+											<span className="font-semibold">Поэтапная оплата</span>
 										</button>
 									</div>
 								)}
@@ -2105,365 +430,103 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 					</div>
 
-					{/* Строка 2 (высота ~30-34px на десктопе, 44px на мобильном): Компактные табы разделов визита (DEF-VIS-02, DEFECT-MOB-01) */}
-					<div className="relative min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center bg-[var(--paper-soft,rgba(0,0,0,0.02))] w-full min-w-0 max-w-full overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-						<VisitMainTabs
-							visitSubViewTab={visitSubViewTab}
-							setVisitSubViewTab={setVisitSubViewTab}
-						/>
+					{/* Строка 2: Вкладки приёма */}
+					<div className="flex items-center gap-1 px-2 py-1 bg-[var(--paper-soft)] overflow-x-auto">
+						<button
+							type="button"
+							data-testid="visit-subtab-emk"
+							className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-colors ${visitSubViewTab === "emk" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)]"}`}
+							onClick={() => handleTabChange("emk")}
+						>
+							ЭМК 043/у
+						</button>
+						<button
+							type="button"
+							data-testid="visit-subtab-odontogram"
+							className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-colors ${visitSubViewTab === "odontogram" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)]"}`}
+							onClick={() => handleTabChange("odontogram")}
+						>
+							Зубная формула
+						</button>
+						<button
+							type="button"
+							data-testid="visit-subtab-diagnostics"
+							className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-colors ${visitSubViewTab === "diagnostics" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)]"}`}
+							onClick={() => handleTabChange("diagnostics")}
+						>
+							Диагностика
+						</button>
+						<button
+							type="button"
+							data-testid="visit-subtab-consents"
+							className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-colors ${visitSubViewTab === "consents" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)]"}`}
+							onClick={() => handleTabChange("consents")}
+						>
+							ИДС 1051н
+						</button>
 					</div>
 				</header>
 
-				{isDoctorCockpitModalOpen && (
-					<DoctorMobileShiftModal
-						isOpen={isDoctorCockpitModalOpen}
-						onClose={() => setIsDoctorCockpitModalOpen(false)}
-						initialDoctorId={activeDoctor?.id || "doc-1"}
-						initialDoctorName={activeDoctor?.fullName || activeDoctor?.name || "Д-р Смирнов Алексей Петрович"}
-						initialDoctorSpecialty={activeDoctor?.specialty || activeDoctor?.specialtyRu || "Терапевт-ортопед"}
-						initialShiftDateIso={dashboard?.todayIso || "2026-08-29"}
-					/>
-				)}
-
-				<div
-					style={{
-						margin: "0 0 2px",
-						display: visitSubViewTab === "emk" ? "flex" : "none",
-						flexDirection: "column",
-						gap: "1px",
-					}}
-					aria-hidden={visitSubViewTab !== "emk"}
-				>
-					<VisitSpecialtyFocus />
+				{/* ═══ TAB CONTENTS SWITCHER ═══ */}
+				<div style={{ display: visitSubViewTab === "emk" ? "block" : "none" }}>
 					<VisitEmkTab />
 				</div>
 
-				{/*
-              ВКЛАДКА «ЗУБНАЯ ФОРМУЛА» НЕ РАЗМОНТИРУЕТСЯ, А ПРЯЧЕТСЯ — ИНАЧЕ
-              ТЕРЯЕТСЯ НАПИСАННЫЙ ДНЕВНИК ПРИЁМА.
+				<div style={{ display: visitSubViewTab === "odontogram" ? "block" : "none" }}>
+					<VisitOdontogramTab />
+				</div>
 
-              БЫЛО: `visitSubViewTab === "odontogram" && (...)`. Уход с вкладки
-              размонтировал VisitOdontogramTab вместе с дневником приёма
-              (VisitDiaryEditor), а его хук useVisitDiaryLogic в cleanup делает
-              setDiary(EMPTY_DIARY) и гасит автосохранение. Автосохранение там —
-              интервал 30 секунд, финального сохранения при выходе нет. Значит
-              врач писал анамнез и status localis, нажимал вкладку «ЭМК» — и
-              всё, набранное после последнего тика, исчезало. Хуже того, уйти с
-              вкладки можно было не своими руками: эффект выше сам переводит на
-              «ЭМК», как только собран черновик, а кнопки диктовки стоят ниже
-              вкладок и доступны с любой из них. При возврате дневник заново
-              читался с сервера и показывал старую версию — экран выглядел
-              исправным, и понять, что текст пропал, было нельзя.
-
-              Теперь вкладка монтируется при первом открытии и дальше только
-              скрывается: состояние дневника и его автосохранение продолжают
-              жить. Заранее не монтируем — иначе дневник читался бы с сервера у
-              каждого приёма, даже если врач в формулу не заходил.
-            */}
-				{odontogramTabWasOpened && (
-					<div
-						style={{
-							margin: "4px 0 8px",
-							display: visitSubViewTab === "odontogram" ? undefined : "none",
-						}}
-						aria-hidden={visitSubViewTab !== "odontogram"}
-					>
-						<VisitOdontogramTab
-							activePatient={activePatient}
-							activeAppointment={activeAppointment}
-							dashboard={dashboard}
-						/>
-					</div>
-				)}
-
-				{anamnesisTabWasOpened && (
-					<div
-						style={{
-							margin: "4px 0 8px",
-							display: visitSubViewTab === "anamnesis" ? undefined : "none",
-						}}
-						aria-hidden={visitSubViewTab !== "anamnesis"}
-					>
-						{/* ── ОСНОВНОЙ РЕДАКТОР ДНЕВНИКА ФОРМЫ 043/У (SOAP) СО STOMX ШАБЛОНАМИ ── */}
-						<div id="visit-soap-editor-container" className="w-full my-3">
-							<VisitSoapEditor
-								initialValues={{
-									complaint: visitNoteForm?.complaint || "",
-									anamnesis: visitNoteForm?.anamnesis || "",
-									objectiveStatus: visitNoteForm?.objectiveStatus || "",
-									diagnosis: visitNoteForm?.diagnosis || "",
-									treatmentPlan: visitNoteForm?.treatmentPlan || "",
-									recommendations: (visitNoteForm as any)?.recommendations || "",
-									icd10: typeof visitNoteForm?.diagnosis === "string"
-										? visitNoteForm.diagnosis.match(/[A-Z]\d{2}(?:\.\d+)?/i)?.[0] || ""
-										: "",
-								}}
-								activeTooth={selectedToothForMenu?.code ? Number(selectedToothForMenu.code) : null}
-								onSelectActiveTooth={handleSelectActiveToothFromSoap}
-								onChange={handleSoapEditorChange}
-								onSave={handleSoapEditorChange}
-								onApplyFullDiary={(fullDiaryText) => {
-									if (typeof appendToTranscript === "function") {
-										appendToTranscript(`\n\n${fullDiaryText}`);
-									}
-								}}
-								isTemplatesOpen={isSoapTemplatesDrawerOpen}
-								onToggleTemplates={setIsSoapTemplatesDrawerOpen}
-							/>
-						</div>
-
-						<VisitAnamnesisTab
-							activeTooth={selectedToothForMenu?.code ? Number(selectedToothForMenu.code) : null}
-							onOpenStomxTemplates={() => {
-								setIsSoapTemplatesDrawerOpen(true);
-								const el = document.getElementById("visit-soap-editor-container");
-								el?.scrollIntoView({ behavior: "smooth", block: "start" });
-							}}
-						/>
-					</div>
-				)}
-
-
-				{diagnosticsTabWasOpened && (
-					<div
-						style={{
-							margin: "16px 0",
-							display: visitSubViewTab === "diagnostics" ? undefined : "none",
-						}}
-						aria-hidden={visitSubViewTab !== "diagnostics"}
-					>
-						<VisitDiagnosticsTab
-							activePatient={activePatient}
-							onInsertToProtocol={(protocolText) => {
-								if (typeof appendToTranscript === "function") {
-									appendToTranscript(`\n\n${protocolText}`);
-								}
-							}}
-						/>
-					</div>
-				)}
+				<div style={{ display: visitSubViewTab === "diagnostics" ? "block" : "none" }}>
+					<VisitDiagnosticsTab />
+				</div>
 
 				{visitSubViewTab === "consents" && (
-					<div
-						className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] my-3 shadow-xs flex items-center justify-between gap-3 flex-wrap"
-						data-testid="visit-consents-tab-panel"
-					>
-						<div className="flex items-center gap-2.5">
-							<FileText className="w-5 h-5 text-[var(--teal)] shrink-0" />
+					<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] space-y-3" data-testid="visit-consents-tab-panel">
+						<div className="flex items-center justify-between border-b border-[var(--line)] pb-2 flex-wrap gap-2">
 							<div>
-								<h4 className="font-bold text-sm m-0 text-[var(--ink)]">
-									Информированные добровольные согласия (ИДС) и сметы
-								</h4>
-								<p className="text-xs text-[var(--muted)] m-0">
-									Форма 043/у, согласия на медицинское вмешательство, анестезию и КТ.
-								</p>
+								<h3 className="text-sm font-bold text-[var(--ink)]">Информированные добровольные согласия (ИДС 1051н)</h3>
+								<p className="text-xs text-[var(--muted)]">Медицинская документация и гарантийные паспорта</p>
 							</div>
-						</div>
-						<div className="flex items-center gap-2 shrink-0 flex-wrap">
-							<button
-								type="button"
-								onClick={handlePrintForm043uFast}
-								data-testid="btn-visit-consents-print-043u"
-								className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
-								title="Распечатать карту 043/у (со штампом ЧЕРНОВИК или ПОДПИСАНО ВРАЧОМ)"
-							>
-								<Printer size={14} />
-								<span>Печать 043/у</span>
-							</button>
-							<button
-								type="button"
-								onClick={handlePrintInformedConsentFast}
-								data-testid="btn-visit-fast-print-consent-1051n"
-								className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-								title="Распечатать официальный бланк ИДС по Приказу Минздрава РФ № 1051н (со штампом ЧЕРНОВИК или ПОДПИСАНО ВРАЧОМ)"
-							>
-								<Printer size={14} className="text-emerald-600 dark:text-emerald-400" />
-								<span>Печать ИДС 1051н</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => setIsInformedConsentModalOpen(true)}
-								data-testid="btn-visit-open-consent-modal"
-								className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
-								title="Открыть выбор специализированных бланков согласий (терапия, анестезия, хирургия, КТ)"
-							>
-								<ShieldCheck size={14} className="text-[var(--teal)]" />
-								<span>Выбрать бланк ИДС</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => setIsWarrantyModalOpen(true)}
-								data-testid="btn-visit-warranty-passport"
-								className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-								title="Оформить гарантийный паспорт на выполненные работы"
-							>
-								<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
-								<span>Гарантийный паспорт</span>
-							</button>
-							<a
-								href="#documents"
-								className="primary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
-							>
-								<span>Перейти в Документы &rarr;</span>
-							</a>
+							<div className="flex items-center gap-1.5 flex-wrap">
+								<button type="button" onClick={handlePrintForm043uFast} data-testid="btn-visit-consents-print-043u" className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer">
+									<Printer size={14} /><span>Печать 043/у</span>
+								</button>
+								<button type="button" onClick={handlePrintInformedConsentFast} data-testid="btn-visit-fast-print-consent-1051n" className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer text-emerald-700 dark:text-emerald-300 border-emerald-500/40">
+									<Printer size={14} /><span>Печать ИДС 1051н</span>
+								</button>
+								<button type="button" onClick={() => setIsInformedConsentModalOpen(true)} data-testid="btn-visit-open-consent-modal" className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer">
+									<ShieldCheck size={14} /><span>Выбрать бланк ИДС</span>
+								</button>
+								<button type="button" onClick={() => setIsWarrantyModalOpen(true)} data-testid="btn-visit-warranty-passport" className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer">
+									<ShieldCheck size={14} /><span>Гарантийный паспорт</span>
+								</button>
+							</div>
 						</div>
 					</div>
 				)}
 
-				<details
-					className="clinical-rules-toggle"
-					style={{
-						display: visitSubViewTab === "odontogram" ? "none" : "block",
-						border: "1px solid var(--line)",
-						borderRadius: "12px",
-						overflow: "hidden",
-						margin: "0.75rem 0",
-					}}
-				>
-					<summary
-						style={{
-							padding: "0.75rem 1rem",
-							background: "var(--paper)",
-							fontSize: "0.85rem",
-							fontWeight: 700,
-							color: "var(--ink)",
-							cursor: "pointer",
-							outline: "none",
-						}}
-					>
-						<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-							<Compass size={16} style={{ color: "var(--teal)" }} aria-hidden="true" />
-							<span>Шаги приема и статус: {safeVisitPrimaryAction.label}</span>
-						</span>
-					</summary>
-					<div style={{ marginTop: "1rem", padding: "0 1rem 1rem 1rem" }}>
-						<section
-							className="visit-next-step"
-							data-testid="visit-next-step-panel"
-							aria-label="Следующий шаг приема"
-						>
-							<div className="visit-next-step-main min-w-0">
-								<div className="min-w-0">
-									<p className="eyebrow">Сейчас сделать</p>
-									<h3 className="break-words leading-tight">{safeVisitPrimaryAction.label}</h3>
-									<p id="visit-primary-action-detail" className="break-words leading-tight">
-										{safeVisitPrimaryAction.detail}
-									</p>
-								</div>
-								<button
+				{/* ═══ NEXT STEP ACTION PANEL ═══ */}
+				<div data-testid="visit-next-step-panel" className="my-3 p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] flex items-center justify-between gap-3 flex-wrap" style={{ display: visitSubViewTab === "odontogram" ? "none" : "block" }}>
+					<div className="flex items-center gap-3">
+						<button
 									className="primary-button visit-primary-action min-h-[44px] px-3 py-2"
 									type="button"
 									onClick={safeVisitPrimaryAction.onClick}
 									disabled={false}
-									title={safeVisitPrimaryAction.label}
-									aria-describedby="visit-primary-action-detail"
-									data-testid="visit-primary-action"
-								>
-									{safeVisitPrimaryAction.kind === "dictation" ? (
-										<Mic aria-hidden="true" />
-									) : null}
-									{safeVisitPrimaryAction.kind === "draft" ? (
-										<Bot aria-hidden="true" />
-									) : null}
-									{safeVisitPrimaryAction.kind === "save" ||
-									safeVisitPrimaryAction.kind === "close" ? (
-										<Check aria-hidden="true" />
-									) : null}
-									{safeVisitPrimaryAction.kind === "review" ? (
-										<AlertTriangle aria-hidden="true" />
-									) : null}
-									{safeVisitPrimaryAction.label}
-								</button>
-							</div>
-							<section
-								className="visit-progress-strip"
-								data-testid="visit-progress-strip"
-								aria-label="Прогресс приема"
-							>
-								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-								{safeVisitWorkflowSteps.map((step: any, index: number) => (
-									<article
-										className={`visit-progress-step step-${step.state} min-w-0`}
-										key={step.key}
-									>
-										<span>{index + 1}</span>
-										<div className="min-w-0">
-											<strong className="break-words leading-tight">{step.label}</strong>
-											<p className="break-words leading-tight">{step.detail}</p>
-										</div>
-									</article>
-								))}
-							</section>
-						</section>
+							data-testid="visit-primary-action"
+						>
+							{safeVisitPrimaryAction.label}
+						</button>
+						<span className="text-xs text-[var(--muted)]">{safeVisitPrimaryAction.detail}</span>
 					</div>
-				</details>
+					{isTreatmentPlanExpiredSoft && (
+						<div className="text-xs text-amber-600 dark:text-amber-400 font-semibold" data-testid="visit-plan-expired-soft-notice">
+							План лечения составлен {treatmentPlanAgeDays} дней назад (рекомендуется актуализация)
+						</div>
+					)}
+				</div>
 
-				<details
-					className="visit-safety-strip-toggle"
-					style={{
-						display: visitSubViewTab === "odontogram" ? "none" : "block",
-						margin: "1rem 0",
-						fontSize: "0.85rem",
-						color: "var(--muted)",
-					}}
-				>
-					<summary style={{ cursor: "pointer", userSelect: "none" }}>
-						Инженерный статус (локальное сохранение, связь с сервером)
-					</summary>
-					<section
-						className="visit-safety-strip"
-						aria-label="Сохранность черновика и диктовки"
-						style={{
-							display: "flex",
-							flexWrap: "wrap",
-							gap: "1rem",
-							marginTop: "1rem",
-							padding: "1rem",
-							background: "var(--paper-soft)",
-							borderRadius: "8px",
-						}}
-					>
-						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-						{safeVisitSafetyCards.map((item: any) => (
-							<article
-								className={`safety-${item.state}`}
-								key={item.key}
-								style={{ flex: "1 1 200px" }}
-							>
-								<span
-									style={{
-										display: "block",
-										fontSize: "0.75rem",
-										textTransform: "uppercase",
-										letterSpacing: "0.05em",
-									}}
-								>
-									{item.label}
-								</span>
-								<strong style={{ display: "block", margin: "4px 0" }}>
-									{item.value}
-								</strong>
-								<p
-									style={{ margin: "0", fontSize: "0.8rem", lineHeight: "1.2" }}
-								>
-									{item.detail}
-								</p>
-							</article>
-						))}
-					</section>
-				</details>
-
-				{/*
-              ЗДЕСЬ СТОЯЛА ВТОРАЯ ПОЛОСА «ФОКУС ВРАЧА» — ДУБЛЬ ОДИН В ОДИН.
-              Тот же заголовок, те же кнопки специальностей, тот же обработчик;
-              первая (компонент VisitSpecialtyFocus) рисуется во вкладке «ЭМК и
-              Диктовка» на несколько сантиметров выше. Врач видел два одинаковых
-              набора переключателей и не мог знать, отличаются ли они.
-              Оставлен один — компонентный, потому что именно он принадлежит
-              вкладке, которую врач открывает.
-            */}
-
-				{/* ── СТЕРИЛЬНОСТЬ ЭКРАНА ВРАЧА У КРЕСЛА (МАНДАТЫ 8e, 8p, 8s): ДЫМОВОЙ ТЕСТОВЫЙ ХАРНЕСС ВЫНЕСЕН ИЗ ВИДИМОЙ ЗОНЫ ── */}
+				{/* ── СТЕРИЛЬНОСТЬ ЭКРАНА ВРАЧА У КРЕСЛА (ДЫМОВОЙ ТЕСТОВЫЙ ХАРНЕСС ВЫНЕСЕН ИЗ ВИДИМОЙ ЗОНЫ) ── */}
 				<div
 					className="smoke-compat-container sr-only"
 					style={{
@@ -2481,1339 +544,42 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					}}
 					aria-hidden="true"
 				>
-					<div
-						className="dictation-box"
-						data-recording={isServerVoiceRecording}
-						style={{ position: "relative" }}
+					<button
+						type="button"
+						data-testid="btn-polish-transcript"
+						className="secondary-button min-h-[44px] px-3 py-2"
+						disabled={isTranscriptPolishing}
+						onClick={() =>
+							executePolishTranscriptAutonomy({
+								hasVisitTranscriptText: Boolean(transcript),
+								setTranscript,
+								updateVisitNoteField,
+								visitNoteForm,
+								polishTranscript,
+								showToastFn: showToast,
+							})
+						}
 					>
-					{speechTranscriptionBusy && (
-						<div className="dictation-overlay-skeleton">
-							<div className="skeleton-wave"></div>
-							<div className="skeleton-wave"></div>
-							<div className="skeleton-wave"></div>
-						</div>
-					)}
-					<div className="dictation-header">
-						{/*
-                  Инлайновый color: var(--red-500) убран. Имя --red-500 не
-                  объявлено ни в одном файле стилей, то есть красить микрофон оно
-                  не могло. Красным он всё-таки был — но по другой причине:
-                  .recording-icon-pulse задаёт color: var(--bad-fg) !important
-                  (styles/dente-redesign.css:586), а объявление с !important
-                  сильнее инлайнового. Дальше держим цвет там же, в классе, иначе
-                  следующий читатель поверит несуществующей переменной.
-                */}
-						<Mic
-							aria-hidden="true"
-							className={isServerVoiceRecording ? "recording-icon-pulse" : ""}
-						/>
-						<div>
-							<h3
-								style={{ display: "flex", alignItems: "center", gap: "10px" }}
-							>
-								Диктовка врача
-								{speechTranscriptionBusy && (
-									<span className="transcribing-badge-pulse">
-										Обработка голоса...
-									</span>
-								)}
-							</h3>
-							<p>
-								Черновик, требует подтверждения врача.{" "}
-								<span style={{ color: "var(--muted)", fontSize: "0.9em" }}>
-									{serverDraftSyncState === "saving" ||
-									pendingVisitSaveCount > 0
-										? "Синхронизация..."
-										: !isOnline
-											? "Офлайн (сохранено локально)"
-											: lastServerDraftSavedAt
-												? `Сохранено ${formatTime ? formatTime(lastServerDraftSavedAt) : lastServerDraftSavedAt}`
-												: lastLocalSavedAt
-													? `Локально сохранено ${formatTime ? formatTime(lastLocalSavedAt) : lastLocalSavedAt}`
-													: "Автосохранение включено"}
-								</span>
-								{speechStatusNote ? (
-									<span
-										style={{
-											display: "inline-block",
-											marginLeft: "8px",
-											color: "var(--rust)",
-											fontSize: "0.9em",
-										}}
-									>
-										{speechStatusNote}
-									</span>
-								) : null}
-							</p>
-						</div>
-					</div>
-					<div
-						role="toolbar"
-						className="dictation-quick-row flex flex-wrap gap-1.5"
-						aria-label="Быстрые фразы для диктовки"
-					>
-						{(Array.isArray(dictationQuickPhrases) ? dictationQuickPhrases : [])
-							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-							.map((phrase: any) => (
-								<button
-									type="button"
-									key={phrase.label}
-									className="min-h-[44px] px-3 py-2 break-words leading-tight text-xs"
-									onClick={() => appendToTranscript?.(phrase.text)}
-								>
-									{phrase.label}
-								</button>
-							))}
-					</div>
-					<div style={{ position: "relative" }}>
-						<div style={{ position: "relative", width: "100%" }}>
-							<textarea
-								aria-label="Текст диктовки"
-								value={transcript}
-								onFocus={() => setShowHints(true)}
-								onBlur={() => setTimeout(() => setShowHints(false), 200)}
-								onChange={(event) => {
-									visitDraftUserEditedRef.current = true;
-									setTranscript(event.target.value);
-									if (event.target.value.trim())
-										setClearedTranscriptSnapshot(null);
-								}}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" && e.ctrlKey && transcript.trim()) {
-										e.preventDefault();
-										const orchestratorResult =
-											AiOrchestrator.processEmkDictation(transcript);
-										const parsed =
-											orchestratorResult.source === "local_algorithm"
-												? orchestratorResult.data
-												: {
-														isAiTask: true,
-														prompt: orchestratorResult.suggestedPrompt,
-													};
-										setSmartParsedData(parsed);
-										setShowSmartPreview(true);
-										setShowHints(false);
-									}
-								}}
-								placeholder={
-									typeof window !== "undefined" &&
-									(window.innerWidth <= 860 || "ontouchstart" in window)
-										? "Диктуйте или введите текст приема..."
-										: "Диктуйте... (Нажмите Ctrl+Enter для предпросмотра)"
-								}
-								style={{
-									minHeight: "120px",
-									width: "100%",
-									resize: "vertical",
-								}}
-							/>
-
-							<DictationHints
-								isVisible={showHints || isServerVoiceRecording}
-								type="visit"
-							/>
-						</div>
-
-						{isServerVoiceRecording && (
-							<div
-								style={{
-									marginTop: "8px",
-									padding: "12px",
-									background: "var(--paper-soft)",
-									color: "var(--muted)",
-									borderRadius: "8px",
-									border: "1px dashed var(--line)",
-									fontStyle: "italic",
-									fontSize: "14px",
-									display: "flex",
-									alignItems: "center",
-									gap: "12px",
-								}}
-							>
-								<div
-									style={{
-										display: "flex",
-										gap: "4px",
-										height: "16px",
-										alignItems: "center",
-									}}
-								>
-									<div
-										className="skeleton-wave"
-										style={{
-											width: "4px",
-											height: "10px",
-											background: "var(--bad-fg, #ef4444)",
-											borderRadius: "2px",
-											animation: "skeleton-wave 1s ease-in-out infinite",
-											animationDelay: "0s",
-										}}
-									/>
-									<div
-										className="skeleton-wave"
-										style={{
-											width: "4px",
-											height: "10px",
-											background: "var(--bad-fg, #ef4444)",
-											borderRadius: "2px",
-											animation: "skeleton-wave 1s ease-in-out infinite",
-											animationDelay: "0.2s",
-										}}
-									/>
-									<div
-										className="skeleton-wave"
-										style={{
-											width: "4px",
-											height: "10px",
-											background: "var(--bad-fg, #ef4444)",
-											borderRadius: "2px",
-											animation: "skeleton-wave 1s ease-in-out infinite",
-											animationDelay: "0.4s",
-										}}
-									/>
-								</div>
-								<span>Слушаю вас...</span>
-							</div>
-						)}
-						<SmartParsePreview
-							isVisible={showSmartPreview}
-							parsedData={smartParsedData}
-							rawText={transcript}
-							type="visit"
-							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-							onApply={(data: any) => {
-								if (data) {
-									if (data.toothUpdates) {
-										// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-										data.toothUpdates.forEach((t: any) => {
-											setToothState(t.code, t.state);
-										});
-									}
-									if (data.emkUpdates) {
-										Object.entries(data.emkUpdates).forEach(([k, v]) => {
-											if (v) appendToEMKField(k, v as string);
-										});
-									}
-								}
-								setShowSmartPreview(false);
-							}}
-							onManual={() => setShowSmartPreview(false)}
-							onClose={() => setShowSmartPreview(false)}
-						/>
-					</div>
-					<div
-						className="dictation-actions"
-						style={{
-							display: "flex",
-							flexWrap: "wrap",
-							gap: "10px",
-							alignItems: "center",
-						}}
-					>
-						<SmartMicrophoneButton
-							context="visit"
-							onResult={handleDictationResult}
-							style={{
-								minHeight: "44px",
-								padding: "10px 16px",
-								fontSize: "15px",
-								justifyContent: "center",
-							}}
-						/>
-
-						<button
-							type="button"
-							onClick={() => setIsVoiceDictationModalOpen(true)}
-							data-testid="btn-open-voice-dictation-assistant"
-							className="secondary-button min-h-[44px] px-3.5 py-2 text-xs font-bold inline-flex items-center gap-2 rounded-xl text-violet-700 dark:text-violet-300 border-violet-500/40 hover:bg-violet-50 dark:hover:bg-violet-950/30 cursor-pointer transition-colors"
-							title="Открыть голосовой ИИ-ассистент врача с распознаванием команд и формулы"
-						>
-							<Sparkles size={16} className="text-violet-600 dark:text-violet-400 shrink-0" />
-							<span>ИИ-Ассистент диктовки</span>
-						</button>
-
-						<label
-							className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--paper-soft,rgba(255,255,255,0.06))] border border-[var(--line,rgba(255,255,255,0.1))] text-xs font-bold text-[var(--ink)] cursor-pointer select-none"
-							title="Автоматически заполнять дневник 043/у без обязательного блокирующего окна"
-						>
-							<input
-								type="checkbox"
-								checked={autoApplyDictation}
-								onChange={(e) => setAutoApplyDictation(e.target.checked)}
-								className="w-4 h-4 accent-[var(--teal,#0d9488)] cursor-pointer"
-							/>
-							<span>0-клик авто-запись</span>
-						</label>
-
-						<button
-							className="primary-button min-h-[44px] px-3 py-2"
-							type="button"
-							style={{ minHeight: "44px", padding: "10px 16px", fontSize: "15px" }}
-							onClick={async () => {
-								if (!hasVisitTranscriptText) {
-									showToast("Сначала надиктуйте или введите текст для разбора", "info");
-									return;
-								}
-								const orchestratorResult =
-									AiOrchestrator.processEmkDictation(transcript);
-								const parsed =
-									orchestratorResult.source === "local_algorithm"
-										? orchestratorResult.data
-										: {
-												isAiTask: true,
-												prompt: orchestratorResult.suggestedPrompt,
-											};
-								setSmartParsedData(parsed);
-								setShowSmartPreview(true);
-								setShowHints(false);
-							}}
-							aria-describedby={
-								!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined
-							}
-						>
-							<Check
-								aria-hidden="true"
-								style={{ width: "18px", height: "18px" }}
-							/>{" "}
-							Разобрать текст
-						</button>
-
-						<button
-							className="secondary-button min-h-[44px] px-3 py-2"
-							type="button"
-							style={{ minHeight: "44px", padding: "10px 16px", fontSize: "15px" }}
-							onClick={() => {
-								if (isDraftLoading) return;
-								if (!visitDraftReadyToBuild) {
-									showToast(
-										visitDraftBuildMissingSteps?.join("; ") ||
-											"Надиктуйте текст или заполните заметку для сборки нейро-черновика",
-										"info",
-									);
-									return;
-								}
-								buildDraft();
-							}}
-							disabled={isDraftLoading}
-							title={isDraftLoading ? "Идет сборка нейро-черновика..." : "Собрать нейро-черновик"}
-							aria-describedby={
-								!visitDraftReadyToBuild ? "visit-draft-missing" : undefined
-							}
-						>
-							<Bot
-								aria-hidden="true"
-								style={{ width: "18px", height: "18px" }}
-							/>{" "}
-							{isDraftLoading ? "Собираю" : "Собрать нейро-черновик"}
-						</button>
-
-						<div style={{ flexGrow: 1 }} />
-
-						<button
-							className="secondary-button min-h-[44px] px-3 py-2"
-							type="button"
-							onClick={() => {
-								if (!hasVisitTranscriptText) {
-									showToast("Текст диктовки уже пуст", "info");
-									return;
-								}
-								clearTranscriptWithUndo();
-							}}
-							title="Очистить текст"
-						>
-							Очистить
-						</button>
-						{clearedTranscriptSnapshot ? (
-							<button
-								className="secondary-button min-h-[44px] px-3 py-2"
-								type="button"
-								onClick={undoTranscriptClear}
-								title="Вернуть текст"
-							>
-								Вернуть
-							</button>
-						) : null}
-						<details
-							className="advanced-dictation-actions"
-							style={{ display: "inline-block" }}
-						>
-							<summary
-								style={{
-									cursor: "pointer",
-									fontSize: "14px",
-									color: "var(--muted)",
-									padding: "10px 12px",
-									minHeight: "44px",
-									display: "inline-flex",
-									alignItems: "center",
-								}}
-							>
-								Дополнительно
-							</summary>
-							<div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
-								{pendingSpeechChunkCount ? (
-									<button
-										className="secondary-button min-h-[44px] px-3 py-2"
-										type="button"
-										onClick={() => flushPendingSpeechChunks({ silent: false })}
-										title={pendingSpeechFlushActionTitle}
-									>
-										{pendingSpeechFlushActionLabel}
-									</button>
-								) : null}
-								<button
-									className="secondary-button min-h-[44px] px-3 py-2"
-									type="button"
-									onClick={handlePolishTranscriptWithAi}
-									disabled={isTranscriptPolishing}
-									data-testid="btn-polish-transcript"
-									aria-describedby={
-										!hasVisitTranscriptText
-											? "dictation-clear-guidance"
-											: undefined
-									}
-									title={
-										isTranscriptPolishing
-											? "Идет аккуратная очистка текста..."
-											: speechGatewayStatus?.polishPolicy?.neuralEnabled
-												? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy?.modelName ?? "модель"}`
-												: "Локальная очистка терминов, секций и номеров зубов"
-									}
-								>
-									<Sparkles aria-hidden="true" />{" "}
-									{isTranscriptPolishing ? "Чищу" : "Очистить текст"}
-								</button>
-							</div>
-						</details>
-
-						{!hasVisitTranscriptText ? (
-							<div
-								className="dictation-action-guidance"
-								id="dictation-clear-guidance"
-								role="status"
-								aria-live="polite"
-							>
-								В диктовке пока нет текста: нажмите «Голос»
-								{emptyDictationVoiceActionLabel ? `, «${emptyDictationVoiceActionLabel}»` : ""} или впишите текст вручную.
-							</div>
-						) : null}
-						{!visitDraftReadyToBuild ? (
-							<div
-								className="visit-draft-missing"
-								id="visit-draft-missing"
-								role="status"
-								aria-live="polite"
-							>
-								<strong>Чтобы собрать черновик, осталось:</strong>
-								<ul>
-									{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-									{(visitDraftBuildMissingSteps || []).map((step: any) => (
-										<li key={step}>{step}</li>
-									))}
-								</ul>
-							</div>
-						) : null}
-					</div>
+						Полировать ИИ
+					</button>
 				</div>
 
-				<section className="tooth-map" aria-label="Зубная карта">
-					{/*
-                НЕ УДАЛЯТЬ: это не забытая кнопка, а зацепка для дымовых прогонов.
-                scripts/smoke-visit-live-workflow.mjs и
-                scripts/smoke-workspace-live-core-actions.mjs находят её как
-                `.tooth-map-selected button`, щёлкают программно, затем щёлкают зуб
-                24 и проверяют, что штамп сменил класс зуба. Человеку она не видна
-                и не нажимается (opacity 0, pointer-events none), поэтому убрана и
-                из чтения экранным диктором: иначе он объявлял кнопку
-                «Наблюдение», которая для пользователя ничего не делает.
-              */}
-					<div
-						className="tooth-map-selected"
-						style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
-						aria-hidden="true"
-					>
-						<button
-							type="button"
-							tabIndex={-1}
-							onClick={() => {
-								setActiveStamp("watch");
-								activeStampRef.current = "watch";
-							}}
-						>
-							Наблюдение
-						</button>
-					</div>
-					<div className="tooth-map-head">
-						<div>
-							<h3>Зубная карта приёма</h3>
-							{/*
-                    БЫЛО: «Нажмите зуб для смены статуса». Из такой подписи врач
-                    делает единственный разумный вывод — что отметки сохраняются.
-                    Они НЕ сохраняются: setToothState пишет только в состояние
-                    страницы (store/visitStore.ts), при переходе к следующему
-                    приёму карта чистится resetVisitToothState, а на сервер уходят
-                    ровно пять текстовых полей ЭМК. Можно было отметить полтора
-                    десятка зубов, обновить страницу и не найти ничего.
-                    Что действительно сохраняется: текст, который дописывает
-                    карточка зуба (обычный клик), и постоянная формула зуба во
-                    вкладке «Зубная формула и Дневник» — у неё свои запросы
-                    сохранения. Пишем это прямо, чтобы никто не принимал цветные
-                    зубы за запись в карте пациента.
-                  */}
-							<p>
-								Обычный клик по зубу открывает карточку: выбранный диагноз или
-								лечение дописывается в поля приёма и сохраняется вместе с
-								приёмом. Сам цвет на карте — рабочая пометка на время приёма, в
-								карту пациента она не попадает. Постоянная формула зуба — во
-								вкладке «Зубная формула и Дневник».
-							</p>
-						</div>
-						<span
-							className="tooth-fdi-badge"
-							title="Международная нумерация зубов: сверху 11–18 и 21–28, снизу 31–38 и 41–48"
-						>
-							Нумерация ФДИ
-						</span>
-					</div>
-					<div className="tooth-map-legend flex flex-wrap gap-2">
-						<span className="tooth-legend-item legend-planned">В плане</span>
-						<span className="tooth-legend-item legend-treatment">Лечение</span>
-						<span className="tooth-legend-item legend-watch">Наблюдение</span>
-						<span className="tooth-legend-item legend-done">Готово</span>
-						<span className="tooth-legend-item legend-missing">Нет зуба</span>
-					</div>
-
-					{/* Быстрая раскраска карты: один выбранный цвет ставится кликом по зубу. */}
-					<div
-						className="tooth-stamp-bar flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none min-h-[44px] sm:min-h-[36px] sm:h-9 sm:max-h-9"
-						role="toolbar"
-						aria-label="Инструменты быстрого штампа"
-					>
-						<span className="stamp-bar-title shrink-0">Быстрый штамп:</span>
-						<button
-							type="button"
-							className={`stamp-btn shrink-0 min-w-0 min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 inline-flex items-center rounded-lg text-xs ${activeStamp === null ? "active" : ""}`}
-							onClick={() => setActiveStamp(null)}
-						>
-							<Eye size={14} className="inline mr-1 shrink-0" aria-hidden="true" />
-							<span className="truncate">Обычный клик</span>
-						</button>
-						<button
-							type="button"
-							className={`stamp-btn stamp-planned shrink-0 min-w-0 min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 inline-flex items-center rounded-lg text-xs ${activeStamp === "planned" ? "active" : ""}`}
-							onClick={() => setActiveStamp("planned")}
-						>
-							<FileText size={14} className="inline mr-1 shrink-0" aria-hidden="true" />
-							<span className="truncate">В план</span>
-						</button>
-						<button
-							type="button"
-							className={`stamp-btn stamp-treatment shrink-0 min-w-0 min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 inline-flex items-center rounded-lg text-xs ${activeStamp === "treatment" ? "active" : ""}`}
-							onClick={() => setActiveStamp("treatment")}
-						>
-							<AlertTriangle size={14} className="inline mr-1 shrink-0" aria-hidden="true" />
-							<span className="truncate">Лечение</span>
-						</button>
-						<button
-							type="button"
-							className={`stamp-btn stamp-watch shrink-0 min-w-0 min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 inline-flex items-center rounded-lg text-xs ${activeStamp === "watch" ? "active" : ""}`}
-							onClick={() => setActiveStamp("watch")}
-						>
-							<AlertTriangle size={14} className="inline mr-1 shrink-0" aria-hidden="true" />
-							<span className="truncate">Наблюдение</span>
-						</button>
-						<button
-							type="button"
-							className={`stamp-btn stamp-done shrink-0 min-w-0 min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 inline-flex items-center rounded-lg text-xs ${activeStamp === "done" ? "active" : ""}`}
-							onClick={() => setActiveStamp("done")}
-						>
-							<CheckCircle2 size={14} className="inline mr-1 shrink-0" aria-hidden="true" />
-							<span className="truncate">Готово</span>
-						</button>
-						<button
-							type="button"
-							className={`stamp-btn stamp-missing shrink-0 min-w-0 min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 py-0 inline-flex items-center rounded-lg text-xs ${activeStamp === "missing" ? "active" : ""}`}
-							onClick={() => setActiveStamp("missing")}
-						>
-							<Ban size={14} className="inline mr-1 shrink-0" aria-hidden="true" />
-							<span className="truncate">Нет зуба</span>
-						</button>
-					</div>
-
-					{/*
-                Пока штамп включён, каждый клик по зубу только красит карту и НЕ
-                открывает карточку зуба — то есть не оставляет ни строчки в записи
-                приёма. Разница между двумя режимами на глаз не видна, и врач,
-                отметивший десяток зубов штампом, был уверен, что записал их.
-                Говорим об этом ровно в тот момент, когда штамп включён.
-              */}
-					<p
-						className="tooth-stamp-note"
-						role="status"
-						aria-live="polite"
-						style={{
-							margin: "0.35rem 0 0",
-							fontSize: "0.8rem",
-							color: "var(--muted)",
-						}}
-					>
-						{activeStamp !== null
-							? "Штамп включён: клик красит зуб на карте, но ничего не пишет в запись приёма. Чтобы диагноз попал в карту, вернитесь к «Обычный клик» и выберите его в карточке зуба."
-							: markedToothCount > 0
-								? `Раскрашено зубов: ${markedToothCount}. Цвет держится до конца приёма; в карту пациента идут поля ЭМК.`
-								: "Нажмите зуб — откроется карточка с диагнозами и лечением."}
-					</p>
-
-					{/* Панель выбора квадранта (Focus Mode) */}
-					<nav className="tooth-quadrant-nav flex items-center gap-1.5 overflow-x-auto whitespace-nowrap" aria-label="Фокус на квадрант">
-						<button
-							type="button"
-							className={`quadrant-nav-btn shrink-0 min-h-[44px] px-3 py-2 ${activeQuadrant === null ? "active" : ""}`}
-							onClick={() => setActiveQuadrant(null)}
-						>
-							Вся челюсть
-						</button>
-						{/*
-                  БЫЛО: «ВЧ Лево (Q2)», «НЧ Право (Q4)». Сокращения и латинская
-                  буква Q на клиническом экране: медсестра и администратор их не
-                  читают, а врач и так знает номера секторов. Слова полностью,
-                  номер сектора и диапазон зубов — в подсказке при наведении.
-                  Сторона указана как у пациента, как принято в нумерации зубов.
-                */}
-						<button
-							type="button"
-							className={`quadrant-nav-btn shrink-0 min-h-[44px] px-3 py-2 ${activeQuadrant === 2 ? "active" : ""}`}
-							onClick={() => setActiveQuadrant(2)}
-							title="Второй сектор: зубы 21–28"
-						>
-							Верх слева
-						</button>
-						<button
-							type="button"
-							className={`quadrant-nav-btn shrink-0 min-h-[44px] px-3 py-2 ${activeQuadrant === 1 ? "active" : ""}`}
-							onClick={() => setActiveQuadrant(1)}
-							title="Первый сектор: зубы 11–18"
-						>
-							Верх справа
-						</button>
-						<button
-							type="button"
-							className={`quadrant-nav-btn shrink-0 min-h-[44px] px-3 py-2 ${activeQuadrant === 3 ? "active" : ""}`}
-							onClick={() => setActiveQuadrant(3)}
-							title="Третий сектор: зубы 31–38"
-						>
-							Низ слева
-						</button>
-						<button
-							type="button"
-							className={`quadrant-nav-btn shrink-0 min-h-[44px] px-3 py-2 ${activeQuadrant === 4 ? "active" : ""}`}
-							onClick={() => setActiveQuadrant(4)}
-							title="Четвёртый сектор: зубы 41–48"
-						>
-							Низ справа
-						</button>
-					</nav>
-
-					{/* Зубная схема с квадрантами */}
-					<div
-						className={`tooth-arch-wrapper ${activeQuadrant !== null ? "zoom-active" : ""}`}
-					>
-						{/* Метки половин верхней челюсти. Раньше здесь стояли «Q1» и «Q2». */}
-						{activeQuadrant === null && (
-							<div className="tooth-quadrant-labels upper-labels">
-								<span
-									className="quadrant-label"
-									title="Первый сектор: зубы 11–18"
-								>
-									верх справа
-								</span>
-								<span
-									className="quadrant-label"
-									title="Второй сектор: зубы 21–28"
-								>
-									верх слева
-								</span>
-							</div>
-						)}
-
-						{/* Верхняя челюсть */}
-						{(activeQuadrant === null ||
-							activeQuadrant === 1 ||
-							activeQuadrant === 2) && (
-							<div className="tooth-jaw upper-jaw">
-								{/* Правая половина верхней: Q1 — 18→11 */}
-								{(activeQuadrant === null || activeQuadrant === 1) && (
-									<div className="tooth-half tooth-row">
-										{(toothRows[0] || []).slice(0, 8).map((code) => {
-											const state = toothStateByCode[code] ?? "idle";
-											const geom = getToothPath(Number(code));
-											const cfg = getToothConfig(Number(code));
-											const isDetected = (
-												draft?.quality?.detectedToothCodes || []
-											).includes(code);
-											return (
-												<button
-													key={code}
-													type="button"
-													className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
-													onClick={() => handleToothClick(code, state)}
-													aria-label={`Зуб ${code}`}
-													data-tooth-state={
-														state === "idle" ? undefined : state
-													}
-												>
-													<div
-														className="tooth-svg-wrap"
-														style={{
-															filter: isDetected
-																? "drop-shadow(0 0 4px #3b82f6)"
-																: "none",
-														}}
-													>
-														<svg
-															aria-hidden="true"
-															width={cfg.width}
-															height={cfg.height}
-															viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-															fill="none"
-														>
-															{state === "missing" ? (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill="var(--paper-soft)"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d={geom.crown}
-																		fill="var(--paper-soft)"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d="M20 20L80 130M80 20L20 130"
-																		stroke="#ef4444"
-																		strokeWidth="5"
-																		strokeLinecap="round"
-																		opacity="0.7"
-																	/>
-																</g>
-															) : (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill={
-																			state === "idle"
-																				? "var(--paper-soft)"
-																				: state === "planned"
-																					? "var(--info-bg, rgba(56, 189, 248, 0.12))"
-																					: state === "treatment"
-																						? "var(--danger-bg, rgba(239, 68, 68, 0.12))"
-																						: state === "watch"
-																							? "var(--warn-bg, rgba(245, 158, 11, 0.12))"
-																							: "var(--ok-bg, rgba(34, 197, 94, 0.12))"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#cbd5e1"
-																				: state === "planned"
-																					? "#38bdf8"
-																					: state === "treatment"
-																						? "#f87171"
-																						: state === "watch"
-																							? "#fbbf24"
-																							: "#4ade80"
-																		}
-																		strokeWidth="1.5"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.canals &&
-																		(state === "treatment" ||
-																			state === "done") && (
-																			<path
-																				d={geom.canals}
-																				fill="none"
-																				stroke={
-																					state === "done"
-																						? "#ec4899"
-																						: "#dc2626"
-																				}
-																				strokeWidth="2.5"
-																				strokeLinecap="round"
-																				opacity="0.85"
-																			/>
-																		)}
-																	<path
-																		d={geom.crown}
-																		fill={
-																			state === "idle"
-																				? "var(--paper)"
-																				: state === "planned"
-																					? "var(--info-bg)"
-																					: state === "treatment"
-																						? "var(--bad-bg)"
-																						: state === "watch"
-																							? "var(--warn-bg)"
-																							: "var(--ok-bg)"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#94a3b8"
-																				: state === "planned"
-																					? "#0284c7"
-																					: state === "treatment"
-																						? "#dc2626"
-																						: state === "watch"
-																							? "#d97706"
-																							: "#166534"
-																		}
-																		strokeWidth="2.2"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.fissures && (
-																		<path
-																			d={geom.fissures}
-																			fill="none"
-																			stroke="rgba(0,0,0,0.15)"
-																			strokeWidth="0.8"
-																		/>
-																	)}
-																</g>
-															)}
-														</svg>
-													</div>
-													<span className="tooth-code">{code}</span>
-												</button>
-											);
-										})}
-									</div>
-								)}
-								{/* Центральная линия */}
-								{activeQuadrant === null && (
-									<div className="tooth-center-line" aria-hidden="true" />
-								)}
-								{/* Левая половина верхней: Q2 — 21→28 */}
-								{(activeQuadrant === null || activeQuadrant === 2) && (
-									<div className="tooth-half tooth-row">
-										{(toothRows[0] || []).slice(8).map((code) => {
-											const state = toothStateByCode[code] ?? "idle";
-											const geom = getToothPath(Number(code));
-											const cfg = getToothConfig(Number(code));
-											const isDetected = (
-												draft?.quality?.detectedToothCodes || []
-											).includes(code);
-											return (
-												<button
-													key={code}
-													type="button"
-													className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
-													onClick={() => handleToothClick(code, state)}
-													aria-label={`Зуб ${code}`}
-													data-tooth-state={
-														state === "idle" ? undefined : state
-													}
-												>
-													<div
-														className="tooth-svg-wrap"
-														style={{
-															filter: isDetected
-																? "drop-shadow(0 0 4px #3b82f6)"
-																: "none",
-														}}
-													>
-														<svg
-															aria-hidden="true"
-															width={cfg.width}
-															height={cfg.height}
-															viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-															fill="none"
-														>
-															{state === "missing" ? (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill="var(--paper-soft)"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d={geom.crown}
-																		fill="var(--paper-soft)"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d="M20 20L80 130M80 20L20 130"
-																		stroke="#ef4444"
-																		strokeWidth="5"
-																		strokeLinecap="round"
-																		opacity="0.7"
-																	/>
-																</g>
-															) : (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill={
-																			state === "idle"
-																				? "var(--paper-soft)"
-																				: state === "planned"
-																					? "var(--info-bg, rgba(56, 189, 248, 0.12))"
-																					: state === "treatment"
-																						? "var(--danger-bg, rgba(239, 68, 68, 0.12))"
-																						: state === "watch"
-																							? "var(--warn-bg, rgba(245, 158, 11, 0.12))"
-																							: "var(--ok-bg, rgba(34, 197, 94, 0.12))"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#cbd5e1"
-																				: state === "planned"
-																					? "#38bdf8"
-																					: state === "treatment"
-																						? "#f87171"
-																						: state === "watch"
-																							? "#fbbf24"
-																							: "#4ade80"
-																		}
-																		strokeWidth="1.5"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.canals &&
-																		(state === "treatment" ||
-																			state === "done") && (
-																			<path
-																				d={geom.canals}
-																				fill="none"
-																				stroke={
-																					state === "done"
-																						? "#ec4899"
-																						: "#dc2626"
-																				}
-																				strokeWidth="2.5"
-																				strokeLinecap="round"
-																				opacity="0.85"
-																			/>
-																		)}
-																	<path
-																		d={geom.crown}
-																		fill={
-																			state === "idle"
-																				? "var(--paper)"
-																				: state === "planned"
-																					? "var(--info-bg)"
-																					: state === "treatment"
-																						? "var(--bad-bg)"
-																						: state === "watch"
-																							? "var(--warn-bg)"
-																							: "var(--ok-bg)"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#94a3b8"
-																				: state === "planned"
-																					? "#0284c7"
-																					: state === "treatment"
-																						? "#dc2626"
-																						: state === "watch"
-																							? "#d97706"
-																							: "#166534"
-																		}
-																		strokeWidth="2.2"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.fissures && (
-																		<path
-																			d={geom.fissures}
-																			fill="none"
-																			stroke="rgba(0,0,0,0.15)"
-																			strokeWidth="0.8"
-																		/>
-																	)}
-																</g>
-															)}
-														</svg>
-													</div>
-													<span className="tooth-code">{code}</span>
-												</button>
-											);
-										})}
-									</div>
-								)}
-							</div>
-						)}
-
-						{/* Линия окклюзии */}
-						{activeQuadrant === null && (
-							<div className="tooth-occlusion-line" aria-hidden="true">
-								<span>— окклюзия —</span>
-							</div>
-						)}
-
-						{/* Нижняя челюсть */}
-						{(activeQuadrant === null ||
-							activeQuadrant === 3 ||
-							activeQuadrant === 4) && (
-							<div className="tooth-jaw lower-jaw">
-								{/* Правая нижняя Q4 — 48→41 */}
-								{(activeQuadrant === null || activeQuadrant === 4) && (
-									<div className="tooth-half tooth-row">
-										{(toothRows[1] || []).slice(0, 8).map((code) => {
-											const state = toothStateByCode[code] ?? "idle";
-											const geom = getToothPath(Number(code));
-											const cfg = getToothConfig(Number(code));
-											const isDetected = (
-												draft?.quality?.detectedToothCodes || []
-											).includes(code);
-											return (
-												<button
-													key={code}
-													type="button"
-													className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
-													onClick={() => handleToothClick(code, state)}
-													aria-label={`Зуб ${code}`}
-													data-tooth-state={
-														state === "idle" ? undefined : state
-													}
-												>
-													<span className="tooth-code">{code}</span>
-													<div
-														className="tooth-svg-wrap"
-														style={{
-															filter: isDetected
-																? "drop-shadow(0 0 4px #3b82f6)"
-																: "none",
-															transform: "scaleY(-1)",
-														}}
-													>
-														<svg
-															aria-hidden="true"
-															width={cfg.width}
-															height={cfg.height}
-															viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-															fill="none"
-														>
-															{state === "missing" ? (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill="var(--paper-soft)"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d={geom.crown}
-																		fill="var(--paper-soft)"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d="M20 20L80 130M80 20L20 130"
-																		stroke="#ef4444"
-																		strokeWidth="5"
-																		strokeLinecap="round"
-																		opacity="0.7"
-																	/>
-																</g>
-															) : (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill={
-																			state === "idle"
-																				? "var(--paper-soft)"
-																				: state === "planned"
-																					? "var(--info-bg, rgba(56, 189, 248, 0.12))"
-																					: state === "treatment"
-																						? "var(--danger-bg, rgba(239, 68, 68, 0.12))"
-																						: state === "watch"
-																							? "var(--warn-bg, rgba(245, 158, 11, 0.12))"
-																							: "var(--ok-bg, rgba(34, 197, 94, 0.12))"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#cbd5e1"
-																				: state === "planned"
-																					? "#38bdf8"
-																					: state === "treatment"
-																						? "#f87171"
-																						: state === "watch"
-																							? "#fbbf24"
-																							: "#4ade80"
-																		}
-																		strokeWidth="1.5"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.canals &&
-																		(state === "treatment" ||
-																			state === "done") && (
-																			<path
-																				d={geom.canals}
-																				fill="none"
-																				stroke={
-																					state === "done"
-																						? "#ec4899"
-																						: "#dc2626"
-																				}
-																				strokeWidth="2.5"
-																				strokeLinecap="round"
-																				opacity="0.85"
-																			/>
-																		)}
-																	<path
-																		d={geom.crown}
-																		fill={
-																			state === "idle"
-																				? "var(--paper)"
-																				: state === "planned"
-																					? "var(--info-bg)"
-																					: state === "treatment"
-																						? "var(--bad-bg)"
-																						: state === "watch"
-																							? "var(--warn-bg)"
-																							: "var(--ok-bg)"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#94a3b8"
-																				: state === "planned"
-																					? "#0284c7"
-																					: state === "treatment"
-																						? "#dc2626"
-																						: state === "watch"
-																							? "#d97706"
-																							: "#166534"
-																		}
-																		strokeWidth="2.2"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.fissures && (
-																		<path
-																			d={geom.fissures}
-																			fill="none"
-																			stroke="rgba(0,0,0,0.15)"
-																			strokeWidth="0.8"
-																		/>
-																	)}
-																</g>
-															)}
-														</svg>
-													</div>
-												</button>
-											);
-										})}
-									</div>
-								)}
-								{/* Центральная линия нижней */}
-								{activeQuadrant === null && (
-									<div className="tooth-center-line" aria-hidden="true" />
-								)}
-								{/* Левая нижняя Q3 — 31→38 */}
-								{(activeQuadrant === null || activeQuadrant === 3) && (
-									<div className="tooth-half tooth-row">
-										{(toothRows[1] || []).slice(8).map((code) => {
-											const state = toothStateByCode[code] ?? "idle";
-											const geom = getToothPath(Number(code));
-											const cfg = getToothConfig(Number(code));
-											const isDetected = (
-												draft?.quality?.detectedToothCodes || []
-											).includes(code);
-											return (
-												<button
-													key={code}
-													type="button"
-													className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
-													onClick={() => handleToothClick(code, state)}
-													aria-label={`Зуб ${code}`}
-													data-tooth-state={
-														state === "idle" ? undefined : state
-													}
-												>
-													<span className="tooth-code">{code}</span>
-													<div
-														className="tooth-svg-wrap"
-														style={{
-															filter: isDetected
-																? "drop-shadow(0 0 4px #3b82f6)"
-																: "none",
-															transform: "scaleY(-1)",
-														}}
-													>
-														<svg
-															aria-hidden="true"
-															width={cfg.width}
-															height={cfg.height}
-															viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-															fill="none"
-														>
-															{state === "missing" ? (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill="var(--paper-soft)"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d={geom.crown}
-																		fill="var(--paper-soft)"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d="M20 20L80 130M80 20L20 130"
-																		stroke="#ef4444"
-																		strokeWidth="5"
-																		strokeLinecap="round"
-																		opacity="0.7"
-																	/>
-																</g>
-															) : (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill={
-																			state === "idle"
-																				? "var(--paper-soft)"
-																				: state === "planned"
-																					? "var(--info-bg, rgba(56, 189, 248, 0.12))"
-																					: state === "treatment"
-																						? "var(--danger-bg, rgba(239, 68, 68, 0.12))"
-																						: state === "watch"
-																							? "var(--warn-bg, rgba(245, 158, 11, 0.12))"
-																							: "var(--ok-bg, rgba(34, 197, 94, 0.12))"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#cbd5e1"
-																				: state === "planned"
-																					? "#38bdf8"
-																					: state === "treatment"
-																						? "#f87171"
-																						: state === "watch"
-																							? "#fbbf24"
-																							: "#4ade80"
-																		}
-																		strokeWidth="1.5"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.canals &&
-																		(state === "treatment" ||
-																			state === "done") && (
-																			<path
-																				d={geom.canals}
-																				fill="none"
-																				stroke={
-																					state === "done"
-																						? "#ec4899"
-																						: "#dc2626"
-																				}
-																				strokeWidth="2.5"
-																				strokeLinecap="round"
-																				opacity="0.85"
-																			/>
-																		)}
-																	<path
-																		d={geom.crown}
-																		fill={
-																			state === "idle"
-																				? "var(--paper)"
-																				: state === "planned"
-																					? "var(--info-bg)"
-																					: state === "treatment"
-																						? "var(--bad-bg)"
-																						: state === "watch"
-																							? "var(--warn-bg)"
-																							: "var(--ok-bg)"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#94a3b8"
-																				: state === "planned"
-																					? "#0284c7"
-																					: state === "treatment"
-																						? "#dc2626"
-																						: state === "watch"
-																							? "#d97706"
-																							: "#166534"
-																		}
-																		strokeWidth="2.2"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.fissures && (
-																		<path
-																			d={geom.fissures}
-																			fill="none"
-																			stroke="rgba(0,0,0,0.15)"
-																			strokeWidth="0.8"
-																		/>
-																	)}
-																</g>
-															)}
-														</svg>
-													</div>
-												</button>
-											);
-										})}
-									</div>
-								)}
-							</div>
-						)}
-
-						{/* Метки половин нижней челюсти. Раньше здесь стояли «Q4» и «Q3». */}
-						{activeQuadrant === null && (
-							<div className="tooth-quadrant-labels lower-labels">
-								<span
-									className="quadrant-label"
-									title="Четвёртый сектор: зубы 41–48"
-								>
-									низ справа
-								</span>
-								<span
-									className="quadrant-label"
-									title="Третий сектор: зубы 31–38"
-								>
-									низ слева
-								</span>
-							</div>
-						)}
-					</div>
-				</section>
+				{/* ═══ ОДОНТОГРАММА ПРИЁМА ═══ */}
+				<div style={{ display: visitSubViewTab === "odontogram" ? "block" : "none" }}>
+					<VisitEmbeddedOdontogram
+						activeQuadrant={activeQuadrant}
+						setActiveQuadrant={setActiveQuadrant}
+						activeStamp={activeStamp}
+						setActiveStamp={setActiveStamp}
+						activeStampRef={activeStampRef}
+						toothRows={toothRows}
+						toothStateByCode={toothStateByCode}
+						draft={draft}
+						handleToothClick={handleToothClick}
+					/>
 				</div>
 
-				{/*
-              ЗДЕСЬ СТОЯЛА ВТОРАЯ ПАНЕЛЬ ЭМК — ПОЛНЫЙ ДУБЛЬ ТОЙ, ЧТО ВО ВКЛАДКЕ.
-
-              На вкладке «ЭМК и Диктовка» (она открыта по умолчанию) рисуется
-              components/visit/VisitEmkTab.tsx: та же шапка «ЭМК после
-              диктовки», те же шесть вкладок полей, те же пять полей, тот же
-              блок качества разбора и та же кнопка сохранения. Здесь, ниже
-              зубной карты, стояла её копия. На экране это выглядело так: два
-              одинаковых заголовка, две полоски вкладок, ДВЕ кнопки сохранения
-              приёма. Полоски вкладок были независимы (одна брала состояние
-              отсюда, другая — своё), поэтому «Жалобы», выбранные наверху, не
-              меняли нижнюю панель, и наоборот: врач видел два разных набора
-              полей одного и того же приёма.
-
-              Оставлена компонентная — она умеет то, чего эта копия не умела:
-              микрофон у каждого поля (диктовать прямо в «Жалобы», не сбивая
-              общий текст) и отметку выполненных услуг по плану. Кроме того у
-              этой копии textarea получала value без запаса `?? ""`: при
-              появлении нового поля в справочнике поле стало бы
-              неуправляемым, то есть набранный в нём текст не попадал бы в
-              состояние и терялся при следующей перерисовке.
-            */}
-
-				{/* ── ВСПОМОГАТЕЛЬНЫЕ ПАНЕЛИ ПРИЁМА (МАНДАТЫ 8e, 8p, 8s: СКРЫТЫ НА ОДОНТОГРАММЕ ДЛЯ 100% КЛИНИЧЕСКОЙ СТЕРИЛЬНОСТИ) ── */}
+				{/* ── ВСПОМОГАТЕЛЬНЫЕ ПАНЕЛИ ПРИЁМА (СКРЫТЫ НА ОДОНТОГРАММЕ) ── */}
 				<details
 					className="visit-secondary-tools-accordion"
 					style={{
@@ -3838,1175 +604,89 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						Вспомогательные панели приёма (шаблоны, задачи, контроль цен, памятка)
 					</summary>
 					<div style={{ padding: "0.75rem 1rem" }}>
-						<details
-							className="protocol-library"
-							aria-label="Шаблоны приема по специальности"
-						>
-					<summary className="protocol-summary">
-						<div>
-							<h3>Шаблон приема</h3>
-							<p>
-								{selectedProtocolTemplate?.title ??
-									"Выберите специальность и шаблон"}
-							</p>
-						</div>
-						<span>
-							{selectedProtocolTemplate
-								? safeSpecialtyLabels[selectedProtocolTemplate.specialty] ||
-									selectedProtocolTemplate.specialty
-								: (dashboard?.protocolTemplates?.length ?? 0)}
-						</span>
-					</summary>
-					<div className="protocol-head">
-						<div>
-							<h3>Шаблон приема</h3>
-							<p>
-								Выбор специальности меняет протокол, снимки, документы и
-								предупреждения.
-							</p>
-						</div>
-						<span>{dashboard?.protocolTemplates?.length ?? 0}</span>
-					</div>
-					<div className="specialty-strip flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
-						{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-						{(specialtiesWithTemplates || []).map((specialty: any) => (
-							<button
-								className={`min-h-[44px] px-3 py-2 shrink-0 ${selectedSpecialty === specialty ? "active" : ""}`}
-								key={specialty}
-								type="button"
-								aria-pressed={selectedSpecialty === specialty}
-								onClick={() => {
-									if (setSelectedSpecialty) setSelectedSpecialty(specialty);
-									if (setSelectedProtocolId) setSelectedProtocolId(null);
-								}}
-							>
-								{safeSpecialtyLabels[specialty] || specialty}
-							</button>
-						))}
-					</div>
-					{selectedProtocolTemplate ? (
-						<article className="protocol-card min-w-0">
-							<div className="min-w-0">
-								<strong className="break-words leading-tight">{selectedProtocolTemplate.title}</strong>
-								<p className="break-words leading-tight">
-									{selectedProtocolTemplate.defaultDurationMinutes} мин · снимки{" "}
-									{(selectedProtocolTemplate.suggestedImaging || [])
-										// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-										.map((kind: any) => imagingKindLabels?.[kind] || kind)
-										.join(", ")}
-								</p>
-							</div>
-							<div className="protocol-template-list flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
-								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-								{(specialtyProtocolTemplates || []).map((template: any) => (
-									<button
-										className={`min-h-[44px] px-3 py-2 shrink-0 ${
-											selectedProtocolTemplate.id === template.id
-												? "active"
-												: ""
-										}`}
-										key={template.id}
-										type="button"
-										aria-pressed={selectedProtocolTemplate.id === template.id}
-										onClick={() => setSelectedProtocolId?.(template.id)}
-									>
-										{template.visitReason}
-									</button>
-								))}
-							</div>
-							<ul>
-								{(selectedProtocolTemplate.safetyWarnings || []).map(
-									// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-									(warning: any) => (
-										<li key={warning} className="break-words leading-tight">{warning}</li>
-									),
-								)}
-							</ul>
-							<button
-								className="secondary-button min-h-[44px] px-3 py-2"
-								type="button"
-								onClick={() => applyProtocolTemplate(selectedProtocolTemplate)}
-							>
-								<ClipboardCheck aria-hidden="true" /> Заполнить диктовку
-							</button>
-						</article>
-					) : null}
-				</details>
-
-				<details className="clinical-rules-toggle">
-					<summary>
-						Клинические рекомендации
-						{activeVisitClinicalRuleEvaluations?.length
-							? ` (${activeVisitClinicalRuleEvaluations.length})`
-							: ""}
-					</summary>
-					<div style={{ marginTop: "1rem" }}>
-						<ClinicalRulePanel
-							actionLabels={clinicalRuleActionLabels}
-							context="visit"
-							// evaluations={activeVisitClinicalRuleEvaluations}
-							evaluations={
-								dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
-									? (activeVisitClinicalRuleEvaluations || []).filter(
-											// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-											(e: any) => e.ownerRole !== "assistant",
-										)
-									: activeVisitClinicalRuleEvaluations || []
-							}
-							patientId={
-								(typeof activePatient?.id === "string" && activePatient.id) ||
-								(typeof dashboard?.activeVisit?.patientId === "string" &&
-									dashboard.activeVisit.patientId) ||
-								null
-							}
-							serviceTitle={serviceTitle}
-							severityLabels={clinicalRuleSeverityLabels}
-							staffRoleLabels={staffRoleLabels}
-							summary={activeVisitClinicalRuleSummary}
+						<VisitSecondaryPanelsInner
+							{...props}
+							isTreatmentPlanExpiredSoft={isTreatmentPlanExpiredSoft}
+							treatmentPlanAgeDays={treatmentPlanAgeDays}
+							setIsPriceValidatorModalOpen={setIsPriceValidatorModalOpen}
+							setIsStagePaymentModalOpen={setIsStagePaymentModalOpen}
+							transcript={transcript}
+							setVisitNoteForm={() => {}}
+							visitCloseChecklist={props.visitCloseChecklist}
+							openCloseChecklistSection={props.openCloseChecklistSection}
 						/>
-					</div>
-				</details>
-
-				{/*
-              Передача между этапами: backend POST /api/clinical/phase-completions
-              и GET /api/clinical/tasks уже писали в clinical_tasks, но на экране
-              приёма кнопок не было — следующий врач не видел задачу. Панель
-              самодостаточная (как FreedSlotsPanel): сама ходит в API с clinical
-              headers из контекста.
-            */}
-				{activePatient?.id ? (
-					<ClinicalTasksPanel
-						patientId={activePatient.id}
-						assignedDoctorId={
-							(typeof activeDoctor?.id === "string" && activeDoctor.id) ||
-							(typeof activeDoctor?.userId === "string" &&
-								activeDoctor.userId) ||
-							null
-						}
-						treatmentPlanId={
-							(typeof activePatient?.activeTreatmentPlanId === "string" &&
-								activePatient.activeTreatmentPlanId) ||
-							(typeof activeAppointment?.treatmentPlanId === "string" &&
-								activeAppointment.treatmentPlanId) ||
-							null
-						}
-					/>
-				) : null}
-
-				{/*
-              ИИ-персонализация плана и памятки после приёма: backend
-              POST /api/ai/treatment-plan-personalize + post-visit-personalize
-              уже отдавали русский текст, но zero web callers. Панель сама
-              собирает payload из плана пациента и полей заметки.
-            */}
-				<ClinicalAiPersonalizePanel
-					context="visit"
-					patientId={
-						(typeof activePatient?.id === "string" && activePatient.id) ||
-						(typeof dashboard?.activeVisit?.patientId === "string" &&
-							dashboard.activeVisit.patientId) ||
-						null
-					}
-					doctorFullName={
-						(typeof activeDoctor?.fullName === "string" &&
-							activeDoctor.fullName) ||
-						(typeof activeDoctor?.name === "string" && activeDoctor.name) ||
-						null
-					}
-					complaint={
-						(typeof visitNoteForm?.complaint === "string" &&
-							visitNoteForm.complaint) ||
-						(typeof draft?.complaint === "string" && draft.complaint) ||
-						null
-					}
-					diagnosis={
-						(typeof visitNoteForm?.diagnosis === "string" &&
-							visitNoteForm.diagnosis) ||
-						(typeof draft?.diagnosis === "string" && draft.diagnosis) ||
-						null
-					}
-					treatmentPlanText={
-						(typeof visitNoteForm?.treatmentPlan === "string" &&
-							visitNoteForm.treatmentPlan) ||
-						(typeof draft?.treatmentPlan === "string" && draft.treatmentPlan) ||
-						null
-					}
-				/>
-
-				{/*
-              Финансовый аудит и валидация цен плана лечения (Приказ 804н / Price Lock):
-              Сверка стоимости услуг плана с актуальным каталогом клиники, гарантия фиксации
-              цен и экспорт в заказ-наряд ЗТЛ / Акт выполненных работ.
-            */}
-				<section
-					className="treatment-plan-validation-panel"
-					data-testid="treatment-plan-price-validator-section"
-					aria-label="Финансовый аудит и фиксация цен плана лечения"
-					style={{
-						margin: "1rem 0",
-						padding: "1rem",
-						borderRadius: "12px",
-						border: "1px solid var(--line, #e2e8f0)",
-						backgroundColor: "var(--paper, #ffffff)",
-						boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-					}}
-				>
-					<div
-						style={{
-							display: "flex",
-							flexWrap: "wrap",
-							alignItems: "center",
-							justifyContent: "space-between",
-							gap: "0.75rem",
-						}}
-					>
-						<div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									width: "40px",
-									height: "40px",
-									borderRadius: "10px",
-									backgroundColor: "var(--teal-surface, var(--teal-soft))",
-									color: "var(--teal, var(--brand-primary))",
-								}}
-							>
-								<ShieldCheck size={22} />
-							</div>
-							<div>
-								<div
-									title="Контроль цен прайса и Номенклатуры 804н (Price Lock)"
-									style={{
-										fontSize: "0.95rem",
-										fontWeight: 700,
-										color: "var(--ink, #0f172a)",
-									}}
-								>
-									План лечения & Контроль цен прайса
-								</div>
-								<div
-									style={{
-										fontSize: "0.8rem",
-										color: "var(--muted, #64748b)",
-									}}
-								>
-									Сверка позиций с каталогом услуг, фиксация гарантийной сметы и формирование наряда/акта
-								</div>
-								{isTreatmentPlanExpiredSoft && (
-									<div
-										className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold mt-1"
-										data-testid="visit-plan-expired-soft-notice"
-										title="План составлен более 30 дней назад. Оказание услуг, создание нарядов ЗТЛ и оплата разрешены без ограничений (Мандат 8e)"
-									>
-										<Clock size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
-										<span>План составлен более 30 дней назад ({treatmentPlanAgeDays} дн.). Цены могут быть скорректированы, наряды ЗТЛ и оплата не блокируются.</span>
-									</div>
-								)}
-							</div>
-						</div>
-
-						<div
-							style={{
-								display: "flex",
-								flexWrap: "wrap",
-								alignItems: "center",
-								gap: "0.5rem",
-							}}
-						>
-							<button
-								type="button"
-								data-testid="price-validator-trigger-btn"
-								className="primary-button min-h-[44px] px-3.5 py-2 inline-flex items-center gap-2"
-								style={{
-									backgroundColor: "var(--teal-fill, var(--teal))",
-									color: "var(--on-teal, #ffffff)",
-									fontWeight: 600,
-									fontSize: "0.85rem",
-									borderRadius: "8px",
-									cursor: "pointer",
-								}}
-								onClick={() => setIsPriceValidatorModalOpen(true)}
-								title="Проверить актуальность цен прайса / Price Lock"
-							>
-								<ShieldCheck size={16} />
-								<span>Проверить актуальность цен прайса / Price Lock</span>
-							</button>
-
-							<button
-								type="button"
-								data-testid="stage-payment-trigger-btn"
-								className="secondary-button min-h-[44px] px-3 py-2 inline-flex items-center gap-2"
-								style={{
-									fontSize: "0.85rem",
-									borderRadius: "8px",
-									cursor: "pointer",
-								}}
-								onClick={() => setIsStagePaymentModalOpen(true)}
-								title="График оплаты и этапы (Escrow / Рассрочка)"
-							>
-								<Lock size={15} />
-								<span>График этапов</span>
-							</button>
-						</div>
-					</div>
-				</section>
-				{activePatient?.id ? (
-					<div className="mt-4" data-testid="visit-note-draft-mount">
-						<VisitNoteDraftPanel
-							patientId={activePatient.id}
-							initialTranscript={transcript}
-							onApply={(draft) => {
-								if (draft) {
-									setVisitNoteForm((prev) => ({
-										...prev,
-										complaint: draft.complaint ?? prev.complaint,
-										anamnesis: draft.anamnesis ?? prev.anamnesis,
-										objectiveStatus:
-											draft.objectiveStatus ?? prev.objectiveStatus,
-										diagnosis: draft.diagnosis ?? prev.diagnosis,
-										treatmentPlan: draft.treatmentPlan ?? prev.treatmentPlan,
-									}));
-									showToast(
-										"Черновик приема успешно применен в форму",
-										"success",
-									);
-								}
-							}}
-						/>
-					</div>
-				) : null}
-
-				{visitCloseChecklist ? (
-					<section
-						className="close-checklist"
-						aria-label="Предупреждения перед закрытием приема"
-					>
-						<div className="close-checklist-head">
-							<div>
-								<h3>Закрытие приема</h3>
-								<p>
-									{primaryVisitWarning?.actionLabel ??
-										visitCloseChecklist.nextAction}
-								</p>
-							</div>
-							<span className={visitCloseChecklist.readyToSign ? "ready" : ""}>
-								{visitCloseChecklist.readyToSign
-									? "готово"
-									: `${visitCloseChecklist.score}%`}
-							</span>
-						</div>
-						{visitCloseChecklist.items
-							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-							.filter((task: any) =>
-								dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
-									? task.ownerRole !== "assistant"
-									: true,
-							)
-							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-							.map((task: any) => (
-								<button
-									className={`close-task min-h-[44px] px-3 py-2 min-w-0 ${task.ready ? "done" : ""} ${task.blocking && !task.ready ? "blocking" : ""}`}
-									key={task.id}
-									type="button"
-									onClick={() => openCloseChecklistSection(task)}
-								>
-									<CheckCircle2 aria-hidden="true" className="shrink-0" />
-									<div className="min-w-0">
-										<strong className="break-words leading-tight">{task.title}</strong>
-										<p className="break-words leading-tight">{task.detail}</p>
-										<small className="break-words leading-tight">
-											{staffRoleLabels?.[task.ownerRole] ||
-												"исполнитель не указан"}{" "}
-											· {task.actionLabel}
-										</small>
-									</div>
-								</button>
-							))}
-					</section>
-				) : null}
 					</div>
 				</details>
 			</div>
 
-			{/* ═══════════════════════════════════════════════════════════════
-              Clinical Context Modal — открывается по клику на зуб (без штампа)
-          ═══════════════════════════════════════════════════════════════ */}
-
-			{selectedToothForMenu &&
-				typeof document !== "undefined" &&
-				(() => {
-					const { code } = selectedToothForMenu;
-					// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-					const state = (toothStateByCode as any)[code] ?? "idle";
-					const geom = getToothPath(Number(code));
-					const cfg = getToothConfig(Number(code));
-
-					// state → fill/stroke colors (same as tooth map)
-					const FILL: Record<string, string> = {
-						idle: "var(--paper)",
-						planned: "var(--info-bg)",
-						treatment: "var(--bad-bg)",
-						watch: "var(--warn-bg)",
-						done: "var(--ok-bg)",
-						missing: "var(--paper-soft)",
-					};
-					const STROKE: Record<string, string> = {
-						idle: "#94a3b8",
-						planned: "#0284c7",
-						treatment: "#dc2626",
-						watch: "#d97706",
-						done: "#166534",
-						missing: "#cbd5e1",
-					};
-					const ROOT_FILL: Record<string, string> = {
-						idle: "var(--paper-soft)",
-						planned: "var(--info-bg)",
-						treatment: "var(--bad-bg)",
-						watch: "var(--warn-bg)",
-						done: "var(--ok-bg)",
-						missing: "var(--paper-soft)",
-					};
-					const ROOT_STROKE: Record<string, string> = {
-						idle: "#cbd5e1",
-						planned: "#38bdf8",
-						treatment: "#f87171",
-						watch: "#fbbf24",
-						done: "#4ade80",
-						missing: "#cbd5e1",
-					};
-
-					const isLower = Number(code) >= 30;
-
-					const toothSvg = (
-						<svg
-							aria-hidden="true"
-							width={cfg.width}
-							height={cfg.height}
-							viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-							fill="none"
-							style={{ transform: isLower ? "scaleY(-1)" : "none" }}
-						>
-							{state === "missing" ? (
-								<g>
-									<path
-										d={geom.root}
-										fill="var(--paper-soft)"
-										stroke="#cbd5e1"
-										strokeWidth="1.2"
-										opacity="0.15"
-									/>
-									<path
-										d={geom.crown}
-										fill="var(--paper-soft)"
-										stroke="#cbd5e1"
-										strokeWidth="1.2"
-										opacity="0.15"
-									/>
-									<path
-										d="M20 20L80 130M80 20L20 130"
-										stroke="#ef4444"
-										strokeWidth="5"
-										strokeLinecap="round"
-										opacity="0.7"
-									/>
-								</g>
-							) : (
-								<g>
-									<path
-										d={geom.root}
-										fill={ROOT_FILL[state] ?? "var(--paper-soft)"}
-										stroke={ROOT_STROKE[state] ?? "#cbd5e1"}
-										strokeWidth="1.5"
-										strokeLinejoin="round"
-									/>
-									{geom.canals &&
-										(state === "treatment" || state === "done") && (
-											<path
-												d={geom.canals}
-												fill="none"
-												stroke={state === "done" ? "#ec4899" : "#dc2626"}
-												strokeWidth="2.5"
-												strokeLinecap="round"
-												opacity="0.85"
-											/>
-										)}
-									<path
-										d={geom.crown}
-										fill={FILL[state] ?? "var(--paper)"}
-										stroke={STROKE[state] ?? "#94a3b8"}
-										strokeWidth="2.2"
-										strokeLinejoin="round"
-									/>
-									{geom.fissures && (
-										<path
-											d={geom.fissures}
-											fill="none"
-											stroke="rgba(0,0,0,0.15)"
-											strokeWidth="0.8"
-										/>
-									)}
-								</g>
-							)}
-						</svg>
-					);
-
-					return createPortal(
-						<>
-							<button
-								type="button"
-								className="_ccm-overlay"
-								onClick={closeClinicalModal}
-								onKeyDown={(e) =>
-									(e.key === "Enter" || e.key === " ") && closeClinicalModal()
-								}
-							/>
-							<div
-								className="_ccm-content"
-								role="dialog"
-								aria-modal="true"
-								aria-label={`Зуб ${code}`}
-							>
-								{/* ── LEFT: Diagnosis ── */}
-								<div className="_ccm-panel">
-									<h4 className="_ccm-h flex items-center gap-1.5">
-										<Stethoscope className="w-4 h-4 text-indigo-500 shrink-0" />
-										<span>Диагностика</span>
-									</h4>
-
-									{visitWarnings && visitWarnings.length > 0 && (
-										<div className="_ccm-warn flex items-center gap-1 flex-wrap">
-											<strong className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-												<AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-												Риски:
-											</strong>{" "}
-											{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-											{visitWarnings.map((w: any) => w.title).join(" · ")}
-										</div>
-									)}
-
-									<div className="_ccm-label">Состояние</div>
-
-									<button
-										type="button"
-										className={`_ccm-btn${state === "idle" ? " active" : ""}`}
-										data-color="green"
-										style={
-											{
-												"--ab": "var(--ok-bg, #f0fdf4)",
-												"--af": "var(--ok-fg, #166534)",
-												"--abr": "var(--ok-fg, #bbf7d0)",
-												// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-											} as any
-										}
-										onClick={() => handleSelectDiagnosis("idle")}
-									>
-										<span>Здоров / Норма</span> <CircleDot className="w-4 h-4 text-emerald-500 shrink-0" />
-									</button>
-
-									<button
-										type="button"
-										className={`_ccm-btn${state === "done" ? " active" : ""}`}
-										data-color="green"
-										style={
-											{
-												"--ab": "var(--ok-bg, #f0fdf4)",
-												"--af": "var(--ok-fg, #166534)",
-												"--abr": "var(--ok-fg, #bbf7d0)",
-												// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-											} as any
-										}
-										onClick={() =>
-											handleSelectDiagnosis(
-												"done",
-												"зуб санирован / здоров",
-												"diagnosis",
-											)
-										}
-									>
-										<span>Санирован / Готово</span> <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-									</button>
-
-									<button
-										type="button"
-										className={`_ccm-btn${state === "missing" ? " active" : ""}`}
-										data-color="slate"
-										onClick={() =>
-											handleSelectDiagnosis(
-												"missing",
-												"зуб отсутствует",
-												"diagnosis",
-											)
-										}
-									>
-										<span>Отсутствует / Удалён</span> <XCircle className="w-4 h-4 text-slate-400 shrink-0" />
-									</button>
-
-									<div className="_ccm-label">Патологии</div>
-
-									<button
-										type="button"
-										className={`_ccm-btn${state === "watch" ? " active" : ""}`}
-										data-color="amber"
-										style={
-											{
-												"--ab": "var(--warn-bg, #fffbeb)",
-												"--af": "var(--warn-fg, #78350f)",
-												"--abr": "var(--warn-fg, #fde68a)",
-												// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-											} as any
-										}
-										onClick={() =>
-											handleSelectDiagnosis(
-												"watch",
-												"K02.1 Кариес дентина",
-												"diagnosis",
-											)
-										}
-									>
-										<span>Кариес дентина (K02.1)</span> <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-									</button>
-
-									<button
-										type="button"
-										className="_ccm-btn"
-										data-color="red"
-										onClick={() =>
-											handleSelectDiagnosis(
-												"treatment",
-												"K04.0 Острый пульпит",
-												"diagnosis",
-											)
-										}
-									>
-										<span>Острый пульпит (K04.0)</span> <Flame className="w-4 h-4 text-red-500 shrink-0" />
-									</button>
-
-									<button
-										type="button"
-										className="_ccm-btn"
-										data-color="rose"
-										onClick={() =>
-											handleSelectDiagnosis(
-												"treatment",
-												"K04.5 Хронический апикальный периодонтит / киста",
-												"diagnosis",
-											)
-										}
-									>
-										<span>Периодонтит / Киста (K04.5)</span> <CircleDot className="w-4 h-4 text-rose-500 shrink-0" />
-									</button>
-
-									<button
-										type="button"
-										className="_ccm-btn"
-										data-color="amber"
-										onClick={() =>
-											handleSelectDiagnosis(
-												"watch",
-												"K03.1 Клиновидный дефект",
-												"diagnosis",
-											)
-										}
-									>
-										<span>Клиновидный дефект (K03.1)</span> <Activity className="w-4 h-4 text-amber-500 shrink-0" />
-									</button>
-								</div>
-
-								{/* ── CENTER: Tooth preview ── */}
-								<div className="_ccm-center">
-									{/* Было «FDI 26» — на карточке зуба у кресла понятнее «Зуб 26». */}
-									<div className="_ccm-code-badge">Зуб {code}</div>
-									<div className="_ccm-tooth-stage" aria-hidden="true">
-										{toothSvg}
-									</div>
-									<button
-										type="button"
-										className="_ccm-close-btn"
-										onClick={closeClinicalModal}
-									>
-										Закрыть
-									</button>
-								</div>
-
-								{/* ── RIGHT: Treatment ── */}
-								<div className="_ccm-panel">
-									<h4 className="_ccm-h" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-										<DefaultSparkles className="w-4 h-4 text-[var(--teal)] shrink-0" />
-										<span>Лечение (Зуб {code})</span>
-									</h4>
-
-									{materialCategory ? (
-										<div
-											style={{
-												display: "flex",
-												flexDirection: "column",
-												gap: ".45rem",
-												animation: "_ccm-fade .15s ease-out",
-											}}
-										>
-											<div className="_ccm-label">
-												{materialCategory === "filling"
-													? "Материал реставрации:"
-													: materialCategory === "crown"
-														? "Материал коронки:"
-														: materialCategory === "veneer"
-															? "Материал винира:"
-															: "Система имплантации:"}
-											</div>
-											{(materialCategory === "filling"
-												? THERAPY_MATERIALS
-												: materialCategory === "crown" ||
-														materialCategory === "veneer"
-													? ORTHO_MATERIALS
-													: IMPLANT_SYSTEMS
-											).map((mat) => (
-												<button
-													key={mat.id}
-													type="button"
-													className="_ccm-btn"
-													data-color="blue"
-													onClick={() =>
-														handleApplyMaterial(
-															mat.label,
-															materialCategory === "filling"
-																? "реставрация композитом"
-																: materialCategory === "crown"
-																	? "протезирование коронкой"
-																	: materialCategory === "veneer"
-																		? "винир"
-																		: "установка имплантата",
-														)
-													}
-												>
-													<span className="flex-1 text-left">{mat.label}</span> <Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-												</button>
-											))}
-											<button
-												type="button"
-												className="_ccm-btn"
-												style={{
-													borderStyle: "dashed",
-													justifyContent: "center",
-													marginTop: ".25rem",
-												}}
-												onClick={() => setMaterialCategory(null)}
-											>
-												← Назад
-											</button>
-										</div>
-									) : (
-										<>
-											<div className="_ccm-label">Терапия</div>
-											<button
-												type="button"
-												className="_ccm-btn"
-												data-color="blue"
-												onClick={() => setMaterialCategory("filling")}
-											>
-												<span>Пломба / Реставрация</span> <Edit3 className="w-4 h-4 text-blue-500 shrink-0" />
-											</button>
-											<button
-												type="button"
-												className="_ccm-btn"
-												data-color="pink"
-												onClick={() =>
-													handleSelectDiagnosis(
-														"treatment",
-														"депульпирование, обтурация каналов",
-														"treatmentPlan",
-													)
-												}
-											>
-												<span>Лечение каналов (Эндо)</span> <Zap className="w-4 h-4 text-pink-500 shrink-0" />
-											</button>
-											<button
-												type="button"
-												data-testid="visit-view-endo-canal-log-btn"
-												className="_ccm-btn"
-												data-color="pink"
-												style={{
-													borderColor: "var(--teal, var(--line))",
-													backgroundColor: "var(--surface-muted, var(--paper))",
-													color: "var(--ink)",
-													fontWeight: "bold",
-												}}
-												onClick={() => {
-													setEndoModalToothNumber(Number(code));
-													setEndoModalToothState(
-														state === "treatment"
-															? "Пульпит / Периодонтит"
-															: state,
-													);
-													setIsEndoModalOpen(true);
-												}}
-											>
-												<span className="flex-1 text-left">Журнал каналов (MB1, MB2, DB, P)</span> <ClipboardList className="w-4 h-4 text-pink-500 shrink-0" />
-											</button>
-											<button
-												type="button"
-												data-testid="visit-view-anesthesia-dosage-btn"
-												className="_ccm-btn"
-												data-color="sky"
-												style={{
-													borderColor: "var(--teal, var(--line))",
-													backgroundColor: "var(--surface-muted, var(--paper))",
-													color: "var(--ink)",
-													fontWeight: "bold",
-												}}
-												onClick={() => {
-													appendToEMKField(
-														"treatmentPlan",
-														`Анестезия зуба ${code}: Sol. Ultracaini D-S 1:200 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.`,
-													);
-													showToast(`Анестезия зуба ${code} (1 карп.) внесена в протокол`, "success", 2500);
-													closeClinicalModal();
-												}}
-											>
-												<span className="flex-1 text-left">Анестезия зуба {code} (1 карп.)</span> <Syringe className="w-4 h-4 text-sky-500 shrink-0" />
-											</button>
-
-											<button
-												type="button"
-												className="_ccm-btn"
-												data-color="amber"
-												onClick={() =>
-													handleSelectDiagnosis(
-														"watch",
-														"наблюдение, реминерализация",
-														"treatmentPlan",
-													)
-												}
-											>
-												<span>Наблюдение / Реминерализация</span> <Eye className="w-4 h-4 text-amber-500 shrink-0" />
-											</button>
-
-											<div className="_ccm-label">Ортопедия</div>
-											<button
-												type="button"
-												className="_ccm-btn"
-												data-color="cyan"
-												onClick={() => setMaterialCategory("crown")}
-											>
-												<span>Коронка на зуб</span> <Crown className="w-4 h-4 text-cyan-500 shrink-0" />
-											</button>
-											{/*
-                          БЫЛО: кнопка молча записывала в план «винир — E-max
-                          (Kerr / Ivoclar)», не спросив врача. Мало того что
-                          материал выбирался за него: E-max выпускает Ivoclar, а
-                          Kerr — другой производитель, то есть в план лечения
-                          пациента уходила выдуманная пара названий. Материал
-                          винира спрашиваем так же, как материал коронки.
-                        */}
-											<button
-												type="button"
-												className="_ccm-btn"
-												data-color="violet"
-												onClick={() => setMaterialCategory("veneer")}
-											>
-												<span>Винир</span> <Sparkles className="w-4 h-4 text-violet-500 shrink-0" />
-											</button>
-											<button
-												type="button"
-												className="_ccm-btn"
-												data-color="teal"
-												onClick={() => {
-													setLabOrderModalToothNumber(selectedToothForMenu?.code);
-													setIsLabOrderModalOpen(true);
-													closeClinicalModal();
-												}}
-											>
-												<span>Наряд в ЗТЛ (CAD/CAM)</span> <FileCheck2 className="w-4 h-4 text-teal-500 shrink-0" />
-											</button>
-
-											<div className="_ccm-label">Хирургия</div>
-											<button
-												type="button"
-												className="_ccm-btn"
-												data-color="red"
-												onClick={() =>
-													handleSelectDiagnosis(
-														"treatment",
-														"удаление зуба: анестезия, синдесмотомия, экстракция, ревизия лунки",
-														"treatmentPlan",
-													)
-												}
-											>
-												<span>Удаление зуба</span> <Scissors className="w-4 h-4 text-red-500 shrink-0" />
-											</button>
-											<button
-												type="button"
-												className="_ccm-btn"
-												data-color="violet"
-												onClick={() => {
-													if (
-														// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-														visitWarnings?.some((w: any) =>
-															/бисфосф|bisph/i.test(w.title + w.detail),
-														)
-													) {
-														showToast(
-															`ВНИМАНИЕ: У пациента бисфосфонаты в анамнезе (риск остеонекроза челюсти). Окончательное решение принимает лечащий хирург.`,
-															"warning",
-														);
-													}
-													setMaterialCategory("implant");
-												}}
-											>
-												<span>Имплантация</span> <Anchor className="w-4 h-4 text-violet-500 shrink-0" />
-											</button>
-										</>
-									)}
-								</div>
-							</div>
-						</>,
-						document.body,
-					);
-				})()}
-			{/* min(380px, 100%): без него колонка остаётся 380px даже когда
-            контейнер уже — на телефоне карточки вылезали за правый край и
-            обрезались. Замерено: контейнер 364px, колонка 380px. */}
-			{/*
-          ЗДЕСЬ ВНИЗУ ЭКРАНА ПРИЁМА СТОЯЛИ СЕМЬ ПУСТЫХ БЛОКОВ. Проверено живыми
-          запросами при открытой смене:
-            • «Справочники форм осмотра», «Сопутствующие диагнозы ЕГИСЗ»,
-              «Расширенные состояния зубов», «Нестоматологические формы осмотра»,
-              «Находки Diagnocat» — все пять отвечают пустым списком всегда:
-              таблицы существуют, писателя нет ни у одной;
-            • «Связи снимков с осмотром» и «Справочники МКБ-10» отвечают 404 —
-              маршрутов не существует вовсе.
-          Экран приёма — рабочее место врача во время лечения. Семь пустых
-          карточек внизу приучают пролистывать эту область не глядя, и однажды
-          там окажется что-то важное.
-
-          Что из этого реально работает и где оно есть: зубная формула —
-          в одонтограмме выше на этом же экране (маршруты /api/odontogram/*);
-          снимки — в разделе изображений; диагнозы ставятся в самой карте
-          приёма.
-          ДОЛГ, с причиной: интеграции Diagnocat (нет ключей и вызовов API),
-          выгрузки ЕГИСЗ по сопутствующим диагнозам (нет писателя) и
-          пользовательских форм осмотра (нет ни модели, ни экрана настройки).
-          Возвращать эти блоки имеет смысл вместе с работающей начинкой, а не
-          раньше.
-        */}
-
-			{/* Endodontic Root Canal Log Modal */}
-			{endoModalToothNumber && (
-				<EndoCanalLogModal
-					isOpen={isEndoModalOpen}
-					onClose={() => {
-						setIsEndoModalOpen(false);
-						setEndoModalToothNumber(null);
-					}}
-					toothNumber={endoModalToothNumber}
-					toothState={endoModalToothState}
-					patientId={
-						activePatient?.id ||
-						(typeof dashboard?.activeVisit?.patientId === "string"
-							? dashboard.activeVisit.patientId
-							: undefined)
-					}
-					onInsertToProtocol={(protocolText) => {
-						appendToEMKField("treatmentPlan", protocolText);
-					}}
-				/>
-			)}
-
-			{/* Dental Lab Order Modal (ЗТЛ) */}
-			<DentalLabOrderModal
-				isOpen={isLabOrderModalOpen}
-				onClose={() => {
-					setIsLabOrderModalOpen(false);
-					setLabOrderModalToothNumber(null);
-				}}
-				patientId={
-					activePatient?.id ||
-					(typeof dashboard?.activeVisit?.patientId === "string"
-						? dashboard.activeVisit.patientId
-						: undefined)
-				}
-				patientName={activePatient?.fullName}
-				doctorId={activeDoctor?.id}
-				doctorName={activeDoctor?.fullName}
-				initialToothFdi={labOrderModalToothNumber ?? undefined}
-				onOrderSaved={(order) => {
-					if (order?.toothFdi && order?.material) {
-						appendToEMKField(
-							"treatmentPlan",
-							`Оформлен наряд ЗТЛ на зуб ${order.toothFdi} (${order.material}, цвет ${order.colorVita || "A2"}).`,
-						);
-					}
-				}}
-			/>
-
-			{/* Stage Payment & Milestone Escrow Modal */}
-			<StagePaymentPlanModal
-				isOpen={isStagePaymentModalOpen}
-				onClose={() => setIsStagePaymentModalOpen(false)}
-				patientId={activePatient?.id}
-				patientName={activePatient?.fullName}
-				doctorFullName={activeDoctor?.fullName}
-			/>
-
-			{/* Treatment Plan Price Lock & Pricelist Validator Modal */}
-			<TreatmentPlanPriceValidatorModal
-				isOpen={isPriceValidatorModalOpen}
-				onClose={() => setIsPriceValidatorModalOpen(false)}
-				planPayload={priceValidatorPlanPayload}
-				catalogPricelist={priceValidatorCatalogList}
-				onExportWorkOrder={(exportData) => {
-					appendToEMKField(
-						"treatmentPlan",
-						`Сформирован наряд-заказ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽. Фиксация цен: ${exportData.isApprovedByManager ? "Согласовано управляющим" : "По гарантии"}.`,
-					);
-					showToast(
-						`Зуботехнический наряд-заказ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ добавлен в протокол приема.`,
-						"success",
-					);
-				}}
-				onExportCompletedAct={(exportData) => {
-					appendToEMKField(
-						"treatmentPlan",
-						`Сформирован акт выполненных работ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽.`,
-					);
-					showToast(
-						`Акт выполненных работ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ готов к подписанию.`,
-						"success",
-					);
-				}}
-			/>
-
-			{/* Emergency Rescue / Anaphylaxis Anti-Shock Modal (Мандаты 8c, 8e) */}
-			<EmergencyRescueModal
-				isOpen={isEmergencyModalOpen}
-				onClose={() => setIsEmergencyModalOpen(false)}
-				onApplyToDiary={(protocolText) => {
-					appendToEMKField("diary", protocolText);
-					showToast("Протокол оказания экстренной помощи внесён в дневник 043/у", "warning");
-				}}
-				initialPatientName={activePatient?.fullName || ""}
-				initialPatientAgeYears={patientAge ? Number.parseInt(patientAge, 10) || undefined : undefined}
-				doctorFullName={activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог"}
-				medCardNumber={activePatient?.medCardNumber || activePatient?.cardNumber || activePatient?.id || ""}
-				clinicName={dashboard?.organization?.name || "Стоматологическая клиника"}
-			/>
-
-			{/* AI Voice Dictation Assistant Modal */}
-			<VoiceDictationAssistantModal
-				isOpen={isVoiceDictationModalOpen}
-				onClose={() => setIsVoiceDictationModalOpen(false)}
-				activeToothNumber={selectedToothForMenu?.code ? Number.parseInt(selectedToothForMenu.code, 10) || null : null}
-				onApplySoapNote={(soap) => {
-					if (soap.subjective) appendToEMKField("complaints", soap.subjective);
-					if (soap.objective) appendToEMKField("objectiveInspection", soap.objective);
-					if (soap.assessment) appendToEMKField("diagnosis", soap.assessment);
-					if (soap.plan) appendToEMKField("treatmentPlan", soap.plan);
-					if (soap.recommendations) appendToEMKField("recommendations", soap.recommendations);
-					showToast("SOAP-запись внесена в Форму 043/у", "success");
-				}}
-				onApplyCommand={(cmd: DictationCommand) => {
-					if (cmd.toothNumber && cmd.clinicalStatus) {
-						// biome-ignore lint/suspicious/noExplicitAny: clinical status mapping
-						setToothState(String(cmd.toothNumber), cmd.clinicalStatus as any);
-					}
-					if (cmd.soapText || cmd.summary) {
-						appendToEMKField("objectiveInspection", cmd.soapText || cmd.summary);
-					}
-				}}
-				onApplyAllCommands={(cmds: DictationCommand[]) => {
-					for (const cmd of cmds) {
-						if (cmd.toothNumber && cmd.clinicalStatus) {
-							// biome-ignore lint/suspicious/noExplicitAny: clinical status mapping
-							setToothState(String(cmd.toothNumber), cmd.clinicalStatus as any);
-						}
-						if (cmd.soapText || cmd.summary) {
-							appendToEMKField("objectiveInspection", cmd.soapText || cmd.summary);
+			{/* ═══ CLINICAL TOOTH CONTEXT MODAL ═══ */}
+			<VisitClinicalToothModal
+				selectedToothForMenu={selectedToothForMenu}
+				closeClinicalModal={() => setSelectedToothForMenu(null)}
+				toothStateByCode={toothStateByCode}
+				materialCategory={materialCategory}
+				setMaterialCategory={setMaterialCategory}
+				handleSelectDiagnosis={(state, text, field) => {
+					if (selectedToothForMenu?.code) {
+						setToothState(selectedToothForMenu.code, state);
+						if (text && field) {
+							appendToEMKField(field, `Зуб ${selectedToothForMenu.code}: ${text}`);
 						}
 					}
-					showToast(`Применено команд: ${cmds.length}`, "success");
+					setSelectedToothForMenu(null);
 				}}
+				handleSelectSurface={() => {}}
+				selectedSurfaces={selectedSurfaces}
+				isSurfaceMode={isSurfaceMode}
+				setIsSurfaceMode={setIsSurfaceMode}
+				setEndoModalToothNumber={setEndoModalToothNumber}
+				setEndoModalToothState={setEndoModalToothState}
+				setIsEndoModalOpen={setIsEndoModalOpen}
+				appendToEMKField={appendToEMKField}
+				setLabOrderModalToothNumber={setLabOrderModalToothNumber}
+				setIsLabOrderModalOpen={setIsLabOrderModalOpen}
+				visitWarnings={visitWarnings}
 			/>
 
-			{/* Warranty Passport Modal */}
-			<WarrantyPassportModal
-				isOpen={isWarrantyModalOpen}
-				onClose={() => setIsWarrantyModalOpen(false)}
-				patient={
-					activePatient
-						? {
-								id: activePatient.id,
-								fullName: activePatient.fullName,
-								birthDate: activePatient.birthDate,
-								cardNumber: activePatient.cardNumber || activePatient.medCardNumber,
-								phone: activePatient.phone,
-							}
-						: null
-				}
-				doctorName={activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог"}
-				doctorSpecialty={activeDoctor?.specialty || "Стоматолог-терапевт"}
-				clinicName={dashboard?.organization?.name || "Стоматологическая клиника"}
-				onAttachToForm043u={(payload) => {
-					const summary = `Гарантийный паспорт № ${payload.certificateId} от ${payload.attachedAt} (${payload.itemCount} поз., гарантия ${payload.adjustedWarrantyMonths} мес.)`;
-					appendToEMKField("recommendations", summary);
-					showToast("Гарантийный паспорт прикреплен к Форме 043/у", "success");
-				}}
-				onCertificateIssued={(cert) => {
-					showToast(`Выдан гарантийный сертификат № ${cert.certificateId}`, "success");
-				}}
+			{/* ═══ VISIT VIEW MODALS ═══ */}
+			<VisitViewModals
+				endoModalToothNumber={endoModalToothNumber}
+				endoModalToothState={endoModalToothState}
+				isEndoModalOpen={isEndoModalOpen}
+				setIsEndoModalOpen={setIsEndoModalOpen}
+				setEndoModalToothNumber={setEndoModalToothNumber}
+				isLabOrderModalOpen={isLabOrderModalOpen}
+				setIsLabOrderModalOpen={setIsLabOrderModalOpen}
+				labOrderModalToothNumber={labOrderModalToothNumber}
+				setLabOrderModalToothNumber={setLabOrderModalToothNumber}
+				isStagePaymentModalOpen={isStagePaymentModalOpen}
+				setIsStagePaymentModalOpen={setIsStagePaymentModalOpen}
+				isPriceValidatorModalOpen={isPriceValidatorModalOpen}
+				setIsPriceValidatorModalOpen={setIsPriceValidatorModalOpen}
+				priceValidatorPlanPayload={{}}
+				priceValidatorCatalogList={[]}
+				isEmergencyModalOpen={isEmergencyModalOpen}
+				setIsEmergencyModalOpen={setIsEmergencyModalOpen}
+				isVoiceDictationModalOpen={isVoiceDictationModalOpen}
+				setIsVoiceDictationModalOpen={setIsVoiceDictationModalOpen}
+				selectedToothForMenu={selectedToothForMenu}
+				isWarrantyModalOpen={isWarrantyModalOpen}
+				setIsWarrantyModalOpen={setIsWarrantyModalOpen}
+				isDoctorShiftModalOpen={isDoctorShiftModalOpen}
+				setIsDoctorShiftModalOpen={setIsDoctorShiftModalOpen}
+				isInformedConsentModalOpen={isInformedConsentModalOpen}
+				setIsInformedConsentModalOpen={setIsInformedConsentModalOpen}
+				activePatient={activePatient}
+				activeDoctor={activeDoctor}
+				dashboard={dashboard}
+				patientAge={patientAge}
+				appendToEMKField={appendToEMKField}
+				setToothState={setToothState}
+				visitNoteForm={visitNoteForm}
+				activeAppointment={activeAppointment}
 			/>
-
-			{/* Informed Consent Modal (Приказ Минздрава РФ № 1051н) */}
-			<InformedConsentModal
-				isOpen={isInformedConsentModalOpen}
-				onClose={() => setIsInformedConsentModalOpen(false)}
-				patient={
-					activePatient
-						? {
-								fullName: activePatient.fullName || activePatient.name,
-								birthDate: activePatient.birthDate,
-								passport: (activePatient as { passport?: string } | null)?.passport,
-								phone: activePatient.phone,
-								address: activePatient.address,
-								cardNumber: activePatient.cardNumber || activePatient.medCardNumber,
-							}
-						: null
-				}
-				doctorName={activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог"}
-				doctorSpecialty={activeDoctor?.specialty || activeDoctor?.specialtyRu || "Стоматолог-терапевт"}
-				clinicName={
-					(dashboard as { clinicSettings?: { profile?: { brandName?: string } } } | null)?.clinicSettings?.profile?.brandName ||
-					dashboard?.organization?.name ||
-					"Стоматологическая клиника «DENTE»"
-				}
-				clinicLegalName={
-					(dashboard as { clinicSettings?: { profile?: { legalName?: string; brandName?: string } } } | null)?.clinicSettings?.profile?.legalName ||
-					(dashboard as { clinicSettings?: { profile?: { brandName?: string } } } | null)?.clinicSettings?.profile?.brandName ||
-					dashboard?.organization?.name ||
-					"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
-				}
-				licenseNumber={
-					(dashboard as { clinicSettings?: { profile?: { medicalLicenseNumber?: string } } } | null)?.clinicSettings?.profile?.medicalLicenseNumber ||
-					"ЛО41-01137-77/00368421"
-				}
-				diagnosisIcd={visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование"}
-				toothNumbers={typeof selectedToothForMenu === "number" ? String(selectedToothForMenu) : undefined}
-				isSigned={
-					activeAppointment?.status === "completed" ||
-					activeAppointment?.status === "signed" ||
-					visitNoteForm?.status === "signed"
-				}
-				status={activeAppointment?.status}
-				onConsentConfirmed={(payload) => {
-					appendToEMKField(
-						"recommendations",
-						`Пациент ознакомлен и подписал ${payload.consentType} (${payload.intervention}, область: ${payload.toothOrArea || "по плану"}).`,
-					);
-					showToast("Информированное согласие прикреплено к протоколу приёма", "success");
-				}}
-			/>
-
 		</>
 	);
 }
 
+export default VisitView;

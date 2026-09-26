@@ -18,6 +18,7 @@ import type {
 	VisitDraftAutosaveResponse,
 } from "@dental/shared";
 import {
+	denteAdminSecretRequestHeaders,
 	queuePendingVisitSave,
 	visitNoteDraftFromForm,
 	type VisitNoteForm,
@@ -167,6 +168,7 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 						method: "PUT",
 						headers: {
 							"Content-Type": "application/json",
+							...denteAdminSecretRequestHeaders(),
 						},
 						body: JSON.stringify({
 							patientId: effectivePatientId,

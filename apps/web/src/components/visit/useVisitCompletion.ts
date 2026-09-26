@@ -20,6 +20,7 @@ import {
 } from "./clinicalVisitWorkflow";
 import type { DiaryState } from "../useVisitDiaryLogic";
 import { useAppStore } from "../../store/appStore";
+import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
 import { fetchWithHandling } from "../../utils/networkUtils";
@@ -179,7 +180,10 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 					try {
 						await fetchWithHandling(`/api/visits/${activeVisit.id}/draft/autosave`, {
 							method: "PUT",
-							headers: { "Content-Type": "application/json" },
+							headers: {
+								"Content-Type": "application/json",
+								...denteAdminSecretRequestHeaders(),
+							},
 							body: JSON.stringify({
 								patientId: effectivePatientId,
 								transcript: "",
