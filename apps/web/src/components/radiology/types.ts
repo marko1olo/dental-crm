@@ -229,6 +229,7 @@ export interface RadiologyStudy {
 	effectiveDoseMsv: number; // мЗв (например, 0.045)
 	imageUrl?: string | undefined;
 	thumbnailUrl?: string;
+	doctorId?: string;
 	doctorName: string;
 	doctorSpecialty?: string;
 	clinicName?: string;

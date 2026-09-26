@@ -1,25 +1,12 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type {
-	CbctVoxelVolume,
-	Point3D,
-	SlabProjectionMode,
-	ObliqueRotationAngles,
-	ViewportTransform,
-	CbctMeasurementRuler,
-	CbctAngleMeasurement,
-	CbctProbeMarker,
-	CbctViewportType,
+	CbctVoxelVolume, Point3D, SlabProjectionMode, ObliqueRotationAngles,
+	ViewportTransform, CbctMeasurementRuler, CbctAngleMeasurement, CbctProbeMarker, CbctViewportType,
 } from "./cbctMprMath";
 import {
-	CBCT_HOUNSFIELD_PRESETS,
-	DEFAULT_OBLIQUE_ROTATION,
-	DEFAULT_VIEWPORT_TRANSFORM,
-	ROMEXIS_COLORS,
-	disposeCbctVolume,
-	getTissueNameFromHU,
-	sampleVoxelHU,
-	worldMmToVoxel,
+	CBCT_HOUNSFIELD_PRESETS, DEFAULT_OBLIQUE_ROTATION, DEFAULT_VIEWPORT_TRANSFORM,
+	ROMEXIS_COLORS, disposeCbctVolume, getTissueNameFromHU, sampleVoxelHU, worldMmToVoxel,
 } from "./cbctMprMath";
 import { useCbctKeyboardShortcuts, applyStepZoom } from "./useCbctKeyboardShortcuts";
 import { CbctHotkeysStatusBar } from "./CbctHotkeysStatusBar";
@@ -36,22 +23,10 @@ import {
 	reconstructPanoramicView,
 } from "./dentalCurveEngine";
 import {
-	type ImplantBrandKey,
-	type VirtualImplantSpec,
-	type CrossSectionImplantPose,
-	type MandibularCanalCrossSection,
-	type Implant3DWorldProjection,
-	type LiveImplantTelemetry,
-	type Vec3,
-	STANDARD_IMPLANT_CATALOG,
-	auditAlveolarBoneContainment,
-	auditNerveSafetyMargin,
-	calculateApexCoordinates,
-	calculateImplant3DWorldPose,
-	computeLiveImplantTelemetry,
-	generateForm043CbctDiary,
-	playNerveSafetyAudioAlarm,
-	sampleCrossSectionHUProfile,
+	type ImplantBrandKey, type VirtualImplantSpec, type CrossSectionImplantPose,
+	type MandibularCanalCrossSection, type Implant3DWorldProjection, type LiveImplantTelemetry, type Vec3,
+	STANDARD_IMPLANT_CATALOG, auditNerveSafetyMargin, calculateApexCoordinates,
+	calculateImplant3DWorldPose, computeLiveImplantTelemetry, playNerveSafetyAudioAlarm, sampleCrossSectionHUProfile,
 } from "./implantSafetyEngine";
 import {
 	calculateSplineLength3DMm,
@@ -65,9 +40,12 @@ import {
 import { CbctLeftToolDock, type CbctToolMode } from "./CbctLeftToolDock";
 import { showToast } from "../GlobalToast";
 import {
-	buildCbctReportData,
-	openCbctReportPrintWindow,
-} from "./cbctExportEngine";
+	exportImplantToTreatmentPlan,
+	exportImplantToDiary043,
+	exportImplantToScheduleDraft,
+	exportPdfImplantReport,
+	addCbctToFinanceAndPlan,
+} from "./ctImplantIntegrationBridge";
 import {
 	type StudioMode,
 	type ViewLayoutMode,
@@ -96,7 +74,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	onClose,
 	study,
 	patientName,
+	patientId,
 	onApplyToDiary043,
+	onApplyToPlan,
 	initialStudioMode,
 	initialSidebarOpen,
 }) => {
@@ -105,7 +85,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	// Studio mode & layout
 	const [studioMode, setStudioMode] = useState<StudioMode>(initialStudioMode ?? "diagnostic");
 	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(initialSidebarOpen ?? (initialStudioMode === "implant"));
-	const [viewLayout, setViewLayout] = useState<ViewLayoutMode>("quad_view");
+	const [viewLayout, setViewLayout] = useState<ViewLayoutMode>("mpr_3_view");
 	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null);
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 	const [isStudioMenuOpen, setIsStudioMenuOpen] = useState<boolean>(false);
@@ -159,44 +139,27 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	const [dragImplantPart, setDragImplantPart] = useState<string | null>(null);
 	const [hoveredImplantPart, setHoveredImplantPart] = useState<string | null>(null);
-	const [crossSectionDragStart, setCrossSectionDragStart] = useState<{
-		clientX: number;
-		clientY: number;
-		startX: number;
-		startY: number;
-		startAng: number;
-	} | null>(null);
-
+	const [crossSectionDragStart, setCrossSectionDragStart] = useState<{ clientX: number; clientY: number; startX: number; startY: number; startAng: number } | null>(null);
 	const [canalXOffsetMm, setCanalXOffsetMm] = useState<number>(2.0);
 	const [canalYDepthMm, setCanalYDepthMm] = useState<number>(16.5);
 
-	// Measurement tools
+	// Measurement tools & transforms
 	const [activeTool, setActiveTool] = useState<CbctToolMode>("crosshair");
 	const [activeViewport, setActiveViewport] = useState<CbctViewportType>("axial");
-	const [rulers, setRulers] = useState<CbctMeasurementRuler[]>([]);
-	const [activeRuler, setActiveRuler] = useState<(CbctMeasurementRuler & { currentMm: Point3D }) | null>(null);
-	const [angles, setAngles] = useState<CbctAngleMeasurement[]>([]);
-	const [activeAngle, setActiveAngle] = useState<(CbctAngleMeasurement & { currentMm: Point3D }) | null>(null);
-	const [probeMarkers, setProbeMarkers] = useState<CbctProbeMarker[]>([]);
-	const [activeProbe, setActiveProbe] = useState<(CbctProbeMarker & { hu: number; tissueName: string }) | null>(null);
+	const [rulers, setRulers] = useState<CbctMeasurementRuler[]>([]), [activeRuler, setActiveRuler] = useState<(CbctMeasurementRuler & { currentMm: Point3D }) | null>(null);
+	const [angles, setAngles] = useState<CbctAngleMeasurement[]>([]), [activeAngle, setActiveAngle] = useState<(CbctAngleMeasurement & { currentMm: Point3D }) | null>(null);
+	const [probeMarkers, setProbeMarkers] = useState<CbctProbeMarker[]>([]), [activeProbe, setActiveProbe] = useState<(CbctProbeMarker & { hu: number; tissueName: string }) | null>(null);
 	const [selectedMeasurement, setSelectedMeasurement] = useState<CbctMeasurementRuler | CbctAngleMeasurement | CbctProbeMarker | null>(null);
 	const [hoveredMeasurementHandle, setHoveredMeasurementHandle] = useState<{ id: string; handleIndex: number } | null>(null);
 	const [draggingMeasurementHandle, setDraggingMeasurementHandle] = useState<{ id: string; handleIndex: number } | null>(null);
-
-	// Transforms
 	const [transforms, setTransforms] = useState<Record<CbctViewportType, ViewportTransform>>(getDefaultViewportTransforms);
 
 	// Canvas refs
-	const axialBaseCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const axialOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const coronalBaseCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const coronalOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const sagittalBaseCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const sagittalOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const panoBaseCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const panoOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const crossSectionBaseCanvasRef = useRef<HTMLCanvasElement | null>(null);
-	const crossSectionOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
+	const axialBaseCanvasRef = useRef<HTMLCanvasElement | null>(null), axialOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
+	const coronalBaseCanvasRef = useRef<HTMLCanvasElement | null>(null), coronalOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
+	const sagittalBaseCanvasRef = useRef<HTMLCanvasElement | null>(null), sagittalOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
+	const panoBaseCanvasRef = useRef<HTMLCanvasElement | null>(null), panoOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
+	const crossSectionBaseCanvasRef = useRef<HTMLCanvasElement | null>(null), crossSectionOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
 	// Calculations
 	const currentVoxel = useMemo(() => volume ? worldMmToVoxel(crosshairMm, volume) : { x: 0, y: 0, z: 0 }, [volume, crosshairMm]);
@@ -464,67 +427,107 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		crossSectionOverlayCanvasRef,
 	});
 
+	const handleExportToPlan = useCallback(() => {
+		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
+		const item = exportImplantToTreatmentPlan({
+			patientId,
+			patientName: patientDisplayName,
+			doctorId: study?.doctorId,
+			doctorName: study?.doctorName,
+			toothFdi: targetTooth,
+			implantSpec: currentImplantSpec,
+			angulationDeg: implantAngulationDeg,
+			ridgeHeightMm: 22.0,
+			ridgeWidthMm: 8.0,
+			mischClass: displayBoneClass,
+			meanHU: displayMeanHU,
+			nerveClearanceMm: displayNerveClearanceMm,
+			recommendedTorqueNcm: displayTorque,
+			drillingProtocol: displayDrillingProtocol,
+			isNerveWarning: nerveAuditResult.isWarning,
+			isNerveDanger: nerveAuditResult.isDangerous,
+		});
+		if (onApplyToPlan) {
+			onApplyToPlan(item);
+		}
+	}, [
+		patientId, patientDisplayName, study, activeCrossSection, currentImplantSpec,
+		implantAngulationDeg, displayBoneClass, displayMeanHU, displayNerveClearanceMm,
+		displayTorque, displayDrillingProtocol, nerveAuditResult, onApplyToPlan,
+	]);
+
+	const handleExportToSchedule = useCallback(() => {
+		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
+		exportImplantToScheduleDraft({
+			patientId,
+			patientName: patientDisplayName,
+			toothFdi: targetTooth,
+			implantSpec: currentImplantSpec,
+			angulationDeg: implantAngulationDeg,
+			ridgeHeightMm: 22.0,
+			ridgeWidthMm: 8.0,
+			mischClass: displayBoneClass,
+			meanHU: displayMeanHU,
+			nerveClearanceMm: displayNerveClearanceMm,
+			recommendedTorqueNcm: displayTorque,
+			drillingProtocol: displayDrillingProtocol,
+		});
+	}, [
+		patientId, patientDisplayName, activeCrossSection, currentImplantSpec,
+		implantAngulationDeg, displayBoneClass, displayMeanHU, displayNerveClearanceMm,
+		displayTorque, displayDrillingProtocol,
+	]);
+
 	const handleExportToEmr = useCallback(async () => {
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
-		const diaryText = generateForm043CbctDiary({
-			toothFdi: targetTooth,
-			implantPose: currentImplantPose,
-			canal: currentCanal,
-			envelope: {
-				crestPoint: { x: 0, y: 0 },
-				basePoint: { x: 0, y: 22.0 },
-				buccalCrestPoint: { x: -4.0, y: 0 },
-				lingualCrestPoint: { x: 4.0, y: 0 },
-				ridgeWidthMm: 8.0,
+		exportImplantToDiary043(
+			{
+				patientId,
+				patientName: patientDisplayName,
+				doctorId: study?.doctorId,
+				doctorName: study?.doctorName,
+				toothFdi: targetTooth,
+				implantSpec: currentImplantSpec,
+				angulationDeg: implantAngulationDeg,
 				ridgeHeightMm: 22.0,
+				ridgeWidthMm: 8.0,
+				mischClass: displayBoneClass,
+				meanHU: displayMeanHU,
+				nerveClearanceMm: displayNerveClearanceMm,
+				recommendedTorqueNcm: displayTorque,
+				drillingProtocol: displayDrillingProtocol,
+				isNerveWarning: nerveAuditResult.isWarning,
+				isNerveDanger: nerveAuditResult.isDangerous,
 			},
-			huSampling: huSamplingResult,
-			patientName: patientDisplayName,
-			clinicName: "Стоматологический центр DENTE",
-		});
-		if (typeof navigator !== "undefined" && navigator.clipboard) {
-			navigator.clipboard.writeText(diaryText).catch(() => {});
-		}
-		if (onApplyToDiary043) {
-			onApplyToDiary043(diaryText);
-		}
-		showToast(`Снимок и протокол КЛКТ-планирования (FDI #${targetTooth}) перенесены в карту 043/у`, "success");
-	}, [activeCrossSection, currentImplantPose, currentCanal, huSamplingResult, patientDisplayName, onApplyToDiary043]);
+			onApplyToDiary043,
+		);
+	}, [
+		patientId, patientDisplayName, study, activeCrossSection, currentImplantSpec,
+		implantAngulationDeg, displayBoneClass, displayMeanHU, displayNerveClearanceMm,
+		displayTorque, displayDrillingProtocol, nerveAuditResult, onApplyToDiary043,
+	]);
 
-	const handleExportPdfReport = useCallback(async () => {
+	const handleExportCbctToFinance = useCallback(() => {
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
-		const diaryText = generateForm043CbctDiary({
+		addCbctToFinanceAndPlan({
+			patientId,
 			toothFdi: targetTooth,
-			implantPose: currentImplantPose,
-			canal: currentCanal,
-			envelope: {
-				crestPoint: { x: 0, y: 0 },
-				basePoint: { x: 0, y: 22.0 },
-				buccalCrestPoint: { x: -4.0, y: 0 },
-				lingualCrestPoint: { x: 4.0, y: 0 },
-				ridgeWidthMm: 8.0,
-				ridgeHeightMm: 22.0,
-			},
-			huSampling: huSamplingResult,
-			patientName: patientDisplayName,
-			clinicName: "Стоматологический центр DENTE",
+			doctorName: study?.doctorName,
 		});
-		const reportData = buildCbctReportData({
-			patientName: patientDisplayName,
-			clinicName: "Стоматологический центр DENTE",
-			doctorName: study?.doctorName ? `Врач: ${study.doctorName}` : "Лечащий врач-стоматолог",
-			studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
-			targetToothFdi: targetTooth,
-			implantPose: currentImplantPose,
-			mischResult: mischClassification,
-			huSampling: huSamplingResult,
-			containment: { residualBuccalBoneMm: 2.0, residualLingualBoneMm: 2.0, isBuccalBoneAdequate: true, isLingualBoneAdequate: true, isApexContained: true, requiresGbrAugmentation: false },
-			nerveSafety: nerveAuditResult,
-			diary043Text: diaryText,
-			tonerSaving: true,
+	}, [activeCrossSection, patientId, study]);
+
+	const handleExportPdfReport = useCallback(() => {
+		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
+		exportPdfImplantReport({
+			targetTooth,
+			currentImplantPose,
+			currentCanal,
+			huSamplingResult,
+			patientDisplayName,
+			study,
+			mischClassification,
+			nerveAuditResult,
 		});
-		openCbctReportPrintWindow(reportData, { tonerSaving: true });
-		showToast(`Протокол КЛКТ-планирования для зуба FDI #${targetTooth} сформирован для печати / PDF (A4)`, "success");
 	}, [activeCrossSection, currentImplantPose, currentCanal, huSamplingResult, patientDisplayName, study, mischClassification, nerveAuditResult]);
 
 	// Hotkeys hook
@@ -588,6 +591,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					studioMode={studioMode}
 					handleSelectStudioMode={handleSelectStudioMode}
 					handleExportToEmr={handleExportToEmr}
+					handleExportCbctToFinance={handleExportCbctToFinance}
 					isSidebarOpen={isSidebarOpen}
 					setIsSidebarOpen={setIsSidebarOpen}
 					isStudioMenuOpen={isStudioMenuOpen}
@@ -746,6 +750,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						setImplantEntryDepthMm={setImplantEntryDepthMm}
 						handleExportToEmr={handleExportToEmr}
 						handleExportPdfReport={() => { void handleExportPdfReport(); }}
+						handleExportToPlan={handleExportToPlan}
+						handleExportToSchedule={handleExportToSchedule}
+						handleExportToFinance={handleExportCbctToFinance}
 					/>
 				</main>
 

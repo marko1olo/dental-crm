@@ -5,6 +5,7 @@ import {
 	Camera,
 	CircleDot,
 	Columns2,
+	Columns3,
 	FileText,
 	Grid2X2,
 	Maximize2,
@@ -15,6 +16,7 @@ import {
 	Search,
 	Sliders,
 	Spline,
+	Receipt,
 	X,
 } from "lucide-react";
 import type { CbctVoxelVolume, CbctViewportType } from "../cbctMprMath";
@@ -29,6 +31,7 @@ export interface CbctHeaderBarProps {
 	readonly studioMode: StudioMode;
 	readonly handleSelectStudioMode: (mode: StudioMode) => void;
 	readonly handleExportToEmr: () => void;
+	readonly handleExportCbctToFinance?: (() => void) | undefined;
 	readonly isSidebarOpen: boolean;
 	readonly setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly isStudioMenuOpen: boolean;
@@ -57,6 +60,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 	studioMode,
 	handleSelectStudioMode,
 	handleExportToEmr,
+	handleExportCbctToFinance,
 	isSidebarOpen,
 	setIsSidebarOpen,
 	isStudioMenuOpen,
@@ -181,6 +185,20 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 					<Camera className="w-3.5 h-3.5" />
 					<span className="hidden sm:inline">В ЭМК</span>
 				</button>
+
+				{/* Primary Action 1b: 1-Click CBCT 804n to Visit Finance & Treatment Plan */}
+				{handleExportCbctToFinance && (
+					<button
+						type="button"
+						onClick={handleExportCbctToFinance}
+						className="px-2 sm:px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition-colors cursor-pointer"
+						data-testid="cbct-header-add-finance-btn"
+						title="В 1 клик добавить услугу КЛКТ (A06.07.012, 3 800 ₽) в финансовый акт визита и смету плана лечения"
+					>
+						<Receipt className="w-3.5 h-3.5" />
+						<span className="hidden md:inline">+ КЛКТ в смету/акт</span>
+					</button>
+				)}
 
 				{/* Primary Action 2: Sidebar Toggle Button with Colored Indicator */}
 				<button
@@ -309,6 +327,23 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 								</button>
 							) : (
 								<div className="flex flex-col gap-0.5">
+									<button
+										type="button"
+										onClick={() => {
+											setViewLayout("mpr_3_view");
+											setIsStudioMenuOpen(false);
+										}}
+										className={`w-full px-2.5 py-1.5 rounded text-xs font-semibold text-left flex items-center gap-2 transition-colors cursor-pointer ${
+											viewLayout === "mpr_3_view"
+												? "text-cyan-400 bg-cyan-950/30"
+												: "text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800"
+										}`}
+										data-testid="cbct-layout-3view-btn"
+										title="3 проекции MPR (Axial / Coronal / Sagittal)"
+									>
+										<Columns3 className="w-3.5 h-3.5 shrink-0" />
+										<span>3 проекции MPR (Axial, Coronal, Sagittal)</span>
+									</button>
 									<button
 										type="button"
 										onClick={() => {

@@ -119,7 +119,7 @@ export const surgicalWarehouseOverdraftStatusSchema = z.object({
 	canProceed: z.literal(true),
 });
 
-export type MischBoneDensity = "D1" | "D2" | "D3" | "D4";
+export type MischBoneDensity = "D1" | "D2" | "D3" | "D4" | "D5";
 export type ImplantCapKind = "fdm" | "plug";
 
 export interface FastImplantPassportData {
@@ -153,7 +153,7 @@ export const fastImplantPassportDataSchema = z.object({
 	lengthMm: z.number().positive(),
 	torqueNcm: z.number().positive(),
 	isqDay0: z.number().int().positive().optional(),
-	boneDensity: z.enum(["D1", "D2", "D3", "D4"]),
+	boneDensity: z.enum(["D1", "D2", "D3", "D4", "D5"]),
 	capType: z.enum(["fdm", "plug"]),
 	catalogArticle: z.string().optional(),
 	lotNumber: z.string().optional(),

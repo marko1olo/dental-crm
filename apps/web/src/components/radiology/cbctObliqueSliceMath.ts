@@ -9,16 +9,19 @@
  * 4. Synchronized Multi-Planar Reslicing across Axial, Coronal, Sagittal planes.
  */
 
-import {
-	type CbctVoxelVolume,
-	type MprPlane,
-	type MprSliceExtractionResult,
-	type Point3D,
-	type SlabProjectionMode,
-	type SliceRenderOptions,
-	get16BitLut,
-	sampleVoxelHU,
+import type {
+	CbctVoxelVolume,
+	MprPlane,
+	MprSliceExtractionResult,
+	Point3D,
+	SlabProjectionMode,
+	SliceRenderOptions,
 } from "./cbctMprMath";
+import {
+	sampleVoxelHU,
+	worldMmToSlicePx,
+} from "./cbctCoordinateMath";
+import { get16BitLut } from "./cbctLutMath";
 import {
 	type ObliqueRotationAngles,
 	DEFAULT_OBLIQUE_ROTATION,
@@ -84,11 +87,10 @@ export function sampleVoxelHUTrilinear(
 	const c1 = c01 * (1.0 - ty) + c11 * ty;
 
 	const rawHu = c0 * (1.0 - tz) + c1 * tz;
-	const slope = volume.rescaleSlope ?? 1.0;
-	const intercept = volume.rescaleIntercept ?? 0.0;
-	const hu = (slope !== 1.0 || intercept !== 0.0) ? rawHu * slope + intercept : rawHu;
-
-	return Math.max(-1000, Math.min(3071, Math.round(hu)));
+	const slope = (volume as { rescaleSlope?: number }).rescaleSlope ?? 1;
+	const intercept = (volume as { rescaleIntercept?: number }).rescaleIntercept ?? 0;
+	const scaled = rawHu * slope + intercept;
+	return Math.max(-32768, Math.min(32767, Math.round(scaled)));
 }
 
 /**
@@ -106,7 +108,8 @@ export function sampleVoxelTrilinearHU(
 // ─── 2. OBLIQUE SLICE EXTRACTION ENGINE ──────────────────────────────────────
 
 export interface ObliqueSliceRenderOptions extends SliceRenderOptions {
-	readonly interpolation?: "nearest" | "trilinear";
+	readonly interpolation?: "nearest" | "trilinear" | undefined;
+	readonly outputBuffer?: Uint8ClampedArray | undefined;
 }
 
 /**
@@ -153,7 +156,7 @@ export function extractObliqueMprSlice(
 			widthPx = dim.width;
 			heightPx = Math.max(1, Math.round((dim.depth * sp.z) / (sp.x || 1.0)));
 			pixelSpacingX = sp.x;
-			pixelSpacingY = sp.z;
+			pixelSpacingY = (dim.depth * sp.z) / heightPx;
 			maxSliceIndex = dim.height - 1;
 			physicalPosMm = crosshairMm.y;
 			break;
@@ -161,7 +164,7 @@ export function extractObliqueMprSlice(
 			widthPx = dim.height;
 			heightPx = Math.max(1, Math.round((dim.depth * sp.z) / (sp.y || 1.0)));
 			pixelSpacingX = sp.y;
-			pixelSpacingY = sp.z;
+			pixelSpacingY = (dim.depth * sp.z) / heightPx;
 			maxSliceIndex = dim.width - 1;
 			physicalPosMm = crosshairMm.x;
 			break;
@@ -177,13 +180,14 @@ export function extractObliqueMprSlice(
 
 	const basis = computeObliquePlaneBasis(plane, crosshairMm, angles);
 	const totalPixels = widthPx * heightPx;
-	const pixelBuffer = new Uint8ClampedArray(totalPixels * 4);
+	const pixelBuffer = options?.outputBuffer && options.outputBuffer.length >= totalPixels * 4
+		? options.outputBuffer
+		: new Uint8ClampedArray(totalPixels * 4);
 
 	// Pre-cached 16-bit Window/Level Look-Up Table (LUT)
 	const lut = get16BitLut(windowWidth, windowLevel, invert);
 
-	const halfW = widthPx / 2.0;
-	const halfH = heightPx / 2.0;
+	const pivotPx = worldMmToSlicePx(crosshairMm, plane, volume);
 
 	const normalStepMm = Math.min(sp.x, Math.min(sp.y, sp.z));
 	const isSlabActive = slabMode !== "single" && slabThicknessMm > normalStepMm;
@@ -238,16 +242,16 @@ export function extractObliqueMprSlice(
 
 	if (!isSlabActive) {
 		for (let row = 0; row < heightPx; row++) {
-			const offsetRow = row - halfH;
+			const offsetRow = row - pivotPx.y;
 			const baseRowWorldX = sliceCenterMm.x + offsetRow * vX;
 			const baseRowWorldY = sliceCenterMm.y + offsetRow * vY;
 			const baseRowWorldZ = sliceCenterMm.z + offsetRow * vZ;
 
 			let pIdx = row * widthPx * 4;
 
-			let vx = (baseRowWorldX - halfW * uX - origin.x) * invSpX;
-			let vy = (baseRowWorldY - halfW * uY - origin.y) * invSpY;
-			let vz = (baseRowWorldZ - halfW * uZ - origin.z) * invSpZ;
+			let vx = (baseRowWorldX - pivotPx.x * uX - origin.x) * invSpX;
+			let vy = (baseRowWorldY - pivotPx.x * uY - origin.y) * invSpY;
+			let vz = (baseRowWorldZ - pivotPx.x * uZ - origin.z) * invSpZ;
 
 			for (let col = 0; col < widthPx; col++) {
 				let hu: number;
@@ -314,7 +318,7 @@ export function extractObliqueMprSlice(
 		}
 	} else {
 		for (let row = 0; row < heightPx; row++) {
-			const offsetRow = row - halfH;
+			const offsetRow = row - pivotPx.y;
 			const baseRowWorldX = sliceCenterMm.x + offsetRow * vX;
 			const baseRowWorldY = sliceCenterMm.y + offsetRow * vY;
 			const baseRowWorldZ = sliceCenterMm.z + offsetRow * vZ;
@@ -322,7 +326,7 @@ export function extractObliqueMprSlice(
 			let pIdx = row * widthPx * 4;
 
 			for (let col = 0; col < widthPx; col++) {
-				const offsetCol = col - halfW;
+				const offsetCol = col - pivotPx.x;
 				const baseWorldX = baseRowWorldX + offsetCol * uX;
 				const baseWorldY = baseRowWorldY + offsetCol * uY;
 				const baseWorldZ = baseRowWorldZ + offsetCol * uZ;

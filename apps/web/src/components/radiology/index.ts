@@ -3,8 +3,10 @@ export * from "./doseSheet";
 export * from "./radiologyMath";
 export * from "./RadiologyReferralModal";
 export * from "./types";
-export * from "./cbctCaliperNerveMath";
+export * from "./cbctAnisotropicCaliperMath";
+
 export * from "./boneDensityMischMath";
+export * from "./cbctRoiProfileMath";
 export * from "./cbctMprMath";
 export * from "./cbctObliqueMath";
 export * from "./cbctAutoArchEngine";

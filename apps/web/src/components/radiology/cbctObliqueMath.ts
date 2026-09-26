@@ -14,20 +14,24 @@
  * - Sub-voxel Trilinear Sampling & Slice Extraction: ./cbctObliqueSliceMath.ts
  */
 
+import type {
+	CbctVoxelVolume,
+	MprPlane,
+	Point3D,
+} from "./cbctMprMath";
 import {
-	type CbctVoxelVolume,
-	type MprPlane,
-	type Point3D,
-	ROMEXIS_COLORS,
 	clampCoordinateToVolume,
-	createEmptyCbctVolume,
-	huToGrayscale,
 	sampleVoxelHU,
+} from "./cbctCoordinateMath";
+import { createEmptyCbctVolume } from "./cbctVolumeLifecycleMath";
+import { ROMEXIS_COLORS } from "./cbctOverlayDecorationMath";
+import {
+	huToGrayscale,
 	generate16BitLut,
 	get16BitLut,
 	applyLutToHU,
 	clearLutCache,
-} from "./cbctMprMath";
+} from "./cbctLutMath";
 
 import {
 	type ObliqueRotationAngles,

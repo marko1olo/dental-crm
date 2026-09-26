@@ -86,45 +86,73 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
 
     const group = view.getUint16(i, true);
     const element = view.getUint16(i + 2, true);
+    if (group === 0) continue;
+
+    const c0 = view.getUint8(i + 4);
+    const c1 = view.getUint8(i + 5);
+    const isExplicit = c0 >= 65 && c0 <= 90 && c1 >= 65 && c1 <= 90;
+    const vr = isExplicit ? String.fromCharCode(c0, c1) : "";
+
+    let tagLen = 0;
+    let tagValOff = 0;
+
+    if (isExplicit) {
+      if (
+        vr === "OB" ||
+        vr === "OW" ||
+        vr === "OF" ||
+        vr === "OD" ||
+        vr === "OL" ||
+        vr === "OV" ||
+        vr === "SV" ||
+        vr === "UV" ||
+        vr === "SQ" ||
+        vr === "UC" ||
+        vr === "UR" ||
+        vr === "UT" ||
+        vr === "UN"
+      ) {
+        tagLen = view.getUint32(i + 8, true);
+        tagValOff = i + 12;
+      } else {
+        tagLen = view.getUint16(i + 6, true);
+        tagValOff = i + 8;
+      }
+    } else {
+      tagLen = view.getUint32(i + 4, true);
+      tagValOff = i + 8;
+    }
 
     if (group === 0x0010 && element === 0x0010) {
       // PatientName
-      const vr0 = String.fromCharCode(view.getUint8(i + 4));
-      const vr1 = String.fromCharCode(view.getUint8(i + 5));
-      const isExplicit = (vr0 >= "A" && vr0 <= "Z") && (vr1 >= "A" && vr1 <= "Z");
-      const len = isExplicit ? view.getUint16(i + 6, true) : view.getUint32(i + 4, true);
-      const off = isExplicit ? i + 8 : i + 8;
-      if (len > 0 && off + len <= byteLength) {
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
         try {
-          const raw = new Uint8Array(buffer, off, Math.min(len, 64));
+          const raw = new Uint8Array(buffer, tagValOff, Math.min(tagLen, 64));
           const decoded = decodeDicomString(raw);
           if (decoded) patientName = decoded;
         } catch {}
       }
     } else if (group === 0x0008 && element === 0x0020) {
       // StudyDate
-      const len = view.getUint16(i + 6, true);
-      if (len >= 8 && i + 8 + len <= byteLength) {
+      if (tagLen >= 8 && tagValOff + tagLen <= byteLength) {
         try {
-          studyDate = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, Math.min(len, 12))).trim();
+          studyDate = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, Math.min(tagLen, 12))).trim();
         } catch {}
       }
     } else if (group === 0x0018 && element === 0x0050) {
       // SliceThickness
-      const len = view.getUint16(i + 6, true);
-      if (len > 0 && i + 8 + len <= byteLength) {
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
         try {
-          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, len)).trim();
+          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseFloat(str);
           if (!Number.isNaN(num) && num > 0) sliceThickness = num;
         } catch {}
       }
     } else if (group === 0x0020 && element === 0x0032) {
       // ImagePositionPatient [X, Y, Z] (Cartesian coordinate in mm)
-      const len = view.getUint16(i + 6, true);
-      if (len > 0 && i + 8 + len <= byteLength) {
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
         try {
-          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, len)).trim();
+          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const parts = str.split("\\").map((s) => Number.parseFloat(s.trim()));
           if (parts.length >= 3 && !Number.isNaN(parts[2])) {
             sliceLocationZ = parts[2] ?? 0.0;
@@ -134,10 +162,9 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
       }
     } else if (group === 0x0020 && element === 0x1041) {
       // SliceLocation (only use if ImagePositionPatient is not available)
-      const len = view.getUint16(i + 6, true);
-      if (len > 0 && i + 8 + len <= byteLength) {
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
         try {
-          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, len)).trim();
+          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseFloat(str);
           if (!Number.isNaN(num) && !hasImagePositionPatient) {
             sliceLocationZ = num;
@@ -146,57 +173,50 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
       }
     } else if (group === 0x0020 && element === 0x0013) {
       // InstanceNumber
-      const len = view.getUint16(i + 6, true);
-      if (len > 0 && i + 8 + len <= byteLength) {
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
         try {
-          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, len)).trim();
+          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseInt(str, 10);
           if (!Number.isNaN(num)) instanceNumber = num;
         } catch {}
       }
     } else if (group === 0x0028 && element === 0x0008) {
       // NumberOfFrames
-      const vr0 = String.fromCharCode(view.getUint8(i + 4));
-      const vr1 = String.fromCharCode(view.getUint8(i + 5));
-      const isExplicit = vr0 >= "A" && vr0 <= "Z" && vr1 >= "A" && vr1 <= "Z";
-      const len = isExplicit ? view.getUint16(i + 6, true) : view.getUint32(i + 4, true);
-      const off = i + 8;
-      if (len > 0 && off + len <= byteLength) {
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
         try {
-          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, off, len)).replace(/\0+$/, "").trim();
+          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).replace(/\0+$/, "").trim();
           const num = Number.parseInt(str, 10);
           if (!Number.isNaN(num) && num > 0) {
             numberOfFrames = num;
-          } else if (len === 2) {
-            const binVal = view.getUint16(off, true);
+          } else if (tagLen === 2) {
+            const binVal = view.getUint16(tagValOff, true);
             if (binVal > 0) numberOfFrames = binVal;
-          } else if (len === 4) {
-            const binVal = view.getUint32(off, true);
+          } else if (tagLen === 4) {
+            const binVal = view.getUint32(tagValOff, true);
             if (binVal > 0) numberOfFrames = binVal;
           }
         } catch {}
       }
     } else if (group === 0x0028 && element === 0x0010) {
       // Rows
-      rows = view.getUint16(i + 8, true);
+      rows = view.getUint16(tagValOff, true);
     } else if (group === 0x0028 && element === 0x0011) {
       // Cols
-      cols = view.getUint16(i + 8, true);
+      cols = view.getUint16(tagValOff, true);
     } else if (group === 0x0028 && element === 0x0100) {
       // BitsAllocated
-      bitsAllocated = view.getUint16(i + 8, true);
+      bitsAllocated = view.getUint16(tagValOff, true);
     } else if (group === 0x0028 && element === 0x0101) {
       // BitsStored
-      bitsStored = view.getUint16(i + 8, true);
+      bitsStored = view.getUint16(tagValOff, true);
     } else if (group === 0x0028 && element === 0x0103) {
       // PixelRepresentation
-      pixelRepresentation = view.getUint16(i + 8, true);
+      pixelRepresentation = view.getUint16(tagValOff, true);
     } else if (group === 0x0028 && element === 0x0030) {
       // PixelSpacing
-      const len = view.getUint16(i + 6, true);
-      if (len > 0 && i + 8 + len <= byteLength) {
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
         try {
-          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, len)).trim();
+          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const parts = str.split("\\").map((s) => Number.parseFloat(s.trim()));
           if (parts.length >= 2) {
             if (!Number.isNaN(parts[0]) && (parts[0] ?? 0) > 0) pixelSpacingY = parts[0] ?? 0.20;
@@ -206,57 +226,44 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
       }
     } else if (group === 0x0028 && element === 0x1050) {
       // WindowCenter
-      const len = view.getUint16(i + 6, true);
-      if (len > 0 && i + 8 + len <= byteLength) {
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
         try {
-          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, len)).trim();
+          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseFloat(str.split("\\")[0]?.trim() ?? "");
           if (!Number.isNaN(num)) windowCenter = num;
         } catch {}
       }
     } else if (group === 0x0028 && element === 0x1051) {
       // WindowWidth
-      const len = view.getUint16(i + 6, true);
-      if (len > 0 && i + 8 + len <= byteLength) {
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
         try {
-          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, len)).trim();
+          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseFloat(str.split("\\")[0]?.trim() ?? "");
           if (!Number.isNaN(num) && num > 0) windowWidth = num;
         } catch {}
       }
     } else if (group === 0x0028 && element === 0x1052) {
       // RescaleIntercept
-      const len = view.getUint16(i + 6, true);
-      if (len > 0 && i + 8 + len <= byteLength) {
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
         try {
-          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, len)).trim();
+          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseFloat(str);
           if (!Number.isNaN(num)) rescaleIntercept = num;
         } catch {}
       }
     } else if (group === 0x0028 && element === 0x1053) {
       // RescaleSlope
-      const len = view.getUint16(i + 6, true);
-      if (len > 0 && i + 8 + len <= byteLength) {
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
         try {
-          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, i + 8, len)).trim();
+          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const num = Number.parseFloat(str);
           if (!Number.isNaN(num) && num > 0) rescaleSlope = num;
         } catch {}
       }
     } else if (group === 0x7fe0 && element === 0x0010) {
       // PixelData
-      const vr0 = String.fromCharCode(view.getUint8(i + 4));
-      const vr1 = String.fromCharCode(view.getUint8(i + 5));
-      const vr = vr0 + vr1;
-      if (vr === "OW" || vr === "OB" || vr === "UN") {
-        pixelDataLength = view.getUint32(i + 8, true);
-        pixelDataOffset = i + 12;
-      } else {
-        pixelDataLength = view.getUint32(i + 4, true);
-        pixelDataOffset = i + 8;
-      }
-      // Once PixelData tag is located, do not scan further into the raw pixel payload
+      pixelDataLength = tagLen;
+      pixelDataOffset = tagValOff;
       break;
     }
   }
@@ -410,6 +417,8 @@ export async function buildVolumeFromDicomBuffers(
     data: voxelData,
     minHU: minVoxelHU,
     maxHU: maxVoxelHU,
+    rescaleSlope: refHeader.rescaleSlope,
+    rescaleIntercept: refHeader.rescaleIntercept,
     defaultWindowWidth: refHeader.windowWidth > 0 ? refHeader.windowWidth : 4400,
     defaultWindowLevel: refHeader.windowCenter !== 0 ? refHeader.windowCenter : 1300,
     isDisposed: false,

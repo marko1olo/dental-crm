@@ -9,12 +9,15 @@
  * 4. Coordinate Transformation from Transformed Canvas to 3D World Space (mm).
  */
 
-import {
-	type CbctVoxelVolume,
-	type MprPlane,
-	type Point3D,
-	clampCoordinateToVolume,
+import type {
+	CbctVoxelVolume,
+	MprPlane,
+	Point3D,
 } from "./cbctMprMath";
+import {
+	clampCoordinateToVolume,
+	worldMmToSlicePx,
+} from "./cbctCoordinateMath";
 
 // ─── 1. OBLIQUE ROTATION & BASIS TYPES ───────────────────────────────────────
 
@@ -206,17 +209,34 @@ export function mapCanvasPointerToWorldMmWithTransform(
 			break;
 		case "coronal":
 			pixelSpacingX = sp.x;
-			pixelSpacingY = sp.z;
+			pixelSpacingY = cHeight > 0 && Math.abs(cHeight - volume.dimensions.depth) < 2
+				? sp.z
+				: (volume.dimensions.depth * sp.z) / (cHeight > 0 ? cHeight : 1);
 			break;
 		case "sagittal":
 			pixelSpacingX = sp.y;
-			pixelSpacingY = sp.z;
+			pixelSpacingY = cHeight > 0 && Math.abs(cHeight - volume.dimensions.depth) < 2
+				? sp.z
+				: (volume.dimensions.depth * sp.z) / (cHeight > 0 ? cHeight : 1);
 			break;
 	}
 
+	// Compute pivot coordinate in canvas pixels corresponding to crosshairMm
+	const slicePx = worldMmToSlicePx(crosshairMm, plane, volume);
+	const expectedW = plane === "sagittal" ? volume.dimensions.height : volume.dimensions.width;
+	const expectedH = plane === "axial"
+		? volume.dimensions.height
+		: Math.max(1, Math.round((volume.dimensions.depth * sp.z) / (plane === "coronal" ? sp.x : sp.y)));
+	const scaleX = expectedW > 0 ? cWidth / expectedW : 1.0;
+	const scaleY = expectedH > 0 ? cHeight / expectedH : 1.0;
+	const pivotPx = {
+		x: slicePx.x * scaleX,
+		y: slicePx.y * scaleY,
+	};
+
 	// Offset from slice center in pixels
-	const offsetColPx = untransformedPxX - cWidth / 2.0;
-	const offsetRowPx = untransformedPxY - cHeight / 2.0;
+	const offsetColPx = untransformedPxX - pivotPx.x;
+	const offsetRowPx = untransformedPxY - pivotPx.y;
 
 	// Offset in physical millimeters along slice U and V axes
 	const offsetMmU = offsetColPx * pixelSpacingX;
