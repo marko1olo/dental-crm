@@ -133,18 +133,20 @@ export const createAppointmentHandler = async (
 							.returning({ id: clinics.id });
 						clinic = newClinic;
 					}
-					const [autoChair] = await db
-						.insert(chairs)
-						.values({
-							organizationId: orgId,
-							clinicId: clinic?.id,
-							name: "Кресло 1",
-							color: "#0d9488",
-							isActive: true,
-						})
-						.returning({ id: chairs.id });
-					if (autoChair) {
-						rawBody.chairId = autoChair.id;
+					const targetClinicId = clinic?.id;
+					if (targetClinicId) {
+						const [autoChair] = await db
+							.insert(chairs)
+							.values({
+								organizationId: orgId,
+								clinicId: targetClinicId,
+								name: "Кресло 1",
+								isActive: true,
+							})
+							.returning({ id: chairs.id });
+						if (autoChair) {
+							rawBody.chairId = autoChair.id;
+						}
 					}
 				}
 			}
