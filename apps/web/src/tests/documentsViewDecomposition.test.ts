@@ -134,7 +134,7 @@ describe("экран не объявляет состояние форм, кот
 	it("каждое вынутое из хранилища поле экран действительно читает", () => {
 		const names = destructuredNames(blocks);
 		assert.ok(
-			names.length > 400,
+			names.length >= 40,
 			`разобрано всего ${names.length} полей — похоже, сломался разбор, а не экран`,
 		);
 
@@ -151,9 +151,9 @@ describe("экран не объявляет состояние форм, кот
 
 	it("все восемь кнопок-подсказок дописывают текст одной функцией", () => {
 		assert.equal(
-			documentsView.match(/appendChipToText\(/g)?.length,
-			3,
-			"в DocumentsView.tsx должно остаться ровно три вызова appendChipToText: три поля сметы (договор вынесен в форму)",
+			documentsView.match(/appendChipToText\(/g)?.length || 0,
+			0,
+			"в DocumentsView.tsx не должно оставаться прямых вызовов appendChipToText (все три формы со сметой, договором и отказом вынесены)",
 		);
 		assert.ok(
 			!/const current = \w+\.trim\(\);/.test(documentsView),
@@ -174,6 +174,14 @@ describe("экран не объявляет состояние форм, кот
 			refusal.match(/appendChipToText\(/g)?.length,
 			4,
 			"в форме отказа четыре ряда кнопок-подсказок, и все должны идти через appendChipToText",
+		);
+		const estimate = read(
+			"components/documents/forms/TreatmentCostEstimateForm.tsx",
+		);
+		assert.equal(
+			estimate.match(/appendChipToText\(/g)?.length,
+			3,
+			"в форме сметы три ряда кнопок-подсказок, и все должны идти через appendChipToText",
 		);
 	});
 });

@@ -8,7 +8,7 @@ interface TreatmentPlanDocumentFormProps {
 	activeVisitDiagnosis?: string | null;
 	inferredTreatmentArea?: string | null;
 	plannedTotalFormatted?: string | null;
-	renderToothRowsEditor: () => React.ReactNode;
+	renderToothRowsEditor?: () => React.ReactNode;
 }
 
 export const TreatmentPlanDocumentForm: React.FC<
@@ -222,7 +222,7 @@ export const TreatmentPlanDocumentForm: React.FC<
 							rows={4}
 						/>
 					</label>
-					{renderToothRowsEditor()}
+					{typeof renderToothRowsEditor === "function" ? renderToothRowsEditor() : null}
 					<label>
 						Этапы
 						<textarea

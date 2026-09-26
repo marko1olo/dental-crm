@@ -59,6 +59,7 @@ const read = (relativePath: string) =>
 	readFileSync(join(webSrc, relativePath), "utf8");
 
 const documentsView = read("DocumentsView.tsx");
+const documentFormSwitch = read("components/documents/tabs/DocumentFormSwitch.tsx");
 const redesignCss = read("styles/dente-redesign.css");
 
 /** Сводка складного блока — одна на все карточки документов. */
@@ -153,8 +154,21 @@ describe("дописывание формулировки кнопкой-под�
 });
 
 describe("вынесенные формы подключены, а не лежат мёртвым файлом", () => {
+	it("DocumentsView подключает DocumentFormSwitch", () => {
+		assert.match(
+			documentsView,
+			/import \{ DocumentFormSwitch \} from "\.\/components\/documents\/tabs\/DocumentFormSwitch"/,
+			"DocumentsView.tsx не импортирует DocumentFormSwitch",
+		);
+		assert.match(
+			documentsView,
+			/<DocumentFormSwitch\b/,
+			"DocumentsView.tsx не монтирует DocumentFormSwitch",
+		);
+	});
+
 	for (const form of extractedForms) {
-		it(`${form.name}: есть определение и есть применение в DocumentsView.tsx`, () => {
+		it(`${form.name}: есть определение и есть применение в DocumentFormSwitch.tsx`, () => {
 			const source = read(form.file);
 			assert.match(
 				source,
@@ -162,16 +176,16 @@ describe("вынесенные формы подключены, а не лежа
 				`${form.file}: пропало объявление компонента`,
 			);
 			assert.match(
-				documentsView,
+				documentFormSwitch,
 				new RegExp(
-					`import \\{ ${form.name} \\} from "\\./components/documents/forms/${form.name}"`,
+					`import \\{ ${form.name} \\} from "\\.\\./forms/${form.name}"`,
 				),
-				`DocumentsView.tsx не импортирует ${form.name}`,
+				`DocumentFormSwitch.tsx не импортирует ${form.name}`,
 			);
 			assert.match(
-				documentsView,
+				documentFormSwitch,
 				new RegExp(`<${form.name}[\\s/>]`),
-				`DocumentsView.tsx импортирует ${form.name}, но не рисует его — это мёртвый файл`,
+				`DocumentFormSwitch.tsx импортирует ${form.name}, но не рисует его — это мёртвый файл`,
 			);
 		});
 	}
@@ -180,6 +194,10 @@ describe("вынесенные формы подключены, а не лежа
 		assert.ok(
 			!documentsView.includes("Заявитель / налогоплательщик"),
 			"в DocumentsView.tsx осталась вторая копия формы заявления: правка в одной из копий не дойдёт до пациента",
+		);
+		assert.ok(
+			!documentFormSwitch.includes("Заявитель / налогоплательщик"),
+			"в DocumentFormSwitch.tsx осталась вторая копия формы заявления: правка в одной из копий не дойдёт до пациента",
 		);
 	});
 
