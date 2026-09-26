@@ -32,6 +32,9 @@ param(
     [string]$LogFile,
 
     [Parameter(Mandatory = $false)]
+    [string]$NodeBin,
+
+    [Parameter(Mandatory = $false)]
     [switch]$StartPostgres
 )
 
@@ -100,6 +103,31 @@ if (-not $PgBinDir) {
     }
 }
 
+# Resolve NodeBin
+if (-not $NodeBin) {
+    $nodeCandidates = @(
+        (Join-Path $scriptRoot "..\bin\node\node.exe"),
+        (Join-Path $scriptRoot "..\bin\node"),
+        "$env:ProgramFiles\DenteCRM\bin\node\node.exe",
+        (Join-Path $scriptRoot "..\..\bin\node\node.exe"),
+        (Get-Command node.exe -ErrorAction SilentlyContinue).Source
+    )
+    foreach ($cand in $nodeCandidates) {
+        if ($cand -and (Test-Path $cand)) {
+            if ((Get-Item $cand) -is [System.IO.DirectoryInfo]) {
+                $checkExe = Join-Path $cand "node.exe"
+                if (Test-Path $checkExe) {
+                    $NodeBin = (Resolve-Path $checkExe).Path
+                    break
+                }
+            } else {
+                $NodeBin = (Resolve-Path $cand).Path
+                break
+            }
+        }
+    }
+}
+
 # Resolve LogFile
 if (-not $LogFile) {
     $logDir = "$env:ProgramData\DenteCRM\logs"
@@ -137,6 +165,7 @@ Write-PreflightLog "=== Starting DENTE CRM Database Preflight Audit ==="
 Write-PreflightLog "Data Directory : $DataDir"
 Write-PreflightLog "Env File       : $EnvFile"
 Write-PreflightLog "Postgres Bin   : $(if ($PgBinDir) { $PgBinDir } else { 'Not specified / Will use PATH' })"
+Write-PreflightLog "Node Bin       : $(if ($NodeBin) { $NodeBin } else { 'Not found / Will look in PATH' })"
 
 # Ensure data directory exists
 if (-not (Test-Path $DataDir)) {
@@ -271,8 +300,26 @@ if ($portCheck.IsListening) {
 
     if (-not $isOwnProcess) {
         Write-PreflightLog "Port $DefaultPort is occupied by an EXTERNAL software (e.g. 1C:Enterprise / 1С:Предприятие)!" "WARN"
-        Write-PreflightLog "Activating collision switch: shifting DENTE PostgreSQL to dedicated fallback port $FallbackPort (D-E-N-T-E)." "WARN"
-        $activePort = $FallbackPort
+        $targetPort = $FallbackPort
+        $fallbackCheck = Test-PortListening -Port $targetPort
+        if ($fallbackCheck.IsListening) {
+            Write-PreflightLog "Preferred fallback port $targetPort is also occupied. Scanning ports 5439..5450..." "WARN"
+            $foundFree = $false
+            foreach ($candidatePort in (5439..5450)) {
+                $check = Test-PortListening -Port $candidatePort
+                if (-not $check.IsListening) {
+                    $targetPort = $candidatePort
+                    $foundFree = $true
+                    break
+                }
+            }
+            if (-not $foundFree) {
+                Write-PreflightLog "FATAL: Could not find any free port in fallback range 5438-5450!" "ERROR"
+                exit 1
+            }
+        }
+        Write-PreflightLog "Activating collision switch: shifting DENTE PostgreSQL to dedicated port $targetPort." "WARN"
+        $activePort = $targetPort
     }
 } else {
     Write-PreflightLog "Default port $DefaultPort is free and available." "INFO"
@@ -461,6 +508,253 @@ if ($StartPostgres) {
     } else {
         Write-PreflightLog "PostgreSQL daemon is already active on port $activePort." "INFO"
     }
+}
+
+# -----------------------------------------------------------------------------
+# 7. VERIFY DATABASE 'dental_crm' & EXECUTE MIGRATIONS (DEFECT 3)
+# -----------------------------------------------------------------------------
+function Ensure-DatabaseExists {
+    param(
+        [int]$Port,
+        [string]$NodeBinary,
+        [string]$PostgresBinDir
+    )
+    
+    Write-PreflightLog "Verifying existence of 'dental_crm' database on port $Port..." "INFO"
+    
+    # 1. Try createdb.exe if available in PostgresBinDir or PATH
+    $createdbExe = $null
+    if ($PostgresBinDir -and (Test-Path (Join-Path $PostgresBinDir "createdb.exe"))) {
+        $createdbExe = Join-Path $PostgresBinDir "createdb.exe"
+    } elseif (Get-Command createdb.exe -ErrorAction SilentlyContinue) {
+        $createdbExe = (Get-Command createdb.exe).Source
+    }
+
+    if ($createdbExe) {
+        Write-PreflightLog "Executing createdb via $createdbExe..." "INFO"
+        try {
+            $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+            $pinfo.FileName = $createdbExe
+            $pinfo.Arguments = "-h 127.0.0.1 -p $Port -U dental -E UTF8 dental_crm"
+            $pinfo.RedirectStandardOutput = $true
+            $pinfo.RedirectStandardError = $true
+            $pinfo.UseShellExecute = $false
+            $pinfo.CreateNoWindow = $true
+
+            $proc = [System.Diagnostics.Process]::Start($pinfo)
+            $stdout = $proc.StandardOutput.ReadToEnd()
+            $stderr = $proc.StandardError.ReadToEnd()
+            $null = $proc.WaitForExit(15000)
+
+            if ($proc.ExitCode -eq 0 -or $stderr -match "already exists" -or $stdout -match "already exists") {
+                Write-PreflightLog "Database 'dental_crm' verified via createdb." "INFO"
+                return $true
+            }
+        } catch {
+            Write-PreflightLog "createdb.exe invocation error: $($_.Exception.Message). Falling back to Node pg." "WARN"
+        }
+    }
+
+    # 2. Node.js pg client fallback
+    $resolvedNode = if ($NodeBinary -and (Test-Path $NodeBinary)) { $NodeBinary } else { (Get-Command node.exe -ErrorAction SilentlyContinue).Source }
+    if (-not $resolvedNode) {
+        Write-PreflightLog "Node.js binary not available to verify database existence." "WARN"
+        return $false
+    }
+
+    $jsScript = @"
+const pg = require('pg');
+const port = parseInt(process.env.TARGET_PG_PORT || '$Port', 10);
+const users = ['dental', 'postgres'];
+
+async function run() {
+  let connected = false;
+  let lastError = null;
+
+  for (const user of users) {
+    for (const db of ['postgres', 'template1']) {
+      const client = new pg.Client({
+        host: '127.0.0.1',
+        port: port,
+        user: user,
+        password: user,
+        database: db,
+        connectionTimeoutMillis: 5000,
+      });
+      try {
+        await client.connect();
+        connected = true;
+        const res = await client.query("SELECT 1 FROM pg_database WHERE datname = 'dental_crm'");
+        if (res.rowCount === 0) {
+          console.log('[PREFLIGHT] Database dental_crm not found. Creating database...');
+          await client.query('CREATE DATABASE dental_crm');
+          console.log('[PREFLIGHT] Database dental_crm created successfully.');
+        } else {
+          console.log('[PREFLIGHT] Database dental_crm already exists.');
+        }
+        await client.end();
+        return process.exit(0);
+      } catch (err) {
+        lastError = err;
+        try { await client.end(); } catch (_) {}
+      }
+    }
+  }
+
+  if (!connected) {
+    console.error('[PREFLIGHT] Could not connect to PostgreSQL:', lastError ? lastError.message : 'Unknown error');
+    process.exit(1);
+  }
+}
+
+run().catch((err) => {
+  console.error('[PREFLIGHT] Database creation failed:', err.message);
+  process.exit(1);
+});
+"@
+
+    try {
+        $nodePathCandidates = @(
+            (Join-Path $scriptRoot "..\node_modules"),
+            (Join-Path $scriptRoot "..\server\node_modules"),
+            (Join-Path $scriptRoot "..\..\node_modules"),
+            (Join-Path $scriptRoot "..\..\..\node_modules")
+        )
+        $validNodePaths = $nodePathCandidates | Where-Object { Test-Path $_ }
+        if ($validNodePaths) {
+            $env:NODE_PATH = ($validNodePaths -join ";")
+        }
+        $env:TARGET_PG_PORT = "$Port"
+
+        $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+        $pinfo.FileName = $resolvedNode
+        $pinfo.Arguments = "-"
+        $pinfo.RedirectStandardInput = $true
+        $pinfo.RedirectStandardOutput = $true
+        $pinfo.RedirectStandardError = $true
+        $pinfo.UseShellExecute = $false
+        $pinfo.CreateNoWindow = $true
+
+        $proc = [System.Diagnostics.Process]::Start($pinfo)
+        $proc.StandardInput.Write($jsScript)
+        $proc.StandardInput.Close()
+
+        $stdout = $proc.StandardOutput.ReadToEnd()
+        $stderr = $proc.StandardError.ReadToEnd()
+        $null = $proc.WaitForExit(20000)
+
+        if ($stdout) {
+            foreach ($line in ($stdout -split "\r?\n")) {
+                if ($line.Trim()) { Write-PreflightLog $line "INFO" }
+            }
+        }
+        if ($proc.ExitCode -eq 0) {
+            Write-PreflightLog "Database 'dental_crm' verified via Node pg client." "INFO"
+            return $true
+        } else {
+            if ($stderr) {
+                foreach ($line in ($stderr -split "\r?\n")) {
+                    if ($line.Trim()) { Write-PreflightLog $line "WARN" }
+                }
+            }
+            Write-PreflightLog "Node pg client exited with code $($proc.ExitCode)" "WARN"
+            return $false
+        }
+    } catch {
+        Write-PreflightLog "Failed to invoke Node pg client: $($_.Exception.Message)" "WARN"
+        return $false
+    }
+}
+
+function Invoke-Migrations {
+    param(
+        [int]$Port,
+        [string]$NodeBinary
+    )
+    
+    $resolvedNode = if ($NodeBinary -and (Test-Path $NodeBinary)) { $NodeBinary } else { (Get-Command node.exe -ErrorAction SilentlyContinue).Source }
+    if (-not $resolvedNode) {
+        Write-PreflightLog "Node.js binary not available. Skipping migration runner in preflight." "WARN"
+        return
+    }
+
+    $migrateCandidates = @(
+        (Join-Path $scriptRoot "..\server\dist\scripts\migrate.js"),
+        (Join-Path $scriptRoot "..\..\apps\api\dist\scripts\migrate.js"),
+        (Join-Path $scriptRoot "..\..\..\apps\api\dist\scripts\migrate.js")
+    )
+    $migrateScript = $null
+    foreach ($cand in $migrateCandidates) {
+        if ($cand -and (Test-Path $cand)) {
+            $migrateScript = (Resolve-Path $cand).Path
+            break
+        }
+    }
+
+    if (-not $migrateScript) {
+        Write-PreflightLog "Migration script (migrate.js) not found. Skipping migration runner in preflight." "WARN"
+        return
+    }
+
+    Write-PreflightLog "Executing database migrations via $migrateScript on port $Port..." "INFO"
+    $env:DATABASE_URL = "postgres://dental:dental@127.0.0.1:$Port/dental_crm"
+    $env:PGPORT = "$Port"
+
+    $nodePathCandidates = @(
+        (Join-Path $scriptRoot "..\node_modules"),
+        (Join-Path $scriptRoot "..\server\node_modules"),
+        (Join-Path $scriptRoot "..\..\node_modules"),
+        (Join-Path $scriptRoot "..\..\..\node_modules")
+    )
+    $validNodePaths = $nodePathCandidates | Where-Object { Test-Path $_ }
+    if ($validNodePaths) {
+        $env:NODE_PATH = ($validNodePaths -join ";")
+    }
+
+    try {
+        $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+        $pinfo.FileName = $resolvedNode
+        $pinfo.Arguments = "`"$migrateScript`""
+        $pinfo.RedirectStandardOutput = $true
+        $pinfo.RedirectStandardError = $true
+        $pinfo.UseShellExecute = $false
+        $pinfo.CreateNoWindow = $true
+
+        $process = [System.Diagnostics.Process]::Start($pinfo)
+        $stdout = $process.StandardOutput.ReadToEnd()
+        $stderr = $process.StandardError.ReadToEnd()
+        $null = $process.WaitForExit(90000)
+
+        if ($stdout) {
+            foreach ($line in ($stdout -split "\r?\n")) {
+                if ($line.Trim()) { Write-PreflightLog "$line" "INFO" }
+            }
+        }
+        if ($stderr) {
+            foreach ($line in ($stderr -split "\r?\n")) {
+                if ($line.Trim()) { Write-PreflightLog "$line" "WARN" }
+            }
+        }
+
+        if ($process.ExitCode -eq 0) {
+            Write-PreflightLog "Database migrations applied successfully." "INFO"
+        } else {
+            Write-PreflightLog "Migration runner exited with code $($process.ExitCode)" "ERROR"
+        }
+    } catch {
+        Write-PreflightLog "Failed to execute migration runner: $($_.Exception.Message)" "ERROR"
+    }
+}
+
+$portReady = Test-PortListening -Port $activePort
+if ($portReady.IsListening) {
+    Write-PreflightLog "PostgreSQL is listening on port $activePort. Ensuring database and applying migrations..." "INFO"
+    $dbOk = Ensure-DatabaseExists -Port $activePort -NodeBinary $NodeBin -PostgresBinDir $PgBinDir
+    if ($dbOk) {
+        Invoke-Migrations -Port $activePort -NodeBinary $NodeBin
+    }
+} else {
+    Write-PreflightLog "PostgreSQL daemon is not currently listening on port $activePort. Database creation and migrations will run on service startup." "WARN"
 }
 
 Write-PreflightLog "=== Preflight Checks Completed Successfully. Target Port: $activePort ===" "INFO"

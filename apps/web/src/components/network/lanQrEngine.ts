@@ -17,6 +17,7 @@ export interface LanConnectionConfig {
 	readonly lanIp: string;
 	readonly port: number;
 	readonly pairingToken: string;
+	readonly pairingPin?: string | null | undefined;
 	readonly role?: DeviceRole;
 	readonly protocol?: "http" | "https";
 }
@@ -27,6 +28,7 @@ export interface LanQrCodeResult {
 	readonly lanIp: string;
 	readonly port: number;
 	readonly pairingToken: string;
+	readonly pairingPin?: string | null | undefined;
 	readonly role: DeviceRole;
 	readonly generatedAt: string;
 }
@@ -70,12 +72,26 @@ export interface LanServerInfoResponse {
 	readonly hostname: string;
 	readonly serverName: string;
 	readonly serverId: string;
-	readonly pairingToken: string;
-	readonly pairingUrl: string;
-	readonly pairingRole?: DeviceRole;
-	readonly pairingExpiresInSeconds: number;
-	readonly pairingExpiresAt: string;
+	readonly requiresAuth?: boolean;
+	readonly pairingToken: string | null;
+	readonly pairingUrl: string | null;
+	readonly pairingPin?: string | null;
+	readonly pairingRole?: DeviceRole | null;
+	readonly pairingExpiresInSeconds: number | null;
+	readonly pairingExpiresAt: string | null;
 	readonly interfaces: readonly LanServerInterfaceItem[];
+}
+
+/**
+ * XML-escapes untrusted characters to prevent SVG injection and XSS.
+ */
+export function escapeXml(unsafe: string): string {
+	return unsafe
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&apos;");
 }
 
 /**
@@ -87,8 +103,9 @@ export function buildLanConnectionUrl(config: LanConnectionConfig): string {
 	const cleanIp = config.lanIp.trim() || "127.0.0.1";
 	const cleanToken = config.pairingToken.trim();
 	const roleParam = config.role ? `&role=${encodeURIComponent(config.role)}` : "";
+	const pinParam = config.pairingPin ? `&pin=${encodeURIComponent(config.pairingPin.trim())}` : "";
 
-	return `${protocol}://${cleanIp}${portPart}/?pair=${encodeURIComponent(cleanToken)}${roleParam}`;
+	return `${protocol}://${cleanIp}${portPart}/?pair=${encodeURIComponent(cleanToken)}${roleParam}${pinParam}`;
 }
 
 /**
@@ -97,9 +114,10 @@ export function buildLanConnectionUrl(config: LanConnectionConfig): string {
 export function parsePairingUrlParams(searchParamsString?: string): {
 	pairingToken: string | null;
 	role: DeviceRole | null;
+	pairingPin: string | null;
 } {
 	if (typeof window === "undefined" && !searchParamsString) {
-		return { pairingToken: null, role: null };
+		return { pairingToken: null, role: null, pairingPin: null };
 	}
 
 	const search =
@@ -110,7 +128,7 @@ export function parsePairingUrlParams(searchParamsString?: string): {
 				: "";
 
 	if (!search) {
-		return { pairingToken: null, role: null };
+		return { pairingToken: null, role: null, pairingPin: null };
 	}
 
 	const params = new URLSearchParams(search);
@@ -118,12 +136,14 @@ export function parsePairingUrlParams(searchParamsString?: string): {
 	const rawRole = params.get("role")?.toLowerCase().trim();
 	const role: DeviceRole | null =
 		rawRole === "assistant" ? "assistant" : rawRole === "doctor" ? "doctor" : null;
+	const pin = params.get("pin")?.trim() || null;
 
-	return { pairingToken: token, role };
+	return { pairingToken: token, role, pairingPin: pin };
 }
 
 /**
  * Generates high-contrast ISO/IEC 18004 SVG QR code for tablet camera scanning.
+ * Sanitizes all input strings against XML injection.
  */
 export function generateLanPairingQr(
 	config: LanConnectionConfig,
@@ -131,16 +151,16 @@ export function generateLanPairingQr(
 ): LanQrCodeResult {
 	const connectionUrl = buildLanConnectionUrl(config);
 	const role = config.role || "doctor";
+	const defaultTitle = `Подключение планшета (${role === "doctor" ? "Врач" : "Ассистент"}) — DENTE CRM`;
+	const safeTitle = escapeXml(svgOptions.title || defaultTitle);
 
 	const qrSvg = generateQrCodeSvg(connectionUrl, {
 		size: svgOptions.size || 240,
 		margin: svgOptions.margin !== undefined ? svgOptions.margin : 2,
 		foregroundColor: svgOptions.foregroundColor || "#0f172a",
 		backgroundColor: svgOptions.backgroundColor || "#ffffff",
-		title:
-			svgOptions.title ||
-			`Подключение планшета (${role === "doctor" ? "Врач" : "Ассистент"}) — DENTE CRM`,
 		...svgOptions,
+		title: safeTitle,
 	});
 
 	return {
@@ -149,6 +169,7 @@ export function generateLanPairingQr(
 		lanIp: config.lanIp,
 		port: config.port,
 		pairingToken: config.pairingToken,
+		pairingPin: config.pairingPin ?? null,
 		role,
 		generatedAt: new Date().toISOString(),
 	};

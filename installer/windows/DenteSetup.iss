@@ -43,10 +43,11 @@ Name: "{app}\bin"
 Name: "{app}\bin\node"
 Name: "{app}\bin\postgres"
 Name: "{app}\bin\postgres\bin"
-Name: "{app}\bin\winsw"
 Name: "{app}\bin\icons"
 Name: "{app}\server"
 Name: "{app}\server\dist"
+Name: "{app}\server\drizzle"
+Name: "{app}\node_modules"
 Name: "{app}\web"
 Name: "{app}\scripts"
 
@@ -61,9 +62,9 @@ Name: "{commonappdata}\DenteCRM\data\backups"
 Name: "{commonappdata}\DenteCRM\logs"
 
 [Files]
-; Windows Service wrapper configuration and binary
-Source: "DenteService.xml"; DestDir: "{app}\bin\winsw"; Flags: ignoreversion
-Source: "bin\winsw\WinSW-x64.exe"; DestDir: "{app}\bin\winsw"; DestName: "DenteService.exe"; Flags: ignoreversion skipifsourcedoesntexist
+; Windows Service wrapper configuration and binary directly in {app}
+Source: "DenteService.xml"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\winsw\WinSW-x64.exe"; DestDir: "{app}"; DestName: "DenteService.exe"; Flags: ignoreversion skipifsourcedoesntexist
 
 ; Portable Node.js LTS runtime
 Source: "bin\node\*"; DestDir: "{app}\bin\node"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
@@ -71,8 +72,12 @@ Source: "bin\node\*"; DestDir: "{app}\bin\node"; Flags: ignoreversion recursesub
 ; Portable PostgreSQL 18 database engine binaries
 Source: "bin\postgres\*"; DestDir: "{app}\bin\postgres"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 
+; Production node_modules runtime dependencies
+Source: "..\..\node_modules\*"; DestDir: "{app}\node_modules"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+
 ; Compiled Fastify API backend and shared package
 Source: "..\..\apps\api\dist\*"; DestDir: "{app}\server\dist"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+Source: "..\..\apps\api\drizzle\*"; DestDir: "{app}\server\drizzle"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 Source: "..\..\apps\api\package.json"; DestDir: "{app}\server"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "..\..\packages\shared\dist\*"; DestDir: "{app}\packages\shared\dist"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 Source: "..\..\packages\shared\package.json"; DestDir: "{app}\packages\shared"; Flags: ignoreversion skipifsourcedoesntexist
@@ -115,10 +120,10 @@ Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -Fil
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\db-preflight.ps1"" -DataDir ""{commonappdata}\DenteCRM\data\pg18"" -EnvFile ""{commonappdata}\DenteCRM\dente.env"" -StartPostgres"; StatusMsg: "Инициализация и предстартовая проверка PostgreSQL 18..."; Flags: runhidden
 
 ; 3. Register WinSW Windows Service
-Filename: "{app}\bin\winsw\DenteService.exe"; Parameters: "install"; StatusMsg: "Регистрация службы DenteCRMService в Windows..."; Flags: runhidden
+Filename: "{app}\DenteService.exe"; Parameters: "install"; StatusMsg: "Регистрация службы DenteCRMService в Windows..."; Flags: runhidden
 
 ; 4. Start WinSW Windows Service
-Filename: "{app}\bin\winsw\DenteService.exe"; Parameters: "start"; StatusMsg: "Запуск службы DenteCRMService..."; Flags: runhidden
+Filename: "{app}\DenteService.exe"; Parameters: "start"; StatusMsg: "Запуск службы DenteCRMService..."; Flags: runhidden
 
 ; 5. Launch Tray Monitor
 Filename: "{app}\scripts\DenteTray.vbs"; Description: "Запустить монитор DENTE в системном трее"; Flags: postinstall nowait runhidden
@@ -128,9 +133,9 @@ Filename: "{app}\scripts\open-dente.cmd"; Description: "Открыть DENTE CRM
 
 [UninstallRun]
 ; 1. Stop Windows Service
-Filename: "{app}\bin\winsw\DenteService.exe"; Parameters: "stop"; Flags: runhidden
+Filename: "{app}\DenteService.exe"; Parameters: "stop"; Flags: runhidden
 ; 2. Uninstall Windows Service
-Filename: "{app}\bin\winsw\DenteService.exe"; Parameters: "uninstall"; Flags: runhidden
+Filename: "{app}\DenteService.exe"; Parameters: "uninstall"; Flags: runhidden
 ; 3. Terminate tray monitor
 Filename: "taskkill.exe"; Parameters: "/F /IM powershell.exe /FI ""WINDOWTITLE eq DenteTray*"""; Flags: runhidden
 

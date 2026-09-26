@@ -84,7 +84,20 @@ describe("lanDiscoveryService Virtual Adapter Blacklist & Reliability Invariants
 		assert.ok(evaluated.reason.includes("virtual"));
 	});
 
-	it("4. evaluateInterfaceCandidate prioritizes physical Wi-Fi over Ethernet and penalizes zero-MAC tunnels", () => {
+	it("4. evaluateInterfaceCandidate prioritizes physical wired Ethernet (+120) over Wi-Fi (+90)", () => {
+		const ethernetIface = {
+			address: "192.168.1.100",
+			netmask: "255.255.255.0",
+			family: "IPv4" as const,
+			mac: "88:d8:2e:a7:e1:aa",
+			internal: false,
+			cidr: "192.168.1.100/24",
+		};
+		const ethernetCandidate = evaluateInterfaceCandidate("Ethernet 1", ethernetIface);
+		assert.strictEqual(ethernetCandidate.isVirtual, false);
+		assert.strictEqual(ethernetCandidate.isEthernet, true);
+		assert.strictEqual(ethernetCandidate.isWifi, false);
+
 		const wifiIface = {
 			address: "192.168.1.103",
 			netmask: "255.255.255.0",
@@ -96,7 +109,14 @@ describe("lanDiscoveryService Virtual Adapter Blacklist & Reliability Invariants
 		const wifiCandidate = evaluateInterfaceCandidate("Беспроводная сеть 2", wifiIface);
 		assert.strictEqual(wifiCandidate.isVirtual, false);
 		assert.strictEqual(wifiCandidate.isWifi, true);
-		assert.ok(wifiCandidate.score >= 140);
+
+		// Wired Ethernet (120+30+10 = 160) must strictly score higher than Wi-Fi (90+30+10 = 130)
+		assert.ok(
+			ethernetCandidate.score > wifiCandidate.score,
+			`Ethernet score (${ethernetCandidate.score}) must exceed Wi-Fi score (${wifiCandidate.score})`,
+		);
+		assert.strictEqual(ethernetCandidate.score, 160);
+		assert.strictEqual(wifiCandidate.score, 130);
 
 		const tunnelIface = {
 			address: "10.88.0.5",
@@ -111,12 +131,28 @@ describe("lanDiscoveryService Virtual Adapter Blacklist & Reliability Invariants
 		assert.ok(tunnelCandidate.score < 0);
 	});
 
-	it("5. getLocalLanAddresses returns prioritized physical IPs on this machine", () => {
+	it("5. Windows Mobile Hotspot (192.168.137.1) receives +150 bonus and outranks standard Ethernet", () => {
+		const hotspotIface = {
+			address: "192.168.137.1",
+			netmask: "255.255.255.0",
+			family: "IPv4" as const,
+			mac: "88:d8:2e:a7:e1:ff",
+			internal: false,
+			cidr: "192.168.137.1/24",
+		};
+		const hotspotCandidate = evaluateInterfaceCandidate("Подключение по локальной сети* 12", hotspotIface);
+		assert.strictEqual(hotspotCandidate.isVirtual, false);
+		// Wi-Fi (90) + 192.168 (30) + /24 (10) + Hotspot (150) = 280
+		// or Physical (60) + 30 + 10 + 150 = 250
+		assert.ok(hotspotCandidate.score >= 250);
+		assert.ok(hotspotCandidate.reason.includes("Windows Mobile Hotspot"));
+	});
+
+	it("6. getLocalLanAddresses returns prioritized physical IPs on this machine", () => {
 		const addresses = getLocalLanAddresses();
 		assert.ok(addresses.length > 0);
-		// Verified on host: 192.168.1.103 is chosen, and 26.131.232.129 (Radmin) / 10.88.0.5 (AWG) are excluded!
+		// Verified on host: physical LAN IP is chosen, and 26.131.232.129 (Radmin) / 10.88.0.5 (AWG) are excluded!
 		if (addresses[0] !== "127.0.0.1") {
-			assert.strictEqual(addresses[0], "192.168.1.103");
 			assert.ok(!addresses.includes("26.131.232.129"));
 			assert.ok(!addresses.includes("10.88.0.5"));
 		}

@@ -2,7 +2,7 @@
  * DENTE Dental CRM — LAN Server Discovery & Network Topology Service
  *
  * Enables automatic discovery and zero-config pairing of clinic server over local network:
- * - Hardened physical adapter prioritization: Wi-Fi / Ethernet with RFC 1918 private subnets
+ * - Hardened physical adapter prioritization: Wired Ethernet / Wi-Fi with RFC 1918 private subnets
  * - Strict virtual adapter blacklist: Hyper-V, WSL, VirtualBox, Docker, TAP-Windows, vEthernet, ZeroTier, Tailscale, WireGuard
  * - Dual-probe UDP broadcast / SSDP responder on port 4101
  * - Exposes real LAN IP candidates for QR pairing modals and doctor/assistant tablet connections
@@ -240,13 +240,13 @@ export function evaluateInterfaceCandidate(
 	let score = 0;
 	const reasonParts: string[] = [];
 
-	// Physical adapter type scoring
-	if (isWifi) {
-		score += 100;
-		reasonParts.push("Wi-Fi adapter (+100)");
-	} else if (isEthernet) {
-		score += 85;
-		reasonParts.push("Ethernet adapter (+85)");
+	// Physical adapter type scoring — Wired Ethernet prioritized over Wi-Fi for clinic servers
+	if (isEthernet) {
+		score += 120;
+		reasonParts.push("Ethernet adapter (+120)");
+	} else if (isWifi) {
+		score += 90;
+		reasonParts.push("Wi-Fi adapter (+90)");
 	} else {
 		score += 60;
 		reasonParts.push("Physical adapter (+60)");
@@ -272,8 +272,8 @@ export function evaluateInterfaceCandidate(
 
 	// Windows Mobile Hotspot adapter detection bonus (192.168.137.1)
 	if (iface.address === "192.168.137.1") {
-		score += 50;
-		reasonParts.push("Windows Mobile Hotspot gateway (+50)");
+		score += 150;
+		reasonParts.push("Windows Mobile Hotspot gateway (+150)");
 	}
 
 	return {
@@ -312,7 +312,7 @@ export function getRankedLanInterfaces(): LanInterfaceCandidate[] {
 
 /**
  * Enumerates valid, non-virtual physical IPv4 LAN addresses of the current machine,
- * prioritized for doctor/assistant tablet connections (Wi-Fi first, then Ethernet).
+ * prioritized for doctor/assistant tablet connections (Wired Ethernet first, then Wi-Fi).
  */
 export function getLocalLanAddresses(): string[] {
 	const ranked = getRankedLanInterfaces();

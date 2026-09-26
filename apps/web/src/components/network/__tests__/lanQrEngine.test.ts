@@ -59,12 +59,15 @@ describe("LAN QR Engine & Discovery Verification", () => {
 		assert.strictEqual(empty.role, null);
 	});
 
-	it("4. generateLanPairingQr produces valid ISO/IEC 18004 SVG markup", () => {
+	it("4. generateLanPairingQr produces valid ISO/IEC 18004 SVG markup with escaped XML metadata", () => {
 		const result = generateLanPairingQr({
 			lanIp: "192.168.1.103",
 			port: 4000,
 			pairingToken: "auth-sample-token",
+			pairingPin: "4821",
 			role: "doctor",
+		}, {
+			title: 'Malicious <script>alert("xss")</script> & "injection"',
 		});
 
 		assert.ok(result.qrSvg.startsWith("<svg"), "QR output must start with <svg");
@@ -72,16 +75,38 @@ describe("LAN QR Engine & Discovery Verification", () => {
 		assert.ok(result.qrSvg.includes("viewBox="), "QR SVG must specify viewBox");
 		assert.strictEqual(result.role, "doctor");
 		assert.strictEqual(result.lanIp, "192.168.1.103");
+		assert.strictEqual(result.pairingPin, "4821");
+
+		// XSS Prevention verification
+		assert.ok(!result.qrSvg.includes("<script>"), "SVG must NOT contain raw <script> tag");
+		assert.ok(result.qrSvg.includes("&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt; &amp; &quot;injection&quot;"), "SVG must XML-escape title");
 	});
 
-	it("5. isWindowsHotspotIp identifies canonical Windows ICS gateway 192.168.137.1", () => {
+	it("5. buildLanConnectionUrl and parsePairingUrlParams correctly propagate pairingPin", () => {
+		const config: LanConnectionConfig = {
+			lanIp: "192.168.1.103",
+			port: 4000,
+			pairingToken: "tok-with-pin",
+			pairingPin: "9482",
+			role: "assistant",
+		};
+		const url = buildLanConnectionUrl(config);
+		assert.ok(url.includes("&pin=9482"), "Connection URL must contain pin parameter");
+
+		const parsed = parsePairingUrlParams("?pair=tok-with-pin&role=assistant&pin=9482");
+		assert.strictEqual(parsed.pairingToken, "tok-with-pin");
+		assert.strictEqual(parsed.role, "assistant");
+		assert.strictEqual(parsed.pairingPin, "9482");
+	});
+
+	it("6. isWindowsHotspotIp identifies canonical Windows ICS gateway 192.168.137.1", () => {
 		assert.strictEqual(isWindowsHotspotIp("192.168.137.1"), true);
 		assert.strictEqual(isWindowsHotspotIp("192.168.1.103"), false);
 		assert.strictEqual(isWindowsHotspotIp("10.0.0.1"), false);
 		assert.strictEqual(isWindowsHotspotIp("127.0.0.1"), false);
 	});
 
-	it("6. getApIsolationDiagnostics returns structured bypass guide with ms-settings command", () => {
+	it("7. getApIsolationDiagnostics returns structured bypass guide with ms-settings command", () => {
 		const diag = getApIsolationDiagnostics();
 		assert.ok(diag.issueTitle.length > 0);
 		assert.ok(diag.cause.includes("AP Isolation") || diag.cause.includes("изоляция"));
@@ -90,7 +115,7 @@ describe("LAN QR Engine & Discovery Verification", () => {
 		assert.strictEqual(diag.steps[0]?.command, "ms-settings:network-mobilehotspot");
 	});
 
-	it("7. formatAdapterDisplayName produces correct badges and labels", () => {
+	it("8. formatAdapterDisplayName produces correct badges and labels", () => {
 		const wifiAdapter: LanServerInterfaceItem = {
 			name: "Беспроводная сеть 2",
 			address: "192.168.1.103",

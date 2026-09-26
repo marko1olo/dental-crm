@@ -8,14 +8,14 @@
  * - GET  /api/network/ping: Ultra-lightweight LAN connectivity heartbeat for tablets at dental chair
  */
 
+import * as crypto from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { resolveOrganizationId } from "../accessGuard.js";
-import { db } from "../db/client.js";
 import { eq } from "drizzle-orm";
-import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
-import { organizations, users } from "../db/schema.js";
+import { withTenantCtx } from "../db/rls.js";
+import { users } from "../db/schema.js";
 import { authTokenSecret } from "../security/authSecret.js";
+import { getRequestIdentity } from "../security/identity.js";
 import {
 	getLanServerDiscoveryMetadata,
 	getLocalLanAddresses,
@@ -30,11 +30,12 @@ const generatePairSchema = z.object({
 	role: pairRoleSchema.default("doctor"),
 	organizationId: z.string().optional(),
 	staffUserId: z.string().optional(),
-	targetIp: z.string().optional(),
+	targetIp: z.string().ip({ version: "v4" }).optional(),
 });
 
 const verifyPairSchema = z.object({
 	token: z.string().min(1),
+	pin: z.string().optional(),
 	deviceName: z.string().optional(),
 });
 
@@ -44,16 +45,102 @@ export interface LanPairingPayload {
 	organizationId: string;
 	staffUserId?: string | undefined;
 	serverId: string;
+	nonce: string;
+	pin: string;
 	issuedAt: number;
+}
+
+export interface ActivePairingNonceEntry {
+	nonce: string;
+	role: "doctor" | "assistant";
+	organizationId: string;
+	staffUserId?: string | undefined;
+	pin: string;
+	expiresAt: number;
 }
 
 const DEFAULT_PAIRING_TTL_SECONDS = 15 * 60; // 15 minutes fresh pairing window
 
+const activePairingNonces = new Map<string, ActivePairingNonceEntry>();
+
+export function purgeExpiredPairingNonces(): void {
+	const now = Date.now();
+	for (const [nonce, entry] of activePairingNonces.entries()) {
+		if (entry.expiresAt <= now) {
+			activePairingNonces.delete(nonce);
+		}
+	}
+}
+
+export function getActivePairingNoncesCount(): number {
+	return activePairingNonces.size;
+}
+
+export function clearPairingNoncesForTest(): void {
+	activePairingNonces.clear();
+}
+
+function createPairingTokenRecord(options: {
+	role: "doctor" | "assistant";
+	organizationId: string;
+	staffUserId?: string | undefined;
+	serverId: string;
+	targetIp: string;
+	webPort: number;
+}): {
+	token: string;
+	url: string;
+	pin: string;
+	nonce: string;
+	expiresInSeconds: number;
+	expiresAt: string;
+} {
+	purgeExpiredPairingNonces();
+	const nonce = crypto.randomUUID();
+	const pin = Math.floor(1000 + Math.random() * 9000).toString();
+	const expiresAtMs = Date.now() + DEFAULT_PAIRING_TTL_SECONDS * 1000;
+
+	activePairingNonces.set(nonce, {
+		nonce,
+		role: options.role,
+		organizationId: options.organizationId,
+		staffUserId: options.staffUserId,
+		pin,
+		expiresAt: expiresAtMs,
+	});
+
+	const token = signToken(
+		{
+			type: "dente_lan_pairing",
+			role: options.role,
+			organizationId: options.organizationId,
+			staffUserId: options.staffUserId,
+			serverId: options.serverId,
+			nonce,
+			pin,
+			issuedAt: Date.now(),
+		} satisfies LanPairingPayload,
+		authTokenSecret(),
+		DEFAULT_PAIRING_TTL_SECONDS,
+	);
+
+	const url = `http://${options.targetIp}:${options.webPort}/?pair=${encodeURIComponent(token)}&role=${options.role}&pin=${pin}`;
+
+	return {
+		token,
+		url,
+		pin,
+		nonce,
+		expiresInSeconds: DEFAULT_PAIRING_TTL_SECONDS,
+		expiresAt: new Date(expiresAtMs).toISOString(),
+	};
+}
+
 export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<void> {
 	/**
 	 * GET /api/network/lan-info
-	 * Returns verified physical LAN IPs (Wi-Fi / Ethernet), filtering out virtual adapters (WSL, Hyper-V, Docker).
-	 * Generates real connection URLs and guides for AP Isolation troubleshooting.
+	 * Returns verified physical LAN IPs (Ethernet / Wi-Fi), filtering out virtual adapters (WSL, Hyper-V, Docker).
+	 * Handing out pairing tokens requires an authenticated clinic session on the server PC.
 	 */
 	app.get("/api/network/lan-info", async (request: FastifyRequest, reply: FastifyReply) => {
 		const metadata = getLanServerDiscoveryMetadata();
@@ -61,31 +148,21 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		const activeLanAddresses = getLocalLanAddresses();
 		const primaryIp = metadata.primaryIp;
 
-		// Resolve organization context if token or cookie present
-		let orgId = await resolveOrganizationId(request);
-		if (!orgId) {
-			// Find default primary organization if single-clinic / solo-doctor
-			const defaultOrg = await withSuperuserBypass(async (tx) => {
-				const orgList = await tx.select({ id: organizations.id }).from(organizations).limit(1);
-				return orgList[0]?.id;
-			});
-			orgId = defaultOrg || "00000000-0000-0000-0000-000000000001";
-		}
+		// Check session identity: guests receive network topology, but no doctor tokens
+		const identity = getRequestIdentity(request);
+		const isAuthenticated = identity.verified && Boolean(identity.organizationId);
 
-		// Generate fresh signed pairing token for immediate doctor QR pairing
-		const pairingToken = signToken(
-			{
-				type: "dente_lan_pairing",
+		let pairingInfo: ReturnType<typeof createPairingTokenRecord> | null = null;
+		if (isAuthenticated && identity.organizationId) {
+			pairingInfo = createPairingTokenRecord({
 				role: "doctor",
-				organizationId: orgId,
+				organizationId: identity.organizationId,
+				staffUserId: identity.userId ?? undefined,
 				serverId: metadata.serverId,
-				issuedAt: Date.now(),
-			} satisfies LanPairingPayload,
-			authTokenSecret(),
-			DEFAULT_PAIRING_TTL_SECONDS,
-		);
-
-		const pairingUrl = `http://${primaryIp}:${metadata.webPort}/?pair=${encodeURIComponent(pairingToken)}`;
+				targetIp: primaryIp,
+				webPort: metadata.webPort,
+			});
+		}
 
 		return reply.send({
 			ok: true,
@@ -97,11 +174,13 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			apiPort: metadata.apiPort,
 			webPort: metadata.webPort,
 			interfaces: rankedInterfaces,
-			pairingToken,
-			pairingUrl,
-			pairingRole: "doctor",
-			pairingExpiresInSeconds: DEFAULT_PAIRING_TTL_SECONDS,
-			pairingExpiresAt: new Date(Date.now() + DEFAULT_PAIRING_TTL_SECONDS * 1000).toISOString(),
+			requiresAuth: !isAuthenticated,
+			pairingToken: pairingInfo?.token ?? null,
+			pairingUrl: pairingInfo?.url ?? null,
+			pairingPin: pairingInfo?.pin ?? null,
+			pairingRole: pairingInfo ? "doctor" : null,
+			pairingExpiresInSeconds: pairingInfo?.expiresInSeconds ?? null,
+			pairingExpiresAt: pairingInfo?.expiresAt ?? null,
 			hotspotGuide: {
 				title: "Включение мобильной точки доступа Windows (Hotspot)",
 				apIsolationWarning:
@@ -136,8 +215,17 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	/**
 	 * POST /api/network/pair/generate
 	 * Generates customized pairing token for doctor or assistant role.
+	 * Requires authenticated clinic session. Validates targetIp against physical LAN interfaces.
 	 */
 	app.post("/api/network/pair/generate", async (request: FastifyRequest, reply: FastifyReply) => {
+		const identity = getRequestIdentity(request);
+		if (!identity.verified || !identity.organizationId) {
+			return reply.code(401).send({
+				error: "Unauthorized",
+				message: "Для генерации QR-кода сопряжения требуется авторизованная сессия клиники.",
+			});
+		}
+
 		const parseRes = generatePairSchema.safeParse(request.body);
 		if (!parseRes.success) {
 			return reply.code(400).send({
@@ -147,49 +235,43 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			});
 		}
 
-		const { role, organizationId, staffUserId, targetIp } = parseRes.data;
+		const { role, staffUserId, targetIp } = parseRes.data;
 		const metadata = getLanServerDiscoveryMetadata();
-		const primaryIp = targetIp || getPrimaryLanIp();
+		const activeLanAddresses = getLocalLanAddresses();
 
-		let resolvedOrgId = organizationId || (await resolveOrganizationId(request));
-		if (!resolvedOrgId) {
-			const defaultOrg = await withSuperuserBypass(async (tx) => {
-				const orgList = await tx.select({ id: organizations.id }).from(organizations).limit(1);
-				return orgList[0]?.id;
+		if (targetIp && !activeLanAddresses.includes(targetIp) && targetIp !== "127.0.0.1") {
+			return reply.code(400).send({
+				error: "InvalidTargetIp",
+				message: `IP-адрес ${targetIp} не принадлежит сетевым интерфейсам сервера клиники. Допустимые адреса: ${activeLanAddresses.join(", ")}`,
 			});
-			resolvedOrgId = defaultOrg || "00000000-0000-0000-0000-000000000001";
 		}
 
-		const pairingToken = signToken(
-			{
-				type: "dente_lan_pairing",
-				role,
-				organizationId: resolvedOrgId,
-				staffUserId,
-				serverId: metadata.serverId,
-				issuedAt: Date.now(),
-			} satisfies LanPairingPayload,
-			authTokenSecret(),
-			DEFAULT_PAIRING_TTL_SECONDS,
-		);
-
-		const pairingUrl = `http://${primaryIp}:${metadata.webPort}/?pair=${encodeURIComponent(pairingToken)}&role=${role}`;
+		const selectedIp = targetIp || getPrimaryLanIp();
+		const pairingInfo = createPairingTokenRecord({
+			role,
+			organizationId: identity.organizationId,
+			staffUserId: staffUserId || (identity.userId ?? undefined),
+			serverId: metadata.serverId,
+			targetIp: selectedIp,
+			webPort: metadata.webPort,
+		});
 
 		return reply.send({
 			ok: true,
 			role,
-			pairingToken,
-			pairingUrl,
-			primaryIp,
+			pairingToken: pairingInfo.token,
+			pairingUrl: pairingInfo.url,
+			pairingPin: pairingInfo.pin,
+			primaryIp: selectedIp,
 			webPort: metadata.webPort,
-			expiresInSeconds: DEFAULT_PAIRING_TTL_SECONDS,
-			expiresAt: new Date(Date.now() + DEFAULT_PAIRING_TTL_SECONDS * 1000).toISOString(),
+			expiresInSeconds: pairingInfo.expiresInSeconds,
+			expiresAt: pairingInfo.expiresAt,
 		});
 	});
 
 	/**
 	 * POST /api/network/pair/verify
-	 * Validates the scanned pairing token from iPad/tablet and yields ready-to-use auth session tokens.
+	 * Validates the scanned pairing token from iPad/tablet with single-use nonce guarantee and optional PIN check.
 	 */
 	app.post("/api/network/pair/verify", async (request: FastifyRequest, reply: FastifyReply) => {
 		const parseRes = verifyPairSchema.safeParse(request.body);
@@ -200,7 +282,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			});
 		}
 
-		const { token, deviceName } = parseRes.data;
+		const { token, pin, deviceName } = parseRes.data;
 		const verified = verifyToken(token, authTokenSecret());
 
 		if (!verified || verified.type !== "dente_lan_pairing") {
@@ -213,6 +295,36 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		const payload = verified as unknown as LanPairingPayload;
 		const orgId = payload.organizationId;
 		const role = payload.role || "doctor";
+		const nonce = payload.nonce;
+
+		if (!nonce) {
+			return reply.code(401).send({
+				error: "InvalidPairingToken",
+				message: "Недействительный формат токена сопряжения (отсутствует одноразовый nonce).",
+			});
+		}
+
+		// Anti-Replay: Verify single-use nonce exists and has not expired
+		purgeExpiredPairingNonces();
+		const nonceEntry = activePairingNonces.get(nonce);
+		if (!nonceEntry || nonceEntry.expiresAt <= Date.now()) {
+			if (nonceEntry) activePairingNonces.delete(nonce);
+			return reply.code(401).send({
+				error: "PairingTokenExpiredOrUsed",
+				message: "Данный QR-код уже был использован или срок его действия истек. Обновите QR-код на сервере.",
+			});
+		}
+
+		// Optional PIN verification check if client provides pin
+		if (pin && pin.trim() !== nonceEntry.pin) {
+			return reply.code(401).send({
+				error: "InvalidPairingPin",
+				message: "Неверный 4-значный ПИН-код подтверждения сопряжения.",
+			});
+		}
+
+		// SINGLE-USE GUARANTEE: Invalidate nonce immediately so token can NEVER be reused!
+		activePairingNonces.delete(nonce);
 
 		// Issue valid clinic token
 		const clinicToken = signToken(

@@ -63,6 +63,8 @@ export const LanQrConnectionModal: React.FC<LanQrConnectionModalProps> = ({
 	const [lanInfo, setLanInfo] = useState<LanServerInfoResponse | null>(null);
 	const [selectedIp, setSelectedIp] = useState<string>("");
 	const [activePairingToken, setActivePairingToken] = useState<string>("");
+	const [pairingPin, setPairingPin] = useState<string | null>(null);
+	const [requiresAuth, setRequiresAuth] = useState<boolean>(false);
 	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 	const [copied, setCopied] = useState<boolean>(false);
@@ -85,20 +87,24 @@ export const LanQrConnectionModal: React.FC<LanQrConnectionModalProps> = ({
 
 			const data: LanServerInfoResponse = await response.json();
 			setLanInfo(data);
-			setSelectedIp((prev) => prev || data.primaryIp || "127.0.0.1");
-			setActivePairingToken(data.pairingToken);
+			setRequiresAuth(Boolean(data.requiresAuth || !data.pairingToken));
+			setSelectedIp(data.primaryIp || "127.0.0.1");
+			setActivePairingToken(data.pairingToken || "");
+			setPairingPin(data.pairingPin || null);
 			setTimeRemainingSeconds(data.pairingExpiresInSeconds || 900);
 
-			// If specific role requested, generate customized token for that role
-			if (targetRole !== "doctor") {
+			// If specific role requested and authenticated, generate customized token for that role
+			if (targetRole !== "doctor" && data.pairingToken) {
 				const pairRes = await fetch("/api/network/pair/generate", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ role: targetRole }),
+					body: JSON.stringify({ role: targetRole, targetIp: data.primaryIp }),
 				});
 				if (pairRes.ok) {
 					const pairData = await pairRes.json();
 					setActivePairingToken(pairData.pairingToken);
+					setPairingPin(pairData.pairingPin || null);
+					setTimeRemainingSeconds(pairData.expiresInSeconds || 900);
 				}
 			}
 		} catch (err) {
@@ -132,25 +138,50 @@ export const LanQrConnectionModal: React.FC<LanQrConnectionModalProps> = ({
 		return () => clearInterval(timer);
 	}, [isOpen, timeRemainingSeconds]);
 
-	// Refresh token and QR code on request
+	// Refresh token and QR code on request: re-fetch fresh network topology and live server IP
 	const handleRefreshToken = async () => {
 		try {
 			setIsRefreshing(true);
+			setError(null);
+
+			// 1. Always query fresh server LAN metadata first to detect changed IP / active Hotspot
+			const lanRes = await fetch("/api/network/lan-info");
+			if (!lanRes.ok) {
+				throw new Error(`Не удалось обновить статус сети (${lanRes.status})`);
+			}
+			const freshLanData: LanServerInfoResponse = await lanRes.json();
+			setLanInfo(freshLanData);
+			setRequiresAuth(Boolean(freshLanData.requiresAuth || !freshLanData.pairingToken));
+
+			const freshPrimaryIp = freshLanData.primaryIp || "127.0.0.1";
+			setSelectedIp(freshPrimaryIp);
+
+			if (freshLanData.requiresAuth || !freshLanData.pairingToken) {
+				setActivePairingToken("");
+				setPairingPin(null);
+				return;
+			}
+
+			// 2. Generate new single-use pairing token bound to the fresh IP
 			const response = await fetch("/api/network/pair/generate", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ role, targetIp: selectedIp }),
+				body: JSON.stringify({ role, targetIp: freshPrimaryIp }),
 			});
 
 			if (response.ok) {
 				const data = await response.json();
 				setActivePairingToken(data.pairingToken);
+				setPairingPin(data.pairingPin || null);
 				setTimeRemainingSeconds(data.expiresInSeconds || 900);
 			} else {
-				await fetchLanInfo(role);
+				setActivePairingToken(freshLanData.pairingToken || "");
+				setPairingPin(freshLanData.pairingPin || null);
+				setTimeRemainingSeconds(freshLanData.pairingExpiresInSeconds || 900);
 			}
-		} catch {
-			await fetchLanInfo(role);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			setError(msg);
 		} finally {
 			setIsRefreshing(false);
 		}
@@ -159,6 +190,8 @@ export const LanQrConnectionModal: React.FC<LanQrConnectionModalProps> = ({
 	// Switch role (Doctor vs Assistant)
 	const handleRoleChange = async (newRole: DeviceRole) => {
 		setRole(newRole);
+		if (requiresAuth || !activePairingToken) return;
+
 		try {
 			setIsRefreshing(true);
 			const response = await fetch("/api/network/pair/generate", {
@@ -169,6 +202,7 @@ export const LanQrConnectionModal: React.FC<LanQrConnectionModalProps> = ({
 			if (response.ok) {
 				const data = await response.json();
 				setActivePairingToken(data.pairingToken);
+				setPairingPin(data.pairingPin || null);
 				setTimeRemainingSeconds(data.expiresInSeconds || 900);
 			}
 		} catch {
@@ -193,6 +227,7 @@ export const LanQrConnectionModal: React.FC<LanQrConnectionModalProps> = ({
 				lanIp: ip,
 				port,
 				pairingToken: token,
+				pairingPin,
 				role,
 			},
 			{
@@ -202,7 +237,7 @@ export const LanQrConnectionModal: React.FC<LanQrConnectionModalProps> = ({
 				backgroundColor: "#ffffff",
 			},
 		);
-	}, [lanInfo, selectedIp, activePairingToken, role]);
+	}, [lanInfo, selectedIp, activePairingToken, pairingPin, role]);
 
 	// Copy direct connection URL to clipboard
 	const handleCopyUrl = async () => {
@@ -369,9 +404,19 @@ export const LanQrConnectionModal: React.FC<LanQrConnectionModalProps> = ({
 
 							{/* Main QR Card Frame */}
 							<div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/90 border border-slate-700/60 shadow-inner">
-								{/* Crisp High-Contrast SVG QR Plate */}
+								{/* Crisp High-Contrast SVG QR Plate or Auth Guard State */}
 								<div className="relative p-3.5 bg-white rounded-2xl shadow-xl border-4 border-slate-100 flex items-center justify-center">
-									{loading ? (
+									{requiresAuth ? (
+										<div className="w-[240px] h-[240px] flex flex-col items-center justify-center text-center p-4 text-slate-800">
+											<ShieldCheck className="w-12 h-12 text-amber-500 mb-2" />
+											<p className="text-xs font-semibold text-slate-900 mb-1">
+												Требуется авторизация
+											</p>
+											<p className="text-[11px] text-slate-600 leading-snug">
+												Для генерации QR-кода сопряжения планшетов выполните вход на сервере клиники.
+											</p>
+										</div>
+									) : loading ? (
 										<div className="w-[240px] h-[240px] flex flex-col items-center justify-center text-slate-700">
 											<RefreshCw className="w-8 h-8 animate-spin text-sky-600 mb-2" />
 											<p className="text-xs font-medium">Определение LAN IP...</p>
@@ -390,29 +435,48 @@ export const LanQrConnectionModal: React.FC<LanQrConnectionModalProps> = ({
 									</div>
 								</div>
 
+								{/* 4-digit PIN verification badge for server monitor screen */}
+								{pairingPin && !requiresAuth && (
+									<div className="mt-3.5 px-4 py-1.5 rounded-xl bg-sky-950/90 border border-sky-500/50 flex items-center gap-2.5 shadow-sm">
+										<span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+											ПИН-код подтверждения:
+										</span>
+										<span className="font-mono text-base font-bold text-sky-400 tracking-widest">
+											{pairingPin}
+										</span>
+									</div>
+								)}
+
 								{/* Live pairing status & Timer */}
-								<div className="flex items-center gap-4 mt-4 text-xs">
-									<div className="flex items-center gap-1.5 text-emerald-400 font-medium">
-										<span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-										<span>Сервер готов к сопряжению</span>
+								{requiresAuth ? (
+									<div className="flex items-center gap-2 mt-4 text-xs text-amber-400 font-medium">
+										<AlertTriangle className="w-3.5 h-3.5" />
+										<span>Сессия на сервере не авторизована</span>
 									</div>
-									<div className="text-slate-400 flex items-center gap-1">
-										<span>QR активен:</span>
-										<span className="font-mono text-slate-200">{formattedTime}</span>
+								) : (
+									<div className="flex items-center gap-4 mt-4 text-xs">
+										<div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+											<span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+											<span>Сервер готов к сопряжению</span>
+										</div>
+										<div className="text-slate-400 flex items-center gap-1">
+											<span>QR активен:</span>
+											<span className="font-mono text-slate-200">{formattedTime}</span>
+										</div>
+										<button
+											type="button"
+											onClick={handleRefreshToken}
+											disabled={isRefreshing}
+											className="p-1 rounded-md text-slate-400 hover:text-sky-400 hover:bg-slate-800 transition-colors"
+											title="Обновить QR-код"
+											aria-label="Обновить QR-код"
+										>
+											<RefreshCw
+												className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-sky-400" : ""}`}
+											/>
+										</button>
 									</div>
-									<button
-										type="button"
-										onClick={handleRefreshToken}
-										disabled={isRefreshing}
-										className="p-1 rounded-md text-slate-400 hover:text-sky-400 hover:bg-slate-800 transition-colors"
-										title="Обновить QR-код"
-										aria-label="Обновить QR-код"
-									>
-										<RefreshCw
-											className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-sky-400" : ""}`}
-										/>
-									</button>
-								</div>
+								)}
 							</div>
 
 							{/* Connection Direct Link & Copy */}
@@ -431,16 +495,23 @@ export const LanQrConnectionModal: React.FC<LanQrConnectionModalProps> = ({
 										id="lan-connection-url-input"
 										type="text"
 										readOnly
-										value={qrResult.connectionUrl}
+										value={
+											requiresAuth
+												? "Требуется авторизация на сервере клиники"
+												: qrResult.connectionUrl
+										}
 										className="flex-1 px-3 py-2 text-xs font-mono bg-slate-950/90 border border-slate-800 rounded-xl text-slate-300 focus:outline-none focus:border-sky-500"
 									/>
 									<button
 										type="button"
 										onClick={handleCopyUrl}
+										disabled={requiresAuth}
 										className={`px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all shrink-0 ${
-											copied
-												? "bg-emerald-600 text-white"
-												: "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
+											requiresAuth
+												? "bg-slate-800/50 text-slate-500 cursor-not-allowed border border-slate-800"
+												: copied
+													? "bg-emerald-600 text-white"
+													: "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
 										}`}
 									>
 										{copied ? (
@@ -478,7 +549,29 @@ export const LanQrConnectionModal: React.FC<LanQrConnectionModalProps> = ({
 												<button
 													key={`${iface.name}-${iface.address}`}
 													type="button"
-													onClick={() => setSelectedIp(iface.address)}
+													onClick={async () => {
+														setSelectedIp(iface.address);
+														if (!requiresAuth && activePairingToken) {
+															try {
+																setIsRefreshing(true);
+																const pairRes = await fetch("/api/network/pair/generate", {
+																	method: "POST",
+																	headers: { "Content-Type": "application/json" },
+																	body: JSON.stringify({ role, targetIp: iface.address }),
+																});
+																if (pairRes.ok) {
+																	const pairData = await pairRes.json();
+																	setActivePairingToken(pairData.pairingToken);
+																	setPairingPin(pairData.pairingPin || null);
+																	setTimeRemainingSeconds(pairData.expiresInSeconds || 900);
+																}
+															} catch {
+																// fallback
+															} finally {
+																setIsRefreshing(false);
+															}
+														}
+													}}
 													className={`p-2 rounded-lg text-left border transition-all text-xs flex flex-col justify-between ${
 														isSelected
 															? "bg-sky-950/50 border-sky-500/80 text-white"

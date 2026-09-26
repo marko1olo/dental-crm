@@ -136,32 +136,36 @@ Write-NetLog "Configuring Windows Defender Firewall inbound rules for DENTE CRM.
 
 $firewallRules = @(
     @{
-        Name        = "DENTE-TCP-4000"
-        DisplayName = "DENTE Dental CRM - Web Client & Fastify HTTP API (TCP 4000)"
-        Description = "Inbound HTTP access to DENTE CRM web interface and REST API for clinic workstations and tablets."
-        Protocol    = "TCP"
-        LocalPort   = 4000
+        Name          = "DENTE-TCP-4000"
+        DisplayName   = "DENTE Dental CRM - Web Client & Fastify HTTP API (TCP 4000)"
+        Description   = "Inbound HTTP access to DENTE CRM web interface and REST API for clinic workstations and tablets."
+        Protocol      = "TCP"
+        LocalPort     = 4000
+        RemoteAddress = "LocalSubnet"
     },
     @{
-        Name        = "DENTE-TCP-4100"
-        DisplayName = "DENTE Dental CRM - Real-time WebSocket Broker (TCP 4100)"
-        Description = "Inbound WebSocket access for real-time schedule synchronization, clinical alerts, and telephony events."
-        Protocol    = "TCP"
-        LocalPort   = 4100
+        Name          = "DENTE-TCP-4100"
+        DisplayName   = "DENTE Dental CRM - Real-time WebSocket Broker (TCP 4100)"
+        Description   = "Inbound WebSocket access for real-time schedule synchronization, clinical alerts, and telephony events."
+        Protocol      = "TCP"
+        LocalPort     = 4100
+        RemoteAddress = "LocalSubnet"
     },
     @{
-        Name        = "DENTE-UDP-5353"
-        DisplayName = "DENTE Dental CRM - mDNS Zero-Config Discovery (UDP 5353)"
-        Description = "Multicast DNS discovery allowing tablet and client applications to discover the server automatically."
-        Protocol    = "UDP"
-        LocalPort   = 5353
+        Name          = "DENTE-UDP-5353"
+        DisplayName   = "DENTE Dental CRM - mDNS Zero-Config Discovery (UDP 5353)"
+        Description   = "Multicast DNS discovery allowing tablet and client applications to discover the server automatically."
+        Protocol      = "UDP"
+        LocalPort     = 5353
+        RemoteAddress = "LocalSubnet"
     },
     @{
-        Name        = "DENTE-UDP-4101"
-        DisplayName = "DENTE Dental CRM - LAN Beacon Responder (UDP 4101)"
-        Description = "UDP discovery probe responder enabling instant discovery of DENTE CRM server across local clinic subnet."
-        Protocol    = "UDP"
-        LocalPort   = 4101
+        Name          = "DENTE-UDP-4101"
+        DisplayName   = "DENTE Dental CRM - LAN Beacon Responder (UDP 4101)"
+        Description   = "UDP discovery probe responder enabling instant discovery of DENTE CRM server across local clinic subnet."
+        Protocol      = "UDP"
+        LocalPort     = 4101
+        RemoteAddress = "LocalSubnet"
     }
 )
 
@@ -178,19 +182,22 @@ foreach ($rule in $firewallRules) {
     $desc = $rule.Description
     $proto = $rule.Protocol
     $port = $rule.LocalPort
+    $remoteAddr = if ($rule.RemoteAddress) { $rule.RemoteAddress } else { "LocalSubnet" }
+    $netshRemote = if ($remoteAddr -eq "LocalSubnet") { "localsubnet" } else { "any" }
 
-    Write-NetLog "Configuring firewall rule: $dispName ($proto $port)..."
+    Write-NetLog "Configuring firewall rule: $dispName ($proto $port, RemoteAddress: $remoteAddr)..."
 
     if ($hasNetFirewallCmdlets) {
         try {
             $existing = Get-NetFirewallRule -Name $ruleName -ErrorAction SilentlyContinue
             if ($existing) {
-                Write-NetLog "Rule '$ruleName' already exists. Ensuring it is enabled..." "INFO"
+                Write-NetLog "Rule '$ruleName' already exists. Ensuring it is enabled with LocalSubnet scope..." "INFO"
                 Set-NetFirewallRule -Name $ruleName `
                     -Enabled True `
                     -Direction Inbound `
                     -Action Allow `
-                    -Profile @("Domain", "Private") `
+                    -Profile Any `
+                    -RemoteAddress $remoteAddr `
                     -ErrorAction SilentlyContinue
             } else {
                 New-NetFirewallRule `
@@ -202,23 +209,24 @@ foreach ($rule in $firewallRules) {
                     -Action Allow `
                     -Protocol $proto `
                     -LocalPort $port `
-                    -Profile @("Domain", "Private") `
+                    -Profile Any `
+                    -RemoteAddress $remoteAddr `
                     -Enabled True `
                     -ErrorAction Stop | Out-Null
-                Write-NetLog "Created firewall rule '$ruleName' successfully." "INFO"
+                Write-NetLog "Created firewall rule '$ruleName' successfully (Profile: Any, RemoteAddress: $remoteAddr)." "INFO"
             }
         } catch {
             Write-NetLog "New-NetFirewallRule failed for '$ruleName': $($_.Exception.Message). Trying netsh fallback..." "WARN"
             & netsh advfirewall firewall delete rule name="$dispName" 2>&1 | Out-Null
-            & netsh advfirewall firewall add rule name="$dispName" dir=in action=allow protocol=$proto localport=$port profile=private,domain description="$desc" 2>&1 | Out-Null
-            Write-NetLog "Applied rule '$dispName' via netsh fallback." "INFO"
+            & netsh advfirewall firewall add rule name="$dispName" dir=in action=allow protocol=$proto localport=$port profile=any remoteip=$netshRemote description="$desc" 2>&1 | Out-Null
+            Write-NetLog "Applied rule '$dispName' via netsh fallback (profile=any, remoteip=$netshRemote)." "INFO"
         }
     } else {
         # Older PowerShell / Windows Core without NetSecurity module
         Write-NetLog "Applying rule '$dispName' via netsh advfirewall..." "INFO"
         & netsh advfirewall firewall delete rule name="$dispName" 2>&1 | Out-Null
-        & netsh advfirewall firewall add rule name="$dispName" dir=in action=allow protocol=$proto localport=$port profile=private,domain description="$desc" 2>&1 | Out-Null
-        Write-NetLog "Applied rule '$dispName' via netsh." "INFO"
+        & netsh advfirewall firewall add rule name="$dispName" dir=in action=allow protocol=$proto localport=$port profile=any remoteip=$netshRemote description="$desc" 2>&1 | Out-Null
+        Write-NetLog "Applied rule '$dispName' via netsh (profile=any, remoteip=$netshRemote)." "INFO"
     }
 }
 
