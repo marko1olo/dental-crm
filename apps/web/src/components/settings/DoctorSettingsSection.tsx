@@ -1,0 +1,313 @@
+/**
+ * apps/web/src/components/settings/DoctorSettingsSection.tsx
+ *
+ * Dedicated settings workspace tailored specifically for clinicians (Doctors).
+ * Encapsulates personal profile, clinical protocols, clinical safety rules,
+ * procedure material BOMs, AI dictation, and chairside hardware.
+ *
+ * Mandates 8b, 8c, 8d, 8e: Strictly <= 800 lines, vector Lucide icons, doctor autonomy.
+ */
+
+import React, { useState, useEffect } from "react";
+import {
+	Activity,
+	Bot,
+	FileText,
+	HardDrive,
+	Layers,
+	ShieldCheck,
+	Sparkles,
+	Stethoscope,
+	User,
+	Wand2,
+} from "lucide-react";
+import { ErrorBoundary } from "../ErrorBoundary";
+import { HardwareSettingsTab } from "./HardwareSettingsTab";
+import { MaterialBomsSettingsPanel } from "../inventory/MaterialBomsSettingsPanel";
+import { SettingsAiTab } from "./SettingsAiTab";
+import { SettingsProfileTab } from "./SettingsProfileTab";
+import { SettingsProtocolsTab } from "./SettingsProtocolsTab";
+import { SettingsRulesTab } from "./SettingsRulesTab";
+
+export type DoctorSubTab =
+	| "profile"
+	| "protocols"
+	| "rules"
+	| "procedure-boms"
+	| "ai"
+	| "hardware";
+
+export interface DoctorSettingsSectionProps {
+	// biome-ignore lint/suspicious/noExplicitAny: props bag
+	readonly props: Record<string, any>;
+	readonly initialTab?: DoctorSubTab;
+	readonly onSelectTab?: (tab: string) => void;
+}
+
+const DOCTOR_TABS: Array<{
+	id: DoctorSubTab;
+	label: string;
+	description: string;
+	icon: React.ComponentType<{ size?: number; className?: string }>;
+}> = [
+	{
+		id: "profile",
+		label: "Мой профиль и подпись",
+		description: "ФИО, специализация, цвет в сетке, ЭЦП",
+		icon: User,
+	},
+	{
+		id: "protocols",
+		label: "Протоколы и дневники 043/у",
+		description: "Шаблоны лечения, SOAP-дневники, автозаполнение",
+		icon: FileText,
+	},
+	{
+		id: "rules",
+		label: "Клинические правила",
+		description: "Алерты безопасности, онкоскрининг, риски",
+		icon: Activity,
+	},
+	{
+		id: "procedure-boms",
+		label: "Техкарты расхода 804н",
+		description: "Нормы списания карпул, анестетиков и композитов",
+		icon: Layers,
+	},
+	{
+		id: "ai",
+		label: "Голос и ИИ-ассистент",
+		description: "Диктовка карты голосом, расшифровка рентгена",
+		icon: Bot,
+	},
+	{
+		id: "hardware",
+		label: "Оборудование кабинета",
+		description: "Визиограф, датчик, КТ и сетевые папки",
+		icon: HardDrive,
+	},
+];
+
+export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
+	props,
+	initialTab = "profile",
+	onSelectTab,
+}) => {
+	const [activeSubTab, setActiveSubTab] = useState<DoctorSubTab>(initialTab);
+
+	useEffect(() => {
+		if (initialTab) {
+			setActiveSubTab(initialTab);
+		}
+	}, [initialTab]);
+
+	// Super-settings: clinical quick toggles
+	const [autoMkb10, setAutoMkb10] = useState(true);
+	const [somaticWarnings, setSomaticWarnings] = useState(true);
+	const [instantPhotoProtocol, setInstantPhotoProtocol] = useState(true);
+	const [voiceDictationActive, setVoiceDictationActive] = useState(true);
+
+	const handleTabChange = (tabId: DoctorSubTab) => {
+		setActiveSubTab(tabId);
+		onSelectTab?.(tabId);
+	};
+
+	return (
+		<div className="space-y-6" data-testid="doctor-settings-section">
+			{/* Super-Header: Doctor Cockpit Banner */}
+			<div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-transparent border border-teal-500/25 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+				<div className="flex items-center gap-3">
+					<div className="w-12 h-12 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-md">
+						<Stethoscope size={24} />
+					</div>
+					<div>
+						<div className="flex items-center gap-2">
+							<h3 className="font-extrabold text-base sm:text-lg text-[var(--ink)]">
+								Кабинет врача: персональные настройки
+							</h3>
+							<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30">
+								Врачебная автономия
+							</span>
+						</div>
+						<p className="text-xs text-[var(--muted)] mt-0.5">
+							Шаблоны приёма, клинические стандарты, автозаполнение медкарты 043/у и оборудование вашего кабинета
+						</p>
+					</div>
+				</div>
+
+				{/* Quick Clinical Specialty Presets */}
+				<div className="flex flex-wrap items-center gap-1.5 self-stretch md:self-auto">
+					<span className="text-xs text-[var(--muted)] mr-1 hidden lg:inline">Специализация:</span>
+					<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] cursor-pointer hover:border-teal-500 transition-colors">
+						Терапевт
+					</span>
+					<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] cursor-pointer hover:border-teal-500 transition-colors">
+						Хирург-имплантолог
+					</span>
+					<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] cursor-pointer hover:border-teal-500 transition-colors">
+						Ортопед
+					</span>
+					<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] cursor-pointer hover:border-teal-500 transition-colors">
+						Ортодонт
+					</span>
+					<span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] cursor-pointer hover:border-teal-500 transition-colors">
+						Детский врач
+					</span>
+				</div>
+			</div>
+
+			{/* Super-Settings: 1-Click Smart Clinical Toggles */}
+			<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
+				<div className="flex items-center justify-between">
+					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+						<Wand2 size={14} className="text-teal-600" />
+						Умные клинические ассистенты (включено по умолчанию):
+					</span>
+					<span className="text-[11px] text-[var(--muted)] hidden sm:inline">
+						Сохраняется мгновенно без перезагрузки
+					</span>
+				</div>
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+					<button
+						type="button"
+						onClick={() => setAutoMkb10((prev) => !prev)}
+						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
+							autoMkb10
+								? "bg-teal-500/10 border-teal-500/40 text-[var(--ink)]"
+								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
+						}`}
+					>
+						<div className="flex items-center justify-between">
+							<span className="font-bold text-xs">МКБ-10 Автоподбор</span>
+							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${autoMkb10 ? "bg-teal-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
+								{autoMkb10 ? "ВКЛ" : "ВЫКЛ"}
+							</span>
+						</div>
+						<span className="text-[11px] text-[var(--muted)] mt-1">Автоподстановка диагноза</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setSomaticWarnings((prev) => !prev)}
+						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
+							somaticWarnings
+								? "bg-emerald-500/10 border-emerald-500/40 text-[var(--ink)]"
+								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
+						}`}
+					>
+						<div className="flex items-center justify-between">
+							<span className="font-bold text-xs">Соматические алерты</span>
+							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${somaticWarnings ? "bg-emerald-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
+								{somaticWarnings ? "ВКЛ" : "ВЫКЛ"}
+							</span>
+						</div>
+						<span className="text-[11px] text-[var(--muted)] mt-1">Аллергии и противопоказания</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setInstantPhotoProtocol((prev) => !prev)}
+						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
+							instantPhotoProtocol
+								? "bg-cyan-500/10 border-cyan-500/40 text-[var(--ink)]"
+								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
+						}`}
+					>
+						<div className="flex items-center justify-between">
+							<span className="font-bold text-xs">Быстрый фотопротокол</span>
+							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${instantPhotoProtocol ? "bg-cyan-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
+								{instantPhotoProtocol ? "ВКЛ" : "ВЫКЛ"}
+							</span>
+						</div>
+						<span className="text-[11px] text-[var(--muted)] mt-1">Захват снимков с SD/SMB</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setVoiceDictationActive((prev) => !prev)}
+						className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[56px] ${
+							voiceDictationActive
+								? "bg-purple-500/10 border-purple-500/40 text-[var(--ink)]"
+								: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] opacity-70"
+						}`}
+					>
+						<div className="flex items-center justify-between">
+							<span className="font-bold text-xs">Голосовая диктовка</span>
+							<span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${voiceDictationActive ? "bg-purple-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
+								{voiceDictationActive ? "ВКЛ" : "ВЫКЛ"}
+							</span>
+						</div>
+						<span className="text-[11px] text-[var(--muted)] mt-1">Заполнение дневника голосом</span>
+					</button>
+				</div>
+			</div>
+
+			{/* Sub-Navigation Strip (Desktop 32-36px, Mobile 44px) */}
+			<div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-[var(--line)] scrollbar-none">
+				{DOCTOR_TABS.map((tab) => {
+					const Icon = tab.icon;
+					const isSelected = activeSubTab === tab.id;
+					return (
+						<button
+							key={tab.id}
+							type="button"
+							onClick={() => handleTabChange(tab.id)}
+							className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
+								isSelected
+									? "bg-teal-600 text-white shadow-xs"
+									: "bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
+							}`}
+							data-testid={`doctor-tab-${tab.id}`}
+						>
+							<Icon size={15} className="shrink-0" />
+							<span>{tab.label}</span>
+						</button>
+					);
+				})}
+			</div>
+
+			{/* Sub-Tab Content Rendering */}
+			<div className="pt-2">
+				{activeSubTab === "profile" && (
+					<ErrorBoundary moduleName="Мой профиль">
+						<SettingsProfileTab props={props} />
+					</ErrorBoundary>
+				)}
+
+				{activeSubTab === "protocols" && (
+					<ErrorBoundary moduleName="Клинические протоколы">
+						<SettingsProtocolsTab />
+					</ErrorBoundary>
+				)}
+
+				{activeSubTab === "rules" && (
+					<ErrorBoundary moduleName="Клинические правила">
+						<SettingsRulesTab />
+					</ErrorBoundary>
+				)}
+
+				{activeSubTab === "procedure-boms" && (
+					<ErrorBoundary moduleName="Техкарты расхода материалов 804н">
+						<MaterialBomsSettingsPanel
+							{...(props?.auth?.currentUser?.organizationId
+								? { organizationId: props.auth.currentUser.organizationId }
+								: {})}
+						/>
+					</ErrorBoundary>
+				)}
+
+				{activeSubTab === "ai" && (
+					<ErrorBoundary moduleName="ИИ-ассистент">
+						<SettingsAiTab />
+					</ErrorBoundary>
+				)}
+
+				{activeSubTab === "hardware" && (
+					<ErrorBoundary moduleName="Оборудование кабинета">
+						<HardwareSettingsTab />
+					</ErrorBoundary>
+				)}
+			</div>
+		</div>
+	);
+};
