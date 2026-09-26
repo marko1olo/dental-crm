@@ -58,6 +58,9 @@ import "./components/schedule/roster/doctorShiftRoster.css";
 import "./components/schedule/chairSchedule.css";
 // Прейскурант и каталог услуг
 import "./components/catalog/pricelist/servicePricelist.css";
+// Рентген-модули: визиограф и hot-folder интейк
+import "./components/radiology/rvgCapture.css";
+import "./components/radiology/hotFolderIntake.css";
 // Оптимизация под слабые ПК (<=4GB RAM, <=4 ядра, медленный HDD): отключение размытия и тяжелых теней
 import "./styles/low-spec-hardware.css";
 // Последним: мастер первого запуска правит фон/цвета слоёв выше, где те

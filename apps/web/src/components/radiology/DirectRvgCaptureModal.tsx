@@ -43,7 +43,7 @@ import { DirectRvgFdiSelector } from "./DirectRvgFdiSelector";
 import { DirectRvgProjectionSelector } from "./DirectRvgProjectionSelector";
 import { DirectRvgViewportToolbar } from "./DirectRvgViewportToolbar";
 import { DirectRvgFooter } from "./DirectRvgFooter";
-import "./rvgCapture.css";
+if (typeof document !== "undefined") { import("./rvgCapture.css"); }
 
 // Transparent re-exports
 export * from "./directRvgTypes";

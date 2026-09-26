@@ -31,7 +31,7 @@ import {
 } from "./hotFolderTypes";
 import { HotFolderFdiSelector } from "./HotFolderFdiSelector";
 import { HotFolderImageCanvas } from "./HotFolderImageCanvas";
-import "./hotFolderIntake.css";
+if (typeof document !== "undefined") { import("./hotFolderIntake.css"); }
 
 // Transparent re-exports for complete backward compatibility and test parity
 export * from "./hotFolderTypes";
