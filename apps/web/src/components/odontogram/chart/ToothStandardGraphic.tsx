@@ -29,12 +29,13 @@ export interface ToothStandardGraphicProps {
 	isPeriodontitis: boolean;
 	resorptionVisual?: any | undefined;
 	isEndoTreated: boolean;
+	material?: RestorativeMaterialKey | undefined;
 	canalObturation?: CanalObturationMaterial | undefined;
 	showPulpAndCanals?: boolean | undefined;
 	hasPost?: boolean | undefined;
 	postType?: PostCoreType | undefined;
 	showPeriodontalBoneLoss?: boolean | undefined;
-	boneLossInfo?: { level: number; pattern: PeriodontalBoneLossPattern } | undefined;
+	boneLossInfo?: { readonly boneLine: string; readonly resorptionArea: string } | null | undefined;
 	effectivePocketDepth?: number | undefined;
 	surfaces?: readonly string[] | undefined;
 	useSurfaces?: boolean | undefined;
@@ -56,6 +57,7 @@ export const ToothStandardGraphic: React.FC<ToothStandardGraphicProps> = ({
 	isPeriodontitis,
 	resorptionVisual,
 	isEndoTreated,
+	material,
 	canalObturation,
 	showPulpAndCanals,
 	hasPost,
@@ -257,9 +259,9 @@ export const ToothStandardGraphic: React.FC<ToothStandardGraphicProps> = ({
 									d={geom.canals}
 									fill="none"
 									stroke={
-										effectiveObturation === "bioceramic"
+										canalObturation === "bioceramic"
 											? "#0d9488"
-											: effectiveObturation === "calcium_hydroxide"
+											: canalObturation === "calcium_hydroxide"
 												? "#eab308"
 												: "url(#gutta-percha-gradient)"
 									}
@@ -272,9 +274,9 @@ export const ToothStandardGraphic: React.FC<ToothStandardGraphicProps> = ({
 									d={geom.canals}
 									fill="none"
 									stroke={
-										effectiveObturation === "bioceramic"
+										canalObturation === "bioceramic"
 											? "#ccfbf1"
-											: effectiveObturation === "calcium_hydroxide"
+											: canalObturation === "calcium_hydroxide"
 												? "#fef9c3"
 												: "#fecdd3"
 									}

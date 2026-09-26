@@ -1,6 +1,6 @@
 import type React from "react";
-import { memo, useState, useRef, useEffect } from "react";
-import { Zap, Sparkles, ChevronDown, MoreHorizontal } from "lucide-react";
+import { memo } from "react";
+import { Zap, Sparkles } from "lucide-react";
 import {
 	type OdontogramQuadrantId,
 	getAdjacentQuadrant,
@@ -39,20 +39,6 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 	handleMarkFrontIntact,
 	handleSelectQuadrant,
 }) => {
-	const [isPresetsOpen, setIsPresetsOpen] = useState(false);
-	const presetsRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		if (!isPresetsOpen) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			if (presetsRef.current && !presetsRef.current.contains(e.target as Node)) {
-				setIsPresetsOpen(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isPresetsOpen]);
-
 	return (
 		<div
 			className="odontogram-unified-toolbar mb-1.5 select-none flex items-center justify-between gap-1.5 flex-nowrap overflow-x-auto no-scrollbar min-h-[32px] sm:min-h-[36px] sm:h-9 py-0.5"
@@ -181,71 +167,43 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						<span>Пломба K02.1</span>
 					</button>
 
-					{/* Dropdown for secondary rare presets (Miller/Hick law) */}
-					<div className="relative inline-flex items-center shrink-0" ref={presetsRef}>
+					{!isPediatricEffective && (
 						<button
 							type="button"
-							onClick={() => setIsPresetsOpen((prev) => !prev)}
-							className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2 py-0.5 rounded-lg text-xs font-bold bg-[var(--odontogram-surface)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border)] flex items-center gap-1 cursor-pointer transition-all shrink-0 shadow-xs"
-							data-testid="tooth-chart-presets-menu-btn"
-							title="Дополнительные пресеты формулы"
+							onClick={handleMarkWisdomTeethMissing}
+							className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+							title="1-клик Адентия 8-ок: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
+							data-testid="mark-wisdom-missing-btn"
+							data-action="tooth-chart-mark-wisdom-missing-btn"
 						>
-							<MoreHorizontal size={13} className="shrink-0 text-[var(--muted)]" />
-							<span className="hidden sm:inline">Пресеты...</span>
-							<ChevronDown size={11} className={`transition-transform shrink-0 ${isPresetsOpen ? "rotate-180" : ""}`} />
+							<Zap size={13} className="text-zinc-500 shrink-0" />
+							<span>Без 8-ок</span>
 						</button>
+					)}
 
-						{isPresetsOpen && (
-							<div
-								className="absolute right-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl min-w-[210px] animate-in fade-in duration-100 text-xs"
-								role="menu"
-							>
-								{!isPediatricEffective && (
-									<button
-										type="button"
-										onClick={() => {
-											handleMarkWisdomTeethMissing();
-											setIsPresetsOpen(false);
-										}}
-										className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft,var(--paper-soft))] flex items-center gap-2 cursor-pointer transition-colors"
-										data-testid="mark-wisdom-missing-btn"
-										data-action="tooth-chart-mark-wisdom-missing-btn"
-									>
-										<Zap size={13} className="text-zinc-500 shrink-0" />
-										<span>Без 8-ок (18, 28, 38, 48)</span>
-									</button>
-								)}
+					{!isPediatricEffective && (
+						<button
+							type="button"
+							onClick={handleMarkMolarsMissing}
+							className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+							title="1-клик Вторичная адентия моляров: зубы 16, 26, 36, 46 моментально помечаются удаленными"
+							data-testid="mark-molars-missing-btn"
+						>
+							<Zap size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>Без моляров</span>
+						</button>
+					)}
 
-								{!isPediatricEffective && (
-									<button
-										type="button"
-										onClick={() => {
-											handleMarkMolarsMissing();
-											setIsPresetsOpen(false);
-										}}
-										className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft,var(--paper-soft))] flex items-center gap-2 cursor-pointer transition-colors"
-										data-testid="mark-molars-missing-btn"
-									>
-										<Zap size={13} className="text-amber-500 shrink-0" />
-										<span>Без моляров (16, 26, 36, 46)</span>
-									</button>
-								)}
-
-								<button
-									type="button"
-									onClick={() => {
-										handleMarkFrontIntact();
-										setIsPresetsOpen(false);
-									}}
-									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft,var(--paper-soft))] flex items-center gap-2 cursor-pointer transition-colors"
-									data-testid="mark-front-intact-btn"
-								>
-									<Zap size={13} className="text-teal-500 shrink-0" />
-									<span>Интактный фронт (13–23, 33–43)</span>
-								</button>
-							</div>
-						)}
-					</div>
+					<button
+						type="button"
+						onClick={handleMarkFrontIntact}
+						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						title="1-клик Интактный фронт: зубы 13–23, 33–43 моментально помечаются здоровыми"
+						data-testid="mark-front-intact-btn"
+					>
+						<Zap size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span>Интактный фронт</span>
+					</button>
 				</div>
 			)}
 		</div>

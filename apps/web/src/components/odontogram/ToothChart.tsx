@@ -13,6 +13,7 @@ export type ToothState =
 
 import type React from "react";
 import { useCallback, useEffect, memo, useRef, useState, useMemo } from "react";
+import { X } from "lucide-react";
 import { globalDentalVoiceEngine } from "../../services/voice";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import { showToast } from "../GlobalToast";
@@ -46,6 +47,7 @@ import {
 	MIXED_BOTTOM_TEETH,
 	MIN_ARCH_SCALE,
 	splitArchAtMidline,
+	isQuadrantTop,
 	getQuadrantTeeth,
 	getQuadrantForTooth,
 	getAdjacentQuadrant,
@@ -106,10 +108,10 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	const appliedArchScaleRef = useRef(1);
 
 	const resolvedTeethData = useMemo(() => {
-		if (teethData.length > 0) return teethData;
+		if (teethData && teethData.length > 0) return teethData;
 		if (patientId) {
 			const cached = loadStoredTeethData(patientId);
-			if (cached.length > 0) return cached;
+			if (cached && cached.length > 0) return cached;
 		}
 		return [];
 	}, [teethData, patientId]);
@@ -151,7 +153,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 				? PEDIATRIC_TOP_TEETH.concat(PEDIATRIC_BOTTOM_TEETH)
 				: TOP_TEETH.concat(BOTTOM_TEETH);
 			onQuickStateChange(allTargets, "Healthy", []);
-			SoundFeedbackService.playSuccess();
+			void SoundFeedbackService.getInstance().playActionSuccess();
 			showToast("Вся зубная формула отмечена как санированная (интактная)", "success");
 		}
 	};
@@ -160,7 +162,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		if (onQuickStateChange) {
 			const wisdomTeeth = [18, 28, 38, 48];
 			onQuickStateChange(wisdomTeeth, "Missing", []);
-			SoundFeedbackService.playSuccess();
+			void SoundFeedbackService.getInstance().playActionSuccess();
 			showToast("Зубы мудрости (18, 28, 38, 48) отмечены как отсутствующие", "info");
 		}
 	};
@@ -169,7 +171,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		if (onQuickStateChange) {
 			const molars = [16, 26, 36, 46];
 			onQuickStateChange(molars, "Missing", []);
-			SoundFeedbackService.playSuccess();
+			void SoundFeedbackService.getInstance().playActionSuccess();
 			showToast("Моляры (16, 26, 36, 46) отмечены как отсутствующие", "info");
 		}
 	};
@@ -178,7 +180,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		if (onQuickStateChange) {
 			const frontTeeth = [13, 12, 11, 21, 22, 23, 43, 42, 41, 31, 32, 33];
 			onQuickStateChange(frontTeeth, "Healthy", []);
-			SoundFeedbackService.playSuccess();
+			void SoundFeedbackService.getInstance().playActionSuccess();
 			showToast("Фронтальная группа зубов отмечена как интактная", "success");
 		}
 	};
@@ -196,9 +198,9 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		if (onMarkProHygieneDone) {
 			onMarkProHygieneDone(protocol);
 		}
-		SoundFeedbackService.playSuccess();
+		void SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(
-			`1-клик Профгигиена: протокол 043/у ${protocol.icd10} и услуга ${protocol.serviceCode} (${protocol.serviceNameRu}) добавлены`,
+			`1-клик Профгигиена: протокол 043/у ${protocol.diagnosis} и услуга ${protocol.serviceCode} (${protocol.serviceName}) добавлены`,
 			"success",
 		);
 	};
@@ -212,9 +214,9 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		if (onApplyFastCariesK021) {
 			onApplyFastCariesK021(protocol);
 		}
-		SoundFeedbackService.playSuccess();
+		void SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(
-			`1-клик Кариес зуба ${targetTooth}: протокол ${protocol.icd10} и пломба ${protocol.serviceCode} добавлены`,
+			`1-клик Кариес зуба ${targetTooth}: протокол ${protocol.diagnosis} и пломба ${protocol.serviceCode} добавлены`,
 			"success",
 		);
 	};
@@ -222,7 +224,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	// Voice dictation listener
 	useEffect(() => {
 		const unsub = globalDentalVoiceEngine.addListener({
-			onIntent: (intent) => {
+			onIntentParsed: (intent) => {
 				if (!intent.teethUpdates || intent.teethUpdates.length === 0) return;
 				if (onQuickStateChange) {
 					for (const upd of intent.teethUpdates) {
@@ -230,7 +232,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 							onQuickStateChange([upd.toothNumber], upd.state as ToothState, upd.surfaces);
 						}
 					}
-					SoundFeedbackService.playSuccess();
+					void SoundFeedbackService.getInstance().playActionSuccess();
 					showToast(`Голосовой ввод: обновлено зубов: ${intent.teethUpdates.length}`, "success");
 				}
 			},
@@ -319,7 +321,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	const handleToothClick = useCallback(
 		(e: React.MouseEvent, num: number) => {
 			if (onToothClick) {
-				onToothClick(e, num);
+				(onToothClick as any)(e, num);
 			} else {
 				setModalTooth(num);
 			}
@@ -381,17 +383,24 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 			/>
 
 			{modalTooth !== null && (
-				<SurfaceSelector
-					selected={toothDataMap.get(modalTooth)?.surfaces ?? []}
-					toothState={toothDataMap.get(modalTooth)?.state ?? "Healthy"}
-					toothNumber={modalTooth}
-					onChange={(nextSurfaces) => {
-						if (onSurfacesChange) {
-							onSurfacesChange([modalTooth], nextSurfaces);
-						}
-					}}
-					onClose={() => setModalTooth(null)}
-				/>
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+					<div className="bg-[var(--paper)] border border-[var(--line)] rounded-xl p-4 shadow-xl max-w-xs w-full flex flex-col items-center gap-3">
+						<div className="flex items-center justify-between w-full">
+							<span className="text-sm font-bold text-[var(--ink)]">Зуб {modalTooth} — Поверхности</span>
+							<button type="button" onClick={() => setModalTooth(null)} className="p-1 rounded-md text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" aria-label="Закрыть">
+								<X size={14} />
+							</button>
+						</div>
+						<SurfaceSelector
+							selected={toothDataMap.get(modalTooth)?.surfaces ?? []}
+							onChange={(nextSurfaces) => {
+								if (onSurfacesChange) {
+									onSurfacesChange([modalTooth], nextSurfaces);
+								}
+							}}
+						/>
+					</div>
+				</div>
 			)}
 		</div>
 	);

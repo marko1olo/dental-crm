@@ -14,13 +14,13 @@ import {
 	type PostCoreType,
 	type RestorativeMaterialKey,
 	type RootResorptionStage,
+	getPeriodontalBoneLevelPath,
 } from "../anatomicalToothGeometries";
 import {
 	type ToothState,
 	TOOTH_STATE_LABELS,
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
-	areSurfacesEqual,
 	scaleCssPx,
 } from "./toothChartTypes";
 import { getToothColors } from "./ToothColors";
@@ -166,7 +166,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 		(number >= 71 && number <= 75);
 	const transform = `scaleX(${isRightSide ? -1 : 1})`;
 
-	const isPeriodontitis = state === "Periodontitis" || periapicalLesion;
+	const isPeriodontitis = Boolean(state === "Periodontitis" || periapicalLesion);
 	const isEndoTreated = canalObturation !== undefined && canalObturation !== "unfilled";
 	const effectiveObturation: CanalObturationMaterial =
 		canalObturation ?? "unfilled";
@@ -230,6 +230,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 			isPeriodontitis={isPeriodontitis}
 			resorptionVisual={resorptionVisual}
 			isEndoTreated={isEndoTreated}
+			material={material}
 			canalObturation={canalObturation}
 			showPulpAndCanals={showPulpAndCanals}
 			hasPost={hasPost}

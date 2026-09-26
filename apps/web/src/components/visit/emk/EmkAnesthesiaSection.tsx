@@ -248,6 +248,36 @@ export function EmkAnesthesiaSection({
 				</button>
 			</div>
 
+			{/* Предупреждение о токсической передозировке (МРД превышена) */}
+			{anesthesiaSafety.isOverdose && (
+				<div
+					className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 flex items-start justify-between gap-2.5 text-xs text-rose-950 dark:text-rose-200 min-w-0 max-w-full"
+					role="alert"
+					data-testid="anesthesia-overdose-toxicity-alert"
+				>
+					<div className="flex items-start gap-2 min-w-0 flex-1">
+						<AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+						<div className="space-y-1 min-w-0 flex-1">
+							<strong className="font-extrabold block text-rose-950 dark:text-rose-100 break-words">
+								Опасность токсической передозировки: Превышена МРД ({carpuleCount} карп. &gt; max {anesthesiaSafety.maxSafeCarpules} карп.)
+							</strong>
+							<p className="m-0 leading-relaxed font-medium break-words">
+								{anesthesiaSafety.formattedSafetyNote} Для пациента весом {patientWeightKg} кг максимальная безопасная доза составляет {anesthesiaSafety.maxSafeCarpules} карп.
+							</p>
+						</div>
+					</div>
+					<button
+						type="button"
+						onClick={() => setCarpuleCount(anesthesiaSafety.maxSafeCarpules)}
+						data-testid="btn-anesthesia-clamp-safe-dose"
+						className="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-200 dark:bg-rose-800 text-rose-950 dark:text-rose-100 hover:bg-rose-300 dark:hover:bg-rose-700 shrink-0 cursor-pointer min-h-[30px]"
+						title="1 клик: снизить дозу до максимально безопасной"
+					>
+						Снизить до {anesthesiaSafety.maxSafeCarpules} карп.
+					</button>
+				</div>
+			)}
+
 			{/* Предупреждение о кардиоваскулярном риске */}
 			{anesthesiaRisk.isWarningTriggered && (
 				<div

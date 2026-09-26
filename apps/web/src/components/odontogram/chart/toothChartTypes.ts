@@ -36,8 +36,6 @@ function areSurfacesEqual(
 }
 export { areSurfacesEqual };
 
-export type { DentitionMode };
-
 export type ToothState =
 	| "Caries"
 	| "Pulpitis"
@@ -74,22 +72,28 @@ export const TOOTH_STATE_LABELS: Record<ToothState, string> = {
 };
 
 import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols043";
-import type { EndoToothClinicalData } from "../../endo/EndoCanalLogModal";
 import { showToast } from "../../GlobalToast";
 import { globalDentalVoiceEngine } from "../../../services/voice";
 import { SoundFeedbackService } from "../../../services/audio/SoundFeedbackService";
 import {
-	type CanalObturationMaterial,
-	type FurcationGrade,
 	getFurcationMarkerSvg,
 	getGingivalRecessionPath,
 	getPeriodontalBoneLevelPath,
-	type PeriodontalBoneLossPattern,
-	type PostCoreType,
-	type RestorativeMaterialKey,
-	type RootResorptionStage,
 	ROOT_RESORPTION_STAGES,
-} from "./anatomicalToothGeometries";
+} from "../anatomicalToothGeometries";
+export {
+	getFurcationMarkerSvg,
+	getGingivalRecessionPath,
+	getPeriodontalBoneLevelPath,
+	ROOT_RESORPTION_STAGES,
+};
+export type {
+	CanalObturationMaterial,
+	FurcationGrade,
+	PeriodontalBoneLossPattern,
+	PostCoreType,
+	RestorativeMaterialKey,
+};
 export interface FastToothPreset {
 	id: string;
 	title: string;
@@ -474,9 +478,11 @@ export interface ToothChartProps {
 	bottomTeeth?: number[] | undefined;
 	selectedTeeth?: number[] | undefined;
 	activeStamp?: ToothState | null | undefined;
-	onToothClick: (num: number, rect: DOMRect, surface?: string | undefined) => void;
+	onToothClick?: ((num: number, rect?: DOMRect, surface?: string | undefined) => void) | ((e: React.MouseEvent, num: number) => void) | undefined;
+	onToothContextMenu?: ((e: React.MouseEvent, num: number) => void) | undefined;
 	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	onResorptionChange?: ((targets: number[], stage: RootResorptionStage) => void) | undefined;
+	onSurfacesChange?: ((targets: number[], surfaces: readonly string[]) => void) | undefined;
 	useSurfaces?: boolean | undefined;
 	hideHeader?: boolean | undefined;
 	hideLegend?: boolean | undefined;
@@ -491,8 +497,8 @@ export interface ToothChartProps {
 	onMarkWisdomTeethMissing?: (() => void) | undefined;
 	onMarkMolarsMissing?: (() => void) | undefined;
 	onMarkFrontIntact?: (() => void) | undefined;
-	onMarkProHygieneDone?: (() => void) | undefined;
-	onApplyFastCariesK021?: ((toothNumber?: number) => void) | undefined;
+	onMarkProHygieneDone?: ((protocol?: any) => void) | undefined;
+	onApplyFastCariesK021?: ((protocol?: any) => void) | undefined;
 	hideExpressActions?: boolean | undefined;
 	className?: string | undefined;
 }
@@ -543,7 +549,7 @@ export const MIXED_BOTTOM_TEETH = [46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 3
 /**
  * Нижняя граница масштаба. Дуга масштабируется под экран мобильного устройства (360px–414px).
  */
-const MIN_ARCH_SCALE = 0.28; // Adaptive mobile scaling down to 0.28 (MIN_ARCH_SCALE = 0.35 baseline)
+export const MIN_ARCH_SCALE = 0.28; // Adaptive mobile scaling down to 0.28 (MIN_ARCH_SCALE = 0.35 baseline)
 
 /** "56px" × 0.68 → "38.08px". Нечисловое значение возвращается как есть. */
 export function scaleCssPx(value: string, factor: number): string {

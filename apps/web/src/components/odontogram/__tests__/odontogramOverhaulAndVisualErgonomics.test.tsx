@@ -290,11 +290,17 @@ describe("CLIN-08: Form 043/u Templates and Studio Mac HIG Density (Mandates 8d,
 	});
 
 	it("verifies ToothChart quadrant switcher has 32px height on desktop", () => {
+		const toolbarPath = path.resolve(
+			__dirname,
+			"../../../../src/components/odontogram/chart/ToothChartToolbar.tsx",
+		);
 		const chartPath = path.resolve(
 			__dirname,
 			"../../../../src/components/odontogram/ToothChart.tsx",
 		);
-		const content = fs.readFileSync(chartPath, "utf-8");
+		const content = fs.existsSync(toolbarPath)
+			? fs.readFileSync(toolbarPath, "utf-8")
+			: fs.readFileSync(chartPath, "utf-8");
 
 		assert.ok(
 			content.includes("odontogram-quadrant-bar mb-1 select-none min-h-[32px] h-8 sm:h-9"),
