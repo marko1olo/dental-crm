@@ -640,7 +640,7 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 							{completedResult && (
 								<div className="flex flex-col sm:flex-row gap-4 items-start">
 									{/* Thermal ASCII Receipt Paper */}
-									<div className="flex-1 bg-white text-slate-900 font-mono text-[11px] p-4 rounded-xl border border-slate-300 shadow-inner space-y-1 w-full whitespace-pre-wrap">
+									<div className="flex-1 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900 text-[var(--ink,#0f172a)] font-mono text-[11px] p-4 rounded-xl border border-[var(--border,#cbd5e1)] shadow-inner space-y-1 w-full whitespace-pre-wrap">
 										{generateThermalRefundReceiptText(completedResult, clinicInfo)}
 									</div>
 
@@ -653,7 +653,7 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 
 										{receiptQrPayload ? (
 											<div
-												className="p-2 bg-white rounded-xl border border-slate-200 shadow-sm"
+												className="p-2 bg-white rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"
 												dangerouslySetInnerHTML={{
 													__html: generateQrCodeSvg(receiptQrPayload, {
 														size: 140,

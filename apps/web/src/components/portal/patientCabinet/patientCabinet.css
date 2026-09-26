@@ -31,6 +31,7 @@
 	--pc-primary: var(--primary, #0d9488);
 	--pc-primary-hover: var(--primary-hover, #0f766e);
 	--pc-primary-light: var(--primary-light, rgba(13, 148, 136, 0.1));
+	--pc-surface-muted: var(--pc-primary-light, rgba(13, 148, 136, 0.1));
 	--pc-success: var(--success, #10b981);
 	--pc-success-light: rgba(16, 185, 129, 0.12);
 	--pc-warning: var(--warning, #f59e0b);
@@ -907,7 +908,47 @@ html.dark:not([data-theme="light"]) .patient-cabinet-modal,
 	}
 
 	.pc-close-btn {
+		min-width: 44px;
+		min-height: 44px;
+		width: 44px;
+		height: 44px;
 		margin-left: auto;
+	}
+
+	.pc-quick-action-btn {
+		min-height: 44px;
+		padding: 10px 16px;
+	}
+
+	.pc-cal-btn {
+		min-height: 44px;
+		padding: 8px 12px;
+	}
+
+	.pc-year-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+
+	.pc-filter-chip {
+		min-height: 44px;
+		padding: 8px 16px;
+	}
+
+	.pc-view-mode-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+
+	.pc-stage-chevron-btn {
+		min-width: 44px;
+		min-height: 44px;
+		padding: 10px;
+	}
+
+	/* Mandate 8p: Purge duplicate profile hero card on mobile (it duplicates sticky .pc-header and wastes 220px) */
+	.pc-status-hero-card {
+		display: none !important;
 	}
 
 	.pc-body {
@@ -973,6 +1014,49 @@ html.dark:not([data-theme="light"]) .patient-cabinet-modal,
 		width: 38px;
 		height: 44px;
 		font-size: 1.125rem;
+	}
+}
+
+/* ==========================================================================
+   Touch Screen / Tablet Ergonomics (Mandate 8c: >= 44px Touch Targets)
+   ========================================================================== */
+@media (pointer: coarse) {
+	.pc-close-btn {
+		min-width: 44px;
+		min-height: 44px;
+		width: 44px;
+		height: 44px;
+	}
+
+	.pc-quick-action-btn {
+		min-height: 44px;
+		padding: 10px 16px;
+	}
+
+	.pc-cal-btn {
+		min-height: 44px;
+		padding: 8px 12px;
+	}
+
+	.pc-year-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+
+	.pc-filter-chip {
+		min-height: 44px;
+		padding: 8px 16px;
+	}
+
+	.pc-view-mode-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+
+	.pc-stage-chevron-btn {
+		min-width: 44px;
+		min-height: 44px;
+		padding: 10px;
 	}
 }
 
@@ -2579,13 +2663,19 @@ html.dark:not([data-theme="light"]) .patient-cabinet-modal,
 }
 
 .pc-friendly-group-card {
-	background: var(--pc-surface);
-	border: 1px solid var(--pc-border);
-	border-radius: var(--pc-radius-md);
-	padding: 12px 14px;
+	background: transparent;
+	border: none;
+	border-top: 1px solid var(--pc-border);
+	border-radius: 0;
+	padding: 12px 2px 4px 2px;
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
+}
+
+.pc-friendly-group-card:first-child {
+	border-top: none;
+	padding-top: 4px;
 }
 
 .pc-friendly-group-head {

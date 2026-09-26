@@ -35,7 +35,7 @@ export const MdlpDisposalQueueTable: React.FC<MdlpDisposalQueueTableProps> = ({
 					</button>
 					<button
 						type="button"
-						className="mdlp-btn mdlp-btn-ghost min-h-[44px] text-xs px-2 text-bad-fg hover:bg-red-50"
+						className="mdlp-btn mdlp-btn-ghost min-h-[44px] text-xs px-2 text-bad-fg hover:bg-red-50 dark:hover:bg-red-950/40"
 						style={{ minHeight: "44px" }}
 						onClick={onClearQueue}
 						title="Очистить всю очередь"

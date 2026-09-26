@@ -16,7 +16,7 @@
  *   * Shining 3D Aoralscan
  *   * Network MFU scanners (Kyocera, HP, Canon, Pantum, Brother)
  *   * Clinical photo-protocol SD-cards
- * - Test connection button with instant status (🟢 Готов / 🟡 Каталог не найден / ⚪ Нажмите для проверки)
+ * - Test connection button with instant status (Готов / Каталог не найден / Проверить связь)
  * - Hot Folders, SLIDA, VDDS, CLI templates with 1-click Windows path auto-population
  * - Exactly 1 toolbar row (32-36px), zero modal hell (depth 1), 0 disabled buttons (Mandate 8e)
  */
@@ -29,7 +29,9 @@ import {
 	CheckCircle2,
 	ChevronDown,
 	ChevronRight,
+	Circle,
 	FileText,
+	Folder,
 	FolderSync,
 	HardDrive,
 	HelpCircle,
@@ -139,16 +141,19 @@ export function HardwareSettingsTab() {
 				<div className="hw-studio-toolbar-right">
 					<div className="hw-studio-counters" title="Статус подключений оборудования">
 						<span className="hw-counter-pill ready" title="Аппараты готовы к снимкам">
-							🟢 {stats.ready}
+							<CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<span>{stats.ready}</span>
 						</span>
 						{stats.notFound > 0 && (
 							<span className="hw-counter-pill warn" title="Каталог не найден или требует настройки">
-								🟡 {stats.notFound}
+								<Zap size={12} className="text-amber-500 shrink-0" />
+								<span>{stats.notFound}</span>
 							</span>
 						)}
 						{stats.untested > 0 && (
 							<span className="hw-counter-pill untested" title="Не проверено">
-								⚪ {stats.untested}
+								<Circle size={12} className="text-slate-400 shrink-0" />
+								<span>{stats.untested}</span>
 							</span>
 						)}
 					</div>
@@ -244,7 +249,7 @@ export function HardwareSettingsTab() {
 									onClick={() => setActiveDeviceId(isExpanded ? null : dev.id)}
 								>
 									<div className="hw-device-header-left">
-										{/* Status Indicator Dot (🟢/🟡/⚪) */}
+										{/* Status Indicator Dot */}
 										<span
 											className={`hw-device-status-dot ${isTesting ? "testing" : dev.status}`}
 											title={dev.statusMessage}
@@ -259,7 +264,10 @@ export function HardwareSettingsTab() {
 												</span>
 											</div>
 											<div className="hw-device-path-line">
-												<span>📁 {dev.hotFolderPath}</span>
+												<span className="inline-flex items-center gap-1">
+													<Folder size={11} className="text-[var(--muted)] shrink-0" />
+													<span>{dev.hotFolderPath}</span>
+												</span>
 												<span>•</span>
 												<span>{HARDWARE_PROTOCOL_LABELS[dev.protocol]}</span>
 												{dev.latencyMs !== null && (
@@ -273,7 +281,7 @@ export function HardwareSettingsTab() {
 									</div>
 
 									<div className="hw-device-header-right">
-										{/* Test Connection Button (🟢/🟡/⚪) */}
+										{/* Test Connection Button */}
 										<button
 											type="button"
 											className={`hw-btn-test-connection ${dev.status}`}
@@ -284,10 +292,10 @@ export function HardwareSettingsTab() {
 											{isTesting
 												? "Проверка..."
 												: dev.status === "ready"
-													? "🟢 Готов к снимкам"
+													? "Готов к снимкам"
 													: dev.status === "not_found"
-														? "🟡 Каталог не найден"
-														: "⚪ Проверить связь"}
+														? "Каталог не найден"
+														: "Проверить связь"}
 										</button>
 
 										{/* Test Capture Button */}

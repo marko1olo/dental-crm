@@ -75,12 +75,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 payment-modal-backdrop"
+			className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 sm:p-4 payment-modal-backdrop"
+			style={{ zIndex: 100 }}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="payment-modal-title"
 		>
-			<div className="payment-modal w-full max-w-xl sm:max-w-2xl md:max-w-3xl rounded-2xl bg-[var(--paper-strong,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] min-h-0">
+			<div className="payment-modal w-full max-w-xl sm:max-w-2xl md:max-w-3xl rounded-2xl bg-[var(--paper-strong,#ffffff)] border border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[96vh] sm:max-h-[92vh] min-h-0">
 				<PaymentModalHeader
 					totalDueRub={discountsHook.totalDueRub}
 					rawTotalDueRub={rawTotalDueRub}

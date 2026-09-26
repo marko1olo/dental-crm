@@ -79,7 +79,7 @@ export const MdlpScannerCard: React.FC<MdlpScannerCardProps> = ({
 						/>
 						<span className="font-medium text-ink">Авторазбор 2D</span>
 					</label>
-					<span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
+					<span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-medium">
 						<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
 						2D-сканер активен
 					</span>
@@ -124,8 +124,8 @@ export const MdlpScannerCard: React.FC<MdlpScannerCardProps> = ({
 				<div
 					className={`p-3 rounded-lg border text-xs flex flex-col gap-1.5 ${
 						lastScanned.isValid
-							? "bg-teal-50/70 border-teal-200 text-teal-950"
-							: "bg-red-50 border-red-200 text-red-950"
+							? "bg-teal-50/70 dark:bg-teal-950/40 border-teal-200 dark:border-teal-800/60 text-teal-950 dark:text-teal-200"
+							: "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800/60 text-red-950 dark:text-red-200"
 					}`}
 				>
 					<div className="flex items-center justify-between font-bold">

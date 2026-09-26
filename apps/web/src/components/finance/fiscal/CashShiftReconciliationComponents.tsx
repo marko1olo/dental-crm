@@ -385,7 +385,7 @@ export const FiscalReceiptTapeViewer: React.FC<FiscalReceiptTapeViewerProps> = (
 			{/* Monospaced Receipt Tape Container */}
 			<div className="flex justify-center p-4 bg-[var(--paper-soft)] rounded-2xl overflow-x-auto">
 				<div
-					className={`p-4 bg-white text-black font-mono text-[11px] leading-relaxed shadow-xl border border-[var(--line)] rounded-sm whitespace-pre ${
+					className={`p-4 bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-mono text-[11px] leading-relaxed shadow-xl border border-[var(--line)] rounded-sm whitespace-pre ${
 						tapeWidth === "80mm" ? "w-[380px]" : "w-[290px]"
 					}`}
 				>
