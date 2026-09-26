@@ -3,31 +3,81 @@ import {
 	safeLocalStorageGetJson,
 	safeLocalStorageSetJson,
 } from "../lib/safeLocalStorage";
+import {
+	ADHESIVE_OPTIONS,
+	ANESTHETIC_OPTIONS,
+	COMPOSITE_OPTIONS,
+	ETCHANT_OPTIONS,
+	ISOLATION_OPTIONS,
+} from "../components/settings/doctorClinicalPreferencesConstants";
+
+export {
+	ADHESIVE_OPTIONS,
+	ANESTHETIC_OPTIONS,
+	COMPOSITE_OPTIONS,
+	ETCHANT_OPTIONS,
+	ISOLATION_OPTIONS,
+};
 
 export type AnestheticKey =
 	| "articaine_100k"
 	| "articaine_200k"
-	| "scandonest_mepivacaine_3";
+	| "septanest_100k"
+	| "ubistesin_forte"
+	| "articaine_binergia"
+	| "scandonest_mepivacaine_3"
+	| "mepivastesin_3"
+	| "lidocaine_2"
+	| "topical_lidoxor";
 
 export type IsolationType =
 	| "cofferdam"
-	| "optragate"
+	| "cofferdam_sanctuary"
+	| "cofferdam_tor_vm"
+	| "cofferdam_nic_tone"
+	| "cofferdam_ksk_dentech"
+	| "optidam"
 	| "liquid_dam"
+	| "optragate"
 	| "cotton_rolls";
 
 export type CompositeMaterial =
 	| "filtek_ultimate"
 	| "estelite_asteria"
 	| "gradia_direct"
-	| "ceram_x_sphere_tec"
 	| "harmonize"
+	| "charisma_classic"
+	| "ceram_x_sphere_tec"
+	| "brilliant_everglow"
+	| "tetric_n_ceram"
+	| "omnichroma"
+	| "esthet_x_hd"
+	| "grandio_admira"
+	| "enamel_plus_hri"
+	| "clearfil_majesty_es2"
+	| "spectrum_tph3"
+	| "dentlight"
 	| "sdr_plus_bulk_fill";
 
 export type AdhesiveSystem =
 	| "optibond_fl"
-	| "prime_and_bond_universal"
+	| "clearfil_se_bond_2"
 	| "single_bond_universal"
-	| "clearfil_se_bond_2";
+	| "single_bond_2"
+	| "prime_and_bond_universal"
+	| "g_premio_bond"
+	| "optibond_universal"
+	| "gluma_2bond"
+	| "tokuyama_universal_bond"
+	| "futurabond_u"
+	| "adhese_universal"
+	| "all_bond_universal";
+
+export type EtchantGel =
+	| "ultra_etch"
+	| "scotchbond_etch"
+	| "total_etch"
+	| "travis_vladmiva";
 
 export type OdontogramNotation = "fdi" | "universal" | "palmer";
 
@@ -40,6 +90,21 @@ export type DoctorSpecialtyKey =
 	| "orthodontist"
 	| "pediatric"
 	| "universal";
+
+export interface ClinicalMaterialOption<TKey extends string = string> {
+	readonly id: TKey;
+	readonly key: TKey;
+	readonly name: string;
+	readonly title: string;
+	readonly manufacturer: string;
+	readonly description: string;
+	readonly popularityRank: number;
+	readonly isFavoriteDefault: boolean;
+	readonly category?: string;
+	readonly generation?: string;
+	readonly badge?: string;
+	readonly hasAdrenaline?: boolean;
+}
 
 export interface FavoriteMedicationOption {
 	readonly id: string;
@@ -64,6 +129,7 @@ export interface DoctorPreferences {
 	defaultIsolation: IsolationType;
 	defaultComposite: CompositeMaterial;
 	defaultAdhesive: AdhesiveSystem;
+	defaultEtchant: EtchantGel;
 	odontogramNotation: OdontogramNotation;
 	defaultDentition: DefaultDentition;
 	enableSlotEndSound: boolean;
@@ -85,6 +151,7 @@ export const DEFAULT_DOCTOR_PREFERENCES: DoctorPreferences = {
 	defaultIsolation: "cofferdam",
 	defaultComposite: "estelite_asteria",
 	defaultAdhesive: "optibond_fl",
+	defaultEtchant: "ultra_etch",
 	odontogramNotation: "fdi",
 	defaultDentition: "adult",
 	enableSlotEndSound: true,
@@ -109,127 +176,6 @@ export const DEFAULT_DOCTOR_PREFERENCES: DoctorPreferences = {
 		"holisal_gel",
 	],
 };
-
-export const ANESTHETIC_OPTIONS: readonly {
-	key: AnestheticKey;
-	title: string;
-	badge: string;
-	description: string;
-	hasAdrenaline: boolean;
-}[] = [
-	{
-		key: "articaine_100k",
-		title: "Артикаин 4% + Адреналин 1:100 000 (Ультракаин Форте / Септанест)",
-		badge: "Норма (1:100k)",
-		description: "Стандарт глубокого обезболивания: 1.7 мл, аспирация (-), для хирургии и пульпитов",
-		hasAdrenaline: true,
-	},
-	{
-		key: "articaine_200k",
-		title: "Артикаин 4% + Адреналин 1:200 000 (Ультракаин Д-С / Убистезин)",
-		badge: "Щадящий (1:200k)",
-		description: "Сниженная нагрузка на миокард и сосуды, препарат выбора для рутинной терапии",
-		hasAdrenaline: true,
-	},
-	{
-		key: "scandonest_mepivacaine_3",
-		title: "Мепивакаин / Скандонест 3% (без адреналина)",
-		badge: "Без адреналина",
-		description: "Препарат выбора для гипертоников, глаукомы, ССЗ и аллергии на сульфиты",
-		hasAdrenaline: false,
-	},
-];
-
-export const ISOLATION_OPTIONS: readonly {
-	key: IsolationType;
-	title: string;
-	description: string;
-}[] = [
-	{
-		key: "cofferdam",
-		title: "Коффердам (Sanctuary / Tor VM / Nic Tone)",
-		description: "Полная изоляция зуба платком и клампом — золотой стандарт эндодонтии и реставраций",
-	},
-	{
-		key: "optragate",
-		title: "ОптраГейт (Ivoclar Vivadent)",
-		description: "Круговой мягкий ретрактор губ и щек без латекса",
-	},
-	{
-		key: "liquid_dam",
-		title: "Жидкий коффердам (гингивальный барьер)",
-		description: "Светоотверждаемый полимерный барьер для защиты краевой десны и отбеливания",
-	},
-	{
-		key: "cotton_rolls",
-		title: "Ватные валики + слюноотсос",
-		description: "Базовая барьерная изоляция и аспирация",
-	},
-];
-
-export const COMPOSITE_OPTIONS: readonly {
-	key: CompositeMaterial;
-	title: string;
-	manufacturer: string;
-}[] = [
-	{
-		key: "estelite_asteria",
-		title: "Estelite Asteria / Sigma Quick",
-		manufacturer: "Tokuyama Dental (Япония)",
-	},
-	{
-		key: "filtek_ultimate",
-		title: "Filtek Ultimate / Z250",
-		manufacturer: "3M ESPE (США)",
-	},
-	{
-		key: "harmonize",
-		title: "Harmonize наногибридный",
-		manufacturer: "Kerr (США)",
-	},
-	{
-		key: "gradia_direct",
-		title: "Gradia Direct",
-		manufacturer: "GC (Япония)",
-	},
-	{
-		key: "ceram_x_sphere_tec",
-		title: "Ceram.X SphereTEC One",
-		manufacturer: "Dentsply Sirona (Германия)",
-	},
-	{
-		key: "sdr_plus_bulk_fill",
-		title: "SDR Plus Bulk-Fill Flow",
-		manufacturer: "Dentsply Sirona (Германия)",
-	},
-];
-
-export const ADHESIVE_OPTIONS: readonly {
-	key: AdhesiveSystem;
-	title: string;
-	generation: string;
-}[] = [
-	{
-		key: "optibond_fl",
-		title: "OptiBond FL (Kerr)",
-		generation: "IV поколение (золотой стандарт тотального протравливания)",
-	},
-	{
-		key: "prime_and_bond_universal",
-		title: "Prime&Bond Universal (Dentsply)",
-		generation: "VIII поколение (универсальный)",
-	},
-	{
-		key: "single_bond_universal",
-		title: "Single Bond Universal (3M)",
-		generation: "VIII поколение (самопротравливающий / тотальный)",
-	},
-	{
-		key: "clearfil_se_bond_2",
-		title: "Clearfil SE Bond 2 (Kuraray)",
-		generation: "VI поколение (двухэтапный самопротравливающий с 10-MDP)",
-	},
-];
 
 export const DURATION_PRESETS = [15, 30, 45, 60, 90, 120] as const;
 
@@ -437,6 +383,7 @@ export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 						defaultIsolation: "cofferdam",
 						defaultComposite: "estelite_asteria",
 						defaultAdhesive: "optibond_fl",
+						defaultEtchant: "ultra_etch",
 						favoriteMedicationIds: [
 							"nimesil_100",
 							"chlorhexidine_005",

@@ -2,9 +2,18 @@
  * Клинические сниппеты и быстрые блоки для конструктора протоколов Формы 043/у.
  * Позволяют врачу за 1 клик вставить нормативные формулировки (анестезия, коффердам,
  * адгезив, реставрация, удаление, имплантация, костная пластика, гигиена) без ручного набора текста.
+ * Автоматически подтягивают персональные настройки врача (композит, адгезив, анестетик, изоляция).
  */
 
 import type { ProtocolTemplate } from "@dental/shared";
+import {
+	ADHESIVE_OPTIONS,
+	ANESTHETIC_OPTIONS,
+	COMPOSITE_OPTIONS,
+	ETCHANT_OPTIONS,
+	ISOLATION_OPTIONS,
+	type DoctorPreferences,
+} from "../../store/doctorPreferencesStore";
 
 export interface ProtocolSnippet {
 	readonly id: string;
@@ -48,6 +57,53 @@ export const ICD10_CLINICAL_PRESETS: readonly Icd10Preset[] = [
 	{ code: "Z01.2", title: "Стоматологическое обследование (профосмотр)", specialty: "universal" },
 ];
 
+/** Получение читаемого названия материала по ключу */
+export function resolveCompositeName(key?: string): string {
+	const found = COMPOSITE_OPTIONS.find((c) => c.id === key || c.key === key);
+	return found?.title || found?.name || "композит светового отверждения (Estelite Asteria)";
+}
+
+export function resolveAdhesiveName(key?: string): string {
+	const found = ADHESIVE_OPTIONS.find((a) => a.id === key || a.key === key);
+	return found?.title || found?.name || "OptiBond FL (Kerr)";
+}
+
+export function resolveAnestheticName(key?: string): string {
+	const found = ANESTHETIC_OPTIONS.find((a) => a.id === key || a.key === key);
+	return found?.title || found?.name || "Sol. Articaini 4% cum Epinephrino 1:100 000 — 1.7 мл";
+}
+
+export function resolveIsolationName(key?: string): string {
+	const found = ISOLATION_OPTIONS.find((i) => i.id === key || i.key === key);
+	return found?.title || found?.name || "коффердам (Sanctuary)";
+}
+
+export function resolveEtchantName(key?: string): string {
+	const found = ETCHANT_OPTIONS.find((e) => e.id === key || e.key === key);
+	return found?.title || found?.name || "Ultra-Etch 35% (Ultradent)";
+}
+
+/** Генерация персонализированного протокола реставрации кариеса с подтягиванием любимых материалов врача */
+export function buildDoctorPersonalizedTherapySnippet(
+	prefs?: Partial<DoctorPreferences>,
+): string {
+	const composite = resolveCompositeName(prefs?.defaultComposite);
+	const adhesive = resolveAdhesiveName(prefs?.defaultAdhesive);
+	const anesthetic = resolveAnestheticName(prefs?.favoriteAnesthetic);
+	const isolation = resolveIsolationName(prefs?.defaultIsolation);
+	const etchant = resolveEtchantName(prefs?.defaultEtchant);
+
+	return [
+		`Анестезия: ${anesthetic}. Аспирационная проба отрицательная.`,
+		`Изоляция операционного поля: ${isolation}, антисептическая обработка полости 0.05% хлоргексидином.`,
+		`Препарирование кариозной полости алмазными борами с водяным охлаждением, некрэктомия до плотного дентина.`,
+		`Протравливание: ${etchant} (эмаль 15 сек, дентин 10 сек), промывание водой, бережное подсушивание.`,
+		`Адгезивный протокол: ${adhesive}, экспозиция, раздувание воздухом, полимеризация 20 сек.`,
+		`Послойная анатомическая реставрация нанокомпозитом: ${composite}.`,
+		`Шлифовка, полировка дисками и головками, окклюзионный контроль артикуляционной бумагой Bausch 40 мкм.`,
+	].join(" ");
+}
+
 export const PROTOCOL_CLINICAL_SNIPPETS: readonly ProtocolSnippet[] = [
 	// Анестезия
 	{
@@ -70,6 +126,20 @@ export const PROTOCOL_CLINICAL_SNIPPETS: readonly ProtocolSnippet[] = [
 		category: "anesthesia",
 		targetField: "treatmentPlanTemplate",
 		text: "Анестезия инфильтрационная/проводниковая (Мепивакаин / Scandonest 3% без вазоконстриктора, 1.7 мл). Щадящий кардиоваскулярный режим. Обезболивание адекватное.",
+	},
+	{
+		id: "anes_septanest",
+		label: "Септанест 1:100k (1.7 мл)",
+		category: "anesthesia",
+		targetField: "treatmentPlanTemplate",
+		text: "Анестезия инфильтрационная/проводниковая: Септанест 1:100 000 — 1.7 мл (Septodont). Аспирационная проба отрицательная. Глубокая анестезия, аллергических реакций нет.",
+	},
+	{
+		id: "anes_mepivastesin",
+		label: "Мепивастезин 3% (3M без адреналина)",
+		category: "anesthesia",
+		targetField: "treatmentPlanTemplate",
+		text: "Анестезия: Мепивастезин 3% (3M) 1.7 мл без вазоконстриктора. Щадящий кардиологический протокол.",
 	},
 
 	// Изоляция
@@ -94,6 +164,13 @@ export const PROTOCOL_CLINICAL_SNIPPETS: readonly ProtocolSnippet[] = [
 		targetField: "treatmentPlanTemplate",
 		text: "Изоляция краевой десны светоотверждаемым жидким коффердамом (Liquid Dam) с полимеризацией 20 сек.",
 	},
+	{
+		id: "iso_nic_tone",
+		label: "Коффердам Nic Tone (эластичный)",
+		category: "isolation",
+		targetField: "treatmentPlanTemplate",
+		text: "Изоляция системой раббердам с высококонтрастным платком повышенной эластичности Nic Tone.",
+	},
 
 	// Терапия
 	{
@@ -102,6 +179,13 @@ export const PROTOCOL_CLINICAL_SNIPPETS: readonly ProtocolSnippet[] = [
 		category: "therapy",
 		targetField: "treatmentPlanTemplate",
 		text: "Препарирование кариозной полости алмазными борами с водяным охлаждением, некрэктомия до плотного дентина. Адгезивный протокол (OptiBond FL), послойная реставрация нанокомпозитом Estelite Asteria. Шлифовка, полировка дисками Sof-Lex, окклюзионный контроль Bausch 40 мкм.",
+	},
+	{
+		id: "prep_caries_filtek",
+		label: "Кариес: препарирование + Filtek Ultimate",
+		category: "therapy",
+		targetField: "treatmentPlanTemplate",
+		text: "Препарирование кариозной полости с водяным охлаждением, медикаментозная обработка. Адгезивный протокол Single Bond Universal, послойная реставрация Filtek Ultimate (3M ESPE), финишная полировка.",
 	},
 	{
 		id: "prep_pulpitis_complete",

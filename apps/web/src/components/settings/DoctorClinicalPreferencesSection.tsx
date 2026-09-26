@@ -2,9 +2,11 @@ import {
 	Activity,
 	Check,
 	Clock,
+	Copy,
 	FileText,
 	Palette,
 	Pill,
+	Search,
 	ShieldCheck,
 	Sparkles,
 	Stethoscope,
@@ -12,32 +14,33 @@ import {
 	Volume2,
 	VolumeX,
 } from "lucide-react";
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import {
 	ADHESIVE_OPTIONS,
 	ANESTHETIC_OPTIONS,
 	COMPOSITE_OPTIONS,
 	DURATION_PRESETS,
+	ETCHANT_OPTIONS,
 	FAVORITE_MEDICATION_OPTIONS,
 	ISOLATION_OPTIONS,
 	ODONTOGRAM_NOTATIONS,
 	useDoctorPreferencesStore,
-	type AnestheticKey,
-	type CompositeMaterial,
-	type IsolationType,
 	type AdhesiveSystem,
-	type OdontogramNotation,
+	type AnestheticKey,
+	type ClinicalMaterialOption,
+	type CompositeMaterial,
 	type DefaultDentition,
-	type DoctorSpecialtyKey,
+	type EtchantGel,
+	type IsolationType,
 } from "../../store/doctorPreferencesStore";
-import { useThemeStore, type ThemeMode } from "../../store/themeStore";
-
+import { useThemeStore } from "../../store/themeStore";
 import {
 	AVAILABLE_QUICK_PROTOCOLS,
 	SPECIALTY_PRESET_ITEMS,
 	THEME_OPTIONS,
 } from "./doctorClinicalPreferencesConstants";
+import { buildDoctorPersonalizedTherapySnippet } from "./protocolSnippetHelpers";
 
 interface DoctorClinicalPreferencesSectionProps {
 	soundNotificationsMuted?: boolean | undefined;
@@ -45,6 +48,8 @@ interface DoctorClinicalPreferencesSectionProps {
 	onTestOnlineBookingSound?: (() => void) | undefined;
 	onTestSlotEndSound?: (() => void) | undefined;
 }
+
+type MaterialCategoryTab = "composites" | "adhesives" | "anesthetics" | "isolation" | "etchants";
 
 export function DoctorClinicalPreferencesSection({
 	soundNotificationsMuted,
@@ -58,6 +63,9 @@ export function DoctorClinicalPreferencesSection({
 	const themeMode = useThemeStore((s) => s.themeMode);
 	const setThemeMode = useThemeStore((s) => s.setThemeMode);
 
+	const [activeMaterialTab, setActiveMaterialTab] = useState<MaterialCategoryTab>("composites");
+	const [materialSearchQuery, setMaterialSearchQuery] = useState<string>("");
+
 	const handleDurationSelect = (mins: 15 | 30 | 45 | 60 | 90 | 120) => {
 		updatePreferences({ defaultVisitDuration: mins });
 		showToast(`Длительность визита по умолчанию: ${mins} мин`, "success");
@@ -66,7 +74,7 @@ export function DoctorClinicalPreferencesSection({
 	const handleAnestheticSelect = (key: AnestheticKey) => {
 		updatePreferences({ favoriteAnesthetic: key });
 		const found = ANESTHETIC_OPTIONS.find((a) => a.key === key);
-		showToast(`Любимый анестетик: ${found?.badge ?? key}`, "success");
+		showToast(`Любимый анестетик: ${found?.badge ?? found?.name ?? key}`, "success");
 	};
 
 	const handleMedicationToggle = (medId: string) => {
@@ -89,6 +97,88 @@ export function DoctorClinicalPreferencesSection({
 		showToast("Список быстрых протоколов обновлен", "info");
 	};
 
+	// Фильтрация материалов по поисковому запросу и вкладке
+	const filteredMaterials = useMemo(() => {
+		let list: readonly ClinicalMaterialOption[] = [];
+		switch (activeMaterialTab) {
+			case "composites":
+				list = COMPOSITE_OPTIONS;
+				break;
+			case "adhesives":
+				list = ADHESIVE_OPTIONS;
+				break;
+			case "anesthetics":
+				list = ANESTHETIC_OPTIONS;
+				break;
+			case "isolation":
+				list = ISOLATION_OPTIONS;
+				break;
+			case "etchants":
+				list = ETCHANT_OPTIONS;
+				break;
+		}
+
+		const q = materialSearchQuery.trim().toLowerCase();
+		if (!q) return list;
+		return list.filter(
+			(m) =>
+				m.name.toLowerCase().includes(q) ||
+				m.title.toLowerCase().includes(q) ||
+				m.manufacturer.toLowerCase().includes(q) ||
+				m.description.toLowerCase().includes(q) ||
+				(m.category && m.category.toLowerCase().includes(q)) ||
+				(m.badge && m.badge.toLowerCase().includes(q)),
+		);
+	}, [activeMaterialTab, materialSearchQuery]);
+
+	// Проверка, является ли материал выбранным по умолчанию в настройках
+	const isMaterialSelected = (id: string): boolean => {
+		switch (activeMaterialTab) {
+			case "composites":
+				return preferences.defaultComposite === id;
+			case "adhesives":
+				return preferences.defaultAdhesive === id;
+			case "anesthetics":
+				return preferences.favoriteAnesthetic === id;
+			case "isolation":
+				return preferences.defaultIsolation === id;
+			case "etchants":
+				return preferences.defaultEtchant === id;
+		}
+	};
+
+	// 1-клик назначение любимого материала
+	const handleSelectFavoriteMaterial = (item: ClinicalMaterialOption) => {
+		switch (activeMaterialTab) {
+			case "composites":
+				updatePreferences({ defaultComposite: item.id as CompositeMaterial });
+				break;
+			case "adhesives":
+				updatePreferences({ defaultAdhesive: item.id as AdhesiveSystem });
+				break;
+			case "anesthetics":
+				updatePreferences({ favoriteAnesthetic: item.id as AnestheticKey });
+				break;
+			case "isolation":
+				updatePreferences({ defaultIsolation: item.id as IsolationType });
+				break;
+			case "etchants":
+				updatePreferences({ defaultEtchant: item.id as EtchantGel });
+				break;
+		}
+		showToast(`Материал «${item.name}» выбран и подтягивается в протокол ЕМК`, "success");
+	};
+
+	// Персонализированный сниппет протокола ЕМК для предпросмотра
+	const liveSoapSnippet = useMemo(() => {
+		return buildDoctorPersonalizedTherapySnippet(preferences);
+	}, [preferences]);
+
+	const handleCopyLiveSnippet = () => {
+		navigator.clipboard.writeText(liveSoapSnippet);
+		showToast("Протокол ЕМК скопирован в буфер обмена", "success");
+	};
+
 	return (
 		<section className="settings-section" data-testid="doctor-clinical-preferences-section">
 			<div className="flex items-center justify-between gap-2 mb-4 pb-2 border-b border-[var(--line)]">
@@ -101,7 +191,7 @@ export function DoctorClinicalPreferencesSection({
 							Клинические настройки врача
 						</h3>
 						<p className="m-0 text-xs text-[var(--muted)]">
-							Персональные пресеты для приёма пациентов, рецептов 107-1/у, дневника 043/у и сетки расписания.
+							Реестр 90% стоматологических материалов РФ/СНГ, пресеты 043/у, рецепты 107-1/у и сетка приёма.
 						</p>
 					</div>
 				</div>
@@ -181,135 +271,135 @@ export function DoctorClinicalPreferencesSection({
 					</div>
 				</div>
 
-				{/* 2. Любимый анестетик первого выбора */}
-				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
-					<div className="flex items-center justify-between">
-						<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-							<Syringe size={15} className="text-[var(--teal)]" />
-							<span>Любимый анестетик первого выбора</span>
-						</label>
-						<span className="text-[11px] font-medium text-[var(--muted)]">
-							Подставляется в 1 клик в дневник 043/у
-						</span>
+				{/* 2. РЕЕСТР КЛИНИЧЕСКИХ МАТЕРИАЛОВ (90% рынка РФ/СНГ) с быстрым поиском и 1-клик выбором */}
+				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
+					<div className="flex items-center justify-between flex-wrap gap-2">
+						<div>
+							<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+								<Activity size={15} className="text-[var(--teal)]" />
+								<span>Реестр клинических материалов (90% рынка РФ/СНГ) и изоляция</span>
+							</label>
+							<p className="m-0 text-[11px] text-[var(--muted)]">
+								1-клик выбор любимого материала с автоматическим подтягиванием в протокол ЕМК Формы 043/у
+							</p>
+						</div>
+						{/* Поиск материала */}
+						<div className="relative min-w-[240px]">
+							<Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+							<input
+								type="text"
+								value={materialSearchQuery}
+								onChange={(e) => setMaterialSearchQuery(e.target.value)}
+								placeholder="Поиск материала (Filtek, Asteria, Kerr...)"
+								className="w-full text-xs pl-8 pr-2.5 py-1.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--teal)]"
+							/>
+						</div>
 					</div>
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-						{ANESTHETIC_OPTIONS.map((anes) => {
-							const isSelected = preferences.favoriteAnesthetic === anes.key;
+
+					{/* Вкладки категорий материалов */}
+					<div className="flex gap-1.5 flex-wrap border-b border-[var(--line)] pb-2">
+						{[
+							{ id: "composites" as const, label: `Композиты (${COMPOSITE_OPTIONS.length})` },
+							{ id: "adhesives" as const, label: `Адгезивы (${ADHESIVE_OPTIONS.length})` },
+							{ id: "anesthetics" as const, label: `Анестетики (${ANESTHETIC_OPTIONS.length})` },
+							{ id: "isolation" as const, label: `Изоляция (${ISOLATION_OPTIONS.length})` },
+							{ id: "etchants" as const, label: `Протравка (${ETCHANT_OPTIONS.length})` },
+						].map((tab) => {
+							const isActive = activeMaterialTab === tab.id;
 							return (
 								<button
-									key={anes.key}
+									key={tab.id}
 									type="button"
-									onClick={() => handleAnestheticSelect(anes.key)}
-									className={`p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-1.5 min-h-[44px] ${
-										isSelected
-											? "bg-[var(--paper)] border-[var(--teal)] shadow-sm ring-1 ring-[var(--teal)]"
-											: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--teal)]/60"
+									onClick={() => setActiveMaterialTab(tab.id)}
+									className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+										isActive
+											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
+											: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
 									}`}
 								>
-									<div className="flex items-start justify-between gap-1">
-										<span className="text-xs font-bold text-[var(--ink)] leading-snug">
-											{anes.title}
-										</span>
-										{isSelected ? (
-											<span className="w-5 h-5 rounded-full bg-[var(--teal)] text-white flex items-center justify-center shrink-0">
-												<Check size={12} className="stroke-[3]" />
-											</span>
-										) : (
-											<span className="w-5 h-5 rounded-full border border-[var(--line)] shrink-0" />
-										)}
-									</div>
-									<p className="text-[11px] text-[var(--muted)] m-0 leading-relaxed">
-										{anes.description}
-									</p>
-									<span
-										className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold w-fit ${
-											anes.hasAdrenaline
-												? "bg-teal-500/10 text-teal-800 dark:text-teal-300"
-												: "bg-amber-500/15 text-amber-800 dark:text-amber-300"
-										}`}
-									>
-										{anes.badge}
-									</span>
+									{tab.label}
 								</button>
 							);
 						})}
 					</div>
-				</div>
 
-				{/* 3. Любимые материалы и изолирующие системы */}
-				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
-					<div className="flex items-center justify-between">
-						<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-							<Activity size={15} className="text-[var(--teal)]" />
-							<span>Любимые расходные материалы и изоляция</span>
-						</label>
-						<span className="text-[11px] font-medium text-[var(--muted)]">
-							Автоматическое включение в протокол лечения
-						</span>
+					{/* Сетка материалов */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-[360px] overflow-y-auto pr-1">
+						{filteredMaterials.map((mat) => {
+							const isSelected = isMaterialSelected(mat.id);
+							return (
+								<button
+									key={mat.id}
+									type="button"
+									onClick={() => handleSelectFavoriteMaterial(mat)}
+									className={`p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-1.5 min-h-[44px] ${
+										isSelected
+											? "bg-[var(--paper)] border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal)]"
+											: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--teal)]/60"
+									}`}
+								>
+									<div className="flex items-start justify-between gap-1.5 w-full">
+										<div className="min-w-0">
+											<div className="flex items-center gap-1.5 flex-wrap">
+												<span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]">
+													#{mat.popularityRank}
+												</span>
+												<span className="text-xs font-bold text-[var(--ink)] leading-snug">
+													{mat.name}
+												</span>
+											</div>
+											<span className="text-[10px] text-[var(--muted)] block mt-0.5">
+												{mat.manufacturer}
+											</span>
+										</div>
+										{isSelected ? (
+											<span className="w-5 h-5 rounded-full bg-[var(--teal)] text-white flex items-center justify-center shrink-0" title="Выбран по умолчанию">
+												<Check size={12} className="stroke-[3]" />
+											</span>
+										) : (
+											<span className="w-5 h-5 rounded-full border border-[var(--line)] shrink-0" title="Нажмите для выбора" />
+										)}
+									</div>
+
+									<p className="text-[11px] text-[var(--muted)] m-0 line-clamp-2 leading-relaxed">
+										{mat.description}
+									</p>
+
+									<div className="flex items-center justify-between gap-1 mt-1 pt-1 border-t border-[var(--line)]/50">
+										<span className="text-[10px] font-medium text-[var(--teal-dark)]">
+											{mat.category || mat.generation || mat.badge || "Стандарт"}
+										</span>
+										{isSelected && (
+											<span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.2 rounded">
+												Любимый в ЕМК
+											</span>
+										)}
+									</div>
+								</button>
+							);
+						})}
 					</div>
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-						{/* Изоляция */}
-						<div className="space-y-1">
-							<span className="text-[11px] font-bold text-[var(--muted)] block">
-								Изоляция рабочего поля
-							</span>
-							<select
-								value={preferences.defaultIsolation}
-								onChange={(e) => {
-									updatePreferences({ defaultIsolation: e.target.value as IsolationType });
-									showToast("Система изоляции обновлена", "info");
-								}}
-								className="w-full text-xs p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] min-h-[44px] sm:min-h-[34px]"
-							>
-								{ISOLATION_OPTIONS.map((opt) => (
-									<option key={opt.key} value={opt.key}>
-										{opt.title}
-									</option>
-								))}
-							</select>
-						</div>
 
-						{/* Композитный пломбировочный материал */}
-						<div className="space-y-1">
-							<span className="text-[11px] font-bold text-[var(--muted)] block">
-								Композитный реставрационный материал
+					{/* 3. Живой протокол ЕМК (Форма 043/у) с подтягиванием любимых материалов врача */}
+					<div className="p-3 rounded-lg bg-[var(--paper)] border border-teal-500/30 space-y-2 mt-2">
+						<div className="flex items-center justify-between gap-2">
+							<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+								<Sparkles size={14} className="text-teal-600" />
+								<span>Автоматический фрагмент протокола ЕМК (Форма 043/у) с вашими материалами</span>
 							</span>
-							<select
-								value={preferences.defaultComposite}
-								onChange={(e) => {
-									updatePreferences({ defaultComposite: e.target.value as CompositeMaterial });
-									showToast("Материал реставрации обновлен", "info");
-								}}
-								className="w-full text-xs p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] min-h-[44px] sm:min-h-[34px]"
+							<button
+								type="button"
+								onClick={handleCopyLiveSnippet}
+								className="text-[11px] font-semibold text-[var(--teal)] hover:underline inline-flex items-center gap-1 cursor-pointer"
+								title="Скопировать готовый текст для Формы 043/у"
 							>
-								{COMPOSITE_OPTIONS.map((opt) => (
-									<option key={opt.key} value={opt.key}>
-										{opt.title} ({opt.manufacturer})
-									</option>
-								))}
-							</select>
+								<Copy size={12} />
+								<span>Копировать</span>
+							</button>
 						</div>
-
-						{/* Адгезивный протокол */}
-						<div className="space-y-1">
-							<span className="text-[11px] font-bold text-[var(--muted)] block">
-								Адгезивный протокол
-							</span>
-							<select
-								value={preferences.defaultAdhesive}
-								onChange={(e) => {
-									updatePreferences({ defaultAdhesive: e.target.value as AdhesiveSystem });
-									showToast("Адгезивный протокол обновлен", "info");
-								}}
-								className="w-full text-xs p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] min-h-[44px] sm:min-h-[34px]"
-							>
-								{ADHESIVE_OPTIONS.map((opt) => (
-									<option key={opt.key} value={opt.key}>
-										{opt.title}
-									</option>
-								))}
-							</select>
-						</div>
+						<p className="text-xs text-[var(--muted)] m-0 leading-relaxed font-mono p-2 rounded bg-[var(--paper-soft)] border border-[var(--line)] select-all">
+							{liveSoapSnippet}
+						</p>
 					</div>
 				</div>
 
