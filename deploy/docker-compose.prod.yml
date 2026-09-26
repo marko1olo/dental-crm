@@ -27,7 +27,7 @@ services:
     environment:
       - DOMAIN=${DOMAIN:?DOMAIN is required in .env}
       - ACME_EMAIL=${ACME_EMAIL:-admin@dente.pro}
-      - ALLOWED_IFRAME_ORIGINS=${ALLOWED_IFRAME_ORIGINS:-*}
+      - ALLOWED_IFRAME_ORIGINS=${ALLOWED_IFRAME_ORIGINS:-}
     depends_on:
       booking-server:
         condition: service_healthy
@@ -55,7 +55,7 @@ services:
     environment:
       - PORT=4000
       - RELAY_SECRET=${RELAY_SECRET:?RELAY_SECRET is required in .env}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-dente_redis_secret}@redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required in .env}@redis:6379
     depends_on:
       redis:
         condition: service_healthy
@@ -90,7 +90,7 @@ services:
       - CLINIC_WEBSITE=${CLINIC_WEBSITE:-https://${DOMAIN}}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required in .env}
       - RELAY_SECRET=${RELAY_SECRET:?RELAY_SECRET is required in .env}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-dente_redis_secret}@redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required in .env}@redis:6379
       - CLOUD_RELAY_URL=http://cloud-relay:4000
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
@@ -118,13 +118,13 @@ services:
     image: redis:7-alpine
     container_name: dente-cloud-redis
     restart: always
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-dente_redis_secret}", "--appendonly", "yes"]
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required in .env}", "--appendonly", "yes"]
     expose:
       - "6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-dente_redis_secret} ping | grep PONG"]
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping | grep PONG"]
       interval: 5s
       timeout: 3s
       retries: 5

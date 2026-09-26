@@ -51,8 +51,8 @@ booking.{$DOMAIN} {
     import compression
 
     header {
-        # Разрешаем встраивание виджета через <iframe> на сайте клиники и в Telegram WebApp
-        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'self' {$ALLOWED_IFRAME_ORIGINS:*} https://web.telegram.org https://*.telegram.org;"
+        # Разрешаем встраивание виджета через <iframe> строго на домене клиники, указанных сайтах и в Telegram WebApp (без опасного wildcard *)
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'self' https://{$DOMAIN} https://*.{$DOMAIN} {$ALLOWED_IFRAME_ORIGINS} https://web.telegram.org https://*.telegram.org;"
     }
 
     reverse_proxy booking-server:3000 {

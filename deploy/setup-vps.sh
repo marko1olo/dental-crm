@@ -3,7 +3,7 @@
 # DENTE DENTAL CRM — VPS AUTOMATED INITIAL SETUP
 # ==============================================================================
 # Target OS: Ubuntu 22.04 LTS / 24.04 LTS / Debian 11 / 12
-# Installs: Docker Engine, Docker Compose Plugin, UFW Firewall (22, 80, 443)
+# Installs: Docker Engine, Docker Compose Plugin, UFW Firewall (SSH, 80, 443)
 # ==============================================================================
 
 set -euo pipefail
@@ -93,20 +93,64 @@ else
     success "Docker успешно установлен и запущен."
 fi
 
-# 4. Configure UFW Firewall (Only 22, 80, 443 TCP/UDP)
+# ------------------------------------------------------------------------------
+# 4. Configure UFW Firewall (SSH Multi-Port Safe Detection + 80 + 443 TCP/UDP)
+# ------------------------------------------------------------------------------
 info "Настройка сетевого экрана UFW..."
 
-# Detect current SSH port from sshd_config or active connection
-SSH_PORT=22
-if [ -f /etc/ssh/sshd_config ]; then
-    DETECTED_PORT=$(grep -E "^Port [0-9]+" /etc/ssh/sshd_config | awk '{print $2}' || true)
-    if [ -n "$DETECTED_PORT" ]; then
-        SSH_PORT="$DETECTED_PORT"
+# Сбор всех активных и сконфигурированных SSH-портов во избежание lockout
+SSH_PORTS_TO_ALLOW=()
+
+# 4.1. Проверка текущей активной SSH-сессии пользователя ($SSH_CONNECTION или $SSH_CLIENT)
+if [ -n "${SSH_CONNECTION:-}" ]; then
+    ACTIVE_PORT=$(echo "$SSH_CONNECTION" | awk '{print $3}')
+    if [ -n "$ACTIVE_PORT" ]; then
+        info "Обнаружен активный порт входящей SSH-сессии: ${ACTIVE_PORT}"
+        SSH_PORTS_TO_ALLOW+=("$ACTIVE_PORT")
+    fi
+elif [ -n "${SSH_CLIENT:-}" ]; then
+    ACTIVE_PORT=$(echo "$SSH_CLIENT" | awk '{print $3}')
+    if [ -n "$ACTIVE_PORT" ]; then
+        info "Обнаружен активный порт входящей SSH-сессии (SSH_CLIENT): ${ACTIVE_PORT}"
+        SSH_PORTS_TO_ALLOW+=("$ACTIVE_PORT")
     fi
 fi
 
-info "Разрешаем SSH порт: ${SSH_PORT}/tcp..."
-ufw allow "${SSH_PORT}/tcp" comment "SSH Remote Management"
+# 4.2. Полная проверка рантайм-конфигурации sshd (учитывает Ubuntu 22/24 drop-in /etc/ssh/sshd_config.d/*.conf)
+if command -v sshd &> /dev/null; then
+    DETECTED_SSHD_PORTS=$(sshd -T 2>/dev/null | awk '$1=="port"{print $2}' || true)
+    for p in $DETECTED_SSHD_PORTS; do
+        if [ -n "$p" ]; then
+            SSH_PORTS_TO_ALLOW+=("$p")
+        fi
+    done
+fi
+
+# 4.3. Резервный поиск в статических файлах конфигурации
+if [ -f /etc/ssh/sshd_config ]; then
+    STATIC_PORTS=$(grep -Ei "^\s*Port\s+[0-9]+" /etc/ssh/sshd_config 2>/dev/null | awk '{print $2}' || true)
+    for p in $STATIC_PORTS; do
+        [ -n "$p" ] && SSH_PORTS_TO_ALLOW+=("$p")
+    done
+fi
+
+if [ -d /etc/ssh/sshd_config.d ]; then
+    DROPIN_PORTS=$(grep -Eih "^\s*Port\s+[0-9]+" /etc/ssh/sshd_config.d/*.conf 2>/dev/null | awk '{print $2}' || true)
+    for p in $DROPIN_PORTS; do
+        [ -n "$p" ] && SSH_PORTS_TO_ALLOW+=("$p")
+    done
+fi
+
+# Стандартный порт 22 как обязательный fallback
+SSH_PORTS_TO_ALLOW+=("22")
+
+# Дедупликация портов
+mapfile -t UNIQUE_SSH_PORTS < <(printf "%s\n" "${SSH_PORTS_TO_ALLOW[@]}" | sort -u)
+
+for port in "${UNIQUE_SSH_PORTS[@]}"; do
+    info "Разрешаем SSH порт: ${port}/tcp (защита от локаута)..."
+    ufw allow "${port}/tcp" comment "SSH Remote Management (Port ${port})"
+done
 
 info "Разрешаем HTTP порт: 80/tcp (Let's Encrypt ACME & HTTP redirect)..."
 ufw allow 80/tcp comment "HTTP Port 80"
@@ -124,7 +168,7 @@ ufw default allow outgoing
 # Enable UFW non-interactively
 info "Активация UFW..."
 ufw --force enable
-success "Файрвол UFW настроен и включен (доступны порты: ${SSH_PORT}, 80, 443 tcp/udp)."
+success "Файрвол UFW настроен и включен (доступны SSH-порты: ${UNIQUE_SSH_PORTS[*]}, 80, 443 tcp/udp)."
 
 # 5. Create runtime folders & fix permissions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

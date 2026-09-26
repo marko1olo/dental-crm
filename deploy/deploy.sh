@@ -43,6 +43,28 @@ cd "$SCRIPT_DIR"
 COMPOSE_FILE="docker-compose.prod.yml"
 ENV_FILE=".env"
 
+# Предварительная загрузка .env, если файл существует
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+fi
+
+# Очистка и санитизация ALLOWED_IFRAME_ORIGINS (снятие внешних кавычек и удаление wildcard *)
+if [ -n "${ALLOWED_IFRAME_ORIGINS:-}" ]; then
+    CLEANED_ORIGINS="$ALLOWED_IFRAME_ORIGINS"
+    # Снятие двойных кавычек в начале и конце
+    CLEANED_ORIGINS="${CLEANED_ORIGINS%\"}"
+    CLEANED_ORIGINS="${CLEANED_ORIGINS#\"}"
+    # Снятие одинарных кавычек в начале и конце
+    CLEANED_ORIGINS="${CLEANED_ORIGINS%\'}"
+    CLEANED_ORIGINS="${CLEANED_ORIGINS#\'}"
+    # Удаление небезопасного wildcard *
+    CLEANED_ORIGINS=$(echo "$CLEANED_ORIGINS" | sed 's/\*//g' | xargs 2>/dev/null || echo "$CLEANED_ORIGINS")
+    export ALLOWED_IFRAME_ORIGINS="$CLEANED_ORIGINS"
+fi
+
 # Command Dispatcher
 COMMAND="${1:-up}"
 
@@ -78,8 +100,12 @@ case "$COMMAND" in
         echo "2. Healthcheck Booking Server (порт 3000):"
         docker compose -f "$COMPOSE_FILE" exec booking-server wget -qO- http://127.0.0.1:3000/health || error "Booking Server недоступен!"
         echo ""
-        echo "3. Redis PING:"
-        docker compose -f "$COMPOSE_FILE" exec redis redis-cli ping || error "Redis недоступен!"
+        echo "3. Redis PING (с аутентификацией паролем):"
+        if [ -n "${REDIS_PASSWORD:-}" ]; then
+            docker compose -f "$COMPOSE_FILE" exec redis redis-cli -a "${REDIS_PASSWORD}" ping || error "Redis auth failed!"
+        else
+            docker compose -f "$COMPOSE_FILE" exec redis redis-cli ping || error "Redis недоступен!"
+        fi
         echo ""
         success "Все внутренние сервисы отвечают 200 OK!"
         exit 0
@@ -111,12 +137,6 @@ if [ ! -f "$ENV_FILE" ]; then
     fi
     exit 1
 fi
-
-# Load environment variables for local validation
-set -a
-# shellcheck disable=SC1090
-source "$ENV_FILE"
-set +a
 
 # Проверка обязательных переменных
 MISSING_VARS=()
@@ -156,10 +176,10 @@ docker run --rm \
     -v "$SCRIPT_DIR/Caddyfile:/etc/caddy/Caddyfile:ro" \
     -e "DOMAIN=${DOMAIN}" \
     -e "ACME_EMAIL=${ACME_EMAIL:-admin@${DOMAIN}}" \
-    -e "ALLOWED_IFRAME_ORIGINS=${ALLOWED_IFRAME_ORIGINS:-*}" \
+    -e "ALLOWED_IFRAME_ORIGINS=${ALLOWED_IFRAME_ORIGINS:-}" \
     caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile > /dev/null
 
-success "Синтаксис Caddyfile 100% валиден."
+success "Синтаксис Caddyfile 100% валиден (без опасного wildcard * в CSP)."
 
 # ------------------------------------------------------------------------------
 # 3. Сборка и запуск контейнеров в фоне
