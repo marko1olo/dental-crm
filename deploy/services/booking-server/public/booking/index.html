@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Онлайн-запись на приём — DENTE</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --primary-soft: rgba(2, 132, 199, 0.1);
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 16px; min-height: 100vh; display: flex; justify-content: center; }
+    .widget-container { max-width: 520px; width: 100%; margin: auto 0; }
+    .header { text-align: center; margin-bottom: 24px; }
+    .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .header p { color: var(--text-muted); font-size: 14px; }
+    .step-card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+    .step-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+    
+    /* Doctor Selection */
+    .doctor-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; border: 1px solid var(--surface-border); margin-bottom: 8px; cursor: pointer; transition: all 0.15s ease; }
+    .doctor-item:hover { border-color: var(--primary); background: var(--primary-soft); }
+    .doctor-item.active { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 1px var(--primary); }
+    .doctor-avatar { font-size: 24px; width: 40px; height: 40px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; }
+    .doctor-info { flex: 1; }
+    .doctor-name { font-weight: 600; font-size: 14px; }
+    .doctor-spec { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    
+    /* Date & Slot Picker */
+    .date-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
+    .date-chip { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--surface-border); text-align: center; cursor: pointer; min-width: 65px; flex-shrink: 0; }
+    .date-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+    .date-chip .day-name { font-size: 11px; text-transform: uppercase; color: var(--text-muted); }
+    .date-chip.active .day-name { color: #e0f2fe; }
+    .date-chip .day-num { font-size: 16px; font-weight: bold; margin-top: 2px; }
+    
+    .slots-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 180px; overflow-y: auto; padding-right: 4px; }
+    .slot-btn { padding: 9px 0; border: 1px solid var(--surface-border); background: transparent; color: var(--text); border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.15s; }
+    .slot-btn:hover:not(:disabled) { border-color: var(--primary); background: var(--primary-soft); }
+    .slot-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+    .slot-btn:disabled { opacity: 0.3; cursor: not-allowed; text-decoration: line-through; }
+    
+    /* Input Fields */
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+    .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--surface-border); background: #0f172a; color: var(--text); font-size: 14px; outline: none; }
+    .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-soft); }
+    
+    /* Submit Button */
+    .submit-btn { width: 100%; padding: 14px; border-radius: 10px; background: var(--primary); color: #fff; border: none; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s; }
+    .submit-btn:hover { background: var(--primary-hover); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    /* Success Screen */
+    .success-card { text-align: center; padding: 32px 20px; display: none; }
+    .success-icon { font-size: 48px; margin-bottom: 16px; color: var(--success); }
+    .success-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .success-desc { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5; }
+    .booking-id-badge { display: inline-block; padding: 6px 14px; background: #334155; border-radius: 20px; font-family: monospace; font-size: 15px; margin-bottom: 16px; letter-spacing: 1px; color: #38bdf8; }
+    .info-footer { font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="widget-container">
+    <div class="header">
+      <h1 id="clinicName">Стоматология ДЕНТЕ</h1>
+      <p id="clinicHours">Онлайн-запись на удобное время 24/7</p>
+    </div>
+
+    <div id="bookingForm">
+      <!-- Шаг 1: Выбор врача -->
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">1</span> Выберите специалиста</div>
+        <div id="doctorsList">
+          <div style="text-align:center; padding: 20px; color: var(--text-muted)">Загрузка врачей...</div>
+        </div>
+      </div>
+
+      <!-- Шаг 2: Дата и время -->
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">2</span> Выберите дату и время приёма</div>
+        <div class="date-row" id="datesContainer"></div>
+        <div class="slots-grid" id="slotsContainer">
+          <div style="grid-column: span 4; text-align: center; padding: 10px; color: var(--text-muted)">Выберите день</div>
+        </div>
+      </div>
+
+      <!-- Шаг 3: Контакты пациента -->
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">3</span> Ваши контактные данные</div>
+        <div class="form-group">
+          <label class="form-label">Ваше имя и фамилия</label>
+          <input type="text" id="patientName" class="form-input" placeholder="Иван Иванов" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Номер телефона для подтверждения</label>
+          <input type="tel" id="patientPhone" class="form-input" placeholder="+7 (999) 000-00-00" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Что вас беспокоит? (необязательно)</label>
+          <input type="text" id="patientComment" class="form-input" placeholder="Консультация, острая боль, профгигиена...">
+        </div>
+
+        <button type="button" id="submitBookingBtn" class="submit-btn">
+          Записаться на приём
+        </button>
+      </div>
+    </div>
+
+    <!-- Экран подтверждения -->
+    <div id="successView" class="step-card success-card">
+      <div class="success-icon">✓</div>
+      <div class="success-title">Запись оформлена!</div>
+      <div class="booking-id-badge" id="bookedIdDisplay">DNT-2026-0000</div>
+      <p class="success-desc" id="bookedMessageDisplay">
+        Ваша заявка принята. Администратор клиники подтвердит запись по телефону или в мессенджере.
+      </p>
+      <button type="button" class="submit-btn" onclick="location.reload()">
+        Оформить ещё одну запись
+      </button>
+    </div>
+
+    <div class="info-footer">
+      🔒 Защищено сквозным шифрованием TLS • DENTE Cloud Engine 24/7
+    </div>
+  </div>
+
+  <script>
+    let selectedDoctorId = null;
+    let selectedDate = null;
+    let selectedTime = null;
+    let doctors = [];
+
+    // Format Date helper
+    function getDaysList() {
+      const days = [];
+      const now = new Date();
+      const dayNames = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+
+      for (let i = 0; i < 14; i++) {
+        const d = new Date(now);
+        d.setDate(now.getDate() + i);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        days.push({
+          dateStr: `${yyyy}-${mm}-${dd}`,
+          dayName: i === 0 ? "Сегодня" : i === 1 ? "Завтра" : dayNames[d.getDay()],
+          dayNum: d.getDate()
+        });
+      }
+      return days;
+    }
+
+    async function init() {
+      // 1. Fetch Clinic Info
+      try {
+        const cRes = await fetch("/api/booking/clinic");
+        if (cRes.ok) {
+          const cData = await cRes.json();
+          document.getElementById("clinicName").textContent = cData.name;
+          document.getElementById("clinicHours").textContent = `${cData.workHours} • ${cData.address}`;
+        }
+      } catch (e) {}
+
+      // 2. Fetch Doctors
+      try {
+        const dRes = await fetch("/api/booking/doctors");
+        doctors = await dRes.json();
+        renderDoctors();
+      } catch (e) {
+        document.getElementById("doctorsList").innerHTML = "<p style='color:var(--danger)'>Не удалось загрузить врачей</p>";
+      }
+
+      // 3. Render Dates
+      renderDates();
+    }
+
+    function renderDoctors() {
+      const container = document.getElementById("doctorsList");
+      container.innerHTML = doctors.map(doc => `
+        <div class="doctor-item ${doc.id === selectedDoctorId ? 'active' : ''}" onclick="selectDoctor('${doc.id}')">
+          <div class="doctor-avatar">${doc.avatar || '👨‍⚕️'}</div>
+          <div class="doctor-info">
+            <div class="doctor-name">${doc.name}</div>
+            <div class="doctor-spec">${doc.specialty} • Стаж ${doc.experienceYears} лет</div>
+          </div>
+        </div>
+      `).join("");
+      if (!selectedDoctorId && doctors.length > 0) {
+        selectDoctor(doctors[0].id);
+      }
+    }
+
+    function selectDoctor(id) {
+      selectedDoctorId = id;
+      renderDoctors();
+      if (selectedDate) loadSlots();
+    }
+
+    function renderDates() {
+      const dates = getDaysList();
+      const container = document.getElementById("datesContainer");
+      selectedDate = dates[0].dateStr;
+
+      container.innerHTML = dates.map(d => `
+        <div class="date-chip ${d.dateStr === selectedDate ? 'active' : ''}" onclick="selectDate('${d.dateStr}')">
+          <div class="day-name">${d.dayName}</div>
+          <div class="day-num">${d.dayNum}</div>
+        </div>
+      `).join("");
+
+      loadSlots();
+    }
+
+    function selectDate(dateStr) {
+      selectedDate = dateStr;
+      renderDatesUi();
+      loadSlots();
+    }
+
+    function renderDatesUi() {
+      document.querySelectorAll(".date-chip").forEach(el => {
+        const onclick = el.getAttribute("onclick");
+        if (onclick && onclick.includes(selectedDate)) {
+          el.classList.add("active");
+        } else {
+          el.classList.remove("active");
+        }
+      });
+    }
+
+    async function loadSlots() {
+      const container = document.getElementById("slotsContainer");
+      container.innerHTML = "<div style='grid-column: span 4; text-align:center; padding:15px; color:var(--text-muted)'>Загрузка слотов...</div>";
+
+      try {
+        const res = await fetch(`/api/booking/slots?doctorId=${selectedDoctorId || ''}&date=${selectedDate}`);
+        const data = await res.json();
+        
+        container.innerHTML = data.slots.map(s => `
+          <button type="button" class="slot-btn ${s.time === selectedTime ? 'active' : ''}" 
+                  ${!s.available ? 'disabled' : ''} onclick="selectSlot('${s.time}')">
+            ${s.time}
+          </button>
+        `).join("");
+      } catch (err) {
+        container.innerHTML = "<div style='grid-column: span 4; color:var(--danger); text-align:center;'>Ошибка загрузки слотов</div>";
+      }
+    }
+
+    function selectSlot(timeStr) {
+      selectedTime = timeStr;
+      document.querySelectorAll(".slot-btn").forEach(btn => {
+        if (btn.textContent.trim() === timeStr) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+    }
+
+    // Phone input auto-formatter
+    const phoneInput = document.getElementById("patientPhone");
+    phoneInput.addEventListener("input", (e) => {
+      let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+      if (!x[2]) {
+        e.target.value = x[1] ? `+7 (${x[1]}` : '';
+      } else {
+        e.target.value = `+7 (${x[2]}` + (x[3] ? `) ${x[3]}` : '') + (x[4] ? `-${x[4]}` : '') + (x[5] ? `-${x[5]}` : '');
+      }
+    });
+
+    // Booking Submission
+    document.getElementById("submitBookingBtn").addEventListener("click", async () => {
+      const name = document.getElementById("patientName").value.trim();
+      const phone = document.getElementById("patientPhone").value.trim();
+      const comment = document.getElementById("patientComment").value.trim();
+
+      if (!name) {
+        alert("Пожалуйста, введите ваше имя");
+        return;
+      }
+      if (phone.replace(/\D/g, "").length < 10) {
+        alert("Пожалуйста, укажите верный номер телефона");
+        return;
+      }
+      if (!selectedTime) {
+        alert("Пожалуйста, выберите время визита");
+        return;
+      }
+
+      const btn = document.getElementById("submitBookingBtn");
+      btn.disabled = true;
+      btn.textContent = "Отправка записи...";
+
+      try {
+        const res = await fetch("/api/booking/book", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            patientName: name,
+            phone,
+            doctorId: selectedDoctorId,
+            date: selectedDate,
+            time: selectedTime,
+            comment
+          })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          document.getElementById("bookingForm").style.display = "none";
+          document.getElementById("successView").style.display = "block";
+          document.getElementById("bookedIdDisplay").textContent = result.bookingId;
+          document.getElementById("bookedMessageDisplay").textContent = result.message;
+        } else {
+          alert(result.message || "Ошибка бронирования");
+          btn.disabled = false;
+          btn.textContent = "Записаться на приём";
+        }
+      } catch (err) {
+        alert("Сбой сети. Попробуйте еще раз.");
+        btn.disabled = false;
+        btn.textContent = "Записаться на приём";
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

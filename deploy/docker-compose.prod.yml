@@ -1,0 +1,145 @@
+# ==============================================================================
+# DENTE DENTAL CRM — PRODUCTION CLOUD VPS DOCKER COMPOSE
+# ==============================================================================
+# Services:
+#   1. caddy: Auto TLS (Let's Encrypt / ZeroSSL), HTTP/3 QUIC, Zstd/Gzip
+#   2. cloud-relay: WebSocket tunnel gateway for clinic PC & lab technicians
+#   3. booking-server: 24/7 online booking API, Telegram WebApp & Patient PWA
+#   4. redis: Night booking persistent FIFO queue & session cache
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # CADDY REVERSE PROXY & AUTOMATED TLS
+  # ----------------------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: dente-cloud-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3 QUIC Protocol
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN:?DOMAIN is required in .env}
+      - ACME_EMAIL=${ACME_EMAIL:-admin@dente.pro}
+      - ALLOWED_IFRAME_ORIGINS=${ALLOWED_IFRAME_ORIGINS:-*}
+    depends_on:
+      booking-server:
+        condition: service_healthy
+      cloud-relay:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "caddy", "version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - dente-cloud-net
+
+  # ----------------------------------------------------------------------------
+  # WEBSOCKET CLOUD RELAY & CLINIC TUNNEL
+  # ----------------------------------------------------------------------------
+  cloud-relay:
+    build:
+      context: ./services/cloud-relay
+      dockerfile: Dockerfile
+    container_name: dente-cloud-relay
+    restart: always
+    expose:
+      - "4000"
+    environment:
+      - PORT=4000
+      - RELAY_SECRET=${RELAY_SECRET:?RELAY_SECRET is required in .env}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-dente_redis_secret}@redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health"]
+      interval: 10s
+      timeout: 4s
+      retries: 3
+      start_period: 5s
+    networks:
+      - dente-cloud-net
+
+  # ----------------------------------------------------------------------------
+  # 24/7 BOOKING SERVER & PATIENT PWA BACKEND
+  # ----------------------------------------------------------------------------
+  booking-server:
+    build:
+      context: ./services/booking-server
+      dockerfile: Dockerfile
+    container_name: dente-booking-server
+    restart: always
+    expose:
+      - "3000"
+    environment:
+      - PORT=3000
+      - DOMAIN=${DOMAIN:?DOMAIN is required in .env}
+      - CLINIC_NAME=${CLINIC_NAME:-Стоматологическая клиника ДЕНТЕ}
+      - CLINIC_PHONE=${CLINIC_PHONE:-+7 (495) 123-45-67}
+      - CLINIC_ADDRESS=${CLINIC_ADDRESS:-г. Москва, ул. Профсоюзная, д. 45}
+      - CLINIC_WORK_HOURS=${CLINIC_WORK_HOURS:-09:00 — 21:00}
+      - CLINIC_TIMEZONE=${CLINIC_TIMEZONE:-Europe/Moscow}
+      - CLINIC_WEBSITE=${CLINIC_WEBSITE:-https://${DOMAIN}}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required in .env}
+      - RELAY_SECRET=${RELAY_SECRET:?RELAY_SECRET is required in .env}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-dente_redis_secret}@redis:6379
+      - CLOUD_RELAY_URL=http://cloud-relay:4000
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - SMS_GATEWAY_API_KEY=${SMS_GATEWAY_API_KEY:-}
+    volumes:
+      - booking_data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+      cloud-relay:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 4s
+      retries: 3
+      start_period: 5s
+    networks:
+      - dente-cloud-net
+
+  # ----------------------------------------------------------------------------
+  # REDIS PERSISTENT QUEUE & CACHE
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: dente-cloud-redis
+    restart: always
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-dente_redis_secret}", "--appendonly", "yes"]
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-dente_redis_secret} ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - dente-cloud-net
+
+# ------------------------------------------------------------------------------
+# VOLUMES & ISOLATED BRIDGE NETWORK
+# ------------------------------------------------------------------------------
+volumes:
+  caddy_data:
+  caddy_config:
+  redis_data:
+  booking_data:
+
+networks:
+  dente-cloud-net:
+    driver: bridge

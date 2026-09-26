@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Личный кабинет пациента — DENTE</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0284c7">
+  <style>
+    :root {
+      --primary: #0284c7;
+      --bg: #090d16;
+      --surface: #141c2e;
+      --surface-card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --green: #10b981;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 70px; min-height: 100vh; }
+    .header-bar { padding: 16px 20px; background: rgba(20, 28, 46, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; }
+    .brand { font-size: 18px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+    .logout-btn { background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; }
+    .container { max-width: 580px; margin: 0 auto; padding: 16px; }
+
+    /* Auth Box */
+    .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; text-align: center; margin-top: 40px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+    .auth-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .auth-subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
+    .input-field { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: #0b1120; color: var(--text); font-size: 16px; margin-bottom: 14px; outline: none; }
+    .input-field:focus { border-color: var(--primary); }
+    .primary-btn { width: 100%; padding: 13px; border-radius: 9px; background: var(--primary); color: #fff; border: none; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+    /* Profile Badge */
+    .profile-card { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+    .patient-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .patient-sub { color: var(--text-muted); font-size: 12px; margin-bottom: 16px; }
+    .fin-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .fin-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 10px 12px; border-radius: 10px; }
+    .fin-label { font-size: 11px; color: var(--text-muted); }
+    .fin-val { font-size: 17px; font-weight: 700; color: var(--green); margin-top: 2px; }
+
+    /* Tabs */
+    .tab-nav { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; margin-bottom: 16px; }
+    .tab-btn { flex: 1; padding: 8px 0; background: none; border: none; color: var(--text-muted); font-size: 13px; font-weight: 500; border-radius: 7px; cursor: pointer; transition: all 0.15s; }
+    .tab-btn.active { background: var(--primary); color: #fff; font-weight: 600; }
+
+    /* Content Cards */
+    .item-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+    .item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .item-title { font-size: 15px; font-weight: 600; }
+    .item-badge { font-size: 11px; padding: 3px 8px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); color: var(--green); font-weight: 600; }
+    .item-row { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+    .progress-bar-bg { width: 100%; height: 6px; background: #334155; border-radius: 3px; margin: 10px 0 6px 0; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: var(--primary); border-radius: 3px; }
+    .tax-banner { background: rgba(2, 132, 199, 0.1); border: 1px solid rgba(2, 132, 199, 0.3); border-radius: 10px; padding: 12px; font-size: 12px; color: #bae6fd; display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+    .tax-btn { padding: 5px 10px; background: var(--primary); border: none; color: #fff; border-radius: 6px; font-size: 11px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="header-bar">
+    <div class="brand">🦷 DENTE Пациент</div>
+    <button type="button" class="logout-btn" id="logoutBtn" style="display:none;" onclick="logout()">Выйти</button>
+  </div>
+
+  <div class="container">
+    <!-- 1. Экран входа по OTP -->
+    <div id="authSection" class="auth-card">
+      <div class="auth-title">Вход в личный кабинет</div>
+      <div class="auth-subtitle">Введите номер телефона для получения SMS-кода</div>
+      <div id="phoneStep">
+        <input type="tel" id="loginPhone" class="input-field" placeholder="+7 (999) 000-00-00">
+        <button type="button" class="primary-btn" onclick="sendOtp()">Получить код</button>
+      </div>
+      <div id="codeStep" style="display:none;">
+        <input type="text" id="loginOtp" class="input-field" placeholder="Код из SMS (демо: 1234)" maxlength="6">
+        <button type="button" class="primary-btn" onclick="verifyOtp()">Войти</button>
+      </div>
+    </div>
+
+    <!-- 2. Личный кабинет после авторизации -->
+    <div id="portalSection" style="display:none;">
+      <div class="profile-card">
+        <div class="patient-name" id="userNameDisplay">Пациент Клиники</div>
+        <div class="patient-sub" id="userCardDisplay">Электронная карта: 043-у/2026</div>
+        <div class="fin-row">
+          <div class="fin-box">
+            <div class="fin-label">Депозит клиники</div>
+            <div class="fin-val" id="userBalanceDisplay">12 500 ₽</div>
+          </div>
+          <div class="fin-box">
+            <div class="fin-label">Бонусы программы</div>
+            <div class="fin-val" id="userCashbackDisplay">1 800 ₽</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-nav">
+        <button type="button" class="tab-btn active" onclick="switchTab('appointments')">Визиты</button>
+        <button type="button" class="tab-btn" onclick="switchTab('plans')">Планы лечения</button>
+        <button type="button" class="tab-btn" onclick="switchTab('invoices')">Счета и вычет</button>
+      </div>
+
+      <div id="tabAppointments">
+        <div class="item-card">
+          <div class="item-header">
+            <div class="item-title">Предстоящий приём</div>
+            <div class="item-badge">Подтверждён</div>
+          </div>
+          <div class="item-row">📅 <strong>2 октября 2026, 15:00</strong></div>
+          <div class="item-row">👨‍⚕️ Врач: Барабаш С.В. (Стоматолог-ортопед)</div>
+          <div class="item-row">📍 Кабинет: №1 (Главный ортопедический)</div>
+          <div class="item-row" style="margin-top:6px; color:#e2e8f0;">Услуга: Фиксация безметалловой коронки E.max</div>
+        </div>
+      </div>
+
+      <div id="tabPlans" style="display:none;">
+        <div class="item-card">
+          <div class="item-header">
+            <div class="item-title">Комплексная санация и ортопедия</div>
+            <div class="item-badge">В процессе</div>
+          </div>
+          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 66%;"></div></div>
+          <div class="item-row" style="display:flex; justify-content:space-between;">
+            <span>Оплачено: 98 000 ₽</span>
+            <span>Всего: 148 000 ₽</span>
+          </div>
+          <div style="font-size:12px; margin-top:10px; border-top:1px solid #334155; padding-top:8px;">
+            ✓ Профгигиена AirFlow и снятие зубных отложений<br>
+            ✓ Лечение кариеса 1.6, 2.5 под микроскопом<br>
+            ⏳ Установка коронки E.max на зуб 1.6
+          </div>
+        </div>
+      </div>
+
+      <div id="tabInvoices" style="display:none;">
+        <div class="item-card">
+          <div class="item-header">
+            <div class="item-title">Счёт №2026-89</div>
+            <div class="item-badge">Оплачен онлайн</div>
+          </div>
+          <div class="item-row">Сумма: <strong>14 500 ₽</strong> • Дата: 18.09.2026</div>
+          <div class="tax-banner">
+            <div>📄 Справка для налогового вычета 13% НДФЛ (ФНС КНД 1151156)</div>
+            <button type="button" class="tax-btn" onclick="alert('Справка сформирована и отправлена на email')">Заказать</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authToken = localStorage.getItem("dente_patient_token");
+
+    function checkAuth() {
+      if (authToken) {
+        document.getElementById("authSection").style.display = "none";
+        document.getElementById("portalSection").style.display = "block";
+        document.getElementById("logoutBtn").style.display = "block";
+        loadPortalData();
+      } else {
+        document.getElementById("authSection").style.display = "block";
+        document.getElementById("portalSection").style.display = "none";
+        document.getElementById("logoutBtn").style.display = "none";
+      }
+    }
+
+    async function sendOtp() {
+      const phone = document.getElementById("loginPhone").value.trim();
+      if (phone.replace(/\D/g, "").length < 10) {
+        alert("Введите корректный номер телефона");
+        return;
+      }
+      try {
+        const res = await fetch("/api/portal/auth/request-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone })
+        });
+        const d = await res.json();
+        if (d.success) {
+          document.getElementById("phoneStep").style.display = "none";
+          document.getElementById("codeStep").style.display = "block";
+          if (d.devCodeHint) {
+            document.getElementById("loginOtp").value = d.devCodeHint;
+          }
+        }
+      } catch (e) {
+        alert("Ошибка сети");
+      }
+    }
+
+    async function verifyOtp() {
+      const phone = document.getElementById("loginPhone").value.trim();
+      const code = document.getElementById("loginOtp").value.trim();
+      try {
+        const res = await fetch("/api/portal/auth/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, code })
+        });
+        const d = await res.json();
+        if (d.success) {
+          authToken = d.token;
+          localStorage.setItem("dente_patient_token", authToken);
+          checkAuth();
+        } else {
+          alert(d.message || "Неверный код");
+        }
+      } catch (e) {
+        alert("Ошибка входа");
+      }
+    }
+
+    async function loadPortalData() {
+      try {
+        const res = await fetch("/api/portal/data", {
+          headers: { "Authorization": `Bearer ${authToken}` }
+        });
+        if (res.ok) {
+          const d = await res.json();
+          document.getElementById("userNameDisplay").textContent = d.patient.name;
+          document.getElementById("userCardDisplay").textContent = `Электронная карта: ${d.patient.cardNumber}`;
+          document.getElementById("userBalanceDisplay").textContent = `${d.patient.balanceRub.toLocaleString()} ₽`;
+          document.getElementById("userCashbackDisplay").textContent = `${d.patient.cashbackRub.toLocaleString()} ₽`;
+        }
+      } catch (e) {}
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll(".tab-btn").forEach((b, idx) => {
+        const tabs = ['appointments', 'plans', 'invoices'];
+        if (tabs[idx] === tab) b.classList.add("active");
+        else b.classList.remove("active");
+      });
+      document.getElementById("tabAppointments").style.display = tab === "appointments" ? "block" : "none";
+      document.getElementById("tabPlans").style.display = tab === "plans" ? "block" : "none";
+      document.getElementById("tabInvoices").style.display = tab === "invoices" ? "block" : "none";
+    }
+
+    function logout() {
+      localStorage.removeItem("dente_patient_token");
+      authToken = null;
+      checkAuth();
+    }
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>

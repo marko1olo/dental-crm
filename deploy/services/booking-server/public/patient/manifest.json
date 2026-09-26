@@ -1,0 +1,23 @@
+{
+  "name": "Личный кабинет пациента DENTE",
+  "short_name": "DENTE Пациент",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0284c7",
+  "description": "Медицинская карта, планы лечения, электронные чеки 54-ФЗ и справки для налоговой",
+  "icons": [
+    {
+      "src": "/static/patient/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/patient/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

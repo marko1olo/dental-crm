@@ -1,0 +1,17 @@
+{
+  "name": "dente-cloud-relay",
+  "version": "1.0.0",
+  "description": "WebSocket Tunnel Gateway for DENTE Dental CRM",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ioredis": "^5.4.1",
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
