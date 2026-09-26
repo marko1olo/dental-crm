@@ -9,90 +9,45 @@
  * - Full 63-FZ PEP & 323-FZ/152-FZ consent signing pipeline.
  */
 
-import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-	Activity,
-	Calendar,
-	Check,
-	CheckCircle2,
-	Clock,
-	CreditCard,
-	DollarSign,
-	FileText,
-	Heart,
-	Layers,
-	Lock,
-	MapPin,
-	Phone,
-	Pill,
-	QrCode,
-	RefreshCw,
-	ShieldCheck,
-	Smartphone,
-	Sparkles,
-	User,
-	X,
+	Activity, Calendar, Check, CheckCircle2, Clock, CreditCard, DollarSign,
+	FileText, Heart, Layers, Lock, MapPin, Phone, Pill, QrCode, RefreshCw,
+	ShieldCheck, Smartphone, Sparkles, User, X,
 } from "lucide-react";
 import {
-	calculateCabinetSummary,
-	calculateDentalHealthIndex,
-	calculatePatientTaxDeduction,
-	downloadDetailedReceipt,
-	downloadPatientTaxCertificate1151156,
-	formatRubles,
-	generatePatientDentalPassport,
-	generatePatientTaxCertificate1151156,
-	generateReceptionCheckinQrPayload,
-	generateSbpQrPayload,
-	generateSmsOtp,
-	openPrintWindow,
-	signConsentWithPep,
-	verifySmsOtp,
-	type DentalHealthIndexResult,
-	type PatientAppointment,
-	type PatientCabinetSummary,
-	type PatientDentalPassport,
-	type PatientInvoiceItem,
-	type PatientPersonalCabinetData,
-	type PatientStatutoryConsent,
-	type PatientTaxDeductionCalculation,
-	type PatientTreatmentPlan,
-	type SbpBankMember,
-	type SbpQrPayload,
-	type TreatmentPlanStage,
+	calculateCabinetSummary, calculateDentalHealthIndex, calculatePatientTaxDeduction,
+	downloadDetailedReceipt, downloadPatientTaxCertificate1151156, formatRubles,
+	generatePatientDentalPassport, generatePatientTaxCertificate1151156,
+	generateReceptionCheckinQrPayload, generateSbpQrPayload, generateSmsOtp,
+	openPrintWindow, signConsentWithPep, verifySmsOtp,
+	type DentalHealthIndexResult, type PatientAppointment, type PatientCabinetSummary,
+	type PatientDentalPassport, type PatientInvoiceItem, type PatientPersonalCabinetData,
+	type PatientStatutoryConsent, type PatientTaxDeductionCalculation,
+	type PatientTreatmentPlan, type SbpBankMember, type SbpQrPayload, type TreatmentPlanStage,
 } from "./patientCabinetEngine";
 import {
-	generateCareMemo,
-	buildWhatsAppLink,
-	detectInterventionTypeFromProcedure,
+	generateCareMemo, buildWhatsAppLink, detectInterventionTypeFromProcedure,
 	type PatientCareMemo,
 } from "./patientCareInstructionsEngine";
 import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
 import {
-	resolveTaxDeductionCategoryShared,
-	type TaxDeductionPaymentItem,
+	resolveTaxDeductionCategoryShared, type TaxDeductionPaymentItem,
 } from "../../finance/taxDeductionEngine";
 import { MobileSelfCheckinModal } from "../selfCheckin";
 import { PatientPlanView } from "../PatientPlanView.js";
 import { DEMO_PATIENT_CABINET } from "./patientCabinetPresets";
 import {
-	OverviewTab,
-	TreatmentPlanTab,
-	InvoicesTab,
-	DocumentsTab,
+	OverviewTab, TreatmentPlanTab, InvoicesTab, DocumentsTab, AppointmentsTab, FamilyTab,
 } from "./tabs";
 import {
-	SbpPaymentSheet,
-	ConsentSigningSheet,
-	ReceptionQrSheet,
-	CareMemoSheet,
-	RescheduleSheet,
-	BookingSheet,
+	SbpPaymentSheet, ConsentSigningSheet, ReceptionQrSheet,
+	CareMemoSheet, RescheduleSheet, BookingSheet,
 } from "./sheets";
 import "./patientCabinet.css";
+import { AuthArtBackground } from "../../auth/AuthArtBackground";
 
-export type PatientCabinetTab = "overview" | "invoices" | "plans" | "documents" | "appointments" | "care" | "passport";
+export type PatientCabinetTab = "overview" | "invoices" | "plans" | "documents" | "appointments" | "care" | "passport" | "family";
 
 export interface PatientCabinetModalProps {
 	readonly isOpen?: boolean | undefined;
@@ -410,6 +365,15 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 		window.open(link, "_blank");
 	}, [data.phone, careMemo.smsText]);
 
+	const handleCancelAppointment = useCallback((aptId: string, reason: string) => {
+		setData((prev) => ({
+			...prev,
+			appointments: prev.appointments.map((a) =>
+				a.id === aptId ? { ...a, status: "cancelled", cancellationReason: reason } : a,
+			),
+		}));
+	}, []);
+
 	if (!isOpen) return null;
 
 	if (isSelfCheckinOpen) {
@@ -452,6 +416,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 	return (
 		<div className="patient-cabinet-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+			<AuthArtBackground overlayAlpha={0.4} />
 			<div className="patient-cabinet-modal" onClick={(e) => e.stopPropagation()}>
 				{/* Top Header HUD */}
 				<header className="pc-header">
@@ -518,56 +483,38 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 				{/* Desktop & Tablet Segmented Navigation Bar */}
 				<nav className="pc-nav-bar" aria-label="Разделы личного кабинета">
-					<button
-						type="button"
-						className={`pc-tab-btn ${activeTab === "overview" || activeTab === "appointments" ? "active" : ""}`}
-						onClick={() => setActiveTab("overview")}
-					>
-						<Activity size={16} />
-						<span>Обзор</span>
-					</button>
-					<button
-						type="button"
-						className={`pc-tab-btn ${activeTab === "plans" || activeTab === "passport" ? "active" : ""}`}
-						onClick={() => setActiveTab("plans")}
-					>
-						<Layers size={16} />
-						<span>План лечения</span>
-						{summary.activePlansCount > 0 && (
-							<span className="pc-tab-counter">{summary.activePlansCount}</span>
-						)}
-					</button>
-					<button
-						type="button"
-						className={`pc-tab-btn ${activeTab === "invoices" ? "active" : ""}`}
-						onClick={() => setActiveTab("invoices")}
-					>
-						<CreditCard size={16} />
-						<span>Счета и оплата</span>
-						{summary.unpaidInvoicesCount > 0 && (
-							<span className="pc-tab-counter" style={{ background: "var(--pc-danger)" }}>
-								{summary.unpaidInvoicesCount}
-							</span>
-						)}
-					</button>
-					<button
-						type="button"
-						className={`pc-tab-btn ${activeTab === "documents" || activeTab === "care" ? "active" : ""}`}
-						onClick={() => setActiveTab("documents")}
-					>
-						<FileText size={16} />
-						<span>Документы</span>
-						{summary.pendingConsentsCount > 0 && (
-							<span className="pc-tab-counter" style={{ background: "var(--pc-warning)" }}>
-								{summary.pendingConsentsCount}
-							</span>
-						)}
-					</button>
+					{[
+						{ tab: "overview" as const, label: "Обзор", icon: Activity },
+						{ tab: "appointments" as const, label: "Записи", icon: Calendar },
+						{ tab: "plans" as const, label: "План лечения", icon: Layers, isMatch: (t: string) => t === "plans" || t === "passport", count: summary.activePlansCount },
+						{ tab: "invoices" as const, label: "Счета и оплата", icon: CreditCard, count: summary.unpaidInvoicesCount, countBg: "var(--pc-danger)" },
+						{ tab: "documents" as const, label: "Документы", icon: FileText, isMatch: (t: string) => t === "documents" || t === "care", count: summary.pendingConsentsCount, countBg: "var(--pc-warning)" },
+						{ tab: "family" as const, label: "Семья", icon: User },
+					].map((item) => {
+						const Icon = item.icon;
+						const active = item.isMatch ? item.isMatch(activeTab) : activeTab === item.tab;
+						return (
+							<button
+								key={item.tab}
+								type="button"
+								className={`pc-tab-btn ${active ? "active" : ""}`}
+								onClick={() => setActiveTab(item.tab)}
+							>
+								<Icon size={16} />
+								<span>{item.label}</span>
+								{typeof item.count === "number" && item.count > 0 && (
+									<span className="pc-tab-counter" style={item.countBg ? { background: item.countBg } : undefined}>
+										{item.count}
+									</span>
+								)}
+							</button>
+						);
+					})}
 				</nav>
 
 				{/* Main Tab Content Body */}
 				<main className="pc-body">
-					{(activeTab === "overview" || activeTab === "appointments") && (
+					{activeTab === "overview" && (
 						<OverviewTab
 							data={data}
 							summary={summary}
@@ -583,12 +530,31 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 						/>
 					)}
 
+					{activeTab === "appointments" && (
+						<AppointmentsTab
+							data={data}
+							onOpenReceptionQr={() => setIsReceptionQrOpen(true)}
+							onOpenReschedule={(apt) => setReschedulingApt(apt)}
+							onOpenBooking={() => setIsBookingOpen(true)}
+							onCancelAppointment={handleCancelAppointment}
+							onShowToast={handleShowCabinetToast}
+						/>
+					)}
+
 					{(activeTab === "plans" || activeTab === "passport") && (
 						<TreatmentPlanTab
 							data={data}
 							dentalPassport={dentalPassport}
 							onPayStageWithSbp={handlePayStageSbp}
 							onBookAppointment={() => setActiveTab("appointments")}
+							onApproveTreatmentPlan={(updatedPlan) => {
+								setData((prev) => ({
+									...prev,
+									treatmentPlans: prev.treatmentPlans.map((p) => (p.id === updatedPlan.id ? updatedPlan : p)),
+								}));
+								handleShowCabinetToast("План лечения успешно согласован (ПЭП 63-ФЗ)!");
+							}}
+							onShowToast={handleShowCabinetToast}
 						/>
 					)}
 
@@ -596,6 +562,11 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 						<InvoicesTab
 							data={data}
 							onOpenSbpForInvoice={handleStartSbpPayment}
+							onOpenCardPayment={(inv) =>
+								handleShowCabinetToast(
+									`Открытие безопасного интернет-эквайринга для счета № ${inv.invoiceNumber}...`,
+								)
+							}
 							onShowToast={handleShowCabinetToast}
 						/>
 					)}
@@ -609,6 +580,18 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 							onStartConsentSigning={(consent) => handleStartConsentSign(consent, "sms_otp")}
 							onOpenTaxCertificateSheet={() => setIsTaxModalOpen(true)}
 							onDownloadTaxCertificateDirect={handleDownloadTaxCertificate}
+							onShowToast={handleShowCabinetToast}
+						/>
+					)}
+
+					{activeTab === "family" && (
+						<FamilyTab
+							data={data}
+							onOpenBookingForMember={(member) => {
+								setIsBookingOpen(true);
+								handleShowCabinetToast(`Онлайн-запись для: ${member.fullName}`);
+							}}
+							onOpenBooking={() => setIsBookingOpen(true)}
 							onShowToast={handleShowCabinetToast}
 						/>
 					)}
@@ -637,38 +620,28 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 				{/* Mobile PWA Bottom Navigation Bar (390px) */}
 				<nav className="pc-mobile-tab-bar" aria-label="Мобильная навигация">
-					<button
-						type="button"
-						className={`pc-mobile-tab-btn ${activeTab === "overview" || activeTab === "appointments" ? "active" : ""}`}
-						onClick={() => setActiveTab("overview")}
-					>
-						<Activity size={18} />
-						<span>Обзор</span>
-					</button>
-					<button
-						type="button"
-						className={`pc-mobile-tab-btn ${activeTab === "plans" || activeTab === "passport" ? "active" : ""}`}
-						onClick={() => setActiveTab("plans")}
-					>
-						<Layers size={18} />
-						<span>План</span>
-					</button>
-					<button
-						type="button"
-						className={`pc-mobile-tab-btn ${activeTab === "invoices" ? "active" : ""}`}
-						onClick={() => setActiveTab("invoices")}
-					>
-						<CreditCard size={18} />
-						<span>Счета</span>
-					</button>
-					<button
-						type="button"
-						className={`pc-mobile-tab-btn ${activeTab === "documents" || activeTab === "care" ? "active" : ""}`}
-						onClick={() => setActiveTab("documents")}
-					>
-						<FileText size={18} />
-						<span>Документы</span>
-					</button>
+					{[
+						{ tab: "overview" as const, label: "Обзор", icon: Activity },
+						{ tab: "appointments" as const, label: "Записи", icon: Calendar },
+						{ tab: "plans" as const, label: "План", icon: Layers, isMatch: (t: string) => t === "plans" || t === "passport" },
+						{ tab: "invoices" as const, label: "Счета", icon: CreditCard },
+						{ tab: "documents" as const, label: "Документы", icon: FileText, isMatch: (t: string) => t === "documents" || t === "care" },
+						{ tab: "family" as const, label: "Семья", icon: User },
+					].map((item) => {
+						const Icon = item.icon;
+						const active = item.isMatch ? item.isMatch(activeTab) : activeTab === item.tab;
+						return (
+							<button
+								key={item.tab}
+								type="button"
+								className={`pc-mobile-tab-btn ${active ? "active" : ""}`}
+								onClick={() => setActiveTab(item.tab)}
+							>
+								<Icon size={18} />
+								<span>{item.label}</span>
+							</button>
+						);
+					})}
 				</nav>
 
 				{/* =================================================================

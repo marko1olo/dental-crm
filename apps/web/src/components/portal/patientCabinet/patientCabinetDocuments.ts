@@ -18,12 +18,20 @@ import type {
 	PatientPersonalCabinetData,
 	PatientInvoiceItem,
 	PatientAppointment,
+	PatientStatutoryConsent,
+	GeneratedDocumentSummary,
+	PatientPrescriptionItem,
 } from "./patientCabinetEngine.js";
 import {
 	formatRussianDateIso,
 	formatRubles,
 	calculateCabinetSummary,
 } from "./patientCabinetEngine.js";
+export {
+	formatRussianDateIso,
+	formatRubles,
+	calculateCabinetSummary,
+};
 
 // ============================================================================
 // STATUTORY TAX DEDUCTION (KND 1151156) & 54-FZ DETAILED RECEIPT GENERATORS
@@ -316,4 +324,415 @@ export function generateReceptionCheckinQrPayload(
 		nextAppointment: nextAppt,
 		receptionInstructionsRu: "Покажите данный QR-код администратору клиники или поднесите к 2D-сканеру на стойке ресепшена для мгновенной регистрации прибытия на прием.",
 	};
+}
+
+// ============================================================================
+// COMPLETED WORKS ACT (АКТ ВЫПОЛНЕННЫХ РАБОТ МЗ РФ 804Н / 54-ФЗ)
+// ============================================================================
+
+export function generateCompletedWorksActHtml(
+	invoice: PatientInvoiceItem,
+	data: PatientPersonalCabinetData,
+): string {
+	const clinicName = "ООО «Стоматологическая клиника ДЕНТЕ»";
+	const clinicInn = "7841098765";
+	const clinicAddress = "г. Санкт-Петербург, Невский пр-т, д. 140, лит. А";
+	const clinicLicense = "ЛО-78-01-011842 от 15.06.2021";
+	const actNumber = `АКТ-${invoice.invoiceNumber.replace(/^[^\d]*/, "") || invoice.id.slice(-6).toUpperCase()}`;
+	const actDate = formatRussianDateIso(invoice.paidAtIso?.slice(0, 10) || invoice.issueDateIso);
+	const doctor = data.curatingDoctor || "Д-р Смирнов А. В.";
+	const fiscalReceipt = invoice.fiscalReceiptNumber || `ФД-${invoice.invoiceNumber}`;
+
+	const itemsHtml = invoice.items
+		.map(
+			(item, idx) => `
+      <tr>
+        <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center;">${idx + 1}</td>
+        <td style="padding: 6px 8px; border: 1px solid #cbd5e1; font-family: monospace; font-size: 11px;">${item.code}</td>
+        <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">
+          <strong>${item.titleRu}</strong>
+          ${item.toothFdi ? `<span style="color: #64748b; font-size: 11px;"> &bull; Зуб №${item.toothFdi}</span>` : ""}
+        </td>
+        <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center;">${item.quantity}</td>
+        <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: right;">${formatRubles(item.priceRub)}</td>
+        <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: right; font-weight: 700;">${formatRubles(item.totalRub)}</td>
+      </tr>`,
+		)
+		.join("");
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Акт выполненных работ ${actNumber} — ${clinicName}</title>
+  <style>
+    @page { size: A4 portrait; margin: 15mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; color: #0f172a; margin: 0; padding: 20px; line-height: 1.5; }
+    .act-container { max-width: 750px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 8px; padding: 28px; background: #ffffff; }
+    .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; }
+    .header h1 { margin: 0 0 4px 0; font-size: 16px; font-weight: 800; text-transform: uppercase; }
+    .header p { margin: 2px 0; font-size: 11px; color: #475569; }
+    .notice { background: #f8fafc; border-left: 3px solid #0d9488; padding: 8px 12px; margin-bottom: 16px; font-size: 11px; color: #334155; }
+    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12px; }
+    .meta-table td { padding: 5px 8px; border-bottom: 1px solid #f1f5f9; }
+    .meta-table td.label { color: #64748b; width: 30%; }
+    .meta-table td.value { font-weight: 600; color: #0f172a; }
+    table.services { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 11px; }
+    table.services th { background: #f8fafc; padding: 8px; text-align: left; font-weight: 700; border: 1px solid #cbd5e1; }
+    .total-box { display: flex; justify-content: space-between; align-items: baseline; background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; }
+    .total-title { font-size: 13px; font-weight: 700; color: #166534; }
+    .total-val { font-size: 16px; font-weight: 800; color: #166534; }
+    .legal-statement { font-size: 11px; color: #334155; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; margin-bottom: 20px; background: #fbfcfe; }
+    .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; padding-top: 16px; border-top: 1px dashed #cbd5e1; font-size: 11px; }
+    .sig-col strong { display: block; margin-bottom: 8px; font-size: 12px; }
+    .sig-line { margin-top: 32px; border-bottom: 1px solid #334155; }
+    .stamp-box { margin-top: 8px; color: #64748b; font-size: 10px; }
+    @media print {
+      body { padding: 0; }
+      .act-container { border: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="act-container">
+    <div class="header">
+      <h1>${clinicName}</h1>
+      <p>ИНН ${clinicInn} &bull; Лицензия ${clinicLicense} &bull; ${clinicAddress}</p>
+      <h2 style="font-size: 14px; margin: 10px 0 0; color: #0d9488;">
+        АКТ ВЫПОЛНЕННЫХ РАБОТ (ОКАЗАННЫХ УСЛУГ) № ${actNumber}
+      </h2>
+      <p style="font-weight: 600; color: #0f172a;">от ${actDate} г.</p>
+    </div>
+
+    <div class="notice">
+      Настоящий Акт составлен в соответствии со ст. 720 ГК РФ и Постановлением Правительства РФ от 11.05.2023 № 736. Акт подтверждает факт надлежащего оказания стоматологических услуг, отсутствие претензий по качеству и сверку с фискальными чеками.
+    </div>
+
+    <table class="meta-table">
+      <tr>
+        <td class="label">Пациент (Заказчик):</td>
+        <td class="value">${data.fullName}</td>
+      </tr>
+      <tr>
+        <td class="label">Номер медицинской карты:</td>
+        <td class="value">${data.cardNumber}</td>
+      </tr>
+      <tr>
+        <td class="label">Лечащий врач:</td>
+        <td class="value">${doctor}</td>
+      </tr>
+      <tr>
+        <td class="label">Счет на оплату:</td>
+        <td class="value">${invoice.invoiceNumber} от ${formatRussianDateIso(invoice.issueDateIso)}</td>
+      </tr>
+      <tr>
+        <td class="label">Фискальный чек 54-ФЗ:</td>
+        <td class="value">${fiscalReceipt}</td>
+      </tr>
+    </table>
+
+    <table class="services">
+      <thead>
+        <tr>
+          <th style="width: 28px; text-align: center;">№</th>
+          <th style="width: 90px;">Код 804н</th>
+          <th>Наименование медицинской услуги</th>
+          <th style="width: 45px; text-align: center;">Кол</th>
+          <th style="width: 85px; text-align: right;">Цена</th>
+          <th style="width: 95px; text-align: right;">Стоимость</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsHtml}
+      </tbody>
+    </table>
+
+    <div class="total-box">
+      <div class="total-title">ИТОГО ВЫПОЛНЕНО И ОПЛАЧЕНО (Без НДС, ст. 149 НК РФ):</div>
+      <div class="total-val">${formatRubles(invoice.totalAmountRub)}</div>
+    </div>
+
+    <div class="legal-statement">
+      Медицинские услуги оказаны Исполнителем надлежащим образом, в полном объеме, в установленные сроки и в соответствии с порядками и клиническими рекомендациями Минздрава РФ. Заказчик (Пациент) подтверждает приемку оказанных услуг и отсутствие претензий по их объему, качеству и стоимости. Рекомендации лечащего врача получены в полном объеме.
+    </div>
+
+    <div class="signatures">
+      <div class="sig-col">
+        <strong>Исполнитель:</strong>
+        <div>Врач: ${doctor}</div>
+        <div class="sig-line"></div>
+        <div class="stamp-box">М.П. ООО «Стоматологическая клиника ДЕНТЕ»</div>
+      </div>
+      <div class="sig-col">
+        <strong>Заказчик (Пациент):</strong>
+        <div>${data.fullName}</div>
+        <div class="sig-line"></div>
+        <div class="stamp-box">Подпись пациента / законного представителя</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+export function downloadCompletedWorksAct(
+	invoice: PatientInvoiceItem,
+	data: PatientPersonalCabinetData,
+): void {
+	const html = generateCompletedWorksActHtml(invoice, data);
+	downloadHtmlFile(html, `Akt_${invoice.invoiceNumber}.html`);
+}
+
+// ============================================================================
+// STATUTORY CONSENT & DOCUMENT SNAPSHOT PRINTABLE VIEWERS
+// ============================================================================
+
+export function generateConsentPrintHtml(
+	consent: PatientStatutoryConsent,
+	data: PatientPersonalCabinetData,
+): string {
+	const clinicName = "ООО «Стоматологическая клиника ДЕНТЕ»";
+	const clinicInn = "7841098765";
+	const clinicLicense = "ЛО-78-01-011842 от 15.06.2021";
+	const clinicAddress = "г. Санкт-Петербург, Невский пр-т, д. 140, лит. А";
+	const isSigned = consent.status === "signed";
+	const signedDate = consent.signedAtIso
+		? formatRussianDateIso(consent.signedAtIso.slice(0, 10))
+		: formatRussianDateIso(new Date().toISOString().slice(0, 10));
+
+	const paragraphs = (consent.fullTextContent || consent.summaryTextRu || "")
+		.split("\n\n")
+		.filter((p) => p.trim().length > 0)
+		.map((p) => `<p style="margin-bottom: 10px; text-align: justify;">${p.replace(/\n/g, "<br/>")}</p>`)
+		.join("");
+
+	const pepStampHtml = isSigned && consent.signatureAudit
+		? `
+    <div style="margin-top: 24px; border: 2px solid #0d9488; border-radius: 8px; padding: 14px 18px; background: #f0fdfa; font-size: 11px;">
+      <div style="font-weight: 800; color: #0f766e; font-size: 12px; margin-bottom: 6px; text-transform: uppercase;">
+        ДОКУМЕНТ ПОДПИСАН ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (63-ФЗ)
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; color: #134e4a;">
+        <div><strong>Владелец подписи:</strong> ${data.fullName}</div>
+        <div><strong>Телефон верификации:</strong> ${consent.signatureAudit.phone}</div>
+        <div><strong>Способ подписания:</strong> SMS/OTP код подтверждения</div>
+        <div><strong>Дата и время:</strong> ${new Date(consent.signatureAudit.timestamp).toLocaleString("ru-RU")}</div>
+      </div>
+      <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #5eead4; font-family: monospace; font-size: 10px; color: #0f766e; word-break: break-all;">
+        <strong>Хеш целостности SHA-256:</strong> ${consent.signatureAudit.integrityHash}
+      </div>
+    </div>`
+		: `
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 36px; padding-top: 16px; border-top: 1px dashed #cbd5e1; font-size: 11px;">
+      <div>
+        <strong>Пациент (Заказчик):</strong>
+        <div style="margin-top: 4px;">${data.fullName}</div>
+        <div style="margin-top: 32px; border-bottom: 1px solid #334155;"></div>
+        <div style="font-size: 10px; color: #64748b; margin-top: 4px;">(Подпись / расшифровка)</div>
+      </div>
+      <div>
+        <strong>Врач:</strong>
+        <div style="margin-top: 4px;">${data.curatingDoctor}</div>
+        <div style="margin-top: 32px; border-bottom: 1px solid #334155;"></div>
+        <div style="font-size: 10px; color: #64748b; margin-top: 4px;">(Подпись врача / М.П.)</div>
+      </div>
+    </div>`;
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>${consent.titleRu} — ${data.fullName}</title>
+  <style>
+    @page { size: A4 portrait; margin: 15mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; color: #0f172a; margin: 0; padding: 20px; line-height: 1.5; }
+    .consent-container { max-width: 750px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 8px; padding: 28px; background: #ffffff; }
+    .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; }
+    .header h1 { margin: 0 0 4px 0; font-size: 15px; font-weight: 800; text-transform: uppercase; }
+    .header p { margin: 2px 0; font-size: 11px; color: #475569; }
+    .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 11px; }
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .content-box { margin: 16px 0; font-size: 11.5px; }
+    @media print {
+      body { padding: 0; }
+      .consent-container { border: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="consent-container">
+    <div class="header">
+      <h1>${clinicName}</h1>
+      <p>ИНН ${clinicInn} &bull; Лицензия ${clinicLicense} &bull; ${clinicAddress}</p>
+      <h2 style="font-size: 14px; margin: 10px 0 4px; color: #0d9488;">${consent.titleRu}</h2>
+      <p style="font-weight: 600; color: #475569;">Правовая основа: ${consent.statutoryBasis} &bull; Код: ${consent.code}</p>
+    </div>
+
+    <div class="meta-box">
+      <div class="meta-grid">
+        <div><strong>Пациент:</strong> ${data.fullName}</div>
+        <div><strong>Медицинская карта:</strong> ${data.cardNumber}</div>
+        <div><strong>Лечащий врач:</strong> ${data.curatingDoctor}</div>
+        <div><strong>Дата:</strong> ${signedDate}</div>
+      </div>
+    </div>
+
+    <div class="content-box">
+      ${paragraphs}
+    </div>
+
+    ${pepStampHtml}
+  </div>
+</body>
+</html>`;
+}
+
+export function generateDocumentSnapshotHtml(
+	doc: GeneratedDocumentSummary,
+	data: PatientPersonalCabinetData,
+): string {
+	const clinicName = "ООО «Стоматологическая клиника ДЕНТЕ»";
+	const clinicInn = "7841098765";
+	const clinicLicense = "ЛО-78-01-011842 от 15.06.2021";
+	const clinicAddress = "г. Санкт-Петербург, Невский пр-т, д. 140, лит. А";
+	const docDate = formatRussianDateIso(doc.dateIso);
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>${doc.title} — ${clinicName}</title>
+  <style>
+    @page { size: A4 portrait; margin: 15mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; color: #0f172a; margin: 0; padding: 20px; line-height: 1.5; }
+    .doc-container { max-width: 750px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 8px; padding: 28px; background: #ffffff; }
+    .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; }
+    .header h1 { margin: 0 0 4px 0; font-size: 16px; font-weight: 800; text-transform: uppercase; }
+    .header p { margin: 2px 0; font-size: 11px; color: #475569; }
+    .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 12px; }
+    .meta-row { display: flex; justify-content: space-between; padding: 3px 0; }
+    .body-box { padding: 16px 0; font-size: 12px; line-height: 1.6; }
+    .stamp-box { margin-top: 24px; border: 1px dashed #cbd5e1; padding: 12px; border-radius: 6px; background: #fafafa; font-size: 11px; }
+    @media print {
+      body { padding: 0; }
+      .doc-container { border: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc-container">
+    <div class="header">
+      <h1>${clinicName}</h1>
+      <p>ИНН ${clinicInn} &bull; Лицензия ${clinicLicense} &bull; ${clinicAddress}</p>
+      <h2 style="font-size: 14px; margin: 10px 0 0; color: #0d9488;">${doc.title}</h2>
+      <p style="font-weight: 600; color: #0f172a;">от ${docDate} г.</p>
+    </div>
+
+    <div class="meta-box">
+      <div class="meta-row"><span>Пациент:</span><strong>${data.fullName}</strong></div>
+      <div class="meta-row"><span>Медицинская карта:</span><strong>${data.cardNumber}</strong></div>
+      <div class="meta-row"><span>Лечащий врач:</span><strong>${data.curatingDoctor}</strong></div>
+      ${doc.documentNumber ? `<div class="meta-row"><span>Номер документа:</span><strong>${doc.documentNumber}</strong></div>` : ""}
+      ${doc.totalAmountRub !== undefined ? `<div class="meta-row"><span>Сумма:</span><strong>${formatRubles(doc.totalAmountRub)}</strong></div>` : ""}
+    </div>
+
+    <div class="body-box">
+      <p>Официальный медицинский документ сформирован и выдан в автоматизированной информационной системе стоматологической клиники DENTE в соответствии с требованиями законодательства РФ в сфере охраны здоровья (323-ФЗ) и Правилами предоставления платных медицинских услуг (ПП РФ № 736).</p>
+      <p>Электронная архивная копия документа зарегистрирована в защищенном реестре клиники со статусом «${doc.status === "issued" ? "Выдан и действителен" : "Черновик"}».</p>
+    </div>
+
+    ${doc.sha256 ? `
+    <div class="stamp-box">
+      <div><strong>Цифровой отпечаток архивной копии (SHA-256):</strong></div>
+      <div style="font-family: monospace; font-size: 10px; color: #0d9488; margin-top: 4px;">${doc.sha256}</div>
+      <div style="font-size: 10px; color: #64748b; margin-top: 4px;">Целостность и неизменность документа подтверждены криптографическим аудитом.</div>
+    </div>` : ""}
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 36px; padding-top: 16px; border-top: 1px dashed #cbd5e1; font-size: 11px;">
+      <div>
+        <strong>От медицинской организации:</strong>
+        <div style="margin-top: 4px;">Врач / Руководитель: ${data.curatingDoctor}</div>
+        <div style="margin-top: 28px; border-bottom: 1px solid #334155;"></div>
+        <div style="font-size: 10px; color: #64748b; margin-top: 4px;">М.П. ООО «Стоматологическая клиника ДЕНТЕ»</div>
+      </div>
+      <div>
+        <strong>Пациент / Заказчик:</strong>
+        <div style="margin-top: 4px;">${data.fullName}</div>
+        <div style="margin-top: 28px; border-bottom: 1px solid #334155;"></div>
+        <div style="font-size: 10px; color: #64748b; margin-top: 4px;">Подпись пациента</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+export function generatePrescription107PrintHtml(
+	rx: PatientPrescriptionItem,
+	data: PatientPersonalCabinetData,
+): string {
+	const clinicName = "ООО «Стоматологическая клиника ДЕНТЕ»";
+	const clinicInn = "7841098765";
+	const clinicLicense = "ЛО-78-01-011842 от 15.06.2021";
+	const clinicAddress = "г. Санкт-Петербург, Невский пр-т, д. 140, лит. А";
+	const rxDate = formatRussianDateIso(rx.dateIso);
+	const doctor = rx.doctorName || data.curatingDoctor || "Д-р Смирнов А. В.";
+	const validity = rx.validityDays ? `${rx.validityDays} дней` : "60 дней";
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Рецептурный бланк 107-1/у — ${rx.medicationName}</title>
+  <style>
+    @page { size: A4 portrait; margin: 15mm; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #111; margin: 0; padding: 25px; line-height: 1.5; }
+    .rx-container { max-width: 650px; margin: 0 auto; border: 1px solid #94a3b8; border-radius: 8px; padding: 24px; background: #ffffff; }
+    .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 14px; }
+    .header h2 { margin: 0 0 2px 0; font-size: 14px; text-transform: uppercase; }
+    .header p { margin: 2px 0; font-size: 11px; color: #475569; }
+    .rx-box { border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; margin: 16px 0; background: #f8fafc; font-size: 13px; }
+    .stamp-row { margin-top: 35px; display: flex; justify-content: space-between; border-top: 1px dashed #94a3b8; padding-top: 12px; font-size: 11px; }
+    @media print {
+      body { padding: 0; }
+      .rx-container { border: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="rx-container">
+    <div class="header">
+      <h2>МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ РФ</h2>
+      <p>Форма № 107-1/у (Приказ Минздрава России № 1094н)</p>
+      <p><strong>${clinicName}</strong> &bull; ИНН ${clinicInn} &bull; Лицензия ${clinicLicense}</p>
+      <p>${clinicAddress}</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; font-size: 11.5px;">
+      <div><strong>Пациент:</strong> ${data.fullName}</div>
+      <div><strong>Дата выписки:</strong> ${rxDate}</div>
+      <div><strong>Дата рождения:</strong> ${data.birthDate ? formatRussianDateIso(data.birthDate) : "—"}</div>
+      <div><strong>Медицинская карта №:</strong> ${data.cardNumber}</div>
+      <div><strong>Лечащий врач:</strong> ${doctor}</div>
+    </div>
+
+    <div class="rx-box">
+      <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
+        Rp.: ${rx.medicationName} ${rx.dosageRu}
+      </div>
+      <div style="color: #334155; margin-bottom: 8px;">
+        ${rx.instructionRu}
+      </div>
+      <div style="font-size: 11px; color: #64748b;">
+        Курс приема: ${rx.durationRu} &bull; Срок действия рецепта: ${validity}
+      </div>
+    </div>
+
+    <div class="stamp-row">
+      <div>Подпись и личная печать врача: ____________________ (${doctor})</div>
+      <div>М.П. Клиники</div>
+    </div>
+  </div>
+</body>
+</html>`;
 }

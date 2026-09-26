@@ -5,10 +5,20 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import React from "react";
+import { renderToString } from "react-dom/server";
+import {
+	OverviewTab,
+	AppointmentsTab,
+	FamilyTab,
+} from "../components/portal/patientCabinet/tabs";
+import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
 import {
 	calculateCabinetSummary,
 	calculateCheckupDaysRemaining,
+	calculateDentalHealthIndex,
 	calculateWarrantyValidity,
+	DEFAULT_PATIENT_TEETH,
 	filterAppointments,
 	filterInvoices,
 	formatKopecksToRub,
@@ -293,4 +303,140 @@ describe("Patient Personal Portal - Statutory Tax Deduction (KND 1151156) & 54-F
 		assert.ok(receiptHtml.includes("<svg"), "Should contain fiscal verification QR code SVG");
 	});
 });
+
+describe("Patient Personal Portal - OverviewTab Dynamic Calendars & Family Pool", () => {
+	it("renders Family Pool balance and members count when available", () => {
+		const dataWithFamily: PatientPersonalCabinetData = {
+			...PATIENT_CABINET_PRESET_ALEXEY,
+			familyBalanceRub: 45000,
+			familyBonusPool: 12000,
+			familyMembersCount: 4,
+		};
+		const summary = calculateCabinetSummary(dataWithFamily);
+		const healthIndex = calculateDentalHealthIndex(dataWithFamily.teeth || DEFAULT_PATIENT_TEETH);
+
+		const html = renderToString(
+			React.createElement(OverviewTab, {
+				data: dataWithFamily,
+				summary,
+				healthIndex,
+				nextApptCountdown: "Через 2 дня",
+				onOpenTab: () => {},
+				onOpenReceptionQr: () => {},
+				onOpenCareMemo: () => {},
+				onOpenSbpForInvoice: () => {},
+				onOpenSelfCheckin: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"pc-family-pool-pill\""), "Should render family pool pill");
+		assert.ok(html.includes("Семейный счет (4 чел.)"), "Should include family members count");
+		assert.ok(html.includes("45\u00A0000 ₽"), "Should include family balance");
+		assert.ok(html.includes("12\u00A0000 бонусов"), "Should include family bonus pool");
+	});
+
+	it("renders dynamic calendar export buttons with appointment date and time", () => {
+		const customAppt = {
+			...PATIENT_CABINET_PRESET_ALEXEY.appointments[0]!,
+			dateIso: "2026-11-20",
+			timeRu: "16:45",
+			doctorName: "Д-р Смирнов А. В.",
+			roomNumber: "Кабинет 3",
+		};
+		const dataWithCustomAppt: PatientPersonalCabinetData = {
+			...PATIENT_CABINET_PRESET_ALEXEY,
+			appointments: [customAppt],
+		};
+		const summary = calculateCabinetSummary(dataWithCustomAppt);
+		const healthIndex = calculateDentalHealthIndex(dataWithCustomAppt.teeth || DEFAULT_PATIENT_TEETH);
+
+		const html = renderToString(
+			React.createElement(OverviewTab, {
+				data: dataWithCustomAppt,
+				summary,
+				healthIndex,
+				nextApptCountdown: "Через 5 дней",
+				onOpenTab: () => {},
+				onOpenReceptionQr: () => {},
+				onOpenCareMemo: () => {},
+				onOpenSbpForInvoice: () => {},
+				onOpenSelfCheckin: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"next-appt-apple-cal-btn\""));
+		assert.ok(html.includes("data-testid=\"next-appt-google-cal-btn\""));
+		assert.ok(html.includes("data-testid=\"next-appt-yandex-cal-btn\""));
+
+		// Must contain appointment date in the card
+		assert.ok(html.includes("2026-11-20"));
+		assert.ok(html.includes("16:45"));
+	});
+});
+
+describe("Patient Personal Portal - AppointmentsTab & FamilyTab Ergonomics", () => {
+	it("renders AppointmentsTab with 18-20px bold visit times, doctors, calendar exports, and cancellation triggers", () => {
+		const html = renderToString(
+			React.createElement(AppointmentsTab, {
+				data: PATIENT_CABINET_PRESET_ALEXEY,
+				onOpenReceptionQr: () => {},
+				onOpenReschedule: () => {},
+				onOpenBooking: () => {},
+				onCancelAppointment: () => {},
+				onShowToast: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"pc-appointments-tab\""), "Should render appointments tab root");
+		assert.ok(html.includes("Предстоящие"), "Should render filter tabs");
+		assert.ok(html.includes("14:30"), "Should render bold visit time");
+		assert.ok(html.includes("Д-р Смирнов Андрей Васильевич"), "Should render doctor name");
+		assert.ok(html.includes("Кабинет № 4"), "Should render room number");
+		assert.ok(html.includes("data-testid=\"btn-cancel-trigger-apt-8842-1\""), "Should render cancellation trigger");
+		assert.ok(html.includes("data-testid=\"btn-reception-qr-apt-8842-1\""), "Should render reception QR button");
+		assert.ok(html.includes("iCal"), "Should render Apple iCal button");
+		assert.ok(html.includes("Google"), "Should render Google Calendar button");
+		assert.ok(html.includes("Яндекс"), "Should render Yandex Calendar button");
+	});
+
+	it("renders FamilyTab with shared family deposit, bonus pool, member cards, and booking triggers", () => {
+		const html = renderToString(
+			React.createElement(FamilyTab, {
+				data: PATIENT_CABINET_PRESET_ALEXEY,
+				onOpenBookingForMember: () => {},
+				onOpenBooking: () => {},
+				onShowToast: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"pc-family-tab\""), "Should render family tab root");
+		assert.ok(html.includes("Семейный депозит и бонусный пул"), "Should render header banner");
+		assert.ok(html.includes(formatRubles(84000)), "Should render shared balance");
+		assert.ok(html.includes("18\u00A0500") && html.includes("бонусов"), "Should render bonus pool");
+		assert.ok(html.includes("Воронова Екатерина Павловна"), "Should render spouse card");
+		assert.ok(html.includes("Супруг(а)"), "Should render relationship tag");
+		assert.ok(html.includes("Воронов Михаил Алексеевич"), "Should render child card");
+		assert.ok(html.includes("Сын"), "Should render child relationship");
+		assert.ok(html.includes("Оплата с общего счета"), "Should render balance permission");
+		assert.ok(html.includes("data-testid=\"btn-toggle-add-family-member\""), "Should render add member button");
+	});
+});
+
+describe("Patient Personal Portal - Atmosphere & AuthArtBackground Integration", () => {
+	it("renders PatientCabinetModal with AuthArtBackground inside patient-cabinet-backdrop", () => {
+		const html = renderToString(
+			React.createElement(PatientCabinetModal, {
+				isOpen: true,
+				initialData: PATIENT_CABINET_PRESET_ALEXEY,
+				onClose: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("patient-cabinet-backdrop"), "Backdrop should be rendered");
+		assert.ok(html.includes("auth-art-background"), "Atmospheric background should be rendered inside backdrop");
+		assert.ok(html.includes("patient-cabinet-modal"), "Modal content window should be rendered");
+		assert.ok(html.includes(PATIENT_CABINET_PRESET_ALEXEY.fullName), "Patient name should be present in header");
+	});
+});
+
 
