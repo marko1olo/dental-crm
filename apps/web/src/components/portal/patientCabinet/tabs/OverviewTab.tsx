@@ -73,24 +73,30 @@ export function getAppointmentCalendarDates(
 	}
 	let rawTime = (timeRu || "14:30").trim();
 	let calculatedDuration = durationMinutes;
+	const parseNum = (val: string | undefined, fallback: number): number => {
+		if (!val) return fallback;
+		const n = Number.parseInt(val, 10);
+		return Number.isNaN(n) ? fallback : n;
+	};
+
 	if (rawTime.includes("-")) {
 		const [startTimeStr, endTimeStr] = rawTime.split("-");
 		rawTime = startTimeStr?.trim() || "14:30";
 		if (endTimeStr?.trim()) {
 			const [endHStr, endMStr] = endTimeStr.trim().split(":");
 			const [startHStr, startMStr] = rawTime.split(":");
-			const sH = Number.parseInt(startHStr || "14", 10) || 14;
-			const sM = Number.parseInt(startMStr || "30", 10) || 30;
-			const eH = Number.parseInt(endHStr || "15", 10) || 15;
-			const eM = Number.parseInt(endMStr || "30", 10) || 30;
+			const sH = parseNum(startHStr, 14);
+			const sM = parseNum(startMStr, 30);
+			const eH = parseNum(endHStr, 15);
+			const eM = parseNum(endMStr, 30);
 			const diff = eH * 60 + eM - (sH * 60 + sM);
 			if (diff > 0) calculatedDuration = diff;
 		}
 	}
 
 	const [hStr, mStr] = rawTime.split(":");
-	const h = Number.parseInt(hStr || "14", 10) || 14;
-	const m = Number.parseInt(mStr || "30", 10) || 30;
+	const h = parseNum(hStr, 14);
+	const m = parseNum(mStr, 30);
 
 	const endMinutesTotal = h * 60 + m + calculatedDuration;
 	const endH = Math.floor(endMinutesTotal / 60) % 24;

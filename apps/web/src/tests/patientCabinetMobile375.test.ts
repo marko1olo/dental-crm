@@ -138,5 +138,49 @@ test("Patient Personal Cabinet & 375px Mobile Ergonomics Suite", async (t) => {
 		assert.ok(css.includes("pc-header"));
 		assert.ok(css.includes("pc-invoice-actions"));
 		assert.ok(css.includes("tax-deduction-quick-card"));
+
+		// Mandate 8c: Specific 44px mobile touch targets
+		assert.ok(css.includes(".pc-close-btn"));
+		assert.ok(css.includes(".pc-quick-action-btn"));
+		assert.ok(css.includes(".pc-cal-btn"));
+		assert.ok(css.includes(".pc-year-btn"));
+		assert.ok(css.includes(".pc-stage-chevron-btn"));
+
+		// Mandate 8p: Purge duplicate profile hero card on mobile
+		assert.ok(css.includes(".pc-status-hero-card"));
+		assert.ok(css.includes("display: none !important"));
+
+		// Touch Screen / Tablet Ergonomics (pointer: coarse)
+		assert.ok(css.includes("@media (pointer: coarse)"));
+	});
+
+	await t.test("8. TreatmentPlanTab & Scans Trigger: Renders Clinical Scans Button", async () => {
+		const { renderToString } = await import("react-dom/server");
+		const React = (await import("react")).default;
+		const { TreatmentPlanTab } = await import(
+			"../components/portal/patientCabinet/tabs/TreatmentPlanTab"
+		);
+		const demo = DEMO_PATIENT_CABINET;
+		const dummyPassport = {
+			patientName: "Воронов Алексей Владимирович",
+			cardNumber: "043-8842",
+			totalTreatedTeethCount: 1,
+			activeGuaranteesCount: 1,
+			entries: [],
+		};
+
+		const html = renderToString(
+			React.createElement(TreatmentPlanTab, {
+				data: demo,
+				dentalPassport: dummyPassport,
+				onPayStageWithSbp: () => {},
+				onBookAppointment: () => {},
+				onOpenClinicalScans: () => {},
+				isClinicalScansOpen: false,
+			}),
+		);
+
+		assert.ok(html.includes('data-testid="open-clinical-scans-btn"'));
+		assert.ok(html.includes("Снимки КТ / ОПТГ и фотопротокол"));
 	});
 });
