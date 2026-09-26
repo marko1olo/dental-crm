@@ -214,7 +214,10 @@ if (Test-Path $pidFilePath) {
             Write-PreflightLog "Active process with PID $recordedPid detected: '$($activeProc.ProcessName)'"
             
             if ($procName -notlike "*postgres*") {
-                Write-PreflightLog "PID $recordedPid belongs to unrelated process '$($activeProc.ProcessName)' (recycled PID). Lock is STALE!" "WARN"
+                # CRITICAL SYSTEM SAFETY: The recorded PID was recycled by Windows OS and belongs to another process
+                # (e.g. svchost.exe, System, lsass.exe, services.exe). Under NO circumstances terminate this process!
+                # We must NEVER kill system processes. Safely remove only the dangling postmaster.pid lock file.
+                Write-PreflightLog "PID $recordedPid belongs to unrelated/system process '$($activeProc.ProcessName)' (recycled PID, not postgres.exe). DO NOT kill this process! Safely removing stale postmaster.pid only." "WARN"
                 $isStaleLock = $true
             } else {
                 # Process is indeed postgres. Check if it points to our DataDir
@@ -246,25 +249,48 @@ if (Test-Path $pidFilePath) {
 function Test-PortListening {
     param([int]$Port)
     
-    $tcpConn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-    if ($tcpConn) {
-        return @{
-            IsListening   = $true
-            OwningProcess = $tcpConn[0].OwningProcess
+    # 1. Primary check: Get-NetTCPConnection (PowerShell 3.0+ / Windows 8+ / Server 2012+)
+    try {
+        $tcpConn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+        if ($tcpConn) {
+            $owningPid = if ($tcpConn -is [array]) { $tcpConn[0].OwningProcess } else { $tcpConn.OwningProcess }
+            return @{
+                IsListening   = $true
+                OwningProcess = $owningPid
+                Source        = "Get-NetTCPConnection"
+            }
         }
-    }
+    } catch {}
     
-    # Fallback socket check
+    # 2. Universal fallback for older Windows (Windows 7 / Server 2008 R2 / WinPE): netstat -ano
+    try {
+        $netstatLines = cmd /c "netstat -ano | findstr :$Port" 2>$null
+        if ($netstatLines) {
+            foreach ($line in ($netstatLines -split "\r?\n")) {
+                $trimmed = $line.Trim()
+                if ($trimmed -match "(?i)TCP\s+\S*:$Port\s+\S+\s+LISTENING\s+(\d+)") {
+                    return @{
+                        IsListening   = $true
+                        OwningProcess = [int]$matches[1]
+                        Source        = "netstat"
+                    }
+                }
+            }
+        }
+    } catch {}
+
+    # 3. Direct socket connect probe fallback
     try {
         $tcpClient = New-Object System.Net.Sockets.TcpClient
         $asyncResult = $tcpClient.BeginConnect("127.0.0.1", $Port, $null, $null)
-        $waitSuccess = $asyncResult.AsyncWaitHandle.WaitOne(500, $false)
+        $waitSuccess = $asyncResult.AsyncWaitHandle.WaitOne(600, $false)
         if ($waitSuccess) {
             $tcpClient.EndConnect($asyncResult)
             $tcpClient.Close()
             return @{
                 IsListening   = $true
                 OwningProcess = $null
+                Source        = "TcpClient"
             }
         }
         $tcpClient.Close()
@@ -273,6 +299,7 @@ function Test-PortListening {
     return @{
         IsListening   = $false
         OwningProcess = $null
+        Source        = "None"
     }
 }
 
@@ -394,12 +421,7 @@ ATTACHMENT_STORAGE_PATH=$env:ProgramData\DenteCRM\data\storage\attachments
 
     foreach ($line in $lines) {
         if ($line -match "^DATABASE_URL=") {
-            # Replace host:port
-            $newLine = [System.Text.RegularExpressions.Regex]::Replace(
-                $line,
-                "@127\.0\.0\.1:\d+",
-                "@127.0.0.1:$Port"
-            )
+            $newLine = [System.Text.RegularExpressions.Regex]::Replace($line, "(@[a-zA-Z0-9_\.\-]+):(\d+)", "`${1}:$Port")
             $newLines += $newLine
             $updatedDbUrl = $true
         } elseif ($line -match "^POSTGRES_PORT=") {
@@ -413,16 +435,13 @@ ATTACHMENT_STORAGE_PATH=$env:ProgramData\DenteCRM\data\storage\attachments
         }
     }
 
-    if (-not $updatedPort) {
-        $newLines += "POSTGRES_PORT=$Port"
-    }
-    if (-not $updatedPgPort) {
-        $newLines += "PGPORT=$Port"
-    }
+    if (-not $updatedDbUrl) { $newLines += "DATABASE_URL=postgres://dental:dental@127.0.0.1:$Port/dental_crm" }
+    if (-not $updatedPort) { $newLines += "POSTGRES_PORT=$Port" }
+    if (-not $updatedPgPort) { $newLines += "PGPORT=$Port" }
 
     $finalContent = ($newLines -join "`r`n") + "`r`n"
     [System.IO.File]::WriteAllText($Path, $finalContent, [System.Text.Encoding]::UTF8)
-    Write-PreflightLog "Synchronized dente.env: DATABASE_URL pointing to 127.0.0.1:$Port" "INFO"
+    Write-PreflightLog "Synchronized dente.env: DATABASE_URL pointing to 127.0.0.1:$Port (PGPORT=$Port)" "INFO"
 }
 
 Sync-PostgresConf -ConfigDir $DataDir -Port $activePort

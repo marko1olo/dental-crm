@@ -65,11 +65,13 @@ Write-NetLog "=== Initializing DENTE Dental CRM LAN & Firewall Configuration ===
 
 # Verify elevated privileges
 $currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
-$principal = New-Object Security.Principal.WindowsPrincipal($currentIdentity)
+$principal = [Security.Principal.WindowsPrincipal]$currentIdentity
 $isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
 if (-not $isAdmin) {
-    Write-NetLog "Elevation required! This script must be executed as Administrator." "ERROR"
+    Write-NetLog "ОШИБКА: Требуются права Администратора!" "ERROR"
+    Write-NetLog "Скрипт настройки сети DENTE CRM должен быть запущен с повышенными привилегиями." "ERROR"
+    Write-NetLog "Пожалуйста, запустите PowerShell от имени Администратора (щелчок правой кнопкой мыши -> 'Запуск от имени администратора' / 'Run as Administrator') и повторите попытку." "ERROR"
     exit 1
 }
 
@@ -79,51 +81,71 @@ if (-not $isAdmin) {
 if (-not $SkipNetworkProfileSwitch) {
     Write-NetLog "Auditing network adapter connection profiles..."
     try {
-        $profiles = Get-NetConnectionProfile -ErrorAction SilentlyContinue
-        if ($profiles) {
-            foreach ($profile in $profiles) {
-                $name = $profile.Name
-                $idx = $profile.InterfaceIndex
-                $category = $profile.NetworkCategory
-                $ipv4 = $profile.IPv4Connectivity
+        $hasNetProfileCmdlets = $false
+        try {
+            if (Get-Command -Name "Get-NetConnectionProfile" -ErrorAction SilentlyContinue) {
+                $hasNetProfileCmdlets = $true
+            }
+        } catch {}
 
-                Write-NetLog "Adapter '$name' (Interface #$idx): Current Category = $category, IPv4 = $ipv4"
+        if ($hasNetProfileCmdlets) {
+            $profiles = Get-NetConnectionProfile -ErrorAction SilentlyContinue
+            if ($profiles) {
+                foreach ($profile in $profiles) {
+                    $name = $profile.Name
+                    $idx = $profile.InterfaceIndex
+                    $category = $profile.NetworkCategory
+                    $ipv4 = $profile.IPv4Connectivity
 
-                if ($category -eq "Public") {
-                    Write-NetLog "Adapter '$name' is set to 'Public' category. Windows Firewall blocks clinic LAN access in Public mode!" "WARN"
-                    Write-NetLog "Switching adapter '$name' (Interface #$idx) to 'Private'..." "INFO"
-                    
-                    try {
-                        Set-NetConnectionProfile -InterfaceIndex $idx -NetworkCategory Private -ErrorAction Stop
-                        Write-NetLog "Successfully switched adapter '$name' to Private category." "INFO"
-                    } catch {
-                        Write-NetLog "Failed to change network profile via Set-NetConnectionProfile: $($_.Exception.Message)" "WARN"
+                    Write-NetLog "Adapter '$name' (Interface #$idx): Current Category = $category, IPv4 = $ipv4"
+
+                    if ($category -eq "Public") {
+                        Write-NetLog "Adapter '$name' is set to 'Public' category. Windows Firewall blocks clinic LAN access in Public mode!" "WARN"
+                        Write-NetLog "Switching adapter '$name' (Interface #$idx) to 'Private'..." "INFO"
                         
-                        # Fallback using registry if WMI/NetConnectionProfile is restricted
                         try {
-                            $regPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Profiles"
-                            $subkeys = Get-ChildItem -Path $regPath -ErrorAction SilentlyContinue
-                            foreach ($sk in $subkeys) {
-                                $pName = (Get-ItemProperty -Path $sk.PSPath).ProfileName
-                                if ($pName -eq $name) {
-                                    Set-ItemProperty -Path $sk.PSPath -Name "Category" -Value 1 -Force
-                                    Write-NetLog "Successfully set Private category in registry for profile '$name'." "INFO"
-                                    break
-                                }
-                            }
+                            Set-NetConnectionProfile -InterfaceIndex $idx -NetworkCategory Private -ErrorAction Stop
+                            Write-NetLog "Successfully switched adapter '$name' to Private category." "INFO"
                         } catch {
-                            Write-NetLog "Registry fallback also failed: $($_.Exception.Message)" "ERROR"
+                            # Fallback for Windows 10/11 Home editions where Set-NetConnectionProfile is restricted
+                            Write-NetLog "WARNING: Windows 10/11 Home restricts Set-NetConnectionProfile: $($_.Exception.Message)" "WARN"
+                            Write-NetLog "Set-NetConnectionProfile is restricted on Windows Home edition. Attempting registry fallback..." "WARN"
+                            
+                            $regSuccess = $false
+                            try {
+                                $regPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Profiles"
+                                if (Test-Path $regPath) {
+                                    $subkeys = Get-ChildItem -Path $regPath -ErrorAction SilentlyContinue
+                                    foreach ($sk in $subkeys) {
+                                        $pName = (Get-ItemProperty -Path $sk.PSPath -ErrorAction SilentlyContinue).ProfileName
+                                        if ($pName -eq $name) {
+                                            Set-ItemProperty -Path $sk.PSPath -Name "Category" -Value 1 -Force -ErrorAction Stop
+                                            Write-NetLog "Successfully set Private category in registry for '$name'." "INFO"
+                                            $regSuccess = $true
+                                            break
+                                        }
+                                    }
+                                }
+                            } catch {
+                                Write-NetLog "Registry fallback restricted: $($_.Exception.Message)" "WARN"
+                            }
+
+                            if (-not $regSuccess) {
+                                Write-NetLog "NOTICE: Network profile '$name' remains '$category'. Firewall rules are applied to all profiles (Profile: Any). Continuing..." "WARN"
+                            }
                         }
+                    } else {
+                        Write-NetLog "Adapter '$name' is already '$category'. No change required." "INFO"
                     }
-                } else {
-                    Write-NetLog "Adapter '$name' is already '$category'. No change required." "INFO"
                 }
+            } else {
+                Write-NetLog "No active network connection profiles found via Get-NetConnectionProfile." "WARN"
             }
         } else {
-            Write-NetLog "No active network connection profiles found via Get-NetConnectionProfile." "WARN"
+            Write-NetLog "Get-NetConnectionProfile cmdlet not available. Proceeding with firewall setup." "WARN"
         }
     } catch {
-        Write-NetLog "Error during network profile audit: $($_.Exception.Message)" "WARN"
+        Write-NetLog "WARNING (Windows Home / Network stack restriction): Network profile audit failed: $($_.Exception.Message). Continuing firewall setup..." "WARN"
     }
 } else {
     Write-NetLog "Skipping network profile switch as requested (-SkipNetworkProfileSwitch)." "INFO"
