@@ -6,6 +6,7 @@ import {
 import { withTenantCtx } from "../db/rls.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { TelephonyGatewayService } from "../services/telephony/telephonyGatewayService.js";
+import { UUID_REGEX } from "../services/telephony/telephonySecurity.js";
 
 export const telephonySipRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
@@ -162,8 +163,16 @@ export const telephonySipRoutes: FastifyPluginAsync = async (
 		request: FastifyRequest<{ Params: { organizationId?: string } }>,
 		reply: FastifyReply,
 	) => {
+		const rawOrgId = request.params.organizationId;
+		if (rawOrgId && !UUID_REGEX.test(rawOrgId)) {
+			return reply.status(400).send({
+				error: "InvalidOrganizationId",
+				message: "organizationId must be a valid UUID format",
+			});
+		}
+
 		const orgId =
-			request.params.organizationId ||
+			rawOrgId ||
 			(await requireResolvedOrganizationId(
 				request,
 				reply,

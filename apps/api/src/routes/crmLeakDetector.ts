@@ -37,6 +37,7 @@ import {
 	users,
 } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { wsBroker } from "../services/websocketBroker.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -370,6 +371,20 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 				.where(eq(crmLeakDetectorLeads.id, id))
 				.returning();
 
+			if (!updated) {
+				return reply.code(500).send({ error: "LeadUpdateFailed", message: "Не удалось обновить статус лида" });
+			}
+
+			wsBroker.broadcastToOrganization(orgId, {
+				type: "CRM_LEAK_LEAD_UPDATED",
+				payload: {
+					leadId: updated.id,
+					status: updated.leadStatus,
+					assignedAdminUserId: updated.assignedAdminUserId,
+					assignedAdminName: updated.assignedAdminName,
+				},
+			});
+
 			return reply.send({ success: true, lead: updated });
 		});
 	});
@@ -411,6 +426,20 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 				.where(eq(crmLeakDetectorLeads.id, id))
 				.returning();
 
+			if (!updated) {
+				return reply.code(500).send({ error: "LeadUpdateFailed", message: "Не удалось обновить статус лида" });
+			}
+
+			wsBroker.broadcastToOrganization(orgId, {
+				type: "CRM_LEAK_LEAD_UPDATED",
+				payload: {
+					leadId: updated.id,
+					status: updated.leadStatus,
+					contactAttemptsCount: updated.contactAttemptsCount,
+					lastContactChannel: updated.lastContactChannel,
+				},
+			});
+
 			return reply.send({ success: true, lead: updated });
 		});
 	});
@@ -449,6 +478,19 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 				.where(eq(crmLeakDetectorLeads.id, id))
 				.returning();
 
+			if (!updated) {
+				return reply.code(500).send({ error: "LeadUpdateFailed", message: "Не удалось обновить статус лида" });
+			}
+
+			wsBroker.broadcastToOrganization(orgId, {
+				type: "CRM_LEAK_LEAD_UPDATED",
+				payload: {
+					leadId: updated.id,
+					status: updated.leadStatus,
+					declineReason: updated.declineReason,
+				},
+			});
+
 			return reply.send({ success: true, lead: updated });
 		});
 	});
@@ -480,6 +522,10 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 		const { id } = req.params as { id: string };
 
 		return withTenantCtx(orgId, async (tx) => {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext('crm:leak:task:' || ${orgId} || ':' || ${id}));`,
+			);
+
 			const [lead] = await tx
 				.select()
 				.from(crmLeakDetectorLeads)
@@ -502,20 +548,52 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 				.where(eq(crmLeakDetectorLeads.id, id))
 				.returning();
 
+			if (!updatedLead) {
+				return reply.code(500).send({ error: "LeadUpdateFailed", message: "Не удалось обновить статус лида" });
+			}
+
 			let createdTicket: unknown = null;
 			if (assignedToId) {
 				try {
-					const { createPatientTaskTicketInDb } = await import("../db/patientTaskTicketsQuery.js");
-					createdTicket = await createPatientTaskTicketInDb(orgId, lead.patientId, {
-						title: `Перезвонить: реактивация (не был ${lead.daysSinceLastVisit} дн.)`,
-						description: `Клинический риск: ${lead.clinicalRiskReason || "Угасание регулярной гигиены"}.${lead.hasUncompletedPlan ? ` Брошенный план: ${lead.uncompletedPlanSumRub} ₽.` : ""}`,
-						assignedToId,
-						priority: lead.hasUncompletedPlan || lead.daysSinceLastVisit > 270 ? "high" : "normal",
-					});
+					const { patientTaskTickets } = await import("../db/schema.js");
+					const taskTitle = `Перезвонить: реактивация (не был ${lead.daysSinceLastVisit} дн.)`;
+					const [existingTicket] = await tx
+						.select()
+						.from(patientTaskTickets)
+						.where(
+							and(
+								eq(patientTaskTickets.organizationId, orgId),
+								eq(patientTaskTickets.patientId, lead.patientId),
+								eq(patientTaskTickets.title, taskTitle),
+							),
+						)
+						.limit(1);
+
+					if (existingTicket) {
+						createdTicket = existingTicket;
+					} else {
+						const { createPatientTaskTicketInDb } = await import("../db/patientTaskTicketsQuery.js");
+						createdTicket = await createPatientTaskTicketInDb(orgId, lead.patientId, {
+							title: taskTitle,
+							description: `Клинический риск: ${lead.clinicalRiskReason || "Угасание регулярной гигиены"}.${lead.hasUncompletedPlan ? ` Брошенный план: ${lead.uncompletedPlanSumRub} ₽.` : ""}`,
+							assignedToId,
+							priority: lead.hasUncompletedPlan || lead.daysSinceLastVisit > 270 ? "high" : "normal",
+						});
+					}
 				} catch (ticketErr) {
 					req.log.warn({ ticketErr }, "[CrmLeakDetector] Could not create task ticket, lead updated anyway");
 				}
 			}
+
+			wsBroker.broadcastToOrganization(orgId, {
+				type: "CRM_LEAK_LEAD_UPDATED",
+				payload: {
+					leadId: updatedLead.id,
+					status: updatedLead.leadStatus,
+					assignedAdminUserId: updatedLead.assignedAdminUserId,
+					assignedAdminName: updatedLead.assignedAdminName,
+				},
+			});
 
 			return reply.send({
 				success: true,

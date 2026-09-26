@@ -48,6 +48,12 @@ export function useWebsocket(url: string) {
 		if (ws.current?.readyState === WebSocket.OPEN) return;
 		if (ws.current?.readyState === WebSocket.CONNECTING) return;
 
+		// Cancel any pending reconnect timers before initiating new connection
+		if (reconnectTimeout.current) {
+			clearTimeout(reconnectTimeout.current);
+			reconnectTimeout.current = null;
+		}
+
 		// Полная очистка предыдущего сокета (включая состояние CLOSING) перед созданием нового
 		if (ws.current) {
 			ws.current.onopen = null;

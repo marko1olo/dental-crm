@@ -54,6 +54,7 @@ export function useSoundNotifications({
 			import.meta as unknown as { env?: Record<string, string> }
 		).env?.VITE_WS_URL;
 		if (configured) return configured;
+		if (typeof window === "undefined") return "";
 		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 		return `${protocol}//${window.location.host}/api/ws/schedule`;
 	})();

@@ -239,4 +239,30 @@ export const wsBroker = {
 			}
 		}
 	},
+	removeClient(ws: WebSocket): boolean {
+		let removed = false;
+		for (const client of clients) {
+			if (client.ws === ws) {
+				clients.delete(client);
+				removed = true;
+			}
+		}
+		return removed;
+	},
+	getClientCount(): number {
+		return clients.size;
+	},
+	pruneDeadClients(): number {
+		let count = 0;
+		for (const client of clients) {
+			if (client.ws.readyState !== 1) {
+				clients.delete(client);
+				count++;
+			}
+		}
+		return count;
+	},
+	clear(): void {
+		clients.clear();
+	},
 };
