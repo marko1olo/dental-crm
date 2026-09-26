@@ -629,18 +629,23 @@ export function usePatientLogic({
 			return null;
 		}
 		const storeState = usePatientStore.getState();
-		const fullName = (storeState.newPatientName || "").trim();
+		const domName = typeof document !== "undefined" ? (document.getElementById("patient-create-full-name") as HTMLInputElement | null)?.value?.trim() : "";
+		const fullName = (storeState.newPatientName || domName || "").trim();
 		if (!fullName) {
 			setError("Укажите ФИО пациента перед созданием карточки.");
 			return null;
 		}
+		const domPhone = typeof document !== "undefined" ? (document.getElementById("patient-create-phone") as HTMLInputElement | null)?.value?.trim() : "";
+		const domBirth = typeof document !== "undefined" ? (document.getElementById("patient-create-birth-date") as HTMLInputElement | null)?.value?.trim() : "";
+		const phone = nullablePatientDraftValue(storeState.newPatientPhone || domPhone);
+		const birthDate = nullablePatientDraftValue(storeState.newPatientBirthDate || domBirth);
 		const isAnon =
 			(storeState.patientAdministrativeProfileDraft.isAnonymous ??
 				patientAdministrativeProfileDraft.isAnonymous) === true;
 		const payload = {
 			fullName,
-			phone: nullablePatientDraftValue(storeState.newPatientPhone),
-			birthDate: nullablePatientDraftValue(storeState.newPatientBirthDate),
+			phone,
+			birthDate,
 			isAnonymous: isAnon,
 			anonymousCode: isAnon
 				? storeState.patientAdministrativeProfileDraft.anonymousCode ||

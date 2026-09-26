@@ -1,4 +1,11 @@
 import { fetchWithHandling } from "../../utils/networkUtils";
+import { useImagingStore } from "../../store/imagingStore";
+import { scanBrowserFileList } from "../../utils/browserImagingFolderScan";
+import {
+	createBrowserImagingScanRuntime,
+	browserImagingScanProgressFromStats,
+	isBrowserImagingScanAbortError,
+} from "../../utils/browserScanUtils";
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export function useImagingQueries(options?: { auth?: any }) {
 	const auth = options?.auth;
@@ -131,8 +138,54 @@ export function useImagingQueries(options?: { auth?: any }) {
 			}),
 		});
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const handleBrowserDirectoryInputChange = async (_files: any) => {};
+	const handleBrowserDirectoryInputChange = async (
+		fileList: FileList | null,
+	) => {
+		if (!fileList || fileList.length === 0) return;
+		const store = useImagingStore.getState();
+		const controller = new AbortController();
+		const startedAt = new Date().toISOString();
+		const runtime = createBrowserImagingScanRuntime(startedAt);
+		store.setIsBrowserImagingFolderPicking(true);
+		store.setBrowserImagingScanProgress(
+			browserImagingScanProgressFromStats(
+				{
+					rootName: "Выбранные файлы браузера",
+					sourceKind: "browser_file_input",
+					scannedFiles: 0,
+					scannedFolders: 0,
+					dicomLikeFiles: 0,
+					archiveFiles: 0,
+					modelFiles: 0,
+					imageFiles: 0,
+					totalBytes: 0,
+					warnings: [],
+				},
+				runtime,
+				"scanning",
+				"проверка выбранных файлов",
+			),
+		);
+		try {
+			const preview = await scanBrowserFileList(fileList, {
+				signal: controller.signal,
+				startedAt,
+				onProgress: (progress) => store.setBrowserImagingScanProgress(progress),
+			});
+			if (!controller.signal.aborted) {
+				store.setBrowserPickedImagingFolder(preview);
+			}
+		} catch (scanError) {
+			if (!isBrowserImagingScanAbortError(scanError)) {
+				console.error(
+					"[handleBrowserDirectoryInputChange] scan error:",
+					scanError,
+				);
+			}
+		} finally {
+			store.setIsBrowserImagingFolderPicking(false);
+		}
+	};
 	const organizeLocalImagingSources = async () => {
 		return fetchWithHandling("/api/imaging/local-organizer/scan-preview", {
 			method: "POST",

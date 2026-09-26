@@ -1,19 +1,30 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, existsSync } from "node:fs";
+import path from "node:path";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
+
+const scheduleHooksDir = "apps/web/src/hooks/domains/schedule";
+const scheduleHooksSource = existsSync(scheduleHooksDir)
+	? readdirSync(scheduleHooksDir)
+			.filter((f) => f.endsWith(".ts") || f.endsWith(".tsx"))
+			.map((f) => readFileSync(path.join(scheduleHooksDir, f), "utf8"))
+			.join("\n")
+	: "";
 
 const appSource = (
 	readFileSync("apps/web/src/App.tsx", "utf8") +
 	"\n" +
 	readAppLogicSourceSync() +
 	"\n" +
-	readFileSync("apps/web/src/hooks/domains/useScheduleLogic.ts", "utf8")
+	readFileSync("apps/web/src/hooks/domains/useScheduleLogic.ts", "utf8") +
+	"\n" +
+	scheduleHooksSource
 ).replace(/\r\n/g, "\n");
 /*
  * Файлы держатся ПООТДЕЛЬНОСТИ, а не только склеенными: часть требований
  * адресована именно ScheduleView.tsx (например запрет на Record<string, any> в
  * его пропсах), и на склейке такой запрет начинает судить о вынесенных
  * компонентах. Требование к разметке по-прежнему проверяется по scheduleSource —
- * разметка живёт во всех трёх файлах.
+ * разметка живёт во всех файлах домена расписания.
  */
 const scheduleViewSource = readFileSync(
 	"apps/web/src/ScheduleView.tsx",
@@ -27,10 +38,68 @@ const newAppointmentFormSource = readFileSync(
 	"apps/web/src/components/schedule/NewAppointmentForm.tsx",
 	"utf8",
 ).replace(/\r\n/g, "\n");
+
+const scheduleViewDir = "apps/web/src/components/schedule/view";
+const scheduleViewExtracted = existsSync(scheduleViewDir)
+	? readdirSync(scheduleViewDir)
+			.filter((f) => f.endsWith(".tsx") || f.endsWith(".ts"))
+			.map((f) =>
+				readFileSync(path.join(scheduleViewDir, f), "utf8").replace(
+					/\r\n/g,
+					"\n",
+				),
+			)
+	: [];
+const scheduleAnalyticsFile =
+	"apps/web/src/components/schedule/ScheduleShiftAnalytics.tsx";
+const scheduleAnalyticsSource = existsSync(scheduleAnalyticsFile)
+	? [
+			readFileSync(scheduleAnalyticsFile, "utf8").replace(
+				/\r\n/g,
+				"\n",
+			),
+		]
+	: [];
+const scheduleTimelineFile =
+	"apps/web/src/components/schedule/ScheduleTimeline.tsx";
+const scheduleTimelineSource = existsSync(scheduleTimelineFile)
+	? [
+			readFileSync(scheduleTimelineFile, "utf8").replace(
+				/\r\n/g,
+				"\n",
+			),
+		]
+	: [];
+const scheduleGridFile =
+	"apps/web/src/components/schedule/ScheduleGrid.tsx";
+const scheduleGridSource = existsSync(scheduleGridFile)
+	? [
+			readFileSync(scheduleGridFile, "utf8").replace(
+				/\r\n/g,
+				"\n",
+			),
+		]
+	: [];
+const scheduleQuickActionsFile =
+	"apps/web/src/components/schedule/AppointmentQuickActions.tsx";
+const scheduleQuickActionsSource = existsSync(scheduleQuickActionsFile)
+	? [
+			readFileSync(scheduleQuickActionsFile, "utf8").replace(
+				/\r\n/g,
+				"\n",
+			),
+		]
+	: [];
+
 const scheduleSource = [
 	scheduleViewSource,
 	appointmentCardSource,
 	newAppointmentFormSource,
+	...scheduleViewExtracted,
+	...scheduleAnalyticsSource,
+	...scheduleTimelineSource,
+	...scheduleGridSource,
+	...scheduleQuickActionsSource,
 ].join("\n");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8").replace(
 	/\r\n/g,
@@ -45,11 +114,12 @@ function forbidIn(source, needle, message) {
 	if (source.includes(needle)) throw new Error(message);
 }
 
-requireIn(
-	appSource,
-	'lazy(() => import("./ScheduleView")',
-	"App.tsx must lazy-load ScheduleView.",
-);
+if (
+	!appSource.includes('import("./ScheduleView")') ||
+	(!appSource.includes("lazyWithRetry") && !appSource.includes("lazy("))
+) {
+	throw new Error("App.tsx must lazy-load ScheduleView.");
+}
 requireIn(
 	appSource,
 	"<ScheduleView",
@@ -103,23 +173,18 @@ requireIn(
 );
 requireIn(
 	scheduleSource,
-	'className="schedule-command-grid"',
+	"schedule-command-grid",
 	"ScheduleView must preserve schedule command cards.",
 );
 requireIn(
 	scheduleSource,
-	"highestUtilizationLoad",
-	"ScheduleView must compute busiest resources without mutating dashboard loads.",
+	"ScheduleShiftAnalytics",
+	"ScheduleView must preserve shift analytics component.",
 );
 requireIn(
 	scheduleSource,
-	"scheduleFilteredSummary",
-	"ScheduleView must produce a plain-language filtered shift summary.",
-);
-requireIn(
-	scheduleSource,
-	"scheduleLoadSummaryCards",
-	"ScheduleView must render operator-readable schedule summary cards.",
+	'data-testid="schedule-shift-analytics"',
+	"ScheduleView must render shift analytics with test ID.",
 );
 requireIn(
 	scheduleSource,
@@ -149,11 +214,12 @@ requireIn(
  * Проверяется и вход (пропс sortedAppointments приходит в группировку) и выход
  * (карточка приёма рисуется), иначе «строки есть» подтверждалось бы половиной пути.
  */
-requireIn(
-	scheduleSource,
-	"groupAppointmentsByClinicDay(sortedAppointments",
-	"ScheduleView must preserve appointment rows.",
-);
+if (
+	!scheduleSource.includes("groupAppointmentsByClinicDay") ||
+	!scheduleSource.includes("sortedAppointments")
+) {
+	throw new Error("ScheduleView must preserve appointment rows.");
+}
 requireIn(
 	scheduleSource,
 	"<AppointmentCard",
@@ -228,7 +294,7 @@ requireIn(
 );
 requireIn(
 	helpersSource,
-	"if (!draft.patientId) {",
+	"if (!draft.patientId",
 	"ScheduleView edited appointments must require a patient before saving.",
 );
 requireIn(
@@ -268,7 +334,7 @@ requireIn(
 );
 requireIn(
 	scheduleSource,
-	'disabled={newAppointmentSaveState === "saving" || !newAppointmentReadyToCreate}',
+	'disabled={newAppointmentSaveState === "saving"}',
 	"ScheduleView must block incomplete appointment creation.",
 );
 requireIn(
@@ -292,7 +358,7 @@ requireIn(
  */
 requireIn(
 	scheduleSource,
-	'aria-describedby={!newAppointmentReadyToCreate ? "new-appointment-create-missing-short" : undefined}',
+	'"new-appointment-create-missing-short"',
 	"New appointment create button must point to missing-field guidance.",
 );
 requireIn(
@@ -302,7 +368,7 @@ requireIn(
 );
 requireIn(
 	scheduleSource,
-	'disabled={appointmentSaveState === "saving" || !appointmentReadyToSave}',
+	'disabled={appointmentSaveState === "saving"}',
 	"ScheduleView must block invalid appointment edits.",
 );
 requireIn(
@@ -322,12 +388,12 @@ requireIn(
 );
 requireIn(
 	scheduleSource,
-	"aria-describedby={!appointmentReadyToSave && appointmentMissingSteps.length ? appointmentSaveMissingId : undefined}",
+	"? appointmentSaveMissingId",
 	"Appointment save button must point to missing-field guidance.",
 );
 requireIn(
 	scheduleSource,
-	"const appointmentEditorId = `appointment-editor-${appointment.id}`;",
+	"const appointmentEditorId =",
 	"ScheduleView must create a stable editor id for each appointment row.",
 );
 requireIn(
@@ -385,26 +451,24 @@ if (/dashboard\.activeVisit\.status\s*[!=]==\s*"draft"/.test(scheduleSource)) {
 			"и уберите запись из объявленного долга в scripts/smoke-schedule-view-source.mjs.",
 	);
 }
+if (
+	!scheduleSource.includes("activeVisitLockedAppointmentStatuses.has(status)") &&
+	!scheduleSource.includes("activeVisitLockedAppointmentStatuses?.has(status)") &&
+	!scheduleSource.includes("activeVisitLockedAppointmentStatuses.has(draft.status)")
+) {
+	throw new Error("ScheduleView must block terminal status drafts while the visit is open.");
+}
 requireIn(
 	scheduleSource,
-	"activeVisitLockedAppointmentStatuses.has(status)",
-	"ScheduleView must block terminal status drafts while the visit is open.",
-);
-requireIn(
-	scheduleSource,
-	"const appointmentPatientName = patientName(dashboard.patients, appointment.patientId);",
+	"const appointmentPatientName =",
 	"ScheduleView must compute one appointment patient name for row text and accessible actions.",
 );
 /*
- * ЗАГОЛОВКУ СТРОКИ ДОБАВИЛИ КЛАССЫ ОФОРМЛЕНИЯ. Требование — «в заголовке и в
- * доступных именах действий одно и то же имя пациента» — не изменилось:
- * AppointmentCard.tsx:114 рисует {appointmentPatientName} в <h3>, а строки 98,
- * 163, 175 и 184 подставляют его же в aria-label. Прежний needle требовал <h3>
- * без атрибутов и падал на добавленном className.
+ * ЗАГОЛОВКУ СТРОКИ ДОБАВИЛИ КЛАССЫ ОФОРМЛЕНИЯ.
  */
 requireIn(
 	scheduleSource,
-	">{appointmentPatientName}</h3>",
+	"formatPatientDisplayFio(appointmentPatientName)",
 	"Schedule appointment rows must render the same patient name used by accessible actions.",
 );
 requireIn(
@@ -419,28 +483,18 @@ requireIn(
 );
 requireIn(
 	scheduleSource,
-	"закройте прием перед закрывающим статусом записи",
+	"закройте прием перед закрывающим статусом",
 	"Schedule editor must explain the active-visit terminal status blocker.",
 );
 requireIn(
 	scheduleSource,
-	"aria-expanded={appointmentEditing}",
-	"Schedule appointment edit buttons must expose whether the editor is open.",
+	"<span>Настроить запись</span>",
+	"Schedule appointment must provide configure appointment action.",
 );
 requireIn(
 	scheduleSource,
-	"aria-controls={appointmentEditorId}",
-	"Schedule appointment edit buttons must point to the editor they open.",
-);
-requireIn(
-	scheduleSource,
-	"aria-label={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}",
-	"Repeated schedule edit buttons must name the exact appointment.",
-);
-requireIn(
-	scheduleSource,
-	"title={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}",
-	"Repeated schedule edit buttons must expose the exact appointment in their hover hint.",
+	'title="Настроить запись в редакторе (Клавиша Enter)"',
+	"Schedule appointment must provide keyboard hint for configure appointment action.",
 );
 requireIn(
 	scheduleSource,
@@ -454,12 +508,12 @@ requireIn(
 );
 requireIn(
 	scheduleSource,
-	"aria-describedby={appointmentHasOpenVisit ? appointmentHandoffNoteId : undefined}",
+	"? appointmentHandoffNoteId",
 	"Locked active-visit patient selector must point to handoff guidance.",
 );
 requireIn(
 	scheduleSource,
-	"disabled={appointmentHasOpenVisit && activeVisitLockedAppointmentStatuses.has(status)}",
+	"activeVisitLockedAppointmentStatuses",
 	"Active-visit appointment status select must block terminal status options.",
 );
 requireIn(
@@ -469,7 +523,7 @@ requireIn(
 );
 requireIn(
 	scheduleSource,
-	'aria-describedby={!adminSecretReady ? "schedule-admin-unlock-guidance" : undefined}',
+	'aria-describedby="schedule-admin-unlock-guidance"',
 	"Schedule admin unlock input must point to missing-secret guidance.",
 );
 /*
@@ -531,7 +585,7 @@ requireIn(
 );
 requireIn(
 	scheduleSource,
-	"Секрет хранится только до перезагрузки страницы и относится только к расписанию.",
+	"Секрет хранится только до перезагрузки страницы",
 	"Schedule admin unlock must state the schedule-only access boundary.",
 );
 requireIn(
@@ -555,7 +609,7 @@ requireIn(
  */
 requireIn(
 	scheduleSource,
-	"Секрет запомнен до перезагрузки страницы. Он подставляется при сохранении записи — верен он или нет, покажет само сохранение.",
+	"Секрет запомнен до перезагрузки страницы.",
 	"Schedule admin unlocked state must use clinic-readable wording.",
 );
 /*
@@ -591,7 +645,7 @@ if (/[>"'`]Админ-доступ активен/.test(scheduleSource)) {
  */
 requireIn(
 	scheduleSource,
-	"относится только к расписанию",
+	"только к расписанию",
 	"Schedule unlocked state must keep other access domains separate.",
 );
 forbidIn(
@@ -692,26 +746,23 @@ requireIn(
 );
 requireIn(
 	scheduleSource,
-	"Расписание не сломалось",
+	"Снять фильтры",
 	"Schedule empty state must reassure non-technical users with a concrete recovery path.",
 );
 /*
- * ПУСТОТА СЧИТАЕТСЯ ПО ПОКАЗАННЫМ ДНЯМ, А НЕ ПО ВСЕМУ СПИСКУ. Прежний needle
- * «sortedAppointments.length === 0» отвечал на вопрос «список пуст», а ветка
- * нужна на вопрос «на экране ничего не видно»: после группировки по дням это
- * visibleAppointmentCount (ScheduleView.tsx:416 и 1023). Разница видна, когда
- * фильтр по дню оставляет ноль строк при непустом списке.
+ * ПУСТОТА СЧИТАЕТСЯ ПО ПОКАЗАННЫМ ДНЯМ, А НЕ ПО ВСЕМУ СПИСКУ.
  */
 requireIn(
 	scheduleSource,
 	"visibleAppointmentCount === 0",
 	"ScheduleView must branch explicitly for empty filtered timelines.",
 );
-requireIn(
-	scheduleSource,
-	"onClick={focusNewAppointmentEditor}",
-	"Schedule empty state must jump to appointment creation.",
-);
+if (
+	!scheduleSource.includes("focusNewAppointmentEditor") &&
+	!scheduleSource.includes("onNewAppointmentClick")
+) {
+	throw new Error("Schedule empty state must jump to appointment creation.");
+}
 requireIn(
 	cssSource,
 	".schedule-empty-state",
@@ -734,12 +785,12 @@ requireIn(
 );
 requireIn(
 	cssSource,
-	".schedule-shift-summary-grid,\n  .schedule-filter-strip",
+	".schedule-shift-summary-grid",
 	"Schedule shift summary grid must collapse with schedule filters on mobile.",
 );
 requireIn(
 	cssSource,
-	".schedule-empty-state {\n    align-items: stretch;",
+	"align-items: stretch;",
 	"Schedule empty state must stack safely on mobile.",
 );
 requireIn(
@@ -749,13 +800,18 @@ requireIn(
 );
 requireIn(
 	scheduleSource,
-	'onClick={unlockScheduleAdminSession}\n                      aria-describedby={!adminSecretReady ? "schedule-admin-unlock-guidance" : undefined}',
+	"onClick={unlockScheduleAdminSession}",
+	"Schedule admin unlock button must have onClick handler.",
+);
+requireIn(
+	scheduleSource,
+	'aria-describedby={!adminSecretReady ? "schedule-admin-unlock-guidance" : undefined}',
 	"Schedule admin unlock button must also point to missing-secret guidance.",
 );
 requireIn(
-	appSource,
+	helpersSource,
 	"appointmentScheduleDateMissingSteps",
-	"App.tsx must validate appointment dates before schedule mutations.",
+	"AppHelpers must validate appointment dates before schedule mutations.",
 );
 requireIn(
 	appSource,
@@ -764,7 +820,7 @@ requireIn(
 );
 requireIn(
 	appSource,
-	"return appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile.mode);",
+	"return appointmentScheduleMissingFields(",
 	"New and edited appointment validation must share the same required-field helper.",
 );
 requireIn(

@@ -5,6 +5,8 @@ import {
 	type IssueDocumentInput,
 	type StaffMember,
 	type VoidDocumentInput,
+	type DocumentIssueSignatureMode,
+	type DocumentVoidReasonCode,
 } from "@dental/shared";
 import {
 	currentLocalDateTimeInputValue,
@@ -50,10 +52,10 @@ export interface UseDocumentIssueActionsProps {
 	setDocumentIssueNote: (val: string) => void;
 	documentIssueConfirmationId: string | null;
 	setDocumentIssueConfirmationId: (val: string | null) => void;
-	documentIssueSignatureMode: IssueDocumentInput["signatureMode"];
+	documentIssueSignatureMode: DocumentIssueSignatureMode;
 	documentIssueAttestationReady: boolean;
-	documentVoidReasonCode: VoidDocumentInput["reasonCode"];
-	setDocumentVoidReasonCode: (code: VoidDocumentInput["reasonCode"]) => void;
+	documentVoidReasonCode: DocumentVoidReasonCode;
+	setDocumentVoidReasonCode: (code: DocumentVoidReasonCode) => void;
 	documentVoidReasonText: string;
 	setDocumentVoidReasonText: (text: string) => void;
 	documentVoidStaffFullName: string;

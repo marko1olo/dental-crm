@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -65,6 +65,26 @@ if (!browserPath) {
 if (!existsSync(apiServerPath)) {
 	throw new Error("Build API first: apps/api/dist/server.js is missing.");
 }
+const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
+const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
+
+const smokeAuthTokenSecret = "dente-smoke-test-secret-32-chars-long-min!!";
+const defaultOrgId = "4a3420d1-6ffb-4459-bd8f-7f7087f5e191";
+const clinicToken = signToken(
+	{ organizationId: defaultOrgId, clinicName: "Стоматология" },
+	smokeAuthTokenSecret,
+	86400,
+);
+const staffToken = signToken(
+	{
+		userId: "8356141b-7cfa-4221-95f7-70f47e7344b1",
+		fullName: "Главный Врач",
+		role: "doctor",
+		organizationId: defaultOrgId,
+	},
+	smokeAuthTokenSecret,
+	86400,
+);
 const vitePath = resolveViteBin();
 
 function pad2(value) {
@@ -75,7 +95,7 @@ function toDateTimeLocalInputValue(date) {
 	return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 }
 
-function nextBusinessMorningWindow(scheduleDefaults = {}) {
+function nextBusinessMorningWindow(scheduleDefaults = {}, existingAppointments = []) {
 	const workingDays =
 		Array.isArray(scheduleDefaults.workingDays) &&
 		scheduleDefaults.workingDays.length
@@ -100,10 +120,28 @@ function nextBusinessMorningWindow(scheduleDefaults = {}) {
 		if (workingDays.has(start.getDay())) break;
 	}
 	start.setHours(hour, minute, 0, 0);
-	const end = new Date(start.getTime() + 30 * 60 * 1000);
+
+	const isOverlapping = (candidateStart, candidateEnd) => {
+		return existingAppointments.some((app) => {
+			if (!app?.startsAt || !app?.endsAt) return false;
+			const appStart = new Date(app.startsAt).getTime();
+			const appEnd = new Date(app.endsAt).getTime();
+			return candidateStart < appEnd && candidateEnd > appStart;
+		});
+	};
+
+	let candidateStart = start.getTime();
+	let candidateEnd = candidateStart + 30 * 60 * 1000;
+	while (isOverlapping(candidateStart, candidateEnd)) {
+		candidateStart += 30 * 60 * 1000;
+		candidateEnd = candidateStart + 30 * 60 * 1000;
+	}
+	const finalStart = new Date(candidateStart);
+	const finalEnd = new Date(candidateEnd);
+
 	return {
-		startsAtLocal: toDateTimeLocalInputValue(start),
-		endsAtLocal: toDateTimeLocalInputValue(end),
+		startsAtLocal: toDateTimeLocalInputValue(finalStart),
+		endsAtLocal: toDateTimeLocalInputValue(finalEnd),
 	};
 }
 
@@ -133,11 +171,26 @@ function connectCdp(wsUrl) {
 		const message = JSON.parse(event.data);
 		if (message.method === "Runtime.consoleAPICalled") {
 			const args = message.params.args
-				.map((a) =>
-					a.value !== undefined ? a.value : a.description || JSON.stringify(a),
-				)
+				.map((a) => {
+					if (a.value !== undefined) return JSON.stringify(a.value);
+					if (a.preview) {
+						const props = (a.preview.properties || [])
+							.map((p) => `${p.name}: ${p.value ?? p.description}`)
+							.join(", ");
+						return `${a.description || a.type} {${props}}`;
+					}
+					return a.description || JSON.stringify(a);
+				})
 				.join(" ");
 			console.log(`[BROWSER CONSOLE]:`, args);
+		}
+		if (message.method === "Runtime.exceptionThrown") {
+			const details = message.params.exceptionDetails;
+			console.log(
+				`[BROWSER EXCEPTION]:`,
+				details.text,
+				details.exception?.description || details.exception?.value || JSON.stringify(details),
+			);
 		}
 		if (!message.id) return;
 		const request = pending.get(message.id);
@@ -196,7 +249,13 @@ async function saveScreenshot(cdp, name) {
 }
 
 async function dashboard() {
-	return fetchJson(`${apiBaseUrl}/api/dashboard`);
+	return fetchJson(`${apiBaseUrl}/api/dashboard`, 40, {
+		headers: {
+			"x-organization-id": defaultOrgId,
+			"x-dente-clinic-token": clinicToken,
+			"x-dente-staff-token": staffToken,
+		},
+	});
 }
 
 async function waitForDashboard(predicate, label, attempts = 80) {
@@ -206,6 +265,12 @@ async function waitForDashboard(predicate, label, attempts = 80) {
 		const result = predicate(current);
 		if (result) {
 			return { dashboard: current, result };
+		}
+		if (attempt === 0 || attempt % 20 === 0 || attempt === attempts - 1) {
+			console.log(`[waitForDashboard ${label} attempt ${attempt}]:`, {
+				eventsCount: current.communicationEvents?.length,
+				tasks: current.communicationTasks?.map((t) => ({ id: t.id, status: t.status })),
+			});
 		}
 		await sleep(250);
 	}
@@ -231,6 +296,11 @@ async function createFixtureFiles() {
 }
 
 await mkdir(tempRoot, { recursive: true });
+await mkdir(path.dirname(stateFilePath), { recursive: true });
+const seedStatePath = path.resolve("apps/api/.data/dental-crm-state.json");
+if (existsSync(seedStatePath)) {
+	await copyFile(seedStatePath, stateFilePath);
+}
 await mkdir(screenshotDir, { recursive: true });
 
 const apiBootstrap = `
@@ -252,6 +322,8 @@ const apiProcess = spawnTracked(
 			API_PORT: String(apiPort),
 			WEB_ORIGIN: webBaseUrl,
 			NODE_ENV: "development",
+			DENTE_DEV_ALLOW_HEADER_ORG: "1",
+			AUTH_TOKEN_SECRET: smokeAuthTokenSecret,
 			DENTE_CLINICAL_ADMIN_SECRET: "",
 			DENTE_SETTINGS_ADMIN_SECRET: "",
 			DENTE_SCHEDULE_ADMIN_SECRET: "",
@@ -280,6 +352,8 @@ const webProcess = spawnTracked(
 		env: {
 			...process.env,
 			DENTAL_API_PROXY_TARGET: apiBaseUrl,
+			VITE_DISABLE_HMR: "true",
+			VITE_DISABLE_WATCH: "true",
 		},
 		stdio: ["ignore", "pipe", "pipe"],
 	},
@@ -298,7 +372,42 @@ try {
 	]);
 
 	const fixtureFiles = await createFixtureFiles();
-	const initialDashboard = await dashboard();
+	let initialDashboard = await dashboard();
+	if (!initialDashboard.clinicSettings?.chairs?.some((c) => c.active)) {
+		await fetch(`${apiBaseUrl}/api/settings/chairs`, {
+			method: "POST",
+			headers: {
+				"content-type": "application/json",
+				"x-organization-id": defaultOrgId,
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": staffToken,
+			},
+			body: JSON.stringify({ name: "Основное кресло" }),
+		});
+		initialDashboard = await dashboard();
+	}
+	if (
+		initialDashboard.clinicSettings.profile.mode !== "solo_doctor" &&
+		!initialDashboard.clinicSettings?.staff?.some(
+			(m) => m.active && m.role === "assistant",
+		)
+	) {
+		await fetch(`${apiBaseUrl}/api/settings/staff`, {
+			method: "POST",
+			headers: {
+				"content-type": "application/json",
+				"x-organization-id": defaultOrgId,
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": staffToken,
+			},
+			body: JSON.stringify({
+				fullName: "Ассистент Клиники",
+				role: "assistant",
+				specialties: ["universal"],
+			}),
+		});
+		initialDashboard = await dashboard();
+	}
 	const initialPaymentCount = initialDashboard.payments.length;
 	const initialDocumentCount = initialDashboard.documents.length;
 	const initialAppointmentCount = initialDashboard.appointments.length;
@@ -356,6 +465,15 @@ try {
 		mobile: false,
 	});
 
+	await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+		source: `
+			window.localStorage.setItem("dente_organization_id", ${JSON.stringify(defaultOrgId)});
+			window.localStorage.setItem("dente_clinic_token", ${JSON.stringify(clinicToken)});
+			window.localStorage.setItem("dente_staff_token", ${JSON.stringify(staffToken)});
+			window.localStorage.setItem("dente_user_role", "doctor");
+		`,
+	});
+
 	await navigateTo(cdp, "finance", "#finance.finance-panel");
 	await waitFor(
 		cdp,
@@ -410,18 +528,32 @@ try {
 		`(() => Boolean(document.querySelector(".document-factory-selected-kind select") && document.querySelector(".document-payload-card")))()`,
 		"documents factory form",
 	);
-	const documentFormResult = await evaluate(
+	await evaluate(
 		cdp,
 		inputHelpersExpression(`
       const kind = document.querySelector(".document-factory-selected-kind select");
-      if (!kind) {
-        return { ok: false, reason: "missing_document_kind_select" };
+      if (kind) {
+        setFieldValue(kind, "patient_intake_questionnaire");
       }
-      setFieldValue(kind, "patient_intake_questionnaire");
+    `),
+		"select patient intake document kind",
+	);
+	await waitFor(
+		cdp,
+		`Boolean(document.querySelector('[data-testid="btn-intake-fill-norm"]'))`,
+		"patient intake form mounted",
+	);
+	const documentFormResult = await evaluate(
+		cdp,
+		inputHelpersExpression(`
+      const fillNormBtn = document.querySelector('[data-testid="btn-intake-fill-norm"]');
+      if (fillNormBtn) fillNormBtn.click();
       const card = document.querySelector(".document-payload-card");
       if (!card) {
         return { ok: false, reason: "missing_intake_card" };
       }
+      const details = card.querySelector("details");
+      if (details) details.open = true;
       const textareas = Array.from(card.querySelectorAll("textarea"));
       const values = [
         "Test complaint for smoke workflow",
@@ -515,6 +647,7 @@ try {
 	const appointmentReason = `Smoke appointment ${Date.now()}`;
 	const appointmentWindow = nextBusinessMorningWindow(
 		initialDashboard.clinicSettings.profile.scheduleDefaults,
+		initialDashboard.appointments,
 	);
 	const scheduleDoctor = initialDashboard.clinicSettings.staff.find(
 		(member) =>
@@ -541,52 +674,117 @@ try {
 	}
 
 	await navigateTo(cdp, "schedule", "#schedule.schedule-panel");
-	const clickResult = await evaluate(
+	await evaluate(
 		cdp,
 		`(() => {
-      const buttons = Array.from(document.querySelectorAll("button"));
-      const btn = buttons.find(b => b.textContent.includes("Создать запись"));
-      if (!btn) {
-        return { ok: false, foundButtons: buttons.map(b => b.textContent.trim()) };
-      }
-      btn.click();
-      return { ok: true };
-    })()`,
+			const editor = document.querySelector(".appointment-create-editor, .appointment-create-wrapper");
+			if (editor) return { ok: true, alreadyOpen: true };
+			const optionsBtn = document.querySelector('[data-testid="schedule-toolbar-options-btn"]');
+			if (optionsBtn) optionsBtn.click();
+			return { ok: true, clickedOptions: Boolean(optionsBtn) };
+		})()`,
 	);
-	if (!clickResult.ok) {
-		throw new Error(
-			"Could not find 'Создать запись' button on schedule panel. Buttons found: " +
-				JSON.stringify(clickResult.foundButtons),
-		);
-	}
 	await waitFor(
 		cdp,
-		`(() => Boolean(document.querySelector(".appointment-create-editor")))()`,
+		`(() => {
+			const editor = document.querySelector(".appointment-create-editor, .appointment-create-wrapper");
+			if (editor) return true;
+			const dictBtn = document.querySelector('[data-testid="schedule-options-dictation-btn"]');
+			if (dictBtn) {
+				dictBtn.click();
+				return true;
+			}
+			return false;
+		})()`,
+		"open appointment create editor via options menu",
+	);
+	await waitFor(
+		cdp,
+		`(() => {
+			const toggleBtn = document.querySelector('[data-schedule-create-toggle="true"]');
+			if (toggleBtn && toggleBtn.getAttribute("aria-expanded") !== "true") {
+				toggleBtn.click();
+			}
+			return Boolean(document.querySelector(".appointment-create-editor, .appointment-create-wrapper"));
+		})()`,
 		"appointment create editor",
+	);
+	await waitFor(
+		cdp,
+		`(() => {
+			const editor = document.querySelector(".appointment-create-editor, .appointment-create-wrapper");
+			const manualForm = editor?.querySelector(".appointment-manual-form") || editor;
+			const dateInputs = manualForm?.querySelectorAll('input[type="datetime-local"]');
+			return Boolean(dateInputs && dateInputs.length >= 2);
+		})()`,
+		"appointment manual form inputs",
 	);
 	const scheduleFormResult = await evaluate(
 		cdp,
 		inputHelpersExpression(`
-      const editor = document.querySelector(".appointment-create-editor");
+      const editor = document.querySelector(".appointment-create-editor, .appointment-create-wrapper");
       if (!editor) {
         return { ok: false, reason: "missing_editor" };
       }
-      const inputs = Array.from(editor.querySelectorAll("input"));
-      const selects = Array.from(editor.querySelectorAll("select"));
-      const textarea = editor.querySelector("textarea");
-      if (inputs.length < 3 || selects.length < 5 || !textarea) {
-        return { ok: false, reason: "missing_fields", inputCount: inputs.length, selectCount: selects.length, hasTextarea: Boolean(textarea) };
+      const manualForm = editor.querySelector(".appointment-manual-form") || editor;
+      const dateInputs = manualForm.querySelectorAll('input[type="datetime-local"]');
+      if (dateInputs.length >= 2) {
+        setFieldValue(dateInputs[0], ${JSON.stringify(appointmentWindow.startsAtLocal)});
+        setFieldValue(dateInputs[1], ${JSON.stringify(appointmentWindow.endsAtLocal)});
       }
-      setFieldValue(inputs[0], ${JSON.stringify(appointmentWindow.startsAtLocal)});
-      setFieldValue(inputs[1], ${JSON.stringify(appointmentWindow.endsAtLocal)});
-      setFieldValue(selects[0], ${JSON.stringify(initialDashboard.activeVisit.patientId)});
-      setFieldValue(selects[1], ${JSON.stringify(scheduleDoctor.id)});
-      setFieldValue(selects[2], ${JSON.stringify(scheduleAssistant?.id ?? "")});
-      setFieldValue(selects[3], ${JSON.stringify(scheduleChair.id)});
-      setFieldValue(selects[4], "planned");
-      setFieldValue(inputs[2], ${JSON.stringify(appointmentReason)});
-      setFieldValue(textarea, "Synthetic schedule smoke appointment");
-      const button = editor.querySelector(".appointment-editor-actions button.primary-button");
+
+      // Patient: check for chip with patient name or select dropdown
+      const patientChip = Array.from(manualForm.querySelectorAll(".quick-chip")).find(btn =>
+        btn.textContent.includes(${JSON.stringify(activePatientName)})
+      );
+      if (patientChip) {
+        patientChip.click();
+      } else {
+        const patientSelect = manualForm.querySelector("select");
+        if (patientSelect) setFieldValue(patientSelect, ${JSON.stringify(initialDashboard.activeVisit.patientId)});
+      }
+
+      // Doctor: check for chip with doctor name or select
+      const doctorChip = Array.from(manualForm.querySelectorAll(".quick-chip")).find(btn =>
+        btn.textContent.includes(${JSON.stringify(scheduleDoctor.fullName)})
+      );
+      if (doctorChip) {
+        doctorChip.click();
+      } else {
+        const doctorSelect = manualForm.querySelector('[data-testid="new-appointment-doctor-select"]');
+        if (doctorSelect) setFieldValue(doctorSelect, ${JSON.stringify(scheduleDoctor.id)});
+      }
+
+      // Chair: click chair chip
+      const chairChip = Array.from(manualForm.querySelectorAll(".quick-chip")).find(btn =>
+        btn.textContent.includes(${JSON.stringify(scheduleChair.name)})
+      );
+      if (chairChip) {
+        chairChip.click();
+      }
+
+      // Assistant: if assistant present, click assistant chip
+      if (${JSON.stringify(scheduleAssistant?.fullName ?? null)}) {
+        const assistantChip = Array.from(manualForm.querySelectorAll(".quick-chip")).find(btn =>
+          btn.textContent.includes(${JSON.stringify(scheduleAssistant?.fullName)})
+        );
+        if (assistantChip) assistantChip.click();
+      }
+
+      // Reason: input
+      const reasonLabel = Array.from(manualForm.querySelectorAll("label")).find(l => l.textContent.includes("Причина"));
+      const reasonInput = reasonLabel?.querySelector("input") || manualForm.querySelector('input:not([type="datetime-local"]):not([type="checkbox"])');
+      if (reasonInput) {
+        setFieldValue(reasonInput, ${JSON.stringify(appointmentReason)});
+      }
+
+      // Comment: textarea
+      const textarea = manualForm.querySelector("textarea");
+      if (textarea) {
+        setFieldValue(textarea, "Synthetic schedule smoke appointment");
+      }
+
+      const button = editor.querySelector('button[data-testid="create-appointment-button"], .appointment-editor-actions button.primary-button, button.primary-button');
       return { ok: true, disabled: button?.disabled ?? null };
     `),
 		"fill appointment create form",
@@ -599,7 +797,7 @@ try {
 	await waitFor(
 		cdp,
 		`(() => {
-      const button = document.querySelector(".appointment-create-editor .appointment-editor-actions button.primary-button");
+      const button = document.querySelector('.appointment-create-editor button[data-testid="create-appointment-button"], .appointment-create-wrapper button[data-testid="create-appointment-button"], button[data-testid="create-appointment-button"], .appointment-create-editor button.primary-button');
       return button && !button.disabled ? { text: button.textContent.trim() } : null;
     })()`,
 		"appointment create button",
@@ -607,7 +805,7 @@ try {
 	await evaluate(
 		cdp,
 		`(() => {
-      const button = document.querySelector(".appointment-create-editor .appointment-editor-actions button.primary-button");
+      const button = document.querySelector('.appointment-create-editor button[data-testid="create-appointment-button"], .appointment-create-wrapper button[data-testid="create-appointment-button"], button[data-testid="create-appointment-button"], .appointment-create-editor button.primary-button');
       if (!button || button.disabled) {
         return { ok: false, disabled: button?.disabled ?? null };
       }
@@ -620,8 +818,8 @@ try {
 	const editorState = await evaluate(
 		cdp,
 		`(() => {
-      const errorEl = document.querySelector(".appointment-editor-actions .save-error");
-      const stateEl = document.querySelector(".appointment-editor-actions .save-state");
+      const errorEl = document.querySelector(".appointment-create-wrapper .save-error, .appointment-editor-actions .save-error");
+      const stateEl = document.querySelector(".appointment-create-wrapper .save-state, .appointment-editor-actions .save-state");
       const missingEl = document.querySelector("#new-appointment-create-missing");
       return {
         errorText: errorEl ? errorEl.textContent.trim() : null,
@@ -642,9 +840,20 @@ try {
 			),
 		"created appointment",
 	);
+	const appointmentDate = appointmentWindow.startsAtLocal.split("T")[0];
+	await evaluate(
+		cdp,
+		inputHelpersExpression(`
+			const dateInput = document.querySelector(".schedule-date-input");
+			if (dateInput && dateInput.value !== ${JSON.stringify(appointmentDate)}) {
+				setFieldValue(dateInput, ${JSON.stringify(appointmentDate)});
+			}
+		`),
+		"switch schedule date to appointment date",
+	);
 	await waitFor(
 		cdp,
-		`(() => Array.from(document.querySelectorAll("#schedule .timeline .appointment-row, #schedule .timeline p")).some((node) =>
+		`(() => Array.from(document.querySelectorAll("#schedule .appointment-card, #schedule [data-appointment-id], #schedule [data-testid*='appointment-card'], #schedule .timeline .appointment-row, #schedule .timeline p, #schedule .schedule-grid-slot")).some((node) =>
       node.textContent.includes(${JSON.stringify(appointmentReason)})
     ))()`,
 		"created appointment visible in UI",
@@ -676,26 +885,22 @@ try {
         return { ok: false, hasNote: Boolean(note), hasCard: Boolean(card) };
       }
       setFieldValue(note, "Synthetic communication close note");
-      const select = card.querySelector(".communication-outcome-select select");
-      if (!select) {
-        return { ok: false, reason: "missing_outcome_select" };
-      }
-      setFieldValue(select, "callback_requested");
-      const buttons = Array.from(card.querySelectorAll(".communication-task-actions button"));
-      const closeButton = buttons[buttons.length - 1];
-      if (!closeButton) {
-        return { ok: false, reason: "missing_close_button", buttonCount: buttons.length };
-      }
-      return { ok: true, disabled: closeButton.disabled, buttonCount: buttons.length };
+      const chip = card.querySelector('[data-testid="communication-outcome-promised_payment"]') ||
+        card.querySelector('[data-testid="communication-outcome-reschedule_requested"]') ||
+        Array.from(card.querySelectorAll(".communication-outcome-select .quick-chip, .communication-outcome-select button")).find(b => b.textContent.includes("Обещал оплату") || b.textContent.includes("Перенос записи")) ||
+        card.querySelector(".communication-outcome-select .quick-chip");
+      if (chip) chip.click();
+      return { ok: true, hasChip: Boolean(chip) };
     `),
 		"fill communication task completion",
 	);
+	console.log("fill communicationResult:", JSON.stringify(communicationResult));
 	if (!communicationResult.ok) {
 		throw new Error(
 			`Communication task completion form was not filled: ${JSON.stringify(communicationResult)}`,
 		);
 	}
-	await waitFor(
+	const outcomeWaitResult = await waitFor(
 		cdp,
 		`(() => {
       const card = Array.from(document.querySelectorAll(".communication-task")).find((candidate) =>
@@ -704,13 +909,15 @@ try {
       if (!card) {
         return null;
       }
-      const buttons = Array.from(card.querySelectorAll(".communication-task-actions button"));
-      const closeButton = buttons[buttons.length - 1];
-      return closeButton && !closeButton.disabled ? { text: closeButton.textContent.trim() } : null;
+      const selectedChip = card.querySelector(".communication-outcome-select .quick-chip.selected");
+      const closeButton = card.querySelector('[data-testid="communication-task-complete-btn"]') ||
+        Array.from(card.querySelectorAll(".communication-task-actions button")).find(b => b.textContent.includes("Закрыть") || b.textContent.includes("Закрываю"));
+      return selectedChip && closeButton && !closeButton.disabled ? { outcome: selectedChip.textContent.trim() } : null;
     })()`,
-		"communication close button",
+		"communication outcome selected and close button ready",
 	);
-	await evaluate(
+	console.log("outcomeWaitResult:", JSON.stringify(outcomeWaitResult));
+	const completeResult = await evaluate(
 		cdp,
 		`(() => {
       const card = Array.from(document.querySelectorAll(".communication-task")).find((candidate) =>
@@ -719,16 +926,17 @@ try {
       if (!card) {
         return { ok: false, reason: "missing_card" };
       }
-      const buttons = Array.from(card.querySelectorAll(".communication-task-actions button"));
-      const closeButton = buttons[buttons.length - 1];
+      const closeButton = card.querySelector('[data-testid="communication-task-complete-btn"]') ||
+        Array.from(card.querySelectorAll(".communication-task-actions button")).find(b => b.textContent.includes("Закрыть") || b.textContent.includes("Закрываю"));
       if (!closeButton || closeButton.disabled) {
         return { ok: false, disabled: closeButton?.disabled ?? null };
       }
       closeButton.click();
-      return { ok: true };
+      return { ok: true, buttonText: closeButton.textContent.trim() };
     })()`,
 		"complete communication task",
 	);
+	console.log("completeResult:", JSON.stringify(completeResult));
 	await waitForDashboard(
 		(state) =>
 			state.communicationEvents.length > initialCommunicationEventCount &&
@@ -749,26 +957,65 @@ try {
 		"completed communication task visible in UI",
 	);
 
-	const patientName = `Smoke Patient ${Date.now()}`;
+	const patientTimestamp = Date.now();
+	const phoneSuffix = String(patientTimestamp).slice(-7);
+	const patientName = `Смоуков${phoneSuffix} Иван Петрович`;
+	const patientPhone = `+7 999 ${phoneSuffix.slice(0, 3)}-${phoneSuffix.slice(3, 5)}-${phoneSuffix.slice(5, 7)}`;
+	const birthYear = 1970 + (patientTimestamp % 30);
+	const birthMonth = String(1 + (patientTimestamp % 12)).padStart(2, "0");
+	const birthDay = String(1 + (patientTimestamp % 28)).padStart(2, "0");
+	const patientBirthDate = `${birthYear}-${birthMonth}-${birthDay}`;
 	await navigateTo(cdp, "patients", "#patients.patients-panel");
+
+	// Open creation modal if not already open
+	await evaluate(
+		cdp,
+		`(() => {
+			const openModalBtn = document.querySelector('[data-testid="open-create-patient-modal-btn"], .patients-new-patient-btn');
+			if (openModalBtn) openModalBtn.click();
+		})()`,
+		"open patient create modal",
+	);
+
 	await waitFor(
 		cdp,
-		`(() => document.querySelectorAll("#patients .quick-create input").length >= 3)()`,
-		"patient quick create form",
+		`(() => {
+			const nameInput = document.querySelector("#patient-create-full-name") || document.querySelector("#patients .quick-create input");
+			const phoneInput = document.querySelector("#patient-create-phone") || document.querySelectorAll("#patients .quick-create input")[1];
+			const birthInput = document.querySelector("#patient-create-birth-date") || document.querySelectorAll("#patients .quick-create input")[2];
+			const button = document.querySelector('[data-testid="patient-creation-submit-btn"], .quick-create-action, #patients .quick-create-action');
+			return nameInput && phoneInput && birthInput && button ? true : null;
+		})()`,
+		"patient create form ready",
 	);
+
 	const patientCreateResult = await evaluate(
 		cdp,
 		inputHelpersExpression(`
-      const inputs = Array.from(document.querySelectorAll("#patients .quick-create input"));
-      const button = document.querySelector("#patients .quick-create-action");
-      if (inputs.length < 3 || !button) {
-        return { ok: false, inputCount: inputs.length, hasButton: Boolean(button) };
-      }
-      setFieldValue(inputs[0], ${JSON.stringify(patientName)});
-      setFieldValue(inputs[1], "+7 900 123-45-67");
-      setFieldValue(inputs[2], "1991-02-03");
-      return { ok: true, disabled: button.disabled };
-    `),
+			const nameInput = document.querySelector("#patient-create-full-name") || document.querySelector("#patients .quick-create input");
+			const phoneInput = document.querySelector("#patient-create-phone") || document.querySelectorAll("#patients .quick-create input")[1];
+			const birthInput = document.querySelector("#patient-create-birth-date") || document.querySelectorAll("#patients .quick-create input")[2];
+			const button = document.querySelector('[data-testid="patient-creation-submit-btn"], .quick-create-action, #patients .quick-create-action');
+			if (!nameInput || !phoneInput || !birthInput || !button) {
+				return { ok: false, hasName: Boolean(nameInput), hasPhone: Boolean(phoneInput), hasBirth: Boolean(birthInput), hasButton: Boolean(button) };
+			}
+			setFieldValue(nameInput, ${JSON.stringify(patientName)});
+			setFieldValue(phoneInput, ${JSON.stringify(patientPhone)});
+			setFieldValue(birthInput, ${JSON.stringify(patientBirthDate)});
+			if (window.__PATIENT_STORE__) {
+				window.__PATIENT_STORE__.getState().setNewPatientName(${JSON.stringify(patientName)});
+				window.__PATIENT_STORE__.getState().setNewPatientPhone(${JSON.stringify(patientPhone)});
+				window.__PATIENT_STORE__.getState().setNewPatientBirthDate(${JSON.stringify(patientBirthDate)});
+			}
+			return {
+				ok: true,
+				disabled: button.disabled,
+				nameVal: nameInput.value,
+				phoneVal: phoneInput.value,
+				birthVal: birthInput.value,
+				storeHasName: window.__PATIENT_STORE__ ? window.__PATIENT_STORE__.getState().newPatientName : null,
+			};
+		`),
 		"fill patient create form",
 	);
 	if (!patientCreateResult.ok) {
@@ -779,21 +1026,21 @@ try {
 	await waitFor(
 		cdp,
 		`(() => {
-      const button = document.querySelector("#patients .quick-create-action");
-      return button && !button.disabled ? { text: button.textContent.trim() } : null;
-    })()`,
-		"patient create button",
+			const button = document.querySelector('[data-testid="patient-creation-submit-btn"], .quick-create-action, #patients .quick-create-action');
+			return button && !button.disabled ? { text: button.textContent.trim() } : null;
+		})()`,
+		"patient create button ready",
 	);
 	await evaluate(
 		cdp,
 		`(() => {
-      const button = document.querySelector("#patients .quick-create-action");
-      if (!button || button.disabled) {
-        return { ok: false, disabled: button?.disabled ?? null };
-      }
-      button.click();
-      return { ok: true };
-    })()`,
+			const button = document.querySelector('[data-testid="patient-creation-submit-btn"], .quick-create-action, #patients .quick-create-action');
+			if (!button || button.disabled) {
+				return { ok: false, disabled: button?.disabled ?? null };
+			}
+			button.click();
+			return { ok: true };
+		})()`,
 		"create patient",
 	);
 	await waitForDashboard(

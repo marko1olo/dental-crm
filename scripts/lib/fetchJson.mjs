@@ -1,10 +1,10 @@
 import { sleep } from "./sleep.mjs";
 
-export async function fetchJson(url, attempts = 40) {
+export async function fetchJson(url, attempts = 40, init = undefined) {
 	let lastError;
 	for (let attempt = 0; attempt < attempts; attempt += 1) {
 		try {
-			const response = await fetch(url);
+			const response = await fetch(url, init);
 			if (response.ok) return response.json();
 			lastError = new Error(`HTTP ${response.status}`);
 		} catch (error) {

@@ -373,7 +373,7 @@ export function useAppointmentMutations({
 				) ?? null;
 			const nextDraftPreferences = {
 				selectedPatientId: newAppointmentDraft.patientId || selectedPatientId,
-				selectedSpecialty,
+				selectedSpecialty: (selectedSpecialty as any) || undefined,
 				scheduleDefaultDoctorUserId: newAppointmentDraft.doctorUserId || null,
 				scheduleDefaultAssistantUserId:
 					newAppointmentDraft.assistantUserId || null,

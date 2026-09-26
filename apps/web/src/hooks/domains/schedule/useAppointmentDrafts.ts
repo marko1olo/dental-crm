@@ -115,7 +115,7 @@ export function useAppointmentDrafts({
 		}
 		return {
 			selectedPatientId,
-			selectedSpecialty,
+			selectedSpecialty: (selectedSpecialty as any) || undefined,
 			scheduleDefaultDoctorUserId,
 			scheduleDefaultAssistantUserId,
 			scheduleDefaultChairId: defaultChairId,
@@ -146,7 +146,7 @@ export function useAppointmentDrafts({
 		setNewAppointmentDraft(
 			newAppointmentDraftFromDashboard(
 				dashboard,
-				newAppointmentPreferenceDefaults(),
+				newAppointmentPreferenceDefaults() as any,
 			),
 		);
 		setNewAppointmentSaveState("idle");

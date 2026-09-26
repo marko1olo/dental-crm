@@ -29,6 +29,7 @@ export interface DocumentModalsContainerProps {
 	setIsSanpinRegistryOpen: (open: boolean) => void;
 	isAutoclaveLogOpen: boolean;
 	setIsAutoclaveLogOpen: (open: boolean) => void;
+	onOpenAutoclaveLog257?: () => void;
 	isFnsNdflXmlOpen: boolean;
 	setIsFnsNdflXmlOpen: (open: boolean) => void;
 	isEgiszRemdOpen: boolean;

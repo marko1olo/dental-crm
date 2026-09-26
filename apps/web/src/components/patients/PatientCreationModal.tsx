@@ -258,7 +258,8 @@ export function PatientCreationModal({
 
 	const handleCreate = async () => {
 		if (isPatientCreating) return;
-		let effectiveName = newPatientName.trim();
+		const inputElem = typeof document !== "undefined" ? (document.getElementById("patient-create-full-name") as HTMLInputElement | null) : null;
+		let effectiveName = (newPatientName.trim() || usePatientStore.getState().newPatientName.trim() || inputElem?.value.trim() || "");
 		if (!effectiveName) {
 			if (isEmergencyOrPrimary) {
 				effectiveName = "Пациент с острой болью (CITO)";
@@ -272,7 +273,21 @@ export function PatientCreationModal({
 				return;
 			}
 		} else {
+			setNewPatientName(effectiveName);
 			usePatientStore.getState().setNewPatientName(effectiveName);
+		}
+		const phoneElem = typeof document !== "undefined" ? (document.getElementById("patient-create-phone") as HTMLInputElement | null) : null;
+		const effectivePhone = (newPatientPhone.trim() || usePatientStore.getState().newPatientPhone.trim() || phoneElem?.value.trim() || "");
+		if (effectivePhone) {
+			const formatted = formatPhoneNumber(effectivePhone);
+			setNewPatientPhone(formatted);
+			usePatientStore.getState().setNewPatientPhone(formatted);
+		}
+		const birthElem = typeof document !== "undefined" ? (document.getElementById("patient-create-birth-date") as HTMLInputElement | null) : null;
+		const effectiveBirth = (newPatientBirthDate.trim() || usePatientStore.getState().newPatientBirthDate.trim() || birthElem?.value.trim() || "");
+		if (effectiveBirth) {
+			setNewPatientBirthDate(effectiveBirth);
+			usePatientStore.getState().setNewPatientBirthDate(effectiveBirth);
 		}
 		try {
 			// Attach advertising source note to administrative profile draft

@@ -89,7 +89,7 @@ export function useDocumentCreation({
 			}
 
 			// Валидация специфичных полей документа
-			const validation = validateDocumentPayloadForKind(kind, payload);
+			const validation = validateDocumentPayloadForKind(kind, preparedState);
 			if (!validation.valid) {
 				const errorMsg =
 					validation.error || "Ошибка заполнения обязательных полей документа.";

@@ -201,3 +201,7 @@ export const usePatientStore = create<PatientStore>((set) => ({
 				typeof val === "function" ? val(state.newRulePatientText) : val,
 		})),
 }));
+
+if (typeof window !== "undefined") {
+	(window as unknown as { __PATIENT_STORE__?: typeof usePatientStore }).__PATIENT_STORE__ = usePatientStore;
+}

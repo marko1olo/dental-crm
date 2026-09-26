@@ -60,11 +60,11 @@ export interface DocumentRegistryTabProps {
 	openDocActionMenuId: string | null;
 	setOpenDocActionMenuId: (id: string | null) => void;
 	loadDocumentAuditFacts: (id: string) => Promise<void> | void;
-	downloadIssuedDocumentHtml: (id: string) => Promise<void> | void;
-	handleDirectPrintDocumentA4: (id: string, title?: string) => Promise<void> | void;
-	downloadTaxDocumentXml: (id: string) => Promise<void> | void;
-	setIsFnsNdflXmlOpen: (open: boolean) => void;
-	setIsEgiszRemdOpen: (open: boolean) => void;
+	downloadIssuedDocumentHtml?: (id: string) => Promise<void> | void;
+	handleDirectPrintDocumentA4?: (id: string, title?: string) => Promise<void> | void;
+	downloadTaxDocumentXml?: (id: string) => Promise<void> | void;
+	setIsFnsNdflXmlOpen?: (open: boolean) => void;
+	setIsEgiszRemdOpen?: (open: boolean) => void;
 	requestDocumentVoid: (doc: GeneratedDocument) => void;
 }
 
@@ -339,7 +339,7 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 														type="button"
 														onClick={() => {
 															setOpenDocActionMenuId(null);
-															void downloadIssuedDocumentHtml(document.id);
+															void downloadIssuedDocumentHtml?.(document.id);
 														}}
 														aria-label={`Скачать HTML документа: ${documentActionContext}`}
 														title={`Скачать HTML документа: ${documentActionContext}`}
@@ -408,10 +408,14 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 													type="button"
 													onClick={() => {
 														setOpenDocActionMenuId(null);
-														void handleDirectPrintDocumentA4(
-															document.id,
-															document.title,
-														);
+														if (handleDirectPrintDocumentA4) {
+															void handleDirectPrintDocumentA4(
+																document.id,
+																document.title,
+															);
+														} else {
+															void openIssuedDocumentHtml(document.id);
+														}
 													}}
 													aria-label={`Прямая печать (A4): ${documentActionContext}`}
 													title={`Печать документа через системный принтер A4: ${documentActionContext}`}
@@ -447,7 +451,7 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 															type="button"
 															onClick={() => {
 																setOpenDocActionMenuId(null);
-																void downloadTaxDocumentXml(document.id);
+																void downloadTaxDocumentXml?.(document.id);
 															}}
 															aria-label={`Скачать XML-файл справки НДФЛ: ${documentActionContext}`}
 															title={`Черновой файл ФНС: ${documentActionContext}`}
@@ -479,7 +483,7 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 															type="button"
 															onClick={() => {
 																setOpenDocActionMenuId(null);
-																setIsFnsNdflXmlOpen(true);
+																setIsFnsNdflXmlOpen?.(true);
 															}}
 															aria-label={`Справка для ФНС (XML): ${documentActionContext}`}
 															title={`Справка для ФНС (XML): ${documentActionContext}`}
@@ -517,7 +521,7 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 														type="button"
 														onClick={() => {
 															setOpenDocActionMenuId(null);
-															setIsEgiszRemdOpen(true);
+															setIsEgiszRemdOpen?.(true);
 														}}
 														aria-label={`Выгрузка СЭМД в ЕГИСЗ: ${documentActionContext}`}
 														title={`Выгрузка СЭМД в ЕГИСЗ: ${documentActionContext}`}

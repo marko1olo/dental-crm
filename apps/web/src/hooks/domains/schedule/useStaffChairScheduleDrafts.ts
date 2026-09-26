@@ -395,10 +395,10 @@ export function useStaffChairScheduleDrafts({
 
 	async function saveOnboardingSchedulesIfDirty(): Promise<boolean> {
 		if (!dashboard) return true;
-		const dirtyStaffIds = Array.from(staffScheduleDirtyIds).filter(
+		const dirtyStaffIds = (Array.from(staffScheduleDirtyIds) as string[]).filter(
 			(staffId: string) => staffScheduleSaveStates[staffId] !== "saving",
 		);
-		const dirtyChairIds = Array.from(chairScheduleDirtyIds).filter(
+		const dirtyChairIds = (Array.from(chairScheduleDirtyIds) as string[]).filter(
 			(chairId: string) => chairScheduleSaveStates[chairId] !== "saving",
 		);
 		if (!dirtyStaffIds.length && !dirtyChairIds.length) return true;
