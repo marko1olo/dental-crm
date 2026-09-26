@@ -55,6 +55,8 @@ export type TunnelMessage =
 	| TunnelEdgeHello;
 
 export interface PendingRequest {
+	readonly id: string;
+	readonly clinicId: string;
 	readonly resolve: (res: TunnelHttpResponse) => void;
 	readonly reject: (err: Error) => void;
 	readonly timer: NodeJS.Timeout;

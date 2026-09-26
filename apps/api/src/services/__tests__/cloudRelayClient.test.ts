@@ -6,7 +6,10 @@ import Fastify from "fastify";
 import { WebSocket, WebSocketServer } from "ws";
 import {
 	CloudRelayClient,
+	getCalibratedNow,
+	getNetworkClockSkewMs,
 	isRouteAllowedForTunnel,
+	setNetworkClockSkewMs,
 	type TunnelRequestPayload,
 	type TunnelResponsePayload,
 } from "../cloudRelayClient.js";
@@ -80,6 +83,19 @@ describe("CloudRelayClient (Clinic Edge NAT Traversal)", () => {
 			assert.strictEqual(isRouteAllowedForTunnel("/api/clinical/odontogram"), false);
 			assert.strictEqual(isRouteAllowedForTunnel("/api/settings/admin"), false);
 		});
+
+		test("0-Day SSRF: блокирует обход каталогов (Path Traversal / Directory Traversal)", () => {
+			assert.strictEqual(isRouteAllowedForTunnel("/health/../../api/admin/users"), false);
+			assert.strictEqual(isRouteAllowedForTunnel("/health/%2e%2e/api/admin/users"), false);
+			assert.strictEqual(isRouteAllowedForTunnel("/health/%2e%2e/%2e%2e/api/admin/users"), false);
+			assert.strictEqual(isRouteAllowedForTunnel("/api/portal/lab-order/../../api/admin/users"), false);
+			assert.strictEqual(isRouteAllowedForTunnel("/api/portal/scans/../../system/passwd"), false);
+			assert.strictEqual(isRouteAllowedForTunnel("/api/portal/mock-storage/../.."), false);
+			assert.strictEqual(isRouteAllowedForTunnel("/health/evil"), false);
+			assert.strictEqual(isRouteAllowedForTunnel("/api/clinical/dental-lab/presets/evil"), false);
+			assert.strictEqual(isRouteAllowedForTunnel("//api/admin/users"), false);
+			assert.strictEqual(isRouteAllowedForTunnel("malformed%XX/test"), false);
+		});
 	});
 
 	describe("Подключение и Heartbeat", () => {
@@ -139,6 +155,64 @@ describe("CloudRelayClient (Clinic Edge NAT Traversal)", () => {
 			ws.send(JSON.stringify({ type: "PING", timestamp: Date.now() }));
 			const gotPong = await pongPromise;
 			assert.strictEqual(gotPong, true);
+		});
+
+		test("4G Silent Deadlock: обрывает зависший сокет (terminate) после 2 пропущенных PONG", async () => {
+			client = new CloudRelayClient({
+				enabled: true,
+				relayUrl: `ws://127.0.0.1:${relayPort}/edge`,
+				authToken: testSecret,
+				clinicId: testClinicId,
+				pingIntervalMs: 50,
+			});
+
+			client.start();
+
+			await new Promise<WebSocket>((resolve) => {
+				wss.on("connection", (socket) => resolve(socket));
+			});
+
+			// Сервер намеренно НЕ шлет PONG на входящие PING от клиента
+			// Ждем 2 интервала пинга + запас (180мс)
+			await new Promise((r) => setTimeout(r, 180));
+
+			const status = client.getStatus();
+			assert.ok(
+				status.lastError?.includes("HEARTBEAT_TIMEOUT: 2 consecutive missed PONGs"),
+				`Ожидалась ошибка HEARTBEAT_TIMEOUT, получено: ${status.lastError}`,
+			);
+		});
+
+		test("CR2032 BIOS Clock Skew: калибрует сетевое смещение времени при получении PONG с timestamp", async () => {
+			setNetworkClockSkewMs(0);
+			assert.strictEqual(getNetworkClockSkewMs(), 0);
+
+			client = new CloudRelayClient({
+				enabled: true,
+				relayUrl: `ws://127.0.0.1:${relayPort}/edge`,
+				authToken: testSecret,
+				clinicId: testClinicId,
+			});
+
+			client.start();
+
+			const ws = await new Promise<WebSocket>((resolve) => {
+				wss.on("connection", (socket) => resolve(socket));
+			});
+
+			// Сервер шлет PONG с опережающим временем (+2 часа)
+			const simulatedServerTime = Date.now() + 7200000;
+			ws.send(JSON.stringify({ type: "PONG", timestamp: simulatedServerTime }));
+
+			// Ждем 50мс на обработку PONG клиентом
+			await new Promise((r) => setTimeout(r, 50));
+
+			const skew = getNetworkClockSkewMs();
+			assert.ok(Math.abs(skew - 7200000) < 1000, `Смещение должно быть ~7200000 мс, получено: ${skew}`);
+
+			const calibratedNow = getCalibratedNow();
+			const diff = calibratedNow.getTime() - Date.now();
+			assert.ok(Math.abs(diff - 7200000) < 1000, `Откалиброванное время должно опережать локальное на ~2 часа`);
 		});
 	});
 
@@ -232,6 +306,46 @@ describe("CloudRelayClient (Clinic Edge NAT Traversal)", () => {
 					clinicId: testClinicId,
 					method: "GET",
 					url: "/api/admin/financial-ledger",
+					headers: {},
+				}),
+			);
+
+			const reply = await forbiddenPromise;
+			assert.strictEqual(reply.statusCode, 403);
+			assert.ok(reply.body?.includes("ForbiddenTunnelRoute"));
+		});
+
+		test("0-Day SSRF: блокирует обход пути (/health/../../api/admin/users) в туннеле с кодом 403 Forbidden", async () => {
+			client = new CloudRelayClient({
+				enabled: true,
+				relayUrl: `ws://127.0.0.1:${relayPort}/edge`,
+				authToken: testSecret,
+				clinicId: testClinicId,
+			});
+
+			client.start();
+
+			const ws = await new Promise<WebSocket>((resolve) => {
+				wss.on("connection", (socket) => resolve(socket));
+			});
+
+			const forbiddenPromise = new Promise<TunnelResponsePayload>((resolve) => {
+				ws.on("message", (raw) => {
+					const msg = JSON.parse(raw.toString()) as TunnelResponsePayload;
+					if (msg.type === "HTTP_RESPONSE" && msg.id === "traversal-attack-req") {
+						resolve(msg);
+					}
+				});
+			});
+
+			// Попытка 0-day SSRF через относительный путь
+			ws.send(
+				JSON.stringify({
+					type: "HTTP_REQUEST",
+					id: "traversal-attack-req",
+					clinicId: testClinicId,
+					method: "GET",
+					url: "/health/../../api/admin/users",
 					headers: {},
 				}),
 			);

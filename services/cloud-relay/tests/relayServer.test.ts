@@ -198,4 +198,80 @@ describe("RelayServer (Cloud Relay & NAT Traversal)", () => {
 
 		edgeWs.close();
 	});
+
+	test("изоляция клиник: дисконнект клиники A не сбрасывает pendingRequests клиники B", async () => {
+		const clinicAId = "clinic-alpha";
+		const clinicBId = "clinic-beta";
+
+		const wsAUrl = `${serverBaseUrl.replace("http", "ws")}/edge?token=${edgeSecret}&clinicId=${clinicAId}`;
+		const wsBUrl = `${serverBaseUrl.replace("http", "ws")}/edge?token=${edgeSecret}&clinicId=${clinicBId}`;
+
+		const wsA = new WebSocket(wsAUrl);
+		const wsB = new WebSocket(wsBUrl);
+
+		await Promise.all([
+			new Promise<void>((resolve, reject) => {
+				wsA.on("open", resolve);
+				wsA.on("error", reject);
+			}),
+			new Promise<void>((resolve, reject) => {
+				wsB.on("open", resolve);
+				wsB.on("error", reject);
+			}),
+		]);
+
+		assert.strictEqual(server.isClinicConnected(clinicAId), true);
+		assert.strictEqual(server.isClinicConnected(clinicBId), true);
+
+		// Клиника B получает запрос, но держит его в pending
+		let clinicBReceivedMsgId = "";
+		let resolveClinicBMessage!: () => void;
+		const clinicBMessagePromise = new Promise<void>((resolve) => {
+			resolveClinicBMessage = resolve;
+		});
+
+		wsB.on("message", (raw) => {
+			const msg = JSON.parse(raw.toString()) as TunnelHttpRequest;
+			if (msg.type === "HTTP_REQUEST") {
+				clinicBReceivedMsgId = msg.id;
+				resolveClinicBMessage();
+			}
+		});
+
+		// Отправляем HTTP запрос для клиники B через релей (с заголовком x-clinic-id: clinic-beta)
+		const fetchClinicBPromise = fetch(`${serverBaseUrl}/api/portal/lab-order/token-beta-123`, {
+			headers: { "x-clinic-id": clinicBId },
+		});
+
+		// Ждем, пока клиника B получит входящий запрос в туннель
+		await clinicBMessagePromise;
+
+		// ТЕПЕРЬ Клиника A внезапно отключается (например, обрыв связи)
+		wsA.close();
+
+		// Даем 50мс на срабатывание события close для сокета клиники A на сервере
+		await new Promise((r) => setTimeout(r, 50));
+
+		// Клиника B ДОЛЖНА ОСТАТЬСЯ подключенной!
+		assert.strictEqual(server.isClinicConnected(clinicBId), true);
+
+		// Клиника B отвечает на свой запрос
+		const reply: TunnelHttpResponse = {
+			type: "HTTP_RESPONSE",
+			id: clinicBReceivedMsgId,
+			statusCode: 200,
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ clinic: "beta", status: "alive" }),
+		};
+		wsB.send(JSON.stringify(reply));
+
+		// Запрос клиники B должен успешно завершиться 200 OK (а не быть сброшенным из-за клиники A!)
+		const res = await fetchClinicBPromise;
+		assert.strictEqual(res.status, 200);
+		const data = (await res.json()) as { clinic: string; status: string };
+		assert.strictEqual(data.clinic, "beta");
+		assert.strictEqual(data.status, "alive");
+
+		wsB.close();
+	});
 });

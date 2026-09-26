@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { FastifyInstance } from "fastify";
 import { WebSocket } from "ws";
 
@@ -47,18 +48,59 @@ export interface TunnelResponsePayload {
 	readonly isBase64?: boolean | undefined;
 }
 
-/** Разрешенные префиксы маршрутов для туннелирования техникам (защита от SSRF и взлома клиники) */
-export const ALLOWED_TUNNEL_ROUTE_PREFIXES = [
-	"/api/portal/lab-order",
-	"/api/portal/scans",
-	"/api/portal/mock-storage",
-	"/api/clinical/dental-lab/presets",
-	"/health",
-] as const;
+/** Разрешенные маршруты для туннелирования техникам (защита от SSRF и обхода директорий) */
+export const ALLOWED_TUNNEL_ROUTES: readonly { readonly path: string; readonly exact?: boolean }[] = [
+	{ path: "/health", exact: true },
+	{ path: "/api/clinical/dental-lab/presets", exact: true },
+	{ path: "/api/portal/lab-order", exact: false },
+	{ path: "/api/portal/scans", exact: false },
+	{ path: "/api/portal/mock-storage", exact: false },
+	{ path: "/api/public/booking", exact: false },
+];
 
+/** Обратная совместимость списка префиксов */
+export const ALLOWED_TUNNEL_ROUTE_PREFIXES = ALLOWED_TUNNEL_ROUTES.map((r) => r.path);
+
+/**
+ * Строгая проверка разрешенных путей для защиты от 0-Day SSRF атак (/health/../../api/admin/users).
+ */
 export function isRouteAllowedForTunnel(urlPath: string): boolean {
-	const cleanPath = urlPath.split("?")[0] || "/";
-	return ALLOWED_TUNNEL_ROUTE_PREFIXES.some((prefix) => cleanPath.startsWith(prefix));
+	if (!urlPath || typeof urlPath !== "string") return false;
+	const rawPath = urlPath.split("?")[0] || "/";
+	let decodedPath: string;
+	try {
+		decodedPath = decodeURIComponent(rawPath);
+	} catch {
+		return false; // Malformed percent-encoding
+	}
+
+	// Нормализация POSIX-пути: схлопывает все /../ и /./
+	const normalized = path.posix.normalize(decodedPath);
+	if (normalized.includes("..") || !normalized.startsWith("/")) {
+		return false; // Попытка directory traversal
+	}
+
+	return ALLOWED_TUNNEL_ROUTES.some((allowed) => {
+		if (allowed.exact) {
+			return normalized === allowed.path;
+		}
+		return normalized === allowed.path || normalized.startsWith(allowed.path + "/");
+	});
+}
+
+/** Смещение системных часов клиники относительно NTP-времени облачного релея (CR2032 BIOS Clock Skew) */
+let currentClockSkewOffsetMs = 0;
+
+export function setNetworkClockSkewMs(skewMs: number): void {
+	currentClockSkewOffsetMs = skewMs;
+}
+
+export function getNetworkClockSkewMs(): number {
+	return currentClockSkewOffsetMs;
+}
+
+export function getCalibratedNow(): Date {
+	return new Date(Date.now() + currentClockSkewOffsetMs);
 }
 
 export function loadCloudRelayConfigFromEnv(): CloudRelayConfig {
@@ -88,6 +130,7 @@ export class CloudRelayClient {
 	private ws: WebSocket | null = null;
 	private isRunning = false;
 	private reconnectAttempts = 0;
+	private missedPongs = 0;
 	private reconnectTimer: NodeJS.Timeout | null = null;
 	private pingTimer: NodeJS.Timeout | null = null;
 	private lastConnectedAt: number | null = null;
@@ -149,6 +192,7 @@ export class CloudRelayClient {
 
 			this.ws.on("open", () => {
 				this.reconnectAttempts = 0;
+				this.missedPongs = 0;
 				this.lastConnectedAt = Date.now();
 				this.lastError = null;
 
@@ -189,10 +233,21 @@ export class CloudRelayClient {
 
 	private startHeartbeat(): void {
 		this.stopHeartbeat();
+		this.missedPongs = 0;
 		this.pingTimer = setInterval(() => {
-			if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-				this.sendMessage({ type: "PING", timestamp: Date.now() });
+			if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+
+			if (this.missedPongs >= 2) {
+				// 4G Silent Deadlock: 2 пропущенных PONG подряд — обрыв полуоткрытого TCP сокета
+				this.lastError = "HEARTBEAT_TIMEOUT: 2 consecutive missed PONGs from cloud relay";
+				try {
+					this.ws.terminate();
+				} catch (_e) {}
+				return;
 			}
+
+			this.missedPongs++;
+			this.sendMessage({ type: "PING", timestamp: Date.now() });
 		}, this.config.pingIntervalMs ?? 20000);
 	}
 
@@ -239,6 +294,13 @@ export class CloudRelayClient {
 		}
 
 		if (message.type === "PONG") {
+			this.missedPongs = 0;
+			// Калибровка часов (CR2032 BIOS Clock Skew)
+			if (typeof message.timestamp === "number") {
+				const localNow = Date.now();
+				const serverTime = message.timestamp;
+				setNetworkClockSkewMs(serverTime - localNow);
+			}
 			return;
 		}
 

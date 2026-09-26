@@ -202,6 +202,8 @@ export class RelayServer {
 			}, this.options.requestTimeoutMs);
 
 			this.pendingRequests.set(request.id, {
+				id: request.id,
+				clinicId: request.clinicId,
 				resolve,
 				reject,
 				timer,
@@ -313,11 +315,13 @@ export class RelayServer {
 			if (this.edgeSockets.get(clinicId) === ws) {
 				this.edgeSockets.delete(clinicId);
 			}
-			// Отклоняем все незавершенные запросы этой клиники
+			// Отклоняем только незавершенные запросы ЭТОЙ клиники, не затрагивая остальные
 			for (const [id, pending] of this.pendingRequests.entries()) {
-				clearTimeout(pending.timer);
-				this.pendingRequests.delete(id);
-				pending.reject(new Error("DISCONNECTED"));
+				if (pending.clinicId === clinicId) {
+					clearTimeout(pending.timer);
+					this.pendingRequests.delete(id);
+					pending.reject(new Error("DISCONNECTED"));
+				}
 			}
 		});
 

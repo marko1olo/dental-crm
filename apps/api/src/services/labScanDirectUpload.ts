@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { getNetworkClockSkewMs } from "./cloudRelayClient.js";
 
 /**
  * labScanDirectUpload.ts — Гибридная передача тяжелых 3D сканов челюстей (STL / PLY / OBJ).
@@ -207,13 +208,16 @@ export function createAwsSigV4PresignedUrl(params: {
 	readonly method: "GET" | "PUT";
 	readonly config: S3StorageConfig;
 	readonly storageKey: string;
-	readonly expiresInSeconds?: number;
-	readonly contentType?: string;
-	readonly dateOverride?: Date;
+	readonly expiresInSeconds?: number | undefined;
+	readonly contentType?: string | undefined;
+	readonly dateOverride?: Date | undefined;
+	readonly clockSkewOffsetMs?: number | undefined;
 }): string {
 	const { method, config, storageKey } = params;
 	const expiresIn = Math.min(Math.max(params.expiresInSeconds ?? 3600, 60), 604800); // 1 мин — 7 дней
-	const now = params.dateOverride ?? new Date();
+	// Защита от CR2032 BIOS Clock Skew: используем сетевое смещение времени от облачного шлюза
+	const clockSkew = params.clockSkewOffsetMs ?? getNetworkClockSkewMs();
+	const now = params.dateOverride ?? new Date(Date.now() + clockSkew);
 
 	const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, ""); // e.g. "20260926T163000Z"
 	const dateStamp = amzDate.slice(0, 8); // e.g. "20260926"
@@ -229,12 +233,25 @@ export function createAwsSigV4PresignedUrl(params: {
 
 	const credential = `${config.accessKeyId}/${dateStamp}/${config.region}/s3/aws4_request`;
 
+	// Подпись Content-Type для защиты от подмены бинарного 3D скана на вредоносные файлы (.exe)
+	const normalizedContentType = params.contentType?.trim().toLowerCase();
+	let canonicalHeaders = "";
+	let signedHeaders = "";
+
+	if (normalizedContentType) {
+		canonicalHeaders = `content-type:${normalizedContentType}\nhost:${host}\n`;
+		signedHeaders = "content-type;host";
+	} else {
+		canonicalHeaders = `host:${host}\n`;
+		signedHeaders = "host";
+	}
+
 	const queryParams: Record<string, string> = {
 		"X-Amz-Algorithm": "AWS4-HMAC-SHA256",
 		"X-Amz-Credential": credential,
 		"X-Amz-Date": amzDate,
 		"X-Amz-Expires": String(expiresIn),
-		"X-Amz-SignedHeaders": "host",
+		"X-Amz-SignedHeaders": signedHeaders,
 	};
 
 	// Сортировка параметров в алфавитном порядке
@@ -243,9 +260,6 @@ export function createAwsSigV4PresignedUrl(params: {
 		.map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(queryParams[k] ?? "")}`)
 		.join("&");
 
-	// Канонические заголовки
-	const canonicalHeaders = `host:${host}\n`;
-	const signedHeaders = "host";
 	const payloadHash = "UNSIGNED-PAYLOAD";
 
 	const canonicalRequest = [
@@ -286,9 +300,10 @@ export function getLabScanUploadPresignedUrl(params: {
 	readonly organizationId: string;
 	readonly labOrderId: string;
 	readonly fileName: string;
-	readonly fileSizeBytes?: number;
-	readonly expiresInSeconds?: number;
-	readonly configOverride?: S3StorageConfig;
+	readonly fileSizeBytes?: number | undefined;
+	readonly expiresInSeconds?: number | undefined;
+	readonly configOverride?: S3StorageConfig | undefined;
+	readonly clockSkewOffsetMs?: number | undefined;
 }): PresignedUploadResult {
 	const validation = validateScanFileMeta(params.fileName, params.fileSizeBytes);
 	if (!validation.isValid) {
@@ -301,7 +316,8 @@ export function getLabScanUploadPresignedUrl(params: {
 		params.fileName,
 	);
 	const expiresInSeconds = params.expiresInSeconds ?? 3600;
-	const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString();
+	const clockSkew = params.clockSkewOffsetMs ?? getNetworkClockSkewMs();
+	const expiresAt = new Date(Date.now() + clockSkew + expiresInSeconds * 1000).toISOString();
 	const config = params.configOverride || getS3ConfigFromEnv();
 
 	if (!config) {
@@ -327,6 +343,7 @@ export function getLabScanUploadPresignedUrl(params: {
 		storageKey,
 		expiresInSeconds,
 		contentType: validation.mimeType,
+		clockSkewOffsetMs: params.clockSkewOffsetMs,
 	});
 
 	const downloadUrl = createAwsSigV4PresignedUrl({
@@ -334,6 +351,7 @@ export function getLabScanUploadPresignedUrl(params: {
 		config,
 		storageKey,
 		expiresInSeconds: 86400 * 7, // 7 дней по умолчанию для ссылки скачивания технику
+		clockSkewOffsetMs: params.clockSkewOffsetMs,
 	});
 
 	return {
@@ -354,15 +372,17 @@ export function getLabScanUploadPresignedUrl(params: {
  */
 export function getLabScanDownloadPresignedUrl(params: {
 	readonly storageKey: string;
-	readonly expiresInSeconds?: number;
-	readonly configOverride?: S3StorageConfig;
+	readonly expiresInSeconds?: number | undefined;
+	readonly configOverride?: S3StorageConfig | undefined;
+	readonly clockSkewOffsetMs?: number | undefined;
 }): PresignedDownloadResult {
 	if (!params.storageKey || !params.storageKey.trim()) {
 		throw new Error("storageKey обязателен для генерации ссылки скачивания");
 	}
 
 	const expiresInSeconds = params.expiresInSeconds ?? 86400 * 3; // 3 дня
-	const expiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString();
+	const clockSkew = params.clockSkewOffsetMs ?? getNetworkClockSkewMs();
+	const expiresAt = new Date(Date.now() + clockSkew + expiresInSeconds * 1000).toISOString();
 	const config = params.configOverride || getS3ConfigFromEnv();
 
 	if (!config) {
@@ -380,6 +400,7 @@ export function getLabScanDownloadPresignedUrl(params: {
 		config,
 		storageKey: params.storageKey,
 		expiresInSeconds,
+		clockSkewOffsetMs: params.clockSkewOffsetMs,
 	});
 
 	return {

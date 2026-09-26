@@ -128,6 +128,53 @@ describe("labScanDirectUpload (3D STL/PLY Scans & S3 Presigned URLs)", () => {
 
 			assert.strictEqual(url1, url2);
 		});
+
+		test("подписывает Content-Type в заголовках (X-Amz-SignedHeaders = content-type;host) для защиты от подмены .exe", () => {
+			const fixedDate = new Date("2026-09-26T12:00:00.000Z");
+
+			const urlStr = createAwsSigV4PresignedUrl({
+				method: "PUT",
+				config: sampleSelectelConfig,
+				storageKey: "org_1/lab_orders/2/scan.stl",
+				expiresInSeconds: 3600,
+				contentType: "model/stl",
+				dateOverride: fixedDate,
+			});
+
+			const parsed = new URL(urlStr);
+			assert.strictEqual(parsed.searchParams.get("X-Amz-SignedHeaders"), "content-type;host");
+
+			const signature = parsed.searchParams.get("X-Amz-Signature");
+			assert.ok(signature && signature.length === 64);
+
+			// Подпись для PUT с contentType ДОЛЖНА отличаться от подписи без contentType
+			const urlStrNoType = createAwsSigV4PresignedUrl({
+				method: "PUT",
+				config: sampleSelectelConfig,
+				storageKey: "org_1/lab_orders/2/scan.stl",
+				expiresInSeconds: 3600,
+				dateOverride: fixedDate,
+			});
+			const parsedNoType = new URL(urlStrNoType);
+			assert.notStrictEqual(signature, parsedNoType.searchParams.get("X-Amz-Signature"));
+		});
+
+		test("калибрует время X-Amz-Date при смещении часов (CR2032 BIOS Clock Skew) через clockSkewOffsetMs", () => {
+			const oneDayMs = 86400000;
+			const baseDate = new Date("2026-09-26T12:00:00.000Z");
+
+			const urlWithSkew = createAwsSigV4PresignedUrl({
+				method: "PUT",
+				config: sampleSelectelConfig,
+				storageKey: "test/skew/scan.stl",
+				expiresInSeconds: 3600,
+				dateOverride: new Date(baseDate.getTime() + oneDayMs),
+			});
+
+			const parsed = new URL(urlWithSkew);
+			assert.strictEqual(parsed.searchParams.get("X-Amz-Date"), "20260927T120000Z");
+			assert.ok(parsed.searchParams.get("X-Amz-Credential")?.includes("/20260927/"));
+		});
 	});
 
 	describe("getLabScanUploadPresignedUrl & getLabScanDownloadPresignedUrl", () => {
@@ -143,8 +190,29 @@ describe("labScanDirectUpload (3D STL/PLY Scans & S3 Presigned URLs)", () => {
 			assert.strictEqual(result.provider, "s3_direct");
 			assert.ok(result.uploadUrl.startsWith("https://s3.ru-1.storage.selcloud.ru/clinic-3d-scans/"));
 			assert.ok(result.uploadUrl.includes("X-Amz-Signature="));
+			// Content-Type подписан в uploadUrl:
+			const uploadParsed = new URL(result.uploadUrl);
+			assert.strictEqual(uploadParsed.searchParams.get("X-Amz-SignedHeaders"), "content-type;host");
+
 			assert.ok(result.downloadUrl.startsWith("https://s3.ru-1.storage.selcloud.ru/clinic-3d-scans/"));
 			assert.strictEqual(result.headersToInclude["content-type"], "model/stl");
+		});
+
+		test("учитывает clockSkewOffsetMs при расчете времени жизни ссылки и даты подписи", () => {
+			const skewMs = 7200000; // 2 часа вперед
+			const uploadRes = getLabScanUploadPresignedUrl({
+				organizationId: "org-spb",
+				labOrderId: "order-skew",
+				fileName: "scan_jaw.ply",
+				configOverride: sampleSelectelConfig,
+				clockSkewOffsetMs: skewMs,
+			});
+
+			const nowMs = Date.now();
+			const expiresAtMs = new Date(uploadRes.expiresAt).getTime();
+			// expiresAt = now + skewMs + 3600*1000
+			const expectedDiff = skewMs + 3600 * 1000;
+			assert.ok(Math.abs(expiresAtMs - nowMs - expectedDiff) < 5000);
 		});
 
 		test("работает в mock-fallback режиме при отсутствии переменных S3 в окружении", () => {
