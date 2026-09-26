@@ -44,9 +44,9 @@ export interface PaymentDiscountCalculation {
 export function calculatePaymentDiscount(
 	rawTotalDueRub: number,
 	options: {
-		isWarranty100?: boolean;
-		customDiscountRub?: number;
-		discountPercent?: number;
+		isWarranty100?: boolean | undefined;
+		customDiscountRub?: number | undefined;
+		discountPercent?: number | undefined;
 	} = {},
 ): PaymentDiscountCalculation {
 	const rawKop = rubToKopecks(rawTotalDueRub);
