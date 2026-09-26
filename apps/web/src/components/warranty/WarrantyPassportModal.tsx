@@ -50,6 +50,7 @@ import {
 	type WarrantyRiskFactors,
 } from "./warrantyEngine.js";
 import "./warrantyPassport.css";
+import { AuthArtBackground } from "../auth/AuthArtBackground";
 import {
 	DENTAL_MATERIALS_CATALOG,
 	getAllWarrantyDefectTemplates,
@@ -99,6 +100,7 @@ export interface WarrantyPassportModalProps {
 	clinicWebsite?: string | null | undefined;
 	initialCategory?: WarrantyCategory | undefined;
 	initialTeeth?: string[] | undefined;
+	initialDiagnosis?: string | undefined;
 	completedStages?: CompletedTreatmentStage[] | undefined;
 	onCertificateIssued?: ((certificate: WarrantyCertificateData) => void) | undefined;
 	onAttachToForm043u?: ((payload: {
@@ -663,6 +665,10 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 
 	const modalContent = (
 		<div className="warranty-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+			<AuthArtBackground
+				settings={{ pack: "dental-epic", dynamicByTimeOfDay: true }}
+				overlayAlpha={0.3}
+			/>
 			<div className="warranty-modal-window" onClick={(e) => e.stopPropagation()}>
 				{/* Header */}
 				<div className="warranty-modal-header">
@@ -1652,5 +1658,5 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 		</div>
 	);
 
-	return createPortal(modalContent, document.body);
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };

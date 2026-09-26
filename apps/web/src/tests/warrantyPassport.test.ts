@@ -8,6 +8,8 @@
 
 import assert from "node:assert/strict";
 import test from "node:test";
+import React from "react";
+import { renderToString } from "react-dom/server";
 import {
 	addMonthsToDate,
 	calculateMultiItemWarrantyTerms,
@@ -27,12 +29,14 @@ import {
 	type WarrantyRemediationOrder,
 	type WarrantyRiskFactors,
 } from "../components/warranty/warrantyEngine.js";
-import {
+import "../../testCssStub.mjs";
+import type { CompletedTreatmentStage } from "../components/warranty/WarrantyPassportModal.js";
+
+const {
 	WarrantyPassportModal,
 	detectCategoryFromServiceTitle,
 	mapCompletedStagesToWarrantyItems,
-	type CompletedTreatmentStage,
-} from "../components/warranty/WarrantyPassportModal.js";
+} = await import("../components/warranty/WarrantyPassportModal.js");
 import {
 	DENTAL_MATERIALS_CATALOG,
 	getAllWarrantyDefectTemplates,
@@ -405,8 +409,17 @@ test("Warranty Certificate HTML Generator (A4 / A5): Full document rendering & s
 	assert.ok(html.includes(certData.integrityHash));
 });
 
-test("WarrantyPassportModal: Component export verification", () => {
+test("WarrantyPassportModal: Component export and atmospheric background verification", () => {
 	assert.equal(typeof WarrantyPassportModal, "function");
+	const html = renderToString(
+		React.createElement(WarrantyPassportModal, {
+			isOpen: true,
+			onClose: () => {},
+		}),
+	);
+	assert.ok(html.includes("warranty-modal-overlay"), "Should render warranty modal overlay");
+	assert.ok(html.includes("auth-art-background"), "Should render atmospheric AuthArtBackground");
+	assert.ok(html.includes("warranty-modal-window"), "Should render opaque warranty modal window");
 });
 
 test("Mandate 8e: Warranty Defect Templates completeness & clinical presets", () => {

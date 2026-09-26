@@ -14,6 +14,7 @@
 	justify-content: center;
 	padding: 16px;
 	animation: warrantyFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	overflow: hidden;
 }
 
 @keyframes warrantyFadeIn {

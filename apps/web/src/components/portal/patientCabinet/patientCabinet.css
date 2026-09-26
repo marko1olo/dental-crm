@@ -17,6 +17,7 @@
 	z-index: 1050;
 	padding: 12px;
 	box-sizing: border-box;
+	overflow: hidden;
 }
 
 .patient-cabinet-modal {
