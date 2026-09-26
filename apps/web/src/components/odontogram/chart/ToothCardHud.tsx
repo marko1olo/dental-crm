@@ -1,6 +1,5 @@
 import type React from "react";
-import { memo, useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { memo } from "react";
 import type { ToothState, RootResorptionStage } from "./toothChartTypes";
 
 export interface ToothCardHudProps {
@@ -24,7 +23,6 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 	onQuickStateChange,
 	onResorptionChange,
 }) => {
-	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	const isLeftMolar = (number >= 16 && number <= 18) || (number >= 46 && number <= 48) || (number >= 54 && number <= 55) || (number >= 84 && number <= 85);
 	const isRightMolar = (number >= 26 && number <= 28) || (number >= 36 && number <= 38) || (number >= 64 && number <= 65) || (number >= 74 && number <= 75);
@@ -39,8 +37,8 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 
 	return (
 		<div
-			className={`tooth-hover-quick-hud absolute ${hudAlignClass} hidden group-hover:flex group-hover/badge:flex transition-all duration-200 z-40 items-center gap-1.5 px-2 py-1.5 rounded-2xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-xl pointer-events-auto whitespace-nowrap ${
-				isTop ? "bottom-full mb-2" : "top-full mt-2"
+			className={`tooth-hover-quick-hud absolute ${hudAlignClass} hidden group-hover:flex group-hover/badge:flex transition-all duration-200 z-40 items-center gap-1 px-1.5 py-1 rounded-xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-2xl backdrop-blur-xl pointer-events-auto whitespace-nowrap ${
+				isTop ? "bottom-full mb-1.5" : "top-full mt-1.5"
 			}`}
 			onClick={(e) => e.stopPropagation()}
 		>
@@ -53,7 +51,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Caries", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Кариес молочного зуба"
 						data-testid={`quick-caries-${number}`}
 					>
@@ -67,7 +65,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Filled", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Пломба стеклоиономерным цементом (СИЦ / Композит)"
 						data-testid={`quick-filled-${number}`}
 					>
@@ -82,7 +80,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Pulpitis", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Витальная пульпотомия молочного зуба (Biodentine/MTA)"
 						data-testid={`quick-pulpotomy-${number}`}
 					>
@@ -96,7 +94,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Crown", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Эстетическая циркониевая коронка NuSmile / 3M"
 						data-testid={`quick-nusmile-${number}`}
 					>
@@ -115,7 +113,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 								const nextStage = stages[nextIdx] ?? 0;
 								onResorptionChange(getTargets(), nextStage);
 							}}
-							className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-orange-500/15 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+							className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-orange-500/15 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 							title={`Сменить стадию физиологической резорбции корня (текущая: ${rootResorptionStage ?? 0}%)`}
 							data-testid={`quick-resorption-${number}`}
 						>
@@ -130,7 +128,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Missing", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-slate-500/15 hover:bg-slate-600 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-slate-500/15 hover:bg-slate-600 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Физиологическая смена зуба (выпал / эксфолиация)"
 						data-testid={`quick-exfoliated-${number}`}
 					>
@@ -144,7 +142,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Healthy", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation"
 						title="Здоровый интактный молочный зуб"
 						data-testid={`quick-healthy-${number}`}
 					>
@@ -161,7 +159,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Caries", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Кариес"
 						data-testid={`quick-caries-${number}`}
 					>
@@ -175,7 +173,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Filled", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Пломба"
 						data-testid={`quick-filled-${number}`}
 					>
@@ -189,7 +187,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Pulpitis", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Пульпит"
 						data-testid={`quick-pulpitis-${number}`}
 					>
@@ -203,7 +201,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Crown", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Коронка"
 						data-testid={`quick-crown-${number}`}
 					>
@@ -217,7 +215,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Implant", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Имплантат"
 						data-testid={`quick-implant-${number}`}
 					>
@@ -231,7 +229,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Missing", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-red-600/15 hover:bg-red-600 text-red-800 dark:text-red-300 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Удален"
 						data-testid={`quick-missing-${number}`}
 					>
@@ -245,7 +243,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 							e.stopPropagation();
 							onQuickStateChange(getTargets(), "Healthy", surfaces);
 						}}
-						className="px-2.5 py-1.5 min-h-[36px] min-w-[36px] rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
+						className="px-2 py-1 min-h-[30px] sm:min-h-[28px] rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 touch-manipulation shrink-0 flex-shrink-0 whitespace-nowrap"
 						title="Здоров (Интактный)"
 						data-testid={`quick-healthy-${number}`}
 					>

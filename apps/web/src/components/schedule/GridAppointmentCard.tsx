@@ -156,6 +156,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 		<div
 			key={a.id}
 			data-testid={`appointment-card-${a.id}`}
+			data-appointment-id={a.id}
 			draggable
 			onMouseEnter={() => onMouseEnter(a.id)}
 			onMouseLeave={onMouseLeave}
@@ -173,8 +174,8 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 				);
 				e.dataTransfer.effectAllowed = "move";
 			}}
-			style={{ contentVisibility: "auto", containIntrinsicSize: "1px 44px" }}
-			className={`w-full text-left p-1.5 sm:p-1.5 rounded-lg border text-xs font-semibold shadow-2xs flex flex-col justify-between gap-1 transition-all min-h-[44px] cursor-grab active:cursor-grabbing relative ${getGridAppointmentCardContainerClasses(
+			style={{ contentVisibility: "auto", containIntrinsicSize: "1px 34px" }}
+			className={`appointment-card w-full text-left p-1.5 sm:p-1.5 rounded-lg border text-xs font-semibold shadow-2xs flex flex-col justify-between gap-1 transition-all min-h-[44px] sm:min-h-[34px] cursor-grab active:cursor-grabbing relative ${getGridAppointmentCardContainerClasses(
 				a.status,
 				{ collision: Boolean(collision), isCito, docTheme },
 			)}`}

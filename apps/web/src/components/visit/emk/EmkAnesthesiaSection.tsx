@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle, Syringe } from "lucide-react";
+import { AlertTriangle, Minus, Plus, ShieldCheck, Syringe } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import {
 	CARPULE_ANESTHESIA_PRESETS,
@@ -17,15 +17,18 @@ export function EmkAnesthesiaSection({
 }: EmkSectionProps) {
 	const [selectedAnesDrugKey, setSelectedAnesDrugKey] = React.useState<string>("ultracain_ds");
 	const [carpuleCount, setCarpuleCount] = React.useState<number>(1);
+	const [patientWeightKg, setPatientWeightKg] = React.useState<number>(
+		patientAge && patientAge < 14 ? 30 : 70,
+	);
 
-	const patientWeightKg = 70; // Среднестатистический взрослый вес по умолчанию
 	const anesthesiaSafety = React.useMemo(() => {
 		return calculateAnesthesiaCarpulesSafety({
 			drugKey: selectedAnesDrugKey,
 			carpulesCount: carpuleCount,
 			patientWeightKg,
+			patientAgeYears: patientAge ?? null,
 		});
-	}, [selectedAnesDrugKey, carpuleCount, patientWeightKg]);
+	}, [selectedAnesDrugKey, carpuleCount, patientWeightKg, patientAge]);
 
 	const anamnesis = visitNoteForm?.anamnesis || "";
 	const anesthesiaRisk = React.useMemo(() => {
@@ -96,6 +99,89 @@ export function EmkAnesthesiaSection({
 						<span>Скандонест 3% (без адреналина)</span>
 					</button>
 				</div>
+			</div>
+
+			{/* Интерактивный калькулятор карпул и предельной безопасной дозы по весу (МРД) */}
+			<div className="flex items-center justify-between gap-2 flex-wrap p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs min-w-0">
+				<div className="flex items-center gap-2 flex-wrap min-w-0">
+					{/* Выбор веса */}
+					<div className="flex items-center gap-1 shrink-0">
+						<span className="text-[11px] font-bold text-[var(--muted)]">Вес:</span>
+						{[15, 30, 50, 70, 85].map((w) => (
+							<button
+								key={w}
+								type="button"
+								onClick={() => setPatientWeightKg(w)}
+								className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-all cursor-pointer ${
+									patientWeightKg === w
+										? "bg-[var(--teal)] text-white border-[var(--teal)]"
+										: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+								}`}
+							>
+								{w} кг
+							</button>
+						))}
+					</div>
+
+					{/* Карпулы */}
+					<div className="flex items-center gap-1 shrink-0 ml-1">
+						<span className="text-[11px] font-bold text-[var(--muted)]">Карпул:</span>
+						<button
+							type="button"
+							onClick={() => setCarpuleCount((prev) => Math.max(0.5, prev - 0.5))}
+							className="w-6 h-6 rounded-md bg-[var(--paper)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] hover:border-[var(--teal)] cursor-pointer"
+							title="Уменьшить на 0.5 карпулы"
+						>
+							<Minus size={11} />
+						</button>
+						<span className="font-mono font-bold px-1.5">{carpuleCount}</span>
+						<button
+							type="button"
+							onClick={() => setCarpuleCount((prev) => prev + 0.5)}
+							className="w-6 h-6 rounded-md bg-[var(--paper)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)] hover:border-[var(--teal)] cursor-pointer"
+							title="Увеличить на 0.5 карпулы"
+						>
+							<Plus size={11} />
+						</button>
+					</div>
+
+					{/* Индикатор безопасности МРД */}
+					<span
+						className={`px-2 py-1 rounded-lg text-[11px] font-bold border inline-flex items-center gap-1 shrink-0 ${
+							anesthesiaSafety.isOverdose
+								? "bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/40"
+								: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/40"
+						}`}
+						title={anesthesiaSafety.formattedSafetyNote}
+					>
+						{anesthesiaSafety.isOverdose ? (
+							<>
+								<AlertTriangle size={12} className="shrink-0 text-rose-500" />
+								<span>Передозировка! (max {anesthesiaSafety.maxSafeCarpules} карп.)</span>
+							</>
+						) : (
+							<>
+								<ShieldCheck size={12} className="shrink-0 text-emerald-500" />
+								<span>Безопасно ({carpuleCount} из max {anesthesiaSafety.maxSafeCarpules} карп. · {anesthesiaSafety.safetyPercentage}%)</span>
+							</>
+						)}
+					</span>
+				</div>
+
+				<button
+					type="button"
+					onClick={() =>
+						handleApplyPreset(
+							`${anesthesiaSafety.drugName} (${carpuleCount} карп.)`,
+							anesthesiaSafety.formattedTreatmentSnippet,
+						)
+					}
+					className="min-h-[28px] h-7 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs whitespace-nowrap shrink-0 ml-auto"
+					title="Внести индивидуальный расчет анестезии в протокол"
+				>
+					<Syringe size={12} className="shrink-0" />
+					<span>Внести в протокол</span>
+				</button>
 			</div>
 
 			{/* Предупреждение о кардиоваскулярном риске */}

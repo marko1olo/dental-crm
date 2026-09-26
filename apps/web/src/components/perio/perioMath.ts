@@ -65,8 +65,8 @@ export const PSR_CODE_DEFINITIONS: Record<PsrCode, PsrCodeDefinition> = {
 		defaultDepthMm: 2,
 		hasCalculus: false,
 		hasBop: false,
-		colorClass: "text-emerald-400 border-emerald-500/40 bg-emerald-500/15",
-		badgeClass: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+		colorClass: "text-emerald-800 dark:text-emerald-300 border-emerald-500/40 bg-emerald-500/15",
+		badgeClass: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30",
 	},
 	1: {
 		code: 1,
@@ -77,8 +77,8 @@ export const PSR_CODE_DEFINITIONS: Record<PsrCode, PsrCodeDefinition> = {
 		defaultDepthMm: 3,
 		hasCalculus: false,
 		hasBop: true,
-		colorClass: "text-amber-400 border-amber-500/40 bg-amber-500/15",
-		badgeClass: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+		colorClass: "text-amber-800 dark:text-amber-300 border-amber-500/40 bg-amber-500/15",
+		badgeClass: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30",
 	},
 	2: {
 		code: 2,
@@ -88,8 +88,8 @@ export const PSR_CODE_DEFINITIONS: Record<PsrCode, PsrCodeDefinition> = {
 		defaultDepthMm: 3,
 		hasCalculus: true,
 		hasBop: true,
-		colorClass: "text-sky-400 border-sky-500/40 bg-sky-500/15",
-		badgeClass: "bg-sky-500/15 text-sky-300 border-sky-500/30",
+		colorClass: "text-sky-800 dark:text-sky-300 border-sky-500/40 bg-sky-500/15",
+		badgeClass: "bg-sky-500/15 text-sky-800 dark:text-sky-300 border-sky-500/30",
 	},
 	3: {
 		code: 3,
@@ -99,8 +99,8 @@ export const PSR_CODE_DEFINITIONS: Record<PsrCode, PsrCodeDefinition> = {
 		defaultDepthMm: 5,
 		hasCalculus: true,
 		hasBop: true,
-		colorClass: "text-orange-400 border-orange-500/40 bg-orange-500/15",
-		badgeClass: "bg-orange-500/15 text-orange-300 border-orange-500/30",
+		colorClass: "text-orange-800 dark:text-orange-300 border-orange-500/40 bg-orange-500/15",
+		badgeClass: "bg-orange-500/15 text-orange-800 dark:text-orange-300 border-orange-500/30",
 	},
 	4: {
 		code: 4,
@@ -110,8 +110,8 @@ export const PSR_CODE_DEFINITIONS: Record<PsrCode, PsrCodeDefinition> = {
 		defaultDepthMm: 7,
 		hasCalculus: true,
 		hasBop: true,
-		colorClass: "text-rose-400 border-rose-500/40 bg-rose-500/15",
-		badgeClass: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+		colorClass: "text-rose-800 dark:text-rose-300 border-rose-500/40 bg-rose-500/15",
+		badgeClass: "bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/30",
 	},
 };
 

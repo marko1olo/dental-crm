@@ -1,4 +1,4 @@
-import type { AapEfpClassificationResult } from "@dental/shared";
+import type { PeriodontalDiagnosisDetail } from "@dental/shared";
 import {
 	Activity,
 	Check,
@@ -16,7 +16,7 @@ import React from "react";
 import type { PerioExpressPresetId } from "../perioMath";
 
 export interface PerioToolbarProps {
-	readonly aapDiagnosis: AapEfpClassificationResult;
+	readonly aapDiagnosis: PeriodontalDiagnosisDetail;
 	readonly readOnly?: boolean | undefined;
 	readonly selectedToothNumber: number;
 	readonly isHygieneExpanded: boolean;
@@ -89,7 +89,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("perio_norm_express")}
-						className="h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
+						className="h-9 sm:h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
 						title="1-клик: Вся десна здорова (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в 043/у)"
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
@@ -101,7 +101,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={() => onApplyExpressPreset("pro_hygiene_express")}
-						className="h-9 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
+						className="h-9 sm:h-8 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
 						title="Профгигиена в 1 клик (УЗ + Air-Flow глицин + полировка + фторирование + услуга A16.07.051)"
 						data-testid="perio-toolbar-prophy-1click-btn"
 					>
@@ -112,7 +112,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={onSetAllIntact}
-						className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-emerald-500/15 hover:text-emerald-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
+						className="h-9 sm:h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-emerald-500/15 hover:text-emerald-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
 						title="Пародонт интактен / норма (все 32 зуба: глубина 2 мм, рецессия 0 мм, BOP 0%)"
 						data-testid="perio-healthy-norm-btn"
 					>
@@ -123,7 +123,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={() => onMarkSelectedToothPathology(5, true)}
-						className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden md:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
+						className="h-9 sm:h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden md:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
 						title={`Быстрая разметка пародонтита: карман 5 мм + кровоточивость для выбранного зуба #${selectedToothNumber}`}
 						data-testid="perio-preset-tooth-pathology"
 					>
@@ -134,7 +134,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={onMarkBopOnDeepPockets}
-						className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden lg:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
+						className="h-9 sm:h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden lg:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
 						title="Автоматически проставить кровоточивость на всех карманах глубиной ≥ 4 мм"
 						data-testid="perio-preset-bop-pockets"
 					>
@@ -145,7 +145,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={onClearPlaque}
-						className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden xl:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
+						className="h-9 sm:h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-400 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden xl:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
 						title="Очистить весь зубной налет"
 						data-testid="perio-preset-clear-plaque"
 					>
@@ -156,7 +156,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={onToggleHygieneExpanded}
-						className={`h-9 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0 ${
+						className={`h-9 sm:h-8 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0 ${
 							isHygieneExpanded
 								? "bg-teal-600 text-white border-teal-500 shadow-xs"
 								: "bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-400 border-[var(--line)] text-[var(--ink)]"
@@ -180,7 +180,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={onInsertToProtocol}
-						className="h-9 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px] whitespace-nowrap shrink-0"
+						className="h-9 sm:h-8 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 whitespace-nowrap shrink-0"
 						title="Сформировать и вставить протокол пародонтограммы в дневник 043/у"
 						data-testid="perio-insert-protocol-btn"
 					>
@@ -193,7 +193,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={onCopyProtocol}
-						className="h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] min-w-[44px] shrink-0"
+						className="h-9 sm:h-8 w-9 sm:w-8 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 shrink-0"
 						title="Копировать текст протокола в буфер"
 						aria-label="Копировать текст протокола"
 					>
@@ -207,7 +207,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 					<button
 						type="button"
 						onClick={onToggleHelp}
-						className="h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] min-w-[44px] shrink-0"
+						className="h-9 sm:h-8 w-9 sm:w-8 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-0 shrink-0"
 						title="Справка по горячим клавишам пародонтограммы"
 						aria-label="Справка по горячим клавишам"
 					>

@@ -55,8 +55,8 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 		<div className="flex flex-col gap-3.5 p-4 rounded-xl bg-teal-500/10 border border-teal-500/30 text-[var(--ink)] shadow-xs">
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-teal-500/20">
 				<div className="flex items-center gap-2 min-w-0">
-					<Activity size={18} className="text-teal-400 shrink-0" />
-					<h4 className="text-sm font-black text-teal-300 truncate">
+					<Activity size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<h4 className="text-sm font-black text-teal-900 dark:text-teal-300 truncate">
 						Экспресс-скрининг пародонта PSR / CPITN (ВОЗ / СтАР) и 1-клик пресеты
 					</h4>
 				</div>
@@ -97,7 +97,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					<button
 						type="button"
 						onClick={onToggleTier3Probing}
-						className="text-xs text-teal-400 hover:text-teal-300 font-bold flex items-center gap-1 cursor-pointer transition-colors min-h-[44px] px-2.5 rounded-lg hover:bg-teal-500/15"
+						className="text-xs text-teal-700 dark:text-teal-400 hover:text-teal-900 dark:hover:text-teal-300 font-bold flex items-center gap-1 cursor-pointer transition-colors min-h-[44px] px-2.5 rounded-lg hover:bg-teal-500/15"
 						data-testid="perio-tier3-toggle-header-btn"
 					>
 						<span>
@@ -121,7 +121,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					type="button"
 					disabled={readOnly}
 					onClick={() => onApplyExpressPreset("perio_norm_express")}
-					className="min-h-[50px] p-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+					className="min-h-[50px] p-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-900 dark:text-emerald-200 border border-emerald-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
 					title={
 						readOnly
 							? "Режим только для чтения (закрытый визит / архив)"
@@ -130,15 +130,15 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					data-testid="perio-preset-norm-card"
 				>
 					<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
-						<span className="flex items-center gap-1.5 text-emerald-300 min-w-0 truncate">
-							<ShieldCheck size={16} className="text-emerald-400 shrink-0" />
+						<span className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 min-w-0 truncate">
+							<ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 							<span className="truncate">Норма (PSR 0)</span>
 						</span>
-						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 shrink-0">
 							Z01.2
 						</span>
 					</div>
-					<span className="text-[11px] text-emerald-200/80 leading-tight mt-1 line-clamp-2">
+					<span className="text-[11px] text-emerald-900/80 dark:text-emerald-200/80 leading-tight mt-1 line-clamp-2">
 						PSR 0, глубина &le; 2 мм, BOP 0, десна плотная
 					</span>
 				</button>
@@ -148,7 +148,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					type="button"
 					disabled={readOnly}
 					onClick={() => onApplyExpressPreset("pro_hygiene_express")}
-					className="min-h-[50px] p-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+					className="min-h-[50px] p-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-900 dark:text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
 					title={
 						readOnly
 							? "Режим только для чтения (закрытый визит / архив)"
@@ -157,15 +157,15 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					data-testid="perio-preset-prophy-card"
 				>
 					<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
-						<span className="flex items-center gap-1.5 text-cyan-300 min-w-0 truncate">
-							<Sparkles size={16} className="text-cyan-400 shrink-0" />
+						<span className="flex items-center gap-1.5 text-cyan-800 dark:text-cyan-300 min-w-0 truncate">
+							<Sparkles size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
 							<span className="truncate">Профгигиена</span>
 						</span>
-						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shrink-0">
+						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 border border-cyan-500/30 shrink-0">
 							A16.07.051
 						</span>
 					</div>
-					<span className="text-[11px] text-cyan-200/80 leading-tight mt-1 line-clamp-2">
+					<span className="text-[11px] text-cyan-900/80 dark:text-cyan-200/80 leading-tight mt-1 line-clamp-2">
 						УЗ + Air-Flow глицин + полировка + фторирование
 					</span>
 				</button>
@@ -175,7 +175,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					type="button"
 					disabled={readOnly}
 					onClick={() => onApplyExpressPreset("gingivitis_express")}
-					className="min-h-[50px] p-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+					className="min-h-[50px] p-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-900 dark:text-amber-200 border border-amber-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
 					title={
 						readOnly
 							? "Режим только для чтения (закрытый визит / архив)"
@@ -184,15 +184,15 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					data-testid="perio-preset-gingivitis-card"
 				>
 					<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
-						<span className="flex items-center gap-1.5 text-amber-300 min-w-0 truncate">
-							<Activity size={16} className="text-amber-400 shrink-0" />
+						<span className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 min-w-0 truncate">
+							<Activity size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
 							<span className="truncate">Гингивит (PSR 1-2)</span>
 						</span>
-						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 shrink-0">
 							K05.1
 						</span>
 					</div>
-					<span className="text-[11px] text-amber-200/80 leading-tight mt-1 line-clamp-2">
+					<span className="text-[11px] text-amber-900/80 dark:text-amber-200/80 leading-tight mt-1 line-clamp-2">
 						карманы &lt; 3.5 мм, BOP+, отек сосочков
 					</span>
 				</button>
@@ -202,7 +202,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					type="button"
 					disabled={readOnly}
 					onClick={() => onApplyExpressPreset("periodontitis_mild_express")}
-					className="min-h-[50px] p-3 rounded-xl bg-rose-600/15 hover:bg-rose-600/30 text-rose-200 border border-rose-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+					className="min-h-[50px] p-3 rounded-xl bg-rose-600/15 hover:bg-rose-600/30 text-rose-900 dark:text-rose-200 border border-rose-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
 					title={
 						readOnly
 							? "Режим только для чтения (закрытый визит / архив)"
@@ -211,15 +211,15 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					data-testid="perio-preset-mild-periodontitis-card"
 				>
 					<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
-						<span className="flex items-center gap-1.5 text-rose-300 min-w-0 truncate">
-							<AlertTriangle size={16} className="text-rose-400 shrink-0" />
+						<span className="flex items-center gap-1.5 text-rose-800 dark:text-rose-300 min-w-0 truncate">
+							<AlertTriangle size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
 							<span className="truncate">Пародонтит легкий</span>
 						</span>
-						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 shrink-0">
+						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-800 dark:text-rose-300 border border-rose-500/30 shrink-0">
 							K05.30
 						</span>
 					</div>
-					<span className="text-[11px] text-rose-200/80 leading-tight mt-1 line-clamp-2">
+					<span className="text-[11px] text-rose-900/80 dark:text-rose-200/80 leading-tight mt-1 line-clamp-2">
 						карманы 3.5–4 мм, BOP+, зубной камень
 					</span>
 				</button>
@@ -229,7 +229,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					type="button"
 					disabled={readOnly}
 					onClick={() => onApplyExpressPreset("periodontitis_moderate_express")}
-					className="min-h-[50px] p-3 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-200 border border-orange-500/45 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+					className="min-h-[50px] p-3 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-900 dark:text-orange-200 border border-orange-500/45 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
 					title={
 						readOnly
 							? "Режим только для чтения (закрытый визит / архив)"
@@ -238,15 +238,15 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					data-testid="perio-preset-periodontitis-card"
 				>
 					<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
-						<span className="flex items-center gap-1.5 text-orange-300 min-w-0 truncate">
-							<ShieldAlert size={16} className="text-orange-400 shrink-0" />
+						<span className="flex items-center gap-1.5 text-orange-800 dark:text-orange-300 min-w-0 truncate">
+							<ShieldAlert size={16} className="text-orange-600 dark:text-orange-400 shrink-0" />
 							<span className="truncate">Пародонтит средний</span>
 						</span>
-						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30 shrink-0">
+						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-800 dark:text-orange-300 border border-orange-500/30 shrink-0">
 							K05.31
 						</span>
 					</div>
-					<span className="text-[11px] text-orange-200/80 leading-tight mt-1 line-clamp-2">
+					<span className="text-[11px] text-orange-900/80 dark:text-orange-200/80 leading-tight mt-1 line-clamp-2">
 						карманы 4–5 мм, рецессия 1–2 мм, подвижность I
 					</span>
 				</button>
@@ -256,7 +256,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					type="button"
 					disabled={readOnly}
 					onClick={() => onApplyExpressPreset("periodontitis_severe_express")}
-					className="min-h-[50px] p-3 rounded-xl bg-red-700/20 hover:bg-red-700/35 text-red-200 border border-red-600/45 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
+					className="min-h-[50px] p-3 rounded-xl bg-red-700/20 hover:bg-red-700/35 text-red-900 dark:text-red-200 border border-red-600/45 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0"
 					title={
 						readOnly
 							? "Режим только для чтения (закрытый визит / архив)"
@@ -266,15 +266,15 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					data-preset-action="perio-preset-severe-btn"
 				>
 					<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
-						<span className="flex items-center gap-1.5 text-red-300 min-w-0 truncate">
-							<ShieldAlert size={16} className="text-red-400 shrink-0" />
+						<span className="flex items-center gap-1.5 text-red-800 dark:text-red-300 min-w-0 truncate">
+							<ShieldAlert size={16} className="text-red-600 dark:text-red-400 shrink-0" />
 							<span className="truncate">Пародонтит тяжелый</span>
 						</span>
-						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30 shrink-0">
+						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/20 text-red-800 dark:text-red-300 border border-red-500/30 shrink-0">
 							K05.32
 						</span>
 					</div>
-					<span className="text-[11px] text-red-200/80 leading-tight mt-1 line-clamp-2">
+					<span className="text-[11px] text-red-900/80 dark:text-red-200/80 leading-tight mt-1 line-clamp-2">
 						карманы &ge;6 мм, гноетечение, подвижность II-III
 					</span>
 				</button>
@@ -283,11 +283,11 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 			{/* 6-Sextants Rapid Interactive PSR Grid */}
 			<div className="flex flex-col gap-2 pt-2 border-t border-teal-500/20">
 				<div className="flex items-center justify-between flex-wrap gap-1.5">
-					<span className="text-xs font-bold text-teal-200 flex items-center gap-1.5">
-						<Layers size={14} className="text-teal-400" />
+					<span className="text-xs font-bold text-teal-900 dark:text-teal-200 flex items-center gap-1.5">
+						<Layers size={14} className="text-teal-600 dark:text-teal-400" />
 						Секстанты PSR (по 6 участкам зубного ряда):
 					</span>
-					<span className="font-mono text-xs font-bold text-teal-300 bg-[var(--paper)] px-2 py-0.5 rounded border border-teal-500/30">
+					<span className="font-mono text-xs font-bold text-teal-900 dark:text-teal-300 bg-[var(--paper)] px-2 py-0.5 rounded border border-teal-500/30">
 						{psrSummaryText}
 					</span>
 				</div>
@@ -312,14 +312,14 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 									<span
 										className={`font-mono font-black text-xs px-1.5 py-0.5 rounded border shrink-0 ${
 											currentCode === 0
-												? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+												? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"
 												: currentCode === 1
-													? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+													? "bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/30"
 													: currentCode === 2
-														? "bg-sky-500/20 text-sky-300 border-sky-500/30"
+														? "bg-sky-500/20 text-sky-800 dark:text-sky-300 border-sky-500/30"
 														: currentCode === 3
-															? "bg-orange-500/20 text-orange-300 border-orange-500/30"
-															: "bg-rose-500/25 text-rose-300 border-rose-500/40"
+															? "bg-orange-500/20 text-orange-800 dark:text-orange-300 border-orange-500/30"
+															: "bg-rose-500/25 text-rose-800 dark:text-rose-300 border-rose-500/40"
 										}`}
 									>
 										Код {currentCode}
@@ -348,7 +348,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 													isSelected
 														? def.badgeClass +
 															" ring-1 ring-white/50 scale-105"
-														: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-white border-[var(--line)]"
+														: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] dark:hover:text-white border-[var(--line)]"
 												}`}
 												title={
 													readOnly
@@ -376,7 +376,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 										className={`min-h-[44px] min-w-[32px] sm:min-w-[36px] rounded-lg font-black text-xs flex items-center justify-center transition-all cursor-pointer touch-manipulation border ${
 											hasAsterisk
 												? "bg-rose-500 text-white border-rose-400 ring-1 ring-white/50"
-												: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-rose-400 border-[var(--line)]"
+												: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-rose-600 dark:hover:text-rose-400 border-[var(--line)]"
 										}`}
 										title={
 											readOnly
@@ -407,7 +407,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					type="button"
 					disabled={readOnly}
 					onClick={() => onApplyExpressPreset("pro_hygiene_express")}
-					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-cyan-500/15 text-cyan-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center gap-1 shrink-0"
+					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-cyan-500/15 text-cyan-800 dark:text-cyan-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center gap-1 shrink-0"
 					title={
 						readOnly
 							? "Режим только для чтения (закрытый визит / архив)"
@@ -415,14 +415,14 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					}
 					data-testid="perio-preset-pro-hygiene-card"
 				>
-					<Sparkles size={12} className="text-cyan-400" />
+					<Sparkles size={12} className="text-cyan-600 dark:text-cyan-400" />
 					<span>Профгигиена (полный протокол)</span>
 				</button>
 				<button
 					type="button"
 					disabled={readOnly}
 					onClick={() => onApplyTherapistPreset("gingivitis_localized")}
-					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-amber-500/15 text-amber-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
+					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
 					title={
 						readOnly
 							? "Режим только для чтения (закрытый визит / архив)"
@@ -435,7 +435,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					type="button"
 					disabled={readOnly}
 					onClick={() => onApplyTherapistPreset("gingivitis_generalized")}
-					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-amber-500/15 text-amber-200 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
+					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
 					title={
 						readOnly
 							? "Режим только для чтения (закрытый визит / архив)"
@@ -448,7 +448,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					type="button"
 					disabled={readOnly}
 					onClick={() => onApplyTherapistPreset("periodontitis_mild")}
-					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-orange-500/15 text-orange-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
+					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-orange-500/15 text-orange-800 dark:text-orange-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
 					title={
 						readOnly
 							? "Режим только для чтения (закрытый визит / архив)"
@@ -461,7 +461,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					type="button"
 					disabled={readOnly}
 					onClick={() => onApplyTherapistPreset("periodontitis_severe")}
-					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-rose-500/15 text-rose-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
+					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
 					title={
 						readOnly
 							? "Режим только для чтения (закрытый визит / архив)"
@@ -474,7 +474,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					type="button"
 					disabled={readOnly}
 					onClick={() => onApplyTherapistPreset("dental_calculus")}
-					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-sky-500/15 text-sky-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
+					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-sky-500/15 text-sky-800 dark:text-sky-300 border border-[var(--line)] transition-all cursor-pointer touch-manipulation flex items-center shrink-0"
 					title={
 						readOnly
 							? "Режим только для чтения (закрытый визит / архив)"
