@@ -1,6 +1,7 @@
 import type { ImagingStudy, ImagingViewerSessionState } from "@dental/shared";
 import { and, eq, inArray } from "drizzle-orm";
 import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
+import { cloneDicomWorkbenchManifestForServerStorage } from "../routes/imaging/workstationReadiness.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 
@@ -530,6 +531,7 @@ export async function saveDicomWorkbenchBundle(
 	organizationId: string,
 	input: SaveDicomWorkbenchBundleRequest,
 ): Promise<DicomWorkbenchBundle> {
+	const sanitizedManifest = cloneDicomWorkbenchManifestForServerStorage(input.manifest);
 	const clientSavedAt = input.clientSavedAt
 		? new Date(input.clientSavedAt)
 		: null;
@@ -558,7 +560,7 @@ export async function saveDicomWorkbenchBundle(
 		const [updated] = await db
 			.update(dicomWorkbenchBundles)
 			.set({
-				manifest: input.manifest,
+				manifest: sanitizedManifest,
 				clientSavedAt,
 				serverSavedAt: now,
 				updatedAt: now,
@@ -600,7 +602,7 @@ export async function saveDicomWorkbenchBundle(
 			sourceName: "API Upload",
 			sourceKind: "manual_upload",
 			pixelPolicy: "metadata_and_tool_state_only_no_pixels",
-			manifest: input.manifest,
+			manifest: sanitizedManifest,
 			clientSavedAt,
 			serverSavedAt: now,
 			warnings: [],

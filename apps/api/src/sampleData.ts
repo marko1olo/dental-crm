@@ -1136,7 +1136,7 @@ const communicationEvents: CommunicationEvent[] = [
 	},
 ];
 
-const imagingStudies: ImagingStudy[] = [
+export const imagingStudies: ImagingStudy[] = [
 	{
 		id: "fbe3704c-9b37-4149-ae4b-e99e46d7599f",
 		organizationId,

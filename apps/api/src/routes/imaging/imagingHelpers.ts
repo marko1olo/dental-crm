@@ -2,6 +2,19 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { setImmediate as yieldImmediate } from "node:timers/promises";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { denteAdminSecretHeader, unguardedBypassAllowed } from "../../accessGuard.js";
+import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
+
+export function getImagingOrganizationId(
+	request: FastifyRequest,
+	reply: FastifyReply,
+): string | null {
+	const identityOrg = getRequestIdentity(request).organizationId;
+	if (identityOrg) return identityOrg;
+	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
+		return "4a3420d1-6ffb-4459-bd8f-7f7087f5e191";
+	}
+	return requireOrganizationId(request, reply);
+}
 
 export type ImagingPayloadSchema<T> = {
 	safeParse: (
