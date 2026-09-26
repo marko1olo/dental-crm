@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Service Identifier -->
+    <key>Label</key>
+    <string>com.dente.crm</string>
+
+    <!-- Execution Arguments -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/Shared/DenteCRM/installer/macos/service-runner.sh</string>
+    </array>
+
+    <!-- Run automatically when user logs in -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Keep alive with crash-restart protection (do not restart on normal clean exit 0) -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <!-- Minimum delay in seconds between restart attempts to prevent spin loops -->
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+
+    <!-- Working Directory -->
+    <key>WorkingDirectory</key>
+    <string>/Users/Shared/DenteCRM</string>
+
+    <!-- Environment variables for Node & Fastify -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>NODE_ENV</key>
+        <string>production</string>
+        <key>PORT</key>
+        <string>4000</string>
+        <key>API_PORT</key>
+        <string>4000</string>
+        <key>API_HOST</key>
+        <string>0.0.0.0</string>
+    </dict>
+
+    <!-- Logging destinations in ~/Library/Logs/DenteCRM -->
+    <key>StandardOutPath</key>
+    <string>/Users/Shared/Library/Logs/DenteCRM/service.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/Shared/Library/Logs/DenteCRM/service-error.log</string>
+
+    <!-- Process Scheduling Priority -->
+    <key>ProcessType</key>
+    <string>Interactive</string>
+</dict>
+</plist>
