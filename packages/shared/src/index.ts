@@ -5749,6 +5749,7 @@ export const generatedDocumentSchema = z.object({
 	doctorSignedAt: z.string().nullable().optional(),
 });
 export type GeneratedDocument = z.infer<typeof generatedDocumentSchema>;
+export type DocumentStatus = GeneratedDocument["status"];
 export const documentChainSummarySchema = z
 	.object({
 		paidMedicalServicesContract: z
