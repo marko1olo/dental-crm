@@ -82,6 +82,8 @@ type SelectRow = Record<string, unknown>;
 interface DbFixture {
 	/** Строки organizations. Пустой массив = организации с таким id не существует. */
 	organizations?: SelectRow[];
+	/** Строки ветки imaging_series (серии снимков). */
+	series?: SelectRow[];
 	/** Строки ветки imaging_instances (индекс объектов). */
 	instances?: SelectRow[];
 	/** Строки ветки imaging_studies (storage_path исследования). */
@@ -116,6 +118,7 @@ function mockDb(t: TestContext, fixture: DbFixture): { calls: number } {
 		let table: unknown = null;
 		const resolveRows = () => {
 			if (table === schema.organizations) return fixture.organizations ?? [];
+			if (table === schema.imagingSeries) return fixture.series ?? [];
 			if (table === schema.imagingInstances) return fixture.instances ?? [];
 			if (table === schema.imagingStudies) return fixture.studies ?? [];
 			throw new Error(
@@ -718,5 +721,50 @@ test("QIDO-RS search blocks non-clinical role with 403 PermissionDenied (152-FZ 
 
 	await app.close();
 });
+
+test("QIDO-RS series search returns series list for study", async (t) => {
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
+
+	const response = await app.inject({
+		method: "GET",
+		url: `/api/dicomweb/studies/${SAMPLE_STUDY_UID}/series`,
+		headers: clinicHeaders(),
+	});
+
+	assert.strictEqual(response.statusCode, 200);
+	assert.ok(
+		response.headers["content-type"]?.startsWith("application/dicom+json"),
+	);
+	const json = response.json();
+	assert.ok(Array.isArray(json));
+	assert.ok(json.length >= 1);
+	assert.strictEqual(json[0]["0020000E"].Value[0], SAMPLE_SERIES_UID);
+
+	await app.close();
+});
+
+test("WADO-RS series metadata returns metadata array for series", async (t) => {
+	mockDb(t, { organizations: existingOrganization() });
+	const app = await buildApp();
+
+	const response = await app.inject({
+		method: "GET",
+		url: `/api/dicomweb/studies/${SAMPLE_STUDY_UID}/series/${SAMPLE_SERIES_UID}/metadata`,
+		headers: clinicHeaders(),
+	});
+
+	assert.strictEqual(response.statusCode, 200);
+	assert.ok(
+		response.headers["content-type"]?.startsWith("application/dicom+json"),
+	);
+	const json = response.json();
+	assert.ok(Array.isArray(json));
+	assert.ok(json.length >= 1);
+	assert.strictEqual(json[0]["00080018"].Value[0], SAMPLE_SOP_UID);
+
+	await app.close();
+});
+
 
 

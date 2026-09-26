@@ -30,6 +30,8 @@ import {
 	organizationExists,
 	resolveInstanceFilePath,
 	streamDicomFileResponse,
+	sampleDicomOwnerOrganizationId,
+	sampleDicomPath,
 } from "./dicomwebHelpers.js";
 import { registerDicomwebStowRoutes } from "./dicomwebStow.js";
 
@@ -174,6 +176,381 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 
 			reply.header("Content-Type", "application/dicom+json");
 			return reply.code(200).send(dicomJson);
+		},
+	);
+
+	/**
+	 * QIDO-RS: Search for Series (DICOM PS3.18 Section 8.4)
+	 * GET /api/dicomweb/studies/:studyUid/series
+	 */
+	app.get<{
+		Params: { studyUid: string };
+	}>(
+		"/api/dicomweb/studies/:studyUid/series",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"dicom qido series",
+				))
+			)
+				return;
+			const organizationId = requireOrganizationId(request, reply);
+			if (!organizationId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.dicom.read",
+					role: staffRole,
+					message:
+						"Доступ к сериям КТ / DICOM ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+				});
+			}
+
+			const studyUid = normalizeUid(request.params.studyUid);
+			if (!studyUid) {
+				return reply.code(400).send({
+					error: "InvalidStudyUid",
+					message: "Не указан StudyInstanceUID.",
+				});
+			}
+
+			if (!UUID_SHAPE.test(organizationId)) {
+				return reply.code(403).send({
+					error: "OrganizationUnknown",
+					message: "Организация из токена не существует.",
+				});
+			}
+
+			const rows = await withTenantCtx(organizationId, async () => {
+				const orgKnown = await organizationExists(organizationId);
+				if (!orgKnown) return null;
+
+				return db
+					.select({
+						seriesUid: schema.imagingSeries.dicomSeriesUid,
+						modality: schema.imagingSeries.modality,
+						seriesNumber: schema.imagingSeries.seriesNumber,
+						seriesDescription: schema.imagingSeries.seriesDescription,
+					})
+					.from(schema.imagingSeries)
+					.innerJoin(
+						schema.imagingStudies,
+						eq(schema.imagingStudies.id, schema.imagingSeries.studyId),
+					)
+					.where(
+						and(
+							eq(schema.imagingSeries.organizationId, organizationId),
+							eq(schema.imagingStudies.organizationId, organizationId),
+							eq(schema.imagingStudies.dicomStudyUid, studyUid),
+						),
+					);
+			});
+
+			if (rows === null) {
+				return reply.code(403).send({
+					error: "OrganizationUnknown",
+					message: "Организация из токена не существует.",
+				});
+			}
+
+			const dicomJson: Record<string, unknown>[] = rows.map((r) => ({
+				"0020000D": { vr: "UI", Value: [studyUid] },
+				"0020000E": { vr: "UI", Value: [r.seriesUid] },
+				"00080060": { vr: "CS", Value: [r.modality ?? "CT"] },
+				"00200011": { vr: "IS", Value: [r.seriesNumber ?? 1] },
+				"0008103E": { vr: "LO", Value: [r.seriesDescription ?? "Series"] },
+			}));
+
+			if (dicomJson.length === 0) {
+				const sampleOwnerOrgId = sampleDicomOwnerOrganizationId();
+				if (sampleOwnerOrgId !== null && sampleOwnerOrgId === organizationId) {
+					const samplePath = sampleDicomPath();
+					const ident = await readDicomIdentity(samplePath);
+					if (ident?.studyUid === studyUid && ident.seriesUid) {
+						dicomJson.push({
+							"0020000D": { vr: "UI", Value: [studyUid] },
+							"0020000E": { vr: "UI", Value: [ident.seriesUid] },
+							"00080060": { vr: "CS", Value: ["CT"] },
+							"00200011": { vr: "IS", Value: [1] },
+							"0008103E": { vr: "LO", Value: ["Sample Series"] },
+						});
+					}
+				}
+			}
+
+			reply.header("Content-Type", "application/dicom+json");
+			return reply.code(200).send(dicomJson);
+		},
+	);
+
+	/**
+	 * QIDO-RS: Search for Instances in Series (DICOM PS3.18 Section 8.5)
+	 * GET /api/dicomweb/studies/:studyUid/series/:seriesUid/instances
+	 */
+	app.get<{
+		Params: { studyUid: string; seriesUid: string };
+	}>(
+		"/api/dicomweb/studies/:studyUid/series/:seriesUid/instances",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"dicom qido instances",
+				))
+			)
+				return;
+			const organizationId = requireOrganizationId(request, reply);
+			if (!organizationId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.dicom.read",
+					role: staffRole,
+					message:
+						"Доступ к объектам КТ / DICOM ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+				});
+			}
+
+			const studyUid = normalizeUid(request.params.studyUid);
+			const seriesUid = normalizeUid(request.params.seriesUid);
+			if (!studyUid || !seriesUid) {
+				return reply.code(400).send({
+					error: "InvalidUid",
+					message: "Не указан StudyInstanceUID или SeriesInstanceUID.",
+				});
+			}
+
+			if (!UUID_SHAPE.test(organizationId)) {
+				return reply.code(403).send({
+					error: "OrganizationUnknown",
+					message: "Организация из токена не существует.",
+				});
+			}
+
+			const rows = await withTenantCtx(organizationId, async () => {
+				const orgKnown = await organizationExists(organizationId);
+				if (!orgKnown) return null;
+
+				return db
+					.select({
+						sopInstanceUid: schema.imagingInstances.dicomSopInstanceUid,
+						instanceNumber: schema.imagingInstances.instanceNumber,
+						sopClassUid: schema.imagingInstances.sopClassUid,
+						rows: schema.imagingInstances.rows,
+						columns: schema.imagingInstances.columns,
+					})
+					.from(schema.imagingInstances)
+					.innerJoin(
+						schema.imagingSeries,
+						eq(schema.imagingSeries.id, schema.imagingInstances.seriesId),
+					)
+					.innerJoin(
+						schema.imagingStudies,
+						eq(schema.imagingStudies.id, schema.imagingSeries.studyId),
+					)
+					.where(
+						and(
+							eq(schema.imagingInstances.organizationId, organizationId),
+							eq(schema.imagingSeries.organizationId, organizationId),
+							eq(schema.imagingStudies.organizationId, organizationId),
+							eq(schema.imagingStudies.dicomStudyUid, studyUid),
+							eq(schema.imagingSeries.dicomSeriesUid, seriesUid),
+						),
+					);
+			});
+
+			if (rows === null) {
+				return reply.code(403).send({
+					error: "OrganizationUnknown",
+					message: "Организация из токена не существует.",
+				});
+			}
+
+			const dicomJson: Record<string, unknown>[] = rows.map((r) => ({
+				"0020000D": { vr: "UI", Value: [studyUid] },
+				"0020000E": { vr: "UI", Value: [seriesUid] },
+				"00080018": { vr: "UI", Value: [r.sopInstanceUid] },
+				"00200013": { vr: "IS", Value: [r.instanceNumber ?? 1] },
+				"00080016": { vr: "UI", Value: [r.sopClassUid ?? "1.2.840.10008.5.1.4.1.1.2"] },
+				"00280010": { vr: "US", Value: [r.rows ?? 512] },
+				"00280011": { vr: "US", Value: [r.columns ?? 512] },
+			}));
+
+			if (dicomJson.length === 0) {
+				const sampleOwnerOrgId = sampleDicomOwnerOrganizationId();
+				if (sampleOwnerOrgId !== null && sampleOwnerOrgId === organizationId) {
+					const samplePath = sampleDicomPath();
+					const ident = await readDicomIdentity(samplePath);
+					if (ident?.studyUid === studyUid && ident.seriesUid === seriesUid && ident.sopInstanceUid) {
+						dicomJson.push({
+							"0020000D": { vr: "UI", Value: [studyUid] },
+							"0020000E": { vr: "UI", Value: [seriesUid] },
+							"00080018": { vr: "UI", Value: [ident.sopInstanceUid] },
+							"00200013": { vr: "IS", Value: [1] },
+							"00080016": { vr: "UI", Value: ["1.2.840.10008.5.1.4.1.1.2"] },
+							"00280010": { vr: "US", Value: [ident.rows ?? 512] },
+							"00280011": { vr: "US", Value: [ident.columns ?? 512] },
+						});
+					}
+				}
+			}
+
+			reply.header("Content-Type", "application/dicom+json");
+			return reply.code(200).send(dicomJson);
+		},
+	);
+
+	/**
+	 * WADO-RS: Retrieve Series Metadata (DICOM PS3.18 Section 9.4)
+	 * GET /api/dicomweb/studies/:studyUid/series/:seriesUid/metadata
+	 */
+	app.get<{
+		Params: { studyUid: string; seriesUid: string };
+	}>(
+		"/api/dicomweb/studies/:studyUid/series/:seriesUid/metadata",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"dicom series metadata",
+				))
+			)
+				return;
+			const organizationId = requireOrganizationId(request, reply);
+			if (!organizationId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.dicom.read",
+					role: staffRole,
+					message:
+						"Доступ к метаданным серии ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+				});
+			}
+
+			const studyUid = normalizeUid(request.params.studyUid);
+			const seriesUid = normalizeUid(request.params.seriesUid);
+			if (!studyUid || !seriesUid) {
+				return reply.code(400).send({
+					error: "InvalidUid",
+					message: "Не указан StudyInstanceUID или SeriesInstanceUID.",
+				});
+			}
+
+			if (!UUID_SHAPE.test(organizationId)) {
+				return reply.code(403).send({
+					error: "OrganizationUnknown",
+					message: "Организация из токена не существует.",
+				});
+			}
+
+			const instances = await withTenantCtx(organizationId, async () => {
+				const orgKnown = await organizationExists(organizationId);
+				if (!orgKnown) return null;
+
+				return db
+					.select({
+						sopInstanceUid: schema.imagingInstances.dicomSopInstanceUid,
+						instanceNumber: schema.imagingInstances.instanceNumber,
+						storagePath: schema.imagingInstances.storagePath,
+						rows: schema.imagingInstances.rows,
+						columns: schema.imagingInstances.columns,
+					})
+					.from(schema.imagingInstances)
+					.innerJoin(
+						schema.imagingSeries,
+						eq(schema.imagingSeries.id, schema.imagingInstances.seriesId),
+					)
+					.innerJoin(
+						schema.imagingStudies,
+						eq(schema.imagingStudies.id, schema.imagingSeries.studyId),
+					)
+					.where(
+						and(
+							eq(schema.imagingInstances.organizationId, organizationId),
+							eq(schema.imagingSeries.organizationId, organizationId),
+							eq(schema.imagingStudies.organizationId, organizationId),
+							eq(schema.imagingStudies.dicomStudyUid, studyUid),
+							eq(schema.imagingSeries.dicomSeriesUid, seriesUid),
+						),
+					);
+			});
+
+			if (instances === null) {
+				return reply.code(403).send({
+					error: "OrganizationUnknown",
+					message: "Организация из токена не существует.",
+				});
+			}
+
+			const metadataList: Record<string, unknown>[] = [];
+			for (const inst of instances) {
+				let ident: DicomFileIdentity | null = null;
+				if (inst.storagePath) {
+					ident = await readDicomIdentity(path.resolve(inst.storagePath));
+				}
+				metadataList.push({
+					"0020000D": { vr: "UI", Value: [studyUid] },
+					"0020000E": { vr: "UI", Value: [seriesUid] },
+					"00080018": { vr: "UI", Value: [inst.sopInstanceUid] },
+					"00200013": { vr: "IS", Value: [inst.instanceNumber ?? 1] },
+					"00280008": { vr: "IS", Value: [ident?.numberOfFrames ?? 1] },
+					"00280010": { vr: "US", Value: [inst.rows ?? ident?.rows ?? 512] },
+					"00280011": { vr: "US", Value: [inst.columns ?? ident?.columns ?? 512] },
+					"00280100": { vr: "US", Value: [ident?.bitsAllocated ?? 16] },
+				});
+			}
+
+			if (metadataList.length === 0) {
+				const sampleOwnerOrgId = sampleDicomOwnerOrganizationId();
+				if (sampleOwnerOrgId !== null && sampleOwnerOrgId === organizationId) {
+					const samplePath = sampleDicomPath();
+					const ident = await readDicomIdentity(samplePath);
+					if (ident?.studyUid === studyUid && ident.seriesUid === seriesUid && ident.sopInstanceUid) {
+						metadataList.push({
+							"0020000D": { vr: "UI", Value: [studyUid] },
+							"0020000E": { vr: "UI", Value: [seriesUid] },
+							"00080018": { vr: "UI", Value: [ident.sopInstanceUid] },
+							"00200013": { vr: "IS", Value: [1] },
+							"00280008": { vr: "IS", Value: [ident.numberOfFrames] },
+							"00280010": { vr: "US", Value: [ident.rows ?? 512] },
+							"00280011": { vr: "US", Value: [ident.columns ?? 512] },
+							"00280100": { vr: "US", Value: [ident.bitsAllocated ?? 16] },
+						});
+					}
+				}
+			}
+
+			reply.header("Content-Type", "application/dicom+json");
+			return reply.code(200).send(metadataList);
 		},
 	);
 

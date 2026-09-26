@@ -1,0 +1,495 @@
+import React from "react";
+import { Box, FolderOpen, RotateCcw, UploadCloud } from "lucide-react";
+import type {
+	CbctVoxelVolume,
+	CbctViewportType,
+	MprPlane,
+	Point3D,
+	SlabProjectionMode,
+	ObliqueRotationAngles,
+	RotationHandlePosition,
+	ViewportTransform,
+} from "../cbctMprMath";
+import { resetPlaneObliqueAngle } from "../cbctMprMath";
+import type { CrossSectionSliceData } from "../dentalCurveEngine";
+import { CbctViewportHud } from "../CbctViewportHud";
+import type { ViewLayoutMode } from "./cbctStudioTypes";
+
+export interface CbctMprViewportsGridProps {
+	readonly isSidebarOpen: boolean;
+	readonly mobileActiveTab: string;
+	readonly volume: CbctVoxelVolume | null;
+	readonly dicomLoadingStatus: string | null;
+	readonly dicomProgress: number;
+	readonly maximizedViewport: CbctViewportType | null;
+	readonly viewLayout: ViewLayoutMode;
+	readonly folderInputRef: React.RefObject<HTMLInputElement | null>;
+	readonly zipInputRef: React.RefObject<HTMLInputElement | null>;
+	readonly handleDicomFilesChange: (files: FileList | File[]) => void;
+	readonly activeViewport: CbctViewportType;
+	readonly setActiveViewport: (v: CbctViewportType) => void;
+	readonly handleToggleMaximize: (v: CbctViewportType) => void;
+	readonly axialBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly axialOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly coronalBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly coronalOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly sagittalBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly sagittalOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly panoBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly panoOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly crossSectionBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly crossSectionOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly handleCanvasDoubleClick: (plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => void;
+	readonly handleCanvasMouseDown: (plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => void;
+	readonly handleCanvasMouseMove: (plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => void;
+	readonly handleCanvasMouseUp: () => void;
+	readonly handleCanvasWheel: (plane: CbctViewportType, e: React.WheelEvent<HTMLCanvasElement>) => void;
+	readonly getCanvasCursor: (plane: MprPlane) => string;
+	readonly crosshairMm: Point3D;
+	readonly currentVoxel: Point3D;
+	readonly slabMode: SlabProjectionMode;
+	readonly slabThicknessMm: number;
+	readonly obliqueAngles: ObliqueRotationAngles;
+	readonly setObliqueAngles: React.Dispatch<React.SetStateAction<ObliqueRotationAngles>>;
+	readonly handleFullResetViewport: (plane: CbctViewportType) => void;
+	readonly activeRotationHandle: { plane: MprPlane; handle: RotationHandlePosition } | null;
+	readonly isShiftRotating: { plane: MprPlane } | null;
+	readonly hoveredHandle: { plane: MprPlane; handle: RotationHandlePosition } | null;
+	readonly transforms: Record<CbctViewportType, ViewportTransform>;
+	readonly windowWidth: number;
+	readonly windowLevel: number;
+	readonly renderViewportOverlays: (v: CbctViewportType) => React.ReactNode;
+	readonly handlePanoMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+	readonly handlePanoMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+	readonly handlePanoMouseUp: () => void;
+	readonly handleCrossSectionMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+	readonly handleCrossSectionMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+	readonly handleCrossSectionMouseUp: () => void;
+	readonly dragImplantPart: string | null;
+	readonly hoveredImplantPart: string | null;
+	readonly activeCrossSection: CrossSectionSliceData | null | undefined;
+	readonly activeCrossSectionIdx: number;
+	readonly crossSections: CrossSectionSliceData[];
+}
+
+export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
+	isSidebarOpen,
+	mobileActiveTab,
+	volume,
+	dicomLoadingStatus,
+	dicomProgress,
+	maximizedViewport,
+	viewLayout,
+	folderInputRef,
+	zipInputRef,
+	handleDicomFilesChange,
+	activeViewport,
+	setActiveViewport,
+	handleToggleMaximize,
+	axialBaseCanvasRef,
+	axialOverlayCanvasRef,
+	coronalBaseCanvasRef,
+	coronalOverlayCanvasRef,
+	sagittalBaseCanvasRef,
+	sagittalOverlayCanvasRef,
+	panoBaseCanvasRef,
+	panoOverlayCanvasRef,
+	crossSectionBaseCanvasRef,
+	crossSectionOverlayCanvasRef,
+	handleCanvasDoubleClick,
+	handleCanvasMouseDown,
+	handleCanvasMouseMove,
+	handleCanvasMouseUp,
+	handleCanvasWheel,
+	getCanvasCursor,
+	crosshairMm,
+	currentVoxel,
+	slabMode,
+	slabThicknessMm,
+	obliqueAngles,
+	setObliqueAngles,
+	handleFullResetViewport,
+	activeRotationHandle,
+	isShiftRotating,
+	hoveredHandle,
+	transforms,
+	windowWidth,
+	windowLevel,
+	renderViewportOverlays,
+	handlePanoMouseDown,
+	handlePanoMouseMove,
+	handlePanoMouseUp,
+	handleCrossSectionMouseDown,
+	handleCrossSectionMouseMove,
+	handleCrossSectionMouseUp,
+	dragImplantPart,
+	hoveredImplantPart,
+	activeCrossSection,
+	activeCrossSectionIdx,
+	crossSections,
+}) => {
+	const renderAxialViewport = (extraClassName = "flex-1 flex flex-col") => (
+		<div
+			onDoubleClick={() => handleToggleMaximize("axial")}
+			onPointerDownCapture={() => setActiveViewport("axial")}
+			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
+				activeViewport === "axial"
+					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
+					: "border border-cyan-500/30 hover:border-cyan-500/60"
+			} ${extraClassName}`}
+			data-testid="cbct-viewport-container-axial"
+		>
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
+				<canvas
+					ref={axialBaseCanvasRef}
+					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+				/>
+				<canvas
+					ref={axialOverlayCanvasRef}
+					onDoubleClick={(e) => handleCanvasDoubleClick("axial", e)}
+					onMouseDown={(e) => handleCanvasMouseDown("axial", e)}
+					onMouseMove={(e) => handleCanvasMouseMove("axial", e)}
+					onMouseUp={handleCanvasMouseUp}
+					onWheel={(e) => handleCanvasWheel("axial", e)}
+					onContextMenu={(e) => e.preventDefault()}
+					style={{ cursor: getCanvasCursor("axial") }}
+					className="absolute inset-0 w-full h-full object-contain z-10"
+				/>
+				<CbctViewportHud
+					viewportType="axial"
+					coordinateMm={{ z: crosshairMm.z }}
+					sliceIndex={volume ? currentVoxel.z : undefined}
+					totalSlices={volume?.dimensions.depth}
+					slabMode={slabMode}
+					slabThicknessMm={slabThicknessMm}
+					pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+					obliqueAngleDeg={obliqueAngles.axialAngleDeg}
+					onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "axial"))}
+					onResetView={() => handleFullResetViewport("axial")}
+					isRotating={activeRotationHandle?.plane === "axial" || isShiftRotating?.plane === "axial"}
+					isHandleHovered={hoveredHandle?.plane === "axial"}
+					isMaximized={maximizedViewport === "axial"}
+					onToggleMaximize={() => handleToggleMaximize("axial")}
+					zoomFactor={transforms.axial?.zoom}
+					windowWidth={windowWidth}
+					windowLevel={windowLevel}
+				>
+					{renderViewportOverlays("axial")}
+				</CbctViewportHud>
+			</div>
+		</div>
+	);
+
+	const renderCoronalViewport = (extraClassName = "flex-1 flex flex-col") => (
+		<div
+			onDoubleClick={() => handleToggleMaximize("coronal")}
+			onPointerDownCapture={() => setActiveViewport("coronal")}
+			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
+				activeViewport === "coronal"
+					? "ring-1 ring-orange-500/50 border border-orange-500/80 shadow-orange-950/30"
+					: "border border-orange-500/30 hover:border-orange-500/60"
+			} ${extraClassName}`}
+			data-testid="cbct-viewport-container-coronal"
+		>
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
+				<canvas
+					ref={coronalBaseCanvasRef}
+					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+				/>
+				<canvas
+					ref={coronalOverlayCanvasRef}
+					onDoubleClick={(e) => handleCanvasDoubleClick("coronal", e)}
+					onMouseDown={(e) => handleCanvasMouseDown("coronal", e)}
+					onMouseMove={(e) => handleCanvasMouseMove("coronal", e)}
+					onMouseUp={handleCanvasMouseUp}
+					onWheel={(e) => handleCanvasWheel("coronal", e)}
+					onContextMenu={(e) => e.preventDefault()}
+					style={{ cursor: getCanvasCursor("coronal") }}
+					className="absolute inset-0 w-full h-full object-contain z-10"
+				/>
+				<CbctViewportHud
+					viewportType="coronal"
+					coordinateMm={{ y: crosshairMm.y }}
+					sliceIndex={volume ? currentVoxel.y : undefined}
+					totalSlices={volume?.dimensions.height}
+					slabMode={slabMode}
+					slabThicknessMm={slabThicknessMm}
+					pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+					obliqueAngleDeg={obliqueAngles.coronalTiltDeg}
+					onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "coronal"))}
+					onResetView={() => handleFullResetViewport("coronal")}
+					isRotating={activeRotationHandle?.plane === "coronal" || isShiftRotating?.plane === "coronal"}
+					isHandleHovered={hoveredHandle?.plane === "coronal"}
+					isMaximized={maximizedViewport === "coronal"}
+					onToggleMaximize={() => handleToggleMaximize("coronal")}
+					zoomFactor={transforms.coronal?.zoom}
+					windowWidth={windowWidth}
+					windowLevel={windowLevel}
+				>
+					{renderViewportOverlays("coronal")}
+				</CbctViewportHud>
+			</div>
+		</div>
+	);
+
+	const renderSagittalViewport = (extraClassName = "flex-1 flex flex-col") => (
+		<div
+			onDoubleClick={() => handleToggleMaximize("sagittal")}
+			onPointerDownCapture={() => setActiveViewport("sagittal")}
+			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
+				activeViewport === "sagittal"
+					? "ring-1 ring-emerald-500/50 border border-emerald-500/80 shadow-emerald-950/30"
+					: "border border-emerald-500/30 hover:border-emerald-500/60"
+			} ${extraClassName}`}
+			data-testid="cbct-viewport-container-sagittal"
+		>
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
+				<canvas
+					ref={sagittalBaseCanvasRef}
+					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+				/>
+				<canvas
+					ref={sagittalOverlayCanvasRef}
+					onDoubleClick={(e) => handleCanvasDoubleClick("sagittal", e)}
+					onMouseDown={(e) => handleCanvasMouseDown("sagittal", e)}
+					onMouseMove={(e) => handleCanvasMouseMove("sagittal", e)}
+					onMouseUp={handleCanvasMouseUp}
+					onWheel={(e) => handleCanvasWheel("sagittal", e)}
+					onContextMenu={(e) => e.preventDefault()}
+					style={{ cursor: getCanvasCursor("sagittal") }}
+					className="absolute inset-0 w-full h-full object-contain z-10"
+				/>
+				<CbctViewportHud
+					viewportType="sagittal"
+					coordinateMm={{ x: crosshairMm.x }}
+					sliceIndex={volume ? currentVoxel.x : undefined}
+					totalSlices={volume?.dimensions.width}
+					slabMode={slabMode}
+					slabThicknessMm={slabThicknessMm}
+					pixelSpacingMm={volume?.spacingMm.y ?? 0.4}
+					obliqueAngleDeg={obliqueAngles.sagittalTiltDeg}
+					onResetAngle={() => setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, "sagittal"))}
+					onResetView={() => handleFullResetViewport("sagittal")}
+					isRotating={activeRotationHandle?.plane === "sagittal" || isShiftRotating?.plane === "sagittal"}
+					isHandleHovered={hoveredHandle?.plane === "sagittal"}
+					isMaximized={maximizedViewport === "sagittal"}
+					onToggleMaximize={() => handleToggleMaximize("sagittal")}
+					zoomFactor={transforms.sagittal?.zoom}
+					windowWidth={windowWidth}
+					windowLevel={windowLevel}
+				>
+					{renderViewportOverlays("sagittal")}
+				</CbctViewportHud>
+			</div>
+		</div>
+	);
+
+	const renderPanoramicViewport = (extraClassName = "flex-1 flex flex-col") => (
+		<div
+			onDoubleClick={() => handleToggleMaximize("panoramic")}
+			onPointerDownCapture={() => setActiveViewport("panoramic")}
+			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
+				activeViewport === "panoramic"
+					? "ring-1 ring-purple-500/50 border border-purple-500/80 shadow-purple-950/30"
+					: "border border-purple-500/30 hover:border-purple-500/60"
+			} ${extraClassName}`}
+			data-testid="cbct-viewport-container-panoramic"
+		>
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
+				<canvas
+					ref={panoBaseCanvasRef}
+					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+				/>
+				<canvas
+					ref={panoOverlayCanvasRef}
+					onDoubleClick={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						handleToggleMaximize("panoramic");
+					}}
+					onMouseDown={handlePanoMouseDown}
+					onMouseMove={handlePanoMouseMove}
+					onMouseUp={handlePanoMouseUp}
+					onMouseLeave={handlePanoMouseUp}
+					onWheel={(e) => handleCanvasWheel("panoramic", e)}
+					onContextMenu={(e) => e.preventDefault()}
+					className="absolute inset-0 w-full h-full object-contain cursor-pointer z-10"
+					data-testid="cbct-panorama-canvas"
+				/>
+				<CbctViewportHud
+					viewportType="panoramic"
+					coordinateMm={{ z: crosshairMm.z }}
+					sliceIndex={volume ? currentVoxel.z : undefined}
+					totalSlices={volume?.dimensions.depth}
+					slabMode={slabMode}
+					slabThicknessMm={slabThicknessMm}
+					pixelSpacingMm={volume?.spacingMm.x ?? 0.4}
+					onResetView={() => handleFullResetViewport("panoramic")}
+					isMaximized={maximizedViewport === "panoramic"}
+					onToggleMaximize={() => handleToggleMaximize("panoramic")}
+					zoomFactor={transforms.panoramic?.zoom}
+					windowWidth={windowWidth}
+					windowLevel={windowLevel}
+				>
+					{renderViewportOverlays("panoramic")}
+				</CbctViewportHud>
+			</div>
+		</div>
+	);
+
+	const renderCrossSectionMaximizedViewport = () => (
+		<div
+			onDoubleClick={() => handleToggleMaximize("cross_section")}
+			onPointerDownCapture={() => setActiveViewport("cross_section")}
+			className={`relative bg-black rounded-md overflow-hidden transition-all flex-1 flex flex-col min-h-0 w-full h-full ${
+				activeViewport === "cross_section"
+					? "ring-1 ring-yellow-500/50 border border-yellow-500/80 shadow-yellow-950/30"
+					: "border border-yellow-500/30 hover:border-yellow-500/60"
+			}`}
+			data-testid="cbct-viewport-container-cross-section"
+		>
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
+				<canvas
+					ref={crossSectionBaseCanvasRef}
+					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+				/>
+				<canvas
+					ref={crossSectionOverlayCanvasRef}
+					onDoubleClick={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						handleToggleMaximize("cross_section");
+					}}
+					onMouseDown={handleCrossSectionMouseDown}
+					onMouseMove={handleCrossSectionMouseMove}
+					onMouseUp={handleCrossSectionMouseUp}
+					onMouseLeave={handleCrossSectionMouseUp}
+					onWheel={(e) => handleCanvasWheel("cross_section", e)}
+					onContextMenu={(e) => e.preventDefault()}
+					className={`absolute inset-0 w-full h-full object-contain z-10 ${
+						dragImplantPart ? "cursor-grabbing" : hoveredImplantPart ? "cursor-grab" : "cursor-default"
+					}`}
+					data-testid="cbct-cross-section-canvas"
+				/>
+				<CbctViewportHud
+					viewportType="cross_section"
+					toothFdi={activeCrossSection?.nearestToothFdi}
+					sliceIndex={activeCrossSectionIdx}
+					totalSlices={crossSections.length}
+					pixelSpacingMm={activeCrossSection?.pixelSpacingMm ?? 0.25}
+					onResetView={() => handleFullResetViewport("cross_section")}
+					isMaximized={true}
+					onToggleMaximize={() => handleToggleMaximize("cross_section")}
+					zoomFactor={transforms.cross_section?.zoom}
+					windowWidth={windowWidth}
+					windowLevel={windowLevel}
+				>
+					{renderViewportOverlays("cross_section")}
+				</CbctViewportHud>
+			</div>
+		</div>
+	);
+
+	return (
+		<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all relative`}>
+			{!volume ? (
+				<div
+					className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[var(--paper-strong,#0f172a)] border border-dashed border-[var(--line,#334155)] rounded-lg m-1 select-none"
+					data-testid="cbct-empty-volume-dropzone"
+					onDragOver={(e) => e.preventDefault()}
+					onDrop={(e) => {
+						e.preventDefault();
+						if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+							handleDicomFilesChange(e.dataTransfer.files);
+						}
+					}}
+				>
+					{dicomLoadingStatus ? (
+						<div className="flex flex-col items-center justify-center gap-3">
+							<div className="w-12 h-12 rounded-xl bg-[var(--paper,#18181b)] border border-[var(--line,#3f3f46)] flex items-center justify-center text-cyan-400 shadow-inner">
+								<RotateCcw className="w-6 h-6 animate-spin text-cyan-400" />
+							</div>
+							<h3 className="text-sm font-bold text-[var(--ink,#f4f4f5)] mb-1">
+								{dicomLoadingStatus}
+							</h3>
+							<div className="w-64 h-2 bg-[var(--paper,#18181b)] rounded-full overflow-hidden border border-[var(--line,#3f3f46)]">
+								<div
+									className="h-full bg-cyan-500 transition-all duration-200"
+									style={{ width: `${Math.max(5, Math.min(100, dicomProgress))}%` }}
+								/>
+							</div>
+							<span className="text-xs font-mono text-[var(--muted,#a1a1aa)]">{dicomProgress}%</span>
+						</div>
+					) : (
+						<>
+							<div className="w-12 h-12 rounded-xl bg-[var(--paper,#18181b)] border border-[var(--line,#3f3f46)] flex items-center justify-center text-cyan-400 mb-3 shadow-inner">
+								<Box className="w-6 h-6" />
+							</div>
+							<h3 className="text-sm font-bold text-[var(--ink,#f4f4f5)] mb-1">
+								Исследование КЛКТ не загружено
+							</h3>
+							<p className="text-xs text-[var(--muted,#a1a1aa)] max-w-md mb-4">
+								Перетащите папку со срезами DICOM (.dcm) или архив .zip сюда, либо выберите файлы для построения мультипланарной реконструкции (MPR) и имплантологического планирования.
+							</p>
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									onClick={() => folderInputRef.current?.click()}
+									className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
+									data-testid="cbct-btn-select-folder-empty"
+								>
+									<FolderOpen className="w-4 h-4" />
+									<span>Выбрать папку DICOM</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => zipInputRef.current?.click()}
+									className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
+									data-testid="cbct-btn-select-zip-empty"
+								>
+									<UploadCloud className="w-4 h-4" />
+									<span>Загрузить .ZIP</span>
+								</button>
+							</div>
+						</>
+					)}
+				</div>
+			) : maximizedViewport !== null ? (
+				<div className="flex-1 flex flex-col min-h-0 w-full h-full">
+					{maximizedViewport === "axial" && renderAxialViewport("flex-1 flex flex-col w-full h-full")}
+					{maximizedViewport === "coronal" && renderCoronalViewport("flex-1 flex flex-col w-full h-full")}
+					{maximizedViewport === "sagittal" && renderSagittalViewport("flex-1 flex flex-col w-full h-full")}
+					{maximizedViewport === "panoramic" && renderPanoramicViewport("flex-1 flex flex-col w-full h-full")}
+					{maximizedViewport === "cross_section" && renderCrossSectionMaximizedViewport()}
+				</div>
+			) : viewLayout === "layout_1_plus_3" ? (
+				<div className="flex-1 grid grid-cols-12 gap-1 min-h-0 min-w-0 w-full h-full">
+					<div className={`col-span-12 lg:col-span-8 min-h-0 min-w-0 w-full h-full ${mobileActiveTab === "axial" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col"}`}>
+						{renderAxialViewport("flex-1 flex flex-col w-full h-full")}
+					</div>
+					<div className="col-span-12 lg:col-span-4 min-h-0 min-w-0 w-full h-full flex flex-col lg:grid lg:grid-rows-3 gap-1">
+						{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+						{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+						{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+					</div>
+				</div>
+			) : (
+				<div className="flex-1 grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-2 gap-1 min-h-0 min-w-0 w-full h-full">
+					{renderAxialViewport(mobileActiveTab === "axial" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+					{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+					{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+					{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+				</div>
+			)}
+			{dicomLoadingStatus && volume && (
+				<div
+					className="absolute top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-zinc-900/95 border border-cyan-500/50 text-cyan-300 text-xs font-bold flex items-center gap-2 shadow-2xl backdrop-blur-md pointer-events-none"
+					data-testid="cbct-loading-status-overlay"
+				>
+					<RotateCcw className="w-4 h-4 animate-spin text-cyan-400" />
+					<span>{dicomLoadingStatus} ({dicomProgress}%)</span>
+				</div>
+			)}
+		</div>
+	);
+};

@@ -461,3 +461,53 @@ export async function buildVolumeFromDicomZip(
   }
   return buildVolumeFromDicomBuffers(items, onProgress);
 }
+
+export async function buildVolumeFromDicomweb(
+  studyUid: string,
+  seriesUid: string,
+  options?: {
+    onProgress?: (percent: number, message: string) => void;
+    headers?: Record<string, string>;
+  },
+): Promise<CbctVoxelVolume> {
+  const onProgress = options?.onProgress;
+  onProgress?.(5, "Запрос метаданных серии из PACS WADO-RS...");
+
+  const headers = options?.headers ?? {};
+  const metaRes = await fetch(`/api/dicomweb/studies/${studyUid}/series/${seriesUid}/metadata`, {
+    headers: { Accept: "application/dicom+json", ...headers },
+  });
+  if (!metaRes.ok) {
+    throw new Error(`PACS WADO-RS metadata request failed: HTTP ${metaRes.status}`);
+  }
+  const metaJson = (await metaRes.json()) as Array<Record<string, { Value?: unknown[] }>>;
+  if (!Array.isArray(metaJson) || metaJson.length === 0) {
+    throw new Error("В запрошенной серии PACS не найдено снимков DICOM");
+  }
+
+  const items: Array<{ buffer: ArrayBuffer; fileName: string }> = [];
+  const total = metaJson.length;
+
+  for (let i = 0; i < total; i++) {
+    const item = metaJson[i];
+    const sopUid = item?.["00080018"]?.Value?.[0] as string | undefined;
+    if (!sopUid) continue;
+
+    const frameRes = await fetch(
+      `/api/dicomweb/studies/${studyUid}/series/${seriesUid}/instances/${sopUid}`,
+      { headers: { Accept: "application/dicom", ...headers } },
+    );
+    if (!frameRes.ok) {
+      throw new Error(`PACS WADO-RS instance download failed (${sopUid}): HTTP ${frameRes.status}`);
+    }
+    const buf = await frameRes.arrayBuffer();
+    items.push({ buffer: buf, fileName: `${sopUid}.dcm` });
+
+    if (i % 5 === 0 || i === total - 1) {
+      const pct = 10 + Math.round((i / total) * 35);
+      onProgress?.(pct, `Загрузка DICOM кадров (${i + 1}/${total})...`);
+    }
+  }
+
+  return buildVolumeFromDicomBuffers(items, onProgress);
+}
