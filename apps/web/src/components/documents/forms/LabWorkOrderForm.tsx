@@ -3,8 +3,8 @@ import { Edit3 } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 
 export interface LabWorkOrderFormProps {
-	renderClinicalToothRowsEditor?: () => React.ReactNode;
-	inferredTreatmentArea?: string;
+	renderClinicalToothRowsEditor?: (() => React.ReactNode) | undefined;
+	inferredTreatmentArea?: string | undefined;
 }
 
 export const LabWorkOrderForm: React.FC<LabWorkOrderFormProps> = React.memo(

@@ -5,8 +5,8 @@ import { formatDateTime } from "../../../AppHelpers";
 import { useDocumentStore } from "../../../store/documentStore";
 
 export interface VisitAttendanceCertificateFormProps {
-	activeAppointment?: Appointment | null;
-	activeDoctor?: StaffMember | null;
+	activeAppointment?: Appointment | null | undefined;
+	activeDoctor?: StaffMember | null | undefined;
 }
 
 export const VisitAttendanceCertificateForm: React.FC<

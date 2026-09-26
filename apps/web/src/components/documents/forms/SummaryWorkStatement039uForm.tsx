@@ -3,9 +3,9 @@ import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import type { SummaryDentistStatement039uPayload } from "@dental/shared";
 
 export interface SummaryWorkStatement039uFormProps {
-	initialPayload?: Partial<SummaryDentistStatement039uPayload>;
-	onChange?: (payload: SummaryDentistStatement039uPayload) => void;
-	disabled?: boolean;
+	initialPayload?: Partial<SummaryDentistStatement039uPayload> | undefined;
+	onChange?: ((payload: SummaryDentistStatement039uPayload) => void) | undefined;
+	disabled?: boolean | undefined;
 }
 
 export const SummaryWorkStatement039uForm: React.FC<SummaryWorkStatement039uFormProps> = React.memo(

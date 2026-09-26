@@ -4,12 +4,12 @@ import { useDocumentStore } from "../../../store/documentStore";
 import { appendChipToText } from "../documentChipText";
 
 export interface TreatmentCostEstimateFormProps {
-	treatmentEstimatePatientOrPayerFullNameValue?: () => string;
-	treatmentEstimateTreatmentBasisValue?: () => string;
-	treatmentEstimateTotalRubValue?: () => number;
-	activeDoctorFullName?: string | null;
-	money?: (val: number | null | undefined) => string;
-	plannedServiceLinesForFinancialPayload?: () => any[];
+	treatmentEstimatePatientOrPayerFullNameValue?: (() => string) | undefined;
+	treatmentEstimateTreatmentBasisValue?: (() => string) | undefined;
+	treatmentEstimateTotalRubValue?: (() => number) | undefined;
+	activeDoctorFullName?: string | null | undefined;
+	money?: ((val: number | null | undefined) => string) | undefined;
+	plannedServiceLinesForFinancialPayload?: (() => any[]) | undefined;
 }
 
 export const TreatmentCostEstimateForm: React.FC<TreatmentCostEstimateFormProps> =

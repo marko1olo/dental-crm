@@ -4,15 +4,15 @@ import type { GeneratedDocument } from "@dental/shared";
 import { useDocumentStore } from "../../../store/documentStore";
 
 export interface CompletedWorksActFormProps {
-	activeDoctorFullName?: string | null;
+	activeDoctorFullName?: string | null | undefined;
 	dashboard?: any;
-	money?: (val: number | null | undefined) => string;
-	treatmentAcceptancePlannedTotalRub?: () => number;
-	completedActPaidRubValue?: () => number;
-	completedActFiscalReceiptLines?: () => string[];
-	typedActiveIssuedPaidContracts?: GeneratedDocument[];
-	completedActContractReferenceForUi?: (doc: GeneratedDocument) => string;
-	selectedCompletedActContractDocumentId?: string;
+	money?: ((val: number | null | undefined) => string) | undefined;
+	treatmentAcceptancePlannedTotalRub?: (() => number) | undefined;
+	completedActPaidRubValue?: (() => number) | undefined;
+	completedActFiscalReceiptLines?: (() => string[]) | undefined;
+	typedActiveIssuedPaidContracts?: GeneratedDocument[] | undefined;
+	completedActContractReferenceForUi?: ((doc: GeneratedDocument) => string) | undefined;
+	selectedCompletedActContractDocumentId?: string | undefined;
 }
 
 export const CompletedWorksActForm: React.FC<CompletedWorksActFormProps> = React.memo(

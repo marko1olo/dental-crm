@@ -87,7 +87,7 @@ function createMockAppLogic(overrides: Record<string, unknown> = {}) {
 		},
 		documentVoidReady: false,
 		documentVoidSaving: false,
-		documentVoidReasonCode: "clerical_error",
+		documentVoidReasonCode: "draft_error",
 		documentVoidReasonText: "",
 		documentVoidStaffFullName: "",
 		documentVoidStaffRole: "",
@@ -297,7 +297,7 @@ describe("Documents View Voiding Autonomy (Mandates 8e, 8k, 8n)", () => {
 			documentVoidConfirmation: {
 				id: "doc-void-101",
 			},
-			documentVoidReasonCode: "clerical_error",
+			documentVoidReasonCode: "draft_error",
 			documentVoidReplacementRequired: false,
 			documentVoidPatientOrPayerNotified: false,
 			documentVoidCorrectionDocumentId: "",
@@ -325,7 +325,7 @@ describe("Documents View Voiding Autonomy (Mandates 8e, 8k, 8n)", () => {
 		assert.equal(updateDocumentStatus.calls[0]?.[1], "void");
 		const payload = updateDocumentStatus.calls[0]?.[2] as any;
 		assert.ok(payload && payload.voidAttestation);
-		assert.equal(payload.voidAttestation.reasonCode, "clerical_error");
+		assert.equal(payload.voidAttestation.reasonCode, "draft_error");
 		assert.equal(payload.voidAttestation.reasonText, DEFAULT_VOID_REASON_TEXT);
 		assert.equal(payload.voidAttestation.staffFullName, "Д-р Смирнов Алексей Владимирович");
 		assert.equal(payload.voidAttestation.staffRole, DEFAULT_VOID_STAFF_ROLE);

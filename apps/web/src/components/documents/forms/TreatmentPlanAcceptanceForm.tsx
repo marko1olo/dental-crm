@@ -3,13 +3,13 @@ import { Edit3 } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 
 export interface TreatmentPlanAcceptanceFormProps {
-	normalizedTreatmentPlanAcceptanceVariant?: (val: string) => any;
+	normalizedTreatmentPlanAcceptanceVariant?: ((val: string) => any) | undefined;
 	dashboard?: any;
-	inferredTreatmentArea?: string;
-	renderClinicalToothRowsEditor?: () => React.ReactNode;
-	treatmentAcceptancePlannedTotalRub?: () => number;
-	money?: (val: number | null | undefined) => string;
-	activeDoctorFullName?: string | null;
+	inferredTreatmentArea?: string | null | undefined;
+	renderClinicalToothRowsEditor?: (() => React.ReactNode) | undefined;
+	treatmentAcceptancePlannedTotalRub?: (() => number) | undefined;
+	money?: ((val: number | null | undefined) => string) | undefined;
+	activeDoctorFullName?: string | null | undefined;
 }
 
 export const TreatmentPlanAcceptanceForm: React.FC<

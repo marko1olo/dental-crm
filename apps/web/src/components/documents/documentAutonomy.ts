@@ -2,6 +2,7 @@ import type {
 	DocumentKind,
 	DocumentKindMetadata,
 	DocumentSourceStatus,
+	DocumentVoidAttestation,
 	GeneratedDocument,
 	StaffMember,
 	VoidDocumentInput,
@@ -24,7 +25,7 @@ export interface DocumentVoidAutonomyParams {
 	setDocumentVoidStatusReviewed?: (val: boolean) => void;
 	documentVoidReasonText?: string;
 	setDocumentVoidReasonText?: (val: string) => void;
-	documentVoidReasonCode?: VoidDocumentInput["reasonCode"];
+	documentVoidReasonCode?: DocumentVoidAttestation["reasonCode"];
 	documentVoidCorrectionDocumentId?: string;
 	documentVoidReplacementRequired?: boolean;
 	documentVoidPatientOrPayerNotified?: boolean;

@@ -1,10 +1,10 @@
 import React, { Suspense } from "react";
 import type {
-	ClinicProfileDraft,
 	DocumentKind,
 	GeneratedDocument,
 	Patient,
 } from "@dental/shared";
+import type { ClinicProfileDraft } from "../../../AppHelpers";
 import { PrimaryIntakePackageModal } from "../PrimaryIntakePackageModal";
 import { SurgicalPackageModal } from "../SurgicalPackageModal";
 import { ClinicalVisitPackageModal } from "../ClinicalVisitPackageModal";
@@ -114,7 +114,7 @@ export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = R
 						isOpen={isSurgicalPackageOpen}
 						onClose={() => setIsSurgicalPackageOpen(false)}
 						patient={activePatient ?? null}
-						doctorFullName={activeDoctor?.fullName}
+						doctorFullName={activeDoctor?.fullName ?? null}
 						existingDocuments={typedActiveDocuments ?? []}
 						onCreateDocument={(kind) => void createDocument(kind)}
 						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
@@ -128,7 +128,7 @@ export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = R
 						isOpen={isClinicalVisitOpen}
 						onClose={() => setIsClinicalVisitOpen(false)}
 						patient={activePatient ?? null}
-						doctorFullName={activeDoctor?.fullName}
+						doctorFullName={activeDoctor?.fullName ?? null}
 						existingDocuments={typedActiveDocuments ?? []}
 						onCreateDocument={(kind) => void createDocument(kind)}
 						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
@@ -145,7 +145,7 @@ export const DocumentModalsContainer: React.FC<DocumentModalsContainerProps> = R
 						taxYear={taxDocumentYear}
 						setTaxYear={setTaxDocumentYear}
 						payerOptions={typedTaxDocumentPayerOptions}
-						selectedPayerKey={selectedTaxDocumentPayerKey}
+						selectedPayerKey={selectedTaxDocumentPayerKey ?? ""}
 						onSelectPayerKey={(key) => setTaxDocumentPayerInn(key)}
 						existingDocuments={typedActiveDocuments ?? []}
 						onCreateDocument={(kind) => void createDocument(kind)}

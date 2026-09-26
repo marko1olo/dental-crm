@@ -26,14 +26,14 @@ import {
 import { safeLocalStorageSetItem } from "../../../lib/safeLocalStorage";
 
 export interface DentalMedicalCard043uFormProps {
-	initialPayload?: Partial<FullForm043uPayload> & {
-		isSigned?: boolean;
-		isDraft?: boolean;
-		revisionCount?: number;
-		revisionReason?: string;
-	};
-	onChange?: (payload: FullForm043uPayload) => void;
-	disabled?: boolean;
+	initialPayload?: (Partial<FullForm043uPayload> & {
+		isSigned?: boolean | undefined;
+		isDraft?: boolean | undefined;
+		revisionCount?: number | undefined;
+		revisionReason?: string | undefined;
+	}) | undefined;
+	onChange?: ((payload: FullForm043uPayload) => void) | undefined;
+	disabled?: boolean | undefined;
 }
 
 const PERMANENT_TEETH_UPPER = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];

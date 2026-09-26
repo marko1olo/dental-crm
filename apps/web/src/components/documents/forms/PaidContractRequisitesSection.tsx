@@ -3,10 +3,10 @@ import { useDocumentStore } from "../../../store/documentStore";
 import { money } from "../../../utils/financeUtils";
 
 export interface PaidContractRequisitesSectionProps {
-	documentPatientFullName?: string | null;
-	activeDoctorFullName?: string | null;
-	totalRubValue?: number;
-	totalRubFormatted?: string | null;
+	documentPatientFullName?: string | null | undefined;
+	activeDoctorFullName?: string | null | undefined;
+	totalRubValue?: number | undefined;
+	totalRubFormatted?: string | null | undefined;
 }
 
 /**

@@ -4,14 +4,14 @@ import type { Patient } from "@dental/shared";
 import { useDocumentStore } from "../../../store/documentStore";
 
 export interface InstallmentScheduleFormProps {
-	installmentScheduleBaseDocumentTitleValue?: () => string;
-	documentPatient?: Patient | null;
-	activeDoctorFullName?: string | null;
-	installmentScheduleTotalRubValue?: () => number;
-	money?: (val: number | null | undefined) => string;
-	installmentSchedulePrepaidRubValue?: () => number;
-	installmentScheduleRemainingRubValue?: () => number;
-	installmentScheduleInstallmentRows?: () => any[];
+	installmentScheduleBaseDocumentTitleValue?: (() => string) | undefined;
+	documentPatient?: Patient | null | undefined;
+	activeDoctorFullName?: string | null | undefined;
+	installmentScheduleTotalRubValue?: (() => number) | undefined;
+	money?: ((val: number | null | undefined) => string) | undefined;
+	installmentSchedulePrepaidRubValue?: (() => number) | undefined;
+	installmentScheduleRemainingRubValue?: (() => number) | undefined;
+	installmentScheduleInstallmentRows?: (() => any[]) | undefined;
 }
 
 export const InstallmentScheduleForm: React.FC<InstallmentScheduleFormProps> =

@@ -1,12 +1,12 @@
 import React from "react";
 import type {
-	ClinicProfileDraft,
 	DocumentKind,
 	GeneratedDocument,
 	Patient,
 	Payment,
 	StaffMember,
 } from "@dental/shared";
+import type { ClinicProfileDraft } from "../../../AppHelpers";
 
 // Modular Forms
 import { AnesthesiaConsentLogForm } from "../forms/AnesthesiaConsentLogForm";
@@ -71,6 +71,7 @@ export interface DocumentFormSwitchProps {
 	paymentReceiptPayerInnValue?: any;
 	paymentReceiptPayerRelationshipValue?: any;
 	selectedPaymentReceiptIdSet?: Set<string>;
+	selectedPaymentReceiptPayments?: Payment[];
 	selectedPaymentReceiptTotalRub?: number;
 	installmentScheduleBaseDocumentTitleValue?: any;
 	installmentScheduleInstallmentRows?: any;
@@ -140,86 +141,97 @@ export const DocumentFormSwitch: React.FC<DocumentFormSwitchProps> = React.memo(
 
 		return (
 			<section className="document-factory-form">
-				{selectedDocumentKind === "dental_medical_card_043u" && (
+				{(selectedDocumentKind === "dental_medical_card_043u" ||
+					(selectedDocumentKind as any) === "outpatient_medical_card_025u") && (
 					<DentalMedicalCard043uForm
-						activeDoctorFullName={props.activeDoctor?.fullName}
-						activePatient={props.activePatient}
-						activeVisit={props.dashboard?.activeVisit}
+						initialPayload={
+							props.activeDoctor?.fullName
+								? {
+										attendingDoctorFullName: props.activeDoctor.fullName,
+										patientFullName: props.activePatient?.fullName ?? "",
+								  }
+								: undefined
+						}
 					/>
 				)}
-				{selectedDocumentKind === "daily_dentist_worksheet_037u" && (
+				{((selectedDocumentKind as any) === "daily_dentist_diary_037u" ||
+					(selectedDocumentKind as any) === "daily_dentist_worksheet_037u") && (
 					<DailyDentistWorkSheet037uForm
-						activeDoctorFullName={props.activeDoctor?.fullName}
+						initialPayload={
+							props.activeDoctor?.fullName
+								? {
+										doctorFullName: props.activeDoctor.fullName,
+								  }
+								: undefined
+						}
 					/>
 				)}
-				{selectedDocumentKind === "summary_work_statement_039u" && (
+				{((selectedDocumentKind as any) === "summary_dentist_statement_039u" ||
+					(selectedDocumentKind as any) === "summary_work_statement_039u") && (
 					<SummaryWorkStatement039uForm
-						activeDoctorFullName={props.activeDoctor?.fullName}
+						initialPayload={
+							props.activeDoctor?.fullName
+								? {
+										doctorFullName: props.activeDoctor.fullName,
+								  }
+								: undefined
+						}
 					/>
 				)}
-				{selectedDocumentKind === "medical_card_extract_003vu" && (
+				{((selectedDocumentKind as any) === "medical_record_extract" ||
+					(selectedDocumentKind as any) === "medical_card_extract_003vu") && (
 					<MedicalCardExtract003vuForm
-						activeDoctorFullName={props.activeDoctor?.fullName}
-						documentPatient={props.documentPatient ?? props.activePatient}
+						initialPayload={
+							props.activeDoctor?.fullName
+								? {
+										attendingDoctorFullName: props.activeDoctor.fullName,
+										patientFullName:
+											(props.documentPatient ?? props.activePatient)?.fullName ?? "",
+								  }
+								: undefined
+						}
 					/>
 				)}
 				{selectedDocumentKind === "orthodontic_medical_card_043_1u" && (
-					<OrthodonticCard043_1uForm
-						activeDoctorFullName={props.activeDoctor?.fullName}
-						activePatient={props.activePatient}
-					/>
+					<OrthodonticCard043_1uForm />
 				)}
 				{selectedDocumentKind === "patient_intake_questionnaire" && (
 					<PatientIntakeQuestionnaireForm
-						pregnancyStatusOptions={props.patientIntakePregnancyStatusOptions}
-						normalizedPregnancyStatus={props.normalizedPatientIntakePregnancyStatus}
+						activeVisitComplaint={props.dashboard?.activeVisit?.complaint ?? null}
 					/>
 				)}
 				{selectedDocumentKind === "radiation_dose_sheet" && (
-					<RadiationDoseSheetForm
-						activeDoctorFullName={props.activeDoctor?.fullName}
-					/>
+					<RadiationDoseSheetForm />
 				)}
 				{selectedDocumentKind === "minor_legal_representative_consent" && (
 					<MinorLegalRepresentativeConsentForm
-						patientFullNameValue={props.minorConsentPatientFullNameValue}
-						patientBirthDateValue={props.minorConsentPatientBirthDateValue}
-						representativeFullNameValue={props.minorRepresentativeFullNameValue}
-						representativeRelationshipValue={props.minorRepresentativeRelationshipValue}
-						representativePhoneValue={props.minorRepresentativePhoneValue}
-						representativeIdentityDocumentValue={props.minorRepresentativeIdentityDocumentValue}
-						interventionScopeValue={props.minorConsentInterventionScopeValue}
-						diagnosisOrIndicationValue={props.minorConsentDiagnosisOrIndicationValue}
+						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
+						minorConsentPatientFullNameValue={props.minorConsentPatientFullNameValue}
+						minorConsentPatientBirthDateValue={props.minorConsentPatientBirthDateValue}
+						minorConsentInterventionScopeValue={props.minorConsentInterventionScopeValue}
+						minorConsentDiagnosisOrIndicationValue={props.minorConsentDiagnosisOrIndicationValue}
 					/>
 				)}
 				{selectedDocumentKind === "warranty_service_memo" && (
 					<WarrantyServiceMemoForm
-						teethOrAreaValue={props.warrantyTeethOrAreaValue}
-						serviceOrWorkNameValue={props.warrantyServiceOrWorkNameValue}
-						linkedActOrContractValue={props.warrantyLinkedActOrContractValue}
+						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
+						warrantyTeethOrAreaValue={props.warrantyTeethOrAreaValue}
+						warrantyServiceOrWorkNameValue={props.warrantyServiceOrWorkNameValue}
 					/>
 				)}
 				{selectedDocumentKind === "completed_works_act" && (
 					<CompletedWorksActForm
-						activeDoctor={props.activeDoctor}
-						activeIssuedPaidContracts={props.activeIssuedPaidContracts}
-						activePatient={props.activePatient}
-						compactDocumentText={props.compactDocumentText}
+						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
+						dashboard={props.dashboard}
+						money={props.money}
 						completedActContractReferenceForUi={props.completedActContractReferenceForUi}
 						completedActFiscalReceiptLines={props.completedActFiscalReceiptLines}
 						completedActPaidRubValue={props.completedActPaidRubValue}
-						documentPatient={props.documentPatient}
-						formatDateTime={props.formatDateTime}
-						formatShortDate={props.formatShortDate}
-						money={props.money}
-						paidContractTotalRubValue={props.paidContractTotalRubValue}
 						selectedCompletedActContractDocumentId={props.selectedCompletedActContractDocumentId}
 					/>
 				)}
 				{selectedDocumentKind === "payment_receipt" && (
 					<PaymentReceiptForm
-						documentPatient={props.documentPatient}
-						eligiblePaymentReceiptPayments={props.eligiblePaymentReceiptPayments}
 						money={props.money}
 						paymentFiscalReceiptLabelForUi={props.paymentFiscalReceiptLabelForUi}
 						paymentReceiptFiscalReceiptLines={props.paymentReceiptFiscalReceiptLines}
@@ -229,14 +241,15 @@ export const DocumentFormSwitch: React.FC<DocumentFormSwitchProps> = React.memo(
 						paymentReceiptPayerIdentityDocumentValue={props.paymentReceiptPayerIdentityDocumentValue}
 						paymentReceiptPayerInnValue={props.paymentReceiptPayerInnValue}
 						paymentReceiptPayerRelationshipValue={props.paymentReceiptPayerRelationshipValue}
-						selectedPaymentReceiptIdSet={props.selectedPaymentReceiptIdSet}
+						selectedPaymentReceiptPayments={props.selectedPaymentReceiptPayments}
 						selectedPaymentReceiptTotalRub={props.selectedPaymentReceiptTotalRub}
 					/>
 				)}
-				{selectedDocumentKind === "installment_schedule" && (
+				{((selectedDocumentKind as any) === "installment_payment_schedule" ||
+					(selectedDocumentKind as any) === "installment_schedule") && (
 					<InstallmentScheduleForm
-						activeDoctor={props.activeDoctor}
-						documentPatient={props.documentPatient}
+						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
+						documentPatient={props.documentPatient ?? props.activePatient ?? null}
 						installmentScheduleBaseDocumentTitleValue={props.installmentScheduleBaseDocumentTitleValue}
 						installmentScheduleInstallmentRows={props.installmentScheduleInstallmentRows}
 						installmentSchedulePrepaidRubValue={props.installmentSchedulePrepaidRubValue}
@@ -247,8 +260,7 @@ export const DocumentFormSwitch: React.FC<DocumentFormSwitchProps> = React.memo(
 				)}
 				{selectedDocumentKind === "treatment_cost_estimate" && (
 					<TreatmentCostEstimateForm
-						activeDoctor={props.activeDoctor}
-						documentPatient={props.documentPatient}
+						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
 						money={props.money}
 						treatmentEstimatePatientOrPayerFullNameValue={props.treatmentEstimatePatientOrPayerFullNameValue}
 						treatmentEstimateTotalRubValue={props.treatmentEstimateTotalRubValue}
@@ -257,15 +269,14 @@ export const DocumentFormSwitch: React.FC<DocumentFormSwitchProps> = React.memo(
 				)}
 				{selectedDocumentKind === "treatment_plan" && (
 					<TreatmentPlanDocumentForm
-						activeDoctorFullName={props.activeDoctor?.fullName}
-						activeVisitComplaint={props.dashboard?.activeVisit?.complaint}
-						inferredTreatmentArea={props.inferredTreatmentArea}
-						plannedServiceLinesForFinancialPayload={props.plannedServiceLinesForFinancialPayload}
+						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
+						activeVisitComplaint={props.dashboard?.activeVisit?.complaint ?? null}
+						inferredTreatmentArea={props.inferredTreatmentArea ?? null}
 					/>
 				)}
 				{selectedDocumentKind === "treatment_plan_acceptance" && (
 					<TreatmentPlanAcceptanceForm
-						activeDoctor={props.activeDoctor}
+						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
 						inferredTreatmentArea={props.inferredTreatmentArea}
 						money={props.money}
 						normalizedTreatmentPlanAcceptanceVariant={props.normalizedTreatmentPlanAcceptanceVariant}
@@ -274,21 +285,17 @@ export const DocumentFormSwitch: React.FC<DocumentFormSwitchProps> = React.memo(
 				)}
 				{selectedDocumentKind === "post_visit_recommendations" && (
 					<PostVisitRecommendationsForm
-						activeAppointment={props.activeAppointment}
-						activeDoctor={props.activeDoctor}
+						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
 						applyPostVisitCarePreset={props.applyPostVisitCarePreset}
 						changePostVisitCareTopic={props.changePostVisitCareTopic}
-						formatDateTime={props.formatDateTime}
 						inferredTreatmentArea={props.inferredTreatmentArea}
 						markPostVisitManualEdited={props.markPostVisitManualEdited}
 						normalizedPostVisitCareTopic={props.normalizedPostVisitCareTopic}
-						postVisitCareTopicOptions={props.postVisitCareTopicOptions}
 					/>
 				)}
-				{selectedDocumentKind === "prescription_order" && (
-					<PrescriptionOrderForm
-						activeDoctorFullName={props.activeDoctor?.fullName}
-					/>
+				{((selectedDocumentKind as any) === "prescription_medication_order" ||
+					(selectedDocumentKind as any) === "prescription_order") && (
+					<PrescriptionOrderForm />
 				)}
 				{selectedDocumentKind === "lab_work_order" && (
 					<LabWorkOrderForm
@@ -302,24 +309,24 @@ export const DocumentFormSwitch: React.FC<DocumentFormSwitchProps> = React.memo(
 						normalizedXrayPregnancyStatus={props.normalizedXrayPregnancyStatus}
 						normalizedXrayPriority={props.normalizedXrayPriority}
 						normalizedXrayStudyType={props.normalizedXrayStudyType}
-						xrayPregnancyStatusOptions={props.xrayPregnancyStatusOptions}
-						xrayStudyTypeOptions={props.xrayStudyTypeOptions}
+						typedXrayPregnancyStatusOptions={props.xrayPregnancyStatusOptions}
+						typedXrayStudyTypeOptions={props.xrayStudyTypeOptions}
 					/>
 				)}
 				{selectedDocumentKind === "medical_record_copy_request" && (
 					<MedicalRecordCopyRequestForm
-						documentPatient={props.documentPatient ?? props.activePatient}
+						documentPatient={props.documentPatient ?? props.activePatient ?? null}
 					/>
 				)}
 				{selectedDocumentKind === "visit_attendance_certificate" && (
 					<VisitAttendanceCertificateForm
-						activeAppointment={props.activeAppointment}
-						activeDoctor={props.activeDoctor}
+						activeAppointment={props.activeAppointment ?? null}
+						activeDoctor={props.activeDoctor ?? null}
 					/>
 				)}
 				{selectedDocumentKind === "medical_document_release_receipt" && (
 					<MedicalDocumentReleaseReceiptForm
-						documentPatient={props.documentPatient ?? props.activePatient}
+						documentPatient={props.documentPatient ?? props.activePatient ?? null}
 						issuedMedicalCopyRequestDocuments={props.typedIssuedMedicalCopyRequestDocuments}
 						releaseProtectionNote={props.releaseProtectionNote}
 						setReleaseProtectionNote={props.setReleaseProtectionNote}
@@ -327,45 +334,43 @@ export const DocumentFormSwitch: React.FC<DocumentFormSwitchProps> = React.memo(
 				)}
 				{selectedDocumentKind === "payment_refund_correction_request" && (
 					<PaymentRefundCorrectionRequestForm
-						activePatient={props.activePatient}
+						activePatient={props.activePatient ?? null}
 						eligiblePayments={props.typedEligibleRefundCorrectionPayments}
-						selectedRefundCorrectionPayment={props.selectedRefundCorrectionPayment}
+						selectedRefundCorrectionPayment={props.selectedRefundCorrectionPayment ?? null}
 						onSelectOriginalPayment={props.selectRefundOriginalPayment}
 						paymentPayerFullName={props.paymentPayerFullName}
 						paymentPayerIdentityDocument={props.paymentPayerIdentityDocument}
 						paymentFiscalReceiptNumber={props.paymentFiscalReceiptNumber}
 					/>
 				)}
-				{selectedDocumentKind === "paid_service_contract" && (
+				{((selectedDocumentKind as any) === "paid_medical_services_contract" ||
+					(selectedDocumentKind as any) === "paid_service_contract") && (
 					<PaidServiceContractForm
-						documentPatientFullName={props.documentPatient?.fullName}
-						activeDoctorFullName={props.activeDoctor?.fullName}
-						activeVisitComplaint={props.dashboard?.activeVisit?.complaint}
-						activeVisitTreatmentPlan={props.dashboard?.activeVisit?.treatmentPlan}
+						documentPatientFullName={props.documentPatient?.fullName ?? props.activePatient?.fullName ?? null}
+						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
 						totalRubValue={props.paidContractTotalRubValue ? props.paidContractTotalRubValue() : 0}
 						totalRubFormatted={props.money && props.paidContractTotalRubValue ? props.money(props.paidContractTotalRubValue()) : "0 ₽"}
 					/>
 				)}
 				{selectedDocumentKind === "payment_invoice" && (
 					<PaymentInvoiceDocumentForm
-						documentPatientFullName={props.documentPatient?.fullName}
-						activeDoctorFullName={props.activeDoctor?.fullName}
-						clinicProfileDraft={props.clinicProfileDraft}
-						totalRubValue={props.paymentInvoiceTotalRubValue ? props.paymentInvoiceTotalRubValue() : 0}
+						documentPatientFullName={props.documentPatient?.fullName ?? props.activePatient?.fullName ?? null}
 						totalRubFormatted={props.money && props.paymentInvoiceTotalRubValue ? props.money(props.paymentInvoiceTotalRubValue()) : "0 ₽"}
 					/>
 				)}
 				{selectedDocumentKind === "informed_consent" && (
 					<InformedConsentForm
-						documentPatientFullName={props.documentPatient?.fullName}
-						activeDoctorFullName={props.activeDoctor?.fullName}
+						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
 					/>
 				)}
-				{selectedDocumentKind === "procedure_specific_consent" && (
+				{((selectedDocumentKind as any) === "procedure_specific_consent_packet" ||
+					(selectedDocumentKind as any) === "procedure_specific_consent") && (
 					<ProcedureSpecificConsentForm
-						procedureSpecificConsentProcedureOptions={props.procedureSpecificConsentProcedureOptions}
-						normalizedProcedureSpecificConsentProcedure={props.normalizedProcedureSpecificConsentProcedure}
-						renderClinicalToothRowsEditor={props.renderClinicalToothRowsEditor}
+						procedureOptions={props.procedureSpecificConsentProcedureOptions ?? []}
+						normalizeProcedure={props.normalizedProcedureSpecificConsentProcedure ?? ((v) => v as any)}
+						renderToothRowsEditor={props.renderClinicalToothRowsEditor ?? (() => null)}
+						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
+						inferredTreatmentArea={props.inferredTreatmentArea ?? null}
 					/>
 				)}
 				{selectedDocumentKind === "anesthesia_consent_log" && (
@@ -375,8 +380,8 @@ export const DocumentFormSwitch: React.FC<DocumentFormSwitchProps> = React.memo(
 				)}
 				{selectedDocumentKind === "photo_video_consent" && (
 					<PhotoVideoConsentForm
-						photoVideoMaterialOptions={props.photoVideoMaterialOptions}
-						togglePhotoVideoMaterial={props.togglePhotoVideoMaterial}
+						materialOptions={props.photoVideoMaterialOptions ?? []}
+						toggleMaterial={props.togglePhotoVideoMaterial ?? (() => {})}
 					/>
 				)}
 				{selectedDocumentKind === "personal_data_processing_consent" && (
@@ -386,18 +391,12 @@ export const DocumentFormSwitch: React.FC<DocumentFormSwitchProps> = React.memo(
 				)}
 				{selectedDocumentKind === "tax_deduction_application" && (
 					<TaxDeductionApplicationForm
-						taxApplicationFormOptions={props.taxApplicationFormOptions}
-						normalizedTaxApplicationForm={props.normalizedTaxApplicationForm}
-						taxApplicationRelationshipOptions={props.taxApplicationRelationshipOptions}
-						normalizedTaxApplicationRelationshipSelect={props.normalizedTaxApplicationRelationshipSelect}
-						taxApplicationDeliveryChannelOptions={props.taxApplicationDeliveryChannelOptions}
-						normalizedTaxApplicationDeliveryChannel={props.normalizedTaxApplicationDeliveryChannel}
-						eligibleTaxPayments={props.eligibleTaxPayments}
-						selectedTaxPaymentIdSet={props.selectedTaxPaymentIdSet}
-						selectAllEligibleTaxPaymentsForCurrentDocument={props.selectAllEligibleTaxPaymentsForCurrentDocument}
-						selectedTaxPaymentTotalRub={props.selectedTaxPaymentTotalRub}
-						money={props.money}
-						selectedDocumentUsesTaxPaymentSelection={props.selectedDocumentUsesTaxPaymentSelection}
+						relationshipOptions={props.taxApplicationRelationshipOptions ?? []}
+						formOptions={props.taxApplicationFormOptions ?? []}
+						deliveryChannelOptions={props.taxApplicationDeliveryChannelOptions ?? []}
+						normalizeRelationship={props.normalizedTaxApplicationRelationshipSelect ?? ((v) => v as any)}
+						normalizeForm={props.normalizedTaxApplicationForm ?? ((v) => v as any)}
+						normalizeDeliveryChannel={props.normalizedTaxApplicationDeliveryChannel ?? ((v) => v as any)}
 					/>
 				)}
 				{selectedDocumentKind === "medical_intervention_refusal" && (

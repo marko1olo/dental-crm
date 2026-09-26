@@ -17,9 +17,9 @@ export interface DocumentSelectOption<T extends string> {
  */
 export interface DocumentVisitHints {
 	/** ФИО лечащего врача активного визита, если визит выбран. */
-	activeDoctorFullName?: string;
+	activeDoctorFullName?: string | null | undefined;
 	/** Жалоба активного визита — подсказка для диагноза и показания. */
-	activeVisitComplaint?: string;
+	activeVisitComplaint?: string | null | undefined;
 	/** Зона лечения, выведенная из зубной формулы визита. */
-	inferredTreatmentArea?: string;
+	inferredTreatmentArea?: string | null | undefined;
 }

@@ -10,13 +10,13 @@ import { paymentFiscalReceiptLabelForUi } from "../../../workspaceUiLabels";
 import { useDocumentStore } from "../../../store/documentStore";
 
 export interface PaymentRefundCorrectionRequestFormProps {
-	activePatient?: Patient | null;
-	eligiblePayments?: Payment[];
-	selectedRefundCorrectionPayment?: Payment | null;
-	onSelectOriginalPayment?: (paymentId: string) => void;
-	paymentPayerFullName?: string;
-	paymentPayerIdentityDocument?: string;
-	paymentFiscalReceiptNumber?: string;
+	activePatient?: Patient | null | undefined;
+	eligiblePayments?: Payment[] | undefined;
+	selectedRefundCorrectionPayment?: Payment | null | undefined;
+	onSelectOriginalPayment?: ((paymentId: string) => void) | undefined;
+	paymentPayerFullName?: string | undefined;
+	paymentPayerIdentityDocument?: string | undefined;
+	paymentFiscalReceiptNumber?: string | undefined;
 }
 
 export const PaymentRefundCorrectionRequestForm: React.FC<

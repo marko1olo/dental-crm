@@ -41,13 +41,13 @@ const PAID_CONTRACT_CARE_REASON_CHIPS = [
 ] as const;
 
 export interface PaidServiceContractFormProps {
-	documentPatientFullName?: string | null;
-	activeVisitComplaint?: string | null;
-	activeVisitTreatmentPlan?: string | null;
-	activeVisitDoctorSummary?: string | null;
-	activeDoctorFullName?: string | null;
-	totalRubValue?: number;
-	totalRubFormatted?: string | null;
+	documentPatientFullName?: string | null | undefined;
+	activeVisitComplaint?: string | null | undefined;
+	activeVisitTreatmentPlan?: string | null | undefined;
+	activeVisitDoctorSummary?: string | null | undefined;
+	activeDoctorFullName?: string | null | undefined;
+	totalRubValue?: number | undefined;
+	totalRubFormatted?: string | null | undefined;
 }
 
 /**

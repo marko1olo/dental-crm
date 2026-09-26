@@ -1,12 +1,12 @@
 import type {
 	GeneratedDocument,
-	MedicalDocumentReleaseChannel,
 	Patient,
 } from "@dental/shared";
 import { Edit3 } from "lucide-react";
 import React from "react";
 import {
 	formatShortDate,
+	type MedicalDocumentReleaseChannel,
 	medicalDocumentReleaseChannelLabels,
 	normalizedMedicalDocumentReleaseChannel,
 } from "../../../AppHelpers";
@@ -23,10 +23,10 @@ export type MedicalCopyRequestSourceDocument = GeneratedDocument & {
 };
 
 export interface MedicalDocumentReleaseReceiptFormProps {
-	documentPatient?: Patient | null;
-	issuedMedicalCopyRequestDocuments?: MedicalCopyRequestSourceDocument[];
-	releaseProtectionNote?: string;
-	setReleaseProtectionNote?: (value: string) => void;
+	documentPatient?: Patient | null | undefined;
+	issuedMedicalCopyRequestDocuments?: MedicalCopyRequestSourceDocument[] | undefined;
+	releaseProtectionNote?: string | undefined;
+	setReleaseProtectionNote?: ((value: string) => void) | undefined;
 }
 
 export function releaseSourceRequestOptionLabel(
@@ -70,7 +70,7 @@ export const MedicalDocumentReleaseReceiptForm: React.FC<
 		releaseRecipientFullName,
 		releaseRecipientIdentityDocument,
 		releaseThirdPartyDataChecked,
-		selectedReleaseSourceRequestDocumentId,
+		releaseSourceRequestDocumentId,
 		setReleaseAccessExpiresAt,
 		setReleaseChannel,
 		setReleaseDeliveredAt,
@@ -125,7 +125,7 @@ export const MedicalDocumentReleaseReceiptForm: React.FC<
 					<label>
 						Основание выдачи
 						<select
-							value={selectedReleaseSourceRequestDocumentId}
+							value={releaseSourceRequestDocumentId}
 							onChange={(event) =>
 								setReleaseSourceRequestDocumentId(event.target.value)
 							}

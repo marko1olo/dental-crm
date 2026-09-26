@@ -12,12 +12,12 @@ import {
 } from "../../consents/consentTemplates.js";
 
 export interface MinorLegalRepresentativeConsentFormProps extends DocumentVisitHints {
-	minorRepresentativeNameValue?: () => string;
-	minorRepresentativePhoneValue?: () => string;
-	minorConsentPatientFullNameValue?: () => string;
-	minorConsentPatientBirthDateValue?: () => string;
-	minorConsentInterventionScopeValue?: () => string;
-	minorConsentDiagnosisOrIndicationValue?: () => string;
+	minorRepresentativeNameValue?: (() => string) | string | undefined;
+	minorRepresentativePhoneValue?: (() => string) | string | undefined;
+	minorConsentPatientFullNameValue?: (() => string) | string | undefined;
+	minorConsentPatientBirthDateValue?: (() => string) | string | undefined;
+	minorConsentInterventionScopeValue?: (() => string) | string | undefined;
+	minorConsentDiagnosisOrIndicationValue?: (() => string) | string | undefined;
 }
 
 const MINOR_RELATION_CHIPS = [
@@ -25,6 +25,11 @@ const MINOR_RELATION_CHIPS = [
 	{ label: "Папа", value: "Отец" },
 	{ label: "Опекун", value: "Опекун" },
 ] as const;
+
+function resolveValue(v: (() => string) | string | undefined): string {
+	if (typeof v === "function") return v();
+	return v ?? "";
+}
 
 /**
  * ИДС на стоматологическое лечение несовершеннолетнего (педиатрия с законным представителем).
@@ -158,7 +163,7 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 		const handlePrintMinorConsent = () => {
 			const repName =
 				minorRepresentativeName ||
-				minorRepresentativeNameValue?.() ||
+				resolveValue(minorRepresentativeNameValue) ||
 				patientAdministrativeProfileDraft.legalRepresentativeFullName ||
 				"________________________________________";
 			const repRel =
@@ -171,19 +176,19 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 				"паспорт серия ______ № ________ выдан ____________________";
 			const repPhone =
 				minorRepresentativePhone ||
-				minorRepresentativePhoneValue?.() ||
+				resolveValue(minorRepresentativePhoneValue) ||
 				patientAdministrativeProfileDraft.legalRepresentativePhone ||
 				patientCoreDraft.phone ||
 				"+7 (___) ___-__-__";
 
 			const childName =
 				minorConsentPatientFullName ||
-				minorConsentPatientFullNameValue?.() ||
+				resolveValue(minorConsentPatientFullNameValue) ||
 				patientCoreDraft.fullName ||
 				"________________________________________";
 			const childBirth =
 				minorConsentPatientBirthDate ||
-				minorConsentPatientBirthDateValue?.() ||
+				resolveValue(minorConsentPatientBirthDateValue) ||
 				patientCoreDraft.birthDate ||
 				"«___» _________ _____ г.";
 
@@ -200,11 +205,11 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 					"Детский врач-стоматолог клиники",
 				interventionScope:
 					minorConsentInterventionScope ||
-					minorConsentInterventionScopeValue?.() ||
+					resolveValue(minorConsentInterventionScopeValue) ||
 					"Детский стоматологический осмотр, диагностика, адаптационный протокол, лечение",
 				diagnosisOrIndication:
 					minorConsentDiagnosisOrIndication ||
-					minorConsentDiagnosisOrIndicationValue?.() ||
+					resolveValue(minorConsentDiagnosisOrIndicationValue) ||
 					"Санация полости рта ребенка, профилактика и лечение кариеса",
 				risks: minorConsentRisks,
 				alternatives: minorConsentAlternatives,
@@ -305,7 +310,7 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 								setMinorRepresentativeName(event.target.value)
 							}
 							placeholder={
-								minorRepresentativeNameValue?.() ||
+								resolveValue(minorRepresentativeNameValue) ||
 								"ФИО родителя, опекуна, усыновителя"
 							}
 						/>
@@ -372,7 +377,7 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 								setMinorConsentPatientFullName(event.target.value)
 							}
 							placeholder={
-								minorConsentPatientFullNameValue?.() ||
+								resolveValue(minorConsentPatientFullNameValue) ||
 								"ФИО несовершеннолетнего пациента"
 							}
 						/>
@@ -385,7 +390,7 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 								setMinorConsentPatientBirthDate(event.target.value)
 							}
 							placeholder={
-								minorConsentPatientBirthDateValue?.() || "ГГГГ-ММ-ДД"
+								resolveValue(minorConsentPatientBirthDateValue) || "ГГГГ-ММ-ДД"
 							}
 						/>
 					</label>
@@ -398,7 +403,7 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 							setMinorRepresentativePhone(event.target.value)
 						}
 						placeholder={
-							minorRepresentativePhoneValue?.() || "+7 (___) ___-__-__"
+							resolveValue(minorRepresentativePhoneValue) || "+7 (___) ___-__-__"
 						}
 					/>
 				</label>
@@ -410,7 +415,7 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 							setMinorConsentInterventionScope(event.target.value)
 						}
 						placeholder={
-							minorConsentInterventionScopeValue?.() ||
+							resolveValue(minorConsentInterventionScopeValue) ||
 							"первичный осмотр, рентген, лечение временных/постоянных зубов, адаптация"
 						}
 						rows={2}
@@ -424,7 +429,7 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 							setMinorConsentDiagnosisOrIndication(event.target.value)
 						}
 						placeholder={
-							minorConsentDiagnosisOrIndicationValue?.() ||
+							resolveValue(minorConsentDiagnosisOrIndicationValue) ||
 							"кариес, пульпит временного зуба, профилактика"
 						}
 						rows={2}

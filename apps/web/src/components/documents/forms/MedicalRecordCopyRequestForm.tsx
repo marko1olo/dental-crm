@@ -1,14 +1,15 @@
-import type { MedicalDocumentReleaseChannel, Patient } from "@dental/shared";
+import type { Patient } from "@dental/shared";
 import { Edit3 } from "lucide-react";
 import React from "react";
 import {
+	type MedicalDocumentReleaseChannel,
 	medicalDocumentReleaseChannelLabels,
 	normalizedMedicalDocumentReleaseChannel,
 } from "../../../AppHelpers";
 import { useDocumentStore } from "../../../store/documentStore";
 
 export interface MedicalRecordCopyRequestFormProps {
-	documentPatient?: Patient | null;
+	documentPatient?: Patient | null | undefined;
 }
 
 export const MedicalRecordCopyRequestForm: React.FC<

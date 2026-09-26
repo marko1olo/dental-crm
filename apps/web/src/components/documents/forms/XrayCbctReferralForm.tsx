@@ -7,20 +7,20 @@ import type {
 import { useDocumentStore } from "../../../store/documentStore";
 
 export interface XrayCbctReferralFormProps {
-	renderClinicalToothRowsEditor?: () => React.ReactNode;
-	inferredTreatmentArea?: string;
-	normalizedXrayStudyType?: (val: string) => XrayCbctReferralStudyType;
+	renderClinicalToothRowsEditor?: (() => React.ReactNode) | undefined;
+	inferredTreatmentArea?: string | null | undefined;
+	normalizedXrayStudyType?: ((val: string) => XrayCbctReferralStudyType) | undefined;
 	typedXrayStudyTypeOptions?: Array<{
 		value: XrayCbctReferralStudyType;
 		label: string;
-	}>;
-	normalizedXrayPriority?: (val: string) => any;
-	normalizedXrayPregnancyStatus?: (val: string) => XrayCbctReferralPregnancyStatus;
+	}> | undefined;
+	normalizedXrayPriority?: ((val: string) => any) | undefined;
+	normalizedXrayPregnancyStatus?: ((val: string) => XrayCbctReferralPregnancyStatus) | undefined;
 	typedXrayPregnancyStatusOptions?: Array<{
 		value: XrayCbctReferralPregnancyStatus;
 		label: string;
-	}>;
-	activeDoctorFullName?: string | null;
+	}> | undefined;
+	activeDoctorFullName?: string | null | undefined;
 }
 
 export const XrayCbctReferralForm: React.FC<XrayCbctReferralFormProps> =

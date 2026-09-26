@@ -5,18 +5,18 @@ import { useDocumentStore } from "../../../store/documentStore";
 import { EmptyState } from "../../EmptyState";
 
 export interface PaymentReceiptFormProps {
-	typedEligiblePaymentReceiptPayments?: Payment[];
-	selectedPaymentReceiptPayments?: Payment[];
-	selectedPaymentReceiptTotalRub?: number;
-	paymentFiscalReceiptLabelForUi?: (payment: Payment) => string;
-	money?: (val: number | null | undefined) => string;
-	paymentReceiptPayerFullNameValue?: () => string;
-	paymentReceiptPayerBirthDateValue?: () => string;
-	paymentReceiptPayerInnValue?: () => string;
-	paymentReceiptPayerRelationshipValue?: () => string;
-	paymentReceiptPayerIdentityDocumentValue?: () => string;
-	paymentReceiptIssuedByValue?: () => string;
-	paymentReceiptFiscalReceiptLines?: () => string[];
+	typedEligiblePaymentReceiptPayments?: Payment[] | undefined;
+	selectedPaymentReceiptPayments?: Payment[] | undefined;
+	selectedPaymentReceiptTotalRub?: number | undefined;
+	paymentFiscalReceiptLabelForUi?: ((payment: Payment) => string) | undefined;
+	money?: ((val: number | null | undefined) => string) | undefined;
+	paymentReceiptPayerFullNameValue?: (() => string) | undefined;
+	paymentReceiptPayerBirthDateValue?: (() => string) | undefined;
+	paymentReceiptPayerInnValue?: (() => string) | undefined;
+	paymentReceiptPayerRelationshipValue?: (() => string) | undefined;
+	paymentReceiptPayerIdentityDocumentValue?: (() => string) | undefined;
+	paymentReceiptIssuedByValue?: (() => string) | undefined;
+	paymentReceiptFiscalReceiptLines?: (() => string[]) | undefined;
 }
 
 export const PaymentReceiptForm: React.FC<PaymentReceiptFormProps> = React.memo(

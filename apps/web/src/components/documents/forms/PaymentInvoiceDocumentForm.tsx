@@ -3,12 +3,12 @@ import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 
 export interface PaymentInvoiceDocumentFormProps {
-	documentPatientFullName?: string | null;
-	documentPatientPhone?: string | null;
-	documentPatientEmail?: string | null;
-	clinicBankDetails?: string | null;
-	totalRubFormatted?: string | null;
-	serviceLinesCount?: number;
+	documentPatientFullName?: string | null | undefined;
+	documentPatientPhone?: string | null | undefined;
+	documentPatientEmail?: string | null | undefined;
+	clinicBankDetails?: string | null | undefined;
+	totalRubFormatted?: string | null | undefined;
+	serviceLinesCount?: number | undefined;
 }
 
 /**

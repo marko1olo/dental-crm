@@ -1,5 +1,6 @@
 import React from "react";
-import type { Patient, StaffMember, ClinicProfileDraft, GeneratedDocument } from "@dental/shared";
+import type { Patient, StaffMember, GeneratedDocument } from "@dental/shared";
+import type { ClinicProfileDraft } from "../../../AppHelpers";
 import { CheckCircle2, Clock, FileText, Printer, Shield, Zap } from "lucide-react";
 import { formatShortDate } from "../../../AppHelpers";
 import { printBlankMedicalContract } from "../../patients/blankContractPrint";

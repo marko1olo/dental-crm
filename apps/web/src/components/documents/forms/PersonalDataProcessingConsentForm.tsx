@@ -27,7 +27,7 @@ export type DocumentClinicOperator = Pick<
 
 export interface PersonalDataProcessingConsentFormProps {
 	/** Черновик профиля клиники: оператор, ИНН и адрес для согласия на ПДн. */
-	clinicProfileDraft: DocumentClinicOperator;
+	clinicProfileDraft?: Partial<DocumentClinicOperator> | DocumentClinicOperator | undefined;
 }
 
 /**
@@ -43,9 +43,18 @@ export const PersonalDataProcessingConsentForm = React.memo(
 	function PersonalDataProcessingConsentForm({
 		clinicProfileDraft,
 	}: PersonalDataProcessingConsentFormProps) {
-		const operatorReview = useMemo(
-			() => personalDataOperatorRequisitesReview(clinicProfileDraft),
+		const safeOperator: DocumentClinicOperator = useMemo(
+			() => ({
+				legalName: clinicProfileDraft?.legalName ?? "",
+				clinicName: clinicProfileDraft?.clinicName ?? "",
+				inn: clinicProfileDraft?.inn ?? "",
+				address: clinicProfileDraft?.address ?? "",
+			}),
 			[clinicProfileDraft],
+		);
+		const operatorReview = useMemo(
+			() => personalDataOperatorRequisitesReview(safeOperator),
+			[safeOperator],
 		);
 		const personalDataActions = useDocumentStore(
 			(state) => state.personalDataActions,
@@ -155,8 +164,8 @@ export const PersonalDataProcessingConsentForm = React.memo(
 						Оператор
 						<input
 							value={
-								clinicProfileDraft.legalName ||
-								clinicProfileDraft.clinicName
+								safeOperator.legalName ||
+								safeOperator.clinicName
 							}
 							readOnly
 							placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
@@ -165,7 +174,7 @@ export const PersonalDataProcessingConsentForm = React.memo(
 					<label>
 						ИНН оператора
 						<input
-							value={clinicProfileDraft.inn}
+							value={safeOperator.inn}
 							readOnly
 							placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
 						/>
@@ -174,7 +183,7 @@ export const PersonalDataProcessingConsentForm = React.memo(
 				<label>
 					Адрес оператора
 					<input
-						value={clinicProfileDraft.address}
+						value={safeOperator.address}
 						readOnly
 						placeholder={`пусто — заполните в «${CLINIC_REQUISITES_LOCATION}»`}
 					/>

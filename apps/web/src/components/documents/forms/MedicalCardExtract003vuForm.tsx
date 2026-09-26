@@ -3,9 +3,9 @@ import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import type { MedicalCardExtract003vuPayload, MedicalExtractTreatmentStage } from "@dental/shared";
 
 export interface MedicalCardExtract003vuFormProps {
-	initialPayload?: Partial<MedicalCardExtract003vuPayload>;
-	onChange?: (payload: MedicalCardExtract003vuPayload) => void;
-	disabled?: boolean;
+	initialPayload?: Partial<MedicalCardExtract003vuPayload> | undefined;
+	onChange?: ((payload: MedicalCardExtract003vuPayload) => void) | undefined;
+	disabled?: boolean | undefined;
 }
 
 export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormProps> = React.memo(

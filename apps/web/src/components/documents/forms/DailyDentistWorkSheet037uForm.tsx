@@ -7,9 +7,9 @@ import {
 } from "@dental/shared";
 
 export interface DailyDentistWorkSheet037uFormProps {
-	initialPayload?: Partial<DailyDentistDiary037uPayload>;
-	onChange?: (payload: DailyDentistDiary037uPayload) => void;
-	disabled?: boolean;
+	initialPayload?: Partial<DailyDentistDiary037uPayload> | undefined;
+	onChange?: ((payload: DailyDentistDiary037uPayload) => void) | undefined;
+	disabled?: boolean | undefined;
 }
 
 export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFormProps> = React.memo(

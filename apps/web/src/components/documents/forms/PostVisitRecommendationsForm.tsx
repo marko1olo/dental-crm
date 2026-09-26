@@ -7,19 +7,19 @@ export interface PostVisitRecommendationsFormProps {
 	typedPostVisitCareTopicOptions?: Array<{
 		value: PostVisitCareTopic;
 		label: string;
-	}>;
-	changePostVisitCareTopic?: (topic: PostVisitCareTopic) => void;
-	normalizedPostVisitCareTopic?: (val: string) => PostVisitCareTopic;
-	markPostVisitManualEdited?: () => void;
-	activeDoctorFullName?: string | null;
-	applyPostVisitCarePreset?: (
+	}> | undefined;
+	changePostVisitCareTopic?: ((topic: PostVisitCareTopic) => void) | undefined;
+	normalizedPostVisitCareTopic?: ((val: string) => PostVisitCareTopic) | undefined;
+	markPostVisitManualEdited?: (() => void) | undefined;
+	activeDoctorFullName?: string | null | undefined;
+	applyPostVisitCarePreset?: ((
 		topic: PostVisitCareTopic,
 		opts?: { force?: boolean },
-	) => void;
-	postVisitPresetFeedback?: string | null;
-	postVisitManualEdited?: boolean;
+	) => void) | undefined;
+	postVisitPresetFeedback?: string | null | undefined;
+	postVisitManualEdited?: boolean | undefined;
 	dashboard?: any;
-	inferredTreatmentArea?: string;
+	inferredTreatmentArea?: string | null | undefined;
 }
 
 export const PostVisitRecommendationsForm: React.FC<

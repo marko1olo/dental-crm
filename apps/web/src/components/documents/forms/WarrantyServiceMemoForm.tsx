@@ -6,9 +6,14 @@ import type { DocumentVisitHints } from "./documentFormTypes";
 
 export interface WarrantyServiceMemoFormProps extends DocumentVisitHints {
 	/** Расчетная подсказка для названия работы из активного визита */
-	warrantyServiceOrWorkNameValue?: () => string;
+	warrantyServiceOrWorkNameValue?: (() => string) | string | undefined;
 	/** Расчетная подсказка для зубов/области из активного визита */
-	warrantyTeethOrAreaValue?: () => string;
+	warrantyTeethOrAreaValue?: (() => string) | string | undefined;
+}
+
+function resolveValue(v: (() => string) | string | undefined): string {
+	if (typeof v === "function") return v();
+	return v ?? "";
 }
 
 /**
@@ -182,7 +187,10 @@ export const WarrantyServiceMemoForm = React.memo(
 						onChange={(event) =>
 							setWarrantyServiceOrWorkName(event.target.value)
 						}
-						placeholder={warrantyServiceOrWorkNameValue?.() || "название работы, реставрации или конструкции"}
+						placeholder={
+							resolveValue(warrantyServiceOrWorkNameValue) ||
+							"название работы, реставрации или конструкции"
+						}
 						rows={2}
 					/>
 				</label>
@@ -204,7 +212,9 @@ export const WarrantyServiceMemoForm = React.memo(
 							onChange={(event) =>
 								setWarrantyTeethOrArea(event.target.value)
 							}
-							placeholder={warrantyTeethOrAreaValue?.() || "зубы / зона лечения"}
+							placeholder={
+								resolveValue(warrantyTeethOrAreaValue) || "зубы / зона лечения"
+							}
 						/>
 					</label>
 				</div>

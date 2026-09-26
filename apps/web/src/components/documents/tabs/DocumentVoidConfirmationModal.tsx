@@ -2,6 +2,7 @@ import React from "react";
 import type {
 	DocumentKind,
 	DocumentStatus,
+	DocumentVoidAttestation,
 	GeneratedDocument,
 	Patient,
 	VoidDocumentInput,
@@ -16,7 +17,7 @@ export interface DocumentVoidConfirmationModalProps {
 		id: string | null | undefined,
 	) => string;
 	patients?: Patient[];
-	documentVoidReasonCode: VoidDocumentInput["reasonCode"];
+	documentVoidReasonCode: DocumentVoidAttestation["reasonCode"];
 	setDocumentVoidReasonCode: (code: any) => void;
 	normalizedDocumentVoidReasonCode: (val: string) => any;
 	documentVoidReasonLabels: Record<string, string>;
