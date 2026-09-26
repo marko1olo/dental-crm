@@ -22,6 +22,7 @@ const __dirname = path.dirname(__filename);
 import {
 	useDoctorPreferencesStore,
 	FAVORITE_MEDICATION_OPTIONS,
+	DENTAL_NEEDLE_OPTIONS,
 	type DoctorSpecialtyKey,
 } from "../../../store/doctorPreferencesStore";
 import {
@@ -47,6 +48,7 @@ describe("Doctor & Admin Settings Red Team Inquisition", () => {
 	const filesToCheck = [
 		"DoctorClinicalPreferencesSection.tsx",
 		"doctor/diaryTemplateTags.ts",
+		"doctor/DoctorAnesthesiaDefaultsSection.tsx",
 		"doctor/DoctorAnesthesiaToxicityCalculator.tsx",
 		"doctor/DoctorForm043TemplatesSection.tsx",
 		"doctor/DoctorPrescriptions107Section.tsx",
@@ -240,6 +242,50 @@ describe("Doctor & Admin Settings Red Team Inquisition", () => {
 			const epinephrinPerCarpule100k = 0.017;
 			const maxSafeCarpulesCardio = Math.floor(0.04 / epinephrinPerCarpule100k);
 			assert.equal(maxSafeCarpulesCardio, 2); // Максимум 2 карпулы при кардиориске
+		});
+	});
+
+	describe("6b. Дефолты анестезии и карпульных игл (1-клик выбор врача вместо академического калькулятора)", () => {
+		it("Поддерживает ключевые анестетики РФ/СНГ (Ультракаин 1:200k, 1:100k, Септанест, Скандонест 3% для гипертоников)", () => {
+			const { updatePreferences } = useDoctorPreferencesStore.getState();
+			updatePreferences({ favoriteAnesthetic: "articaine_200k" });
+			assert.equal(useDoctorPreferencesStore.getState().preferences.favoriteAnesthetic, "articaine_200k");
+
+			updatePreferences({ favoriteAnesthetic: "scandonest_mepivacaine_3" });
+			assert.equal(useDoctorPreferencesStore.getState().preferences.favoriteAnesthetic, "scandonest_mepivacaine_3");
+		});
+
+		it("Поддерживает типы карпульных игл (Septoject 30G короткие, 27G длинные, XL ультракороткие, Dispoject)", () => {
+			assert.ok(DENTAL_NEEDLE_OPTIONS.length >= 4);
+			const shortNeedle = DENTAL_NEEDLE_OPTIONS.find((n) => n.id === "septoject_30g_short");
+			assert.ok(shortNeedle);
+			assert.equal(shortNeedle.gauge, "30G (0.3 мм)");
+
+			const longNeedle = DENTAL_NEEDLE_OPTIONS.find((n) => n.id === "septoject_27g_long");
+			assert.ok(longNeedle);
+			assert.equal(longNeedle.gauge, "27G (0.4 мм)");
+
+			const { updatePreferences } = useDoctorPreferencesStore.getState();
+			updatePreferences({ favoriteNeedleType: "septoject_27g_long" });
+			assert.equal(useDoctorPreferencesStore.getState().preferences.favoriteNeedleType, "septoject_27g_long");
+		});
+
+		it("Пресеты специальностей калибруют анестетик и карпульные иглы в 1 клик", () => {
+			const { applySpecialtyPreset } = useDoctorPreferencesStore.getState();
+			applySpecialtyPreset("surgeon");
+			let state = useDoctorPreferencesStore.getState().preferences;
+			assert.equal(state.favoriteAnesthetic, "articaine_100k");
+			assert.equal(state.favoriteNeedleType, "septoject_27g_long");
+
+			applySpecialtyPreset("therapist");
+			state = useDoctorPreferencesStore.getState().preferences;
+			assert.equal(state.favoriteAnesthetic, "articaine_200k");
+			assert.equal(state.favoriteNeedleType, "septoject_30g_short");
+
+			applySpecialtyPreset("pediatric");
+			state = useDoctorPreferencesStore.getState().preferences;
+			assert.equal(state.favoriteAnesthetic, "articaine_200k");
+			assert.equal(state.favoriteNeedleType, "septoject_30g_extra_short");
 		});
 	});
 

@@ -5,6 +5,7 @@
  */
 
 export * from "./diaryTemplateTags";
+export * from "./DoctorAnesthesiaDefaultsSection";
 export * from "./DoctorAnesthesiaToxicityCalculator";
 export * from "./DoctorForm043TemplatesSection";
 export * from "./DoctorPrescriptions107Section";

@@ -30,6 +30,81 @@ export type AnestheticKey =
 	| "lidocaine_2"
 	| "topical_lidoxor";
 
+export type DentalNeedleType =
+	| "septoject_30g_short"
+	| "septoject_27g_long"
+	| "septoject_30g_extra_short"
+	| "dispoject_30g_short";
+
+export interface DentalNeedleOption {
+	readonly id: DentalNeedleType;
+	readonly key: DentalNeedleType;
+	readonly name: string;
+	readonly title: string;
+	readonly manufacturer: string;
+	readonly description: string;
+	readonly gauge: string;
+	readonly length: string;
+	readonly badge: string;
+	readonly recommendedSpecialty: string;
+	readonly isFavoriteDefault?: boolean;
+}
+
+export const DENTAL_NEEDLE_OPTIONS: readonly DentalNeedleOption[] = [
+	{
+		id: "septoject_30g_short",
+		key: "septoject_30g_short",
+		name: "Septoject 30G короткие (0.3 × 21–25 мм)",
+		title: "Septoject 30G короткие",
+		manufacturer: "Septodont (Франция)",
+		description: "Стандарт для инфильтрационной анестезии, атравматичный срез, щадящий укол",
+		gauge: "30G (0.3 мм)",
+		length: "21–25 мм",
+		badge: "#1 Инфильтрация",
+		recommendedSpecialty: "Терапия, ортопедия, пародонтология",
+		isFavoriteDefault: true,
+	},
+	{
+		id: "septoject_27g_long",
+		key: "septoject_27g_long",
+		name: "Septoject 27G длинные (0.4 × 35–38 мм)",
+		title: "Septoject 27G длинные",
+		manufacturer: "Septodont (Франция)",
+		description: "Проводниковая (мандибулярная и торусальная) анестезия, хирургические вмешательства",
+		gauge: "27G (0.4 мм)",
+		length: "35–38 мм",
+		badge: "#2 Проводниковая (Хирургия)",
+		recommendedSpecialty: "Хирургия, имплантология, удаление 8-х зубов",
+		isFavoriteDefault: false,
+	},
+	{
+		id: "septoject_30g_extra_short",
+		key: "septoject_30g_extra_short",
+		name: "Septoject XL 30G ультракороткие (10–12 мм)",
+		title: "Septoject XL 30G ультракороткие",
+		manufacturer: "Septodont (Франция)",
+		description: "Интралигаментарная, интрасептальная анестезия и детский приём (минимальная травма)",
+		gauge: "30G (0.3 мм)",
+		length: "10–12 мм",
+		badge: "Интралигаментарная / Детство",
+		recommendedSpecialty: "Детская стоматология, интралигаментарная анестезия",
+		isFavoriteDefault: false,
+	},
+	{
+		id: "dispoject_30g_short",
+		key: "dispoject_30g_short",
+		name: "Dispoject 30G короткие (0.3 × 25 мм)",
+		title: "Dispoject 30G короткие",
+		manufacturer: "Dispoject / Citoject",
+		description: "Силиконизированные карпульные иглы для рутинной инфильтрации",
+		gauge: "30G (0.3 мм)",
+		length: "25 мм",
+		badge: "Эконом стандарт",
+		recommendedSpecialty: "Универсальный терапевтический приём",
+		isFavoriteDefault: false,
+	},
+];
+
 export type IsolationType =
 	| "cofferdam"
 	| "cofferdam_sanctuary"
@@ -130,6 +205,7 @@ export interface FavoriteMedicationOption {
 export interface DoctorPreferences {
 	defaultVisitDuration: 15 | 30 | 45 | 60 | 90 | 120;
 	favoriteAnesthetic: AnestheticKey;
+	favoriteNeedleType?: DentalNeedleType;
 	defaultIsolation: IsolationType;
 	defaultComposite: CompositeMaterial;
 	defaultAdhesive: AdhesiveSystem;
@@ -160,6 +236,7 @@ export interface DoctorPreferences {
 export const DEFAULT_DOCTOR_PREFERENCES: DoctorPreferences = {
 	defaultVisitDuration: 30,
 	favoriteAnesthetic: "articaine_100k",
+	favoriteNeedleType: "septoject_30g_short",
 	defaultIsolation: "cofferdam",
 	defaultComposite: "estelite_asteria",
 	defaultAdhesive: "optibond_fl",
@@ -443,6 +520,7 @@ export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 						specialty,
 						defaultVisitDuration: 45,
 						favoriteAnesthetic: "articaine_100k",
+						favoriteNeedleType: "septoject_27g_long",
 						defaultIsolation: "cofferdam",
 						favoriteMedicationIds: [
 							"amoxiclav_875_125",
@@ -458,6 +536,7 @@ export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 						specialty,
 						defaultVisitDuration: 60,
 						favoriteAnesthetic: "articaine_200k",
+						favoriteNeedleType: "septoject_30g_short",
 						defaultIsolation: "cofferdam",
 						defaultComposite: "estelite_asteria",
 						defaultAdhesive: "optibond_fl",
@@ -474,6 +553,7 @@ export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 						specialty,
 						defaultVisitDuration: 60,
 						favoriteAnesthetic: "articaine_200k",
+						favoriteNeedleType: "septoject_30g_short",
 						defaultIsolation: "optragate",
 						favoriteMedicationIds: [
 							"nimesil_100",
@@ -487,6 +567,7 @@ export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 						specialty,
 						defaultVisitDuration: 30,
 						defaultDentition: "mixed",
+						favoriteNeedleType: "septoject_30g_short",
 						defaultIsolation: "optragate",
 						favoriteMedicationIds: [
 							"nimesil_100",
@@ -499,6 +580,7 @@ export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 						specialty,
 						defaultVisitDuration: 45,
 						favoriteAnesthetic: "articaine_200k",
+						favoriteNeedleType: "septoject_30g_short",
 						defaultIsolation: "optragate",
 						favoriteMedicationIds: [
 							"chlorhexidine_005",
@@ -514,6 +596,7 @@ export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 						defaultVisitDuration: 30,
 						defaultDentition: "pediatric",
 						favoriteAnesthetic: "articaine_200k",
+						favoriteNeedleType: "septoject_30g_extra_short",
 						defaultIsolation: "optragate",
 						favoriteMedicationIds: [
 							"ibuprofen_400",
@@ -527,6 +610,7 @@ export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 					presetPatch = {
 						specialty: "universal",
 						defaultVisitDuration: 30,
+						favoriteNeedleType: "septoject_30g_short",
 					};
 					break;
 			}

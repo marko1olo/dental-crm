@@ -42,7 +42,7 @@ import {
 } from "./doctorClinicalPreferencesConstants";
 import { buildDoctorPersonalizedTherapySnippet } from "./protocolSnippetHelpers";
 import {
-	DoctorAnesthesiaToxicityCalculator,
+	DoctorAnesthesiaDefaultsSection,
 	DoctorForm043TemplatesSection,
 	DoctorPrescriptions107Section,
 } from "./doctor";
@@ -268,9 +268,10 @@ export function DoctorClinicalPreferencesSection({
 								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
 								: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
 						}`}
+						data-testid="doctor-clinical-subtab-anesthesia"
 					>
 						<Syringe size={14} />
-						<span>Токсичность анестезии</span>
+						<span>Анестезия и иглы</span>
 					</button>
 					<button
 						type="button"
@@ -298,7 +299,7 @@ export function DoctorClinicalPreferencesSection({
 					</button>
 				</div>
 
-				{clinicalSubTab === "anesthesia" && <DoctorAnesthesiaToxicityCalculator />}
+				{clinicalSubTab === "anesthesia" && <DoctorAnesthesiaDefaultsSection />}
 				{clinicalSubTab === "templates_043" && <DoctorForm043TemplatesSection />}
 				{clinicalSubTab === "prescriptions_107" && <DoctorPrescriptions107Section />}
 

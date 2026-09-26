@@ -10,6 +10,7 @@ import {
 	ADHESIVE_OPTIONS,
 	ANESTHETIC_OPTIONS,
 	COMPOSITE_OPTIONS,
+	DENTAL_NEEDLE_OPTIONS,
 	ETCHANT_OPTIONS,
 	ISOLATION_OPTIONS,
 	type DoctorPreferences,
@@ -71,6 +72,11 @@ export function resolveAdhesiveName(key?: string): string {
 export function resolveAnestheticName(key?: string): string {
 	const found = ANESTHETIC_OPTIONS.find((a) => a.id === key || a.key === key);
 	return found?.title || found?.name || "Sol. Articaini 4% cum Epinephrino 1:100 000 — 1.7 мл";
+}
+
+export function resolveNeedleName(key?: string): string {
+	const found = DENTAL_NEEDLE_OPTIONS.find((n) => n.id === key || n.key === key);
+	return found?.title || found?.name || "Septoject 30G короткие";
 }
 
 export function resolveIsolationName(key?: string): string {
