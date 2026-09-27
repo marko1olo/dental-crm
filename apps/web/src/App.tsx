@@ -1353,12 +1353,12 @@ export function App() {
 				<a className="skip-link" href="#workspace-content">
 					Перейти к рабочей области
 				</a>
-				<WorkspaceSidebar
-					currentView={currentView}
+				<WorkspaceSidebar currentView={currentView}
 					onViewIntent={preloadWorkspaceView}
 					role={selectedWorkspaceRole}
 					collapsed={sidebarCollapsed}
 					onToggleCollapsed={toggleSidebarCollapsed}
+					onLockSession={handleLockSession}
 				/>
 				<section
 					className={`workspace view-${currentView}`}

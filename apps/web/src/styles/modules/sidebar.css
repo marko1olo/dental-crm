@@ -143,7 +143,7 @@ html.dark .sidebar .nav-item.active,
 	opacity: 1 !important;
 }
 
-/* 5. Sidebar Footer with Quiet Telemetry */
+/* 5. Sidebar Footer with Clinic Control Pill */
 .sidebar-footer {
 	margin-top: auto !important;
 	flex-shrink: 0 !important;
@@ -151,34 +151,70 @@ html.dark .sidebar .nav-item.active,
 	align-items: center !important;
 	justify-content: space-between !important;
 	gap: 6px !important;
-	padding: 10px 4px 6px !important;
+	padding: 8px 4px 6px !important;
 	border-top: 1px solid var(--line) !important;
 	max-width: 100% !important;
-	overflow: hidden !important;
 	box-sizing: border-box !important;
 }
 
-.sidebar-lan-indicator {
-	display: inline-flex !important;
+.sidebar-footer .dnt-clinic-control-wrapper {
+	position: relative !important;
+	display: flex !important;
 	align-items: center !important;
-	gap: 6px !important;
-	padding: 4px 6px !important;
-	border-radius: 6px !important;
-	border: none !important;
-	background: transparent !important;
-	cursor: pointer !important;
-	color: var(--muted, #64748b) !important;
-	transition: background 0.15s ease, color 0.15s ease !important;
+	flex: 1 1 auto !important;
+	min-width: 0 !important;
+	max-width: calc(100% - 34px) !important;
 }
 
-.sidebar-lan-indicator:hover {
-	background: var(--paper-soft, rgba(0, 0, 0, 0.04)) !important;
-	color: var(--ink) !important;
+.sidebar-footer .dnt-clinic-control-pill {
+	height: 30px !important;
+	min-height: 30px !important;
+	max-height: 30px !important;
+	padding: 0 6px !important;
+	gap: 5px !important;
+	border-radius: 8px !important;
+	font-size: 11px !important;
+	background: var(--paper-soft, rgba(0, 0, 0, 0.03)) !important;
+	border: 1px solid var(--line) !important;
+	box-shadow: none !important;
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+	transition: background 0.15s ease, border-color 0.15s ease !important;
 }
 
-[data-theme="dark"] .sidebar-lan-indicator:hover,
-[data-theme="night"] .sidebar-lan-indicator:hover {
+.sidebar-footer .dnt-clinic-control-pill:hover {
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08)) !important;
+	border-color: var(--teal, #0d9488) !important;
+	transform: none !important;
+}
+
+[data-theme="dark"] .sidebar-footer .dnt-clinic-control-pill,
+[data-theme="night"] .sidebar-footer .dnt-clinic-control-pill,
+[data-theme="ocean"] .sidebar-footer .dnt-clinic-control-pill {
 	background: rgba(255, 255, 255, 0.05) !important;
+	border-color: var(--line) !important;
+}
+
+[data-theme="dark"] .sidebar-footer .dnt-clinic-control-pill:hover,
+[data-theme="night"] .sidebar-footer .dnt-clinic-control-pill:hover,
+[data-theme="ocean"] .sidebar-footer .dnt-clinic-control-pill:hover {
+	background: var(--teal-soft, rgba(45, 212, 191, 0.15)) !important;
+	border-color: var(--teal, #2dd4bf) !important;
+}
+
+/* Control center popover when opened from sidebar footer: opens upward */
+.sidebar-footer .dnt-control-center-popover {
+	position: fixed !important;
+	top: auto !important;
+	bottom: 48px !important;
+	left: 12px !important;
+	right: auto !important;
+	width: 360px !important;
+	max-width: calc(100vw - 24px) !important;
+	max-height: calc(100vh - 80px) !important;
+	overflow-y: auto !important;
+	z-index: 9999 !important;
+	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 0 20px rgba(13, 148, 136, 0.15) !important;
 }
 
 /* 6. Collapsed Mode [data-collapsed="true"] */
@@ -204,8 +240,25 @@ html.dark .sidebar .nav-item.active,
 [data-collapsed="true"] .sidebar-footer {
 	flex-direction: column !important;
 	align-items: center !important;
-	gap: 8px !important;
+	gap: 6px !important;
 	padding: 8px 0 6px !important;
+}
+
+[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-wrapper {
+	max-width: 100% !important;
+	justify-content: center !important;
+}
+
+[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill {
+	padding: 0 4px !important;
+	gap: 3px !important;
+	width: 100% !important;
+	justify-content: center !important;
+}
+
+[data-collapsed="true"] .sidebar-footer .dnt-control-center-popover {
+	left: 80px !important;
+	bottom: 12px !important;
 }
 
 /* 7. Viewport Adaptations */

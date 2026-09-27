@@ -47,8 +47,6 @@ import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatient
 import { ThemeQuickAccessWidget } from "./components/workspace/ThemeQuickAccessWidget";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
 import { lazyWithRetry } from "./lib/lazyWithRetry";
-import { useOfflineSync } from "./hooks/useOfflineSync";
-import { OfflineSyncGuardModal } from "./components/sync/OfflineSyncGuardModal";
 import "./styles/modules/sidebar.css";
 import "./styles/workspace.css";
 
@@ -297,86 +295,20 @@ export const sidebarHints: Record<AppView, string> = {
 	marketing: "Акции и реклама",
 };
 
-export function SidebarNetworkTelemetry({ collapsed }: { collapsed: boolean }) {
-	const [isModalOpen, setIsModalOpen] = useState(false);
-	const { isOnline, isLan, isSyncing, pendingMutationCount, lastSyncError } =
-		useOfflineSync();
-
-	const statusDotColor = isSyncing
-		? "var(--teal, #0d9488)"
-		: !isOnline
-			? "var(--critical, #dc2626)"
-			: lastSyncError
-				? "var(--warn, #d97706)"
-				: isLan
-					? "var(--teal, #0d9488)"
-					: "var(--success, #059669)";
-
-	const statusText = isSyncing
-		? "Синхронизация..."
-		: !isOnline
-			? "Офлайн"
-			: lastSyncError
-				? "Ошибка связи"
-				: isLan
-					? "Локальная сеть"
-					: "Сеть в норме";
-
-	const tooltip = `${statusText}${pendingMutationCount > 0 ? ` (${pendingMutationCount} в очереди)` : ""}`;
-
-	return (
-		<>
-			<button
-				type="button"
-				className="sidebar-lan-indicator group flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[var(--teal-surface,rgba(13,148,136,0.08))] transition-colors text-left border-0 bg-transparent cursor-pointer max-w-full overflow-hidden"
-				title={`${tooltip}. Нажмите для деталей синхронизации.`}
-				onClick={() => setIsModalOpen(true)}
-				aria-label={tooltip}
-			>
-				<span
-					className="relative flex h-2 w-2 shrink-0 items-center justify-center"
-					aria-hidden="true"
-				>
-					{isSyncing && (
-						<span
-							className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping"
-							style={{ backgroundColor: statusDotColor }}
-						/>
-					)}
-					<span
-						className="relative inline-flex rounded-full h-1.5 w-1.5"
-						style={{ backgroundColor: statusDotColor }}
-					/>
-				</span>
-				{!collapsed && (
-					<span className="text-[11px] text-[var(--muted)] group-hover:text-[var(--ink)] font-medium leading-none truncate max-w-[130px] transition-colors">
-						{isLan ? "Локальная сеть" : "Сеть в норме"}
-						{pendingMutationCount > 0 && ` (${pendingMutationCount})`}
-					</span>
-				)}
-			</button>
-			{isModalOpen && (
-				<OfflineSyncGuardModal
-					isOpen={isModalOpen}
-					onClose={() => setIsModalOpen(false)}
-				/>
-			)}
-		</>
-	);
-}
-
 export function WorkspaceSidebar({
 	currentView,
 	onViewIntent,
 	role,
 	collapsed,
 	onToggleCollapsed,
+	onLockSession,
 }: {
 	currentView: AppView;
 	onViewIntent?: WorkspaceViewIntentHandler;
 	role: StaffRole;
 	collapsed: boolean;
 	onToggleCollapsed: () => void;
+	onLockSession?: (() => void) | undefined;
 }) {
 	/*
 	 * Режим читается из того же ответа сервера, по которому решают рассылки
@@ -545,8 +477,8 @@ export function WorkspaceSidebar({
 					</a>
 				</p>
 			) : null}
-			<div className="sidebar-footer max-w-full overflow-hidden shrink-0 mt-auto pb-2 flex items-center justify-between">
-				<SidebarNetworkTelemetry collapsed={collapsed} />
+			<div className="sidebar-footer max-w-full shrink-0 mt-auto pb-2 flex items-center justify-between">
+				<ClinicControlPill onLockSession={onLockSession} />
 				<button
 					className="icon-button sidebar-collapse-button"
 					type="button"
@@ -818,7 +750,6 @@ export function WorkspaceTopbar({
 					<PerspectiveSwitcher />
 					<RecentPatientHistoryWidget compactDropdown />
 					<NotificationBell />
-					<ClinicControlPill onLockSession={onLockSession} />
 				</div>
 			</div>
 			{/*
