@@ -18,9 +18,10 @@ import { showToast } from "../GlobalToast";
 interface ClinicLoginProps {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	onLoginSuccess: (clinicProfile: any) => void;
+	onSwitchToUserLogin?: () => void;
 }
 
-export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
+export function ClinicLogin({ onLoginSuccess, onSwitchToUserLogin }: ClinicLoginProps) {
 	const [email, setEmail] = useState("clinic@example.com");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
@@ -128,7 +129,20 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
 				</form>
 
 				<div className="auth-footer-hints auth-footer-hints--border">
-					Пароль по умолчанию для демо-клиники: <code>dente2026</code>
+					{onSwitchToUserLogin ? (
+						<div style={{ marginBottom: "8px" }}>
+							<button
+								type="button"
+								onClick={onSwitchToUserLogin}
+								className="auth-link-btn"
+							>
+								Войти как врач / администратор
+							</button>
+						</div>
+					) : null}
+					<div>
+						Пароль по умолчанию для демо-клиники: <code>dente2026</code>
+					</div>
 				</div>
 			</div>
 		</div>

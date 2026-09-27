@@ -72,6 +72,7 @@ export function AuthHub({ onSuccess }: AuthHubProps) {
 				onLoginSuccess={(cp) => {
 					onSuccess(cp, null);
 				}}
+				onSwitchToUserLogin={() => setView("user_login")}
 			/>
 		);
 	};

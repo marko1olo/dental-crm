@@ -1,3 +1,4 @@
+import React from "react";
 import type {
 	ClinicMode,
 	Dashboard,
@@ -20,6 +21,7 @@ import {
 	ClipboardCheck,
 	Plus,
 	ShieldCheck,
+	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 
@@ -474,7 +476,21 @@ export function OnboardingWizardModal({
 					</span>
 				</div>
 				<button
-					className="primary-button"
+					className="primary-button onboarding-fast-oneclick-btn"
+					type="button"
+					onClick={() => {
+						if (!clinicProfileDraft.clinicName?.trim()) {
+							updateClinicProfileDraft("clinicName", "Стоматология ДЕНТЕ");
+						}
+						showToast("Клиника запущена с базовыми настройками (соло-врач, 1 кресло)", "success");
+						void continueOnboardingInDraftMode("schedule");
+					}}
+					title="Мгновенный запуск клиники с базовыми настройками (соло-врач, 1 кресло)"
+				>
+					<Zap aria-hidden="true" /> 0-клик старт (соло-врач)
+				</button>
+				<button
+					className="secondary-button"
 					type="button"
 					onClick={() => void continueOnboardingInDraftMode("visit")}
 				>

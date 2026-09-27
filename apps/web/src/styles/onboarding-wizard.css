@@ -1,321 +1,551 @@
 /* ============================================================
-   Мастер первого запуска — оформление на токенах темы.
+   Мастер первого запуска DENTE — премиальное оформление на токенах темы.
 
    ПОЧЕМУ ЭТОТ ФАЙЛ СУЩЕСТВУЕТ
-   Экран первого запуска был свёрстан инлайновыми стилями с
-   зашитыми светлыми цветами (#ffffff, #111827, #f9fafb …).
-   Инлайн проигрывает объявлениям с !important, а premium.css
-   задаёт `.onboarding-shell { background: var(--glass-panel)
-   !important }`. В тёмной теме фон становился тёмным, а текст
-   оставался почти чёрным из инлайна: заголовок «Быстрая
-   настройка CRM Dente» имел контраст 1.00 — то есть был
-   полностью невидим.
-
-   Здесь всё оформление вынесено в классы на токенах, поэтому
-   обе темы получаются из одного набора правил.
+   Экран первого запуска ранее страдал от зашитых цветов (#fbfefd, #0d4f49,
+   #eef8f5) в main.css, вызывавших ослепляющие белые плашки в темных темах
+   и жесткую 4-колоночную сетку для 5 шагов.
+   Здесь все оформление приведено к токенам дизайн-системы DENTE:
+   - Высота контролов 36px на десктопе;
+   - Скругления 8px / 10px / 12px без уродливых квадратов 96px;
+   - Сегментные переключатели на единой подложке;
+   - Полная поддержка Светлой и Тёмной тем без белых пятен;
+   - Быстрый старт соло-врача в 1 клик (Мандат 8n).
    ============================================================ */
 
-/* Подложка мастера тёмная в обеих темах — как экраны входа: это
-   брендовая заставка, а не рабочая поверхность. Токены темы здесь не
-   годятся: --ink в тёмной теме почти белый, и градиент выцветал в
-   светло-бирюзовое полотно (проверено в браузере). */
-.onboarding-fullscreen {
-	align-items: center;
-	background:
-		radial-gradient(circle at 12% 8%, rgba(45, 212, 191, 0.22), transparent 45%),
-		radial-gradient(
-			circle at 88% 92%,
-			rgba(13, 148, 136, 0.18),
-			transparent 50%
-		),
-		linear-gradient(
-			135deg,
-			var(--teal-dark, #0f766e) 0%,
-			var(--paper-strong, #0b1a18) 60%,
-			var(--dark-bg, #060d0c) 100%
-		);
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	min-height: 100dvh;
-	overflow-y: auto;
-	padding: clamp(16px, 4vw, 40px) clamp(12px, 3vw, 20px);
-}
-
-/* Модальная панель мастера первого запуска — чистый изолированный контейнер без вложенных секций-рамок */
-.onboarding-modal-card {
+/* ---------- Основная панель мастера ---------- */
+.onboarding-shell {
 	background: var(--paper-strong, var(--paper));
 	border: 1px solid var(--line);
 	border-radius: 16px;
-	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.05);
 	display: flex;
 	flex-direction: column;
-	gap: 0;
-	margin: auto;
-	max-width: 760px;
-	padding: clamp(24px, 4vw, 40px);
+	gap: 16px;
+	padding: 24px 28px;
+	max-width: 1080px;
+	margin: 0 auto;
 	width: 100%;
+	box-sizing: border-box;
 }
 
-.onboarding-modal-card .onboarding-head {
-	border-bottom: 1px solid var(--line);
-	display: block;
-	margin-bottom: 24px;
-	padding-bottom: 20px;
-}
-
-.onboarding-modal-card .onboarding-head .eyebrow {
-	color: var(--teal-dark);
-	font-size: 12px;
-	font-weight: 600;
-	letter-spacing: 0.05em;
-	margin: 0;
-	text-transform: uppercase;
-}
-
-.onboarding-modal-card .onboarding-head h2 {
-	color: var(--ink);
-	font-size: clamp(19px, 4vw, 24px);
-	font-weight: 700;
-	margin: 4px 0 0;
-}
-
-/* ---------- Полоса шагов ---------- */
-.onboarding-modal-card .wizard-step-list {
+/* ---------- Шапка мастера ---------- */
+.onboarding-shell .onboarding-head {
 	display: grid;
-	gap: 12px;
-	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-	margin-bottom: 32px;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 20px;
+	align-items: start;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 16px;
+	margin-bottom: 4px;
 }
 
-.wizard-step {
+.onboarding-shell .onboarding-head .eyebrow {
+	color: var(--teal);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	margin: 0 0 4px 0;
+}
+
+.onboarding-shell .onboarding-head h2 {
+	color: var(--ink);
+	font-size: 20px;
+	font-weight: 700;
+	line-height: 1.25;
+	margin: 0 0 6px 0;
+}
+
+.onboarding-shell .onboarding-head p {
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.4;
+	margin: 0;
+}
+
+/* ---------- Индикатор готовности ---------- */
+.onboarding-shell .onboarding-score {
+	align-items: center;
 	background: var(--paper-soft);
 	border: 1px solid var(--line);
-	border-radius: 8px;
-	display: grid;
+	border-radius: 12px;
+	display: flex;
+	flex-direction: column;
 	gap: 2px;
-	padding: 10px;
+	justify-content: center;
+	min-width: 120px;
+	padding: 10px 16px;
+	text-align: center;
 }
 
-.wizard-step[data-active="true"] {
-	background: var(--teal-surface);
+.onboarding-shell .onboarding-score span {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.onboarding-shell .onboarding-score strong {
+	color: var(--teal);
+	font-size: 24px;
+	font-weight: 800;
+	line-height: 1.1;
+}
+
+.onboarding-shell .onboarding-score small {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 500;
+}
+
+/* ---------- Быстрый старт (Мандат 8n) ---------- */
+.onboarding-shell .onboarding-fast-start {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08));
+	border: 1px solid var(--teal, rgba(13, 148, 136, 0.3));
+	border-radius: 12px;
+	padding: 12px 18px;
+	flex-wrap: wrap;
+}
+
+.onboarding-shell .onboarding-fast-start > div {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	flex: 1 1 240px;
+}
+
+.onboarding-shell .onboarding-fast-start strong {
+	color: var(--ink);
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.onboarding-shell .onboarding-fast-start span {
+	color: var(--ink-2, var(--muted));
+	font-size: 12px;
+	line-height: 1.35;
+}
+
+.onboarding-shell .onboarding-fast-start button {
+	height: 36px;
+	min-height: 36px;
+	box-sizing: border-box;
+	padding: 0 14px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.onboarding-shell .onboarding-fast-start .primary-button {
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	border: 1px solid var(--teal-dark, #0f766e);
+	box-shadow: var(--shadow-1);
+}
+
+.onboarding-shell .onboarding-fast-start .primary-button:hover {
+	background: var(--teal-dark, #0f766e);
+}
+
+.onboarding-shell .onboarding-fast-start .secondary-button {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+}
+
+.onboarding-shell .onboarding-fast-start .secondary-button:hover {
+	background: var(--paper);
 	border-color: var(--teal);
 }
 
-.wizard-step-index {
-	color: var(--muted);
-	font-size: 11px;
-	font-weight: 600;
-}
-
-.wizard-step[data-active="true"] .wizard-step-index {
-	color: var(--teal-dark);
-}
-
-.wizard-step-title {
-	color: var(--ink-2, var(--ink));
-	font-size: 14px;
-}
-
-.wizard-step[data-active="true"] .wizard-step-title {
-	color: var(--teal-dark);
-}
-
-.wizard-step-detail {
-	color: var(--muted);
-	font-size: 11px;
-}
-
-/* ---------- Панель шага ---------- */
-.onboarding-modal-card .onboarding-panel {
-	background: transparent;
-	border: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 20px;
+/* ---------- Полоса шагов (5 шагов в 1 ряд на десктопе) ---------- */
+.onboarding-shell .onboarding-step-list {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	gap: 10px;
+	margin: 4px 0 8px 0;
+	border: none;
 	padding: 0;
 }
 
-.onboarding-modal-card .onboarding-panel h3 {
-	color: var(--ink);
-	font-size: clamp(17px, 3.5vw, 20px);
-	font-weight: 600;
-	margin: 0 0 8px;
+@media (max-width: 900px) {
+	.onboarding-shell .onboarding-step-list {
+		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	}
 }
 
-.onboarding-modal-card .onboarding-panel p {
-	color: var(--ink-2, var(--muted));
+.onboarding-shell .onboarding-step-list button {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	color: var(--ink-2);
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+	min-height: unset;
+	padding: 10px 14px;
+	text-align: left;
+	width: 100%;
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.onboarding-shell .onboarding-step-list button:hover:not(.active) {
+	background: var(--paper);
+	border-color: var(--teal);
+}
+
+.onboarding-shell .onboarding-step-list button span {
+	align-items: center;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.12));
+	border-radius: 6px;
+	color: var(--teal-dark, #0f766e);
+	display: inline-flex;
+	font-size: 11px;
+	font-weight: 700;
+	height: 20px;
+	width: 20px;
+	justify-content: center;
+}
+
+.onboarding-shell .onboarding-step-list button strong {
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.onboarding-shell .onboarding-step-list button small {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 400;
+	line-height: 1.2;
+}
+
+.onboarding-shell .onboarding-step-list button.active {
+	background: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	box-shadow: var(--shadow-1);
+}
+
+.onboarding-shell .onboarding-step-list button.active span {
+	background: rgba(255, 255, 255, 0.25);
+	color: #ffffff;
+}
+
+.onboarding-shell .onboarding-step-list button.active strong {
+	color: #ffffff;
+}
+
+.onboarding-shell .onboarding-step-list button.active small {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+.onboarding-shell .onboarding-step-list button.done {
+	border-color: var(--teal);
+	background: var(--paper-soft);
+}
+
+.onboarding-shell .onboarding-step-list button.done span {
+	background: var(--teal);
+	color: #ffffff;
+}
+
+/* ---------- Панель шага ---------- */
+.onboarding-shell .onboarding-panel {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 20px 24px;
+}
+
+.onboarding-shell .onboarding-panel h3 {
+	color: var(--ink);
+	font-size: 16px;
+	font-weight: 700;
+	margin: 0 0 4px 0;
+}
+
+.onboarding-shell .onboarding-panel p {
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.4;
 	margin: 0;
 }
 
-/* ---------- Выбор режима запуска ---------- */
-.wizard-mode-grid {
+.onboarding-shell .onboarding-source-grid {
 	display: grid;
-	gap: 16px;
-	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 10px;
 }
 
-.wizard-mode-card {
-	align-items: flex-start;
-	background: var(--paper-soft);
+.onboarding-shell .onboarding-source-grid span {
+	background: var(--paper);
 	border: 1px solid var(--line);
-	border-radius: 12px;
-	cursor: pointer;
+	border-radius: 8px;
+	padding: 10px 14px;
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.onboarding-shell .onboarding-form-grid {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+	.onboarding-shell .onboarding-form-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.onboarding-shell .onboarding-form-grid label {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
-	padding: 20px;
-	text-align: left;
-	transition:
-		border-color var(--transition-fast, 0.15s ease),
-		background-color var(--transition-fast, 0.15s ease),
-		box-shadow var(--transition-fast, 0.15s ease),
-		transform var(--transition-fast, 0.15s ease);
+	gap: 4px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink-2);
 }
 
-.wizard-mode-card:hover:not(:disabled) {
-	background: var(--teal-surface, var(--paper-soft));
-	border-color: var(--teal);
-	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-	transform: translateY(-2px);
-}
-
-.wizard-mode-card:focus-visible {
-	outline: 2px solid var(--teal);
-	outline-offset: 2px;
-}
-
-.wizard-mode-card:disabled {
-	cursor: progress;
-	opacity: 0.6;
-}
-
-.wizard-mode-icon {
-	font-size: 28px;
-	line-height: 1;
-	margin-bottom: 2px;
-}
-
-.wizard-mode-title {
+.onboarding-shell .onboarding-form-grid input,
+.onboarding-shell .onboarding-form-grid select {
+	height: 36px;
+	min-height: 36px;
+	box-sizing: border-box;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 0 12px;
 	color: var(--ink);
-	font-size: 16px;
+	font-size: 13px;
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.onboarding-shell .onboarding-form-grid input:focus,
+.onboarding-shell .onboarding-form-grid select:focus {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 2px var(--teal-surface, rgba(13, 148, 136, 0.2));
+}
+
+/* ---------- Режим клиники (mode-grid) ---------- */
+.onboarding-shell .mode-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+	border: none;
+	padding: 0;
+	margin: 0;
+}
+
+.onboarding-shell .mode-card {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 14px 16px;
+	text-align: left;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.onboarding-shell .mode-card:hover {
+	border-color: var(--teal);
+	background: var(--teal-surface, var(--paper));
+}
+
+.onboarding-shell .mode-card.active {
+	border-color: var(--teal);
+	background: var(--teal-surface, var(--paper));
+	box-shadow: 0 0 0 1px var(--teal);
+}
+
+.onboarding-shell .mode-card strong {
+	color: var(--ink);
+	font-size: 14px;
 	font-weight: 600;
 }
 
-.wizard-mode-card:hover:not(:disabled) .wizard-mode-title {
-	color: var(--teal-dark, var(--ink));
-}
-
-.wizard-mode-note {
-	color: var(--ink-2, var(--muted));
-	font-size: 13px;
-	line-height: 1.45;
-}
-
-/* ---------- Поля ---------- */
-.wizard-field-list {
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-}
-
-.wizard-field {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-
-.wizard-field > label {
-	color: var(--ink-2, var(--ink));
-	font-size: 14px;
-	font-weight: 500;
-}
-
-.wizard-field > input {
-	background: var(--paper);
-	border: 1px solid var(--line-strong);
-	border-radius: 8px;
-	color: var(--ink);
-	font-size: 15px;
-	padding: 10px;
-}
-
-.wizard-field > input::placeholder {
+.onboarding-shell .mode-card span {
 	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.35;
 }
 
-/* ---------- Выбор роли ---------- */
-.wizard-role-row {
+/* ---------- Выбор ролей и специализаций ---------- */
+.onboarding-shell .role-picker,
+.onboarding-shell .specialty-strip {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
-}
-
-.wizard-role-chip {
 	background: var(--paper);
-	border: 1px solid var(--line-strong);
-	border-radius: 20px;
-	color: var(--ink-2, var(--ink));
-	cursor: pointer;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 6px;
+	border: none;
+	margin: 0;
+}
+
+.onboarding-shell .role-picker button,
+.onboarding-shell .specialty-strip button {
+	height: 32px;
+	padding: 0 14px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink-2);
+	font-size: 13px;
 	font-weight: 500;
-	padding: 8px 16px;
-	transition: background var(--transition-fast, 0.15s ease);
+	cursor: pointer;
+	transition: all 0.15s ease;
 }
 
-.wizard-role-chip:hover {
+.onboarding-shell .role-picker button:hover,
+.onboarding-shell .specialty-strip button:hover {
+	background: var(--paper);
 	border-color: var(--teal);
+	color: var(--ink);
 }
 
-.wizard-role-chip[aria-pressed="true"] {
+.onboarding-shell .role-picker button.active,
+.onboarding-shell .specialty-strip button.active {
 	background: var(--teal);
 	border-color: var(--teal);
-	color: var(--on-teal, var(--paper-strong, #ffffff));
+	color: var(--on-teal, #ffffff);
+	font-weight: 600;
+	box-shadow: var(--shadow-1);
 }
 
-/* ---------- Сводка последнего шага ---------- */
-.wizard-summary-grid {
-	background: var(--paper-soft);
-	border: 1px solid var(--line);
-	border-radius: 12px;
-	display: grid;
-	gap: 16px;
-	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-	padding: 20px;
-}
-
-.wizard-summary-label {
-	color: var(--muted);
-	display: block;
-	font-size: 12px;
-	text-transform: uppercase;
-}
-
-.wizard-summary-value {
-	color: var(--ink);
-	font-size: 15px;
-}
-
-/* ---------- Кнопки ---------- */
-.onboarding-modal-card .onboarding-actions {
+/* ---------- Дни недели ---------- */
+.onboarding-shell .weekday-toggle-row {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 12px;
-	justify-content: flex-end;
-	margin-top: 24px;
+	gap: 6px;
+	border: none;
+	padding: 0;
+	margin: 0;
 }
 
-.onboarding-modal-card .onboarding-actions button {
-	border-radius: 8px;
+.onboarding-shell .weekday-toggle-row button {
+	height: 32px;
+	min-width: 36px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink-2);
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.onboarding-shell .weekday-toggle-row button.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: var(--on-teal, #ffffff);
 	font-weight: 600;
-	min-height: 44px;
-	padding: 10px 24px;
 }
 
-@media (max-width: 560px) {
-	.onboarding-modal-card .onboarding-actions {
-		justify-content: stretch;
-	}
-	.onboarding-modal-card .onboarding-actions button {
-		flex: 1 1 140px;
-	}
+/* ---------- Сводка готовности ---------- */
+.onboarding-shell .onboarding-readiness-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 10px;
+	margin-top: 8px;
+}
+
+.onboarding-shell .onboarding-readiness-grid span {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 10px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--ink);
+}
+
+/* ---------- Подсказки и блокеры ---------- */
+.onboarding-shell .onboarding-blocker {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-left: 3px solid var(--teal);
+	border-radius: 6px;
+	padding: 10px 14px;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--ink-2);
+	margin: 4px 0 0 0;
+}
+
+.onboarding-shell .onboarding-blocker.onboarding-advisory {
+	border-left-color: var(--muted);
+}
+
+/* ---------- Кнопки действий в подвале ---------- */
+.onboarding-shell .onboarding-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	justify-content: flex-end;
+	align-items: center;
+	margin-top: 14px;
+	padding-top: 16px;
+	border-top: 1px solid var(--line);
+}
+
+.onboarding-shell .onboarding-actions button {
+	height: 36px;
+	min-height: 36px;
+	box-sizing: border-box;
+	padding: 0 18px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.onboarding-shell .onboarding-actions .primary-button {
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	border: 1px solid var(--teal-dark, #0f766e);
+	box-shadow: var(--shadow-1);
+}
+
+.onboarding-shell .onboarding-actions .primary-button:hover {
+	background: var(--teal-dark, #0f766e);
+}
+
+.onboarding-shell .onboarding-actions .secondary-button {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+}
+
+.onboarding-shell .onboarding-actions .secondary-button:hover {
+	background: var(--paper);
+	border-color: var(--teal);
 }

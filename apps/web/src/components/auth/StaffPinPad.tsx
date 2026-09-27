@@ -1,5 +1,5 @@
+import React, { useEffect, useState } from "react";
 import { Delete, Lock, LogOut, UserCheck } from "lucide-react";
-import { useEffect, useState } from "react";
 import {
 	actionFailureToast,
 	NO_RESPONSE_CAUSE,
