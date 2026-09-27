@@ -19,8 +19,7 @@ import {
 	X,
 	ZoomIn,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 // Русское склонение счётного слова: «1 зуб», «2 зуба», «5 зубов».
 import { countLabel } from "../../AppHelpers";
 /*
@@ -1070,12 +1069,12 @@ export function VisiographAnalyzer({
 		// исправления содержимое aiReport исполнялось как HTML в том же origin,
 		// что и приложение (XSS через окно печати).
 		win.document.write(`
-      <html><head><title>AI Отчёт · ShadowAnalyst</title>
+      <html><head><title>Отчёт · Рентген-анализ ИИ</title>
       <style>body{font-family:Arial,sans-serif;padding:24px;max-width:700px;margin:0 auto}
       h1{font-size:18px;border-bottom:2px solid #333;padding-bottom:8px}
       pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.6}</style>
       </head><body>
-      <h1>ИИ-Анализ 2D-снимка · ShadowAnalyst</h1>
+      <h1>Рентген-анализ 2D-снимка (ИИ)</h1>
       <p style="color:#666;font-size:12px">Дата: ${escapeHtml(new Date(currentScan.capturedAt).toLocaleDateString("ru-RU"))}</p>
       <pre>${escapeHtml(currentScan.aiReport)}</pre>
       </body></html>
@@ -1148,105 +1147,78 @@ export function VisiographAnalyzer({
 	// чужих файлах в форме var(--text-muted, #718096) — объявив это имя, я молча
 	// сменил бы цвет в правилах, где сейчас работает запас.
 	return (
-		<details
-			className="visiograph-analyzer-details"
-			style={{ marginBottom: "12px" }}
+		<div
+			className="visiograph-analyzer-container"
+			style={{
+				border: "1px solid var(--line)",
+				borderRadius: "14px",
+				background: "var(--paper)",
+				marginBottom: "12px",
+				overflow: "hidden",
+			}}
 		>
-			<summary
+			{/* Header bar */}
+			<div
 				style={{
 					display: "flex",
 					alignItems: "center",
+					justifyContent: "space-between",
+					padding: "12px 16px",
+					borderBottom: "1px solid var(--line)",
+					background: "var(--paper-soft)",
+					flexWrap: "wrap",
 					gap: "8px",
-					cursor: "pointer",
-					padding: "8px 0",
-					userSelect: "none",
-					listStyle: "none",
-					color: "var(--muted)",
-					width: "fit-content",
 				}}
 			>
-				<ScanLine size={18} style={{ color: "var(--teal)" }} />
-				<span style={{ fontSize: "0.95rem", fontWeight: 500 }}>
-					ИИ-Анализ снимка (ShadowAnalyst)
-				</span>
-				{(scanHistory.length > 0 || isLoadingHistory) && (
-					<span
-						style={{
-							// БЫЛО: жёсткий 'white'. В тёмной теме --teal это #2dd4bf, и
-							// белая цифра на нём давала контраст 1.86 — счётчик снимков
-							// читался с трудом. --on-teal задуман ровно для этого: белый в
-							// светлой теме, почти чёрный в тёмной и ночной.
-							fontSize: "0.78rem",
-							background: "var(--teal)",
-							color: "var(--on-teal)",
-							borderRadius: "999px",
-							padding: "1px 7px",
-							fontWeight: 600,
-						}}
-					>
-						{isLoadingHistory ? "…" : scanHistory.length}
+				<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+					<ScanLine size={16} style={{ color: "var(--teal)" }} />
+					<span style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--ink)" }}>
+						Рентген-анализ снимка (ИИ) · Dental AI
 					</span>
-				)}
-				{/* Панель свёрнута по умолчанию (<details> без open), поэтому отказ
-            чтения архива внутри неё врач бы не увидел вовсе — а раньше он и
-            внутри выглядел как «снимков нет». Пометка в сводке — единственное
-            место, где это видно в свёрнутом виде. */}
-				{historyFailure && (
-					<span
-						style={{
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "4px",
-							fontSize: "0.78rem",
-							color: "var(--warn-fg)",
-							fontWeight: 600,
-						}}
-					>
-						<AlertTriangle size={13} /> архив снимков не прочитан
-					</span>
-				)}
-			</summary>
-
-			<div
-				style={{
-					border: "1px solid var(--line)",
-					borderRadius: "14px",
-					background: "var(--paper)",
-					marginTop: "10px",
-					overflow: "hidden",
-				}}
-			>
-				{/* Header bar */}
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-						padding: "12px 16px",
-						borderBottom: "1px solid var(--line)",
-						background: "var(--paper-soft)",
-					}}
-				>
-					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-						<Bot size={16} style={{ color: "var(--teal)" }} />
-						<span style={{ fontWeight: 600, fontSize: "0.9rem" }}>
-							ShadowAnalyst · Dental AI
+					{(scanHistory.length > 0 || isLoadingHistory) && (
+						<span
+							style={{
+								fontSize: "0.78rem",
+								background: "var(--teal)",
+								color: "var(--on-teal, white)",
+								borderRadius: "999px",
+								padding: "1px 7px",
+								fontWeight: 600,
+							}}
+							title="Снимков в архиве пациента"
+						>
+							{isLoadingHistory ? "…" : `${scanHistory.length} в архиве`}
 						</span>
-						{criticalCount > 0 && (
-							<span
-								style={{
-									background: "#e53935",
-									color: "white",
-									fontSize: "0.75rem",
-									padding: "2px 8px",
-									borderRadius: "999px",
-									fontWeight: 700,
-								}}
-							>
-								{criticalCount} проблем
-							</span>
-						)}
-					</div>
+					)}
+					{criticalCount > 0 && (
+						<span
+							style={{
+								background: "#e53935",
+								color: "white",
+								fontSize: "0.75rem",
+								padding: "2px 8px",
+								borderRadius: "999px",
+								fontWeight: 700,
+							}}
+						>
+							{criticalCount} проблем
+						</span>
+					)}
+					{historyFailure && (
+						<span
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "4px",
+								fontSize: "0.78rem",
+								color: "var(--warn-fg)",
+								fontWeight: 600,
+							}}
+						>
+							<AlertTriangle size={13} /> Ожидание снимка для анализа
+						</span>
+					)}
+				</div>
 					<div style={{ display: "flex", gap: "6px" }}>
 						{currentScan?.aiReport && (
 							<>
@@ -1316,8 +1288,8 @@ export function VisiographAnalyzer({
 							style={{
 								width: "100%",
 								border: `2px dashed ${isDragOver ? "var(--teal)" : "var(--line-strong)"}`,
-								borderRadius: "12px",
-								padding: "28px 20px",
+								borderRadius: "14px",
+								padding: "44px 24px",
 								textAlign: "center",
 								cursor: isAnalyzing ? "not-allowed" : "pointer",
 								background: isDragOver
@@ -1345,12 +1317,12 @@ export function VisiographAnalyzer({
 									}}
 								>
 									<Loader2
-										size={36}
+										size={40}
 										className="animate-spin"
 										style={{ color: "var(--teal)" }}
 									/>
 									<p
-										style={{ margin: 0, fontWeight: 600, color: "var(--ink)" }}
+										style={{ margin: 0, fontWeight: 600, color: "var(--ink)", fontSize: "0.95rem" }}
 									>
 										Анализируем снимок...
 									</p>
@@ -1370,45 +1342,70 @@ export function VisiographAnalyzer({
 										display: "flex",
 										flexDirection: "column",
 										alignItems: "center",
-										gap: "10px",
+										gap: "12px",
 									}}
 								>
-									<UploadCloud
-										size={36}
+									<div
 										style={{
-											color: isDragOver ? "var(--teal)" : "var(--muted)",
-										}}
-									/>
-									<p
-										style={{
-											margin: 0,
-											fontWeight: 600,
-											color: isDragOver ? "var(--teal)" : "var(--ink)",
-										}}
-									>
-										{isDragOver
-											? "Отпустите снимок"
-											: "Перетащите снимок или нажмите"}
-									</p>
-									<p
-										style={{
-											margin: 0,
-											fontSize: "0.82rem",
-											color: "var(--muted)",
+											width: "60px",
+											height: "60px",
+											borderRadius: "16px",
+											background: isDragOver ? "var(--teal-soft)" : "var(--paper)",
+											border: "1px solid var(--line)",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
 										}}
 									>
-										Прицельный снимок (JPG, PNG, BMP). Мгновенное открытие (&lt;50мс).
-										ИИ запускается строго по кнопке врача (без авто-перезаписи формулы).
-									</p>
+										<UploadCloud
+											size={30}
+											style={{
+												color: "var(--teal)",
+											}}
+										/>
+									</div>
+									<div>
+										<p
+											style={{
+												margin: 0,
+												fontWeight: 700,
+												fontSize: "1.05rem",
+												color: isDragOver ? "var(--teal)" : "var(--ink)",
+											}}
+										>
+											{isDragOver
+												? "Отпустите снимок для загрузки"
+												: "Перетащите снимок сюда или выберите файл"}
+										</p>
+										<p
+											style={{
+												margin: "6px 0 0 0",
+												fontSize: "0.85rem",
+												color: "var(--muted)",
+											}}
+										>
+											Прицельный снимок (JPG, PNG, BMP). Мгновенное открытие (&lt;50мс).
+											ИИ запускается строго по кнопке врача (без авто-перезаписи формулы).
+										</p>
+									</div>
 									<span
 										className="btn-primary"
 										style={{
-											display: "inline-block",
-											marginTop: "8px",
-											padding: "8px 20px",
+											display: "inline-flex",
+											alignItems: "center",
+											gap: "6px",
+											marginTop: "4px",
+											padding: "9px 24px",
 											borderRadius: "8px",
 											fontSize: "0.88rem",
+											fontWeight: 600,
+											background: "var(--teal)",
+											color: "var(--on-teal, white)",
+											border: "1px solid var(--teal)",
+											boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
 											opacity: isAnalyzing ? 0.5 : 1,
+											cursor: "pointer",
 										}}
 									>
 										Выбрать файл
@@ -2187,7 +2184,7 @@ export function VisiographAnalyzer({
 									>
 										<Sparkles size={14} style={{ color: "var(--teal)" }} />
 										<span style={{ fontWeight: 600, fontSize: "0.88rem" }}>
-											Полный отчёт ShadowAnalyst
+											Полный отчёт рентген-анализа ИИ
 										</span>
 										<span
 											style={{
@@ -2597,7 +2594,6 @@ export function VisiographAnalyzer({
 					)}
 				</div>
 			</div>
-		</details>
 	);
 }
 
