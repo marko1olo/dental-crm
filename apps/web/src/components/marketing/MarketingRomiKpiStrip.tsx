@@ -3,10 +3,10 @@
  */
 
 import React from "react";
-import type { MarketingRomiSummaryResult } from "@dental/shared";
+import type { MarketingRomiSummary } from "@dental/shared";
 
 export interface MarketingRomiKpiStripProps {
-	readonly summary: MarketingRomiSummaryResult;
+	readonly summary: MarketingRomiSummary;
 }
 
 export function MarketingRomiKpiStrip({ summary }: MarketingRomiKpiStripProps) {

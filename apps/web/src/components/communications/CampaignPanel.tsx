@@ -999,6 +999,7 @@ export function CampaignPanel({
 
 						<button
 							className="primary-button"
+							style={{ minHeight: "44px" }}
 							type="button"
 							disabled={busy}
 							onClick={() => void createCampaign()}
