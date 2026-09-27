@@ -3,6 +3,7 @@ import {
 	ArrowDownToLine,
 	ArrowUpFromLine,
 	ChevronDown,
+	Clock,
 	Edit2,
 	FileText,
 	MoreHorizontal,
@@ -34,6 +35,14 @@ import {
 	type FefoTrafficLightInfo,
 } from "./inventory/NurseCarpuleDisposalModal";
 import { InventoryStockTable } from "./inventory/InventoryStockTable";
+import { WarehouseItemsTable } from "./warehouse/WarehouseItemsTable";
+import {
+	computeAuditLineItem,
+	DEFAULT_COMMISSION_MEMBERS,
+	DEFAULT_INVENTORY_ITEMS_PRESET,
+	type WarehouseAuditItemLine,
+	type WarehouseInventoryAuditDocument,
+} from "./inventory/warehouseInventoryEngine.js";
 
 const MaterialBomsSettingsPanel = lazy(() =>
 	import("./inventory/MaterialBomsSettingsPanel").then((module) => ({
@@ -229,6 +238,77 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 		return sliceDomList(filteredItems ?? [], displayLimit, 0);
 	}, [filteredItems, displayLimit]);
 
+	const auditInitialDoc: WarehouseInventoryAuditDocument = useMemo(() => {
+		const auditDate = new Date().toISOString().slice(0, 10);
+		if (!items || items.length === 0) {
+			return {
+				id: `audit-${Date.now()}`,
+				documentNumber: `ИНВ-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
+				orderNumber: "ПР-44/ИНВ",
+				orderDate: auditDate,
+				auditStartDate: auditDate,
+				auditEndDate: auditDate,
+				auditDate,
+				branchId: organizationId,
+				branchNameRu: "Центральное отделение",
+				warehouseNameRu: "Главный склад расходных материалов",
+				molFullName: "Ответственный сотрудник",
+				molPosition: "Старшая медсестра / Администратор",
+				status: "reconciliation" as const,
+				commission: DEFAULT_COMMISSION_MEMBERS,
+				items: [...DEFAULT_INVENTORY_ITEMS_PRESET],
+				organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»",
+				organizationOkpo: "49201948",
+				organizationInn: "7701984512",
+			};
+		}
+		const auditItems: WarehouseAuditItemLine[] = items.map((it, idx) => {
+			const costRub = parseFloat(it.unitCostRub) || 0;
+			const unitCostKopecks = Math.round(costRub * 100);
+			const bookQuantity = Number(it.stockQuantity) || 0;
+			const expiryDate = it.expirationDate || "2027-12-31";
+
+			return computeAuditLineItem(
+				{
+					itemId: it.id,
+					sku: it.sku || `SKU-${String(idx + 1).padStart(4, "0")}`,
+					nameRu: it.name,
+					category: it.category || "Расходные материалы",
+					unitRu: it.unit || "шт.",
+					okeiCode: "796",
+					batchNumber: it.lotNumber || `ПАРТИЯ-${it.id.slice(0, 6)}`,
+					expiryDate,
+					storageLocationRu: "Основной стеллаж",
+					bookQuantity,
+					actualQuantity: bookQuantity,
+					unitCostKopecks,
+				},
+				auditDate,
+			);
+		});
+
+		return {
+			id: `audit-${Date.now()}`,
+			documentNumber: `ИНВ-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
+			orderNumber: "ПР-44/ИНВ",
+			orderDate: auditDate,
+			auditStartDate: auditDate,
+			auditEndDate: auditDate,
+			auditDate,
+			branchId: organizationId,
+			branchNameRu: "Центральное отделение",
+			warehouseNameRu: "Главный склад расходных материалов",
+			molFullName: "Ответственный сотрудник",
+			molPosition: "Старшая медсестра / Администратор",
+			status: "reconciliation" as const,
+			commission: DEFAULT_COMMISSION_MEMBERS,
+			items: auditItems,
+			organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»",
+			organizationOkpo: "49201948",
+			organizationInn: "7701984512",
+		};
+	}, [items, organizationId]);
+
 	React.useEffect(() => {
 		const handleOutside = (e: MouseEvent) => {
 			if (opsMenuRef.current && !opsMenuRef.current.contains(e.target as Node)) {
@@ -363,57 +443,93 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 						<span>Склад материалов</span>
 					</div>
 
-					{/* Subtabs switcher */}
-					<div className="flex items-center gap-1 bg-[var(--paper-soft,#f1f5f9)] p-0.5 rounded-lg border border-[var(--line,#e2e8f0)] shrink-0">
+					{/* Subtabs switcher — strict 32px height, 8px radius, DENTE tokens, Lucide icons (Mandates 8c, 8d, 8e) */}
+					<div
+						className="inventory-subtabs-container flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-xl border border-[var(--line)] shrink-0"
+						role="tablist"
+						aria-label="Режимы склада"
+					>
 						<button
 							type="button"
 							onClick={() => {
 								setActiveSubTab("inventory");
 								setStockViewMode("standard");
 							}}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`inventory-subtab-btn h-8 px-3 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 								activeSubTab === "inventory" && stockViewMode === "standard"
-									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xs border border-[var(--line,#e2e8f0)]"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									? "active bg-[var(--paper)] text-[var(--ink)] font-bold shadow-xs border border-[var(--line)]"
+									: "bg-transparent text-[var(--muted)] border border-transparent hover:text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal-soft)]"
 							}`}
+							role="tab"
+							aria-selected={activeSubTab === "inventory" && stockViewMode === "standard"}
 							data-testid="tab-inventory-items"
 						>
+							<Package
+								size={14}
+								className={
+									activeSubTab === "inventory" && stockViewMode === "standard"
+										? "text-teal-600 dark:text-teal-400 shrink-0"
+										: "text-[var(--muted)] shrink-0"
+								}
+							/>
 							<span>Остатки</span>
-							<span className="text-[10px] opacity-70">({items.length})</span>
+							<span className="text-[10px] opacity-70 font-mono">({items.length})</span>
 						</button>
+
 						<button
 							type="button"
 							onClick={() => {
 								setActiveSubTab("inventory");
 								setStockViewMode("fefo");
 							}}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`inventory-subtab-btn h-8 px-3 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 								activeSubTab === "inventory" && stockViewMode === "fefo"
-									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xs border border-[var(--line,#e2e8f0)]"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									? "active bg-[var(--paper)] text-[var(--ink)] font-bold shadow-xs border border-[var(--line)]"
+									: "bg-transparent text-[var(--muted)] border border-transparent hover:text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal-soft)]"
 							}`}
+							role="tab"
+							aria-selected={activeSubTab === "inventory" && stockViewMode === "fefo"}
 							data-testid="tab-inventory-fefo"
 						>
+							<Clock
+								size={14}
+								className={
+									activeSubTab === "inventory" && stockViewMode === "fefo"
+										? "text-teal-600 dark:text-teal-400 shrink-0"
+										: "text-[var(--muted)] shrink-0"
+								}
+							/>
 							<span>Сводка FEFO</span>
-							<span className="text-[10px] opacity-70">({items.length})</span>
+							<span className="text-[10px] opacity-70 font-mono">({items.length})</span>
 						</button>
+
 						<button
 							type="button"
 							onClick={() => setActiveSubTab("rules")}
-							className={`min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 sm:py-0 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`inventory-subtab-btn h-8 px-3 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
 								activeSubTab === "rules"
-									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xs border border-[var(--line,#e2e8f0)]"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									? "active bg-[var(--paper)] text-[var(--ink)] font-bold shadow-xs border border-[var(--line)]"
+									: "bg-transparent text-[var(--muted)] border border-transparent hover:text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal-soft)]"
 							}`}
+							role="tab"
+							aria-selected={activeSubTab === "rules"}
 							data-testid="tab-inventory-rules"
 						>
+							<FileText
+								size={14}
+								className={
+									activeSubTab === "rules"
+										? "text-teal-600 dark:text-teal-400 shrink-0"
+										: "text-[var(--muted)] shrink-0"
+								}
+							/>
 							<span>Правила списания</span>
-							<span className="text-[10px] opacity-70">({rulesList.length})</span>
+							<span className="text-[10px] opacity-70 font-mono">({rulesList.length})</span>
 						</button>
 					</div>
 
 					{/* Compact Inline KPI Badges */}
-					<div className="hidden md:flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)] shrink-0 pl-1 border-l border-[var(--line,#e2e8f0)]">
+					<div className="hidden lg:flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)] shrink-0 pl-1 border-l border-[var(--line,#e2e8f0)]">
 						<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[11px] font-medium shrink-0 whitespace-nowrap">
 							Поз: <strong className="text-[var(--ink,#0f172a)] font-bold">{totalItems}</strong>
 						</span>
@@ -430,7 +546,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 							</strong>
 						</span>
 						{totalValue > 0 && (
-							<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[11px] font-medium shrink-0 whitespace-nowrap">
+							<span className="hidden 2xl:inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#e2e8f0)] text-[11px] font-medium shrink-0 whitespace-nowrap">
 								Стоимость:{" "}
 								<strong className="text-teal-600 dark:text-teal-400 font-bold">
 									{money(totalValue)}
@@ -456,7 +572,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 							color="var(--muted)"
 							style={{
 								position: "absolute",
-								left: 8,
+								left: 9,
 								pointerEvents: "none",
 							}}
 						/>
@@ -465,10 +581,10 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 							placeholder="Поиск..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="!pl-7 w-36 lg:w-48 text-xs min-h-[44px] sm:min-h-[28px] sm:h-7 shrink-0"
+							className="!pl-7.5 w-28 sm:w-36 text-xs h-8 shrink-0"
 							style={{
 								padding: "4px 8px 4px 28px",
-								borderRadius: 6,
+								borderRadius: 8,
 								border: `1px solid ${borderColor}`,
 								background: paperBg,
 								color: "var(--ink)",
@@ -483,7 +599,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 					<button
 						type="button"
 						onClick={() => setIsQuickPackagesOpen((prev) => !prev)}
-						className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 rounded-md text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors border shrink-0 whitespace-nowrap"
+						className="h-8 px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors border shrink-0 whitespace-nowrap"
 						style={{
 							background: isQuickPackagesOpen ? "var(--teal-soft)" : paperSoftBg,
 							color: isQuickPackagesOpen ? "var(--teal-dark, #0f766e)" : "var(--ink)",
@@ -506,17 +622,8 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 						data-testid="nurse-quick-carpules-btn"
 						disabled={isWritingOffCarpules}
 						onClick={() => handleQuickWriteoffCarpules()}
-						className="secondary-button min-h-[44px] sm:min-h-[28px] sm:h-7 shrink-0 whitespace-nowrap"
+						className="secondary-button h-8 px-2.5 rounded-lg shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 font-bold text-xs cursor-pointer transition-colors"
 						style={{
-							display: "inline-flex",
-							alignItems: "center",
-							gap: 5,
-							padding: "4px 8px",
-							borderRadius: 6,
-							fontWeight: 700,
-							fontSize: 12,
-							whiteSpace: "nowrap",
-							cursor: "pointer",
 							background: paperSoftBg,
 							border: `1px solid ${borderColor}`,
 							color: "var(--ink)",
@@ -533,21 +640,12 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 					<div ref={opsMenuRef} className="shrink-0" style={{ position: "relative", display: "inline-block" }}>
 						<button
 							type="button"
-							className="secondary-button min-h-[44px] sm:min-h-[28px] sm:h-7 shrink-0 whitespace-nowrap"
+							className="secondary-button h-8 px-2.5 rounded-lg shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors"
 							onClick={() => setIsOpsMenuOpen((prev) => !prev)}
 							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: 5,
-								padding: "4px 9px",
-								borderRadius: 6,
 								border: `1px solid ${borderColor}`,
 								background: paperSoftBg,
 								color: "var(--ink)",
-								fontWeight: 600,
-								fontSize: 12,
-								cursor: "pointer",
-								whiteSpace: "nowrap",
 							}}
 							title="Операции со складом: Списание по наряду, ТОРГ-13, ИНВ-3/19, МДЛП, Техкарты"
 							aria-expanded={isOpsMenuOpen}
@@ -1275,936 +1373,35 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 						/>
 					</div>
 				) : (
-					/* TABLE */
-					<div
-						className="inventory-view-table-wrapper"
-						style={{
-							flex: 1,
-							overflowX: "auto",
-							overflowY: "auto",
-							maxWidth: "100%",
-							width: "100%",
-							boxSizing: "border-box",
-							background: paperBg,
-							borderRadius: 12,
-							border: `1px solid ${borderColor}`,
+					/* TABLE: Calibrated 7-column DENTE warehouse table */
+					<WarehouseItemsTable
+						items={inventorySlice.visibleItems}
+						isLoading={isLoading}
+						organizationId={organizationId}
+						searchQuery={searchQuery}
+						loadError={loadError}
+						hasMore={inventorySlice.hasMore}
+						remainingCount={inventorySlice.remainingCount}
+						onShowMore={() => setDisplayLimit((prev) => prev + 40)}
+						onSelectItem={(item) => openEditModal(item)}
+						onEditItem={(item) => openEditModal(item)}
+						onDeductItem={(item) => {
+							setAdjustingItem(item);
+							setAdjustType("out");
+							setAdjustAmount("");
 						}}
-					>
-						<table
-							className="inventory-view-table"
-							style={{
-								width: "100%",
-								minWidth: "770px",
-								borderCollapse: "collapse",
-								textAlign: "left",
-							}}
-						>
-							<thead
-								style={{
-									position: "sticky",
-									top: 0,
-									background: paperSoftBg,
-									zIndex: 10,
-								}}
-							>
-								<tr>
-									<th
-										className="inventory-col-name"
-										style={{
-											padding: "10px 14px",
-											fontSize: 12,
-											color: "var(--muted)",
-											fontWeight: 600,
-											borderBottom: `1px solid ${borderColor}`,
-											textTransform: "uppercase",
-											letterSpacing: 0.5,
-											whiteSpace: "nowrap",
-											minWidth: 160,
-										}}
-									>
-										Наименование
-									</th>
-									<th
-										className="inventory-col-stock"
-										style={{
-											padding: "10px 14px",
-											fontSize: 12,
-											color: "var(--muted)",
-											fontWeight: 600,
-											borderBottom: `1px solid ${borderColor}`,
-											textTransform: "uppercase",
-											letterSpacing: 0.5,
-											whiteSpace: "nowrap",
-											width: 90,
-											minWidth: 90,
-											maxWidth: 90,
-											textAlign: "right",
-										}}
-									>
-										Остаток
-									</th>
-									<th
-										className="inventory-col-threshold"
-										style={{
-											padding: "10px 8px",
-											fontSize: 12,
-											color: "var(--muted)",
-											fontWeight: 600,
-											borderBottom: `1px solid ${borderColor}`,
-											textTransform: "uppercase",
-											letterSpacing: 0.5,
-											whiteSpace: "nowrap",
-											width: 80,
-											minWidth: 80,
-											maxWidth: 80,
-											textAlign: "center",
-										}}
-									>
-										Мин. запас
-									</th>
-									<th
-										className="inventory-col-cost"
-										style={{
-											padding: "10px 14px",
-											fontSize: 12,
-											color: "var(--muted)",
-											fontWeight: 600,
-											borderBottom: `1px solid ${borderColor}`,
-											textTransform: "uppercase",
-											letterSpacing: 0.5,
-											whiteSpace: "nowrap",
-											width: 90,
-											minWidth: 90,
-											maxWidth: 90,
-											textAlign: "right",
-										}}
-									>
-										Цена / ед.
-									</th>
-									<th
-										className="inventory-col-fefo"
-										style={{
-											padding: "10px 12px",
-											fontSize: 12,
-											color: "var(--muted)",
-											fontWeight: 600,
-											borderBottom: `1px solid ${borderColor}`,
-											textTransform: "uppercase",
-											letterSpacing: 0.5,
-											whiteSpace: "nowrap",
-											width: 150,
-											minWidth: 150,
-											maxWidth: 150,
-										}}
-									>
-										Партия / Срок
-									</th>
-									<th
-										className="inventory-col-barcode"
-										style={{
-											padding: "10px 8px",
-											fontSize: 12,
-											color: "var(--muted)",
-											fontWeight: 600,
-											borderBottom: `1px solid ${borderColor}`,
-											textTransform: "uppercase",
-											letterSpacing: 0.5,
-											whiteSpace: "nowrap",
-											width: 115,
-											minWidth: 110,
-											maxWidth: 125,
-										}}
-									>
-										Штрихкод
-									</th>
-									<th
-										className="inventory-col-actions whitespace-nowrap shrink-0"
-										style={{
-											padding: "10px 8px",
-											fontSize: 12,
-											color: "var(--muted)",
-											fontWeight: 600,
-											borderBottom: `1px solid ${borderColor}`,
-											textTransform: "uppercase",
-											letterSpacing: 0.5,
-											textAlign: "right",
-											width: 185,
-											minWidth: 185,
-											maxWidth: 190,
-											whiteSpace: "nowrap",
-										}}
-									>
-										Действия
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								{filteredItems.length === 0 ? (
-									<tr>
-										{/* В шапке семь колонок: при colSpan={5} текст съезжал влево. */}
-										<td
-											colSpan={7}
-											style={{
-												padding: "32px 16px",
-												textAlign: "center",
-												color: "var(--muted)",
-											}}
-										>
-											{/*
-												ТРИ РАЗНЫХ ПУСТЫХ ЭКРАНА, А НЕ ОДИН.
-
-												Здесь стояло «Склад пуст. Добавьте первый материал.» на
-												любую пустоту, включая ту, при которой добавлять нельзя:
-												пока организация не определена (профиль клиники ещё не
-												пришёл, вход просрочен), запрос остатков вообще не
-												уходит — hook снимает признак загрузки и оставляет
-												список пустым. Кладовщик читал «склад пуст» и заносил
-												материалы заново поверх настоящих остатков.
-											*/}
-											{/*
-												Отказ сервера — отдельное состояние, а не пустота.
-
-												При упавшем запросе список остаётся пустым, и здесь
-												показывалось «Склад пуст. Добавьте первый материал.»
-												Уведомление об ошибке к этому времени уже погасло, так
-												что экран прямо предлагал занести материалы заново
-												поверх настоящих остатков. Теперь видно, что остатки не
-												загружены, и есть чем повторить запрос.
-											*/}
-											{loadError ? (
-												<span
-													style={{
-														display: "flex",
-														flexDirection: "column",
-														alignItems: "center",
-														gap: 14,
-													}}
-												>
-													<AlertTriangle
-														size={22}
-														style={{ color: "var(--bad-fg, #ef4444)" }}
-													/>
-													<span style={{ color: "var(--ink)", fontSize: 15 }}>
-														{loadError}
-													</span>
-													<button
-														type="button"
-														onClick={() => fetchItems()}
-														disabled={isLoading}
-														style={{
-															padding: "10px 20px",
-															borderRadius: 8,
-															border: `1px solid ${borderColor}`,
-															background: paperSoftBg,
-															color: "var(--ink)",
-															fontWeight: 600,
-															fontSize: 14,
-															cursor: isLoading ? "wait" : "pointer",
-														}}
-													>
-														{isLoading ? "Загружаем..." : "Повторить"}
-													</button>
-												</span>
-											) : !organizationId ? (
-												"Склад не загружен: клиника не определена. Обновите страницу или войдите в кабинет заново — добавлять материалы сейчас нельзя, настоящие остатки не показаны."
-											) : searchQuery ? (
-												<div
-													style={{
-														display: "flex",
-														flexDirection: "column",
-														alignItems: "center",
-														gap: 8,
-													}}
-												>
-													<Search size={28} style={{ color: "var(--muted)" }} />
-													<span style={{ color: "var(--ink)", fontWeight: 600, fontSize: 14 }}>
-														Материалы не найдены по запросу «{searchQuery}»
-													</span>
-													<span style={{ color: "var(--muted)", fontSize: 12 }}>
-														Проверьте правильность наименования, артикула SKU или штрихкода партии.
-													</span>
-												</div>
-											) : (
-												<div
-													style={{
-														display: "flex",
-														flexDirection: "column",
-														alignItems: "center",
-														gap: 12,
-														maxWidth: 480,
-														margin: "0 auto",
-													}}
-													className="w-full max-w-full px-2 sm:px-4 text-center break-words flex flex-col items-center gap-3 mx-auto"
-												>
-													<Package size={40} style={{ color: "var(--teal, #0d9488)" }} />
-													<span style={{ color: "var(--ink)", fontWeight: 700, fontSize: 16 }} className="w-full break-words text-center">
-														На складе пока нет материалов и партий
-													</span>
-													<span style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }} className="w-full break-words text-center">
-														Оформите первую приходную накладную для оприходования медикаментов, анестетиков, пломбировочных материалов и расходников.
-													</span>
-													<div className="flex flex-wrap items-center justify-center gap-2 mt-2">
-														<button
-															type="button"
-															onClick={() => setIsAcceptanceWaybillsOpen(true)}
-															style={{
-																minHeight: "40px",
-																padding: "8px 20px",
-																borderRadius: 8,
-																background: "var(--teal, #0d9488)",
-																color: "var(--on-teal, #ffffff)",
-																fontWeight: 700,
-																fontSize: 14,
-																border: "none",
-																boxShadow: "var(--shadow-1)",
-																cursor: "pointer",
-																display: "inline-flex",
-																alignItems: "center",
-																gap: 8,
-															}}
-															data-testid="empty-state-acceptance-waybills-btn"
-														>
-															<FileText size={16} />
-															<span>Оформить приходную накладную (FEFO)</span>
-														</button>
-														<button
-															type="button"
-															onClick={() => openAddModal()}
-															style={{
-																minHeight: "40px",
-																padding: "8px 16px",
-																borderRadius: 8,
-																background: "transparent",
-																color: "var(--ink)",
-																fontWeight: 600,
-																fontSize: 13,
-																border: "1px solid var(--line, #e2e8f0)",
-																cursor: "pointer",
-																display: "inline-flex",
-																alignItems: "center",
-																gap: 6,
-															}}
-															data-testid="empty-state-add-first-material-btn"
-														>
-															<Plus size={14} />
-															<span>Создать карточку вручную</span>
-														</button>
-													</div>
-												</div>
-											)}
-										</td>
-									</tr>
-								) : (
-									inventorySlice.visibleItems.map((item) => {
-										const isLowStock =
-											item.stockQuantity <= item.criticalThreshold;
-										/*
-										 * БЫЛО: `Number(item.unitCostRub) || 0`.
-										 * Нечитаемая/пустая/битая цена становилась нулём:
-										 * строка склада показывала материал бесплатным,
-										 * «итого» по позиции считалось от нуля, а шапка
-										 * totalValue (parseKopecks) могла показывать другое.
-										 * money() уже умеет «не определено» для NaN — но
-										 * до неё ноль подставляли здесь.
-										 * СТАЛО: конечное число оставляем; иначе null и
-										 * честный money(null)/без ложного «итого».
-										 */
-										const unitCostRaw = Number(item.unitCostRub);
-										const unitCost = Number.isFinite(unitCostRaw)
-											? unitCostRaw
-											: null;
-										const lineValue =
-											unitCost !== null && Number.isFinite(item.stockQuantity)
-												? item.stockQuantity * unitCost
-												: null;
-										return (
-											<tr
-												key={item.id}
-												className="inventory-item-row"
-												style={{
-													borderBottom: `1px solid ${borderColor}`,
-													transition: "background 0.15s",
-													contentVisibility: "auto",
-													containIntrinsicSize: "1px 40px",
-													contain: "content",
-												}}
-											>
-												<td
-													className="inventory-col-name"
-													style={{
-														padding: "10px 14px",
-														color: "var(--ink)",
-														fontWeight: 500,
-														minWidth: 160,
-													}}
-												>
-													<div
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: 8,
-														}}
-													>
-														{isLowStock && (
-															<AlertTriangle size={15} color="var(--bad-fg, #ef4444)" className="shrink-0" />
-														)}
-														<span className="truncate max-w-[280px]" title={item.name}>
-															{item.name}
-														</span>
-													</div>
-												</td>
-												<td
-													className="inventory-col-stock"
-													style={{
-														padding: "10px 14px",
-														whiteSpace: "nowrap",
-														textAlign: "right",
-														width: 90,
-														minWidth: 90,
-														maxWidth: 90,
-													}}
-												>
-													<span
-														style={{
-															background: isLowStock
-																? "var(--bad-bg, rgba(239, 68, 68, 0.1))"
-																: "var(--teal-surface, rgba(16, 185, 129, 0.1))",
-															color: isLowStock
-																? "var(--bad-fg, #ef4444)"
-																: "var(--teal)",
-															padding: "4px 8px",
-															borderRadius: 6,
-															fontWeight: 600,
-															fontSize: 13,
-															border: isLowStock
-																? "1px solid rgba(239, 68, 68, 0.3)"
-																: "1px solid rgba(13, 148, 136, 0.25)",
-															whiteSpace: "nowrap",
-															display: "inline-flex",
-															alignItems: "center",
-														}}
-													>
-														{item.stockQuantity}&nbsp;{item.unit || "шт."}
-													</span>
-												</td>
-												<td
-													className="inventory-col-threshold"
-													style={{
-														padding: "10px 8px",
-														color: "var(--muted)",
-														fontSize: 13,
-														whiteSpace: "nowrap",
-														textAlign: "center",
-														width: 80,
-														minWidth: 80,
-														maxWidth: 80,
-													}}
-												>
-													{item.criticalThreshold}&nbsp;{item.unit || "шт."}
-												</td>
-												<td
-													className="inventory-col-cost"
-													style={{
-														padding: "10px 14px",
-														fontSize: 13,
-														whiteSpace: "nowrap",
-														textAlign: "right",
-														width: 90,
-														minWidth: 90,
-														maxWidth: 90,
-													}}
-												>
-													{/*
-													 * БЫЛО: unitCost > 0 / lineValue > 0 после Number||0.
-													 * Неизвестная цена уже null; сравнение с 0 схлопывало
-													 * «не определено» и честный ноль в одно «—».
-													 * СТАЛО: null → money(null) («не определено»);
-													 * конечное число (в т.ч. 0) → money; итого только
-													 * когда lineValue известен.
-													 */}
-													{unitCost !== null ? (
-														<div>
-															<div
-																style={{ color: "var(--ink)", fontWeight: 500 }}
-															>
-																{money(unitCost)}
-															</div>
-															{lineValue !== null && (
-																<div
-																	style={{
-																		color: "var(--muted)",
-																		fontSize: 11,
-																	}}
-																>
-																	итого: {money(lineValue)}
-																</div>
-															)}
-														</div>
-													) : (
-														<span
-															style={{
-																color: "var(--muted)",
-																fontStyle: "italic",
-															}}
-														>
-															{money(null)}
-														</span>
-													)}
-												</td>
-												<td
-													className="inventory-col-fefo"
-													style={{
-														padding: "10px 12px",
-														color: "var(--muted)",
-														fontSize: 13,
-														whiteSpace: "nowrap",
-														width: 150,
-														minWidth: 150,
-														maxWidth: 150,
-													}}
-												>
-													{/*
-													  Просрочку и «вот-вот истечёт» надо различать.
-
-													  Раньше оба случая красились одинаково и цветом
-													  var(--tomato) — токена с таким именем в проекте нет
-													  вовсе, поэтому предупреждение попросту не
-													  показывалось: текст оставался обычным. Просроченный
-													  материал нельзя использовать совсем, а истекающий
-													  надо успеть израсходовать — это разные решения
-													  кладовщика, и выглядеть они обязаны по-разному.
-													*/}
-													{item.expirationDate ? (
-														(() => {
-															const state = expirationState(
-																item.expirationDate,
-															);
-															return (
-																<div
-																	style={{
-																		display: "flex",
-																		flexDirection: "column",
-																		gap: 3,
-																		whiteSpace: "nowrap",
-																		maxWidth: 150,
-																	}}
-																	data-fefo-status={state.status}
-																	data-testid={`inventory-fefo-traffic-${state.status}`}
-																>
-																	<div style={{ display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", maxWidth: 150 }}>
-																		<span
-																			style={{
-																				width: 7,
-																				height: 7,
-																				borderRadius: "50%",
-																				backgroundColor: state.dotColor,
-																				flexShrink: 0,
-																			}}
-																			data-fefo-dot={state.status}
-																			aria-hidden="true"
-																		/>
-																		<span className={`${state.className} truncate`} style={{ fontSize: 12, lineHeight: "1.2", maxWidth: 135 }} title={state.label}>
-																			{state.label}
-																		</span>
-																	</div>
-																	<div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 1, whiteSpace: "nowrap" }}>
-																		<span
-																			style={{
-																				display: "inline-flex",
-																				alignItems: "center",
-																				padding: "1px 5px",
-																				borderRadius: 4,
-																				fontSize: 9,
-																				fontWeight: 700,
-																				textTransform: "uppercase",
-																				letterSpacing: "0.03em",
-																				whiteSpace: "nowrap",
-																			}}
-																			className={`${state.bgClass} ${state.textClass}`}
-																			data-testid="fefo-traffic-badge"
-																		>
-																			{state.badgeText}
-																		</span>
-																		{item.lotNumber ? (
-																			<span style={{ fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap" }} title={`Партия: ${item.lotNumber}`}>
-																				Партия:&nbsp;{item.lotNumber}
-																			</span>
-																		) : null}
-																	</div>
-																</div>
-															);
-														})()
-													) : item.lotNumber ? (
-														<span style={{ fontSize: 12, whiteSpace: "nowrap" }}>
-															Партия:&nbsp;{item.lotNumber}
-														</span>
-													) : (
-														<span style={{ fontStyle: "italic", opacity: 0.5, whiteSpace: "nowrap" }}>
-															Не указан
-														</span>
-													)}
-												</td>
-												<td
-													className="inventory-col-barcode"
-													style={{
-														padding: "10px 6px",
-														color: "var(--muted)",
-														fontSize: 13,
-														whiteSpace: "nowrap",
-														width: 115,
-														minWidth: 110,
-														maxWidth: 125,
-														overflow: "hidden",
-														textOverflow: "ellipsis",
-													}}
-												>
-													{item.barcode ? (
-														<span
-															style={{
-																fontFamily: "monospace",
-																background: "rgba(0,0,0,0.05)",
-																padding: "1px 4px",
-																borderRadius: 4,
-																fontSize: 10,
-																letterSpacing: "-0.2px",
-																display: "inline-block",
-																maxWidth: "100%",
-																overflow: "hidden",
-																textOverflow: "ellipsis",
-																verticalAlign: "middle",
-															}}
-															title={item.barcode}
-														>
-															{item.barcode}
-														</span>
-													) : (
-														<span style={{ fontStyle: "italic", opacity: 0.5, fontSize: 12 }}>
-															Нет
-														</span>
-													)}
-												</td>
-												<td
-													className="inventory-col-actions shrink-0 whitespace-nowrap"
-													style={{
-														padding: "8px 6px",
-														textAlign: "right",
-														width: 185,
-														minWidth: 185,
-														maxWidth: 190,
-													}}
-												>
-													<div
-														style={{
-															display: "flex",
-															justifyContent: "flex-end",
-															alignItems: "center",
-															gap: 4,
-														}}
-														className="shrink-0 flex-nowrap"
-													>
-														{/* Action 1: Списание (Direct primary action) */}
-														<button
-															type="button"
-															onClick={() => {
-																setAdjustingItem(item);
-																setAdjustType("out");
-																setAdjustAmount("");
-															}}
-															className="min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
-															style={{
-																background: "var(--bad-bg, rgba(239, 68, 68, 0.1))",
-																color: "var(--bad-fg, #ef4444)",
-																border: "1px solid rgba(239, 68, 68, 0.25)",
-																whiteSpace: "nowrap",
-															}}
-															title="Списать расход материала (Primary Action: Расход)"
-															data-testid={`btn-item-writeoff-${item.id}`}
-														>
-															<ArrowUpFromLine size={12} className="shrink-0" />
-															<span className="whitespace-nowrap shrink-0">Списание</span>
-														</button>
-
-														{/* Action 2: Приход (Direct primary action) */}
-														<button
-															type="button"
-															onClick={() => {
-																setAdjustingItem(item);
-																setAdjustType("in");
-																setAdjustAmount("");
-															}}
-															className="min-h-[36px] sm:min-h-0 sm:h-7 px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
-															style={{
-																background: "var(--teal-soft)",
-																color: "var(--teal-dark, #0f766e)",
-																border: "1px solid var(--teal)",
-																whiteSpace: "nowrap",
-															}}
-															title="Оприходовать материал на склад / накладная (Primary Action: Приход)"
-															data-testid={`btn-item-arrival-${item.id}`}
-														>
-															<ArrowDownToLine size={12} className="shrink-0" />
-															<span className="whitespace-nowrap shrink-0">Приход</span>
-														</button>
-
-														{/* Secondary Actions Menu (MoreHorizontal) - Miller's Law <=2 direct controls */}
-														<div
-															style={{ position: "relative", display: "inline-flex" }}
-															className="shrink-0"
-															ref={activeMenuRowId === item.id ? rowMenuRef : null}
-														>
-															<button
-																type="button"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	setActiveMenuRowId((prev) =>
-																		prev === item.id ? null : item.id,
-																	);
-																}}
-																className="min-h-[36px] sm:min-h-0 sm:h-7 w-7 rounded-lg cursor-pointer inline-flex items-center justify-center transition-colors shrink-0"
-																style={{
-																	background: "var(--paper-soft, rgba(0,0,0,0.04))",
-																	color: "var(--muted)",
-																	border: "1px solid var(--line, rgba(0,0,0,0.08))",
-																}}
-																title="Дополнительные действия с позицией"
-																aria-label="Меню дополнительных действий склада"
-																aria-haspopup="menu"
-																aria-expanded={activeMenuRowId === item.id}
-																data-testid={`btn-item-more-${item.id}`}
-															>
-																<MoreHorizontal size={14} />
-															</button>
-															{activeMenuRowId === item.id && (
-																<div
-																	style={{
-																		position: "absolute",
-																		right: 0,
-																		top: "100%",
-																		marginTop: 4,
-																		background: "var(--paper-strong)",
-																		border: "1px solid var(--line)",
-																		borderRadius: 8,
-																		boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-																		padding: 4,
-																		zIndex: 50,
-																		minWidth: 190,
-																		display: "flex",
-																		flexDirection: "column",
-																		gap: 2,
-																		textAlign: "left",
-																	}}
-																	role="menu"
-																	aria-label="Меню позиции склада"
-																	onClick={(e) => e.stopPropagation()}
-																>
-																	<button
-																		type="button"
-																		onClick={() => {
-																			setActiveMenuRowId(null);
-																			if (item.barcode) {
-																				navigator.clipboard?.writeText(item.barcode);
-																				showToast(`Штрихкод скопирован: ${item.barcode}`, "info");
-																			} else {
-																				showToast("У позиции нет штрихкода (задайте в редактировании)", "info");
-																			}
-																		}}
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: 8,
-																			padding: "8px 12px",
-																			fontSize: 12,
-																			fontWeight: 500,
-																			color: "var(--ink)",
-																			background: "none",
-																			border: "none",
-																			borderRadius: 6,
-																			cursor: "pointer",
-																			width: "100%",
-																			textAlign: "left",
-																		}}
-																		role="menuitem"
-																	>
-																		<QrCode size={14} className="text-teal-600 shrink-0" />
-																		<span>Штрихкод {item.barcode ? `(${item.barcode})` : ""}</span>
-																	</button>
-																	<button
-																		type="button"
-																		onClick={() => {
-																			setActiveMenuRowId(null);
-																			setIsWarehouseManagerOpen(true);
-																		}}
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: 8,
-																			padding: "8px 12px",
-																			fontSize: 12,
-																			fontWeight: 500,
-																			color: "var(--ink)",
-																			background: "none",
-																			border: "none",
-																			borderRadius: 6,
-																			cursor: "pointer",
-																			width: "100%",
-																			textAlign: "left",
-																		}}
-																		role="menuitem"
-																	>
-																		<TrendingUp size={14} className="text-blue-600 shrink-0" />
-																		<span>История движений</span>
-																	</button>
-																	<button
-																		type="button"
-																		onClick={() => {
-																			setActiveMenuRowId(null);
-																			showToast(`Печать этикетки «${item.name}» (штрихкод: ${item.barcode || "б/ш"}) отправлена`, "info");
-																		}}
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: 8,
-																			padding: "8px 12px",
-																			fontSize: 12,
-																			fontWeight: 500,
-																			color: "var(--ink)",
-																			background: "none",
-																			border: "none",
-																			borderRadius: 6,
-																			cursor: "pointer",
-																			width: "100%",
-																			textAlign: "left",
-																		}}
-																		role="menuitem"
-																	>
-																		<Printer size={14} className="text-indigo-600 shrink-0" />
-																		<span>Печать этикетки</span>
-																	</button>
-																	<button
-																		type="button"
-																		onClick={() => {
-																			setActiveMenuRowId(null);
-																			setIsInventoryAuditOpen(true);
-																		}}
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: 8,
-																			padding: "8px 12px",
-																			fontSize: 12,
-																			fontWeight: 500,
-																			color: "var(--ink)",
-																			background: "none",
-																			border: "none",
-																			borderRadius: 6,
-																			cursor: "pointer",
-																			width: "100%",
-																			textAlign: "left",
-																		}}
-																		role="menuitem"
-																	>
-																		<ShieldCheck size={14} className="text-emerald-600 shrink-0" />
-																		<span>Инвентаризация (сверка)</span>
-																	</button>
-																	<button
-																		type="button"
-																		onClick={() => {
-																			setActiveMenuRowId(null);
-																			openEditModal(item);
-																		}}
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: 8,
-																			padding: "8px 12px",
-																			fontSize: 12,
-																			fontWeight: 500,
-																			color: "var(--ink)",
-																			background: "none",
-																			border: "none",
-																			borderRadius: 6,
-																			cursor: "pointer",
-																			width: "100%",
-																			textAlign: "left",
-																		}}
-																		role="menuitem"
-																	>
-																		<Edit2 size={14} className="text-amber-600 shrink-0" />
-																		<span>Редактировать</span>
-																	</button>
-																	<div
-																		style={{
-																			height: 1,
-																			background: "var(--line, #e2e8f0)",
-																			margin: "2px 0",
-																		}}
-																	/>
-																	<button
-																		type="button"
-																		onClick={() => {
-																			setActiveMenuRowId(null);
-																			handleDeleteItem(item.id, item.name);
-																		}}
-																		style={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: 8,
-																			padding: "8px 12px",
-																			fontSize: 12,
-																			fontWeight: 600,
-																			color: "var(--bad-fg, #ef4444)",
-																			background: "none",
-																			border: "none",
-																			borderRadius: 6,
-																			cursor: "pointer",
-																			width: "100%",
-																			textAlign: "left",
-																		}}
-																		role="menuitem"
-																	>
-																		<Trash2 size={14} className="shrink-0" />
-																		<span>Удалить</span>
-																	</button>
-																</div>
-															)}
-														</div>
-													</div>
-												</td>
-											</tr>
-										);
-									})
-								)}
-								{inventorySlice.hasMore && (
-									<tr>
-										<td colSpan={7} style={{ textAlign: "center", padding: "16px" }}>
-											<button
-												type="button"
-												className="btn-inventory-show-more"
-												onClick={() => setDisplayLimit((prev) => prev + 40)}
-												style={{
-													background: "var(--paper-strong)",
-													border: "1px solid var(--border)",
-													color: "var(--ink)",
-													padding: "8px 18px",
-													borderRadius: "8px",
-													fontSize: "13px",
-													fontWeight: 600,
-													cursor: "pointer",
-													display: "inline-flex",
-													alignItems: "center",
-													gap: "6px",
-													margin: "0 auto",
-												}}
-												title="Подгрузить следующие материалы склада"
-											>
-												<span>Показать ещё 40 материалов (осталось {inventorySlice.remainingCount})</span>
-											</button>
-										</td>
-									</tr>
-								)}
-							</tbody>
-						</table>
-					</div>
+						onReceiveItem={(item) => {
+							setAdjustingItem(item);
+							setAdjustType("in");
+							setAdjustAmount("");
+						}}
+						onDeleteItem={(id, name) => handleDeleteItem(id, name)}
+						onOpenWaybills={() => setIsAcceptanceWaybillsOpen(true)}
+						onOpenAddModal={() => openAddModal()}
+						onOpenWarehouseManager={() => setIsWarehouseManagerOpen(true)}
+						onOpenInventoryAudit={() => setIsInventoryAuditOpen(true)}
+						onRetry={() => fetchItems()}
+					/>
 				)}
 			</div>
 
@@ -2861,9 +2058,50 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 					<WarehouseInventoryAuditModal
 						isOpen={isInventoryAuditOpen}
 						onClose={() => setIsInventoryAuditOpen(false)}
-						onApplyAudit={async () => {
-							setIsInventoryAuditOpen(false);
-							fetchItems();
+						initialDocument={auditInitialDoc}
+						onApplyAudit={async (doc) => {
+							try {
+								const discrepancyItems = doc.items.filter(
+									(it) => it.discrepancyQuantity !== 0,
+								);
+								if (discrepancyItems.length > 0) {
+									const headers = getHeaders({
+										"Content-Type": "application/json",
+									});
+									for (const it of discrepancyItems) {
+										await fetch(
+											`/api/inventory/${organizationId}/${it.itemId}/stock`,
+											{
+												method: "PATCH",
+												headers,
+												body: JSON.stringify({
+													adjustment: it.discrepancyQuantity,
+													reason: `Инвентаризация ${doc.documentNumber} (${it.discrepancyQuantity > 0 ? "излишек" : "недостача"})`,
+													allowOverdraft: true,
+												}),
+											},
+										);
+									}
+									showToast(
+										`Инвентаризация утверждена: скорректировано ${discrepancyItems.length} позиций на складе`,
+										"info",
+									);
+								} else {
+									showToast(
+										"Инвентаризация утверждена: расхождений по остаткам не выявлено",
+										"info",
+									);
+								}
+							} catch (err) {
+								const message =
+									err instanceof Error
+										? err.message
+										: "Не удалось провести списание/оприходование по инвентаризации";
+								showToast(message, "error");
+							} finally {
+								setIsInventoryAuditOpen(false);
+								fetchItems();
+							}
 						}}
 						onDocumentSaved={() => {
 							fetchItems();

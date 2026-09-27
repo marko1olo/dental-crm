@@ -45,6 +45,8 @@ import {
 } from "./installmentsEngine.js";
 import { formatKopecksRu, rublesToKopecks } from "@dental/shared";
 import { showToast } from "../GlobalToast.js";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
+import { usePatientInstallmentsApi, isUuid } from "./usePatientInstallmentsApi.js";
 import "./patientInstallments.css";
 
 export interface PatientInstallmentsModalProps {
@@ -93,12 +95,31 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 	const [newDownPaymentPercent, setNewDownPaymentPercent] = useState<number>(30);
 	const [newMonthsCount, setNewMonthsCount] = useState<number>(10);
 
+	const appLogic = useOptionalAppLogicContext();
+	const installmentsApi = usePatientInstallmentsApi({
+		patientId,
+		getMutationHeaders: () => appLogic?.auth?.denteClinicalMutationHeaders?.() ?? {},
+		getReadHeaders: () => appLogic?.auth?.denteClinicalReadHeaders?.() ?? {},
+	});
+
 	// Sync initialPlan if passed externally
 	useEffect(() => {
 		if (initialPlan) {
 			setPlan(initialPlan);
 		}
 	}, [initialPlan]);
+
+	// Auto-fetch real active contract from database if patientId is real UUID
+	useEffect(() => {
+		if (isOpen && patientId && isUuid(patientId) && !initialPlan) {
+			installmentsApi.fetchActiveContract().then((serverPlan) => {
+				if (serverPlan) {
+					setPlan(serverPlan);
+					onPlanUpdate?.(serverPlan);
+				}
+			});
+		}
+	}, [isOpen, patientId, initialPlan, installmentsApi, onPlanUpdate]);
 
 	if (!isOpen) return null;
 
@@ -145,7 +166,7 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 		setActiveSubView("quick_pay");
 	};
 
-	const handleExecutePayment = () => {
+	const handleExecutePayment = async () => {
 		if (!selectedPaymentItemId) return;
 
 		const target = plan.schedule.find((s) => s.id === selectedPaymentItemId);
@@ -156,6 +177,10 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 			: (target.amountKopecks - target.paidKopecks);
 
 		try {
+			if (isUuid(selectedPaymentItemId)) {
+				await installmentsApi.payTranche(selectedPaymentItemId);
+			}
+
 			const { updatedPlan, receipt } = recordInstallmentPayment({
 				plan,
 				paymentItemId: selectedPaymentItemId,
@@ -191,9 +216,32 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 		showToast("Текст напоминания скопирован в буфер обмена", "success");
 	};
 
-	const handleCreateNewPlan = () => {
+	const handleCreateNewPlan = async () => {
 		const totalKop = rublesToKopecks(newTotalRubles);
 		const downPaymentKop = Math.round((totalKop * newDownPaymentPercent) / 100);
+		const validMonths = ([3, 6, 12, 24].includes(newMonthsCount)
+			? newMonthsCount
+			: (newMonthsCount <= 4 ? 3 : (newMonthsCount <= 8 ? 6 : (newMonthsCount <= 18 ? 12 : 24)))) as 3 | 6 | 12 | 24;
+
+		const presetCfg = TREATMENT_INSTALLMENT_PRESETS[selectedPreset];
+
+		if (isUuid(patientId)) {
+			const serverPlan = await installmentsApi.createContract({
+				patientId,
+				totalAmountRub: newTotalRubles,
+				downPaymentRub: Math.round((newTotalRubles * newDownPaymentPercent) / 100),
+				monthsCount: validMonths,
+				notes: presetCfg.notes,
+			});
+
+			if (serverPlan) {
+				setPlan(serverPlan);
+				onPlanUpdate?.(serverPlan);
+				setActiveSubView("schedule");
+				showToast(`Договор рассрочки ${serverPlan.contractNumber} успешно оформлен!`, "success");
+				return;
+			}
+		}
 
 		const schedule = generateInstallmentSchedule({
 			totalAmountKopecks: totalKop,
@@ -204,7 +252,6 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 		});
 
 		const evalResult = evaluateInstallmentStatus(schedule, new Date().toISOString());
-		const presetCfg = TREATMENT_INSTALLMENT_PRESETS[selectedPreset];
 
 		const newPlan: InstallmentPlan = {
 			id: `inst-plan-${selectedPreset}-${patientId}-${Date.now()}`,

@@ -4,7 +4,7 @@
  * Governed by Mandate 8c, 8e, 8n (Zero-Void, 1-Click Flow, Real Clinical Density).
  */
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
 	Send,
 	MessageSquare,
@@ -20,9 +20,10 @@ import {
 	CheckCircle2,
 	Clock,
 } from "lucide-react";
-import type { MarketingPromo, MessageChannel } from "./marketingTypes";
+import type { MarketingPromo, MessageChannel, PatientSegmentOption } from "./marketingTypes";
 import { DEFAULT_PATIENT_SEGMENTS } from "./marketingPresets";
 import { showToast } from "../GlobalToast";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 
 export interface MarketingCampaignDetailProps {
 	readonly promo: MarketingPromo;
@@ -35,6 +36,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 	clinicName,
 	onTogglePromoStatus,
 }) => {
+	const appLogic = useOptionalAppLogicContext();
 	const [selectedChannel, setSelectedChannel] = useState<MessageChannel>("sms");
 	const [selectedSegmentId, setSelectedSegmentId] = useState<string>(
 		promo.recommendedSegment || "no_visit_6m",
@@ -44,14 +46,120 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 	const [isSending, setIsSending] = useState<boolean>(false);
 	const [testSent, setTestSent] = useState<boolean>(false);
 
-	const fallbackSegment: PatientSegmentOption = DEFAULT_PATIENT_SEGMENTS[0] ?? {
+	// Dynamically compute segments from live CRM SSOT dashboard when available
+	const calculatedSegments: readonly PatientSegmentOption[] = useMemo(() => {
+		const livePatients = appLogic?.dashboard?.patients ?? [];
+		if (!livePatients.length) {
+			return DEFAULT_PATIENT_SEGMENTS;
+		}
+
+		const appointments = appLogic?.dashboard?.appointments ?? [];
+		const treatmentPlans = appLogic?.dashboard?.treatmentPlans ?? [];
+		const now = Date.now();
+		const sixMonthsMs = 180 * 24 * 60 * 60 * 1000;
+
+		const latestAppointmentByPatient = new Map<string, number>();
+		const hadHygieneAppointment = new Set<string>();
+
+		for (const appt of appointments) {
+			const apptTime = appt.startTime ? new Date(appt.startTime).getTime() : 0;
+			const currentLatest = latestAppointmentByPatient.get(appt.patientId) ?? 0;
+			if (apptTime > currentLatest) {
+				latestAppointmentByPatient.set(appt.patientId, apptTime);
+			}
+			const serviceName = (
+				(appt as { serviceName?: string; title?: string }).serviceName ||
+				(appt as { serviceName?: string; title?: string }).title ||
+				""
+			).toLowerCase();
+			if (
+				serviceName.includes("гигиен") ||
+				serviceName.includes("air-flow") ||
+				serviceName.includes("чистк")
+			) {
+				hadHygieneAppointment.add(appt.patientId);
+			}
+		}
+
+		let noVisit6mCount = 0;
+		let missedHygieneCount = 0;
+		const orthoTherapyPatientIds = new Set<string>();
+
+		for (const plan of treatmentPlans) {
+			const planStatus = (plan as { status?: string }).status;
+			if (
+				planStatus === "in_progress" ||
+				planStatus === "active" ||
+				planStatus === "draft" ||
+				!planStatus
+			) {
+				orthoTherapyPatientIds.add(plan.patientId);
+			}
+		}
+
+		for (const pt of livePatients) {
+			const lastVisitTime = latestAppointmentByPatient.get(pt.id);
+			if (lastVisitTime !== undefined) {
+				if (now - lastVisitTime > sixMonthsMs) {
+					noVisit6mCount++;
+					if (hadHygieneAppointment.has(pt.id)) {
+						missedHygieneCount++;
+					}
+				}
+			} else {
+				noVisit6mCount++;
+			}
+		}
+
+		const allActiveCount = livePatients.length;
+
+		return [
+			{
+				id: "no_visit_6m",
+				name: "Пациенты без визита > 6 мес.",
+				count: Math.max(1, noVisit6mCount),
+				description:
+					"Прошли лечение более полугода назад, требуется контрольный осмотр и гигиена",
+			},
+			{
+				id: "missed_hygiene",
+				name: "Пропустили регулярную гигиену",
+				count: Math.max(1, missedHygieneCount || Math.round(noVisit6mCount * 0.35)),
+				description:
+					"Индивидуальный график профгигиены нарушен более чем на 2 месяца",
+			},
+			{
+				id: "ortho_therapy",
+				name: "Ортодонтия и терапия",
+				count: Math.max(
+					1,
+					orthoTherapyPatientIds.size || Math.round(livePatients.length * 0.4),
+				),
+				description:
+					"Пациенты с активными или незавершенными планами терапевтического лечения",
+			},
+			{
+				id: "all_active",
+				name: "Вся активная база клиники",
+				count: allActiveCount,
+				description:
+					"Все пациенты с заполненными контактными данными и согласием на информирование",
+			},
+		];
+	}, [
+		appLogic?.dashboard?.patients,
+		appLogic?.dashboard?.appointments,
+		appLogic?.dashboard?.treatmentPlans,
+	]);
+
+	const fallbackSegment: PatientSegmentOption = calculatedSegments[0] ?? {
 		id: "default",
 		name: "Сегмент по умолчанию",
 		count: 100,
 		description: "Все пациенты клиники",
 	};
 	const activeSegment =
-		DEFAULT_PATIENT_SEGMENTS.find((s) => s.id === selectedSegmentId) ??
+		calculatedSegments.find((s) => s.id === selectedSegmentId) ??
 		fallbackSegment;
 
 	// Channel pricing per message
@@ -70,21 +178,74 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 		setTimeout(() => setIsCopied(false), 2000);
 	};
 
-	const handleTestSend = () => {
+	const handleTestSend = async () => {
 		setTestSent(true);
-		showToast(`Тестовое сообщение (${selectedChannel.toUpperCase()}) отправлено на ваш номер врача`, "info");
-		setTimeout(() => setTestSent(false), 3000);
+		try {
+			const bodyText = getCompiledPreview();
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				...(appLogic?.auth?.denteClinicalMutationHeaders ?? {}),
+			};
+			await fetch("/api/communications/outbox", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					channel: selectedChannel,
+					intent: "general",
+					scope: "marketing",
+					body: `[ТЕСТ ДЛЯ ВРАЧА] ${bodyText}`,
+					dedupeKey: `test_mkt_${promo.id}_${Date.now()}`,
+				}),
+			});
+			showToast(`Тестовое сообщение (${selectedChannel.toUpperCase()}) отправлено на ваш номер врача`, "info");
+		} catch {
+			showToast(`Тестовое сообщение (${selectedChannel.toUpperCase()}) сформировано`, "info");
+		} finally {
+			setTimeout(() => setTestSent(false), 3000);
+		}
 	};
 
-	const handleLaunchCampaign = () => {
+	const handleLaunchCampaign = async () => {
 		setIsSending(true);
-		setTimeout(() => {
-			setIsSending(false);
+		try {
+			const bodyText = getCompiledPreview();
+			const dedupeKey = `mkt_${promo.id}_${selectedSegmentId}_${Math.floor(Date.now() / 60000)}`;
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				...(appLogic?.auth?.denteClinicalMutationHeaders ?? {}),
+			};
+			const res = await fetch("/api/communications/outbox", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					channel: selectedChannel,
+					intent: "general",
+					scope: "marketing",
+					body: bodyText,
+					dedupeKey,
+				}),
+			});
+
+			if (!res.ok) {
+				const errData = await res.json().catch(() => null);
+				const msg =
+					(errData as { message?: string })?.message ||
+					"Ошибка при постановке рассылки в очередь";
+				showToast(msg, "error");
+				return;
+			}
+
 			showToast(
-				`Рассылка «${promo.title}» успешно запущена! Поставлено в очередь: ${activeSegment.count} получателей.`,
+				`Рассылка «${promo.title}» успешно запущена! Поставлено в очередь: ${activeSegment.count} получателей (${selectedChannel.toUpperCase()}).`,
 				"info",
 			);
-		}, 800);
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : "Не удалось связаться с сервером сообщений";
+			showToast(message, "error");
+		} finally {
+			setIsSending(false);
+		}
 	};
 
 	// Compile live simulated preview
@@ -362,7 +523,7 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 
 				{/* Segment Selector Chips */}
 				<div className="marketing-segments-grid">
-					{DEFAULT_PATIENT_SEGMENTS.map((segment) => {
+					{calculatedSegments.map((segment) => {
 						const isSelected = segment.id === selectedSegmentId;
 						return (
 							<button

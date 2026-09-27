@@ -25,6 +25,7 @@ import {
 	type TaxDeductionRelationship,
 } from "./taxDeductionEngine";
 import { showToast } from "../GlobalToast";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { TaxDeductionFamilyTab } from "./TaxDeductionFamilyTab";
 import { TaxDeductionChecksTab } from "./TaxDeductionChecksTab";
 import { TaxDeductionXmlTab } from "./TaxDeductionXmlTab";
@@ -71,7 +72,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	payments = [],
 	selectedYear: propSelectedYear,
 	defaultTaxYear,
-	patientId: _patientId,
+	patientId,
 	autoFetchPayments: _autoFetchPayments,
 	clinicName = "ООО «Стоматологическая клиника»",
 	clinicInn = "",
@@ -82,6 +83,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	clinicAddress = "",
 	chiefDoctorName = "Руководитель клиники",
 }) => {
+	const appLogic = useOptionalAppLogicContext();
 	const currentYear = new Date().getFullYear();
 	const [activeTab, setActiveTab] = useState<"form" | "checks" | "family" | "xml">("form");
 	const [selectedYear, setSelectedYear] = useState<number>(() => {
@@ -420,9 +422,59 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 		showToast("Данные плательщика заполнены из карточки пациента", "info");
 	};
 
-	const handlePrint = () => {
+	const handlePrint = async () => {
 		const params = getCertificateParams();
 		const html = renderOfficialTaxCertificateKnd1151156Html(params);
+
+		// Сохранение факта выдачи справки в историю документов пациента (POST /api/documents)
+		if (
+			patientId &&
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)
+		) {
+			try {
+				const headers: Record<string, string> = {
+					"Content-Type": "application/json",
+					...(appLogic?.auth?.denteClinicalMutationHeaders ?? {}),
+				};
+				const validInn =
+					payerInn && /^\d{10}$|^\d{12}$/.test(payerInn.trim()) ? payerInn.trim() : null;
+				const validPaymentIds = yearPayments
+					.map((p) => p.id)
+					.filter((id) =>
+						Boolean(
+							id &&
+								/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+						),
+					);
+
+				const payload =
+					validPaymentIds.length > 0
+						? {
+								taxPaymentSelection: {
+									selectedPaymentIds: validPaymentIds,
+								},
+							}
+						: undefined;
+
+				await fetch("/api/documents", {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						patientId,
+						kind: "tax_deduction_certificate",
+						title: `Справка для налоговой (КНД 1151156) за ${selectedYear} г.`,
+						taxYear: selectedYear,
+						taxPayerInn: validInn,
+						totalAmountRub: targetYearSummary.totalRub,
+						payload,
+					}),
+				});
+				showToast(`Справка за ${selectedYear} г. сохранена в документах пациента`, "success");
+			} catch (err) {
+				console.warn("Не удалось сохранить справку в документах пациента:", err);
+			}
+		}
+
 		const win = window.open("", "_blank");
 		if (win) {
 			win.document.write(html);

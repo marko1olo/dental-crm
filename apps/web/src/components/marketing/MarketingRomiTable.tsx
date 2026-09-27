@@ -14,7 +14,7 @@
  * - Удобное редактирование затрат, пациентов и выручки прямо в таблице.
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
 	BarChart3,
 	CheckCircle2,
@@ -169,7 +169,7 @@ export function MarketingRomiTable() {
 		setSyncMessage(null);
 	};
 
-	const handleSyncWithCrm = () => {
+	const handleSyncWithCrmLocal = () => {
 		const patients = (appLogic?.dashboard?.patients ?? []) as any[];
 		const appointments = (appLogic?.dashboard?.appointments ?? []) as any[];
 		const payments = (appLogic?.dashboard?.payments ?? []) as any[];
@@ -195,6 +195,75 @@ export function MarketingRomiTable() {
 		const msg = `Синхронизировано с CRM: учтено ${patients.length} пациентов, ${appointments.length} приемов, ${payments.length} оплат`;
 		setSyncMessage(msg);
 	};
+
+	const fetchServerAttribution = async () => {
+		try {
+			const headers = appLogic?.auth && typeof appLogic.auth.denteClinicalReadHeaders === "function"
+				? appLogic.auth.denteClinicalReadHeaders()
+				: {};
+			const res = await fetch("/api/marketing/attribution", { headers });
+			if (res.ok) {
+				const data = await res.json();
+				if (Array.isArray(data?.selfBookingChannels) && data.selfBookingChannels.length > 0) {
+					const customBudgetsKopecks: Record<string, number> = {};
+					for (const ch of channels) {
+						if (ch.spentKopecks > 0) {
+							customBudgetsKopecks[ch.channelKey] = ch.spentKopecks;
+						}
+					}
+
+					const serverChannels: AdvertisingChannelInput[] = data.selfBookingChannels.map((c: any) => ({
+						id: `ch-${c.key}`,
+						channelKey: c.key,
+						nameRu: c.nameRu,
+						categoryRu: c.categoryRu,
+						spentKopecks: customBudgetsKopecks[c.key] ?? Number(c.spentKopecks || 0),
+						leadsCount: Number(c.viewsCount || 0),
+						primaryPatientsCount: Number(c.paidPatientsCount || c.attendedCount || 0),
+						revenueKopecks: Number(c.revenueKopecks || 0),
+						repeatVisitsCount: Math.max(0, Number(c.attendedCount || 0) - Number(c.paidPatientsCount || 0)),
+						notes: `Сквозная аналитика Fastify: записей ${c.bookingsCount}, явка ${c.attendedCount}`,
+					}));
+
+					if (data.telephonyAdminFunnel) {
+						const tf = data.telephonyAdminFunnel;
+						serverChannels.push({
+							id: "ch-telephony",
+							channelKey: "telephony",
+							nameRu: "Телефония регистратуры (Звонки)",
+							categoryRu: "Коллтрекинг",
+							spentKopecks: customBudgetsKopecks.telephony ?? Number(tf.spentKopecks || 0),
+							leadsCount: Number(tf.incomingCallsCount || 0),
+							primaryPatientsCount: Number(tf.paidPatientsCount || tf.attendedCount || 0),
+							revenueKopecks: Number(tf.revenueKopecks || 0),
+							repeatVisitsCount: Math.max(0, Number(tf.attendedCount || 0) - Number(tf.paidPatientsCount || 0)),
+							notes: `Звонков: ${tf.incomingCallsCount}, конверсия в запись: ${tf.conversionCallToBookingPercent}%`,
+						});
+					}
+
+					persistChannels(serverChannels);
+					const revRub = data.summary?.totalOnlineRevenueKopecks
+						? (data.summary.totalOnlineRevenueKopecks / 100).toLocaleString("ru-RU")
+						: "0";
+					const msg = `Сквозная аналитика (GET /api/marketing/attribution): ${serverChannels.length} каналов, общая выручка онлайн ${revRub} ₽`;
+					setSyncMessage(msg);
+					return;
+				}
+			}
+		} catch (err) {
+			console.warn("[MarketingRomiTable] Server attribution fetch error, falling back:", err);
+		}
+		// Fallback to local CRM aggregation
+		handleSyncWithCrmLocal();
+	};
+
+	const handleSyncWithCrm = () => {
+		fetchServerAttribution();
+	};
+
+	useEffect(() => {
+		fetchServerAttribution();
+	}, []);
 
 	return (
 		<section
