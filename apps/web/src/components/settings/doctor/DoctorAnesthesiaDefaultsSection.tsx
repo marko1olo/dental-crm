@@ -224,15 +224,17 @@ export function DoctorAnesthesiaDefaultsSection() {
 
 				{/* Дополнительные анестетики каталога РФ/СНГ (раскрывающийся список) */}
 				{secondaryAnesthetics.length > 0 && (
-					<div>
+					<div className="pt-1">
 						<button
 							type="button"
 							onClick={() => setShowAllAnesthetics((prev) => !prev)}
-							className="text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] inline-flex items-center gap-1 cursor-pointer py-1"
+							className="h-8 min-h-[32px] sm:h-[34px] px-3.5 rounded-lg text-xs font-semibold text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] hover:border-teal-500/50 shadow-2xs transition-all inline-flex items-center gap-2 cursor-pointer select-none"
+							data-testid="toggle-secondary-anesthetics-btn"
+							title={showAllAnesthetics ? "Скрыть дополнительные препараты" : "Показать полный реестр анестетиков РФ/СНГ"}
 						>
 							<ChevronDown
 								size={14}
-								className={`transition-transform duration-200 ${
+								className={`text-teal-600 dark:text-teal-400 transition-transform duration-200 shrink-0 ${
 									showAllAnesthetics ? "rotate-180" : ""
 								}`}
 							/>
@@ -360,7 +362,7 @@ export function DoctorAnesthesiaDefaultsSection() {
 					<button
 						type="button"
 						onClick={handleCopyLiveSnippet}
-						className="text-xs font-semibold text-teal-700 dark:text-teal-300 hover:underline inline-flex items-center gap-1 cursor-pointer"
+						className="text-xs font-semibold text-teal-700 dark:text-teal-300 hover:underline inline-flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0"
 						title="Скопировать готовый текст для амбулаторной карты"
 					>
 						<Copy size={13} />
@@ -371,6 +373,70 @@ export function DoctorAnesthesiaDefaultsSection() {
 					{liveAnesthesiaNote}
 				</p>
 			</div>
+
+			{/* 4. Справочник предельной токсичности и лимитов карпул (раскрывающийся аккордеон) */}
+			<details className="group rounded-xl border border-[var(--line)] bg-[var(--paper)] overflow-hidden transition-all" data-testid="anesthesia-toxicity-reference">
+				<summary className="p-3 text-xs font-bold text-[var(--ink)] cursor-pointer select-none flex items-center justify-between hover:bg-[var(--paper-soft)]">
+					<div className="flex items-center gap-2">
+						<HeartPulse size={15} className="text-rose-500" />
+						<span>Справочник токсичности и лимитов карпул (Мандат 8k: справочная памятка)</span>
+					</div>
+					<span className="text-[11px] text-[var(--muted)] group-open:rotate-180 transition-transform">
+						▼
+					</span>
+				</summary>
+				<div className="p-3.5 pt-0 border-t border-[var(--line)] text-xs text-[var(--muted)] space-y-3">
+					<p className="m-0 text-[11px] leading-relaxed">
+						Расчёт безопасных пределов по массе тела взрослого пациента (клинические рекомендации Стоматологической Ассоциации России СтАР):
+					</p>
+					<div className="overflow-x-auto">
+						<table className="w-full text-left text-xs border-collapse">
+							<thead>
+								<tr className="border-b border-[var(--line)] text-[var(--ink)] font-semibold">
+									<th className="py-1.5 pr-2">Препарат</th>
+									<th className="py-1.5 px-2">Концентрация</th>
+									<th className="py-1.5 px-2">Макс. доза</th>
+									<th className="py-1.5 px-2">50 кг</th>
+									<th className="py-1.5 px-2">70 кг</th>
+									<th className="py-1.5 pl-2">Кардио-лимит</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-[var(--line)]/50 text-[11px]">
+								<tr>
+									<td className="py-1.5 pr-2 font-bold text-[var(--ink)]">Артикаин (Убистезин/Септанест)</td>
+									<td className="py-1.5 px-2 font-mono">4% (1:200k / 1:100k)</td>
+									<td className="py-1.5 px-2 font-mono">7 мг/кг (макс 500 мг)</td>
+									<td className="py-1.5 px-2 font-bold text-teal-700 dark:text-teal-300">до 5 карпул</td>
+									<td className="py-1.5 px-2 font-bold text-teal-700 dark:text-teal-300">до 7 карпул</td>
+									<td className="py-1.5 pl-2 text-rose-600 dark:text-rose-400 font-bold">макс 2 карпулы (1:200k)</td>
+								</tr>
+								<tr>
+									<td className="py-1.5 pr-2 font-bold text-[var(--ink)]">Мепивакаин (Скандонест)</td>
+									<td className="py-1.5 px-2 font-mono">3% (без адреналина)</td>
+									<td className="py-1.5 px-2 font-mono">4.4 мг/кг (макс 300 мг)</td>
+									<td className="py-1.5 px-2 font-bold text-teal-700 dark:text-teal-300">до 4 карпул</td>
+									<td className="py-1.5 px-2 font-bold text-teal-700 dark:text-teal-300">до 5.5 карпул</td>
+									<td className="py-1.5 pl-2 text-emerald-700 dark:text-emerald-300 font-bold">Препарат выбора</td>
+								</tr>
+								<tr>
+									<td className="py-1.5 pr-2 font-bold text-[var(--ink)]">Лидокаин (Ксилостезин)</td>
+									<td className="py-1.5 px-2 font-mono">2% (1:80k / 1:100k)</td>
+									<td className="py-1.5 px-2 font-mono">4.4 мг/кг (макс 300 мг)</td>
+									<td className="py-1.5 px-2 font-bold text-teal-700 dark:text-teal-300">до 4 карпул</td>
+									<td className="py-1.5 px-2 font-bold text-teal-700 dark:text-teal-300">до 6 карпул</td>
+									<td className="py-1.5 pl-2 text-amber-600 dark:text-amber-400 font-bold">макс 2 карпулы</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<div className="p-2 rounded bg-rose-500/10 border border-rose-500/20 text-[11px] text-rose-700 dark:text-rose-300 flex items-start gap-1.5">
+						<HeartPulse size={14} className="shrink-0 mt-0.5" />
+						<span>
+							<strong>Кардиологический регламент:</strong> у пациентов с ИБС, гипертензией II-III ст. и аритмией суммарная доза экзогенного адреналина не должна превышать 0.04 мг (соответствует строго 2 карпулам 1:200 000). Всегда проводите аспирационную пробу.
+						</span>
+					</div>
+				</div>
+			</details>
 		</div>
 	);
 }

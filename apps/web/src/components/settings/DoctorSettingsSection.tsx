@@ -52,13 +52,14 @@ export interface DoctorSettingsSectionProps {
 const SPECIALTY_PRESET_BUTTONS: readonly {
 	key: DoctorSpecialtyKey;
 	label: string;
+	title: string;
 }[] = [
-	{ key: "therapist", label: "Терапевт" },
-	{ key: "surgeon", label: "Хирург-имплантолог" },
-	{ key: "orthopedist", label: "Ортопед" },
-	{ key: "orthodontist", label: "Ортодонт" },
-	{ key: "periodontist", label: "Пародонтолог" },
-	{ key: "pediatric", label: "Детский врач" },
+	{ key: "therapist", label: "Терапевт", title: "Терапевтическая стоматология" },
+	{ key: "surgeon", label: "Хирург", title: "Хирургическая стоматология и имплантология" },
+	{ key: "orthopedist", label: "Ортопед", title: "Ортопедическая стоматология и протезирование" },
+	{ key: "orthodontist", label: "Ортодонт", title: "Ортодонтия и исправление прикуса" },
+	{ key: "periodontist", label: "Пародонтолог", title: "Пародонтология и здоровье десен" },
+	{ key: "pediatric", label: "Детский", title: "Детская стоматология" },
 ];
 
 export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
@@ -102,50 +103,60 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 	return (
 		<div className="space-y-6" data-testid="doctor-settings-section">
 			{/* Super-Header: Doctor Cockpit Banner */}
-			<div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-transparent border border-teal-500/25 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-				<div className="flex items-center gap-3">
+			<div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-transparent border border-teal-500/25 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+				<div className="flex items-center gap-3 min-w-0">
 					<div className="w-12 h-12 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-md">
 						<Stethoscope size={24} />
 					</div>
-					<div>
-						<div className="flex items-center gap-2">
+					<div className="min-w-0">
+						<div className="flex items-center gap-2 flex-wrap">
 							<h3 className="font-extrabold text-base sm:text-lg text-[var(--ink)]">
 								Кабинет врача: персональные настройки
 							</h3>
-							<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30">
-								Врачебная автономия
+							<span
+								className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-teal-500/15 text-teal-800 dark:text-teal-300 border border-teal-500/30 whitespace-nowrap shrink-0 select-none leading-none"
+								style={{ lineHeight: 1 }}
+								title="Персональные клинические стандарты врача (не перетираются общеклиническими настройками)"
+							>
+								<ShieldCheck size={12} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>Врачебная автономия</span>
 							</span>
 						</div>
-						<p className="text-xs text-[var(--muted)] mt-0.5">
-							Шаблоны приёма, клинические стандарты, автозаполнение медкарты 043/у и оборудование вашего кабинета
+						<p className="text-xs text-[var(--muted)] mt-0.5 line-clamp-2 sm:truncate max-w-xl">
+							Персональные клинические стандарты врача: шаблоны 043/у, пресеты анестезии и материалы
 						</p>
 					</div>
 				</div>
 
 				{/* Quick Clinical Specialty Presets */}
-				<div className="flex flex-wrap items-center gap-1.5 self-stretch md:self-auto">
-					<span className="text-xs text-[var(--muted)] mr-1 hidden lg:inline">Специализация:</span>
-					{SPECIALTY_PRESET_BUTTONS.map((spec) => {
-						const isSelected = currentSpecialty === spec.key;
-						return (
-							<button
-								key={spec.key}
-								type="button"
-								onClick={() => {
-									applySpecialtyPreset(spec.key);
-									showToast(`Пресет «${spec.label}» активирован (настройки приёма обновлены)`, "success");
-								}}
-								className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer min-h-[30px] ${
-									isSelected
-										? "bg-teal-600 text-white border-teal-600 shadow-2xs font-bold"
-										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:border-teal-500"
-								}`}
-								title={`Активировать пресет рабочего места для «${spec.label}»`}
-							>
-								{spec.label}
-							</button>
-						);
-					})}
+				<div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 shrink-0 self-stretch xl:self-auto">
+					<span className="text-xs font-semibold text-[var(--muted)] whitespace-nowrap hidden lg:inline">
+						Специализация:
+					</span>
+					<div className="grid grid-cols-2 sm:grid-cols-3 xl:flex xl:flex-nowrap gap-1.5 p-1 rounded-xl bg-[var(--paper-soft)]/70 border border-[var(--line)]/70 w-full sm:w-auto">
+						{SPECIALTY_PRESET_BUTTONS.map((spec) => {
+							const isSelected = currentSpecialty === spec.key;
+							return (
+								<button
+									key={spec.key}
+									type="button"
+									onClick={() => {
+										applySpecialtyPreset(spec.key);
+										showToast(`Пресет «${spec.label}» активирован (настройки приёма обновлены)`, "success");
+									}}
+									className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer min-h-[30px] h-[30px] whitespace-nowrap flex items-center justify-center shrink-0 ${
+										isSelected
+											? "bg-teal-600 text-white border-teal-600 shadow-2xs font-bold"
+											: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-teal-500/70 hover:bg-[var(--paper-soft)]"
+									}`}
+									title={`Активировать пресет рабочего места для «${spec.label}»`}
+									data-testid={`doctor-specialty-preset-banner-${spec.key}`}
+								>
+									{spec.label}
+								</button>
+							);
+						})}
+					</div>
 				</div>
 			</div>
 
@@ -236,7 +247,7 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 			</div>
 
 			{/* Sub-Navigation Strip (Desktop 32-36px, Mobile 44px) */}
-			<div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-[var(--line)] scrollbar-none">
+			<div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-[var(--line)] scrollbar-none shrink-0">
 				{DOCTOR_TABS.map((tab) => {
 					const Icon = tab.icon;
 					const isSelected = activeSubTab === tab.id;
@@ -245,7 +256,8 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 							key={tab.id}
 							type="button"
 							onClick={() => handleTabChange(tab.id)}
-							className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
+							title={tab.description}
+							className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer transition-all ${
 								isSelected
 									? "bg-teal-600 text-white shadow-xs"
 									: "bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
@@ -253,7 +265,7 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 							data-testid={`doctor-tab-${tab.id}`}
 						>
 							<Icon size={15} className="shrink-0" />
-							<span>{tab.label}</span>
+							<span className="whitespace-nowrap">{tab.label}</span>
 						</button>
 					);
 				})}

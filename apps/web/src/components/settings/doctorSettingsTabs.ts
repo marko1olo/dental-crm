@@ -28,7 +28,7 @@ export interface DoctorTabDefinition {
 export const DOCTOR_TABS: readonly DoctorTabDefinition[] = [
 	{
 		id: "profile",
-		label: "Мой профиль и подпись",
+		label: "Мой профиль",
 		description: "ФИО, специализация, цвет в сетке, ЭЦП",
 		icon: User,
 	},
@@ -40,7 +40,7 @@ export const DOCTOR_TABS: readonly DoctorTabDefinition[] = [
 	},
 	{
 		id: "protocols",
-		label: "Протоколы и дневники 043/у",
+		label: "Протоколы 043/у",
 		description: "Шаблоны лечения, SOAP-дневники, автозаполнение",
 		icon: FileText,
 	},
@@ -52,19 +52,19 @@ export const DOCTOR_TABS: readonly DoctorTabDefinition[] = [
 	},
 	{
 		id: "procedure-boms",
-		label: "Техкарты расхода 804н",
+		label: "Техкарты 804н",
 		description: "Нормы списания карпул, анестетиков и композитов",
 		icon: Layers,
 	},
 	{
 		id: "ai",
-		label: "Голос и ИИ-ассистент",
+		label: "ИИ-ассистент",
 		description: "Диктовка карты голосом, расшифровка рентгена",
 		icon: Bot,
 	},
 	{
 		id: "hardware",
-		label: "Оборудование кабинета",
+		label: "Оборудование",
 		description: "Визиограф, датчик, КТ и сетевые папки",
 		icon: HardDrive,
 	},

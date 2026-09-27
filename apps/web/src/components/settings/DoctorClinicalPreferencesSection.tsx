@@ -1,12 +1,9 @@
 import {
-	Activity,
 	Check,
 	Clock,
-	Copy,
 	FileText,
 	Palette,
 	Pill,
-	Search,
 	ShieldCheck,
 	Sparkles,
 	Stethoscope,
@@ -14,37 +11,26 @@ import {
 	Volume2,
 	VolumeX,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { showToast } from "../GlobalToast";
 import {
-	ADHESIVE_OPTIONS,
-	ANESTHETIC_OPTIONS,
-	COMPOSITE_OPTIONS,
 	DURATION_PRESETS,
-	ETCHANT_OPTIONS,
 	FAVORITE_MEDICATION_OPTIONS,
-	ISOLATION_OPTIONS,
 	ODONTOGRAM_NOTATIONS,
 	useDoctorPreferencesStore,
-	type AdhesiveSystem,
-	type AnestheticKey,
-	type ClinicalMaterialOption,
-	type CompositeMaterial,
 	type DefaultDentition,
-	type EtchantGel,
-	type IsolationType,
 } from "../../store/doctorPreferencesStore";
 import { useThemeStore } from "../../store/themeStore";
 import {
 	AVAILABLE_QUICK_PROTOCOLS,
-	SPECIALTY_PRESET_ITEMS,
 	THEME_OPTIONS,
 } from "./doctorClinicalPreferencesConstants";
-import { buildDoctorPersonalizedTherapySnippet } from "./protocolSnippetHelpers";
 import {
 	DoctorAnesthesiaDefaultsSection,
 	DoctorForm043TemplatesSection,
+	DoctorMaterialsCatalogSection,
 	DoctorPrescriptions107Section,
+	DoctorSpecialtyPresetsCard,
 } from "./doctor";
 
 interface DoctorClinicalPreferencesSectionProps {
@@ -54,8 +40,6 @@ interface DoctorClinicalPreferencesSectionProps {
 	onTestSlotEndSound?: (() => void) | undefined;
 }
 
-type MaterialCategoryTab = "composites" | "adhesives" | "anesthetics" | "isolation" | "etchants";
-
 export function DoctorClinicalPreferencesSection({
 	soundNotificationsMuted,
 	onToggleSoundMuted,
@@ -64,25 +48,16 @@ export function DoctorClinicalPreferencesSection({
 }: DoctorClinicalPreferencesSectionProps) {
 	const preferences = useDoctorPreferencesStore((s) => s.preferences);
 	const updatePreferences = useDoctorPreferencesStore((s) => s.updatePreferences);
-	const applySpecialtyPreset = useDoctorPreferencesStore((s) => s.applySpecialtyPreset);
 	const themeMode = useThemeStore((s) => s.themeMode);
 	const setThemeMode = useThemeStore((s) => s.setThemeMode);
 
 	const [clinicalSubTab, setClinicalSubTab] = useState<
 		"materials" | "anesthesia" | "templates_043" | "prescriptions_107"
 	>("materials");
-	const [activeMaterialTab, setActiveMaterialTab] = useState<MaterialCategoryTab>("composites");
-	const [materialSearchQuery, setMaterialSearchQuery] = useState<string>("");
 
 	const handleDurationSelect = (mins: 15 | 30 | 45 | 60 | 90 | 120) => {
 		updatePreferences({ defaultVisitDuration: mins });
 		showToast(`Длительность визита по умолчанию: ${mins} мин`, "success");
-	};
-
-	const handleAnestheticSelect = (key: AnestheticKey) => {
-		updatePreferences({ favoriteAnesthetic: key });
-		const found = ANESTHETIC_OPTIONS.find((a) => a.key === key);
-		showToast(`Любимый анестетик: ${found?.badge ?? found?.name ?? key}`, "success");
 	};
 
 	const handleMedicationToggle = (medId: string) => {
@@ -103,88 +78,6 @@ export function DoctorClinicalPreferencesSection({
 			: [...current, protocolId];
 		updatePreferences({ quickProtocolIds: next });
 		showToast("Список быстрых протоколов обновлен", "info");
-	};
-
-	// Фильтрация материалов по поисковому запросу и вкладке
-	const filteredMaterials = useMemo(() => {
-		let list: readonly ClinicalMaterialOption[] = [];
-		switch (activeMaterialTab) {
-			case "composites":
-				list = COMPOSITE_OPTIONS;
-				break;
-			case "adhesives":
-				list = ADHESIVE_OPTIONS;
-				break;
-			case "anesthetics":
-				list = ANESTHETIC_OPTIONS;
-				break;
-			case "isolation":
-				list = ISOLATION_OPTIONS;
-				break;
-			case "etchants":
-				list = ETCHANT_OPTIONS;
-				break;
-		}
-
-		const q = materialSearchQuery.trim().toLowerCase();
-		if (!q) return list;
-		return list.filter(
-			(m) =>
-				m.name.toLowerCase().includes(q) ||
-				m.title.toLowerCase().includes(q) ||
-				m.manufacturer.toLowerCase().includes(q) ||
-				m.description.toLowerCase().includes(q) ||
-				(m.category && m.category.toLowerCase().includes(q)) ||
-				(m.badge && m.badge.toLowerCase().includes(q)),
-		);
-	}, [activeMaterialTab, materialSearchQuery]);
-
-	// Проверка, является ли материал выбранным по умолчанию в настройках
-	const isMaterialSelected = (id: string): boolean => {
-		switch (activeMaterialTab) {
-			case "composites":
-				return preferences.defaultComposite === id;
-			case "adhesives":
-				return preferences.defaultAdhesive === id;
-			case "anesthetics":
-				return preferences.favoriteAnesthetic === id;
-			case "isolation":
-				return preferences.defaultIsolation === id;
-			case "etchants":
-				return preferences.defaultEtchant === id;
-		}
-	};
-
-	// 1-клик назначение любимого материала
-	const handleSelectFavoriteMaterial = (item: ClinicalMaterialOption) => {
-		switch (activeMaterialTab) {
-			case "composites":
-				updatePreferences({ defaultComposite: item.id as CompositeMaterial });
-				break;
-			case "adhesives":
-				updatePreferences({ defaultAdhesive: item.id as AdhesiveSystem });
-				break;
-			case "anesthetics":
-				updatePreferences({ favoriteAnesthetic: item.id as AnestheticKey });
-				break;
-			case "isolation":
-				updatePreferences({ defaultIsolation: item.id as IsolationType });
-				break;
-			case "etchants":
-				updatePreferences({ defaultEtchant: item.id as EtchantGel });
-				break;
-		}
-		showToast(`Материал «${item.name}» выбран и подтягивается в протокол ЕМК`, "success");
-	};
-
-	// Персонализированный сниппет протокола ЕМК для предпросмотра
-	const liveSoapSnippet = useMemo(() => {
-		return buildDoctorPersonalizedTherapySnippet(preferences);
-	}, [preferences]);
-
-	const handleCopyLiveSnippet = () => {
-		navigator.clipboard.writeText(liveSoapSnippet);
-		showToast("Протокол ЕМК скопирован в буфер обмена", "success");
 	};
 
 	return (
@@ -211,40 +104,8 @@ export function DoctorClinicalPreferencesSection({
 
 			<div className="space-y-6">
 				{/* 0. Быстрые пресеты по специальности врача (1 клик) */}
-				<div className="p-3.5 rounded-xl bg-gradient-to-r from-teal-500/10 via-[var(--paper-soft)] to-transparent border border-teal-500/25 space-y-2">
-					<div className="flex items-center justify-between">
-						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-							<Stethoscope size={15} className="text-teal-600 shrink-0" />
-							<span>Специализация врача (1-клик перенастройка всего кабинета)</span>
-						</span>
-						<span className="text-[11px] text-[var(--muted)]">
-							Мгновенная калибровка длительности, анестетиков и материалов
-						</span>
-					</div>
-					<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-						{SPECIALTY_PRESET_ITEMS.map((spec) => {
-							const isSelected = preferences.specialty === spec.key;
-							return (
-								<button
-									key={spec.key}
-									type="button"
-									onClick={() => {
-										applySpecialtyPreset(spec.key);
-										showToast(`Профиль врача: ${spec.label} активирован`, "success");
-									}}
-									className={`min-h-[44px] sm:min-h-[34px] px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer border ${
-										isSelected
-											? "bg-teal-600 text-white border-teal-600 shadow-2xs font-bold"
-											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-500"
-									}`}
-								>
-									<span>{spec.label}</span>
-									{isSelected && <Check size={13} className="stroke-[3]" />}
-								</button>
-							);
-						})}
-					</div>
-				</div>
+				<DoctorSpecialtyPresetsCard />
+
 
 				{/* Подвкладки клинических настроек */}
 				<div className="flex items-center gap-1.5 border-b border-[var(--line)] pb-2 overflow-x-auto">
@@ -338,137 +199,9 @@ export function DoctorClinicalPreferencesSection({
 					</div>
 				</div>
 
-				{/* 2. РЕЕСТР КЛИНИЧЕСКИХ МАТЕРИАЛОВ (90% рынка РФ/СНГ) с быстрым поиском и 1-клик выбором */}
-				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
-					<div className="flex items-center justify-between flex-wrap gap-2">
-						<div>
-							<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-								<Activity size={15} className="text-[var(--teal)]" />
-								<span>Реестр клинических материалов (90% рынка РФ/СНГ) и изоляция</span>
-							</label>
-							<p className="m-0 text-[11px] text-[var(--muted)]">
-								1-клик выбор любимого материала с автоматическим подтягиванием в протокол ЕМК Формы 043/у
-							</p>
-						</div>
-						{/* Поиск материала */}
-						<div className="relative min-w-[240px]">
-							<Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
-							<input
-								type="text"
-								value={materialSearchQuery}
-								onChange={(e) => setMaterialSearchQuery(e.target.value)}
-								placeholder="Поиск материала (Filtek, Asteria, Kerr...)"
-								className="w-full text-xs pl-8 pr-2.5 py-1.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--teal)]"
-							/>
-						</div>
-					</div>
+				{/* 2. РЕЕСТР КЛИНИЧЕСКИХ МАТЕРИАЛОВ (90% рынка РФ/СНГ) и изоляция */}
+				<DoctorMaterialsCatalogSection />
 
-					{/* Вкладки категорий материалов */}
-					<div className="flex gap-1.5 flex-wrap border-b border-[var(--line)] pb-2">
-						{[
-							{ id: "composites" as const, label: `Композиты (${COMPOSITE_OPTIONS.length})` },
-							{ id: "adhesives" as const, label: `Адгезивы (${ADHESIVE_OPTIONS.length})` },
-							{ id: "anesthetics" as const, label: `Анестетики (${ANESTHETIC_OPTIONS.length})` },
-							{ id: "isolation" as const, label: `Изоляция (${ISOLATION_OPTIONS.length})` },
-							{ id: "etchants" as const, label: `Протравка (${ETCHANT_OPTIONS.length})` },
-						].map((tab) => {
-							const isActive = activeMaterialTab === tab.id;
-							return (
-								<button
-									key={tab.id}
-									type="button"
-									onClick={() => setActiveMaterialTab(tab.id)}
-									className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-										isActive
-											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
-											: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
-									}`}
-								>
-									{tab.label}
-								</button>
-							);
-						})}
-					</div>
-
-					{/* Сетка материалов */}
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-[360px] overflow-y-auto pr-1">
-						{filteredMaterials.map((mat) => {
-							const isSelected = isMaterialSelected(mat.id);
-							return (
-								<button
-									key={mat.id}
-									type="button"
-									onClick={() => handleSelectFavoriteMaterial(mat)}
-									className={`p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-1.5 min-h-[44px] ${
-										isSelected
-											? "bg-[var(--paper)] border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal)]"
-											: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--teal)]/60"
-									}`}
-								>
-									<div className="flex items-start justify-between gap-1.5 w-full">
-										<div className="min-w-0">
-											<div className="flex items-center gap-1.5 flex-wrap">
-												<span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]">
-													#{mat.popularityRank}
-												</span>
-												<span className="text-xs font-bold text-[var(--ink)] leading-snug">
-													{mat.name}
-												</span>
-											</div>
-											<span className="text-[10px] text-[var(--muted)] block mt-0.5">
-												{mat.manufacturer}
-											</span>
-										</div>
-										{isSelected ? (
-											<span className="w-5 h-5 rounded-full bg-[var(--teal)] text-white flex items-center justify-center shrink-0" title="Выбран по умолчанию">
-												<Check size={12} className="stroke-[3]" />
-											</span>
-										) : (
-											<span className="w-5 h-5 rounded-full border border-[var(--line)] shrink-0" title="Нажмите для выбора" />
-										)}
-									</div>
-
-									<p className="text-[11px] text-[var(--muted)] m-0 line-clamp-2 leading-relaxed">
-										{mat.description}
-									</p>
-
-									<div className="flex items-center justify-between gap-1 mt-1 pt-1 border-t border-[var(--line)]/50">
-										<span className="text-[10px] font-medium text-[var(--teal-dark)]">
-											{mat.category || mat.generation || mat.badge || "Стандарт"}
-										</span>
-										{isSelected && (
-											<span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.2 rounded">
-												Любимый в ЕМК
-											</span>
-										)}
-									</div>
-								</button>
-							);
-						})}
-					</div>
-
-					{/* 3. Живой протокол ЕМК (Форма 043/у) с подтягиванием любимых материалов врача */}
-					<div className="p-3 rounded-lg bg-[var(--paper)] border border-teal-500/30 space-y-2 mt-2">
-						<div className="flex items-center justify-between gap-2">
-							<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-								<Sparkles size={14} className="text-teal-600" />
-								<span>Автоматический фрагмент протокола ЕМК (Форма 043/у) с вашими материалами</span>
-							</span>
-							<button
-								type="button"
-								onClick={handleCopyLiveSnippet}
-								className="text-[11px] font-semibold text-[var(--teal)] hover:underline inline-flex items-center gap-1 cursor-pointer"
-								title="Скопировать готовый текст для Формы 043/у"
-							>
-								<Copy size={12} />
-								<span>Копировать</span>
-							</button>
-						</div>
-						<p className="text-xs text-[var(--muted)] m-0 leading-relaxed font-mono p-2 rounded bg-[var(--paper-soft)] border border-[var(--line)] select-all">
-							{liveSoapSnippet}
-						</p>
-					</div>
-				</div>
 
 				{/* 4. Любимые медикаменты для рецептов (Рецептурный бланк 107-1/у) */}
 				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5">
