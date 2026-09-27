@@ -172,9 +172,11 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 							background: "var(--paper-soft)",
 							padding: "2px 6px",
 							borderRadius: 4,
+							whiteSpace: "nowrap",
+							flexShrink: 0,
 						}}
 					>
-						{lead.expectedRevenue} ₽
+						{Number(lead.expectedRevenue).toLocaleString("ru-RU")} ₽
 					</div>
 				) : null}
 			</div>
@@ -220,14 +222,15 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 						color: "var(--ink)",
 						cursor: "pointer",
 						outline: "none",
+						maxWidth: 150,
 					}}
 					title="Сменить статус в 1 клик"
 					aria-label="Выбрать статус обращения"
 				>
-					<option value="new">Новые</option>
-					<option value="contacted">В работе</option>
-					<option value="consult_booked">Записаны</option>
-					<option value="showed_up">Дошел</option>
+					<option value="new">1. Новые</option>
+					<option value="contacted">2. В работе</option>
+					<option value="consult_booked">3. Записаны</option>
+					<option value="showed_up">4. Дошли до клиники</option>
 					<option value="no_answer">Недозвон</option>
 					<option value="trash">Отказ</option>
 				</select>
@@ -251,12 +254,12 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 							e.stopPropagation();
 							onSchedule(lead.id);
 						}}
-						className="w-full py-1.5 px-2.5 rounded-lg text-xs font-bold bg-[var(--teal-soft)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--teal)] flex items-center justify-center gap-1.5 transition-colors"
+						className="w-full py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-[var(--teal-soft)] hover:opacity-90 text-[var(--teal-dark)] border border-[var(--teal)] flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
 						data-testid={`schedule-lead-btn-${lead.id}`}
 						title="Записать в сетку расписания"
 					>
-						<Calendar size={13} />
-						<span>Записать в сетку расписания</span>
+						<Calendar size={13} className="shrink-0" />
+						<span className="truncate">Записать на приём</span>
 					</button>
 				)}
 
@@ -285,13 +288,13 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 							creatingPatientLeadId === lead.id
 								? "wait"
 								: "pointer",
-						transition: "background 0.2s",
+						transition: "all 0.2s ease",
 					}}
 					data-testid={`create-patient-btn-${lead.id}`}
 					title="Создать карту пациента из обращения в 1 клик"
 				>
-					<UserPlus size={13} />
-					<span>
+					<UserPlus size={13} className="shrink-0" />
+					<span className="truncate">
 						{creatingPatientLeadId === lead.id
 							? "Создаём карту…"
 							: "Создать пациента в 1 клик"}

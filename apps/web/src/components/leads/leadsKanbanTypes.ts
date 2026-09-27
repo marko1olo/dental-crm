@@ -126,25 +126,25 @@ export const COLUMNS: {
 }[] = [
 	{
 		id: "new",
-		label: "Новые",
+		label: "1. Новые",
 		color: "rgba(59, 130, 246, 0.2)",
 		icon: React.createElement(Plus, { size: 16 }),
 	},
 	{
 		id: "contacted",
-		label: "В работе",
+		label: "2. В работе",
 		color: "rgba(245, 158, 11, 0.2)",
 		icon: React.createElement(Phone, { size: 16 }),
 	},
 	{
 		id: "consult_booked",
-		label: "Записаны",
+		label: "3. Записаны",
 		color: "rgba(16, 185, 129, 0.2)",
 		icon: React.createElement(CalendarClock, { size: 16 }),
 	},
 	{
 		id: "showed_up",
-		label: "Дошел",
+		label: "4. Дошли до клиники",
 		color: "rgba(139, 92, 246, 0.2)",
 		icon: React.createElement(UserCheck, { size: 16 }),
 	},
@@ -161,3 +161,7 @@ export const COLUMNS: {
 		icon: React.createElement(Trash2, { size: 16 }),
 	},
 ];
+
+/** The 4 canonical active funnel stages for the primary clinic patient flow */
+export const CORE_FUNNEL_COLUMNS = COLUMNS.slice(0, 4);
+

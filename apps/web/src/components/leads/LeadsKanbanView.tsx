@@ -108,10 +108,10 @@ export function LeadsKanbanView() {
 		try {
 			await updateLeadStatus(leadId, nextStatus);
 			const stageLabels: Record<Lead["status"], string> = {
-				new: "«Новые»",
-				contacted: "«В работе»",
-				consult_booked: "«Записаны»",
-				showed_up: "«Дошел»",
+				new: "«1. Новые»",
+				contacted: "«2. В работе»",
+				consult_booked: "«3. Записаны»",
+				showed_up: "«4. Дошли до клиники»",
 				no_answer: "«Недозвон»",
 				trash: "«Отказ»",
 			};
@@ -124,6 +124,9 @@ export function LeadsKanbanView() {
 			showToast(text, "error");
 		}
 	};
+
+	// View mode: 4 core funnel stages vs all 6 stages
+	const [viewMode, setViewMode] = useState<"funnel" | "all">("funnel");
 
 	// Filters
 	const [searchQuery, setSearchQuery] = useState("");
@@ -221,17 +224,22 @@ export function LeadsKanbanView() {
 				.then(() => {
 					if (status === "consult_booked") {
 						showToast(
-							"Обращение переведено в статус «Записан на консультацию».",
+							"Обращение переведено в статус «3. Записаны».",
 							"success",
 						);
 					} else if (status === "showed_up") {
 						showToast(
-							"Обращение переведено в статус «Дошел до клиники».",
+							"Обращение переведено в статус «4. Дошли до клиники».",
 							"success",
 						);
 					} else if (status === "contacted") {
 						showToast(
-							"Обращение переведено в статус «В работе».",
+							"Обращение переведено в статус «2. В работе».",
+							"success",
+						);
+					} else if (status === "new") {
+						showToast(
+							"Обращение переведено в статус «1. Новые».",
 							"success",
 						);
 					}
@@ -400,6 +408,16 @@ export function LeadsKanbanView() {
 		return Array.from(s);
 	}, [leads]);
 
+	const secondaryLeadsCount = useMemo(() => {
+		return leads.filter(
+			(l) => l.status === "no_answer" || l.status === "trash",
+		).length;
+	}, [leads]);
+
+	const activeColumns = useMemo(() => {
+		return viewMode === "funnel" ? COLUMNS.slice(0, 4) : COLUMNS;
+	}, [viewMode]);
+
 	if (isLoading && leads.length === 0) {
 		return (
 			<div
@@ -422,19 +440,7 @@ export function LeadsKanbanView() {
 	const borderColor = "var(--line)";
 
 	return (
-		<div
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				height: "100%",
-				padding: "24px",
-				background: boardBg,
-				backdropFilter: "blur(20px)",
-				borderRadius: "16px",
-				border: `1px solid ${borderColor}`,
-				boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-			}}
-		>
+		<div className="leads-board-container">
 			{/* HEADER & FILTERS */}
 			<LeadsKanbanHeader
 				searchQuery={searchQuery}
@@ -442,6 +448,9 @@ export function LeadsKanbanView() {
 				sourceFilter={sourceFilter}
 				setSourceFilter={setSourceFilter}
 				uniqueSources={uniqueSources}
+				viewMode={viewMode}
+				setViewMode={setViewMode}
+				secondaryLeadsCount={secondaryLeadsCount}
 				onNewLead={() => openEditModal()}
 				onOpenAnalytics={() => setIsAnalyticsOpen(true)}
 				onOpenLeakDetector={() => setIsLeakDetectorOpen(true)}
@@ -468,15 +477,10 @@ export function LeadsKanbanView() {
 
 			{/* KANBAN BOARD */}
 			<div
-				style={{
-					display: "flex",
-					gap: "16px",
-					flex: 1,
-					overflowX: "auto",
-					paddingBottom: "16px",
-				}}
+				className={`leads-kanban-board ${viewMode === "funnel" ? "leads-kanban-board--funnel" : "leads-kanban-board--all"}`}
+				data-testid="leads-kanban-board"
 			>
-				{COLUMNS.map((col) => {
+				{activeColumns.map((col) => {
 					const columnLeads = filteredLeads.filter((l) => l.status === col.id);
 					const columnRevenue = columnLeads.reduce(
 						(acc, l) => acc + (Number(l.expectedRevenue) || 0),
@@ -489,105 +493,45 @@ export function LeadsKanbanView() {
 							aria-label={col.label}
 							onDragOver={handleDragOver}
 							onDrop={(e) => handleDrop(e, col.id)}
-							style={{
-								flex: "0 0 320px",
-								background: colBg,
-								borderRadius: "12px",
-								padding: "16px",
-								display: "flex",
-								flexDirection: "column",
-								border: `1px solid ${borderColor}`,
-								transition: "all 0.3s ease",
-							}}
+							className="leads-kanban-column"
+							data-testid={`leads-kanban-column-${col.id}`}
 						>
-							<div
-								style={{
-									display: "flex",
-									flexDirection: "column",
-									gap: 8,
-									marginBottom: "16px",
-									paddingBottom: "12px",
-									borderBottom: `1px solid ${borderColor}`,
-								}}
-							>
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "space-between",
-									}}
-								>
+							<div className="leads-kanban-column-header">
+								<div className="leads-kanban-column-title-row">
 									<div
 										style={{
 											display: "flex",
 											alignItems: "center",
 											gap: "8px",
+											minWidth: 0,
 										}}
 									>
 										<div
-											style={{
-												width: 32,
-												height: 32,
-												borderRadius: 8,
-												background: col.color,
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												color: "var(--ink)",
-											}}
+											className="leads-kanban-column-icon"
+											style={{ background: col.color }}
 										>
 											{col.icon}
 										</div>
 										<h3
-											style={{
-												margin: 0,
-												fontSize: 16,
-												fontWeight: 600,
-												color: "var(--ink)",
-											}}
+											className="leads-kanban-column-title"
+											title={col.label}
 										>
 											{col.label}
 										</h3>
 									</div>
-									<span
-										style={{
-											fontSize: 13,
-											fontWeight: 600,
-											color: "var(--muted)",
-											background: "var(--line)",
-											padding: "2px 8px",
-											borderRadius: 12,
-										}}
-									>
+									<span className="leads-kanban-column-count">
 										{columnLeads.length}
 									</span>
 								</div>
 								{columnRevenue > 0 && (
-									<div
-										style={{
-											fontSize: 13,
-											color: "var(--teal)",
-											fontWeight: 500,
-											display: "flex",
-											alignItems: "center",
-											gap: 4,
-										}}
-									>
-										<DollarSign size={14} />{" "}
+									<div className="leads-kanban-column-revenue">
+										<DollarSign size={13} />{" "}
 										{columnRevenue.toLocaleString("ru-RU")} ₽
 									</div>
 								)}
 							</div>
 
-							<div
-								style={{
-									flex: 1,
-									overflowY: "auto",
-									display: "flex",
-									flexDirection: "column",
-									gap: "12px",
-								}}
-							>
+							<div className="leads-kanban-column-cards">
 								<AnimatePresence>
 									{columnLeads.map((lead) => (
 										<LeadCard
@@ -610,16 +554,7 @@ export function LeadsKanbanView() {
 								</AnimatePresence>
 
 								{columnLeads.length === 0 && (
-									<div
-										style={{
-											padding: "24px",
-											textAlign: "center",
-											color: "var(--muted)",
-											fontSize: 13,
-											border: `1px dashed ${borderColor}`,
-											borderRadius: 12,
-										}}
-									>
+									<div className="leads-kanban-empty-dropzone">
 										Перетащите сюда
 									</div>
 								)}

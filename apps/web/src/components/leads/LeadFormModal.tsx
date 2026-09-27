@@ -248,10 +248,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 								cursor: "pointer",
 							}}
 						>
-							<option value="new">Новые</option>
-							<option value="contacted">В работе</option>
-							<option value="consult_booked">Записаны</option>
-							<option value="showed_up">Дошел</option>
+							<option value="new">1. Новые</option>
+							<option value="contacted">2. В работе</option>
+							<option value="consult_booked">3. Записаны</option>
+							<option value="showed_up">4. Дошли до клиники</option>
 							<option value="no_answer">Недозвон</option>
 							<option value="trash">Отказ</option>
 						</select>

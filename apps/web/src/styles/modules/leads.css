@@ -1,0 +1,195 @@
+/**
+ * DENTE Dental CRM — Leads Funnel & Kanban View Styles
+ *
+ * Mandate 8c (Visual Quality & 10 Themes Parity)
+ * Mandate 8s (Modular Architecture & CSS Isolation)
+ * UTF-8 without BOM. Strictly <= 800 lines.
+ */
+
+.leads-board-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	padding: 20px;
+	background: var(--paper-strong);
+	backdrop-filter: blur(20px);
+	border-radius: 16px;
+	border: 1px solid var(--line);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+	overflow: hidden;
+}
+
+.leads-kanban-board {
+	display: grid;
+	gap: 12px;
+	flex: 1;
+	min-height: 0;
+	width: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding-bottom: 8px;
+}
+
+/* 4-column Core Funnel: guaranteed >= 240px, expands equally to 100% on desktop (1440px / 1920px) */
+.leads-kanban-board--funnel {
+	grid-template-columns: repeat(4, minmax(240px, 1fr));
+}
+
+/* 6-column Full View: includes secondary and terminal columns (No answer / Rejection) */
+.leads-kanban-board--all {
+	grid-template-columns: repeat(6, minmax(240px, 1fr));
+}
+
+.leads-kanban-column {
+	min-width: 240px;
+	background: var(--paper-soft);
+	border-radius: 12px;
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--line);
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	min-height: 0;
+	height: 100%;
+}
+
+.leads-kanban-column:hover {
+	border-color: var(--line-strong, var(--line));
+}
+
+.leads-kanban-column-header {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 12px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid var(--line);
+	flex-shrink: 0;
+}
+
+.leads-kanban-column-title-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.leads-kanban-column-icon {
+	width: 28px;
+	height: 28px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--ink);
+	flex-shrink: 0;
+}
+
+.leads-kanban-column-title {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--ink);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.leads-kanban-column-count {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted);
+	background: var(--line);
+	padding: 2px 8px;
+	border-radius: 12px;
+	flex-shrink: 0;
+}
+
+.leads-kanban-column-revenue {
+	font-size: 12px;
+	color: var(--teal);
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.leads-kanban-column-cards {
+	flex: 1;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	min-height: 0;
+	padding-right: 2px;
+}
+
+.leads-kanban-empty-dropzone {
+	padding: 24px 12px;
+	text-align: center;
+	color: var(--muted);
+	font-size: 13px;
+	border: 1px dashed var(--line);
+	border-radius: 10px;
+	margin: auto 0;
+}
+
+/* Leads Segmented View Mode Toggle */
+.leads-viewmode-segmented {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	gap: 2px;
+	height: 34px;
+	box-sizing: border-box;
+}
+
+.leads-viewmode-segmented-btn {
+	padding: 4px 10px;
+	font-size: 12px;
+	font-weight: 500;
+	border-radius: 6px;
+	border: none;
+	cursor: pointer;
+	background: transparent;
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	height: 26px;
+	line-height: 1;
+}
+
+.leads-viewmode-segmented-btn:hover {
+	color: var(--ink);
+}
+
+.leads-viewmode-segmented-btn.is-active {
+	background: var(--paper);
+	color: var(--ink);
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.leads-viewmode-badge {
+	font-size: 10px;
+	font-weight: 700;
+	padding: 1px 5px;
+	border-radius: 8px;
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+/* Dark mode overrides */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark) .leads-board-container {
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark) .leads-viewmode-segmented-btn.is-active {
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
