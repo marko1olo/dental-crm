@@ -1,0 +1,246 @@
+/**
+ * sidebar.css — DENTE CRM Modular Sidebar & Navigation Architecture
+ *
+ * Visual Rules:
+ * 1. Active section selector is a floating capsule (border-radius: 8px on all 4 corners, symmetric margins).
+ * 2. No 90-degree abrupt clipping against panel borders.
+ * 3. Restored informative micro-hints (11px, var(--muted), leading-tight, truncate).
+ * 4. Quiet LAN telemetry in bottom-left footer (6px indicator dot + 11px muted label).
+ */
+
+/* 1. Sidebar Container */
+.sidebar {
+	width: var(--sidebar-width, 252px) !important;
+	padding: 14px 10px 10px !important;
+	box-sizing: border-box !important;
+	overflow: hidden !important;
+}
+
+/* 2. Navigation List */
+.sidebar nav {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 2px !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	box-sizing: border-box !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	overflow-y: auto !important;
+	overflow-x: hidden !important;
+	scrollbar-width: thin !important;
+}
+
+/* 3. Navigation Item — Floating Capsule */
+.sidebar .nav-item {
+	display: flex !important;
+	align-items: center !important;
+	width: calc(100% - 8px) !important;
+	margin: 1px 4px !important;
+	padding: 6px 10px !important;
+	border-radius: 8px !important;
+	border: 1px solid transparent !important;
+	box-sizing: border-box !important;
+	transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
+	transform: none !important;
+	text-decoration: none !important;
+}
+
+.sidebar .nav-item:hover {
+	background: var(--teal-surface, rgba(45, 212, 191, 0.08)) !important;
+	color: var(--ink) !important;
+	border-radius: 8px !important;
+	transform: none !important;
+}
+
+/* Active Navigation Item — Complete Floating Capsule with 8px radius on all 4 corners */
+.sidebar .nav-item.active {
+	background: var(--primary-soft, var(--teal-soft)) !important;
+	border: 1px solid var(--teal, #0d9488) !important;
+	border-radius: 8px !important;
+	color: var(--primary, var(--teal-dark)) !important;
+	box-shadow: none !important;
+	transform: none !important;
+}
+
+/* Disable pseudo-element strips on active items */
+.sidebar .nav-item.active::before,
+.sidebar .nav-item::before {
+	display: none !important;
+}
+
+/* Dark mode active item styling */
+[data-theme="dark"] .sidebar .nav-item.active,
+[data-theme="night"] .sidebar .nav-item.active,
+[data-theme="ocean"] .sidebar .nav-item.active,
+[data-theme="emerald"] .sidebar .nav-item.active,
+[data-theme="cyber_xray"] .sidebar .nav-item.active,
+html.dark .sidebar .nav-item.active,
+.dark .sidebar .nav-item.active {
+	background: var(--teal-soft, rgba(45, 212, 191, 0.16)) !important;
+	border-color: rgba(45, 212, 191, 0.35) !important;
+	color: var(--teal, #2dd4bf) !important;
+	border-radius: 8px !important;
+}
+
+/* 4. Section Label & Micro-Hint Typography */
+.sidebar .nav-copy {
+	display: flex !important;
+	flex-direction: column !important;
+	justify-content: center !important;
+	min-width: 0 !important;
+	max-width: 100% !important;
+	flex: 1 1 0% !important;
+	overflow: hidden !important;
+	box-sizing: border-box !important;
+}
+
+.sidebar .nav-label {
+	font-size: 13.5px !important;
+	font-weight: 600 !important;
+	line-height: 1.2 !important;
+	white-space: nowrap !important;
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+	display: block !important;
+	color: inherit !important;
+}
+
+.sidebar .nav-copy small,
+.sidebar .nav-hint {
+	display: block !important;
+	font-size: 11px !important;
+	font-weight: 400 !important;
+	line-height: 1.2 !important;
+	color: var(--muted, #64748b) !important;
+	margin-top: 1px !important;
+	white-space: nowrap !important;
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+	opacity: 0.85 !important;
+}
+
+.sidebar .nav-item:hover .nav-copy small,
+.sidebar .nav-item:hover .nav-hint {
+	color: var(--ink) !important;
+	opacity: 1 !important;
+}
+
+.sidebar .nav-item.active .nav-copy small,
+.sidebar .nav-item.active .nav-hint {
+	color: var(--primary, var(--teal-dark)) !important;
+	opacity: 0.95 !important;
+}
+
+[data-theme="dark"] .sidebar .nav-item.active .nav-copy small,
+[data-theme="dark"] .sidebar .nav-item.active .nav-hint,
+[data-theme="night"] .sidebar .nav-item.active .nav-copy small,
+[data-theme="night"] .sidebar .nav-item.active .nav-hint,
+[data-theme="ocean"] .sidebar .nav-item.active .nav-copy small,
+[data-theme="emerald"] .sidebar .nav-item.active .nav-copy small,
+[data-theme="cyber_xray"] .sidebar .nav-item.active .nav-copy small {
+	color: var(--teal, #2dd4bf) !important;
+	opacity: 1 !important;
+}
+
+/* 5. Sidebar Footer with Quiet Telemetry */
+.sidebar-footer {
+	margin-top: auto !important;
+	flex-shrink: 0 !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 6px !important;
+	padding: 10px 4px 6px !important;
+	border-top: 1px solid var(--line) !important;
+	max-width: 100% !important;
+	overflow: hidden !important;
+	box-sizing: border-box !important;
+}
+
+.sidebar-lan-indicator {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	padding: 4px 6px !important;
+	border-radius: 6px !important;
+	border: none !important;
+	background: transparent !important;
+	cursor: pointer !important;
+	color: var(--muted, #64748b) !important;
+	transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+.sidebar-lan-indicator:hover {
+	background: var(--paper-soft, rgba(0, 0, 0, 0.04)) !important;
+	color: var(--ink) !important;
+}
+
+[data-theme="dark"] .sidebar-lan-indicator:hover,
+[data-theme="night"] .sidebar-lan-indicator:hover {
+	background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 6. Collapsed Mode [data-collapsed="true"] */
+[data-collapsed="true"] .sidebar {
+	width: 76px !important;
+	padding: 14px 6px 8px !important;
+}
+
+[data-collapsed="true"] .sidebar .nav-item {
+	justify-content: center !important;
+	padding: 10px 0 !important;
+	margin: 2px 0 !important;
+	width: 100% !important;
+}
+
+[data-collapsed="true"] .sidebar .nav-copy,
+[data-collapsed="true"] .sidebar .nav-hint,
+[data-collapsed="true"] .sidebar .nav-copy small,
+[data-collapsed="true"] .sidebar .brand-mark span {
+	display: none !important;
+}
+
+[data-collapsed="true"] .sidebar-footer {
+	flex-direction: column !important;
+	align-items: center !important;
+	gap: 8px !important;
+	padding: 8px 0 6px !important;
+}
+
+/* 7. Viewport Adaptations */
+@media (max-width: 1280px) {
+	.sidebar {
+		width: var(--sidebar-width, 210px) !important;
+		padding: 12px 6px !important;
+	}
+	.sidebar .nav-item {
+		padding: 5px 6px !important;
+		gap: 6px !important;
+	}
+	.sidebar .nav-label {
+		font-size: 13px !important;
+	}
+	.sidebar .nav-hint {
+		font-size: 10.5px !important;
+	}
+}
+
+@media (max-height: 960px) {
+	.sidebar {
+		padding: 8px 8px 6px !important;
+	}
+	.sidebar .brand-mark {
+		padding: 2px 4px 6px !important;
+	}
+	.sidebar .nav-item {
+		padding: 5px 8px !important;
+	}
+	.sidebar .nav-label {
+		font-size: 13px !important;
+	}
+	.sidebar-footer {
+		padding-top: 6px !important;
+		padding-bottom: 4px !important;
+	}
+}

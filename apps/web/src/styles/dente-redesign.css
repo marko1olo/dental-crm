@@ -1011,13 +1011,14 @@ html.dark .sidebar .nav-item.active,
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	padding: 8px 10px;
-	border-radius: 10px;
+	padding: 6px 10px;
+	border-radius: 8px;
 	color: var(--ink-2);
 	font-weight: 500;
 	min-width: 0;
 	max-width: 100%;
-	width: 100%;
+	width: calc(100% - 8px);
+	margin: 1px 4px;
 	overflow: hidden;
 	box-sizing: border-box;
 	transition:
@@ -1038,7 +1039,7 @@ html.dark .sidebar .nav-item.active,
 .nav-item.active {
 	color: var(--primary, var(--teal-dark));
 	background: var(--primary-soft, var(--teal-soft));
-	box-shadow: inset 3px 0 0 var(--primary, var(--teal));
+	border-radius: 8px;
 	font-weight: 600;
 }
 [data-theme="dark"] .nav-item.active,
@@ -1068,8 +1069,17 @@ html.dark .sidebar .nav-item.active,
 	max-width: 100%;
 	display: block;
 }
-.nav-copy small {
-	display: none !important;
+.nav-copy small,
+.nav-hint {
+	display: block;
+	font-size: 11px;
+	line-height: 1.2;
+	color: var(--muted, #64748b);
+	margin-top: 1px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	opacity: 0.85;
 }
 @media (max-width: 1280px) {
 	:root {
@@ -1077,7 +1087,7 @@ html.dark .sidebar .nav-item.active,
 	}
 	.sidebar {
 		width: var(--sidebar-width, 190px);
-		padding: 12px 8px;
+		padding: 12px 6px;
 		flex-direction: column !important;
 		flex-wrap: nowrap !important;
 		align-items: stretch !important;
@@ -1086,16 +1096,20 @@ html.dark .sidebar .nav-item.active,
 		gap: 2px;
 	}
 	.nav-item {
-		padding: 6px 8px;
-		gap: 8px;
+		padding: 5px 6px;
+		gap: 6px;
 		min-width: 0;
+		width: calc(100% - 4px);
+		margin: 1px 2px;
 	}
 	.nav-label {
 		font-size: 13px;
 	}
 	.sidebar .nav-copy small,
-	.nav-copy small {
-		display: none !important;
+	.nav-copy small,
+	.nav-hint {
+		display: block;
+		font-size: 10.5px;
 	}
 }
 
@@ -1130,10 +1144,10 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 /* Компактная клиническая плотность на экранах высотой <= 960px */
 @media (max-height: 960px) {
 	.sidebar {
-		padding: 10px 8px 8px;
+		padding: 8px 8px 6px;
 	}
 	.brand-mark {
-		padding: 2px 6px 8px;
+		padding: 2px 4px 6px;
 	}
 	.sidebar nav {
 		gap: 2px;
@@ -1148,8 +1162,8 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 		font-size: 13px;
 	}
 	.sidebar-footer {
-		padding-top: 8px;
-		padding-bottom: 8px;
+		padding-top: 6px;
+		padding-bottom: 4px;
 		flex-shrink: 0;
 		margin-top: auto;
 	}
@@ -1161,9 +1175,10 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 	flex-shrink: 0;
 	display: flex;
 	align-items: center;
+	justify-content: space-between;
 	gap: 8px;
-	padding-top: 14px;
-	padding-bottom: 12px;
+	padding-top: 10px;
+	padding-bottom: 8px;
 	border-top: 1px solid var(--line);
 	max-width: 100%;
 	overflow: hidden;
@@ -1371,10 +1386,15 @@ html.dark .topbar .eyebrow,
 	flex-shrink: 0;
 	min-width: max-content;
 }
+@media (max-width: 1480px) {
+	.workspace-perspective-switcher {
+		display: none !important;
+	}
+}
 .top-actions {
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	gap: 8px !important;
 	margin-left: auto;
 	flex-shrink: 0 !important;
 	position: relative;
@@ -2011,6 +2031,10 @@ button[data-tooth-state="missing"] {
 	.recent-patients-header-dropdown,
 	.workspace-perspective-switcher {
 		display: none;
+	}
+	/* Schedule View has its own dedicated quick booking button in ScheduleFilterStrip (Defect 2, Mandates 8p, 8c) */
+	.workspace.view-schedule .top-actions {
+		display: none !important;
 	}
 	/* top-actions strip */
 	.top-actions {

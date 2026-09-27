@@ -39,14 +39,18 @@ import {
 	Waves,
 	Zap,
 } from "lucide-react";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ClinicControlPill } from "./components/Header";
 import { NotificationBell } from "./components/notifications/NotificationBell";
-import { NetworkStatusIndicator } from "./components/sync/NetworkStatusIndicator";
 import { resolveTelephonyWsUrl } from "./components/telephony/IncomingCallPopup";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
+import { ThemeQuickAccessWidget } from "./components/workspace/ThemeQuickAccessWidget";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
 import { lazyWithRetry } from "./lib/lazyWithRetry";
+import { useOfflineSync } from "./hooks/useOfflineSync";
+import { OfflineSyncGuardModal } from "./components/sync/OfflineSyncGuardModal";
+import "./styles/modules/sidebar.css";
+import "./styles/workspace.css";
 
 // Ленивая загрузка тяжелых виджетов телефонии (160+ КБ кода).
 // Не раздувает стартовый бандл рабочего места врача и исключает тормоза на HDD 5400 RPM.
@@ -276,6 +280,91 @@ export function getRailViewsHiddenByMode(
 	return getFilteredAppViews(role).filter((view) => !visible.includes(view));
 }
 
+export const sidebarHints: Record<AppView, string> = {
+	shift: "Показатели дня",
+	schedule: "График и визиты",
+	patients: "Картотека и баланс",
+	imaging: "Рентген и КТ",
+	visit: "043/у и дневник",
+	documents: "Справки и акты",
+	finance: "Касса и счета",
+	analytics: "Отчёты и выручка",
+	communications: "Звонки и чаты",
+	inventory: "Склад и материалы",
+	scanner: "СанПиН и стерилизация",
+	leads: "Воронка и лиды",
+	settings: "Клиника и интеграции",
+	marketing: "Акции и реклама",
+};
+
+export function SidebarNetworkTelemetry({ collapsed }: { collapsed: boolean }) {
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const { isOnline, isLan, isSyncing, pendingMutationCount, lastSyncError } =
+		useOfflineSync();
+
+	const statusDotColor = isSyncing
+		? "var(--teal, #0d9488)"
+		: !isOnline
+			? "var(--critical, #dc2626)"
+			: lastSyncError
+				? "var(--warn, #d97706)"
+				: isLan
+					? "var(--teal, #0d9488)"
+					: "var(--success, #059669)";
+
+	const statusText = isSyncing
+		? "Синхронизация..."
+		: !isOnline
+			? "Офлайн"
+			: lastSyncError
+				? "Ошибка связи"
+				: isLan
+					? "Локальная сеть"
+					: "Сеть в норме";
+
+	const tooltip = `${statusText}${pendingMutationCount > 0 ? ` (${pendingMutationCount} в очереди)` : ""}`;
+
+	return (
+		<>
+			<button
+				type="button"
+				className="sidebar-lan-indicator group flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[var(--teal-surface,rgba(13,148,136,0.08))] transition-colors text-left border-0 bg-transparent cursor-pointer max-w-full overflow-hidden"
+				title={`${tooltip}. Нажмите для деталей синхронизации.`}
+				onClick={() => setIsModalOpen(true)}
+				aria-label={tooltip}
+			>
+				<span
+					className="relative flex h-2 w-2 shrink-0 items-center justify-center"
+					aria-hidden="true"
+				>
+					{isSyncing && (
+						<span
+							className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping"
+							style={{ backgroundColor: statusDotColor }}
+						/>
+					)}
+					<span
+						className="relative inline-flex rounded-full h-1.5 w-1.5"
+						style={{ backgroundColor: statusDotColor }}
+					/>
+				</span>
+				{!collapsed && (
+					<span className="text-[11px] text-[var(--muted)] group-hover:text-[var(--ink)] font-medium leading-none truncate max-w-[130px] transition-colors">
+						{isLan ? "Локальная сеть" : "Сеть в норме"}
+						{pendingMutationCount > 0 && ` (${pendingMutationCount})`}
+					</span>
+				)}
+			</button>
+			{isModalOpen && (
+				<OfflineSyncGuardModal
+					isOpen={isModalOpen}
+					onClose={() => setIsModalOpen(false)}
+				/>
+			)}
+		</>
+	);
+}
+
 export function WorkspaceSidebar({
 	currentView,
 	onViewIntent,
@@ -404,8 +493,8 @@ export function WorkspaceSidebar({
 							href={`#${view}`}
 							key={view}
 							aria-current={currentView === view ? "page" : undefined}
-							aria-label={`${viewLabels[view]}: ${viewHints[view]}`}
-							title={`${viewLabels[view]}: ${viewHints[view]}`}
+							aria-label={`${viewLabels[view]}: ${sidebarHints[view] || viewHints[view]}`}
+							title={`${viewLabels[view]}: ${sidebarHints[view] || viewHints[view]}`}
 							onPointerEnter={() => onViewIntent?.(view, "hover")}
 							onPointerLeave={() => onViewIntent?.(view, "cancel")}
 							onFocus={() => onViewIntent?.(view, "hover")}
@@ -416,7 +505,7 @@ export function WorkspaceSidebar({
 								<SidebarIcon section={view} />
 								<span className="nav-copy min-w-0 overflow-hidden flex-1">
 									<span className="nav-label truncate min-w-0 block">{viewLabels[view]}</span>
-									<small className="hidden">{viewHints[view]}</small>
+									<small className="nav-hint truncate min-w-0 block">{sidebarHints[view] || viewHints[view]}</small>
 								</span>
 								<span className={navCaptionClass}>{viewLabels[view]}</span>
 							</span>
@@ -456,8 +545,8 @@ export function WorkspaceSidebar({
 					</a>
 				</p>
 			) : null}
-			<div className="sidebar-footer max-w-full overflow-hidden shrink-0 mt-auto pb-2">
-				<ThemeSwitcher />
+			<div className="sidebar-footer max-w-full overflow-hidden shrink-0 mt-auto pb-2 flex items-center justify-between">
+				<SidebarNetworkTelemetry collapsed={collapsed} />
 				<button
 					className="icon-button sidebar-collapse-button"
 					type="button"
@@ -470,146 +559,6 @@ export function WorkspaceSidebar({
 				</button>
 			</div>
 		</aside>
-	);
-}
-
-function ThemeSwitcher() {
-	const themeMode = useThemeStore((state) => state.themeMode);
-	const setThemeMode = useThemeStore((state) => state.setThemeMode);
-
-	const options: Array<{
-		mode: ThemeMode;
-		label: string;
-		hint: string;
-		Icon: LucideIcon;
-		dot: string;
-	}> = [
-		{
-			mode: "auto",
-			label: "Авто",
-			hint: "Следовать системной теме устройства",
-			Icon: Laptop,
-			dot: "#94a3b8",
-		},
-		{
-			mode: "light",
-			label: "День",
-			hint: "Клиническая светлая тема",
-			Icon: Sun,
-			dot: "#0d9488",
-		},
-		{
-			mode: "dark",
-			label: "Тьма",
-			hint: "Хирургическая тёмная (Slate)",
-			Icon: Moon,
-			dot: "#2dd4bf",
-		},
-		{
-			mode: "night",
-			label: "OLED",
-			hint: "Истинный глубокий чёрный для OLED",
-			Icon: Sparkles,
-			dot: "#ffffff",
-		},
-		{
-			mode: "calm_teal",
-			label: "Морская",
-			hint: "Мягкая мятная успокаивающая тема",
-			Icon: Waves,
-			dot: "#14b8a6",
-		},
-		{
-			mode: "sakura",
-			label: "Сакура",
-			hint: "Нежная розовая сакура для детской и эстетики",
-			Icon: Flower2,
-			dot: "#f43f5e",
-		},
-		{
-			mode: "ocean",
-			label: "Океан",
-			hint: "Глубокий сапфировый ультрамарин",
-			Icon: Droplets,
-			dot: "#38bdf8",
-		},
-		{
-			mode: "emerald",
-			label: "Изумруд",
-			hint: "Хвойно-изумрудная свежесть",
-			Icon: Trees,
-			dot: "#34d399",
-		},
-		{
-			mode: "cyber_xray",
-			label: "Рентген",
-			hint: "Неоновый кибер-КТ визиограф",
-			Icon: Zap,
-			dot: "#00f0ff",
-		},
-		{
-			mode: "warm_sand",
-			label: "Песок",
-			hint: "Тёплый уют шамотной керамики",
-			Icon: Flame,
-			dot: "#d97706",
-		},
-		{
-			mode: "contrast",
-			label: "Контраст",
-			hint: "Высокий контраст WCAG AAA (7:1)",
-			Icon: Eye,
-			dot: "#000000",
-		},
-	];
-
-	const currentOption =
-		options.find((opt) => opt.mode === themeMode) ?? options[0]!;
-
-	return (
-		<details
-			className="workspace-role-switcher workspace-theme-switcher"
-			aria-label="Тема оформления"
-		>
-			<summary title={currentOption.hint}>
-				<span
-					className="theme-dot"
-					style={{ backgroundColor: currentOption.dot }}
-				/>
-				<currentOption.Icon
-					size={13}
-					className="shrink-0 opacity-80"
-					aria-hidden="true"
-				/>
-				<strong>{currentOption.label}</strong>
-			</summary>
-			<div className="role-switcher-options theme-switcher-grid">
-				{options.map((option) => (
-					<button
-						className={themeMode === option.mode ? "active" : ""}
-						key={option.mode}
-						type="button"
-						aria-pressed={themeMode === option.mode}
-						title={option.hint}
-						onClick={(event) => {
-							setThemeMode(option.mode);
-							event.currentTarget.closest("details")?.removeAttribute("open");
-						}}
-					>
-						<span
-							className="theme-dot"
-							style={{ backgroundColor: option.dot }}
-						/>
-						<option.Icon
-							size={13}
-							className="shrink-0 opacity-80"
-							aria-hidden="true"
-						/>
-						<span>{option.label}</span>
-					</button>
-				))}
-			</div>
-		</details>
 	);
 }
 
@@ -869,7 +818,6 @@ export function WorkspaceTopbar({
 					<PerspectiveSwitcher />
 					<RecentPatientHistoryWidget compactDropdown />
 					<NotificationBell />
-					<NetworkStatusIndicator className="shrink-0 flex-shrink-0" />
 					<ClinicControlPill onLockSession={onLockSession} />
 				</div>
 			</div>
@@ -1039,6 +987,9 @@ export function WorkspaceTopbar({
           раскладку, которой не существует.
         */}
 				<WorkspaceActionsMount />
+
+				{/* Быстрый доступ к темам оформления в десктопном топбаре (32px, 8px радиус) */}
+				<ThemeQuickAccessWidget variant="topbar" />
 
 				{/*
           КОПИЛОТ / КЛИНИЧЕСКИЙ ИИ-АССИСТЕНТ — крупная кнопка в шапке в 1 клик.
