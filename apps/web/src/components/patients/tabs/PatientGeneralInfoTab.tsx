@@ -461,7 +461,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 							</div>
 
 							{/* Экспресс-соматика и аллергии (чипы) */}
-							<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] flex flex-col gap-2.5">
+							<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs flex flex-col gap-2.5">
 								<div className="flex items-center justify-between gap-2 flex-wrap">
 									<div className="flex items-center gap-2">
 										<HeartPulse className="w-3.5 h-3.5 text-[var(--teal)]" />
@@ -571,13 +571,14 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 							</div>
 
 							{/* Законный представитель / Член семьи (ст. 64 СК РФ / 323-ФЗ) */}
-							<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] flex flex-col gap-2.5">
+							<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs flex flex-col gap-2.5">
 								<div className="flex items-center justify-between gap-2 flex-wrap">
 									<div className="flex items-center gap-2">
 										<Users className="w-3.5 h-3.5 text-[var(--teal)]" />
 										<span className="font-bold text-xs text-[var(--ink)]">
-											Законный представитель / Член семьи (ст. 64 СК РФ / 323-ФЗ):
+											Законный представитель / Член семьи:
 										</span>
+										<span className="sr-only">Законный представитель / Член семьи (ст. 64 СК РФ / 323-ФЗ)</span>
 									</div>
 									{patient?.representativeType && (
 										<span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300">
@@ -722,7 +723,13 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						</div>
 
 						{/* 2. АККОРДЕОН 1: ПАСПОРТНЫЕ ДАННЫЕ И АДРЕСА */}
-						<div className="border border-[var(--line)] rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper)] transition-all overflow-hidden shadow-2xs">
+						<div
+							className={`rounded-xl bg-[var(--paper)] border transition-all overflow-hidden ${
+								accordionsOpen.passport
+									? "border-[var(--teal)]/40 ring-1 ring-[var(--teal)]/20 shadow-xs"
+									: "border-[var(--line)] hover:border-[var(--teal)]/40 hover:bg-[var(--paper-soft)]/40 shadow-2xs"
+							}`}
+						>
 							<button
 								type="button"
 								onClick={() => toggleAccordion("passport")}
@@ -731,7 +738,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 								aria-expanded={accordionsOpen.passport}
 							>
 								<div className="flex items-center gap-2.5 min-w-0">
-									<div className="w-7 h-7 rounded-lg bg-[var(--teal)]/10 text-[var(--teal)] flex items-center justify-center shrink-0">
+									<div className="w-8 h-8 rounded-lg bg-[var(--teal)]/10 text-[var(--teal)] border border-[var(--teal)]/20 flex items-center justify-center shrink-0">
 										<CreditCard className="w-4 h-4" />
 									</div>
 									<div className="min-w-0">
@@ -745,16 +752,16 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 								</div>
 								<div className="flex items-center gap-2.5 shrink-0 ml-2">
 									<span
-										className={`text-[11px] font-medium hidden sm:inline-block truncate max-w-[240px] md:max-w-xs ${
+										className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold hidden sm:inline-block truncate max-w-[260px] md:max-w-xs transition-colors ${
 											passportSummary === "Не заполнено"
-												? "text-[var(--muted)]"
-												: "text-[var(--teal)] font-semibold"
+												? "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]"
+												: "bg-teal-500/10 text-[var(--teal)] border border-teal-500/20 font-bold"
 										}`}
 									>
 										{passportSummary}
 									</span>
 									<ChevronDown
-										className={`w-4 h-4 text-[var(--muted)] transition-transform duration-200 ${
+										className={`w-4 h-4 text-[var(--teal)] transition-transform duration-200 ${
 											accordionsOpen.passport ? "rotate-180" : ""
 										}`}
 									/>
@@ -990,7 +997,13 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						</div>
 
 						{/* 3. АККОРДЕОН 2: ГОСУДАРСТВЕННАЯ И СТРАХОВАЯ ИДЕНТИФИКАЦИЯ (СНИЛС, ОМС, ДМС) */}
-						<div className="border border-[var(--line)] rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper)] transition-all overflow-hidden shadow-2xs">
+						<div
+							className={`rounded-xl bg-[var(--paper)] border transition-all overflow-hidden ${
+								accordionsOpen.insurance
+									? "border-[var(--teal)]/40 ring-1 ring-[var(--teal)]/20 shadow-xs"
+									: "border-[var(--line)] hover:border-[var(--teal)]/40 hover:bg-[var(--paper-soft)]/40 shadow-2xs"
+							}`}
+						>
 							<button
 								type="button"
 								onClick={() => toggleAccordion("insurance")}
@@ -999,7 +1012,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 								aria-expanded={accordionsOpen.insurance}
 							>
 								<div className="flex items-center gap-2.5 min-w-0">
-									<div className="w-7 h-7 rounded-lg bg-[var(--teal)]/10 text-[var(--teal)] flex items-center justify-center shrink-0">
+									<div className="w-8 h-8 rounded-lg bg-[var(--teal)]/10 text-[var(--teal)] border border-[var(--teal)]/20 flex items-center justify-center shrink-0">
 										<FileCheck className="w-4 h-4" />
 									</div>
 									<div className="min-w-0">
@@ -1013,16 +1026,16 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 								</div>
 								<div className="flex items-center gap-2.5 shrink-0 ml-2">
 									<span
-										className={`text-[11px] font-medium hidden sm:inline-block truncate max-w-[240px] md:max-w-xs ${
+										className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold hidden sm:inline-block truncate max-w-[260px] md:max-w-xs transition-colors ${
 											insuranceSummary === "Не заполнено"
-												? "text-[var(--muted)]"
-												: "text-[var(--teal)] font-semibold"
+												? "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]"
+												: "bg-teal-500/10 text-[var(--teal)] border border-teal-500/20 font-bold"
 										}`}
 									>
 										{insuranceSummary}
 									</span>
 									<ChevronDown
-										className={`w-4 h-4 text-[var(--muted)] transition-transform duration-200 ${
+										className={`w-4 h-4 text-[var(--teal)] transition-transform duration-200 ${
 											accordionsOpen.insurance ? "rotate-180" : ""
 										}`}
 									/>
@@ -1143,7 +1156,13 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						</div>
 
 						{/* 4. АККОРДЕОН 3: СЛУЖЕБНЫЕ ЗАМЕТКИ РЕГИСТРАТУРЫ И ВРАЧА */}
-						<div className="border border-[var(--line)] rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper)] transition-all overflow-hidden shadow-2xs">
+						<div
+							className={`rounded-xl bg-[var(--paper)] border transition-all overflow-hidden ${
+								accordionsOpen.notes
+									? "border-[var(--teal)]/40 ring-1 ring-[var(--teal)]/20 shadow-xs"
+									: "border-[var(--line)] hover:border-[var(--teal)]/40 hover:bg-[var(--paper-soft)]/40 shadow-2xs"
+							}`}
+						>
 							<button
 								type="button"
 								onClick={() => toggleAccordion("notes")}
@@ -1152,7 +1171,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 								aria-expanded={accordionsOpen.notes}
 							>
 								<div className="flex items-center gap-2.5 min-w-0">
-									<div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+									<div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center justify-center shrink-0">
 										<Tag className="w-4 h-4" />
 									</div>
 									<div className="min-w-0">
@@ -1166,16 +1185,16 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 								</div>
 								<div className="flex items-center gap-2.5 shrink-0 ml-2">
 									<span
-										className={`text-[11px] font-medium hidden sm:inline-block truncate max-w-[240px] md:max-w-xs ${
+										className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold hidden sm:inline-block truncate max-w-[260px] md:max-w-xs transition-colors ${
 											notesSummary === "Заметок нет"
-												? "text-[var(--muted)]"
-												: "text-amber-600 dark:text-amber-400 font-semibold"
+												? "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]"
+												: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 font-bold"
 										}`}
 									>
 										{notesSummary}
 									</span>
 									<ChevronDown
-										className={`w-4 h-4 text-[var(--muted)] transition-transform duration-200 ${
+										className={`w-4 h-4 text-[var(--teal)] transition-transform duration-200 ${
 											accordionsOpen.notes ? "rotate-180" : ""
 										}`}
 									/>
@@ -1192,7 +1211,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 							>
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
 									{/* Заметки регистратуры */}
-									<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] flex flex-col gap-2.5">
+									<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs flex flex-col gap-2.5">
 										<div className="flex items-center justify-between gap-1 flex-wrap">
 											<div className="flex items-center gap-1.5">
 												<Tag className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
@@ -1242,7 +1261,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 									</div>
 
 									{/* Клинические особенности врача */}
-									<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] flex flex-col gap-2.5">
+									<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs flex flex-col gap-2.5">
 										<div className="flex items-center justify-between gap-1 flex-wrap">
 											<div className="flex items-center gap-1.5">
 												<Stethoscope className="w-3.5 h-3.5 text-[var(--teal)]" />
@@ -1281,7 +1300,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 								</div>
 
 								{/* Канал привлечения пациента (Маркетинг / StomX) */}
-								<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] flex flex-col gap-2">
+								<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-2xs flex flex-col gap-2">
 									<div className="flex items-center justify-between gap-2 flex-wrap">
 										<div className="flex items-center gap-2">
 											<Megaphone className="w-3.5 h-3.5 text-[var(--teal)]" />

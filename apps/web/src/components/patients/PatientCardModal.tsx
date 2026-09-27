@@ -315,7 +315,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 					{/* Modal Footer */}
 					<div className="flex items-center justify-between p-3 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex-wrap gap-2 print:hidden">
 						<span className="text-xs text-[var(--muted)] truncate">
-							Медицинская карта пациента • 152-ФЗ / 323-ФЗ / 54-ФЗ
+							Медицинская карта пациента • Защита персональных данных
 						</span>
 						<div className="flex items-center gap-2">
 							<button
