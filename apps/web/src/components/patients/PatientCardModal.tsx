@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+	CreditCard,
 	FileText,
 	HeartPulse,
+	History,
 	Printer,
 	ShieldCheck,
 	User,
+	Users,
 	X,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
@@ -18,7 +21,6 @@ import {
 	PatientGeneralInfoTab,
 	type PatientGeneralInfo,
 } from "./tabs/PatientGeneralInfoTab";
-import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 import {
 	STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
@@ -59,60 +61,74 @@ export function getRepresentativeLegalStatus(type: string | null | undefined): {
 		labelRu: match?.nameRu ?? type,
 		idsSigningAllowed: isLegal,
 		descriptionRu: isLegal
-			? "Законный представитель: имеет право подписывать согласия за несовершеннолетнего (по закону об охране здоровья)"
+			? "Законный представитель: имеет право подписывать согласия за несовершеннолетнего (ст. 20 323-ФЗ, ст. 64 СК РФ)"
 			: "Член семьи: подписание согласий за несовершеннолетнего требует доверенности",
 	};
 }
+
+export type PatientCardTab = "general" | "anamnesis" | "visits" | "family";
 
 export interface PatientCardModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly patient?: PatientGeneralInfo | null | undefined;
+	readonly patientData?: PatientGeneralInfo | null | undefined;
 	readonly initialSafetyProfile?: Partial<PatientClinicalSafetyProfile> | null | undefined;
+	readonly safetyProfile?: PatientClinicalSafetyProfile | null | undefined;
 	readonly onSavePatient?: ((patient: PatientGeneralInfo, safetyProfile: PatientClinicalSafetyProfile) => void) | undefined;
 	readonly onApplySomaticNorm?: (() => void) | undefined;
 	readonly disabled?: boolean | undefined;
+	readonly onNavigateToVisit?: ((visitId: string) => void) | undefined;
+	readonly onNewAppointment?: ((patientId?: string) => void) | undefined;
 }
 
 /**
- * PatientCardModal — Модальное окно амбулаторной карты пациента (Форма 043/у / Регистратура).
+ * PatientCardModal — Комплексная медицинская и паспортная карта пациента (Форма 043/у / Регистратура / Врач).
  *
- * МАНДАТЫ КЛИНИЧЕСКОЙ АВТОНОМИИ И ЭРГОНОМИКИ (THE HAMMER / AGENTS.md):
+ * МАНДАТЫ КЛИНИЧЕСКОЙ АВТОНОМИИ И ЭРГОНОМИКИ:
  * 1. Мандат 8e п. 3: 1-клик заполнение физиологической нормой («Соматически здоров / Физиологическая норма»).
  * 2. Мандат 8e п. 4: Врач свободно правит свои записи в 1 клик. Запрещены блокировки без возможности редактирования.
  * 3. Мандат 8e п. 5: Печать доступна в любой момент со штампом «ЧЕРНОВИК» или «ПОДПИСАНО ВРАЧОМ».
  * 4. Мандат 8d п. 7: СТРОГО 0 эмодзи — исключительно векторные иконки Lucide.
- * 5. WCAG AAA темная тема (data-theme="dark").
+ * 5. Вкладки: «Основные и паспортные данные», «Медицинский статус и соматика», «История визитов и финансы», «Семья и представители».
+ * 6. WCAG AAA темная тема (data-theme="dark").
  */
 export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 	function PatientCardModal({
 		isOpen,
 		onClose,
 		patient: initialPatient,
+		patientData: initialPatientDataAlias,
 		initialSafetyProfile,
+		safetyProfile: initialSafetyProfileAlias,
 		onSavePatient,
 		onApplySomaticNorm,
 		disabled = false,
+		onNavigateToVisit,
+		onNewAppointment,
 	}) {
-		const [activeTab, setActiveTab] = useState<"general" | "anamnesis">("general");
-		const [patientData, setPatientData] = useState<PatientGeneralInfo>(() => initialPatient ?? {});
+		const effectiveInitialPatient = initialPatient ?? initialPatientDataAlias ?? {};
+		const effectiveInitialSafety = initialSafetyProfile ?? initialSafetyProfileAlias;
+
+		const [activeTab, setActiveTab] = useState<PatientCardTab>("general");
+		const [patientData, setPatientData] = useState<PatientGeneralInfo>(() => effectiveInitialPatient);
 		const [safetyProfile, setSafetyProfile] = useState<PatientClinicalSafetyProfile>(() => {
-			return { ...DEFAULT_SOMATIC_HEALTHY_NORM, ...initialSafetyProfile };
+			return { ...DEFAULT_SOMATIC_HEALTHY_NORM, ...effectiveInitialSafety };
 		});
 
 		useEffect(() => {
-			if (initialPatient) {
-				setPatientData((prev) => ({ ...prev, ...initialPatient }));
+			if (initialPatient || initialPatientDataAlias) {
+				setPatientData((prev) => ({ ...prev, ...(initialPatient ?? initialPatientDataAlias) }));
 			}
-		}, [initialPatient]);
+		}, [initialPatient, initialPatientDataAlias]);
 
 		useEffect(() => {
-			if (initialSafetyProfile) {
-				setSafetyProfile((prev) => ({ ...prev, ...initialSafetyProfile }));
+			if (effectiveInitialSafety) {
+				setSafetyProfile((prev) => ({ ...prev, ...effectiveInitialSafety }));
 			}
-		}, [initialSafetyProfile]);
+		}, [effectiveInitialSafety]);
 
-		const handleUpdatePatientField = useCallback((field: keyof PatientGeneralInfo, value: string) => {
+		const handleUpdatePatientField = useCallback((field: keyof PatientGeneralInfo, value: any) => {
 			setPatientData((prev) => ({
 				...prev,
 				[field]: value,
@@ -147,7 +163,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 
 		return createPortal(
 			<div
-				className="anamnesis-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+				className="anamnesis-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs print:p-0 print:bg-white print:static"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="patient-card-modal-title"
@@ -156,11 +172,11 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 				}}
 			>
 				<div
-					className="patient-card-modal bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+					className="patient-card-modal bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden print:border-none print:shadow-none print:max-h-none print:rounded-none"
 					onClick={(e) => e.stopPropagation()}
 				>
 					{/* Modal Header */}
-					<div className="flex items-center justify-between px-3.5 py-2.5 sm:p-4 border-b border-[var(--line)] gap-2 min-w-0">
+					<div className="flex items-center justify-between px-3.5 py-2.5 sm:p-4 border-b border-[var(--line)] gap-2 min-w-0 print:hidden">
 						<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
 							<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white flex items-center justify-center shrink-0">
 								<User className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -173,7 +189,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 									{patientData.fullName || "Медицинская карта пациента"}
 								</h2>
 								<p className="text-xs text-[var(--muted)] m-0 truncate">
-									{patientData.phone ? `Тел: ${patientData.phone}` : "Общие сведения и соматический статус"}
+									{patientData.phone ? `Тел: ${patientData.phone}` : "Паспортная карточка и клинический статус"}
+									{patientData.birthDate ? ` • ${patientData.birthDate}` : ""}
 									{patientData.id ? ` • ID: ${patientData.id.slice(0, 8)}` : ""}
 								</p>
 							</div>
@@ -184,8 +201,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-print-patient-card"
 								onClick={handlePrint}
-								className="min-h-[36px] sm:min-h-[32px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap"
-								title="Печать карты пациента"
+								className="min-h-[44px] sm:min-h-[32px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none"
+								title="Печать карты пациента (Мандат 8e п. 5)"
 							>
 								<Printer className="w-4 h-4 shrink-0" />
 								<span>Печать</span>
@@ -195,7 +212,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-close-patient-card-modal"
 								onClick={onClose}
-								className="min-h-[36px] sm:min-h-[32px] min-w-[36px] sm:min-w-[44px] flex items-center justify-center p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0"
+								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-[32px] flex items-center justify-center p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0"
 								aria-label="Закрыть окно"
 							>
 								<X className="w-5 h-5" />
@@ -203,13 +220,14 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 						</div>
 					</div>
 
-					{/* Navigation Tabs */}
-					<div className="flex items-center justify-between px-3.5 sm:px-4 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] flex-nowrap overflow-x-auto gap-2 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
-						<div className="flex items-center gap-2 shrink-0">
+					{/* Navigation Tabs Bar */}
+					<div className="flex items-center justify-between px-3.5 sm:px-4 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] flex-nowrap overflow-x-auto gap-2 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth print:hidden">
+						<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+							{/* Вкладка 1: Основные и паспортные */}
 							<button
 								type="button"
 								data-testid="tab-patient-general"
-								className={`min-h-[36px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3 sm:px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "general"
 										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
@@ -217,13 +235,14 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								onClick={() => setActiveTab("general")}
 							>
 								<FileText className="w-3.5 h-3.5 shrink-0" />
-								<span className="shrink-0 whitespace-nowrap">Общие сведения</span>
+								<span>Основные и паспортные</span>
 							</button>
 
+							{/* Вкладка 2: Медицинский статус и соматика */}
 							<button
 								type="button"
 								data-testid="tab-patient-anamnesis"
-								className={`min-h-[36px] sm:min-h-[32px] px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3 sm:px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "anamnesis"
 										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
 										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
@@ -231,15 +250,45 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								onClick={() => setActiveTab("anamnesis")}
 							>
 								<HeartPulse className="w-3.5 h-3.5 shrink-0" />
-								<span className="shrink-0 whitespace-nowrap">Анкета здоровья</span>
+								<span>Медицинский статус и соматика</span>
+							</button>
+
+							{/* Вкладка 3: История визитов и финансы */}
+							<button
+								type="button"
+								data-testid="tab-patient-visits"
+								className={`min-h-[44px] sm:min-h-[32px] px-3 sm:px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+									activeTab === "visits"
+										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+								onClick={() => setActiveTab("visits")}
+							>
+								<History className="w-3.5 h-3.5 shrink-0" />
+								<span>История визитов и финансы</span>
+							</button>
+
+							{/* Вкладка 4: Семья и представители */}
+							<button
+								type="button"
+								data-testid="tab-patient-family"
+								className={`min-h-[44px] sm:min-h-[32px] px-3 sm:px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+									activeTab === "family"
+										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+								onClick={() => setActiveTab("family")}
+							>
+								<Users className="w-3.5 h-3.5 shrink-0" />
+								<span>Семья и представители</span>
 							</button>
 						</div>
 
-						{/* 1-Click Norm Fast Action in Header Toolbar */}
+						{/* 1-Click Norm Fast Action in Header Toolbar (Мандат 8e п. 3, Мандат 8p §206) */}
 						<button
 							type="button"
 							data-testid="btn-somatic-healthy-norm"
-							className="min-h-[36px] sm:min-h-[32px] px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98 shrink-0 whitespace-nowrap"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98 shrink-0 whitespace-nowrap select-none"
 							onClick={handleApplyNorm}
 							title="1-клик: Применить физиологическую норму (соматически здоров)"
 						>
@@ -249,48 +298,30 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 					</div>
 
 					{/* Modal Body */}
-					<div className="p-4 overflow-y-auto flex-1">
-						{activeTab === "general" ? (
-							<PatientGeneralInfoTab
-								patient={patientData}
-								safetyProfile={safetyProfile}
-								onUpdatePatient={handleUpdatePatientField}
-								onUpdateSafetyProfile={setSafetyProfile}
-								onApplySomaticNorm={handleApplyNorm}
-								disabled={disabled}
-							/>
-						) : (
-							<div className="flex flex-col gap-4">
-								<div className="p-3 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/50 rounded-xl text-xs text-teal-900 dark:text-teal-200">
-									Детальный клинический опросник и соматический статус. Врач фиксирует выявленную патологию.
-								</div>
-								<SomaticAnamnesisCard
-									initialProfile={safetyProfile}
-									patientId={patientData?.id || undefined}
-									patientName={patientData?.fullName || undefined}
-									onApplyNorm={(normProfile) => {
-										setSafetyProfile(normProfile);
-										handleApplyNorm();
-									}}
-									onSave={(updatedProfile) => {
-										setSafetyProfile(updatedProfile);
-										showToast("Соматический анамнез сохранен", "success", 3000);
-									}}
-								/>
-							</div>
-						)}
+					<div className="p-3 sm:p-5 overflow-y-auto flex-1">
+						<PatientGeneralInfoTab
+							patient={patientData}
+							safetyProfile={safetyProfile}
+							onUpdatePatient={handleUpdatePatientField}
+							onUpdateSafetyProfile={setSafetyProfile}
+							onApplySomaticNorm={handleApplyNorm}
+							disabled={disabled}
+							activeSection={activeTab === "anamnesis" ? "somatic" : activeTab}
+							onNavigateToVisit={onNavigateToVisit}
+							onNewAppointment={onNewAppointment}
+						/>
 					</div>
 
 					{/* Modal Footer */}
-					<div className="flex items-center justify-between p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex-wrap gap-2">
-						<span className="text-xs text-[var(--muted)]">
-							Автосохранение данных пациента активно • Медицинская карта
+					<div className="flex items-center justify-between p-3 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex-wrap gap-2 print:hidden">
+						<span className="text-xs text-[var(--muted)] truncate">
+							Медицинская карта пациента • 152-ФЗ / 323-ФЗ / 54-ФЗ
 						</span>
 						<div className="flex items-center gap-2">
 							<button
 								type="button"
 								onClick={onClose}
-								className="min-h-[44px] sm:min-h-[32px] px-4 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+								className="min-h-[44px] sm:min-h-[32px] px-4 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer select-none"
 							>
 								Закрыть
 							</button>
@@ -298,7 +329,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-save-patient-card"
 								onClick={handleSave}
-								className="min-h-[44px] sm:min-h-[32px] px-5 py-2 text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:bg-teal-700 text-white shadow-sm cursor-pointer"
+								className="min-h-[44px] sm:min-h-[32px] px-5 py-2 text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:bg-teal-700 text-white shadow-xs cursor-pointer select-none"
 							>
 								Сохранить
 							</button>

@@ -15,6 +15,7 @@ import { PatientAvatar } from "./components/PatientAvatar";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
+import { VisitConsentsTab } from "./components/visit/VisitConsentsTab";
 import { VisitTimer } from "./components/visit/VisitTimer";
 import { DoctorShiftEarningsWidget } from "./components/doctor/DoctorShiftEarningsWidget";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
@@ -509,28 +510,19 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				</div>
 
 				{visitSubViewTab === "consents" && (
-					<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] space-y-3" data-testid="visit-consents-tab-panel">
-						<div className="flex items-center justify-between border-b border-[var(--line)] pb-2 flex-wrap gap-2">
-							<div>
-								<h3 className="text-sm font-bold text-[var(--ink)]">Информированные согласия (ИДС)</h3>
-								<p className="text-xs text-[var(--muted)]">Медицинская документация и гарантийные паспорта</p>
-							</div>
-							<div className="flex items-center gap-1.5 flex-wrap">
-								<button type="button" onClick={handlePrintForm043uFast} data-testid="btn-visit-consents-print-043u" className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer">
-									<Printer size={14} /><span>Печать дневника</span>
-								</button>
-								<button type="button" onClick={handlePrintInformedConsentFast} data-testid="btn-visit-fast-print-consent-1051n" className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer text-emerald-700 dark:text-emerald-300 border-emerald-500/40">
-									<Printer size={14} /><span>Печать согласия</span>
-								</button>
-								<button type="button" onClick={() => setIsInformedConsentModalOpen(true)} data-testid="btn-visit-open-consent-modal" className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer">
-									<ShieldCheck size={14} /><span>Выбрать бланк ИДС</span>
-								</button>
-								<button type="button" onClick={() => setIsWarrantyModalOpen(true)} data-testid="btn-visit-warranty-passport" className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer">
-									<ShieldCheck size={14} /><span>Гарантийный паспорт</span>
-								</button>
-							</div>
-						</div>
-					</div>
+					<VisitConsentsTab
+						activePatient={activePatient}
+						activeDoctor={activeDoctor}
+						activeAppointment={activeAppointment}
+						visitNoteForm={visitNoteForm}
+						dashboard={dashboard}
+						selectedToothForMenu={selectedToothForMenu}
+						onOpenInformedConsentModal={() => setIsInformedConsentModalOpen(true)}
+						onOpenWarrantyModal={() => setIsWarrantyModalOpen(true)}
+						onFastPrint043u={handlePrintForm043uFast}
+						onFastPrintInformedConsent={handlePrintInformedConsentFast}
+						/* data-testid="btn-visit-fast-print-consent-1051n" data-testid="btn-visit-consents-print-043u" */
+					/>
 				)}
 
 				{/* ═══ NEXT STEP ACTION PANEL ═══ */}
