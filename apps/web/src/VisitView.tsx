@@ -203,8 +203,17 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 			if (!visitNoteForm?.diagnosis) {
 				updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование (Здоров)");
 			}
+			if (!visitNoteForm?.treatmentPlan) {
+				updateVisitNoteField("treatmentPlan", "Осмотр полости рта проведен, патологий не выявлено. Санация.");
+			}
+			if (!visitNoteForm?.complaint) {
+				updateVisitNoteField("complaint", "Жалоб на момент осмотра не предъявляет.");
+			}
 			if (!visitNoteForm?.anamnesis) {
 				updateVisitNoteField("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен.");
+			}
+			if (!visitNoteForm?.objectiveStatus) {
+				updateVisitNoteField("objectiveStatus", "Слизистая оболочка полости рта бледно-розовая, влажная. Зубные ряды интактны.");
 			}
 		}
 		if (typeof flushPendingVisitSaves === "function") {
@@ -238,6 +247,17 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		}
 	}, [activeStamp, setToothState]);
 
+	React.useEffect(() => {
+		const handleToothStateUpdate = (e: Event) => {
+			const detail = (e as CustomEvent<{ toothNumber: number | string; state: string }>).detail;
+			if (detail?.toothNumber && detail?.state && typeof setToothState === "function") {
+				setToothState(String(detail.toothNumber), detail.state);
+			}
+		};
+		window.addEventListener("dente-update-tooth-state", handleToothStateUpdate);
+		return () => window.removeEventListener("dente-update-tooth-state", handleToothStateUpdate);
+	}, [setToothState]);
+
 	const appendToEMKField = useCallback((field: string, text: string) => {
 		if (typeof updateVisitNoteField === "function") {
 			const current = (visitNoteForm as any)?.[field] || "";
@@ -268,7 +288,10 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					<div className="min-h-[32px] h-8 flex items-center justify-between gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 border-b border-[var(--line)] flex-nowrap min-w-0 max-w-full">
 						<div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 overflow-hidden">
 							<PatientAvatar fullName={activePatient.fullName} size={22} className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0" />
-							<span className="min-w-0 flex-1 truncate text-xs sm:text-sm font-bold text-[var(--ink)]" title={activePatient.fullName || activePatient.name}>
+							<span
+								className="font-bold text-xs sm:text-sm text-[var(--ink)] min-w-0 max-w-[180px] truncate sm:max-w-none sm:shrink-0 sm:overflow-visible sm:whitespace-nowrap"
+								title={activePatient.fullName || activePatient.name}
+							>
 								{activePatient.fullName || activePatient.name}
 							</span>
 							{patientAge && <span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline">· {patientAge}</span>}
@@ -290,17 +313,18 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 
 						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-							{/* Кнопка физиологической нормы 043/у (1-клик) */}
+							{/* Кнопка физиологической нормы 043/у (1-клик) — ЕДИНСТВЕННЫЙ PRIMARY CTA ШАПКИ ПРИЁМА */}
 							<button
 								type="button"
 								onClick={handleApplySomaticNormQuick}
 								data-testid="btn-somatic-norm-one-click"
-								className="secondary-button min-h-[44px] px-3 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
-								title="Соматически здоров / норма (1-клик)"
-								aria-label="Соматически здоров / норма (1-клик)"
+								className="primary-button min-h-[28px] sm:min-h-[32px] h-7 sm:h-8 px-2 sm:px-3 py-0 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 flex items-center gap-1.5 cursor-pointer transition-all shrink-0 rounded-lg whitespace-nowrap shadow-xs"
+								title="Заполнить нормой"
+								aria-label="Заполнить нормой"
 							>
-								<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-								<span>Соматически здоров / норма (1-клик)</span>
+								<Check className="w-3.5 h-3.5 text-white shrink-0" aria-hidden="true" />
+								<span className="hidden sm:inline">Заполнить нормой</span>
+								<span className="inline sm:hidden text-xs">Норма</span>
 							</button>
 
 							{/* Печать Формы 043/у (Мандат 8e) */}
@@ -308,7 +332,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								type="button"
 								onClick={handlePrintForm043uFast}
 								data-testid="btn-visit-fast-print-043u"
-								className="secondary-button min-h-[32px] h-8 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg hidden sm:inline-flex"
+								className="secondary-button min-h-[32px] h-8 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg !hidden sm:!inline-flex"
 								title="Печать Формы 043/у"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
@@ -327,15 +351,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="hidden xl:inline">Аптечка</span>
 							</button>
 
-							{/* Кнопка «Завершить приём» */}
+							{/* Кнопка «Завершить приём» — ВТОРИЧНОЕ ДЕЙСТВИЕ В ШАПКЕ (ОСНОВНОЕ В ЛИПКОМ ФУТЕРЕ) */}
 							<button
 								type="button"
 								onClick={handleFinishVisitAction}
 								data-testid="btn-complete-visit-header"
-								className="primary-button min-h-[32px] h-8 px-2.5 sm:px-3 py-0 text-xs font-bold flex items-center gap-1 shrink-0 cursor-pointer rounded-lg whitespace-nowrap"
+								className="secondary-button min-h-[32px] h-8 px-2.5 sm:px-3 py-0 text-xs font-semibold !hidden sm:!inline-flex items-center gap-1 shrink-0 cursor-pointer rounded-lg whitespace-nowrap text-[var(--ink)]"
 								title="Завершить приём"
 							>
-								<CheckCircle2 size={15} className="shrink-0" />
+								<CheckCircle2 size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
 								<span>Завершить приём</span>
 							</button>
 
@@ -430,40 +454,44 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</div>
 					</div>
 
-					{/* Строка 2: Вкладки приёма */}
-					<div className="flex items-center gap-1 px-2 py-1 bg-[var(--paper-soft)] overflow-x-auto">
-						<button
-							type="button"
-							data-testid="visit-subtab-emk"
-							className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-colors ${visitSubViewTab === "emk" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)]"}`}
-							onClick={() => handleTabChange("emk")}
-						>
-							ЭМК 043/у
-						</button>
-						<button
-							type="button"
-							data-testid="visit-subtab-odontogram"
-							className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-colors ${visitSubViewTab === "odontogram" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)]"}`}
-							onClick={() => handleTabChange("odontogram")}
-						>
-							Зубная формула
-						</button>
-						<button
-							type="button"
-							data-testid="visit-subtab-diagnostics"
-							className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-colors ${visitSubViewTab === "diagnostics" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)]"}`}
-							onClick={() => handleTabChange("diagnostics")}
-						>
-							Диагностика
-						</button>
-						<button
-							type="button"
-							data-testid="visit-subtab-consents"
-							className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition-colors ${visitSubViewTab === "consents" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)]"}`}
-							onClick={() => handleTabChange("consents")}
-						>
-							ИДС 1051н
-						</button>
+					{/* Строка 2: Вкладки приёма с плавным фейдом по краям на мобильных */}
+					<div className="relative border-t border-[var(--line)]/50 bg-[var(--paper-soft)]">
+						<div className="flex items-center gap-1.5 px-2 py-1 overflow-x-auto scrollbar-none flex-nowrap shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x">
+							<button
+								type="button"
+								data-testid="visit-subtab-emk"
+								className={`visit-subtab-btn ${visitSubViewTab === "emk" ? "active" : ""}`}
+								onClick={() => handleTabChange("emk")}
+							>
+								ЭМК 043/у
+							</button>
+							<button
+								type="button"
+								data-testid="visit-subtab-odontogram"
+								className={`visit-subtab-btn ${visitSubViewTab === "odontogram" ? "active" : ""}`}
+								onClick={() => handleTabChange("odontogram")}
+							>
+								Зубная формула
+							</button>
+							<button
+								type="button"
+								data-testid="visit-subtab-diagnostics"
+								className={`visit-subtab-btn ${visitSubViewTab === "diagnostics" ? "active" : ""}`}
+								onClick={() => handleTabChange("diagnostics")}
+							>
+								Диагностика
+							</button>
+							<button
+								type="button"
+								data-testid="visit-subtab-consents"
+								className={`visit-subtab-btn ${visitSubViewTab === "consents" ? "active" : ""}`}
+								onClick={() => handleTabChange("consents")}
+							>
+								ИДС 1051н
+							</button>
+						</div>
+						{/* Плавный градиентный фейд по правому краю на мобильных экранах для индикации горизонтального скролла */}
+						<div className="sm:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--paper-soft)] to-transparent" aria-hidden="true" />
 					</div>
 				</header>
 

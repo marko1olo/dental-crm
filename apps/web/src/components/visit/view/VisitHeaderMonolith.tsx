@@ -181,17 +181,16 @@ export function VisitHeaderMonolith({
 						onClick={handleApplySomaticNormQuick}
 						data-testid="btn-somatic-norm-one-click"
 						className="secondary-button h-7 min-h-[28px] sm:min-h-0 sm:h-7 px-2 sm:px-2.5 py-0 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1 cursor-pointer transition-all shrink-0 rounded-lg"
-						title="Соматически здоров / норма (1-клик): зафиксировать норму во всех показателях и перенести в дневник 043/у"
-						aria-label="Соматически здоров / норма (1-клик)"
+						title="Заполнить нормой"
+						aria-label="Заполнить нормой"
 					>
 						<Check
 							className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0"
 							aria-hidden="true"
 						/>
-						<span className="hidden 2xl:inline">
-							Соматически здоров / норма
+						<span className="hidden sm:inline">
+							Заполнить нормой
 						</span>
-						<span className="hidden sm:inline 2xl:hidden">Норма 043/у</span>
 						<span className="sm:hidden">Норма</span>
 					</button>
 

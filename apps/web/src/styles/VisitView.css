@@ -524,4 +524,82 @@
 	flex-shrink: 0 !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   PREMIUM VISIT SUB-NAVIGATION TABS (DEFECT 2: ОЖИВЛЕНИЕ ВКЛАДОК)
+   ═══════════════════════════════════════════════════════════════════ */
+.visit-subtab-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 28px;
+	height: 28px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink);
+	background: var(--paper);
+	background: color-mix(in srgb, var(--paper) 65%, transparent);
+	border: 1px solid var(--line);
+	cursor: pointer;
+	user-select: none;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: all 0.15s ease-in-out;
+	opacity: 0.9;
+}
+
+.visit-subtab-btn:hover {
+	opacity: 1;
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--line-strong, var(--line));
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.visit-subtab-btn.active {
+	opacity: 1;
+	background: var(--paper);
+	color: var(--ink);
+	font-weight: 700;
+	border-color: var(--line-strong, var(--line));
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .visit-subtab-btn,
+[data-theme="night"] .visit-subtab-btn,
+[data-theme="cyber_xray"] .visit-subtab-btn,
+[data-theme="ocean"] .visit-subtab-btn,
+[data-theme="emerald"] .visit-subtab-btn,
+html.dark .visit-subtab-btn {
+	background: var(--paper);
+	background: color-mix(in srgb, var(--paper) 75%, transparent);
+	color: var(--ink);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .visit-subtab-btn:hover,
+[data-theme="night"] .visit-subtab-btn:hover,
+[data-theme="cyber_xray"] .visit-subtab-btn:hover,
+[data-theme="ocean"] .visit-subtab-btn:hover,
+[data-theme="emerald"] .visit-subtab-btn:hover,
+html.dark .visit-subtab-btn:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line-strong, var(--line));
+}
+
+[data-theme="dark"] .visit-subtab-btn.active,
+[data-theme="night"] .visit-subtab-btn.active,
+[data-theme="cyber_xray"] .visit-subtab-btn.active,
+[data-theme="ocean"] .visit-subtab-btn.active,
+[data-theme="emerald"] .visit-subtab-btn.active,
+html.dark .visit-subtab-btn.active {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line-strong, var(--line));
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+
 
