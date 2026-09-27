@@ -73,6 +73,51 @@
 	text-align: center;
 }
 
+/* 3.1. Explicit Column Widths (Anti-Clipping / Full Desktop Visibility) */
+.inventory-col-name {
+	min-width: 160px;
+}
+
+.inventory-col-stock {
+	width: 90px;
+	min-width: 90px;
+	max-width: 90px;
+	text-align: right;
+}
+
+.inventory-col-threshold {
+	width: 80px;
+	min-width: 80px;
+	max-width: 80px;
+	text-align: center;
+}
+
+.inventory-col-cost {
+	width: 90px;
+	min-width: 90px;
+	max-width: 90px;
+	text-align: right;
+}
+
+.inventory-col-fefo {
+	width: 150px;
+	min-width: 150px;
+	max-width: 150px;
+}
+
+.inventory-col-barcode {
+	width: 115px;
+	min-width: 110px;
+	max-width: 125px;
+}
+
+.inventory-col-actions {
+	width: 185px;
+	min-width: 185px;
+	max-width: 190px;
+	text-align: right;
+}
+
 /* 4. Stock Quantity Badge (No staircases, atomic number + unit) */
 .inventory-stock-badge {
 	display: inline-flex;
