@@ -21,13 +21,10 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
 	ShieldCheck,
-	ShieldAlert,
 	Check,
 	CheckCircle2,
 	AlertTriangle,
 	Printer,
-	ChevronDown,
-	ChevronUp,
 	Eye,
 	EyeOff,
 	Tablet,
@@ -36,8 +33,7 @@ import {
 	Award,
 	History,
 	RotateCcw,
-	ExternalLink,
-	Sparkles,
+	MoreVertical,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import {
@@ -234,6 +230,22 @@ export function VisitConsentsTab({
 
 	// Аккордеон раскрытых карточек (превью текста)
 	const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+
+	// Активное выпадающее меню действий [...] для карточки
+	const [activeDropdownKey, setActiveDropdownKey] = useState<string | null>(null);
+
+	// Закрытие выпадающего меню при клике вне него
+	useEffect(() => {
+		if (!activeDropdownKey) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (!target?.closest(".vct-dropdown-wrapper")) {
+				setActiveDropdownKey(null);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [activeDropdownKey]);
 
 	// Локальное состояние подписанных согласий пациента
 	const [consentRecords, setConsentRecords] = useState<Record<string, ConsentRecordState>>(() => {
@@ -482,13 +494,17 @@ export function VisitConsentsTab({
 
 	// Печать бланка одного согласия (заполненного)
 	const handlePrintSingleFilled = useCallback((key: ConsentTemplateKey) => {
+		if (key === "CONSENT_INSPECTION_1051N" && onFastPrintInformedConsent) {
+			onFastPrintInformedConsent();
+			return;
+		}
 		const isItemSigned = Boolean(consentRecords[key]?.isSigned) || isVisitClosed;
 		printFilledConsentTemplate(key, substitutionContext, {
 			isSigned: isItemSigned,
 			watermarkText: isItemSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК — ДЛЯ ОЗНАКОМЛЕНИЯ",
 		});
 		showToast("Бланк ИДС отправлен на печать", "success");
-	}, [consentRecords, isVisitClosed, substitutionContext]);
+	}, [consentRecords, isVisitClosed, onFastPrintInformedConsent, substitutionContext]);
 
 	// Печать чистого бланка одного согласия со строками «________»
 	const handlePrintSingleBlank = useCallback((key: ConsentTemplateKey) => {
@@ -605,25 +621,35 @@ export function VisitConsentsTab({
 					font-weight: 600;
 					cursor: pointer;
 					transition: all 0.15s ease;
-					border: 1px solid transparent;
+					border: 1px solid var(--line);
+					background: var(--paper);
+					color: var(--ink);
 					white-space: nowrap;
 					user-select: none;
 					text-decoration: none;
 					box-sizing: border-box;
 				}
 
+				.vct-btn:hover:not(:disabled) {
+					background: var(--paper-soft);
+					border-color: var(--line-strong, var(--line));
+					color: var(--ink);
+				}
+
 				.vct-btn:disabled {
-					opacity: 0.5;
+					opacity: 0.45;
 					cursor: not-allowed;
 				}
 
 				.vct-btn-primary {
-					background: var(--teal);
-					color: var(--on-teal, #ffffff);
-					border-color: var(--teal-dark, #0d9488);
+					background: var(--teal, #0d9488);
+					color: #ffffff;
+					border-color: var(--teal, #0d9488);
 				}
 				.vct-btn-primary:hover:not(:disabled) {
 					background: var(--teal-dark, #0f766e);
+					border-color: var(--teal-dark, #0f766e);
+					color: #ffffff;
 				}
 
 				.vct-btn-success {
@@ -633,32 +659,117 @@ export function VisitConsentsTab({
 				}
 				.vct-btn-success:hover:not(:disabled) {
 					filter: brightness(0.92);
+					color: #ffffff;
 				}
 
 				.vct-btn-secondary {
-					background: var(--paper-soft);
-					color: var(--ink);
-					border-color: var(--line-strong, var(--line));
-				}
-				.vct-btn-secondary:hover:not(:disabled) {
 					background: var(--paper);
-					border-color: var(--muted);
-				}
-
-				.vct-btn-outline-danger {
-					background: transparent;
-					color: var(--danger, #dc2626);
+					color: var(--ink);
 					border-color: var(--line);
 				}
-				.vct-btn-outline-danger:hover:not(:disabled) {
-					background: var(--danger-surface, #fef2f2);
-					border-color: var(--danger, #dc2626);
+				.vct-btn-secondary:hover:not(:disabled) {
+					background: var(--paper-soft);
+					border-color: var(--line-strong, var(--line));
+					color: var(--ink);
 				}
 
-				.vct-btn-sm {
-					height: 28px;
-					padding: 0 9px;
-					font-size: 11.5px;
+				.vct-btn-outline-teal {
+					background: rgba(13, 148, 136, 0.08);
+					color: var(--teal, #0d9488);
+					border-color: rgba(13, 148, 136, 0.35);
+				}
+				.vct-btn-outline-teal:hover:not(:disabled) {
+					background: rgba(13, 148, 136, 0.16);
+					border-color: var(--teal, #0d9488);
+					color: var(--teal, #0d9488);
+				}
+
+				.vct-btn-icon {
+					width: 32px;
+					height: 32px;
+					padding: 0;
+					display: inline-flex;
+					align-items: center;
+					justify-content: center;
+					border-radius: var(--radius-md, 8px);
+					background: var(--paper);
+					border: 1px solid var(--line);
+					color: var(--muted);
+					cursor: pointer;
+					transition: all 0.15s ease;
+					box-sizing: border-box;
+				}
+				.vct-btn-icon:hover:not(:disabled) {
+					background: var(--paper-soft);
+					border-color: var(--line-strong, var(--line));
+					color: var(--ink);
+				}
+				.vct-btn-icon.active {
+					background: var(--paper-soft);
+					border-color: var(--teal, #0d9488);
+					color: var(--teal, #0d9488);
+				}
+
+				.vct-dropdown-wrapper {
+					position: relative;
+					display: inline-block;
+				}
+
+				.vct-dropdown-menu {
+					position: absolute;
+					right: 0;
+					top: calc(100% + 4px);
+					min-width: 220px;
+					background: var(--paper);
+					border: 1px solid var(--line);
+					border-radius: var(--radius-lg, 10px);
+					box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+					padding: 4px;
+					z-index: 50;
+					display: flex;
+					flex-direction: column;
+					gap: 2px;
+					animation: vctDropdownFade 0.15s ease-out;
+				}
+
+				@keyframes vctDropdownFade {
+					from {
+						opacity: 0;
+						transform: translateY(-4px) scale(0.98);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0) scale(1);
+					}
+				}
+
+				.vct-dropdown-item {
+					display: flex;
+					align-items: center;
+					gap: 8px;
+					width: 100%;
+					padding: 7px 10px;
+					border-radius: 6px;
+					font-size: 12px;
+					font-weight: 500;
+					color: var(--ink);
+					background: transparent;
+					border: none;
+					cursor: pointer;
+					text-align: left;
+					transition: background 0.12s ease;
+					box-sizing: border-box;
+				}
+
+				.vct-dropdown-item:hover {
+					background: var(--paper-soft);
+					color: var(--ink);
+				}
+
+				.vct-dropdown-divider {
+					height: 1px;
+					background: var(--line);
+					margin: 2px 0;
 				}
 
 				/* Hot Path Banner */
@@ -805,13 +916,15 @@ export function VisitConsentsTab({
 				.vct-consent-card {
 					border: 1px solid var(--line);
 					border-radius: var(--radius-lg, 10px);
-					background: var(--paper-soft);
+					background: var(--paper);
 					transition: border-color 0.15s ease, box-shadow 0.15s ease;
-					overflow: hidden;
+					overflow: visible;
+					position: relative;
 				}
 
 				.vct-consent-card:hover {
 					border-color: var(--line-strong, var(--line));
+					box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
 				}
 
 				.vct-consent-card.highlight-required {
@@ -826,7 +939,7 @@ export function VisitConsentsTab({
 					display: flex;
 					align-items: center;
 					justify-content: space-between;
-					padding: 10px 14px;
+					padding: 12px 14px;
 					gap: 12px;
 					flex-wrap: wrap;
 				}
@@ -863,15 +976,15 @@ export function VisitConsentsTab({
 					font-family: monospace;
 					font-size: 10.5px;
 					font-weight: 700;
-					padding: 1px 5px;
+					padding: 2px 6px;
 					border-radius: 4px;
-					background: var(--paper);
+					background: var(--paper-soft);
 					border: 1px solid var(--line);
 					color: var(--muted);
 				}
 
 				.vct-statutory-pill {
-					font-size: 10.5px;
+					font-size: 11px;
 					font-weight: 600;
 					color: var(--muted);
 				}
@@ -894,11 +1007,13 @@ export function VisitConsentsTab({
 					display: inline-flex;
 					align-items: center;
 					gap: 5px;
-					padding: 3px 8px;
+					height: 24px;
+					padding: 0 9px;
 					border-radius: var(--radius-full, 9999px);
 					font-size: 11px;
 					font-weight: 700;
 					letter-spacing: 0.02em;
+					box-sizing: border-box;
 				}
 
 				.vct-badge-signed {
@@ -914,7 +1029,7 @@ export function VisitConsentsTab({
 				}
 
 				.vct-badge-neutral {
-					background: var(--paper);
+					background: var(--paper-soft);
 					color: var(--muted);
 					border: 1px solid var(--line);
 				}
@@ -930,15 +1045,17 @@ export function VisitConsentsTab({
 				.vct-card-actions {
 					display: flex;
 					align-items: center;
-					gap: 6px;
+					gap: 8px;
 					flex-wrap: wrap;
 				}
 
 				/* Inline Accordion Preview */
 				.vct-inline-preview {
 					border-top: 1px solid var(--line);
+					border-bottom-left-radius: var(--radius-lg, 10px);
+					border-bottom-right-radius: var(--radius-lg, 10px);
 					padding: 14px 16px;
-					background: var(--paper);
+					background: var(--paper-soft);
 					display: flex;
 					flex-direction: column;
 					gap: 12px;
@@ -1100,40 +1217,19 @@ export function VisitConsentsTab({
 				<div className="vct-title-group">
 					<h3 className="vct-title">
 						<ShieldCheck size={18} style={{ color: "var(--teal)" }} />
-						<span>Информированные согласия (ИДС) и Гарантии</span>
+						<span>Информированные согласия (ИДС) и гарантии</span>
 					</h3>
 					<p className="vct-subtitle">
-						Юридический щит врача по 323-ФЗ (Приказ № 1051н), защита персональных данных (152-ФЗ) и паспорт гарантий
+						Юридический щит врача по 323-ФЗ, защита персональных данных (152-ФЗ) и паспорт гарантий
 					</p>
 				</div>
 				<div className="vct-header-actions">
 					<button
 						type="button"
-						onClick={onFastPrint043u}
-						data-testid="btn-visit-consents-print-043u"
-						className="vct-btn vct-btn-secondary"
-						title="Мгновенная печать дневника Формы 043/у"
-					>
-						<Printer size={14} />
-						<span>Печать дневника 043/у</span>
-					</button>
-					<button
-						type="button"
-						onClick={onFastPrintInformedConsent}
-						data-testid="btn-visit-fast-print-consent-1051n"
-						className="vct-btn vct-btn-secondary"
-						style={{ color: "var(--emerald)", borderColor: "rgba(5, 150, 105, 0.4)" }}
-						title="Печать канонического бланка ИДС по Приказу 1051н"
-					>
-						<Printer size={14} />
-						<span>Печать согласия 1051н</span>
-					</button>
-					<button
-						type="button"
 						onClick={onOpenInformedConsentModal}
 						data-testid="btn-visit-open-consent-modal"
 						className="vct-btn vct-btn-secondary"
-						title="Открыть полный интерактивный каталог согласий и планшетной подписи"
+						title="Открыть полный каталог бланков согласий и планшетной подписи"
 					>
 						<Tablet size={14} />
 						<span>Выбрать бланк ИДС</span>
@@ -1308,68 +1404,108 @@ export function VisitConsentsTab({
 									</div>
 
 									<div className="vct-card-actions">
-										{/* 1-клик отметка подписи на бумаге */}
+										{/* 1. Статус / Подтверждение: 1-клик отметка подписи */}
 										<button
 											type="button"
 											onClick={() => handleTogglePaperSigned(item.key, item.title)}
-											className={`vct-btn vct-btn-sm ${isSigned ? "vct-btn-secondary" : "vct-btn-success"}`}
+											className={`vct-btn ${isSigned ? "vct-btn-secondary" : "vct-btn-success"}`}
 											title={isSigned ? "Снять отметку о подписи" : "1-клик отметка: пациент подписал согласие на бумаге"}
 										>
 											{isSigned ? (
 												<>
-													<RotateCcw size={12} />
+													<RotateCcw size={13} />
 													<span>Изменить</span>
 												</>
 											) : (
 												<>
-													<Check size={13} />
-													<span>Отметить: Подписано на бумаге</span>
+													<Check size={14} />
+													<span>Отметить подписанным</span>
 												</>
 											)}
 										</button>
 
-										{/* Печать заполненного бланка */}
+										{/* 2. Главное действие печати бланка */}
 										<button
 											type="button"
 											onClick={() => handlePrintSingleFilled(item.key)}
-											className="vct-btn vct-btn-secondary vct-btn-sm"
+											className="vct-btn vct-btn-secondary"
+											data-testid={item.key === "CONSENT_INSPECTION_1051N" ? "btn-visit-fast-print-consent-1051n" : undefined}
 											title="Распечатать предварительно заполненный бланк согласия (А4)"
 										>
 											<Printer size={13} />
 											<span>Печать бланка</span>
 										</button>
 
-										{/* Печать чистого бланка */}
-										<button
-											type="button"
-											onClick={() => handlePrintSingleBlank(item.key)}
-											className="vct-btn vct-btn-secondary vct-btn-sm"
-											title="Распечатать чистый бланк со строками «________» для ручного заполнения"
-										>
-											<FileText size={13} />
-											<span>Чистый</span>
-										</button>
-
-										{/* Инлайн-аккордеон текста (без модалок) */}
+										{/* 3. Лаконичный переключатель быстрого просмотра */}
 										<button
 											type="button"
 											onClick={() => toggleCardExpand(item.key)}
-											className="vct-btn vct-btn-secondary vct-btn-sm"
-											title={isExpanded ? "Свернуть текст" : "Раскрыть текст согласия для ознакомления"}
+											className={`vct-btn ${isExpanded ? "vct-btn-outline-teal" : "vct-btn-secondary"}`}
+											title={isExpanded ? "Скрыть текст согласия" : "Раскрыть текст согласия для ознакомления"}
 										>
-											{isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+											{isExpanded ? <EyeOff size={13} /> : <Eye size={13} />}
 											<span>{isExpanded ? "Скрыть" : "Быстрый просмотр"}</span>
 										</button>
 
-										{/* Планшетная подпись */}
-										<button
-											type="button"
-											onClick={onOpenInformedConsentModal}
-											className="vct-btn vct-btn-secondary vct-btn-sm"
-											title="Открыть модалку планшетной touch-подписи"
-										>
-											<Tablet size={13} />
-										</button>
+										{/* 4. Вторичные действия под компактной кнопкой-меню [...] */}
+										<div className="vct-dropdown-wrapper">
+											<button
+												type="button"
+												onClick={() => setActiveDropdownKey(activeDropdownKey === item.key ? null : item.key)}
+												className={`vct-btn-icon ${activeDropdownKey === item.key ? "active" : ""}`}
+												title="Дополнительные действия (чистый бланк, подпись на планшете, история)"
+												aria-label="Дополнительные действия"
+												aria-expanded={activeDropdownKey === item.key}
+											>
+												<MoreVertical size={15} />
+											</button>
+
+											{activeDropdownKey === item.key && (
+												<div className="vct-dropdown-menu" role="menu">
+													<button
+														type="button"
+														className="vct-dropdown-item"
+														role="menuitem"
+														onClick={() => {
+															setActiveDropdownKey(null);
+															handlePrintSingleBlank(item.key);
+														}}
+													>
+														<FileText size={14} style={{ color: "var(--muted)" }} />
+														<span>Чистый бланк со строками</span>
+													</button>
+													<button
+														type="button"
+														className="vct-dropdown-item"
+														role="menuitem"
+														onClick={() => {
+															setActiveDropdownKey(null);
+															onOpenInformedConsentModal?.();
+														}}
+													>
+														<Tablet size={14} style={{ color: "var(--teal)" }} />
+														<span>Подпись на планшете</span>
+													</button>
+													<div className="vct-dropdown-divider" />
+													<button
+														type="button"
+														className="vct-dropdown-item"
+														role="menuitem"
+														onClick={() => {
+															setActiveDropdownKey(null);
+															if (item.record?.integrityHash) {
+																showToast(`SHA-256: ${item.record.integrityHash}`, "info");
+															} else {
+																showToast(`Согласие «${item.title}» ожидает оформления`, "info");
+															}
+														}}
+													>
+														<History size={14} style={{ color: "var(--muted)" }} />
+														<span>История и целостность</span>
+													</button>
+												</div>
+											)}
+										</div>
 									</div>
 								</div>
 
@@ -1427,7 +1563,7 @@ export function VisitConsentsTab({
 											<button
 												type="button"
 												onClick={() => handlePrintSingleFilled(item.key)}
-												className="vct-btn vct-btn-primary vct-btn-sm"
+												className="vct-btn vct-btn-primary"
 											>
 												<Printer size={13} />
 												<span>Распечатать этот текст</span>
@@ -1435,7 +1571,7 @@ export function VisitConsentsTab({
 											<button
 												type="button"
 												onClick={() => toggleCardExpand(item.key)}
-												className="vct-btn vct-btn-secondary vct-btn-sm"
+												className="vct-btn vct-btn-secondary"
 											>
 												Закрыть превью
 											</button>
@@ -1495,10 +1631,10 @@ export function VisitConsentsTab({
 												<button
 													type="button"
 													onClick={() => handlePrintSingleFilled(doc.key)}
-													className="vct-btn vct-btn-secondary vct-btn-sm"
+													className="vct-btn vct-btn-secondary"
 													title="Повторная печать согласия из архива"
 												>
-													<Printer size={12} />
+													<Printer size={13} />
 													<span>Печать</span>
 												</button>
 											</td>
@@ -1557,7 +1693,8 @@ export function VisitConsentsTab({
 					<button
 						type="button"
 						onClick={onFastPrint043u}
-						className="vct-btn vct-btn-secondary vct-btn-sm"
+						data-testid="btn-visit-consents-print-043u"
+						className="vct-btn vct-btn-secondary"
 						title="Печать полного дневника 043/у текущего приёма"
 					>
 						<Printer size={13} />
@@ -1566,7 +1703,7 @@ export function VisitConsentsTab({
 					<button
 						type="button"
 						onClick={onOpenWarrantyModal}
-						className="vct-btn vct-btn-secondary vct-btn-sm"
+						className="vct-btn vct-btn-secondary"
 						title="Гарантийный талон и паспорт"
 					>
 						<Award size={13} />
@@ -1575,7 +1712,7 @@ export function VisitConsentsTab({
 					<button
 						type="button"
 						onClick={onOpenInformedConsentModal}
-						className="vct-btn vct-btn-secondary vct-btn-sm"
+						className="vct-btn vct-btn-secondary"
 						title="Открыть модальное окно выбора любого специализированного бланка ИДС"
 					>
 						<Tablet size={13} />
