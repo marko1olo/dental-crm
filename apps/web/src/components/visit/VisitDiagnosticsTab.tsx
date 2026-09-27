@@ -1,5 +1,5 @@
-import { Activity, Camera, ChevronDown, ChevronRight, FileText, FolderInput, Image as ImageIcon, Layers, Plus, Receipt, Scan, Trash2 } from "lucide-react";
-import React, { useState } from "react";
+import { Activity, Camera, ChevronDown, ChevronRight, FileText, FolderInput, Image as ImageIcon, Layers, MoreHorizontal, Plus, Receipt, Scan, Trash2 } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
@@ -90,6 +90,23 @@ export function VisitDiagnosticsTab(props?: {
 		String(ctx?.dashboard?.activeDoctor?.specialty || "").toLowerCase().includes("ortho") ||
 		String(ctx?.dashboard?.activeDoctor?.specialtyRu || "").toLowerCase().includes("ортодонт");
 	const [isAdvancedDiagnosticsOpen, setIsAdvancedDiagnosticsOpen] = useState<boolean>(isOrthoContext);
+	const [isPhotoAttachFormOpen, setIsPhotoAttachFormOpen] = useState<boolean>(false);
+	const [isCbctMenuOpen, setIsCbctMenuOpen] = useState<boolean>(false);
+	const cbctMenuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (cbctMenuRef.current && !cbctMenuRef.current.contains(event.target as Node)) {
+				setIsCbctMenuOpen(false);
+			}
+		};
+		if (isCbctMenuOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [isCbctMenuOpen]);
 
 	const [photoAttachments, setPhotoAttachments] = useState<ClinicalPhotoAttachment[]>([]);
 	const initialToothNumber = Number(ctx?.dashboard?.activeVisit?.diagnosisTooth) || 16;
@@ -169,115 +186,48 @@ export function VisitDiagnosticsTab(props?: {
 			data-testid="visit-diagnostics-tab"
 			className="visit-diagnostics-tab bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-4 flex flex-col gap-4 shadow-sm"
 		>
-			{/* Radiology & Advanced Imaging Quick Bar (Unified 32px Clinical Density) */}
-			<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none pb-2 border-b border-[var(--line)]">
-				<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider shrink-0 flex items-center gap-1.5 mr-1">
-					<Scan size={14} className="text-[var(--teal)]" />
-					<span>Диагностика:</span>
-				</span>
-				{/* 1 Эшелон: Прицельный визиограф и импорт снимков */}
-				<button
-					type="button"
-					onClick={() => setIsDirectRvgModalOpen(true)}
-					className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 shrink-0 flex items-center gap-1.5"
-					data-testid="btn-open-direct-rvg-modal"
-					title="Прямой снимок с визиографа (RVG)"
-				>
-					<Camera size={14} className="text-[var(--teal)]" />
-					<span>Снимок RVG</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => setIsHotFolderModalOpen(true)}
-					className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 shrink-0 flex items-center gap-1.5"
-					data-testid="btn-open-hot-folder-modal"
-					title="Автоимпорт из Hot Folder (EzDent / Romexis)"
-				>
-					<FolderInput size={14} className="text-[var(--teal)]" />
-					<span>Hot Folder</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => setIsDicomViewerModalOpen(true)}
-					className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 shrink-0 flex items-center gap-1.5"
-					data-testid="btn-open-dicom-viewer-modal"
-					title="Просмотр DICOM / ОПТГ панорамы / КТ-серии"
-				>
-					<ImageIcon size={14} className="text-[var(--teal)]" />
-					<span>DICOM / ОПТГ</span>
-				</button>
+			{/* Diagnostic Context Header & Utilities (Progressive Disclosure, Zero Button Duplication) */}
+			<div className="flex items-center justify-between gap-3 pb-3 border-b border-[var(--line)] flex-wrap">
+				<div className="flex items-center gap-2.5">
+					<div className="w-8 h-8 rounded-lg bg-[var(--teal-soft,#0d948815)] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0 border border-[var(--teal,#0d9488)]/20 shadow-2xs">
+						<Scan size={16} />
+					</div>
+					<div>
+						<div className="flex items-center gap-2 flex-wrap">
+							<h2 className="text-xs sm:text-sm font-bold text-[var(--ink)] m-0 leading-tight">
+								Диагностический комплекс
+							</h2>
+							{initialToothNumber ? (
+								<span className="text-[11px] font-bold text-[var(--teal)] bg-[var(--teal-soft,#0d948815)] px-2 py-0.5 rounded-md border border-[var(--teal)]/20">
+									Зуб FDI {initialToothNumber}
+								</span>
+							) : null}
+						</div>
+					</div>
+				</div>
 
-				<div className="w-[1px] h-4 bg-[var(--line)] shrink-0 my-auto" />
-
-				{/* 2 Эшелон: КЛКТ 3D, направления и фотопротокол */}
-				<button
-					type="button"
-					onClick={() => setIsCbctModalOpen(true)}
-					className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 shrink-0 flex items-center gap-1.5"
-					data-testid="btn-open-cbct-studio-modal"
-					title="3D КЛКТ / КТ-исследование (MPR & Имплантация)"
-				>
-					<Activity size={14} className="text-[var(--teal)]" />
-					<span>3D КЛКТ (MPR)</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => {
-						addCbctToFinanceAndPlan({
-							patientId: visitPatientId ?? activePatient?.id,
-							toothFdi: initialToothNumber || 16,
-							doctorName: dashboard?.activeDoctor?.fullName || ctx?.auth?.currentUser?.name,
-						});
-					}}
-					className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--teal-soft,#0d948815)] hover:bg-[var(--teal-soft,#0d948825)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 cursor-pointer transition-all shadow-2xs active:scale-98 shrink-0 flex items-center gap-1.5"
-					data-testid="btn-add-cbct-service-to-visit"
-					title="В 1 клик добавить услугу КЛКТ (3 800 ₽) в смету приёма"
-				>
-					<Receipt size={14} />
-					<span>+ КЛКТ в смету</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => setIsRadiologyModalOpen(true)}
-					className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 shrink-0 flex items-center gap-1.5"
-					data-testid="btn-open-radiology-referral-modal"
-					title="Направление на КЛКТ / ОПТГ / ТРГ"
-				>
-					<Scan size={14} className="text-[var(--teal)]" />
-					<span>Направление на снимок</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => setIsPhotoProtocolModalOpen(true)}
-					className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 shrink-0 flex items-center gap-1.5"
-					title="Сетка фотопротокола (12 слотов)"
-				>
-					<Camera size={14} className="text-[var(--teal)]" />
-					<span>Фотопротокол</span>
-				</button>
-
-				<div className="w-[1px] h-4 bg-[var(--line)] shrink-0 my-auto" />
-
-				{/* 3 Эшелон: Инструментальные замеры */}
-				<button
-					type="button"
-					onClick={() => setIsEndoLogModalOpen(true)}
-					className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 shrink-0 flex items-center gap-1.5"
-					data-testid="btn-open-endo-canal-modal"
-					title="Эндодонтия: Журнал длины каналов (WL)"
-				>
-					<Layers size={14} className="text-[var(--teal)]" />
-					<span>Длина каналов (WL)</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => setIsImplantPassportModalOpen(true)}
-					className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 shrink-0 flex items-center gap-1.5"
-					title="Хирургический паспорт имплантата & ISQ"
-				>
-					<Activity size={14} className="text-[var(--teal)]" />
-					<span>Хирургия & ISQ</span>
-				</button>
+				{/* Quick Non-duplicate Utilities: Radiology Referral & 12-Slot Photo Protocol */}
+				<div className="flex items-center gap-1.5 shrink-0">
+					<button
+						type="button"
+						onClick={() => setIsRadiologyModalOpen(true)}
+						className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
+						data-testid="btn-open-radiology-referral-modal"
+						title="Выписать направление на КЛКТ / ОПТГ / ТРГ"
+					>
+						<FileText size={14} className="text-[var(--teal)]" />
+						<span>Направление</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setIsPhotoProtocolModalOpen(true)}
+						className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
+						title="Открыть сетку фотопротокола (12 слотов)"
+					>
+						<Camera size={14} className="text-[var(--teal)]" />
+						<span>Фотопротокол (12 слотов)</span>
+					</button>
+				</div>
 			</div>
 
 			{/* Target Patient Status Notice (Quiet, Non-blocking, No Clumsy Dashed Box) */}
@@ -297,7 +247,7 @@ export function VisitDiagnosticsTab(props?: {
 						onClick={() =>
 							visitPatientId && setSelectedPatientId(visitPatientId)
 						}
-						className="h-7 px-2.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors cursor-pointer shrink-0"
+						className="h-8 px-3 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors cursor-pointer shrink-0"
 					>
 						Писать в карту {visitPatientName ?? "пациента приёма"}
 					</button>
@@ -316,7 +266,7 @@ export function VisitDiagnosticsTab(props?: {
 						onClick={() =>
 							visitPatientId && setSelectedPatientId(visitPatientId)
 						}
-						className="h-7 px-2.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white transition-colors cursor-pointer shrink-0"
+						className="h-8 px-3 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white transition-colors cursor-pointer shrink-0"
 					>
 						Открыть карту {visitPatientName ?? "пациента приёма"}
 					</button>
@@ -329,7 +279,7 @@ export function VisitDiagnosticsTab(props?: {
 					data-testid="visit-imaging-target-ok"
 				>
 					<span className="w-1.5 h-1.5 rounded-full bg-[var(--teal)] shrink-0 inline-block" />
-					<span>Снимок и заключение сохранятся в карту: <strong>{visitPatientName || selectedPatientName}</strong>{initialToothNumber ? ` · Зуб FDI ${initialToothNumber}` : ""}</span>
+					<span>Снимок и заключение сохранятся в карту: <strong className="text-[var(--ink)]">{visitPatientName || selectedPatientName}</strong>{initialToothNumber ? ` · Зуб FDI ${initialToothNumber}` : ""}</span>
 				</p>
 			) : null}
 
@@ -350,8 +300,8 @@ export function VisitDiagnosticsTab(props?: {
 			<div className="flex flex-col gap-2.5">
 				<div className="flex items-center justify-between gap-3 flex-wrap">
 					<div className="flex items-center gap-2">
-						<div className="w-7 h-7 rounded-lg bg-[var(--teal-soft,#0d948815)] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0 border border-[var(--teal,#0d9488)]/20">
-							<Camera size={14} />
+						<div className="w-8 h-8 rounded-lg bg-[var(--teal-soft,#0d948815)] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0 border border-[var(--teal,#0d9488)]/20 shadow-2xs">
+							<Camera size={15} />
 						</div>
 						<div className="flex items-center gap-2 flex-wrap">
 							<h3 className="text-xs sm:text-sm font-bold text-[var(--ink)] m-0">
@@ -372,28 +322,31 @@ export function VisitDiagnosticsTab(props?: {
 						<button
 							type="button"
 							onClick={() => setIsDirectRvgModalOpen(true)}
-							className="h-7 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1"
+							data-testid="btn-open-direct-rvg-modal"
+							className="h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--teal)] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] border border-[var(--teal)] shadow-2xs active:scale-98 transition-all cursor-pointer flex items-center gap-1.5"
 							title="Прямой захват снимка с датчика визиографа"
 						>
-							<Camera size={13} className="text-[var(--teal)]" />
-							<span>Захват с визиографа</span>
+							<Camera size={14} />
+							<span>+ Захват с визиографа</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setIsHotFolderModalOpen(true)}
-							className="h-7 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1"
+							data-testid="btn-open-hot-folder-modal"
+							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
 							title="Автоимпорт из Hot Folder (EzDent / Romexis / Visiography)"
 						>
-							<FolderInput size={13} className="text-[var(--teal)]" />
+							<FolderInput size={14} className="text-[var(--teal)]" />
 							<span>Hot Folder</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setIsDicomViewerModalOpen(true)}
-							className="h-7 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1"
+							data-testid="btn-open-dicom-viewer-modal"
+							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 cursor-pointer transition-all shadow-2xs active:scale-98 flex items-center gap-1.5"
 							title="Открыть DICOM / ОПТГ панораму"
 						>
-							<ImageIcon size={13} className="text-[var(--teal)]" />
+							<ImageIcon size={14} className="text-[var(--teal)]" />
 							<span>DICOM / ОПТГ</span>
 						</button>
 					</div>
@@ -409,7 +362,7 @@ export function VisitDiagnosticsTab(props?: {
 
 			{/* ═══════════════════════════════════════════════════════════════════════
 			    2 ЭШЕЛОН (30–50% ПРИЁМОВ):
-			    Дентальный фотопротокол («До / После», фото зуба макро, протокол улыбки)
+			    Дентальный фотопротокол («До / После») — Progressive Disclosure
 			    ═══════════════════════════════════════════════════════════════════════ */}
 			<div
 				data-testid="visit-photo-protocol-card"
@@ -421,7 +374,7 @@ export function VisitDiagnosticsTab(props?: {
 							<Camera size={18} />
 						</div>
 						<div>
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-2 flex-wrap">
 								<strong className="text-xs sm:text-sm font-bold text-[var(--ink)]">
 									Дентальный фотопротокол («До / После»)
 								</strong>
@@ -438,74 +391,92 @@ export function VisitDiagnosticsTab(props?: {
 						</div>
 					</div>
 
-					<button
-						type="button"
-						onClick={() => setIsPhotoProtocolModalOpen(true)}
-						data-testid="open-visit-photo-protocol-modal-btn"
-						className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 font-semibold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
-					>
-						<Camera size={14} className="text-[var(--teal)]" />
-						<span>Сетка протокола (12 слотов)</span>
-					</button>
+					<div className="flex items-center gap-1.5 shrink-0">
+						<button
+							type="button"
+							onClick={() => setIsPhotoAttachFormOpen((prev) => !prev)}
+							className={`h-8 px-3 rounded-lg border font-semibold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-98 transition-all cursor-pointer ${
+								isPhotoAttachFormOpen
+									? "bg-[var(--teal-soft,#0d948815)] text-[var(--teal)] border-[var(--teal)]/40"
+									: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]/40"
+							}`}
+							title="Прикрепить снимок к зубу"
+						>
+							<Plus size={14} className={isPhotoAttachFormOpen ? "rotate-45 transition-transform" : "text-[var(--teal)] transition-transform"} />
+							<span>{isPhotoAttachFormOpen ? "Скрыть форму" : "+ Добавить фото"}</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setIsPhotoProtocolModalOpen(true)}
+							data-testid="open-visit-photo-protocol-modal-btn"
+							className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 font-semibold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
+							title="Сетка фотопротокола (12 слотов)"
+						>
+							<Camera size={14} className="text-[var(--teal)]" />
+							<span>Сетка протокола (12 слотов)</span>
+						</button>
+					</div>
 				</div>
 
-				{/* Compact Aligned Quick-Attach Toolbar (32px Unified Height) */}
-				<div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--line)]">
-					<div className="flex items-center gap-1.5 text-xs text-[var(--muted)] font-medium">
-						<span>Зуб:</span>
-						<select
-							id="photo-tooth-select"
-							value={selectedToothForPhoto}
-							onChange={(e) => setSelectedToothForPhoto(Number(e.target.value))}
-							className="h-8 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] px-2 focus:outline-none focus:border-[var(--teal)] cursor-pointer"
+				{/* Progressive Disclosure: Collapsible Quick-Attach Form (Hidden by default) */}
+				{isPhotoAttachFormOpen && (
+					<div className="pt-2.5 border-t border-[var(--line)] flex flex-wrap items-center gap-2 animate-in fade-in duration-200">
+						<div className="flex items-center gap-1.5 text-xs text-[var(--muted)] font-medium">
+							<span>Зуб:</span>
+							<select
+								id="photo-tooth-select"
+								value={selectedToothForPhoto}
+								onChange={(e) => setSelectedToothForPhoto(Number(e.target.value))}
+								className="h-8 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] px-2 focus:outline-none focus:border-[var(--teal)] cursor-pointer"
+							>
+								<option value={0}>Общий вид</option>
+								{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28, 48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
+									<option key={t} value={t}>
+										Зуб {t}
+									</option>
+								))}
+							</select>
+						</div>
+
+						<div className="flex items-center gap-1.5 text-xs text-[var(--muted)] font-medium">
+							<span>Этап:</span>
+							<select
+								id="photo-stage-select"
+								value={selectedPhotoType}
+								onChange={(e) => setSelectedPhotoType(e.target.value as any)}
+								className="h-8 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] px-2 focus:outline-none focus:border-[var(--teal)] cursor-pointer"
+							>
+								<option value="before">До лечения</option>
+								<option value="process">В процессе (коффердам/преп)</option>
+								<option value="after">После лечения (контроль)</option>
+								<option value="intraoral_macro">Внутриротовой макро</option>
+								<option value="face_portrait">Портрет лица</option>
+							</select>
+						</div>
+
+						<div className="flex-1 min-w-[200px]">
+							<input
+								id="photo-comment-input"
+								type="text"
+								placeholder="Клинический комментарий (цвет, анатомическая моделировка)..."
+								value={photoComment}
+								onChange={(e) => setPhotoComment(e.target.value)}
+								className="w-full h-8 px-2.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)]"
+							/>
+						</div>
+
+						<button
+							type="button"
+							onClick={handleAddPhoto}
+							className="h-8 px-3.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] text-xs font-semibold flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
 						>
-							<option value={0}>Общий вид</option>
-							{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28, 48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
-								<option key={t} value={t}>
-									Зуб {t}
-								</option>
-							))}
-						</select>
+							<Plus size={14} />
+							<span>Привязать</span>
+						</button>
 					</div>
+				)}
 
-					<div className="flex items-center gap-1.5 text-xs text-[var(--muted)] font-medium">
-						<span>Этап:</span>
-						<select
-							id="photo-stage-select"
-							value={selectedPhotoType}
-							onChange={(e) => setSelectedPhotoType(e.target.value as any)}
-							className="h-8 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] px-2 focus:outline-none focus:border-[var(--teal)] cursor-pointer"
-						>
-							<option value="before">До лечения</option>
-							<option value="process">В процессе (коффердам/преп)</option>
-							<option value="after">После лечения (контроль)</option>
-							<option value="intraoral_macro">Внутриротовой макро</option>
-							<option value="face_portrait">Портрет лица</option>
-						</select>
-					</div>
-
-					<div className="flex-1 min-w-[180px]">
-						<input
-							id="photo-comment-input"
-							type="text"
-							placeholder="Клинический комментарий (цвет, анатомическая моделировка)..."
-							value={photoComment}
-							onChange={(e) => setPhotoComment(e.target.value)}
-							className="w-full h-8 px-2.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)]"
-						/>
-					</div>
-
-					<button
-						type="button"
-						onClick={handleAddPhoto}
-						className="h-8 px-3 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] text-xs font-semibold flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
-					>
-						<Plus size={14} />
-						<span>Привязать</span>
-					</button>
-				</div>
-
-				{/* List of Attached Photos */}
+				{/* List of Attached Photos or Quiet State */}
 				{photoAttachments.length > 0 ? (
 					<div className="pt-2 border-t border-[var(--line)] space-y-2">
 						<div className="text-[11px] font-bold text-[var(--muted)]">
@@ -549,6 +520,10 @@ export function VisitDiagnosticsTab(props?: {
 							))}
 						</div>
 					</div>
+				) : !isPhotoAttachFormOpen ? (
+					<div className="pt-2 border-t border-[var(--line)]/50 text-[11px] text-[var(--muted)] flex items-center justify-between">
+						<span>Снимки не прикреплены. Нажмите «+ Добавить фото» для быстрой привязки к зубу FDI или откройте сетку.</span>
+					</div>
 				) : null}
 			</div>
 
@@ -560,7 +535,7 @@ export function VisitDiagnosticsTab(props?: {
 				{/* 3D CBCT / Panoramic OPG Card */}
 				<div
 					data-testid="visit-cbct-optg-card"
-					className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--line-strong)] flex flex-col justify-between gap-3 shadow-2xs transition-all"
+					className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--line-strong)] flex flex-col justify-between gap-3 shadow-2xs transition-all relative"
 				>
 					<div className="flex items-start gap-3">
 						<div className="w-9 h-9 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--teal)] flex items-center justify-center shrink-0 shadow-2xs">
@@ -581,50 +556,74 @@ export function VisitDiagnosticsTab(props?: {
 						</div>
 					</div>
 
-					<div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[var(--line)]/50">
+					<div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--line)]/50 relative" ref={cbctMenuRef}>
 						<button
 							type="button"
 							onClick={() => setIsCbctModalOpen(true)}
-							data-testid="open-visit-cbct-studio-btn"
-							className="h-8 px-2.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 font-semibold text-xs flex items-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
+							data-testid="btn-open-cbct-studio-modal"
+							id="open-visit-cbct-studio-btn"
+							className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 font-semibold text-xs flex items-center gap-1.5 shadow-2xs active:scale-98 transition-all cursor-pointer flex-1 justify-center"
 							title="3D КЛКТ Studio (MPR-срезы & Имплантация)"
 						>
-							<Activity size={13} className="text-[var(--teal)]" />
-							<span>3D КЛКТ</span>
+							<Activity size={14} className="text-[var(--teal)]" />
+							<span>Открыть 3D КЛКТ Studio</span>
 						</button>
-						<button
-							type="button"
-							onClick={() => {
-								addCbctToFinanceAndPlan({
-									patientId: visitPatientId ?? activePatient?.id,
-									toothFdi: initialToothNumber || 16,
-									doctorName: dashboard?.activeDoctor?.fullName || ctx?.auth?.currentUser?.name,
-								});
-							}}
-							className="h-8 px-2 rounded-lg bg-[var(--teal-soft,#0d948815)] hover:bg-[var(--teal-soft,#0d948825)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 font-semibold text-xs flex items-center gap-1 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
-							title="В 1 клик добавить услугу КЛКТ (3 800 ₽) в смету приёма"
-						>
-							<Receipt size={13} />
-							<span>+ В смету</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setIsRadiologyModalOpen(true)}
-							className="h-8 px-2 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 font-semibold text-xs flex items-center gap-1 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
-							title="Выписать направление на КЛКТ / ОПТГ / ТРГ"
-						>
-							<Scan size={13} className="text-[var(--teal)]" />
-							<span>Направление</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setIsDicomViewerModalOpen(true)}
-							className="h-8 px-2 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 font-semibold text-xs flex items-center gap-1 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
-							title="Просмотр DICOM / КТ-серии"
-						>
-							<ImageIcon size={13} className="text-[var(--teal)]" />
-							<span>DICOM</span>
-						</button>
+
+						{/* Compact Dropdown Menu «...» for Secondary Actions */}
+						<div className="relative">
+							<button
+								type="button"
+								onClick={() => setIsCbctMenuOpen((prev) => !prev)}
+								className="h-8 w-8 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 flex items-center justify-center transition-all cursor-pointer shadow-2xs active:scale-98"
+								title="Дополнительные действия КЛКТ"
+								aria-label="Дополнительные действия КЛКТ"
+							>
+								<MoreHorizontal size={15} />
+							</button>
+
+							{isCbctMenuOpen && (
+								<div className="absolute right-0 bottom-full mb-1.5 w-56 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-xl z-20 py-1 flex flex-col gap-0.5 text-xs animate-in fade-in duration-150">
+									<button
+										type="button"
+										onClick={() => {
+											setIsCbctMenuOpen(false);
+											addCbctToFinanceAndPlan({
+												patientId: visitPatientId ?? activePatient?.id,
+												toothFdi: initialToothNumber || 16,
+												doctorName: dashboard?.activeDoctor?.fullName || ctx?.auth?.currentUser?.name,
+											});
+										}}
+										data-testid="btn-add-cbct-service-to-visit"
+										className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+									>
+										<Receipt size={14} className="text-[var(--teal)]" />
+										<span>+ КЛКТ в смету (3 800 ₽)</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setIsCbctMenuOpen(false);
+											setIsRadiologyModalOpen(true);
+										}}
+										className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+									>
+										<Scan size={14} className="text-[var(--teal)]" />
+										<span>Направление на снимок</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setIsCbctMenuOpen(false);
+											setIsDicomViewerModalOpen(true);
+										}}
+										className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors"
+									>
+										<ImageIcon size={14} className="text-[var(--teal)]" />
+										<span>Просмотр DICOM серии</span>
+									</button>
+								</div>
+							)}
+						</div>
 					</div>
 				</div>
 
@@ -657,7 +656,7 @@ export function VisitDiagnosticsTab(props?: {
 							type="button"
 							onClick={() => setIsEndoLogModalOpen(true)}
 							data-testid="btn-open-endo-canal-modal"
-							className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 font-semibold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
+							className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 font-semibold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer w-full sm:w-auto"
 						>
 							<Layers size={14} className="text-[var(--teal)]" />
 							<span>Журнал каналов (WL)</span>
@@ -694,7 +693,7 @@ export function VisitDiagnosticsTab(props?: {
 							type="button"
 							onClick={() => setIsImplantPassportModalOpen(true)}
 							data-testid="open-implant-passport-modal-btn"
-							className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 font-semibold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
+							className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 font-semibold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer w-full sm:w-auto"
 						>
 							<Activity size={14} className="text-[var(--teal)]" />
 							<span>Хирургический паспорт & ISQ</span>
@@ -784,7 +783,7 @@ export function VisitDiagnosticsTab(props?: {
 								type="button"
 								onClick={() => setIsCephModalOpen(true)}
 								data-testid="open-visit-ceph-modal-btn"
-								className="h-8 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 font-semibold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
+								className="h-8 px-3 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]/40 font-semibold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-98 transition-all cursor-pointer"
 							>
 								<Activity size={14} className="text-[var(--teal)]" />
 								<span>Открыть анализ ТРГ</span>
