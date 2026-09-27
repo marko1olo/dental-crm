@@ -1,0 +1,302 @@
+/* ==========================================================================
+   SANPIN ZERO-FRICTION & AUTOMATION DESIGN SYSTEM (apps/web/src/styles/modules/sanpin.css)
+   Complies with .agents/DESIGNER_VISUAL_INQUISITION_BIBLE.md & THE_HAMMER_MASTER_PROMPT.md
+   - 32px height, 8px border-radius, strict single-line toolbars
+   - No glaring white flashes in dark themes (var(--paper), var(--paper-strong), var(--line))
+   - Segmented period switch (День | Неделя | Месяц) with smooth sliding container
+   - Zero raw emojis (100% Lucide icons), quiet system telemetry
+   ========================================================================== */
+
+.sanpin-container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+	padding: 0.85rem 1.15rem;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #1e293b);
+	border-radius: 8px;
+	min-height: 80vh;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .sanpin-container,
+.dark .sanpin-container {
+	background: var(--paper-strong, #0f172a);
+	color: var(--ink, #f8fafc);
+}
+
+/* Header & Title Area */
+.sanpin-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.25rem 0 0.5rem;
+	border-bottom: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+	min-height: 40px;
+	box-sizing: border-box;
+}
+
+.sanpin-title-block {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+	flex-shrink: 0;
+}
+
+.sanpin-title-block h1 {
+	font-size: 1.05rem;
+	font-weight: 700;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .sanpin-title-block h1,
+.dark .sanpin-title-block h1 {
+	color: #f8fafc;
+}
+
+/* Regulatory & Quality Badges (Quiet & Reassuring, No Alarming Red Blobs) */
+.sanpin-badge-gov {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: 0.725rem;
+	font-weight: 600;
+	background: rgba(16, 185, 129, 0.12);
+	color: #059669;
+	padding: 0.2rem 0.55rem;
+	border-radius: 6px;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+	height: 26px;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .sanpin-badge-gov,
+.dark .sanpin-badge-gov {
+	background: rgba(16, 185, 129, 0.2);
+	color: #34d399;
+	border-color: rgba(52, 211, 153, 0.3);
+}
+
+.sanpin-badge-quality {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: 0.725rem;
+	font-weight: 600;
+	background: rgba(13, 148, 136, 0.1);
+	color: var(--teal, #0d9488);
+	padding: 0.2rem 0.6rem;
+	border-radius: 6px;
+	border: 1px solid rgba(13, 148, 136, 0.25);
+	height: 26px;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .sanpin-badge-quality,
+.dark .sanpin-badge-quality {
+	background: rgba(45, 212, 191, 0.15);
+	color: #2dd4bf;
+	border-color: rgba(45, 212, 191, 0.3);
+}
+
+/* Header Action Strip: Single Row, Strict 32px Height, 8px Radius */
+.sanpin-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-shrink: 0;
+	flex-wrap: nowrap;
+}
+
+/* Segmented Period Switcher (День | Неделя | Месяц) */
+.sanpin-period-switch {
+	display: inline-flex;
+	align-items: center;
+	background: var(--paper-soft, #f1f5f9);
+	padding: 2px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	height: 32px;
+	min-height: 32px;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .sanpin-period-switch,
+.dark .sanpin-period-switch {
+	background: #1e293b;
+	border-color: #334155;
+}
+
+.sanpin-period-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 0.65rem;
+	height: 26px;
+	min-height: 26px;
+	font-size: 0.78rem;
+	font-weight: 600;
+	border-radius: 6px;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.sanpin-period-btn:hover {
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .sanpin-period-btn:hover,
+.dark .sanpin-period-btn:hover {
+	color: #f8fafc;
+}
+
+.sanpin-period-btn.active {
+	background: var(--paper, #ffffff);
+	color: var(--teal, #0d9488);
+	font-weight: 700;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .sanpin-period-btn.active,
+.dark .sanpin-period-btn.active {
+	background: var(--paper-strong, #0f172a);
+	color: #2dd4bf;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Primary CTA Button: 32px Height, 8px Radius, Dominant Emerald/Teal */
+.sanpin-btn-primary-cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 0.85rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	border-radius: 8px;
+	border: 1px solid var(--teal, #0d9488);
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	cursor: pointer;
+	white-space: nowrap;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+	transition: all 0.15s ease;
+}
+
+.sanpin-btn-primary-cta:hover {
+	background: #0f766e;
+	border-color: #0f766e;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.35);
+}
+
+[data-theme="dark"] .sanpin-btn-primary-cta,
+.dark .sanpin-btn-primary-cta {
+	background: #0d9488;
+	border-color: #0d9488;
+	color: #ffffff;
+}
+
+[data-theme="dark"] .sanpin-btn-primary-cta:hover,
+.dark .sanpin-btn-primary-cta:hover {
+	background: #14b8a6;
+	border-color: #14b8a6;
+}
+
+/* Secondary CTA: Print for Rospotrebnadzor */
+.sanpin-btn-export-cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 0.75rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #1e293b);
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+
+.sanpin-btn-export-cta:hover {
+	background: var(--paper-soft, #f1f5f9);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+}
+
+[data-theme="dark"] .sanpin-btn-export-cta,
+.dark .sanpin-btn-export-cta {
+	background: #1e293b;
+	border-color: #334155;
+	color: #e2e8f0;
+}
+
+[data-theme="dark"] .sanpin-btn-export-cta:hover,
+.dark .sanpin-btn-export-cta:hover {
+	background: #334155;
+	border-color: #2dd4bf;
+	color: #2dd4bf;
+}
+
+/* Options Button */
+.sanpin-btn-options {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.3rem;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 0.65rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #334155);
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+
+.sanpin-btn-options:hover {
+	background: var(--paper-soft, #f1f5f9);
+	border-color: var(--brand-primary, #2563eb);
+}
+
+[data-theme="dark"] .sanpin-btn-options,
+.dark .sanpin-btn-options {
+	background: #1e293b;
+	border-color: #334155;
+	color: #cbd5e1;
+}
+
+[data-theme="dark"] .sanpin-btn-options:hover,
+.dark .sanpin-btn-options:hover {
+	background: #334155;
+	color: #f8fafc;
+}
+
+/* Table Toolbar Controls: Strict 32px Height, 8px Radius */
+.sanpin-table-toolbar button,
+.sanpin-table-toolbar select,
+.sanpin-table-toolbar input {
+	height: 32px !important;
+	min-height: 32px !important;
+	border-radius: 8px !important;
+	font-size: 0.8125rem !important;
+}

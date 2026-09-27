@@ -1,3 +1,5 @@
+@import "../../styles/modules/sanpin.css";
+
 /* ==========================================================================
    SANPIN & PRODUCTION CONTROL REGISTERS DESIGN SYSTEM (СанПиН 3.3686-21)
    ========================================================================== */
@@ -9,7 +11,7 @@
 	padding: 0.85rem 1.15rem;
 	background: var(--paper, #ffffff);
 	color: var(--ink, #1e293b);
-	border-radius: 0.75rem;
+	border-radius: 8px;
 	min-height: 80vh;
 	box-sizing: border-box;
 }
@@ -457,7 +459,7 @@
 
 .sanpin-input, .sanpin-select {
 	padding: 0.35rem 0.65rem;
-	border-radius: 0.375rem;
+	border-radius: 8px;
 	border: 1px solid var(--line, #cbd5e1);
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
@@ -490,7 +492,7 @@
 	padding: 0.35rem 0.85rem;
 	font-size: 0.8125rem;
 	font-weight: 600;
-	border-radius: 0.375rem;
+	border-radius: 8px;
 	border: 1px solid transparent;
 	cursor: pointer;
 	min-height: 32px;
