@@ -479,6 +479,7 @@ export function WorkspaceSidebar({
 			) : null}
 			<div className="sidebar-footer max-w-full shrink-0 mt-auto pb-2 flex items-center justify-between">
 				<ClinicControlPill onLockSession={onLockSession} />
+				<ThemeQuickAccessWidget variant="footer" collapsed={collapsed} />
 				<button
 					className="icon-button sidebar-collapse-button"
 					type="button"
@@ -918,9 +919,6 @@ export function WorkspaceTopbar({
           раскладку, которой не существует.
         */}
 				<WorkspaceActionsMount />
-
-				{/* Быстрый доступ к темам оформления в десктопном топбаре (32px, 8px радиус) */}
-				<ThemeQuickAccessWidget variant="topbar" />
 
 				{/*
           КОПИЛОТ / КЛИНИЧЕСКИЙ ИИ-АССИСТЕНТ — крупная кнопка в шапке в 1 клик.
