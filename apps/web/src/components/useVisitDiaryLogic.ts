@@ -371,20 +371,18 @@ export type DiaryLoadState =
 	/** Прочитать не удалось. `status` — код ответа, null — до сервера не дошли. */
 	| { readonly phase: "failed"; readonly status: number | null };
 
+const UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** Как называется содержимое этой панели в текстах состояний. */
 const DIARY_SUBJECT: PanelSubject = {
-	// Целая согласованная строка: слова «не загружены» больше не дописывает общий
-	// модуль, поэтому число и род называет тот, кто знает существительное. Тот же
-	// оборот стоит в двух запретах сохранения ниже («Записи приёма не прочитаны»),
-	// поэтому здесь взято «не загружены» — иначе одна и та же фраза прозвучала бы
-	// в заголовке и сразу под ним.
-	notLoadedTitle: "Записи приёма не загружены",
-	accusative: "записи приёма",
+	notLoadedTitle: "Дневник не синхронизирован",
+	accusative: "дневник приёма",
 	emptyTitle: "Дневник приёма ещё не заполнен",
 	emptyHint:
 		"Заполните разделы S, O, A, P и нажмите «Сохранить черновик» — дальше запись сохраняется сама каждые 30 секунд.",
 	failureConsequence:
-		"Не считайте дневник пустым: он не прочитан. Не набирайте заново — обновите страницу. Пока запись не прочитана, сохранение и подписание отключены, чтобы не записать пустые поля поверх сохранённого текста.",
+		"Проверьте подключение и нажмите «Обновить». Черновик сохранён локально.",
 };
 
 /** Объект из тела ответа или null. Массив и скаляр объектом не считаются. */
@@ -702,17 +700,43 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setDiaryDoctorSpecialty(null);
 		autosaveFailureReportedRef.current = false;
 
-		/** Отказ чтения: состояние + сообщение человеку с подсказкой что делать. */
-		const reportLoadFailure = (status: number | null) => {
+		/** Отказ чтения: состояние + предупреждение человеку при явном повторе. */
+		const reportLoadFailure = (status: number | null, shouldToast = true) => {
 			if (!alive) return;
 			setLoadState({ phase: "failed", status });
-			const text = panelStateText(DIARY_SUBJECT, { phase: "failed", status });
-			// 14 секунд вместо обычных 4: это предупреждение о потере записи,
-			// его надо успеть прочитать целиком.
-			showToast(`${text.title} ${text.hint}`, "error", 14000);
+			if (shouldToast) {
+				showToast(
+					"Дневник не синхронизирован. Проверьте подключение и нажмите «Обновить». Черновик сохранён локально.",
+					"warning",
+					5000,
+				);
+			}
 		};
 
 		const loadDiary = async () => {
+			// 1. Если visitId пустой, новый или черновой без UUID (предпросмотр/создание) — это новый приём
+			if (
+				!visitId ||
+				!UUID_REGEX.test(visitId) ||
+				visitId === "new" ||
+				visitId === "draft" ||
+				visitId === "preview"
+			) {
+				setDiaryDoctorFullName(null);
+				setDiaryDoctorSpecialty(null);
+				setLoadState({ phase: "empty" });
+				return;
+			}
+
+			// 2. В режиме офлайн переходим к работе с локальным черновиком
+			const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+			if (isOffline) {
+				setDiaryDoctorFullName(null);
+				setDiaryDoctorSpecialty(null);
+				setLoadState({ phase: "empty" });
+				return;
+			}
+
 			let status: number | null = null;
 			/* Секрет берётся на момент запроса, а не на момент рендера эффекта. */
 			const headerSource = authRef.current;
@@ -725,21 +749,53 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 							: {},
 				});
 				status = response.status;
-				// Тело читается один раз строкой: на пустом теле res.json() бросает
-				// исключение с английским текстом, и прежний catch превращал это в
-				// то же ложное «дневник пуст».
 				const rawBody = await response.text();
-				if (!response.ok) {
-					logger.error(`[diary load] ${status} ${rawBody.slice(0, 300)}`);
-					reportLoadFailure(status);
+
+				// 3. Сервер вернул 404 — приём ещё не сохранён в БД клиники, это новый приём
+				if (status === 404) {
+					if (!alive) return;
+					setDiaryDoctorFullName(null);
+					setDiaryDoctorSpecialty(null);
+					setLoadState({ phase: "empty" });
+
+					// Гидратация из store (ЭМК), если есть набранный текст
+					const storeState = useVisitStore.getState();
+					const formFromStore = storeState.visitNoteForm ?? {};
+					const prefill = soapPrefillFromVisitNote(formFromStore);
+					if (Object.keys(prefill).length > 0) {
+						hasHydratedFromStoreRef.current = visitId;
+						setRawDiary((prev) => ({ ...prev, ...prefill }));
+						if (prefill.diagnosisIcd10) {
+							setIcdSearch((c) => (c.trim() ? c : (prefill.diagnosisIcd10 ?? c)));
+						}
+					}
 					return;
 				}
+
+				// 4. Vite SPA fallback / бэкенд не запущен (получен HTML вместо JSON)
+				const isHtmlResponse =
+					rawBody.trim().startsWith("<") || rawBody.includes("<!DOCTYPE html");
+				if (isHtmlResponse) {
+					if (!alive) return;
+					logger.warn(
+						`[diary load] API бэкенда недоступен (получен HTML). Режим локального черновика.`,
+					);
+					setDiaryDoctorFullName(null);
+					setDiaryDoctorSpecialty(null);
+					setLoadState({ phase: "empty" });
+					return;
+				}
+
+				if (!response.ok) {
+					logger.error(`[diary load] ${status} ${rawBody.slice(0, 300)}`);
+					reportLoadFailure(status, _reloadToken > 0);
+					return;
+				}
+
 				const payload = jsonObjectOrNull(rawBody);
 				if (!payload) {
-					// Успешный статус с нечитаемым или пустым телом — испорченный
-					// ответ, а не отсутствие дневника.
 					logger.error(`[diary load] ${status}: тело ответа не разобрано`);
-					reportLoadFailure(status);
+					reportLoadFailure(status, _reloadToken > 0);
 					return;
 				}
 				if (!alive) return;
@@ -864,33 +920,23 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 							setRevisionCount(rows.length);
 						}
 					} catch (revisionsError) {
-						showToast(
-							actionFailureToast(
-								"Ошибка выполнения операции",
-								(revisionsError as { status?: number })?.status ?? null,
-							),
-							"error",
-						);
-						logger.error(
-							"[diary revisions] запрос не выполнен",
+						logger.warn(
+							"[diary revisions] запрос ревизий не выполнен",
 							revisionsError,
 						);
 					}
 				}
 			} catch (error) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(error as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				// Сюда попадает обрыв сети и выключенный сервер клиники: тогда status
-				// так и остаётся null, и текст скажет «сервер не ответил». Если ответ
-				// уже пришёл, а порвалось чтение тела, код сохраняется — сообщение
-				// будет про непонятный ответ, а не про отсутствие сети.
-				logger.error("[diary load] запрос не выполнен", error);
-				reportLoadFailure(status);
+				logger.warn("[diary load] запрос не выполнен (офлайн или сеть недоступна)", error);
+				if (!alive) return;
+				const isOfflineNow = typeof navigator !== "undefined" && !navigator.onLine;
+				if (isOfflineNow) {
+					setDiaryDoctorFullName(null);
+					setDiaryDoctorSpecialty(null);
+					setLoadState({ phase: "empty" });
+				} else {
+					reportLoadFailure(status, _reloadToken > 0);
+				}
 			}
 		};
 
@@ -1281,9 +1327,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			if (loadState.phase === "failed") {
 				if (!silent) {
 					showToast(
-						`Черновик не сохранён: ${requestFailureCause(loadState.status)}. Записи приёма не прочитаны, поэтому сохранять поверх них нельзя — обновите страницу; набранный текст останется на экране, скопируйте его перед обновлением.`,
-						"error",
-						14000,
+						"Дневник не синхронизирован. Проверьте подключение и нажмите «Обновить». Черновик сохранён локально.",
+						"warning",
+						5000,
 					);
 				}
 				return null;
@@ -2144,9 +2190,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			showToast(
 				loadState.phase === "loading"
 					? "Дневник приёма ещё читается с сервера — подождите пару секунд и повторите подписание."
-					: `Подписать нельзя: ${requestFailureCause(loadState.status)}. Записи приёма не прочитаны — обновите страницу и убедитесь, что видите свой текст, прежде чем подписывать.`,
-				"error",
-				14000,
+					: "Дневник не синхронизирован. Проверьте подключение и нажмите «Обновить» перед подписанием.",
+				"warning",
+				5000,
 			);
 			return;
 		}
