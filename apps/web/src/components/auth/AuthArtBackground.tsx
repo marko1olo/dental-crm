@@ -22,7 +22,11 @@ export interface AuthArtBackgroundProps {
 	readonly className?: string | undefined;
 }
 
-export function calculateAdaptiveScrimAlpha(dominantColor?: string | null, baseAlpha = 0.25): number {
+export function calculateAdaptiveScrimAlpha(
+	dominantColor?: string | null,
+	baseAlpha = 0.25,
+	themeMode?: string,
+): number {
 	if (!dominantColor) return Math.max(baseAlpha, 0.35);
 	try {
 		const clean = dominantColor.replace("#", "").trim();
@@ -30,6 +34,13 @@ export function calculateAdaptiveScrimAlpha(dominantColor?: string | null, baseA
 		const g = parseInt(clean.slice(2, 4), 16);
 		const b = parseInt(clean.slice(4, 6), 16);
 		const lum = 0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255);
+		if (themeMode === "light") {
+			// In light theme, soft scrim preserves morning radiance while softening dark contrast
+			if (lum < 0.25) {
+				return Math.min(Math.max(baseAlpha, 0.3), 0.45);
+			}
+			return Math.min(Math.max(baseAlpha, 0.15), 0.25);
+		}
 		if (lum > 0.35) {
 			return Math.max(baseAlpha, 0.55);
 		}
@@ -53,6 +64,53 @@ export function AuthArtBackground({
 	});
 	const [loaded, setLoaded] = useState(false);
 	const [imgError, setImgError] = useState(false);
+	const [isLight, setIsLight] = useState<boolean>(() => {
+		if (typeof document !== "undefined") {
+			const dataTheme = document.documentElement.getAttribute("data-theme");
+			if (dataTheme === "light") return true;
+			if (document.documentElement.classList.contains("light")) return true;
+			if (dataTheme && dataTheme !== "light") return false;
+		}
+		const stored = safeLocalStorageGetItem("dente_theme_mode");
+		if (stored === "light") return true;
+		if (stored && stored !== "auto" && stored !== "light") return false;
+		if (typeof window !== "undefined" && window.matchMedia) {
+			return !window.matchMedia("(prefers-color-scheme: dark)").matches;
+		}
+		return false;
+	});
+
+	useEffect(() => {
+		if (typeof document === "undefined") return;
+
+		const checkTheme = () => {
+			const dataTheme = document.documentElement.getAttribute("data-theme");
+			const hasLightClass = document.documentElement.classList.contains("light");
+			const stored = safeLocalStorageGetItem("dente_theme_mode");
+			const light =
+				dataTheme === "light" ||
+				hasLightClass ||
+				stored === "light" ||
+				(stored === "auto" &&
+					window.matchMedia &&
+					!window.matchMedia("(prefers-color-scheme: dark)").matches);
+			setIsLight(Boolean(light));
+		};
+
+		checkTheme();
+
+		const observer = new MutationObserver(checkTheme);
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ["data-theme", "class"],
+		});
+
+		window.addEventListener("storage", checkTheme);
+		return () => {
+			observer.disconnect();
+			window.removeEventListener("storage", checkTheme);
+		};
+	}, []);
 
 	useEffect(() => {
 		let isMounted = true;
@@ -138,9 +196,13 @@ export function AuthArtBackground({
 		}
 
 		const pickArt = () => {
-			const slot = effectiveSettings.dynamicByTimeOfDay
-				? getCurrentTimeSlot()
+			const currentSlot = effectiveSettings.dynamicByTimeOfDay
+				? getCurrentTimeSlot(isLight ? "light" : "dark")
 				: "day";
+			const slot =
+				isLight && (currentSlot === "night" || currentSlot === "evening")
+					? "morning"
+					: currentSlot;
 			const isReducedMotion =
 				typeof window !== "undefined" &&
 				window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -154,6 +216,7 @@ export function AuthArtBackground({
 				slot,
 				saveData: !!isSaveData,
 				reducedMotion: isReducedMotion,
+				theme: isLight ? "light" : "dark",
 			});
 			setSelectedArt(art);
 		};
@@ -164,7 +227,7 @@ export function AuthArtBackground({
 			const interval = setInterval(pickArt, 60_000);
 			return () => clearInterval(interval);
 		}
-	}, [manifest, effectiveSettings]);
+	}, [manifest, effectiveSettings, isLight]);
 
 	useEffect(() => {
 		setLoaded(false);
@@ -172,8 +235,12 @@ export function AuthArtBackground({
 	}, [selectedArt]);
 
 	const effectiveScrimAlpha = useMemo(() => {
-		return calculateAdaptiveScrimAlpha(selectedArt?.dominantColor, overlayAlpha);
-	}, [selectedArt?.dominantColor, overlayAlpha]);
+		return calculateAdaptiveScrimAlpha(
+			selectedArt?.dominantColor,
+			overlayAlpha,
+			isLight ? "light" : "dark",
+		);
+	}, [selectedArt?.dominantColor, overlayAlpha, isLight]);
 
 	if (!effectiveSettings.enabled) {
 		return null; // User explicitly disabled auth art
@@ -189,9 +256,11 @@ export function AuthArtBackground({
 				left: 0,
 				right: 0,
 				bottom: 0,
-				zIndex: -1,
+				zIndex: 0,
 				overflow: "hidden",
-				backgroundColor: selectedArt?.dominantColor || "var(--background, var(--paper, #0b1311))",
+				backgroundColor:
+					selectedArt?.dominantColor ||
+					(isLight ? "#f0fdfa" : "var(--background, var(--paper, #0b1311))"),
 				pointerEvents: "none",
 			}}
 		>
@@ -209,7 +278,7 @@ export function AuthArtBackground({
 						backgroundPosition: "center",
 						filter: "blur(20px)",
 						transform: "scale(1.05)",
-						opacity: loaded && !imgError ? 0.35 : 0.95,
+						opacity: loaded && !imgError ? (isLight ? 0.25 : 0.35) : 0.95,
 						transition: "opacity 0.8s ease-in-out",
 					}}
 				/>
@@ -232,9 +301,14 @@ export function AuthArtBackground({
 						<source srcSet={`/auth-art/${selectedArt.webp}`} type="image/webp" />
 					)}
 					<img
+						ref={(img) => {
+							if (img?.complete && img.naturalWidth > 0 && !loaded) {
+								setLoaded(true);
+							}
+						}}
 						src={`/auth-art/${selectedArt.webp || selectedArt.avif}`}
 						alt=""
-						loading="lazy"
+						loading="eager"
 						decoding="async"
 						onLoad={() => setLoaded(true)}
 						onError={() => setImgError(true)}
@@ -250,15 +324,18 @@ export function AuthArtBackground({
 					/>
 				</picture>
 			)}
-			{/* Scrim layer with vertical gradient for WCAG AA readability across themes */}
+			{/* Scrim layer with vertical gradient for WCAG readability across themes */}
 			<div
+				className="auth-art-scrim"
 				style={{
 					position: "absolute",
 					top: 0,
 					left: 0,
 					right: 0,
 					bottom: 0,
-					background: `linear-gradient(180deg, rgba(0,0,0,${effectiveScrimAlpha * 0.75}) 0%, rgba(0,0,0,${effectiveScrimAlpha * 1.25}) 100%)`,
+					background: isLight
+						? `linear-gradient(180deg, rgba(240, 253, 250, ${effectiveScrimAlpha * 0.35}) 0%, rgba(204, 251, 241, ${effectiveScrimAlpha * 0.55}) 100%)`
+						: `linear-gradient(180deg, rgba(0,0,0,${effectiveScrimAlpha * 0.75}) 0%, rgba(0,0,0,${effectiveScrimAlpha * 1.25}) 100%)`,
 				}}
 			/>
 		</div>

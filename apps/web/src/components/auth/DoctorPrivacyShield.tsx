@@ -308,6 +308,9 @@ export function DoctorPrivacyShield({
 				padding: "16px",
 				userSelect: "none",
 				fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+				backgroundColor: "rgba(10, 15, 29, 0.72)",
+				backdropFilter: "blur(28px)",
+				WebkitBackdropFilter: "blur(28px)",
 			}}
 			role="dialog"
 			aria-modal="true"
@@ -325,7 +328,7 @@ export function DoctorPrivacyShield({
 					bottom: 0,
 					zIndex: 0,
 					overflow: "hidden",
-					backgroundColor: selectedArt?.dominantColor || "var(--paper-strong, #090d16)",
+					backgroundColor: "transparent",
 					pointerEvents: "none",
 				}}
 			>
@@ -383,7 +386,7 @@ export function DoctorPrivacyShield({
 								height: "100%",
 								objectFit: "cover",
 								objectPosition: "center",
-								opacity: artLoaded && !artError ? 0.45 : 0,
+								opacity: artLoaded && !artError ? 0.65 : 0,
 								transition: "opacity 0.8s ease-in-out",
 								display: "block",
 							}}
@@ -391,7 +394,7 @@ export function DoctorPrivacyShield({
 					</picture>
 				)}
 
-				{/* Глубокий затемняющий слой матового стекла для 100% перекрытия медданных */}
+				{/* Мягкий радиальный затемняющий слой для фокуса на PIN-паде и 152-ФЗ бейдже */}
 				<div
 					style={{
 						position: "absolute",
@@ -399,9 +402,8 @@ export function DoctorPrivacyShield({
 						left: 0,
 						right: 0,
 						bottom: 0,
-						backgroundColor: "rgba(10, 15, 29, 0.86)",
-						backdropFilter: "blur(28px)",
-						WebkitBackdropFilter: "blur(28px)",
+						background:
+							"radial-gradient(circle at center, rgba(10, 15, 29, 0.45) 0%, rgba(10, 15, 29, 0.78) 100%)",
 					}}
 				/>
 
