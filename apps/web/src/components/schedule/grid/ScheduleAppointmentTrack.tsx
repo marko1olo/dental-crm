@@ -142,9 +142,9 @@ export function ScheduleAppointmentTrack({
             style={{
               minWidth:
                 effectiveChairs.length > 1
-                  ? `${Math.max(260, 72 + effectiveChairs.length * 180)}px`
+                  ? `${Math.max(260, 72 + effectiveChairs.length * 220)}px`
                   : undefined,
-              gridTemplateColumns: `clamp(76px, 15vw, 90px) repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
+              gridTemplateColumns: `clamp(112px, 10vw, 150px) repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
               contain: "content",
               contentVisibility: "auto",
               containIntrinsicSize: "1px 36px",
@@ -207,13 +207,14 @@ export function ScheduleAppointmentTrack({
                     })}
                     {cellMaintenance.map((mBlock) => {
                       const mReasonLabel =
-                        mBlock.reason === "sanitation"
-                          ? "Санитарный буфер (СанПиН 3.3686-21)"
+                        mBlock.note ||
+                        (mBlock.reason === "sanitation"
+                          ? "Санитарная обработка (СанПиН 3.3686-21)"
                           : mBlock.reason === "tech_break"
                             ? "Технический перерыв"
                             : mBlock.reason === "maintenance"
                               ? "Техобслуживание"
-                              : mBlock.reason;
+                              : mBlock.reason);
                       const mDuration =
                         mBlock.startsAt && mBlock.endsAt
                           ? Math.round(

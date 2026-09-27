@@ -89,7 +89,7 @@ export function ScheduleChairHeader({
   return (
     <div
       key={chair.id}
-      className="h-8 sm:h-9 px-1 sm:px-1.5 text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] last:border-r-0 flex items-center justify-between gap-1 relative"
+      className="h-8 sm:h-9 px-1 sm:px-1.5 text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] last:border-r-0 flex items-center justify-between gap-1 relative overflow-hidden"
       data-testid={`chair-header-${chair.id}`}
       data-chair-palette={chairPalette.nameRu}
     >
@@ -303,7 +303,7 @@ export function ScheduleChairHeader({
       {/* Quick Doctor Select & Quick Shift Select in header when multiple doctors available */}
       {doctors && doctors.length > 0 && (
         <div
-          className="flex flex-row items-center gap-1 shrink-0 ml-1 cursor-pointer min-h-[44px]"
+          className="flex flex-row items-center gap-1 shrink-0 ml-1 cursor-pointer h-7 min-h-[28px]"
           data-testid={`chair-doctor-badge-${chair.id}`}
           onClick={() => openAssignModal(chair.id)}
           title={
@@ -333,7 +333,7 @@ export function ScheduleChairHeader({
               }
             }}
             onClick={(e) => e.stopPropagation()}
-            className="text-[10px] font-bold border border-[var(--line)] rounded px-1 py-0.5 bg-[var(--paper)] text-[var(--ink)] cursor-pointer h-6 max-w-[95px] sm:max-w-[110px] truncate"
+            className="text-[10px] font-bold border border-[var(--line)] rounded-lg px-2 py-0.5 bg-[var(--paper)] text-[var(--ink)] cursor-pointer h-7 min-w-[95px] sm:min-w-[130px] max-w-[130px] sm:max-w-[180px] shrink-0"
             title="Закрепление врача за креслом в 1 клик (выбор из списка)"
             data-testid={`chair-duty-doctor-select-${chair.id}`}
             aria-label={`Дежурный врач для ${chair.name}`}
@@ -386,7 +386,7 @@ export function ScheduleChairHeader({
               }
             }}
             onClick={(e) => e.stopPropagation()}
-            className="text-[10px] font-bold border border-[var(--line)] rounded px-1 py-0.5 bg-[var(--paper)] text-[var(--ink)] cursor-pointer h-6 w-[56px] sm:w-[62px]"
+            className="text-[10px] font-bold border border-[var(--line)] rounded-lg px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] cursor-pointer h-7 min-w-[76px] sm:min-w-[84px] sm:w-[86px] shrink-0"
             title="Смена врача на кресле (Утро 09:00-15:00 / Вечер 15:00-21:00 / Полный день 08:00-20:00 / 09:00-21:00)"
             data-testid={`chair-shift-select-${chair.id}`}
             aria-label={`Смена для ${chair.name}`}

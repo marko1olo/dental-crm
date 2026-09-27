@@ -284,6 +284,9 @@ async function runInquisitionCapture() {
     if (auth.isIntercepted) {
       await page.route("**/api/**", async (route) => {
         const url = route.request().url();
+        if (url.includes("/src/")) {
+          return route.continue();
+        }
         if (url.includes("/api/dashboard")) {
           return route.fulfill({
             status: 200,
@@ -374,6 +377,11 @@ async function runInquisitionCapture() {
           };
         }, theme);
         console.log(`  [Theme Applied] ${theme}: store=${res?.store}, dataTheme=${res?.dataTheme}, dark=${res?.hasDarkClass}`);
+        const isDark = ["dark", "night", "ocean", "emerald", "cyber_xray"].includes(theme);
+        await page.waitForFunction((dark) => {
+          const hasDark = document.documentElement.classList.contains("dark");
+          return dark ? hasDark : !hasDark;
+        }, isDark, { timeout: 10000 }).catch(() => {});
         await page.waitForTimeout(800);
         break;
       } catch (err) {
@@ -413,7 +421,7 @@ async function runInquisitionCapture() {
     await page.waitForTimeout(800);
 
     for (let i = 0; i < 20; i++) {
-      const isBoot = await page.evaluate(() => Boolean(document.querySelector(".boot-state")));
+      const isBoot = await page.evaluate(() => Boolean(document.querySelector(".boot-state"))).catch(() => true);
       if (!isBoot) break;
       await page.waitForTimeout(500);
     }
@@ -425,7 +433,12 @@ async function runInquisitionCapture() {
     if (fs.existsSync(targetFile)) {
       try { fs.unlinkSync(targetFile); } catch (_e) {}
     }
-    await page.screenshot({ path: targetFile, fullPage: false });
+    await page.screenshot({
+      path: targetFile,
+      fullPage: false,
+      animations: "disabled",
+      timeout: 15000,
+    });
     await page.waitForTimeout(300);
 
     for (const d of targetDirs) {
@@ -539,8 +552,10 @@ async function runInquisitionCapture() {
   await takeProof(dPage, "02_schedule_desktop_dark.png", "Schedule", "Desktop Dark", ".schedule-filter-strip");
 
   // 1B. Visit Desktop Light & Dark
-  await configurePage(dPage, "light");
   await navigateView(dPage, "visit", ".visit-monolithic-header, [data-testid=\"visit-header-monolith\"]");
+  await configurePage(dPage, "light");
+  await dPage.waitForSelector(".visit-monolithic-header, [data-testid=\"visit-header-monolith\"]", { state: "visible", timeout: 30000 });
+  await dPage.waitForTimeout(1200);
   await takeProof(dPage, "05_visit_desktop_light.png", "Visit", "Desktop Light", ".visit-monolithic-header, [data-testid=\"visit-header-monolith\"]");
 
   await configurePage(dPage, "dark");
@@ -555,49 +570,15 @@ async function runInquisitionCapture() {
   await takeProof(dPage, "10_patients_desktop_dark.png", "Patients", "Desktop Dark", ".patients-search-box, .patients-container");
 
   // 1D. Finance Desktop Light & Dark
-  await configurePage(dPage, "light");
   await navigateView(dPage, "finance", ".finance-header-actions, .finance-panel, #finance");
+  await configurePage(dPage, "light");
   await takeProof(dPage, "13_finance_desktop_light.png", "Finance", "Desktop Light", ".finance-header-actions, .finance-panel, #finance");
 
   await configurePage(dPage, "dark");
   await takeProof(dPage, "14_finance_desktop_dark.png", "Finance", "Desktop Dark", ".finance-header-actions, .finance-panel, #finance");
 
-  // 1E. Theme Switcher Modal in Action (1-Click Open Proof)
-  await navigateView(dPage, "schedule", ".schedule-filter-strip");
-  console.log("  -> Triggering Theme Switcher Modal via topbar button...");
-  await dPage.evaluate(() => {
-    window.dispatchEvent(new CustomEvent("dente:open-theme-switcher"));
-  });
-  await dPage.waitForSelector("#theme-modal-title", { state: "visible", timeout: 10000 });
-  await takeProof(dPage, "17_theme_switcher_modal.png", "Theme Switcher Modal", "Desktop 10-Themes", "#theme-modal-title");
-
-  // Close modal by clicking "Готово"
-  await dPage.evaluate(() => {
-    const btn = Array.from(document.querySelectorAll("button")).find((b) => b.textContent?.includes("Готово"));
-    if (btn) btn.click();
-  });
-  await dPage.waitForTimeout(600);
-
-  // 1F. Atmospheric Themes on Schedule: Ocean, Cyber X-Ray, Emerald
-  await configurePage(dPage, "ocean");
-  await takeProof(dPage, "18_schedule_desktop_ocean.png", "Schedule", "Desktop Ocean", ".schedule-filter-strip");
-
-  await configurePage(dPage, "cyber_xray");
-  await takeProof(dPage, "19_schedule_desktop_cyber_xray.png", "Schedule", "Desktop Cyber X-Ray", ".schedule-filter-strip");
-
-  await configurePage(dPage, "emerald");
-  await takeProof(dPage, "20_schedule_desktop_emerald.png", "Schedule", "Desktop Emerald", ".schedule-filter-strip");
-
-  await configurePage(dPage, "sakura");
-  await takeProof(dPage, "21_schedule_desktop_sakura.png", "Schedule", "Desktop Sakura", ".schedule-filter-strip");
-
-  await configurePage(dPage, "warm_sand");
-  await takeProof(dPage, "22_schedule_desktop_warm_sand.png", "Schedule", "Desktop Warm Sand", ".schedule-filter-strip");
-
-  await configurePage(dPage, "night");
-  await takeProof(dPage, "23_schedule_desktop_night.png", "Schedule", "Desktop Night OLED", ".schedule-filter-strip");
-
-  await desktopContext.close();
+  await dPage.close().catch(() => {});
+  await desktopContext.close().catch(() => {});
 
   // =========================================================================
   // 2. MOBILE VIEWPORT (390x844, Scale 2)
@@ -628,8 +609,8 @@ async function runInquisitionCapture() {
   await takeProof(mPage, "04_schedule_mobile_dark.png", "Schedule", "Mobile Dark", ".schedule-filter-strip");
 
   // 2B. Visit Mobile Light & Dark
-  await configurePage(mPage, "light");
   await navigateView(mPage, "visit", ".visit-monolithic-header, [data-testid=\"visit-header-monolith\"]");
+  await configurePage(mPage, "light");
   await takeProof(mPage, "07_visit_mobile_light.png", "Visit", "Mobile Light", ".visit-monolithic-header, [data-testid=\"visit-header-monolith\"]");
 
   await configurePage(mPage, "dark");
@@ -644,14 +625,62 @@ async function runInquisitionCapture() {
   await takeProof(mPage, "12_patients_mobile_dark.png", "Patients", "Mobile Dark", ".patients-search-box, .patients-container");
 
   // 2D. Finance Mobile Light & Dark
-  await configurePage(mPage, "light");
   await navigateView(mPage, "finance", ".finance-header-actions, .finance-panel, #finance");
+  await configurePage(mPage, "light");
   await takeProof(mPage, "15_finance_mobile_light.png", "Finance", "Mobile Light", ".finance-header-actions, .finance-panel, #finance");
 
   await configurePage(mPage, "dark");
   await takeProof(mPage, "16_finance_mobile_dark.png", "Finance", "Mobile Dark", ".finance-header-actions, .finance-panel, #finance");
 
   await mobileContext.close();
+
+  // =========================================================================
+  // 3. THEME SWITCHER MODAL & ATMOSPHERIC THEMES (DESKTOP)
+  // =========================================================================
+  console.log("\n>>> STARTING ATMOSPHERIC THEMES SUITE <<<");
+  await navigateView(dPage, "schedule", ".schedule-filter-strip");
+  console.log("  -> Triggering Theme Switcher Modal via topbar button...");
+  await dPage.evaluate(() => {
+    window.dispatchEvent(new CustomEvent("dente:open-theme-switcher"));
+  });
+  await dPage.waitForSelector("#theme-modal-title", { state: "visible", timeout: 10000 });
+  await takeProof(dPage, "17_theme_switcher_modal.png", "Theme Switcher Modal", "Desktop 10-Themes", "#theme-modal-title");
+
+  // Close modal by clicking "Готово" or pressing Escape
+  await dPage.evaluate(() => {
+    const btn = Array.from(document.querySelectorAll("button")).find((b) => b.textContent?.includes("Готово"));
+    if (btn) btn.click();
+    else window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+  });
+  await dPage.waitForSelector("#theme-modal-title", { state: "detached", timeout: 10000 }).catch(() => {});
+  await dPage.waitForTimeout(600);
+
+  // Atmospheric Themes on Schedule: Ocean, Cyber X-Ray, Emerald, Sakura, Warm Sand, Night
+  await configurePage(dPage, "ocean");
+  await navigateView(dPage, "schedule", ".schedule-filter-strip");
+  await takeProof(dPage, "18_schedule_desktop_ocean.png", "Schedule", "Desktop Ocean", ".schedule-filter-strip");
+
+  await configurePage(dPage, "cyber_xray");
+  await navigateView(dPage, "schedule", ".schedule-filter-strip");
+  await takeProof(dPage, "19_schedule_desktop_cyber_xray.png", "Schedule", "Desktop Cyber X-Ray", ".schedule-filter-strip");
+
+  await configurePage(dPage, "emerald");
+  await navigateView(dPage, "schedule", ".schedule-filter-strip");
+  await takeProof(dPage, "20_schedule_desktop_emerald.png", "Schedule", "Desktop Emerald", ".schedule-filter-strip");
+
+  await configurePage(dPage, "sakura");
+  await navigateView(dPage, "schedule", ".schedule-filter-strip");
+  await takeProof(dPage, "21_schedule_desktop_sakura.png", "Schedule", "Desktop Sakura", ".schedule-filter-strip");
+
+  await configurePage(dPage, "warm_sand");
+  await navigateView(dPage, "schedule", ".schedule-filter-strip");
+  await takeProof(dPage, "22_schedule_desktop_warm_sand.png", "Schedule", "Desktop Warm Sand", ".schedule-filter-strip");
+
+  await configurePage(dPage, "night");
+  await navigateView(dPage, "schedule", ".schedule-filter-strip");
+  await takeProof(dPage, "23_schedule_desktop_night.png", "Schedule", "Desktop Night OLED", ".schedule-filter-strip");
+
+  await desktopContext.close();
   await browser.close();
 
   // Summary verification

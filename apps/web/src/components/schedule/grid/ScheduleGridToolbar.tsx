@@ -67,15 +67,12 @@ export function ScheduleGridTimeCorner({
   handleSetGridStep,
 }: ScheduleGridTimeCornerProps) {
   return (
-    <div className="px-1 sm:px-1.5 h-8 sm:h-9 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-between gap-1 sticky left-0 z-20 bg-[var(--paper-soft)]">
+    <div className="px-1.5 h-8 sm:h-9 text-xs font-medium text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center gap-1 sm:gap-1.5 sticky left-0 z-20 bg-[var(--paper-soft)] select-none">
+      <span className="hidden sm:inline text-[11px] font-medium text-[var(--muted)] tracking-tight shrink-0 select-none">
+        Сетка:
+      </span>
       <div
-        className="flex items-center justify-center text-[10px] font-bold text-[var(--muted)]"
-        title="Шаг времени"
-      >
-        <Clock size={12} className="text-[var(--teal)] shrink-0" />
-      </div>
-      <div
-        className="flex items-center gap-0.5 p-0.5 rounded bg-[var(--paper)] border border-[var(--line)] shadow-2xs"
+        className="schedule-grid-step-segmented shrink-0 select-none"
         data-testid="schedule-grid-step-selector"
         role="group"
         aria-label="Шаг сетки расписания"
@@ -83,36 +80,27 @@ export function ScheduleGridTimeCorner({
         <button
           type="button"
           onClick={() => handleSetGridStep(15)}
-          className={`px-1 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-            gridStep === 15
-              ? "bg-[var(--teal)] text-white shadow-2xs"
-              : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-          }`}
+          className={`schedule-grid-step-btn ${gridStep === 15 ? "active" : ""}`}
           data-testid="btn-grid-step-15"
+          title="Масштаб сетки: 15 минут"
         >
           15м
         </button>
         <button
           type="button"
           onClick={() => handleSetGridStep(30)}
-          className={`px-1 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-            gridStep === 30
-              ? "bg-[var(--teal)] text-white shadow-2xs"
-              : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-          }`}
+          className={`schedule-grid-step-btn ${gridStep === 30 ? "active" : ""}`}
           data-testid="btn-grid-step-30"
+          title="Масштаб сетки: 30 минут"
         >
           30м
         </button>
         <button
           type="button"
           onClick={() => handleSetGridStep(60)}
-          className={`px-1 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-            gridStep === 60
-              ? "bg-[var(--teal)] text-white shadow-2xs"
-              : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-          }`}
+          className={`schedule-grid-step-btn ${gridStep === 60 ? "active" : ""}`}
           data-testid="btn-grid-step-60"
+          title="Масштаб сетки: 60 минут"
         >
           60м
         </button>

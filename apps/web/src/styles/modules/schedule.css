@@ -371,7 +371,7 @@
 	padding: 0 10px;
 	margin: 0;
 	align-self: center;
-	border-radius: 6px;
+	border-radius: 8px;
 	font-size: 12px;
 	flex-shrink: 0;
 	white-space: nowrap;
@@ -389,10 +389,12 @@
 .schedule-my-chair-chip,
 .schedule-auto-call-chip,
 .schedule-doctor-chip,
-.schedule-add-chair-chip-btn {
+.schedule-add-chair-chip-btn,
+.schedule-filter-strip .quick-chip,
+.schedule-filter-strip .schedule-filter-chips button {
 	flex: 0 0 auto !important;
 	flex-shrink: 0 !important;
-	min-width: fit-content !important;
+	min-width: max-content !important;
 	max-width: none !important;
 	white-space: nowrap !important;
 	overflow: visible !important;
@@ -401,11 +403,10 @@
 .schedule-my-chair-chip *,
 .schedule-auto-call-chip *,
 .schedule-doctor-chip *,
-.schedule-add-chair-chip-btn * {
+.schedule-add-chair-chip-btn *,
+.schedule-filter-strip .quick-chip *,
+.schedule-filter-strip .schedule-filter-chips button * {
 	white-space: nowrap !important;
-	flex: 0 0 auto !important;
-	flex-shrink: 0 !important;
-	min-width: fit-content !important;
 	overflow: visible !important;
 	text-overflow: clip !important;
 }
@@ -805,6 +806,7 @@ body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
 button[data-testid^="btn-slot-"],
 [data-testid^="btn-slot-"],
 .schedule-empty-slot-btn {
+	background-color: transparent !important;
 	color: var(--ink-muted, #334155) !important;
 	border-color: var(--line-strong, #94a3b8) !important;
 }
@@ -840,6 +842,7 @@ button[data-testid^="btn-slot-"]:hover span,
 [data-theme="dark"] button[data-testid^="btn-slot-"],
 [data-theme="dark"] [data-testid^="btn-slot-"],
 [data-theme="dark"] .schedule-empty-slot-btn {
+	background-color: transparent !important;
 	color: #cbd5e1 !important;
 	border-color: rgba(255, 255, 255, 0.2) !important;
 }
@@ -901,6 +904,174 @@ button[data-testid^="btn-slot-"]:hover span,
 [data-theme="sakura"] [data-testid^="btn-slot-"]:hover span {
 	color: #70072e !important;
 }
+
+/* Mobile Schedule View: suppress redundant topbar + Запись (already present in ScheduleFilterStrip, Mandates 8p, 8c) */
+@media (max-width: 840px) {
+	.workspace.view-schedule .top-actions {
+		display: none !important;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HARMONIZED SCHEDULE CONTROLS & TIMELINE STYLIST (BIBLE AUDIT)
+   Native Segmented Controls & Quiet Secondary Options Button
+   ═══════════════════════════════════════════════════════════════════ */
+.schedule-view-mode-segmented {
+	display: inline-flex;
+	align-items: center;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 2px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	box-sizing: border-box;
+	gap: 2px;
+	user-select: none;
+}
+
+.schedule-view-mode-btn {
+	border: 0 !important;
+	outline: none;
+	height: 26px;
+	min-height: 26px;
+	max-height: 26px;
+	padding: 0 10px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+	background: transparent;
+	color: var(--muted);
+	box-sizing: border-box;
+}
+
+.schedule-view-mode-btn:hover {
+	color: var(--ink);
+	background: rgba(125, 125, 125, 0.08);
+}
+
+.schedule-view-mode-btn.active {
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-weight: 700 !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+	border: 1px solid var(--line) !important;
+}
+
+[data-theme="dark"] .schedule-view-mode-btn.active,
+[data-theme="night"] .schedule-view-mode-btn.active,
+.dark .schedule-view-mode-btn.active {
+	background: var(--paper-strong, var(--paper)) !important;
+	color: var(--ink) !important;
+	border: 1px solid var(--line) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.schedule-toolbar-options-btn {
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper-soft) !important;
+	color: var(--ink) !important;
+	padding: 0 10px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	transition: all 0.15s ease !important;
+	box-sizing: border-box !important;
+	user-select: none;
+}
+
+.schedule-toolbar-options-btn:hover,
+.schedule-toolbar-options-btn[aria-expanded="true"] {
+	background: var(--paper) !important;
+	border-color: var(--line-strong, var(--line)) !important;
+	color: var(--ink) !important;
+}
+
+.schedule-toolbar-options-btn svg {
+	color: var(--muted) !important;
+	transition: color 0.15s ease;
+}
+
+.schedule-toolbar-options-btn:hover svg,
+.schedule-toolbar-options-btn[aria-expanded="true"] svg {
+	color: var(--ink) !important;
+}
+
+.schedule-grid-step-segmented {
+	display: inline-flex;
+	align-items: center;
+	height: 24px;
+	min-height: 24px;
+	max-height: 24px;
+	padding: 1.5px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	box-sizing: border-box;
+	gap: 2px;
+	user-select: none;
+}
+
+.schedule-grid-step-btn {
+	border: 0 !important;
+	outline: none;
+	height: 19px;
+	min-height: 19px;
+	max-height: 19px;
+	padding: 0 5px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+	background: transparent;
+	color: var(--muted);
+	box-sizing: border-box;
+}
+
+.schedule-grid-step-btn:hover {
+	color: var(--ink);
+	background: rgba(125, 125, 125, 0.08);
+}
+
+.schedule-grid-step-btn.active {
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-weight: 700 !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+	border: 1px solid var(--line) !important;
+}
+
+[data-theme="dark"] .schedule-grid-step-btn.active,
+[data-theme="night"] .schedule-grid-step-btn.active,
+.dark .schedule-grid-step-btn.active {
+	background: var(--paper-strong, var(--paper)) !important;
+	color: var(--ink) !important;
+	border: 1px solid var(--line) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
 
 
 

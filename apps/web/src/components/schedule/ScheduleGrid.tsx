@@ -186,9 +186,9 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(
           style={{
             minWidth:
               duty.effectiveChairs.length > 1
-                ? `${Math.max(260, 72 + duty.effectiveChairs.length * 180)}px`
+                ? `${Math.max(260, 72 + duty.effectiveChairs.length * 220)}px`
                 : undefined,
-            gridTemplateColumns: `clamp(76px, 15vw, 90px) repeat(${duty.effectiveChairs.length}, minmax(180px, 1fr))`,
+            gridTemplateColumns: `clamp(112px, 10vw, 150px) repeat(${duty.effectiveChairs.length}, minmax(180px, 1fr))`,
           }}
         >
           {/* Time corner header with Grid Step Selector */}
