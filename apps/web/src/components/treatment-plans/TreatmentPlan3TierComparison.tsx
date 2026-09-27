@@ -439,11 +439,11 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 					</button>
 
 					{/* Secondary Action Strip: 1 unified action line (Installment + optional Print contract) */}
-					<div className="flex items-center gap-1.5">
+					<div className="flex flex-wrap items-center gap-2">
 						<button
 							type="button"
 							onClick={(e) => handleInstallmentClick(e, tier)}
-							className="flex-1 min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center justify-center gap-1 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap min-w-0"
+							className="flex-1 min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center justify-center gap-1.5 px-3 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap min-w-0"
 							title="Оформить рассрочку 0% по данному варианту"
 						>
 							<CreditCard size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
@@ -454,7 +454,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 							<button
 								type="button"
 								onClick={(e) => handlePrintClick(e, tier)}
-								className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1"
+								className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap"
 								title="Распечатать договор и смету"
 								aria-label="Договор и смета (QR)"
 							>
@@ -507,16 +507,16 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 					</div>
 				</div>
 
-				<div className="flex flex-wrap items-center gap-1.5 shrink-0">
+				<div className="flex flex-wrap items-center gap-2 shrink-0">
 					{/* Payment Mode Selector with 32px standard height */}
-					<div className="inline-flex items-center p-0.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))]">
+					<div className="flex flex-wrap items-center gap-2 p-1 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))]">
 						<button
 							type="button"
 							onClick={() => setActivePaymentMode("installment")}
-							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg font-bold text-xs transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
 								activePaymentMode === "installment"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
 							Рассрочка 0%
@@ -524,10 +524,10 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<button
 							type="button"
 							onClick={() => setActivePaymentMode("staged")}
-							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg font-bold text-xs transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
 								activePaymentMode === "staged"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
 							Этапы (30/40/30)
@@ -535,10 +535,10 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<button
 							type="button"
 							onClick={() => setActivePaymentMode("discount")}
-							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg font-bold text-xs transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
 								activePaymentMode === "discount"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
 							Скидка 5% (100%)
@@ -547,16 +547,16 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 					{/* Term Selector (when in installment mode) */}
 					{activePaymentMode === "installment" && (
-						<div className="flex items-center gap-0.5 bg-[var(--paper-strong,var(--paper,#ffffff))] p-0.5 rounded-xl border border-[var(--line,var(--border,#cbd5e1))]">
+						<div className="flex items-center gap-1 bg-[var(--paper-strong,var(--paper,#ffffff))] p-1 rounded-xl border border-[var(--line,var(--border,#cbd5e1))]">
 							{[3, 6, 12, 24].map((m) => (
 								<button
 									key={m}
 									type="button"
 									onClick={() => setInstallmentMonths(m as 3 | 6 | 12 | 24)}
-									className={`min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 px-2 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center ${
+									className={`min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8 px-2 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
 										installmentMonths === m
 											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
 									}`}
 								>
 									{m}м
@@ -569,14 +569,14 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 					<button
 						type="button"
 						onClick={() => setShowNdflBreakdown((prev) => !prev)}
-						className={`min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-2.5 sm:px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+						className={`min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3 rounded-lg border text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
 							showNdflBreakdown
 								? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-								: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] border-[var(--line,var(--border,#cbd5e1))]"
+								: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border-[var(--line,var(--border,#cbd5e1))]"
 						}`}
 						title="Показать расчет налогового вычета 13% по НК РФ"
 					>
-						<ShieldCheck size={14} />
+						<ShieldCheck size={14} className="shrink-0" />
 						<span>Вычет 13%</span>
 					</button>
 
@@ -585,10 +585,10 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<button
 							type="button"
 							onClick={onOpenComparatorStudio}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-2.5 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap"
 							title="Открыть полноэкранную презентационную студию сравнения"
 						>
-							<Sparkles size={13} className="text-[var(--teal,var(--brand-primary))]" />
+							<Sparkles size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 							<span className="hidden sm:inline">Студия</span>
 						</button>
 					)}
@@ -598,10 +598,10 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<button
 							type="button"
 							onClick={onOpenStagePaymentStudio}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-2.5 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap"
 							title="Открыть студию поэтапной оплаты и эскроу-депозитов"
 						>
-							<Coins size={13} className="text-amber-500" />
+							<Coins size={13} className="text-amber-500 shrink-0" />
 							<span className="hidden sm:inline">Эскроу</span>
 						</button>
 					)}
@@ -611,10 +611,10 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<button
 							type="button"
 							onClick={onOpenPriceValidatorStudio}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-2.5 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap"
 							title="Проверить цены по прайсу и протоколам СтАР"
 						>
-							<FileCheck size={13} className="text-emerald-600" />
+							<FileCheck size={13} className="text-emerald-600 shrink-0" />
 							<span className="hidden sm:inline">Валидация</span>
 						</button>
 					)}

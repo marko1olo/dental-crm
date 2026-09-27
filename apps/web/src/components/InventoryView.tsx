@@ -1302,85 +1302,100 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 								<tr>
 									<th
 										style={{
-											padding: "14px 20px",
+											padding: "10px 14px",
 											fontSize: 12,
 											color: "var(--muted)",
 											fontWeight: 600,
 											borderBottom: `1px solid ${borderColor}`,
 											textTransform: "uppercase",
 											letterSpacing: 0.5,
+											whiteSpace: "nowrap",
+											minWidth: 180,
 										}}
 									>
 										Наименование
 									</th>
 									<th
 										style={{
-											padding: "14px 20px",
+											padding: "10px 14px",
 											fontSize: 12,
 											color: "var(--muted)",
 											fontWeight: 600,
 											borderBottom: `1px solid ${borderColor}`,
 											textTransform: "uppercase",
 											letterSpacing: 0.5,
+											whiteSpace: "nowrap",
+											minWidth: 110,
+											textAlign: "right",
 										}}
 									>
 										Остаток
 									</th>
 									<th
 										style={{
-											padding: "14px 20px",
+											padding: "10px 14px",
 											fontSize: 12,
 											color: "var(--muted)",
 											fontWeight: 600,
 											borderBottom: `1px solid ${borderColor}`,
 											textTransform: "uppercase",
 											letterSpacing: 0.5,
+											whiteSpace: "nowrap",
+											minWidth: 100,
+											textAlign: "right",
 										}}
 									>
 										Мин. запас
 									</th>
 									<th
 										style={{
-											padding: "14px 20px",
+											padding: "10px 14px",
 											fontSize: 12,
 											color: "var(--muted)",
 											fontWeight: 600,
 											borderBottom: `1px solid ${borderColor}`,
 											textTransform: "uppercase",
 											letterSpacing: 0.5,
+											whiteSpace: "nowrap",
+											minWidth: 120,
+											textAlign: "right",
 										}}
 									>
 										Цена / ед.
 									</th>
 									<th
 										style={{
-											padding: "14px 20px",
+											padding: "10px 14px",
 											fontSize: 12,
 											color: "var(--muted)",
 											fontWeight: 600,
 											borderBottom: `1px solid ${borderColor}`,
 											textTransform: "uppercase",
 											letterSpacing: 0.5,
+											whiteSpace: "nowrap",
+											minWidth: 170,
 										}}
 									>
 										Партия / Срок
 									</th>
 									<th
 										style={{
-											padding: "14px 20px",
+											padding: "10px 14px",
 											fontSize: 12,
 											color: "var(--muted)",
 											fontWeight: 600,
 											borderBottom: `1px solid ${borderColor}`,
 											textTransform: "uppercase",
 											letterSpacing: 0.5,
+											whiteSpace: "nowrap",
+											minWidth: 120,
 										}}
 									>
 										Штрихкод
 									</th>
 									<th
 										style={{
-											padding: "14px 20px",
+											padding: "10px 14px",
 											fontSize: 12,
 											color: "var(--muted)",
 											fontWeight: 600,
@@ -1388,8 +1403,9 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 											textTransform: "uppercase",
 											letterSpacing: 0.5,
 											textAlign: "right",
-											minWidth: 320,
-											width: 320,
+											minWidth: 240,
+											width: 240,
+											whiteSpace: "nowrap",
 										}}
 										className="whitespace-nowrap shrink-0"
 									>
@@ -1590,7 +1606,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 											>
 												<td
 													style={{
-														padding: "14px 20px",
+														padding: "10px 14px",
 														color: "var(--ink)",
 														fontWeight: 500,
 													}}
@@ -1610,12 +1626,12 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 														</span>
 													</div>
 												</td>
-												<td style={{ padding: "14px 20px" }}>
+												<td style={{ padding: "10px 14px", whiteSpace: "nowrap", textAlign: "right" }}>
 													<span
 														style={{
 															background: isLowStock
-																? "rgba(239, 68, 68, 0.1)"
-																: "rgba(16, 185, 129, 0.1)",
+																? "var(--bad-bg, rgba(239, 68, 68, 0.1))"
+																: "var(--teal-surface, rgba(16, 185, 129, 0.1))",
 															color: isLowStock
 																? "var(--bad-fg, #ef4444)"
 																: "var(--teal)",
@@ -1625,22 +1641,27 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 															fontSize: 14,
 															border: isLowStock
 																? "1px solid rgba(239, 68, 68, 0.3)"
-																: "1px solid rgba(16, 185, 129, 0.2)",
+																: "1px solid rgba(13, 148, 136, 0.25)",
+															whiteSpace: "nowrap",
+															display: "inline-flex",
+															alignItems: "center",
 														}}
 													>
-														{item.stockQuantity} шт.
+														{item.stockQuantity}&nbsp;{item.unit || "шт."}
 													</span>
 												</td>
 												<td
 													style={{
-														padding: "14px 20px",
+														padding: "10px 14px",
 														color: "var(--muted)",
 														fontSize: 14,
+														whiteSpace: "nowrap",
+														textAlign: "right",
 													}}
 												>
-													{item.criticalThreshold} шт.
+													{item.criticalThreshold}&nbsp;{item.unit || "шт."}
 												</td>
-												<td style={{ padding: "14px 20px", fontSize: 14 }}>
+												<td style={{ padding: "10px 14px", fontSize: 14, whiteSpace: "nowrap", textAlign: "right" }}>
 													{/*
 													 * БЫЛО: unitCost > 0 / lineValue > 0 после Number||0.
 													 * Неизвестная цена уже null; сравнение с 0 схлопывало
@@ -1689,9 +1710,10 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 												</td>
 												<td
 													style={{
-														padding: "14px 20px",
+														padding: "10px 14px",
 														color: "var(--muted)",
 														fontSize: 14,
+														whiteSpace: "nowrap",
 													}}
 												>
 													{/*
@@ -1716,11 +1738,12 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 																		display: "flex",
 																		flexDirection: "column",
 																		gap: 3,
+																		whiteSpace: "nowrap",
 																	}}
 																	data-fefo-status={state.status}
 																	data-testid={`inventory-fefo-traffic-${state.status}`}
 																>
-																	<div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+																	<div style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
 																		<span
 																			style={{
 																				width: 8,
@@ -1732,11 +1755,11 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 																			data-fefo-dot={state.status}
 																			aria-hidden="true"
 																		/>
-																		<span className={state.className} style={{ fontSize: 13, lineHeight: "1.2" }}>
+																		<span className={state.className} style={{ fontSize: 13, lineHeight: "1.2", whiteSpace: "nowrap" }}>
 																			{state.label}
 																		</span>
 																	</div>
-																	<div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 1 }}>
+																	<div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 1, whiteSpace: "nowrap" }}>
 																		<span
 																			style={{
 																				display: "inline-flex",
@@ -1747,6 +1770,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 																				fontWeight: 700,
 																				textTransform: "uppercase",
 																				letterSpacing: "0.03em",
+																				whiteSpace: "nowrap",
 																			}}
 																			className={`${state.bgClass} ${state.textClass}`}
 																			data-testid="fefo-traffic-badge"
@@ -1754,8 +1778,8 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 																			{state.badgeText}
 																		</span>
 																		{item.lotNumber ? (
-																			<span style={{ fontSize: 11, color: "var(--muted)" }}>
-																				Партия: {item.lotNumber}
+																			<span style={{ fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap" }}>
+																				Партия:&nbsp;{item.lotNumber}
 																			</span>
 																		) : null}
 																	</div>
@@ -1763,20 +1787,21 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 															);
 														})()
 													) : item.lotNumber ? (
-														<span style={{ fontSize: 12 }}>
-															Партия: {item.lotNumber}
+														<span style={{ fontSize: 12, whiteSpace: "nowrap" }}>
+															Партия:&nbsp;{item.lotNumber}
 														</span>
 													) : (
-														<span style={{ fontStyle: "italic", opacity: 0.5 }}>
+														<span style={{ fontStyle: "italic", opacity: 0.5, whiteSpace: "nowrap" }}>
 															Не указан
 														</span>
 													)}
 												</td>
 												<td
 													style={{
-														padding: "14px 20px",
+														padding: "10px 14px",
 														color: "var(--muted)",
 														fontSize: 14,
+														whiteSpace: "nowrap",
 													}}
 												>
 													{item.barcode ? (
@@ -1797,7 +1822,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 													)}
 												</td>
 												<td
-													style={{ padding: "14px 20px", textAlign: "right", minWidth: 320 }}
+													style={{ padding: "10px 14px", textAlign: "right", minWidth: 240 }}
 													className="shrink-0 whitespace-nowrap"
 												>
 													<div
@@ -2491,8 +2516,8 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 							}}
 						>
 							Текущий остаток:{" "}
-							<strong style={{ color: "var(--ink)" }}>
-								{adjustingItem.stockQuantity} шт.
+							<strong style={{ color: "var(--ink)", whiteSpace: "nowrap" }}>
+								{adjustingItem.stockQuantity}&nbsp;{adjustingItem.unit || "шт."}
 							</strong>
 						</p>
 
@@ -2555,7 +2580,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 										fontWeight: 500,
 									}}
 								>
-									Количество (шт.)
+									Количество ({adjustingItem.unit || "шт."})
 								</label>
 								<input
 									id="inv-adjust-amount"
@@ -2587,8 +2612,8 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 									}}
 								>
 									Будет:{" "}
-									<strong style={{ color: adjustExceedsStock ? "var(--bad-fg, #ef4444)" : "var(--ink)" }}>
-										{adjustResultQuantity} шт.{adjustExceedsStock ? " (дефицит)" : ""}
+									<strong style={{ color: adjustExceedsStock ? "var(--bad-fg, #ef4444)" : "var(--ink)", whiteSpace: "nowrap" }}>
+										{adjustResultQuantity}&nbsp;{adjustingItem.unit || "шт."}{adjustExceedsStock ? " (дефицит)" : ""}
 									</strong>
 								</p>
 							)}

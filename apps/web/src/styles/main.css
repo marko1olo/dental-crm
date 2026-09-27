@@ -4,6 +4,10 @@
 @import "../components/odontogram/odontogram.css";
 @import "./modules/patient-workspace.css";
 @import "./modules/mobile-touch.css";
+@import "./modules/finance.css";
+@import "./modules/payments.css";
+@import "./modules/inventory.css";
+@import "./modules/treatment-plans.css";
 @import "../components/copilot/CopilotDrawer.css";
 @import "../components/copilot/CopilotGenerativeCards.css";
 @import "../components/copilot/CopilotActionConfirm.css";
@@ -14392,16 +14396,16 @@ html.dark .communication-side .panel-heading h3,
 		flex-shrink: 0 !important;
 	}
 	.payment-methods-toolbar {
-		margin-bottom: 2px !important;
+		margin-bottom: 6px !important;
 		display: grid !important;
-		grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-		gap: 3px !important;
+		grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+		gap: 4px !important;
 	}
 	.payment-methods-toolbar .quick-chip {
-		min-height: 30px !important;
-		height: 30px !important;
-		padding: 1px 2px !important;
-		font-size: 10.5px !important;
+		min-height: 42px !important;
+		height: 42px !important;
+		padding: 2px 4px !important;
+		font-size: 11px !important;
 		justify-content: center !important;
 		text-align: center !important;
 	}
