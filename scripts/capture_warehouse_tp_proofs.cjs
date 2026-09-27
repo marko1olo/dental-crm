@@ -65,8 +65,12 @@ const mockInventoryItems = [
 
 async function captureProofs() {
   const outDir = path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/subagent6");
+  const outDirInquisition = path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/inquisition_live");
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
+  }
+  if (!fs.existsSync(outDirInquisition)) {
+    fs.mkdirSync(outDirInquisition, { recursive: true });
   }
 
   console.log("[Playwright] Launching Chrome executable...");
@@ -211,12 +215,16 @@ async function captureProofs() {
 
   // 1A. Warehouse Desktop Light
   await applyTheme(dPage, "light");
-  await dPage.screenshot({ path: path.join(outDir, "warehouse_desktop_light.png"), fullPage: false });
+  const lightPath = path.join(outDir, "warehouse_desktop_light.png");
+  await dPage.screenshot({ path: lightPath, fullPage: false });
+  fs.copyFileSync(lightPath, path.join(outDirInquisition, "warehouse_desktop_light.png"));
   console.log("  [Saved] warehouse_desktop_light.png");
 
   // 1B. Warehouse Desktop Dark
   await applyTheme(dPage, "dark");
-  await dPage.screenshot({ path: path.join(outDir, "warehouse_desktop_dark.png"), fullPage: false });
+  const darkPath = path.join(outDir, "warehouse_desktop_dark.png");
+  await dPage.screenshot({ path: darkPath, fullPage: false });
+  fs.copyFileSync(darkPath, path.join(outDirInquisition, "warehouse_desktop_dark.png"));
   console.log("  [Saved] warehouse_desktop_dark.png");
 
   await dPage.close();

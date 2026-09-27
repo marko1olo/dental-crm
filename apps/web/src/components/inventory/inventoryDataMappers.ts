@@ -11,6 +11,8 @@ export interface InventoryItem {
 	barcode?: string;
 	expirationDate?: string;
 	lotNumber?: string;
+	category?: string;
+	supplier?: string;
 }
 
 /** Календарный день значения даты по местному времени, в виде «ГГГГ-ММ-ДД». */
@@ -49,6 +51,9 @@ export function inventoryItemFromServer(raw: unknown): InventoryItem {
 	const barcode = asText(row.barcode);
 	const lotNumber = asText(row.lotNumber);
 	const expiration = asText(row.expirationDate);
+	const category = asText(row.category);
+	const supplier = asText(row.supplier);
+	const unit = asText(row.unit || row.unitOfMeasure);
 	return {
 		id: String(row.id ?? ""),
 		name: typeof row.name === "string" ? row.name : "",
@@ -56,13 +61,18 @@ export function inventoryItemFromServer(raw: unknown): InventoryItem {
 		criticalThreshold: asNumber(row.criticalThreshold),
 		// Цена остаётся строкой: так объявлен тип, и её везде читают через Number().
 		unitCostRub:
-			row.unitCostRub === null || row.unitCostRub === undefined
-				? "0"
-				: String(row.unitCostRub),
+			row.unitCostRub !== null && row.unitCostRub !== undefined
+				? String(row.unitCostRub)
+				: row.unitCostKopecks !== null && row.unitCostKopecks !== undefined
+				? String(Number(row.unitCostKopecks) / 100)
+				: "0",
 		updatedAt: typeof row.updatedAt === "string" ? row.updatedAt : "",
+		...(unit ? { unit } : {}),
 		...(sku ? { sku } : {}),
 		...(barcode ? { barcode } : {}),
 		...(lotNumber ? { lotNumber } : {}),
+		...(category ? { category } : {}),
+		...(supplier ? { supplier } : {}),
 		/*
 		 * Срок годности приводим к «ГГГГ-ММ-ДД» по местному дню.
 		 *

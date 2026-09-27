@@ -73,49 +73,112 @@
 	text-align: center;
 }
 
-/* 3.1. Explicit Column Widths (Anti-Clipping / Full Desktop Visibility) */
+/* 3.1. Calibrated 7-Column Layout for 1440px / 1280px Desktop (Total ~870px, Zero Horizontal Scroll) */
+.inventory-col-sku {
+	width: 105px;
+	min-width: 100px;
+	max-width: 110px;
+}
+
 .inventory-col-name {
-	min-width: 160px;
+	min-width: 180px;
+}
+
+.inventory-col-category {
+	width: 105px;
+	min-width: 100px;
+	max-width: 110px;
 }
 
 .inventory-col-stock {
-	width: 90px;
-	min-width: 90px;
+	width: 85px;
+	min-width: 80px;
 	max-width: 90px;
 	text-align: right;
 }
 
 .inventory-col-threshold {
-	width: 80px;
-	min-width: 80px;
+	width: 75px;
+	min-width: 70px;
 	max-width: 80px;
 	text-align: center;
 }
 
 .inventory-col-cost {
-	width: 90px;
-	min-width: 90px;
+	width: 85px;
+	min-width: 80px;
 	max-width: 90px;
 	text-align: right;
 }
 
 .inventory-col-fefo {
-	width: 150px;
-	min-width: 150px;
-	max-width: 150px;
+	width: 145px;
+	min-width: 140px;
+	max-width: 155px;
 }
 
-.inventory-col-barcode {
+.inventory-col-lot {
 	width: 115px;
 	min-width: 110px;
 	max-width: 125px;
 }
 
+.inventory-col-barcode {
+	width: 105px;
+	min-width: 100px;
+	max-width: 110px;
+}
+
 .inventory-col-actions {
-	width: 185px;
-	min-width: 185px;
-	max-width: 190px;
+	width: 160px;
+	min-width: 155px;
+	max-width: 165px;
 	text-align: right;
+}
+
+/* 3.2. Subtabs Switcher in Toolbar (Mandates 8c, 8d, 8e: Strict 32px height, 8px radius) */
+.inventory-subtabs-container {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	background: var(--paper-soft);
+	padding: 2px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	flex-shrink: 0;
+}
+
+.inventory-subtab-btn {
+	height: 32px;
+	min-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	transition: all 0.15s ease-in-out;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted);
+}
+
+.inventory-subtab-btn:hover {
+	color: var(--ink);
+	background: var(--teal-surface);
+	border-color: var(--teal-soft);
+}
+
+.inventory-subtab-btn.active {
+	background: var(--paper);
+	color: var(--ink);
+	font-weight: 700;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	border-color: var(--line);
 }
 
 /* 4. Stock Quantity Badge (No staircases, atomic number + unit) */

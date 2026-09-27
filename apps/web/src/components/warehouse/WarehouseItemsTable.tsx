@@ -139,7 +139,6 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 				className="inventory-view-table"
 				style={{
 					width: "100%",
-					minWidth: "980px",
 					borderCollapse: "collapse",
 					textAlign: "left",
 				}}
@@ -158,7 +157,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 						<th
 							className="inventory-col-sku"
 							style={{
-								padding: "8px 10px",
+								padding: "8px 8px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
@@ -166,9 +165,9 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 115,
-								minWidth: 115,
-								maxWidth: 120,
+								width: 105,
+								minWidth: 100,
+								maxWidth: 110,
 							}}
 						>
 							<div className="leading-tight">
@@ -181,7 +180,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 						<th
 							className="inventory-col-name"
 							style={{
-								padding: "8px 10px",
+								padding: "8px 8px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
@@ -189,7 +188,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								minWidth: 200,
+								minWidth: 180,
 							}}
 						>
 							Наименование
@@ -199,7 +198,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 						<th
 							className="inventory-col-category"
 							style={{
-								padding: "8px 10px",
+								padding: "8px 8px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
@@ -207,9 +206,9 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 110,
-								minWidth: 110,
-								maxWidth: 120,
+								width: 105,
+								minWidth: 100,
+								maxWidth: 110,
 							}}
 						>
 							Категория
@@ -219,7 +218,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 						<th
 							className="inventory-col-stock"
 							style={{
-								padding: "8px 10px",
+								padding: "8px 8px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
@@ -227,9 +226,9 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 95,
-								minWidth: 95,
-								maxWidth: 105,
+								width: 85,
+								minWidth: 80,
+								maxWidth: 90,
 								textAlign: "right",
 							}}
 						>
@@ -240,7 +239,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 						<th
 							className="inventory-col-fefo"
 							style={{
-								padding: "8px 10px",
+								padding: "8px 8px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
@@ -248,9 +247,9 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 155,
-								minWidth: 155,
-								maxWidth: 165,
+								width: 145,
+								minWidth: 140,
+								maxWidth: 155,
 							}}
 						>
 							<div className="leading-tight">
@@ -263,7 +262,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 						<th
 							className="inventory-col-lot"
 							style={{
-								padding: "8px 10px",
+								padding: "8px 8px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
@@ -271,9 +270,9 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 125,
-								minWidth: 125,
-								maxWidth: 135,
+								width: 115,
+								minWidth: 110,
+								maxWidth: 125,
 							}}
 						>
 							<div className="leading-tight">
@@ -286,7 +285,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 						<th
 							className="inventory-col-actions"
 							style={{
-								padding: "8px 10px",
+								padding: "8px 8px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
@@ -294,9 +293,9 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								textAlign: "right",
-								width: 175,
-								minWidth: 175,
-								maxWidth: 180,
+								width: 160,
+								minWidth: 155,
+								maxWidth: 165,
 								whiteSpace: "nowrap",
 							}}
 						>
@@ -442,11 +441,12 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 									>
 										<div className="flex items-center gap-2 min-w-0">
 											{isLowStock && (
-												<AlertTriangle
-													size={14}
-													className="text-rose-600 dark:text-rose-400 shrink-0"
-													title="Критический остаток"
-												/>
+												<span title="Критический остаток" className="inline-flex shrink-0">
+													<AlertTriangle
+														size={14}
+														className="text-rose-600 dark:text-rose-400 shrink-0"
+													/>
+												</span>
 											)}
 											<div className="min-w-0 flex-1">
 												<div
@@ -602,7 +602,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 											<button
 												type="button"
 												onClick={() => onDeductItem(item)}
-												className="h-7 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/25"
+												className="h-7 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/25"
 												title="Списать расход материала"
 												data-testid={`btn-item-writeoff-${item.id}`}
 											>
@@ -613,7 +613,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 											<button
 												type="button"
 												onClick={() => onReceiveItem(item)}
-												className="h-7 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 bg-[var(--teal-soft)] text-[var(--teal-dark,#0f766e)] hover:bg-[var(--teal-surface)] border border-[var(--teal)]"
+												className="h-7 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 bg-[var(--teal-soft)] text-[var(--teal-dark,#0f766e)] hover:bg-[var(--teal-surface)] border border-[var(--teal)]"
 												title="Оприходовать материал на склад"
 												data-testid={`btn-item-arrival-${item.id}`}
 											>
@@ -629,12 +629,12 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 															prev === item.id ? null : item.id,
 														)
 													}
-													className="w-7 h-7 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center justify-center bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
+													className="w-6 h-7 rounded-lg text-xs transition-all cursor-pointer inline-flex items-center justify-center bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
 													title="Дополнительные операции"
 													data-testid={`btn-item-more-${item.id}`}
 													aria-expanded={activeMenuRowId === item.id}
 												>
-													<MoreHorizontal size={14} />
+													<MoreHorizontal size={13} />
 												</button>
 
 												{activeMenuRowId === item.id && (
