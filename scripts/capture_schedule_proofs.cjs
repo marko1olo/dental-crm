@@ -479,6 +479,17 @@ async function main() {
     await setTheme(page, "light");
     await saveProof(page, "44_schedule_chairs_desktop_light.png");
 
+    // Capture Multi-Chair Ocean (46_schedule_chairs_desktop_ocean.png)
+    await setTheme(page, "ocean");
+    await saveProof(page, "46_schedule_chairs_desktop_ocean.png");
+
+    const brainDir = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\a84df016-a7cc-461c-ba80-899ae84de477\\screenshots";
+    if (!fs.existsSync(brainDir)) fs.mkdirSync(brainDir, { recursive: true });
+    for (const f of ["44_schedule_chairs_desktop_light.png", "45_schedule_chairs_desktop_dark.png", "46_schedule_chairs_desktop_ocean.png"]) {
+      const src = path.resolve("docs/screenshots/inquisition_live", f);
+      if (fs.existsSync(src)) fs.copyFileSync(src, path.join(brainDir, f));
+    }
+
     console.log("All schedule visual proofs successfully captured!");
   } finally {
     await browser.close();
