@@ -40,6 +40,7 @@ export interface StaffUnlockMember {
 	readonly fullName?: unknown;
 	readonly role?: unknown;
 	readonly active?: unknown;
+	readonly color?: unknown;
 }
 
 export type StaffUnlockListState =

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Delete, Lock, LogOut, UserCheck } from "lucide-react";
+import { Delete, Lock, LogOut, UserCheck, Users } from "lucide-react";
 import {
 	actionFailureToast,
 	NO_RESPONSE_CAUSE,
@@ -20,6 +20,7 @@ import {
 	STAFF_UNLOCK_LIST_SUBJECT,
 } from "./staffUnlockState";
 import { AuthArtBackground } from "./AuthArtBackground";
+import { formatDoctorRole } from "./doctorPrivacyShieldHelpers";
 
 interface StaffPinPadProps {
 	/**
@@ -277,7 +278,10 @@ export function StaffPinPad({
 				{/* Left Side: Staff Selector */}
 				<div className="auth-modal-left">
 					<div className="auth-header">
-						<h3 className="auth-title">Сотрудники клиники</h3>
+						<h3 className="auth-title">
+							<Users size={18} className="auth-icon-inline" />
+							Сотрудники клиники
+						</h3>
 						<p className="auth-subtitle">
 							Выберите свой профиль для разблокировки смены
 						</p>
@@ -357,7 +361,15 @@ export function StaffPinPad({
 											setErrorText(null);
 										}}
 									>
-										<div className="auth-staff-avatar bg-indigo-600">
+										<div
+											className="auth-staff-avatar"
+											style={{
+												backgroundColor:
+													typeof staff?.color === "string" && staff.color
+														? staff.color
+														: "var(--teal, #0d9488)",
+											}}
+										>
 											{initials}
 										</div>
 										<div className="auth-staff-info">
@@ -371,9 +383,16 @@ export function StaffPinPad({
 												{fullName || "Без имени"}
 											</div>
 											<div className="auth-staff-role">
-												{typeof staff?.role === "string" ? staff.role : ""}
+												{typeof staff?.role === "string"
+													? formatDoctorRole(staff.role)
+													: ""}
 											</div>
 										</div>
+										{isSelected && (
+											<div className="auth-staff-check">
+												<UserCheck size={18} />
+											</div>
+										)}
 									</button>
 								);
 							})

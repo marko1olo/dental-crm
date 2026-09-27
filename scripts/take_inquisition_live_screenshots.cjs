@@ -636,6 +636,21 @@ async function runInquisitionCapture() {
   await configurePage(dPage, "dark");
   await takeProof(dPage, "06_visit_desktop_dark.png", "Visit", "Desktop Dark", ".visit-monolithic-header, [data-testid=\"visit-header-monolith\"]");
 
+  // 1B-2. Visit Diagnostics Tab Desktop Light & Dark
+  const diagTabBtn = await dPage.$('[data-testid="visit-subtab-diagnostics"]');
+  if (diagTabBtn) {
+    console.log("Navigating to Diagnostics tab...");
+    await diagTabBtn.click();
+    await dPage.waitForTimeout(1000);
+    await configurePage(dPage, "light");
+    await takeProof(dPage, "visit_tab3_diagnostics_desktop_light.png", "Visit Diagnostics", "Desktop Light", '[data-testid="visit-diagnostics-tab"]');
+    await configurePage(dPage, "dark");
+    await takeProof(dPage, "visit_tab3_diagnostics_desktop_dark.png", "Visit Diagnostics", "Desktop Dark", '[data-testid="visit-diagnostics-tab"]');
+    const emkTabBtn = await dPage.$('[data-testid="visit-subtab-emk"]');
+    if (emkTabBtn) await emkTabBtn.click();
+    await dPage.waitForTimeout(600);
+  }
+
   // 1C. Patients Desktop Light & Dark
   await navigateView(dPage, "patients", ".patients-search-box, .patients-container");
   await configurePage(dPage, "light");

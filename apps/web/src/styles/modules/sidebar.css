@@ -10,8 +10,8 @@
 
 /* 1. Sidebar Container */
 .sidebar {
-	width: var(--sidebar-width, 252px) !important;
-	padding: 14px 10px 10px !important;
+	width: var(--sidebar-width, 200px) !important;
+	padding: 12px 6px 8px !important;
 	box-sizing: border-box !important;
 	overflow: hidden !important;
 }
@@ -35,9 +35,9 @@
 .sidebar .nav-item {
 	display: flex !important;
 	align-items: center !important;
-	width: calc(100% - 8px) !important;
-	margin: 1px 4px !important;
-	padding: 6px 10px !important;
+	width: calc(100% - 4px) !important;
+	margin: 1px 2px !important;
+	padding: 6px 8px !important;
 	border-radius: 8px !important;
 	border: 1px solid transparent !important;
 	box-sizing: border-box !important;
@@ -96,9 +96,9 @@ html.dark .sidebar .nav-item.active,
 }
 
 .sidebar .nav-label {
-	font-size: 13.5px !important;
+	font-size: 13px !important;
 	font-weight: 600 !important;
-	line-height: 1.2 !important;
+	line-height: 1.25 !important;
 	white-space: nowrap !important;
 	overflow: hidden !important;
 	text-overflow: ellipsis !important;
@@ -109,7 +109,7 @@ html.dark .sidebar .nav-item.active,
 .sidebar .nav-copy small,
 .sidebar .nav-hint {
 	display: block !important;
-	font-size: 11px !important;
+	font-size: 10.5px !important;
 	font-weight: 400 !important;
 	line-height: 1.2 !important;
 	color: var(--muted, #64748b) !important;
@@ -143,25 +143,44 @@ html.dark .sidebar .nav-item.active,
 	opacity: 1 !important;
 }
 
-/* 5. Sidebar Footer with Clinic Control Pill & Theme Switcher */
+/* 5. Sidebar Footer with 2-Tier Stack: Theme & Collapse (Tier 1) + Clinic Control Pill (Tier 2) */
 .sidebar-footer {
 	margin-top: auto !important;
 	flex-shrink: 0 !important;
 	display: flex !important;
-	align-items: center !important;
-	justify-content: space-between !important;
-	gap: 4px !important;
+	flex-direction: column !important;
+	align-items: stretch !important;
+	gap: 6px !important;
 	padding: 8px 4px 6px !important;
 	border-top: 1px solid var(--line) !important;
 	max-width: 100% !important;
+	width: 100% !important;
 	box-sizing: border-box !important;
+}
+
+.sidebar-footer-tier {
+	display: flex !important;
+	align-items: center !important;
+	width: 100% !important;
+	box-sizing: border-box !important;
+}
+
+.sidebar-footer-tier--top {
+	justify-content: space-between !important;
+	gap: 4px !important;
+}
+
+.sidebar-footer-tier--bottom {
+	justify-content: center !important;
+	padding-top: 2px !important;
 }
 
 .sidebar-footer .dnt-clinic-control-wrapper {
 	position: relative !important;
 	display: flex !important;
 	align-items: center !important;
-	flex: 0 0 auto !important;
+	justify-content: center !important;
+	width: 100% !important;
 	min-width: 0 !important;
 }
 
@@ -169,8 +188,8 @@ html.dark .sidebar .nav-item.active,
 	height: 30px !important;
 	min-height: 30px !important;
 	max-height: 30px !important;
-	padding: 0 6px !important;
-	gap: 5px !important;
+	padding: 0 8px !important;
+	gap: 6px !important;
 	border-radius: 8px !important;
 	font-size: 11px !important;
 	background: var(--paper-soft, rgba(0, 0, 0, 0.03)) !important;
@@ -179,6 +198,9 @@ html.dark .sidebar .nav-item.active,
 	backdrop-filter: none !important;
 	-webkit-backdrop-filter: none !important;
 	transition: background 0.15s ease, border-color 0.15s ease !important;
+	width: 100% !important;
+	justify-content: center !important;
+	box-sizing: border-box !important;
 }
 
 .sidebar-footer .dnt-clinic-control-pill:hover {
@@ -187,18 +209,63 @@ html.dark .sidebar .nav-item.active,
 	transform: none !important;
 }
 
+/* Ensure pill in sidebar footer stays compact and icon-only */
+.sidebar-footer .dnt-clinic-control-pill .dnt-pill-segment > span:not(.dnt-pill-dot):not([class*="animate-pulse"]) {
+	display: none !important;
+}
+
+/* Collapse button in sidebar footer */
+.sidebar-footer .sidebar-collapse-button {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 30px !important;
+	height: 30px !important;
+	min-width: 30px !important;
+	min-height: 30px !important;
+	padding: 0 !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper-soft, rgba(0, 0, 0, 0.03)) !important;
+	color: var(--ink) !important;
+	cursor: pointer !important;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+	flex-shrink: 0 !important;
+}
+
+.sidebar-footer .sidebar-collapse-button:hover {
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08)) !important;
+	border-color: var(--teal, #0d9488) !important;
+	color: var(--teal, #0d9488) !important;
+}
+
 [data-theme="dark"] .sidebar-footer .dnt-clinic-control-pill,
 [data-theme="night"] .sidebar-footer .dnt-clinic-control-pill,
-[data-theme="ocean"] .sidebar-footer .dnt-clinic-control-pill {
+[data-theme="ocean"] .sidebar-footer .dnt-clinic-control-pill,
+[data-theme="emerald"] .sidebar-footer .dnt-clinic-control-pill,
+[data-theme="cyber_xray"] .sidebar-footer .dnt-clinic-control-pill,
+[data-theme="dark"] .sidebar-footer .sidebar-collapse-button,
+[data-theme="night"] .sidebar-footer .sidebar-collapse-button,
+[data-theme="ocean"] .sidebar-footer .sidebar-collapse-button,
+[data-theme="emerald"] .sidebar-footer .sidebar-collapse-button,
+[data-theme="cyber_xray"] .sidebar-footer .sidebar-collapse-button {
 	background: rgba(255, 255, 255, 0.05) !important;
 	border-color: var(--line) !important;
 }
 
 [data-theme="dark"] .sidebar-footer .dnt-clinic-control-pill:hover,
 [data-theme="night"] .sidebar-footer .dnt-clinic-control-pill:hover,
-[data-theme="ocean"] .sidebar-footer .dnt-clinic-control-pill:hover {
+[data-theme="ocean"] .sidebar-footer .dnt-clinic-control-pill:hover,
+[data-theme="emerald"] .sidebar-footer .dnt-clinic-control-pill:hover,
+[data-theme="cyber_xray"] .sidebar-footer .dnt-clinic-control-pill:hover,
+[data-theme="dark"] .sidebar-footer .sidebar-collapse-button:hover,
+[data-theme="night"] .sidebar-footer .sidebar-collapse-button:hover,
+[data-theme="ocean"] .sidebar-footer .sidebar-collapse-button:hover,
+[data-theme="emerald"] .sidebar-footer .sidebar-collapse-button:hover,
+[data-theme="cyber_xray"] .sidebar-footer .sidebar-collapse-button:hover {
 	background: var(--teal-soft, rgba(45, 212, 191, 0.15)) !important;
 	border-color: var(--teal, #2dd4bf) !important;
+	color: var(--teal, #2dd4bf) !important;
 }
 
 /* Theme quick access button in sidebar footer */
@@ -209,14 +276,14 @@ html.dark .sidebar .nav-item.active,
 	height: 30px !important;
 	min-height: 30px !important;
 	max-height: 30px !important;
-	padding: 0 6px !important;
+	padding: 0 8px !important;
 	border-radius: 8px !important;
 	border: 1px solid var(--line) !important;
 	background: var(--paper-soft, rgba(0, 0, 0, 0.03)) !important;
 	color: var(--ink) !important;
 	cursor: pointer !important;
 	transition: background 0.15s ease, border-color 0.15s ease !important;
-	flex: 0 0 auto !important;
+	flex: 0 1 auto !important;
 }
 
 .sidebar-footer .theme-footer-control:hover {
@@ -226,14 +293,18 @@ html.dark .sidebar .nav-item.active,
 
 [data-theme="dark"] .sidebar-footer .theme-footer-control,
 [data-theme="night"] .sidebar-footer .theme-footer-control,
-[data-theme="ocean"] .sidebar-footer .theme-footer-control {
+[data-theme="ocean"] .sidebar-footer .theme-footer-control,
+[data-theme="emerald"] .sidebar-footer .theme-footer-control,
+[data-theme="cyber_xray"] .sidebar-footer .theme-footer-control {
 	background: rgba(255, 255, 255, 0.05) !important;
 	border-color: var(--line) !important;
 }
 
 [data-theme="dark"] .sidebar-footer .theme-footer-control:hover,
 [data-theme="night"] .sidebar-footer .theme-footer-control:hover,
-[data-theme="ocean"] .sidebar-footer .theme-footer-control:hover {
+[data-theme="ocean"] .sidebar-footer .theme-footer-control:hover,
+[data-theme="emerald"] .sidebar-footer .theme-footer-control:hover,
+[data-theme="cyber_xray"] .sidebar-footer .theme-footer-control:hover {
 	background: var(--teal-soft, rgba(45, 212, 191, 0.15)) !important;
 	border-color: var(--teal, #2dd4bf) !important;
 }
@@ -242,12 +313,12 @@ html.dark .sidebar .nav-item.active,
 .sidebar-footer .dnt-control-center-popover {
 	position: fixed !important;
 	top: auto !important;
-	bottom: 48px !important;
-	left: 12px !important;
+	bottom: 86px !important;
+	left: 10px !important;
 	right: auto !important;
 	width: 360px !important;
 	max-width: calc(100vw - 24px) !important;
-	max-height: calc(100vh - 80px) !important;
+	max-height: calc(100vh - 100px) !important;
 	overflow-y: auto !important;
 	z-index: 9999 !important;
 	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 0 20px rgba(13, 148, 136, 0.15) !important;
@@ -280,6 +351,18 @@ html.dark .sidebar .nav-item.active,
 	padding: 8px 0 6px !important;
 }
 
+[data-collapsed="true"] .sidebar-footer-tier {
+	flex-direction: column !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	width: 100% !important;
+}
+
+[data-collapsed="true"] .sidebar-footer-tier--bottom {
+	padding-top: 0 !important;
+}
+
 [data-collapsed="true"] .sidebar-footer .dnt-clinic-control-wrapper {
 	max-width: 100% !important;
 	justify-content: center !important;
@@ -287,9 +370,25 @@ html.dark .sidebar .nav-item.active,
 
 [data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill {
 	padding: 0 4px !important;
-	gap: 3px !important;
+	gap: 4px !important;
 	width: 100% !important;
+	max-width: 64px !important;
 	justify-content: center !important;
+	overflow: hidden !important;
+}
+
+[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill .dnt-pill-divider,
+[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill > svg:last-child {
+	display: none !important;
+}
+
+[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill .dnt-pill-segment {
+	gap: 2px !important;
+}
+
+[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill .dnt-pill-dot {
+	width: 5px !important;
+	height: 5px !important;
 }
 
 [data-collapsed="true"] .sidebar-footer .dnt-control-center-popover {
@@ -300,7 +399,7 @@ html.dark .sidebar .nav-item.active,
 /* 7. Viewport Adaptations */
 @media (max-width: 1280px) {
 	.sidebar {
-		width: var(--sidebar-width, 210px) !important;
+		width: var(--sidebar-width, 190px) !important;
 		padding: 12px 6px !important;
 	}
 	.sidebar .nav-item {

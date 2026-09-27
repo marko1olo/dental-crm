@@ -398,7 +398,7 @@ export function WorkspaceSidebar({
 	 */
 	const navSlotClass = collapsed
 		? "flex w-full min-w-0 flex-col items-center gap-[0.1875rem] text-center"
-		: "flex w-full min-w-0 items-center gap-[0.6875rem] max-[1140px]:flex-col max-[1140px]:gap-[0.1875rem] max-[1140px]:text-center";
+		: "flex w-full min-w-0 items-center gap-[0.5rem] max-[1140px]:flex-col max-[1140px]:gap-[0.1875rem] max-[1140px]:text-center";
 	const navCaptionClass = collapsed
 		? "block max-w-full text-[0.625rem] font-semibold leading-[1.15] break-words"
 		: "hidden max-w-full text-[0.625rem] font-semibold leading-[1.15] break-words max-[1140px]:block";
@@ -477,19 +477,23 @@ export function WorkspaceSidebar({
 					</a>
 				</p>
 			) : null}
-			<div className="sidebar-footer max-w-full shrink-0 mt-auto pb-2 flex items-center justify-between">
-				<ClinicControlPill onLockSession={onLockSession} />
-				<ThemeQuickAccessWidget variant="footer" collapsed={collapsed} />
-				<button
-					className="icon-button sidebar-collapse-button"
-					type="button"
-					aria-label={collapsed ? "Развернуть меню" : "Свернуть меню"}
-					title={collapsed ? "Развернуть меню" : "Свернуть меню"}
-					aria-pressed={collapsed}
-					onClick={onToggleCollapsed}
-				>
-					<ChevronsLeft aria-hidden="true" />
-				</button>
+			<div className="sidebar-footer max-w-full shrink-0 mt-auto flex flex-col gap-1.5 pt-2 pb-1 border-t border-[var(--line)]">
+				<div className="sidebar-footer-tier sidebar-footer-tier--top flex items-center justify-between gap-1 w-full">
+					<ThemeQuickAccessWidget variant="footer" collapsed={collapsed} />
+					<button
+						className="icon-button sidebar-collapse-button"
+						type="button"
+						aria-label={collapsed ? "Развернуть меню" : "Свернуть меню"}
+						title={collapsed ? "Развернуть меню" : "Свернуть меню"}
+						aria-pressed={collapsed}
+						onClick={onToggleCollapsed}
+					>
+						<ChevronsLeft aria-hidden="true" />
+					</button>
+				</div>
+				<div className="sidebar-footer-tier sidebar-footer-tier--bottom flex items-center justify-center w-full">
+					<ClinicControlPill onLockSession={onLockSession} />
+				</div>
 			</div>
 		</aside>
 	);

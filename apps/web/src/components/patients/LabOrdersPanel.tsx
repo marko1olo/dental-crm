@@ -800,24 +800,27 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						<RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[var(--teal)]" : ""}`} />
 					</button>
 
-					{/* Consolidated Presets Dropdown */}
+					{/* Consolidated Presets, Tracker & Registry Dropdown (1-Row Rule) */}
 					<div className="relative inline-block" ref={presetsMenuRef}>
 						<button
 							type="button"
 							onClick={() => setIsPresetsMenuOpen((prev) => !prev)}
 							disabled={submitting}
-							className="lab-btn-32 bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20 font-bold"
-							title="Быстрые экспресс-шаблоны ЗТЛ (Цирконий A2, Временная PMMA, Вкладка КХС)"
+							className="lab-btn-32"
+							title="Инструменты, шаблоны и трекер ЗТЛ"
 							aria-expanded={isPresetsMenuOpen}
 							aria-haspopup="true"
 						>
-							<Zap className="w-3.5 h-3.5 text-amber-500" />
-							<span>Быстрые шаблоны</span>
+							<Layers className="w-3.5 h-3.5 text-[var(--teal)]" />
+							<span>Шаблоны и трекер</span>
 							<ChevronDown className={`w-3 h-3 transition-transform ${isPresetsMenuOpen ? "rotate-180" : ""}`} />
 						</button>
 
 						{isPresetsMenuOpen && (
-							<div className="absolute left-0 top-full mt-1 w-64 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+							<div className="absolute right-0 sm:left-0 top-full mt-1 w-64 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+								<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+									Экспресс-шаблоны ЗТЛ:
+								</div>
 								<button
 									type="button"
 									onClick={() => {
@@ -825,7 +828,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 										void handleOneClickCreate();
 									}}
 									disabled={submitting}
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between transition-colors cursor-pointer"
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between transition-colors cursor-pointer"
 									title="Создать наряд ЗТЛ в 1 клик: Коронка цирконий/E.max, цвет VITA A2, срок 7 рабочих дней"
 									data-testid="lab-order-one-click-btn"
 								>
@@ -846,7 +849,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 										if (pmma) void handleExpressPresetCreate(pmma);
 									}}
 									disabled={submitting}
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between transition-colors cursor-pointer"
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between transition-colors cursor-pointer"
 									title="Создать наряд в 1 клик: Временная PMMA CAD/CAM, срок 2 рабочих дня"
 									data-testid="lab-order-preset-pmma-btn"
 								>
@@ -867,7 +870,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 										if (corePost) void handleExpressPresetCreate(corePost);
 									}}
 									disabled={submitting}
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between transition-colors cursor-pointer"
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-between transition-colors cursor-pointer"
 									title="Создать наряд в 1 клик: Культевая вкладка КХС (CoCr), срок 3 рабочих дня"
 									data-testid="lab-order-preset-core-post-btn"
 								>
@@ -879,31 +882,51 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 										</div>
 									</div>
 								</button>
+
+								<div className="border-t border-[var(--line)] my-1" />
+
+								<button
+									type="button"
+									onClick={() => {
+										setIsPresetsMenuOpen(false);
+										setIsTrackerModalOpen(true);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 transition-colors cursor-pointer"
+									title="Трекер нарядов и дедлайнов ЗТЛ"
+									data-testid="lab-orders-tracker-trigger"
+								>
+									<Clock className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+									<span>Трекер нарядов и дедлайнов</span>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => {
+										setIsPresetsMenuOpen(false);
+										setIsLabHubOpen(true);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 transition-colors cursor-pointer"
+									title="Реестр нарядов ЗТЛ"
+									data-testid="lab-orders-hub-trigger"
+								>
+									<Layers className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+									<span>Реестр нарядов ЗТЛ</span>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => {
+										setIsPresetsMenuOpen(false);
+										setShowQuickForm(!showQuickForm);
+									}}
+									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-2 transition-colors cursor-pointer"
+								>
+									<Plus className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+									<span>{showQuickForm ? "Скрыть форму наряда" : "Быстрый наряд (inline-форма)"}</span>
+								</button>
 							</div>
 						)}
 					</div>
-
-					<button
-						type="button"
-						onClick={() => setIsTrackerModalOpen(true)}
-						className="lab-btn-32 bg-teal-500/10 text-teal-800 dark:text-teal-200 border-teal-500/30 hover:bg-teal-500/20 font-bold"
-						title="Трекер нарядов и дедлайнов ЗТЛ"
-						data-testid="lab-orders-tracker-trigger"
-					>
-						<Clock className="w-3.5 h-3.5 text-teal-500" />
-						<span>Трекер ЗТЛ</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setIsLabHubOpen(true)}
-						className="lab-btn-32 bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 border-indigo-500/30 hover:bg-indigo-500/20 font-bold"
-						title="Реестр нарядов ЗТЛ"
-						data-testid="lab-orders-hub-trigger"
-					>
-						<Layers className="w-3.5 h-3.5 text-indigo-500" />
-						<span>Реестр нарядов</span>
-					</button>
 
 					<button
 						type="button"
@@ -912,19 +935,11 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 							setIsOrderModalOpen(true);
 						}}
 						className="lab-btn-32 is-primary"
-						title="Полный наряд CAD/CAM"
+						title="Оформить наряд в зуботехническую лабораторию"
+						data-testid="btn-create-lab-order"
 					>
-						<Sparkles className="w-3.5 h-3.5" />
-						<span>+ Наряд CAD/CAM</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={() => setShowQuickForm(!showQuickForm)}
-						className="lab-btn-32"
-					>
-						{showQuickForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-						<span>{showQuickForm ? "Отмена" : "Быстрый наряд"}</span>
+						<Plus className="w-3.5 h-3.5" />
+						<span>+ Наряд в ЗТЛ</span>
 					</button>
 				</div>
 			</div>

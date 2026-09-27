@@ -9,10 +9,12 @@ import {
 import {
 	Banknote,
 	Bot,
+	ChevronDown,
 	Coins,
 	CreditCard,
 	MoreVertical,
 	QrCode,
+	SlidersHorizontal,
 	UserRound,
 	X,
 } from "lucide-react";
@@ -845,6 +847,12 @@ export function PaymentCapture({
 			normalizeRubAmountInput(amount) === 0 ||
 			normalizeRubAmountInput(amount) === null);
 
+	const parsedInputAmount = normalizeRubAmountInput(amount);
+	const dueAmount =
+		parsedInputAmount !== null && parsedInputAmount > 0
+			? parsedInputAmount
+			: (remainingDebt !== undefined ? remainingDebt : (parsedInputAmount ?? 1));
+
 	// Опциональные поля для справки об оплате мед. услуг в ФНС (Мандат 8e / 8n: НЕ БЛОКИРУЮТ приём денег)
 	const taxDeductionMissingSteps = [
 		payerInnInvalid ? "ИНН плательщика должен содержать 10 или 12 цифр (опционально для физлиц)" : null,
@@ -1361,118 +1369,7 @@ export function PaymentCapture({
 				</div>
 			</div>
 
-			{/* Скидки врача и гарантийные переделки (Мандат 8e п. 7, Мандат 8n: без паролей администратора и блокировок) */}
-			<div
-				className="doctor-discounts-section col-span-full"
-				style={{ gridColumn: "1 / -1", marginTop: "2px", marginBottom: "2px" }}
-				data-testid="doctor-discounts-section"
-			>
-				<span className="text-[10px] sm:text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block mb-0.5">
-					Скидка врача / Гарантия:
-				</span>
-				<div
-					role="toolbar"
-					className="quick-chips-row doctor-discount-chips"
-					style={{ display: "flex", gap: "3px" }}
-					aria-label="Скидки врача и гарантийные переделки"
-				>
-					<button
-						type="button"
-						className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-extrabold shrink-0 ${selectedDoctorDiscount === "warranty_100" ? "active bg-blue-600 text-white" : ""}`}
-						onClick={() => applyDoctorDiscount("warranty_100")}
-						data-testid="btn-doctor-discount-warranty"
-						title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без блокировок)"
-					>
-						<span className="sm:hidden">100% Гарантия</span>
-						<span className="hidden sm:inline">100% Гарантия (Переделка)</span>
-					</button>
-					<button
-						type="button"
-						className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 ${selectedDoctorDiscount === "colleague_100" ? "active bg-purple-600 text-white" : ""}`}
-						onClick={() => applyDoctorDiscount("colleague_100")}
-						data-testid="btn-doctor-discount-colleague"
-						title="100% скидка для коллег и персонала клиники"
-					>
-						Персонал 100%
-					</button>
-					<button
-						type="button"
-						className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-1.5 sm:px-2 text-[11px] sm:text-xs font-semibold shrink-0 ${selectedDoctorDiscount === "percent_50" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
-						onClick={() => applyDoctorDiscount("percent_50")}
-						data-testid="btn-doctor-discount-50"
-					>
-						<span className="sm:hidden">-50%</span>
-						<span className="hidden sm:inline">Скидка 50%</span>
-					</button>
-					<button
-						type="button"
-						className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-1.5 sm:px-2 text-[11px] sm:text-xs font-semibold shrink-0 ${selectedDoctorDiscount === "percent_20" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
-						onClick={() => applyDoctorDiscount("percent_20")}
-						data-testid="btn-doctor-discount-20"
-					>
-						<span className="sm:hidden">-20%</span>
-						<span className="hidden sm:inline">Скидка 20%</span>
-					</button>
-					<button
-						type="button"
-						className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-1.5 sm:px-2 text-[11px] sm:text-xs font-semibold shrink-0 ${selectedDoctorDiscount === "percent_10" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
-						onClick={() => applyDoctorDiscount("percent_10")}
-						data-testid="btn-doctor-discount-10"
-					>
-						<span className="sm:hidden">-10%</span>
-						<span className="hidden sm:inline">Скидка 10%</span>
-					</button>
-				</div>
-			</div>
-
-			{/* Комбинированная оплата в 1 клик (Мандаты 8e, 8n, 8k: нал + карта + баланс без трения) */}
-			<div
-				className="combined-payment-presets-section col-span-full"
-				style={{ gridColumn: "1 / -1", marginTop: "2px", marginBottom: "2px" }}
-				data-testid="combined-payment-presets-section"
-			>
-				<span className="text-[10px] sm:text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block mb-0.5">
-					Комбинированная оплата в 1 клик:
-				</span>
-				<div
-					role="toolbar"
-					className="quick-chips-row combined-payment-chips"
-					style={{ display: "flex", gap: "3px", flexWrap: "wrap" }}
-					aria-label="Комбинированная оплата в 1 клик"
-				>
-					<button
-						type="button"
-						className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-400 hover:bg-indigo-500/25 cursor-pointer flex items-center gap-1.5 transition-all"
-						onClick={applySplit5050Preset}
-						data-testid="btn-combo-split-50-50"
-						title="Комбинированная оплата: 50% Наличные + 50% Карта"
-					>
-						<Coins size={13} className="shrink-0" />
-						<span>50/50 Нал + Карта</span>
-					</button>
-					<button
-						type="button"
-						className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-400 hover:bg-teal-500/25 cursor-pointer flex items-center gap-1.5 transition-all"
-						onClick={applyThreeWaySplitPreset}
-						data-testid="btn-combo-split-three-way"
-						title="Комбинированная оплата в 1 клик: Нал + Карта + Баланс"
-					>
-						<UserRound size={13} className="shrink-0" />
-						<span>Нал + Карта + Баланс</span>
-					</button>
-					<button
-						type="button"
-						className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-400 hover:bg-purple-500/25 cursor-pointer flex items-center gap-1.5 transition-all"
-						onClick={applyDepositPlusCardPreset}
-						data-testid="btn-combo-split-deposit-card"
-						title="Комбинированная оплата: Баланс + Карта"
-					>
-						<CreditCard size={13} className="shrink-0" />
-						<span>Баланс + Карта</span>
-					</button>
-				</div>
-			</div>
-
+			{/* 2-уровневая панель чекаута (Мандаты 8e, 8n, 8p): Уровень 2 — Способ оплаты */}
 			<div
 				role="toolbar"
 				className="quick-chips-row payment-methods-toolbar col-span-full"
@@ -1503,7 +1400,13 @@ export function PaymentCapture({
 									? "Перевод"
 									: paymentMethod === "family_wallet"
 										? "Баланс"
-										: methodLabels[paymentMethod] || paymentMethod}
+										: paymentMethod === "card"
+											? "Карта"
+											: paymentMethod === "cash"
+												? "Нал"
+												: paymentMethod === "online"
+													? "Онлайн"
+													: methodLabels[paymentMethod] || paymentMethod}
 							</span>
 							<span className="hidden sm:inline">
 								{methodLabels[paymentMethod] ||
@@ -1515,6 +1418,141 @@ export function PaymentCapture({
 					);
 				})}
 			</div>
+
+			{/* Скидки врача и сплит оплаты под компактной раскрывающейся панелью (Мандаты 8e, 8n, 8p: 2-уровневая касса без свалки кнопок) */}
+			<details
+				className="payment-options-accordion group col-span-full rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] px-2.5 py-1.5 my-1 text-xs select-none shadow-xs"
+				data-testid="payment-options-accordion"
+				style={{ gridColumn: "1 / -1" }}
+			>
+				<summary className="flex items-center justify-between cursor-pointer font-semibold text-[var(--ink)] list-none hover:text-[var(--teal)] transition-colors min-h-[30px] px-1 [&::-webkit-details-marker]:hidden">
+					<div className="flex items-center gap-1.5">
+						<SlidersHorizontal size={13} className="text-[var(--teal)] shrink-0" />
+						<span className="text-[11px] sm:text-xs font-bold">Скидки врача и сплит оплаты</span>
+						{selectedDoctorDiscount && (
+							<span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 bg-teal-500/15 px-1.5 py-0.5 rounded">
+								Скидка активна
+							</span>
+						)}
+					</div>
+					<div className="flex items-center gap-1 text-[11px] text-[var(--muted)]">
+						<span className="group-open:hidden text-[10px]">Опции</span>
+						<ChevronDown
+							size={13}
+							className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180 shrink-0"
+						/>
+					</div>
+				</summary>
+				<div className="pt-2 space-y-2 border-t border-[var(--line-subtle)] mt-1.5">
+					{/* Скидки врача и гарантийные переделки (Мандат 8e п. 7, Мандат 8n: без паролей администратора и блокировок) */}
+					<div
+						className="doctor-discounts-section"
+						data-testid="doctor-discounts-section"
+					>
+						<span className="text-[10px] sm:text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block mb-0.5">
+							Скидка врача / Гарантия:
+						</span>
+						<div
+							role="toolbar"
+							className="quick-chips-row doctor-discount-chips flex flex-wrap gap-1"
+							aria-label="Скидки врача и гарантийные переделки"
+						>
+							<button
+								type="button"
+								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-extrabold shrink-0 ${selectedDoctorDiscount === "warranty_100" ? "active bg-blue-600 text-white" : ""}`}
+								onClick={() => applyDoctorDiscount("warranty_100")}
+								data-testid="btn-doctor-discount-warranty"
+								title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без блокировок)"
+							>
+								<span className="sm:hidden">100% Гарантия</span>
+								<span className="hidden sm:inline">100% Гарантия (Переделка)</span>
+							</button>
+							<button
+								type="button"
+								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 ${selectedDoctorDiscount === "colleague_100" ? "active bg-purple-600 text-white" : ""}`}
+								onClick={() => applyDoctorDiscount("colleague_100")}
+								data-testid="btn-doctor-discount-colleague"
+								title="100% скидка для коллег и персонала клиники"
+							>
+								Персонал 100%
+							</button>
+							<button
+								type="button"
+								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-1.5 sm:px-2 text-[11px] sm:text-xs font-semibold shrink-0 ${selectedDoctorDiscount === "percent_50" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
+								onClick={() => applyDoctorDiscount("percent_50")}
+								data-testid="btn-doctor-discount-50"
+							>
+								<span className="sm:hidden">-50%</span>
+								<span className="hidden sm:inline">Скидка 50%</span>
+							</button>
+							<button
+								type="button"
+								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-1.5 sm:px-2 text-[11px] sm:text-xs font-semibold shrink-0 ${selectedDoctorDiscount === "percent_20" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
+								onClick={() => applyDoctorDiscount("percent_20")}
+								data-testid="btn-doctor-discount-20"
+							>
+								<span className="sm:hidden">-20%</span>
+								<span className="hidden sm:inline">Скидка 20%</span>
+							</button>
+							<button
+								type="button"
+								className={`quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-1.5 sm:px-2 text-[11px] sm:text-xs font-semibold shrink-0 ${selectedDoctorDiscount === "percent_10" ? "active bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400 font-bold" : ""}`}
+								onClick={() => applyDoctorDiscount("percent_10")}
+								data-testid="btn-doctor-discount-10"
+							>
+								<span className="sm:hidden">-10%</span>
+								<span className="hidden sm:inline">Скидка 10%</span>
+							</button>
+						</div>
+					</div>
+
+					{/* Комбинированная оплата в 1 клик (Мандаты 8e, 8n, 8k: нал + карта + баланс без трения) */}
+					<div
+						className="combined-payment-presets-section"
+						data-testid="combined-payment-presets-section"
+					>
+						<span className="text-[10px] sm:text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block mb-0.5">
+							Комбинированная оплата в 1 клик:
+						</span>
+						<div
+							role="toolbar"
+							className="quick-chips-row combined-payment-chips flex flex-wrap gap-1"
+							aria-label="Комбинированная оплата в 1 клик"
+						>
+							<button
+								type="button"
+								className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-400 hover:bg-indigo-500/25 cursor-pointer flex items-center gap-1.5 transition-all"
+								onClick={applySplit5050Preset}
+								data-testid="btn-combo-split-50-50"
+								title="Комбинированная оплата: 50% Наличные + 50% Карта"
+							>
+								<Coins size={13} className="shrink-0" />
+								<span>50/50 Нал + Карта</span>
+							</button>
+							<button
+								type="button"
+								className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-400 hover:bg-teal-500/25 cursor-pointer flex items-center gap-1.5 transition-all"
+								onClick={applyThreeWaySplitPreset}
+								data-testid="btn-combo-split-three-way"
+								title="Комбинированная оплата в 1 клик: Нал + Карта + Баланс"
+							>
+								<UserRound size={13} className="shrink-0" />
+								<span>Нал + Карта + Баланс</span>
+							</button>
+							<button
+								type="button"
+								className="quick-chip min-h-[44px] sm:min-h-7 sm:h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-bold shrink-0 bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-400 hover:bg-purple-500/25 cursor-pointer flex items-center gap-1.5 transition-all"
+								onClick={applyDepositPlusCardPreset}
+								data-testid="btn-combo-split-deposit-card"
+								title="Комбинированная оплата: Баланс + Карта"
+							>
+								<CreditCard size={13} className="shrink-0" />
+								<span>Баланс + Карта</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			</details>
 
 			{method === "cash" &&
 				(normalizeRubAmountInput(amount) ?? 0) > 0 &&
@@ -1690,7 +1728,7 @@ export function PaymentCapture({
 			{/* Панель оформления чека и кнопок оплаты (Мандат 8e / 8c / 8p: фиксирована внизу экрана) */}
 			<div
 				id="payment-checkout-bar"
-				className="payment-checkout-bar col-span-full fixed bottom-0 right-0 z-50 bg-[var(--paper-strong,var(--paper))] dark:bg-[var(--paper-strong)] border-t border-[var(--line)] shadow-2xl px-2 sm:px-3 py-2 sm:py-2.5 flex flex-row items-center justify-between gap-1.5 sm:gap-2 max-w-full min-w-0 box-border left-0 md:left-[var(--sidebar-width,252px)] pb-safe overflow-hidden"
+				className="payment-checkout-bar col-span-full fixed bottom-0 right-0 z-50 bg-[var(--paper-strong,var(--paper))] dark:bg-[var(--paper-strong)] border-t border-[var(--line)] shadow-2xl px-2 sm:px-3 py-2 sm:py-2.5 flex flex-row items-center justify-between gap-1.5 sm:gap-2 max-w-full min-w-0 box-border left-0 md:left-[var(--sidebar-width,200px)] pb-safe overflow-hidden"
 				style={{
 					position: "fixed",
 					bottom: 0,
@@ -1742,14 +1780,20 @@ export function PaymentCapture({
 						</span>
 					</button>
 					<button
-						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:!hidden min-w-0 px-2 sm:px-2.5 lg:px-3 overflow-hidden shrink"
+						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:!hidden min-w-0 px-2 sm:px-2.5 lg:px-3 overflow-hidden shrink disabled:opacity-40 disabled:cursor-not-allowed"
 						type="button"
 						onClick={handleSberPosClick}
 						aria-describedby={
 							!paymentReadyToSubmit ? paymentMissingId : undefined
 						}
-						disabled={isSaving}
-						title={isSaving ? "Идет сохранение платежа, терминал занят..." : undefined}
+						disabled={isSaving || dueAmount <= 0}
+						title={
+							isSaving
+								? "Идет сохранение платежа, терминал занят..."
+								: dueAmount <= 0
+									? "Сумма к списанию 0 ₽ — введите сумму"
+									: undefined
+						}
 						data-testid="payment-sberpos-button"
 					>
 						<CreditCard aria-hidden="true" size={15} className="shrink-0" />{" "}
@@ -1760,14 +1804,20 @@ export function PaymentCapture({
 						</span>
 					</button>
 					<button
-						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:!hidden flex items-center gap-1 sm:gap-1.5 min-w-0 px-2 sm:px-2.5 lg:px-3 whitespace-nowrap shrink"
+						className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 flex-1 font-semibold text-xs max-sm:!hidden flex items-center gap-1 sm:gap-1.5 min-w-0 px-2 sm:px-2.5 lg:px-3 whitespace-nowrap shrink disabled:opacity-40 disabled:cursor-not-allowed"
 						type="button"
 						onClick={handleOpenSplitModal}
 						aria-describedby={
 							!paymentReadyToSubmit ? paymentMissingId : undefined
 						}
-						disabled={isSaving}
-						title={isSaving ? "Операция выполняется..." : "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"}
+						disabled={isSaving || dueAmount <= 0}
+						title={
+							isSaving
+								? "Операция выполняется..."
+								: dueAmount <= 0
+									? "Сумма к списанию 0 ₽ — введите сумму"
+									: "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
+						}
 						data-testid="payment-split-modal-button"
 					>
 						<Coins aria-hidden="true" size={15} className="shrink-0 text-indigo-600 dark:text-indigo-400" />{" "}
@@ -1801,10 +1851,16 @@ export function PaymentCapture({
 										setIsMoreActionsOpen(false);
 										handleSberPosClick();
 									}}
-									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] sm:hidden flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px]"
+									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] sm:hidden flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
 									role="menuitem"
-									disabled={isSaving}
-									title={isSaving ? "Операция выполняется..." : "Сбер POS"}
+									disabled={isSaving || dueAmount <= 0}
+									title={
+										isSaving
+											? "Операция выполняется..."
+											: dueAmount <= 0
+												? "Сумма к списанию 0 ₽"
+												: "Сбер POS"
+									}
 								>
 									<CreditCard
 										size={15}
@@ -1818,11 +1874,17 @@ export function PaymentCapture({
 										setIsMoreActionsOpen(false);
 										handleOpenSplitModal();
 									}}
-									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px]"
+									className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--line)] text-[var(--ink)] flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
 									role="menuitem"
-									disabled={isSaving}
+									disabled={isSaving || dueAmount <= 0}
 									data-testid="payment-split-modal-button"
-									title={isSaving ? "Операция выполняется..." : "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"}
+									title={
+										isSaving
+											? "Операция выполняется..."
+											: dueAmount <= 0
+												? "Сумма к списанию 0 ₽"
+												: "Комбинированная оплата: Нал + Карта + Баланс (Сплит)"
+									}
 								>
 									<Coins
 										size={15}
@@ -1836,10 +1898,16 @@ export function PaymentCapture({
 										setIsMoreActionsOpen(false);
 										handleManualCardTerminalSubmit();
 									}}
-									className="w-full text-left px-2.5 py-2 text-xs font-bold rounded-lg hover:bg-[var(--line)] text-blue-700 dark:text-blue-300 flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px]"
+									className="w-full text-left px-2.5 py-2 text-xs font-bold rounded-lg hover:bg-[var(--line)] text-blue-700 dark:text-blue-300 flex items-center gap-2 cursor-pointer transition-colors min-h-[44px] sm:min-h-[36px] disabled:opacity-40 disabled:cursor-not-allowed"
 									role="menuitem"
-									disabled={isSaving}
-									title={isSaving ? "Операция выполняется..." : "Зафиксировать оплату в CRM, если карта списана на терминале вручную"}
+									disabled={isSaving || dueAmount <= 0}
+									title={
+										isSaving
+											? "Операция выполняется..."
+											: dueAmount <= 0
+												? "Сумма к списанию 0 ₽"
+												: "Зафиксировать оплату в CRM, если карта списана на терминале вручную"
+									}
 									data-testid="payment-manual-card-terminal-button"
 								>
 									<CreditCard

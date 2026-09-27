@@ -35,7 +35,7 @@ import {
 } from "./doctorPrivacyShieldHelpers";
 
 /**
- * Экран приватности врача (152-ФЗ / Защита врачебной тайны)
+ * Экран приватности врача (Защита врачебной тайны)
  *
  * 1. Полностью перекрывает интерфейс с медицинскими данными тёмным стеклянным арт-фоном
  *    (selectAuthArt(manifest, { pack: 'dental-epic' })).
@@ -308,13 +308,13 @@ export function DoctorPrivacyShield({
 				padding: "16px",
 				userSelect: "none",
 				fontFamily: "Inter, system-ui, -apple-system, sans-serif",
-				backgroundColor: "rgba(10, 15, 29, 0.72)",
+				backgroundColor: "rgba(10, 15, 29, 0.58)",
 				backdropFilter: "blur(28px)",
 				WebkitBackdropFilter: "blur(28px)",
 			}}
 			role="dialog"
 			aria-modal="true"
-			aria-label="Экран приватности врача (152-ФЗ)"
+			aria-label="Экран приватности врача — Врачебная тайна"
 			data-testid="doctor-privacy-shield"
 		>
 			{/* 1. Тёмный стеклянный арт-фон (selectAuthArt) */}
@@ -386,7 +386,7 @@ export function DoctorPrivacyShield({
 								height: "100%",
 								objectFit: "cover",
 								objectPosition: "center",
-								opacity: artLoaded && !artError ? 0.65 : 0,
+								opacity: artLoaded && !artError ? 0.28 : 0,
 								transition: "opacity 0.8s ease-in-out",
 								display: "block",
 							}}
@@ -394,7 +394,7 @@ export function DoctorPrivacyShield({
 					</picture>
 				)}
 
-				{/* Мягкий радиальный затемняющий слой для фокуса на PIN-паде и 152-ФЗ бейдже */}
+				{/* Мягкий радиальный затемняющий слой для фокуса на PIN-паде и бейдже тайны */}
 				<div
 					style={{
 						position: "absolute",
@@ -447,16 +447,16 @@ export function DoctorPrivacyShield({
 					color: "#ffffff",
 				}}
 			>
-				{/* 152-ФЗ Бейдж врачебной тайны */}
+				{/* Лаконичный бейдж врачебной тайны */}
 				<div
 					style={{
 						display: "inline-flex",
 						alignItems: "center",
-						gap: "6px",
-						padding: "4px 10px",
+						gap: "5px",
+						padding: "3px 10px",
 						borderRadius: "9999px",
-						backgroundColor: "rgba(13, 148, 136, 0.18)",
-						border: "1px solid rgba(45, 212, 191, 0.35)",
+						backgroundColor: "rgba(13, 148, 136, 0.16)",
+						border: "1px solid rgba(45, 212, 191, 0.3)",
 						color: "#2dd4bf",
 						fontSize: "11px",
 						fontWeight: 600,
@@ -465,7 +465,7 @@ export function DoctorPrivacyShield({
 					}}
 				>
 					<ShieldCheck size={13} className="shrink-0" />
-					<span>152-ФЗ · Врачебная тайна</span>
+					<span>Врачебная тайна</span>
 				</div>
 
 				{/* Аватар текущего врача */}

@@ -601,7 +601,7 @@
 .payment-checkout-bar {
 	position: fixed !important;
 	bottom: 0 !important;
-	left: var(--sidebar-width, 252px) !important;
+	left: var(--sidebar-width, 200px) !important;
 	right: 0 !important;
 	width: auto !important;
 	z-index: 50 !important;

@@ -49,7 +49,7 @@
 	--focus-ring: rgba(13, 148, 136, 0.5);
 	--mobile-nav-height: 68px;
 	--bottom-nav-height: 68px;
-	--sidebar-width: 252px;
+	--sidebar-width: 200px;
 	--transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	--transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 	--transition-spring: 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -905,7 +905,7 @@ select:focus {
 
 /* ---------- 5. САЙДБАР ---------- */
 .sidebar {
-	width: var(--sidebar-width, 252px);
+	width: var(--sidebar-width, 200px);
 	flex-shrink: 0;
 	display: flex;
 	flex-direction: column;
@@ -1269,7 +1269,7 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 }
 [data-collapsed="true"] .sidebar-footer {
 	flex-direction: column;
-	gap: 8px;
+	gap: 6px;
 }
 [data-collapsed="true"] .theme-switcher {
 	display: none;
