@@ -140,7 +140,49 @@ async function capture() {
       if (url.includes("/api/patients")) {
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockDashboard.patients || []) });
       }
-      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
+      if (url.includes("/api/workspace/profile")) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            success: true,
+            flags: {
+              hasAssistants: true,
+              hasMultipleChairs: true,
+              hasDentalLab: true,
+              hasInsuranceCoPay: true,
+              hasInstallments: true,
+              hasOrthodontics: true,
+              hasGnathology: false,
+              hasTasks: true,
+              hasReclamations: true,
+              workspacePreset: "enterprise",
+              onboardingCompleted: true,
+              hasPediatricMode: false,
+              isOmniRole: false,
+              numberOfDoctors: 4,
+              hasPayrollModule: true,
+              hasMarketingModule: true,
+              hasAnalyticsModule: true,
+              hasCsoScanner: false,
+              hasLeadsKanban: false,
+              hasOmnichannel: false,
+              hasInventoryModule: true,
+              aiEnableTreatmentPlan: true,
+              aiEnableRecommendations: true,
+              aiEnableDocuments: true,
+              hasEngineeringStatus: false,
+              hasClinicalRules: true,
+              hasReferralModule: false,
+              hasBpmWorkflows: false,
+            },
+          }),
+        });
+      }
+      if (url.includes("/api/clinic") || url.includes("/api/settings")) {
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockDashboard.clinicSettings || {}) });
+      }
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true }) });
     });
 
     console.log("Navigating to http://127.0.0.1:5173/#schedule...");
@@ -201,35 +243,35 @@ async function capture() {
       // --- SCREEN 2: SETTINGS (Матрица прав & Доступ) ---
       console.log(`[${theme}] Opening Settings view...`);
       await page.evaluate(() => { window.location.hash = "#settings/access"; });
-      await page.waitForSelector('.settings-zone, [data-testid="settings-view"]', { state: "visible", timeout: 20000 });
-      await page.waitForTimeout(1000);
+      await page.waitForSelector('[data-testid="settings-view"]', { state: "visible", timeout: 25000 });
+      await page.waitForTimeout(800);
 
       // Click "Все разделы" to see full settings if collapsed
       const allBtn = page.locator('[data-testid="btn-settings-role-all"]').first();
       if (await allBtn.isVisible()) {
         await allBtn.click();
-        await page.waitForTimeout(400);
+        await page.waitForTimeout(500);
       }
 
       // Ensure "Доступ" tab is clicked
       const accessTab = page.locator('button:has-text("Доступ"), [data-testid="settings-tab-access"]').first();
       if (await accessTab.isVisible()) {
         await accessTab.click();
-        await page.waitForTimeout(800);
+        await page.waitForTimeout(1000);
       }
       await saveProof(page, `settings_roles_clean_${theme}.png`);
 
       // --- SCREEN 3: PATIENTS (Картотека пациентов & Карточка) ---
       console.log(`[${theme}] Opening Patients view...`);
       await page.evaluate(() => { window.location.hash = "#patients"; });
-      await page.waitForSelector('.patients-view, [data-testid="patient-quick-actions-toolbar"]', { state: "visible", timeout: 15000 });
-      await page.waitForTimeout(800);
+      await page.waitForSelector('[data-testid="open-create-patient-modal-btn"], [data-testid^="patient-row-"]', { state: "visible", timeout: 25000 });
+      await page.waitForTimeout(1000);
 
-      // Click on first patient card to show general info
-      const firstPatient = page.locator('.patient-list-item, [data-testid^="patient-card"], .patient-card').first();
-      if (await firstPatient.isVisible()) {
-        await firstPatient.click();
-        await page.waitForTimeout(600);
+      // Click on first patient row to open patient card
+      const firstPatientRow = page.locator('[data-testid^="patient-row-"]').first();
+      if (await firstPatientRow.isVisible()) {
+        await firstPatientRow.click();
+        await page.waitForTimeout(1000);
       }
       await saveProof(page, `patients_clean_${theme}.png`);
 
@@ -237,14 +279,15 @@ async function capture() {
       const moreActionsBtn = page.locator('[data-testid="patient-card-more-actions-btn"]');
       if (await moreActionsBtn.isVisible()) {
         await moreActionsBtn.click();
-        await page.waitForTimeout(400);
+        await page.waitForTimeout(500);
         const openCardBtn = page.locator('[data-testid="open-patient-card-modal-btn"]');
         if (await openCardBtn.isVisible()) {
           await openCardBtn.click();
-          await page.waitForTimeout(800);
+          await page.waitForSelector('.patient-card-modal, [data-testid="patient-card-modal"]', { state: "visible", timeout: 10000 }).catch(() => {});
+          await page.waitForTimeout(1000);
           await saveProof(page, `patient_card_modal_clean_${theme}.png`);
           // Close modal
-          const closeModalBtn = page.locator('button:has-text("Закрыть")').first();
+          const closeModalBtn = page.locator('button:has-text("Закрыть"), [aria-label="Закрыть"]').first();
           if (await closeModalBtn.isVisible()) {
             await closeModalBtn.click();
             await page.waitForTimeout(400);
