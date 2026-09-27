@@ -77,7 +77,7 @@ export const SUPER_PERMISSIONS_MAP: Record<string, SuperPermissionInfo> = {
 	},
 	"clinical.records.write": {
 		badge: "Подпись медицинской карты",
-		hint: "Юридическая ответственность: постановка диагноза и подписание клинического протокола по 804н.",
+		hint: "Юридическая ответственность: постановка диагноза и подписание клинического протокола.",
 		isCritical: true,
 	},
 	"settings.staff_authority": {
@@ -87,12 +87,12 @@ export const SUPER_PERMISSIONS_MAP: Record<string, SuperPermissionInfo> = {
 	},
 	"finance.refunds": {
 		badge: "Возвраты из кассы",
-		hint: "Кассовая дисциплина: выдача наличных и безналичных возвратов по чекам 54-ФЗ.",
+		hint: "Кассовая дисциплина: выдача наличных и безналичных возвратов по кассовым чекам.",
 		isCritical: false,
 	},
 	"finance.tariffs_manage": {
 		badge: "Супер-право: Прейскурант",
-		hint: "Ценовая политика: изменение цен на услуги 804н и технологических карт расходов.",
+		hint: "Ценовая политика: изменение цен на медицинские услуги и технологических карт расходов.",
 		isCritical: true,
 	},
 };
@@ -210,7 +210,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 									: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"
 							}`}
 							data-testid="rbac-filter-super-rights"
-							title="Фильтровать только полномочия повышенной ответственности (P&L, Зарплаты, 152-ФЗ, 323-ФЗ)"
+							title="Фильтровать только полномочия повышенной ответственности (P&L, Зарплаты, Персональные данные, Подпись карты)"
 						>
 							<AlertTriangle size={14} className={onlySuperRights ? "text-amber-600 dark:text-amber-400" : "text-slate-400"} />
 							<span>Только супер-права</span>
