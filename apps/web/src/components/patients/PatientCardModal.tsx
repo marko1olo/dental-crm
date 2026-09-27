@@ -201,7 +201,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-print-patient-card"
 								onClick={handlePrint}
-								className="min-h-[44px] sm:min-h-[32px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none"
+								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all"
 								title="Печать карты пациента (Мандат 8e п. 5)"
 							>
 								<Printer className="w-4 h-4 shrink-0" />
@@ -212,10 +212,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-close-patient-card-modal"
 								onClick={onClose}
-								className="min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-[32px] flex items-center justify-center p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0"
+								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[32px] h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shrink-0"
 								aria-label="Закрыть окно"
 							>
-								<X className="w-5 h-5" />
+								<X className="w-4 h-4" />
 							</button>
 						</div>
 					</div>
@@ -227,10 +227,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								data-testid="tab-patient-general"
-								className={`min-h-[44px] sm:min-h-[32px] px-3 sm:px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "general"
-										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+										? "bg-[var(--teal)] text-white shadow-xs"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 								}`}
 								onClick={() => setActiveTab("general")}
 							>
@@ -242,10 +242,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								data-testid="tab-patient-anamnesis"
-								className={`min-h-[44px] sm:min-h-[32px] px-3 sm:px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "anamnesis"
-										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+										? "bg-[var(--teal)] text-white shadow-xs"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 								}`}
 								onClick={() => setActiveTab("anamnesis")}
 							>
@@ -257,10 +257,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								data-testid="tab-patient-visits"
-								className={`min-h-[44px] sm:min-h-[32px] px-3 sm:px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "visits"
-										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+										? "bg-[var(--teal)] text-white shadow-xs"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 								}`}
 								onClick={() => setActiveTab("visits")}
 							>
@@ -272,10 +272,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								data-testid="tab-patient-family"
-								className={`min-h-[44px] sm:min-h-[32px] px-3 sm:px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "family"
-										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+										? "bg-[var(--teal)] text-white shadow-xs"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 								}`}
 								onClick={() => setActiveTab("family")}
 							>
@@ -288,7 +288,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 						<button
 							type="button"
 							data-testid="btn-somatic-healthy-norm"
-							className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98 shrink-0 whitespace-nowrap select-none"
+							className="min-h-[44px] sm:min-h-[32px] h-8 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98 shrink-0 whitespace-nowrap select-none"
 							onClick={handleApplyNorm}
 							title="1-клик: Применить физиологическую норму (соматически здоров)"
 						>
@@ -321,7 +321,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								onClick={onClose}
-								className="min-h-[44px] sm:min-h-[32px] px-4 py-2 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer select-none"
+								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[32px] h-8 px-4 text-xs font-semibold rounded-lg cursor-pointer select-none transition-all"
 							>
 								Закрыть
 							</button>
@@ -329,7 +329,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-save-patient-card"
 								onClick={handleSave}
-								className="min-h-[44px] sm:min-h-[32px] px-5 py-2 text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:bg-teal-700 text-white shadow-xs cursor-pointer select-none"
+								className="bg-[var(--teal)] text-white hover:opacity-95 min-h-[44px] sm:min-h-[32px] h-8 px-4 text-xs font-semibold rounded-lg shadow-xs cursor-pointer select-none transition-all"
 							>
 								Сохранить
 							</button>
