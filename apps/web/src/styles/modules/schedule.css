@@ -222,6 +222,8 @@
 .appointment-card {
 	content-visibility: auto;
 	contain-intrinsic-size: 1px 48px;
+	container-type: inline-size;
+	container-name: apptcard;
 	padding: 16px;
 	background: var(--paper);
 	border: 1px solid var(--line);
@@ -239,6 +241,93 @@
 	transform: translateY(-2px);
 	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 	border-color: var(--line-strong);
+}
+
+/* 2-Column Balanced Internal Layout for Appointment Cards */
+.appointment-card-grid-2col {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+	min-width: 0;
+}
+
+@container apptcard (min-width: 380px) {
+	.appointment-card-grid-2col {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 10px;
+		align-items: stretch;
+	}
+	.appointment-card-left-col {
+		border-right: 1px solid var(--line);
+		padding-right: 10px;
+	}
+	.appointment-card-right-col {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		min-width: 0;
+	}
+}
+
+@media (min-width: 1024px) {
+	.appointment-card-grid-2col {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 10px;
+		align-items: stretch;
+	}
+	.appointment-card-left-col {
+		border-right: 1px solid var(--line);
+		padding-right: 10px;
+	}
+	.appointment-card-right-col {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		min-width: 0;
+	}
+}
+
+/* Split-Day (2-Shift Timeline: 08:00-14:00 & 14:00-20:00) */
+.schedule-split-day-track {
+	width: 100%;
+	min-width: 100%;
+}
+.schedule-shift-subtrack {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+.schedule-shift-header {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12px;
+	font-weight: 700;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper-soft);
+	user-select: none;
+	box-sizing: border-box;
+}
+.schedule-shift-header-morning {
+	color: var(--amber);
+}
+.schedule-shift-header-evening {
+	color: var(--teal);
+}
+.schedule-split-day-track .schedule-grid-container > div {
+	min-height: 38px;
+}
+.schedule-split-day-track .schedule-empty-slot-btn {
+	min-height: 26px;
+	height: 26px;
+	padding: 0 4px;
 }
 .schedule-day-gap,
 .schedule-day-overlap,
