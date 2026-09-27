@@ -609,7 +609,7 @@ export const DEFAULT_804N_CONSUMABLE_LINKS: readonly ConsumableItemLink[] = [
 		inventoryItemId: "mat-composite-sdr-bulk",
 		itemName: "Текучий композит объемного внесения SDR Plus Bulk Fill Flowable (Dentsply)",
 		category: "composite",
-		unit: "compula",
+		unit: "dose",
 		quantityPerService: 1,
 		isMandatory: true,
 		costPriceKopecks: 32000, // 320.00 ₽ (#1 SDR Bulk Fill)

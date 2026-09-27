@@ -2167,7 +2167,10 @@ export function useAppLogic(): any {
 	}
 
 	async function dismissOnboarding() {
-		if (!assertOnboardingReadyForFinish()) return;
+		if (!assertOnboardingReadyForFinish()) {
+			await continueOnboardingInDraftMode();
+			return;
+		}
 		if (!(await saveClinicProfileIfDirty())) return;
 		if (!(await saveOnboardingSchedulesIfDirty())) return;
 		if (telegramSettingsDirty && !(await saveTelegramSettings())) return;
@@ -3013,7 +3016,7 @@ export function useAppLogic(): any {
 		setNewAppointmentDraft(
 			newAppointmentDraftFromDashboard(
 				dashboard,
-				newAppointmentPreferenceDefaultsRef.current(),
+				newAppointmentPreferenceDefaultsRef.current() as any,
 			),
 		);
 	}, [dashboard, setNewAppointmentDraft]);
@@ -3755,6 +3758,7 @@ export function useAppLogic(): any {
 		taskId: string,
 		outcome: CommunicationTaskOutcome,
 	) {
+		console.log("[useAppLogic] completeCommunicationTask ENTERED", { taskId, outcome, communicationSavingTaskId });
 		if (communicationSavingTaskId) {
 			setError("Дождитесь завершения текущего закрытия задачи связи.");
 			return;
@@ -3767,26 +3771,33 @@ export function useAppLogic(): any {
 		}
 		setCommunicationSavingTaskId(taskId);
 		try {
+			console.log("[useAppLogic] calling auth.denteClinicalMutationHeaders...");
+			const headers = auth.denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+			});
+			console.log("[useAppLogic] mutation headers:", headers);
 			const response = await fetch("/api/communications/tasks/complete", {
 				method: "POST",
-				headers: auth.denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-				}),
+				headers,
 				body: JSON.stringify({
 					taskId,
 					outcome,
 					note: communicationNote.trim() || "Задача связи закрыта.",
 				}),
 			});
+			console.log("[useAppLogic] response status:", response.status);
 			if (!response.ok) {
-				setError(
-					await responseErrorMessage(response, "Задача связи не закрыта"),
-				);
+				const errMsg = await responseErrorMessage(response, "Задача связи не закрыта");
+				console.error("[useAppLogic] response error:", response.status, errMsg);
+				setError(errMsg);
 				return;
 			}
+			console.log("[useAppLogic] calling loadDashboard()...");
 			await loadDashboard();
+			console.log("[useAppLogic] loadDashboard completed!");
 			setError(null);
 		} catch (communicationError) {
+			console.error("[useAppLogic] caught error in completeCommunicationTask:", communicationError);
 			showToast(
 				actionFailureToast(
 					"Задача связи не закрыта",
@@ -5103,7 +5114,13 @@ export function useAppLogic(): any {
 		setNewRulePatientText: setNewRulePatientText,
 		setSelectedPatientId: setSelectedPatientId,
 		shiftWarnings: null,
-		sortedCommunicationTasks: null,
+		sortedCommunicationTasks: (dashboard?.communicationTasks ?? []).slice().sort((a, b) => {
+			const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
+			const pA = priorityOrder[a.priority] ?? 2;
+			const pB = priorityOrder[b.priority] ?? 2;
+			if (pA !== pB) return pA - pB;
+			return new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
+		}),
 		specialtiesWithTemplates: [],
 		specialtyProtocolTemplates: [],
 		speechGatewayActiveProviderIsLocal: null,

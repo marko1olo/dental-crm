@@ -674,7 +674,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
             {morningSlots.map((hour, hIndex) => (
               <div
                 key={`morning-time-${hour}`}
-                className="schedule-time-label px-1.5 sm:px-2 py-1 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-20 bg-[var(--paper)] select-none flex items-center justify-center min-h-[38px]"
+                className="schedule-time-label px-1.5 sm:px-2 py-1 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center min-h-[38px]"
                 style={{ gridColumn: 1, gridRow: hIndex + 1 }}
               >
                 {hour}
@@ -707,7 +707,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
             {eveningSlots.map((hour, hIndex) => (
               <div
                 key={`evening-time-${hour}`}
-                className="schedule-time-label px-1.5 sm:px-2 py-1 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-20 bg-[var(--paper)] select-none flex items-center justify-center min-h-[38px]"
+                className="schedule-time-label px-1.5 sm:px-2 py-1 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center min-h-[38px]"
                 style={{ gridColumn: 1, gridRow: hIndex + 1 }}
               >
                 {hour}
@@ -739,7 +739,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
       {timeSlots.map((hour, hIndex) => (
         <div
           key={`time-${hour}`}
-          className="schedule-time-label px-1.5 sm:px-2 py-1 sm:py-1.5 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-20 bg-[var(--paper)] select-none flex items-center justify-center min-h-[52px]"
+          className="schedule-time-label px-1.5 sm:px-2 py-1 sm:py-1.5 text-center text-xs font-bold text-[var(--muted)] border-r border-b border-[var(--line)] sticky left-0 z-10 bg-[var(--paper)] select-none flex items-center justify-center min-h-[52px]"
           style={{
             gridColumn: 1,
             gridRow: hIndex + 1,

@@ -283,11 +283,11 @@ export function ScheduleChairDutySection({
         {/* StomX / IDENT Shift Coverage Strip */}
         {assignment.shiftPreset !== "two_shifts" && (
           <div
-            className="grid grid-cols-2 gap-1 w-full text-[10px] font-medium"
+            className="flex items-center gap-1 text-[10px] font-medium"
             data-testid={`chair-shift-strip-${chair.id}`}
           >
             <div
-              className={`px-1.5 py-0.5 rounded-md border flex items-center gap-1 min-w-0 ${
+              className={`px-1.5 py-0.5 rounded-md border flex items-center justify-center gap-1 shrink-0 ${
                 assignment.shiftPreset === "morning" ||
                 (!assignment.shiftPreset && sStart <= 8)
                   ? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)] text-[var(--teal)] font-bold shadow-2xs"
@@ -302,22 +302,19 @@ export function ScheduleChairDutySection({
               }
             >
               <Sun
-                size={10}
+                size={11}
                 className="text-amber-500 shrink-0"
                 aria-hidden="true"
               />
-              <span className="truncate">
-                <span className="font-bold">Утро: </span>
+              <span className="text-[10px] font-bold whitespace-nowrap">
                 {assignment.shiftPreset === "morning" ||
                 (!assignment.shiftPreset && sStart <= 8)
-                  ? formatDoctorShortName(
-                      assignment.doctorName,
-                    )
-                  : "Свободно"}
+                  ? (formatDoctorShortName(assignment.doctorName)?.split(" ")?.[0] || "Занят")
+                  : "Своб."}
               </span>
             </div>
             <div
-              className={`px-1.5 py-0.5 rounded-md border flex items-center gap-1 min-w-0 ${
+              className={`px-1.5 py-0.5 rounded-md border flex items-center justify-center gap-1 shrink-0 ${
                 assignment.shiftPreset === "evening" ||
                 (!assignment.shiftPreset && sEnd >= 20)
                   ? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)] text-[var(--teal)] font-bold shadow-2xs"
@@ -332,18 +329,15 @@ export function ScheduleChairDutySection({
               }
             >
               <Moon
-                size={10}
+                size={11}
                 className="text-indigo-400 shrink-0"
                 aria-hidden="true"
               />
-              <span className="truncate">
-                <span className="font-bold">Вечер: </span>
+              <span className="text-[10px] font-bold whitespace-nowrap">
                 {assignment.shiftPreset === "evening" ||
                 (!assignment.shiftPreset && sEnd >= 20)
-                  ? formatDoctorShortName(
-                      assignment.doctorName,
-                    )
-                  : "Свободно"}
+                  ? (formatDoctorShortName(assignment.doctorName)?.split(" ")?.[0] || "Занят")
+                  : "Своб."}
               </span>
             </div>
           </div>
@@ -490,36 +484,32 @@ export function ScheduleChairDutySection({
     <div className="w-full flex flex-col gap-1">
       {/* StomX / IDENT Shift Coverage Strip (Both shifts unassigned/free) */}
       <div
-        className="grid grid-cols-2 gap-1 w-full text-[10px] font-medium text-[var(--muted)]"
+        className="flex items-center gap-1 text-[10px] font-medium text-[var(--muted)]"
         data-testid={`chair-shift-strip-${chair.id}`}
       >
         <div
-          className="px-1.5 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] opacity-60 flex items-center gap-1 min-w-0"
+          className="px-1.5 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] opacity-60 flex items-center justify-center gap-1 shrink-0"
           data-testid={`chair-status-morning-${chair.id}`}
           title="Утренняя смена (08:00–14:00): Свободно"
         >
           <Sun
-            size={10}
+            size={11}
             className="text-amber-500 shrink-0"
             aria-hidden="true"
           />
-          <span className="truncate">
-            <span className="font-bold">Утро: </span>Свободно
-          </span>
+          <span className="text-[10px] font-bold whitespace-nowrap">Своб.</span>
         </div>
         <div
-          className="px-1.5 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] opacity-60 flex items-center gap-1 min-w-0"
+          className="px-1.5 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper)] opacity-60 flex items-center justify-center gap-1 shrink-0"
           data-testid={`chair-status-evening-${chair.id}`}
           title="Вечерняя смена (14:00–20:00): Свободно"
         >
           <Moon
-            size={10}
+            size={11}
             className="text-indigo-400 shrink-0"
             aria-hidden="true"
           />
-          <span className="truncate">
-            <span className="font-bold">Вечер: </span>Свободно
-          </span>
+          <span className="text-[10px] font-bold whitespace-nowrap">Своб.</span>
         </div>
       </div>
       <button

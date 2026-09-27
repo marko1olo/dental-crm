@@ -549,7 +549,7 @@ export function ScheduleFilterStrip({
 				}
 			`}</style>
 			<div
-				className="schedule-filter-chips hidden sm:flex flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-none py-0.5 min-w-0 pr-2"
+				className="schedule-filter-chips hidden sm:flex flex-1 items-center gap-1.5 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-none py-0.5 min-w-0 px-2"
 				onWheel={(e) => {
 					if (e.deltaY !== 0) {
 						e.currentTarget.scrollLeft += e.deltaY;
@@ -668,7 +668,10 @@ export function ScheduleFilterStrip({
 						const chairLabel = specName && !chair.name.includes("(")
 							? `${chair.name} (${specName})`
 							: chair?.name || "Кресло";
-						const shortChairName = (chair?.name || "Кресло").replace(/Кресло\s*/i, "Кр. ");
+						const shortChairName = (chair?.name || "Кресло")
+							.replace(/Кабинет\s*/i, "Каб. ")
+							.replace(/Кресло\s*/i, "Кр. ")
+							.replace(/\s*\([^)]*\)/, "");
 
 						return (
 							<button

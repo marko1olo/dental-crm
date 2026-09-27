@@ -67,7 +67,7 @@ export function ScheduleGridTimeCorner({
   handleSetGridStep,
 }: ScheduleGridTimeCornerProps) {
   return (
-    <div className="px-1.5 h-8 sm:h-9 text-xs font-medium text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center gap-1 sm:gap-1.5 sticky left-0 z-20 bg-[var(--paper-soft)] select-none">
+    <div className="px-1.5 h-full min-h-[58px] text-xs font-medium text-[var(--muted)] border-r border-[var(--line)] flex flex-col justify-center items-center py-1 gap-1 sticky left-0 z-20 bg-[var(--paper-soft)] select-none">
       <span className="hidden sm:inline text-[11px] font-medium text-[var(--muted)] tracking-tight shrink-0 select-none">
         Сетка:
       </span>

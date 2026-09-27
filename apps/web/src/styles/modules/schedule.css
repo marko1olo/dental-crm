@@ -290,6 +290,52 @@
 	}
 }
 
+/* Quick Actions Ergonomics for multi-chair / compact cards (< 480px) */
+.appointment-card-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	width: 100%;
+	max-width: 100%;
+	overflow: hidden;
+}
+
+@container apptcard (max-width: 480px) {
+	.appointment-card-actions {
+		gap: 3px;
+	}
+	.appointment-action-pay .appointment-action-label,
+	.appointment-action-call .appointment-action-label {
+		display: none !important;
+	}
+	.appointment-action-pay,
+	.appointment-action-call {
+		width: 28px !important;
+		min-width: 28px !important;
+		max-width: 28px !important;
+		padding: 0 !important;
+		justify-content: center !important;
+	}
+}
+
+@container (max-width: 480px) {
+	.appointment-card-actions {
+		gap: 3px;
+	}
+	.appointment-action-pay .appointment-action-label,
+	.appointment-action-call .appointment-action-label {
+		display: none !important;
+	}
+	.appointment-action-pay,
+	.appointment-action-call {
+		width: 28px !important;
+		min-width: 28px !important;
+		max-width: 28px !important;
+		padding: 0 !important;
+		justify-content: center !important;
+	}
+}
+
 /* Split-Day (2-Shift Timeline: 08:00-14:00 & 14:00-20:00) */
 .schedule-split-day-track {
 	width: 100%;

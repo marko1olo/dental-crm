@@ -19,9 +19,16 @@ const mockDashboard = {
   clinicSettings: {
     profile: {
       clinicName: "Стоматология ДЕНТЕ Премиум",
+      phone: "+7 (495) 123-45-67",
       timezone: "Europe/Moscow",
       mode: "clinic",
       activeSpecialties: ["therapy", "orthopedics", "surgery", "orthodontics", "pediatric", "periodontics"],
+      legalName: "ООО «Стоматология ДЕНТЕ Премиум»",
+      inn: "7701234567",
+      address: "Москва, Столярный переулок, 14",
+      medicalLicenseNumber: "ЛО-77-01-012345",
+      medicalLicenseIssuedAt: "2020-01-15",
+      medicalLicenseIssuer: "Департамент здравоохранения города Москвы",
     },
     staff: [
       {
@@ -29,6 +36,7 @@ const mockDashboard = {
         fullName: "Д-р Воронов Алексей Владимирович",
         role: "owner",
         specialties: ["therapist", "orthopedist"],
+        canSignMedicalRecords: true,
         active: true,
         color: "#0d9488",
         createdAt: new Date().toISOString(),
@@ -39,8 +47,18 @@ const mockDashboard = {
         fullName: "Д-р Соколова Мария Игоревна",
         role: "doctor",
         specialties: ["surgeon"],
+        canSignMedicalRecords: true,
         active: true,
         color: "#6366f1",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: "asst-1",
+        organizationId: "00000000-0000-0000-0000-000000000001",
+        fullName: "Иванова Анна Павловна",
+        role: "assistant",
+        active: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
@@ -310,6 +328,38 @@ async function main() {
       localStorage.setItem("dente_active_role", "owner");
       localStorage.setItem("dente_active_mode", "clinic");
       sessionStorage.setItem("dente_unlocked", "true");
+      localStorage.setItem(
+        "dente_ui_preferences_v1",
+        JSON.stringify({
+          onboardingDismissed: true,
+          onboardingStep: "done",
+          onboardingDraftMode: false,
+          version: 1,
+        })
+      );
+      localStorage.setItem(
+        "dental-crm:onboarding:v1",
+        JSON.stringify({
+          dismissed: true,
+          step: "done",
+          completed: true,
+          onboardingDismissed: true,
+          onboardingStep: "done",
+          onboardingDraftMode: false,
+          version: 1,
+        })
+      );
+      localStorage.setItem(
+        "dental-crm:web-ui-preferences:v1",
+        JSON.stringify({
+          version: 1,
+          uiLanguage: "ru",
+          selectedWorkspaceRole: "owner",
+          onboardingDismissed: true,
+          onboardingStep: "done",
+          onboardingDraftMode: false,
+        })
+      );
     });
 
     const page = await context.newPage();
@@ -356,6 +406,19 @@ async function main() {
       await page.waitForTimeout(400);
     }
 
+    const noticeDismissBtn = page.locator('.app-notice button:has-text("Понятно"), [data-testid="btn-dismiss-notice"]');
+    if (await noticeDismissBtn.isVisible()) {
+      console.log("Dismissing banner notice...");
+      await noticeDismissBtn.click().catch(() => {});
+      await page.waitForTimeout(300);
+    }
+
+    // Ensure filter chips are not scrolled
+    await page.evaluate(() => {
+      const el = document.querySelector('.schedule-filter-chips');
+      if (el) el.scrollLeft = 0;
+    });
+
     // =========================================================================
     // 1. Single-chair Split-Shift View: Morning 08:00-14:00 & Evening 14:00-20:00
     // Select chair-1 by clicking its chip in filter strip
@@ -366,6 +429,12 @@ async function main() {
       await chair1Badge.click();
       await page.waitForTimeout(600);
     }
+
+    // Reset chips scroll again
+    await page.evaluate(() => {
+      const el = document.querySelector('.schedule-filter-chips');
+      if (el) el.scrollLeft = 0;
+    });
 
     // Verify split track is visible
     await page.waitForSelector('[data-testid="schedule-split-day-track"]', { state: "visible", timeout: 10000 });
@@ -396,6 +465,12 @@ async function main() {
       await chairsModeBtn.click();
       await page.waitForTimeout(600);
     }
+
+    // Ensure filter chips are not scrolled in multi-chair view
+    await page.evaluate(() => {
+      const el = document.querySelector('.schedule-filter-chips');
+      if (el) el.scrollLeft = 0;
+    });
 
     // Capture Multi-Chair Dark (45_schedule_chairs_desktop_dark.png)
     await saveProof(page, "45_schedule_chairs_desktop_dark.png");

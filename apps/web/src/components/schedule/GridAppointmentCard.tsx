@@ -518,7 +518,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						</div>
 
 						{/* Quick Actions (28px height) */}
-						<div className="flex items-center gap-1 pt-1 border-t border-[var(--line)]/40 mt-auto min-w-0">
+						<div className="appointment-card-actions flex items-center gap-1 pt-1 border-t border-[var(--line)]/40 mt-auto min-w-0 max-w-full overflow-hidden">
 							{/* 1. В приём */}
 							<button
 								type="button"
@@ -530,7 +530,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									useAppStore.getState().setCurrentView("visit");
 									showToast(`Открыт приём: ${pName} (043/у)`, "info");
 								}}
-								className="h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-[var(--teal)]/40 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 text-[var(--teal-dark,var(--teal))] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+								className="appointment-action-visit h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-[var(--teal)]/40 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 text-[var(--teal-dark,var(--teal))] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 								title={`Открыть приём и карту 043/у: ${pName}`}
 								aria-label={`Открыть приём ${pName}`}
 								data-testid={`appointment-action-start-${a.id}`}
@@ -550,13 +550,13 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									useAppStore.getState().setCurrentView("finance");
 									showToast(`Касса 54-ФЗ: расчёт ${pName}`, "info");
 								}}
-								className="h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+								className="appointment-action-pay h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 								title={`Оплата визита (касса 54-ФЗ): ${pName}`}
 								aria-label={`Оплата визита ${pName}`}
 								data-testid={`appointment-action-pay-${a.id}`}
 							>
 								<CreditCard size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-								<span className="whitespace-nowrap">Оплата</span>
+								<span className="appointment-action-label whitespace-nowrap">Оплата</span>
 							</button>
 
 							{/* 3. Позвонить */}
@@ -564,13 +564,13 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 								<a
 									href={`tel:${patObj.phone}`}
 									onClick={(e) => e.stopPropagation()}
-									className="h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-sky-500/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-800 dark:text-sky-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+									className="appointment-action-call h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-sky-500/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-800 dark:text-sky-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 									title={`Позвонить ${pName}: ${patObj.phone}`}
 									aria-label={`Позвонить ${pName}`}
 									data-testid={`appointment-action-call-${a.id}`}
 								>
 									<Phone size={12} className="shrink-0 text-sky-600 dark:text-sky-400" />
-									<span className="whitespace-nowrap">Позвонить</span>
+									<span className="appointment-action-label whitespace-nowrap">Позвонить</span>
 								</a>
 							) : (
 								<button
@@ -579,13 +579,13 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 										e.stopPropagation();
 										showToast(`Телефон не указан для ${pName}`, "warning");
 									}}
-									className="h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+									className="appointment-action-call h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 									title={`Телефон не указан для ${pName}`}
 									aria-label={`Телефон не указан для ${pName}`}
 									data-testid={`appointment-action-call-${a.id}`}
 								>
 									<Phone size={12} className="shrink-0 opacity-40" />
-									<span className="whitespace-nowrap">Позвонить</span>
+									<span className="appointment-action-label whitespace-nowrap">Позвонить</span>
 								</button>
 							)}
 
@@ -597,7 +597,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 										e.stopPropagation();
 										onToggleMenu(a.id);
 									}}
-									className="h-7 w-7 min-h-[28px] min-w-[28px] p-0 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none"
+									className="appointment-action-more h-7 w-7 min-h-[28px] min-w-[28px] p-0 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none shrink-0"
 									title="Все действия и статусы визита"
 									aria-label="Дополнительные действия визита"
 									aria-expanded={isMenuOpen}

@@ -89,109 +89,120 @@ export function ScheduleChairHeader({
   return (
     <div
       key={chair.id}
-      className="h-8 sm:h-9 px-1 sm:px-1.5 text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] last:border-r-0 flex items-center justify-between gap-1 relative overflow-hidden"
+      className="px-2 py-1 text-xs border-r border-[var(--line)] last:border-r-0 flex flex-col justify-between gap-1 relative overflow-hidden bg-[var(--paper-soft)] min-h-[58px] select-none"
       data-testid={`chair-header-${chair.id}`}
       data-chair-palette={chairPalette.nameRu}
     >
-      <div
-        className="w-[3px] h-3.5 rounded-full shrink-0"
-        style={{ backgroundColor: chairAccentColor }}
-        data-testid={`chair-accent-bar-${chair.id}`}
-      />
-      <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
-        <span className="truncate text-[11px] sm:text-xs font-bold text-[var(--ink)] shrink min-w-0">
-          {chair.name}
-        </span>
-        {doctors.map((d) => (
-          <button
-            key={`quick-chip-${chair.id}-${d.id}`}
-            type="button"
-            style={{ display: "none" }}
-            className="hidden"
-            aria-hidden="true"
-            tabIndex={-1}
-            data-testid={`chair-quick-doctor-chip-${chair.id}-${d.id}`}
+      {/* Tier 1: Bold, Prominent Chair Header with Accent Color & Actions */}
+      <div className="flex items-center justify-between gap-1 w-full min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+          <div
+            className="w-[4px] h-3.5 rounded-full shrink-0"
+            style={{ backgroundColor: chairAccentColor }}
+            data-testid={`chair-accent-bar-${chair.id}`}
           />
-        ))}
-        <span
-          className="hidden xl:inline text-[9px] px-1 py-0.2 rounded font-bold uppercase tracking-wider border shrink-0"
-          data-chair-palette={chairPalette.nameRu}
-          style={{
-            color: chairPalette.bright_code,
-            borderColor: `${chairPalette.bright_code}50`,
-            backgroundColor: "var(--paper-soft)",
-          }}
-          title={`Рабочее место StomX: ${chairPalette.nameRu}`}
-          data-testid={`chair-palette-badge-${chair.id}`}
-        >
-          {chairPalette.nameRu}
-        </span>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setActiveHeaderMaintenanceChairId((prev) =>
-              prev === chair.id ? null : chair.id,
-            );
-          }}
-          className="min-h-[20px] h-5 w-5 p-0 rounded hover:bg-[var(--line)]/50 text-[var(--muted)] flex items-center justify-center cursor-pointer shrink-0"
-          title={`Санобработка / Техперерыв для «${chair.name}» (1 клик)`}
-          aria-label={`Санобработка и техперерыв для ${chair.name}`}
-          data-testid={`btn-chair-maintenance-${chair.id}`}
-        >
-          <Clock
-            size={11}
-            className="opacity-80 hover:opacity-100 text-amber-500"
-          />
-        </button>
-        {onEditChair && chair.id !== DEFAULT_SOLO_CHAIR.id && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEditChair({
-                id: chair.id,
-                name: chair.name,
-                roomNumber:
-                  (chair as any).roomNumber ||
-                  (chair as any).room ||
-                  "",
-                branchId: (chair as any).branchId,
-                color: chair.color || "var(--teal, #0d9488)",
-                specialization: (chair as any).specialization,
-                isActive:
-                  (chair as any).active ??
-                  (chair as any).isActive ??
-                  true,
-              });
-            }}
-            className="min-h-[20px] h-5 w-5 p-0 rounded hover:bg-[var(--line)]/50 text-[var(--muted)] flex items-center justify-center cursor-pointer shrink-0"
-            title={`Редактировать параметры кресла «${chair.name}»`}
-            aria-label={`Редактировать параметры кресла ${chair.name}`}
-            data-testid={`btn-edit-chair-${chair.id}`}
+          <span
+            className="truncate text-xs sm:text-[13px] font-black text-[var(--ink)] tracking-tight"
+            title={chair.name}
+            data-testid={`chair-title-${chair.id}`}
           >
-            <Settings
-              size={11}
-              className="opacity-70 hover:opacity-100"
+            {chair.name.replace(/^Кабинет\s*/i, "Кресло ")}
+          </span>
+          {doctors.map((d) => (
+            <button
+              key={`quick-chip-${chair.id}-${d.id}`}
+              type="button"
+              style={{ display: "none" }}
+              className="hidden"
+              aria-hidden="true"
+              tabIndex={-1}
+              data-testid={`chair-quick-doctor-chip-${chair.id}-${d.id}`}
             />
-          </button>
-        )}
-        {!hasDoctor && (chair as any).active !== false && (
+          ))}
+          <span
+            className="hidden 2xl:inline text-[9px] px-1 py-0.2 rounded font-bold uppercase tracking-wider border shrink-0"
+            data-chair-palette={chairPalette.nameRu}
+            style={{
+              color: chairPalette.bright_code,
+              borderColor: `${chairPalette.bright_code}50`,
+              backgroundColor: "var(--paper)",
+            }}
+            title={`Рабочее место StomX: ${chairPalette.nameRu}`}
+            data-testid={`chair-palette-badge-${chair.id}`}
+          >
+            {chairPalette.nameRu}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-0.5 shrink-0">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              setActiveHeaderDoctorPopoverChairId(
-                activeHeaderDoctorPopoverChairId === chair.id ? null : chair.id,
+              setActiveHeaderMaintenanceChairId((prev) =>
+                prev === chair.id ? null : chair.id,
               );
             }}
-            className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-1 py-0.2 shrink-0 cursor-pointer"
-            title="Кресло свободно (врач не назначен). Нажмите для назначения смены в 1 клик"
-            data-testid={`chair-grid-unstaffed-badge-${chair.id}`}
+            className="min-h-[22px] h-[22px] w-[22px] p-0 rounded hover:bg-[var(--line)]/50 text-[var(--muted)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+            title={`Санобработка / Техперерыв для «${chair.name}» (1 клик)`}
+            aria-label={`Санобработка и техперерыв для ${chair.name}`}
+            data-testid={`btn-chair-maintenance-${chair.id}`}
           >
-            + Врач
+            <Clock
+              size={12}
+              className="opacity-80 hover:opacity-100 text-amber-500"
+            />
           </button>
-        )}
+          {onEditChair && chair.id !== DEFAULT_SOLO_CHAIR.id && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditChair({
+                  id: chair.id,
+                  name: chair.name,
+                  roomNumber:
+                    (chair as any).roomNumber ||
+                    (chair as any).room ||
+                    "",
+                  branchId: (chair as any).branchId,
+                  color: chair.color || "var(--teal, #0d9488)",
+                  specialization: (chair as any).specialization,
+                  isActive:
+                    (chair as any).active ??
+                    (chair as any).isActive ??
+                    true,
+                });
+              }}
+              className="min-h-[22px] h-[22px] w-[22px] p-0 rounded hover:bg-[var(--line)]/50 text-[var(--muted)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
+              title={`Редактировать параметры кресла «${chair.name}»`}
+              aria-label={`Редактировать параметры кресла ${chair.name}`}
+              data-testid={`btn-edit-chair-${chair.id}`}
+            >
+              <Settings
+                size={12}
+                className="opacity-70 hover:opacity-100"
+              />
+            </button>
+          )}
+          {!hasDoctor && (chair as any).active !== false && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveHeaderDoctorPopoverChairId(
+                  activeHeaderDoctorPopoverChairId === chair.id ? null : chair.id,
+                );
+              }}
+              className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-1.5 py-0.5 shrink-0 cursor-pointer"
+              title="Кресло свободно (врач не назначен). Нажмите для назначения смены в 1 клик"
+              data-testid={`chair-grid-unstaffed-badge-${chair.id}`}
+            >
+              + Врач
+            </button>
+          )}
+        </div>
+      </div>
         {/* Preserved hidden elements for full backward compatibility and test IDs */}
         <button
           type="button"
@@ -298,109 +309,127 @@ export function ScheduleChairHeader({
             );
           }}
         />
-      </div>
 
-      {/* Quick Doctor Select & Quick Shift Select in header when multiple doctors available */}
-      {doctors && doctors.length > 0 && (
-        <div
-          className="flex flex-row items-center gap-1 shrink-0 ml-1 cursor-pointer h-7 min-h-[28px]"
-          data-testid={`chair-doctor-badge-${chair.id}`}
-          onClick={() => openAssignModal(chair.id)}
-          title={
-            assignment?.doctorName
-              ? `Врач на смене: ${assignment.doctorName} (${assignment.shiftHours || "08:00–20:00"}). Нажмите для смены`
-              : undefined
-          }
-          aria-label={
-            assignment?.doctorName
-              ? `Врач ${assignment.doctorName}, ${assignment.shiftHours || "08:00–20:00"}. Нажмите для изменения`
-              : undefined
-          }
-        >
-          <select
-            value={assignment?.doctorId || ""}
-            onChange={(e) => {
-              const docId = e.target.value;
-              if (docId) {
-                handleBindDoctorToChair(chair.id, docId);
-                handleConfirmAssignDoctor(
-                  chair.id,
-                  docId,
-                  assignment?.shiftPreset || "full",
-                );
-              } else {
-                handleUnassignDoctor(chair.id);
-              }
-            }}
-            onClick={(e) => e.stopPropagation()}
-            className="text-[10px] font-bold border border-[var(--line)] rounded-lg px-2 py-0.5 bg-[var(--paper)] text-[var(--ink)] cursor-pointer h-7 min-w-[95px] sm:min-w-[130px] max-w-[130px] sm:max-w-[180px] shrink-0"
-            title="Закрепление врача за креслом в 1 клик (выбор из списка)"
-            data-testid={`chair-duty-doctor-select-${chair.id}`}
-            aria-label={`Дежурный врач для ${chair.name}`}
-          >
-            <option value="">
-              {assignment?.doctorId
-                ? "Снять врача (без назначения)"
-                : "+ Врач..."}
-            </option>
-            {doctors.map((d) => (
-              <option key={d.id} value={d.id} title={d.fullName}>
-                {formatDoctorShortName(d.fullName)}
-              </option>
-            ))}
-          </select>
-          <select
-            value={
-              assignment?.shiftPreset === "morning_9"
-                ? "morning_9"
-                : assignment?.shiftPreset === "evening_15"
-                  ? "evening_15"
-                  : assignment?.shiftPreset === "morning"
-                    ? "morning"
-                    : assignment?.shiftPreset === "evening"
-                      ? "evening"
-                      : assignment?.shiftPreset === "two_shifts"
-                        ? "two_shifts"
-                        : assignment?.shiftPreset === "full_9_21"
-                          ? "full_9_21"
-                          : "full"
+      {/* Tier 2: Doctor selection, Shift selection & Shift duty badges */}
+      <div className="flex items-center justify-between gap-1 w-full min-w-0">
+        {doctors && doctors.length > 0 && (
+          <div
+            className="flex flex-row items-center gap-1 shrink-0 cursor-pointer h-7 min-h-[28px]"
+            data-testid={`chair-doctor-badge-${chair.id}`}
+            onClick={() => openAssignModal(chair.id)}
+            title={
+              assignment?.doctorName
+                ? `Врач на смене: ${assignment.doctorName} (${assignment.shiftHours || "08:00–20:00"}). Нажмите для смены`
+                : undefined
             }
-            onChange={(e) => {
-              const newPreset = e.target.value as
-                | "morning"
-                | "morning_9"
-                | "evening"
-                | "evening_15"
-                | "full"
-                | "full_9_21"
-                | "two_shifts";
-              const currentDocId =
-                assignment?.doctorId ||
-                (doctors.length > 0 ? doctors[0]!.id : "");
-              if (currentDocId) {
-                handleConfirmAssignDoctor(
-                  chair.id,
-                  currentDocId,
-                  newPreset,
-                );
-              }
-            }}
-            onClick={(e) => e.stopPropagation()}
-            className="text-[10px] font-bold border border-[var(--line)] rounded-lg px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] cursor-pointer h-7 min-w-[76px] sm:min-w-[84px] sm:w-[86px] shrink-0"
-            title="Смена врача на кресле (Утро 09:00-15:00 / Вечер 15:00-21:00 / Полный день 08:00-20:00 / 09:00-21:00)"
-            data-testid={`chair-shift-select-${chair.id}`}
-            aria-label={`Смена для ${chair.name}`}
+            aria-label={
+              assignment?.doctorName
+                ? `Врач ${assignment.doctorName}, ${assignment.shiftHours || "08:00–20:00"}. Нажмите для изменения`
+                : undefined
+            }
           >
-            <option value="morning_9">09–15</option>
-            <option value="evening_15">15–21</option>
-            <option value="full">08–20</option>
-            <option value="full_9_21">09–21</option>
-            <option value="morning">08–14</option>
-            <option value="evening">14–20</option>
-            <option value="two_shifts">2 см</option>
-          </select>
+            <select
+              value={assignment?.doctorId || ""}
+              onChange={(e) => {
+                const docId = e.target.value;
+                if (docId) {
+                  handleBindDoctorToChair(chair.id, docId);
+                  handleConfirmAssignDoctor(
+                    chair.id,
+                    docId,
+                    assignment?.shiftPreset || "full",
+                  );
+                } else {
+                  handleUnassignDoctor(chair.id);
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="text-[10px] font-bold border border-[var(--line)] rounded-lg px-2 py-0.5 bg-[var(--paper)] text-[var(--ink)] cursor-pointer h-7 min-w-[95px] sm:min-w-[130px] max-w-[130px] sm:max-w-[180px] shrink-0"
+              title="Закрепление врача за креслом в 1 клик (выбор из списка)"
+              data-testid={`chair-duty-doctor-select-${chair.id}`}
+              aria-label={`Дежурный врач для ${chair.name}`}
+            >
+              <option value="">
+                {assignment?.doctorId
+                  ? "Снять врача (без назначения)"
+                  : "+ Врач..."}
+              </option>
+              {doctors.map((d) => (
+                <option key={d.id} value={d.id} title={d.fullName}>
+                  {formatDoctorShortName(d.fullName)}
+                </option>
+              ))}
+            </select>
+            <select
+              value={
+                assignment?.shiftPreset === "morning_9"
+                  ? "morning_9"
+                  : assignment?.shiftPreset === "evening_15"
+                    ? "evening_15"
+                    : assignment?.shiftPreset === "morning"
+                      ? "morning"
+                      : assignment?.shiftPreset === "evening"
+                        ? "evening"
+                        : assignment?.shiftPreset === "two_shifts"
+                          ? "two_shifts"
+                          : assignment?.shiftPreset === "full_9_21"
+                            ? "full_9_21"
+                            : "full"
+              }
+              onChange={(e) => {
+                const newPreset = e.target.value as
+                  | "morning"
+                  | "morning_9"
+                  | "evening"
+                  | "evening_15"
+                  | "full"
+                  | "full_9_21"
+                  | "two_shifts";
+                const currentDocId =
+                  assignment?.doctorId ||
+                  (doctors.length > 0 ? doctors[0]!.id : "");
+                if (currentDocId) {
+                  handleConfirmAssignDoctor(
+                    chair.id,
+                    currentDocId,
+                    newPreset,
+                  );
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="text-[10px] font-bold border border-[var(--line)] rounded-lg px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] cursor-pointer h-7 min-w-[76px] sm:min-w-[84px] sm:w-[86px] shrink-0"
+              title="Смена врача на кресле (Утро 09:00-15:00 / Вечер 15:00-21:00 / Полный день 08:00-20:00 / 09:00-21:00)"
+              data-testid={`chair-shift-select-${chair.id}`}
+              aria-label={`Смена для ${chair.name}`}
+            >
+              <option value="morning_9">09–15</option>
+              <option value="evening_15">15–21</option>
+              <option value="full">08–20</option>
+              <option value="full_9_21">09–21</option>
+              <option value="morning">08–14</option>
+              <option value="evening">14–20</option>
+              <option value="two_shifts">2 см</option>
+            </select>
+          </div>
+        )}
+
+        {/* Doctor-to-Chair Shift Binding Badge / Button */}
+        <div className="flex items-center gap-1 shrink-0 ml-auto">
+          <ScheduleChairDutySection
+            chair={chair}
+            assignment={assignment}
+            hasDoctor={hasDoctor}
+            isToday={isToday}
+            currentHour={currentHour}
+            doctors={doctors}
+            suggestedDoctor={suggestedDoctor}
+            isSoloDoctor={isSoloDoctor}
+            dateKey={dateKey}
+            openAssignModal={openAssignModal}
+            handleConfirmAssignDoctor={handleConfirmAssignDoctor}
+          />
         </div>
-      )}
+      </div>
 
       {/* 1-Tap Chair Doctor Quick Popover */}
       {activeHeaderDoctorPopoverChairId === chair.id && (
@@ -431,21 +460,6 @@ export function ScheduleChairHeader({
           handleAddMaintenance={handleAddMaintenance}
         />
       )}
-
-      {/* Doctor-to-Chair Shift Binding Badge / Button */}
-      <ScheduleChairDutySection
-        chair={chair}
-        assignment={assignment}
-        hasDoctor={hasDoctor}
-        isToday={isToday}
-        currentHour={currentHour}
-        doctors={doctors}
-        suggestedDoctor={suggestedDoctor}
-        isSoloDoctor={isSoloDoctor}
-        dateKey={dateKey}
-        openAssignModal={openAssignModal}
-        handleConfirmAssignDoctor={handleConfirmAssignDoctor}
-      />
     </div>
   );
 }

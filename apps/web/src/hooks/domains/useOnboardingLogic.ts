@@ -211,7 +211,10 @@ function assertOnboardingReadyForFinish(): boolean {
 	}
 
 async function dismissOnboarding() {
-		if (!assertOnboardingReadyForFinish()) return;
+		if (!assertOnboardingReadyForFinish()) {
+			await continueOnboardingInDraftMode();
+			return;
+		}
 		if (!(await clinicSettings.saveClinicProfileIfDirty())) return;
 		if (!(await saveOnboardingSchedulesIfDirty())) return;
 		if (telegramSettingsDirty && !(await saveTelegramSettings())) return;
