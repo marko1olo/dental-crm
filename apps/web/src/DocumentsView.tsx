@@ -214,6 +214,27 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 	);
 
 
+	const clinicalKinds = useMemo(
+		() =>
+			new Set<DocumentKind>([
+				"dental_medical_card_043u",
+				"treatment_plan",
+				"treatment_cost_estimate",
+				"surgical_operation_protocol",
+			]),
+		[],
+	);
+
+	const certificatesSanpinKinds = useMemo(
+		() =>
+			new Set<DocumentKind>([
+				"visit_attendance_certificate",
+				"radiation_dose_sheet",
+				"autoclave_sterilization_log_257u",
+			]),
+		[],
+	);
+
 	const sanitizedDocumentFactoryGroups = useMemo(() => {
 		const groups = (props.documentFactoryGroups ?? []) as Array<{
 			title: string;
@@ -440,6 +461,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				setIsClinicalVisitOpen={setIsClinicalVisitOpen}
 				setIsTaxAccountingOpen={setIsTaxAccountingOpen}
 				setIsSanpinRegistryOpen={setIsSanpinRegistryOpen}
+				onSelectDocumentKind={setSelectedDocumentKind}
 			/>
 
 			{/* 3. НАВИГАЦИОННЫЕ ВКЛАДКИ ПО КАТЕГОРИЯМ */}
@@ -514,16 +536,21 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 
 			{/* 4. ФАБРИКА ДОКУМЕНТОВ И АКТИВНАЯ ФОРМА */}
 			<section className="document-factory" aria-label="Быстро создать документ">
-				<div className="document-factory-selected-kind">
-					<label>
-						Документ
+				<div className="document-factory-toolbar document-factory-selected-kind">
+					<div className="document-factory-select-container">
+						<label htmlFor="document-kind-selector" className="document-factory-select-label">
+							Шаблон документа:
+						</label>
 						<select
+							id="document-kind-selector"
+							className="document-factory-select"
 							value={selectedDocumentKind}
 							onChange={(event) =>
 								setSelectedDocumentKind(
 									normalizedDocumentKind(event.target.value),
 								)
 							}
+							data-testid="select-document-kind"
 						>
 							{(sanitizedDocumentFactoryGroups ?? []).map((group) => (
 								<optgroup key={group.title} label={group.title}>
@@ -535,26 +562,29 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								</optgroup>
 							))}
 						</select>
-					</label>
+					</div>
+
+					<div className="document-factory-actions">
+						<button
+							className="primary-button document-factory-create-btn"
+							type="button"
+							disabled={Boolean(documentCreateSavingKind)}
+							aria-busy={isSelectedDocumentCreating || undefined}
+							aria-describedby={selectedDocumentCreateGuidanceId}
+							onClick={() => void createDocument(selectedDocumentKind)}
+							data-testid="btn-create-selected-document"
+						>
+							<FileText size={15} aria-hidden="true" />
+							<span>
+								{isSelectedDocumentCreating
+									? "Создаю..."
+									: "Создать выбранный документ"}
+							</span>
+						</button>
+					</div>
 				</div>
 
 				<DocumentFormSwitch {...props} selectedDocumentKind={selectedDocumentKind} />
-
-				<div className="document-factory-selected-kind" style={{ marginTop: "16px" }}>
-					<button
-						className="primary-button"
-						type="button"
-						disabled={Boolean(documentCreateSavingKind)}
-						aria-busy={isSelectedDocumentCreating || undefined}
-						aria-describedby={selectedDocumentCreateGuidanceId}
-						onClick={() => void createDocument(selectedDocumentKind)}
-					>
-						<FileText aria-hidden="true" />{" "}
-						{isSelectedDocumentCreating
-							? "Создаю документ"
-							: "Создать выбранный документ"}
-					</button>
-				</div>
 
 				{/* 5. КАТАЛОГ ШАБЛОНОВ ДОКУМЕНТОВ */}
 				<DocumentTemplatesCatalog

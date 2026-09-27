@@ -14,7 +14,10 @@
  * - Двойной механизм печати: всплывающее окно `window.open` + скрытый `iframe` при блокировке поп-апов.
  */
 
+import { escapeHtml, formatDateRu } from "./documentPrintFormatters";
+
 export interface SurgicalPackagePrintOptions {
+
 	patient: {
 		fullName?: string | null | undefined;
 		birthDate?: string | null | undefined;
@@ -59,30 +62,6 @@ export interface SurgicalPackagePrintOptions {
 	} | null | undefined;
 }
 
-function escapeHtml(str: string | null | undefined): string {
-	if (!str) return "";
-	return String(str)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
-
-function formatDateRu(dateStr: string | null | undefined): string {
-	if (!dateStr) return "«___» _________ _____ г.";
-	try {
-		const d = new Date(dateStr);
-		if (Number.isNaN(d.getTime())) return escapeHtml(dateStr);
-		return d.toLocaleDateString("ru-RU", {
-			day: "numeric",
-			month: "long",
-			year: "numeric",
-		}) + " г.";
-	} catch {
-		return escapeHtml(dateStr);
-	}
-}
 
 /**
  * Генерирует единый монолитный HTML-документ с 3 хирургическими бланками.

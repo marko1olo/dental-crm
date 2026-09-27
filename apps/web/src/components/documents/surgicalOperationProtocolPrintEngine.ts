@@ -12,7 +12,10 @@
  * - Мандат 8d (Святость бланков, грех № 7): ноль эмодзи, строгая векторная и шрифтовая типографика.
  */
 
+import { escapeHtml, formatDateRu } from "./documentPrintFormatters";
+
 export interface SurgicalOperationProtocolPrintOptions {
+
 	patient: {
 		fullName?: string | null | undefined;
 		birthDate?: string | null | undefined;
@@ -65,32 +68,6 @@ export interface SurgicalOperationProtocolPrintOptions {
 	isSignedByDoctor?: boolean | undefined;
 }
 
-function escapeHtml(str: string | null | undefined): string {
-	if (!str) return "";
-	return String(str)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
-
-function formatDateRu(dateStr: string | null | undefined): string {
-	if (!dateStr) return "«___» _________ _____ г.";
-	try {
-		const d = new Date(dateStr);
-		if (Number.isNaN(d.getTime())) return escapeHtml(dateStr);
-		return (
-			d.toLocaleDateString("ru-RU", {
-				day: "numeric",
-				month: "long",
-				year: "numeric",
-			}) + " г."
-		);
-	} catch {
-		return escapeHtml(dateStr);
-	}
-}
 
 /**
  * Генерирует HTML протокола хирургической операции по стандартам Минздрава РФ (Форма 043/у).

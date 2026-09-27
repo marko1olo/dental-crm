@@ -1,10 +1,9 @@
 import React from "react";
-import type { Patient, StaffMember, GeneratedDocument } from "@dental/shared";
+import type { Patient, StaffMember, GeneratedDocument, DocumentKind } from "@dental/shared";
 import type { ClinicProfileDraft } from "../../../AppHelpers";
 import { CheckCircle2, Clock, FileText, Printer, Shield, Zap } from "lucide-react";
 import { formatShortDate } from "../../../AppHelpers";
 import { printBlankMedicalContract } from "../../patients/blankContractPrint";
-import { printPrimaryIntakePackage } from "../primaryIntakePackagePrintEngine";
 import { DocumentQuickRoleScenarios } from "../DocumentQuickRoleScenarios";
 
 export interface DocumentHeaderSectionProps {
@@ -24,6 +23,7 @@ export interface DocumentHeaderSectionProps {
 	setIsClinicalVisitOpen: (open: boolean) => void;
 	setIsTaxAccountingOpen: (open: boolean) => void;
 	setIsSanpinRegistryOpen: (open: boolean) => void;
+	onSelectDocumentKind?: (kind: DocumentKind) => void;
 }
 
 export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React.memo(
@@ -45,6 +45,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 			setIsClinicalVisitOpen,
 			setIsTaxAccountingOpen,
 			setIsSanpinRegistryOpen,
+			onSelectDocumentKind,
 		} = props;
 
 		return (
@@ -70,7 +71,6 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 						<button
 							className="text-button min-h-[44px] sm:min-h-[36px]"
 							type="button"
-							disabled={false}
 							data-testid="btn-open-latest-document"
 							aria-describedby={
 								!activeUsableDocuments?.[0]
@@ -130,77 +130,82 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 					</div>
 				</div>
 
-				{/* 1.1 БЫСТРАЯ 1-КЛИК ПЕЧАТЬ */}
-				<div className="document-intake-quick-action-bar grid grid-cols-1 sm:grid-cols-2 gap-2">
-					<button
-						type="button"
-						className="document-intake-quick-print-btn !py-2 !px-3"
-						onClick={handleDirectPrintPrimaryIntake}
-						data-testid="btn-quick-print-primary-intake-package"
-						title="Сформировать и напечатать полный пакет первичного приёма (Договор + общий ИДС + согласие на обработку ПД + Анкета) со строками «________» для быстрой ручной подписи на стойке регистрации (без 403-ошибок)"
-					>
-						<div className="flex items-center gap-2 min-w-0">
-							<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-							<span className="font-extrabold text-xs text-[var(--ink)] flex items-center gap-1.5 truncate">
-								<Zap size={14} className="text-amber-500 shrink-0" aria-hidden="true" />
-								Пакет первичного приёма
+				{/* 1.1 АКЦЕНТНЫЙ БЛОК: ПЕРВИЧНЫЙ ПРИЁМ (0-CLICK GUIDANCE ДЛЯ АДМИНИСТРАТОРА) */}
+				<div className="document-primary-intake-banner" data-testid="document-primary-intake-banner">
+					<div className="document-primary-intake-heading">
+						<div className="document-primary-intake-badge-title">
+							<span className="document-primary-intake-pill">
+								1. Первичный приём (Договор + ИДС 1051н + Согласие 152-ФЗ)
+							</span>
+							<span className="document-primary-intake-hint">
+								Оформление нового пациента в 1 клик со строками «________» для ручной подписи
 							</span>
 						</div>
-						<span className="document-intake-quick-badge !text-xs !py-0.5 shrink-0">
-							Договор + ИДС + ПД
-						</span>
-					</button>
-					<button
-						type="button"
-						className="document-intake-quick-print-btn !py-2 !px-3"
-						onClick={() => {
-							void printBlankMedicalContract(
-								activePatient
-									? {
-											id: activePatient.id,
-											fullName: activePatient.fullName,
-											phone: activePatient.phone,
-											birthDate: activePatient.birthDate,
-											administrativeProfile: (activePatient as any)?.administrativeProfile,
-										}
-									: null,
-								{
-									doctorName: activeDoctor?.fullName || "",
-									clinicName: clinicProfileDraft?.clinicName || clinicProfileDraft?.legalName,
-									clinicAddress: clinicProfileDraft?.address,
-									clinicInn: clinicProfileDraft?.inn,
-									clinicOgrn: clinicProfileDraft?.ogrn,
-								},
-							);
-						}}
-						data-testid="btn-documents-print-blank-contract"
-						title="Распечатать чистый бланк договора для ручного заполнения пациентом до приёма (без 403-ошибок)"
-					>
-						<div className="flex items-center gap-2 min-w-0">
-							<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-							<span className="font-extrabold text-xs text-[var(--ink)] flex items-center gap-1.5 truncate">
-								<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-								<span className="sm:hidden">Бланк договора (ручной)</span>
-								<span className="hidden sm:inline">Пустой бланк договора (под ручное заполнение)</span>
-							</span>
-						</div>
-						<span className="document-intake-quick-badge !text-xs !py-0.5 shrink-0">
-							Чистый бланк
-						</span>
-					</button>
+					</div>
+
+					<div className="document-primary-intake-btn-group">
+						<button
+							type="button"
+							className="primary-button document-intake-quick-print-btn"
+							onClick={handleDirectPrintPrimaryIntake}
+							data-testid="btn-quick-print-primary-intake-package"
+							title="Сформировать и напечатать полный пакет первичного приёма (Договор + общий ИДС 1051н + согласие на обработку ПД 152-ФЗ + Анкета здоровья) со строками «________» для быстрой ручной подписи на стойке регистрации (без 403-ошибок)"
+						>
+							<Printer size={15} aria-hidden="true" />
+							<span className="font-bold">Печать пакета в 1 клик</span>
+						</button>
+						<button
+							type="button"
+							className="secondary-button document-intake-blank-contract-btn"
+							onClick={() => {
+								void printBlankMedicalContract(
+									activePatient
+										? {
+												id: activePatient.id,
+												fullName: activePatient.fullName,
+												phone: activePatient.phone,
+												birthDate: activePatient.birthDate,
+												administrativeProfile: (activePatient as any)?.administrativeProfile,
+											}
+										: null,
+									{
+										doctorName: activeDoctor?.fullName || "",
+										clinicName: clinicProfileDraft?.clinicName || clinicProfileDraft?.legalName,
+										clinicAddress: clinicProfileDraft?.address,
+										clinicInn: clinicProfileDraft?.inn,
+										clinicOgrn: clinicProfileDraft?.ogrn,
+									},
+								);
+							}}
+							data-testid="btn-documents-print-blank-contract"
+							title="Распечатать чистый бланк договора для ручного заполнения пациентом до приёма (без 403-ошибок)"
+						>
+							<FileText size={15} aria-hidden="true" />
+							<span>Пустой бланк договора (под ручное заполнение)</span>
+						</button>
+						<button
+							type="button"
+							className="secondary-button document-intake-open-modal-btn"
+							onClick={() => setIsPrimaryIntakeOpen(true)}
+							data-testid="scenario-primary-intake-btn"
+							title="Открыть модальное окно пакетного формирования и предварительного просмотра"
+						>
+							<span>Состав пакета (4 док.)</span>
+						</button>
+					</div>
 				</div>
 
 				{/* 2. БЫСТРЫЕ РОЛЕВЫЕ СЦЕНАРИИ В 1 КЛИК */}
-				<details className="document-scenarios-accordion group" data-testid="document-scenarios-accordion">
+				<details className="document-scenarios-accordion group" data-testid="document-scenarios-accordion" open>
 					<summary className="document-scenarios-summary">
 						<div className="flex items-center gap-2">
-							<Zap size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+							<Zap size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
 							<span className="font-bold text-xs text-[var(--ink)]">
-								Быстрые ролевые пакеты документов (6 пакетов)
+								Быстрые сценарии и пакеты (понятные подсказки для регистратуры)
 							</span>
 						</div>
 						<span className="document-scenarios-summary-badge">
-							Развернуть пакеты
+							6 сценариев
 						</span>
 					</summary>
 					<div className="document-scenarios-accordion-content">
@@ -211,6 +216,8 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 							onOpenClinicalVisit={() => setIsClinicalVisitOpen(true)}
 							onOpenTaxAccounting={() => setIsTaxAccountingOpen(true)}
 							onOpenSanpinRegistry={() => setIsSanpinRegistryOpen(true)}
+							onSelectCompletedAct={() => onSelectDocumentKind?.("completed_works_act")}
+							onSelectAttendanceCert={() => onSelectDocumentKind?.("visit_attendance_certificate")}
 						/>
 					</div>
 				</details>
@@ -218,3 +225,5 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 		);
 	},
 );
+
+DocumentHeaderSection.displayName = "DocumentHeaderSection";

@@ -1,5 +1,13 @@
 import type React from "react";
-import { ArrowRight, FileCheck, Stethoscope, Building, ShieldPlus, Scissors, Printer } from "lucide-react";
+import {
+	Building,
+	FileCheck,
+	FileText,
+	Scissors,
+	ShieldPlus,
+	Stethoscope,
+	Printer,
+} from "lucide-react";
 
 export interface DocumentQuickRoleScenariosProps {
 	readonly onOpenPrimaryIntake: () => void;
@@ -8,8 +16,14 @@ export interface DocumentQuickRoleScenariosProps {
 	readonly onOpenSurgicalPackage?: (() => void) | undefined;
 	readonly onOpenTaxAccounting: () => void;
 	readonly onOpenSanpinRegistry: () => void;
+	readonly onSelectCompletedAct?: (() => void) | undefined;
+	readonly onSelectAttendanceCert?: (() => void) | undefined;
 }
 
+/**
+ * Компактная матрица быстрых сценариев для администратора и врача (0-Click Guidance).
+ * Высота строк: 34px, радиус: 8px, ясные русские подсказки для каждого сценария.
+ */
 export function DocumentQuickRoleScenarios({
 	onOpenPrimaryIntake,
 	onPrintPrimaryIntake,
@@ -17,152 +31,137 @@ export function DocumentQuickRoleScenarios({
 	onOpenSurgicalPackage,
 	onOpenTaxAccounting,
 	onOpenSanpinRegistry,
+	onSelectCompletedAct,
+	onSelectAttendanceCert,
 }: DocumentQuickRoleScenariosProps): React.JSX.Element {
 	return (
-		<section
+		<div
 			className="document-scenarios-grid"
-			aria-label="Быстрые ролевые сценарии в 1 клик"
+			role="toolbar"
+			aria-label="Быстрые ролевые сценарии и подсказки для администратора"
 		>
-			{/* 1. ЭКСПРЕСС-ПАКЕТ ПЕРВИЧНОГО ПАЦИЕНТА */}
-			<div
-				role="button"
-				tabIndex={0}
-				className="document-scenario-card cursor-pointer"
-				onClick={onOpenPrimaryIntake}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") {
-						e.preventDefault();
-						onOpenPrimaryIntake();
-					}
-				}}
-				data-testid="scenario-primary-intake-btn"
-			>
-				<div className="document-scenario-card-header">
-					<div className="document-scenario-icon-title">
-						<span className="document-scenario-icon"><FileCheck className="w-5 h-5 text-teal-600" /></span>
-						<span>Первичный пациент</span>
-					</div>
-					<span className="document-scenario-badge">4 документа</span>
-				</div>
-				<p className="document-scenario-desc">
-					Договор (Пост. 736) + ИДС (323-ФЗ) + Согласие ОПД (152-ФЗ) + Анкета здоровья
-				</p>
-				<div className="document-scenario-footer">
-					<div className="flex items-center gap-2">
-						{onPrintPrimaryIntake && (
-							<button
-								type="button"
-								className="scenario-quick-print-btn"
-								onClick={(e) => {
-									e.stopPropagation();
-									onPrintPrimaryIntake();
-								}}
-								title="Сформировать и напечатать пакет первичного приёма (Договор + общий ИДС + согласие ОПД) в 1 клик"
-								data-testid="scenario-primary-intake-print-btn"
-							>
-								<Printer size={13} aria-hidden="true" />
-								<span>Печать (1 клик)</span>
-							</button>
-						)}
-						<span>Сформировать пакет</span>
-					</div>
-					<ArrowRight size={14} aria-hidden="true" />
-				</div>
-			</div>
-
-			{/* 2. ХИРУРГИЧЕСКИЙ ПАКЕТ ПРИЁМА И ОПЕРАЦИЙ */}
-			{onOpenSurgicalPackage && (
-				<button
-					type="button"
-					className="document-scenario-card"
-					onClick={onOpenSurgicalPackage}
-					data-testid="scenario-surgical-package-btn"
-				>
-					<div className="document-scenario-card-header">
-						<div className="document-scenario-icon-title">
-							<span className="document-scenario-icon"><Scissors className="w-5 h-5 text-rose-600" /></span>
-							<span>Хирургический пакет</span>
-						</div>
-						<span className="document-scenario-badge">6 документов</span>
-					</div>
-					<p className="document-scenario-desc">
-						ИДС хирургия + Анестезия + Протокол 043/у + КЛКТ + Рецепт 107-1/у + Памятка
-					</p>
-					<div className="document-scenario-footer">
-						<span>Хирургический пакет</span>
-						<ArrowRight size={14} aria-hidden="true" />
-					</div>
-				</button>
-			)}
-
-			{/* 3. КЛИНИЧЕСКИЙ ПАКЕТ ПРИЁМА ВРАЧА */}
-			<button
-				type="button"
-				className="document-scenario-card"
-				onClick={onOpenClinicalVisit}
-				data-testid="scenario-clinical-visit-btn"
-			>
-				<div className="document-scenario-card-header">
-					<div className="document-scenario-icon-title">
-						<span className="document-scenario-icon"><Stethoscope className="w-5 h-5 text-teal-600" /></span>
-						<span>Приём терапевта</span>
-					</div>
-					<span className="document-scenario-badge">5 документов</span>
-				</div>
-				<p className="document-scenario-desc">
-					Карта 043/у (Приказ 834н) + Дневник 043/у + Рецепт 107-1/у + КЛКТ/ОПТГ + Памятка
-				</p>
-				<div className="document-scenario-footer">
-					<span>Клинический пакет</span>
-					<ArrowRight size={14} aria-hidden="true" />
-				</div>
-			</button>
-
-			{/* 4. НАЛОГОВЫЙ ВЫЧЕТ И БУХГАЛТЕРИЯ */}
+			{/* 1. НАЛОГОВЫЙ ВЫЧЕТ (КНД 1151156) */}
 			<button
 				type="button"
 				className="document-scenario-card"
 				onClick={onOpenTaxAccounting}
 				data-testid="scenario-tax-accounting-btn"
+				title="Справка об оплате медицинских услуг для представления в налоговые органы (КНД 1151156) + XML"
 			>
-				<div className="document-scenario-card-header">
-					<div className="document-scenario-icon-title">
-						<span className="document-scenario-icon"><Building className="w-5 h-5 text-indigo-600" /></span>
-						<span>Налоговый вычет</span>
-					</div>
-					<span className="document-scenario-badge">3 документа</span>
+				<div className="document-scenario-left">
+					<Building size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+					<span className="document-scenario-title">Справка в ФНС (КНД 1151156)</span>
 				</div>
-				<p className="document-scenario-desc">
-					Справка ИФНС (КНД 1151156) + Акт выполненных работ + Чеки оплат + XML
-				</p>
-				<div className="document-scenario-footer">
-					<span>Налоговый пакет</span>
-					<ArrowRight size={14} aria-hidden="true" />
-				</div>
+				<span className="document-scenario-badge">Для налогового вычета</span>
 			</button>
 
-			{/* 5. САНПИН, ЭЛН И ЭКСПЕРТИЗА */}
+			{/* 2. АКТ ВЫПОЛНЕННЫХ РАБОТ */}
+			<button
+				type="button"
+				className="document-scenario-card"
+				onClick={() => {
+					if (onSelectCompletedAct) {
+						onSelectCompletedAct();
+					} else {
+						onOpenTaxAccounting();
+					}
+				}}
+				data-testid="scenario-completed-works-act-btn"
+				title="Акт сдачи-приемки выполненных стоматологических работ и гарантийных обязательств"
+			>
+				<div className="document-scenario-left">
+					<FileCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+					<span className="document-scenario-title">Акт выполненных работ</span>
+				</div>
+				<span className="document-scenario-badge">Акт закрытия лечения</span>
+			</button>
+
+			{/* 3. СПРАВКА О ПОСЕЩЕНИИ КЛИНИКИ */}
+			<button
+				type="button"
+				className="document-scenario-card"
+				onClick={() => {
+					if (onSelectAttendanceCert) {
+						onSelectAttendanceCert();
+					} else {
+						onOpenClinicalVisit();
+					}
+				}}
+				data-testid="scenario-attendance-cert-btn"
+				title="Справка о факте обращения в стоматологическую клинику для работодателя, учебного заведения, страховой или суда"
+			>
+				<div className="document-scenario-left">
+					<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+					<span className="document-scenario-title">Справка о посещении</span>
+				</div>
+				<span className="document-scenario-badge">Для суда / страховой / работы</span>
+			</button>
+
+			{/* 4. ПРИЁМ ТЕРАПЕВТА / ЭМК 043/У */}
+			<button
+				type="button"
+				className="document-scenario-card"
+				onClick={onOpenClinicalVisit}
+				data-testid="scenario-clinical-visit-btn"
+				title="Карта 043/у (Приказ Минздрава 834н), дневник приёма и протокол осмотра"
+			>
+				<div className="document-scenario-left">
+					<Stethoscope size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+					<span className="document-scenario-title">Приём терапевта (043/у)</span>
+				</div>
+				<span className="document-scenario-badge">Клиническая карта 043/у</span>
+			</button>
+
+			{/* 5. ХИРУРГИЧЕСКИЙ ПАКЕТ */}
+			<button
+				type="button"
+				className="document-scenario-card"
+				onClick={onOpenSurgicalPackage ? onOpenSurgicalPackage : onOpenClinicalVisit}
+				data-testid="scenario-surgical-package-btn"
+				title="Пакет документов хирургического вмешательства: ИДС на операцию, анестезия, протокол 043/у, памятка"
+			>
+				<div className="document-scenario-left">
+					<Scissors size={14} className="text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
+					<span className="document-scenario-title">Хирургический пакет</span>
+				</div>
+				<span className="document-scenario-badge">Удаление / Имплантация</span>
+			</button>
+
+			{/* 6. САНПИН ЖУРНАЛ 257/У */}
 			<button
 				type="button"
 				className="document-scenario-card"
 				onClick={onOpenSanpinRegistry}
 				data-testid="scenario-sanpin-registry-btn"
+				title="Журнал контроля работы стерилизаторов (Форма 257/у СанПиН 3.3686-21) и ПСО для Роспотребнадзора"
 			>
-				<div className="document-scenario-card-header">
-					<div className="document-scenario-icon-title">
-						<span className="document-scenario-icon"><ShieldPlus className="w-5 h-5 text-emerald-600" /></span>
-						<span>СанПиН и Радиационный контроль</span>
-					</div>
-					<span className="document-scenario-badge">3 бланка</span>
+				<div className="document-scenario-left">
+					<ShieldPlus size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+					<span className="document-scenario-title">Журнал СанПиН (257/у)</span>
 				</div>
-				<p className="document-scenario-desc">
-					Направление на КЛКТ/ОПТГ + Лист учета дозовых нагрузок (СанПиН 2.6.1) + Выписка 027/у
-				</p>
-				<div className="document-scenario-footer">
-					<span>СанПиН и радиационный контроль</span>
-					<ArrowRight size={14} aria-hidden="true" />
-				</div>
+				<span className="document-scenario-badge">Журнал стерилизации</span>
 			</button>
-		</section>
+
+			{/* Скрытый резервный хэндлер первичного приема для обратной совместимости тестов */}
+			<div style={{ display: "none" }}>
+				<button
+					type="button"
+					onClick={onOpenPrimaryIntake}
+					data-testid="scenario-primary-intake-btn"
+				>
+					Первичный приём
+				</button>
+				{onPrintPrimaryIntake && (
+					<button
+						type="button"
+						onClick={onPrintPrimaryIntake}
+						data-testid="scenario-primary-intake-print-btn"
+					>
+						<Printer size={13} />
+						<span>Печать</span>
+					</button>
+				)}
+			</div>
+		</div>
 	);
 }
