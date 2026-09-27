@@ -1,0 +1,370 @@
+/**
+ * apps/web/src/styles/modules/settings.css
+ *
+ * DENTE Design System: Settings & Configuration Hub Architecture Styles.
+ * Mandates 8b, 8c, 8d, 8e:
+ * - Segmented Control Strip (macOS / Linear style, 32px, 8px radius, quiet telemetry).
+ * - Uniform 32px controls, 8px radius, elimination of system ButtonFace styles.
+ * - Single-row toolbar hygiene, full dark/light theme consistency.
+ * - Strictly <= 800 lines.
+ */
+
+/* ==========================================================================
+   1. ROLE SWITCHER SEGMENTED CONTROL STRIP (macOS / Linear style)
+   ========================================================================== */
+
+.settings-role-strip-container {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 20px;
+	width: 100%;
+}
+
+.settings-segmented-strip {
+	display: inline-flex;
+	align-items: center;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 2px;
+	gap: 2px;
+	box-sizing: border-box;
+	user-select: none;
+	height: 36px;
+	max-height: 36px;
+}
+
+.settings-segment-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 14px;
+	border-radius: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	white-space: nowrap;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+	box-sizing: border-box;
+	line-height: 1;
+}
+
+.settings-segment-btn:hover {
+	color: var(--ink);
+	background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="dark"] .settings-segment-btn:hover,
+[data-theme="night"] .settings-segment-btn:hover,
+[data-theme="oled"] .settings-segment-btn:hover,
+[data-theme="cyber_xray"] .settings-segment-btn:hover {
+	background: rgba(255, 255, 255, 0.04);
+}
+
+.settings-segment-btn.active {
+	background: var(--paper);
+	border-color: var(--line);
+	color: var(--teal-dark, var(--teal));
+	font-weight: 700;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .settings-segment-btn.active,
+[data-theme="night"] .settings-segment-btn.active,
+[data-theme="oled"] .settings-segment-btn.active,
+[data-theme="cyber_xray"] .settings-segment-btn.active {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line);
+	color: var(--teal-light, var(--teal));
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.settings-segment-btn:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 1px;
+}
+
+.settings-segment-divider {
+	width: 1px;
+	height: 16px;
+	background: var(--line);
+	margin: 0 2px;
+	flex-shrink: 0;
+}
+
+.settings-role-hint-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	color: var(--muted);
+	padding: 4px 10px;
+	border-radius: 6px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+}
+
+.settings-role-hint-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--teal);
+	flex-shrink: 0;
+}
+
+/* ==========================================================================
+   2. COCKPIT SUB-NAVIGATION STRIPS (Doctor, Admin, Owner)
+   ========================================================================== */
+
+.settings-subnav-strip {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-x: auto;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--line);
+	scrollbar-width: none;
+	width: 100%;
+	flex-shrink: 0;
+}
+
+.settings-subnav-strip::-webkit-scrollbar {
+	display: none;
+}
+
+.settings-subnav-btn {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 12.5px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	cursor: pointer;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--muted);
+	transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+	box-sizing: border-box;
+	line-height: 1;
+	user-select: none;
+}
+
+.settings-subnav-btn:hover {
+	color: var(--ink);
+	background: var(--paper);
+	border-color: var(--line-strong, var(--line));
+}
+
+.settings-subnav-btn.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: #ffffff;
+	font-weight: 700;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+}
+
+[data-theme="dark"] .settings-subnav-btn.active,
+[data-theme="night"] .settings-subnav-btn.active,
+[data-theme="oled"] .settings-subnav-btn.active,
+[data-theme="cyber_xray"] .settings-subnav-btn.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: #ffffff;
+	box-shadow: 0 1px 4px rgba(13, 148, 136, 0.4);
+}
+
+.settings-subnav-btn:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 1px;
+}
+
+/* ==========================================================================
+   3. ALL SECTIONS SIDEBAR CATALOGUE (roleMode === "all")
+   ========================================================================== */
+
+.settings-catalogue-sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	position: sticky;
+	top: 80px;
+	max-height: calc(100vh - 120px);
+	overflow-y: auto;
+	scrollbar-width: thin;
+	padding-right: 4px;
+}
+
+.settings-catalogue-group {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	margin-bottom: 14px;
+}
+
+.settings-catalogue-group-header {
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--muted);
+	padding: 4px 10px;
+	margin-bottom: 2px;
+	user-select: none;
+}
+
+.settings-catalogue-btn {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 500;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	text-align: left;
+	width: 100%;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--ink);
+	transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+	box-sizing: border-box;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.settings-catalogue-btn:hover {
+	background: var(--paper-soft);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+.settings-catalogue-btn.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: #ffffff;
+	font-weight: 700;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+}
+
+.settings-catalogue-btn.active svg {
+	color: #ffffff;
+}
+
+/* ==========================================================================
+   4. CLINIC SECTION CARDS & PRESETS (DENTE 32px & 8px Radius)
+   ========================================================================== */
+
+.settings-action-btn-32 {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-sizing: border-box;
+	white-space: nowrap;
+	line-height: 1;
+}
+
+.settings-action-btn-32:hover {
+	background: var(--paper-soft);
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
+}
+
+.settings-action-btn-32.active,
+.settings-action-btn-32.selected {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: #ffffff;
+	font-weight: 700;
+}
+
+.settings-preset-chip-32 {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 11.5px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-sizing: border-box;
+	white-space: nowrap;
+	line-height: 1;
+}
+
+.settings-preset-chip-32:hover {
+	color: var(--ink);
+	border-color: var(--teal);
+	background: var(--paper-soft);
+}
+
+.settings-preset-chip-32.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: #ffffff;
+	font-weight: 700;
+}
+
+/* Ensure no system buttonface leakage */
+.settings-zone button {
+	font-family: inherit;
+}
+
+.settings-zone input:not([type="checkbox"]):not([type="radio"]),
+.settings-zone select {
+	height: 32px;
+	min-height: 32px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 13px;
+	padding: 0 10px;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.settings-zone input:not([type="checkbox"]):not([type="radio"]):focus,
+.settings-zone select:focus {
+	border-color: var(--teal);
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+}

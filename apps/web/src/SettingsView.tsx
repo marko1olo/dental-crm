@@ -14,16 +14,32 @@ import type React from "react";
 import { useState, useMemo, useEffect, type KeyboardEvent } from "react";
 import { motion } from "framer-motion";
 import {
+	Bot,
 	Building2,
 	ChevronDown,
 	ClipboardCheck,
+	Database,
+	DollarSign,
+	FileText,
+	HardDrive,
+	HardDriveDownload,
+	Layers,
+	LineChart,
 	Lock,
+	MessageSquare,
 	MoreHorizontal,
+	Puzzle,
+	Send,
+	ShieldAlert,
 	ShieldCheck,
 	SlidersHorizontal,
 	Stethoscope,
+	User,
 	UserCheck,
+	Users,
+	Wand2,
 } from "lucide-react";
+import "./styles/modules/settings.css";
 import type {
 	DentalPricelistAnalysisResponse,
 } from "@dental/shared";
@@ -71,6 +87,7 @@ export type SettingsRoleMode = "doctor" | "admin" | "owner" | "all";
 
 const DOCTOR_TABS = new Set<string>([
 	"profile",
+	"preferences",
 	"protocols",
 	"rules",
 	"procedure-boms",
@@ -241,13 +258,37 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 		);
 	};
 
+	const SETTINGS_TAB_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+		profile: User,
+		preferences: Wand2,
+		clinic: Building2,
+		modules: Puzzle,
+		staff: Users,
+		access: Lock,
+		telegram: MessageSquare,
+		hardware: HardDrive,
+		protocols: FileText,
+		rules: ShieldAlert,
+		"procedure-boms": Layers,
+		prices: DollarSign,
+		ai: Bot,
+		insurance: ShieldCheck,
+		marketing: Send,
+		bpmn: SlidersHorizontal,
+		sources: Database,
+		reporting: LineChart,
+		imports: HardDriveDownload,
+		audit: Lock,
+	};
+
 	const renderTabButton = (tab: (typeof typedSettingsTabs)[number]) => {
 		const tabSelected = settingsTab === tab.id;
+		const Icon = SETTINGS_TAB_ICONS[tab.id] || SlidersHorizontal;
 		return (
 			<button
 				aria-controls={settingsTabPanelId(tab.id)}
 				aria-selected={tabSelected}
-				className={`${tabSelected ? "active" : ""} flex-shrink-0 whitespace-nowrap`}
+				className={`settings-catalogue-btn ${tabSelected ? "active" : ""} flex-shrink-0 whitespace-nowrap`}
 				id={settingsTabButtonId(tab.id)}
 				key={tab.id}
 				onClick={() => selectSettingsTab(tab.id)}
@@ -258,9 +299,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				role="tab"
 				tabIndex={tabSelected ? 0 : -1}
 				type="button"
-				style={{ minHeight: "32px", padding: "6px 14px", boxSizing: "border-box" }}
 			>
-				{tab.title}
+				<Icon size={14} className="shrink-0" />
+				<span className="truncate">{tab.title}</span>
 			</button>
 		);
 	};
@@ -330,109 +371,121 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				</div>
 			</div>
 
-			{/* Role Switcher Cockpit Tabs (Hot-Path UX) */}
-			<div className="mb-6 p-1.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-2">
-				<div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+			{/* Role Switcher Cockpit Tabs: Premium macOS / Linear Segmented Control Strip */}
+			<div
+				className="settings-role-strip-container col-span-full mb-6"
+				style={{ gridColumn: "1 / -1" }}
+			>
+				<div
+					className="settings-segmented-strip"
+					role="tablist"
+					aria-label="Режим настроек"
+				>
 					<button
 						type="button"
+						role="tab"
+						aria-selected={roleMode === "doctor"}
 						onClick={() => setRoleMode("doctor")}
-						className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-							roleMode === "doctor"
-								? "bg-teal-600 text-white shadow-sm"
-								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]"
-						}`}
+						className={`settings-segment-btn ${roleMode === "doctor" ? "active" : ""}`}
 						data-testid="btn-settings-role-doctor"
 					>
-						<Stethoscope size={15} />
-						<span>Врач</span>
+						<Stethoscope size={15} className="shrink-0" />
+						<span className="whitespace-nowrap">Врач</span>
 					</button>
 
 					<button
 						type="button"
+						role="tab"
+						aria-selected={roleMode === "admin"}
 						onClick={() => setRoleMode("admin")}
-						className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-							roleMode === "admin"
-								? "bg-teal-600 text-white shadow-sm"
-								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]"
-						}`}
+						className={`settings-segment-btn ${roleMode === "admin" ? "active" : ""}`}
 						data-testid="btn-settings-role-admin"
 					>
-						<UserCheck size={15} />
-						<span>Администратор</span>
+						<UserCheck size={15} className="shrink-0" />
+						<span className="whitespace-nowrap">Администратор</span>
 					</button>
 
 					<button
 						type="button"
+						role="tab"
+						aria-selected={roleMode === "owner"}
 						onClick={() => setRoleMode("owner")}
-						className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-							roleMode === "owner"
-								? "bg-teal-600 text-white shadow-sm"
-								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]"
-						}`}
+						className={`settings-segment-btn ${roleMode === "owner" ? "active" : ""}`}
 						data-testid="btn-settings-role-owner"
 					>
-						<Building2 size={15} />
-						<span>Владелец / Управляющий</span>
+						<Building2 size={15} className="shrink-0" />
+						<span className="whitespace-nowrap">Владелец</span>
+					</button>
+
+					<div className="settings-segment-divider" aria-hidden="true" />
+
+					<button
+						type="button"
+						role="tab"
+						aria-selected={roleMode === "all"}
+						onClick={() => setRoleMode("all")}
+						className={`settings-segment-btn ${roleMode === "all" ? "active" : ""}`}
+						title="Показать все настройки единым классическим каталогом"
+						data-testid="btn-settings-role-all"
+					>
+						<SlidersHorizontal size={14} className="shrink-0" />
+						<span className="whitespace-nowrap">Все разделы</span>
 					</button>
 				</div>
 
-				<button
-					type="button"
-					onClick={() => setRoleMode("all")}
-					className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
-						roleMode === "all"
-							? "bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] shadow-sm font-bold"
-							: "text-[var(--muted)] hover:text-[var(--ink)]"
-					}`}
-					title="Показать все настройки единым классическим каталогом"
-					data-testid="btn-settings-role-all"
-				>
-					<SlidersHorizontal size={14} />
-					<span>Все разделы</span>
-				</button>
+				<div className="settings-role-hint-pill hidden lg:inline-flex">
+					<span className="settings-role-hint-dot" aria-hidden="true" />
+					<span>
+						{roleMode === "doctor" && "Кабинет врача: персональные стандарты, шаблоны 043/у и автономия"}
+						{roleMode === "admin" && "Кабинет администратора: кресла, график смен, права и напоминания"}
+						{roleMode === "owner" && "Кабинет владельца: реквизиты, 54-ФЗ, прайс 804н и масштаб"}
+						{roleMode === "all" && "Полный каталог: все модули и технические параметры клиники"}
+					</span>
+				</div>
 			</div>
 
 			{/* Main Workspace: Active Role Section or Comprehensive View */}
-			{roleMode === "doctor" && (
-				<DoctorSettingsSection
-					props={settingsProps}
-					initialTab={DOCTOR_TABS.has(settingsTab) ? (settingsTab as DoctorSubTab) : "profile"}
-					onSelectTab={selectSettingsTab}
-				/>
-			)}
+			<div className="col-span-full w-full min-w-0" style={{ gridColumn: "1 / -1" }}>
+				{roleMode === "doctor" && (
+					<DoctorSettingsSection
+						props={settingsProps}
+						initialTab={DOCTOR_TABS.has(settingsTab) ? (settingsTab as DoctorSubTab) : "profile"}
+						onSelectTab={selectSettingsTab}
+					/>
+				)}
 
-			{roleMode === "admin" && (
-				<AdminSettingsSection
-					props={settingsProps}
-					initialTab={ADMIN_TABS.has(settingsTab) ? (settingsTab as AdminSubTab) : "clinic"}
-					onSelectTab={selectSettingsTab}
-				/>
-			)}
+				{roleMode === "admin" && (
+					<AdminSettingsSection
+						props={settingsProps}
+						initialTab={ADMIN_TABS.has(settingsTab) ? (settingsTab as AdminSubTab) : "clinic"}
+						onSelectTab={selectSettingsTab}
+					/>
+				)}
 
-			{roleMode === "owner" && (
-				<OwnerSettingsSection
-					props={settingsProps}
-					initialTab={OWNER_TABS.has(settingsTab) ? (settingsTab as OwnerSubTab) : "clinic"}
-					onSelectTab={selectSettingsTab}
-					appLogic={appLogic}
-				/>
-			)}
+				{roleMode === "owner" && (
+					<OwnerSettingsSection
+						props={settingsProps}
+						initialTab={OWNER_TABS.has(settingsTab) ? (settingsTab as OwnerSubTab) : "clinic"}
+						onSelectTab={selectSettingsTab}
+						appLogic={appLogic}
+					/>
+				)}
 
-			{roleMode === "all" && (
-				<div>
-					<div
-						className="settings-tabs scrollbar-none touch-pan-x"
-						role="tablist"
-						aria-label="Раздел настроек"
-					>
+				{roleMode === "all" && (
+					<div className="grid grid-cols-1 md:grid-cols-[240px_minmax(0,1fr)] gap-6 items-start">
+						<div
+							className="settings-catalogue-sidebar settings-tabs scrollbar-none touch-pan-x"
+							role="tablist"
+							aria-label="Раздел настроек"
+						>
 						{(settingsTabGroups ?? []).map((group) => {
 							const tabsInGroup = (typedSettingsTabs ?? []).filter(
 								(t) => t?.group === group?.id,
 							);
 							if (tabsInGroup.length === 0) return null;
 							return (
-								<div className="settings-tabs-group" key={group.id}>
-									<span className="settings-tabs-group-header">{group.title}</span>
+								<div className="settings-catalogue-group settings-tabs-group" key={group.id}>
+									<span className="settings-catalogue-group-header settings-tabs-group-header">{group.title}</span>
 									{tabsInGroup.map(renderTabButton)}
 								</div>
 							);
@@ -684,6 +737,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 					</div>
 				</div>
 			)}
+			</div>
 		</motion.section>
 	);
 }

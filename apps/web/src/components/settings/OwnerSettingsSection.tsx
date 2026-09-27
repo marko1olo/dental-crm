@@ -330,8 +330,8 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 				</div>
 			</div>
 
-			{/* Sub-Navigation Strip (Desktop 32-36px, Mobile 44px) */}
-			<div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-[var(--line)] scrollbar-none">
+			{/* Sub-Navigation Strip (Desktop 32px, Radius 8px) */}
+			<div className="settings-subnav-strip" role="tablist" aria-label="Разделы настроек владельца">
 				{OWNER_TABS.map((tab) => {
 					const Icon = tab.icon;
 					const isSelected = activeSubTab === tab.id;
@@ -339,15 +339,14 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 						<button
 							key={tab.id}
 							type="button"
+							role="tab"
+							aria-selected={isSelected}
 							onClick={() => handleTabChange(tab.id)}
-							className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all ${
-								isSelected
-									? "bg-amber-600 text-white shadow-xs"
-									: "bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
-							}`}
+							title={tab.description}
+							className={`settings-subnav-btn ${isSelected ? "active" : ""}`}
 							data-testid={`owner-tab-${tab.id}`}
 						>
-							<Icon size={15} className="shrink-0" />
+							<Icon size={14} className="shrink-0" />
 							<span>{tab.label}</span>
 						</button>
 					);

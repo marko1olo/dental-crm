@@ -402,13 +402,12 @@ export function SettingsClinicTab({
 						/>
 						<button
 							aria-label="Добавить сотрудника"
-							className="icon-button flex items-center justify-center rounded-xl bg-teal-600 text-white hover:bg-teal-700 transition-colors cursor-pointer shrink-0"
+							className="icon-button flex items-center justify-center rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors cursor-pointer shrink-0 h-8 min-h-[32px] w-8 min-w-[32px]"
 							type="button"
 							onClick={handleAddStaff}
 							disabled={false}
-							style={{ minHeight: "44px", minWidth: "44px" }}
 						>
-							<Plus aria-hidden="true" size={20} />
+							<Plus aria-hidden="true" size={18} />
 						</button>
 					</div>
 
@@ -419,7 +418,7 @@ export function SettingsClinicTab({
 						</span>
 						<button
 							type="button"
-							className="compact-button secondary-button px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer"
+							className="compact-button secondary-button px-3 h-8 min-h-[32px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer inline-flex items-center"
 							onClick={() => {
 								setNewStaffName?.("Дежурный врач (терапевт)");
 								setNewStaffRole?.("doctor");
@@ -431,7 +430,7 @@ export function SettingsClinicTab({
 						</button>
 						<button
 							type="button"
-							className="compact-button secondary-button px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer"
+							className="compact-button secondary-button px-3 h-8 min-h-[32px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer inline-flex items-center"
 							onClick={() => {
 								setNewStaffName?.("Сменный ассистент");
 								setNewStaffRole?.("assistant");
@@ -443,7 +442,7 @@ export function SettingsClinicTab({
 						</button>
 						<button
 							type="button"
-							className="compact-button secondary-button px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer"
+							className="compact-button secondary-button px-3 h-8 min-h-[32px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer inline-flex items-center"
 							onClick={() => {
 								setNewStaffName?.("Администратор смены");
 								setNewStaffRole?.("administrator");
@@ -462,7 +461,7 @@ export function SettingsClinicTab({
 					>
 						{staffCreationRoles.map((role) => (
 							<button
-								className={`px-3 py-1 rounded-lg text-xs font-semibold border cursor-pointer transition-all ${newStaffRole === role ? "bg-teal-600 text-white border-teal-600 shadow-xs" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-slate-400"}`}
+								className={`px-3 h-8 min-h-[32px] rounded-lg text-xs font-semibold border cursor-pointer transition-all inline-flex items-center ${newStaffRole === role ? "bg-teal-600 text-white border-teal-600 shadow-xs" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-slate-400"}`}
 								key={role}
 								type="button"
 								aria-pressed={newStaffRole === role}
@@ -483,7 +482,7 @@ export function SettingsClinicTab({
 							{(Object.keys(specialtyLabels || {}) as DentalSpecialty[]).map(
 								(specialty) => (
 									<button
-										className={`px-2.5 py-0.5 rounded-lg text-[11px] font-semibold border cursor-pointer transition-all ${newStaffSpecialty === specialty ? "bg-indigo-600 text-white border-indigo-600 shadow-xs" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-slate-400"}`}
+										className={`px-2.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold border cursor-pointer transition-all inline-flex items-center ${newStaffSpecialty === specialty ? "bg-indigo-600 text-white border-indigo-600 shadow-xs" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-slate-400"}`}
 										key={specialty}
 										type="button"
 										aria-pressed={newStaffSpecialty === specialty}
@@ -508,8 +507,7 @@ export function SettingsClinicTab({
 						</div>
 						<button
 							type="button"
-							className="secondary-button compact-button inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer whitespace-nowrap"
-							style={{ minHeight: "44px" }}
+							className="secondary-button compact-button inline-flex items-center gap-1 px-3 h-8 min-h-[32px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer whitespace-nowrap"
 							onClick={() => {
 								if (typeof props?.setSettingsTab === "function") {
 									props.setSettingsTab("staff");

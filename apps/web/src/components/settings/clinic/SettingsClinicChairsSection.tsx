@@ -133,7 +133,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 				</span>
 				<button
 					type="button"
-					className="compact-button secondary-button px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer"
+					className="compact-button secondary-button h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer inline-flex items-center"
 					onClick={() => {
 						setNewChairName?.(`Кабинет №${typedChairs.length + 1} (Терапия)`);
 						setNewChairHasXraySensor(true);
@@ -146,7 +146,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 				</button>
 				<button
 					type="button"
-					className="compact-button secondary-button px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer"
+					className="compact-button secondary-button h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer inline-flex items-center"
 					onClick={() => {
 						setNewChairName?.(`Кабинет №${typedChairs.length + 1} (Хирургия)`);
 						setNewChairHasXraySensor(true);
@@ -159,7 +159,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 				</button>
 				<button
 					type="button"
-					className="compact-button secondary-button px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer"
+					className="compact-button secondary-button h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer inline-flex items-center"
 					onClick={() => {
 						setNewChairName?.("Кабинет гигиены и профосмотра");
 						setNewChairHasXraySensor(false);
@@ -180,7 +180,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 			>
 				<span className="text-[11px] text-[var(--muted)] font-semibold mr-1">Оснащение:</span>
 				<button
-					className={`px-3 py-1 rounded-lg text-xs font-semibold border cursor-pointer transition-all ${newChairHasXraySensor ? "bg-teal-600 text-white border-teal-600" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"}`}
+					className={`h-8 px-3 rounded-lg text-xs font-semibold border cursor-pointer transition-all inline-flex items-center ${newChairHasXraySensor ? "bg-teal-600 text-white border-teal-600" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"}`}
 					type="button"
 					aria-pressed={newChairHasXraySensor}
 					onClick={() =>
@@ -190,7 +190,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 					RVG визиограф
 				</button>
 				<button
-					className={`px-3 py-1 rounded-lg text-xs font-semibold border cursor-pointer transition-all ${newChairHasMicroscope ? "bg-teal-600 text-white border-teal-600" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"}`}
+					className={`h-8 px-3 rounded-lg text-xs font-semibold border cursor-pointer transition-all inline-flex items-center ${newChairHasMicroscope ? "bg-teal-600 text-white border-teal-600" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"}`}
 					type="button"
 					aria-pressed={newChairHasMicroscope}
 					onClick={() =>
@@ -200,7 +200,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 					Микроскоп
 				</button>
 				<button
-					className={`px-3 py-1 rounded-lg text-xs font-semibold border cursor-pointer transition-all ${newChairHasSurgeryKit ? "bg-teal-600 text-white border-teal-600" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"}`}
+					className={`h-8 px-3 rounded-lg text-xs font-semibold border cursor-pointer transition-all inline-flex items-center ${newChairHasSurgeryKit ? "bg-teal-600 text-white border-teal-600" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"}`}
 					type="button"
 					aria-pressed={newChairHasSurgeryKit}
 					onClick={() =>
@@ -284,21 +284,21 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 										<span className="text-[11px] text-[var(--muted)] font-semibold">Смена:</span>
 										<button
 											type="button"
-											className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+											className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer inline-flex items-center"
 											onClick={() => applyChairShift(chair.id, "08:00", "14:00", "1-я смена")}
 										>
 											08:00–14:00 (1-я)
 										</button>
 										<button
 											type="button"
-											className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+											className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer inline-flex items-center"
 											onClick={() => applyChairShift(chair.id, "14:00", "20:00", "2-я смена")}
 										>
 											14:00–20:00 (2-я)
 										</button>
 										<button
 											type="button"
-											className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+											className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer inline-flex items-center"
 											onClick={() => applyChairShift(chair.id, "08:00", "21:00", "Весь день")}
 										>
 											08:00–21:00 (День)
@@ -342,28 +342,28 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 										<span className="text-[11px] text-[var(--muted)] font-semibold">Дни:</span>
 										<button
 											type="button"
-											className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+											className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer inline-flex items-center"
 											onClick={() => setChairPresetDays(chair.id, [1, 2, 3, 4, 5])}
 										>
 											Пн–Пт
 										</button>
 										<button
 											type="button"
-											className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+											className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer inline-flex items-center"
 											onClick={() => setChairPresetDays(chair.id, [1, 2, 3, 4, 5, 6])}
 										>
 											Пн–Сб
 										</button>
 										<button
 											type="button"
-											className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+											className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer inline-flex items-center"
 											onClick={() => setChairPresetDays(chair.id, [1, 2, 3, 4, 5, 6, 7])}
 										>
 											Все дни
 										</button>
 										<button
 											type="button"
-											className="px-2 py-0.5 rounded text-[11px] font-semibold text-teal-600 hover:text-teal-700 hover:bg-teal-50 dark:hover:bg-teal-950/30 cursor-pointer inline-flex items-center gap-1"
+											className="h-8 px-2.5 rounded-lg text-xs font-semibold text-teal-600 hover:text-teal-700 hover:bg-teal-50 dark:hover:bg-teal-950/30 cursor-pointer inline-flex items-center gap-1"
 											onClick={() => applyChairHoursToAll(chair.id)}
 											title="Скопировать часы кресла ко всем выбранным дням"
 										>
@@ -456,7 +456,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 
 									<div className="flex items-center gap-2">
 										<button
-											className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer"
+											className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer inline-flex items-center"
 											type="button"
 											onClick={() => void saveChairSchedule(chair.id)}
 											disabled={scheduleSaving}
@@ -464,7 +464,7 @@ export const SettingsClinicChairsSection: React.FC<SettingsClinicChairsSectionPr
 											{scheduleSaving ? "Сохраняю…" : "Сохранить график"}
 										</button>
 										<button
-											className="px-3 py-1.5 rounded-lg border border-rose-300 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/20 text-xs font-semibold text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/50 cursor-pointer"
+											className="h-8 px-3 rounded-lg border border-rose-300 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/20 text-xs font-semibold text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/50 cursor-pointer inline-flex items-center"
 											type="button"
 											onClick={() => void deleteChair(chair.id)}
 											title="Мягкое отключение: приёмы сохраняются, кресло скрывается из выборщиков новых записей"

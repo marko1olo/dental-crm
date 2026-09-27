@@ -144,7 +144,7 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 										applySpecialtyPreset(spec.key);
 										showToast(`Пресет «${spec.label}» активирован (настройки приёма обновлены)`, "success");
 									}}
-									className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer min-h-[30px] h-[30px] whitespace-nowrap flex items-center justify-center shrink-0 ${
+									className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer min-h-[32px] h-8 whitespace-nowrap flex items-center justify-center shrink-0 ${
 										isSelected
 											? "bg-teal-600 text-white border-teal-600 shadow-2xs font-bold"
 											: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-teal-500/70 hover:bg-[var(--paper-soft)]"
@@ -246,8 +246,8 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 				</div>
 			</div>
 
-			{/* Sub-Navigation Strip (Desktop 32-36px, Mobile 44px) */}
-			<div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-[var(--line)] scrollbar-none shrink-0">
+			{/* Sub-Navigation Strip (Desktop 32px, Radius 8px) */}
+			<div className="settings-subnav-strip" role="tablist" aria-label="Разделы настроек врача">
 				{DOCTOR_TABS.map((tab) => {
 					const Icon = tab.icon;
 					const isSelected = activeSubTab === tab.id;
@@ -255,16 +255,14 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 						<button
 							key={tab.id}
 							type="button"
+							role="tab"
+							aria-selected={isSelected}
 							onClick={() => handleTabChange(tab.id)}
 							title={tab.description}
-							className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer transition-all ${
-								isSelected
-									? "bg-teal-600 text-white shadow-xs"
-									: "bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
-							}`}
+							className={`settings-subnav-btn ${isSelected ? "active" : ""}`}
 							data-testid={`doctor-tab-${tab.id}`}
 						>
-							<Icon size={15} className="shrink-0" />
+							<Icon size={14} className="shrink-0" />
 							<span className="whitespace-nowrap">{tab.label}</span>
 						</button>
 					);
