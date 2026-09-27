@@ -292,7 +292,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 							: isHygiene
 								? "Осмотр, Air-Flow, фторирование"
 								: isCaries
-									? "Кариес → Пломба + 804н"
+									? "Кариес → Пломба + услуга"
 									: isPulpitis
 										? "Анестезия + Экстирпация + Ca(OH)2"
 										: isPerio
@@ -373,7 +373,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 					<div className="flex items-center gap-1.5">
 						<Stethoscope size={14} className="text-blue-500 shrink-0" />
 						<span>
-							Терапия и эндодонтия в 1 клик (СтАР / 804н / Без симулятора):
+							Терапия и эндодонтия в 1 клик:
 						</span>
 					</div>
 					<span className="text-[11px] font-mono text-[var(--muted)] font-normal hidden sm:inline">

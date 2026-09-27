@@ -192,10 +192,10 @@ export function VisitDiagnosticsTab(props?: {
 					}}
 					className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--teal-soft,#0d948815)] hover:bg-[var(--teal-soft,#0d948825)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 cursor-pointer transition-all shadow-2xs active:scale-98 shrink-0 flex items-center gap-1.5"
 					data-testid="btn-add-cbct-service-to-visit"
-					title="В 1 клик добавить услугу КЛКТ (A06.07.012, 3 800 ₽) в смету и финансовый акт (804н)"
+					title="В 1 клик добавить услугу КЛКТ (3 800 ₽) в смету приёма"
 				>
 					<Receipt size={14} />
-					<span>+ КЛКТ в смету (804н)</span>
+					<span>+ КЛКТ в смету</span>
 				</button>
 				<button
 					type="button"
@@ -205,7 +205,7 @@ export function VisitDiagnosticsTab(props?: {
 					title="Направление на КЛКТ / ОПТГ / ТРГ"
 				>
 					<Scan size={14} className="text-[var(--teal)]" />
-					<span>Направление 043/у</span>
+					<span>Направление на снимок</span>
 				</button>
 				<button
 					type="button"
@@ -215,7 +215,7 @@ export function VisitDiagnosticsTab(props?: {
 					title="Эндодонтия: Журнал длины каналов (WL)"
 				>
 					<Layers size={14} className="text-[var(--teal)]" />
-					<span>Журнал WL</span>
+					<span>Длина каналов (WL)</span>
 				</button>
 				<button
 					type="button"
@@ -266,7 +266,7 @@ export function VisitDiagnosticsTab(props?: {
 									Цефалометрический анализ ТРГ
 								</strong>
 								<span className="text-[10px] font-semibold text-[var(--muted)] bg-[var(--paper)] px-1.5 py-0.5 rounded border border-[var(--line)]">
-									Форма 043/у
+									Протокол ТРГ
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted)] m-0 mt-0.5 leading-snug">
@@ -303,7 +303,7 @@ export function VisitDiagnosticsTab(props?: {
 									Хирургический паспорт & ISQ
 								</strong>
 								<span className="text-[10px] font-semibold text-[var(--muted)] bg-[var(--paper)] px-1.5 py-0.5 rounded border border-[var(--line)]">
-									Хирургия 043/у
+									Имплантация
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted)] m-0 mt-0.5 leading-snug">
@@ -339,7 +339,7 @@ export function VisitDiagnosticsTab(props?: {
 						<div>
 							<div className="flex items-center gap-2">
 								<strong className="text-xs sm:text-sm font-bold text-[var(--ink)]">
-									Дентальный фотопротокол («До / После») & Ведомость 043/у
+									Дентальный фотопротокол («До / После»)
 								</strong>
 								<span className="text-[10px] font-semibold text-[var(--muted)] bg-[var(--paper)] px-1.5 py-0.5 rounded border border-[var(--line)]">
 									Фотоприложения

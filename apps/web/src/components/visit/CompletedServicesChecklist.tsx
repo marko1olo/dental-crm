@@ -466,7 +466,7 @@ export const CompletedServicesChecklist: React.FC<
 					Отметка выполненного у кресла
 				</h4>
 				<span className="text-[11px] text-slate-500 dark:text-slate-400">
-					Номенклатура 804н
+					Прейскурант услуг
 				</span>
 			</div>
 			<p className="m-0 mb-3 text-xs text-slate-500 dark:text-slate-400">
@@ -483,7 +483,7 @@ export const CompletedServicesChecklist: React.FC<
 				onToggleToothGrid={() => setIsToothGridOpen(!isToothGridOpen)}
 			/>
 
-			{/* 2. 9 ЭКСПРЕСС-УСЛУГ У КРЕСЛА (1 КЛИК, 804н) */}
+			{/* 2. 9 быстрых услуг у кресла */}
 			<ChairsideExpressGrid
 				selectedTooth={selectedTooth}
 				onAddExpressService={handleAddExpressService}
@@ -497,7 +497,7 @@ export const CompletedServicesChecklist: React.FC<
 						type="text"
 						value={catalogSearch}
 						onChange={(e) => setCatalogSearch(e.target.value)}
-						placeholder="Поиск по прейскуранту клиники (код 804н или название: пломба, коронка, анестезия)..."
+						placeholder="Поиск по прейскуранту клиники (код услуги или название: пломба, коронка, анестезия)..."
 						data-testid="service-catalog-search-input"
 						className="w-full text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-9 pr-8 py-2.5 min-h-[44px] focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder:text-slate-400"
 					/>

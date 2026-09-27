@@ -194,7 +194,7 @@ export function VisitHeaderMonolith({
 						<span className="sm:hidden">Норма</span>
 					</button>
 
-					{/* Печать Формы 043/у (Мандат 8e) */}
+					{/* Печать дневника приёма (Мандат 8e) */}
 					<button
 						type="button"
 						onClick={handlePrintForm043uFast}
@@ -204,13 +204,13 @@ export function VisitHeaderMonolith({
 								? "!hidden"
 								: "!hidden sm:!inline-flex"
 						}`}
-						title="Печать Формы 043/у в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
+						title="Печать дневника в любой момент (если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 					>
 						<Printer
 							className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0"
 							aria-hidden="true"
 						/>
-						<span className="hidden lg:inline">Печать 043/у</span>
+						<span className="hidden lg:inline">Печать дневника</span>
 					</button>
 
 					{/* Экстренная помощь / Аптечка анти-шок */}
@@ -327,7 +327,7 @@ export function VisitHeaderMonolith({
 							onClick={() => {
 								useAppStore.getState().setCurrentView("finance");
 								showToast(
-									"Переход в кассу для оформления чека (54-ФЗ)",
+									"Переход в кассу для оформления чека",
 									"info",
 								);
 							}}
@@ -337,7 +337,7 @@ export function VisitHeaderMonolith({
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="visit-queue-tab-completed"
-							title={`Ожидает оплаты: ${shiftDayQueue.awaitingPayment} (приём завершён, готов к кассе 54-ФЗ)`}
+							title={`Ожидает оплаты: ${shiftDayQueue.awaitingPayment} (приём завершён, готов к оплате)`}
 						>
 							<CheckCircle2
 								size={12}
@@ -427,7 +427,7 @@ export function VisitHeaderMonolith({
 										className="text-sky-600 dark:text-sky-400 shrink-0"
 									/>
 									<div className="flex flex-col">
-										<span className="font-semibold">Печать Формы 043/у</span>
+										<span className="font-semibold">Печать дневника</span>
 										<span className="text-[10px] text-[var(--muted)]">
 											С текущим штампом (черновик/подписано)
 										</span>
@@ -450,7 +450,7 @@ export function VisitHeaderMonolith({
 									/>
 									<div className="flex flex-col">
 										<span className="font-semibold">
-											Печать согласия (ИДС 1051н)
+											Печать согласия (ИДС)
 										</span>
 										<span className="text-[10px] text-[var(--muted)]">
 											С текущим штампом (черновик/подписано)

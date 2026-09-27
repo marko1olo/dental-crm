@@ -135,7 +135,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 					<div className="document-primary-intake-heading">
 						<div className="document-primary-intake-badge-title">
 							<span className="document-primary-intake-pill">
-								1. Первичный приём (Договор + ИДС 1051н + Согласие 152-ФЗ)
+								1. Первичный приём (Договор + Согласие ИДС + Персональные данные)
 							</span>
 							<span className="document-primary-intake-hint">
 								Оформление нового пациента в 1 клик со строками «________» для ручной подписи
@@ -149,7 +149,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 							className="primary-button document-intake-quick-print-btn"
 							onClick={handleDirectPrintPrimaryIntake}
 							data-testid="btn-quick-print-primary-intake-package"
-							title="Сформировать и напечатать полный пакет первичного приёма (Договор + общий ИДС 1051н + согласие на обработку ПД 152-ФЗ + Анкета здоровья) со строками «________» для быстрой ручной подписи на стойке регистрации (без 403-ошибок)"
+							title="Сформировать и напечатать полный пакет первичного приёма (Договор + Согласие ИДС + Персональные данные + Анкета здоровья) со строками «________» для быстрой ручной подписи на стойке регистрации"
 						>
 							<Printer size={15} aria-hidden="true" />
 							<span className="font-bold">Печать пакета в 1 клик</span>
@@ -178,7 +178,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 								);
 							}}
 							data-testid="btn-documents-print-blank-contract"
-							title="Распечатать чистый бланк договора для ручного заполнения пациентом до приёма (без 403-ошибок)"
+							title="Распечатать чистый бланк договора для ручного заполнения пациентом до приёма"
 						>
 							<FileText size={15} aria-hidden="true" />
 							<span>Пустой бланк договора (под ручное заполнение)</span>

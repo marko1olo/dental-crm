@@ -787,7 +787,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						data-testid="open-1click-templates-btn"
 						onClick={() => setShowTemplatesModal(true)}
 						className="vde-043__btn"
-						title="Открыть 1-Click клинические протоколы и шаблоны 043/у (Приказ 834н / 804н)"
+						title="Клинические протоколы и шаблоны приёма"
 					>
 						<Sparkles className="w-4 h-4 text-[var(--teal)]" />
 						Протоколы 1-Click

@@ -104,14 +104,14 @@ export function EmkServicesSection({
 						))}
 					</div>
 
-					{/* Быстрые клинические пакеты Номенклатуры 804н */}
+					{/* Быстрые клинические пакеты */}
 					<div className="pt-2.5 border-t border-[var(--line)]">
 						<div className="flex items-center justify-between gap-1 mb-1.5">
 							<span className="text-xs font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
 								<Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
 								Стандартные клинические пакеты (1 клик):
 							</span>
-							<span className="text-[10px] text-[var(--muted)]">Номенклатура 804н</span>
+							<span className="text-[10px] text-[var(--muted)]">Каталог услуг</span>
 						</div>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
 							{CLINICAL_SERVICE_BUNDLES.map((bundle) => (

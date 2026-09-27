@@ -242,7 +242,7 @@ export function EmkToolbar({
 								className="w-full text-left px-2.5 py-1.5 rounded-lg font-semibold text-[var(--teal)] hover:bg-[var(--teal-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 							>
 								<Sparkles className="w-3.5 h-3.5 shrink-0" />
-								<span>Каталог СтАР / 804н</span>
+								<span>Каталог услуг</span>
 							</button>
 						</div>
 					)}

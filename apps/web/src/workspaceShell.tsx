@@ -283,7 +283,7 @@ export const sidebarHints: Record<AppView, string> = {
 	schedule: "График и визиты",
 	patients: "Картотека и баланс",
 	imaging: "Рентген и КТ",
-	visit: "043/у и дневник",
+	visit: "Карта и дневник",
 	documents: "Справки и акты",
 	finance: "Касса и счета",
 	analytics: "Отчёты и выручка",

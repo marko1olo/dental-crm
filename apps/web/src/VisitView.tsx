@@ -327,16 +327,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<span className="inline sm:hidden text-xs">Норма</span>
 							</button>
 
-							{/* Печать Формы 043/у (Мандат 8e) */}
+							{/* Печать дневника приёма (Мандат 8e) */}
 							<button
 								type="button"
 								onClick={handlePrintForm043uFast}
 								data-testid="btn-visit-fast-print-043u"
 								className="secondary-button min-h-[32px] h-8 px-2 sm:px-2.5 py-0 text-xs font-semibold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 items-center gap-1 cursor-pointer shrink-0 rounded-lg !hidden sm:!inline-flex"
-								title="Печать Формы 043/у"
+								title="Печать дневника"
 							>
 								<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-								<span>Печать 043/у</span>
+								<span>Печать дневника</span>
 							</button>
 
 							{/* Экстренная аптечка */}
@@ -394,7 +394,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											role="menuitem"
 										>
 											<Printer size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
-											<span className="font-semibold">Печать Формы 043/у</span>
+											<span className="font-semibold">Печать дневника</span>
 										</button>
 										<button
 											type="button"
@@ -407,7 +407,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											role="menuitem"
 										>
 											<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-											<span className="font-semibold">Печать ИДС 1051н</span>
+											<span className="font-semibold">Печать согласия</span>
 										</button>
 										<button
 											type="button"
@@ -463,7 +463,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								className={`visit-subtab-btn ${visitSubViewTab === "emk" ? "active" : ""}`}
 								onClick={() => handleTabChange("emk")}
 							>
-								ЭМК 043/у
+								Дневник приёма
 							</button>
 							<button
 								type="button"
@@ -487,7 +487,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								className={`visit-subtab-btn ${visitSubViewTab === "consents" ? "active" : ""}`}
 								onClick={() => handleTabChange("consents")}
 							>
-								ИДС 1051н
+								Согласия
 							</button>
 						</div>
 						{/* Плавный градиентный фейд по правому краю на мобильных экранах для индикации горизонтального скролла */}
@@ -512,15 +512,15 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					<div className="p-3 bg-[var(--paper)] rounded-xl border border-[var(--line)] space-y-3" data-testid="visit-consents-tab-panel">
 						<div className="flex items-center justify-between border-b border-[var(--line)] pb-2 flex-wrap gap-2">
 							<div>
-								<h3 className="text-sm font-bold text-[var(--ink)]">Информированные добровольные согласия (ИДС 1051н)</h3>
+								<h3 className="text-sm font-bold text-[var(--ink)]">Информированные согласия (ИДС)</h3>
 								<p className="text-xs text-[var(--muted)]">Медицинская документация и гарантийные паспорта</p>
 							</div>
 							<div className="flex items-center gap-1.5 flex-wrap">
 								<button type="button" onClick={handlePrintForm043uFast} data-testid="btn-visit-consents-print-043u" className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer">
-									<Printer size={14} /><span>Печать 043/у</span>
+									<Printer size={14} /><span>Печать дневника</span>
 								</button>
 								<button type="button" onClick={handlePrintInformedConsentFast} data-testid="btn-visit-fast-print-consent-1051n" className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer text-emerald-700 dark:text-emerald-300 border-emerald-500/40">
-									<Printer size={14} /><span>Печать ИДС 1051н</span>
+									<Printer size={14} /><span>Печать согласия</span>
 								</button>
 								<button type="button" onClick={() => setIsInformedConsentModalOpen(true)} data-testid="btn-visit-open-consent-modal" className="secondary-button min-h-[32px] h-8 px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer">
 									<ShieldCheck size={14} /><span>Выбрать бланк ИДС</span>
