@@ -13,20 +13,58 @@
    - Быстрый старт соло-врача в 1 клик (Мандат 8n).
    ============================================================ */
 
-/* ---------- Основная панель мастера ---------- */
+/* ---------- Полноэкранный атмосферный оверлей мастера ---------- */
+.onboarding-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 850;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 36px 20px;
+	box-sizing: border-box;
+	background: rgba(10, 18, 17, 0.52);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+}
+
+[data-theme="light"] .onboarding-overlay,
+html.light .onboarding-overlay {
+	background: rgba(240, 253, 250, 0.38);
+}
+
+/* ---------- Основная стеклянная панель мастера ---------- */
 .onboarding-shell {
-	background: var(--paper-strong, var(--paper));
-	border: 1px solid var(--line);
-	border-radius: 16px;
-	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.05);
+	position: relative;
+	background: var(--glass-panel, rgba(20, 28, 27, 0.85));
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
+	border-radius: 20px;
+	box-shadow:
+		0 24px 48px -12px rgba(0, 0, 0, 0.5),
+		0 0 0 1px rgba(255, 255, 255, 0.05),
+		inset 0 1px 0 rgba(255, 255, 255, 0.12);
+	backdrop-filter: blur(28px);
+	-webkit-backdrop-filter: blur(28px);
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-	padding: 24px 28px;
+	padding: 28px 32px;
 	max-width: 1080px;
-	margin: 0 auto;
+	margin: auto;
 	width: 100%;
 	box-sizing: border-box;
+}
+
+[data-theme="light"] .onboarding-shell,
+html.light .onboarding-shell {
+	background: var(--glass-panel, rgba(255, 255, 255, 0.9));
+	border-color: var(--line, rgba(0, 0, 0, 0.1));
+	box-shadow:
+		0 24px 48px -12px rgba(0, 0, 0, 0.12),
+		0 0 0 1px rgba(0, 0, 0, 0.04),
+		inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 /* ---------- Шапка мастера ---------- */
@@ -38,6 +76,34 @@
 	border-bottom: 1px solid var(--line);
 	padding-bottom: 16px;
 	margin-bottom: 4px;
+}
+
+.onboarding-head-aside {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+}
+
+.onboarding-head-close-btn {
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	border-radius: 10px;
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
+	background: var(--paper-soft, rgba(255, 255, 255, 0.05));
+	color: var(--muted, #94a3b8);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	padding: 0;
+}
+
+.onboarding-head-close-btn:hover {
+	background: var(--paper, rgba(255, 255, 255, 0.12));
+	color: var(--ink, #ffffff);
+	border-color: var(--line, rgba(255, 255, 255, 0.25));
 }
 
 .onboarding-shell .onboarding-head .eyebrow {

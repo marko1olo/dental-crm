@@ -21,8 +21,10 @@ import {
 	ClipboardCheck,
 	Plus,
 	ShieldCheck,
+	X,
 	Zap,
 } from "lucide-react";
+import { AuthArtBackground } from "../auth/AuthArtBackground";
 import { showToast } from "../GlobalToast";
 
 export interface OnboardingStepItem {
@@ -442,28 +444,49 @@ export function OnboardingWizardModal({
 	};
 
 	return (
-		<section
-			className="onboarding-shell"
+		<div
+			className="onboarding-overlay"
+			role="dialog"
+			aria-modal="true"
 			aria-label="Первичная настройка клиники"
 		>
-			<div className="onboarding-head">
-				<div>
-					<p className="eyebrow">Первое открытие</p>
-					<h2>Настройка новой клиники и рабочего места врача</h2>
-					<p>
-						Можно начать прием сразу. Юридические поля, импорт и Telegram
-						остаются в настройке и не мешают диктовке, расписанию и карточке
-						пациента.
-					</p>
+			<AuthArtBackground
+				overlayAlpha={0.38}
+				settings={{ pack: "dental-epic", dynamicByTimeOfDay: true }}
+			/>
+			<section
+				className="onboarding-shell animate-fade-in-up"
+				aria-label="Первичная настройка клиники"
+			>
+				<div className="onboarding-head">
+					<div>
+						<p className="eyebrow">Первое открытие</p>
+						<h2>Настройка новой клиники и рабочего места врача</h2>
+						<p>
+							Можно начать прием сразу. Юридические поля, импорт и Telegram
+							остаются в настройке и не мешают диктовке, расписанию и карточке
+							пациента.
+						</p>
+					</div>
+					<div className="onboarding-head-aside">
+						<div className="onboarding-score">
+							<span>
+								{currentOnboardingIndex + 1}/{onboardingSteps.length}
+							</span>
+							<strong>{legalReadinessPercent}%</strong>
+							<small>готовность документов</small>
+						</div>
+						<button
+							className="onboarding-head-close-btn"
+							type="button"
+							onClick={dismissOnboarding}
+							title="Скрыть мастер настройки"
+							aria-label="Скрыть мастер настройки"
+						>
+							<X size={18} aria-hidden="true" />
+						</button>
+					</div>
 				</div>
-				<div className="onboarding-score">
-					<span>
-						{currentOnboardingIndex + 1}/{onboardingSteps.length}
-					</span>
-					<strong>{legalReadinessPercent}%</strong>
-					<small>готовность документов</small>
-				</div>
-			</div>
 			<section
 				className="onboarding-fast-start"
 				aria-label="Быстрый старт работы"
@@ -1962,5 +1985,6 @@ export function OnboardingWizardModal({
 				)}
 			</div>
 		</section>
-	);
+	</div>
+);
 }
