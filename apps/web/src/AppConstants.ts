@@ -232,6 +232,7 @@ export type SettingsTab = (typeof settingsTabs)[number]["id"];
 
 export const settingsTabs = [
 	{ id: "profile", title: "Мой профиль", group: "account" },
+	{ id: "preferences", title: "Клинические пресеты", group: "clinical" },
 	{ id: "clinic", title: "Клиника", group: "main" },
 	{ id: "modules", title: "Модули", group: "main" },
 	{ id: "staff", title: "Сотрудники", group: "main" },
@@ -240,7 +241,7 @@ export const settingsTabs = [
 	{ id: "hardware", title: "Оборудование", group: "main" },
 	{ id: "protocols", title: "Протоколы", group: "clinical" },
 	{ id: "rules", title: "Правила", group: "clinical" },
-	{ id: "procedure-boms", title: "Техкарты 804н", group: "clinical" },
+	{ id: "procedure-boms", title: "Технологические карты", group: "clinical" },
 	{ id: "prices", title: "Прайс", group: "clinical" },
 	{ id: "ai", title: "ИИ", group: "clinical" },
 	{ id: "insurance", title: "Страховые", group: "stock" },
@@ -1474,13 +1475,15 @@ export type StaffScheduleSaveState = "idle" | "saving" | "saved" | "error";
 export type AppointmentScheduleDraft = {
 	patientId: string;
 	doctorUserId: string;
-	assistantUserId: string;
+	assistantUserId?: string | null;
 	chairId: string;
 	status: Appointment["status"];
 	startsAt: string;
 	endsAt: string;
-	reason: string;
-	comment: string;
+	reason?: string;
+	comment?: string;
+	notes?: string;
+	cancellationReason?: string;
 };
 
 export type AppointmentScheduleSaveState =

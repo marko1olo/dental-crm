@@ -92,7 +92,7 @@ export function EmkSomaticCard({
 					</div>
 					<div>
 						<h4 className="text-xs font-bold text-[var(--ink)] m-0">Соматический статус и анамнез</h4>
-						<span className="text-[11px] text-[var(--muted)]">Форма 043/у • 1-клик заполнение физиологической нормой</span>
+						<span className="text-[11px] text-[var(--muted)]">Медицинская карта • 1-клик заполнение нормой</span>
 					</div>
 				</div>
 
@@ -101,11 +101,11 @@ export function EmkSomaticCard({
 					onClick={handleNorm}
 					disabled={isLocked}
 					data-testid="btn-fill-norm-quick"
-					title="Заполнить поля ЭМК стандартной физиологической нормой (соматически здоров)"
-					className="min-h-[32px] h-8 px-3 py-1 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-white hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+					title="Заполнить поля стандартной физиологической нормой (соматически здоров)"
+					className="hidden"
 				>
-					<Sparkles size={13} />
-					<span>Заполнить нормой в 1 клик</span>
+					<Sparkles size={12} className="text-amber-500/80 shrink-0" />
+					<span>Заполнить нормой</span>
 				</button>
 			</div>
 

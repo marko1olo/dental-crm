@@ -142,7 +142,7 @@ export function SettingsAccessTab({
 				<div className="flex-1 min-w-0">
 					<p className="eyebrow text-[10px] sm:text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider m-0">Безопасность и RBAC</p>
 					<h2 className="text-sm sm:text-lg font-bold text-slate-900 dark:text-white m-0 mt-0.5 break-words leading-snug">
-						Матрица прав доступа к модулям DENTE, 152-ФЗ защита и финансовая изоляция
+						Матрица прав доступа к модулям DENTE, защита данных и финансовая изоляция
 					</h2>
 					<p className="text-xs text-slate-600 dark:text-slate-300 m-0 mt-1 leading-relaxed break-words hidden sm:block">
 						Гранулярная ролевая модель для 8 клинических и административных ролей.
@@ -157,7 +157,7 @@ export function SettingsAccessTab({
 				<div className="p-3 sm:p-4 rounded-xl border border-teal-300 dark:border-teal-800 bg-teal-50/80 dark:bg-teal-950/40 flex flex-col gap-1.5 sm:gap-2 min-w-0">
 					<div className="flex items-center gap-2 text-teal-800 dark:text-teal-200 font-bold text-xs sm:text-sm">
 						<ShieldCheck size={16} className="shrink-0 sm:w-[18px] sm:h-[18px] text-teal-600 dark:text-teal-400" />
-						<span className="min-w-0 flex-1 break-words">152-ФЗ Защита ПДн</span>
+						<span className="min-w-0 flex-1 break-words">Защита персональных данных</span>
 					</div>
 					<p className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 m-0 leading-relaxed break-words min-w-0">
 						Телефоны, паспорта, СНИЛС и адреса проживания маскируются для ассистентов и младшего персонала.
@@ -190,10 +190,10 @@ export function SettingsAccessTab({
 				<div className="p-3 sm:p-4 rounded-xl border border-blue-300 dark:border-blue-800 bg-blue-50/80 dark:bg-blue-950/40 flex flex-col gap-1.5 sm:gap-2 min-w-0">
 					<div className="flex items-center gap-2 text-blue-800 dark:text-blue-200 font-bold text-xs sm:text-sm">
 						<FileCheck size={16} className="shrink-0 sm:w-[18px] sm:h-[18px] text-blue-600 dark:text-blue-400" />
-						<span className="min-w-0 flex-1 break-words">323-ФЗ Подпись протоколов</span>
+						<span className="min-w-0 flex-1 break-words">Подпись протоколов и карты</span>
 					</div>
 					<p className="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 m-0 leading-relaxed break-words min-w-0">
-						Клинические протоколы, дневники и форму 043/у могут подписывать исключительно дипломированные врачи.
+						Клинические протоколы, дневники и медицинскую карту могут подписывать исключительно дипломированные врачи.
 						Ассистенты, регистраторы и немедицинский персонал законодательно лишены права подписи.
 					</p>
 				</div>

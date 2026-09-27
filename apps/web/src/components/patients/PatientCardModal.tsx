@@ -59,8 +59,8 @@ export function getRepresentativeLegalStatus(type: string | null | undefined): {
 		labelRu: match?.nameRu ?? type,
 		idsSigningAllowed: isLegal,
 		descriptionRu: isLegal
-			? "Законный представитель: имеет законное право подписывать ИДС за несовершеннолетнего (ст. 20 323-ФЗ и ст. 64 СК РФ)"
-			: "Член семьи: подписание ИДС за несовершеннолетнего требует нотариальной доверенности (ст. 20 323-ФЗ)",
+			? "Законный представитель: имеет право подписывать согласия за несовершеннолетнего (по закону об охране здоровья)"
+			: "Член семьи: подписание согласий за несовершеннолетнего требует доверенности",
 	};
 }
 
@@ -284,7 +284,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 					{/* Modal Footer */}
 					<div className="flex items-center justify-between p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex-wrap gap-2">
 						<span className="text-xs text-[var(--muted)]">
-							Автосохранение данных пациента активно • Форма 043/у
+							Автосохранение данных пациента активно • Медицинская карта
 						</span>
 						<div className="flex items-center gap-2">
 							<button

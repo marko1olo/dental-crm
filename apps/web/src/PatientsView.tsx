@@ -266,14 +266,14 @@ export function executeOpenPatientVisitAutonomy({
 }) {
 	if (!selectedPatient) {
 		showToastFn(
-			"Выберите пациента из списка слева для открытия приёма 043/у",
+			"Выберите пациента из списка слева для открытия приёма",
 			"info",
 		);
 		return { executed: false, reason: "no_patient" as const };
 	}
 	setSelectedPatientId(selectedPatient.id);
 	setCurrentView("visit");
-	showToastFn(`Открыт приём 043/у: ${selectedPatient.fullName}`, "success");
+	showToastFn(`Открыт приём: ${selectedPatient.fullName}`, "success");
 	return { executed: true, reason: "visit_opened" as const };
 }
 
@@ -783,7 +783,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 	return (
 		<div
-			className="patients-panel max-md:!bg-transparent max-md:!border-none max-md:!shadow-none max-md:!p-0 max-md:!rounded-none max-md:min-h-screen max-md:h-full max-md:flex-1"
+			className="patients-panel max-md:!bg-transparent max-md:!border-none max-md:!shadow-none max-md:!p-0 max-md:!rounded-none max-md:min-h-screen max-md:h-full max-md:flex-1 pb-6"
 			id="patients"
 		>
 			{/* Clean Single-Tier Toolbar Header */}
@@ -823,7 +823,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				<div className="patients-header-actions shrink-0">
 					<button
 						type="button"
-						className={`secondary-button ${showLostPatientsOnly ? "active" : ""} shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 rounded-lg font-medium inline-flex items-center justify-center cursor-pointer transition-all select-none`}
+						className={`secondary-button ${showLostPatientsOnly ? "active" : ""} shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 rounded-lg font-medium inline-flex items-center justify-center cursor-pointer transition-all select-none`}
 						onClick={toggleLostPatients}
 						title="Показать пациентов без будущих приемов, открытых задач и записей в листе ожидания"
 					>
@@ -837,7 +837,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					</button>
 					<button
 						type="button"
-						className="primary-button patients-new-patient-btn shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 sm:px-3 rounded-lg font-semibold inline-flex items-center justify-center gap-1.5"
+						className="primary-button patients-new-patient-btn shrink-0 min-w-0 text-xs sm:text-xs min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 rounded-lg font-semibold inline-flex items-center justify-center gap-1.5"
 						onClick={() => setIsCreateModalOpen(true)}
 						title="Зарегистрировать нового пациента"
 						data-testid="open-create-patient-modal-btn"
@@ -976,7 +976,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									) : null}
 								</div>
 								<div
-									className="patient-row-actions flex items-center gap-1 shrink-0"
+									className="patient-row-actions flex items-center gap-1.5 shrink-0 pl-1"
 									onClick={(e) => e.stopPropagation()}
 								>
 									{/* Secondary Actions Dropdown Menu «...» (Miller's Law - frees >200px of row width) */}
@@ -986,8 +986,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									>
 										<button
 											type="button"
-											className="patient-row-more-btn min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors"
-											title="Действия с пациентом (В карту, Запись, Карточка, Касса 54-ФЗ)"
+											className="patient-row-more-btn w-8 h-8 min-w-[32px] min-h-[32px] p-0 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors shrink-0"
+											title="Действия с пациентом (В карту, Запись, Карточка, Касса)"
 											aria-label={`Меню действий для ${patient.fullName}`}
 											aria-expanded={rowMenuPatientId === patient.id}
 											data-testid={`patient-row-more-btn-${patient.id}`}
@@ -1014,7 +1014,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 													type="button"
 													className="patient-row-action-btn patient-row-chart-btn w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 													role="menuitem"
-													title={`Открыть приём и карту 043/у: ${patient.fullName}`}
+													title={`Открыть приём и карту: ${patient.fullName}`}
 													data-testid={`patient-row-chart-btn-${patient.id}`}
 													onClick={() => {
 														setRowMenuPatientId(null);
@@ -1028,7 +1028,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 														size={14}
 														className="text-[var(--teal,var(--brand-primary))] shrink-0"
 													/>
-													<span>В карту 043/у (Приём)</span>
+													<span>В карту (Приём)</span>
 												</button>
 
 												{/* Action 2: «Запись» */}
@@ -1078,7 +1078,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 														handleSelectPatient(patient.id);
 														useAppStore.getState().setCurrentView("finance");
 														showToast(
-															`Касса 54-ФЗ: расчёт ${patient.fullName}`,
+															`Касса: расчёт ${patient.fullName}`,
 															"info",
 														);
 													}}
@@ -1087,7 +1087,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 														size={14}
 														className="text-emerald-600 dark:text-emerald-400 shrink-0"
 													/>
-													<span>Касса 54-ФЗ / Оплата</span>
+													<span>Касса / Оплата</span>
 												</button>
 												<button
 													type="button"
@@ -1141,12 +1141,24 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										)}
 									</div>
 
-									{/* Visual interactive chevron indicator (DEF-PAT-04) */}
-									<ChevronRight
-										size={16}
-										className="text-[var(--muted)] opacity-50 group-hover:opacity-100 group-hover:text-[var(--teal)] transition-all shrink-0 pointer-events-none ml-0.5"
-										aria-hidden="true"
-									/>
+									{/* Visual interactive chevron button (32x32px, flex-shrink: 0) */}
+									<button
+										type="button"
+										className="patient-row-chevron-btn w-8 h-8 min-w-[32px] min-h-[32px] p-0 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[var(--muted)] hover:text-[var(--teal-dark)] inline-flex items-center justify-center cursor-pointer transition-colors shrink-0"
+										title={`Открыть карточку: ${patient.fullName}`}
+										aria-label={`Открыть карточку: ${patient.fullName}`}
+										data-testid={`patient-row-open-btn-${patient.id}`}
+										onClick={(e) => {
+											e.stopPropagation();
+											handleSelectPatient(patient.id);
+										}}
+									>
+										<ChevronRight
+											size={15}
+											className="shrink-0"
+											aria-hidden="true"
+										/>
+									</button>
 								</div>
 							</article>
 						);
@@ -1186,7 +1198,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							}
 							description={
 								!query.trim()
-									? "Создайте электронную медицинскую карту (043/у) первого пациента или выполните пакетный импорт существующей базы из Excel, 1С или IDENT."
+									? "Создайте медицинскую карту первого пациента или выполните пакетный импорт существующей базы из Excel, 1С или IDENT."
 									: `По запросу «${query.trim()}» ничего не найдено. Проверьте правильность написания ФИО или номера телефона.`
 							}
 							action={
@@ -1247,32 +1259,32 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 				{/* Right Column: Selected Patient Details & Widgets */}
 				<section
-					className="patient-admin-panel max-md:!bg-transparent max-md:!border-none max-md:!shadow-none max-md:!p-2 max-md:!rounded-none"
+					className="patient-admin-panel max-md:!bg-transparent max-md:!border-none max-md:!shadow-none max-md:!p-2 max-md:!rounded-none pb-6"
 					aria-label="Карточка активного пациента"
 				>
 					{/* Mobile back to list navigation header */}
-					<div className="patient-mobile-back-header md:hidden">
+					<div className="patient-mobile-back-header md:hidden flex items-center justify-between gap-2 flex-wrap w-full mb-3">
 						<button
 							type="button"
-							className="mobile-back-to-list-btn"
+							className="mobile-back-to-list-btn min-h-[36px] h-9 px-3 py-1.5"
 							onClick={() => setMobileActiveView("list")}
 							aria-label="Вернуться к списку пациентов"
 						>
-							<ArrowLeft size={16} aria-hidden="true" />
+							<ArrowLeft size={15} aria-hidden="true" />
 							<span>← Назад</span>
 						</button>
 						{selectedPatient && (
-							<div className="flex items-center gap-1.5 shrink-0">
+							<div className="flex items-center gap-1.5 flex-wrap shrink-0">
 								<button
 									type="button"
 									onClick={() =>
 										executeOpenPatientVisitAutonomy({ selectedPatient })
 									}
-									className="min-h-[44px] px-3 py-1.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-[var(--on-teal,#ffffff)] text-xs font-bold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
-									title="Открыть амбулаторный приём 043/у"
+									className="min-h-[34px] h-8 px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-[var(--on-teal,#ffffff)] text-xs font-bold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer shrink-0"
+									title="Открыть приём"
 									data-testid="patient-mobile-header-open-visit-btn"
 								>
-									<Stethoscope size={14} aria-hidden="true" />
+									<Stethoscope size={13} aria-hidden="true" />
 									<span>Приём</span>
 								</button>
 								<button
@@ -1280,11 +1292,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									onClick={() =>
 										void printBlankMedicalContract(selectedPatient)
 									}
-									className="min-h-[44px] px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+									className="min-h-[34px] h-8 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1 shadow-xs active:scale-95 cursor-pointer shrink-0"
 									title="Распечатать бланк договора"
 									data-testid="patient-mobile-header-print-contract-btn"
 								>
-									<FileText size={14} aria-hidden="true" />
+									<FileText size={13} aria-hidden="true" />
 									<span>Договор</span>
 								</button>
 								<button
@@ -1292,11 +1304,11 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									onClick={() =>
 										void printBlankMedicalConsent(selectedPatient)
 									}
-									className="min-h-[44px] px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs active:scale-95 cursor-pointer"
+									className="min-h-[34px] h-8 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1 shadow-xs active:scale-95 cursor-pointer shrink-0"
 									title="Распечатать бланк ИДС"
 									data-testid="patient-mobile-header-print-consent-btn"
 								>
-									<ShieldCheck size={14} aria-hidden="true" />
+									<ShieldCheck size={13} aria-hidden="true" />
 									<span>ИДС</span>
 								</button>
 							</div>
@@ -1311,7 +1323,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							marginBottom: "8px",
 						}}
 					>
-						<div className="flex items-center justify-between gap-2.5 w-full min-w-0">
+						<div className="flex flex-wrap items-center justify-between gap-2.5 w-full min-w-0">
 							<div className="flex items-center gap-2.5 min-w-0 flex-1">
 								{selectedPatient && (
 									<PatientAvatar
@@ -1320,13 +1332,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									/>
 								)}
 								<span
-									className="break-words min-w-0 max-w-full sm:max-w-md leading-tight"
+									className="break-words min-w-0 max-w-full sm:max-w-md leading-tight text-sm sm:text-base font-bold text-[var(--ink)]"
 									title={selectedPatient ? selectedPatient.fullName : undefined}
-									style={{
-										fontSize: "16px",
-										fontWeight: 700,
-										color: "var(--ink)",
-									}}
 								>
 									{selectedPatient
 										? selectedPatient.fullName
@@ -1334,24 +1341,26 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								</span>
 							</div>
 
-							<PatientCardSavePill
-								hasSelectedPatient={Boolean(selectedPatient)}
-								sections={[
-									{
-										dirty: patientCoreDirty,
-										saveState: patientCoreSaveState,
-									},
-									{
-										dirty: patientAdministrativeProfileDirty,
-										saveState: patientAdministrativeProfileSaveState,
-									},
-								]}
-							/>
+							<div className="shrink-0 max-w-full">
+								<PatientCardSavePill
+									hasSelectedPatient={Boolean(selectedPatient)}
+									sections={[
+										{
+											dirty: patientCoreDirty,
+											saveState: patientCoreSaveState,
+										},
+										{
+											dirty: patientAdministrativeProfileDirty,
+											saveState: patientAdministrativeProfileSaveState,
+										},
+									]}
+								/>
+							</div>
 						</div>
 
 						{selectedPatient && (
 							<div
-								className="flex items-center gap-1.5 flex-nowrap overflow-x-auto no-scrollbar scrollbar-none w-full pt-0.5 pb-0.5 select-none relative"
+								className="flex items-center gap-1.5 flex-wrap w-full pt-0.5 pb-0.5 select-none relative"
 								data-testid="patient-quick-actions-toolbar"
 							>
 								{/* Primary CTA 1 (Above Fold): Сохранить данные */}
@@ -1365,7 +1374,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											: undefined
 									}
 									disabled={patientCoreSaveState === "saving"}
-									className="primary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-all shadow-xs"
+									className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-all shadow-xs"
 									title="Сохранить изменения в карточке пациента"
 									data-testid="patient-core-save-btn"
 								>
@@ -1380,8 +1389,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										executeOpenPatientVisitAutonomy({ selectedPatient })
 									}
 									disabled={false}
-									className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark)] dark:text-[var(--teal)] border border-[var(--teal)]/30"
-									title="Открыть амбулаторный приём 043/у"
+									className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal-dark)] dark:text-[var(--teal)] border border-[var(--teal)]/30"
+									title="Открыть приём"
 									data-testid="patient-card-open-visit-btn"
 								>
 									<Stethoscope
@@ -1409,7 +1418,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 												"info",
 											);
 										}}
-										className="min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1 cursor-pointer text-xs shrink-0 transition-colors"
+										className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 py-1.5 rounded-lg bg-[var(--teal-soft)] hover:bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal)]/30 font-semibold inline-flex items-center gap-1.5 cursor-pointer text-xs shrink-0 transition-colors"
 										title={`Следующий приём: ${new Date(nextPatientAppointment.startsAt!).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`}
 										data-testid="patient-quick-next-appointment-btn"
 									>
@@ -1439,7 +1448,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								>
 									<button
 										type="button"
-										className="secondary-button min-h-[44px] sm:min-h-0 sm:h-7 px-2 py-1 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--ink)] border border-[var(--line)]"
+										className="patient-card-more-btn min-h-[44px] sm:min-h-[36px] sm:h-9 sm:w-9 w-9 h-9 p-0 rounded-lg text-xs font-bold inline-flex items-center justify-center cursor-pointer shrink-0 transition-colors bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] hover:border-[var(--teal)] text-[var(--ink)] border border-[var(--line)]"
 										onClick={() => setIsPatientActionsMenuOpen((v) => !v)}
 										title="Дополнительные действия с пациентом"
 										aria-label="Дополнительные действия с пациентом"
@@ -1447,7 +1456,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										aria-expanded={isPatientActionsMenuOpen}
 										data-testid="patient-card-more-actions-btn"
 									>
-										<MoreHorizontal size={14} aria-hidden="true" />
+										<MoreHorizontal size={16} aria-hidden="true" />
 									</button>
 
 									{isPatientActionsMenuOpen && (
@@ -1636,7 +1645,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 													cursor: "pointer",
 													textAlign: "left",
 												}}
-												title="Открыть амбулаторную медицинскую карту Форма 043/у в 1 клик"
+												title="Открыть медицинскую карту в 1 клик"
 												data-testid="open-patient-card-modal-btn"
 											>
 												<FileText
@@ -1644,10 +1653,10 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 													className="text-[var(--teal)] shrink-0"
 													aria-hidden="true"
 												/>
-												<span>Медицинская карта 043/у</span>
+												<span>Медицинская карта</span>
 											</button>
 
-											{/* 5. Счета и касса 54-ФЗ */}
+											{/* 5. Счета и касса */}
 											<button
 												type="button"
 												className="patient-dropdown-item hover:bg-[var(--paper-hover)] text-[var(--ink)]"
@@ -1660,7 +1669,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 													}
 													useAppStore.getState().setCurrentView("finance");
 													showToast(
-														`Открыты счета и касса 54-ФЗ: ${selectedPatient?.fullName || ""}`,
+														`Открыты счета и касса: ${selectedPatient?.fullName || ""}`,
 														"info",
 													);
 												}}
@@ -1680,7 +1689,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 													cursor: "pointer",
 													textAlign: "left",
 												}}
-												title="Счета, акты по 804н и касса 54-ФЗ"
+												title="Счета, акты и касса"
 												data-testid="patient-card-finance-btn"
 											>
 												<span className="flex items-center gap-2">
@@ -1689,7 +1698,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 														className="text-teal-600 dark:text-teal-400 shrink-0"
 														aria-hidden="true"
 													/>
-													<span>Счета и касса (54-ФЗ)</span>
+													<span>Счета и касса</span>
 												</span>
 												<span
 													data-testid="patient-quick-balance-btn"
@@ -1775,7 +1784,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 													cursor: "pointer",
 													textAlign: "left",
 												}}
-												title="Программа лояльности и бонусы (54-ФЗ / ФФД 1.2)"
+												title="Программа лояльности и бонусы"
 												data-testid="open-loyalty-program-modal-btn"
 											>
 												<Gift
@@ -1940,24 +1949,25 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									boxSizing: "border-box",
 								}}
 							/>
+							{/* 3 Semantic Categories of Quick Chips (Safety, Comfort, Finance & Service) */}
 							<div className="quick-chips-group">
-								<div className="quick-chips-group-title">
-									Сервис и лояльность:
+								<div className="quick-chips-group-title flex items-center gap-1.5 text-xs text-[var(--muted)] font-semibold">
+									<span className="w-1.5 h-1.5 rounded-full bg-rose-500/80 inline-block shrink-0" aria-hidden="true" />
+									<span>Аллергии и соматический статус:</span>
 								</div>
-								<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full overflow-hidden">
+								<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full">
 									{[
-										"VIP",
-										"Семья",
-										"Согласовать скидку",
-										"Должник",
-										"Просит звонить заранее",
-										"Высокий средний чек",
-										"Часто отменяет",
+										"Аллергия на латекс",
+										"Аллергия на анестезию",
+										"Бронхиальная астма",
+										"Гипертония",
+										"Сахарный диабет",
+										"Антикоагулянты",
 									].map((chip) => (
 										<button
 											key={chip}
 											type="button"
-											className="quick-chip max-w-[180px] truncate"
+											className="quick-chip quick-chip-somatic max-w-[200px] truncate"
 											title={`+ ${chip}`}
 											onClick={() => {
 												const currentVal = patientCoreDraft.notes.trim();
@@ -1975,21 +1985,60 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									))}
 								</div>
 							</div>
+
 							<div className="quick-chips-group">
-								<div className="quick-chips-group-title">
-									Особенности приёма:
+								<div className="quick-chips-group-title flex items-center gap-1.5 text-xs text-[var(--muted)] font-semibold">
+									<span className="w-1.5 h-1.5 rounded-full bg-teal-500/80 inline-block shrink-0" aria-hidden="true" />
+									<span>Особенности приёма и комфорт:</span>
 								</div>
-								<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full overflow-hidden">
+								<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full">
 									{[
 										"Боится уколов",
-										"Очень тревожный",
+										"Дентофобия / тревожный",
 										"Рвотный рефлекс",
 										"Ортодонтический пациент",
 									].map((chip) => (
 										<button
 											key={chip}
 											type="button"
-											className="quick-chip max-w-[180px] truncate"
+											className="quick-chip quick-chip-comfort max-w-[200px] truncate"
+											title={`+ ${chip}`}
+											onClick={() => {
+												const currentVal = patientCoreDraft.notes.trim();
+												const chipLower = chip.toLowerCase();
+												if (currentVal.toLowerCase().includes(chipLower))
+													return;
+												const newVal = currentVal
+													? `${currentVal}, ${chipLower}`
+													: chipLower;
+												updatePatientCoreDraft("notes", newVal);
+											}}
+										>
+											+ {chip}
+										</button>
+									))}
+								</div>
+							</div>
+
+							<div className="quick-chips-group">
+								<div className="quick-chips-group-title flex items-center gap-1.5 text-xs text-[var(--muted)] font-semibold">
+									<span className="w-1.5 h-1.5 rounded-full bg-indigo-500/80 inline-block shrink-0" aria-hidden="true" />
+									<span>Сервис и финансовый статус:</span>
+								</div>
+								<div className="quick-chips-wrap flex flex-wrap gap-1.5 max-w-full">
+									{[
+										"VIP",
+										"Семейный счёт",
+										"Согласовать скидку",
+										"Контроль расчётов",
+										"Высокий средний чек",
+										"Уточнять явку",
+										"Звонить заранее",
+									].map((chip) => (
+										<button
+											key={chip}
+											type="button"
+											className="quick-chip quick-chip-finance max-w-[200px] truncate"
 											title={`+ ${chip}`}
 											onClick={() => {
 												const currentVal = patientCoreDraft.notes.trim();

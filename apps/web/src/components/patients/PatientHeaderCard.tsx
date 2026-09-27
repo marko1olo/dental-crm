@@ -299,7 +299,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 						}`}
 						title={
 							balance > 0
-								? "Аванс / Депозит пациента (54-ФЗ)"
+								? "Аванс / Депозит пациента"
 								: balance < 0
 									? "Задолженность за оказанные услуги"
 									: "Баланс нулевой (все услуги оплачены)"
@@ -323,10 +323,10 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 									.getState()
 									.setSelectedPatientId(resolvedPatient.id);
 								useAppStore.getState().setCurrentView("visit");
-								showToast(`Открыт приём 043/у: ${fullName}`, "success");
+								showToast(`Открыт приём: ${fullName}`, "success");
 							}}
 							className="h-8 px-2.5 sm:px-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all text-xs"
-							title="Открыть амбулаторный приём 043/у без лишних подтверждений"
+							title="Открыть амбулаторный приём без лишних подтверждений"
 							data-testid="header-open-visit-btn"
 						>
 							<Stethoscope size={13} />
@@ -378,7 +378,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 								type="button"
 								onClick={() => setIsActionsMenuOpen((prev) => !prev)}
 								className="h-8 w-8 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--paper-hover,#e2e8f0)] text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] inline-flex items-center justify-center cursor-pointer transition-colors"
-								title="Дополнительные действия (печать 043/у, касса, архив)"
+								title="Дополнительные действия (печать карты, касса, архив)"
 								aria-label="Дополнительные действия"
 								aria-expanded={isActionsMenuOpen}
 								aria-haspopup="true"
@@ -392,7 +392,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 									className="absolute right-0 top-full mt-1 w-64 p-1 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] shadow-xl z-50 flex flex-col gap-0.5 text-xs animate-in fade-in zoom-in-95 duration-100"
 									data-testid="header-actions-menu-popover"
 								>
-									{/* 1. Печать и экспорт карты 043/у */}
+									{/* 1. Печать и экспорт карты */}
 									<button
 										type="button"
 										onClick={() => {
@@ -400,17 +400,17 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 											if (typeof window !== "undefined") {
 												window.print();
 											}
-											showToast("Печать и экспорт карты 043/у запущены", "info");
+											showToast("Печать и экспорт карты запущены", "info");
 										}}
 										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-										title="Печать и экспорт карты 043/у"
+										title="Печать и экспорт карты"
 										data-testid="header-export-043u-btn"
 									>
 										<Printer size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
-										<span className="truncate">Печать карты (043/у)</span>
+										<span className="truncate">Печать карты</span>
 									</button>
 
-									{/* 2. Выписка счёта и касса (54-ФЗ) */}
+									{/* 2. Выписка счёта и касса */}
 									<button
 										type="button"
 										onClick={() => {
@@ -422,11 +422,11 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 											showToast(`Открыта касса и счета: ${fullName}`, "info");
 										}}
 										className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-										title="Выписка счёта, акты выполненных работ и касса 54-ФЗ"
+										title="Выписка счёта, акты выполненных работ и касса"
 										data-testid="header-finance-btn"
 									>
 										<FileText size={13} className="text-emerald-600 shrink-0" />
-										<span className="truncate">Счета и касса (54-ФЗ)</span>
+										<span className="truncate">Счета и касса</span>
 									</button>
 
 									{/* 3. Семейный баланс */}
@@ -481,7 +481,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 										<span className="truncate">Бланк ИДС / согласий (_______)</span>
 									</button>
 
-									{/* 5. Анамнез 043/у */}
+									{/* 5. Анамнез */}
 									{onOpenAnamnesis && (
 										<button
 											type="button"
@@ -490,11 +490,11 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 												onOpenAnamnesis();
 											}}
 											className="w-full h-8 px-2 rounded-lg hover:bg-[var(--paper-hover,#f1f5f9)] dark:hover:bg-[var(--paper-hover,#1e293b)] text-[var(--ink,#0f172a)] dark:text-white font-medium inline-flex items-center gap-2 cursor-pointer transition-colors text-left"
-											title="Анамнез 043/у"
+											title="Анамнез пациента"
 											data-testid="header-anamnesis-btn"
 										>
 											<HeartPulse size={13} className="text-rose-500 shrink-0" />
-											<span className="truncate">Анамнез 043/у</span>
+											<span className="truncate">Анамнез</span>
 										</button>
 									)}
 
