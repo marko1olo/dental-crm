@@ -733,7 +733,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 							<button
 								type="button"
 								onClick={() => toggleAccordion("passport")}
-								className="w-full flex items-center justify-between p-3 sm:p-3.5 text-left cursor-pointer select-none transition-colors"
+								className="w-full flex items-center justify-between p-3 sm:p-3.5 text-left cursor-pointer select-none transition-colors bg-transparent"
 								data-testid="accordion-toggle-passport"
 								aria-expanded={accordionsOpen.passport}
 							>
@@ -1007,7 +1007,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 							<button
 								type="button"
 								onClick={() => toggleAccordion("insurance")}
-								className="w-full flex items-center justify-between p-3 sm:p-3.5 text-left cursor-pointer select-none transition-colors"
+								className="w-full flex items-center justify-between p-3 sm:p-3.5 text-left cursor-pointer select-none transition-colors bg-transparent"
 								data-testid="accordion-toggle-insurance"
 								aria-expanded={accordionsOpen.insurance}
 							>
@@ -1166,7 +1166,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 							<button
 								type="button"
 								onClick={() => toggleAccordion("notes")}
-								className="w-full flex items-center justify-between p-3 sm:p-3.5 text-left cursor-pointer select-none transition-colors"
+								className="w-full flex items-center justify-between p-3 sm:p-3.5 text-left cursor-pointer select-none transition-colors bg-transparent"
 								data-testid="accordion-toggle-notes"
 								aria-expanded={accordionsOpen.notes}
 							>
