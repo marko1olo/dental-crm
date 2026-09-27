@@ -319,7 +319,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 											<tr>
 												<th className="p-2.5 font-semibold">Дата</th>
 												<th className="p-2.5 font-semibold">Пациент</th>
-												<th className="p-2.5 font-semibold">Услуга / Код 804н / Зуб</th>
+												<th className="p-2.5 font-semibold">Услуга / Код / Зуб</th>
 												<th className="p-2.5 font-semibold text-right">Выручка</th>
 												<th className="p-2.5 font-semibold text-right">Материалы</th>
 												<th className="p-2.5 font-semibold text-right">ЗТЛ</th>
@@ -342,7 +342,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 															<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
 																{srv.order804nCode && (
 																	<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
-																		804н: {srv.order804nCode}
+																		Код: {srv.order804nCode}
 																	</span>
 																)}
 																{srv.toothCode && (

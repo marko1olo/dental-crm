@@ -351,7 +351,7 @@ export function VoiceDictationAssistantModal({
 							<div className="dnt-voice-rec-status-sub">
 								{isListening
 									? "Говорите команды (например: «Зуб 46 кариес дентина, анестезия убистезин»)"
-									: "Автоматическое распознавание номеров зубов FDI, диагнозов и дневника 043/у"}
+									: "Автоматическое распознавание номеров зубов, диагнозов и дневника приёма"}
 							</div>
 						</div>
 
@@ -550,7 +550,7 @@ export function VoiceDictationAssistantModal({
 									}}
 								>
 									<FileText size={18} />
-									<span>Дневник приёма (Форма 043/у)</span>
+									<span>Дневник приёма</span>
 								</div>
 
 								<div className="dnt-voice-soap-grid">

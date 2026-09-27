@@ -32,7 +32,7 @@ describe("VisitTherapyProtocolWidget (Chairside 30-second Therapy & Restoration)
 		assert.ok(html.includes("Гарантия"), "Has StAR warranty indicator");
 
 		// Кнопки действий
-		assert.ok(html.includes("Внести в 043/у"), "Has primary 1-click Form 043/u action button");
+		assert.ok(html.includes("Внести в дневник"), "Has primary 1-click Form 043/u action button");
 		assert.ok(html.includes("В смету"), "Has 1-click invoice / estimate service button");
 
 		// Тач-таргеты >= 44px (Мандат 8d)

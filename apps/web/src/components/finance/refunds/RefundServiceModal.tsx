@@ -308,9 +308,9 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 						"ККТ временно офлайн при фискализации возврата",
 						finalQueueId
 					);
-					showToast("ККТ временно офлайн: чек возврата 54-ФЗ помещен в буфер отложенной печати", "warning");
+					showToast("ККТ временно офлайн: чек возврата помещен в буфер отложенной печати", "warning");
 				} else {
-					showToast(`Чек «Возврат прихода» 54-ФЗ №${finalDocNumber || "б/н"} успешно фискализирован!`, "success");
+					showToast(`Чек возврата «Возврат прихода» №${finalDocNumber || "б/н"} успешно фискализирован!`, "success");
 				}
 			} else {
 				const errData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
@@ -424,7 +424,7 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 						</div>
 						<div>
 							<h3 className="text-base font-extrabold text-[var(--ink,#0f172a)] m-0 leading-snug">
-								Оформление частичного возврата (54-ФЗ)
+								Оформление частичного возврата
 							</h3>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0">
 								Счет: <span className="font-mono font-bold text-[var(--ink,#0f172a)]">{invoiceNumber}</span> • Пациент: {patientName}
@@ -581,7 +581,7 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 										<span>Итоговый пересчет операции (ACID):</span>
 									</div>
 									<span className="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold">
-										54-ФЗ ФФД 1.2
+										Фискальный чек возврата
 									</span>
 								</div>
 

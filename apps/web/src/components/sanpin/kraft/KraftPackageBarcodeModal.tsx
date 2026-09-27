@@ -250,16 +250,16 @@ export function KraftPackageBarcodeModal({
 		return parseAndValidateKraftBarcode(scannedInput.trim());
 	}, [scannedInput]);
 
-	// Attach Scanned to 043/u protocol
+	// Attach Scanned to medical card protocol
 	const handleAttachScannedTo043 = async () => {
 		if (!parsedScanned) return;
 		if (parsedScanned.isExpired) {
-			showToast("Внимание: крафт-пакет просрочен по СанПиН 3.3686-21! Привязан к протоколу 043/у с предупреждением.", "warning");
+			showToast("Внимание: крафт-пакет просрочен по СанПиН 3.3686-21! Привязан к протоколу приёма с предупреждением.", "warning");
 		}
 		if (onAttachToProtocol) {
 			await onAttachToProtocol(parsedScanned);
 			if (!parsedScanned.isExpired) {
-				showToast("Пакет успешно привязан к протоколу приема (Форма № 043/у)", "success");
+				showToast("Пакет успешно привязан к протоколу приема (медицинская карта)", "success");
 			}
 			onClose();
 		} else {
@@ -303,7 +303,7 @@ export function KraftPackageBarcodeModal({
 		setScannedInput(rawCode);
 		if (onAttachToProtocol) {
 			await onAttachToProtocol(record);
-			showToast("Стерилизация зафиксирована (Тест-индикатор 5 класса, Норма) и внесена в 043/у", "success");
+			showToast("Стерилизация зафиксирована (Тест-индикатор 5 класса, Норма) и внесена в карту", "success");
 			onClose();
 		} else {
 			showToast("Стерилизация зафиксирована: Тест-индикатор 5 класса (Норма)", "success");
@@ -686,7 +686,7 @@ export function KraftPackageBarcodeModal({
 						className={`kraft-tab-btn ${activeTab === "scan" ? "active" : ""}`}
 						data-testid="tab-kraft-scanner"
 					>
-						<Scan size={16} /> 2. Сканер и привязка (043/у)
+						<Scan size={16} /> 2. Сканер и привязка к карте
 					</button>
 
 					<button
@@ -1153,7 +1153,7 @@ export function KraftPackageBarcodeModal({
 										cursor: "pointer",
 									}}
 									data-testid="btn-fixate-sterilization-norm"
-									title="1-Клик фиксация стерилизации крафт-пакета по тест-индикатору 5 класса (Норма) для формы 043/у"
+									title="1-Клик фиксация стерилизации крафт-пакета по тест-индикатору 5 класса (Норма) для медицинской карты"
 								>
 									<CheckCircle2 size={18} />
 									<span>Стерилизация проведена / Тест-индикатор 5 класса (Норма)</span>
@@ -1250,7 +1250,7 @@ export function KraftPackageBarcodeModal({
 										</div>
 									</div>
 
-									{/* 043/u Record formatted preview */}
+									{/* Medical card record formatted preview */}
 									<div
 										style={{
 											padding: "0.75rem",
@@ -1261,7 +1261,7 @@ export function KraftPackageBarcodeModal({
 											fontStyle: "italic",
 										}}
 									>
-										<strong>Запись для Формы № 043/у:</strong> {parsedScanned.formattedProtocolRecord043}
+										<strong>Запись для медицинской карты:</strong> {parsedScanned.formattedProtocolRecord043}
 									</div>
 
 									<button
@@ -1282,7 +1282,7 @@ export function KraftPackageBarcodeModal({
 										data-testid="attach-to-043-btn"
 									>
 										<Sparkles size={18} />
-										<span>Привязать к протоколу приема 043/у (1 клик)</span>
+										<span>Привязать к протоколу приёма (1 клик)</span>
 									</button>
 								</div>
 							) : (

@@ -78,7 +78,7 @@ export function validateTreatmentPlanStarProtocols(
 	const checks: StarProtocolRuleCheck[] = [];
 
 	const codesPresent = new Set(allItems.map((i) => i.code804n.trim().toUpperCase()));
-	const hasCTDiagnostics = codesPresent.has("A06.07.004") || codesPresent.has("A06.07.003");
+	const hasCTDiagnostics = codesPresent.has("A06.07.012") || codesPresent.has("A06.07.004") || codesPresent.has("A06.07.003");
 	const hasHygiene = codesPresent.has("A16.07.050") || codesPresent.has("A16.07.051");
 
 	// 1. Проверка Номенклатуры 804н для всех позиций
@@ -91,12 +91,12 @@ export function validateTreatmentPlanStarProtocols(
 			checks.push({
 				ruleId: `804n-format-${item.id}`,
 				protocolCode: "NOMENCLATURE_804N",
-				protocolTitleRu: "Номенклатура медицинских услуг (Приказ МЗ РФ № 804н)",
+				protocolTitleRu: "Прейскурант и номенклатура услуг",
 				toothNumber: item.toothNumber,
-				ruleDescriptionRu: "Каждая позиция плана должна иметь валидный код по Номенклатуре 804н",
+				ruleDescriptionRu: "Каждая позиция плана должна иметь валидный код по прейскуранту услуг",
 				status: "warning",
 				messageRu: `Позиция «${item.name}» использует пользовательский код номенклатуры: «${item.code804n}»`,
-				recommendationRu: "Рекомендуется указать утвержденный код Номенклатуры 804н (например, A16.07.002.001)",
+				recommendationRu: "Рекомендуется указать утвержденный код прейскуранта услуг (например, A16.07.002.001)",
 				normativeRefRu: "Приказ Минздрава России от 13.10.2017 № 804н",
 				order804nCodesRelated: [item.code804n],
 			});
@@ -107,10 +107,10 @@ export function validateTreatmentPlanStarProtocols(
 		checks.push({
 			ruleId: "804n-all-valid",
 			protocolCode: "NOMENCLATURE_804N",
-			protocolTitleRu: "Номенклатура медицинских услуг (Приказ МЗ РФ № 804н)",
-			ruleDescriptionRu: "Все позиции плана соответствуют кодификатору 804н",
+			protocolTitleRu: "Прейскурант и номенклатура услуг",
+			ruleDescriptionRu: "Все позиции плана соответствуют прейскуранту услуг",
 			status: "pass",
-			messageRu: `Все ${allItems.length} процедур плана имеют зарегистрированные коды Номенклатуры 804н`,
+			messageRu: `Все ${allItems.length} процедур плана имеют зарегистрированные коды прейскуранта услуг`,
 			normativeRefRu: "Приказ Минздрава России от 13.10.2017 № 804н",
 			order804nCodesRelated: Array.from(codesPresent),
 		});
@@ -264,8 +264,8 @@ export function validateTreatmentPlanStarProtocols(
 		}
 
 		// Б) Протокол СтАР: Дентальная имплантация (К08.1)
-		const hasImplant = codes.includes("A16.07.054.001");
-		const hasGuide = codes.includes("A16.07.054");
+		const hasImplant = codes.includes("A16.07.054.001") || codes.includes("A16.07.054");
+		const hasGuide = codes.includes("A16.07.054") && !codes.includes("A16.07.054.001");
 		const hasImplantCrown = codes.includes("A16.07.006");
 
 		if (hasImplant) {

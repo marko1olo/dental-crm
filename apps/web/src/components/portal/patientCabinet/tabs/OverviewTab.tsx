@@ -156,7 +156,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 						<div className="pc-status-name-row">
 							<h3 className="pc-patient-name">{data.fullName}</h3>
 							<span className="pc-badge-card-number">
-								Карта 043/у № {data.cardNumber}
+								Медицинская карта № {data.cardNumber}
 							</span>
 						</div>
 						<p className="pc-doctor-subtitle">
@@ -529,7 +529,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 						<div>
 							<strong>
 								Ожидает подписи {summary.pendingConsentsCount} информированное
-								согласие (ИДС 323-ФЗ)
+								согласие (ИДС)
 							</strong>
 							<p className="pc-alert-subtext">
 								Подтвердите согласие на медицинское вмешательство по SMS (63-ФЗ

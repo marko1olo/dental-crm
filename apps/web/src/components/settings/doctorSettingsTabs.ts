@@ -40,7 +40,7 @@ export const DOCTOR_TABS: readonly DoctorTabDefinition[] = [
 	},
 	{
 		id: "protocols",
-		label: "Протоколы 043/у",
+		label: "Клинические протоколы",
 		description: "Шаблоны лечения, SOAP-дневники, автозаполнение",
 		icon: FileText,
 	},
@@ -52,7 +52,7 @@ export const DOCTOR_TABS: readonly DoctorTabDefinition[] = [
 	},
 	{
 		id: "procedure-boms",
-		label: "Техкарты 804н",
+		label: "Технологические карты",
 		description: "Нормы списания карпул, анестетиков и композитов",
 		icon: Layers,
 	},

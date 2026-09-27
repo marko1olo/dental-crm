@@ -168,7 +168,7 @@ export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProp
 						<div className="selfcheckin-legal-pep-badge">
 							<ShieldCheck size={16} />
 							<span>
-								Простая электронная подпись (ПЭП по 63-ФЗ, ст. 20 323-ФЗ)
+								Электронная подпись (ПЭП)
 							</span>
 						</div>
 						<div className="flex flex-col gap-2 mt-3">

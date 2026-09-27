@@ -862,7 +862,7 @@ export function generateBlankConsentFallbackHtml(
 </head>
 <body>
 	<div class="no-print">
-		<span><strong>Бланк ИДС со строками _______ для ручного заполнения</strong> (Приказ Минздрава № 1051н, ст. 20 323-ФЗ, 152-ФЗ).</span>
+		<span><strong>Бланк информированного добровольного согласия (ИДС) для ручного заполнения.</strong></span>
 		<div class="no-print-actions">
 			<button class="btn-print" onclick="window.print()">Печать (Ctrl+P)</button>
 			<button class="btn-close" onclick="window.close()">Закрыть</button>
@@ -878,9 +878,9 @@ export function generateBlankConsentFallbackHtml(
 				<div>Лицензия на осуществление медицинской деятельности: <strong>№ ${escapeHtml(medicalLicenseNumber)}</strong> от ${escapeHtml(medicalLicenseDate)} г., выданная: ${escapeHtml(medicalLicenseIssuer)}.</div>
 			</td>
 			<td class="legal-badge-cell" style="width: 220px;">
-				<div class="legal-badge">Приказ № 1051н</div>
-				<div>ст. 20 Федерального закона № 323-ФЗ</div>
-				<div style="font-weight: bold; color: #0f172a;">В медкарту стоматологического пациента (043/у)</div>
+				<div class="legal-badge">Согласие ИДС</div>
+				<div>Информированное согласие</div>
+				<div style="font-weight: bold; color: #0f172a;">В медицинскую карту пациента</div>
 			</td>
 		</tr>
 	</table>

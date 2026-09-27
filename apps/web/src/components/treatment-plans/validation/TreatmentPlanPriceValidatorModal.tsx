@@ -482,7 +482,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 							}`}
 						>
 							<Award size={14} />
-							<span>Протоколы СтАР & 804н</span>
+							<span>Стандарты и прейскурант</span>
 							<span className="px-1.5 py-0.2 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] text-[10px] font-mono">
 								{starValidation.checks.length}
 							</span>
@@ -501,7 +501,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 					</div>
 
 					<div className="text-xs text-slate-500 font-mono">
-						Код МЗ РФ: Приказ 804н
+						Код в прейскуранте
 					</div>
 				</div>
 
@@ -686,7 +686,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 									<thead>
 										<tr>
 											<th style={{ width: "5%" }}># / Зуб</th>
-											<th style={{ width: "12%" }}>Код 804н</th>
+											<th style={{ width: "12%" }}>Код услуги</th>
 											<th style={{ width: "30%" }}>Услуга</th>
 											<th style={{ width: "6%" }}>Кол-во</th>
 											<th style={{ width: "12%" }}>Цена в плане</th>
@@ -927,7 +927,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 											<span>Норматив: {check.normativeRefRu}</span>
 											{check.order804nCodesRelated.length > 0 && (
 												<span className="font-mono">
-													Коды 804н: {check.order804nCodesRelated.join(", ")}
+													Коды услуг: {check.order804nCodesRelated.join(", ")}
 												</span>
 											)}
 										</div>
@@ -962,7 +962,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 
 									<div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
 										<strong className="text-slate-900 dark:text-slate-100 block">
-											2. Клинический аудит СтАР & 804н:
+											2. Клинический аудит стандартов:
 										</strong>
 										<ul className="space-y-1 text-slate-600 dark:text-slate-300">
 											<li>• Общий индекс соответствия: <strong>{starValidation.complianceScorePercent}%</strong></li>

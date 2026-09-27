@@ -10,7 +10,7 @@
  * - Гарантийные сертификаты СтАР.
  */
 
-import type React from "react";
+import React from "react";
 import {
 	AlertTriangle,
 	Award,
@@ -23,6 +23,8 @@ import {
 	Eye,
 	FileCheck,
 	FileText,
+	Pill,
+	Printer,
 	ReceiptText,
 	ShieldCheck,
 	Smartphone,
@@ -37,6 +39,12 @@ import {
 	calculateWarrantyValidity,
 	formatRussianDateIso,
 	formatRubles,
+	generateConsentPrintHtml,
+	generateDocumentSnapshotHtml,
+	generateExtract043Html,
+	generatePatientTaxCertificate1151156,
+	generatePrescription107PrintHtml,
+	openPrintWindow,
 } from "../patientCabinetEngine";
 
 export interface DocumentsTabProps {
@@ -150,6 +158,23 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 
 							<button
 								type="button"
+								className="pc-btn-secondary pc-tax-print-btn"
+								data-testid="print-tax-deduction-btn"
+								onClick={() => {
+									openPrintWindow(
+										generatePatientTaxCertificate1151156(data, selectedTaxYear),
+									);
+									onShowToast(
+										`Справка для налогового вычета (ФНС) за ${selectedTaxYear} год готова к печати!`,
+									);
+								}}
+							>
+								<Printer size={15} />
+								<span>Справка для налогового вычета (ФНС)</span>
+							</button>
+
+							<button
+								type="button"
 								className="pc-btn-secondary pc-tax-view-btn"
 								data-testid="print-tax-knd-btn"
 								onClick={onOpenTaxCertificateSheet}
@@ -200,7 +225,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 				<div className="pc-card-header">
 					<div className="pc-card-title">
 						<FileCheck size={20} className="pc-icon-primary" />
-						<span>Информированные согласия (ИДС 323-ФЗ & 152-ФЗ)</span>
+						<span>Информированные согласия (ИДС)</span>
 					</div>
 					<span className="pc-section-hint">Юридическая сила по 63-ФЗ ст. 6</span>
 				</div>
@@ -253,31 +278,45 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 											Криптографический хеш ПЭП (SHA-256):{" "}
 											<code>{consent.signatureAudit.integrityHash}</code>
 										</span>
-										{consent.pdfDownloadUrl && (
-											<a
-												href={consent.pdfDownloadUrl}
-												target="_blank"
-												rel="noreferrer"
-												className="pc-btn-secondary pc-btn-compact"
-											>
-												<Download size={13} />
-												<span>PDF</span>
-											</a>
-										)}
+										<button
+											type="button"
+											className="pc-btn-secondary pc-btn-compact"
+											data-testid={`print-signed-consent-btn-${consent.id}`}
+											data-legacy-testid={`view-consent-btn-${consent.id}`}
+											onClick={() => {
+												openPrintWindow(generateConsentPrintHtml(consent, data));
+												onShowToast(`Печатная форма согласия «${consent.titleRu}» готова!`);
+											}}
+										>
+											<Eye size={13} />
+											<span>Бланк со штампом ПЭП</span>
+										</button>
 									</div>
 								)}
 
-								{/* Если ожидает: 1-клик SMS/ПЭП подписание */}
+								{/* Если ожидает: 1-клик SMS/ПЭП подписание + просмотр бланка */}
 								{!isSigned && (
 									<div className="pc-consent-actions-row">
 										<button
 											type="button"
 											className="pc-btn-primary pc-sign-btn"
 											onClick={() => onStartConsentSigning(consent)}
-											data-testid={`sign-sms-btn-${consent.id}`}
+											data-testid={`sign-consent-btn-${consent.id}`}
+											data-legacy-testid={`sign-sms-btn-${consent.id}`}
 										>
 											<Smartphone size={16} />
 											<span>Подписать по SMS (63-ФЗ ПЭП)</span>
+										</button>
+										<button
+											type="button"
+											className="pc-btn-secondary pc-btn-compact"
+											data-testid={`preview-consent-btn-${consent.id}`}
+											onClick={() => {
+												openPrintWindow(generateConsentPrintHtml(consent, data));
+											}}
+										>
+											<Eye size={13} />
+											<span>Печатный бланк</span>
 										</button>
 									</div>
 								)}
@@ -287,119 +326,165 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 				</div>
 			</section>
 
-			{/* 3. ЭЛЕКТРОННЫЕ РЕЦЕПТЫ НА ЛЕКАРСТВА (ФОРМА 107-1/У, ПРИКАЗ 1094Н) */}
-			<section className="pc-section-card">
+			{/* 3. ОФИЦИАЛЬНЫЕ МЕДИЦИНСКИЕ ДОКУМЕНТЫ (Договоры, Акты, Форма 043/у) */}
+			<section className="pc-section-card" data-testid="clinical-documents-section">
 				<div className="pc-card-header">
 					<div className="pc-card-title">
-						<FileText size={20} className="pc-icon-primary" />
+						<FileCheck size={20} className="pc-icon-primary" />
+						<span>Официальные медицинские документы и договоры</span>
+					</div>
+					<span className="pc-section-hint">Юридически значимые документы клиники</span>
+				</div>
+
+				{(!data.documents || data.documents.length === 0) ? (
+					<div className="pc-empty-state" data-testid="clinical-documents-empty">
+						<FileText size={32} className="pc-icon-muted" />
+						<p className="pc-empty-title">Официальные документы формируются в клинике</p>
+						<p className="pc-empty-desc">
+							Договоры на оказание платных медицинских услуг, акты сдачи-приемки и медицинские выписки отобразятся здесь сразу после выдачи врачом.
+						</p>
+					</div>
+				) : (
+					<div className="pc-clinical-docs-list" data-testid="clinical-documents-list">
+						{data.documents.map((doc) => {
+							const isIssued = doc.status === "issued";
+							const kindLabel =
+								doc.kind === "paid_medical_services_contract"
+									? "Договор"
+									: doc.kind === "completed_works_act"
+										? "Акт оказанных услуг"
+										: doc.kind.includes("043") || doc.kind === "outpatient_medical_card_025u"
+											? "Медицинская выписка"
+											: doc.kind === "tax_deduction_certificate"
+												? "ФНС"
+												: "Документ";
+
+							return (
+								<div
+									key={doc.id}
+									className={`pc-consent-card ${isIssued ? "signed" : "pending"}`}
+									data-testid={`clinical-doc-${doc.id}`}
+								>
+									<div className="pc-consent-head">
+										<div>
+											<div className="pc-consent-code-row">
+												<span className="pc-consent-code-badge">{kindLabel}</span>
+												<strong className="pc-consent-title">{doc.title}</strong>
+											</div>
+											<p className="pc-consent-summary">
+												Оформлен: {formatRussianDateIso(doc.dateIso)}
+												{doc.totalAmountRub !== undefined && doc.totalAmountRub > 0 && (
+													<> &bull; Сумма: <strong>{formatRubles(doc.totalAmountRub)}</strong></>
+												)}
+												{doc.documentNumber && <> &bull; № {doc.documentNumber}</>}
+											</p>
+										</div>
+
+										<div>
+											<span className={`pc-status-badge ${isIssued ? "paid" : "unpaid"}`}>
+												{isIssued ? <CheckCircle2 size={14} /> : <Clock size={14} />}
+												<span>{isIssued ? "Выдан и действителен" : "Черновик"}</span>
+											</span>
+										</div>
+									</div>
+
+									{doc.sha256 && (
+										<div className="pc-audit-hash-badge">
+											<span className="pc-hash-text">
+												Цифровой отпечаток архива (SHA-256): <code>{doc.sha256}</code>
+											</span>
+										</div>
+									)}
+
+									<div className="pc-consent-actions-row">
+										{(doc.kind === "medical_card_extract_043" || doc.kind.includes("043")) && (
+											<button
+												type="button"
+												className="pc-btn-primary pc-btn-compact pc-extract-print-btn"
+												data-testid="print-extract-043-btn"
+												onClick={() => {
+													openPrintWindow(generateExtract043Html(doc, data));
+													onShowToast(
+														`Медицинская выписка готова к печати!`,
+													);
+												}}
+											>
+												<Printer size={14} />
+												<span>Печать выписки</span>
+											</button>
+										)}
+
+										<button
+											type="button"
+											className="pc-btn-secondary pc-btn-compact"
+											data-testid={`view-doc-btn-${doc.id}`}
+											onClick={() => {
+												openPrintWindow(generateDocumentSnapshotHtml(doc, data));
+												onShowToast(`Документ «${doc.title}» готов к просмотру`);
+											}}
+										>
+											<Eye size={14} />
+											<span>Печать / Просмотр</span>
+										</button>
+									</div>
+								</div>
+							);
+						})}
+					</div>
+				)}
+			</section>
+
+			{/* 4. ЭЛЕКТРОННЫЕ РЕЦЕПТЫ НА ЛЕКАРСТВА (ФОРМА 107-1/У, ПРИКАЗ 1094Н) */}
+			<section className="pc-section-card" data-testid="prescriptions-section">
+				<div className="pc-card-header">
+					<div className="pc-card-title">
+						<Pill size={20} className="pc-icon-primary" />
 						<span>Электронные рецепты (Приказ Минздрава № 1094н, форма 107-1/у)</span>
 					</div>
 					<span className="pc-section-hint">Для предъявления в аптеках РФ</span>
 				</div>
 
-				<div className="pc-prescriptions-list">
-					<div className="pc-prescription-item">
-						<div>
-							<div className="pc-rx-title-line">
-								<strong>Амоксициллин 500 мг (капсулы №20)</strong>
-								<span className="pc-status-badge paid">
-									<CheckCircle2 size={12} />
-									<span>Действителен (60 дней)</span>
-								</span>
-							</div>
-							<p className="pc-rx-instruction">
-								Rp.: Amoxicillini 500 mg &bull; Внутрь по 1 капсуле 3 раза в день через
-								8 ч, курс 5–7 дней
-							</p>
-						</div>
-
-						<button
-							type="button"
-							className="pc-btn-primary pc-rx-download-btn"
-							onClick={() => {
-								const printWindow = window.open(
-									"",
-									"_blank",
-									"width=800,height=900",
-								);
-								if (printWindow) {
-									printWindow.document.open();
-									printWindow.document.write(`<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Рецептурный бланк 107-1/у — Амоксициллин</title>
-<style>body{font-family:'Segoe UI',Arial,sans-serif;padding:35px;color:#111}.hdr{border-bottom:2px solid #333;padding-bottom:10px;text-align:center}.box{border:1px solid #ccc;border-radius:8px;padding:15px;margin:20px 0;background:#fafafa}.stmp{margin-top:35px;display:flex;justify-content:space-between;border-top:1px dashed #999;padding-top:10px}</style></head>
-<body><div class="hdr"><h3>МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ РФ</h3><p>Форма № 107-1/у (Приказ Минздрава России № 1094н)</p></div>
-<p><strong>Пациент:</strong> ${data.fullName}</p>
-<div class="box"><p><strong>Rp.:</strong> Amoxicillini 500 mg (капсулы №20)</p><p>Внутрь по 1 капсуле 3 раза в день через 8 ч, курс 5–7 дней</p><p><strong>Срок действия:</strong> 60 дней</p></div>
-<div class="stmp"><div>Подпись и личная печать врача: ____________________</div><div>М.П. Клиники</div></div></body></html>`);
-									printWindow.document.close();
-									printWindow.focus();
-									setTimeout(() => printWindow.print(), 250);
-									onShowToast(
-										"Рецептурный бланк 107-1/у (Амоксициллин 500 мг) готов к печати!",
-									);
-								} else {
-									onShowToast(
-										"Разрешите всплывающие окна для печати рецепта 107-1/у",
-									);
-								}
-							}}
-						>
-							<Download size={15} />
-							<span>Скачать рецепт (PDF)</span>
-						</button>
+				{(!data.prescriptions || data.prescriptions.length === 0) ? (
+					<div className="pc-empty-state" data-testid="prescriptions-empty-state">
+						<Pill size={32} className="pc-icon-muted" />
+						<p className="pc-empty-title">Назначений лекарственных препаратов нет</p>
+						<p className="pc-empty-desc">
+							Лечащий врач не назначал рецептурных медикаментов. При появлении показаний выписанные рецепты по форме 107-1/у отобразятся здесь.
+						</p>
 					</div>
+				) : (
+					<div className="pc-prescriptions-list" data-testid="prescriptions-list">
+						{data.prescriptions.map((rx) => (
+							<div key={rx.id} className="pc-prescription-item" data-testid={`rx-item-${rx.id}`}>
+								<div>
+									<div className="pc-rx-title-line">
+										<strong>{rx.medicationName} {rx.dosageRu}</strong>
+										<span className="pc-status-badge paid">
+											<CheckCircle2 size={12} />
+											<span>{rx.validityDays ? `Действителен (${rx.validityDays} дн.)` : "Действителен"}</span>
+										</span>
+									</div>
+									<p className="pc-rx-instruction">
+										{rx.instructionRu} &bull; Курс: {rx.durationRu}
+									</p>
+								</div>
 
-					<div className="pc-prescription-item">
-						<div>
-							<div className="pc-rx-title-line">
-								<strong>Ибупрофен 400 мг (таблетки №20)</strong>
-								<span className="pc-status-badge paid">
-									<CheckCircle2 size={12} />
-									<span>Действителен (60 дней)</span>
-								</span>
+								<button
+									type="button"
+									className="pc-btn-primary pc-rx-download-btn"
+									data-testid={`print-prescription-btn-${rx.id}`}
+									onClick={() => {
+										openPrintWindow(generatePrescription107PrintHtml(rx, data));
+										onShowToast(`Рецептурный бланк 107-1/у (${rx.medicationName}) готов к печати!`);
+									}}
+								>
+									<Printer size={15} />
+									<span>Печать рецепта (107-1/у)</span>
+								</button>
 							</div>
-							<p className="pc-rx-instruction">
-								Rp.: Ibuprofeni 400 mg &bull; При зубной боли по 1 таб. после еды
-								(макс. 3 таб./сутки)
-							</p>
-						</div>
-
-						<button
-							type="button"
-							className="pc-btn-primary pc-rx-download-btn"
-							onClick={() => {
-								const printWindow = window.open(
-									"",
-									"_blank",
-									"width=800,height=900",
-								);
-								if (printWindow) {
-									printWindow.document.open();
-									printWindow.document.write(`<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Рецептурный бланк 107-1/у — Ибупрофен</title>
-<style>body{font-family:'Segoe UI',Arial,sans-serif;padding:35px;color:#111}.hdr{border-bottom:2px solid #333;padding-bottom:10px;text-align:center}.box{border:1px solid #ccc;border-radius:8px;padding:15px;margin:20px 0;background:#fafafa}.stmp{margin-top:35px;display:flex;justify-content:space-between;border-top:1px dashed #999;padding-top:10px}</style></head>
-<body><div class="hdr"><h3>МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ РФ</h3><p>Форма № 107-1/у (Приказ Минздрава России № 1094н)</p></div>
-<p><strong>Пациент:</strong> ${data.fullName}</p>
-<div class="box"><p><strong>Rp.:</strong> Ibuprofeni 400 mg (таблетки №20)</p><p>При зубной боли по 1 таб. после еды (макс. 3 таб./сутки)</p><p><strong>Срок действия:</strong> 60 дней</p></div>
-<div class="stmp"><div>Подпись и личная печать врача: ____________________</div><div>М.П. Клиники</div></div></body></html>`);
-									printWindow.document.close();
-									printWindow.focus();
-									setTimeout(() => printWindow.print(), 250);
-									onShowToast(
-										"Рецептурный бланк 107-1/у (Ибупрофен 400 мг) готов к печати!",
-									);
-								} else {
-									onShowToast(
-										"Разрешите всплывающие окна для печати рецепта 107-1/у",
-									);
-								}
-							}}
-						>
-							<Download size={15} />
-							<span>Скачать рецепт (PDF)</span>
-						</button>
+						))}
 					</div>
-				</div>
+				)}
 			</section>
 
 			{/* 4. ГАРАНТИЙНЫЕ ПАСПОРТА СЕРТИФИКАЦИИ СТАР */}

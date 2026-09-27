@@ -244,7 +244,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 			console.warn("dente-apply-soap-protocol dispatch fallback:", err);
 		}
 
-		showToast(`Протокол лечения зуба ${effectiveTooth} внесен в Форму 043/у`, "success", 3000);
+		showToast(`Протокол лечения зуба ${effectiveTooth} внесен в дневник приёма`, "success", 3000);
 	}, [soapResult, effectiveTooth, selectedSurfaces, onApplyProtocolText]);
 
 	// 1-КЛИК ДОБАВЛЕНИЕ В СМЕТУ / НАЧИСЛЕНИЕ УСЛУГ 804н
@@ -540,7 +540,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 						data-testid="therapy-btn-apply-043"
 					>
 						<FileText className="h-4 w-4 shrink-0" />
-						<span>Внести в 043/у</span>
+						<span>Внести в дневник</span>
 					</button>
 
 					{/* Кнопка 1-клик в смету */}

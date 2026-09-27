@@ -343,7 +343,8 @@ export function validateTreatmentPlanPrices(
 	adminOverride?: AdminOverrideMetadata | undefined,
 	currentDateIso: string = new Date().toISOString(),
 ): PlanPriceValidationReport {
-	const planAgeDays = calculateDaysBetween(plan.createdAtIso, currentDateIso);
+	const planCreatedAt = plan?.createdAtIso || currentDateIso;
+	const planAgeDays = calculateDaysBetween(planCreatedAt, currentDateIso);
 	const isPlanExpired = planAgeDays > preset.validityDays;
 	const expiryDaysRemaining = preset.validityDays - planAgeDays;
 
@@ -368,7 +369,8 @@ export function validateTreatmentPlanPrices(
 	const validatedItems: ValidatedPlanItem[] = [];
 	const validationMessages: string[] = [];
 
-	for (const item of plan.items) {
+	const planItems = Array.isArray(plan?.items) ? plan.items : [];
+	for (const item of planItems) {
 		const resolutionOverride = itemResolutions?.[item.itemId];
 		const customPriceOverride = customPrices?.[item.itemId];
 
@@ -463,14 +465,14 @@ export function validateTreatmentPlanPrices(
 	const canGenerateCompletedAct = true;
 
 	return {
-		planId: plan.planId,
-		planNumber: plan.planNumber,
-		planTitle: plan.planTitle,
-		patientId: plan.patientId,
-		patientName: plan.patientName,
-		doctorId: plan.doctorId,
-		doctorFullName: plan.doctorFullName,
-		createdAtIso: plan.createdAtIso,
+		planId: plan?.planId || "plan-default",
+		planNumber: plan?.planNumber || "1",
+		planTitle: plan?.planTitle || "План лечения",
+		patientId: plan?.patientId || "",
+		patientName: plan?.patientName || "",
+		doctorId: plan?.doctorId || "",
+		doctorFullName: plan?.doctorFullName || "",
+		createdAtIso: plan?.createdAtIso || currentDateIso,
 		planAgeDays,
 		isPlanExpired,
 		expiryDaysRemaining,
@@ -514,7 +516,8 @@ export function applyBatchResolutionToAllItems(
 	adminOverride?: AdminOverrideMetadata,
 ): PlanPriceValidationReport {
 	const itemResolutions: Record<string, PriceLockResolutionPolicy> = {};
-	for (const item of plan.items) {
+	const items = Array.isArray(plan?.items) ? plan.items : [];
+	for (const item of items) {
 		itemResolutions[item.itemId] = batchResolution;
 	}
 	return validateTreatmentPlanPrices(

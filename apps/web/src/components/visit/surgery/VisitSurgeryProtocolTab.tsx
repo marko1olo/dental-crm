@@ -415,7 +415,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--teal,#0d9488)]">
 						<Sparkles size={15} />
-						<span>1-Клик Пресет имплантации (Форма 043/у):</span>
+						<span>1-Клик Пресет имплантации:</span>
 					</div>
 					<button
 						type="button"
@@ -557,7 +557,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 			<div className="space-y-2">
 				<div className="flex items-center justify-between">
 					<label htmlFor="visit-surgery-text" className="text-xs font-black uppercase text-[var(--muted)] tracking-wider">
-						Текст протокола (Форма 043/у):
+						Текст протокола операции:
 					</label>
 					<button
 						type="button"
@@ -585,7 +585,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 				<div className="text-xs text-[var(--muted)]">
 					{currentNorm.code804n && (
 						<>
-							<span>804н: </span>
+							<span>Код: </span>
 							<strong className="text-[var(--ink)]">{currentNorm.code804n}</strong>
 							<span> · </span>
 						</>
@@ -614,7 +614,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 						onClick={handlePrintProtocol}
 						className="px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer min-h-[48px] touch-manipulation"
 						data-testid="btn-tab-print-protocol"
-						title="Печать протокола операции Формы 043/у"
+						title="Печать протокола операции"
 					>
 						<Printer size={16} />
 						<span>Печать протокола</span>
@@ -643,7 +643,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 						data-testid="btn-apply-to-visit-diary"
 					>
 						<FileText size={16} />
-						<span>Внести в карту 043/у</span>
+						<span>Внести в карту</span>
 					</button>
 				</div>
 

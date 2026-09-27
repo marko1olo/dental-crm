@@ -272,7 +272,7 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 							onChange={(e) => setAutoSendReceipt(e.target.checked)}
 							className="rounded accent-teal-600"
 						/>
-						<span>Электронный чек по SMS/Email (ст. 1.2 54-ФЗ)</span>
+						<span>Электронный чек по SMS/Email</span>
 					</label>
 					<label className="flex items-center gap-2 text-xs text-[var(--ink)] cursor-pointer">
 						<input

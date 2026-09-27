@@ -988,7 +988,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 										</div>
 
 										<div className="warranty-form-group">
-											<label className="warranty-label">Код Номенклатуры 804н</label>
+											<label className="warranty-label">Код услуги</label>
 											<input
 												type="text"
 												className="warranty-input"
@@ -1042,7 +1042,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 											<thead>
 												<tr>
 													<th>Зуб</th>
-													<th>Вид работы & 804н</th>
+													<th>Вид работы & код</th>
 													<th>Материал & ЗТЛ</th>
 													<th>Оттенок & LOT (МДЛП)</th>
 													<th>Гарантия</th>
@@ -1058,8 +1058,8 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 														<td style={{ maxWidth: "200px" }}>
 															<div className="truncate min-w-0" title={it.clinicalWorkTitle}>{it.clinicalWorkTitle}</div>
 															{it.serviceCode804n && (
-																<div className="warranty-804n-badge" title="Код Номенклатуры 804н">
-																	804н: {it.serviceCode804n}
+																<div className="warranty-804n-badge" title="Код услуги">
+																	Код: {it.serviceCode804n}
 																</div>
 															)}
 														</td>
@@ -1647,10 +1647,10 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 							type="button"
 							className="warranty-btn-primary"
 							onClick={handleAttachTo043u}
-							title="Внести гарантийный паспорт в электронную медкарту 043/у"
+							title="Внести гарантийный паспорт в медкарту"
 						>
 							{attachedStatus ? <CheckCircle2 size={16} /> : <FileCheck size={16} />}
-							{attachedStatus ? "Обновить в карте 043/у" : "Выдать паспорт & В карту 043/у"}
+							{attachedStatus ? "Обновить в карте" : "Выдать паспорт & В карту"}
 						</button>
 					</div>
 				</div>

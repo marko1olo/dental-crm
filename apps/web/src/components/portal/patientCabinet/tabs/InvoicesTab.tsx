@@ -9,8 +9,7 @@
  * - Режим отображения: понятные блоки без латыни / структурированная таблица.
  */
 
-import type React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
 	Activity,
 	Award,
@@ -19,6 +18,7 @@ import {
 	CreditCard,
 	Download,
 	ExternalLink,
+	FileCheck,
 	FileText,
 	Layers,
 	Pill,
@@ -32,20 +32,26 @@ import {
 import type {
 	PatientInvoiceItem,
 	PatientPersonalCabinetData,
-} from "../patientCabinetEngine";
+} from "../patientCabinetEngine.js";
 import {
 	downloadDetailedReceipt,
+	downloadPaymentInvoice,
 	filterInvoices,
 	formatRussianDateIso,
 	formatRubles,
+	generateCompletedWorksActHtml,
 	generateDetailedReceiptHtml,
+	generateFnsReceiptCheckUrl,
+	generatePaymentInvoiceHtml,
+	generatePatientTaxCertificate1151156,
 	openPrintWindow,
-} from "../patientCabinetEngine";
-import { groupServicesIntoFriendlyBlocks } from "../patientCareInstructionsEngine";
+} from "../patientCabinetEngine.js";
+import { groupServicesIntoFriendlyBlocks } from "../patientCareInstructionsEngine.js";
 
 export interface InvoicesTabProps {
 	readonly data: PatientPersonalCabinetData;
 	readonly onOpenSbpForInvoice: (inv: PatientInvoiceItem) => void;
+	readonly onOpenCardPayment?: (inv: PatientInvoiceItem) => void;
 	readonly onShowToast: (msg: string) => void;
 }
 
@@ -75,6 +81,7 @@ const renderCategoryIcon = (categoryGroup: string) => {
 export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 	data,
 	onOpenSbpForInvoice,
+	onOpenCardPayment,
 	onShowToast,
 }) => {
 	const [filter, setFilter] = useState<"all" | "unpaid" | "paid">("all");
@@ -121,6 +128,21 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 				</div>
 
 				<div className="pc-view-mode-wrapper">
+					<button
+						type="button"
+						className="pc-btn-secondary pc-tax-knd-shortcut-btn"
+						onClick={() => {
+							openPrintWindow(generatePatientTaxCertificate1151156(data, 2026));
+							onShowToast(
+								"Официальная справка для налогового вычета (ФНС) по форме КНД 1151156 готова к печати!",
+							);
+						}}
+						data-testid="print-tax-deduction-btn"
+					>
+						<FileText size={15} />
+						<span>Справка для вычета (ФНС)</span>
+					</button>
+
 					<button
 						type="button"
 						className="pc-btn-secondary pc-mode-toggle-btn"
@@ -272,7 +294,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 									</div>
 								)}
 
-								{/* Кнопки действий: СБП или Чек 54-ФЗ */}
+								{/* Кнопки действий: СБП, Карта, Счет А4 или Чек 54-ФЗ, Акт */}
 								<div className="pc-invoice-actions">
 									{isUnpaid ? (
 										<div className="pc-unpaid-actions-row">
@@ -285,12 +307,57 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 												<QrCode size={18} />
 												<span>Оплатить через СБП (0% комиссии)</span>
 											</button>
+
+											<button
+												type="button"
+												className="pc-btn-secondary pc-card-pay-btn"
+												onClick={() => {
+													if (onOpenCardPayment) {
+														onOpenCardPayment(inv);
+													} else {
+														onShowToast(
+															`Переход к безопасной интернет-оплате картой счета № ${inv.invoiceNumber}...`,
+														);
+													}
+												}}
+												data-testid={`pay-card-btn-${inv.id}`}
+											>
+												<CreditCard size={18} />
+												<span>Банковской картой</span>
+											</button>
+
+											<button
+												type="button"
+												className="pc-btn-secondary pc-invoice-print-btn"
+												data-testid={`print-invoice-btn-${inv.id}`}
+												onClick={() => {
+													openPrintWindow(generatePaymentInvoiceHtml(inv, data));
+												}}
+											>
+												<Printer size={15} />
+												<span>Счет на оплату А4</span>
+											</button>
+
+											<button
+												type="button"
+												className="pc-btn-secondary pc-invoice-download-btn"
+												data-testid={`download-invoice-btn-${inv.id}`}
+												onClick={() => {
+													downloadPaymentInvoice(inv, data);
+													onShowToast(
+														`Счет на оплату № ${inv.invoiceNumber} сохранен!`,
+													);
+												}}
+											>
+												<Download size={15} />
+												<span>Скачать счет А4</span>
+											</button>
 										</div>
 									) : (
 										<div className="pc-paid-actions-row">
 											{inv.fiscalReceiptNumber && (
 												<span className="pc-fiscal-badge">
-													Чек 54-ФЗ № {inv.fiscalReceiptNumber}
+													Кассовый чек № {inv.fiscalReceiptNumber}
 												</span>
 											)}
 
@@ -301,12 +368,12 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 												onClick={() => {
 													downloadDetailedReceipt(inv, data);
 													onShowToast(
-														`Детализированный чек 54-ФЗ № ${inv.invoiceNumber} сохранен!`,
+														`Кассовый чек № ${inv.invoiceNumber} сохранен!`,
 													);
 												}}
 											>
 												<Download size={15} />
-												<span>Чек (54-ФЗ)</span>
+												<span>Кассовый чек</span>
 											</button>
 
 											<button
@@ -321,17 +388,31 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 												<span>Печать с QR ФНС</span>
 											</button>
 
-											{inv.fiscalReceiptUrl && (
-												<a
-													href={inv.fiscalReceiptUrl}
-													target="_blank"
-													rel="noreferrer"
-													className="pc-btn-secondary pc-fns-link-btn"
-												>
-													<ExternalLink size={15} />
-													<span>Проверить в ФНС</span>
-												</a>
-											)}
+											<button
+												type="button"
+												className="pc-btn-secondary pc-act-print-btn"
+												data-testid={`print-act-btn-${inv.id}`}
+												onClick={() => {
+													openPrintWindow(generateCompletedWorksActHtml(inv, data));
+													onShowToast(
+														`Акт выполненных работ по счету № ${inv.invoiceNumber} готов к печати!`,
+													);
+												}}
+											>
+												<FileCheck size={15} />
+												<span>Акт выполненных работ</span>
+											</button>
+
+											<a
+												href={inv.fiscalReceiptUrl || generateFnsReceiptCheckUrl(inv)}
+												target="_blank"
+												rel="noreferrer"
+												className="pc-btn-secondary pc-fns-link-btn"
+												data-testid={`fns-check-link-${inv.id}`}
+											>
+												<ExternalLink size={15} />
+												<span>Проверить в ФНС</span>
+											</a>
 										</div>
 									)}
 								</div>

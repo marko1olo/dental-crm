@@ -71,12 +71,12 @@ export const SUPER_PERMISSIONS_MAP: Record<string, SuperPermissionInfo> = {
 		isCritical: true,
 	},
 	"patients.pii_full": {
-		badge: "152-ФЗ: Полные ПДн",
+		badge: "Доступ к персональным данным",
 		hint: "Персональные данные: просмотр неэкранированных паспортов, номеров телефонов и адресов.",
 		isCritical: false,
 	},
 	"clinical.records.write": {
-		badge: "323-ФЗ: Подпись ЭМК",
+		badge: "Подпись медицинской карты",
 		hint: "Юридическая ответственность: постановка диагноза и подписание клинического протокола по 804н.",
 		isCritical: true,
 	},
@@ -86,7 +86,7 @@ export const SUPER_PERMISSIONS_MAP: Record<string, SuperPermissionInfo> = {
 		isCritical: true,
 	},
 	"finance.refunds": {
-		badge: "54-ФЗ: Возвраты из кассы",
+		badge: "Возвраты из кассы",
 		hint: "Кассовая дисциплина: выдача наличных и безналичных возвратов по чекам 54-ФЗ.",
 		isCritical: false,
 	},
@@ -233,8 +233,8 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 								<option value="all">Все модули ({PERMISSION_DEFINITIONS.length})</option>
 								<option value="clinical">ЭМК и протоколы</option>
 								<option value="schedule">Расписание и смены</option>
-								<option value="patients">Пациенты и 152-ФЗ</option>
-								<option value="finance_cashier">Касса 54-ФЗ</option>
+								<option value="patients">Пациенты и персональные данные</option>
+								<option value="finance_cashier">Касса и платежи</option>
 								<option value="finance_reports">P&L и финансы</option>
 								<option value="payroll">Зарплата и сделка</option>
 								<option value="inventory">Склад и СанПиН</option>
@@ -310,7 +310,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 					{activeRoleMeta.role === "assistant" && (
 						<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-200 border border-amber-300 dark:border-amber-700 whitespace-nowrap shadow-xs">
 							<Shield size={12} className="shrink-0 text-amber-700 dark:text-amber-300" />
-							<span>152-ФЗ: Маскирован</span>
+							<span>Данные защищены</span>
 						</span>
 					)}
 					{activeRoleMeta.role === "owner" && (
@@ -340,7 +340,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 						</div>
 						<div className="flex items-start gap-1.5">
 							<Check size={13} className="text-emerald-600 shrink-0 mt-0.5" />
-							<span><strong>323-ФЗ автономия:</strong> Полное право ведения ЭМК 043/у, подписи медицинских протоколов и отправки СЭМД в ЕГИСЗ.</span>
+							<span><strong>Врачебная автономия:</strong> Полное право ведения медицинской карты, подписи медицинских протоколов и отправки СЭМД в ЕГИСЗ.</span>
 						</div>
 					</div>
 				</div>
@@ -355,15 +355,15 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-700 dark:text-slate-300">
 						<div className="flex items-start gap-1.5">
 							<Lock size={13} className="text-rose-600 shrink-0 mt-0.5" />
-							<span><strong>Запрет подписи 323-ФЗ:</strong> Подписание протоколов за врача строго запрещено (требуется врачебный диплом).</span>
+							<span><strong>Запрет подписи медкарты:</strong> Подписание протоколов за врача строго запрещено (требуется врачебный диплом).</span>
 						</div>
 						<div className="flex items-start gap-1.5">
 							<Shield size={13} className="text-amber-600 shrink-0 mt-0.5" />
-							<span><strong>152-ФЗ маскирование:</strong> Паспорта, телефоны и адреса пациентов скрыты для защиты от утечек.</span>
+							<span><strong>Защита персональных данных:</strong> Паспорта, телефоны и адреса пациентов скрыты для защиты от утечек.</span>
 						</div>
 						<div className="flex items-start gap-1.5">
 							<Lock size={13} className="text-slate-600 shrink-0 mt-0.5" />
-							<span><strong>Финансовый блок:</strong> Кассовые операции 54-ФЗ, прием платежей и возвраты денежных средств закрыты.</span>
+							<span><strong>Финансовый блок:</strong> Кассовые операции, прием платежей и возвраты денежных средств закрыты.</span>
 						</div>
 					</div>
 				</div>
@@ -382,11 +382,11 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 						</div>
 						<div className="flex items-start gap-1.5">
 							<Lock size={13} className="text-rose-600 shrink-0 mt-0.5" />
-							<span><strong>Запрет подписи ЭМК:</strong> Регистратор не имеет права подписывать клинические дневники и протоколы 804н.</span>
+							<span><strong>Запрет подписи ЭМК:</strong> Регистратор не имеет права подписывать клинические дневники и протоколы услуг.</span>
 						</div>
 						<div className="flex items-start gap-1.5">
 							<Coins size={13} className="text-teal-600 shrink-0 mt-0.5" />
-							<span><strong>Касса 54-ФЗ:</strong> Приём оплат наличными/картой, печать чеков и запись пациентов на приём.</span>
+							<span><strong>Касса и расчёты:</strong> Приём оплат наличными/картой, печать чеков и запись пациентов на приём.</span>
 						</div>
 					</div>
 				</div>

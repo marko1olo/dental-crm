@@ -158,14 +158,14 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 				>
 					{showOptionalDocs
 						? "Скрыть нормативные документы"
-						: "Нормативные документы (ИДС 323-ФЗ, 152-ФЗ) и анкета (по желанию)"}
+						: "Документы (согласие на приём и обработку данных) и анкета"}
 				</button>
 
 				{showOptionalDocs && (
 					<div className="mt-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs space-y-2 text-slate-600 dark:text-slate-300">
 						<p>
 							При чекине в 1 касание согласие на медицинское
-							вмешательство (323-ФЗ) и обработку данных (152-ФЗ)
+							вмешательство и обработку персональных данных
 							подтверждается простой электронной подписью по номеру
 							телефона (ПЭП 63-ФЗ).
 						</p>

@@ -208,7 +208,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 						<div className="flex items-center gap-2">
 							<Users className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 							<span className="font-bold text-xs text-[var(--ink,#1e293b)] dark:text-slate-100">
-								Законный представитель / Член семьи (ст. 64 СК РФ / 323-ФЗ):
+								Законный представитель / Член семьи:
 							</span>
 						</div>
 						{patient?.representativeType && (
@@ -240,7 +240,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 									disabled={disabled}
 									title={
 										rep.isLegalRepresentative
-											? `${rep.nameRu}: Законный представитель ребёнка (Право подписи ИДС по ст. 20 323-ФЗ / ст. 64 СК РФ)`
+											? `${rep.nameRu}: Законный представитель ребёнка (Право подписи согласий)`
 											: `${rep.nameRu}: Член семьи (Для подписи ИДС за несовершеннолетнего требуется нотариальная доверенность)`
 									}
 								>
@@ -280,11 +280,11 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 								<span>
 									{selectedRep.isLegalRepresentative ? (
 										<>
-											<strong>Законный представитель ребёнка:</strong> Имеет безусловное законное право подписывать информированное добровольное согласие (ИДС) за несовершеннолетнего (ст. 20 323-ФЗ и ст. 64 СК РФ).
+											<strong>Законный представитель ребёнка:</strong> Имеет безусловное законное право подписывать информированное добровольное согласие (ИДС) за несовершеннолетнего (по закону об охране здоровья граждан).
 										</>
 									) : (
 										<>
-											<strong>Член семьи (не является законным представителем):</strong> Для подписания ИДС за несовершеннолетнего требуется нотариальная доверенность (ст. 20 323-ФЗ).
+											<strong>Член семьи (не является законным представителем):</strong> Для подписания ИДС за несовершеннолетнего требуется нотариальная доверенность (требуется доверенность).
 										</>
 									)}
 								</span>
