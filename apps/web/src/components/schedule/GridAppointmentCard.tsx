@@ -9,6 +9,7 @@ import {
 	Check,
 	CheckCircle2,
 	CreditCard,
+	FileText,
 	MoreVertical,
 	Phone,
 	PhoneCall,
@@ -174,8 +175,8 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 				);
 				e.dataTransfer.effectAllowed = "move";
 			}}
-			style={{ contentVisibility: "auto", containIntrinsicSize: "1px 34px" }}
-			className={`appointment-card w-full text-left p-1.5 sm:p-1.5 rounded-lg border text-xs font-semibold shadow-2xs flex flex-col justify-between gap-1 transition-all min-h-[44px] sm:min-h-[34px] cursor-grab active:cursor-grabbing relative ${getGridAppointmentCardContainerClasses(
+			style={{ contentVisibility: "auto", containIntrinsicSize: "1px 60px" }}
+			className={`appointment-card m-0 mb-0 w-full h-full text-left p-1.5 sm:p-2 rounded-xl border text-xs font-semibold shadow-2xs flex flex-col justify-between gap-1.5 transition-all min-h-[44px] cursor-grab active:cursor-grabbing relative ${getGridAppointmentCardContainerClasses(
 				a.status,
 				{ collision: Boolean(collision), isCito, docTheme },
 			)}`}
@@ -285,15 +286,15 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									onToggleStatusPicker(a.id);
 								}
 							}}
-							className={`text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-1 transition-all cursor-pointer hover:opacity-90 active:scale-95 max-w-[120px] sm:max-w-none truncate ${
+							className={`h-[26px] min-h-[26px] text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1.5 transition-all cursor-pointer hover:opacity-90 active:scale-95 max-w-[130px] sm:max-w-none truncate ${
 								isAppointmentInChair(a.status)
-									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
+									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs ring-1 ring-teal-400/50"
 									: a.status === "arrived"
 										? "bg-amber-500 text-white shadow-xs"
 										: a.status === "confirmed"
 											? "bg-emerald-600 text-white shadow-xs"
 											: a.status === "completed"
-												? "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+												? "bg-slate-200/90 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
 												: "bg-[var(--paper)]/80 text-[var(--ink)]"
 							}`}
 							title={`Статус: ${getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}. Нажмите для быстрой смены в 1 клик`}
@@ -305,6 +306,9 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 							)}
 							{String(a.status).toLowerCase() === "completed" && (
 								<Check size={11} className="shrink-0 text-current" />
+							)}
+							{String(a.status).toLowerCase() === "confirmed" && (
+								<PhoneCall size={11} className="shrink-0 text-current" />
 							)}
 							<span className="truncate">{getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}</span>
 						</button>
@@ -453,18 +457,58 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 				</div>
 			)}
 
-			{/* Compact Action Bar — Strictly <= 2 primary actions per card per Mandates 8c, 8d, 8e */}
-			<div className="flex items-center justify-between gap-1 pt-0.5 border-t border-[var(--line)]/40 mt-0.5 min-w-0">
+			{/* Enriched Quick Action Bar — Height 28px, border-radius 6px per User Directive & Mandates 8c, 8d */}
+			<div className="flex items-center flex-wrap gap-1.5 pt-1.5 border-t border-[var(--line)]/50 mt-auto min-w-0">
+				{/* 1. В приём (ЭМК 043/у) */}
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						if (a.patientId) {
+							usePatientStore.getState().setSelectedPatientId(a.patientId);
+						}
+						onAppointmentClick(a);
+					}}
+					className="h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-[var(--teal)]/40 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 text-[var(--teal-dark,var(--teal))] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+					title={`Открыть приём и карту 043/у: ${pName}`}
+					aria-label={`Открыть приём ${pName}`}
+					data-testid={`appointment-action-start-${a.id}`}
+				>
+					<FileText size={12} className="shrink-0 text-[var(--teal)]" />
+					<span className="whitespace-nowrap">В приём</span>
+				</button>
+
+				{/* 2. Оплата (Быстрый переход к кассе 54-ФЗ) */}
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						if (a.patientId) {
+							usePatientStore.getState().setSelectedPatientId(a.patientId);
+						}
+						useAppStore.getState().setCurrentView("finance");
+						showToast(`Касса 54-ФЗ: расчёт ${pName}`, "info");
+					}}
+					className="h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+					title={`Оплата визита (касса 54-ФЗ): ${pName}`}
+					aria-label={`Оплата визита ${pName}`}
+					data-testid={`appointment-action-pay-${a.id}`}
+				>
+					<CreditCard size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+					<span className="whitespace-nowrap">Оплата</span>
+				</button>
+
+				{/* 3. Позвонить (Связь по АТС) */}
 				{patObj?.phone ? (
 					<a
 						href={`tel:${patObj.phone}`}
 						onClick={(e) => e.stopPropagation()}
-						className="h-5 min-h-[20px] max-h-[20px] px-1.5 py-0 rounded border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+						className="h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-sky-500/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-800 dark:text-sky-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 						title={`Позвонить ${pName}: ${patObj.phone}`}
 						aria-label={`Позвонить ${pName}`}
 						data-testid={`appointment-action-call-${a.id}`}
 					>
-						<Phone size={10} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<Phone size={12} className="shrink-0 text-sky-600 dark:text-sky-400" />
 						<span className="whitespace-nowrap">Позвонить</span>
 					</a>
 				) : (
@@ -472,15 +516,15 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
-							onAppointmentClick(a);
+							showToast(`Телефон не указан для ${pName}`, "warning");
 						}}
-						className="h-5 min-h-[20px] max-h-[20px] px-1.5 py-0 rounded border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
-						title={`Открыть прием ${pName}`}
-						aria-label={`Открыть прием ${pName}`}
-						data-testid={`appointment-action-start-${a.id}`}
+						className="h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+						title={`Телефон не указан для ${pName}`}
+						aria-label={`Телефон не указан для ${pName}`}
+						data-testid={`appointment-action-call-${a.id}`}
 					>
-						<User size={10} className="text-[var(--teal)] shrink-0" />
-						<span className="whitespace-nowrap">Прием</span>
+						<Phone size={12} className="shrink-0 opacity-40" />
+						<span className="whitespace-nowrap">Позвонить</span>
 					</button>
 				)}
 
@@ -492,12 +536,12 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 							e.stopPropagation();
 							onToggleMenu(a.id);
 						}}
-						className="h-5 w-5 min-h-[20px] min-w-[20px] p-0 rounded border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none"
+						className="h-7 w-7 min-h-[28px] min-w-[28px] p-0 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer select-none"
 						title="Все действия и статусы визита"
 						aria-label="Дополнительные действия визита"
 						aria-expanded={isMenuOpen}
 					>
-						<MoreVertical size={11} />
+						<MoreVertical size={13} />
 					</button>
 
 					<GridAppointmentMenu
