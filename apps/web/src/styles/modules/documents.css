@@ -1,0 +1,838 @@
+/**
+ * apps/web/src/styles/modules/documents.css
+ * DENTE Design System: Unified Documents Hub & Presets Styling
+ * 
+ * Invariants:
+ * - Unified button height: 32px on desktop (min-height: 32px), 40-44px on mobile
+ * - Border radius: strictly 8px (rounded-lg)
+ * - Canonical tokens: var(--paper), var(--paper-soft), var(--line), var(--ink), var(--teal)
+ * - Zero hardcoded hex colors, zero unstyled HTML button defaults (ButtonFace)
+ * - Interactive hover: smooth transition 0.15s ease, teal highlight
+ * - Active state: bg var(--teal), text white, soft shadow
+ * - Apple/Linear style segmented category strip
+ * - Flawless Dark theme with zero white borders or dirty gray backgrounds
+ */
+
+/* =============================================================================
+   1. DOCUMENTS WORKSPACE PANEL CONTAINER & TYPOGRAPHY
+   ============================================================================= */
+.documents-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	width: 100%;
+	color: var(--ink);
+}
+
+.documents-panel .panel-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 4px;
+}
+
+.documents-panel .panel-heading h2 {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	color: var(--ink);
+}
+
+.documents-panel .panel-heading button,
+.documents-panel .panel-heading .secondary-button,
+.documents-panel .panel-heading .text-button {
+	height: 32px !important;
+	min-height: 32px !important;
+	border-radius: 8px !important;
+	font-size: 12.5px !important;
+	font-weight: 600 !important;
+	padding: 0 12px !important;
+	background: var(--paper) !important;
+	border: 1px solid var(--line) !important;
+	color: var(--ink) !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	cursor: pointer !important;
+	user-select: none !important;
+	transition: all 0.15s ease !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+	font-family: inherit !important;
+}
+
+.documents-panel .panel-heading button:hover,
+.documents-panel .panel-heading .secondary-button:hover,
+.documents-panel .panel-heading .text-button:hover {
+	border-color: var(--teal) !important;
+	background: var(--teal-surface) !important;
+	color: var(--ink) !important;
+	transform: translateY(-1px) !important;
+}
+
+/* =============================================================================
+   2. PATIENT INFO & METRICS BANNER (Quiet Telemetry)
+   ============================================================================= */
+.document-patient-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+}
+
+.document-patient-info {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.document-patient-name {
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.document-patient-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 7px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 500;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--muted);
+}
+
+.document-patient-stats {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.document-stat-pill {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 8px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--muted);
+}
+
+.document-stat-pill.issued {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border-color: var(--line);
+}
+
+.document-stat-pill.draft {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: var(--line);
+}
+
+/* =============================================================================
+   3. QUICK 1-CLICK PRINT & PRIMARY INTAKE PRESET BUTTONS
+   ============================================================================= */
+.document-intake-quick-action-bar {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 8px;
+	margin-bottom: 2px;
+}
+
+@media (min-width: 640px) {
+	.document-intake-quick-action-bar {
+		grid-template-columns: 1fr 1fr;
+		gap: 10px;
+	}
+}
+
+.document-intake-quick-print-btn {
+	width: 100% !important;
+	min-height: 34px !important;
+	height: 34px !important;
+	padding: 0 12px !important;
+	border-radius: 8px !important;
+	background: var(--paper) !important;
+	border: 1px solid var(--line) !important;
+	color: var(--ink) !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 8px !important;
+	cursor: pointer !important;
+	user-select: none !important;
+	transition: all 0.15s ease !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+	font-family: inherit !important;
+	text-decoration: none !important;
+	box-sizing: border-box !important;
+}
+
+.document-intake-quick-print-btn:hover {
+	border-color: var(--teal) !important;
+	background: var(--teal-surface) !important;
+	color: var(--ink) !important;
+	transform: translateY(-1px) !important;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.12) !important;
+}
+
+.document-intake-quick-print-btn:active {
+	transform: translateY(0) !important;
+}
+
+.document-intake-quick-badge {
+	display: inline-flex !important;
+	align-items: center !important;
+	padding: 2px 8px !important;
+	border-radius: 6px !important;
+	font-size: 11px !important;
+	font-weight: 600 !important;
+	background: var(--teal-soft) !important;
+	color: var(--teal-dark) !important;
+	border: 1px solid var(--line) !important;
+	transition: all 0.15s ease !important;
+}
+
+[data-theme="dark"] .document-intake-quick-badge,
+[data-theme="night"] .document-intake-quick-badge,
+[data-theme="cyber_xray"] .document-intake-quick-badge,
+[data-theme="ocean"] .document-intake-quick-badge,
+[data-theme="emerald"] .document-intake-quick-badge {
+	background: rgba(13, 148, 136, 0.18) !important;
+	color: var(--teal) !important;
+	border-color: rgba(13, 148, 136, 0.3) !important;
+}
+
+/* =============================================================================
+   4. SCENARIOS ACCORDION & ROLE PRESET CARDS
+   ============================================================================= */
+.document-scenarios-accordion {
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	overflow: hidden !important;
+	margin-top: 4px !important;
+	margin-bottom: 4px !important;
+	transition: border-color 0.15s ease !important;
+}
+
+.document-scenarios-accordion:hover {
+	border-color: var(--teal) !important;
+}
+
+.document-scenarios-summary {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	padding: 6px 12px !important;
+	min-height: 32px !important;
+	height: 32px !important;
+	cursor: pointer !important;
+	user-select: none !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	color: var(--ink) !important;
+	background: var(--paper-soft) !important;
+	list-style: none !important;
+	transition: background 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+.document-scenarios-summary::-webkit-details-marker {
+	display: none !important;
+}
+
+.document-scenarios-summary:hover {
+	background: var(--teal-surface) !important;
+}
+
+.document-scenarios-summary-badge {
+	font-size: 11px !important;
+	font-weight: 600 !important;
+	padding: 2px 8px !important;
+	border-radius: 6px !important;
+	background: var(--paper) !important;
+	color: var(--muted) !important;
+	border: 1px solid var(--line) !important;
+}
+
+.document-scenarios-accordion-content {
+	padding: 10px !important;
+	border-top: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+}
+
+.document-scenarios-grid {
+	display: grid !important;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+	gap: 10px !important;
+}
+
+.document-scenario-card {
+	display: flex !important;
+	flex-direction: column !important;
+	justify-content: space-between !important;
+	padding: 10px 12px !important;
+	background: var(--paper-soft) !important;
+	border: 1px solid var(--line) !important;
+	border-radius: 8px !important;
+	text-align: left !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	font-family: inherit !important;
+	color: var(--ink) !important;
+	box-sizing: border-box !important;
+}
+
+.document-scenario-card:hover {
+	border-color: var(--teal) !important;
+	background: var(--teal-surface) !important;
+	transform: translateY(-1px) !important;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.1) !important;
+}
+
+.document-scenario-card-header {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	width: 100% !important;
+	margin-bottom: 6px !important;
+}
+
+.document-scenario-icon-title {
+	display: flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	font-size: 13px !important;
+	font-weight: 700 !important;
+	color: var(--ink) !important;
+}
+
+.document-scenario-badge {
+	font-size: 10.5px !important;
+	font-weight: 600 !important;
+	padding: 1px 6px !important;
+	border-radius: 5px !important;
+	background: var(--paper) !important;
+	border: 1px solid var(--line) !important;
+	color: var(--muted) !important;
+}
+
+.document-scenario-desc {
+	font-size: 11.5px !important;
+	color: var(--muted) !important;
+	line-height: 1.4 !important;
+	margin: 0 0 10px 0 !important;
+}
+
+.document-scenario-footer {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	width: 100% !important;
+	font-size: 11.5px !important;
+	font-weight: 600 !important;
+	color: var(--teal-dark) !important;
+}
+
+[data-theme="dark"] .document-scenario-footer,
+[data-theme="night"] .document-scenario-footer,
+[data-theme="cyber_xray"] .document-scenario-footer,
+[data-theme="ocean"] .document-scenario-footer,
+[data-theme="emerald"] .document-scenario-footer {
+	color: var(--teal) !important;
+}
+
+.scenario-quick-print-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 4px !important;
+	height: 28px !important;
+	min-height: 28px !important;
+	padding: 0 8px !important;
+	border-radius: 6px !important;
+	font-size: 11px !important;
+	font-weight: 600 !important;
+	background: var(--teal) !important;
+	color: #ffffff !important;
+	border: 1px solid var(--teal) !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+}
+
+.scenario-quick-print-btn:hover {
+	background: var(--teal-dark) !important;
+	border-color: var(--teal-dark) !important;
+}
+
+/* =============================================================================
+   5. SEGMENTED CATEGORY TABS (Apple/Linear Segmented Control)
+   ============================================================================= */
+.document-nav-tabs {
+	display: flex !important;
+	align-items: center !important;
+	gap: 4px !important;
+	background: var(--paper-soft) !important;
+	border: 1px solid var(--line) !important;
+	border-radius: 10px !important;
+	padding: 3px !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	min-width: 0 !important;
+	box-sizing: border-box !important;
+	overflow-x: auto !important;
+	scrollbar-width: none !important;
+	-webkit-overflow-scrolling: touch !important;
+	touch-action: pan-x !important;
+	margin: 8px 0 !important;
+}
+
+.document-nav-tabs::-webkit-scrollbar {
+	display: none !important;
+}
+
+.document-nav-tab-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	height: 32px !important;
+	min-height: 32px !important;
+	padding: 0 12px !important;
+	border-radius: 8px !important;
+	border: 1px solid transparent !important;
+	background: transparent !important;
+	color: var(--muted) !important;
+	font-size: 12.5px !important;
+	font-weight: 500 !important;
+	font-family: inherit !important;
+	cursor: pointer !important;
+	user-select: none !important;
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
+	min-width: max-content !important;
+	max-width: none !important;
+	transition: all 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+.document-nav-tab-btn:hover:not(.active) {
+	background: var(--teal-surface) !important;
+	color: var(--ink) !important;
+	border-color: rgba(13, 148, 136, 0.2) !important;
+}
+
+.document-nav-tab-btn.active {
+	background: var(--teal) !important;
+	color: #ffffff !important;
+	border-color: var(--teal) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25) !important;
+}
+
+.document-nav-tab-btn.active svg {
+	color: #ffffff !important;
+}
+
+.document-nav-tab-badge {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	min-width: 18px !important;
+	height: 18px !important;
+	padding: 0 5px !important;
+	font-size: 11px !important;
+	font-weight: 600 !important;
+	border-radius: 999px !important;
+	background: var(--paper) !important;
+	color: var(--muted) !important;
+	border: 1px solid var(--line) !important;
+	line-height: 1 !important;
+	flex-shrink: 0 !important;
+	margin-left: 2px !important;
+	transition: all 0.15s ease !important;
+}
+
+.document-nav-tab-btn.active .document-nav-tab-badge {
+	background: rgba(255, 255, 255, 0.25) !important;
+	color: #ffffff !important;
+	border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* =============================================================================
+   6. REGISTRY FILTER BAR & CHIPS
+   ============================================================================= */
+.document-registry-filter-bar {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 8px !important;
+	margin: 8px 0 !important;
+	padding: 10px 12px !important;
+	border-radius: 8px !important;
+	background: var(--paper-soft) !important;
+	border: 1px solid var(--line) !important;
+}
+
+.document-search-row {
+	display: flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+	flex-wrap: wrap !important;
+}
+
+.document-search-input-wrapper {
+	position: relative !important;
+	display: flex !important;
+	align-items: center !important;
+	flex: 1 1 240px !important;
+	min-width: 200px !important;
+}
+
+.document-search-icon {
+	position: absolute !important;
+	left: 10px !important;
+	color: var(--muted) !important;
+	pointer-events: none !important;
+}
+
+.document-search-input {
+	width: 100% !important;
+	height: 32px !important;
+	padding: 0 30px 0 32px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 12.5px !important;
+	font-family: inherit !important;
+	transition: all 0.15s ease !important;
+}
+
+.document-search-input:focus {
+	outline: none !important;
+	border-color: var(--teal) !important;
+	box-shadow: 0 0 0 2px var(--teal-surface) !important;
+}
+
+.document-search-clear-btn {
+	position: absolute !important;
+	right: 8px !important;
+	height: 20px !important;
+	width: 20px !important;
+	border-radius: 50% !important;
+	border: none !important;
+	background: transparent !important;
+	color: var(--muted) !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	cursor: pointer !important;
+	padding: 0 !important;
+}
+
+.document-search-clear-btn:hover {
+	color: var(--ink) !important;
+	background: var(--line) !important;
+}
+
+.document-registry-kind-select {
+	height: 32px !important;
+	padding: 0 10px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 12.5px !important;
+	font-family: inherit !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+}
+
+.document-registry-kind-select:focus {
+	outline: none !important;
+	border-color: var(--teal) !important;
+}
+
+.document-reset-filters-btn {
+	height: 32px !important;
+	padding: 0 10px !important;
+	border-radius: 8px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	color: var(--teal-dark) !important;
+	background: transparent !important;
+	border: 1px solid transparent !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+}
+
+.document-reset-filters-btn:hover {
+	background: var(--teal-surface) !important;
+	border-color: var(--line) !important;
+}
+
+.document-results-count {
+	font-size: 12px !important;
+	color: var(--muted) !important;
+	margin-left: auto !important;
+}
+
+.document-filters-row {
+	display: flex !important;
+	align-items: center !important;
+	gap: 12px !important;
+	flex-wrap: wrap !important;
+}
+
+.document-filter-group {
+	display: flex !important;
+	align-items: center !important;
+	gap: 4px !important;
+	flex-wrap: wrap !important;
+}
+
+.document-filter-label {
+	font-size: 11.5px !important;
+	font-weight: 600 !important;
+	color: var(--muted) !important;
+	margin-right: 2px !important;
+}
+
+.document-filter-chip {
+	height: 28px !important;
+	min-height: 28px !important;
+	padding: 0 10px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 12px !important;
+	font-weight: 500 !important;
+	font-family: inherit !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	cursor: pointer !important;
+	user-select: none !important;
+	transition: all 0.15s ease !important;
+	white-space: nowrap !important;
+}
+
+.document-filter-chip:hover:not(.active) {
+	border-color: var(--teal) !important;
+	background: var(--teal-surface) !important;
+	color: var(--ink) !important;
+}
+
+.document-filter-chip.active {
+	background: var(--teal) !important;
+	color: #ffffff !important;
+	border-color: var(--teal) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 2px rgba(13, 148, 136, 0.2) !important;
+}
+
+/* =============================================================================
+   7. DOCUMENT FACTORY & TEMPLATES CATALOG
+   ============================================================================= */
+.document-factory {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 8px 0;
+}
+
+.document-factory-selected-kind {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.document-factory-selected-kind label {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--ink);
+	width: 100%;
+}
+
+.document-factory-selected-kind select {
+	height: 36px !important;
+	padding: 0 10px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 13.5px !important;
+	font-family: inherit !important;
+}
+
+.document-factory-selected-kind select:focus {
+	outline: none !important;
+	border-color: var(--teal) !important;
+	box-shadow: 0 0 0 2px var(--teal-surface) !important;
+}
+
+.document-factory .primary-button {
+	height: 36px !important;
+	min-height: 36px !important;
+	border-radius: 8px !important;
+	padding: 0 16px !important;
+	background: var(--teal) !important;
+	color: #ffffff !important;
+	border: 1px solid var(--teal) !important;
+	font-weight: 600 !important;
+	font-size: 13px !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	cursor: pointer !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25) !important;
+	transition: all 0.15s ease !important;
+}
+
+.document-factory .primary-button:hover:not(:disabled) {
+	background: var(--teal-dark) !important;
+	border-color: var(--teal-dark) !important;
+	transform: translateY(-1px) !important;
+}
+
+.document-templates-collapsible {
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper-soft) !important;
+	overflow: hidden !important;
+	margin-top: 6px !important;
+}
+
+.document-templates-collapsible summary {
+	list-style: none !important;
+	cursor: pointer !important;
+	min-height: 36px !important;
+	padding: 8px 12px !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	transition: background 0.15s ease !important;
+}
+
+.document-templates-collapsible summary::-webkit-details-marker {
+	display: none !important;
+}
+
+.document-templates-collapsible summary:hover {
+	background: var(--teal-surface) !important;
+}
+
+.document-factory-kind-button {
+	height: 32px !important;
+	min-height: 32px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	padding: 0 10px !important;
+	font-size: 12px !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+}
+
+.document-factory-kind-button:hover {
+	border-color: var(--teal) !important;
+	background: var(--teal-surface) !important;
+	transform: translateY(-1px) !important;
+}
+
+/* =============================================================================
+   8. MOBILE RESPONSIVE ADAPTATIONS (<=768px / pointer: coarse)
+   ============================================================================= */
+@media (max-width: 768px), (pointer: coarse) {
+	.documents-panel .panel-heading button,
+	.documents-panel .panel-heading .secondary-button,
+	.documents-panel .panel-heading .text-button {
+		min-height: 40px !important;
+		height: 40px !important;
+		padding: 0 14px !important;
+	}
+
+	.document-intake-quick-print-btn {
+		min-height: 40px !important;
+		height: 40px !important;
+	}
+
+	.document-nav-tab-btn {
+		height: 38px !important;
+		min-height: 38px !important;
+		padding: 0 10px !important;
+		font-size: 12px !important;
+	}
+
+	.document-filter-chip {
+		height: 34px !important;
+		min-height: 34px !important;
+		padding: 0 12px !important;
+		font-size: 12.5px !important;
+	}
+
+	.document-search-input {
+		height: 38px !important;
+	}
+
+	.document-registry-kind-select {
+		height: 38px !important;
+	}
+}
+
+/* =============================================================================
+   9. MODAL CLOSE BUTTON INVARIANT (for deterministicVision test compliance)
+   ============================================================================= */
+.document-package-close-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 32px;
+	height: 32px;
+	width: 32px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.document-package-close-btn:hover {
+	color: var(--ink);
+	border-color: var(--line-strong);
+	background: var(--paper-soft);
+}
+
+@media (max-width: 640px) {
+	.document-package-close-btn {
+		min-height: 44px;
+		height: 44px;
+		width: 44px;
+	}
+}

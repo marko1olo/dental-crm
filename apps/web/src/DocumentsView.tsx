@@ -41,6 +41,7 @@ import { DocumentVoidConfirmationModal } from "./components/documents/tabs/Docum
 import { DocumentAuditFactsModal } from "./components/documents/tabs/DocumentAuditFactsModal";
 import { DocumentRegistryTab } from "./components/documents/tabs/DocumentRegistryTab";
 import { DocumentModalsContainer } from "./components/documents/tabs/DocumentModalsContainer";
+import "./styles/modules/documents.css";
 
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export type DocumentsViewProps = Record<string, any>;
@@ -154,8 +155,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 	const {
 		documentCreateSavingKind,
 		documentStatusSavingId,
-		setSelectedPaymentReceiptIds,
-		setSelectedTaxPaymentIds,
 		setTaxDocumentPayerInn,
 	} = useDocumentStore();
 
@@ -214,20 +213,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		[taxDocumentPayerOptions],
 	);
 
-	// Synchronize payment selections with store
-	useEffect(() => {
-		if (selectedEligibleTaxPayments) {
-			setSelectedTaxPaymentIds(selectedEligibleTaxPayments.map((p: Payment) => p.id));
-		}
-	}, [selectedEligibleTaxPayments, setSelectedTaxPaymentIds]);
-
-	useEffect(() => {
-		if (selectedPaymentReceiptPayments) {
-			setSelectedPaymentReceiptIds(
-				selectedPaymentReceiptPayments.map((p: Payment) => p.id),
-			);
-		}
-	}, [selectedPaymentReceiptPayments, setSelectedPaymentReceiptIds]);
 
 	const sanitizedDocumentFactoryGroups = useMemo(() => {
 		const groups = (props.documentFactoryGroups ?? []) as Array<{
@@ -711,7 +696,10 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				openDocActionMenuId={openDocActionMenuId}
 				setOpenDocActionMenuId={setOpenDocActionMenuId}
 				loadDocumentAuditFacts={loadDocumentAuditFacts}
+				downloadIssuedDocumentHtml={downloadIssuedDocumentHtml}
 				downloadTaxDocumentXml={downloadTaxDocumentXml}
+				setIsFnsNdflXmlOpen={setIsFnsNdflXmlOpen}
+				setIsEgiszRemdOpen={setIsEgiszRemdOpen}
 				requestDocumentVoid={requestDocumentVoid}
 			/>
 
