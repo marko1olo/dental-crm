@@ -16,7 +16,12 @@ import {
 	type InventoryItemLookup,
 	calculateStageMaterialRequirements,
 } from "./treatmentPlanMaterialEngine";
-import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanStageStatus } from "./types";
+import {
+	type TreatmentPlanItem,
+	type TreatmentPlanStage,
+	type TreatmentPlanStageStatus,
+	romanizeStageNumber,
+} from "./types";
 import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
 import { TreatmentPlanStageItemRow } from "./TreatmentPlanStageItemRow";
 import { TreatmentPlanStageFooter, type StageStatusConfigItem } from "./TreatmentPlanStageFooter";
@@ -205,9 +210,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 					<div
 						className={`flex items-center justify-center w-10 h-10 rounded-xl font-bold font-mono text-sm shrink-0 border ${theme.iconBg} ${theme.accentBorder}`}
 					>
-						{stage.stageNumber === 1 && "I"}
-						{stage.stageNumber === 2 && "II"}
-						{stage.stageNumber === 3 && "III"}
+						{romanizeStageNumber(stage.stageNumber)}
 					</div>
 
 					<div className="flex flex-col min-w-0">

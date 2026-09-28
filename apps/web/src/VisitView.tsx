@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { denteAdminSecretRequestHeaders } from "./AppHelpers";
 import {
 	AlertOctagon,
 	Check,
@@ -19,6 +20,7 @@ import { VisitConsentsTab } from "./components/visit/VisitConsentsTab";
 import { VisitTimer } from "./components/visit/VisitTimer";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { isNegativeAllergyStatement } from "./components/patients/safetyMath";
+import { ClinicalErrorBoundary } from "./components/common/ClinicalErrorBoundary";
 import "./styles/VisitView.css";
 
 import {
@@ -96,6 +98,90 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen] = useState(false);
 
 	const headerMoreMenuRef = React.useRef<HTMLDivElement | null>(null);
+
+	const [loadedTreatmentPlan, setLoadedTreatmentPlan] = useState<any>(null);
+
+	// Production PostgreSQL 18: загрузка согласованного плана лечения пациента
+	useEffect(() => {
+		if (!activePatient?.id) {
+			setLoadedTreatmentPlan(null);
+			return;
+		}
+		let cancelled = false;
+		async function fetchPatientTreatmentPlan() {
+			try {
+				const res = await fetch(`/api/patients/${activePatient.id}/treatment-plans`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!res.ok) return;
+				const data = await res.json();
+				if (cancelled) return;
+				if (data?.success && Array.isArray(data.plans) && data.plans.length > 0) {
+					const plan =
+						data.plans.find((p: any) => p.status === "Approved" || p.status === "Active") ||
+						data.plans[0];
+					setLoadedTreatmentPlan(plan);
+				}
+			} catch {
+				// Non-blocking in offline / test mode
+			}
+		}
+		fetchPatientTreatmentPlan();
+		const handleReload = () => fetchPatientTreatmentPlan();
+		window.addEventListener("dente-treatment-plans-reload", handleReload);
+		return () => {
+			cancelled = true;
+			window.removeEventListener("dente-treatment-plans-reload", handleReload);
+		};
+	}, [activePatient?.id]);
+
+	// Сквозная связка: приём события «Взять этап в работу визита»
+	useEffect(() => {
+		const handleTakeStage = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			if (!detail) return;
+			const { stage, items } = detail;
+			const stageItems = items || stage?.items || [];
+			if (stageItems.length > 0) {
+				const itemDescriptions = stageItems
+					.map((it: any) => {
+						const tooth =
+							it.toothNumber || it.toothCode ? ` (зуб #${it.toothNumber || it.toothCode})` : "";
+						return `${it.name || it.title || it.priceId}${tooth}`;
+					})
+					.join(", ");
+
+				const stagePrefix = stage?.title ? `[${stage.title}]: ` : "[Этап плана лечения]: ";
+				updateVisitNoteField("treatmentPlan", `${stagePrefix}${itemDescriptions}`);
+
+				// Перенос каждой услуги в биллинг и счёт приёма у кресла
+				for (const it of stageItems) {
+					window.dispatchEvent(
+						new CustomEvent("dente-add-billing-item", {
+							detail: {
+								item: {
+									code804n: it.code804n || it.priceId || "A16.07.001",
+									title: it.name || it.title || "Услуга плана лечения",
+									toothCode: it.toothNumber ? String(it.toothNumber) : it.toothCode,
+									quantity: it.quantity || 1,
+									unitPriceRub: Number(it.unitPriceRub ?? it.price ?? 0),
+									discountRub: Number(it.discountRub ?? it.discount ?? 0),
+								},
+							},
+						}),
+					);
+				}
+				showToast(
+					`Этап «${stage?.title || "План лечения"}» взят в работу визита (${stageItems.length} услуг)`,
+					"success",
+					4000,
+				);
+			}
+		};
+
+		window.addEventListener("dente-take-stage-to-visit", handleTakeStage);
+		return () => window.removeEventListener("dente-take-stage-to-visit", handleTakeStage);
+	}, [updateVisitNoteField]);
 
 	const patientAge = useMemo(() => {
 		if (!activePatient?.birthDate) return null;
@@ -498,32 +584,96 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				</header>
 
 				{/* ═══ TAB CONTENTS SWITCHER ═══ */}
-				<div style={{ display: visitSubViewTab === "emk" ? "block" : "none" }}>
-					<VisitEmkTab />
-				</div>
+				<ClinicalErrorBoundary
+					workspaceName="Клинические вкладки приёма"
+					workspaceKey="visit"
+					visitId={activeAppointment?.id}
+				>
+					<div style={{ display: visitSubViewTab === "emk" ? "block" : "none" }}>
+						<VisitEmkTab />
+					</div>
 
-				<div style={{ display: visitSubViewTab === "odontogram" ? "block" : "none" }}>
-					<VisitOdontogramTab />
-				</div>
+					<div style={{ display: visitSubViewTab === "odontogram" ? "block" : "none" }}>
+						<VisitOdontogramTab />
+					</div>
 
-				<div style={{ display: visitSubViewTab === "diagnostics" ? "block" : "none" }}>
-					<VisitDiagnosticsTab />
-				</div>
+					<div style={{ display: visitSubViewTab === "diagnostics" ? "block" : "none" }}>
+						<VisitDiagnosticsTab />
+					</div>
 
-				{visitSubViewTab === "consents" && (
-					<VisitConsentsTab
-						activePatient={activePatient}
-						activeDoctor={activeDoctor}
-						activeAppointment={activeAppointment}
-						visitNoteForm={visitNoteForm}
-						dashboard={dashboard}
-						selectedToothForMenu={selectedToothForMenu}
-						onOpenInformedConsentModal={() => setIsInformedConsentModalOpen(true)}
-						onOpenWarrantyModal={() => setIsWarrantyModalOpen(true)}
-						onFastPrint043u={handlePrintForm043uFast}
-						onFastPrintInformedConsent={handlePrintInformedConsentFast}
-						/* data-testid="btn-visit-fast-print-consent-1051n" data-testid="btn-visit-consents-print-043u" */
-					/>
+					{visitSubViewTab === "consents" && (
+						<VisitConsentsTab
+							activePatient={activePatient}
+							activeDoctor={activeDoctor}
+							activeAppointment={activeAppointment}
+							visitNoteForm={visitNoteForm}
+							dashboard={dashboard}
+							selectedToothForMenu={selectedToothForMenu}
+							onOpenInformedConsentModal={() => setIsInformedConsentModalOpen(true)}
+							onOpenWarrantyModal={() => setIsWarrantyModalOpen(true)}
+							onFastPrint043u={handlePrintForm043uFast}
+							onFastPrintInformedConsent={handlePrintInformedConsentFast}
+							/* data-testid="btn-visit-fast-print-consent-1051n" data-testid="btn-visit-consents-print-043u" */
+						/>
+					)}
+				</ClinicalErrorBoundary>
+
+				{/* ═══ TREATMENT PLAN HANDOFF COCKPIT STRIP (МАНДАТ 8e, 8n) ═══ */}
+				{loadedTreatmentPlan && Array.isArray(loadedTreatmentPlan.items) && loadedTreatmentPlan.items.length > 0 && (
+					<div
+						data-testid="visit-treatment-plan-handoff-banner"
+						className="my-2 p-3 rounded-xl border border-[var(--teal,#0d9488)]/40 bg-[var(--teal,#0d9488)]/5 flex items-center justify-between gap-3 flex-wrap text-xs shadow-2xs"
+						style={{ display: visitSubViewTab === "odontogram" ? "none" : "flex" }}
+					>
+						<div className="flex items-center gap-2.5 min-w-0">
+							<div className="p-1.5 rounded-lg bg-[var(--teal,#0d9488)]/15 text-[var(--teal-dark,#0f766e)] dark:text-teal-300 shrink-0">
+								<ShieldCheck size={16} />
+							</div>
+							<div className="flex flex-col min-w-0">
+								<div className="flex items-center gap-2 flex-wrap">
+									<span className="font-bold text-xs text-[var(--ink,#0f172a)] truncate">
+										План лечения: {loadedTreatmentPlan.name}
+									</span>
+									<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--teal,#0d9488)]/15 text-[var(--teal-dark,#0f766e)] dark:text-teal-300 border border-[var(--teal,#0d9488)]/30">
+										{loadedTreatmentPlan.status === "Approved"
+											? "Согласован"
+											: loadedTreatmentPlan.status === "Active"
+												? "В работе"
+												: "Черновик"}
+									</span>
+								</div>
+								<span className="text-[11px] text-[var(--muted,#64748b)]">
+									{loadedTreatmentPlan.items.length} запланированных услуг на сумму{" "}
+									{Number(loadedTreatmentPlan.totalPrice || 0).toLocaleString("ru-RU")} ₽
+								</span>
+							</div>
+						</div>
+
+						<button
+							type="button"
+							data-testid="take-stage-to-visit-btn"
+							onClick={() => {
+								window.dispatchEvent(
+									new CustomEvent("dente-take-stage-to-visit", {
+										detail: {
+											stage: {
+												title: loadedTreatmentPlan.name,
+												stageNumber: 1,
+												items: loadedTreatmentPlan.items,
+											},
+											items: loadedTreatmentPlan.items,
+											patientId: activePatient?.id,
+										},
+									}),
+								);
+							}}
+							className="h-8 min-h-[32px] px-3.5 rounded-lg text-xs font-bold text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 shrink-0"
+							title="Перенести услуги согласованного этапа плана лечения в текущий визит и счет"
+						>
+							<CheckCircle2 size={14} />
+							<span>Взять этап в работу визита</span>
+						</button>
+					</div>
 				)}
 
 				{/* ═══ NEXT STEP ACTION PANEL ═══ */}

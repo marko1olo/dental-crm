@@ -11,8 +11,27 @@ import type {
 
 export type TreatmentPlanStageKind =
 	| "stage_1_therapy" // Этап 1: Неотложная помощь и терапевтическая санация
-	| "stage_2_surgery" // Этап 2: Хирургический этап
-	| "stage_3_orthopedics"; // Этап 3: Ортопедический этап
+	| "stage_2_surgery" // Этап 2: Хирургический этап и имплантация
+	| "stage_3_orthopedics" // Этап 3: Ортопедический этап и протезирование
+	| "stage_4_orthodontics" // Этап 4: Ортодонтическое лечение
+	| "stage_5_periodontics" // Этап 5: Пародонтология и профгигиена
+	| "stage_custom"; // Произвольный клинический этап
+
+export function romanizeStageNumber(num: number): string {
+	const romanMap: Record<number, string> = {
+		1: "I",
+		2: "II",
+		3: "III",
+		4: "IV",
+		5: "V",
+		6: "VI",
+		7: "VII",
+		8: "VIII",
+		9: "IX",
+		10: "X",
+	};
+	return romanMap[num] || String(num);
+}
 
 export type TreatmentPlanTierId = "economy" | "standard" | "optimum";
 

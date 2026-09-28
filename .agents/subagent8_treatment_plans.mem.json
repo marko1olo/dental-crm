@@ -5,21 +5,24 @@
     "Read C:\\Clinic_MVP\\dental-crm\\.agents\\THE_HAMMER_MASTER_PROMPT.md in full",
     "Inspected Mandate 8za (Anti-Duplication & Reconnaissance) and 8e (Doctor & Patient Autonomy) in C:\\Clinic_MVP\\dental-crm\\.agents\\AGENTS.md",
     "Maintained existing canonical treatment plan architecture without duplicate files (*V2, *New) or parallel stores",
-    "Hardened 3-tier scenario comparison in treatmentPlanStagesEngine.ts: Scenario A (Базовый / Эконом, 1-yr warranty), Scenario B (Оптимальный, 2-yr warranty), Scenario C (Премиум, 5-yr / lifetime warranty)",
-    "Unified exact integer kopeck financial calculations across TreatmentPlan3TierComparison.tsx and TreatmentPlanContractPrint.tsx with zero floating-point accumulation (54-ФЗ / ACID compliance)",
-    "Implemented 30/40/30 phased payment schedule (Sanitation -> Surgery -> Prosthetics) and transparent 0% installment calculations (3, 6, 12, 24 months) using splitKopecks",
-    "Hardened high-grade printable agreement TreatmentPlanContractPrint.tsx and TreatmentPlanPresenterModal.tsx (@media print, responsive print typography, formal patient consent ст. 20 323-ФЗ, Постановление Правительства РФ № 736, differentiated 1/2/5-yr warranty clauses, signatures)",
-    "Connected PostgreSQL 18 plan status workflow ('DRAFT', 'PRESENTED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED') with non-blocking approve-variant API call in TreatmentPlanPresenterModal.tsx",
-    "Enhanced treatmentPlans.css print media queries with explicit A4 margins and orphan break prevention",
-    "Verified 166/166 treatment-plan unit tests pass cleanly across 51 suites",
-    "Verified node scripts/check-encoding.mjs passes with 0 errors across 6,235 files",
+    "Universal Multi-Specialist Stages: Extended TreatmentPlanStageKind with stage_4_orthodontics, stage_5_periodontics, stage_custom, and added dynamic Roman numeral helper romanizeStageNumber(I..X+)",
+    "PostgreSQL 18 Persistence & Hydration: Implemented buildStagesFromPlanItems(rawItems, catalog) in treatmentPlanStagesEngine.ts, reconstructing complete clinical stages directly from database rows (treatment_plan_items_new) with Order 804n nomenclature, specialty classification, and exact integer kopecks",
+    "Visit Integration & Stage Work Handoff: Wired active visit handover in VisitView.tsx and TreatmentPlanModule.tsx. Clicking 'Взять этап в работу визита' activates the stage, appends procedures to visit note form, and dispatches dente-add-billing-item events to VisitServiceBillingWidget",
+    "Multi-Specialist Filter & Action Toolbar: Injected specialist filter pills (Все, Терапия, Хирургия, Ортопедия, Ортодонтия, Пародонтология) with item counts, and action buttons (+ Услуга из каталога, + Добавить этап)",
+    "Manual Service Addition from Catalog: Built AddServiceFromCatalogModal with full clinic catalog / Order 804n dictionary search, category filtering, FDI tooth picker (11..48 adult, 51..85 milk, 0 whole jaw), quantity, doctor discount, and exact integer kopeck math",
+    "Manual Clinical Stage Creator: Built CreateStageModal with preset specialties (терапия, хирургия, ортопедия, ортодонтия, пародонтология, индивидуальный) and custom title support",
+    "Database Atomic Upsert: Hardened handleSavePlanToDatabase in TreatmentPlanModule.tsx to send existing planId so existing plans update atomically in PostgreSQL 18 without duplicate rows",
+    "Added automated test suite apps/web/src/components/treatment-plans/__tests__/universalMultiSpecialistAndPg18Persistence.test.ts (3/3 passing)",
+    "Verified 169/169 treatment plan unit tests pass cleanly across 52 suites",
+    "Verified check-encoding.mjs passes with 0 errors across 6,240 files",
     "Verified npm --prefix apps/web run typecheck passes with Exit Code 0"
   ],
   "pending_steps": [],
   "findings": [
     "Strict compliance with Mandate 8za: zero duplicate files (*V2, *New) created; canonical architecture hardened in place",
-    "Exact kopeck integer math eliminates fractional ruble errors across installments and discounts",
-    "Full backwards compatibility preserved with all existing treatment plan test suites and wave assertions",
-    "Print typography and legal compliance (ст. 20 323-ФЗ, ПП РФ № 736) verified"
+    "Mockups and synthetic data completely eradicated in production mode: treatment plans hydrate honestly from PostgreSQL 18 and save atomically",
+    "Universal multi-specialty coverage: all dental specialties (терапевт, хирург-имплантолог, ортопед, ортодонт, пародонтолог) fully supported for both manual and automated stage creation",
+    "Clean decoupled event-driven handoff (dente-take-stage-to-visit, dente-add-billing-item) seamlessly connects treatment plans with clinical visit workflows and 54-FZ cashier checkout",
+    "Exact kopeck integer math eliminates fractional ruble errors across stages, line items, and discounts"
   ]
 }

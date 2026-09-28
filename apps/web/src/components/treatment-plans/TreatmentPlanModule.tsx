@@ -4,6 +4,7 @@
 
 import React, { useMemo, useState, useRef, useEffect, lazy, Suspense } from "react";
 import {
+	Activity,
 	Bot,
 	Check,
 	ChevronDown,
@@ -11,22 +12,30 @@ import {
 	Coins,
 	FileCheck,
 	FileText,
+	Filter,
 	FlaskConical,
+	FolderPlus,
 	Layers,
 	MoreVertical,
 	PackageCheck,
 	PenTool,
 	Percent,
+	Plus,
 	Receipt,
 	Save,
+	Search,
 	Send,
 	ShieldCheck,
 	Sparkles,
+	Stethoscope,
+	Trash2,
 	UserCheck,
+	X,
 	Zap,
 } from "lucide-react";
 import { type Kopecks, parseKopecks } from "@dental/shared";
-import type { TreatmentPlanItem } from "./types";
+import type { TreatmentPlanItem, TreatmentPlanStageKind } from "./types";
+import { romanizeStageNumber } from "./types";
 import {
 	type BillingInvoice,
 	loadStoredInvoices,
@@ -42,6 +51,8 @@ import {
 	calculateLoyaltyBonusDeduction,
 	generate3TierPlanComparison,
 	generateTreatmentPlanStages,
+	buildStagesFromPlanItems,
+	ORDER_804N_DICTIONARY,
 } from "./treatmentPlanStagesEngine";
 import { loadPersistedCustomPlanItems } from "../radiology/ctImplantIntegrationBridge";
 import {
@@ -234,10 +245,91 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState<boolean>(initialOptionsMenuOpen);
 	const optionsMenuRef = useRef<HTMLDivElement>(null);
 
+	// PostgreSQL 18: идентификатор плана в базе и статус сетевой загрузки
+	const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
+	const [isLoadingPlan, setIsLoadingPlan] = useState<boolean>(false);
+
+	// Фильтр по специальности врача и ручное редактирование этапов / услуг
+	const [specialtyFilter, setSpecialtyFilter] = useState<
+		"all" | "therapy" | "surgery" | "orthopedics" | "orthodontics" | "periodontics"
+	>("all");
+	const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState<boolean>(false);
+	const [targetStageForAdd, setTargetStageForAdd] = useState<TreatmentPlanStage | null>(null);
+	const [isCreateStageModalOpen, setIsCreateStageModalOpen] = useState<boolean>(false);
+
+	// Модальное окно добавления услуги из прейскуранта
+	const [serviceSearchQuery, setServiceSearchQuery] = useState<string>("");
+	const [selectedCatalogItem, setSelectedCatalogItem] = useState<CatalogServiceLookupItem | null>(null);
+	const [selectedToothForService, setSelectedToothForService] = useState<number | null>(null);
+	const [serviceQuantity, setServiceQuantity] = useState<number>(1);
+	const [serviceDiscountPercent, setServiceDiscountPercent] = useState<number>(0);
+	const [serviceTargetStageNumber, setServiceTargetStageNumber] = useState<number>(1);
+	const [serviceCategoryFilter, setServiceCategoryFilter] = useState<string>("all");
+
+	// Модальное окно создания этапа
+	const [newStagePreset, setNewStagePreset] = useState<
+		"therapy" | "surgery" | "orthopedics" | "orthodontics" | "periodontics" | "custom"
+	>("therapy");
+	const [newStageCustomTitle, setNewStageCustomTitle] = useState<string>("");
+
 	// AI Copilot & Custom Stages State
 	const [customStages, setCustomStages] = useState<TreatmentPlanStage[] | null>(null);
 	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
 	const [isCopilotExecuting, setIsCopilotExecuting] = useState<boolean>(false);
+
+	const catalog = dashboard?.serviceCatalog as CatalogServiceLookupItem[] | undefined;
+
+	// Честная загрузка плана лечения из PostgreSQL 18
+	useEffect(() => {
+		if (!patientId) return;
+		let isCancelled = false;
+
+		async function loadPatientPlans() {
+			setIsLoadingPlan(true);
+			try {
+				const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/treatment-plans`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!res.ok) return;
+				const data = await res.json();
+				if (isCancelled) return;
+				if (data?.success && Array.isArray(data.plans) && data.plans.length > 0) {
+					const latestPlan =
+						data.plans.find((p: any) => p.status === "Approved" || p.status === "Active") ||
+						data.plans[0];
+					if (latestPlan) {
+						setCurrentPlanId(latestPlan.id);
+						if (latestPlan.status === "Approved") setPlanStatus("agreed");
+						else if (latestPlan.status === "Active") setPlanStatus("in_progress");
+						else if (latestPlan.status === "Completed") setPlanStatus("completed");
+						else setPlanStatus("draft");
+
+						if (Array.isArray(latestPlan.items) && latestPlan.items.length > 0) {
+							const rebuilt = buildStagesFromPlanItems(latestPlan.items, catalog);
+							if (rebuilt.length > 0) {
+								setCustomStages(rebuilt);
+							}
+						}
+					}
+				}
+			} catch (e) {
+				logger.warn("[TreatmentPlanModule] Ошибка загрузки планов пациента из БД", e);
+			} finally {
+				if (!isCancelled) setIsLoadingPlan(false);
+			}
+		}
+
+		loadPatientPlans();
+
+		const handleReload = () => {
+			loadPatientPlans();
+		};
+		window.addEventListener("dente-treatment-plans-reload", handleReload);
+		return () => {
+			isCancelled = true;
+			window.removeEventListener("dente-treatment-plans-reload", handleReload);
+		};
+	}, [patientId, catalog]);
 
 	useEffect(() => {
 		const handleOutside = (e: MouseEvent) => {
@@ -258,7 +350,6 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		useState<DigitalSignatureAgreementData | null>(null);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 
-	const catalog = dashboard?.serviceCatalog as CatalogServiceLookupItem[] | undefined;
 	const patient = (dashboard?.patients as any[] | undefined)?.find(
 		(p: any) => p.id === patientId,
 	);
@@ -962,12 +1053,13 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				isAuto: it.isAuto ?? true,
 			}));
 
-			const res = await fetch(`/api/patients/${patientId}/treatment-plans`, {
+			const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/treatment-plans`, {
 				method: "POST",
 				headers: denteAdminSecretRequestHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
+					...(currentPlanId ? { id: currentPlanId } : {}),
 					name: `${currentTier.title} (${new Date().toLocaleDateString("ru-RU")})`,
 					status:
 						planStatus === "agreed"
@@ -984,8 +1076,11 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 			if (res.ok) {
 				const data = await res.json();
-				if (data.planId && onPlanSaved) {
-					onPlanSaved(data.planId);
+				if (data.planId) {
+					setCurrentPlanId(data.planId);
+					if (onPlanSaved) {
+						onPlanSaved(data.planId);
+					}
 				}
 				showToast(
 					`Комплексный план лечения успешно сохранен в базе на сумму ${(grandTotalRub || 0).toLocaleString("ru-RU")} ₽!`,
@@ -1043,6 +1138,211 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		}
 	};
 
+	// Фильтрация этапов по специальности врача клиники (Мандат 8e: универсальность)
+	const visibleStages = useMemo(() => {
+		if (specialtyFilter === "all") return stages;
+		return stages.filter((s) => {
+			if (specialtyFilter === "therapy") {
+				return (
+					s.stageKind === "stage_1_therapy" ||
+					s.items.some((i) => {
+						const c = (i.category || "").toLowerCase();
+						return c.includes("терап") || c.includes("кариес") || c.includes("эндо");
+					})
+				);
+			}
+			if (specialtyFilter === "surgery") {
+				return (
+					s.stageKind === "stage_2_surgery" ||
+					s.items.some((i) => {
+						const c = (i.category || "").toLowerCase();
+						return c.includes("хирург") || c.includes("имплант") || c.includes("удал");
+					})
+				);
+			}
+			if (specialtyFilter === "orthopedics") {
+				return (
+					s.stageKind === "stage_3_orthopedics" ||
+					s.items.some((i) => {
+						const c = (i.category || "").toLowerCase();
+						return c.includes("ортопед") || c.includes("коронк") || c.includes("протез") || c.includes("мост");
+					})
+				);
+			}
+			if (specialtyFilter === "orthodontics") {
+				return (
+					s.stageKind === "stage_4_orthodontics" ||
+					s.items.some((i) => {
+						const c = (i.category || "").toLowerCase();
+						return c.includes("ортодонт") || c.includes("брекет") || c.includes("элайнер");
+					})
+				);
+			}
+			if (specialtyFilter === "periodontics") {
+				return (
+					s.stageKind === "stage_5_periodontics" ||
+					s.items.some((i) => {
+						const c = (i.category || "").toLowerCase();
+						return c.includes("пародонт") || c.includes("гигиен") || c.includes("десн");
+					})
+				);
+			}
+			return true;
+		});
+	}, [stages, specialtyFilter]);
+
+	// Ручное добавление любой услуги из прейскуранта клиники в этап (Мандаты 8e, 8k)
+	const handleAddItemToStage = (
+		targetStageNumber: number,
+		newItemData: {
+			code804n: string;
+			name: string;
+			category: string;
+			toothNumber?: number;
+			quantity: number;
+			unitPriceRub: number;
+			discountRub: number;
+		},
+	) => {
+		const grossKopecks = Math.round(newItemData.unitPriceRub * newItemData.quantity * 100);
+		const discKopecks = Math.round(newItemData.discountRub * 100);
+		const netKopecks = Math.max(0, grossKopecks - discKopecks);
+		const netRub = netKopecks / 100;
+
+		const stageKind: TreatmentPlanStageKind =
+			targetStageNumber === 2
+				? "stage_2_surgery"
+				: targetStageNumber === 3
+					? "stage_3_orthopedics"
+					: targetStageNumber === 4
+						? "stage_4_orthodontics"
+						: targetStageNumber === 5
+							? "stage_5_periodontics"
+							: "stage_1_therapy";
+
+		const newItem: TreatmentPlanItem = {
+			id: `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+			toothNumber: newItemData.toothNumber,
+			code804n: newItemData.code804n,
+			name: newItemData.name,
+			category: newItemData.category,
+			priceRub: netRub,
+			unitPriceRub: newItemData.unitPriceRub,
+			discountRub: newItemData.discountRub,
+			quantity: newItemData.quantity,
+			phase: targetStageNumber,
+			stageKind,
+			priceId: newItemData.code804n,
+			fromCatalog: true,
+			isAuto: false,
+		};
+
+		const existingStage = stages.find((s) => s.stageNumber === targetStageNumber);
+		let nextStages: TreatmentPlanStage[];
+
+		if (existingStage) {
+			nextStages = stages.map((s) => {
+				if (s.stageNumber !== targetStageNumber) return s;
+				const updatedItems = [...s.items, newItem];
+				const totalKopecks = updatedItems.reduce((acc, it) => {
+					const g = Math.round(it.unitPriceRub * it.quantity * 100);
+					const d = Math.round(it.discountRub * 100);
+					return (acc + Math.max(0, g - d)) as Kopecks;
+				}, 0 as Kopecks);
+				return {
+					...s,
+					items: updatedItems,
+					totalKopecks,
+					totalRub: totalKopecks / 100,
+					order804nCodes: Array.from(new Set(updatedItems.map((i) => i.code804n))),
+				};
+			});
+		} else {
+			const newStage: TreatmentPlanStage = {
+				stageNumber: targetStageNumber,
+				stageKind,
+				title: `Этап ${romanizeStageNumber(targetStageNumber)}: Клинический этап`,
+				subtitle: "Процедуры по назначению врача",
+				clinicalGoal: "Достижение согласованного клинического результата",
+				items: [newItem],
+				totalRub: netRub,
+				totalKopecks: netKopecks as Kopecks,
+				estimatedVisits: 1,
+				estimatedWeeks: 2,
+				order804nCodes: [newItem.code804n],
+				status: "agreed",
+			};
+			nextStages = [...stages, newStage].sort((a, b) => a.stageNumber - b.stageNumber);
+		}
+
+		setCustomStages(nextStages);
+		showToast(`Услуга «${newItem.name}» добавлена в этап №${targetStageNumber}`, "success");
+	};
+
+	// Создание нового этапа плана лечения
+	const handleCreateNewStage = (
+		presetKind: "therapy" | "surgery" | "orthopedics" | "orthodontics" | "periodontics" | "custom",
+		customTitle?: string,
+	) => {
+		const newStageNumber = stages.length > 0 ? Math.max(...stages.map((s) => s.stageNumber)) + 1 : 1;
+		let stageKind: TreatmentPlanStageKind = "stage_1_therapy";
+		let title = `Этап ${romanizeStageNumber(newStageNumber)}: ${customTitle || "Терапевтический этап"}`;
+		let subtitle = "Санация и терапевтические процедуры";
+		let clinicalGoal = "Полная санация и купирование воспалительных процессов";
+
+		if (presetKind === "surgery") {
+			stageKind = "stage_2_surgery";
+			title = `Этап ${romanizeStageNumber(newStageNumber)}: ${customTitle || "Хирургический этап и имплантация"}`;
+			subtitle = "Удаление несостоятельных зубов, пластика и имплантация";
+			clinicalGoal = "Восстановление костной опоры и подготовка к протезированию";
+		} else if (presetKind === "orthopedics") {
+			stageKind = "stage_3_orthopedics";
+			title = `Этап ${romanizeStageNumber(newStageNumber)}: ${customTitle || "Ортопедическая реабилитация"}`;
+			subtitle = "Коронки, мостовидные протезы и функциональная окклюзия";
+			clinicalGoal = "Восстановление жевательной функции и эстетики";
+		} else if (presetKind === "orthodontics") {
+			stageKind = "stage_4_orthodontics";
+			title = `Этап ${romanizeStageNumber(newStageNumber)}: ${customTitle || "Ортодонтическое лечение"}`;
+			subtitle = "Нормализация окклюзии, исправление прикуса";
+			clinicalGoal = "Формирование стабильного правильного прикуса";
+		} else if (presetKind === "periodontics") {
+			stageKind = "stage_5_periodontics";
+			title = `Этап ${romanizeStageNumber(newStageNumber)}: ${customTitle || "Пародонтология и профилактика"}`;
+			subtitle = "Вектор-терапия, кюретаж и стабилизация пародонта";
+			clinicalGoal = "Купирование воспаления десны и защита от рецидивов";
+		} else if (presetKind === "custom") {
+			stageKind = "stage_custom";
+			title = `Этап ${romanizeStageNumber(newStageNumber)}: ${customTitle || "Индивидуальный клинический этап"}`;
+			subtitle = "Специализированный протокол лечения";
+			clinicalGoal = "Выполнение индивидуальных клинических назначений";
+		}
+
+		const newStage: TreatmentPlanStage = {
+			stageNumber: newStageNumber,
+			stageKind,
+			title,
+			subtitle,
+			clinicalGoal,
+			items: [],
+			totalRub: 0,
+			totalKopecks: 0 as Kopecks,
+			estimatedVisits: 1,
+			estimatedWeeks: 2,
+			order804nCodes: [],
+			status: "agreed",
+		};
+
+		setCustomStages([...stages, newStage]);
+		showToast(`Создан новый этап: «${title}»`, "success");
+	};
+
+	const handleDeleteStage = (stageToDelete: TreatmentPlanStage) => {
+		const updated = stages.filter((s) => s.stageNumber !== stageToDelete.stageNumber);
+		setCustomStages(updated);
+		showToast(`Этап №${stageToDelete.stageNumber} удален из плана`, "info");
+	};
+
+	// 5. Сквозная связка: согласованный этап передается в работу визита («Взять этап в работу визита»)
 	const handleStartStage = (stageToStart: TreatmentPlanStage) => {
 		const updated = stages.map((s) =>
 			s.stageNumber === stageToStart.stageNumber
@@ -1051,11 +1351,41 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		);
 		setCustomStages(updated);
 		showToast(
-			`Этап №${stageToStart.stageNumber} («${stageToStart.title}») активирован: процедурная запись добавлена в расписание`,
+			`Этап №${stageToStart.stageNumber} («${stageToStart.title}») активирован и передан в работу визита (${stageToStart.items.length} услуг)`,
 			"success",
-			3500,
+			4000,
 		);
 		if (typeof window !== "undefined") {
+			// 1. Dispatch custom event to hand over to active visit
+			window.dispatchEvent(
+				new CustomEvent("dente-take-stage-to-visit", {
+					detail: {
+						patientId,
+						patientName,
+						stage: stageToStart,
+						items: stageToStart.items,
+					},
+				}),
+			);
+
+			// 2. Dispatch billing addition for every item in this stage
+			for (const item of stageToStart.items) {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-billing-item", {
+						detail: {
+							item: {
+								code804n: item.code804n || item.priceId || "A16.07.001",
+								title: item.name,
+								toothCode: item.toothNumber ? String(item.toothNumber) : undefined,
+								quantity: item.quantity || 1,
+								unitPriceRub: item.unitPriceRub,
+								discountRub: item.discountRub || 0,
+							},
+						},
+					}),
+				);
+			}
+
 			window.dispatchEvent(
 				new CustomEvent("dente-book-stage-appointment", {
 					detail: {
@@ -1088,6 +1418,80 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		);
 		setCustomStages(updated);
 		showToast(`Статус этапа №${stageToChange.stageNumber} изменен на «${newStatus}»`, "info");
+	};
+
+	// Эффективный каталог услуг: прейскурант клиники из базы или номенклатура 804н
+	const effectiveCatalog = useMemo<CatalogServiceLookupItem[]>(() => {
+		if (Array.isArray(catalog) && catalog.length > 0) {
+			return catalog;
+		}
+		return Object.values(ORDER_804N_DICTIONARY).map((proc) => ({
+			id: proc.code,
+			title: proc.title,
+			category: proc.category,
+			basePriceRub: proc.defaultPriceRub,
+			code: proc.code,
+			order804nCode: proc.code,
+			active: true,
+		}));
+	}, [catalog]);
+
+	const availableCategories = useMemo(() => {
+		const set = new Set<string>();
+		for (const it of effectiveCatalog) {
+			if (it.category) set.add(it.category);
+		}
+		return Array.from(set).sort();
+	}, [effectiveCatalog]);
+
+	const filteredCatalogServices = useMemo(() => {
+		const q = serviceSearchQuery.trim().toLowerCase();
+		return effectiveCatalog.filter((item) => {
+			if (serviceCategoryFilter !== "all") {
+				const cat = (item.category || "").toLowerCase();
+				if (!cat.includes(serviceCategoryFilter.toLowerCase())) return false;
+			}
+			if (!q) return true;
+			const t = (item.title || "").toLowerCase();
+			const c = (item.code || item.order804nCode || "").toLowerCase();
+			const cat = (item.category || "").toLowerCase();
+			return t.includes(q) || c.includes(q) || cat.includes(q);
+		});
+	}, [effectiveCatalog, serviceSearchQuery, serviceCategoryFilter]);
+
+	const handleConfirmAddService = () => {
+		if (!selectedCatalogItem) {
+			showToast("Выберите услугу из каталога", "warning");
+			return;
+		}
+		const basePrice = selectedCatalogItem.basePriceRub || 0;
+		const qty = Math.max(1, serviceQuantity);
+		const discPct = Math.max(0, Math.min(100, serviceDiscountPercent));
+		const grossRub = basePrice * qty;
+		const discountRub = Math.round((grossRub * discPct) / 100);
+
+		handleAddItemToStage(serviceTargetStageNumber, {
+			code804n: selectedCatalogItem.order804nCode || selectedCatalogItem.code || selectedCatalogItem.id,
+			name: selectedCatalogItem.title,
+			category: selectedCatalogItem.category || "Общее",
+			...(selectedToothForService ? { toothNumber: selectedToothForService } : {}),
+			quantity: qty,
+			unitPriceRub: basePrice,
+			discountRub,
+		});
+
+		setIsAddServiceModalOpen(false);
+		setSelectedCatalogItem(null);
+		setSelectedToothForService(null);
+		setServiceQuantity(1);
+		setServiceDiscountPercent(0);
+	};
+
+	const handleConfirmCreateStage = () => {
+		handleCreateNewStage(newStagePreset, newStageCustomTitle.trim() || undefined);
+		setIsCreateStageModalOpen(false);
+		setNewStageCustomTitle("");
+		setNewStagePreset("therapy");
 	};
 
 	return (
@@ -1798,66 +2202,220 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					onApproveAndSign={() => setIsSignModalOpen(true)}
 					onPrintContract={() => setIsContractPrintOpen(true)}
 				/>
-			) : stages.length === 0 ? (
-				<div className="p-8 rounded-2xl border border-dashed border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-center text-xs text-[var(--muted,#64748b)] space-y-3">
-					<Layers className="w-10 h-10 mx-auto text-[var(--muted,#64748b)] opacity-40" />
-					<div className="font-bold text-sm text-[var(--ink,#0f172a)]">
-						В плане лечения пока нет сформированных этапов
-					</div>
-					<p className="max-w-md mx-auto m-0 text-xs text-[var(--muted,#64748b)]">
-						Добавьте клинический пакет (Кариес / Профгигиена / Коронка) или переключитесь на 3-вариантный вид для автоматического расчета.
-					</p>
-					<div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
-						<button
-							type="button"
-							onClick={() => handleApplyClinicalBundle("hygiene_turnkey")}
-							className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft)] border border-[var(--teal)]/30 transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
-						>
-							<Sparkles size={13} />
-							<span>+ Пакет: Профгигиена</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setActiveViewTab("3tier")}
-							className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
-						>
-							<span>3 Варианта лечения</span>
-						</button>
-					</div>
-				</div>
 			) : (
 				<div className="flex flex-col gap-4">
-					{stages.map((stage) => (
-						<TreatmentPlanStageCard
-							key={stage.stageNumber}
-							stage={stage}
-							defaultExpanded={true}
-							{...(Array.isArray(dashboard?.inventoryItems) && dashboard.inventoryItems.length > 0
-								? { inventoryItems: dashboard.inventoryItems as InventoryItemLookup[] }
-								: {})}
-							onUpdateItemQuantity={handleUpdateItemQuantity}
-							onUpdateItemPrice={handleUpdateItemPrice}
-							onUpdateItem={handleUpdateItem}
-							onRemoveItem={handleRemoveItem}
-							onExecuteWriteOffStage={handleExecuteWriteOffStage}
-							onStartStage={handleStartStage}
-							onChangeStageStatus={handleChangeStageStatus}
-							onPayStage={(stageToPay) => {
-								setSelectedInstallmentStage(stageToPay);
-								setIsFiscalModalOpen(true);
-							}}
-							onApplyStageDiscount={() => {
-								setDiscountPercent(10);
-								showToast("Применена скидка врача 10% на план лечения", "success");
-							}}
-							onOpenLabOrder={handleOpenLabOrder}
-							onOneClickLabOrder={handleOneClickLabOrder}
-							onOpenInstallment={(stageToFinance) => {
-								setSelectedInstallmentStage(stageToFinance);
-								setIsInstallmentModalOpen(true);
-							}}
-						/>
-					))}
+					{/* Doctor Specialty Filter Bar & Stage Actions (Mandate 8e: Doctor Autonomy & Universal for all specialists) */}
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] shadow-xs">
+						{/* Specialty Filter Pills */}
+						<div className="flex items-center gap-1.5 flex-wrap" role="tablist" aria-label="Фильтр по специализациям">
+							{[
+								{ id: "all", label: "Все специалисты", count: stages.length },
+								{
+									id: "therapy",
+									label: "Терапия",
+									count: stages.filter(
+										(s) =>
+											s.stageKind === "stage_1_therapy" ||
+											s.items.some((i) => {
+												const c = (i.category || "").toLowerCase();
+												return c.includes("терап") || c.includes("кариес") || c.includes("эндо");
+											}),
+									).length,
+								},
+								{
+									id: "surgery",
+									label: "Хирургия",
+									count: stages.filter(
+										(s) =>
+											s.stageKind === "stage_2_surgery" ||
+											s.items.some((i) => {
+												const c = (i.category || "").toLowerCase();
+												return c.includes("хирург") || c.includes("имплант") || c.includes("удал");
+											}),
+									).length,
+								},
+								{
+									id: "orthopedics",
+									label: "Ортопедия",
+									count: stages.filter(
+										(s) =>
+											s.stageKind === "stage_3_orthopedics" ||
+											s.items.some((i) => {
+												const c = (i.category || "").toLowerCase();
+												return c.includes("ортопед") || c.includes("коронк") || c.includes("мост");
+											}),
+									).length,
+								},
+								{
+									id: "orthodontics",
+									label: "Ортодонтия",
+									count: stages.filter(
+										(s) =>
+											s.stageKind === "stage_4_orthodontics" ||
+											s.items.some((i) => {
+												const c = (i.category || "").toLowerCase();
+												return c.includes("ортодонт") || c.includes("брекет") || c.includes("элайнер");
+											}),
+									).length,
+								},
+								{
+									id: "periodontics",
+									label: "Пародонтология",
+									count: stages.filter(
+										(s) =>
+											s.stageKind === "stage_5_periodontics" ||
+											s.items.some((i) => {
+												const c = (i.category || "").toLowerCase();
+												return c.includes("пародонт") || c.includes("гигиен") || c.includes("десн");
+											}),
+									).length,
+								},
+							].map((tab) => (
+								<button
+									key={tab.id}
+									type="button"
+									onClick={() => setSpecialtyFilter(tab.id as any)}
+									data-testid={`tp-specialty-filter-${tab.id}`}
+									className={`min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 touch-manipulation ${
+										specialtyFilter === tab.id
+											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
+											: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))]"
+									}`}
+								>
+									<span>{tab.label}</span>
+									{tab.count > 0 && (
+										<span
+											className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+												specialtyFilter === tab.id
+													? "bg-white/20 text-white"
+													: "bg-[var(--paper-strong)] text-[var(--muted)]"
+											}`}
+										>
+											{tab.count}
+										</span>
+									)}
+								</button>
+							))}
+						</div>
+
+						{/* Actions: + Добавить услугу из каталога, + Добавить этап плана */}
+						<div className="flex items-center gap-2 flex-wrap shrink-0">
+							<button
+								type="button"
+								onClick={() => {
+									const defaultStage = visibleStages[0] || stages[0] || null;
+									setTargetStageForAdd(defaultStage);
+									if (defaultStage) {
+										setServiceTargetStageNumber(defaultStage.stageNumber);
+									}
+									setIsAddServiceModalOpen(true);
+								}}
+								data-testid="tp-add-catalog-service-btn"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft)] border border-[var(--teal)]/30 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs touch-manipulation"
+								title="Добавить любую услугу из утвержденного прейскуранта клиники (Мандат 8e)"
+							>
+								<Plus size={14} />
+								<span>+ Услуга из каталога</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setIsCreateStageModalOpen(true)}
+								data-testid="tp-create-stage-btn"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs touch-manipulation"
+								title="Добавить новый этап в план лечения"
+							>
+								<Layers size={14} className="text-[var(--teal,var(--brand-primary))]" />
+								<span>+ Добавить этап</span>
+							</button>
+						</div>
+					</div>
+
+					{/* Stage list or Empty state */}
+					{visibleStages.length === 0 ? (
+						<div className="p-8 rounded-2xl border border-dashed border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-center text-xs text-[var(--muted,#64748b)] space-y-3">
+							<Layers className="w-10 h-10 mx-auto text-[var(--muted,#64748b)] opacity-40" />
+							<div className="font-bold text-sm text-[var(--ink,#0f172a)]">
+								{specialtyFilter !== "all"
+									? "В выбранной специализации пока нет этапов"
+									: "В плане лечения пока нет сформированных этапов"}
+							</div>
+							<p className="max-w-md mx-auto m-0 text-xs text-[var(--muted,#64748b)]">
+								{specialtyFilter !== "all"
+									? "Сбросьте фильтр или добавьте новый этап по этой специальности."
+									: "Добавьте клинический пакет, услугу из каталога или создайте этап вручную."}
+							</p>
+							<div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+								{specialtyFilter !== "all" ? (
+									<button
+										type="button"
+										onClick={() => setSpecialtyFilter("all")}
+										className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+									>
+										<span>Показать все этапы</span>
+									</button>
+								) : (
+									<>
+										<button
+											type="button"
+											onClick={() => handleApplyClinicalBundle("hygiene_turnkey")}
+											className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft)] border border-[var(--teal)]/30 transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+										>
+											<Sparkles size={13} />
+											<span>+ Пакет: Профгигиена</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => setIsCreateStageModalOpen(true)}
+											className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+										>
+											<span>+ Создать этап</span>
+										</button>
+									</>
+								)}
+							</div>
+						</div>
+					) : (
+						<div className="flex flex-col gap-4">
+							{visibleStages.map((stage) => (
+								<TreatmentPlanStageCard
+									key={stage.stageNumber}
+									stage={stage}
+									defaultExpanded={true}
+									{...(Array.isArray(dashboard?.inventoryItems) && dashboard.inventoryItems.length > 0
+										? { inventoryItems: dashboard.inventoryItems as InventoryItemLookup[] }
+										: {})}
+									onUpdateItemQuantity={handleUpdateItemQuantity}
+									onUpdateItemPrice={handleUpdateItemPrice}
+									onUpdateItem={handleUpdateItem}
+									onRemoveItem={handleRemoveItem}
+									onAddItem={(st) => {
+										setTargetStageForAdd(st);
+										setServiceTargetStageNumber(st.stageNumber);
+										setIsAddServiceModalOpen(true);
+									}}
+									onDeleteStage={handleDeleteStage}
+									onExecuteWriteOffStage={handleExecuteWriteOffStage}
+									onStartStage={handleStartStage}
+									onChangeStageStatus={handleChangeStageStatus}
+									onPayStage={(stageToPay) => {
+										setSelectedInstallmentStage(stageToPay);
+										setIsFiscalModalOpen(true);
+									}}
+									onApplyStageDiscount={() => {
+										setDiscountPercent(10);
+										showToast("Применена скидка врача 10% на план лечения", "success");
+									}}
+									onOpenLabOrder={handleOpenLabOrder}
+									onOneClickLabOrder={handleOneClickLabOrder}
+									onOpenInstallment={(stageToFinance) => {
+										setSelectedInstallmentStage(stageToFinance);
+										setIsInstallmentModalOpen(true);
+									}}
+								/>
+							))}
+						</div>
+					)}
 				</div>
 			)}
 
@@ -2239,6 +2797,517 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						targetMode="both"
 					/>
 				</Suspense>
+			)}
+
+			{/* Manual Service Addition from Catalog Modal (Mandates 8e, 8k) */}
+			{isAddServiceModalOpen && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="add-service-modal-title"
+					data-testid="add-service-from-catalog-modal"
+				>
+					<div
+						className="w-full max-w-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl border border-[var(--line,var(--border,#cbd5e1))] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+						onClick={(e) => e.stopPropagation()}
+					>
+						{/* Header */}
+						<div className="flex items-center justify-between p-4 border-b border-[var(--line,var(--border,#cbd5e1))]">
+							<div className="flex items-center gap-2.5">
+								<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal)]/20">
+									<FolderPlus size={18} />
+								</div>
+								<div>
+									<h3 id="add-service-modal-title" className="text-sm font-black text-[var(--ink,#0f172a)]">
+										Добавить услугу из каталога
+									</h3>
+									<p className="text-[11px] text-[var(--muted,#64748b)]">
+										Прейскурант клиники & Номенклатура Минздрава 804н (Мандат 8e)
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									setIsAddServiceModalOpen(false);
+									setSelectedCatalogItem(null);
+								}}
+								className="p-1.5 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors"
+								aria-label="Закрыть окно"
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						{/* Body */}
+						<div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+							{/* Search & Category Filter */}
+							<div className="space-y-2">
+								<div className="relative">
+									<Search
+										size={15}
+										className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted,#64748b)]"
+									/>
+									<input
+										type="text"
+										value={serviceSearchQuery}
+										onChange={(e) => setServiceSearchQuery(e.target.value)}
+										placeholder="Поиск по названию или коду 804н (кариес, коронка, имплант, A16.07...)"
+										className="w-full h-9 pl-9 pr-8 text-xs rounded-xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+										data-testid="catalog-service-search-input"
+									/>
+									{serviceSearchQuery && (
+										<button
+											type="button"
+											onClick={() => setServiceSearchQuery("")}
+											className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+										>
+											<X size={14} />
+										</button>
+									)}
+								</div>
+
+								{/* Category Pills */}
+								{availableCategories.length > 0 && (
+									<div className="flex items-center gap-1 overflow-x-auto pb-1 max-w-full">
+										<button
+											type="button"
+											onClick={() => setServiceCategoryFilter("all")}
+											className={`h-6 px-2.5 rounded-lg text-[11px] font-bold cursor-pointer transition-colors shrink-0 ${
+												serviceCategoryFilter === "all"
+													? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+													: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink)] border border-[var(--line,#e2e8f0)]"
+											}`}
+										>
+											Все ({effectiveCatalog.length})
+										</button>
+										{availableCategories.map((cat) => (
+											<button
+												key={cat}
+												type="button"
+												onClick={() => setServiceCategoryFilter(cat)}
+												className={`h-6 px-2.5 rounded-lg text-[11px] font-bold cursor-pointer transition-colors shrink-0 ${
+													serviceCategoryFilter === cat
+														? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+														: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink)] border border-[var(--line,#e2e8f0)]"
+												}`}
+											>
+												{cat}
+											</button>
+										))}
+									</div>
+								)}
+							</div>
+
+							{/* Services List */}
+							<div className="border border-[var(--line,var(--border,#cbd5e1))] rounded-2xl overflow-hidden max-h-48 overflow-y-auto divide-y divide-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
+								{filteredCatalogServices.length === 0 ? (
+									<div className="p-4 text-center text-xs text-[var(--muted,#64748b)]">
+										Услуги не найдены. Попробуйте изменить поисковый запрос.
+									</div>
+								) : (
+									filteredCatalogServices.map((item) => {
+										const isSelected = selectedCatalogItem?.id === item.id;
+										return (
+											<div
+												key={item.id}
+												onClick={() => setSelectedCatalogItem(item)}
+												data-testid={`catalog-item-${item.id}`}
+												className={`p-2.5 flex items-center justify-between gap-3 cursor-pointer transition-colors ${
+													isSelected
+														? "bg-[var(--teal-soft,var(--paper-soft))] border-l-4 border-l-[var(--teal,var(--brand-primary))]"
+														: "hover:bg-[var(--paper-strong,#ffffff)]"
+												}`}
+											>
+												<div className="min-w-0 flex-1">
+													<div className="flex items-center gap-1.5 flex-wrap">
+														<span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--teal-dark,var(--teal))]">
+															{item.order804nCode || item.code || item.id}
+														</span>
+														<span className="text-[10px] text-[var(--muted,#64748b)]">
+															{item.category}
+														</span>
+													</div>
+													<div className="font-semibold text-xs text-[var(--ink,#0f172a)] truncate mt-0.5">
+														{item.title}
+													</div>
+												</div>
+												<div className="text-right shrink-0 flex items-center gap-2">
+													<span className="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">
+														{(item.basePriceRub || 0).toLocaleString("ru-RU")} ₽
+													</span>
+													{isSelected && (
+														<Check size={14} className="text-[var(--teal,var(--brand-primary))]" />
+													)}
+												</div>
+											</div>
+										);
+									})
+								)}
+							</div>
+
+							{/* Configuration when a service is selected */}
+							{selectedCatalogItem && (
+								<div className="p-3 rounded-2xl bg-[var(--paper-strong,#ffffff)] border border-[var(--teal)]/40 space-y-3 shadow-xs">
+									<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2">
+										<div className="min-w-0">
+											<div className="text-[10px] text-[var(--muted)] uppercase font-bold tracking-wider">
+												Выбранная процедура:
+											</div>
+											<div className="font-bold text-xs text-[var(--ink)] truncate">
+												{selectedCatalogItem.title}
+											</div>
+										</div>
+										<span className="font-mono font-bold text-sm text-emerald-600 shrink-0">
+											{(selectedCatalogItem.basePriceRub || 0).toLocaleString("ru-RU")} ₽ / ед.
+										</span>
+									</div>
+
+									{/* Target Stage selector */}
+									<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+										<label className="text-[11px] font-bold text-[var(--muted)]">
+											Назначить в этап плана:
+										</label>
+										<select
+											value={serviceTargetStageNumber}
+											onChange={(e) => setServiceTargetStageNumber(Number(e.target.value))}
+											className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-bold text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+											data-testid="target-stage-selector"
+										>
+											{stages.map((st) => (
+												<option key={st.stageNumber} value={st.stageNumber}>
+													Этап {romanizeStageNumber(st.stageNumber)}: {st.title}
+												</option>
+											))}
+											{stages.length === 0 && (
+												<option value={1}>Этап I: Клинический этап</option>
+											)}
+										</select>
+									</div>
+
+									{/* FDI Tooth Selector */}
+									<div className="space-y-1.5">
+										<div className="flex items-center justify-between">
+											<label className="text-[11px] font-bold text-[var(--muted)]">
+												Привязка к зубу (FDI ISO 3950):
+											</label>
+											<button
+												type="button"
+												onClick={() => setSelectedToothForService(null)}
+												className={`text-[10px] px-2 py-0.5 rounded-md font-bold cursor-pointer transition-colors ${
+													selectedToothForService === null
+														? "bg-[var(--teal)] text-white"
+														: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
+												}`}
+											>
+												Без зуба / Общая
+											</button>
+										</div>
+
+										{/* Quick tooth selector chips */}
+										<div className="space-y-1 bg-[var(--paper-soft)] p-2 rounded-xl border border-[var(--line)]">
+											{/* Upper Jaw: Q1 (18..11) | Q2 (21..28) */}
+											<div className="flex items-center justify-center gap-1 flex-wrap text-[10px] font-mono font-bold">
+												<span className="text-[9px] text-[var(--muted)] mr-1">В/Ч:</span>
+												{[18, 17, 16, 15, 14, 13, 12, 11].map((t) => (
+													<button
+														key={t}
+														type="button"
+														onClick={() => setSelectedToothForService(selectedToothForService === t ? null : t)}
+														className={`w-6 h-6 rounded flex items-center justify-center cursor-pointer transition-all ${
+															selectedToothForService === t
+																? "bg-[var(--teal)] text-white shadow-2xs font-black"
+																: "bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)]"
+														}`}
+													>
+														{t}
+													</button>
+												))}
+												<span className="text-[var(--line)] font-normal">|</span>
+												{[21, 22, 23, 24, 25, 26, 27, 28].map((t) => (
+													<button
+														key={t}
+														type="button"
+														onClick={() => setSelectedToothForService(selectedToothForService === t ? null : t)}
+														className={`w-6 h-6 rounded flex items-center justify-center cursor-pointer transition-all ${
+															selectedToothForService === t
+																? "bg-[var(--teal)] text-white shadow-2xs font-black"
+																: "bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)]"
+														}`}
+													>
+														{t}
+													</button>
+												))}
+											</div>
+
+											{/* Lower Jaw: Q4 (48..41) | Q3 (31..38) */}
+											<div className="flex items-center justify-center gap-1 flex-wrap text-[10px] font-mono font-bold">
+												<span className="text-[9px] text-[var(--muted)] mr-1">Н/Ч:</span>
+												{[48, 47, 46, 45, 44, 43, 42, 41].map((t) => (
+													<button
+														key={t}
+														type="button"
+														onClick={() => setSelectedToothForService(selectedToothForService === t ? null : t)}
+														className={`w-6 h-6 rounded flex items-center justify-center cursor-pointer transition-all ${
+															selectedToothForService === t
+																? "bg-[var(--teal)] text-white shadow-2xs font-black"
+																: "bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)]"
+														}`}
+													>
+														{t}
+													</button>
+												))}
+												<span className="text-[var(--line)] font-normal">|</span>
+												{[31, 32, 33, 34, 35, 36, 37, 38].map((t) => (
+													<button
+														key={t}
+														type="button"
+														onClick={() => setSelectedToothForService(selectedToothForService === t ? null : t)}
+														className={`w-6 h-6 rounded flex items-center justify-center cursor-pointer transition-all ${
+															selectedToothForService === t
+																? "bg-[var(--teal)] text-white shadow-2xs font-black"
+																: "bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)]"
+														}`}
+													>
+														{t}
+													</button>
+												))}
+											</div>
+										</div>
+									</div>
+
+									{/* Quantity & Discount */}
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+										{/* Quantity */}
+										<div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+											<span className="text-[11px] font-bold text-[var(--muted)]">Количество:</span>
+											<div className="flex items-center gap-1.5">
+												<button
+													type="button"
+													onClick={() => setServiceQuantity(Math.max(1, serviceQuantity - 1))}
+													className="w-7 h-7 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-bold flex items-center justify-center cursor-pointer hover:bg-[var(--line)]"
+												>
+													-
+												</button>
+												<span className="w-8 text-center font-mono font-bold text-xs">
+													{serviceQuantity}
+												</span>
+												<button
+													type="button"
+													onClick={() => setServiceQuantity(serviceQuantity + 1)}
+													className="w-7 h-7 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-bold flex items-center justify-center cursor-pointer hover:bg-[var(--line)]"
+												>
+													+
+												</button>
+											</div>
+										</div>
+
+										{/* Doctor Discount */}
+										<div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+											<span className="text-[11px] font-bold text-[var(--muted)]">Скидка врача:</span>
+											<div className="flex items-center gap-1">
+												{[0, 10, 50, 100].map((pct) => (
+													<button
+														key={pct}
+														type="button"
+														onClick={() => setServiceDiscountPercent(pct)}
+														className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold cursor-pointer transition-colors ${
+															serviceDiscountPercent === pct
+																? "bg-[var(--teal)] text-white"
+																: "bg-[var(--paper-strong)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
+														}`}
+													>
+														{pct}%
+													</button>
+												))}
+												<input
+													type="number"
+													min="0"
+													max="100"
+													value={serviceDiscountPercent}
+													onChange={(e) => {
+														const v = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+														setServiceDiscountPercent(v);
+													}}
+													className="w-10 h-7 text-center font-mono font-bold text-xs rounded border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]"
+												/>
+											</div>
+										</div>
+									</div>
+
+									{/* Total Calculation Strip (Mandate 8k: Kopeck Exact Money) */}
+									{(() => {
+										const basePrice = selectedCatalogItem.basePriceRub || 0;
+										const grossRub = basePrice * serviceQuantity;
+										const discRub = Math.round((grossRub * serviceDiscountPercent) / 100);
+										const netRub = Math.max(0, grossRub - discRub);
+										return (
+											<div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs font-bold">
+												<span className="text-emerald-900 dark:text-emerald-200">
+													Итого к начислению в план:
+												</span>
+												<div className="flex items-center gap-2">
+													{discRub > 0 && (
+														<span className="text-[11px] text-[var(--muted)] line-through font-mono">
+															{grossRub.toLocaleString("ru-RU")} ₽
+														</span>
+													)}
+													<span className="font-mono text-sm text-emerald-700 dark:text-emerald-300">
+														{netRub.toLocaleString("ru-RU")} ₽
+													</span>
+												</div>
+											</div>
+										);
+									})()}
+								</div>
+							)}
+						</div>
+
+						{/* Footer */}
+						<div className="p-4 border-t border-[var(--line,var(--border,#cbd5e1))] flex items-center justify-between gap-3 bg-[var(--paper-soft,#f8fafc)]">
+							<button
+								type="button"
+								onClick={() => {
+									setIsAddServiceModalOpen(false);
+									setSelectedCatalogItem(null);
+								}}
+								className="min-h-[44px] sm:min-h-[36px] px-4 py-2 rounded-xl text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)] cursor-pointer transition-colors"
+							>
+								Отмена
+							</button>
+
+							<button
+								type="button"
+								disabled={!selectedCatalogItem}
+								onClick={handleConfirmAddService}
+								data-testid="confirm-add-service-to-stage-btn"
+								className="min-h-[44px] sm:min-h-[36px] px-5 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,#0f766e)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all shadow-md flex items-center gap-1.5"
+							>
+								<Plus size={15} />
+								<span>Добавить в этап</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Create New Plan Stage Modal (Mandate 8e: Doctor Autonomy) */}
+			{isCreateStageModalOpen && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="create-stage-modal-title"
+					data-testid="create-stage-modal"
+				>
+					<div
+						className="w-full max-w-lg bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl border border-[var(--line,var(--border,#cbd5e1))] shadow-2xl flex flex-col overflow-hidden"
+						onClick={(e) => e.stopPropagation()}
+					>
+						{/* Header */}
+						<div className="flex items-center justify-between p-4 border-b border-[var(--line,var(--border,#cbd5e1))]">
+							<div className="flex items-center gap-2.5">
+								<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal)]/20">
+									<Layers size={18} />
+								</div>
+								<div>
+									<h3 id="create-stage-modal-title" className="text-sm font-black text-[var(--ink,#0f172a)]">
+										Новый этап плана лечения
+									</h3>
+									<p className="text-[11px] text-[var(--muted,#64748b)]">
+										Выберите профиль или создайте индивидуальный этап
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsCreateStageModalOpen(false)}
+								className="p-1.5 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors"
+								aria-label="Закрыть окно"
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						{/* Body */}
+						<div className="p-4 space-y-4 text-xs">
+							{/* Presets Grid */}
+							<div className="space-y-1.5">
+								<label className="text-[11px] font-bold text-[var(--muted)]">
+									Клиническая специализация этапа:
+								</label>
+								<div className="grid grid-cols-2 gap-2">
+									{[
+										{ id: "therapy", label: "Терапия и санация", desc: "Кариес, эндодонтия, гигиена" },
+										{ id: "surgery", label: "Хирургия и имплантация", desc: "Удаление, пластика, импланты" },
+										{ id: "orthopedics", label: "Ортопедическая реабилитация", desc: "Коронки, мосты, виниры" },
+										{ id: "orthodontics", label: "Ортодонтическое лечение", desc: "Брекеты, элайнеры, прикус" },
+										{ id: "periodontics", label: "Пародонтология", desc: "SRP, Вектор, кюретаж" },
+										{ id: "custom", label: "Индивидуальный этап", desc: "Специализированный протокол" },
+									].map((preset) => {
+										const isSelected = newStagePreset === preset.id;
+										return (
+											<button
+												key={preset.id}
+												type="button"
+												onClick={() => setNewStagePreset(preset.id as any)}
+												className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+													isSelected
+														? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal,var(--brand-primary))] shadow-xs"
+														: "bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#ffffff)]"
+												}`}
+											>
+												<div className="font-bold text-xs text-[var(--ink,#0f172a)]">
+													{preset.label}
+												</div>
+												<div className="text-[10px] text-[var(--muted,#64748b)] mt-0.5 line-clamp-1">
+													{preset.desc}
+												</div>
+											</button>
+										);
+									})}
+								</div>
+							</div>
+
+							{/* Custom Stage Title input */}
+							<div className="space-y-1.5">
+								<label className="text-[11px] font-bold text-[var(--muted)]">
+									Пользовательское название этапа (необязательно):
+								</label>
+								<input
+									type="text"
+									value={newStageCustomTitle}
+									onChange={(e) => setNewStageCustomTitle(e.target.value)}
+									placeholder="Например: Протезирование на мультиюнитах All-on-4"
+									className="w-full h-9 px-3 text-xs rounded-xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+									data-testid="create-stage-title-input"
+								/>
+							</div>
+						</div>
+
+						{/* Footer */}
+						<div className="p-4 border-t border-[var(--line,var(--border,#cbd5e1))] flex items-center justify-between gap-3 bg-[var(--paper-soft,#f8fafc)]">
+							<button
+								type="button"
+								onClick={() => setIsCreateStageModalOpen(false)}
+								className="min-h-[44px] sm:min-h-[36px] px-4 py-2 rounded-xl text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)] cursor-pointer transition-colors"
+							>
+								Отмена
+							</button>
+
+							<button
+								type="button"
+								onClick={handleConfirmCreateStage}
+								data-testid="confirm-create-stage-btn"
+								className="min-h-[44px] sm:min-h-[36px] px-5 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,#0f766e)] cursor-pointer transition-all shadow-md flex items-center gap-1.5"
+							>
+								<Plus size={15} />
+								<span>Создать этап</span>
+							</button>
+						</div>
+					</div>
+				</div>
 			)}
 		</div>
 	);

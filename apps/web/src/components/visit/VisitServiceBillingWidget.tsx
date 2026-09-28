@@ -37,12 +37,9 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 	readOnly = false,
 	className = "",
 }) => {
-	const [services, setServices] = useState<VisitBillingServiceItem[]>(() => {
-		if (initialServices && initialServices.length > 0) {
-			return [...initialServices];
-		}
-		return [...DEFAULT_CHAIRSIDE_SERVICES];
-	});
+	const [services, setServices] = useState<VisitBillingServiceItem[]>(() =>
+		initialServices && initialServices.length > 0 ? [...initialServices] : [...DEFAULT_CHAIRSIDE_SERVICES]
+	);
 
 	const [globalDiscountPercent, setGlobalDiscountPercent] = useState<number>(0);
 	const [isGlobalWarranty100, setIsGlobalWarranty100] = useState<boolean>(false);
@@ -58,8 +55,71 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 		[onServicesChange]
 	);
 
-	// Слушатель событий добавления и отката услуг от Копилота (Мандат 8e / DEF-COPILOT-01)
+	// Слушатель событий добавления и отката услуг от Копилота и клинических протоколов (Мандаты 8b, 8e, 8n)
 	useEffect(() => {
+		const handleAddServicesToInvoice = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			if (!detail) return;
+			const rawList: any[] = Array.isArray(detail)
+				? detail
+				: Array.isArray(detail.services)
+				? detail.services
+				: Array.isArray(detail.items)
+				? detail.items
+				: detail.service
+				? [detail.service]
+				: [];
+			if (rawList.length === 0) return;
+
+			const newItems: VisitBillingServiceItem[] = rawList.map((s: any, idx: number) => {
+				const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+					? crypto.randomUUID().slice(0, 8)
+					: `${Date.now()}-${idx}`;
+				const priceRub = Number(
+					s.unitPriceRub ??
+					s.priceRub ??
+					s.price ??
+					(typeof s.priceKopecks === "number" ? s.priceKopecks / 100 : 0)
+				);
+				const tooth = s.toothCode ?? s.toothNumber ?? detail.toothCode ?? detail.toothNumber;
+				return {
+					id: s.id || `inv-svc-${Date.now()}-${idSuffix}`,
+					code804n: s.code804n || s.code || "A16.07.001",
+					title: s.title || s.name || s.nameRu || "Стоматологическая услуга",
+					toothCode: tooth ? String(tooth) : undefined,
+					quantity: Number(s.quantity) > 0 ? Number(s.quantity) : 1,
+					unitPriceRub: Math.max(0, priceRub),
+					discountPercent: Number(s.discountPercent) || 0,
+					discountRub: Number(s.discountRub) || 0,
+					isWarranty: Boolean(s.isWarranty),
+				};
+			});
+
+			setServices((prev) => {
+				const isPlaceholder =
+					prev.length === DEFAULT_CHAIRSIDE_SERVICES.length &&
+					prev.every((item, idx) => item.id === DEFAULT_CHAIRSIDE_SERVICES[idx]?.id);
+				const shouldReplace = Boolean(detail.replaceExisting) || isPlaceholder;
+				const next = shouldReplace ? newItems : [...prev, ...newItems];
+				onServicesChange?.(next);
+				return next;
+			});
+			if (onAddBillingItem) {
+				newItems.forEach((it) => {
+					const toothNum = it.toothCode ? Number(it.toothCode) || undefined : undefined;
+					onAddBillingItem({
+						code804n: it.code804n,
+						title: it.title,
+						priceRub: it.unitPriceRub,
+						quantity: it.quantity,
+						...(toothNum !== undefined ? { toothNumber: toothNum } : {}),
+					});
+				});
+			}
+			const totalSum = newItems.reduce((acc, it) => acc + it.unitPriceRub * it.quantity, 0);
+			showToast(`Услуги (${newItems.length}) на сумму ${totalSum.toLocaleString("ru-RU")} ₽ добавлены в счёт`, "success", 3000);
+		};
+
 		const handleAddBillingEvent = (e: Event) => {
 			const detail = (e as CustomEvent)?.detail;
 			if (!detail) return;
@@ -79,7 +139,10 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 				isWarranty: false,
 			};
 			setServices((prev) => {
-				const next = [...prev, newItem];
+				const isPlaceholder =
+					prev.length === DEFAULT_CHAIRSIDE_SERVICES.length &&
+					prev.every((pItem, idx) => pItem.id === DEFAULT_CHAIRSIDE_SERVICES[idx]?.id);
+				const next = isPlaceholder ? [newItem] : [...prev, newItem];
 				onServicesChange?.(next);
 				return next;
 			});
@@ -102,9 +165,11 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 			});
 		};
 
+		window.addEventListener("dente-add-services-to-invoice", handleAddServicesToInvoice);
 		window.addEventListener("dente-add-billing-item", handleAddBillingEvent);
 		window.addEventListener("dente-remove-billing-items", handleRemoveBillingEvent);
 		return () => {
+			window.removeEventListener("dente-add-services-to-invoice", handleAddServicesToInvoice);
 			window.removeEventListener("dente-add-billing-item", handleAddBillingEvent);
 			window.removeEventListener("dente-remove-billing-items", handleRemoveBillingEvent);
 		};
@@ -328,55 +393,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 			)
 			.join("");
 
-		const html = `<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<title>Смета оказанных стоматологических услуг</title>
-<style>
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; }
-.header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; }
-h1 { margin: 0 0 8px 0; font-size: 20px; font-weight: 800; }
-.clinic { font-size: 13px; color: #475569; }
-.patient { margin: 16px 0; font-size: 14px; }
-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
-th { background: #f8fafc; font-weight: 700; padding: 10px 12px; border-bottom: 2px solid #cbd5e1; text-align: left; }
-.total-box { margin-top: 24px; text-align: right; font-size: 14px; }
-.total-due { font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 8px; }
-</style>
-</head>
-<body>
-<div class="header">
-  <h1>СМЕТА ОКАЗАННЫХ СТОМАТОЛОГИЧЕСКИХ УСЛУГ</h1>
-  <div class="clinic">${clinicLegalName} • Номенклатура Минздрава РФ № 804н</div>
-</div>
-<div class="patient">
-  <div><strong>Пациент:</strong> ${patientName}</div>
-  <div><strong>Лечащий врач:</strong> ${doctorName}</div>
-  <div><strong>Дата:</strong> ${new Date().toLocaleDateString("ru-RU")}</div>
-</div>
-<table>
-  <thead>
-    <tr>
-      <th>№</th>
-      <th>Код 804н</th>
-      <th>Наименование услуги</th>
-      <th style="text-align: center;">Кол-во</th>
-      <th style="text-align: right;">Цена</th>
-      <th style="text-align: right;">Сумма</th>
-    </tr>
-  </thead>
-  <tbody>
-    ${printRows}
-  </tbody>
-</table>
-<div class="total-box">
-  <div>Сумма по прейскуранту: <strong>${totals.rawTotalRub.toLocaleString("ru-RU")} ₽</strong></div>
-  ${totals.discountRub > 0 ? `<div style="color: #b45309;">Скидка врача: <strong>-${totals.discountRub.toLocaleString("ru-RU")} ₽ (${totals.effectiveDiscountPercent}%)</strong></div>` : ""}
-  <div class="total-due">Итого к оплате: ${totals.isWarranty100 ? "0 ₽ (Скидка 100% — Гарантийный прием)" : `${totals.totalDueRub.toLocaleString("ru-RU")} ₽`}</div>
-</div>
-</body>
-</html>`;
+		const html = `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Смета оказанных стоматологических услуг</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:30px;color:#0f172a}.header{border-bottom:2px solid #0f172a;padding-bottom:12px;margin-bottom:16px}h1{margin:0 0 6px 0;font-size:18px;font-weight:800}.clinic{font-size:12px;color:#475569}.patient{margin:12px 0;font-size:13px}table{width:100%;border-collapse:collapse;margin:16px 0;font-size:12px}th,td{padding:8px 10px;border-bottom:1px solid #cbd5e1;text-align:left}th{background:#f8fafc;font-weight:700;border-bottom:2px solid #94a3b8}.total-box{margin-top:20px;text-align:right;font-size:13px}.total-due{font-size:16px;font-weight:800;color:#0f172a;margin-top:6px}</style></head><body><div class="header"><h1>СМЕТА ОКАЗАННЫХ СТОМАТОЛОГИЧЕСКИХ УСЛУГ</h1><div class="clinic">${clinicLegalName} • Прейскурант услуг</div></div><div class="patient"><div><strong>Пациент:</strong> ${patientName}</div><div><strong>Лечащий врач:</strong> ${doctorName}</div><div><strong>Дата:</strong> ${new Date().toLocaleDateString("ru-RU")}</div></div><table><thead><tr><th>№</th><th>Код услуги</th><th>Наименование услуги</th><th style="text-align:center;">Кол-во</th><th style="text-align:right;">Цена</th><th style="text-align:right;">Сумма</th></tr></thead><tbody>${printRows}</tbody></table><div class="total-box"><div>Сумма по прейскуранту: <strong>${totals.rawTotalRub.toLocaleString("ru-RU")} ₽</strong></div>${totals.discountRub > 0 ? `<div style="color:#b45309;">Скидка врача: <strong>-${totals.discountRub.toLocaleString("ru-RU")} ₽ (${totals.effectiveDiscountPercent}%)</strong></div>` : ""}<div class="total-due">Итого к оплате: ${totals.isWarranty100 ? "0 ₽ (Скидка 100% — Гарантийный прием)" : `${totals.totalDueRub.toLocaleString("ru-RU")} ₽`}</div></div></body></html>`;
 
 		void hardwarePrinter.printHtmlWithPopupFallback(html, {
 			title: "Смета услуг визита",
@@ -726,7 +743,7 @@ th { background: #f8fafc; font-weight: 700; padding: 10px 12px; border-bottom: 2
 							title={
 								totals.isWarranty100
 									? "Закрыть визит по 100% гарантии (0 ₽)"
-									: `Перейти к оплате ${totals.totalDueRub.toLocaleString("ru-RU")} ₽ в кассу 54-ФЗ`
+									: `Перейти к оплате ${totals.totalDueRub.toLocaleString("ru-RU")} ₽ в кассу`
 							}
 							className={`h-9 px-5 rounded-xl text-white text-xs font-bold cursor-pointer transition-all flex items-center gap-2 shadow-sm ${
 								totals.isWarranty100
@@ -743,7 +760,7 @@ th { background: #f8fafc; font-weight: 700; padding: 10px 12px; border-bottom: 2
 							) : (
 								<>
 									<CreditCard size={16} />
-									<span>Оплатить в кассу 54-ФЗ ({totals.totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+									<span>Оплатить в кассу ({totals.totalDueRub.toLocaleString("ru-RU")} ₽)</span>
 								</>
 							)}
 						</button>
