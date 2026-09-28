@@ -61,6 +61,45 @@ export interface TreatmentPlanItem {
 
 export type TreatmentPlanStageStatus = "draft" | "agreed" | "in_progress" | "completed";
 
+export type TreatmentPlanWorkflowStatus =
+	| "DRAFT"
+	| "PRESENTED"
+	| "ACCEPTED"
+	| "IN_PROGRESS"
+	| "COMPLETED";
+
+export function formatWarrantyYearsText(warrantyYears: number | string): string {
+	if (typeof warrantyYears === "string") return warrantyYears;
+	if (warrantyYears === 1) return "1 год";
+	if (warrantyYears >= 2 && warrantyYears <= 4) return `${warrantyYears} года`;
+	return `${warrantyYears} лет`;
+}
+
+export function mapWorkflowStatusToDbStatus(
+	status: TreatmentPlanWorkflowStatus | string,
+): "Draft" | "Active" | "Approved" | "Completed" | "Rejected" {
+	const normalized = (status || "").toUpperCase();
+	switch (normalized) {
+		case "DRAFT":
+		case "PRESENTED":
+			return "Draft";
+		case "ACCEPTED":
+		case "AGREED":
+		case "APPROVED":
+			return "Approved";
+		case "IN_PROGRESS":
+		case "ACTIVE":
+			return "Active";
+		case "COMPLETED":
+		case "SIGNED":
+			return "Completed";
+		case "REJECTED":
+			return "Rejected";
+		default:
+			return "Draft";
+	}
+}
+
 export interface TreatmentPlanStage {
 	readonly stageNumber: number; // 1, 2, 3
 	readonly stageKind: TreatmentPlanStageKind;
@@ -129,6 +168,7 @@ export interface TreatmentPlanTier {
 	readonly installments: Record<3 | 6 | 12 | 24, TierInstallmentPlan>;
 	readonly ndflDetails: NdflDeductionResult;
 	readonly stagedSchedule?: StagedPaymentScheduleBreakdown | undefined;
+	readonly workflowStatus?: TreatmentPlanWorkflowStatus | undefined;
 }
 
 export interface DigitalSignatureAgreementData {

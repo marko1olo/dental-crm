@@ -39,7 +39,8 @@ import {
 	Sparkles,
 	Star,
 } from "lucide-react";
-import type { TreatmentPlanTier, TreatmentPlanTierId } from "./types";
+import { parseKopecks } from "@dental/shared";
+import { formatWarrantyYearsText, type TreatmentPlanTier, type TreatmentPlanTierId } from "./types";
 import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
 
 export interface TreatmentPlan3TierComparisonProps {
@@ -63,9 +64,8 @@ function getTierShortLabel(tier: TreatmentPlanTier): string {
 	}
 	const firstWord = tier.title.split(/[\s(]/)[0]?.trim();
 	if (firstWord && firstWord.length > 0) {
-		if (firstWord.toLowerCase().startsWith("эконом")) return "Эконом";
-		if (firstWord.toLowerCase().startsWith("стандарт")) return "Стандарт";
-		if (firstWord.toLowerCase().startsWith("оптимал")) return "Оптимум";
+		if (firstWord.toLowerCase().startsWith("эконом") || firstWord.toLowerCase().startsWith("базов")) return "Эконом";
+		if (firstWord.toLowerCase().startsWith("стандарт") || firstWord.toLowerCase().startsWith("оптимал")) return "Оптимум";
 		if (firstWord.toLowerCase().startsWith("премиум")) return "Премиум";
 		return firstWord;
 	}
@@ -154,18 +154,20 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 		const isSelected = activeTierId === tier.tierId;
 		const isExpandedStages = expandedStagesTierId === tier.tierId;
 
-		// Financial Calculations in whole rubles
+		// Financial Calculations in whole rubles with kopeck-exact precision
 		const monthlyPayment =
 			tier.installments?.[installmentMonths]?.monthlyPaymentRub ??
 			Math.round(tier.totalRub / installmentMonths || 0);
 
-		const discount5PctAmount = Math.round(tier.totalRub * 0.05);
-		const priceWith5PctDiscount = Math.max(0, tier.totalRub - discount5PctAmount);
+		const effectiveTotalKopecks = tier.totalKopecks || parseKopecks(tier.totalRub);
+		const discount5PctKopecks = Math.round(effectiveTotalKopecks * 0.05);
+		const discount5PctAmount = Math.round(discount5PctKopecks / 100);
+		const priceWith5PctDiscount = Math.max(0, Math.round((effectiveTotalKopecks - discount5PctKopecks) / 100));
 
-		// Staged 30/40/30
-		const stage1Rub = Math.round(tier.totalRub * 0.3);
-		const stage2Rub = Math.round(tier.totalRub * 0.4);
-		const stage3Rub = tier.totalRub - stage1Rub - stage2Rub;
+		// Staged 30/40/30 from exact kopeck schedule
+		const stage1Rub = tier.stagedSchedule?.stage1AdvanceTherapyRub ?? Math.round(tier.totalRub * 0.3);
+		const stage2Rub = tier.stagedSchedule?.stage2SurgeryImplantRub ?? Math.round(tier.totalRub * 0.4);
+		const stage3Rub = tier.stagedSchedule?.stage3OrthopedicsRub ?? (tier.totalRub - stage1Rub - stage2Rub);
 
 		return (
 			<div
@@ -314,9 +316,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 								<Shield size={11} /> Гарантия клиники
 							</span>
 							<strong className="text-[11px] text-[var(--ink,#0f172a)] truncate mt-0.5">
-								{typeof tier.warrantyYears === "number"
-									? `${tier.warrantyYears} ${tier.warrantyYears === 1 ? "год" : tier.warrantyYears >= 2 && tier.warrantyYears <= 4 ? "года" : "лет"}`
-									: tier.warrantyYears}
+								{formatWarrantyYearsText(tier.warrantyYears)}
 							</strong>
 						</div>
 
@@ -498,7 +498,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 								3-Tier Сравнение планов (Эконом / Оптимум / Премиум)
 							</span>
 							<span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20 whitespace-nowrap">
-								СтАР / 804н
+								Стандарты СтАР
 							</span>
 						</div>
 						<p className="text-[11px] text-[var(--muted,#64748b)] m-0 mt-0.5 leading-relaxed break-words">

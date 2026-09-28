@@ -1164,6 +1164,11 @@
 }
 
 @media print {
+	@page {
+		size: A4 portrait;
+		margin: 12mm 10mm 12mm 10mm;
+	}
+
 	body * {
 		visibility: hidden;
 	}
@@ -1193,6 +1198,8 @@
 	.patient-stage-card {
 		border: 1px solid #cbd5e1 !important;
 		background: #ffffff !important;
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
 	}
 	.patient-stage-pill {
 		background: #f1f5f9 !important;
@@ -1211,5 +1218,32 @@
 	.patient-finance-card.highlight {
 		border-color: #0d9488 !important;
 		background: #f0fdfa !important;
+	}
+	.treatment-print-table {
+		width: 100% !important;
+		border-collapse: collapse !important;
+		page-break-inside: auto !important;
+		font-size: 8.5pt !important;
+	}
+	.treatment-print-table thead {
+		display: table-header-group !important;
+	}
+	.treatment-print-table tr {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+	.treatment-print-table th,
+	.treatment-print-table td {
+		border-color: #cbd5e1 !important;
+		color: #0f172a !important;
+	}
+	.treatment-print-signatures,
+	.treatment-print-warranties,
+	.patient-finance-grid {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+	.treatment-doc-watermark {
+		color: rgba(0, 0, 0, 0.03) !important;
 	}
 }

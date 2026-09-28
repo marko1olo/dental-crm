@@ -53,18 +53,22 @@ import {
 	calculateStaged304030Schedule,
 	type TreatmentPlanValidateAndCommentResponse,
 } from "@dental/shared";
-import type {
-	NdflDeductionResult,
-	TreatmentPlanStage,
-	TreatmentPlanTier,
-	TreatmentPlanTierId,
+import {
+	formatWarrantyYearsText,
+	type NdflDeductionResult,
+	type TreatmentPlanStage,
+	type TreatmentPlanTier,
+	type TreatmentPlanTierId,
+	type TreatmentPlanWorkflowStatus,
 } from "./types";
 import type { ToothData } from "../odontogram/ToothChart";
 import { AuthArtBackground } from "../auth/AuthArtBackground";
 import {
 	generate3TierPlanComparison,
 	computeTierInstallments,
+	isDemoShowcaseMode,
 } from "./treatmentPlanStagesEngine";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { MissingPriceAlert } from "./MissingPriceAlert";
 import {
 	applyCopilotCommandToPlan,
@@ -177,6 +181,8 @@ export interface TreatmentPlanPresenterModalProps {
 	readonly isDraft?: boolean | undefined;
 	readonly isSigned?: boolean | undefined;
 	readonly status?: string | undefined;
+	readonly planId?: string | undefined;
+	readonly workflowStatus?: TreatmentPlanWorkflowStatus | undefined;
 	readonly watermarkText?: string | undefined;
 	readonly className?: string | undefined;
 }
@@ -232,6 +238,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	isDraft,
 	isSigned,
 	status,
+	planId,
+	workflowStatus = "PRESENTED",
 	watermarkText,
 	className = "",
 }) => {
@@ -244,7 +252,13 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		status === "signed" ||
 		status === "completed" ||
 		status === "approved" ||
-		status === "issued"
+		status === "issued" ||
+		status === "ACCEPTED" ||
+		status === "Approved" ||
+		status === "COMPLETED" ||
+		status === "Completed" ||
+		workflowStatus === "ACCEPTED" ||
+		workflowStatus === "COMPLETED"
 	);
 	const effectiveWatermark =
 		watermarkText ||
@@ -611,6 +625,21 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		const variantTitle = getTierLetter(effectiveTier.tierId);
 		const message = "Выбор зафиксирован: Пациент выбрал " + variantTitle + " на сумму " + formatRubles(effectiveTier.totalRub);
 		setConfirmedNotice(message);
+
+		if (planId && patientId && !isDemoShowcaseMode()) {
+			fetch(`/api/patients/${encodeURIComponent(patientId)}/treatment-plans/${encodeURIComponent(planId)}/approve-variant`, {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					reason: `Пациент согласовал ${variantTitle} у кресла (ст. 20 323-ФЗ)`,
+				}),
+			}).catch(() => {
+				// Non-blocking in offline or preview environments
+			});
+		}
+
 		onConfirmSelection?.(effectiveTier);
 	};
 
@@ -676,8 +705,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 							<div className="treatment-presenter-header-meta min-w-0 flex-1">
 								<h2 id="treatment-presenter-modal-title" className="treatment-presenter-main-title flex items-center gap-2 flex-wrap">
 									<span className="truncate">Презентация планов лечения</span>
-									<span className="treatment-presenter-law-badge whitespace-nowrap">
-										ПП РФ № 736 & 804н
+									<span className="treatment-presenter-law-badge whitespace-nowrap" title="ПП РФ № 736 & 804н">
+										Прейскурант клиники
 									</span>
 									{planAgeDays > 30 && (
 										<span
@@ -1168,7 +1197,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 													<ShieldCheck size={13} />
 													<span>Гарантия:</span>
 													<span className="treatment-metric-val">
-														{typeof tier.warrantyYears === "number" ? `${tier.warrantyYears} года` : tier.warrantyYears}
+														{formatWarrantyYearsText(tier.warrantyYears)}
 													</span>
 												</div>
 											</div>
@@ -1725,7 +1754,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 								<div className="text-[11px] text-[var(--tp-text-muted)] bg-[var(--tp-surface-soft)] p-3 rounded-xl border border-[var(--tp-border)] flex items-center gap-1.5">
 									<Check size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span>Выдаем готовую официальную Справку об оплате медицинских услуг для ФНС (КНД 1151156)</span>
+									<span>Выдаем готовую официальную справку об оплате услуг для налогового вычета (13% НДФЛ)</span>
 								</div>
 							</div>
 						</div>
@@ -1883,7 +1912,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											</strong>
 											<div className="text-emerald-700 font-bold text-[10.5px] mt-0.5 inline-flex items-center gap-1">
 												<ShieldCheck size={12} className="shrink-0 text-emerald-600" />
-												<span>Гарантия клиники: {selectedTier.warrantyYears} лет</span>
+												<span>Гарантия клиники: {formatWarrantyYearsText(selectedTier.warrantyYears)}</span>
 											</div>
 										</div>
 									</div>
@@ -2025,7 +2054,10 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											• План составлен в соответствии с Клиническими рекомендациями Стоматологической Ассоциации России (СтАР).
 										</p>
 										<p>
-											• Гарантия на терапевтическое и ортопедическое лечение составляет <strong>{selectedTier.warrantyYears} лет</strong> при соблюдении рекомендаций врача и прохождении плановой гигиены каждые 6 месяцев.
+											• Гарантия на выполненные работы и материалы составляет <strong>{formatWarrantyYearsText(selectedTier.warrantyYears)}</strong> при соблюдении рекомендаций врача и прохождении плановой гигиены каждые 6 месяцев.
+										</p>
+										<p>
+											• Информированное согласие (ст. 20 323-ФЗ): Пациент подтверждает ознакомление с планом, этапами, альтернативными сценариями лечения и порядком оплаты.
 										</p>
 									</div>
 
@@ -2228,10 +2260,13 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											1. Услуги оказываются в соответствии с клиническими рекомендациями Стоматологической ассоциации России (СтАР) и стандартами медицинской помощи.
 										</p>
 										<p style={{ margin: "4px 0" }}>
-											2. Гарантийный срок на ортопедические конструкции и пломбировочные материалы составляет <strong>{selectedTier.warrantyYears} лет</strong> при условии соблюдения пациентом правил гигиены и прохождения контрольных осмотров каждые 6 месяцев.
+											2. Гарантийный срок на ортопедические конструкции и пломбировочные материалы составляет <strong>{formatWarrantyYearsText(selectedTier.warrantyYears)}</strong> при условии соблюдения пациентом правил гигиены и прохождения контрольных осмотров каждые 6 месяцев.
 										</p>
 										<p style={{ margin: "4px 0" }}>
-											3. Заказчик уведомлен о праве на получение социального налогового вычета по НДФЛ в размере 13% от стоимости лечения (Код {selectedTier.ndflDetails.code}).
+											3. Дифференцированные гарантии клиники: Базовый / Эконом — 1 год; Оптимальный — 2 года; Премиум — 5 лет (пожизненная международная гарантия производителя на имплантаты Straumann/Astra Tech).
+										</p>
+										<p style={{ margin: "4px 0" }}>
+											4. Заказчик уведомлен о праве на получение социального налогового вычета по НДФЛ в размере 13% от стоимости лечения (Код {selectedTier.ndflDetails.code}).
 										</p>
 									</div>
 

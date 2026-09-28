@@ -169,7 +169,7 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 								Быстрый ввод
 							</span>
 							<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] border border-[var(--line,#cbd5e1)]">
-								Приказ МЗ РФ №804н
+								Прейскурант услуг
 							</span>
 						</div>
 						<p className="text-[11px] text-[var(--muted,#64748b)]">
@@ -444,7 +444,7 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 								<table className="w-full text-[11px] border-collapse">
 									<thead>
 										<tr className="border-b border-[var(--line,var(--border,#cbd5e1))] text-[var(--muted,#64748b)] text-left">
-											<th className="py-1 pr-2">Код 804н</th>
+											<th className="py-1 pr-2">Код услуги</th>
 											<th className="py-1 pr-2">Процедура</th>
 											<th className="py-1 pr-2">Материалы и протокол</th>
 											<th className="py-1 text-right">Тариф</th>

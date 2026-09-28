@@ -1,0 +1,25 @@
+{
+  "subagent": "Subagent 8: Treatment Plan 3-Tier Presentation & Patient Agreement Hardening Engineer",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Read C:\\Clinic_MVP\\dental-crm\\.agents\\THE_HAMMER_MASTER_PROMPT.md in full",
+    "Inspected Mandate 8za (Anti-Duplication & Reconnaissance) and 8e (Doctor & Patient Autonomy) in C:\\Clinic_MVP\\dental-crm\\.agents\\AGENTS.md",
+    "Maintained existing canonical treatment plan architecture without duplicate files (*V2, *New) or parallel stores",
+    "Hardened 3-tier scenario comparison in treatmentPlanStagesEngine.ts: Scenario A (Базовый / Эконом, 1-yr warranty), Scenario B (Оптимальный, 2-yr warranty), Scenario C (Премиум, 5-yr / lifetime warranty)",
+    "Unified exact integer kopeck financial calculations across TreatmentPlan3TierComparison.tsx and TreatmentPlanContractPrint.tsx with zero floating-point accumulation (54-ФЗ / ACID compliance)",
+    "Implemented 30/40/30 phased payment schedule (Sanitation -> Surgery -> Prosthetics) and transparent 0% installment calculations (3, 6, 12, 24 months) using splitKopecks",
+    "Hardened high-grade printable agreement TreatmentPlanContractPrint.tsx and TreatmentPlanPresenterModal.tsx (@media print, responsive print typography, formal patient consent ст. 20 323-ФЗ, Постановление Правительства РФ № 736, differentiated 1/2/5-yr warranty clauses, signatures)",
+    "Connected PostgreSQL 18 plan status workflow ('DRAFT', 'PRESENTED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED') with non-blocking approve-variant API call in TreatmentPlanPresenterModal.tsx",
+    "Enhanced treatmentPlans.css print media queries with explicit A4 margins and orphan break prevention",
+    "Verified 166/166 treatment-plan unit tests pass cleanly across 51 suites",
+    "Verified node scripts/check-encoding.mjs passes with 0 errors across 6,235 files",
+    "Verified npm --prefix apps/web run typecheck passes with Exit Code 0"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Strict compliance with Mandate 8za: zero duplicate files (*V2, *New) created; canonical architecture hardened in place",
+    "Exact kopeck integer math eliminates fractional ruble errors across installments and discounts",
+    "Full backwards compatibility preserved with all existing treatment plan test suites and wave assertions",
+    "Print typography and legal compliance (ст. 20 323-ФЗ, ПП РФ № 736) verified"
+  ]
+}

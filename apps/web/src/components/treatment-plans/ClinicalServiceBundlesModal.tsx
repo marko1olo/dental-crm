@@ -270,17 +270,17 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
 								<h2 id="chairside-bundles-title" className="text-sm sm:text-base font-black tracking-tight truncate">
-									Клинические пакеты услуг 804н у кресла («Все включено»)
+									Клинические пакеты услуг у кресла («Все включено»)
 								</h2>
 								<span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[var(--teal,#0d9488)]/15 text-[var(--teal-dark,#0f766e)] dark:text-teal-300 border border-[var(--teal,#0d9488)]/30 shrink-0">
 									1 клик
 								</span>
 								<span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] border border-[var(--line,#cbd5e1)] shrink-0">
-									Приказ МЗ РФ №804н
+									Прейскурант услуг
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted,#64748b)] truncate">
-								Быстрое добавление полного комплекса номенклатуры 804н в план лечения или счет пациента без ручного набора 5–8 мелких кодов
+								Быстрое добавление полного комплекса услуг в план лечения или счет пациента без ручного набора 5–8 мелких кодов
 							</p>
 						</div>
 					</div>
@@ -536,7 +536,7 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 															type="button"
 															onClick={() => handleApplyInvoice(bundle)}
 															className="h-8 px-3 rounded-xl border border-[var(--teal,#0d9488)]/40 bg-[var(--teal,#0d9488)]/10 hover:bg-[var(--teal,#0d9488)]/20 text-[var(--teal-dark,#0f766e)] dark:text-teal-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-															title={`Выставить счет пациенту по пакету 804н${bundle.requiresTooth ? ` (зуб ${selectedTooth})` : ""}`}
+															title={`Выставить счет пациенту по пакету${bundle.requiresTooth ? ` (зуб ${selectedTooth})` : ""}`}
 															data-testid={`apply-invoice-${bundle.id}`}
 														>
 															<Receipt size={14} />
@@ -553,7 +553,7 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 												<div className="flex items-center justify-between gap-2">
 													<div className="flex items-center gap-2">
 														<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
-															Состав клинического пакета (номенклатура 804н):
+															Состав клинического пакета (услуги):
 														</span>
 														<span className="text-[11px] text-[var(--muted,#64748b)]">
 															Снимите галочку, если позиция не проводилась
@@ -634,7 +634,7 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 				<div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] shrink-0 text-xs text-[var(--muted,#64748b)]">
 					<div className="flex items-center gap-2">
 						<Stethoscope size={14} className="text-[var(--teal,#0d9488)]" />
-						<span>Все суммы рассчитываются в целочисленных копейках без плавающей точки (54-ФЗ / ACID).</span>
+						<span>Все суммы рассчитываются в копейках с гарантией абсолютной точности.</span>
 					</div>
 
 					<button

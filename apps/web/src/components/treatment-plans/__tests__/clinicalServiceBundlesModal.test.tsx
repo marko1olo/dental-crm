@@ -37,8 +37,8 @@ describe("ClinicalServiceBundlesModal — Компонент модальног�
 		);
 
 		// Проверка заголовка и стандартов
-		assert.ok(html.includes("Клинические пакеты услуг 804н у кресла"), "Заголовок должен присутствовать");
-		assert.ok(html.includes("Приказ МЗ РФ №804н"), "Бейдж 804н должен присутствовать");
+		assert.ok(html.includes("Клинические пакеты услуг у кресла"), "Заголовок должен присутствовать");
+		assert.ok(html.includes("Прейскурант услуг"), "Бейдж прейскуранта должен присутствовать");
 		assert.ok(html.includes("data-testid=\"clinical-service-bundles-modal\""), "Контейнер модалки должен иметь data-testid");
 
 		// Проверка наличия всех 10 пакетов в DOM

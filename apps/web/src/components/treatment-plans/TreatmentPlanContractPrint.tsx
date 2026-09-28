@@ -23,12 +23,13 @@ import {
 	Sparkles,
 	X,
 } from "lucide-react";
-import type {
-	DigitalSignatureAgreementData,
-	TreatmentPlanStage,
-	TreatmentPlanTier,
+import {
+	formatWarrantyYearsText,
+	type DigitalSignatureAgreementData,
+	type TreatmentPlanStage,
+	type TreatmentPlanTier,
 } from "./types";
-import { type Kopecks, parseKopecks } from "@dental/shared";
+import { type Kopecks, parseKopecks, splitKopecks } from "@dental/shared";
 import { TreatmentPlanQrCode } from "./qr/TreatmentPlanQrCode";
 import { generatePlanVerificationQrPayload } from "./qr/treatmentPlanQrEngine";
 import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
@@ -497,9 +498,8 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 								</div>
 								<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center">
 									{([3, 6, 12, 24] as const).map((m) => {
-										const monthly =
-											tier.installments?.[m]?.monthlyPaymentRub ??
-											Math.round(finalTotalRub / m);
+										const parts = splitKopecks(finalTotalKopecks, m);
+										const monthly = Math.round((parts[0] ?? 0) / 100);
 										const isCurrent = m === installmentMonths;
 										return (
 											<div
@@ -560,15 +560,21 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 					</div>
 
 					{/* Section 4: Warranties & Clinical Obligations */}
-					<div className="space-y-1 text-[10px] text-slate-600">
-						<h3 className="font-bold text-slate-900 uppercase tracking-wide text-[11px]">
-							4. Гарантийные обязательства и условия сохранения гарантии
+					<div className="space-y-1.5 text-[10px] text-slate-600 treatment-print-warranties">
+						<h3 className="font-bold text-slate-900 uppercase tracking-wide text-[11px] m-0">
+							4. Гарантийные обязательства, условия сохранения гарантии и согласие пациента
 						</h3>
 						<p className="text-justify m-0">
-							4.1. Гарантийный срок на выполненные работы по варианту «{tier.title}» составляет: <strong>{tier.warrantyYears}</strong> с момента подписания Акта оказанных услуг при условии соблюдения Пациентом графика контрольных визитов (1 раз в 6 месяцев) и правил индивидуальной гигиены.
+							4.1. Гарантийный срок на выполненные работы и установленные конструкции по варианту «{tier.title}» составляет: <strong>{formatWarrantyYearsText(tier.warrantyYears)}</strong> с даты подписания Акта оказанных услуг при условии соблюдения Пациентом графика контрольных визитов (1 раз в 6 месяцев) и правил индивидуальной гигиены.
 						</p>
 						<p className="text-justify m-0">
-							4.2. Пациент подтверждает, что ознакомлен с клиническими целями, возможными рисками, альтернативными методами лечения и правилами эксплуатации ортопедических и хирургических конструкций.
+							4.2. Условия гарантии по клиническим категориям:
+							• Вариант А («Базовый / Эконом»): 1 год на базовые световые композитные пломбы и металлокерамические коронки/протезы Co-Cr.
+							• Вариант Б («Оптимальный»): 2 года на биологическую герметизацию дентина, нанокомпозиты Estelite Asteria, стекловолоконные штифты, монолитный диоксид циркония Prettau и имплантаты Osstem TS-III.
+							• Вариант В («Премиум»): 5 лет на эндодонтическое лечение под микроскопом Leica, керамику IPS e.max Press, индивидуальные циркониевые абатменты; пожизненная международная гарантия производителя на имплантаты Straumann SLActive / Astra Tech.
+						</p>
+						<p className="text-justify m-0">
+							4.3. Информированное добровольное согласие (ст. 20 323-ФЗ, Постановление Правительства РФ № 736): Пациент подтверждает, что ознакомлен с диагнозом, планом, сроками, альтернативными вариантами лечения, возможными рисками и правилами эксплуатации ортопедических и хирургических конструкций.
 						</p>
 					</div>
 

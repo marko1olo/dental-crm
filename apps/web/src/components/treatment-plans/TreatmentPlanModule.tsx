@@ -1703,7 +1703,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							</span>
 						</div>
 						<div className="flex items-center gap-2 text-[11px] text-[var(--muted,#64748b)]">
-							<span className="hidden sm:inline font-mono">Приказ МЗ РФ №804н</span>
+							<span className="hidden sm:inline font-mono">Прейскурант услуг</span>
 							<ChevronDown size={14} className="transition-transform group-open:rotate-180" />
 						</div>
 					</summary>
@@ -2180,8 +2180,27 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						patientPhone={dashboard?.activePatient?.phone || ""}
 						doctorFullName={auth?.currentUser?.name || "Лечащий врач"}
 						teeth={teethData}
+						tiers={planTiers}
+						initialSelectedTierId={selectedTierId}
+						contractNumber={contractNumber}
 						onSelectPlan={(plan) => {
+							setSelectedTierId(plan.tierId);
 							showToast(`Выбран план: ${plan.title} (${plan.totalRub.toLocaleString("ru-RU")} ₽)`, "success");
+						}}
+						onConfirmSelection={(plan) => {
+							setSelectedTierId(plan.tierId);
+							setPlanStatus("agreed");
+							showToast(`Пациент подтвердил выбор: ${plan.title}`, "success");
+						}}
+						onApproveAndSign={(plan) => {
+							setSelectedTierId(plan.tierId);
+							setIsPresenterModalOpen(false);
+							setIsSignModalOpen(true);
+						}}
+						onPrintContract={(plan) => {
+							setSelectedTierId(plan.tierId);
+							setIsPresenterModalOpen(false);
+							setIsContractPrintOpen(true);
 						}}
 					/>
 				</Suspense>
