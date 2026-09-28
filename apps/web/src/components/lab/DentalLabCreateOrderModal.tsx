@@ -106,7 +106,7 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 		const created = createDentalLabOrder({
 			patientId: currentPatientId || `pat-${Date.now()}`,
 			patientName: newPatientName.trim(),
-			patientChartNumber: newChartNumber.trim() || "043/у",
+			patientChartNumber: newChartNumber.trim() || undefined,
 			doctorId: "doc-current",
 			doctorName: newDoctorName.trim() || currentDoctorName?.trim() || "Врач-ортопед",
 			clinicName: "Стоматологическая клиника DENTE",
@@ -168,7 +168,7 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 								<input
 									type="text"
 									className="ztl-form-input"
-									placeholder="043/у-1234"
+									placeholder="№ 1234"
 									value={newChartNumber}
 									onChange={(e) => setNewChartNumber(e.target.value)}
 								/>
@@ -403,7 +403,7 @@ export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps>
 								<input
 									type="text"
 									className="ztl-form-input"
-									placeholder="appt-8041"
+									placeholder="appt-1234"
 									value={newAppointmentId}
 									onChange={(e) => setNewAppointmentId(e.target.value)}
 								/>

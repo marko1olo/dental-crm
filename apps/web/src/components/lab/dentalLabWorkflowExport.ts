@@ -88,7 +88,7 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 	<meta charset="UTF-8">
 	<title>Наряд-заказ ЗТЛ № ${order.orderNumber}</title>
 	<style>
-		@page { size: A4 portrait; margin: 10mm 14mm; }
+		@page { size: A4 portrait; margin: 8mm 12mm; }
 		body {
 			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 			color: #0f172a;
@@ -144,6 +144,22 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 		.sig-col { display: table-cell; width: 33.3%; padding: 0 8px; text-align: center; }
 		.sig-line { border-bottom: 1px solid #0f172a; margin-top: 28px; margin-bottom: 4px; }
 		.sig-sub { font-size: 9.5px; color: #64748b; }
+		.box, .teeth-block, .status-strip, .section-title, tr, .signatures, .grid-2, .header-table {
+			break-inside: avoid;
+			page-break-inside: avoid;
+		}
+		@media print {
+			html, body {
+				background: #ffffff !important;
+				color: #000000 !important;
+				-webkit-print-color-adjust: exact !important;
+				print-color-adjust: exact !important;
+			}
+			.box, .teeth-block, .status-strip, .section-title, tr, .signatures, .grid-2, .header-table {
+				break-inside: avoid !important;
+				page-break-inside: avoid !important;
+			}
+		}
 	</style>
 </head>
 <body>
@@ -312,7 +328,7 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 			<div class="data-row"><span class="label">Себестоимость ЗТЛ:</span> <span class="value">${order.financials.labCostTotalRub.toLocaleString("ru-RU")} ₽</span></div>
 			<div class="data-row"><span class="label">Маржа клиники:</span> <span class="value" style="color: #0d9488;">${order.financials.clinicGrossMarginRub.toLocaleString("ru-RU")} ₽ (${order.financials.grossMarginPercent}%)</span></div>
 			<div class="data-row" style="margin-top: 4px; font-size: 10.5px; color: #64748b;">
-				Автономия врача (Мандат 8e п. 7): Истечение 30 дней плана лечения не блокирует наряды ЗТЛ и оплату.
+				Клиническое решение лечащего врача • Наряд авторизован к производству
 			</div>
 		</div>
 		<div class="col" style="text-align: right;">

@@ -366,21 +366,61 @@ export interface LabOrderFinancialClearingResult {
 	pricePerUnitKopecks: number;
 	costPerUnitKopecks: number;
 	isBalanced: boolean;
+	isWarrantyRework?: boolean;
+	warrantyLiabilityType?: "clinic_warranty" | "lab_defect" | "patient_fault";
+	warrantyLiabilityKopecks?: number;
+	warrantyLiabilityLabelRu?: string;
 }
 
 /**
  * Calculates complete order financial clearing in integer kopecks.
+ * Includes warranty rework protocol: patient strictly 0 ₽, costs tracked as clinic liability or lab defect.
  */
 export function calculateLabOrderFinancialsKopecks(params: {
 	unitsCount: number;
 	pricePerUnitKopecks: number;
 	costPerUnitKopecks: number;
 	doctorPercent?: number;
+	isWarrantyRework?: boolean;
+	warrantyLiabilityType?: "clinic_warranty" | "lab_defect" | "patient_fault";
 }): LabOrderFinancialClearingResult {
 	const count = Math.max(1, Math.round(params.unitsCount || 1));
 	const pricePerUnit = Math.max(0, Math.round(params.pricePerUnitKopecks || 0));
 	const costPerUnit = Math.max(0, Math.round(params.costPerUnitKopecks || 0));
 	const doctorPct = Math.max(0, Math.min(100, params.doctorPercent ?? 20));
+
+	const isWarranty = Boolean(params.isWarrantyRework);
+	const liabilityType = params.warrantyLiabilityType || "clinic_warranty";
+
+	if (isWarranty) {
+		let effectiveLabCostKop = costPerUnit * count;
+		let warrantyLiabilityKopecks = effectiveLabCostKop;
+		let liabilityLabelRu = "Гарантийные обязательства клиники";
+
+		if (liabilityType === "lab_defect") {
+			effectiveLabCostKop = 0;
+			warrantyLiabilityKopecks = 0;
+			liabilityLabelRu = "Брак ЗТЛ (переделка за счет лаборатории 0 ₽)";
+		}
+
+		return {
+			patientPriceTotalKopecks: 0,
+			labCostTotalKopecks: effectiveLabCostKop,
+			grossMarginKopecks: 0,
+			grossMarginPercent: 0,
+			doctorCommissionKopecks: 0,
+			doctorPercent: doctorPct,
+			clinicNetProfitKopecks: -effectiveLabCostKop,
+			unitsCount: count,
+			pricePerUnitKopecks: 0,
+			costPerUnitKopecks: costPerUnit,
+			isBalanced: true,
+			isWarrantyRework: true,
+			warrantyLiabilityType: liabilityType,
+			warrantyLiabilityKopecks,
+			warrantyLiabilityLabelRu: liabilityLabelRu,
+		};
+	}
 
 	const patientPriceTotalKopecks = pricePerUnit * count;
 	const labCostTotalKopecks = costPerUnit * count;
@@ -408,6 +448,7 @@ export function calculateLabOrderFinancialsKopecks(params: {
 		pricePerUnitKopecks: pricePerUnit,
 		costPerUnitKopecks: costPerUnit,
 		isBalanced: (doctorCommissionKopecks + clinicNetProfitKopecks) === grossMarginKopecks,
+		isWarrantyRework: false,
 	};
 }
 

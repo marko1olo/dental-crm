@@ -9,25 +9,25 @@ export interface DentalLabExpressConfiguratorProps {
 	setMaterial: (mat: string) => void;
 	dueDate: string;
 	setDueDate: (date: string) => void;
-	shadeSystem?: "classical" | "3d_master" | "bleach";
-	setShadeSystem?: (system: "classical" | "3d_master" | "bleach") => void;
-	shadeClassical?: string;
-	setShadeClassical?: (shade: string) => void;
-	shadeBleach?: string;
-	setShadeBleach?: (shade: string) => void;
-	shadeBody?: string;
-	setShadeBody?: (shade: string) => void;
-	surfaceTexture?: string;
-	setSurfaceTexture?: (texture: string) => void;
-	cementGapMicrons?: number;
-	setCementGapMicrons?: (gap: number) => void;
-	occlusalScheme?: string;
-	setOcclusalScheme?: (scheme: string) => void;
-	contactTightness?: string;
-	setContactTightness?: (tightness: string) => void;
-	impressionType?: string;
-	setImpressionType?: (type: string) => void;
-	onOpenAdvancedShades?: () => void;
+	shadeSystem?: "classical" | "3d_master" | "bleach" | undefined;
+	setShadeSystem?: ((system: "classical" | "3d_master" | "bleach") => void) | undefined;
+	shadeClassical?: string | undefined;
+	setShadeClassical?: ((shade: string) => void) | undefined;
+	shadeBleach?: string | undefined;
+	setShadeBleach?: ((shade: string) => void) | undefined;
+	shadeBody?: string | undefined;
+	setShadeBody?: ((shade: string) => void) | undefined;
+	surfaceTexture?: string | undefined;
+	setSurfaceTexture?: ((texture: string) => void) | undefined;
+	cementGapMicrons?: number | undefined;
+	setCementGapMicrons?: ((gap: number) => void) | undefined;
+	occlusalScheme?: string | undefined;
+	setOcclusalScheme?: ((scheme: string) => void) | undefined;
+	contactTightness?: string | undefined;
+	setContactTightness?: ((tightness: string) => void) | undefined;
+	impressionType?: string | undefined;
+	setImpressionType?: ((type: string) => void) | undefined;
+	onOpenAdvancedShades?: (() => void) | undefined;
 }
 
 export function DentalLabExpressConfigurator({

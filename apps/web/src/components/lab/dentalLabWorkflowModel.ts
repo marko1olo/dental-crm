@@ -8,6 +8,7 @@ import type {
 	LabWorkflowStatus,
 	LabDelayAlert,
 	DentalLabWorkflowFinancials,
+	WarrantyLiabilityType,
 } from "./dentalLabWorkflowEngine";
 import {
 	ORTHOPEDIC_WORK_TYPES,
@@ -98,6 +99,7 @@ export interface DentalLabWorkflowOrder {
 	readonly originalOrderId?: string | undefined;
 	readonly originalOrderNumber?: string | undefined;
 	readonly isWarrantyRework?: boolean | undefined;
+	readonly warrantyLiabilityType?: WarrantyLiabilityType | undefined;
 	readonly reworkReason?: string | undefined;
 	readonly createdAtIso: string;
 	readonly updatedAtIso: string;
@@ -223,7 +225,7 @@ export function createDentalLabOrder(params: CreateDentalLabOrderParams): Dental
 		labContactPhone: params.labContactPhone || "",
 		patientId: params.patientId,
 		patientName: params.patientName,
-		patientChartNumber: params.patientChartNumber || "043/у",
+		patientChartNumber: params.patientChartNumber || undefined,
 		doctorId: params.doctorId,
 		doctorName: params.doctorName,
 		doctorPhone: params.doctorPhone,
@@ -362,7 +364,8 @@ export function advanceLabOrderStage(
 
 /**
  * Отправка сданного наряд-заказа на гарантийную переделку / рекламацию в ЗТЛ.
- * Сохраняет прямую ссылку на исходный заказ-наряд, фиксирует причину рекламации
+ * Сохраняет прямую ссылку на исходный заказ-наряд, фиксирует причину рекламации,
+ * разграничивает гарантийные обязательства клиники и брак ЗТЛ,
  * и пересчитывает плановый срок готовности доработки ЗТЛ (+4 рабочих дня).
  */
 export function sendOrderToWarrantyRework(
@@ -370,6 +373,7 @@ export function sendOrderToWarrantyRework(
 	reworkReason: string = "Гарантийная рекламация: скол керамики / завышение прикуса / краевое прилегание",
 	authorName: string = "Врач-ортопед",
 	currentDate: Date = new Date(),
+	warrantyLiabilityType: WarrantyLiabilityType = "clinic_warranty",
 ): DentalLabWorkflowOrder {
 	const nowIso = currentDate.toISOString();
 	const newExpectedDate = addWorkingDaysRu(currentDate, 4);
@@ -388,29 +392,27 @@ export function sendOrderToWarrantyRework(
 		labName: order.labName,
 	});
 
-	const reworkNote = `Гарантийная переделка (исходный наряд № ${order.orderNumber}): ${reworkReason}`;
+	const liabilityLabelRu =
+		warrantyLiabilityType === "lab_defect"
+			? "Брак ЗТЛ (переделка за счет лаборатории 0 ₽)"
+			: "Гарантийные обязательства клиники";
 
-	// Гарантийная переделка для пациента СТРОГО 0 ₽ (Мандат 8e / Без поборов с пациента)
-	const warrantyFinancials: DentalLabWorkflowFinancials = {
-		...order.financials,
-		patientPriceTotalKopecks: 0,
-		patientPriceTotalRub: 0,
-		pricePerUnitKopecks: 0,
-		clinicGrossMarginKopecks: 0,
-		clinicGrossMarginRub: 0,
-		grossMarginPercent: 0,
-		doctorWageBaseKopecks: 0,
-		doctorWageKopecks: 0,
-		doctorWageRub: 0,
-		clinicNetProfitKopecks: -order.financials.labCostKopecks,
-		clinicNetProfitRub: -order.financials.labCostTotalRub,
-		isBalanced: true,
-	};
+	const reworkNote = `Гарантийная переделка [${liabilityLabelRu}] (исходный наряд № ${order.orderNumber}): ${reworkReason}`;
+
+	// Гарантийный финансовый протокол (пациент СТРОГО 0 ₽, расчет обязательств без копеечного дрейфа)
+	const warrantyFinancials = calculateLabWorkflowFinancials({
+		unitsCount: order.financials.unitsCount,
+		costPerUnitKopecks: order.financials.costPerUnitKopecks,
+		doctorPercent: order.financials.doctorPercent,
+		isWarrantyRework: true,
+		warrantyLiabilityType,
+	});
 
 	return {
 		...order,
 		currentStage: "warranty_rework",
 		isWarrantyRework: true,
+		warrantyLiabilityType,
 		reworkReason,
 		originalOrderId: order.originalOrderId || order.id,
 		originalOrderNumber: order.originalOrderNumber || order.orderNumber,

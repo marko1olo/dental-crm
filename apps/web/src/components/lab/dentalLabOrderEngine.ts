@@ -392,6 +392,11 @@ export interface ZtlWageFinancials {
 	readonly doctorWageRub: number;
 	readonly clinicMarginRub: number;
 	readonly isBalanced: boolean;
+	readonly isWarrantyRework?: boolean | undefined;
+	readonly warrantyLiabilityType?: "clinic_warranty" | "lab_defect" | "patient_fault" | undefined;
+	readonly warrantyLiabilityKopecks?: number | undefined;
+	readonly warrantyLiabilityRub?: number | undefined;
+	readonly warrantyLiabilityLabelRu?: string | undefined;
 }
 
 export interface CalculateZtlFinancialsParams {
@@ -401,11 +406,14 @@ export interface CalculateZtlFinancialsParams {
 	readonly ztlCostRub?: number | undefined;
 	readonly ztlCostKopecks?: number | undefined;
 	readonly doctorSharePercent?: number | undefined; // По умолчанию 20%
+	readonly isWarrantyRework?: boolean | undefined;
+	readonly warrantyLiabilityType?: "clinic_warranty" | "lab_defect" | "patient_fault" | undefined;
 }
 
 /**
  * Рассчитывает сдельную оплату врача-ортопеда с гарантированным вычетом себестоимости ЗТЛ.
  * Инвариант: doctorWageKopecks + clinicMarginKopecks === doctorWageBaseKopecks.
+ * Гарантийный протокол: пациент СТРОГО 0 ₽, учет затрат как обязательства клиники или брак ЗТЛ.
  */
 export function calculateZtlWageFinancials(params: CalculateZtlFinancialsParams): ZtlWageFinancials {
 	const count = Math.max(1, Math.round(params.unitsCount || 1));
@@ -427,6 +435,45 @@ export function calculateZtlWageFinancials(params: CalculateZtlFinancialsParams)
 	);
 
 	const docPct = Math.max(0, Math.min(100, params.doctorSharePercent ?? 20));
+
+	const isWarranty = Boolean(params.isWarrantyRework);
+	const liabilityType = params.warrantyLiabilityType || "clinic_warranty";
+
+	if (isWarranty) {
+		// При гарантийной переделке пациент платит строго 0 ₽
+		let effectiveZtlCostKop = unitCostKop * count;
+		let warrantyLiabilityKopecks = effectiveZtlCostKop;
+		let liabilityLabelRu = "Гарантийные обязательства клиники";
+
+		if (liabilityType === "lab_defect") {
+			effectiveZtlCostKop = 0;
+			warrantyLiabilityKopecks = 0;
+			liabilityLabelRu = "Брак ЗТЛ (переделка за счет лаборатории 0 ₽)";
+		}
+
+		const clinicMarginKopecks = effectiveZtlCostKop === 0 ? 0 : -effectiveZtlCostKop;
+
+		return {
+			unitsCount: count,
+			patientPriceKopecks: 0,
+			ztlCostKopecks: effectiveZtlCostKop,
+			doctorWageBaseKopecks: 0,
+			doctorSharePercent: docPct,
+			doctorWageKopecks: 0,
+			clinicMarginKopecks,
+			patientPriceRub: 0,
+			ztlCostRub: effectiveZtlCostKop / 100,
+			doctorWageBaseRub: 0,
+			doctorWageRub: 0,
+			clinicMarginRub: clinicMarginKopecks === 0 ? 0 : clinicMarginKopecks / 100,
+			isBalanced: true,
+			isWarrantyRework: true,
+			warrantyLiabilityType: liabilityType,
+			warrantyLiabilityKopecks,
+			warrantyLiabilityRub: warrantyLiabilityKopecks / 100,
+			warrantyLiabilityLabelRu: liabilityLabelRu,
+		};
+	}
 
 	const patientPriceKopecks = unitPriceKop * count;
 	const ztlCostKopecks = unitCostKop * count;
@@ -454,6 +501,7 @@ export function calculateZtlWageFinancials(params: CalculateZtlFinancialsParams)
 		doctorWageRub: doctorWageKopecks / 100,
 		clinicMarginRub: clinicMarginKopecks / 100,
 		isBalanced: doctorWageKopecks + clinicMarginKopecks === doctorWageBaseKopecks,
+		isWarrantyRework: false,
 	};
 }
 

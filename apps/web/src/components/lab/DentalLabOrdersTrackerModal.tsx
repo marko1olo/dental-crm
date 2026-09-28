@@ -5,6 +5,7 @@ import {
 	Plus,
 	X,
 	Calendar,
+	CalendarCheck,
 	CheckCircle2,
 	Clock,
 	AlertTriangle,
@@ -23,6 +24,10 @@ import {
 	Truck,
 	Check,
 } from "lucide-react";
+import {
+	DentalLabReadyInClinicModal,
+	type ReadyInClinicLabOrder,
+} from "./DentalLabReadyInClinicModal";
 import {
 	type DentalLabConstructionType,
 	type DentalLabOrderStatus,
@@ -140,6 +145,27 @@ export function DentalLabOrdersTrackerModal({
 	// Drawer создания / редактирования наряда
 	const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
 	const [editingOrder, setEditingOrder] = useState<DentalLabOrderRecord | null>(null);
+
+	// Ready in clinic prompt modal state (Mandates 8b, 8e, 8n)
+	const [isReadyInClinicModalOpen, setIsReadyInClinicModalOpen] = useState(false);
+	const [readyInClinicOrder, setReadyInClinicOrder] = useState<ReadyInClinicLabOrder | null>(null);
+
+	const handleOpenReadyInClinicPrompt = (order: DentalLabOrderRecord) => {
+		setOpenActionMenuId(null);
+		const target: ReadyInClinicLabOrder = {
+			id: order.id,
+			orderNumber: order.orderNumber,
+			patientName: order.patientName,
+			doctorName: order.doctorName,
+			toothFdi: order.teethFdi,
+			material: order.materialRu,
+			colorVita: order.vitaShade,
+			constructionType: order.constructionType,
+			clinicName: "DENTE",
+		};
+		setReadyInClinicOrder(target);
+		setIsReadyInClinicModalOpen(true);
+	};
 
 	// Загрузка живых нарядов с бэкенда при открытии
 	useEffect(() => {
@@ -306,6 +332,34 @@ export function DentalLabOrdersTrackerModal({
 				const next = getNextLabStatus(o.status);
 				if (!next) return o;
 				showToast(`Наряд ${o.orderNumber}: статус изменен на «${DENTAL_LAB_STATUSES[next].labelRu}»`, "success");
+
+				// Real PATCH /api/lab/orders/:id (Mandate 8b, 8e, 8n)
+				if (!o.id.startsWith("demo-")) {
+					const mappedStatus =
+						next === "delivered_to_patient" ? "completed" :
+						next === "ready_in_clinic" ? "ready" :
+						next === "try_in" ? "fitting" :
+						next === "in_progress" ? "in_progress" : "sent";
+
+					fetch(`/api/lab/orders/${o.id}`, {
+						method: "PATCH",
+						headers: {
+							"Content-Type": "application/json",
+							...denteAdminSecretRequestHeaders(),
+						},
+						body: JSON.stringify({
+							status: mappedStatus,
+							stage: next,
+						}),
+					}).catch((err) => {
+						console.warn("[DentalLabOrdersTrackerModal] Failed to advance status on backend:", err);
+					});
+				}
+
+				if (next === "ready_in_clinic") {
+					handleOpenReadyInClinicPrompt({ ...o, status: next });
+				}
+
 				return { ...o, status: next, updatedAt: new Date().toISOString() };
 			}),
 		);
@@ -317,6 +371,24 @@ export function DentalLabOrdersTrackerModal({
 			prev.map((o) => {
 				if (o.id !== orderId) return o;
 				showToast(`Наряд ${o.orderNumber} направлен на гарантийную переделку (0 ₽)`, "warning");
+
+				if (!o.id.startsWith("demo-")) {
+					fetch(`/api/lab/orders/${o.id}`, {
+						method: "PATCH",
+						headers: {
+							"Content-Type": "application/json",
+							...denteAdminSecretRequestHeaders(),
+						},
+						body: JSON.stringify({
+							status: "refitting",
+							stage: "warranty_rework",
+							notes: "Коррекция окклюзии / соответствие цвета VITA",
+						}),
+					}).catch((err) => {
+						console.warn("[DentalLabOrdersTrackerModal] Failed to set warranty rework on backend:", err);
+					});
+				}
+
 				return {
 					...o,
 					status: "warranty_rework",
@@ -334,11 +406,73 @@ export function DentalLabOrdersTrackerModal({
 			setOrders((prev) => prev.map((o) => (o.id === saved.id ? saved : o)));
 			onOrderSaved?.(saved);
 			showToast(`Наряд ${saved.orderNumber} успешно обновлен`, "success");
+
+			// Real PUT /api/lab/orders/:id persistence
+			if (!saved.id.startsWith("demo-")) {
+				fetch(`/api/lab/orders/${saved.id}`, {
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+						...denteAdminSecretRequestHeaders(),
+					},
+					body: JSON.stringify({
+						toothFdi: saved.teethFdi.join(", "),
+						material: saved.materialRu,
+						colorVita: saved.vitaShade,
+						dueDate: saved.deadlineDate,
+						clinicalNotes: saved.clinicalNotes,
+						priceRub: Math.round(saved.patientPriceKopecks / 100),
+						status:
+							saved.status === "delivered_to_patient" ? "completed" :
+							saved.status === "ready_in_clinic" ? "ready" :
+							saved.status === "try_in" ? "fitting" :
+							saved.status === "in_progress" ? "in_progress" : "sent",
+					}),
+				}).catch((err) => {
+					console.warn("[DentalLabOrdersTrackerModal] Failed to update order on backend:", err);
+				});
+			}
 		} else {
 			setOrders((prev) => [saved, ...prev]);
 			onOrderSaved?.(saved);
 			showToast(`Наряд ${saved.orderNumber} оформлен в ЗТЛ`, "success");
+
+			// Real POST /api/lab/orders persistence
+			fetch("/api/lab/orders", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					orderNumber: saved.orderNumber,
+					patientId: saved.patientId || currentPatientId,
+					patientName: saved.patientName,
+					doctorId: saved.doctorId,
+					doctorName: saved.doctorName,
+					toothFdi: saved.teethFdi.join(", "),
+					material: saved.materialRu,
+					colorVita: saved.vitaShade,
+					dueDate: saved.deadlineDate,
+					clinicalNotes: saved.clinicalNotes,
+					priceRub: Math.round(saved.patientPriceKopecks / 100),
+					status:
+						saved.status === "delivered_to_patient" ? "completed" :
+						saved.status === "ready_in_clinic" ? "ready" :
+						saved.status === "try_in" ? "fitting" :
+						saved.status === "in_progress" ? "in_progress" : "sent",
+				}),
+			}).catch((err) => {
+				console.warn("[DentalLabOrdersTrackerModal] Failed to persist new order on backend:", err);
+			});
 		}
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-lab-order-created", { detail: saved }),
+			);
+		}
+
 		setIsCreateDrawerOpen(false);
 		setEditingOrder(null);
 	};
@@ -638,8 +772,19 @@ export function DentalLabOrdersTrackerModal({
 										{/* Нижняя панель действий (Закон Миллера: ровно 2 прямых действия + «...») */}
 										<div className="pt-2 border-t border-[var(--line,#cbd5e1)] flex items-center justify-between gap-1.5">
 											<div className="flex items-center gap-1.5 flex-1 min-w-0">
-												{/* ПРЯМОЕ ДЕЙСТВИЕ 1: 1-клик перевод на следующий статус */}
-												{nextStatus && (
+												{/* ПРЯМОЕ ДЕЙСТВИЕ 1: 1-клик перевод на следующий статус или Запись / SMS при готовности */}
+												{order.status === "ready_in_clinic" ? (
+													<button
+														type="button"
+														onClick={() => handleOpenReadyInClinicPrompt(order)}
+														className="h-7 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-[11px] inline-flex items-center gap-1 transition-colors cursor-pointer"
+														title="Работа в клинике! Записать пациента на примерку / фиксацию и отправить SMS / WhatsApp"
+														data-testid={`lab-tracker-ready-schedule-btn-${order.id}`}
+													>
+														<CalendarCheck className="w-3 h-3" />
+														<span>Запись / SMS</span>
+													</button>
+												) : nextStatus ? (
 													<button
 														type="button"
 														onClick={() => handleAdvanceStatus(order.id)}
@@ -650,7 +795,7 @@ export function DentalLabOrdersTrackerModal({
 														<ChevronRight className="w-3 h-3" />
 														<span>{DENTAL_LAB_STATUSES[nextStatus].shortLabelRu}</span>
 													</button>
-												)}
+												) : null}
 
 												{/* ПРЯМОЕ ДЕЙСТВИЕ 2: Редактировать / Детали */}
 												<button
@@ -678,6 +823,18 @@ export function DentalLabOrdersTrackerModal({
 
 													{openActionMenuId === order.id && (
 														<div className="absolute right-0 bottom-full mb-1 z-50 w-48 p-1 bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-xl shadow-xl flex flex-col gap-0.5 text-xs">
+															<button
+																type="button"
+																onClick={() => {
+																	setOpenActionMenuId(null);
+																	handleOpenReadyInClinicPrompt(order);
+																}}
+																className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1.5 cursor-pointer"
+																data-testid={`lab-tracker-menu-ready-schedule-btn-${order.id}`}
+															>
+																<CalendarCheck className="w-3.5 h-3.5 text-emerald-600" />
+																<span>Запись на примерку / SMS</span>
+															</button>
 															<button
 																type="button"
 																onClick={() => {
@@ -724,6 +881,13 @@ export function DentalLabOrdersTrackerModal({
 					currentDoctorName={currentDoctorName}
 					currentToothNumber={currentToothNumber}
 					onSaveOrder={handleSaveDrawerOrder}
+				/>
+
+				{/* Модалка быстрой записи и шаблонов SMS / WhatsApp при поступлении работы в клинику */}
+				<DentalLabReadyInClinicModal
+					isOpen={isReadyInClinicModalOpen}
+					onClose={() => setIsReadyInClinicModalOpen(false)}
+					order={readyInClinicOrder}
 				/>
 			</div>
 		</div>

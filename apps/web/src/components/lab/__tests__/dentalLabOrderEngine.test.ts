@@ -101,11 +101,11 @@ describe("dentalLabOrderEngine: Стоматологический трекер 
 
 		it("поддерживает 5 канонических статусов (CANONICAL_5_CLINICAL_LAB_STATUSES) и взаимный маппинг", () => {
 			assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES.length, 5);
-			assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES[0].id, "sent");
-			assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES[1].id, "in_progress");
-			assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES[2].id, "fitting");
-			assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES[3].id, "ready");
-			assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES[4].id, "completed");
+			assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES[0]?.id, "sent");
+			assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES[1]?.id, "in_progress");
+			assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES[2]?.id, "fitting");
+			assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES[3]?.id, "ready");
+			assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES[4]?.id, "completed");
 
 			assert.equal(mapOrderStatusToCanonical5("sent_to_lab"), "sent");
 			assert.equal(mapOrderStatusToCanonical5("in_progress"), "in_progress");

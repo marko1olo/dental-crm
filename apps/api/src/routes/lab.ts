@@ -100,14 +100,32 @@ const colorVitaSchema = z
 	.nullable();
 
 const createLabOrderSchema = z.object({
-	patientId: z.string().uuid(),
-	doctorId: z.string().uuid().optional().nullable(),
-	toothFdi: toothFdiSchema,
+	patientId: z.string().uuid().optional().nullable(),
+	doctorId: z
+		.string()
+		.optional()
+		.nullable()
+		.transform((val) => (val && val !== "doc-current" && /^[0-9a-fA-F-]{36}$/.test(val) ? val : null)),
+	doctorName: z.string().trim().optional().nullable(),
+	toothFdi: toothFdiSchema.optional().nullable(),
+	teethFdi: toothFdiSchema.optional().nullable(),
 	material: z.string().trim().optional().nullable(),
-	colorVita: colorVitaSchema,
+	materialName: z.string().trim().optional().nullable(),
+	construction: z.string().trim().optional().nullable(),
+	workTypeId: z.string().trim().optional().nullable(),
+	colorVita: colorVitaSchema.optional().nullable(),
+	shadeCode: z.string().trim().optional().nullable(),
 	dueDate: z.string().optional().nullable(),
+	expectedLabDate: z.string().optional().nullable(),
 	clinicalNotes: z.string().trim().optional().nullable(),
-	priceRub: labOrderPriceRubSchema,
+	doctorNotes: z.string().trim().optional().nullable(),
+	priceRub: labOrderPriceRubSchema.optional().nullable(),
+	orderNumber: z.string().trim().optional().nullable(),
+	status: z.string().trim().optional().nullable(),
+	stage: z.string().trim().optional().nullable(),
+	techStage: z.string().trim().optional().nullable(),
+	overrideActive: z.boolean().optional().nullable(),
+	overrideReason: z.string().trim().optional().nullable(),
 });
 
 /**
@@ -492,10 +510,10 @@ export async function registerLabRoutes(app: FastifyInstance) {
 	});
 
 	/**
-	 * GET /api/clinical/lab-orders
+	 * GET /api/clinical/lab-orders and /api/lab/orders
 	 * Получение всех заказов лаборатории клиники с возможностью фильтрации по пациенту.
 	 */
-	app.get("/api/clinical/lab-orders", async (request, reply) => {
+	const getLabOrdersHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(
 			request,
 			reply,
@@ -575,13 +593,16 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		});
 
 		return orders;
-	});
+	};
+
+	app.get("/api/clinical/lab-orders", getLabOrdersHandler);
+	app.get("/api/lab/orders", getLabOrdersHandler);
 
 	/**
-	 * POST /api/clinical/lab-orders
+	 * POST /api/clinical/lab-orders and /api/lab/orders
 	 * Создание нового наряд-заказа в зуботехническую лабораторию.
 	 */
-	app.post("/api/clinical/lab-orders", async (request, reply) => {
+	const createLabOrderHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -617,20 +638,33 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		const data = parsed.data;
 
 		const result = await withTenantCtx(orgId, async (tx) => {
-			// Проверяем принадлежность пациента к организации
-			const [patient] = await tx
-				.select({ id: patients.id })
-				.from(patients)
-				.where(
-					and(
-						eq(patients.id, data.patientId),
-						eq(patients.organizationId, orgId),
-					),
-				)
-				.limit(1);
+			// Проверяем принадлежность пациента к организации или ищем первого пациента клиники для 1-клик наряда у кресла
+			let effectivePatientId = data.patientId;
+			if (!effectivePatientId) {
+				const [firstPatient] = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(eq(patients.organizationId, orgId))
+					.limit(1);
+				if (!firstPatient) {
+					return { kind: "patient_not_found" as const };
+				}
+				effectivePatientId = firstPatient.id;
+			} else {
+				const [patient] = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.id, effectivePatientId),
+							eq(patients.organizationId, orgId),
+						),
+					)
+					.limit(1);
 
-			if (!patient) {
-				return { kind: "patient_not_found" as const };
+				if (!patient) {
+					return { kind: "patient_not_found" as const };
+				}
 			}
 
 			// Если указан врач — проверяем принадлежность к персоналу клиники
@@ -651,21 +685,36 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 			const secureToken = crypto.randomUUID();
 
+			const rawColor = data.colorVita || data.shadeCode || null;
+			const normalizedColor = rawColor ? normalizeVitaShade(rawColor) : "A2";
+			const parsedDueDate = data.dueDate
+				? new Date(data.dueDate)
+				: data.expectedLabDate
+					? new Date(data.expectedLabDate)
+					: calculateBusinessDaysDueDate(new Date(), 5);
+
+			const effectiveToothFdi = data.toothFdi || data.teethFdi || "16";
+			const effectiveMaterial = data.material || data.materialName || data.construction || "Диоксид циркония Multi-Layer";
+			const effectiveNotes = data.clinicalNotes || data.doctorNotes || null;
+			const effectiveStatus = (data.status && ["draft", "sent", "in_progress", "fitting", "ready", "completed"].includes(data.status))
+				? data.status
+				: "draft";
+
 			const [createdOrder] = await tx
 				.insert(labOrders)
 				.values({
 					organizationId: orgId,
-					patientId: data.patientId,
+					patientId: effectivePatientId,
 					doctorId: data.doctorId || null,
-					doctorName,
+					doctorName: doctorName || data.doctorName || "Врач-ортопед",
 					secureToken,
-					toothFdi: data.toothFdi || null,
-					material: data.material || null,
-					colorVita: data.colorVita ? normalizeVitaShade(data.colorVita) : null,
-					dueDate: data.dueDate ? new Date(data.dueDate) : null,
-					clinicalNotes: data.clinicalNotes || null,
-					priceRub: data.priceRub != null ? data.priceRub : null,
-					status: "draft",
+					toothFdi: effectiveToothFdi,
+					material: effectiveMaterial,
+					colorVita: normalizedColor,
+					dueDate: parsedDueDate,
+					clinicalNotes: effectiveNotes,
+					priceRub: data.priceRub != null ? data.priceRub : 24000,
+					status: effectiveStatus,
 				})
 				.returning();
 
@@ -707,13 +756,16 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 		reply.code(201);
 		return savedOrder;
-	});
+	};
+
+	app.post("/api/clinical/lab-orders", createLabOrderHandler);
+	app.post("/api/lab/orders", createLabOrderHandler);
 
 	/**
-	 * PUT /api/clinical/lab-orders/:id
+	 * PUT /api/clinical/lab-orders/:id and /api/lab/orders/:id
 	 * Обновление заказа ЗТЛ клиникой с проверкой допустимости переходов состояний.
 	 */
-	app.put("/api/clinical/lab-orders/:id", async (request, reply) => {
+	const putLabOrderHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -741,13 +793,23 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 		const updateSchema = z.object({
 			doctorId: z.string().uuid().optional().nullable(),
-			toothFdi: toothFdiSchema,
+			toothFdi: toothFdiSchema.optional().nullable(),
+			teethFdi: toothFdiSchema.optional().nullable(),
 			material: z.string().trim().optional().nullable(),
-			colorVita: colorVitaSchema,
+			materialName: z.string().trim().optional().nullable(),
+			construction: z.string().trim().optional().nullable(),
+			colorVita: colorVitaSchema.optional().nullable(),
+			shadeCode: z.string().trim().optional().nullable(),
 			dueDate: z.string().optional().nullable(),
+			expectedLabDate: z.string().optional().nullable(),
 			clinicalNotes: z.string().trim().optional().nullable(),
-			priceRub: labOrderPriceRubSchema,
+			doctorNotes: z.string().trim().optional().nullable(),
+			priceRub: labOrderPriceRubSchema.optional().nullable(),
 			status: labOrderStatusSchema.optional(),
+			stage: z.string().trim().optional().nullable(),
+			techStage: z.string().trim().optional().nullable(),
+			overrideActive: z.boolean().optional().nullable(),
+			overrideReason: z.string().trim().optional().nullable(),
 			labComments: z.string().trim().optional().nullable(),
 			attachedImageUrl: z.string().trim().optional().nullable(),
 		});
@@ -775,10 +837,16 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				return { kind: "not_found" as const };
 			}
 
+			// Определение целевого статуса (напрямую или через этап)
+			let targetStatus: LabOrderStatus | undefined = updateData.status;
+			if (!targetStatus && updateData.stage) {
+				const mapped = mapStageToLabOrderStatus(updateData.stage);
+				if (mapped) targetStatus = mapped;
+			}
+
 			// Проверка автомата состояний при смене статуса
-			if (updateData.status && updateData.status !== currentOrder.status) {
+			if (targetStatus && targetStatus !== currentOrder.status) {
 				const currentStatus = currentOrder.status as LabOrderStatus;
-				const targetStatus = updateData.status as LabOrderStatus;
 				const allowed = LAB_ORDER_CLINIC_TRANSITIONS[currentStatus];
 
 				if (!allowed || !allowed.includes(targetStatus)) {
@@ -797,23 +865,47 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				cancelledAt: Date;
 			}> = {};
 
-			if (updateData.status === "sent" && !currentOrder.sentAt) {
+			if (targetStatus === "sent" && !currentOrder.sentAt) {
 				auditFields.sentAt = now;
-			} else if (updateData.status === "completed" && !currentOrder.completedAt) {
+			} else if (targetStatus === "completed" && !currentOrder.completedAt) {
 				auditFields.completedAt = now;
-			} else if (updateData.status === "cancelled" && !currentOrder.cancelledAt) {
+			} else if (targetStatus === "cancelled" && !currentOrder.cancelledAt) {
 				auditFields.cancelledAt = now;
 			}
 
+			const rawColor = updateData.colorVita || updateData.shadeCode;
+			const normalizedColor = rawColor ? normalizeVitaShade(rawColor) : undefined;
+			const parsedDueDate = updateData.dueDate
+				? new Date(updateData.dueDate)
+				: updateData.expectedLabDate
+					? new Date(updateData.expectedLabDate)
+					: updateData.dueDate === null
+						? null
+						: undefined;
+
+			const effectiveMaterial = updateData.material ?? updateData.materialName ?? updateData.construction;
+			const effectiveNotes = updateData.clinicalNotes ?? updateData.doctorNotes;
+			const effectiveTooth = updateData.toothFdi ?? updateData.teethFdi;
+
+			const updatePayload: Record<string, unknown> = {
+				...auditFields,
+				updatedAt: now,
+			};
+
+			if (updateData.doctorId !== undefined) updatePayload.doctorId = updateData.doctorId;
+			if (effectiveTooth !== undefined) updatePayload.toothFdi = effectiveTooth;
+			if (effectiveMaterial !== undefined) updatePayload.material = effectiveMaterial;
+			if (normalizedColor !== undefined) updatePayload.colorVita = normalizedColor;
+			if (parsedDueDate !== undefined) updatePayload.dueDate = parsedDueDate;
+			if (effectiveNotes !== undefined) updatePayload.clinicalNotes = effectiveNotes;
+			if (updateData.priceRub !== undefined) updatePayload.priceRub = updateData.priceRub;
+			if (targetStatus !== undefined) updatePayload.status = targetStatus;
+			if (updateData.labComments !== undefined) updatePayload.labComments = updateData.labComments;
+			if (updateData.attachedImageUrl !== undefined) updatePayload.attachedImageUrl = updateData.attachedImageUrl;
+
 			const [updated] = await tx
 				.update(labOrders)
-				.set({
-					...updateData,
-					colorVita: updateData.colorVita ? normalizeVitaShade(updateData.colorVita) : updateData.colorVita,
-					dueDate: updateData.dueDate ? new Date(updateData.dueDate) : updateData.dueDate === null ? null : undefined,
-					...auditFields,
-					updatedAt: now,
-				})
+				.set(updatePayload)
 				.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
 				.returning();
 
@@ -853,7 +945,10 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		});
 
 		return updated;
-	});
+	};
+
+	app.put("/api/clinical/lab-orders/:id", putLabOrderHandler);
+	app.put("/api/lab/orders/:id", putLabOrderHandler);
 
 	/**
 	 * Вспомогательное сопоставление клинического этапа ЗТЛ на допустимый статус lab_orders.status (0042 CHECK).
@@ -862,12 +957,22 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		switch (stage) {
 			case "sent_to_lab":
 			case "sent":
+			case "impression_scan":
+			case "impression":
+			case "scan":
+			case "Слепок/Скан":
 				return "sent";
 			case "in_progress":
 			case "model_cad_design":
 			case "framework_wax_milling":
 			case "sintering_ceramic_layering":
 			case "final_glaze":
+			case "framework_fitting":
+			case "framework":
+			case "Каркас/Примерка":
+			case "ceramic_layering":
+			case "ceramic":
+			case "Нанесение керамики":
 				return "in_progress";
 			case "shipped":
 			case "shipped_to_clinic":
@@ -875,6 +980,10 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			case "delivered_to_clinic":
 			case "received":
 			case "clinic_received":
+			case "ready_in_clinic":
+			case "ready":
+			case "ready_work":
+			case "Готовая работа":
 				return "received";
 			case "fitting_scheduled":
 			case "fitting_in_mouth":
@@ -884,6 +993,9 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				return "refitting";
 			case "delivered_completed":
 			case "completed":
+			case "patient_fixation":
+			case "fixation":
+			case "Фиксация":
 				return "completed";
 			case "cancelled":
 				return "cancelled";

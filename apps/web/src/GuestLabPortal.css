@@ -302,4 +302,45 @@
 	.guest-portal-actions div {
 		flex-direction: column;
 	}
+	.guest-portal-actions button,
+	.guest-portal-actions .secondary-button,
+	.guest-portal-actions .primary-button {
+		width: 100% !important;
+		min-height: 44px !important;
+		font-size: 14px !important;
+		touch-action: manipulation;
+		-webkit-tap-highlight-color: transparent;
+	}
+}
+
+@media print {
+	@page {
+		size: A4 portrait;
+		margin: 8mm 12mm;
+	}
+	html, body {
+		background: #ffffff !important;
+		color: #000000 !important;
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+	.guest-portal-actions,
+	button,
+	.print\\:hidden {
+		display: none !important;
+	}
+	.guest-portal-card {
+		border: none !important;
+		box-shadow: none !important;
+		padding: 0 !important;
+		max-width: 100% !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+	}
+	.guest-portal-grid,
+	.guest-portal-scan-card,
+	.guest-portal-field {
+		break-inside: avoid !important;
+		page-break-inside: avoid !important;
+	}
 }

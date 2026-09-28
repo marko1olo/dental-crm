@@ -52,6 +52,10 @@ import {
 	DentalLabOrderDetailsModal,
 	type ActionPromptState,
 } from "./DentalLabOrderDetailsModal";
+import {
+	DentalLabReadyInClinicModal,
+	type ReadyInClinicLabOrder,
+} from "./DentalLabReadyInClinicModal";
 
 export interface DentalLabOrdersHubModalProps {
 	readonly isOpen: boolean;
@@ -157,6 +161,27 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	const [activeCardMenuOrderId, setActiveCardMenuOrderId] = useState<string | null>(null);
 	const [stageLimits, setStageLimits] = useState<Record<string, number>>({});
 
+	// Ready in clinic 1-click schedule/SMS modal state (Mandates 8b, 8e, 8n)
+	const [isReadyInClinicModalOpen, setIsReadyInClinicModalOpen] = useState<boolean>(false);
+	const [readyInClinicOrder, setReadyInClinicOrder] = useState<ReadyInClinicLabOrder | null>(null);
+
+	const handleOpenReadyInClinicPrompt = useCallback((order: DentalLabWorkflowOrder) => {
+		const target: ReadyInClinicLabOrder = {
+			id: order.id,
+			orderNumber: order.orderNumber,
+			patientId: order.patientId,
+			patientName: order.patientName,
+			doctorName: order.doctorName,
+			toothFdi: Array.isArray(order.selectedTeeth) ? order.selectedTeeth.join(", ") : undefined,
+			material: order.materialName,
+			colorVita: order.shadeCode,
+			constructionType: order.workTypeId,
+			clinicName: order.clinicName || "DENTE",
+		};
+		setReadyInClinicOrder(target);
+		setIsReadyInClinicModalOpen(true);
+	}, []);
+
 	// Всплывающие уведомления (Мандат 8e / Мгновенная обратная связь врачу)
 	const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -261,7 +286,11 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
 		if (onSaveOrder) onSaveOrder(updated);
 		showToast(`Наряд № ${order.orderNumber}: переведен в статус «${LAB_WORKFLOW_STATUSES[nextStage].nameRu}»`);
-	}, [onSaveOrder, showToast]);
+
+		if (nextStage === "fitting_scheduled") {
+			handleOpenReadyInClinicPrompt(updated);
+		}
+	}, [handleOpenReadyInClinicPrompt, onSaveOrder, showToast]);
 
 	// Перевод на технологический этап ЗТЛ (1..8)
 	const handleAdvanceTechStage = useCallback((order: DentalLabWorkflowOrder, targetTechStage?: LabTechnologicalStageId) => {
@@ -281,7 +310,11 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		if (inspectingOrder && inspectingOrder.id === order.id) setInspectingOrder(updated);
 		if (onSaveOrder) onSaveOrder(updated);
 		showToast(`Наряд № ${order.orderNumber}: этап ЗТЛ обновлен на «${LAB_TECHNOLOGICAL_STAGES[nextTechStage].shortTitleRu}»`);
-	}, [inspectingOrder, onSaveOrder, showToast]);
+
+		if (nextTechStage === "ready_in_clinic") {
+			handleOpenReadyInClinicPrompt(updated);
+		}
+	}, [handleOpenReadyInClinicPrompt, inspectingOrder, onSaveOrder, showToast]);
 
 	// Отправка на гарантийную переделку / рекламацию в ЗТЛ
 	const handleWarrantyReworkSubmit = useCallback((order: DentalLabWorkflowOrder, reason: string) => {
@@ -345,6 +378,13 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		setOrders((prev) => [created, ...prev]);
 		if (onSaveOrder) onSaveOrder(created);
 		showToast(`Наряд № ${created.orderNumber} успешно создан`);
+
+		// Dispatch reactive event for CRM and chairside synchronization
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-lab-order-created", { detail: created }),
+			);
+		}
 
 		// Persist lab order to PostgreSQL 18 backend (Mandates 8e, 8b, 8n)
 		fetch("/api/clinical/lab-orders", {
@@ -729,6 +769,13 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 					actionPrompt={actionPrompt}
 					onCloseActionPrompt={() => setActionPrompt(null)}
 					onActionPromptSubmit={handleActionPromptSubmit}
+				/>
+
+				{/* ─── 7. МОДАЛЬНОЕ ОКНО БЫСТРОЙ ЗАПИСИ И ШАБЛОНОВ SMS / WHATSAPP ─── */}
+				<DentalLabReadyInClinicModal
+					isOpen={isReadyInClinicModalOpen}
+					onClose={() => setIsReadyInClinicModalOpen(false)}
+					order={readyInClinicOrder}
 				/>
 			</div>
 		</div>

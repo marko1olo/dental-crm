@@ -533,7 +533,7 @@ export function useDentalLabOrderForm({
 			};
 			const protocolText = formatLabOrderFormZtl1A4Protocol(synthOrder, "Стоматологическая клиника DENTE");
 			navigator.clipboard.writeText(protocolText);
-			showToast("Протокол ЗТЛ-1 (Форма 043/у) скопирован в буфер", "success");
+			showToast("Протокол наряда ЗТЛ-1 скопирован в буфер", "success");
 		} catch (_e) {
 			showToast("Не удалось скопировать протокол ЗТЛ-1", "error");
 		}

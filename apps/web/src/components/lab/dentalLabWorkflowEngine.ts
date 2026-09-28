@@ -573,6 +573,11 @@ export function checkLabDeadlineAndAlert(params: CheckLabDeadlineParams): LabDel
 
 // ─── 4. ФИНАНСОВЫЙ УЧЕТ В ЦЕЛОЧИСЛЕННЫХ КОПЕЙКАХ ──────────────────────────────
 
+export type WarrantyLiabilityType =
+	| "clinic_warranty" // Гарантийные обязательства клиники (клиника оплачивает себестоимость повторной работы, пациент 0 ₽)
+	| "lab_defect"      // Брак ЗТЛ (брак лаборатории: лаборатория переделывает за свой счет, клиника 0 ₽, пациент 0 ₽)
+	| "patient_fault";  // Негарантийный случай (нарушение рекомендаций пациентом)
+
 export interface DentalLabWorkflowFinancials {
 	readonly unitsCount: number;
 	readonly pricePerUnitKopecks: number;
@@ -592,6 +597,11 @@ export interface DentalLabWorkflowFinancials {
 	readonly doctorWageRub: number;
 	readonly clinicNetProfitRub: number;
 	readonly isBalanced: boolean;
+	readonly isWarrantyRework?: boolean | undefined;
+	readonly warrantyLiabilityType?: WarrantyLiabilityType | undefined;
+	readonly warrantyLiabilityKopecks?: number | undefined;
+	readonly warrantyLiabilityRub?: number | undefined;
+	readonly warrantyLiabilityLabelRu?: string | undefined;
 }
 
 export interface CalculateLabFinancialsParams {
@@ -601,11 +611,14 @@ export interface CalculateLabFinancialsParams {
 	readonly pricePerUnitRub?: number | undefined;
 	readonly costPerUnitRub?: number | undefined;
 	readonly doctorPercent?: number | undefined; // По умолчанию 20%
+	readonly isWarrantyRework?: boolean | undefined;
+	readonly warrantyLiabilityType?: WarrantyLiabilityType | undefined;
 }
 
 /**
  * Целочисленный расчет себестоимости ЗТЛ и сдельной оплаты врача-ортопеда.
  * Инвариант: doctorWageKopecks + clinicNetProfitKopecks === doctorWageBaseKopecks (Zero Penny-Drift).
+ * Гарантийный протокол: пациент СТРОГО 0 ₽, затраты маркируются как обязательства клиники или брак ЗТЛ.
  */
 export function calculateLabWorkflowFinancials(
 	params: CalculateLabFinancialsParams,
@@ -630,6 +643,55 @@ export function calculateLabWorkflowFinancials(
 	);
 
 	const doctorPct = Math.max(0, Math.min(100, params.doctorPercent ?? 20));
+
+	const isWarranty = Boolean(params.isWarrantyRework);
+	const liabilityType: WarrantyLiabilityType = params.warrantyLiabilityType || "clinic_warranty";
+
+	if (isWarranty) {
+		// При гарантийной переделке пациент ВСЕГДА платит 0 ₽ / 0 копеек (Мандат 8e / Без поборов с пациента)
+		let effectiveLabCostKopecks = costPerUnit * count;
+		let warrantyLiabilityKopecks = effectiveLabCostKopecks;
+		let liabilityLabelRu = "Гарантийные обязательства клиники";
+
+		if (liabilityType === "lab_defect") {
+			// Брак лаборатории (ЗТЛ): лаборатория переделывает работу бесплатно за свой счёт
+			effectiveLabCostKopecks = 0;
+			warrantyLiabilityKopecks = 0;
+			liabilityLabelRu = "Брак ЗТЛ (переделка за счет лаборатории 0 ₽)";
+		}
+
+		const clinicGrossMarginKopecks = 0;
+		const grossMarginPercent = 0;
+		const doctorWageBaseKopecks = 0;
+		const doctorWageKopecks = 0;
+		const clinicNetProfitKopecks = effectiveLabCostKopecks === 0 ? 0 : -effectiveLabCostKopecks;
+
+		return {
+			unitsCount: count,
+			pricePerUnitKopecks: 0,
+			costPerUnitKopecks: costPerUnit,
+			patientPriceTotalKopecks: 0,
+			labCostKopecks: effectiveLabCostKopecks,
+			labCostTotalKopecks: effectiveLabCostKopecks,
+			clinicGrossMarginKopecks,
+			grossMarginPercent,
+			doctorPercent: doctorPct,
+			doctorWageBaseKopecks,
+			doctorWageKopecks,
+			clinicNetProfitKopecks,
+			patientPriceTotalRub: 0,
+			labCostTotalRub: effectiveLabCostKopecks / 100,
+			clinicGrossMarginRub: 0,
+			doctorWageRub: 0,
+			clinicNetProfitRub: clinicNetProfitKopecks === 0 ? 0 : clinicNetProfitKopecks / 100,
+			isBalanced: true,
+			isWarrantyRework: true,
+			warrantyLiabilityType: liabilityType,
+			warrantyLiabilityKopecks,
+			warrantyLiabilityRub: warrantyLiabilityKopecks / 100,
+			warrantyLiabilityLabelRu: liabilityLabelRu,
+		};
+	}
 
 	const patientPriceTotalKopecks = pricePerUnit * count;
 	const labCostKopecks = costPerUnit * count;
@@ -664,5 +726,6 @@ export function calculateLabWorkflowFinancials(
 		doctorWageRub: doctorWageKopecks / 100,
 		clinicNetProfitRub: clinicNetProfitKopecks / 100,
 		isBalanced: doctorWageKopecks + clinicNetProfitKopecks === doctorWageBaseKopecks,
+		isWarrantyRework: false,
 	};
 }

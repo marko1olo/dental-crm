@@ -383,7 +383,7 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 	const barcodeSvg = generateBarcodeSvg(order.orderNumber, 240, 50);
 	const qrSvg = generateQrCodeSvg(`DENTE-LAB:${order.orderNumber}|PATIENT:${order.patientName}|TEETH:${teethFormatted}`, 90);
 	const isDraft = order.currentStage === 'draft' || order.currentStage === 'draft_order' || order.currentStage === 'impression_sent';
-	const stampText = isDraft ? 'ЧЕРНОВИК (В РАБОТЕ) (МАНДАТ 8E)' : 'ПОДПИСАНО ВРАЧОМ (МАНДАТ 8E) • В ПРОИЗВОДСТВЕ ЗТЛ';
+	const stampText = isDraft ? 'ЧЕРНОВИК (В РАБОТЕ)' : 'ПОДПИСАНО ВРАЧОМ • В ПРОИЗВОДСТВЕ ЗТЛ';
 	const stampColor = isDraft ? '#d97706' : '#059669';
 	const stampBg = isDraft ? '#fffbeb' : '#f0fdf4';
 	const odontogramSvg = generateFdiOdontogramSvg(order.selectedTeeth);
@@ -463,7 +463,7 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 	${order.isWarrantyRework ? `
 	<div style="background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px;">
 		<div style="color: #e11d48; font-weight: 800; font-size: 12px; text-transform: uppercase;">
-			БЕЗУСЛОВНАЯ ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽ ДЛЯ ПАЦИЕНТА — МАНДАТ 8e П. 7)
+			БЕЗУСЛОВНАЯ ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽ ДЛЯ ПАЦИЕНТА)
 		</div>
 		<div style="font-size: 11px; color: #9f1239; margin-top: 2px;">
 			Основание: ${order.reworkReason || 'Гарантийная рекламация: коррекция прилегания / окклюзии'}
@@ -597,7 +597,7 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 			<div class="data-row"><span class="label">Стоимость клиники:</span> <span class="value" ${order.isWarrantyRework ? 'style="color: #15803d; font-weight: 800;"' : ''}>${order.financials.patientPriceTotalRub.toLocaleString('ru-RU')} ₽ ${order.isWarrantyRework ? '(0 ₽ гарантия)' : ''}</span></div>
 			<div class="data-row"><span class="label">Себестоимость лаборатории:</span> <span class="value">${order.financials.labCostTotalRub.toLocaleString('ru-RU')} ₽</span></div>
 			<div class="data-row" style="margin-top: 6px; font-size: 11px; color: #64748b;">
-				Автономия врача (Мандат 8e п. 7): Истечение 30 дней плана лечения не блокирует наряды ЗТЛ и оплату.
+				Клиническое решение лечащего врача • Наряд авторизован к производству
 			</div>
 		</div>
 		<div class="col" style="text-align: right;">

@@ -311,7 +311,7 @@ export function DentalLabRestorationTab({
 						Этап 1: Слепок / Интраоральный цифровой скан (Оттискная масса)
 					</label>
 					<span className="text-[11px] font-semibold text-teal-600 dark:text-teal-400">
-						СанПиН 3.3686-21
+						Дезинфекция оттиска
 					</span>
 				</div>
 				<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

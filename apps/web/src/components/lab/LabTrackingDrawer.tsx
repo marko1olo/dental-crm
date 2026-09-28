@@ -269,7 +269,7 @@ export function LabTrackingDrawer({
 								<span>5 этапов клинического трекинга</span>
 								<span className="font-mono text-[10px]">ГОСТ Р 51087-97</span>
 							</div>
-							<div className="grid grid-cols-5 gap-1.5 text-center">
+							<div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-center">
 								{CANONICAL_5_CLINICAL_LAB_STATUSES.map((item) => {
 									const mappedCurrent = mapTo5StageLabStatus(activeStage);
 									const isCurrent = mappedCurrent === item.id;
@@ -287,7 +287,9 @@ export function LabTrackingDrawer({
 												else if (item.id === "ready") handleAdvanceStage("delivered_to_clinic");
 												else if (item.id === "completed") handleAdvanceStage("delivered_completed");
 											}}
-											className={`p-1.5 rounded-lg border text-center transition-all cursor-pointer min-h-[38px] ${
+											className={`p-2 sm:p-1.5 rounded-lg border text-center transition-all cursor-pointer min-h-[44px] sm:min-h-[38px] flex flex-col justify-center touch-manipulation ${
+												item.step === 5 ? "col-span-2 sm:col-span-1" : ""
+											} ${
 												isCurrent
 													? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-xs ring-1 ring-[var(--teal)]"
 													: isPassed

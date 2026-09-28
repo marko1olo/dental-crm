@@ -4,6 +4,7 @@ import {
 	AlertOctagon,
 	Box,
 	Calendar,
+	CalendarCheck,
 	Camera,
 	CheckCircle2,
 	Clock,
@@ -14,6 +15,8 @@ import {
 	Filter,
 	FlaskConical,
 	Layers,
+	LayoutGrid,
+	LayoutList,
 	Link,
 	Loader2,
 	MessageSquare,
@@ -36,7 +39,7 @@ import { denteAdminSecretRequestHeaders, money } from "../AppHelpers";
 import { showToast } from "../components/GlobalToast";
 import type { DentalLabOrderData } from "../components/lab/DentalLabOrderModal";
 import { useAppStore } from "../store/appStore";
-import { formatLabOrderTeethOrJaw, isJawWideConstruction } from "../components/lab/labMath";
+import { formatLabOrderTeethOrJaw, isJawWideConstruction, SHADE_SWATCH_MAP } from "../components/lab/labMath";
 
 const DentalLabOrderModal = lazy(() =>
 	import("../components/lab/DentalLabOrderModal").then((module) => ({
@@ -64,6 +67,10 @@ import {
 	is3DScanUrl,
 } from "../components/lab/LabAttachScanModal";
 import { LabOrderCard } from "../components/lab/LabOrderCard";
+import {
+	DentalLabReadyInClinicModal,
+	type ReadyInClinicLabOrder,
+} from "../components/lab/DentalLabReadyInClinicModal";
 
 export {
 	LabActionPromptModal,
@@ -72,6 +79,8 @@ export {
 	type LabAttachScanModalProps,
 	is3DScanUrl,
 	LabOrderCard,
+	DentalLabReadyInClinicModal,
+	type ReadyInClinicLabOrder,
 };
 
 export function LabOrdersPage() {
@@ -83,6 +92,7 @@ export function LabOrdersPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("all");
 	const [doctorFilter, setDoctorFilter] = useState<string>("all");
+	const [viewMode, setViewMode] = useState<"table" | "cards">("table");
 	const [openMenuOrderId, setOpenMenuOrderId] = useState<string | null>(null);
 
 	// Action Prompt Modal State (Mandates 8e, 8n)
@@ -102,6 +112,30 @@ export function LabOrdersPage() {
 	// Tracking Drawer State
 	const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
 	const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<DentalLabOrderData | null>(null);
+
+	// Ready in clinic prompt modal state (Mandates 8b, 8e, 8n)
+	const [isReadyInClinicModalOpen, setIsReadyInClinicModalOpen] = useState(false);
+	const [readyInClinicOrder, setReadyInClinicOrder] = useState<ReadyInClinicLabOrder | null>(null);
+
+	const handleOpenReadyInClinicPrompt = useCallback((order: DentalLabOrderData) => {
+		setOpenMenuOrderId(null);
+		const target: ReadyInClinicLabOrder = {
+			id: order.id || "ztl-order",
+			orderNumber: (order as any).orderNumber || (order.id ? order.id.slice(0, 8) : "ЗТЛ-1"),
+			patientId: order.patientId ?? undefined,
+			patientName: order.patientName || "Пациент",
+			patientPhone: (order as any).patientPhone ?? undefined,
+			doctorName: order.doctorName ?? undefined,
+			doctorId: order.doctorId ?? undefined,
+			toothFdi: order.toothFdi ?? undefined,
+			material: order.material ?? undefined,
+			colorVita: order.colorVita ?? undefined,
+			constructionType: order.constructionType ?? undefined,
+			clinicName: "DENTE",
+		};
+		setReadyInClinicOrder(target);
+		setIsReadyInClinicModalOpen(true);
+	}, []);
 
 	// Live status updates from store
 	const labOrderStatuses = useAppStore((state: any) => state.labOrderStatuses);
@@ -131,10 +165,30 @@ export function LabOrdersPage() {
 		fetchOrders();
 	}, [fetchOrders, labOrderStatuses]);
 
+	// Канонические 5 клинических этапов для фильтрации реестра ЗТЛ
+	const CANONICAL_STAGE_FILTERS = useMemo(() => [
+		{ id: "all", label: "Все", statuses: [] as string[] },
+		{ id: "impression_scan", label: "Слепок", statuses: ["sent", "impression_scan", "draft"] },
+		{ id: "framework_fitting", label: "Каркас", statuses: ["in_progress", "framework_fitting"] },
+		{ id: "ceramic_layering", label: "Керамика", statuses: ["fitting", "refitting", "ceramic_layering"] },
+		{ id: "ready_in_clinic", label: "Готовая в клинике", statuses: ["ready", "ready_in_clinic", "shipped", "delivered", "received"] },
+		{ id: "patient_fixation", label: "Зафиксировано", statuses: ["completed", "patient_fixation", "delivered_completed"] },
+	], []);
+
 	// Filtered Orders List
 	const filteredOrders = useMemo(() => {
+		const matchedFilter = CANONICAL_STAGE_FILTERS.find((f) => f.id === statusFilter);
+
 		return orders.filter((o) => {
-			if (statusFilter !== "all" && o.status !== statusFilter) return false;
+			if (statusFilter !== "all") {
+				if (matchedFilter && matchedFilter.statuses.length > 0) {
+					const hasStatus = matchedFilter.statuses.includes(o.status || "");
+					const hasStage = (o as any).stage === statusFilter || (o as any).currentStage === statusFilter;
+					if (!hasStatus && !hasStage) return false;
+				} else if (o.status !== statusFilter) {
+					return false;
+				}
+			}
 			if (doctorFilter !== "all" && o.doctorId !== doctorFilter && o.doctorName !== doctorFilter) return false;
 
 			if (searchQuery.trim()) {
@@ -144,12 +198,13 @@ export function LabOrdersPage() {
 				const tooth = (o.toothFdi || "").toLowerCase();
 				const mat = (o.material || "").toLowerCase();
 				const notes = (o.clinicalNotes || "").toLowerCase();
-				return pName.includes(q) || dName.includes(q) || tooth.includes(q) || mat.includes(q) || notes.includes(q);
+				const num = ((o as any).orderNumber || o.id || "").toLowerCase();
+				return pName.includes(q) || dName.includes(q) || tooth.includes(q) || mat.includes(q) || notes.includes(q) || num.includes(q);
 			}
 
 			return true;
 		});
-	}, [orders, statusFilter, doctorFilter, searchQuery]);
+	}, [orders, statusFilter, doctorFilter, searchQuery, CANONICAL_STAGE_FILTERS]);
 
 	// KPI Metrics
 	const metrics = useMemo(() => {
@@ -205,6 +260,13 @@ export function LabOrdersPage() {
 
 			showToast("Статус наряда ЗТЛ успешно обновлен", "success");
 			fetchOrders();
+
+			if (newStatus === "ready" || newStatus === "ready_in_clinic" || newStatus === "shipped" || newStatus === "delivered" || newStatus === "received") {
+				const matched = orders.find((o) => o.id === orderId);
+				if (matched) {
+					handleOpenReadyInClinicPrompt({ ...matched, status: newStatus });
+				}
+			}
 		} catch (err: any) {
 			showToast(err.message || "Ошибка смены статуса", "error");
 		}
@@ -318,10 +380,10 @@ export function LabOrdersPage() {
 
 	const handleReclamation = (order: DentalLabOrderData) => {
 		setOpenMenuOrderId(null);
-		const defaultReason = "Несоответствие цвета VITA / переделка по гарантии (0 ₽)";
+		const defaultReason = "Брак ЗТЛ: несоответствие цвета VITA / переделка за счет лаборатории (0 ₽)";
 		setPromptState({
 			title: "Оформление рекламации ЗТЛ",
-			description: "Перевод наряда на гарантийную доработку (0 ₽). Выберите причину из списка или введите подробное описание дефекта:",
+			description: "Перевод наряда на гарантийную доработку (пациент 0 ₽). Выберите причину из списка или введите подробное описание дефекта:",
 			icon: <AlertOctagon className="w-4 h-4 text-rose-600 dark:text-rose-400" />,
 			initialValue: defaultReason,
 			placeholder: "Опишите дефект конструкции...",
@@ -329,15 +391,24 @@ export function LabOrdersPage() {
 			submitVariant: "danger",
 			multiline: true,
 			quickPresets: [
-				"Несоответствие цвета VITA / переделка по гарантии (0 ₽)",
-				"Скол облицовочной керамики",
-				"Балансир каркаса / неплотное краевое прилегание",
-				"Завышение по прикусу / окклюзионная интерференция",
-				"Некорректная анатомическая форма / контактный пункт",
+				"Брак ЗТЛ: несоответствие цвета VITA / переделка за счет лаборатории (0 ₽)",
+				"Брак ЗТЛ: балансир каркаса / неплотное краевое прилегание (0 ₽)",
+				"Брак ЗТЛ: скол керамики при обжиге в лаборатории (0 ₽)",
+				"Гарантия клиники: скол керамики при эксплуатации (пациент 0 ₽)",
+				"Гарантия клиники: завышение по прикусу / окклюзионная интерференция (пациент 0 ₽)",
+				"Гарантия клиники: коррекция анатомической формы / контактного пункта (пациент 0 ₽)",
 			],
 			onSubmit: (reason: string) => {
 				setPromptState(null);
 				if (!reason.trim()) return;
+				const isLabDefect =
+					reason.toLowerCase().includes("брак зтл") ||
+					reason.toLowerCase().includes("вина лаборатории") ||
+					reason.toLowerCase().includes("брак лаборатории") ||
+					reason.toLowerCase().includes("за счет лаборатории");
+				const liabilityType = isLabDefect ? "lab_defect" : "clinic_warranty";
+				const liabilityLabelRu = isLabDefect ? "Брак ЗТЛ" : "Гарантийные обязательства клиники";
+
 				fetch(`/api/clinical/lab-orders/${order.id}`, {
 					method: "PUT",
 					headers: {
@@ -346,12 +417,20 @@ export function LabOrdersPage() {
 					},
 					body: JSON.stringify({
 						status: "refitting",
-						clinicalNotes: `${order.clinicalNotes || ""}\n[РЕКЛАМАЦИЯ ЗТЛ: ${reason.trim()}]`.trim(),
+						stage: "warranty_rework",
+						isWarrantyRework: true,
+						warrantyLiabilityType: liabilityType,
+						priceRub: 0,
+						clinicalNotes: `${order.clinicalNotes || ""}\n[РЕКЛАМАЦИЯ ЗТЛ (${liabilityLabelRu}): ${reason.trim()}]`.trim(),
 					}),
 				})
 					.then((res) => {
 						if (!res.ok) throw new Error("Ошибка рекламации");
-						showToast("Рекламация оформлена. Наряд отправлен на гарантийную доработку (0 ₽)", "warning");
+						showToast(
+							`Рекламация оформлена [${liabilityLabelRu}]. Для пациента: 0 ₽. Наряд отправлен на доработку`,
+							"warning",
+							4000,
+						);
 						fetchOrders();
 					})
 					.catch((err) => showToast(err.message || "Ошибка рекламации", "error"));
@@ -380,6 +459,13 @@ export function LabOrdersPage() {
 			}
 			showToast("Этап наряда ЗТЛ успешно обновлен", "success");
 			fetchOrders();
+
+			if (newStage === "ready" || newStage === "ready_in_clinic" || newStage === "received" || newStage === "delivered" || newStage === "completed") {
+				const matched = orders.find((o) => o.id === orderId);
+				if (matched) {
+					handleOpenReadyInClinicPrompt({ ...matched, status: "ready" });
+				}
+			}
 		} catch (err: any) {
 			showToast(err.message || "Ошибка смены этапа ЗТЛ", "error");
 		}
@@ -505,6 +591,62 @@ export function LabOrdersPage() {
 				</div>
 			</div>
 
+			{/* ─── ПАНЕЛЬ ФИЛЬТРАЦИИ 5 ЭТАПОВ И ПЕРЕКЛЮЧАТЕЛЬ СЕТКИ 32PX (МАНДАТЫ 8d, 8p) ─── */}
+			<div className="flex items-center justify-between gap-2 overflow-x-auto pb-0.5">
+				<div className="flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] text-xs shrink-0">
+					{CANONICAL_STAGE_FILTERS.map((f) => {
+						const isActive = statusFilter === f.id;
+						return (
+							<button
+								key={f.id}
+								type="button"
+								onClick={() => setStatusFilter(f.id)}
+								className={`h-7 px-2.5 rounded-md text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+									isActive
+										? "bg-[var(--teal)] text-white shadow-2xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+								}`}
+								data-testid={`lab-status-filter-${f.id}`}
+							>
+								<span>{f.label}</span>
+							</button>
+						);
+					})}
+				</div>
+
+				{/* Переключатель вида: Плотная таблица 32px / Карточки */}
+				<div className="hidden sm:flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] text-xs shrink-0">
+					<button
+						type="button"
+						onClick={() => setViewMode("table")}
+						className={`h-7 px-2.5 rounded-md text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+							viewMode === "table"
+								? "bg-[var(--teal)] text-white shadow-2xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+						}`}
+						title="Плотный десктопный реестр (32px)"
+						data-testid="lab-orders-view-table-btn"
+					>
+						<LayoutList className="w-3.5 h-3.5" />
+						<span>Таблица 32px</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setViewMode("cards")}
+						className={`h-7 px-2.5 rounded-md text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+							viewMode === "cards"
+								? "bg-[var(--teal)] text-white shadow-2xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+						}`}
+						title="Вид карточками"
+						data-testid="lab-orders-view-cards-btn"
+					>
+						<LayoutGrid className="w-3.5 h-3.5" />
+						<span>Карточки</span>
+					</button>
+				</div>
+			</div>
+
 			{/* Main Orders Table / Cards */}
 			{isLoading ? (
 				<div className="p-12 text-center text-[var(--muted)] flex items-center justify-center gap-2">
@@ -537,8 +679,230 @@ export function LabOrdersPage() {
 						<span>Оформить заказ-наряд в лабораторию</span>
 					</button>
 				</div>
+			) : viewMode === "table" ? (
+				/* ─── ПЛОТНЫЙ ДЕСКТОПНЫЙ РЕЕСТР: СТРОГО СЕТКА 32PX (МАНДАТЫ 8d п. 2, 8p) ─── */
+				<div className="overflow-x-auto rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs" data-testid="lab-orders-table-container">
+					<table className="w-full text-left border-collapse" data-testid="lab-orders-dense-table">
+						<thead>
+							<tr className="h-8 min-h-[32px] max-h-[32px] bg-[var(--paper-soft)] border-b border-[var(--line)] text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] select-none">
+								<th className="px-3 py-0 whitespace-nowrap">№ Наряда</th>
+								<th className="px-3 py-0 whitespace-nowrap">Пациент</th>
+								<th className="px-2 py-0 whitespace-nowrap text-center">Зуб (FDI)</th>
+								<th className="px-3 py-0 whitespace-nowrap">Конструкция / Материал</th>
+								<th className="px-2 py-0 whitespace-nowrap">Цвет VITA</th>
+								<th className="px-3 py-0 whitespace-nowrap">Статус ЗТЛ</th>
+								<th className="px-3 py-0 whitespace-nowrap">Срок (Дедлайн)</th>
+								<th className="px-3 py-0 whitespace-nowrap font-mono text-right">Себестоимость</th>
+								<th className="px-3 py-0 whitespace-nowrap text-right">Действия</th>
+							</tr>
+						</thead>
+						<tbody className="divide-y divide-[var(--line)]">
+							{filteredOrders.map((order) => {
+								const isReady = order.status === "ready" || order.status === "ready_in_clinic" || order.status === "shipped" || order.status === "delivered" || order.status === "received";
+								const isOverdue = order.dueDate && order.status !== "completed" && order.status !== "cancelled" && new Date(order.dueDate).getTime() < Date.now();
+								const orderNumDisplay = (order as any).orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ");
+								const swatchBg = SHADE_SWATCH_MAP[order.colorVita?.toUpperCase() ?? ""]?.bg || "#f4eedb";
+
+								return (
+									<tr
+										key={order.id}
+										className="h-8 min-h-[32px] max-h-[32px] hover:bg-[var(--paper-soft)] transition-colors text-xs text-[var(--ink)]"
+										data-testid={`lab-order-table-row-${order.id}`}
+									>
+										{/* 1. Номер наряда */}
+										<td className="px-3 py-0 whitespace-nowrap align-middle">
+											<span className="font-mono font-bold text-[11px] text-teal-600 dark:text-teal-400">
+												{orderNumDisplay}
+											</span>
+										</td>
+
+										{/* 2. Пациент */}
+										<td className="px-3 py-0 whitespace-nowrap align-middle">
+											<span className="font-bold truncate max-w-[170px] inline-block align-middle" title={order.patientName}>
+												{order.patientName || "Пациент"}
+											</span>
+										</td>
+
+										{/* 3. Зуб FDI */}
+										<td className="px-2 py-0 whitespace-nowrap align-middle text-center">
+											<span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border border-[var(--line)] font-mono">
+												{order.toothFdi ? `№ ${order.toothFdi}` : "Челюсть"}
+											</span>
+										</td>
+
+										{/* 4. Конструкция & Материал */}
+										<td className="px-3 py-0 whitespace-nowrap align-middle">
+											<span className="truncate max-w-[190px] inline-block align-middle text-[11px] text-[var(--ink)]" title={`${order.constructionType || ""} ${order.material || ""}`}>
+												{order.constructionType || order.material || "Конструкция"}
+											</span>
+										</td>
+
+										{/* 5. VITA */}
+										<td className="px-2 py-0 whitespace-nowrap align-middle">
+											<span className="inline-flex items-center gap-1.5 font-bold text-[11px]">
+												<span
+													className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
+													style={{ backgroundColor: swatchBg }}
+												/>
+												<span>{order.colorVita || "A2"}</span>
+											</span>
+										</td>
+
+										{/* 6. Статус */}
+										<td className="px-3 py-0 whitespace-nowrap align-middle">
+											{getStatusBadge(order.status)}
+										</td>
+
+										{/* 7. Дедлайн */}
+										<td className="px-3 py-0 whitespace-nowrap align-middle">
+											<span className={`text-[11px] font-mono ${isOverdue ? "text-rose-600 font-bold" : "text-[var(--muted)]"}`}>
+												{order.dueDate ? new Date(order.dueDate).toLocaleDateString("ru-RU") : "—"}
+											</span>
+										</td>
+
+										{/* 8. Себестоимость / Пациент */}
+										<td className="px-3 py-0 whitespace-nowrap align-middle font-mono font-bold text-xs text-right">
+											{(order as any).isWarrantyRework || order.status === "refitting" || order.priceRub === 0 ? (
+												<span className="text-emerald-600 dark:text-emerald-400 font-bold" title="Гарантийная рекламация: 0 ₽ для пациента">
+													0 ₽ (Гарантия)
+												</span>
+											) : order.priceRub != null ? (
+												money(order.priceRub)
+											) : (
+												"—"
+											)}
+										</td>
+
+										{/* 9. Действия (строго 28-32px) */}
+										<td className="px-3 py-0 whitespace-nowrap align-middle text-right">
+											<div className="inline-flex items-center gap-1">
+												{isReady ? (
+													<button
+														type="button"
+														onClick={() => handleOpenReadyInClinicPrompt(order)}
+														className="h-7 min-h-[28px] px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+														title="Работа готова в клинике! Записать пациента на примерку / фиксацию и отправить SMS / WhatsApp"
+														data-testid={`lab-order-table-schedule-btn-${order.id}`}
+													>
+														<CalendarCheck className="w-3 h-3" />
+														<span>Запись/SMS</span>
+													</button>
+												) : (
+													<button
+														type="button"
+														onClick={() => handleOpenPrintOrder(order)}
+														className="h-7 min-h-[28px] px-2 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+														title="Распечатать официальный наряд ЗТЛ-1 (ГОСТ / СтАР)"
+														data-testid={`lab-order-table-print-btn-${order.id}`}
+													>
+														<Printer className="w-3 h-3" />
+														<span>ЗТЛ-1</span>
+													</button>
+												)}
+
+												<button
+													type="button"
+													onClick={() => handleOpenTracking(order)}
+													className="h-7 min-h-[28px] w-7 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
+													title="Клинический трекер этапов ЗТЛ"
+													data-testid={`lab-order-table-track-btn-${order.id}`}
+												>
+													<Layers className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+												</button>
+
+												<div className="relative">
+													<button
+														type="button"
+														onClick={() => setOpenMenuOrderId((prev) => prev === order.id ? null : (order.id || null))}
+														className="h-7 min-h-[28px] w-7 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
+														aria-label="Вторичные действия"
+														data-testid={`lab-order-table-menu-btn-${order.id}`}
+													>
+														<MoreVertical className="w-3.5 h-3.5" />
+													</button>
+
+													{openMenuOrderId === order.id && (
+														<div
+															className="absolute right-0 top-full mt-1 w-52 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl z-30 py-1 text-xs text-[var(--ink)] animate-in fade-in-50 duration-100 text-left"
+															onClick={(e) => e.stopPropagation()}
+														>
+															<button
+																type="button"
+																onClick={() => handleAttach3DScan(order)}
+																className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px]"
+															>
+																<Box className="w-3.5 h-3.5 text-teal-500" />
+																<span>Прикрепить 3D-скан (STL/PLY)</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => handleAttachBitePhoto(order)}
+																className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px]"
+															>
+																<Camera className="w-3.5 h-3.5 text-sky-500" />
+																<span>Прикрепить фото прикуса</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => handleTechnicianComment(order)}
+																className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px]"
+															>
+																<MessageSquare className="w-3.5 h-3.5 text-amber-500" />
+																<span>Комментарий технику</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => handleOpenPrintOrder(order)}
+																className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px]"
+															>
+																<Printer className="w-3.5 h-3.5 text-teal-600" />
+																<span>Печать наряда ЗТЛ-1</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => handleRepeatFitting(order)}
+																className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px] text-purple-600 dark:text-purple-400"
+															>
+																<RotateCcw className="w-3.5 h-3.5" />
+																<span>Повторная примерка</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => handleReclamation(order)}
+																className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px] text-rose-600 dark:text-rose-400"
+															>
+																<AlertOctagon className="w-3.5 h-3.5" />
+																<span>Рекламация (доработка 0 ₽)</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => handleOpenEditOrder(order)}
+																className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px]"
+															>
+																<ExternalLink className="w-3.5 h-3.5" />
+																<span>Редактировать параметры</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => copyPortalLink((order as any).portalToken || order.id)}
+																className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px]"
+															>
+																<Link className="w-3.5 h-3.5" />
+																<span>Ссылка для техника</span>
+															</button>
+														</div>
+													)}
+												</div>
+											</div>
+										</td>
+									</tr>
+								);
+							})}
+						</tbody>
+					</table>
+				</div>
 			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="lab-orders-cards-grid">
 					{filteredOrders.map((order) => (
 						<LabOrderCard
 							key={order.id}
@@ -555,6 +919,7 @@ export function LabOrdersPage() {
 							handleOpenEditOrder={handleOpenEditOrder}
 							copyPortalLink={copyPortalLink}
 							getStatusBadge={getStatusBadge}
+							handleOpenReadyInClinicPrompt={handleOpenReadyInClinicPrompt}
 						/>
 					))}
 				</div>
@@ -610,6 +975,13 @@ export function LabOrdersPage() {
 					/>
 				</Suspense>
 			)}
+
+			{/* Ready in clinic 1-click booking and SMS / WhatsApp modal (Mandates 8b, 8e, 8n) */}
+			<DentalLabReadyInClinicModal
+				isOpen={isReadyInClinicModalOpen}
+				onClose={() => setIsReadyInClinicModalOpen(false)}
+				order={readyInClinicOrder}
+			/>
 		</div>
 	);
 }

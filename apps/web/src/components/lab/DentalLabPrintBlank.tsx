@@ -124,8 +124,43 @@ export function DentalLabPrintBlank({
 
 	return (
 		<div className="space-y-6">
+			{/* Print stylesheet for perfect A4 output and anti-dark-theme-bleed */}
+			<style>{`
+				@media print {
+					@page {
+						size: A4 portrait;
+						margin: 8mm 10mm;
+					}
+					html, body {
+						background: #ffffff !important;
+						color: #000000 !important;
+						-webkit-print-color-adjust: exact !important;
+						print-color-adjust: exact !important;
+					}
+					.print\\:hidden, button, header, nav, aside {
+						display: none !important;
+					}
+					#printable-lab-order-sheet {
+						border: none !important;
+						box-shadow: none !important;
+						padding: 0 !important;
+						margin: 0 !important;
+						background: #ffffff !important;
+						color: #000000 !important;
+					}
+					.break-inside-avoid,
+					tr,
+					.teeth-avoid-break,
+					.spec-avoid-break,
+					.tracker-avoid-break {
+						break-inside: avoid !important;
+						page-break-inside: avoid !important;
+					}
+				}
+			`}</style>
+
 			{/* Header Toolbar */}
-			<div className="flex items-center justify-between flex-wrap gap-3">
+			<div className="flex items-center justify-between flex-wrap gap-3 print:hidden">
 				<div>
 					<h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 m-0">
 						Форма № ЗТЛ-1: Наряд-заказ в зуботехническую лабораторию (СтАР / ГОСТ)
@@ -149,7 +184,7 @@ export function DentalLabPrintBlank({
 			<div
 				id="printable-lab-order-sheet"
 				data-testid="form-ztl-1-blank"
-				className="p-6 sm:p-8 bg-white text-slate-900 rounded-xl border border-slate-300 shadow-sm space-y-5 print:border-none print:shadow-none print:p-0"
+				className="p-6 sm:p-8 bg-white text-slate-900 rounded-xl border border-slate-300 shadow-sm space-y-5 print:border-none print:shadow-none print:p-0 print:m-0 print:space-y-4"
 			>
 				{/* Blank Header */}
 				<div className="flex justify-between items-start border-b-2 border-slate-900 pb-3">
@@ -204,7 +239,7 @@ export function DentalLabPrintBlank({
 				</div>
 
 				{/* Info Table */}
-				<div className="grid grid-cols-2 gap-4 text-xs">
+				<div className="grid grid-cols-2 gap-4 text-xs break-inside-avoid print:break-inside-avoid" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
 					<div className="space-y-1.5">
 						<div>
 							<strong>Пациент:</strong> <span className="font-bold">{patientFio.fullName}</span>{" "}
@@ -256,7 +291,7 @@ export function DentalLabPrintBlank({
 				</div>
 
 				{/* Detailed Spec Box */}
-				<div className="p-3.5 bg-slate-50 border border-slate-300 rounded-lg text-xs space-y-2">
+				<div className="p-3.5 bg-slate-50 border border-slate-300 rounded-lg text-xs space-y-2 break-inside-avoid print:break-inside-avoid" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
 					<div className="font-bold border-b border-slate-200 pb-1 uppercase tracking-wider text-[11px] text-slate-700">
 						Техническое задание зубному технику:
 					</div>
@@ -305,7 +340,8 @@ export function DentalLabPrintBlank({
 
 				{/* 5-Stage Clinical Tracking Progression (ГОСТ Р 51087-97 / Мандаты 8e, 8s, 8k) */}
 				<div
-					className="p-3 bg-slate-50 border border-slate-300 rounded-lg text-xs space-y-2"
+					className="p-3 bg-slate-50 border border-slate-300 rounded-lg text-xs space-y-2 break-inside-avoid print:break-inside-avoid"
+					style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
 					data-testid="lab-blank-5stage-tracker"
 				>
 					<div className="font-bold border-b border-slate-200 pb-1.5 uppercase tracking-wider text-[11px] text-slate-700 flex justify-between items-center">
@@ -341,10 +377,10 @@ export function DentalLabPrintBlank({
 					</div>
 				</div>
 
-				{/* Disinfection & SanPiN Mark */}
-				<div className="p-2.5 border border-dashed border-slate-300 rounded text-xs flex justify-between items-center text-slate-600 flex-wrap gap-2">
+				{/* Disinfection & Authorization Mark */}
+				<div className="p-2.5 border border-dashed border-slate-300 rounded text-xs flex justify-between items-center text-slate-600 flex-wrap gap-2 break-inside-avoid print:break-inside-avoid" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
 					<span>
-						[СанПиН 3.3686-21] Оттиски дезинфицированы • [Мандат 8e п. 7] Срок плана лечения (&gt;30 дн.) не блокирует наряды ЗТЛ
+						Оттиски и материалы дезинфицированы в клинике • Срок плана лечения (&gt;30 дн.) не блокирует наряды ЗТЛ • Наряд авторизован лечащим врачом
 					</span>
 					{totalLabPriceRub != null && totalLabPriceRub > 0 && (
 						<span className="font-bold text-slate-900">
@@ -354,7 +390,7 @@ export function DentalLabPrintBlank({
 				</div>
 
 				{/* Barcode & QR Code Section */}
-				<div className="flex justify-between items-center pt-2 border-t border-dashed border-slate-300">
+				<div className="flex justify-between items-center pt-2 border-t border-dashed border-slate-300 break-inside-avoid print:break-inside-avoid" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
 					<div className="w-1/2">
 						<div className="text-xs uppercase font-bold text-slate-500 mb-1">
 							Штрихкод наряда
@@ -382,7 +418,7 @@ export function DentalLabPrintBlank({
 				</div>
 
 				{/* Signatures */}
-				<div className="grid grid-cols-2 gap-8 pt-4 text-xs">
+				<div className="grid grid-cols-2 gap-8 pt-4 text-xs break-inside-avoid print:break-inside-avoid" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
 					<div className="border-t border-slate-400 pt-1">
 						Врач-ортопед: ___________________ / {formDoctorName} /
 					</div>

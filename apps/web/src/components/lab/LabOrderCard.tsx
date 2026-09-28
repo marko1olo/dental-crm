@@ -3,6 +3,7 @@ import {
 	AlertOctagon,
 	Box,
 	Calendar,
+	CalendarCheck,
 	Camera,
 	FileText,
 	Layers,
@@ -32,6 +33,7 @@ export interface LabOrderCardProps {
 	handleOpenEditOrder: (order: DentalLabOrderData) => void;
 	copyPortalLink: (token?: string) => void;
 	getStatusBadge: (status?: string) => React.ReactNode;
+	handleOpenReadyInClinicPrompt?: ((order: DentalLabOrderData) => void) | undefined;
 }
 
 export function LabOrderCard({
@@ -48,6 +50,7 @@ export function LabOrderCard({
 	handleOpenEditOrder,
 	copyPortalLink,
 	getStatusBadge,
+	handleOpenReadyInClinicPrompt,
 }: LabOrderCardProps) {
 	return (
 		<div
@@ -153,36 +156,62 @@ export function LabOrderCard({
 				</div>
 
 				<div className="flex items-center gap-1.5">
-					{/* ПРЯМОЕ ДЕЙСТВИЕ 1: Печать наряда ЗТЛ-1 (ГОСТ) */}
-					<button
-						type="button"
-						onClick={() => handleOpenPrintOrder(order)}
-						className="h-9 min-h-[36px] px-3 rounded-xl bg-[var(--teal)] text-[var(--on-teal,#ffffff)] hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-						title="Распечатать официальный наряд ЗТЛ-1 (ГОСТ / СтАР)"
-						data-testid={`lab-order-print-ztl1-btn-${order.id}`}
-					>
-						<Printer className="w-3.5 h-3.5" />
-						<span>Печать ЗТЛ-1</span>
-					</button>
+					{/* ПРЯМОЕ ДЕЙСТВИЕ 1: Если работа готова в клинике — 1-клик «Запись / SMS», иначе «Печать ЗТЛ-1» */}
+					{handleOpenReadyInClinicPrompt && (order.status === "ready" || order.status === "ready_in_clinic" || order.status === "shipped" || order.status === "delivered" || order.status === "received") ? (
+						<button
+							type="button"
+							onClick={() => handleOpenReadyInClinicPrompt(order)}
+							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+							title="Работа готова в клинике! Записать пациента на примерку / фиксацию и отправить SMS / WhatsApp"
+							data-testid={`lab-order-ready-schedule-btn-${order.id}`}
+						>
+							<CalendarCheck className="w-3.5 h-3.5" />
+							<span>Запись / SMS</span>
+						</button>
+					) : (
+						<button
+							type="button"
+							onClick={() => handleOpenPrintOrder(order)}
+							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-[var(--teal)] text-[var(--on-teal,#ffffff)] hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+							title="Распечатать официальный наряд ЗТЛ-1 (ГОСТ / СтАР)"
+							data-testid={`lab-order-print-ztl1-btn-${order.id}`}
+						>
+							<Printer className="w-3.5 h-3.5" />
+							<span>Печать ЗТЛ-1</span>
+						</button>
+					)}
 
-					{/* ПРЯМОЕ ДЕЙСТВИЕ 2: Сменить этап/статус */}
-					<button
-						type="button"
-						onClick={() => handleOpenTracking(order)}
-						className="h-9 min-h-[36px] px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-						title="Сменить этап или статус изготовления работы в ЗТЛ"
-						data-testid={`lab-order-stage-status-btn-${order.id}`}
-					>
-						<Layers className="w-3.5 h-3.5 text-indigo-500" />
-						<span>Этап/статус</span>
-					</button>
+					{/* ПРЯМОЕ ДЕЙСТВИЕ 2: Сменить этап/статус (или Печать ЗТЛ-1 если первое действие занято Записью) */}
+					{handleOpenReadyInClinicPrompt && (order.status === "ready" || order.status === "ready_in_clinic" || order.status === "shipped" || order.status === "delivered" || order.status === "received") ? (
+						<button
+							type="button"
+							onClick={() => handleOpenPrintOrder(order)}
+							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+							title="Распечатать официальный наряд ЗТЛ-1 (ГОСТ / СтАР)"
+							data-testid={`lab-order-print-ztl1-btn-${order.id}`}
+						>
+							<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+							<span>Печать ЗТЛ-1</span>
+						</button>
+					) : (
+						<button
+							type="button"
+							onClick={() => handleOpenTracking(order)}
+							className="min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+							title="Сменить этап или статус изготовления работы в ЗТЛ"
+							data-testid={`lab-order-stage-status-btn-${order.id}`}
+						>
+							<Layers className="w-3.5 h-3.5 text-indigo-500" />
+							<span>Этап/статус</span>
+						</button>
+					)}
 
 					{/* ВТОРИЧНЫЕ ДЕЙСТВИЯ: Меню "..." (MoreHorizontal) */}
 					<div className="relative">
 						<button
 							type="button"
 							onClick={() => setOpenMenuOrderId((prev) => prev === order.id ? null : (order.id || null))}
-							className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
+							className="w-11 sm:w-8 h-11 sm:h-8 min-w-[44px] sm:min-w-[32px] min-h-[44px] sm:min-h-[32px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
 							aria-label="Вторичные действия с нарядом ЗТЛ"
 							aria-expanded={openMenuOrderId === order.id}
 							title="Вторичные действия: фото прикуса, комментарий технику, повторная примерка, рекламация"
@@ -192,6 +221,31 @@ export function LabOrderCard({
 
 						{openMenuOrderId === order.id && (
 							<div className="absolute right-0 bottom-full mb-1 z-50 w-56 p-1.5 bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl shadow-lg flex flex-col gap-1 text-xs">
+								{handleOpenReadyInClinicPrompt && (
+									<button
+										type="button"
+										onClick={() => {
+											setOpenMenuOrderId(null);
+											handleOpenReadyInClinicPrompt(order);
+										}}
+										className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-2 cursor-pointer"
+										data-testid={`lab-order-menu-ready-schedule-btn-${order.id}`}
+									>
+										<CalendarCheck className="w-3.5 h-3.5 text-emerald-500" />
+										<span>Запись на примерку / SMS</span>
+									</button>
+								)}
+								<button
+									type="button"
+									onClick={() => {
+										setOpenMenuOrderId(null);
+										handleOpenTracking(order);
+									}}
+									className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer"
+								>
+									<Layers className="w-3.5 h-3.5 text-indigo-500" />
+									<span>Сменить этап/статус</span>
+								</button>
 								<button
 									type="button"
 									onClick={() => handleAttach3DScan(order)}
