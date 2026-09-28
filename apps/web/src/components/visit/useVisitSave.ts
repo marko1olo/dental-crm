@@ -29,6 +29,15 @@ import { useAppStore } from "../../store/appStore";
 import { fetchWithHandling } from "../../utils/networkUtils";
 import { logger } from "../../utils/logger";
 import { getOptimizedTiming } from "../../utils/lowSpecHddOptimizer";
+import {
+	saveVisitDraftDebounced,
+	saveVisitDraft,
+	loadVisitDraftSync,
+	loadVisitDraft,
+	flushPendingOfflineDrafts,
+} from "../../services/offline/offlineStorage";
+import { flushPendingStorageWrites } from "../../lib/safeLocalStorage";
+import { broadcastClinicalEntityChange } from "../../services/storage";
 
 export type SaveSyncState = "idle" | "saving" | "saved" | "queued" | "error";
 
@@ -70,6 +79,10 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 		silent = false,
 	} = options;
 
+	const storeVisitNoteForm = useVisitStore((s) => s.visitNoteForm);
+	const setVisitNoteForm = useVisitStore((s) => s.setVisitNoteForm);
+	const effectiveVisitNoteForm = options.visitNoteForm ?? storeVisitNoteForm;
+
 	const [saveState, setSaveState] = useState<SaveSyncState>("idle");
 	const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
@@ -77,10 +90,10 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 	const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const lastSavedSignatureRef = useRef<string>("");
 	const isMountedRef = useRef<boolean>(true);
-	const currentFormRef = useRef<VisitNoteForm | undefined>(visitNoteForm);
+	const currentFormRef = useRef<VisitNoteForm>(effectiveVisitNoteForm);
 	const currentTranscriptRef = useRef<string>(transcript);
 
-	currentFormRef.current = visitNoteForm;
+	currentFormRef.current = effectiveVisitNoteForm;
 	currentTranscriptRef.current = transcript;
 
 	const setServerDraftSyncState = useVisitStore((s) => s.setServerDraftSyncState);
@@ -100,6 +113,59 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 			transcript: tr || "",
 		});
 	}, []);
+
+	// Восстановление локального черновика при монтировании/перезагрузке,
+	// если форма пустая, а в L1 RAM или IndexedDB есть несохраненные данные
+	useEffect(() => {
+		const effectiveVisitId = visitId || activeVisit?.id;
+		if (!effectiveVisitId || effectiveVisitId === "no-active-visit") return;
+
+		const isBlank =
+			!effectiveVisitNoteForm.complaint &&
+			!effectiveVisitNoteForm.anamnesis &&
+			!effectiveVisitNoteForm.objectiveStatus &&
+			!effectiveVisitNoteForm.diagnosis &&
+			!effectiveVisitNoteForm.treatmentPlan;
+
+		if (isBlank) {
+			const syncDraft = loadVisitDraftSync<VisitNoteForm>(effectiveVisitId);
+			if (syncDraft?.data && typeof syncDraft.data === "object") {
+				const d = syncDraft.data as Partial<VisitNoteForm>;
+				if (d.complaint || d.anamnesis || d.objectiveStatus || d.diagnosis || d.treatmentPlan) {
+					setVisitNoteForm((prev) => ({
+						complaint: d.complaint ?? prev.complaint,
+						anamnesis: d.anamnesis ?? prev.anamnesis,
+						objectiveStatus: d.objectiveStatus ?? prev.objectiveStatus,
+						diagnosis: d.diagnosis ?? prev.diagnosis,
+						treatmentPlan: d.treatmentPlan ?? prev.treatmentPlan,
+					}));
+				}
+			} else {
+				void loadVisitDraft<VisitNoteForm>(effectiveVisitId).then((asyncDraft) => {
+					if (!isMountedRef.current || !asyncDraft?.data || typeof asyncDraft.data !== "object") return;
+					const d = asyncDraft.data as Partial<VisitNoteForm>;
+					if (d.complaint || d.anamnesis || d.objectiveStatus || d.diagnosis || d.treatmentPlan) {
+						setVisitNoteForm((prev) => {
+							const stillBlank =
+								!prev.complaint &&
+								!prev.anamnesis &&
+								!prev.objectiveStatus &&
+								!prev.diagnosis &&
+								!prev.treatmentPlan;
+							if (!stillBlank) return prev;
+							return {
+								complaint: d.complaint ?? prev.complaint,
+								anamnesis: d.anamnesis ?? prev.anamnesis,
+								objectiveStatus: d.objectiveStatus ?? prev.objectiveStatus,
+								diagnosis: d.diagnosis ?? prev.diagnosis,
+								treatmentPlan: d.treatmentPlan ?? prev.treatmentPlan,
+							};
+						});
+					}
+				});
+			}
+		}
+	}, [visitId, activeVisit?.id, setVisitNoteForm]);
 
 	const executeSave = useCallback(
 		async (opts?: { silent?: boolean; force?: boolean }): Promise<{ success: boolean; error?: string }> => {
@@ -127,7 +193,7 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 
 			const draftPayload = form
 				? visitNoteDraftFromForm(form, [
-						"Автосохранение врача solo. Протокол 043/у зафиксирован.",
+						"Автосохранение врача solo. Дневник приёма зафиксирован.",
 					])
 				: null;
 
@@ -153,7 +219,10 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 					lastSavedSignatureRef.current = signature;
 					setSaveState("queued");
 					setServerDraftSyncState("queued");
-					setHasUnsavedChanges(false);
+					if (isMountedRef.current) {
+						const currentSig = computeSignature(currentFormRef.current, currentTranscriptRef.current);
+						setHasUnsavedChanges(currentSig !== signature);
+					}
 					return { success: true };
 				} catch (queueErr) {
 					logger.error("[useVisitSave] Ошибка оффлайн-сохранения:", queueErr);
@@ -196,12 +265,25 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 				if (isMountedRef.current) {
 					setSaveState("saved");
 					setLastSavedAt(savedAtDate);
-					setHasUnsavedChanges(false);
+					// Проверяем: не напечатал ли врач новые символы, пока шел сетевой запрос
+					const currentSig = computeSignature(currentFormRef.current, currentTranscriptRef.current);
+					setHasUnsavedChanges(currentSig !== signature);
 				}
 				setServerDraftSyncState("saved");
 				setLastServerDraftSavedAt(savedAtIso);
 
 				onSaveSuccess?.(result.serverDraft);
+
+				try {
+					broadcastClinicalEntityChange({
+						entityType: "visit_draft",
+						entityId: effectiveVisitId,
+						patientId: effectivePatientId || undefined,
+						updatedAt: savedAtIso,
+					});
+				} catch (broadcastErr) {
+					logger.debug("[useVisitSave] Broadcast clinical entity failed:", broadcastErr);
+				}
 
 				return { success: true };
 			} catch (syncError) {
@@ -224,7 +306,8 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 					lastSavedSignatureRef.current = signature;
 					if (isMountedRef.current) {
 						setSaveState("queued");
-						setHasUnsavedChanges(false);
+						const currentSig = computeSignature(currentFormRef.current, currentTranscriptRef.current);
+						setHasUnsavedChanges(currentSig !== signature);
 					}
 					setServerDraftSyncState("queued");
 					return { success: true };
@@ -258,11 +341,22 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 		],
 	);
 
-	// Debounced change listener
+	// Debounced change listener & instant L1 RAM + debounced disk draft mirror
 	useEffect(() => {
 		if (isLocked) return;
-		const signature = computeSignature(visitNoteForm, transcript);
+		const signature = computeSignature(effectiveVisitNoteForm, transcript);
 		if (!signature) return;
+
+		const effVisitId = visitId || activeVisit?.id;
+		const effOrgId = organizationId || activeVisit?.organizationId;
+
+		if (effVisitId && effVisitId !== "no-active-visit") {
+			// Мгновенная фиксация в L1 RAM (0 мс) + отложенная запись в IndexedDB/диск
+			const draftPayload = visitNoteDraftFromForm(effectiveVisitNoteForm, [
+				"Автосохранение врача solo. Дневник приёма зафиксирован.",
+			]);
+			saveVisitDraftDebounced(effVisitId, draftPayload, effOrgId, debounceMs);
+		}
 
 		if (signature !== lastSavedSignatureRef.current) {
 			setHasUnsavedChanges(true);
@@ -281,7 +375,7 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 				clearTimeout(debounceTimerRef.current);
 			}
 		};
-	}, [visitNoteForm, transcript, debounceMs, isLocked, computeSignature, executeSave]);
+	}, [effectiveVisitNoteForm, transcript, debounceMs, isLocked, computeSignature, executeSave, visitId, activeVisit, organizationId]);
 
 	// Auto-flush on tab switch / window unload / pagehide to guarantee 0 data loss (Mandate 8e)
 	useEffect(() => {
@@ -292,6 +386,55 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 				clearTimeout(debounceTimerRef.current);
 				debounceTimerRef.current = null;
 			}
+
+			// 1. Принудительный сброс низкоуровневых очередей на диск
+			flushPendingStorageWrites();
+			void flushPendingOfflineDrafts();
+
+			// 2. Синхронное сохранение локального черновика и постановка в очередь отправки
+			const form = currentFormRef.current;
+			const effVisitId = visitId || activeVisit?.id;
+			const effPatientId = patientId || activeVisit?.patientId;
+			const effOrgId = organizationId || activeVisit?.organizationId;
+
+			if (form && effVisitId && effVisitId !== "no-active-visit") {
+				const draftPayload = visitNoteDraftFromForm(form, [
+					"Автосохранение врача solo при закрытии вкладки. Дневник зафиксирован.",
+				]);
+				void saveVisitDraft(effVisitId, draftPayload, effOrgId, { immediate: true });
+				void queuePendingVisitSave(
+					{
+						visitId: effVisitId,
+						clientMutationId: `save-unload-${Date.now()}`,
+						baseRevision: activeVisit?.revision ?? null,
+						draft: draftPayload,
+						doctorSummary: null,
+						transcript: currentTranscriptRef.current,
+						selectedSpecialty: (selectedSpecialty as DentalSpecialty) || "universal",
+					},
+					effOrgId,
+				);
+
+				// 3. Отправка beacon в фоновый поток браузера
+				if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+					try {
+						const beaconPayload = JSON.stringify({
+							patientId: effPatientId,
+							selectedSpecialty,
+							transcript: currentTranscriptRef.current,
+							draft: draftPayload,
+							baseRevision: activeVisit?.revision ?? null,
+							clientDraftId: `visit-draft-${effVisitId}`,
+							clientSavedAt: new Date().toISOString(),
+						});
+						const blob = new Blob([beaconPayload], { type: "application/json" });
+						navigator.sendBeacon(`/api/visits/${effVisitId}/draft/autosave`, blob);
+					} catch {
+						// Ошибка sendBeacon не критична — черновик уже надежно сохранен в IndexedDB
+					}
+				}
+			}
+
 			void executeSave({ silent: true, force: true });
 		};
 
@@ -319,7 +462,7 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 				debounceTimerRef.current = null;
 			}
 		};
-	}, [executeSave]);
+	}, [executeSave, visitId, activeVisit, patientId, organizationId, selectedSpecialty]);
 
 	const flushPendingSave = useCallback(async () => {
 		if (debounceTimerRef.current) {

@@ -67,6 +67,188 @@ export function isQuotaExceededError(err: unknown): boolean {
 	);
 }
 
+/** Имя базы данных IndexedDB для аварийного сохранения при переполнении LocalStorage (QuotaExceededError) */
+export const IDB_FALLBACK_DB_NAME = "dente_local_storage_fallback_v1";
+export const IDB_FALLBACK_STORE_NAME = "storage_kv";
+export const IDB_FALLBACK_VERSION = 1;
+
+let idbFallbackDbPromise: Promise<IDBDatabase | null> | null = null;
+
+export function isIdbStorageFallbackAvailable(): boolean {
+	try {
+		if (typeof window !== "undefined" && window.indexedDB && typeof window.indexedDB.open === "function") {
+			return true;
+		}
+		if (
+			typeof globalThis !== "undefined" &&
+			(globalThis as unknown as { indexedDB?: IDBFactory }).indexedDB &&
+			typeof (globalThis as unknown as { indexedDB?: IDBFactory }).indexedDB?.open === "function"
+		) {
+			return true;
+		}
+	} catch {
+		// ignore
+	}
+	return false;
+}
+
+function getIdbFactory(): IDBFactory | null {
+	try {
+		if (typeof window !== "undefined" && window.indexedDB) {
+			return window.indexedDB;
+		}
+	} catch {
+		// ignore
+	}
+	try {
+		if (typeof globalThis !== "undefined" && (globalThis as unknown as { indexedDB?: IDBFactory }).indexedDB) {
+			return (globalThis as unknown as { indexedDB?: IDBFactory }).indexedDB ?? null;
+		}
+	} catch {
+		// ignore
+	}
+	return null;
+}
+
+export function openIdbFallbackDb(): Promise<IDBDatabase | null> {
+	if (!isIdbStorageFallbackAvailable()) return Promise.resolve(null);
+	if (idbFallbackDbPromise) return idbFallbackDbPromise;
+
+	idbFallbackDbPromise = new Promise<IDBDatabase | null>((resolve) => {
+		try {
+			const factory = getIdbFactory();
+			if (!factory) {
+				idbFallbackDbPromise = null;
+				return resolve(null);
+			}
+			const req = factory.open(IDB_FALLBACK_DB_NAME, IDB_FALLBACK_VERSION);
+			req.onupgradeneeded = () => {
+				const db = req.result;
+				if (!db.objectStoreNames.contains(IDB_FALLBACK_STORE_NAME)) {
+					db.createObjectStore(IDB_FALLBACK_STORE_NAME, { keyPath: "key" });
+				}
+			};
+			req.onsuccess = () => resolve(req.result);
+			req.onerror = () => {
+				idbFallbackDbPromise = null;
+				resolve(null);
+			};
+			req.onblocked = () => {
+				idbFallbackDbPromise = null;
+				resolve(null);
+			};
+		} catch {
+			idbFallbackDbPromise = null;
+			resolve(null);
+		}
+	});
+
+	return idbFallbackDbPromise;
+}
+
+export async function saveIdbStorageFallback(key: string, value: string): Promise<boolean> {
+	try {
+		const db = await openIdbFallbackDb();
+		if (!db) return false;
+		return await new Promise<boolean>((resolve) => {
+			try {
+				const tx = db.transaction(IDB_FALLBACK_STORE_NAME, "readwrite");
+				const store = tx.objectStore(IDB_FALLBACK_STORE_NAME);
+				const req = store.put({ key, value, updatedAt: Date.now() });
+				req.onsuccess = () => resolve(true);
+				req.onerror = () => resolve(false);
+				tx.onabort = () => resolve(false);
+			} catch {
+				resolve(false);
+			}
+		});
+	} catch {
+		return false;
+	}
+}
+
+export async function getIdbStorageFallback(key: string): Promise<string | null> {
+	try {
+		const db = await openIdbFallbackDb();
+		if (!db) return null;
+		return await new Promise<string | null>((resolve) => {
+			try {
+				const tx = db.transaction(IDB_FALLBACK_STORE_NAME, "readonly");
+				const store = tx.objectStore(IDB_FALLBACK_STORE_NAME);
+				const req = store.get(key);
+				req.onsuccess = () => {
+					const record = req.result as { key: string; value: string } | undefined;
+					resolve(record ? record.value : null);
+				};
+				req.onerror = () => resolve(null);
+				tx.onabort = () => resolve(null);
+			} catch {
+				resolve(null);
+			}
+		});
+	} catch {
+		return null;
+	}
+}
+
+export async function removeIdbStorageFallback(key: string): Promise<boolean> {
+	try {
+		const db = await openIdbFallbackDb();
+		if (!db) return false;
+		return await new Promise<boolean>((resolve) => {
+			try {
+				const tx = db.transaction(IDB_FALLBACK_STORE_NAME, "readwrite");
+				const store = tx.objectStore(IDB_FALLBACK_STORE_NAME);
+				const req = store.delete(key);
+				req.onsuccess = () => resolve(true);
+				req.onerror = () => resolve(false);
+				tx.onabort = () => resolve(false);
+			} catch {
+				resolve(false);
+			}
+		});
+	} catch {
+		return false;
+	}
+}
+
+export async function hydrateLocalStorageFromIdbFallback(): Promise<number> {
+	try {
+		const db = await openIdbFallbackDb();
+		if (!db) return 0;
+		return await new Promise<number>((resolve) => {
+			try {
+				const tx = db.transaction(IDB_FALLBACK_STORE_NAME, "readonly");
+				const store = tx.objectStore(IDB_FALLBACK_STORE_NAME);
+				const req = store.getAll();
+				req.onsuccess = () => {
+					const records = (req.result as Array<{ key: string; value: string }>) || [];
+					let count = 0;
+					for (const r of records) {
+						if (r && r.key) {
+							if (!inMemoryStorageCache.has(r.key)) {
+								inMemoryStorageCache.set(r.key, r.value);
+								count++;
+							}
+						}
+					}
+					resolve(count);
+				};
+				req.onerror = () => resolve(0);
+				tx.onabort = () => resolve(0);
+			} catch {
+				resolve(0);
+			}
+		});
+	} catch {
+		return 0;
+	}
+}
+
+export function resetIdbFallbackConnection(): void {
+	idbFallbackDbPromise = null;
+}
+
 function getUnderlyingLocalStorage(): Storage | null {
 	try {
 		if (typeof window !== "undefined" && window.localStorage) {
@@ -256,10 +438,14 @@ export function flushPendingStorageWrites(): void {
 					try {
 						storage.setItem(key, value);
 						pendingDiskWrites.delete(key);
+						continue;
 					} catch {
 						// Item too large even after eviction
 					}
 				}
+				// LocalStorage переполнен: спасаем в IndexedDB fallback, чтобы гарантировать Zero Keystroke Loss
+				void saveIdbStorageFallback(key, value);
+				pendingDiskWrites.delete(key);
 			}
 		}
 		pendingDiskWrites.clear();
@@ -285,6 +471,7 @@ export function clearInMemoryStorageCache(): void {
 		sessionDiskFlushTimer = null;
 	}
 	resetInMemoryAuthTokens();
+	resetIdbFallbackConnection();
 }
 
 function ensureTokenStorageListener(): void {
@@ -347,8 +534,16 @@ export function safeLocalStorageGetItem(key: string): string | null {
 	try {
 		ensureTokenStorageListener();
 		const val = storage.getItem(key);
-		putInMemoryStorageCache(key, val);
-		return val;
+		if (val !== null) {
+			putInMemoryStorageCache(key, val);
+			return val;
+		}
+		const memVal = inMemoryStorageCache.get(key) ?? null;
+		if (memVal !== null) {
+			return memVal;
+		}
+		putInMemoryStorageCache(key, null);
+		return null;
 	} catch {
 		return inMemoryStorageCache.get(key) ?? null;
 	}
@@ -374,7 +569,13 @@ export function safeLocalStorageSetItem(key: string, value: string, immediate = 
 	putInMemoryStorageCache(key, value);
 
 	const storage = getUnderlyingLocalStorage();
-	if (!storage) return false;
+	if (!storage) {
+		if (isIdbStorageFallbackAvailable()) {
+			void saveIdbStorageFallback(key, value);
+			return true;
+		}
+		return false;
+	}
 
 	ensureTokenStorageListener();
 
@@ -391,10 +592,13 @@ export function safeLocalStorageSetItem(key: string, value: string, immediate = 
 					storage.setItem(key, value);
 					return true;
 				} catch {
-					return false;
+					// LocalStorage переполнен даже после очистки: спасаем в IndexedDB fallback
+					void saveIdbStorageFallback(key, value);
+					return true;
 				}
 			}
-			return false;
+			void saveIdbStorageFallback(key, value);
+			return true;
 		}
 	}
 
@@ -432,15 +636,21 @@ export function safeLocalStorageRemoveItem(key: string): boolean {
 	pendingDiskWrites.delete(key);
 
 	const storage = getUnderlyingLocalStorage();
-	if (!storage) return false;
+	if (!storage) {
+		void removeIdbStorageFallback(key);
+		return false;
+	}
 	if (alreadyNull && !hadPending) {
+		void removeIdbStorageFallback(key);
 		return true;
 	}
 	try {
 		ensureTokenStorageListener();
 		storage.removeItem(key);
+		void removeIdbStorageFallback(key);
 		return true;
 	} catch {
+		void removeIdbStorageFallback(key);
 		return false;
 	}
 }
@@ -613,13 +823,27 @@ export async function parseJsonNonBlocking<T = unknown>(raw: string): Promise<T>
 }
 
 /**
- * Асинхронное чтение JSON из safeLocalStorage с фоновым парсингом больших объемов.
+ * Асинхронное получение значения из safeLocalStorage с автоматической проверкой IndexedDB fallback.
+ */
+export async function safeLocalStorageGetItemAsync(key: string): Promise<string | null> {
+	const syncVal = safeLocalStorageGetItem(key);
+	if (syncVal !== null) return syncVal;
+	const idbVal = await getIdbStorageFallback(key);
+	if (idbVal !== null) {
+		putInMemoryStorageCache(key, idbVal);
+		return idbVal;
+	}
+	return null;
+}
+
+/**
+ * Асинхронное чтение JSON из safeLocalStorage с фоновым парсингом больших объемов и проверкой IndexedDB fallback.
  */
 export async function safeLocalStorageGetJsonAsync<T>(
 	key: string,
 	defaultValue: T,
 ): Promise<T> {
-	const raw = safeLocalStorageGetItem(key);
+	const raw = await safeLocalStorageGetItemAsync(key);
 	if (!raw) return defaultValue;
 	try {
 		const parsed = await parseJsonNonBlocking<T>(raw);
@@ -628,3 +852,15 @@ export async function safeLocalStorageGetJsonAsync<T>(
 		return defaultValue;
 	}
 }
+
+// Автоматическая гидратация L1 RAM кэша из аварийного IndexedDB хранилища при старте приложения
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+	if (typeof document !== "undefined" && (document.readyState === "complete" || document.readyState === "interactive")) {
+		void hydrateLocalStorageFromIdbFallback();
+	} else {
+		window.addEventListener("DOMContentLoaded", () => {
+			void hydrateLocalStorageFromIdbFallback();
+		});
+	}
+}
+

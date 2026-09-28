@@ -559,7 +559,29 @@ export function useVisitLogic({
 					: current,
 			);
 			setDraft(null);
-			setVisitNoteForm(visitNoteFormFromVisit(result.visit));
+			setVisitNoteForm((currentForm) => {
+				const serverForm = visitNoteFormFromVisit(result.visit);
+				if (!currentForm) return serverForm;
+				// Неразрушающее слияние (Zero Keystroke Loss):
+				// Если врач продолжал набирать текст локально, пока шел сетевой запрос или оффлайн-синхронизация,
+				// не затираем свежие локальные правки старым слепком с сервера.
+				const merged: VisitNoteForm = { ...serverForm };
+				const fields: (keyof VisitNoteForm)[] = [
+					"complaint",
+					"anamnesis",
+					"objectiveStatus",
+					"diagnosis",
+					"treatmentPlan",
+				];
+				for (const field of fields) {
+					const localVal = currentForm[field]?.trim();
+					const srvVal = serverForm[field]?.trim();
+					if (localVal && localVal !== srvVal) {
+						(merged as any)[field] = currentForm[field] ?? "";
+					}
+				}
+				return merged;
+			});
 			setLastVisitSaveReceipt(result.saveReceipt);
 			if (result.saveReceipt.warning) {
 				setError(result.saveReceipt.warning);

@@ -11,6 +11,11 @@
  * 4. 3-Tier Seamless Transition Manager (Autonomous Offline <-> LAN Local Mesh <-> Cloud PostgreSQL)
  */
 
+import {
+	SOMATIC_SAFETY_FIELDS,
+	isSomaticSafetyFieldOrRisk,
+	mergeSomaticSafetyField,
+} from "./crdt.js";
 import { computePayloadHash, createCompositeIdempotencyKey } from "./hashing.js";
 import {
 	type ConflictResolutionStrategy,
@@ -211,8 +216,42 @@ export interface ScheduleAppointmentConflictResult {
 	resolvedAppointment: Record<string, unknown>;
 	updatedClock: VectorClock;
 	hasConflict: boolean;
-	strategy: "created" | "lww" | "status_priority" | "merged";
+	strategy: "created" | "lww" | "status_priority" | "merged" | "somatic_safety_union";
 	conflictDetails: FieldConflictDetail[];
+}
+
+function protectSomaticSafety(
+	target: Record<string, unknown>,
+	existing: Record<string, unknown>,
+	incoming: Record<string, unknown>,
+	conflicts: FieldConflictDetail[],
+): void {
+	const allKeys = new Set([...Object.keys(existing), ...Object.keys(incoming)]);
+	for (const key of allKeys) {
+		if (isSomaticSafetyFieldOrRisk(key)) {
+			const existVal = existing[key];
+			const incVal = incoming[key];
+			if (existVal !== undefined && incVal !== undefined) {
+				if (JSON.stringify(existVal) !== JSON.stringify(incVal)) {
+					const somatic = mergeSomaticSafetyField(key, incVal, existVal);
+					target[key] = somatic.resolvedValue;
+					conflicts.push({
+						field: key,
+						clientValue: incVal,
+						serverValue: existVal,
+						resolvedValue: somatic.resolvedValue,
+						strategy: "somatic_safety_union",
+						winner: somatic.winner,
+						reason: somatic.reason,
+					});
+				}
+			} else if (existVal !== undefined && incVal === undefined) {
+				target[key] = existVal;
+			} else if (incVal !== undefined && existVal === undefined) {
+				target[key] = incVal;
+			}
+		}
+	}
 }
 
 export function resolveScheduleAppointmentCrdt(
@@ -246,22 +285,46 @@ export function resolveScheduleAppointmentCrdt(
 	);
 
 	if (causalRelation === "after") {
+		const resolved: Record<string, unknown> = {
+			...existingAppointment,
+			...incomingAppointment,
+		};
+		const somaticConflicts: FieldConflictDetail[] = [];
+		protectSomaticSafety(
+			resolved,
+			existingAppointment,
+			incomingAppointment,
+			somaticConflicts,
+		);
+		const hasSomatic = somaticConflicts.length > 0;
 		return {
-			resolvedAppointment: { ...existingAppointment, ...incomingAppointment },
+			resolvedAppointment: resolved,
 			updatedClock: mergedClock,
-			hasConflict: false,
-			strategy: "lww",
-			conflictDetails: [],
+			hasConflict: hasSomatic,
+			strategy: hasSomatic ? "somatic_safety_union" : "lww",
+			conflictDetails: somaticConflicts,
 		};
 	}
 
 	if (causalRelation === "before") {
+		const resolved: Record<string, unknown> = {
+			...incomingAppointment,
+			...existingAppointment,
+		};
+		const somaticConflicts: FieldConflictDetail[] = [];
+		protectSomaticSafety(
+			resolved,
+			existingAppointment,
+			incomingAppointment,
+			somaticConflicts,
+		);
+		const hasSomatic = somaticConflicts.length > 0;
 		return {
-			resolvedAppointment: { ...incomingAppointment, ...existingAppointment },
+			resolvedAppointment: resolved,
 			updatedClock: mergedClock,
-			hasConflict: false,
-			strategy: "lww",
-			conflictDetails: [],
+			hasConflict: hasSomatic,
+			strategy: hasSomatic ? "somatic_safety_union" : "lww",
+			conflictDetails: somaticConflicts,
 		};
 	}
 
@@ -312,6 +375,28 @@ export function resolveScheduleAppointmentCrdt(
 	for (const [key, incVal] of Object.entries(incomingAppointment)) {
 		if (key === "status" || key === "id" || key === "organizationId") continue;
 		const existVal = existingAppointment[key];
+
+		// Clinical Somatic Safety Invariant:
+		if (isSomaticSafetyFieldOrRisk(key)) {
+			const somatic = mergeSomaticSafetyField(key, incVal, existVal);
+			merged[key] = somatic.resolvedValue;
+			if (
+				JSON.stringify(existVal) !== JSON.stringify(incVal) ||
+				somatic.winner !== "server"
+			) {
+				conflicts.push({
+					field: key,
+					clientValue: incVal,
+					serverValue: existVal,
+					resolvedValue: somatic.resolvedValue,
+					strategy: "somatic_safety_union",
+					winner: somatic.winner,
+					reason: somatic.reason,
+				});
+			}
+			continue;
+		}
+
 		if (existVal === undefined) {
 			merged[key] = incVal;
 		} else if (JSON.stringify(existVal) !== JSON.stringify(incVal)) {
@@ -359,11 +444,28 @@ export function resolveScheduleAppointmentCrdt(
 		}
 	}
 
+	const hasStatusConflict = conflicts.some((c) => c.field === "status");
+	const hasSomaticConflict = conflicts.some(
+		(c) => c.strategy === "somatic_safety_union",
+	);
+	const resolvedStrategy:
+		| "created"
+		| "lww"
+		| "status_priority"
+		| "merged"
+		| "somatic_safety_union" = hasStatusConflict
+		? "status_priority"
+		: hasSomaticConflict
+			? "somatic_safety_union"
+			: conflicts.length > 0
+				? "status_priority"
+				: "merged";
+
 	return {
 		resolvedAppointment: merged,
 		updatedClock: mergedClock,
 		hasConflict: conflicts.length > 0,
-		strategy: conflicts.length > 0 ? "status_priority" : "merged",
+		strategy: resolvedStrategy,
 		conflictDetails: conflicts,
 	};
 }
@@ -560,6 +662,26 @@ export function resolveForm043DiaryCrdt(
 				strategy: "field_merge",
 				winner: "merged",
 				reason: `Array field '${field}' union-merged without dropping doctor entries`,
+			});
+			continue;
+		}
+
+		// Zero Keystroke Loss Invariant: blank/empty string incoming field NEVER destroys non-empty clinical notes
+		if (
+			typeof incVal === "string" &&
+			!incVal.trim() &&
+			typeof existVal === "string" &&
+			existVal.trim().length > 0
+		) {
+			merged[field] = existVal;
+			conflicts.push({
+				field,
+				clientValue: incVal,
+				serverValue: existVal,
+				resolvedValue: existVal,
+				strategy: "crdt",
+				winner: "server",
+				reason: "Blank incoming clinical field rejected to protect existing non-empty diary notes (Zero Keystroke Loss)",
 			});
 			continue;
 		}

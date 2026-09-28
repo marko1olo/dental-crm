@@ -208,6 +208,37 @@ describe("Sync & CRDT Engine: Field-Level Merging & Conflict Resolution", () => 
 		assert.equal(result.changedFields.length, 0);
 	});
 
+	test("mergeFieldLevelCrdt union-merges somatic allergies and preserves contraindications against blank patch", () => {
+		const serverPatient = {
+			id: "pat-somatic-1",
+			allergies: ["Лидокаин"],
+			contraindications: "Инфаркт миокарда (2025)",
+			anesthesiaRisk: "moderate",
+		};
+		const clientPatch = {
+			allergies: ["Пенициллин", "Лидокаин"], // Added Penicillin
+			contraindications: "", // Cleared in error by client form
+			anesthesiaRisk: "critical", // Upgraded to critical
+		};
+
+		const result = mergeFieldLevelCrdt({
+			entityKind: "patient",
+			entityId: "pat-somatic-1",
+			serverEntity: serverPatient,
+			clientPatch,
+			clientUpdatedAt: "2026-08-25T12:00:00.000Z",
+			serverUpdatedAt: "2026-08-25T11:00:00.000Z",
+		});
+
+		// Allergies union-merged
+		assert.deepEqual(result.mergedEntity.allergies, ["Лидокаин", "Пенициллин"]);
+		// Blank contraindications does not wipe server value
+		assert.equal(result.mergedEntity.contraindications, "Инфаркт миокарда (2025)");
+		// Anesthesia risk upgraded to critical
+		assert.equal(result.mergedEntity.anesthesiaRisk, "critical");
+		assert.equal(result.strategy, "somatic_safety_union");
+	});
+
 	test("New entity creation via CRDT merge initializes full mutation vector", () => {
 		const clientPatch = {
 			fullName: "Новый Пациент",
@@ -360,6 +391,108 @@ describe("Sync & CRDT Engine: Schedule & Appointment Conflict Resolution", () =>
 		assert.equal(result.resolvedAppointment.status, "cancelled");
 		assert.equal(result.resolvedAppointment.cancellationReason, "Пациент заболел");
 	});
+
+	test("Concurrent edits by two administrators: offline adds allergies, online adds contraindications -> both preserved with zero data loss", () => {
+		const existingApp = {
+			id: "app-200",
+			patientId: "pat-200",
+			status: "confirmed",
+			startsAt: "2026-08-25T12:00:00.000Z",
+			contraindications: "Беременность 1 триместр",
+		};
+		const incomingApp = {
+			id: "app-200",
+			patientId: "pat-200",
+			status: "confirmed",
+			allergies: ["Лидокаин (Отек Квинке)"],
+			anesthesiaRisk: "critical",
+		};
+
+		// Concurrent clocks
+		const clockA = { "admin-reception": 2, "admin-tablet": 1 };
+		const clockB = { "admin-reception": 1, "admin-tablet": 2 };
+
+		const result = resolveScheduleAppointmentCrdt({
+			existingAppointment: existingApp,
+			incomingAppointment: incomingApp,
+			existingClock: clockA,
+			incomingClock: clockB,
+			existingUpdatedAt: "2026-08-25T11:00:00.000Z",
+			incomingUpdatedAt: "2026-08-25T11:02:00.000Z",
+			nodeId: "admin-tablet",
+		});
+
+		assert.equal(result.hasConflict, true);
+		assert.equal(result.strategy, "somatic_safety_union");
+		// Both somatic fields MUST be preserved!
+		assert.deepEqual(result.resolvedAppointment.allergies, ["Лидокаин (Отек Квинке)"]);
+		assert.equal(result.resolvedAppointment.contraindications, "Беременность 1 триместр");
+		assert.equal(result.resolvedAppointment.anesthesiaRisk, "critical");
+	});
+
+	test("Online newer edit with empty allergies [] or '' does NOT overwrite existing offline allergies", () => {
+		const existingApp = {
+			id: "app-201",
+			patientId: "pat-201",
+			status: "confirmed",
+			allergies: ["Ультракаин (Анафилаксия)"],
+			contraindications: "Бронхиальная астма",
+		};
+		// Online edit made 10 minutes later with empty allergies & contraindications
+		const incomingApp = {
+			id: "app-201",
+			patientId: "pat-201",
+			status: "confirmed",
+			allergies: [],
+			contraindications: "   ",
+			comment: "Пациент подтвердил приём по SMS",
+		};
+
+		const result = resolveScheduleAppointmentCrdt({
+			existingAppointment: existingApp,
+			incomingAppointment: incomingApp,
+			existingUpdatedAt: "2026-08-25T11:00:00.000Z",
+			incomingUpdatedAt: "2026-08-25T11:10:00.000Z",
+			nodeId: "cloud-vps",
+		});
+
+		// Allergies and contraindications MUST NOT be cleared!
+		assert.deepEqual(result.resolvedAppointment.allergies, ["Ультракаин (Анафилаксия)"]);
+		assert.equal(result.resolvedAppointment.contraindications, "Бронхиальная астма");
+		assert.equal(result.resolvedAppointment.comment, "Пациент подтвердил приём по SMS");
+	});
+
+	test("Anesthesia risk level upgrades strictly to highest rating (critical > high > moderate > normal)", () => {
+		const existingApp = {
+			id: "app-202",
+			anesthesiaRisk: "moderate",
+		};
+		const incomingApp = {
+			id: "app-202",
+			anesthesiaRisk: "critical",
+		};
+
+		const result = resolveScheduleAppointmentCrdt({
+			existingAppointment: existingApp,
+			incomingAppointment: incomingApp,
+			existingUpdatedAt: "2026-08-25T11:00:00.000Z",
+			incomingUpdatedAt: "2026-08-25T11:01:00.000Z",
+			nodeId: "doctor-tablet",
+		});
+
+		assert.equal(result.resolvedAppointment.anesthesiaRisk, "critical");
+
+		// Conversely: lower incoming risk does NOT downgrade existing higher risk
+		const downgradeAttempt = resolveScheduleAppointmentCrdt({
+			existingAppointment: { id: "app-202", anesthesiaRisk: "critical" },
+			incomingAppointment: { id: "app-202", anesthesiaRisk: "normal" },
+			existingUpdatedAt: "2026-08-25T11:00:00.000Z",
+			incomingUpdatedAt: "2026-08-25T11:05:00.000Z",
+			nodeId: "reception-pc",
+		});
+
+		assert.equal(downgradeAttempt.resolvedAppointment.anesthesiaRisk, "critical");
+	});
 });
 
 describe("Sync & CRDT Engine: Form 043/u Odontogram Surface Map & Medical Diarires", () => {
@@ -436,6 +569,45 @@ describe("Sync & CRDT Engine: Form 043/u Odontogram Surface Map & Medical Diarir
 		assert.equal((result.resolvedDiary.treatmentProtocol as string[]).length, 4);
 		// Both prescriptions preserved
 		assert.equal((result.resolvedDiary.prescriptions as string[]).length, 2);
+	});
+
+	test("resolveForm043DiaryCrdt protects non-empty diary fields from blank incoming overwrites (Zero Keystroke Loss)", () => {
+		const existingDiary = {
+			id: "diary-202",
+			complaints: "Постоянная ноющая боль в зубе 4.7 при накусывании",
+			anamnesis: "Боли начались 2 дня назад после приема холодной пищи",
+			statusLocalis: "Зуб 4.7 под пломбой, перкуссия резко болезненна",
+		};
+		// Incoming diary has blank complaints & anamnesis (e.g. uninitialized form snapshot or partial draft)
+		const incomingDiary = {
+			id: "diary-202",
+			complaints: "",
+			anamnesis: "   ",
+			statusLocalis: "Зуб 4.7: переходная складка гиперемирована",
+		};
+
+		const result = resolveForm043DiaryCrdt({
+			existingDiary,
+			incomingDiary,
+			existingUpdatedAt: "2026-08-25T10:00:00.000Z",
+			incomingUpdatedAt: "2026-08-25T10:30:00.000Z", // Newer timestamp
+			nodeId: "cloud-server",
+		});
+
+		// Blank incoming fields MUST NOT overwrite existing doctor notes
+		assert.equal(
+			result.resolvedDiary.complaints,
+			"Постоянная ноющая боль в зубе 4.7 при накусывании",
+		);
+		assert.equal(
+			result.resolvedDiary.anamnesis,
+			"Боли начались 2 дня назад после приема холодной пищи",
+		);
+		// Non-blank newer field updates cleanly
+		assert.equal(
+			result.resolvedDiary.statusLocalis,
+			"Зуб 4.7: переходная складка гиперемирована",
+		);
 	});
 });
 

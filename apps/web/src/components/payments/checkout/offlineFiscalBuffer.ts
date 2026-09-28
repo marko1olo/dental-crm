@@ -5,8 +5,7 @@
  * Compliant with Mandate 8e: Zero-Wait Patient Intake & Offline Queue Resilience.
  */
 
-import type { ClientLegalType } from "../../../types/payment.js";
-import type { Ffd12FiscalPayload } from "./fastCheckoutEngine.js";
+import type { ClientLegalType, Ffd12FiscalPayload } from "./fastCheckoutEngine.js";
 
 export interface OfflineFiscalBufferItem {
 	readonly orderId: string;

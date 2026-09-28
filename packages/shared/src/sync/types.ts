@@ -68,6 +68,7 @@ export const conflictResolutionStrategySchema = z.enum([
 	"idempotent_replay",
 	"status_priority",
 	"rejected",
+	"somatic_safety_union",
 ]);
 export type ConflictResolutionStrategy = z.infer<
 	typeof conflictResolutionStrategySchema

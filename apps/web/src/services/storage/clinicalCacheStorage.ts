@@ -11,9 +11,17 @@
 
 import { logger } from "../../utils/logger";
 import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+	safeLocalStorageRemoveItem,
+} from "../../lib/safeLocalStorage";
+import {
 	isIndexedDbAvailable,
 	openOfflineOutboxDb,
 	CLINICAL_CACHE_STORE_NAME,
+	DRAFTS_STORE_NAME,
+	MUTATIONS_STORE_NAME,
+	SCHEDULES_CACHE_STORE_NAME,
 	formatBytesHuman,
 	type StorageEstimateInfo,
 	queueBatchedStorePut,
@@ -23,6 +31,7 @@ import {
 import type {
 	CachedEntityKind,
 	ClinicalCachedEntity,
+	StoragePruneReport,
 } from "./storageTypes";
 
 export const LOCAL_STORAGE_CACHE_PREFIX = "dente_cached_entity_v1:";
@@ -37,9 +46,8 @@ function buildCacheKey(entityKind: string, entityId: string): string {
 function getLocalStorageCachedEntity<T>(
 	cacheKey: string,
 ): ClinicalCachedEntity<T> | null {
-	if (typeof window === "undefined" || !window.localStorage) return null;
 	try {
-		const raw = window.localStorage.getItem(
+		const raw = safeLocalStorageGetItem(
 			`${LOCAL_STORAGE_CACHE_PREFIX}${cacheKey}`,
 		);
 		if (!raw) return null;
@@ -57,13 +65,10 @@ function getLocalStorageCachedEntity<T>(
 function saveLocalStorageCachedEntity<T>(
 	entity: ClinicalCachedEntity<T>,
 ): void {
-	if (typeof window === "undefined" || !window.localStorage) return;
 	try {
 		const storageKey = `${LOCAL_STORAGE_CACHE_PREFIX}${entity.cacheKey}`;
 		const serialized = JSON.stringify(entity);
-		const existing = window.localStorage.getItem(storageKey);
-		if (existing === serialized) return;
-		window.localStorage.setItem(storageKey, serialized);
+		safeLocalStorageSetItem(storageKey, serialized);
 	} catch (err) {
 		logger.error(
 			`[ClinicalCacheStorage] Error saving localStorage cache ${entity.cacheKey}`,
@@ -73,9 +78,8 @@ function saveLocalStorageCachedEntity<T>(
 }
 
 function removeLocalStorageCachedEntity(cacheKey: string): void {
-	if (typeof window === "undefined" || !window.localStorage) return;
 	try {
-		window.localStorage.removeItem(`${LOCAL_STORAGE_CACHE_PREFIX}${cacheKey}`);
+		safeLocalStorageRemoveItem(`${LOCAL_STORAGE_CACHE_PREFIX}${cacheKey}`);
 	} catch (err) {
 		logger.error(
 			`[ClinicalCacheStorage] Error removing localStorage cache ${cacheKey}`,
@@ -411,3 +415,242 @@ export async function getStorageEstimate(): Promise<StorageEstimateInfo> {
 		indexedDbAvailable,
 	};
 }
+
+export const DEFAULT_STALE_SNAPSHOT_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+/**
+ * Background Housekeeping: Prunes stale offline snapshots older than 30 days
+ * from IndexedDB and LocalStorage to prevent boundless storage growth.
+ *
+ * Guaranteed Invariants:
+ * 1. Statutory reference catalogs (804n nomenclature, ICD-10, 043/u templates) are NEVER pruned.
+ * 2. Uncommitted or in-flight dirty drafts are NEVER pruned.
+ * 3. Non-blocking asynchronous chunking yields to main thread to prevent UI freezing on low-spec PCs.
+ * 4. In-memory L1 cache maps are cleared alongside disk records.
+ */
+export async function pruneStaleOfflineSnapshots(
+	maxAgeMs: number = DEFAULT_STALE_SNAPSHOT_TTL_MS,
+): Promise<StoragePruneReport> {
+	const nowMs = Date.now();
+	let prunedClinicalCacheCount = 0;
+	let prunedDraftsCount = 0;
+	let prunedMutationsCount = 0;
+	let prunedSchedulesCount = 0;
+	let prunedLocalStorageCount = 0;
+
+	const statutoryCatalogKeys = new Set([
+		"catalog_804n:canonical",
+		"catalog_icd10:canonical",
+		"catalog_templates:canonical",
+	]);
+
+	try {
+		const db = await openOfflineOutboxDb();
+
+		// 1. Prune Clinical Cache Store
+		if (db.objectStoreNames.contains(CLINICAL_CACHE_STORE_NAME)) {
+			try {
+				const tx = db.transaction(CLINICAL_CACHE_STORE_NAME, "readwrite");
+				const store = tx.objectStore(CLINICAL_CACHE_STORE_NAME);
+				const req = store.getAll();
+				const records = await new Promise<ClinicalCachedEntity[]>((resolve, reject) => {
+					req.onsuccess = () => resolve((req.result as ClinicalCachedEntity[]) || []);
+					req.onerror = () => reject(req.error);
+				});
+
+				let opCount = 0;
+				for (const rec of records) {
+					if (!rec || !rec.cacheKey) continue;
+					if (statutoryCatalogKeys.has(rec.cacheKey)) continue;
+
+					const age = nowMs - (rec.cachedAtMs || (rec.cachedAt ? Date.parse(rec.cachedAt) : 0));
+					if (age > maxAgeMs) {
+						store.delete(rec.cacheKey);
+						inMemoryEntityCacheMap.delete(rec.cacheKey);
+						cancelBatchedStorePut(CLINICAL_CACHE_STORE_NAME, rec.cacheKey);
+						removeLocalStorageCachedEntity(rec.cacheKey);
+						prunedClinicalCacheCount++;
+					}
+					if (++opCount % 50 === 0) await yieldToMainThread();
+				}
+			} catch (err) {
+				logger.warn("[ClinicalCacheStorage] Prune clinical_cache failed:", err);
+			}
+		}
+
+		// 2. Prune Saved Stale Drafts Store (>30 days)
+		if (db.objectStoreNames.contains(DRAFTS_STORE_NAME)) {
+			try {
+				const tx = db.transaction(DRAFTS_STORE_NAME, "readwrite");
+				const store = tx.objectStore(DRAFTS_STORE_NAME);
+				const req = store.getAll();
+				const drafts = await new Promise<any[]>((resolve, reject) => {
+					req.onsuccess = () => resolve((req.result as any[]) || []);
+					req.onerror = () => reject(req.error);
+				});
+
+				let opCount = 0;
+				for (const draft of drafts) {
+					if (!draft || !draft.draftKey) continue;
+					const timestamp = draft.updatedAtMs || (draft.updatedAt ? Date.parse(draft.updatedAt) : 0);
+					const age = nowMs - timestamp;
+					if (age > maxAgeMs && draft.isSaved !== false) {
+						store.delete(draft.draftKey);
+						safeLocalStorageRemoveItem(`dente_offline_draft_v1:${draft.draftKey}`);
+						prunedDraftsCount++;
+					}
+					if (++opCount % 50 === 0) await yieldToMainThread();
+				}
+			} catch (err) {
+				logger.warn("[ClinicalCacheStorage] Prune drafts failed:", err);
+			}
+		}
+
+		// 3. Prune Synced/Duplicate Mutations (>30 days)
+		if (db.objectStoreNames.contains(MUTATIONS_STORE_NAME)) {
+			try {
+				const tx = db.transaction(MUTATIONS_STORE_NAME, "readwrite");
+				const store = tx.objectStore(MUTATIONS_STORE_NAME);
+				const req = store.getAll();
+				const mutations = await new Promise<any[]>((resolve, reject) => {
+					req.onsuccess = () => resolve((req.result as any[]) || []);
+					req.onerror = () => reject(req.error);
+				});
+
+				let opCount = 0;
+				for (const m of mutations) {
+					if (!m || !m.mutationId) continue;
+					const isFinished =
+						m.status === "synced" ||
+						m.status === "duplicate" ||
+						m.status === "conflict_resolved";
+					if (isFinished) {
+						const timestamp = m.createdAtMs || (m.createdAt ? Date.parse(m.createdAt) : 0);
+						if (nowMs - timestamp > maxAgeMs) {
+							store.delete(m.mutationId);
+							prunedMutationsCount++;
+						}
+					}
+					if (++opCount % 50 === 0) await yieldToMainThread();
+				}
+			} catch (err) {
+				logger.warn("[ClinicalCacheStorage] Prune mutations failed:", err);
+			}
+		}
+
+		// 4. Prune Stale Schedule Caches (>30 days)
+		if (db.objectStoreNames.contains(SCHEDULES_CACHE_STORE_NAME)) {
+			try {
+				const tx = db.transaction(SCHEDULES_CACHE_STORE_NAME, "readwrite");
+				const store = tx.objectStore(SCHEDULES_CACHE_STORE_NAME);
+				const req = store.getAll();
+				const schedules = await new Promise<any[]>((resolve, reject) => {
+					req.onsuccess = () => resolve((req.result as any[]) || []);
+					req.onerror = () => reject(req.error);
+				});
+
+				let opCount = 0;
+				for (const sch of schedules) {
+					if (!sch || !sch.scheduleKey) continue;
+					const timestamp = sch.cachedAtMs || (sch.cachedAt ? Date.parse(sch.cachedAt) : 0);
+					if (nowMs - timestamp > maxAgeMs) {
+						store.delete(sch.scheduleKey);
+						safeLocalStorageRemoveItem(`dente_schedule_cache_v1:${sch.scheduleKey}`);
+						prunedSchedulesCount++;
+					}
+					if (++opCount % 50 === 0) await yieldToMainThread();
+				}
+			} catch (err) {
+				logger.warn("[ClinicalCacheStorage] Prune schedules failed:", err);
+			}
+		}
+	} catch (err) {
+		logger.debug("[ClinicalCacheStorage] IDB not accessible during prune, proceeding with localStorage", err);
+	}
+
+	// 5. Sweep LocalStorage for stale entries
+	if (typeof window !== "undefined" && window.localStorage) {
+		try {
+			const keysToRemove: string[] = [];
+			for (let i = 0; i < window.localStorage.length; i++) {
+				const key = window.localStorage.key(i);
+				if (!key) continue;
+
+				if (key.startsWith(LOCAL_STORAGE_CACHE_PREFIX)) {
+					const cacheKey = key.slice(LOCAL_STORAGE_CACHE_PREFIX.length);
+					if (statutoryCatalogKeys.has(cacheKey)) continue;
+
+					const raw = safeLocalStorageGetItem(key);
+					if (raw) {
+						try {
+							const parsed = JSON.parse(raw);
+							const timestamp =
+								parsed?.cachedAtMs || (parsed?.cachedAt ? Date.parse(parsed.cachedAt) : 0);
+							if (timestamp > 0 && nowMs - timestamp > maxAgeMs) {
+								keysToRemove.push(key);
+							}
+						} catch {
+							// skip unparseable
+						}
+					}
+				}
+			}
+
+			for (const key of keysToRemove) {
+				safeLocalStorageRemoveItem(key);
+				prunedLocalStorageCount++;
+			}
+		} catch (err) {
+			logger.warn("[ClinicalCacheStorage] LocalStorage prune error:", err);
+		}
+	}
+
+	const totalPrunedCount =
+		prunedClinicalCacheCount +
+		prunedDraftsCount +
+		prunedMutationsCount +
+		prunedSchedulesCount +
+		prunedLocalStorageCount;
+
+	const report: StoragePruneReport = {
+		prunedAt: new Date(nowMs).toISOString(),
+		ttlDays: Math.round(maxAgeMs / (24 * 60 * 60 * 1000)),
+		prunedClinicalCacheCount,
+		prunedDraftsCount,
+		prunedMutationsCount,
+		prunedSchedulesCount,
+		prunedLocalStorageCount,
+		totalPrunedCount,
+	};
+
+	if (totalPrunedCount > 0) {
+		logger.info(
+			`[ClinicalCacheStorage] Housekeeping pruned ${totalPrunedCount} stale offline snapshots (> ${report.ttlDays} days)`,
+		);
+	}
+
+	return report;
+}
+
+let isPruneScheduled = false;
+
+/**
+ * Schedules background idle housekeeping to run during browser idle time.
+ */
+export function scheduleStoragePruneIdle(maxAgeMs?: number): void {
+	if (isPruneScheduled || typeof window === "undefined") return;
+	isPruneScheduled = true;
+	const runPrune = () => {
+		void pruneStaleOfflineSnapshots(maxAgeMs).catch((err) => {
+			logger.debug("[ClinicalCacheStorage] Idle prune warning:", err);
+		});
+	};
+
+	const win = window as unknown as { requestIdleCallback?: (cb: () => void, opt: { timeout: number }) => number };
+	if (typeof win.requestIdleCallback === "function") {
+		win.requestIdleCallback(() => runPrune(), { timeout: 10_000 });
+	} else {
+		setTimeout(runPrune, 5_000);
+	}
+}
+

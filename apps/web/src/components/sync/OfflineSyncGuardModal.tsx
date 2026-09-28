@@ -383,7 +383,7 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 										{status.bufferedRecordsCount.diaries}
 									</div>
 									<div className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 mt-0.5">
-										Форма 043/у
+										Медицинская карта
 									</div>
 								</div>
 

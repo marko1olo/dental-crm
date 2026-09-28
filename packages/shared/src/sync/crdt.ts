@@ -23,7 +23,7 @@ export interface MergeFieldLevelCrdtResult<T = Record<string, unknown>> {
 	changedFields: string[];
 	conflicts: FieldConflictDetail[];
 	hasConflicts: boolean;
-	strategy: "created" | "field_merge" | "lww" | "identical_noop";
+	strategy: "created" | "field_merge" | "lww" | "identical_noop" | "somatic_safety_union";
 }
 
 function parseIsoTimestamp(isoString?: string | null | undefined): number {
@@ -131,6 +131,176 @@ export function resetGlobalClockSkew(): void {
 	lastMonotonicAdjustedMs = 0;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Somatic Safety & Medical Alerts Invariants (Allergies, Risks, Contraindications)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const SOMATIC_SAFETY_FIELDS = new Set([
+	"allergies",
+	"somaticAllergies",
+	"somatic_allergies",
+	"contraindications",
+	"emergencyAlerts",
+	"emergency_alerts",
+	"chronicDiseases",
+	"chronic_diseases",
+	"somaticAlerts",
+	"somatic_alerts",
+	"medicalAlerts",
+	"medical_alerts",
+]);
+
+export const ANESTHESIA_RISK_RANK: Record<string, number> = {
+	critical: 5,
+	high: 4,
+	moderate: 3,
+	low: 2,
+	normal: 1,
+};
+
+export function isSomaticSafetyFieldOrRisk(field: string): boolean {
+	return (
+		SOMATIC_SAFETY_FIELDS.has(field) ||
+		field === "anesthesiaRisk" ||
+		field === "anesthesia_risk"
+	);
+}
+
+export function isSomaticEmpty(val: unknown): boolean {
+	if (val === undefined || val === null) return true;
+	if (typeof val === "string") return val.trim() === "";
+	if (Array.isArray(val)) {
+		return (
+			val.length === 0 ||
+			val.every((item) => (typeof item === "string" ? item.trim() === "" : !item))
+		);
+	}
+	if (typeof val === "object") {
+		return Object.keys(val as Record<string, unknown>).length === 0;
+	}
+	return false;
+}
+
+export interface SomaticSafetyMergeResult {
+	resolvedValue: unknown;
+	winner: "client" | "server" | "merged";
+	reason: string;
+}
+
+export function mergeSomaticSafetyField(
+	field: string,
+	clientVal: unknown,
+	serverVal: unknown,
+): SomaticSafetyMergeResult {
+	// Anesthesia risk ranking progression: highest rating strictly wins
+	if (field === "anesthesiaRisk" || field === "anesthesia_risk") {
+		const clientRank =
+			typeof clientVal === "string"
+				? ANESTHESIA_RISK_RANK[clientVal.toLowerCase().trim()] ?? 0
+				: 0;
+		const serverRank =
+			typeof serverVal === "string"
+				? ANESTHESIA_RISK_RANK[serverVal.toLowerCase().trim()] ?? 0
+				: 0;
+
+		if (clientRank > serverRank) {
+			return {
+				resolvedValue: clientVal,
+				winner: "client",
+				reason: `Upgraded anesthesia risk to higher clinical alert level (${String(clientVal)} [${clientRank}] > ${String(serverVal)} [${serverRank}])`,
+			};
+		}
+		if (serverRank > clientRank) {
+			return {
+				resolvedValue: serverVal,
+				winner: "server",
+				reason: `Preserved higher anesthesia risk alert level (${String(serverVal)} [${serverRank}] >= ${String(clientVal)} [${clientRank}])`,
+			};
+		}
+		return {
+			resolvedValue:
+				clientVal !== undefined && clientVal !== "" ? clientVal : serverVal,
+			winner: "client",
+			reason: "Identical or equal rank anesthesia risk level",
+		};
+	}
+
+	const clientEmpty = isSomaticEmpty(clientVal);
+	const serverEmpty = isSomaticEmpty(serverVal);
+
+	if (clientEmpty && !serverEmpty) {
+		return {
+			resolvedValue: serverVal,
+			winner: "server",
+			reason:
+				"Preserved non-empty somatic safety data against empty/cleared client update",
+		};
+	}
+
+	if (!clientEmpty && serverEmpty) {
+		return {
+			resolvedValue: clientVal,
+			winner: "client",
+			reason: "Adopted new non-empty somatic safety data over empty server value",
+		};
+	}
+
+	if (clientEmpty && serverEmpty) {
+		return {
+			resolvedValue: serverVal !== undefined ? serverVal : clientVal,
+			winner: "server",
+			reason: "Both somatic safety values are empty",
+		};
+	}
+
+	// Both are non-empty: non-destructively merge arrays or join strings
+	const toItems = (val: unknown): string[] => {
+		if (Array.isArray(val)) {
+			return val.map((x) => String(x).trim()).filter(Boolean);
+		}
+		if (typeof val === "string") {
+			return val
+				.split(";")
+				.map((s) => s.trim())
+				.filter(Boolean);
+		}
+		return [];
+	};
+
+	const clientItems = toItems(clientVal);
+	const serverItems = toItems(serverVal);
+
+	const unionItems: string[] = [];
+	const seen = new Set<string>();
+
+	for (const item of [...serverItems, ...clientItems]) {
+		const lower = item.toLowerCase();
+		if (!seen.has(lower)) {
+			seen.add(lower);
+			unionItems.push(item);
+		}
+	}
+
+	// If either input was an array, return array
+	if (Array.isArray(clientVal) || Array.isArray(serverVal)) {
+		return {
+			resolvedValue: unionItems,
+			winner: "merged",
+			reason:
+				"Union-merged somatic safety alert entries from both client and server",
+		};
+	}
+
+	// Otherwise both were strings: join with semicolon
+	const mergedString = unionItems.join("; ");
+	return {
+		resolvedValue: mergedString,
+		winner: "merged",
+		reason:
+			"Combined distinct somatic safety notes from client and server with semicolon",
+	};
+}
+
 /**
  * Deterministic Field-Level Last-Write-Wins (LWW) CRDT & Three-Way Merging.
  *
@@ -141,6 +311,7 @@ export function resetGlobalClockSkew(): void {
  * 2. Same-field concurrent collisions are resolved deterministically using
  *    vector clocks / field timestamps (`mutationVector` / `updatedAt`).
  * 3. Idempotent: merging the exact same patch multiple times produces the exact same result.
+ * 4. Somatic safety alerts (allergies, contraindications, anesthesia risk) are never wiped or downgraded.
  */
 export function mergeFieldLevelCrdt<T extends Record<string, unknown>>(
 	options: MergeFieldLevelCrdtOptions,
@@ -221,6 +392,36 @@ export function mergeFieldLevelCrdt<T extends Record<string, unknown>>(
 		const clientValJson = JSON.stringify(clientVal);
 		const serverValJson = JSON.stringify(serverVal);
 		if (clientValJson === serverValJson) {
+			continue;
+		}
+
+		// Clinical Somatic Safety & Medical Alerts Invariant:
+		// Never wipe allergies or contraindications via blind LWW, union-merge entries,
+		// and upgrade to highest anesthesia risk.
+		if (isSomaticSafetyFieldOrRisk(field)) {
+			const somatic = mergeSomaticSafetyField(field, clientVal, serverVal);
+			const resolvedValJson = JSON.stringify(somatic.resolvedValue);
+
+			if (resolvedValJson !== serverValJson) {
+				merged[field] = somatic.resolvedValue;
+				changedFields.push(field);
+				mergedVector[field] = {
+					updatedAt: clientFieldEntry?.updatedAt || clientUpdatedAt || nowIso,
+					version: (serverFieldEntry?.version ?? 0) + 1,
+					authorId: authorUserId,
+					clientId,
+				};
+			}
+
+			conflicts.push({
+				field,
+				clientValue: clientVal,
+				serverValue: serverVal,
+				resolvedValue: somatic.resolvedValue,
+				strategy: "somatic_safety_union",
+				winner: somatic.winner,
+				reason: somatic.reason,
+			});
 			continue;
 		}
 
@@ -306,12 +507,21 @@ export function mergeFieldLevelCrdt<T extends Record<string, unknown>>(
 	}
 
 	const hasActualConflicts = conflicts.length > 0;
+	const hasSomaticConflicts = conflicts.some(
+		(c) => c.strategy === "somatic_safety_union",
+	);
 	return {
 		mergedEntity: merged as unknown as T,
 		updatedVector: mergedVector,
 		changedFields,
 		conflicts,
 		hasConflicts: hasActualConflicts,
-		strategy: hasActualConflicts ? "lww" : changedFields.length > 0 ? "field_merge" : "identical_noop",
+		strategy: hasSomaticConflicts
+			? "somatic_safety_union"
+			: hasActualConflicts
+				? "lww"
+				: changedFields.length > 0
+					? "field_merge"
+					: "identical_noop",
 	};
 }

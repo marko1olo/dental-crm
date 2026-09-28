@@ -98,7 +98,7 @@ export function resolveEntityConflict<T extends Record<string, unknown> = Record
 	changedFields: string[];
 	conflicts: FieldConflictDetail[];
 	hasConflicts: boolean;
-	strategy: "created" | "field_merge" | "lww" | "identical_noop";
+	strategy: ReturnType<typeof mergeFieldLevelCrdt<T>>["strategy"];
 } {
 	const res = mergeFieldLevelCrdt<T>({
 		entityKind: options.entityKind,

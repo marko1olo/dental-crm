@@ -72,7 +72,7 @@ export const OfflineMutationQueueViewer: React.FC<OfflineMutationQueueViewerProp
 			case "odontogram":
 				return "Зубная формула (FDI)";
 			case "visit_diary":
-				return "Дневник 043/у";
+				return "Дневник приема";
 			case "patient":
 				return "Пациент";
 			case "payment":
