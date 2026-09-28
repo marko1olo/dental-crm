@@ -52,6 +52,9 @@ export const treatmentConsumables = pgTable(
 		orgCodeItemUniqueIdx: uniqueIndex(
 			"treatment_consumables_org_code_item_unique_idx",
 		).on(table.organizationId, table.catalogItemCode, table.inventoryItemId),
+		organizationIdIdx: index("treatment_consumables_organization_id_idx").on(
+			table.organizationId,
+		),
 		orgCodeIdx: index("treatment_consumables_org_code_idx").on(
 			table.organizationId,
 			table.catalogItemCode,
@@ -92,6 +95,9 @@ export const treatmentConsumableDeductions = pgTable(
 		orgReferenceUniqueIdx: uniqueIndex(
 			"treatment_consumable_deductions_org_reference_unique_idx",
 		).on(table.organizationId, table.treatmentReferenceId),
+		organizationIdIdx: index(
+			"treatment_consumable_deductions_organization_id_idx",
+		).on(table.organizationId),
 		orgVisitIdx: index("treatment_consumable_deductions_org_visit_idx").on(
 			table.organizationId,
 			table.visitId,

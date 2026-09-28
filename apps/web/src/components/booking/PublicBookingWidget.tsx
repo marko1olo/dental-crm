@@ -29,7 +29,6 @@ import {
 	dispatchBookingCompletedMessage,
 	formatPhoneRu,
 	formatRussianDate,
-	generateFallbackSlots,
 	generateGoogleCalendarUrl,
 	generateIcsCalendarContent,
 	generateYandexCalendarUrl,
@@ -80,7 +79,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 
 	const [selectedDate, setSelectedDate] = useState<string>(() => toLocalDateString());
 	const [selectedSlot, setSelectedSlot] = useState<BookingSlot | null>(null);
-	const [slots, setSlots] = useState<BookingSlot[]>(() => generateFallbackSlots(toLocalDateString()));
+	const [slots, setSlots] = useState<BookingSlot[]>([]);
 	const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
 
 	const [contacts, setContacts] = useState<BookingContacts>({
@@ -118,7 +117,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 	const fetchSlots = useCallback(
 		async (date: string, doctorId: string | null) => {
 			if (!organizationId) {
-				setSlots(generateFallbackSlots(date));
+				setSlots([]);
 				return;
 			}
 			setLoadingSlots(true);
@@ -129,12 +128,12 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 				const res = await fetch(url);
 				if (res.ok) {
 					const data = (await res.json()) as BookingSlot[];
-					setSlots(Array.isArray(data) && data.length > 0 ? data : generateFallbackSlots(date));
+					setSlots(Array.isArray(data) ? data : []);
 				} else {
-					setSlots(generateFallbackSlots(date));
+					setSlots([]);
 				}
 			} catch {
-				setSlots(generateFallbackSlots(date));
+				setSlots([]);
 			} finally {
 				setLoadingSlots(false);
 			}
@@ -471,6 +470,16 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 
 					{loadingSlots ? (
 						<div style={{ padding: "24px", textAlign: "center", color: "var(--muted, #64748b)", fontSize: "13px" }}>Загрузка свободных слотов...</div>
+					) : slots.length === 0 ? (
+						<div style={{ padding: "32px 16px", textAlign: "center", color: "var(--muted, #64748b)" }}>
+							<Calendar size={32} style={{ margin: "0 auto 8px auto", opacity: 0.5 }} />
+							<div style={{ fontWeight: 600, fontSize: "14px", color: "var(--ink, #0f172a)", marginBottom: "4px" }}>
+								На выбранную дату нет свободных слотов для записи
+							</div>
+							<div style={{ fontSize: "12px" }}>
+								Пожалуйста, выберите другую дату в календаре выше или свяжитесь с клиникой по телефону.
+							</div>
+						</div>
 					) : (
 						<div style={{ display: "flex", flexDirection: "column", gap: "12px", maxHeight: "250px", overflowY: "auto", paddingRight: "4px" }}>
 							{groupedSlots.morning.length > 0 && (

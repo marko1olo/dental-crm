@@ -38,6 +38,16 @@ export const LeadAudioPlayerWidget: React.FC<LeadAudioPlayerWidgetProps> = ({
 	}, [durationSeconds]);
 
 	useEffect(() => {
+		if (audioRef.current) {
+			audioRef.current.pause();
+			audioRef.current = null;
+		}
+		setIsPlaying(false);
+		setCurrentTime(0);
+		setHasError(false);
+	}, [audioUrl]);
+
+	useEffect(() => {
 		return () => {
 			if (audioRef.current) {
 				audioRef.current.pause();
@@ -46,7 +56,7 @@ export const LeadAudioPlayerWidget: React.FC<LeadAudioPlayerWidgetProps> = ({
 		};
 	}, []);
 
-	if (!audioUrl) return null;
+	if (!audioUrl || !audioUrl.trim()) return null;
 
 	const handleTogglePlay = (e: React.MouseEvent) => {
 		e.stopPropagation();

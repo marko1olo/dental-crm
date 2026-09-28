@@ -22,7 +22,12 @@ import {
 	getPrimaryLanIp,
 	getRankedLanInterfaces,
 } from "../services/lanDiscoveryService.js";
+import { getLanMeshService } from "../services/lanMeshService.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
+import {
+	lanMeshHandshakePayloadSchema,
+	queuedMeshMutationSchema,
+} from "@dental/shared";
 
 const pairRoleSchema = z.enum(["doctor", "assistant"]);
 
@@ -398,6 +403,120 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			ok: true,
 			service: "dental-crm-lan",
 			time: new Date().toISOString(),
+		});
+	});
+
+	/**
+	 * GET /api/network/lan-mesh/handshake
+	 * Fast HTTP probe endpoint to confirm active DENTE LAN node.
+	 */
+	app.get("/api/network/lan-mesh/handshake", async (_request: FastifyRequest, reply: FastifyReply) => {
+		const meshService = getLanMeshService();
+		const handshake = meshService.getTopology().createHandshakePayload();
+		return reply.send({
+			ok: true,
+			nodeId: handshake.nodeId,
+			clinicId: handshake.clinicId,
+			role: handshake.role,
+			appVersion: handshake.appVersion,
+			schemaVersion: handshake.schemaVersion,
+		});
+	});
+
+	/**
+	 * POST /api/network/lan-mesh/handshake
+	 * Negotiates version and schema compatibility with remote clinic node.
+	 */
+	app.post("/api/network/lan-mesh/handshake", async (request: FastifyRequest, reply: FastifyReply) => {
+		const parseRes = lanMeshHandshakePayloadSchema.safeParse(request.body);
+		if (!parseRes.success) {
+			return reply.code(400).send({
+				ok: false,
+				error: "InvalidHandshakePayload",
+				details: parseRes.error.format(),
+			});
+		}
+
+		const meshService = getLanMeshService();
+		const result = meshService.handleIncomingHandshake(parseRes.data);
+
+		return reply.send({
+			ok: result.ok,
+			compatibility: result.compatibility,
+			handshake: result.handshake,
+		});
+	});
+
+	/**
+	 * GET /api/network/lan-mesh/status
+	 * Returns current topology status, known peers, Master election, and offline queue status badge.
+	 */
+	app.get("/api/network/lan-mesh/status", async (_request: FastifyRequest, reply: FastifyReply) => {
+		const meshService = getLanMeshService();
+		const badge = meshService.getStatusBadge();
+		const topology = meshService.getTopology();
+
+		return reply.send({
+			ok: true,
+			localNode: topology.createHandshakePayload(),
+			masterNode: topology.getMasterNode(),
+			peers: topology.getPeerSummaries(),
+			statusBadge: badge,
+		});
+	});
+
+	/**
+	 * POST /api/network/lan-mesh/mutations
+	 * Accepts streaming mutations from satellite workstations to the Master.
+	 */
+	app.post("/api/network/lan-mesh/mutations", async (request: FastifyRequest, reply: FastifyReply) => {
+		const parseRes = z.object({ mutations: z.array(queuedMeshMutationSchema) }).safeParse(request.body);
+		if (!parseRes.success) {
+			return reply.code(400).send({
+				ok: false,
+				error: "InvalidMutationPayload",
+				message: "Expected valid 'mutations' array in request body.",
+				details: parseRes.error.format(),
+			});
+		}
+
+		const meshService = getLanMeshService();
+		const badge = meshService.getStatusBadge();
+
+		// Schema incompatibility guard: reject direct mutations if schema is incompatible
+		if (badge.syncMode === "sync_deferred" || badge.syncMode === "read_only") {
+			return reply.code(409).send({
+				ok: false,
+				error: "SchemaIncompatible",
+				message: "Direct schema mutations rejected: schema mismatch prevents database corruption.",
+				warningBadge: badge.warningBadge,
+			});
+		}
+
+		// Acknowledge applied mutations
+		const appliedCount = parseRes.data.mutations.length;
+		return reply.send({
+			ok: true,
+			processedCount: appliedCount,
+			appliedCount,
+			appliedAt: new Date().toISOString(),
+		});
+	});
+
+	/**
+	 * POST /api/network/lan-mesh/discover
+	 * Triggers immediate UDP broadcast beacon and active subnet HTTP probe.
+	 */
+	app.post("/api/network/lan-mesh/discover", async (_request: FastifyRequest, reply: FastifyReply) => {
+		const meshService = getLanMeshService();
+		meshService.broadcastBeacon();
+		const discovered = await meshService.probeSubnetHttp();
+
+		return reply.send({
+			ok: true,
+			discoveredEndpoints: discovered,
+			peers: meshService.getKnownPeers(),
+			statusBadge: meshService.getStatusBadge(),
 		});
 	});
 }

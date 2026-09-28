@@ -169,20 +169,31 @@ export const systemRamWatchdogs = pgTable(
  * не было, поэтому не загружались services/biAnalyticsWorker.ts и
  * scripts/cronAnalyticsWorker.ts.
  */
-export const biAnalyticsSnapshots = pgTable("bi_analytics_snapshots", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id").notNull(),
-	snapshotDate: timestamp("snapshot_date", { withTimezone: true }).notNull(),
-	cohortLtvJson: jsonb("cohort_ltv_json").notNull().default({}),
-	planFunnelJson: jsonb("plan_funnel_json").notNull().default({}),
-	chairUtilizationJson: jsonb("chair_utilization_json").notNull().default({}),
-	doctorProfitabilityJson: jsonb("doctor_profitability_json")
-		.notNull()
-		.default({}),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-});
+export const biAnalyticsSnapshots = pgTable(
+	"bi_analytics_snapshots",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id").notNull(),
+		snapshotDate: timestamp("snapshot_date", { withTimezone: true }).notNull(),
+		cohortLtvJson: jsonb("cohort_ltv_json").notNull().default({}),
+		planFunnelJson: jsonb("plan_funnel_json").notNull().default({}),
+		chairUtilizationJson: jsonb("chair_utilization_json").notNull().default({}),
+		doctorProfitabilityJson: jsonb("doctor_profitability_json")
+			.notNull()
+			.default({}),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => ({
+		organizationIdIdx: index("bi_analytics_snapshots_organization_id_idx").on(
+			table.organizationId,
+		),
+		snapshotDateIdx: index("bi_analytics_snapshots_snapshot_date_idx").on(
+			table.snapshotDate,
+		),
+	}),
+);
 
 export const migrationRuns = pgTable(
 	"migration_runs",
@@ -396,6 +407,9 @@ export const migrationEntityLinks = pgTable(
 				table.entityKind,
 				table.sourceSystem,
 				table.sourceEntityId,
+			),
+			idxEntityLinksOrg: index("migration_entity_links_organization_id_idx").on(
+				table.organizationId,
 			),
 			idxEntityLinksTarget: index("migration_entity_links_target_idx").on(
 				table.targetEntityId,

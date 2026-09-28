@@ -78,7 +78,8 @@ export interface PatientCabinetModalProps {
 	readonly onAppointmentBooked?: ((appointmentReq: { specialty: string; preferredDate: string; note: string }) => void) | undefined;
 }
 
-export { mapServerPortalMeToCabinetData } from "./patientCabinetMapper";
+import { mapServerPortalMeToCabinetData } from "./patientCabinetMapper";
+export { mapServerPortalMeToCabinetData };
 
 export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	isOpen = true,
@@ -94,6 +95,33 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 }) => {
 	const [data, setData] = useState<PatientPersonalCabinetData>(() => initialData || DEMO_PATIENT_CABINET);
 	const [activeTab, setActiveTab] = useState<PatientCabinetTab>(() => normalizePatientTab(initialTab));
+
+	useEffect(() => {
+		if (!token) return;
+		let isMounted = true;
+		const fetchMe = async () => {
+			try {
+				const res = await fetch("/api/portal/me", {
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				});
+				if (res.ok) {
+					const json = await res.json();
+					if (isMounted && json && json.patient) {
+						const mapped = mapServerPortalMeToCabinetData(json);
+						setData(mapped);
+					}
+				}
+			} catch (err) {
+				console.error("[PatientCabinetModal] Failed to fetch /api/portal/me:", err);
+			}
+		};
+		void fetchMe();
+		return () => {
+			isMounted = false;
+		};
+	}, [token]);
 
 	// Sheets and Modals State (Depth strictly 1)
 	const [activeSbpInvoice, setActiveSbpInvoice] = useState<PatientInvoiceItem | null>(null);

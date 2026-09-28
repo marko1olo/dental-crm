@@ -231,4 +231,85 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 		const errJson = wrongPinRes.json();
 		assert.strictEqual(errJson.error, "InvalidPairingPin");
 	});
+
+	it("9. GET /api/network/lan-mesh/handshake: fast HTTP probe returns local node info", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/network/lan-mesh/handshake",
+		});
+
+		assert.strictEqual(res.statusCode, 200);
+		const json = res.json();
+		assert.strictEqual(json.ok, true);
+		assert.ok(json.nodeId);
+		assert.ok(json.clinicId);
+		assert.ok(json.role);
+		assert.ok(json.appVersion);
+		assert.ok(json.schemaVersion !== undefined);
+	});
+
+	it("10. POST /api/network/lan-mesh/handshake: negotiates capabilities and returns compatibility", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/network/lan-mesh/handshake",
+			payload: {
+				nodeId: "remote-doctor-2",
+				clinicId: "clinic-default",
+				appVersion: "2.4.0",
+				schemaVersion: 182,
+				role: "doctor",
+				ip: "192.168.1.55",
+				port: 4105,
+				peerList: [],
+			},
+		});
+
+		assert.strictEqual(res.statusCode, 200);
+		const json = res.json();
+		assert.strictEqual(json.ok, true);
+		assert.strictEqual(json.compatibility.compatible, true);
+		assert.strictEqual(json.compatibility.syncAllowed, true);
+		assert.strictEqual(json.compatibility.mode, "full_sync");
+		assert.ok(json.handshake);
+	});
+
+	it("11. GET /api/network/lan-mesh/status: returns topology status badge", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/network/lan-mesh/status",
+		});
+
+		assert.strictEqual(res.statusCode, 200);
+		const json = res.json();
+		assert.strictEqual(json.ok, true);
+		assert.ok(json.localNode);
+		assert.ok(json.statusBadge);
+		assert.ok(["streaming", "offline_queued", "sync_deferred", "read_only"].includes(json.statusBadge.syncMode));
+	});
+
+	it("12. POST /api/network/lan-mesh/mutations: applies mutation batch", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/network/lan-mesh/mutations",
+			payload: {
+				mutations: [
+					{
+						id: "mut-batch-1",
+						entityKind: "appointment",
+						entityId: "app-300",
+						action: "update",
+						payload: { status: "confirmed" },
+						timestamp: Date.now(),
+						idempotencyKey: "idem-batch-1",
+						originNodeId: "doctor-remote",
+					},
+				],
+			},
+		});
+
+		assert.strictEqual(res.statusCode, 200);
+		const json = res.json();
+		assert.strictEqual(json.ok, true);
+		assert.strictEqual(json.appliedCount, 1);
+	});
 });

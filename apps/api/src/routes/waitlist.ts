@@ -259,6 +259,69 @@ export async function registerWaitlistRoutes(
 	});
 
 	/**
+	 * PATCH /api/waitlist/:id/status
+	 * Updates the status of a waitlist entry (e.g. fulfilled).
+	 */
+	app.patch("/api/waitlist/:id/status", async (request, reply) => {
+		try {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"waitlist write",
+			);
+			if (!orgId) return;
+
+			const { id } = request.params as { id: string };
+			const statusSchema = z.object({
+				status: z.enum(["active", "fulfilled"]),
+			});
+
+			const parsed = statusSchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный статус записи листа ожидания.",
+				});
+			}
+
+			const [updated] = await db
+				.update(appointmentWaitlists)
+				.set({
+					status: parsed.data.status,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(appointmentWaitlists.id, id),
+						eq(appointmentWaitlists.organizationId, orgId),
+					),
+				)
+				.returning();
+
+			if (!updated) {
+				return reply.code(404).send({
+					error: "WaitlistItemNotFound",
+					message: "Запись листа ожидания не найдена.",
+				});
+			}
+
+			wsBroker.broadcastToOrganization(orgId, {
+				type: "WAITLIST_UPDATED",
+				payload: updated,
+			});
+
+			return updated;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+		} catch (error: any) {
+			request.log.error(error);
+			return reply.status(500).send({
+				error: "InternalServerError",
+				message: "Ошибка при обновлении статуса листа ожидания.",
+			});
+		}
+	});
+
+	/**
 	 * DELETE /api/waitlist/:id
 	 * Removes an entry from the waitlist.
 	 */

@@ -2164,6 +2164,7 @@ export const drugInteractions = pgTable(
 			t.drugAInnLatin,
 			t.drugBInnLatin,
 		),
+		orgIdx: index("drug_interactions_organization_id_idx").on(t.organizationId),
 	}),
 );
 

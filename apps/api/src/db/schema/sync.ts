@@ -42,6 +42,9 @@ export const syncIdempotencyRecords = pgTable(
 		orgIdempotencyKeyIdx: uniqueIndex(
 			"sync_idempotency_records_org_key_idx",
 		).on(t.organizationId, t.idempotencyKey),
+		organizationIdIdx: index(
+			"sync_idempotency_records_organization_id_idx",
+		).on(t.organizationId),
 		orgEntityIdx: index("sync_idempotency_records_org_entity_idx").on(
 			t.organizationId,
 			t.entityKind,
@@ -82,6 +85,9 @@ export const syncEntityVectors = pgTable(
 		orgEntityKindIdIdx: uniqueIndex(
 			"sync_entity_vectors_org_kind_entity_idx",
 		).on(t.organizationId, t.entityKind, t.entityId),
+		organizationIdIdx: index(
+			"sync_entity_vectors_organization_id_idx",
+		).on(t.organizationId),
 	}),
 );
 

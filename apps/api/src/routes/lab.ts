@@ -1283,6 +1283,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 	app.patch("/api/lab/orders/:id", patchLabOrderHandler);
 	app.patch("/api/clinical/lab-orders/:id", patchLabOrderHandler);
+	app.patch("/api/clinical/lab-orders/:id/status", patchLabOrderHandler);
 
 	/**
 	 * DELETE /api/clinical/lab-orders/:id

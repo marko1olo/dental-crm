@@ -285,8 +285,8 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
         });
 
         if (waitlistItem.id) {
-          void fetch(`/api/waitlist/${waitlistItem.id}/status`, {
-            method: "PATCH",
+          void fetch(`/api/waitlist/${encodeURIComponent(waitlistItem.id)}`, {
+            method: "PUT",
             headers: {
               "Content-Type": "application/json",
               ...denteAdminSecretRequestHeaders(),

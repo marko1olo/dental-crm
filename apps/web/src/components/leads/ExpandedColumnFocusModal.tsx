@@ -178,6 +178,17 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 		return sortLeads(result, sortOption);
 	}, [columnLeads, searchQuery, urgencyFilter, sortOption]);
 
+	// Pagination limit for massive datasets (prevents DOM freeze on 300+ leads)
+	const [visibleLimit, setVisibleLimit] = useState(60);
+
+	useEffect(() => {
+		setVisibleLimit(60);
+	}, [searchQuery, urgencyFilter, sortOption, column.id]);
+
+	const visibleLeads = useMemo(() => {
+		return displayLeads.slice(0, visibleLimit);
+	}, [displayLeads, visibleLimit]);
+
 	// Toggle selection for a single lead
 	const toggleSelectLead = (id: string, e?: React.MouseEvent) => {
 		if (e) e.stopPropagation();
@@ -584,8 +595,9 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 						</div>
 					) : viewMode === "cards" ? (
 						/* VIEW 1: 3-COLUMN WIDE CARDS GRID */
-						<div className="expanded-focus-cards-grid">
-							{displayLeads.map((lead) => {
+						<div className="flex flex-col gap-3">
+							<div className="expanded-focus-cards-grid">
+								{visibleLeads.map((lead) => {
 								const sla = getLeadSlaStatus(lead);
 								const isSelected = selectedLeadIds.has(lead.id);
 								const channelKey = lead.source
@@ -752,6 +764,18 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 									</div>
 								);
 							})}
+							</div>
+							{visibleLimit < displayLeads.length && (
+								<div className="flex justify-center p-3">
+									<button
+										type="button"
+										onClick={() => setVisibleLimit((prev) => prev + 60)}
+										className="px-4 py-2 text-xs font-semibold rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+									>
+										Показать ещё 60 (показано {visibleLeads.length} из {displayLeads.length})
+									</button>
+								</div>
+							)}
 						</div>
 					) : (
 						/* VIEW 2: CLINICAL SPREADSHEET (32px Dense Table) */
@@ -785,7 +809,7 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 									</tr>
 								</thead>
 								<tbody>
-									{displayLeads.map((lead) => {
+									{visibleLeads.map((lead) => {
 										const sla = getLeadSlaStatus(lead);
 										const isSelected = selectedLeadIds.has(lead.id);
 										const channelKey = lead.source
@@ -949,6 +973,17 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 									})}
 								</tbody>
 							</table>
+							{visibleLimit < displayLeads.length && (
+								<div className="flex justify-center p-3">
+									<button
+										type="button"
+										onClick={() => setVisibleLimit((prev) => prev + 60)}
+										className="px-4 py-2 text-xs font-semibold rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+									>
+										Показать ещё 60 (показано {visibleLeads.length} из {displayLeads.length})
+									</button>
+								</div>
+							)}
 						</div>
 					)}
 				</div>
@@ -956,7 +991,7 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 				{/* 5. FOOTER STATUS BAR */}
 				<footer className="expanded-focus-footer">
 					<div className="flex items-center gap-3 text-[11.5px] text-[var(--muted)]">
-						<span>Показано: <strong>{displayLeads.length}</strong> из {columnLeads.length}</span>
+						<span>Показано: <strong>{visibleLeads.length}</strong> из {displayLeads.length}{displayLeads.length !== columnLeads.length ? ` (всего ${columnLeads.length})` : ""}</span>
 						<span>·</span>
 						<span>Клавиша <strong>Esc</strong> для возврата к доске</span>
 					</div>

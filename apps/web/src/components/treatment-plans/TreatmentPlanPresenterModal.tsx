@@ -263,7 +263,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		if (customTiers && customTiers.length === 3) {
 			return customTiers;
 		}
-		const effectiveTeeth = teeth && teeth.length > 0 ? teeth : DEFAULT_SAMPLE_TEETH;
+		const effectiveTeeth = teeth !== undefined ? teeth : DEFAULT_SAMPLE_TEETH;
 		return generate3TierPlanComparison(effectiveTeeth);
 	}, [customTiers, teeth]);
 

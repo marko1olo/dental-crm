@@ -999,7 +999,7 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		return result;
 	});
 
-	app.post("/api/leads/:id/create-patient", async (req, reply) => {
+	const createPatientFromLeadHandler = async (req: any, reply: any) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 			req,
 			reply,
@@ -1044,6 +1044,7 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 					success: true,
 					alreadyExisted: true,
 					patient: existingPatient,
+					patientId: existingPatient.id,
 					message: `Пациент с номером ${cleanPhone} уже существует в базе: ${existingPatient.fullName}`,
 				});
 			}
@@ -1084,7 +1085,11 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 			success: true,
 			alreadyExisted: false,
 			patient,
+			patientId: patient.id,
 			message: `Создана амбулаторная карта: ${patient.fullName}`,
 		});
-	});
+	};
+
+	app.post("/api/leads/:id/create-patient", createPatientFromLeadHandler);
+	app.post("/api/leads/:id/convert-to-patient", createPatientFromLeadHandler);
 }

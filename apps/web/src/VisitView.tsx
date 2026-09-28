@@ -271,8 +271,27 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		kind: "save",
 	};
 
-	const treatmentPlanAgeDays = 35;
-	const isTreatmentPlanExpiredSoft = true;
+	// Dynamic treatment plan age & soft expiration calculation
+	const activePlan = useMemo(() => {
+		const scenarios = (dashboard?.treatmentPlanScenarios as any[]) || [];
+		const patientScenarios = scenarios.filter((s) => s.patientId === activePatient?.id);
+		if (patientScenarios.length > 0) return patientScenarios[0];
+		const items = (dashboard?.treatmentPlanItems as any[]) || [];
+		const patientItems = items.filter((i) => i.patientId === activePatient?.id);
+		if (patientItems.length > 0) return patientItems[0];
+		return null;
+	}, [dashboard?.treatmentPlanScenarios, dashboard?.treatmentPlanItems, activePatient?.id]);
+
+	const treatmentPlanAgeDays = useMemo(() => {
+		if (!activePlan) return 0;
+		const rawDate = activePlan.createdAt || activePlan.plannedAt || activePlan.date;
+		if (!rawDate) return 0;
+		const createdTime = new Date(rawDate).getTime();
+		if (Number.isNaN(createdTime)) return 0;
+		return Math.max(0, Math.floor((Date.now() - createdTime) / (1000 * 60 * 60 * 24)));
+	}, [activePlan]);
+
+	const isTreatmentPlanExpiredSoft = activePlan !== null && treatmentPlanAgeDays > 30;
 
 	if (!activePatient) {
 		return <EmptyState title="Пациент не выбран" description="Выберите пациента в расписании или списке для начала приёма." />;
@@ -657,8 +676,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				setIsStagePaymentModalOpen={setIsStagePaymentModalOpen}
 				isPriceValidatorModalOpen={isPriceValidatorModalOpen}
 				setIsPriceValidatorModalOpen={setIsPriceValidatorModalOpen}
-				priceValidatorPlanPayload={{}}
-				priceValidatorCatalogList={[]}
+				priceValidatorPlanPayload={activePlan || undefined}
+				priceValidatorCatalogList={dashboard?.serviceCatalog}
 				isEmergencyModalOpen={isEmergencyModalOpen}
 				setIsEmergencyModalOpen={setIsEmergencyModalOpen}
 				isVoiceDictationModalOpen={isVoiceDictationModalOpen}
