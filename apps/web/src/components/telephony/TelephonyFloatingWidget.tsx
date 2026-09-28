@@ -60,6 +60,11 @@ import {
 	useTelephonyStore,
 } from "../../store/telephonyStore";
 import { showToast } from "../GlobalToast";
+import {
+	resolveCallAdvertisingAttribution,
+	captureLeadFromIncomingCall,
+	CHANNEL_BADGE_COLORS,
+} from "./telephonyAttribution";
 
 export interface TelephonyFloatingWidgetProps {
 	className?: string;
@@ -133,6 +138,7 @@ export function TelephonyFloatingWidget({
 	);
 	const [showWidgetMoreMenu, setShowWidgetMoreMenu] = useState(false);
 	const [isCreatingPatient, setIsCreatingPatient] = useState(false);
+	const [isCapturingLead, setIsCapturingLead] = useState(false);
 
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const waveformRef = useRef<HTMLDivElement | null>(null);
@@ -262,6 +268,11 @@ export function TelephonyFloatingWidget({
 	const acutePainAlerts = useMemo(() => {
 		return somaticAlerts.filter((a) => a.category === "pain");
 	}, [somaticAlerts]);
+
+	const callAttribution = useMemo(() => {
+		if (!activeCall) return null;
+		return resolveCallAdvertisingAttribution(activeCall);
+	}, [activeCall]);
 
 	const callerName =
 		resolvedPatient?.fullName || activeCall?.patientName || "Неизвестный номер";
@@ -597,6 +608,22 @@ export function TelephonyFloatingWidget({
 			showToast(msg, "error");
 		} finally {
 			setIsCreatingPatient(false);
+		}
+	};
+
+	// 1-Click Lead Capture with Automatic Marketing Attribution (Mandate 8e, 8n)
+	const handleCaptureLead = async () => {
+		if (!activeCall || isCapturingLead) return;
+		setIsCapturingLead(true);
+		try {
+			const res = await captureLeadFromIncomingCall(activeCall);
+			if (res.success) {
+				showToast(res.message, "success");
+			} else {
+				showToast(res.message, "error");
+			}
+		} finally {
+			setIsCapturingLead(false);
 		}
 	};
 
@@ -1515,6 +1542,28 @@ export function TelephonyFloatingWidget({
 													className="absolute right-0 bottom-full mb-1.5 w-64 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line-strong,var(--line,#e2e8f0))] shadow-2xl p-1.5 z-50 text-xs animate-in fade-in zoom-in-95 space-y-0.5"
 													data-testid="widget-more-menu-dropdown"
 												>
+													{!resolvedPatient && callAttribution && (
+														<button
+															type="button"
+															onClick={() => {
+																handleCaptureLead();
+																setShowWidgetMoreMenu(false);
+															}}
+															disabled={isCapturingLead || activeCall?.isLeadCaptured}
+															className="w-full text-left px-2.5 py-2 rounded-lg bg-[var(--teal-surface)] hover:opacity-90 text-[var(--teal)] font-bold flex items-center gap-2 transition-colors cursor-pointer border border-[var(--teal-soft)] mb-1"
+															data-testid="widget-action-capture-lead"
+															title={`1-Клик захват в лиды с авторазметкой канала (${callAttribution.channelLabel})`}
+														>
+															<UserPlus size={14} className="text-[var(--teal)] shrink-0" />
+															<span className="truncate">
+																{activeCall?.isLeadCaptured
+																	? "✓ Лид захвачен"
+																	: isCapturingLead
+																		? "Захват лида..."
+																		: `В лиды: ${callAttribution.channelLabel}`}
+															</span>
+														</button>
+													)}
 													<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
 														Слоты быстрой записи:
 													</div>

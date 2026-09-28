@@ -179,6 +179,20 @@ export function normalizeMarketingChannel(
 	const s = rawSource.trim().toLowerCase();
 	if (!s) return "other";
 
+	// Fast path: if already a canonical key
+	if (
+		s === "yandex_direct" ||
+		s === "gis_2" ||
+		s === "prodoctorov" ||
+		s === "napopravku" ||
+		s === "site_seo" ||
+		s === "social_media" ||
+		s === "recommendations" ||
+		s === "other"
+	) {
+		return s as CanonicalMarketingChannelKey;
+	}
+
 	if (
 		s.includes("директ") ||
 		s.includes("direct") ||
@@ -253,7 +267,8 @@ export function getMarketingChannelLabel(
 // 3. ВХОДНЫЕ ДАННЫЕ ЛИДА ДЛЯ ВОРОНКИ
 // ---------------------------------------------------------------------------
 
-export interface FunnelLead extends Partial<Lead> {
+export interface FunnelLead extends Omit<Partial<Lead>, "status" | "expectedRevenue" | "createdAt"> {
+
 	id: string;
 	name: string;
 	phone?: string;

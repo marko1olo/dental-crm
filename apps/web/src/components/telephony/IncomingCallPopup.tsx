@@ -26,6 +26,7 @@ import {
 	Sparkles,
 	User,
 	UserCheck,
+	UserPlus,
 	Volume2,
 	VolumeX,
 	X,
@@ -34,6 +35,11 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import {
+	resolveCallAdvertisingAttribution,
+	captureLeadFromIncomingCall,
+	CHANNEL_BADGE_COLORS,
+} from "./telephonyAttribution";
 import {
 	readDenteClinicToken,
 	readDenteStaffToken,
@@ -57,6 +63,7 @@ import {
 	resolvePatientLastVisit,
 	resolvePatientSomaticAlerts,
 	resolvePatientUpcomingAppointment,
+	resolvePatientActiveTreatmentPlan,
 	type SpeechTranscriptUtterance,
 	useTelephonyStore,
 } from "../../store/telephonyStore";
@@ -538,6 +545,7 @@ export function IncomingCallPopup() {
 	const [showQuickBooking, setShowQuickBooking] = useState(false);
 	const [showOutcomePanel, setShowOutcomePanel] = useState(false);
 	const [isCreatingPatient, setIsCreatingPatient] = useState(false);
+	const [isCapturingLead, setIsCapturingLead] = useState(false);
 
 	const lastCallRef = useRef<TelephonyCall | null>(activeCall);
 	useEffect(() => {
@@ -716,6 +724,23 @@ export function IncomingCallPopup() {
 		return somaticAlerts.filter((a) => a.category === "pain");
 	}, [somaticAlerts]);
 
+	const activeTreatmentPlan = useMemo(() => {
+		return resolvePatientActiveTreatmentPlan(
+			resolvedPatient?.id || null,
+			dashboard?.treatmentPlanItems,
+			dashboard?.treatmentPlanScenarios,
+		);
+	}, [
+		resolvedPatient?.id,
+		dashboard?.treatmentPlanItems,
+		dashboard?.treatmentPlanScenarios,
+	]);
+
+	const callAttribution = useMemo(() => {
+		if (!currentCall) return null;
+		return resolveCallAdvertisingAttribution(currentCall);
+	}, [currentCall]);
+
 	// Absolute doctor immunity and DND suppression: zero popup disruption (Mandate 8e)
 	if (isDoctorMode || isDndActive) return null;
 	if (!isCallDrawerOpen) {
@@ -885,6 +910,8 @@ export function IncomingCallPopup() {
 	const handleToggleCardDrawer = () => {
 		if (resolvedPatient) {
 			setSelectedPatientId(resolvedPatient.id);
+		} else if (currentCall?.phone) {
+			setNewPatientPhone(currentCall.phone);
 		}
 		if (activeCall && activeCall.status === "ringing") {
 			connectCall();
@@ -893,7 +920,9 @@ export function IncomingCallPopup() {
 		const willBeOpen = !isCallDrawerOpen;
 		if (willBeOpen) {
 			showToast(
-				`Карточка ${callerName} открыта в боковой шторке (визит 043/у сохранён)`,
+				isKnownPatient
+					? `Карточка ${callerName} открыта в боковой шторке (визит 043/у сохранён)`
+					: `Регистрация нового пациента (${formattedPhone}) в боковой шторке`,
 				"info",
 			);
 		}
@@ -1094,6 +1123,24 @@ export function IncomingCallPopup() {
 		}
 	};
 
+	// 1-Click Lead Capture with Automatic Marketing Attribution (Mandate 8e, 8n)
+	const handleCaptureLead = async () => {
+		if (!currentCall || isCapturingLead) return;
+		setIsCapturingLead(true);
+		try {
+			const res = await captureLeadFromIncomingCall(currentCall, {
+				customName: newPatientNameInput,
+			});
+			if (res.success) {
+				showToast(res.message, "success");
+			} else {
+				showToast(res.message, "error");
+			}
+		} finally {
+			setIsCapturingLead(false);
+		}
+	};
+
 	if (typeof document === "undefined") return null;
 	if (isDoctorMode) return null;
 
@@ -1109,7 +1156,7 @@ export function IncomingCallPopup() {
 					{!isExpanded ? (
 						/* Compact Telephony Capsule (0-occlusion, non-blocking) */
 						<section
-							className="dnt-incoming-call-capsule pointer-events-auto flex items-center gap-2 p-1.5 sm:p-2 rounded-full border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xl backdrop-blur-xl animate-badge-drop max-w-[calc(100vw-24px)]"
+							className="dnt-incoming-call-capsule pointer-events-auto flex items-center gap-2 p-1.5 sm:p-2 rounded-full border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xl backdrop-blur-xl animate-badge-drop max-w-[calc(100%-24px)]"
 							aria-label="Входящий звонок телефонии (компактный режим)"
 							data-testid="incoming-call-capsule"
 						>
@@ -1210,7 +1257,7 @@ export function IncomingCallPopup() {
 						</section>
 					) : (
 						<section
-							className="dnt-incoming-call-badge pointer-events-auto flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl backdrop-blur-xl animate-badge-drop w-[360px] sm:w-[420px] max-w-[calc(100vw-24px)]"
+							className="dnt-incoming-call-badge pointer-events-auto flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl backdrop-blur-xl animate-badge-drop w-[360px] sm:w-[420px] max-w-[calc(100%-24px)]"
 							aria-label="Входящий звонок телефонии"
 							data-testid="incoming-call-popup"
 						>
@@ -1356,15 +1403,27 @@ export function IncomingCallPopup() {
 										>
 											{callerName}
 										</h3>
-										<span
-											className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 ${
-												isKnownPatient
-													? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
-													: "bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800"
-											}`}
-										>
-											{isKnownPatient ? "Пациент" : "Новый лид"}
-										</span>
+										{isKnownPatient ? (
+											<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+												Пациент
+											</span>
+										) : (
+											<span
+												className="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0 inline-flex items-center gap-1"
+												style={{
+													backgroundColor:
+														callAttribution ? CHANNEL_BADGE_COLORS[callAttribution.channelKey].bg : undefined,
+													color:
+														callAttribution ? CHANNEL_BADGE_COLORS[callAttribution.channelKey].text : undefined,
+													border:
+														callAttribution ? `1px solid ${CHANNEL_BADGE_COLORS[callAttribution.channelKey].border}` : undefined,
+												}}
+												data-testid="incoming-call-marketing-channel-badge"
+												title={`Канал рекламы: ${callAttribution?.channelLabel || "ВАТС"}${callAttribution?.virtualNumberDisplay ? ` • ВАТС: ${callAttribution.virtualNumberDisplay}` : ""}${callAttribution?.utmSummary ? ` • UTM: [${callAttribution.utmSummary}]` : ""}`}
+											>
+												{callAttribution ? callAttribution.channelLabel : "Новый лид"}
+											</span>
+										)}
 									</div>
 									<div className="flex items-center gap-2 text-xs font-mono text-[var(--muted,#64748b)]">
 										<span className="font-bold text-[var(--ink,#0f172a)] shrink-0">
@@ -1433,6 +1492,20 @@ export function IncomingCallPopup() {
 									</span>
 								)}
 
+								{/* Активный план лечения */}
+								{activeTreatmentPlan && activeTreatmentPlan.hasActivePlan && (
+									<span
+										className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] flex items-center gap-1 min-w-0 max-w-[240px]"
+										title={`План: ${activeTreatmentPlan.planTitle} (${activeTreatmentPlan.formattedTotalCost}, выполнено ${activeTreatmentPlan.progressPercent}%)${activeTreatmentPlan.nextService ? ` • След: ${activeTreatmentPlan.nextService}` : ""}`}
+										data-testid="incoming-call-active-plan-badge"
+									>
+										<Sparkles size={11} className="text-amber-500 shrink-0" />
+										<span className="truncate">
+											{activeTreatmentPlan.planTitle} ({activeTreatmentPlan.progressPercent}%)
+										</span>
+									</span>
+								)}
+
 								{/* Аллергия alert pill */}
 								{allergyAlerts.length > 0 && (
 									<span
@@ -1492,7 +1565,7 @@ export function IncomingCallPopup() {
 								>
 									<UserCheck size={16} className="text-[var(--teal)]" />
 									<span>
-										{isKnownPatient ? "Открыть карту" : "Создать пациента"}
+										{isKnownPatient ? "Открыть карту" : "+ Новый пациент"}
 									</span>
 								</button>
 
@@ -1511,6 +1584,28 @@ export function IncomingCallPopup() {
 
 									{showBadgeMoreMenu && (
 										<div className="absolute right-0 bottom-full mb-1.5 w-64 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line-strong,var(--line,#e2e8f0))] shadow-2xl p-1.5 z-50 text-xs animate-in fade-in zoom-in-95 space-y-0.5">
+											{!isKnownPatient && callAttribution && (
+												<button
+													type="button"
+													onClick={() => {
+														handleCaptureLead();
+														setShowBadgeMoreMenu(false);
+													}}
+													disabled={isCapturingLead || currentCall?.isLeadCaptured}
+													className="w-full text-left px-2.5 py-2 rounded-lg bg-[var(--teal-surface)] hover:opacity-90 text-[var(--teal)] font-bold flex items-center gap-2 transition-colors cursor-pointer border border-[var(--teal-soft)] mb-1"
+													data-testid="badge-action-capture-lead"
+													title={`1-Клик захват в лиды с авторазметкой канала (${callAttribution.channelLabel})`}
+												>
+													<UserPlus size={14} className="text-[var(--teal)] shrink-0" />
+													<span className="truncate">
+														{currentCall?.isLeadCaptured
+															? "✓ Лид захвачен"
+															: isCapturingLead
+																? "Захват лида..."
+																: `В лиды: ${callAttribution.channelLabel}`}
+													</span>
+												</button>
+											)}
 											<button
 												type="button"
 												onClick={() => {
@@ -1607,13 +1702,16 @@ export function IncomingCallPopup() {
 												<button
 													type="button"
 													onClick={() => {
+														if (currentCall?.phone) {
+															setNewPatientPhone(currentCall.phone);
+														}
 														handleQuickCreatePatient();
 														setShowBadgeMoreMenu(false);
 													}}
 													className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 transition-colors cursor-pointer"
 												>
 													<UserCheck size={13} className="text-emerald-600" />
-													<span>1-Click Создать пациента</span>
+													<span>+ Новый пациент (1-Click)</span>
 												</button>
 											)}
 
@@ -1917,7 +2015,7 @@ export function IncomingCallPopup() {
 							>
 								<UserCheck size={15} className="text-[var(--teal)]" />
 								<span>
-									{isKnownPatient ? "Открыть карту" : "Создать пациента"}
+									{isKnownPatient ? "Открыть карту" : "+ Новый пациент"}
 								</span>
 							</button>
 						</div>
@@ -2244,6 +2342,71 @@ export function IncomingCallPopup() {
 							)}
 						</div>
 
+						{/* Unknown Caller: 1-Click Lead Capture with Automatic Marketing Attribution */}
+						{!isKnownPatient && callAttribution && (
+							<div
+								className="p-3.5 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--teal-soft)] space-y-2.5 shadow-xs"
+								data-testid="telephony-lead-capture-card"
+							>
+								<div className="flex items-center justify-between gap-1 flex-wrap">
+									<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)]">
+										<Sparkles size={14} className="text-amber-500 shrink-0" />
+										<span>Захват в CRM-лиды</span>
+									</div>
+									<span
+										className="px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0"
+										style={{
+											backgroundColor:
+												CHANNEL_BADGE_COLORS[callAttribution.channelKey].bg,
+											color:
+												CHANNEL_BADGE_COLORS[callAttribution.channelKey].text,
+											border: `1px solid ${CHANNEL_BADGE_COLORS[callAttribution.channelKey].border}`,
+										}}
+										data-testid="telephony-attribution-channel-pill"
+									>
+										{callAttribution.channelLabel}
+									</span>
+								</div>
+
+								<div className="text-[11px] text-[var(--muted,#64748b)] space-y-1">
+									{callAttribution.virtualNumberDisplay && (
+										<div className="flex items-center justify-between">
+											<span>Номер ВАТС:</span>
+											<span className="font-mono font-semibold text-[var(--ink,#0f172a)]">
+												{callAttribution.virtualNumberDisplay}
+											</span>
+										</div>
+									)}
+									{callAttribution.utmSummary && (
+										<div className="flex items-start justify-between gap-1">
+											<span className="shrink-0">UTM-метки:</span>
+											<span className="font-mono text-[10px] text-[var(--teal)] text-right break-all">
+												{callAttribution.utmSummary}
+											</span>
+										</div>
+									)}
+								</div>
+
+								<button
+									type="button"
+									onClick={() => handleCaptureLead()}
+									disabled={isCapturingLead || currentCall?.isLeadCaptured}
+									className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60"
+									data-testid="drawer-action-capture-lead"
+									title="1-Клик захват звонящего в лиды с автоматической разметкой рекламного канала"
+								>
+									<UserPlus size={15} />
+									<span>
+										{currentCall?.isLeadCaptured
+											? `✓ Лид захвачен (${callAttribution.channelLabel})`
+											: isCapturingLead
+												? "Сохранение лида..."
+												: `Захватить в лиды (${callAttribution.channelLabel})`}
+									</span>
+								</button>
+							</div>
+						)}
+
 						{/* Unknown Caller: Inline quick patient registration without navigating away */}
 						{!isKnownPatient && (
 							<div className="p-3.5 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 space-y-2">
@@ -2260,17 +2423,21 @@ export function IncomingCallPopup() {
 										onChange={(e) => setNewPatientNameInput(e.target.value)}
 										placeholder="ФИО пациента (по умолчанию: Пациент + телефон)"
 										className="w-full min-h-[40px] px-3 py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-xs font-medium text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+										data-testid="popup-drawer-new-patient-name-input"
 									/>
 									<button
 										type="button"
 										onClick={() => handleQuickCreatePatient()}
-										className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[var(--teal)] text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+										disabled={isCreatingPatient}
+										className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[var(--teal)] text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
+										data-testid="popup-drawer-quick-create-patient-btn"
+										title="Создать первичную карту пациента в 1 клик за 5 секунд (без обязательного паспорта и СНИЛС)"
 									>
 										<UserCheck size={15} />
 										<span>
 											{isCreatingPatient
 												? "Создание карты..."
-												: "Создать пациента в 1 клик (визит сохранён)"}
+												: "+ Создать пациента за 5 секунд"}
 										</span>
 									</button>
 								</div>

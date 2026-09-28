@@ -9,10 +9,35 @@
  * - Zero emojis
  */
 
-import type React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Edit2, Globe, Phone, UserPlus } from "lucide-react";
+import {
+	ArrowRight,
+	Calendar,
+	Check,
+	Edit2,
+	Eye,
+	FileText,
+	Globe,
+	Phone,
+	UserPlus,
+} from "lucide-react";
 import type { Lead } from "../../store/leadsStore";
+import {
+	CHANNEL_BADGE_COLORS,
+	CHANNEL_DISPLAY_NAMES,
+} from "../telephony/telephonyAttribution";
+import { normalizeMarketingChannel } from "./leadsFunnelTypes";
+
+const NEXT_STAGE_MAP: Partial<
+	Record<Lead["status"], { status: Lead["status"]; label: string }>
+> = {
+	new: { status: "contacted", label: "Квалифицировать →" },
+	contacted: { status: "consult_booked", label: "На консультацию →" },
+	consult_booked: { status: "showed_up", label: "Пациент дошёл →" },
+	no_answer: { status: "new", label: "Повторить (в Новые) →" },
+	trash: { status: "new", label: "Восстановить обращение →" },
+};
 
 export interface LeadCardProps {
 	lead: Lead;
@@ -29,6 +54,7 @@ export interface LeadCardProps {
 	) => void;
 	onCreatePatient: (lead: Lead) => Promise<void> | void;
 	onSchedule: (leadId: string) => void;
+	onQuickSchedule?: (leadId: string) => Promise<void> | void;
 }
 
 export const LeadCard: React.FC<LeadCardProps> = ({
@@ -42,7 +68,22 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 	onStatusChange,
 	onCreatePatient,
 	onSchedule,
+	onQuickSchedule,
 }) => {
+	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+	const channelKey = lead.source ? normalizeMarketingChannel(lead.source) : null;
+	const channelBadge =
+		channelKey && CHANNEL_BADGE_COLORS[channelKey]
+			? CHANNEL_BADGE_COLORS[channelKey]
+			: {
+					bg: "var(--teal-soft)",
+					color: "var(--teal-dark, var(--teal))",
+					border: "var(--teal)",
+				};
+	const channelLabel =
+		channelKey && CHANNEL_DISPLAY_NAMES[channelKey]
+			? CHANNEL_DISPLAY_NAMES[channelKey]
+			: lead.source;
 	return (
 		<motion.div
 			layout
@@ -69,13 +110,14 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				boxShadow: "0 8px 16px rgba(0,0,0,0.08)",
 			}}
 		>
-			{/* Заголовок карточки: имя и кнопка редактирования */}
+			{/* Заголовок карточки: имя, быстрый просмотр и кнопка редактирования */}
 			<div
 				style={{
 					display: "flex",
 					justifyContent: "space-between",
 					alignItems: "flex-start",
 					marginBottom: "8px",
+					gap: 6,
 				}}
 			>
 				<strong
@@ -85,27 +127,61 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 						display: "flex",
 						alignItems: "center",
 						gap: 6,
+						minWidth: 0,
+						wordBreak: "break-word",
+						overflowWrap: "anywhere",
+						flex: 1,
 					}}
 				>
 					{lead.name}
 				</strong>
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						onEdit(lead);
-					}}
-					style={{
-						background: "none",
-						border: "none",
-						cursor: "pointer",
-						padding: 2,
-					}}
-					title="Редактировать лид"
-					aria-label="Редактировать лид"
-				>
-					<Edit2 size={14} color="var(--muted)" style={{ opacity: 0.7 }} />
-				</button>
+				<div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							setIsPreviewOpen((prev) => !prev);
+						}}
+						style={{
+							background: isPreviewOpen ? "var(--teal-soft)" : "none",
+							border: "none",
+							cursor: "pointer",
+							padding: 3,
+							borderRadius: 4,
+							color: isPreviewOpen ? "var(--teal-dark, var(--teal))" : "var(--muted)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+						}}
+						title={isPreviewOpen ? "Скрыть быстрый просмотр" : "Быстрый просмотр обращения"}
+						aria-label="Быстрый просмотр обращения"
+						data-testid={`preview-lead-btn-${lead.id}`}
+					>
+						<Eye size={14} />
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							onEdit(lead);
+						}}
+						style={{
+							background: "none",
+							border: "none",
+							cursor: "pointer",
+							padding: 3,
+							borderRadius: 4,
+							color: "var(--muted)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+						}}
+						title="Редактировать лид"
+						aria-label="Редактировать лид"
+					>
+						<Edit2 size={14} style={{ opacity: 0.7 }} />
+					</button>
+				</div>
 			</div>
 
 			{/* Телефонный номер (прямой клик для звонка) */}
@@ -118,20 +194,130 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 						fontSize: 13,
 						color: "var(--muted)",
 						marginBottom: 6,
+						minWidth: 0,
 					}}
 				>
-					<Phone size={12} />
+					<Phone size={12} className="shrink-0" />
 					<a
 						href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
 						onClick={(e) => e.stopPropagation()}
 						style={{
 							color: "inherit",
 							textDecoration: "none",
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							whiteSpace: "nowrap",
+							minWidth: 0,
 						}}
 						title="Позвонить контакту"
 					>
 						{lead.phone}
 					</a>
+				</div>
+			)}
+
+			{/* Компактный чип примечаний/жалоб лида */}
+			{lead.notes && (
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: 5,
+						fontSize: 11.5,
+						color: "var(--muted)",
+						background: "var(--paper-soft)",
+						padding: "3px 7px",
+						borderRadius: 6,
+						marginBottom: 6,
+						minWidth: 0,
+					}}
+					title={`Примечание: ${lead.notes}`}
+				>
+					<FileText size={11} className="shrink-0" style={{ color: "var(--teal)" }} />
+					<span
+						style={{
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							whiteSpace: "nowrap",
+							minWidth: 0,
+						}}
+					>
+						{lead.notes}
+					</span>
+				</div>
+			)}
+
+			{/* Интерактивный быстрый просмотр (Instant Preview Panel) */}
+			{isPreviewOpen && (
+				<div
+					style={{
+						marginBottom: 8,
+						padding: "8px 10px",
+						background: "var(--paper-soft)",
+						borderRadius: 8,
+						border: `1px solid ${borderColor}`,
+						fontSize: 12,
+						display: "flex",
+						flexDirection: "column",
+						gap: 5,
+					}}
+					onClick={(e) => e.stopPropagation()}
+					data-testid={`lead-instant-preview-${lead.id}`}
+				>
+					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+						<span style={{ fontWeight: 600, color: "var(--ink)", fontSize: 11 }}>
+							Карточка обращения
+						</span>
+						<span style={{ fontSize: 10, color: "var(--muted)" }}>
+							№ {lead.id.slice(0, 6)}
+						</span>
+					</div>
+					{lead.notes && (
+						<div style={{ fontSize: 11.5 }}>
+							<span style={{ color: "var(--muted)" }}>Запрос: </span>
+							<span style={{ color: "var(--ink)", fontStyle: "italic" }}>{lead.notes}</span>
+						</div>
+					)}
+					{lead.source && (
+						<div style={{ fontSize: 11.5 }}>
+							<span style={{ color: "var(--muted)" }}>Канал: </span>
+							<span style={{ color: channelBadge.color, fontWeight: 500 }}>{channelLabel}</span>
+						</div>
+					)}
+					{lead.createdAt && (
+						<div style={{ fontSize: 10.5, color: "var(--muted)" }}>
+							Дата: {new Date(lead.createdAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+						</div>
+					)}
+					{onQuickSchedule && lead.status !== "trash" && (
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								void onQuickSchedule(lead.id);
+							}}
+							style={{
+								marginTop: 4,
+								padding: "4px 8px",
+								borderRadius: 6,
+								fontSize: 11,
+								fontWeight: 600,
+								background: "var(--teal-soft)",
+								color: "var(--teal-dark, var(--teal))",
+								border: "1px solid var(--teal)",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: 5,
+								cursor: "pointer",
+							}}
+							title="Записать на ближайшее время в расписании в 1 клик"
+							data-testid={`instant-quick-schedule-btn-${lead.id}`}
+						>
+							<Calendar size={12} />
+							<span>Записать в 1 клик (дежурный слот)</span>
+						</button>
+					)}
 				</div>
 			)}
 
@@ -141,8 +327,9 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
-					marginTop: "6px",
+					marginTop: "4px",
 					marginBottom: "8px",
+					gap: 6,
 				}}
 			>
 				{lead.source ? (
@@ -152,13 +339,22 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 							alignItems: "center",
 							gap: 4,
 							fontSize: 11,
-							color: "var(--teal)",
-							background: "rgba(59, 130, 246, 0.1)",
+							color: channelBadge.color,
+							background: channelBadge.bg,
+							border: `1px solid ${channelBadge.border}`,
 							padding: "2px 6px",
 							borderRadius: 4,
+							maxWidth: 140,
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							whiteSpace: "nowrap",
 						}}
+						title={`Источник: ${channelLabel}`}
 					>
-						<Globe size={10} /> {lead.source}
+						<Globe size={10} className="shrink-0" />
+						<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+							{channelLabel}
+						</span>
 					</div>
 				) : (
 					<div />
@@ -181,15 +377,69 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				) : null}
 			</div>
 
-			{/* Селектор статуса в 1 клик */}
+			{/* 1-клик перевод на следующий этап воронки */}
+			{NEXT_STAGE_MAP[lead.status] ? (
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						onStatusChange(e, lead.id, NEXT_STAGE_MAP[lead.status]!.status);
+					}}
+					style={{
+						width: "100%",
+						padding: "5px 8px",
+						borderRadius: 7,
+						fontSize: 11.5,
+						fontWeight: 600,
+						background: "var(--teal-soft)",
+						color: "var(--teal-dark, var(--teal))",
+						border: "1px solid var(--teal)",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						gap: 6,
+						cursor: "pointer",
+						transition: "all 0.15s ease",
+						marginBottom: 6,
+					}}
+					title={`Перевести на этап ${NEXT_STAGE_MAP[lead.status]!.label} в 1 клик`}
+					data-testid={`advance-stage-btn-${lead.id}`}
+				>
+					<span>{NEXT_STAGE_MAP[lead.status]!.label}</span>
+					<ArrowRight size={12} className="shrink-0" />
+				</button>
+			) : lead.status === "showed_up" ? (
+				<div
+					style={{
+						width: "100%",
+						padding: "4px 8px",
+						borderRadius: 6,
+						fontSize: 11,
+						fontWeight: 600,
+						background: "var(--ok-bg)",
+						color: "var(--ok-fg)",
+						border: "1px solid var(--line)",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						gap: 5,
+						marginBottom: 6,
+					}}
+				>
+					<Check size={12} className="shrink-0" />
+					<span>Пациент в клинике</span>
+				</div>
+			) : null}
+
+			{/* Селектор статуса */}
 			<div
 				style={{
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
 					gap: 6,
-					marginTop: "8px",
-					paddingTop: "8px",
+					marginTop: "4px",
+					paddingTop: "6px",
 					borderTop: `1px solid ${borderColor}`,
 				}}
 				onClick={(e) => e.stopPropagation()}
@@ -222,15 +472,15 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 						color: "var(--ink)",
 						cursor: "pointer",
 						outline: "none",
-						maxWidth: 150,
+						maxWidth: 155,
 					}}
-					title="Сменить статус в 1 клик"
+					title="Сменить статус обращения"
 					aria-label="Выбрать статус обращения"
 				>
 					<option value="new">1. Новые</option>
-					<option value="contacted">2. В работе</option>
-					<option value="consult_booked">3. Записаны</option>
-					<option value="showed_up">4. Дошли до клиники</option>
+					<option value="contacted">2. Квалифицированные</option>
+					<option value="consult_booked">3. Консультация</option>
+					<option value="showed_up">4. Дошли</option>
 					<option value="no_answer">Недозвон</option>
 					<option value="trash">Отказ</option>
 				</select>
@@ -254,12 +504,29 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 							e.stopPropagation();
 							onSchedule(lead.id);
 						}}
-						className="w-full py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-[var(--teal-soft)] hover:opacity-90 text-[var(--teal-dark)] border border-[var(--teal)] flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+						style={{
+							width: "100%",
+							padding: "6px 10px",
+							borderRadius: 8,
+							fontSize: 12,
+							fontWeight: 600,
+							background: "var(--teal-soft)",
+							color: "var(--teal-dark, var(--teal))",
+							border: "1px solid var(--teal)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: 6,
+							cursor: "pointer",
+							transition: "all 0.15s ease",
+						}}
 						data-testid={`schedule-lead-btn-${lead.id}`}
 						title="Записать в сетку расписания"
 					>
 						<Calendar size={13} className="shrink-0" />
-						<span className="truncate">Записать на приём</span>
+						<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+							Записать на приём
+						</span>
 					</button>
 				)}
 

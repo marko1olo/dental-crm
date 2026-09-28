@@ -205,7 +205,7 @@ export function LeadsFunnelAnalyticsModal({
 					background: "var(--paper-strong)",
 					color: "var(--ink)",
 					width: "1100px",
-					maxWidth: "96vw",
+					maxWidth: "calc(100% - 32px)",
 					maxHeight: "92vh",
 					borderRadius: "16px",
 					border: "1px solid var(--line)",

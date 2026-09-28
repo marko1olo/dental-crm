@@ -161,9 +161,9 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 			});
 
 			assert.strictEqual(fetchCalls.length, 1);
-			assert.match(fetchCalls[0].url, /\/api\/leads\/lead-123$/);
-			assert.strictEqual(fetchCalls[0].method, "PATCH");
-			assert.deepStrictEqual(fetchCalls[0].body, {
+			assert.match(fetchCalls[0]!.url, /\/api\/leads\/lead-123$/);
+			assert.strictEqual(fetchCalls[0]!.method, "PATCH");
+			assert.deepStrictEqual(fetchCalls[0]!.body, {
 				name: "Петр Васильев (Обновлен)",
 				status: "contacted",
 				expectedRevenue: "15000",
@@ -209,8 +209,8 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 			);
 
 			assert.strictEqual(fetchCalls.length, 1);
-			assert.match(fetchCalls[0].url, /\/api\/leads\/lead-123\/convert$/);
-			assert.strictEqual(fetchCalls[0].method, "POST");
+			assert.match(fetchCalls[0]!.url, /\/api\/leads\/lead-123\/convert$/);
+			assert.strictEqual(fetchCalls[0]!.method, "POST");
 			assert.ok(result.patient);
 			assert.ok(result.appointment);
 
@@ -243,8 +243,8 @@ describe("INQUISITOR 2: Leads & CRM Funnel Domain — SSOT & Connection Verifica
 			);
 
 			assert.strictEqual(fetchCalls.length, 1);
-			assert.match(fetchCalls[0].url, /\/api\/leads\/lead-123\/status$/);
-			assert.strictEqual(fetchCalls[0].method, "PATCH");
+			assert.match(fetchCalls[0]!.url, /\/api\/leads\/lead-123\/status$/);
+			assert.strictEqual(fetchCalls[0]!.method, "PATCH");
 
 			// Rolled back to "new"
 			const leadInStore = useLeadsStore

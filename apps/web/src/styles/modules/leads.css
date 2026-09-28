@@ -30,14 +30,24 @@
 	padding-bottom: 8px;
 }
 
-/* 4-column Core Funnel: guaranteed >= 240px, expands equally to 100% on desktop (1440px / 1920px) */
+/* 4-column Core Funnel: guaranteed zero horizontal scroll on desktop (1440px / 1920px) */
 .leads-kanban-board--funnel {
-	grid-template-columns: repeat(4, minmax(240px, 1fr));
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.leads-kanban-board--funnel .leads-kanban-column {
+	min-width: 0;
+}
+
+@media (min-width: 1024px) {
+	.leads-kanban-board--funnel {
+		overflow-x: hidden;
+	}
 }
 
 /* 6-column Full View: includes secondary and terminal columns (No answer / Rejection) */
 .leads-kanban-board--all {
-	grid-template-columns: repeat(6, minmax(240px, 1fr));
+	grid-template-columns: repeat(6, minmax(220px, 1fr));
 }
 
 .leads-kanban-column {

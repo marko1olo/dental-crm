@@ -17,9 +17,9 @@
 	align-items: center;
 	pointer-events: none;
 	font-family: inherit;
-	transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	width: auto;
-	max-width: calc(100vw - 24px);
+	max-width: 100%;
 }
 
 /* Modal coexistence: when a modal is open, ensure telephony is centered and accessible without occluding modal close buttons */
@@ -50,15 +50,16 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	gap: 8px;
 	padding: 6px 14px;
 	border-radius: 9999px;
-	background: var(--paper-strong, var(--paper, #ffffff));
-	color: var(--ink, #0f172a);
-	border: 1px solid var(--line-strong, var(--line, #cbd5e1));
+	background: var(--paper-strong);
+	color: var(--ink);
+	border: 1px solid var(--line);
 	box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.25), 0 0 16px 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
-	animation: dnt-badge-drop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	animation: dnt-badge-drop 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	box-sizing: border-box;
 	user-select: none;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Compact Incoming Call Badge (Top-Right Non-Blocking) */
@@ -68,14 +69,15 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	gap: 8px;
 	padding: 12px 14px;
 	border-radius: 16px;
-	background: var(--paper-strong, var(--paper, #ffffff));
-	color: var(--ink, #0f172a);
-	border: 1px solid var(--line-strong, var(--line, #cbd5e1));
+	background: var(--paper-strong);
+	color: var(--ink);
+	border: 1px solid var(--line);
 	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25), 0 0 20px 2px var(--teal-soft, rgba(13, 148, 136, 0.18));
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
-	animation: dnt-badge-drop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	animation: dnt-badge-drop 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	box-sizing: border-box;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes dnt-badge-drop {
@@ -90,7 +92,7 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 }
 
 .animate-badge-drop {
-	animation: dnt-badge-drop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	animation: dnt-badge-drop 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Patient Side Drawer (Slide-Over without resetting active 043/u diary) */
@@ -100,19 +102,20 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	right: 0;
 	bottom: 0;
 	width: 480px;
-	max-width: 100vw;
+	max-width: 100%;
 	z-index: 9995;
-	background: var(--paper-strong, var(--paper, #ffffff));
-	color: var(--ink, #0f172a);
-	border-left: 1px solid var(--line-strong, var(--line, #e2e8f0));
+	background: var(--paper-strong);
+	color: var(--ink);
+	border-left: 1px solid var(--line);
 	box-shadow: -12px 0 36px -4px rgba(0, 0, 0, 0.3), 0 0 24px 2px var(--teal-soft, rgba(13, 148, 136, 0.15));
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
 	backdrop-filter: blur(24px);
 	-webkit-backdrop-filter: blur(24px);
-	animation: dnt-slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+	animation: dnt-slide-in-right 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	box-sizing: border-box;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes dnt-slide-in-right {
@@ -145,8 +148,8 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	}
 
 	.dnt-telephony-island-expanded {
-		width: calc(100vw - 24px);
-		max-width: 100vw;
+		width: 100%;
+		max-width: 100%;
 		border-radius: 16px;
 	}
 }
@@ -158,14 +161,15 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	gap: 8px;
 	padding: 6px 12px;
 	border-radius: 9999px;
-	background: var(--paper-strong, var(--paper, #ffffff));
-	color: var(--ink, #0f172a);
-	border: 1px solid var(--line-strong, var(--line, #cbd5e1));
+	background: var(--paper-strong);
+	color: var(--ink);
+	border: 1px solid var(--line);
 	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25), 0 0 20px 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
-	animation: dnt-island-drop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	animation: dnt-island-drop 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	user-select: none;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes dnt-island-drop {
@@ -182,20 +186,21 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 /* Expanded Dynamic Island Panel */
 .dnt-telephony-island-expanded {
 	width: 520px;
-	max-width: calc(100vw - 24px);
+	max-width: 100%;
 	max-height: calc(100dvh - 32px);
-	background: var(--paper-strong, var(--paper, #ffffff));
-	color: var(--ink, #0f172a);
+	background: var(--paper-strong);
+	color: var(--ink);
 	border-radius: 24px;
-	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
+	border: 1px solid var(--line);
 	box-shadow: 0 28px 56px -12px rgba(0, 0, 0, 0.4), 0 0 30px 4px var(--teal-soft, rgba(13, 148, 136, 0.22));
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
 	backdrop-filter: blur(24px);
 	-webkit-backdrop-filter: blur(24px);
-	animation: dnt-island-expand 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+	animation: dnt-island-expand 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	box-sizing: border-box;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes dnt-island-expand {
@@ -221,7 +226,7 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	align-items: center;
 	gap: 8px;
 	font-family: inherit;
-	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	pointer-events: none !important;
 }
 
@@ -286,21 +291,22 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 
 /* Expanded Softphone Card */
 .dnt-telephony-card {
-	width: calc(100vw - 24px);
+	width: 100%;
 	max-width: 460px;
 	max-height: calc(100vh - 40px);
-	background: var(--paper-strong, var(--paper, #ffffff));
-	color: var(--ink, #0f172a);
+	background: var(--paper-strong);
+	color: var(--ink);
 	border-radius: 20px;
-	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
+	border: 1px solid var(--line);
 	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.4), 0 0 24px 2px rgba(13, 148, 136, 0.2);
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
-	animation: dnt-slide-in-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+	animation: dnt-slide-in-up 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	box-sizing: border-box;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Animations */
@@ -338,27 +344,27 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 	.dnt-incoming-call-badge-container {
 		top: 8px;
 		right: 8px;
-		max-width: calc(100vw - 16px);
+		max-width: 100%;
 	}
 
 	.dnt-incoming-call-badge {
-		width: calc(100vw - 16px);
-		max-width: calc(100vw - 16px);
+		width: 100%;
+		max-width: 100%;
 	}
 
 	.dnt-telephony-patient-drawer {
-		width: 100vw;
-		max-width: 100vw;
+		width: 100%;
+		max-width: 100%;
 	}
 
 	.dnt-telephony-island-pill {
 		padding: 4px 10px;
-		max-width: calc(100vw - 20px);
+		max-width: 100%;
 	}
 
 	.dnt-telephony-island-expanded {
-		width: calc(100vw - 16px);
-		max-width: calc(100vw - 16px);
+		width: 100%;
+		max-width: 100%;
 	}
 }
 
@@ -500,8 +506,8 @@ body:has([aria-modal="true"]) .dnt-incoming-call-badge-container {
 [data-theme="light"] .dnt-incoming-call-badge,
 [data-theme="light"] .dnt-incoming-call-capsule,
 [data-theme="light"] .dnt-telephony-patient-drawer {
-	background: var(--paper-strong, var(--paper, #ffffff));
-	border-color: var(--line-strong, var(--line, #e2e8f0));
-	color: var(--ink, #0f172a);
+	background: var(--paper-strong);
+	border-color: var(--line);
+	color: var(--ink);
 	box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15), 0 0 20px 2px rgba(15, 118, 110, 0.12);
 }

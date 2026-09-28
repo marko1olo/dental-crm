@@ -88,6 +88,14 @@ export const telephonyWebhookPayloadSchema = z.object({
 	vpbx_api_key: z.string().optional(),
 	sign: z.string().optional(),
 	signature: z.string().optional(),
+	utm_source: z.string().optional(),
+	utm_medium: z.string().optional(),
+	utm_campaign: z.string().optional(),
+	utm_content: z.string().optional(),
+	utm_term: z.string().optional(),
+	advertising_channel: z.string().optional(),
+	virtual_number: z.string().optional(),
+	channel: z.string().optional(),
 });
 
 export type TelephonyWebhookPayload = z.infer<
@@ -346,6 +354,81 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 			if (event === "ringing") {
 				let matchedLead: typeof crmLeads.$inferSelect | null = null;
 
+				// Marketing channel attribution resolution
+				let detectedMarketingChannel = "telephony";
+				let detectedChannelLabel = "Прямой звонок / ВАТС";
+
+				const utmRaw = `${data.utm_source || ""} ${data.utm_campaign || ""} ${data.utm_medium || ""}`
+					.trim()
+					.toLowerCase();
+				if (utmRaw) {
+					if (/yandex|direct|директ|рся|rsya/i.test(utmRaw)) {
+						detectedMarketingChannel = "yandex_direct";
+						detectedChannelLabel = "Яндекс.Директ";
+					} else if (/2gis|gis|2гис|дубльгис/i.test(utmRaw)) {
+						detectedMarketingChannel = "gis_2";
+						detectedChannelLabel = "2ГИС Карты";
+					} else if (/prodoctorov|продокторов/i.test(utmRaw)) {
+						detectedMarketingChannel = "prodoctorov";
+						detectedChannelLabel = "ПроДокторов";
+					} else if (/napopravku|напоправку/i.test(utmRaw)) {
+						detectedMarketingChannel = "napopravku";
+						detectedChannelLabel = "НаПоправку";
+					} else if (/site|сайт|seo|сео|органика|organic|google/i.test(utmRaw)) {
+						detectedMarketingChannel = "site_seo";
+						detectedChannelLabel = "Сайт / SEO";
+					} else if (/vk|vkontakte|telegram|tg|вк|инста|instagram/i.test(utmRaw)) {
+						detectedMarketingChannel = "social_media";
+						detectedChannelLabel = "Соцсети (VK / TG)";
+					}
+				}
+
+				if (detectedMarketingChannel === "telephony" && data.advertising_channel) {
+					const ch = data.advertising_channel.trim().toLowerCase();
+					if (/direct|яндекс|yandex/i.test(ch)) {
+						detectedMarketingChannel = "yandex_direct";
+						detectedChannelLabel = "Яндекс.Директ";
+					} else if (/2gis|2гис/i.test(ch)) {
+						detectedMarketingChannel = "gis_2";
+						detectedChannelLabel = "2ГИС Карты";
+					} else if (/prodoc/i.test(ch)) {
+						detectedMarketingChannel = "prodoctorov";
+						detectedChannelLabel = "ПроДокторов";
+					} else if (/napopr/i.test(ch)) {
+						detectedMarketingChannel = "napopravku";
+						detectedChannelLabel = "НаПоправку";
+					} else if (/site|seo|сайт/i.test(ch)) {
+						detectedMarketingChannel = "site_seo";
+						detectedChannelLabel = "Сайт / SEO";
+					} else {
+						detectedMarketingChannel = ch;
+						detectedChannelLabel = ch;
+					}
+				}
+
+				if (detectedMarketingChannel === "telephony" && targetRaw) {
+					const trLower = targetRaw.toLowerCase();
+					if (/direct|yandex|директ/i.test(trLower)) {
+						detectedMarketingChannel = "yandex_direct";
+						detectedChannelLabel = "Яндекс.Директ";
+					} else if (/2gis|2гис/i.test(trLower)) {
+						detectedMarketingChannel = "gis_2";
+						detectedChannelLabel = "2ГИС Карты";
+					} else if (/prodoc/i.test(trLower)) {
+						detectedMarketingChannel = "prodoctorov";
+						detectedChannelLabel = "ПроДокторов";
+					}
+				}
+
+				const virtualTrunkNumber = targetPhone.e164 || targetRaw || "";
+				const utmDetailStr = [
+					data.utm_source ? `source=${data.utm_source}` : null,
+					data.utm_campaign ? `campaign=${data.utm_campaign}` : null,
+					data.utm_medium ? `medium=${data.utm_medium}` : null,
+				]
+					.filter(Boolean)
+					.join(", ");
+
 				if (!matchedPatient && callerPhone.national10.length >= 7) {
 					try {
 						matchedLead = await db.transaction(async (tx) => {
@@ -380,9 +463,9 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 									name: `Входящий звонок ${callerPhone.e164}`,
 									patientName: `Звонок ${callerPhone.e164}`,
 									phone: callerPhone.e164,
-									source: "telephony",
+									source: detectedMarketingChannel,
 									status: "new",
-									notes: `Автоматический лид из входящего звонка АТС (${callId ? `call_id: ${callId}` : "прямой вызов"})`,
+									notes: `Автоматический лид из входящего звонка ВАТС (${detectedProvider}). Канал: ${detectedChannelLabel}.${virtualTrunkNumber ? ` Номер ВАТС: ${virtualTrunkNumber}.` : ""}${utmDetailStr ? ` UTM: [${utmDetailStr}].` : ""} ${callId ? `call_id: ${callId}` : "прямой вызов"}`,
 								})
 								.returning();
 							return insertedLeads[0] ?? null;
@@ -409,6 +492,13 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 						callId: callId || null,
 						provider: detectedProvider,
 						timestamp: new Date().toISOString(),
+						virtualNumber: virtualTrunkNumber || null,
+						calledDid: data.called_did || data.called_number || null,
+						utmSource: data.utm_source || null,
+						utmCampaign: data.utm_campaign || null,
+						utmMedium: data.utm_medium || null,
+						advertisingChannel: detectedMarketingChannel,
+						leadId: matchedLead?.id || null,
 					},
 				});
 

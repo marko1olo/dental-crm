@@ -109,9 +109,9 @@ export function LeadsKanbanView() {
 			await updateLeadStatus(leadId, nextStatus);
 			const stageLabels: Record<Lead["status"], string> = {
 				new: "«1. Новые»",
-				contacted: "«2. В работе»",
-				consult_booked: "«3. Записаны»",
-				showed_up: "«4. Дошли до клиники»",
+				contacted: "«2. Квалифицированные»",
+				consult_booked: "«3. Консультация»",
+				showed_up: "«4. Дошли»",
 				no_answer: "«Недозвон»",
 				trash: "«Отказ»",
 			};
@@ -218,31 +218,22 @@ export function LeadsKanbanView() {
 
 	const handleDrop = (e: React.DragEvent, status: Lead["status"]) => {
 		e.preventDefault();
-		const id = e.dataTransfer.getData("leadId");
-		if (id && draggedLeadId === id) {
+		const id = e.dataTransfer?.getData("leadId") || draggedLeadId;
+		if (id) {
 			void updateLeadStatus(id, status)
 				.then(() => {
-					if (status === "consult_booked") {
-						showToast(
-							"Обращение переведено в статус «3. Записаны».",
-							"success",
-						);
-					} else if (status === "showed_up") {
-						showToast(
-							"Обращение переведено в статус «4. Дошли до клиники».",
-							"success",
-						);
-					} else if (status === "contacted") {
-						showToast(
-							"Обращение переведено в статус «2. В работе».",
-							"success",
-						);
-					} else if (status === "new") {
-						showToast(
-							"Обращение переведено в статус «1. Новые».",
-							"success",
-						);
-					}
+					const STAGE_LABELS: Record<Lead["status"], string> = {
+						new: "«1. Новые»",
+						contacted: "«2. Квалифицированные»",
+						consult_booked: "«3. Консультация»",
+						showed_up: "«4. Дошли»",
+						no_answer: "«Недозвон»",
+						trash: "«Отказ»",
+					};
+					showToast(
+						`Обращение переведено в статус ${STAGE_LABELS[status] || status}.`,
+						"success",
+					);
 				})
 				.catch((err: unknown) => {
 					const text =
@@ -253,6 +244,45 @@ export function LeadsKanbanView() {
 				});
 		}
 		setDraggedLeadId(null);
+	};
+
+	const handleQuickSchedule = async (leadId: string) => {
+		const targetDate =
+			appointmentDate || dateInputValuePlusDays(1, clinicTimeZone);
+		const startDateTime = new Date(
+			`${targetDate}T${appointmentTime || "10:00"}:00`,
+		);
+		const effectiveVisitMins = resolveLeadVisitMinutes(visitMinutes);
+		const endDateTime = new Date(
+			startDateTime.getTime() + effectiveVisitMins * 60000,
+		);
+
+		const effectiveStaff = resolveLeadBookingStaff(staff);
+		const effectiveChairs = resolveLeadBookingChairs(chairs);
+		const doctorIdToBook =
+			selectedDoctorId || effectiveStaff[0]?.id || FALLBACK_SOLO_DOCTOR.id;
+		const chairIdToBook =
+			selectedChairId || effectiveChairs[0]?.id || FALLBACK_DEFAULT_CHAIR.id;
+
+		try {
+			await convertLeadToAppointment(leadId, {
+				appointmentStart: startDateTime.toISOString(),
+				appointmentEnd: endDateTime.toISOString(),
+				chairId: chairIdToBook,
+				doctorId: doctorIdToBook,
+			});
+			showToast(
+				"Создан первичный прием в расписании и карта пациента в 1 клик",
+				"success",
+			);
+			fetchLeads();
+		} catch (err: unknown) {
+			const text =
+				err instanceof Error && err.message.trim()
+					? err.message
+					: "Не удалось записать лида в 1 клик.";
+			showToast(text, "error");
+		}
 	};
 
 	const handleConvertSubmit = async (e: React.FormEvent) => {
@@ -325,6 +355,7 @@ export function LeadsKanbanView() {
 				source: lead.source || "",
 				expectedRevenue: lead.expectedRevenue || "",
 				status: lead.status || "new",
+				notes: lead.notes || "",
 			});
 		} else {
 			setEditingLeadId("new");
@@ -334,6 +365,7 @@ export function LeadsKanbanView() {
 				source: "",
 				expectedRevenue: "",
 				status: "new",
+				notes: "",
 			});
 		}
 		setIsEditOpen(true);
@@ -349,6 +381,7 @@ export function LeadsKanbanView() {
 				expectedRevenue: editForm.expectedRevenue
 					? String(editForm.expectedRevenue)
 					: "",
+				notes: editForm.notes || "",
 			};
 
 			if (editingLeadId === "new") {
@@ -549,6 +582,7 @@ export function LeadsKanbanView() {
 												setConvertingLeadId(leadId);
 												setIsConvertOpen(true);
 											}}
+											onQuickSchedule={handleQuickSchedule}
 										/>
 									))}
 								</AnimatePresence>

@@ -4,9 +4,12 @@ import type {
 	Patient,
 	PatientInsight,
 	StaffMember,
+	TreatmentPlanItem,
+	TreatmentPlanScenario,
 } from "@dental/shared";
 import { normalizePhoneDigits } from "./telephonyHelpers";
 import type {
+	PatientActiveTreatmentPlanSummary,
 	PatientFinancialSummary,
 	PatientLastVisitSummary,
 	PatientNextVisitSummary,
@@ -466,6 +469,93 @@ export function resolvePatientSomaticAlerts(
 }
 
 /**
+ * Resolves active treatment plan, progress, and financial totals for a patient.
+ */
+export function resolvePatientActiveTreatmentPlan(
+	patientId: string | null | undefined,
+	treatmentPlanItems?: TreatmentPlanItem[] | null | undefined,
+	treatmentPlanScenarios?: TreatmentPlanScenario[] | null | undefined,
+): PatientActiveTreatmentPlanSummary {
+	if (!patientId || (!treatmentPlanItems && !treatmentPlanScenarios)) {
+		return {
+			hasActivePlan: false,
+			planTitle: null,
+			totalCostRub: 0,
+			formattedTotalCost: "0 ₽",
+			itemsCount: 0,
+			completedCount: 0,
+			pendingCount: 0,
+			progressPercent: 0,
+			nextService: null,
+		};
+	}
+
+	const patientItems = (treatmentPlanItems || []).filter(
+		(i) => i.patientId === patientId,
+	);
+	const patientScenarios = (treatmentPlanScenarios || []).filter(
+		(s) => s.patientId === patientId,
+	);
+
+	if (patientItems.length === 0 && patientScenarios.length === 0) {
+		return {
+			hasActivePlan: false,
+			planTitle: null,
+			totalCostRub: 0,
+			formattedTotalCost: "0 ₽",
+			itemsCount: 0,
+			completedCount: 0,
+			pendingCount: 0,
+			progressPercent: 0,
+			nextService: null,
+		};
+	}
+
+	const activeScenario = patientScenarios[0] || null;
+	const totalCostRub =
+		activeScenario && typeof activeScenario.totalRub === "number" && activeScenario.totalRub > 0
+			? activeScenario.totalRub
+			: patientItems.reduce((acc, it) => {
+					const unit = Number(it.unitPriceRub) || 0;
+					const discount = Number(it.discountRub) || 0;
+					const qty = Number(it.quantity) || 1;
+					const cost = Math.max(0, (unit - discount) * qty);
+					return acc + cost;
+				}, 0);
+
+	const completedCount = patientItems.filter((i) => i.status === "completed").length;
+	const pendingCount = patientItems.filter(
+		(i) => (i.status as string) === "planned" || i.status === "proposed" || i.status === "in_progress" || i.status === "approved",
+	).length;
+	const totalCount = patientItems.length;
+	const progressPercent =
+		totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+	const firstPending = patientItems.find(
+		(i) => (i.status as string) === "planned" || i.status === "proposed" || i.status === "in_progress" || i.status === "approved",
+	);
+	const nextService = firstPending ? firstPending.snapshotServiceName : null;
+
+	const formattedTotalCost = new Intl.NumberFormat("ru-RU", {
+		style: "currency",
+		currency: "RUB",
+		maximumFractionDigits: 0,
+	}).format(totalCostRub);
+
+	return {
+		hasActivePlan: true,
+		planTitle: activeScenario?.title || "Комплексный план лечения",
+		totalCostRub,
+		formattedTotalCost,
+		itemsCount: totalCount,
+		completedCount,
+		pendingCount,
+		progressPercent,
+		nextService,
+	};
+}
+
+/**
  * Resolves upcoming next visit date with full descriptive summary.
  */
 export function resolvePatientNextVisit(
@@ -609,6 +699,44 @@ export function generateAppointmentConfirmationMessage(params: {
 
 	return `Здравствуйте, ${params.patientName}! Напоминаем о вашей записи в ${clinic}: ${formattedDate} в ${formattedTime}${doctor}. Подтверждаете визит? Ответьте ДА или позвоните нам.`;
 }
+
+/**
+ * Generates an orthopedic ready message for SMS / WhatsApp (Mandates 8b, 8d, 8e).
+ * Strict zero emojis, polite natural clinical Russian tone with tooth FDI, material, and doctor.
+ */
+export function generateOrthopedicReadyMessage(params: {
+	patientName: string;
+	orderNumber?: string | undefined;
+	toothFdi?: string | number | readonly (string | number)[] | undefined;
+	material?: string | undefined;
+	doctorName?: string | null | undefined;
+	clinicName?: string | undefined;
+	clinicPhone?: string | undefined;
+	bookingUrl?: string | undefined;
+	channel?: "sms" | "whatsapp" | undefined;
+}): string {
+	const firstName = params.patientName
+		? params.patientName.split(" ")[1] || params.patientName.split(" ")[0] || "пациент"
+		: "пациент";
+	const teeth = Array.isArray(params.toothFdi)
+		? params.toothFdi.join(", ")
+		: params.toothFdi
+			? String(params.toothFdi)
+			: "16";
+	const mat = params.material || "ортопедическая конструкция";
+	const doc = params.doctorName || "лечащего врача";
+	const clinic = params.clinicName || "DENTE";
+	const phone = params.clinicPhone || "+7 (495) 000-00-00";
+	const bookingUrl = params.bookingUrl || "https://dente.ru/book";
+
+	if (params.channel === "sms") {
+		return `${firstName}, ваша работа (${mat}, зуб ${teeth}) поступила в клинику ${clinic}. Ждем вас на примерку/фиксацию к д-ру ${doc}. Запись: ${phone}`;
+	}
+
+	const orderStr = params.orderNumber ? ` по наряду № ${params.orderNumber}` : "";
+	return `Добрый день, ${firstName}! Рады сообщить, что ваша ортопедическая работа${orderStr} (${mat}, зуб ${teeth}) готова и доставлена в клинику ${clinic}. Доктор ${doc} готов провести примерку и постоянную фиксацию. Пожалуйста, сообщите удобное время для визита по тел. ${phone} или запишитесь онлайн: ${bookingUrl}. С заботой, стоматология ${clinic}!`;
+}
+
 
 /**
  * Creates a WhatsApp web/app link to trigger 1-click confirmation message.

@@ -46,7 +46,19 @@ export interface IncomingCallPayload {
 	recordingUrl?: string | undefined;
 	callStartedAt?: number | undefined;
 	transcript?: SpeechTranscriptUtterance[] | undefined;
+	virtualNumber?: string | undefined;
+	calledDid?: string | undefined;
+	utmSource?: string | undefined;
+	utmMedium?: string | undefined;
+	utmCampaign?: string | undefined;
+	utmContent?: string | undefined;
+	utmTerm?: string | undefined;
+	advertisingChannel?: string | undefined;
+	leadId?: string | null | undefined;
+	isLeadCaptured?: boolean | undefined;
 }
+
+export type TelephonyCallPayload = IncomingCallPayload;
 
 export type CallOutcome =
 	| "booked"
@@ -302,6 +314,18 @@ export interface PatientNextVisitSummary {
 	readonly fullTextRu: string;
 }
 
+export interface PatientActiveTreatmentPlanSummary {
+	readonly hasActivePlan: boolean;
+	readonly planTitle: string | null;
+	readonly totalCostRub: number;
+	readonly formattedTotalCost: string;
+	readonly itemsCount: number;
+	readonly completedCount: number;
+	readonly pendingCount: number;
+	readonly progressPercent: number;
+	readonly nextService: string | null;
+}
+
 export interface CallerIdentificationResult {
 	readonly isKnownPatient: boolean;
 	readonly patient: any | null;
@@ -310,6 +334,8 @@ export interface CallerIdentificationResult {
 	readonly initials: string;
 	readonly upcomingAppointment: PatientUpcomingAppointmentSummary | null;
 	readonly somaticAlerts: PatientSomaticAlert[];
+	readonly activeTreatmentPlan?: PatientActiveTreatmentPlanSummary | null;
 	readonly financialSummary: PatientFinancialSummary;
 	readonly nextVisit: PatientNextVisitSummary;
 }
+

@@ -50,11 +50,8 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 			}}
 		>
 			<div className="flex items-center gap-2.5 flex-wrap">
-				<h2 className="m-0 text-xl font-semibold text-[var(--ink)] flex items-center gap-2">
-					Воронка Пациентов
-					<span className="text-[10px] font-bold px-2 py-0.5 bg-[var(--teal)] text-white rounded-full uppercase tracking-wider">
-						PRO
-					</span>
+				<h2 className="m-0 text-lg font-bold text-[var(--ink)] flex items-center gap-2">
+					Воронка обращений
 				</h2>
 
 				{/* Segmented Funnel / All stages selector */}
@@ -93,40 +90,28 @@ export const LeadsKanbanHeader: React.FC<LeadsKanbanHeaderProps> = ({
 				</div>
 
 				<button
-					className="primary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
+					className="primary-button h-[32px] min-h-[32px] text-xs font-semibold px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center gap-1.5"
 					onClick={onNewLead}
 					type="button"
-					aria-label="Создать новый лид"
+					aria-label="Создать новое обращение"
 				>
-					<Plus size={15} /> Новый лид
+					<Plus size={14} /> Новый лид
 				</button>
 				<button
-					className="secondary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
+					className="secondary-button h-[32px] min-h-[32px] text-xs font-medium px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center gap-1.5"
 					onClick={onOpenAnalytics}
 					type="button"
 					aria-label="Открыть сквозную аналитику воронки"
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: 5,
-						fontWeight: 600,
-					}}
 				>
-					<BarChart3 size={15} color="var(--teal)" /> Аналитика воронки
+					<BarChart3 size={14} className="text-[var(--teal)]" /> Аналитика воронки
 				</button>
 				<button
-					className="secondary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
+					className="secondary-button h-[32px] min-h-[32px] text-xs font-medium px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] inline-flex items-center gap-1.5"
 					onClick={onOpenLeakDetector}
 					type="button"
 					aria-label="Открыть детектор оттока пациентов (210 дней)"
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: 5,
-						fontWeight: 600,
-					}}
 				>
-					<RotateCcw size={15} color="var(--teal)" /> Детектор оттока
+					<RotateCcw size={14} className="text-[var(--teal)]" /> Детектор оттока
 				</button>
 			</div>
 

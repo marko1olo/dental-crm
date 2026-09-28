@@ -162,7 +162,11 @@ export function CommunicationsView(
 	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(false);
 	const [isOmnichannelHubOpen, setIsOmnichannelHubOpen] = useState(false);
 
-	const tasksSlice = sliceDomList(sortedCommunicationTasks ?? [], tasksLimit, 0);
+	const effectiveTasks =
+		Array.isArray(sortedCommunicationTasks) && sortedCommunicationTasks.length > 0
+			? sortedCommunicationTasks
+			: (dashboard?.communicationTasks ?? []);
+	const tasksSlice = sliceDomList(effectiveTasks, tasksLimit, 0);
 	const journalSlice = sliceDomList(journal.entries ?? [], journalLimit, 0);
 
 	const communicationSummaryHasNumbers = Boolean(
@@ -352,7 +356,7 @@ export function CommunicationsView(
         журнал клиники, не имеет права быть невидимым, поэтому блок показывается
         и тогда, когда очередь пуста, но в заметке что-то есть.
       */}
-					{(sortedCommunicationTasks ?? []).length || closingNoteArmed ? (
+					{effectiveTasks.length || closingNoteArmed ? (
 						<div className="communication-note-row bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-4 mb-5">
 							<div className="flex justify-between items-center mb-3">
 								<div>

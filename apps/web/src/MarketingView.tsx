@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from "react";
-import { Tag, Users, BarChart3, Megaphone } from "lucide-react";
+import { Tag, Users, BarChart3, Megaphone, TrendingUp } from "lucide-react";
 import { DEFAULT_MARKETING_PROMOS } from "./components/marketing/marketingPresets";
 import type { MarketingPromo } from "./components/marketing/marketingTypes";
 import { MarketingPromosList } from "./components/marketing/MarketingPromosList";
@@ -14,9 +14,11 @@ import { MarketingCampaignDetail } from "./components/marketing/MarketingCampaig
 import { MarketingNewPromoModal } from "./components/marketing/MarketingNewPromoModal";
 import { RecallListPanel } from "./components/patients/RecallListPanel";
 import { MarketingRomiTable } from "./components/marketing/MarketingRomiTable";
+import { MarketingDashboardView } from "./pages/MarketingDashboardView";
 import "./styles/modules/marketing.css";
 
-export type MarketingTab = "promos" | "recalls" | "romi";
+export type MarketingTab = "promos" | "recalls" | "romi" | "analytics";
+export { MarketingDashboardView };
 
 export interface MarketingViewProps {
 	readonly clinicName?: string;
@@ -81,6 +83,16 @@ export function MarketingView({
 				<nav className="marketing-top-tabs" aria-label="Разделы маркетинга">
 					<button
 						type="button"
+						className={`marketing-top-tab ${activeTab === "analytics" ? "marketing-top-tab--active" : ""}`}
+						onClick={() => setActiveTab("analytics")}
+						data-testid="tab-nav-analytics"
+					>
+						<TrendingUp size={14} aria-hidden="true" />
+						<span>Сквозная аналитика и воронка</span>
+					</button>
+
+					<button
+						type="button"
 						className={`marketing-top-tab ${activeTab === "promos" ? "marketing-top-tab--active" : ""}`}
 						onClick={() => setActiveTab("promos")}
 						data-testid="tab-nav-promos"
@@ -110,6 +122,14 @@ export function MarketingView({
 					</button>
 				</nav>
 			</div>
+
+			{/* TAB 0: СКВОЗНАЯ АНАЛИТИКА И ВОРОНКА МАРКЕТИНГА */}
+			{activeTab === "analytics" && (
+				<MarketingDashboardView
+					clinicName={clinicName}
+					onNavigateToRecalls={() => setActiveTab("recalls")}
+				/>
+			)}
 
 			{/* TAB 1: АКЦИИ И КАМПАНИИ (Двухколоночный сбалансированный десктоп-дашборд) */}
 			{activeTab === "promos" && (

@@ -225,6 +225,36 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
 					<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 						<label
+							htmlFor="edit-lead-notes"
+							style={{ fontSize: 13, color: "var(--muted)" }}
+						>
+							Пожелания / Жалобы / Примечания
+						</label>
+						<textarea
+							id="edit-lead-notes"
+							rows={3}
+							value={editForm.notes || ""}
+							onChange={(e) =>
+								setEditForm({
+									...editForm,
+									notes: e.target.value,
+								})
+							}
+							placeholder="Например: острая боль, интересует имплантация, запись после 18:00..."
+							style={{
+								padding: 10,
+								borderRadius: 8,
+								border: `1px solid ${borderColor}`,
+								background: colBg,
+								color: "var(--ink)",
+								resize: "vertical",
+								fontSize: 13,
+							}}
+						/>
+					</div>
+
+					<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+						<label
 							htmlFor="edit-lead-status"
 							style={{ fontSize: 13, color: "var(--muted)" }}
 						>
@@ -249,9 +279,9 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 							}}
 						>
 							<option value="new">1. Новые</option>
-							<option value="contacted">2. В работе</option>
-							<option value="consult_booked">3. Записаны</option>
-							<option value="showed_up">4. Дошли до клиники</option>
+							<option value="contacted">2. Квалифицированные</option>
+							<option value="consult_booked">3. Консультация</option>
+							<option value="showed_up">4. Дошли</option>
 							<option value="no_answer">Недозвон</option>
 							<option value="trash">Отказ</option>
 						</select>
