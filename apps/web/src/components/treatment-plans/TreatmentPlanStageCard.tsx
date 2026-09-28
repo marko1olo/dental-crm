@@ -329,7 +329,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									В данном этапе нет запланированных процедур
 								</span>
 								<span className="text-[11px] text-[var(--muted,#64748b)] max-w-sm">
-									Назначьте процедуры из каталога 804н или примените готовый клинический пакет СтАР
+									Назначьте процедуры из клинического каталога или примените готовый пакет СтАР
 								</span>
 								{onAddItem && (
 									<button
@@ -433,7 +433,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 									<table className="w-full border-collapse text-[11px]">
 										<thead>
 											<tr className="border-b border-[var(--line,var(--border,#cbd5e1))] text-[var(--muted,#64748b)] text-left">
-												<th className="pb-1 font-semibold">Материал (Норма 804н)</th>
+												<th className="pb-1 font-semibold">Материал (Клиническая норма)</th>
 												<th className="pb-1 font-semibold text-center">Расход</th>
 												<th className="pb-1 font-semibold text-right">Уч. цена</th>
 												<th className="pb-1 font-semibold text-right">Сумма</th>

@@ -2,10 +2,11 @@
  * TreatmentPlanSignatureModal.tsx — модальное окно электронного подписания плана лечения пациентом.
  */
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
 	AlertCircle,
+	AlertTriangle,
 	CheckCircle2,
 	FileCheck,
 	Lock,
@@ -18,6 +19,7 @@ import type {
 	DigitalSignatureAgreementData,
 	TreatmentPlanTier,
 } from "./types";
+import { detectMutuallyExclusiveToothProcedures } from "./validation/starProtocolValidationEngine";
 
 interface TreatmentPlanSignatureModalProps {
 	readonly isOpen: boolean;
@@ -48,10 +50,26 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 	const [errorText, setErrorText] = useState<string | null>(null);
 
+	const allItems = useMemo(() => {
+		return tier?.stages ? tier.stages.flatMap((s) => s.items) : [];
+	}, [tier]);
+
+	const conflicts = useMemo(() => {
+		return detectMutuallyExclusiveToothProcedures(allItems);
+	}, [allItems]);
+
 	if (!isOpen) return null;
 
 	const handleConfirmAgreement = (forcedSignature?: string) => {
 		if (isSubmitting) return;
+
+		if (conflicts.length > 0) {
+			const first = conflicts[0]!;
+			setErrorText(
+				`Невозможно утвердить план: обнаружен клинический конфликт на зубе №${first.toothNumber}! В плане одновременно назначены взаимоисключающие манипуляции: «${first.procedureA.name}» и «${first.procedureB.name}». Устраните противоречие перед утверждением.`,
+			);
+			return;
+		}
 
 		// Doctor & Patient Autonomy (Mandate 8e): Zero arbitrary locks.
 		// Clicking confirmation is an explicit affirmation of patient and doctor agreement.
@@ -82,6 +100,13 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 
 	const handlePaperConfirm = () => {
 		if (isSubmitting) return;
+		if (conflicts.length > 0) {
+			const first = conflicts[0]!;
+			setErrorText(
+				`Невозможно утвердить план: обнаружен клинический конфликт на зубе №${first.toothNumber}! В плане одновременно назначены взаимоисключающие манипуляции: «${first.procedureA.name}» и «${first.procedureB.name}». Устраните противоречие перед утверждением.`,
+			);
+			return;
+		}
 		setTermsAccepted(true);
 		setSignatureBase64(PAPER_SIGNATURE_DATA_URL);
 		setErrorText(null);
@@ -198,6 +223,31 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 						)}
 					</div>
 
+					{/* Clinical Conflict Alert (Mutually Exclusive Procedures on same FDI tooth) */}
+					{conflicts.length > 0 && (
+						<div
+							className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-3"
+							data-testid="clinical-conflict-alert"
+						>
+							<AlertTriangle size={20} className="shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+							<div className="space-y-1.5 flex-1">
+								<div className="font-bold text-sm">
+									Клинический конфликт: взаимоисключающие манипуляции
+								</div>
+								<div className="space-y-1">
+									{conflicts.map((c, idx) => (
+										<div key={idx} className="text-xs leading-relaxed">
+											• <strong>Зуб №{c.toothNumber}:</strong> {c.descriptionRu}
+										</div>
+									))}
+								</div>
+								<div className="text-[11px] text-rose-600/90 dark:text-rose-400/90 font-semibold pt-1 border-t border-rose-500/20">
+									Утверждение плана заблокировано до устранения взаимоисключающих назначений лечащим врачом.
+								</div>
+							</div>
+						</div>
+					)}
+
 					{/* Checkbox Consent */}
 					<label className="flex items-start gap-2.5 pt-1 text-xs text-[var(--ink)] cursor-pointer select-none">
 						<input
@@ -234,10 +284,16 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 						type="button"
 						onClick={handlePaperConfirm}
 						aria-busy={isSubmitting}
-						className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
+						disabled={conflicts.length > 0 || isSubmitting}
+						title={conflicts.length > 0 ? "Устраните взаимоисключающие манипуляции перед утверждением" : undefined}
+						className={`w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border transition-colors ${
+							conflicts.length > 0
+								? "opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-300 dark:border-slate-700"
+								: "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer"
+						}`}
 						data-testid="paper-signature-confirm-btn"
 					>
-						<ShieldCheck size={14} className="text-emerald-600" />
+						<ShieldCheck size={14} className={conflicts.length > 0 ? "text-slate-400" : "text-emerald-600"} />
 						<span>Утвердить и подписать на бумаге (1 клик)</span>
 					</button>
 
@@ -245,7 +301,13 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 						type="button"
 						onClick={() => handleConfirmAgreement()}
 						aria-busy={isSubmitting}
-						className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+						disabled={conflicts.length > 0 || isSubmitting}
+						title={conflicts.length > 0 ? "Устраните взаимоисключающие манипуляции перед утверждением" : undefined}
+						className={`w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-extrabold text-white transition-all ${
+							conflicts.length > 0
+								? "opacity-50 cursor-not-allowed bg-slate-400 dark:bg-slate-700"
+								: "bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-emerald-600/20 cursor-pointer"
+						}`}
 						data-testid="confirm-sign-plan-btn"
 					>
 						<Lock size={14} />

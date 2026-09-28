@@ -12,7 +12,7 @@ export interface TreatmentPlanActSignaturesProps {
 	readonly actData: CompletedWorksActAndWriteOffData;
 	readonly palette: DocumentBrandColorPalette;
 	readonly legalName: string;
-	readonly patientPassport?: string;
+	readonly patientPassport?: string | null | undefined;
 	readonly showDoctorStampFrame: boolean;
 	readonly showQrVerification: boolean;
 	readonly verificationHash: string;

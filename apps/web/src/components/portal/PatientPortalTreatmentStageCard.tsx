@@ -26,8 +26,7 @@ import {
 	Sparkles,
 	Zap,
 } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { formatRubles } from "./patientCabinet/patientCabinetEngine.js";
 
 export interface DualServiceItem {

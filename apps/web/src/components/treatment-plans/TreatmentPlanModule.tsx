@@ -43,6 +43,7 @@ import {
 	generate3TierPlanComparison,
 	generateTreatmentPlanStages,
 } from "./treatmentPlanStagesEngine";
+import { loadPersistedCustomPlanItems } from "../radiology/ctImplantIntegrationBridge";
 import {
 	type InventoryItemLookup,
 	generateCompletedWorksActAndWriteOff,
@@ -70,7 +71,7 @@ const TreatmentPlanSignatureModal = lazy(() =>
 		default: module.TreatmentPlanSignatureModal,
 	})),
 );
-import { TreatmentPlanStageCard } from "./TreatmentPlanStageCard";
+import { TreatmentPlanStageCard, type TreatmentPlanStageStatus } from "./TreatmentPlanStageCard";
 const TreatmentPlanComparatorModal = lazy(() =>
 	import("./comparator/TreatmentPlanComparatorModal").then((module) => ({
 		default: module.TreatmentPlanComparatorModal,
@@ -142,6 +143,7 @@ import type {
 	TreatmentPlanTierId,
 } from "./types";
 import type { TreatmentPlanValidationPayload } from "./validation/planPriceValidationPresets";
+import { detectMutuallyExclusiveToothProcedures } from "./validation/starProtocolValidationEngine";
 
 export type TreatmentPlanStatusFilter = "all" | "draft" | "agreed" | "in_progress" | "completed";
 
@@ -189,6 +191,20 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	);
 
 	const handleStatusTransition = (newStatus: "draft" | "agreed" | "in_progress" | "completed") => {
+		if (newStatus === "agreed" || newStatus === "in_progress") {
+			const allItems = stages.flatMap((s) => s.items);
+			const conflicts = detectMutuallyExclusiveToothProcedures(allItems);
+			if (conflicts.length > 0) {
+				const first = conflicts[0]!;
+				showToast(
+					`Невозможно согласовать план: обнаружен клинический конфликт на зубе №${first.toothNumber}! Одновременно назначены «${first.procedureA.name}» и «${first.procedureB.name}».`,
+					"error",
+					7000,
+				);
+				return;
+			}
+		}
+
 		setPlanStatus(newStatus);
 		onStatusChange?.(newStatus);
 		const statusLabels: Record<"draft" | "agreed" | "in_progress" | "completed", string> = {
@@ -271,16 +287,150 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 	const stages = customStages ?? autoStages;
 
+	const effectiveSignTier = useMemo(() => {
+		const totalKopecks = stages.reduce(
+			(sum, s) => sum + (s.totalKopecks ?? Math.round((s.totalRub || 0) * 100)),
+			0,
+		);
+		const totalRub = totalKopecks / 100;
+		return {
+			...currentTier,
+			stages,
+			totalRub,
+			totalKopecks,
+		};
+	}, [currentTier, stages]);
+
+	useEffect(() => {
+		const handleAddItem = (e: Event) => {
+			const customEvent = e as CustomEvent<{ item: TreatmentPlanItem; toothNumber?: number; patientId?: string }>;
+			if (!customEvent.detail?.item) return;
+			const newItem = customEvent.detail.item;
+			setCustomStages((prevStages) => {
+				const current = prevStages ?? autoStages;
+				return current.map((st) => {
+					if (st.stageKind === newItem.stageKind || (newItem.phase && st.stageNumber === newItem.phase)) {
+						if (st.items.some((it) => it.id === newItem.id)) {
+							return st;
+						}
+						const updatedItems = [...st.items, newItem];
+						const totalKopecks = updatedItems.reduce((acc, it) => acc + Math.round((it.priceRub || 0) * 100), 0);
+						return {
+							...st,
+							items: updatedItems,
+							totalRub: totalKopecks / 100,
+							totalKopecks,
+							order804nCodes: Array.from(new Set([...st.order804nCodes, newItem.code804n])),
+						};
+					}
+					return st;
+				});
+			});
+		};
+		window.addEventListener("dente-add-treatment-plan-item", handleAddItem);
+		return () => window.removeEventListener("dente-add-treatment-plan-item", handleAddItem);
+	}, [autoStages]);
+
+	useEffect(() => {
+		if (!patientId) return;
+		const persistedItems = loadPersistedCustomPlanItems(patientId);
+		if (persistedItems.length === 0) return;
+		setCustomStages((prevStages) => {
+			const current = prevStages ?? autoStages;
+			let changed = false;
+			const updated = current.map((st) => {
+				const matching = persistedItems.filter(
+					(it) => it.stageKind === st.stageKind || (it.phase && st.stageNumber === it.phase),
+				);
+				if (matching.length === 0) return st;
+				const newUnique = matching.filter((m) => !st.items.some((it) => it.id === m.id));
+				if (newUnique.length === 0) return st;
+				changed = true;
+				const updatedItems = [...st.items, ...newUnique];
+				const totalKopecks = updatedItems.reduce((acc, it) => acc + Math.round((it.priceRub || 0) * 100), 0);
+				return {
+					...st,
+					items: updatedItems,
+					totalRub: totalKopecks / 100,
+					totalKopecks,
+					order804nCodes: Array.from(new Set([...st.order804nCodes, ...newUnique.map((it) => it.code804n)])),
+				};
+			});
+			return changed ? updated : prevStages;
+		});
+	}, [patientId, autoStages]);
+
+	const handleUpdateItemQuantity = (itemId: string, newQty: number) => {
+		const safeQty = Math.max(1, Math.round(newQty));
+		const updated = stages.map((st) => {
+			let modified = false;
+			const updatedItems = st.items.map((it) => {
+				if (it.id === itemId) {
+					modified = true;
+					const unitPriceRub =
+						it.unitPriceRub > 0
+							? it.unitPriceRub
+							: Math.round(
+									(it.priceRub + (it.discountRub || 0)) /
+										Math.max(1, it.quantity || 1),
+								);
+					const unitKop = parseKopecks(unitPriceRub);
+					const discountPct = discountPercent || 0;
+					const unitDiscountKop =
+						discountPct > 0 ? Math.round((unitKop * discountPct) / 100) : 0;
+					const finalUnitKop = Math.max(0, unitKop - unitDiscountKop);
+					const totalLineKop = finalUnitKop * safeQty;
+					const totalDiscountKop = unitDiscountKop * safeQty;
+
+					return {
+						...it,
+						quantity: safeQty,
+						unitPriceRub: unitKop / 100,
+						discountRub: totalDiscountKop / 100,
+						priceRub: totalLineKop / 100,
+					};
+				}
+				return it;
+			});
+			if (!modified) return st;
+
+			const stTotalKopecks = updatedItems.reduce(
+				(acc, it) => acc + Math.round(it.priceRub * 100),
+				0,
+			);
+			const stTotalRub = stTotalKopecks / 100;
+			return {
+				...st,
+				items: updatedItems,
+				totalRub: stTotalRub,
+				totalKopecks: stTotalKopecks,
+			};
+		});
+
+		setCustomStages(updated);
+	};
+
 	const handleUpdateItemPrice = (itemId: string, newPriceRub: number) => {
 		const updated = stages.map((st) => {
 			let modified = false;
 			const updatedItems = st.items.map((it) => {
 				if (it.id === itemId) {
 					modified = true;
+					const safeQty = Math.max(1, it.quantity || 1);
+					const unitKop = parseKopecks(newPriceRub);
+					const discountPct = discountPercent || 0;
+					const unitDiscountKop =
+						discountPct > 0 ? Math.round((unitKop * discountPct) / 100) : 0;
+					const finalUnitKop = Math.max(0, unitKop - unitDiscountKop);
+					const totalLineKop = finalUnitKop * safeQty;
+					const totalDiscountKop = unitDiscountKop * safeQty;
+
 					return {
 						...it,
-						priceRub: newPriceRub,
+						quantity: safeQty,
 						unitPriceRub: newPriceRub,
+						discountRub: totalDiscountKop / 100,
+						priceRub: totalLineKop / 100,
 						requiresManualPricing: false,
 					};
 				}
@@ -303,6 +453,79 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 		setCustomStages(updated);
 		showToast(`Цена услуги обновлена: ${newPriceRub.toLocaleString("ru-RU")} ₽`, "success");
+	};
+
+	const handleUpdateItem = (updatedItem: TreatmentPlanItem) => {
+		const updated = stages.map((st) => {
+			let modified = false;
+			const updatedItems = st.items.map((it) => {
+				if (it.id === updatedItem.id) {
+					modified = true;
+					const safeQty = Math.max(1, updatedItem.quantity || 1);
+					const unitPriceRub =
+						updatedItem.unitPriceRub > 0
+							? updatedItem.unitPriceRub
+							: Math.round(
+									(updatedItem.priceRub + (updatedItem.discountRub || 0)) /
+										safeQty,
+								);
+					const unitKop = parseKopecks(unitPriceRub);
+					const discountPct = discountPercent || 0;
+					const unitDiscountKop =
+						discountPct > 0 ? Math.round((unitKop * discountPct) / 100) : 0;
+					const finalUnitKop = Math.max(0, unitKop - unitDiscountKop);
+					const totalLineKop = finalUnitKop * safeQty;
+					const totalDiscountKop = unitDiscountKop * safeQty;
+
+					return {
+						...updatedItem,
+						quantity: safeQty,
+						unitPriceRub: unitKop / 100,
+						discountRub: totalDiscountKop / 100,
+						priceRub: totalLineKop / 100,
+						requiresManualPricing: false,
+					};
+				}
+				return it;
+			});
+			if (!modified) return st;
+
+			const stTotalKopecks = updatedItems.reduce(
+				(acc, it) => acc + Math.round(it.priceRub * 100),
+				0,
+			);
+			const stTotalRub = stTotalKopecks / 100;
+			return {
+				...st,
+				items: updatedItems,
+				totalRub: stTotalRub,
+				totalKopecks: stTotalKopecks,
+			};
+		});
+
+		setCustomStages(updated);
+		showToast(`Процедура «${updatedItem.name}» обновлена`, "success");
+	};
+
+	const handleRemoveItem = (itemId: string) => {
+		const updated = stages.map((st) => {
+			if (!st.items.some((it) => it.id === itemId)) return st;
+			const updatedItems = st.items.filter((it) => it.id !== itemId);
+			const stTotalKopecks = updatedItems.reduce(
+				(acc, it) => acc + Math.round(it.priceRub * 100),
+				0,
+			);
+			const stTotalRub = stTotalKopecks / 100;
+			return {
+				...st,
+				items: updatedItems,
+				totalRub: stTotalRub,
+				totalKopecks: stTotalKopecks,
+			};
+		});
+
+		setCustomStages(updated);
+		showToast("Процедура удалена из этапа", "info");
 	};
 
 	const handleExecuteCopilot = (cmdOrText: CopilotCommandType | string) => {
@@ -427,12 +650,12 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	// Loyalty and Bonus Points deduction calculation
 	const loyaltyDeduction = useMemo(() => {
 		return calculateLoyaltyBonusDeduction(
-			currentTier.totalKopecks,
+			effectiveSignTier.totalKopecks,
 			discountPercent,
 			patientBalanceRub,
 			bonusPointsToUseRub,
 		);
-	}, [currentTier.totalKopecks, discountPercent, patientBalanceRub, bonusPointsToUseRub]);
+	}, [effectiveSignTier.totalKopecks, discountPercent, patientBalanceRub, bonusPointsToUseRub]);
 
 	// 3. Extract orthopedic teeth (crowns, bridges, dentures, veneers, implant crowns)
 	const orthopedicTeeth = useMemo(() => {
@@ -820,6 +1043,53 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		}
 	};
 
+	const handleStartStage = (stageToStart: TreatmentPlanStage) => {
+		const updated = stages.map((s) =>
+			s.stageNumber === stageToStart.stageNumber
+				? { ...s, status: "in_progress" as const }
+				: s,
+		);
+		setCustomStages(updated);
+		showToast(
+			`Этап №${stageToStart.stageNumber} («${stageToStart.title}») активирован: процедурная запись добавлена в расписание`,
+			"success",
+			3500,
+		);
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-book-stage-appointment", {
+					detail: {
+						patientId,
+						patientName,
+						stageNumber: stageToStart.stageNumber,
+						stageTitle: stageToStart.title,
+						items: stageToStart.items,
+					},
+				}),
+			);
+			window.dispatchEvent(
+				new CustomEvent("dente-stage-activated", {
+					detail: {
+						patientId,
+						stageNumber: stageToStart.stageNumber,
+						stageTitle: stageToStart.title,
+					},
+				}),
+			);
+		}
+	};
+
+	const handleChangeStageStatus = (
+		stageToChange: TreatmentPlanStage,
+		newStatus: TreatmentPlanStageStatus,
+	) => {
+		const updated = stages.map((s) =>
+			s.stageNumber === stageToChange.stageNumber ? { ...s, status: newStatus } : s,
+		);
+		setCustomStages(updated);
+		showToast(`Статус этапа №${stageToChange.stageNumber} изменен на «${newStatus}»`, "info");
+	};
+
 	return (
 		<div
 			className={`treatment-plan-module flex flex-col gap-5 w-full bg-[var(--paper,var(--background,#ffffff))] text-[var(--ink,#0f172a)] rounded-3xl border border-[var(--line,var(--border,#cbd5e1))] p-5 shadow-xl ${className}`.trim()}
@@ -837,7 +1107,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								Комплексный план лечения
 							</h2>
 							<span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 font-mono font-bold border border-cyan-500/20 shrink-0">
-								Приказ МЗ РФ №804н
+								Клинический протокол
 							</span>
 							<span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-mono font-bold border border-emerald-500/20 shrink-0">
 								СтАР
@@ -932,7 +1202,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("3tier")}
-							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
+							className={`min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 								activeViewTab === "3tier"
 									? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -943,7 +1213,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveViewTab("stages")}
-							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
+							className={`min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 								activeViewTab === "stages"
 									? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -955,7 +1225,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							type="button"
 							onClick={() => setActiveViewTab("phased4")}
 							data-testid="tp-tab-phased4"
-							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
+							className={`min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation ${
 								activeViewTab === "phased4"
 									? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -968,7 +1238,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					{/* Secondary 1: Digital Signature Indicator / Button */}
 					{signedAgreement ? (
 						<div
-							className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold min-h-[44px] sm:min-h-[32px] sm:h-8 touch-manipulation"
+							className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold min-h-[44px] sm:min-h-[38px] sm:h-[38px] touch-manipulation"
 							data-testid="tp-signed-badge"
 						>
 							<ShieldCheck size={16} />
@@ -978,7 +1248,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsSignModalOpen(true)}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] cursor-pointer transition-colors touch-manipulation shadow-xs"
+							className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] cursor-pointer transition-colors touch-manipulation shadow-xs"
 							title="Открыть окно цифровой подписи согласия"
 							data-testid="tp-sign-btn"
 						>
@@ -991,7 +1261,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					<button
 						type="button"
 						onClick={handleExportCashier}
-						className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation"
+						className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation"
 						title="Мгновенно отправить счет кассиру в 1 клик (StomX / DentalPRO Parity)"
 						data-testid="tp-quick-cashier-btn"
 					>
@@ -1004,7 +1274,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors touch-manipulation"
+							className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors touch-manipulation"
 							title="Дополнительные студии, валидация и печать"
 							aria-label="Опции плана лечения"
 							aria-expanded={isOptionsMenuOpen}
@@ -1059,10 +1329,10 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
 								role="menuitem"
 								data-testid="tp-fiscal-btn"
-								title="Принять оплату (карты, СБП QR, наличные) и пробить фискальный чек 54-ФЗ"
+								title="Принять оплату (карты, СБП QR, наличные) и пробить кассовый чек"
 							>
 								<ShieldCheck size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-								<span>Чек 54-ФЗ & Оплата</span>
+								<span>Кассовый чек & Оплата</span>
 							</button>
 
 								<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
@@ -1139,7 +1409,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									role="menuitem"
 								>
 									<FileCheck size={14} className="text-emerald-600" />
-									<span>Валидатор СтАР & 804н</span>
+									<span>Клинический валидатор СтАР</span>
 								</button>
 
 								<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1.5">
@@ -1190,7 +1460,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					<button
 						type="button"
 						onClick={handleSavePlanToDatabase}
-						className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] cursor-pointer transition-all shadow-md shadow-[var(--teal)]/20 active:scale-98 ml-auto"
+						className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] cursor-pointer transition-all shadow-md shadow-[var(--teal)]/20 active:scale-98 ml-auto touch-manipulation"
 						data-testid="treatment-plan-save-btn"
 					>
 						<Save size={15} className={isSaving ? "animate-spin" : ""} />
@@ -1413,11 +1683,11 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						type="button"
 						onClick={() => setIsChairsideBundlesModalOpen(true)}
 						className="h-8 px-3.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
-						title="Открыть клинические пакеты 804н у кресла («Все включено»)"
+						title="Открыть клинические пакеты услуг у кресла («Все включено»)"
 						data-testid="open-chairside-bundles-modal-btn"
 					>
 						<PackageCheck size={15} />
-						<span>Пакеты 804н у кресла («Все включено»)</span>
+						<span>Клинические пакеты («Все включено»)</span>
 						<span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-white/20 text-white ml-1">
 							{CLINICAL_BUNDLES.length} пакетов
 						</span>
@@ -1565,8 +1835,13 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							{...(Array.isArray(dashboard?.inventoryItems) && dashboard.inventoryItems.length > 0
 								? { inventoryItems: dashboard.inventoryItems as InventoryItemLookup[] }
 								: {})}
+							onUpdateItemQuantity={handleUpdateItemQuantity}
 							onUpdateItemPrice={handleUpdateItemPrice}
+							onUpdateItem={handleUpdateItem}
+							onRemoveItem={handleRemoveItem}
 							onExecuteWriteOffStage={handleExecuteWriteOffStage}
+							onStartStage={handleStartStage}
+							onChangeStageStatus={handleChangeStageStatus}
 							onPayStage={(stageToPay) => {
 								setSelectedInstallmentStage(stageToPay);
 								setIsFiscalModalOpen(true);
@@ -1679,7 +1954,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				<Suspense fallback={null}>
 					<TreatmentPlanSignatureModal
 						isOpen={isSignModalOpen}
-						tier={currentTier}
+						tier={effectiveSignTier}
 						patientName={patientName}
 						patientId={patientId}
 						doctorFullName={auth?.currentUser?.name || "Лечащий врач стоматолог"}
@@ -1689,7 +1964,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							setSignedAgreement(agreement);
 							setIsSignModalOpen(false);
 							showToast(
-								`План «${currentTier.title}» успешно подписан пациентом ${patientName}!`,
+								`План «${effectiveSignTier.title}» успешно подписан пациентом ${patientName}!`,
 								"success",
 								5000,
 							);
@@ -1703,7 +1978,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				<Suspense fallback={null}>
 					<TreatmentPlanContractPrint
 						isOpen={isContractPrintOpen}
-						tier={currentTier}
+						tier={effectiveSignTier}
 						stages={stages}
 						patientName={patientName}
 						patientId={patientId}
@@ -1741,7 +2016,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				<Suspense fallback={null}>
 					<FiscalReceipt54FzModal
 						isOpen={isFiscalModalOpen}
-						items={currentTier.stages.flatMap((s) => s.items)}
+						items={effectiveSignTier.stages.flatMap((s) => s.items)}
 						patientId={patientId}
 						patientName={patientName}
 						patientPhone={dashboard?.activePatient?.phone || ""}

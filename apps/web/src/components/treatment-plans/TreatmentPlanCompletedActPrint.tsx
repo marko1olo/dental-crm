@@ -481,7 +481,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 							>
 								<div className="flex items-center gap-2">
 									<Award className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-									<span>1. Оказанные медицинские услуги (Номенклатура МЗ РФ № 804н)</span>
+									<span>1. Оказанные медицинские услуги (Клинический протокол)</span>
 								</div>
 								<span className="text-[11px] font-semibold lowercase opacity-90">
 									Позиций: {visibleProcedures.length + (!showMicroConsumables && microConsumables.length > 0 ? 1 : 0)}
@@ -493,7 +493,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 									<thead>
 										<tr className="bg-slate-100 text-slate-800 font-bold text-[11px]">
 											<th className="border border-slate-300 p-2 text-center w-10">№</th>
-											<th className="border border-slate-300 p-2 text-center w-28">Код 804н</th>
+											<th className="border border-slate-300 p-2 text-center w-28">Код услуги</th>
 											<th className="border border-slate-300 p-2 text-center w-16">Зуб (FDI)</th>
 											<th className="border border-slate-300 p-2 text-left">
 												Наименование и клиническое содержание медицинской услуги

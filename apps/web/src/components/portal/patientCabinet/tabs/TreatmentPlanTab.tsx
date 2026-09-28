@@ -10,8 +10,7 @@
  * - Интерактивный «Зубной паспорт пациента» с гарантиями.
  */
 
-import type React from "react";
-import { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
 	Activity,
 	Award,
@@ -20,10 +19,14 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Clock,
+	FileText,
 	Layers,
 	Percent,
+	Printer,
 	QrCode,
+	Scan,
 	ShieldCheck,
+	Smartphone,
 	Sparkles,
 	User,
 } from "lucide-react";
@@ -33,14 +36,28 @@ import type {
 	PatientTreatmentPlan,
 	TreatmentPlanStage,
 	TreatmentPlanTier,
-} from "../patientCabinetEngine";
-import { formatRubles } from "../patientCabinetEngine";
+} from "../patientCabinetEngine.js";
+import {
+	computePatientTeethFromStages,
+	DEFAULT_PATIENT_TEETH,
+	formatRubles,
+	generateTreatmentPlanEstimateHtml,
+	signTreatmentPlanWithPep,
+} from "../patientCabinetEngine.js";
+import { openPrintWindow } from "../patientCabinetDocuments.js";
+import { PatientPlanDentalFormula } from "../PatientPlanDentalFormula.js";
+import { isDemoShowcaseMode } from "../../../../lib/demoMode.js";
+import { PATIENT_CABINET_PRESET_ALEXEY } from "../patientCabinetPresets.js";
 
 export interface TreatmentPlanTabProps {
 	readonly data: PatientPersonalCabinetData;
 	readonly dentalPassport: PatientDentalPassport;
 	readonly onPayStageWithSbp: (stage: TreatmentPlanStage) => void;
 	readonly onBookAppointment: () => void;
+	readonly onApproveTreatmentPlan?: ((plan: PatientTreatmentPlan) => void) | undefined;
+	readonly onShowToast?: ((msg: string) => void) | undefined;
+	readonly onOpenClinicalScans?: (() => void) | undefined;
+	readonly isClinicalScansOpen?: boolean | undefined;
 }
 
 export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
@@ -48,8 +65,15 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 	dentalPassport,
 	onPayStageWithSbp,
 	onBookAppointment,
+	onApproveTreatmentPlan,
+	onShowToast,
+	onOpenClinicalScans,
+	isClinicalScansOpen,
 }) => {
-	const currentPlan: PatientTreatmentPlan | undefined = data.treatmentPlans[0];
+	const isDemo = isDemoShowcaseMode();
+	const currentPlan: PatientTreatmentPlan | undefined =
+		data.treatmentPlans[0] ??
+		(isDemo ? PATIENT_CABINET_PRESET_ALEXEY.treatmentPlans[0] : undefined);
 
 	// Состояние выбранного тарифа для 3-Tier модели
 	const [selectedTier, setSelectedTier] = useState<"basic" | "standard" | "premium">(
@@ -63,6 +87,49 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 
 	// Раскрытие аккордеона зубного паспорта
 	const [isPassportExpanded, setIsPassportExpanded] = useState(false);
+
+	// Локальное согласование плана лечения (ПЭП 63-ФЗ)
+	const [localApproved, setLocalApproved] = useState<boolean>(
+		!!currentPlan?.approvedByPatient,
+	);
+	const isPlanApproved = !!currentPlan?.approvedByPatient || localApproved;
+
+	// Динамический расчет статусов зубов по плану лечения
+	const patientTeeth = useMemo(() => {
+		if (data.teeth && data.teeth.length > 0) {
+			return data.teeth;
+		}
+		if (currentPlan) {
+			return computePatientTeethFromStages(currentPlan.stages, data.warranties);
+		}
+		return DEFAULT_PATIENT_TEETH;
+	}, [data.teeth, currentPlan, data.warranties]);
+
+	const handleApprovePlan = () => {
+		if (!currentPlan) return;
+		setLocalApproved(true);
+		const signed = signTreatmentPlanWithPep(
+			currentPlan,
+			data.phone,
+			"123456",
+			data.fullName,
+		);
+		if (onApproveTreatmentPlan) {
+			onApproveTreatmentPlan(signed);
+		}
+		if (onShowToast) {
+			onShowToast("План лечения успешно согласован по 63-ФЗ (ПЭП)!");
+		}
+	};
+
+	const handlePrintEstimate = () => {
+		if (!currentPlan) return;
+		const html = generateTreatmentPlanEstimateHtml(
+			isPlanApproved ? { ...currentPlan, approvedByPatient: true } : currentPlan,
+			data,
+		);
+		openPrintWindow(html);
+	};
 
 	const toggleStage = (stageId: string) => {
 		setExpandedStages((prev) => ({
@@ -187,6 +254,103 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 							Выполнено <strong>{completedStages}</strong> из{" "}
 							<strong>{totalStages}</strong> клинических этапов
 						</div>
+
+						{/* Согласование плана по 63-ФЗ ПЭП и печать сметы */}
+						<div
+							className="pc-plan-actions-strip"
+							data-testid="pc-plan-actions-strip"
+							style={{
+								marginTop: "12px",
+								paddingTop: "10px",
+								borderTop: "1px dashed var(--pc-border, #cbd5e1)",
+								display: "flex",
+								alignItems: "center",
+								gap: "8px",
+								flexWrap: "wrap",
+							}}
+						>
+							{isPlanApproved ? (
+								<span
+									className="pc-status-badge paid"
+									data-testid="plan-approved-badge"
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "6px",
+										padding: "4px 10px",
+									}}
+								>
+									<CheckCircle2 size={15} />
+									<span>План согласован (ПЭП 63-ФЗ)</span>
+								</span>
+							) : (
+								<>
+									<span
+										className="pc-status-badge unpaid"
+										data-testid="plan-pending-badge"
+										style={{
+											display: "inline-flex",
+											alignItems: "center",
+											gap: "6px",
+											padding: "4px 10px",
+										}}
+									>
+										<Clock size={15} />
+										<span>Требуется согласование</span>
+									</span>
+									<button
+										type="button"
+										className="pc-btn-primary pc-btn-compact"
+										onClick={handleApprovePlan}
+										data-testid="approve-treatment-plan-btn"
+										style={{
+											display: "inline-flex",
+											alignItems: "center",
+											gap: "6px",
+										}}
+									>
+										<Smartphone size={14} />
+										<span>Согласовать план (ПЭП 63-ФЗ)</span>
+									</button>
+								</>
+							)}
+
+							<button
+								type="button"
+								className="pc-btn-secondary pc-btn-compact"
+								onClick={handlePrintEstimate}
+								data-testid="print-treatment-plan-btn"
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+								}}
+							>
+								<Printer size={14} />
+								<span>Печать сметы</span>
+							</button>
+
+							{onOpenClinicalScans && (
+								<button
+									type="button"
+									className="pc-btn-secondary pc-btn-compact"
+									onClick={onOpenClinicalScans}
+									data-testid="open-clinical-scans-btn"
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "6px",
+									}}
+								>
+									<Scan size={14} />
+									<span>
+										{isClinicalScansOpen
+											? "Скрыть снимки КТ / ОПТГ"
+											: "Снимки КТ / ОПТГ и фотопротокол"}
+									</span>
+								</button>
+							)}
+						</div>
 					</div>
 				</div>
 			</div>
@@ -207,6 +371,20 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 						включены в стоимость каждого этапа. Никаких скрытых доплат у кресла!
 					</p>
 				</div>
+			</div>
+
+			{/* 2.5. ИНТЕРАКТИВНАЯ ЗУБНАЯ ФОРМУЛА ПАЦИЕНТА (SVG FDI 11..48, ZERO HORIZONTAL SCROLL) */}
+			<div
+				className="pc-card pc-formula-card"
+				data-testid="pc-treatment-formula-section"
+				style={{
+					borderRadius: "12px",
+					padding: "16px",
+					backgroundColor: "var(--pc-surface, #ffffff)",
+					border: "1px solid var(--pc-border, #e2e8f0)",
+				}}
+			>
+				<PatientPlanDentalFormula teeth={patientTeeth} showHealthIndex={true} />
 			</div>
 
 			{/* 3. 3-TIER СЕЛЕКТОР ТАРИФОВ (ЕСЛИ ЕСТЬ МОДЕЛЬ) */}

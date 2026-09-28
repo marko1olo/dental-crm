@@ -289,7 +289,7 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 								id="treatment-plan-wizard-title"
 								className="text-base font-black tracking-tight"
 							>
-								Смета плана лечения по патологиям (804н)
+								Смета плана лечения по патологиям
 							</h2>
 							<p className="text-xs text-[var(--odontogram-ink-muted,#64748b)]">
 								{patientName ? `Пациент: ${patientName} • ` : ""}
@@ -433,7 +433,7 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 											<thead>
 												<tr className="border-b border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 bg-[var(--paper,#ffffff)] dark:bg-zinc-900 text-[10px] uppercase font-bold text-[var(--odontogram-ink-muted,#64748b)]">
 													<th className="py-2 px-3 w-14">Зуб</th>
-													<th className="py-2 px-3 w-28">Код 804н</th>
+													<th className="py-2 px-3 w-28">Код услуги</th>
 													<th className="py-2 px-3">Наименование услуги</th>
 													<th className="py-2 px-3 w-16 text-center">Кол-во</th>
 													<th className="py-2 px-3 w-24 text-right">Цена</th>

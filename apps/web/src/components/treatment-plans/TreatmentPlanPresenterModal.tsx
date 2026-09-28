@@ -381,6 +381,11 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		return allTiers.find((t) => t.tierId === selectedTierId) ?? allTiers[1] ?? allTiers[0]!;
 	}, [allTiers, selectedTierId]);
 
+	const activeSelectedTierStages = useMemo(() => {
+		const withItems = selectedTier.stages.filter((s) => s.items && s.items.length > 0);
+		return withItems.length > 0 ? withItems : selectedTier.stages;
+	}, [selectedTier.stages]);
+
 	const cleanPatCode = patientId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase() || "0891";
 	const displayContractNumber = contractNumber || ("ДОГ-2026-" + cleanPatCode);
 
@@ -758,7 +763,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 							data-testid="tab-stages-btn"
 						>
 							<Clock size={14} />
-							<span>Этапы (804н)</span>
+							<span>Клинические этапы</span>
 						</button>
 						<button
 							type="button"
@@ -1240,7 +1245,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 												Клинические этапы плана: {selectedTier.title} ({getTierLetter(selectedTier.tierId)})
 											</h4>
 											<p className="text-xs text-[var(--tp-text-muted)] m-0">
-												Номенклатура медицинских услуг Приказа Минздрава России № 804н и зубы FDI (11–48)
+												Клинический протокол медицинских услуг и анатомические зоны FDI (11–48)
 											</p>
 										</div>
 									</div>
@@ -1322,7 +1327,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																<thead>
 																	<tr>
 																		<th className="w-10">№</th>
-																		<th className="w-28">Код 804н</th>
+																		<th className="w-28">Код услуги</th>
 																		<th className="w-16">Зуб FDI</th>
 																		<th>Наименование услуги</th>
 																		<th className="w-16 text-center">Кол-во</th>
@@ -1433,7 +1438,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 							<div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex-wrap gap-3">
 								<div>
 									<h3 className="text-base font-bold text-[var(--tp-text-main)] m-0">
-										Развернутая смета клинических этапов по номенклатуре 804н
+										Развернутая смета клинических этапов лечения
 									</h3>
 									<p className="text-xs text-[var(--tp-text-muted)] m-0">
 										Выбранный вариант: <strong>{selectedTier.title}</strong> · Итого по смете:{" "}
@@ -1462,7 +1467,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											В смете пока нет клинических этапов
 										</span>
 										<span>
-											Назначьте процедуры по Приказу 804н или примените готовые клинические пакеты
+											Назначьте медицинские процедуры или примените готовые клинические пакеты
 										</span>
 									</div>
 								) : (
@@ -1491,7 +1496,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 													<thead>
 														<tr>
 															<th className="w-10">№</th>
-															<th className="w-28">Код 804н</th>
+															<th className="w-28">Код услуги</th>
 															<th className="w-16">Зуб FDI</th>
 															<th>Наименование медицинской услуги</th>
 															<th className="w-16 text-center">Кол-во</th>
@@ -1600,6 +1605,26 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								patientFullName={patientName || "Пациент"}
 								onBookStage={(stage) => {
 									showToast(`Запись на этап: «${stage.titleRu}» (${stage.timelineRu}) передана в расписание`, "info");
+									if (typeof window !== "undefined") {
+										window.dispatchEvent(
+											new CustomEvent("dente-book-stage-appointment", {
+												detail: {
+													patientId,
+													patientName,
+													stageTitle: stage.titleRu,
+													stageNumber: stage.stageNumber,
+													timelineRu: stage.timelineRu,
+													items: stage.procedures.map((p) => ({
+														id: p.id,
+														name: p.patientFriendlyTitleRu || p.medicalTitleRu,
+														priceRub: p.priceRub,
+														quantity: p.quantity,
+														toothNumber: p.toothNumber,
+													})),
+												},
+											}),
+										);
+									}
 								}}
 							/>
 						</div>
@@ -1746,7 +1771,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											data-testid="print-format-official-btn"
 										>
 											<FileCheck2 size={13} className="shrink-0" />
-											<span>Приложение №1 (804н / ПП РФ №736)</span>
+											<span>Приложение №1 (Официальная смета)</span>
 										</button>
 									</div>
 
@@ -1784,7 +1809,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											position: "absolute",
 											top: "45%",
 											left: "50%",
-											transform: "translate(-50%, -50%) rotate(-30deg)",
+											transform: "translate(-50%, -50%) rotate(-32deg)",
 											fontSize: "52pt",
 											fontWeight: 900,
 											color: "rgba(0, 0, 0, 0.04)",
@@ -1843,7 +1868,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											<span className="text-slate-500 block text-[10.5px]">Пациент:</span>
 											<strong className="text-slate-900 text-sm">{patientName}</strong>
 											<div className="text-slate-500 text-[10.5px] mt-0.5">
-												Карта ф. 043/у: {patientId}{patientPhone ? ` · Тел: ${patientPhone}` : ""}
+												Номер медкарты: {patientId}{patientPhone ? ` · Тел: ${patientPhone}` : ""}
 											</div>
 										</div>
 										<div>
@@ -1875,7 +1900,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 									{/* Large Clinical Stage Blocks */}
 									<div className="space-y-4">
-										{selectedTier.stages.map((stage) => {
+										{activeSelectedTierStages.map((stage) => {
 											const cleanItems = stage.items.filter((it) => !isMicroConsumable(it));
 											const microConsumablesCount = stage.items.length - cleanItems.length;
 
@@ -2096,9 +2121,13 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										<div>
 											<div className="font-bold border-b border-black pb-1 mb-1">ИСПОЛНИТЕЛЬ (КЛИНИКА):</div>
 											<div>{clinicLegalName}</div>
-											<div>ИНН: {clinicInn} · ОГРН: {clinicOgrn}</div>
-											<div>Адрес: {clinicAddress}</div>
-											<div>Лицензия: {clinicLicense}</div>
+											{(clinicInn || clinicOgrn) && (
+												<div>
+													{[clinicInn ? `ИНН: ${clinicInn}` : "", clinicOgrn ? `ОГРН: ${clinicOgrn}` : ""].filter(Boolean).join(" · ")}
+												</div>
+											)}
+											{clinicAddress && <div>Адрес: {clinicAddress}</div>}
+											{clinicLicense && <div>Лицензия: {clinicLicense}</div>}
 											<div>Лечащий врач: {doctorFullName} ({doctorSpecialty})</div>
 										</div>
 										<div>
@@ -2106,7 +2135,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											<div>ФИО: <strong>{patientName || "_________________________________"}</strong></div>
 											<div>Дата рождения: {patientBirthDate || "«___» _______ 19___ г."}</div>
 											<div>Телефон: {patientPhone || "____________________"}</div>
-											<div>Номер медицинской карты: {patientId || "____________________"} (ф. 043/у)</div>
+											<div>Номер медицинской карты: {patientId || "____________________"}</div>
 										</div>
 									</div>
 
@@ -2115,7 +2144,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										<thead>
 											<tr>
 												<th style={{ width: "24px" }}>№</th>
-												<th style={{ width: "90px" }}>Код по 804н</th>
+												<th style={{ width: "90px" }}>Код услуги</th>
 												<th style={{ width: "45px" }}>Зуб</th>
 												<th>Наименование медицинской услуги</th>
 												<th style={{ width: "40px" }}>Кол-во</th>
@@ -2125,55 +2154,61 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											</tr>
 										</thead>
 										<tbody>
-											{selectedTier.stages.map((stage) => {
-												const displayItems = showMicroConsumables
-													? stage.items
-													: stage.items.filter((it) => !isMicroConsumable(it));
-												const microConsumablesCount = stage.items.length - displayItems.length;
+											{(() => {
+												let globalAppendixItemIndex = 1;
+												return activeSelectedTierStages.map((stage) => {
+													const displayItems = showMicroConsumables
+														? stage.items
+														: stage.items.filter((it) => !isMicroConsumable(it));
+													const microConsumablesCount = stage.items.length - displayItems.length;
 
-												return (
-													<React.Fragment key={stage.stageNumber}>
-														<tr style={{ background: "var(--paper-soft, var(--line))", fontWeight: "bold" }}>
-															<td colSpan={7}>
-																{stage.title} (Срок: {stage.estimatedWeeks} нед., {stage.estimatedVisits} визитов)
-															</td>
-															<td style={{ textAlign: "right" }}>
-																{stage.totalRub.toLocaleString("ru-RU")}
-															</td>
-														</tr>
-														{displayItems.map((it, idx) => (
-															<tr key={it.id || idx}>
-																<td style={{ textAlign: "center" }}>{idx + 1}</td>
-																<td style={{ fontFamily: "monospace", fontSize: "8.5pt" }}>{it.code804n}</td>
-																<td style={{ textAlign: "center", fontWeight: "bold" }}>{it.toothNumber || "—"}</td>
-																<td>
-																	<div>{it.name}</div>
-																	{it.materials && (
-																		<div style={{ fontSize: "8pt", color: "var(--muted)" }}>
-																			Материал: {it.materials}
-																		</div>
-																	)}
+													return (
+														<React.Fragment key={stage.stageNumber}>
+															<tr style={{ background: "var(--paper-soft, var(--line))", fontWeight: "bold" }}>
+																<td colSpan={7}>
+																	{stage.title} (Срок: {stage.estimatedWeeks} нед., {stage.estimatedVisits} визитов)
 																</td>
-																<td style={{ textAlign: "center" }}>{it.quantity}</td>
-																<td style={{ textAlign: "right" }}>{it.unitPriceRub.toLocaleString("ru-RU")}</td>
-																<td style={{ textAlign: "right" }}>{it.discountRub.toLocaleString("ru-RU")}</td>
-																<td style={{ textAlign: "right", fontWeight: "bold" }}>
-																	{it.priceRub.toLocaleString("ru-RU")}
+																<td style={{ textAlign: "right" }}>
+																	{stage.totalRub.toLocaleString("ru-RU")}
 																</td>
 															</tr>
-														))}
-														{!showMicroConsumables && microConsumablesCount > 0 && (
-															<tr style={{ background: "var(--paper-soft, var(--paper))", fontStyle: "italic", fontSize: "8pt", color: "var(--muted)" }}>
-																<td style={{ textAlign: "center" }}>•</td>
-																<td colSpan={6}>
-																	Индивидуальный гигиенический и асептический комплект (салфетки, валики, слюноотсос, перчатки — {microConsumablesCount} поз., включено в стоимость этапа)
-																</td>
-																<td style={{ textAlign: "right" }}>Включено</td>
-															</tr>
-														)}
-													</React.Fragment>
-												);
-											})}
+															{displayItems.map((it) => {
+																const itemIdx = globalAppendixItemIndex++;
+																return (
+																	<tr key={it.id || itemIdx}>
+																		<td style={{ textAlign: "center" }}>{itemIdx}</td>
+																		<td style={{ fontFamily: "monospace", fontSize: "8.5pt" }}>{it.code804n}</td>
+																		<td style={{ textAlign: "center", fontWeight: "bold" }}>{it.toothNumber || "—"}</td>
+																		<td>
+																			<div>{it.name}</div>
+																			{it.materials && (
+																				<div style={{ fontSize: "8pt", color: "var(--muted)" }}>
+																					Материал: {it.materials}
+																				</div>
+																			)}
+																		</td>
+																		<td style={{ textAlign: "center" }}>{it.quantity}</td>
+																		<td style={{ textAlign: "right" }}>{it.unitPriceRub.toLocaleString("ru-RU")}</td>
+																		<td style={{ textAlign: "right" }}>{it.discountRub.toLocaleString("ru-RU")}</td>
+																		<td style={{ textAlign: "right", fontWeight: "bold" }}>
+																			{it.priceRub.toLocaleString("ru-RU")}
+																		</td>
+																	</tr>
+																);
+															})}
+															{!showMicroConsumables && microConsumablesCount > 0 && (
+																<tr style={{ background: "var(--paper-soft, var(--paper))", fontStyle: "italic", fontSize: "8pt", color: "var(--muted)" }}>
+																	<td style={{ textAlign: "center" }}>•</td>
+																	<td colSpan={6}>
+																		Индивидуальный гигиенический и асептический комплект (салфетки, валики, слюноотсос, перчатки — {microConsumablesCount} поз., включено в стоимость этапа)
+																	</td>
+																	<td style={{ textAlign: "right" }}>Включено</td>
+																</tr>
+															)}
+														</React.Fragment>
+													);
+												});
+											})()}
 										</tbody>
 										<tfoot>
 											<tr style={{ fontWeight: "bold", fontSize: "10pt", background: "var(--paper-soft, var(--paper))" }}>
@@ -2243,7 +2278,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											</span>
 										</div>
 										<p className="text-xs text-[var(--tp-text-muted)] m-0 mt-0.5">
-											Валидация анатомии зубов FDI, протоколов СтАР, Номенклатуры 804н и перевод для пациента
+											Валидация анатомии зубов FDI, клинических протоколов СтАР и перевод для пациента
 										</p>
 									</div>
 								</div>

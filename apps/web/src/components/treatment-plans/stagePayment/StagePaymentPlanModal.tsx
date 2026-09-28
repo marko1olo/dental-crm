@@ -321,7 +321,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 			clinicName,
 		);
 		setActiveFiscalReceipt(receipt);
-		setStatusMessage(`Фискальный чек №${receipt.receiptId} сформирован согласно 54-ФЗ.`);
+		setStatusMessage(`Кассовый чек №${receipt.receiptId} сформирован.`);
 	};
 
 	// Экспорт в CSV (RFC 4180)
@@ -495,7 +495,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 						className={`stage-payment-tab-btn ${activeTab === "termination" ? "active" : ""}`}
 					>
 						<RotateCcw className="h-4 w-4" />
-						<span>Расторжение и возврат (ст. 32)</span>
+						<span>Расторжение и возврат</span>
 					</button>
 
 					<button
@@ -504,7 +504,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 						className={`stage-payment-tab-btn ${activeTab === "fiscal54fz" ? "active" : ""}`}
 					>
 						<QrCode className="h-4 w-4" />
-						<span>Фискализация 54-ФЗ</span>
+						<span>Кассовые чеки</span>
 					</button>
 
 					<button
@@ -787,7 +787,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 																	role="menuitem"
 																>
 																	<QrCode className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-																	<span>54-ФЗ Чек</span>
+																	<span>Кассовый чек</span>
 																</button>
 															</div>
 														)}
@@ -1042,7 +1042,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 								<AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
 								<div>
 									<h4 className="font-bold text-rose-900 dark:text-rose-200">
-										Расчет возврата при досрочном расторжении (ст. 32 Закона РФ № 2300-1)
+										Расчет возврата при досрочном расторжении
 									</h4>
 									<p className="text-[var(--muted,#64748b)] mt-1">
 										Потребитель вправе отказаться от договора в любое время при условии оплаты фактически понесенных расходов клиники (ст. 709 ГК РФ). Работы по подписанным Актам признаны и возврату не подлежат.
@@ -1175,7 +1175,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 							<div className="flex-1 w-full rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,#ffffff)] p-5 flex flex-col gap-4">
 								<h3 className="font-bold text-base text-[var(--ink,#0f172a)] flex items-center gap-2">
 									<QrCode className="h-5 w-5 text-[var(--teal,var(--brand-primary))]" />
-									Параметры фискализации по 54-ФЗ
+									Параметры кассового чека
 								</h3>
 
 								<div>
@@ -1197,7 +1197,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 
 								<div>
 									<label className="text-xs font-semibold text-[var(--muted,#64748b)] block mb-1.5">
-										Признак способа расчета (Тег 1214):
+										Признак способа расчета:
 									</label>
 									<div className="grid grid-cols-3 gap-2">
 										<button
@@ -1309,7 +1309,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 
 										{/* QR Payload visualization */}
 										<div className="mt-3 text-center p-3 border border-slate-300 dark:border-slate-700 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-mono break-all">
-											[QR-КОД ФНС 54-ФЗ]<br />
+											[QR-КОД ФНС]<br />
 											{activeFiscalReceipt.qrPayload}
 										</div>
 									</div>

@@ -40,7 +40,7 @@ export interface TreatmentPlanItem {
 	readonly unitPriceRub: number;
 	readonly discountRub: number;
 	readonly quantity: number;
-	readonly phase: number; // 1, 2, 3
+	readonly phase?: number | undefined; // 1, 2, 3
 	readonly stageKind: TreatmentPlanStageKind;
 	readonly isAuto?: boolean | undefined;
 	readonly priceId?: string | null | undefined;

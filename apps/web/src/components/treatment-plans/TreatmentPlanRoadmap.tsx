@@ -567,11 +567,11 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 					<button
 						type="button"
 						onClick={onRequestTaxCertificate}
-						className="min-h-[44px] px-4 rounded-xl bg-[var(--paper-strong,#0f172a)] border border-sky-500/30 text-sky-600 dark:text-sky-300 hover:text-sky-700 dark:hover:text-white hover:bg-sky-500/20 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+						className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-xl bg-[var(--paper-strong,#0f172a)] border border-sky-500/30 text-sky-600 dark:text-sky-300 hover:text-sky-700 dark:hover:white hover:bg-sky-500/20 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
 						data-testid="request-tax-cert-btn"
 					>
-						<FileBadge className="w-4 h-4" />
-						<span>Справка для ФНС (КНД 1151156)</span>
+						<FileBadge className="w-3.5 h-3.5" />
+						<span>Справка для ФНС</span>
 					</button>
 				</div>
 			</div>
@@ -628,7 +628,7 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 									<button
 										type="button"
 										onClick={() => toggleStage(stage.stageNumber)}
-										className="p-2 min-h-[44px] min-w-[44px] rounded-lg hover:bg-[var(--paper-soft,#1e293b)] text-[var(--muted,var(--ink-muted))] hover:text-[var(--ink)] cursor-pointer inline-flex items-center justify-center transition-colors"
+										className="p-1.5 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] text-[var(--muted,var(--ink-muted))] hover:text-[var(--ink)] cursor-pointer inline-flex items-center justify-center transition-colors"
 										aria-label={isExpanded ? "Свернуть" : "Развернуть"}
 										data-testid={`toggle-stage-btn-${stage.stageNumber}`}
 									>
@@ -751,6 +751,19 @@ export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
 											onBookStage?.(stage);
 											onSelectStage?.(stage);
 											onBookStageSlot?.(stage.stageNumber, stage);
+											if (typeof window !== "undefined") {
+												window.dispatchEvent(
+													new CustomEvent("dente-book-stage-appointment", {
+														detail: {
+															stageNumber: stage.stageNumber,
+															stageTitle: stage.titleRu,
+															timelineRu: stage.timelineRu,
+															patientFullName,
+															procedures: stage.procedures,
+														},
+													}),
+												);
+											}
 										}}
 										className="roadmap-book-stage-btn"
 										data-testid={`book-stage-btn-${stage.stageNumber}`}

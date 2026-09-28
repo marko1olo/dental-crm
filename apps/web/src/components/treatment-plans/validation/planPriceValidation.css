@@ -533,7 +533,8 @@
 	}
 	.price-validator-modal {
 		height: 100vh;
-		max-width: 100vw;
+		width: 100%;
+		max-width: 100%;
 		border-radius: 0;
 		border: none;
 	}

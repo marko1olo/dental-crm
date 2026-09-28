@@ -485,7 +485,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                 {(grandTotalRub || 0).toLocaleString('ru-RU')} ₽
               </span>
               <span className="text-xs text-[var(--muted)] font-semibold hidden md:inline">
-                (Приказ 804н / СтАР)
+                (Клинические протоколы СтАР)
               </span>
             </div>
           </div>

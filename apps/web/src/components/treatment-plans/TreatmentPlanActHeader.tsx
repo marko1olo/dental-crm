@@ -13,7 +13,7 @@ export interface TreatmentPlanActHeaderProps {
 	readonly palette: DocumentBrandColorPalette;
 	readonly headerStyle: "modern_split" | "classic_centered" | "minimal_clean";
 	readonly showClinicLogo: boolean;
-	readonly logoUrl?: string;
+	readonly logoUrl?: string | null | undefined;
 	readonly showClinicRequisites: boolean;
 	readonly clinicName: string;
 	readonly slogan?: string;

@@ -447,8 +447,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 									? "bg-teal-600 text-white shadow-xs font-black"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
+							aria-label="3 Варианта (Приказ 804н)"
 						>
-							3 Варианта (Приказ 804н)
+							3 Варианта плана
 						</button>
 						<button
 							type="button"

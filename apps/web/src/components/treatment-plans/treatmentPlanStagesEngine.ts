@@ -61,35 +61,36 @@ export interface MatchCatalogServiceResult {
 
 /**
  * Глобальный переключатель демонстрационного режима для презентаций / пресетов.
+ * Синхронизирован со сквозным модулем demoMode.ts (Мандат 8y).
  */
-let _demoShowcaseOverride: boolean | null = null;
+import {
+	isDemoShowcaseMode as isCentralDemoShowcaseMode,
+	setRuntimeDemoMode as setCentralDemoShowcaseMode,
+} from "../../lib/demoMode";
 
 export function setDemoShowcaseMode(enabled: boolean | null): void {
-	_demoShowcaseOverride = enabled;
+	setCentralDemoShowcaseMode(enabled);
 }
 
 export function isDemoShowcaseMode(explicitOverride?: boolean): boolean {
-	if (typeof explicitOverride === "boolean") return explicitOverride;
-	if (typeof _demoShowcaseOverride === "boolean") return _demoShowcaseOverride;
-
-	if (typeof process !== "undefined" && process.env) {
-		if (process.env.IS_DEMO_SHOWCASE === "true" || process.env.VITE_DEMO_SHOWCASE === "true") {
-			return true;
-		}
-	}
-	if (typeof import.meta !== "undefined" && (import.meta as unknown as { env?: Record<string, string> }).env) {
-		const env = (import.meta as unknown as { env: Record<string, string> }).env;
-		if (
-			env.IS_DEMO_SHOWCASE === "true" ||
-			env.VITE_DEMO_SHOWCASE === "true" ||
-			env.VITE_DEMO_MODE === "true" ||
-			env.MODE === "demo"
-		) {
-			return true;
-		}
-	}
-	return false;
+	return isCentralDemoShowcaseMode(explicitOverride);
 }
+
+/**
+ * Образцовая клиническая одонтограмма для демонстрационного режима (Showcase):
+ * - 16: Кариес жевательной поверхности
+ * - 36: Отсутствующий зуб (показана дентальная имплантация)
+ * - 46: Пульпит (эндодонтия 3 каналов)
+ * - 11: Разрушение коронковой части (показана ортопедическая коронка)
+ * - 24: Кариес контактной поверхности
+ */
+export const DEMO_SHOWCASE_TEETH: readonly ToothData[] = [
+	{ toothNumber: 16, state: "Caries", notes: "Глубокий кариес жевательной поверхности" },
+	{ toothNumber: 36, state: "Missing", notes: "Отсутствует зуб, показана дентальная имплантация" },
+	{ toothNumber: 46, state: "Pulpitis", notes: "Острый очаговый пульпит, эндодонтическое лечение" },
+	{ toothNumber: 11, state: "Crown", notes: "Разрушение коронковой части, показана ортопедия" },
+	{ toothNumber: 24, state: "Caries", notes: "Кариес контактной поверхности" },
+];
 
 /**
  * Проверка принадлежности зуба к временному (молочному) прикусу по стандарту FDI ISO 3950.
@@ -1081,8 +1082,13 @@ export function generateTreatmentPlanStages(
 	const validDiscountPct = Math.max(0, Math.min(100, discountPercent));
 	const isDemo = isDemoShowcaseMode(options?.isDemoMode);
 
+	const effectiveTeeth =
+		isDemo && (!teeth || teeth.length === 0 || !teeth.some((t) => (t.state && t.state !== "Healthy" && t.state !== "Filled") || Boolean(t.boneLossLevel && t.boneLossLevel > 0)))
+			? DEMO_SHOWCASE_TEETH
+			: teeth;
+
 	// Проверка наличия каких-либо патологий: если все зубы Healthy или Filled -> возвращаем пустые этапы!
-	const hasPathology = teeth.some((t) => {
+	const hasPathology = effectiveTeeth.some((t) => {
 		const s = t.state || "Healthy";
 		return (
 			(s !== "Healthy" && s !== "Filled") ||
@@ -1108,7 +1114,7 @@ export function generateTreatmentPlanStages(
 	let hasImplants = false;
 
 	// 1. Предварительный пародонтологический скрининг
-	for (const tooth of teeth) {
+	for (const tooth of effectiveTeeth) {
 		const hasBoneLoss = Boolean(tooth.boneLossLevel && tooth.boneLossLevel > 0);
 		const hasMobility = Boolean(tooth.mobility && tooth.mobility > 0);
 		const hasFurcation = Boolean(tooth.furcationGrade && tooth.furcationGrade > 0);
@@ -1201,7 +1207,7 @@ export function generateTreatmentPlanStages(
 	const missingUpper: number[] = [];
 	const missingLower: number[] = [];
 
-	for (const tooth of teeth) {
+	for (const tooth of effectiveTeeth) {
 		const num = tooth.toothNumber;
 		const state: ToothState | string = tooth.state || "Healthy";
 		const isDeciduous = isDeciduousTooth(num);
@@ -1640,7 +1646,7 @@ export function generateTreatmentPlanStages(
 					hasImplants = true;
 					handledTeeth.add(missingT);
 
-					const toothObj = teeth.find((t) => t.toothNumber === missingT);
+					const toothObj = effectiveTeeth.find((t) => t.toothNumber === missingT);
 					if (toothObj?.boneLossLevel && toothObj.boneLossLevel >= 2) {
 						const defBone = ORDER_804N_DICTIONARY.BoneGraftingSinusLift!;
 						stage2Items.push(
@@ -1830,12 +1836,18 @@ export function generateTierPlanStages(
 	const isDemo = isDemoShowcaseMode(options?.isDemoMode);
 	const validDiscountPct = Math.max(0, Math.min(100, discountPercent));
 
+
+	const effectiveTeeth =
+		isDemo && (!teeth || teeth.length === 0 || !teeth.some((t) => (t.state && t.state !== "Healthy" && t.state !== "Filled") || Boolean(t.boneLossLevel && t.boneLossLevel > 0)))
+			? DEMO_SHOWCASE_TEETH
+			: teeth;
+
 	// Для тарифа Стандарт используем базовый генератор
 	if (tierId === "standard") {
-		return generateTreatmentPlanStages(teeth, catalog, discountPercent, { isDemoMode: isDemo });
+		return generateTreatmentPlanStages(effectiveTeeth, catalog, discountPercent, { isDemoMode: isDemo });
 	}
 
-	const hasPathology = teeth.some((t) => {
+	const hasPathology = effectiveTeeth.some((t) => {
 		const s = t.state || "Healthy";
 		return (
 			(s !== "Healthy" && s !== "Filled") ||
@@ -1888,7 +1900,7 @@ export function generateTierPlanStages(
 	const missingUpper: number[] = [];
 	const missingLower: number[] = [];
 
-	for (const tooth of teeth) {
+	for (const tooth of effectiveTeeth) {
 		const num = tooth.toothNumber;
 		const state: ToothState | string = tooth.state || "Healthy";
 		const isDeciduous = isDeciduousTooth(num);
@@ -2563,12 +2575,8 @@ export function generate3TierPlanComparison(
 	patientBonusBalanceRub: number = 0,
 	options?: { isDemoMode?: boolean },
 ): [TreatmentPlanTier, TreatmentPlanTier, TreatmentPlanTier] {
-	const isDemo = options?.isDemoMode !== undefined ? options.isDemoMode : (isDemoShowcaseMode() || !catalog || catalog.length === 0);
+	const isDemo = options?.isDemoMode !== undefined ? options.isDemoMode : isDemoShowcaseMode();
 	const validLoyaltyPct = Math.max(0, Math.min(100, patientLoyaltyDiscountPercent));
-
-	const economyStages = generateTierPlanStages("economy", teeth, catalog, validLoyaltyPct, { isDemoMode: isDemo });
-	const standardStages = generateTierPlanStages("standard", teeth, catalog, validLoyaltyPct, { isDemoMode: isDemo });
-	const optimumStages = generateTierPlanStages("optimum", teeth, catalog, validLoyaltyPct, { isDemoMode: isDemo });
 
 	function makeTier(
 		tierId: TreatmentPlanTierId,
@@ -2627,6 +2635,16 @@ export function generate3TierPlanComparison(
 			stagedSchedule,
 		};
 	}
+
+
+	const effectiveTeeth =
+		isDemo && (!teeth || teeth.length === 0 || !teeth.some((t) => (t.state && t.state !== "Healthy" && t.state !== "Filled") || Boolean(t.boneLossLevel && t.boneLossLevel > 0)))
+			? DEMO_SHOWCASE_TEETH
+			: teeth;
+
+	const economyStages = generateTierPlanStages("economy", effectiveTeeth, catalog, validLoyaltyPct, { isDemoMode: isDemo });
+	const standardStages = generateTierPlanStages("standard", effectiveTeeth, catalog, validLoyaltyPct, { isDemoMode: isDemo });
+	const optimumStages = generateTierPlanStages("optimum", effectiveTeeth, catalog, validLoyaltyPct, { isDemoMode: isDemo });
 
 	const economyTier = makeTier(
 		"economy",

@@ -361,12 +361,13 @@
 }
 
 .roadmap-book-stage-btn {
-	min-height: 44px;
-	padding: 0.5rem 1.25rem;
-	border-radius: 0.75rem;
+	height: 32px;
+	min-height: 32px;
+	padding: 0.375rem 1rem;
+	border-radius: 0.5rem;
 	background: var(--teal);
 	color: var(--paper-strong);
-	font-size: 0.875rem;
+	font-size: 0.75rem;
 	font-weight: 600;
 	border: none;
 	cursor: pointer;
@@ -378,6 +379,16 @@
 	touch-action: manipulation;
 }
 
+@media (pointer: coarse), (max-width: 640px) {
+	.roadmap-book-stage-btn {
+		min-height: 44px;
+		height: auto;
+		padding: 0.625rem 1rem;
+		font-size: 0.875rem;
+		border-radius: 0.75rem;
+	}
+}
+
 .roadmap-book-stage-btn:hover {
 	background: var(--teal-dark);
 	opacity: 0.95;
@@ -386,3 +397,4 @@
 .roadmap-book-stage-btn:active {
 	transform: scale(0.98);
 }
+

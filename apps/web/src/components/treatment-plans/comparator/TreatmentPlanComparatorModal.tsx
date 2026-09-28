@@ -205,6 +205,29 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 
 				{/* Scrollable Body */}
 				<div className="plan-comparator-body">
+					{/* iOS-style Segmented Control for Mobile/Tablet (<= 960px) to eliminate 2500px vertical scroll */}
+					<div
+						className="plan-comparator-segmented-control"
+						data-testid="comparator-segmented-control"
+					>
+						{(["optimum_vip", "standard_recommended", "economy_basic"] as PlanTierCode[]).map((tierKey) => {
+							const v = variants[tierKey];
+							const isSelected = selectedTier === tierKey;
+							return (
+								<button
+									key={tierKey}
+									type="button"
+									className={`plan-segmented-tab ${isSelected ? "active" : ""}`}
+									onClick={() => handleSelectPlan(tierKey)}
+									data-testid={`comparator-tab-${tierKey}`}
+								>
+									<span className="plan-segmented-tab-title">{v.title.split("(")[0]?.trim()}</span>
+									<span className="plan-segmented-tab-price">{v.totalCostRub.toLocaleString("ru-RU")} ₽</span>
+								</button>
+							);
+						})}
+					</div>
+
 					{/* 3-Column Plan Cards Grid */}
 					<div className="plan-cards-grid">
 						{(["optimum_vip", "standard_recommended", "economy_basic"] as PlanTierCode[]).map((tierKey) => {

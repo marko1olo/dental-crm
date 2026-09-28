@@ -390,7 +390,7 @@ describe("treatmentPlanBundlesEngine — экспорт в кассу 54-ФЗ и
 			assert.equal(it.category, "surgery");
 			assert.equal(it.toothNumber, 38);
 			assert.ok(it.priceRub > 0);
-			assert.ok(it.code804n.startsWith("A"));
+			assert.ok(it.code804n?.startsWith("A"));
 		}
 	});
 
@@ -409,6 +409,6 @@ describe("treatmentPlanBundlesEngine — экспорт в кассу 54-ФЗ и
 		assert.equal(invoice.netTotalRub, 6750);
 		assert.equal(invoice.netTotalKopecks, parseKopecks(6750));
 		assert.ok(invoice.items.length === 4);
-		assert.ok(invoice.invoiceNumber.startsWith("ПАКЕТ-"));
+		assert.ok(invoice.invoiceNumber?.startsWith("ПАКЕТ-"));
 	});
 });

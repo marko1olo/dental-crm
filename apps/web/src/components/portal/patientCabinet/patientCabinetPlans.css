@@ -1,0 +1,695 @@
+/* Documents & Tax Deduction Section Styles */
+.pc-tax-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.pc-tax-main-title {
+	margin: 0 0 4px 0;
+	font-size: 1.0625rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+}
+
+.pc-tax-subtitle {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--pc-text-muted);
+}
+
+.pc-tax-year-selector {
+	display: flex;
+	gap: 6px;
+}
+
+.pc-year-btn {
+	padding: 6px 14px;
+	min-height: 34px;
+	border-radius: 8px;
+	background: var(--pc-surface);
+	color: var(--pc-text-muted);
+	border: 1px solid var(--pc-border);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-year-btn.active {
+	background: var(--pc-primary);
+	color: #ffffff;
+	border-color: var(--pc-primary);
+}
+
+.pc-tax-banner-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	border-radius: var(--pc-radius-md);
+	background: linear-gradient(135deg, var(--pc-primary), var(--pc-primary-hover));
+	color: #ffffff;
+	font-size: 0.875rem;
+	font-weight: 700;
+	margin-bottom: 16px;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+}
+
+/* Treatment Plan 3-Tier Model Tab Buttons */
+.pc-three-tier-section {
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.pc-tier-tabs-row {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pc-tier-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 8px 16px;
+	min-height: 40px;
+	border-radius: var(--pc-radius-sm);
+	background: var(--pc-bg);
+	color: var(--pc-text-main);
+	border: 1.5px solid var(--pc-border);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+	flex: 1;
+	min-width: 140px;
+}
+
+.pc-tier-tab-btn:hover {
+	border-color: var(--pc-primary);
+}
+
+.pc-tier-tab-btn.active {
+	background: var(--pc-primary-light);
+	border-color: var(--pc-primary);
+	color: var(--pc-primary);
+}
+
+.pc-tier-name {
+	font-weight: 700;
+}
+
+.pc-tier-price {
+	font-weight: 800;
+	color: var(--pc-text-main);
+}
+
+.pc-tier-tab-btn.active .pc-tier-price {
+	color: var(--pc-primary);
+}
+
+.pc-tier-details-box {
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm);
+	padding: 10px 14px;
+}
+
+.pc-tier-summary {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--pc-text-muted);
+	line-height: 1.4;
+}
+
+/* Treatment Plan SVG Progress Ring */
+.pc-plan-hero-grid {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	flex-wrap: wrap;
+}
+
+.pc-ring-diagram-wrapper {
+	position: relative;
+	width: 130px;
+	height: 130px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.pc-ring-center-content {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	pointer-events: none;
+}
+
+.pc-ring-percent {
+	font-size: 1.625rem;
+	font-weight: 900;
+	color: var(--pc-text-main);
+	line-height: 1;
+}
+
+.pc-ring-subtext {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--pc-text-muted);
+	margin-top: 2px;
+}
+
+/* Treatment Plan Hero Text & Financials */
+.pc-plan-hero-text {
+	flex: 1;
+	min-width: 240px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pc-plan-header-line {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.pc-plan-title {
+	margin: 0;
+	font-size: 1.125rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	line-height: 1.3;
+}
+
+.pc-plan-curator {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--pc-text-muted);
+}
+
+.pc-plan-financials-box {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	background: var(--pc-surface);
+	padding: 8px 12px;
+	border-radius: var(--pc-radius-sm);
+	border: 1px solid var(--pc-border);
+}
+
+.pc-fin-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.8125rem;
+}
+
+.pc-fin-label {
+	color: var(--pc-text-muted);
+	font-weight: 500;
+}
+
+.pc-fin-val {
+	font-weight: 800;
+	color: var(--pc-text-main);
+}
+
+.pc-fin-val.total {
+	color: var(--pc-text-main);
+}
+
+.pc-fin-val.paid {
+	color: var(--pc-success);
+}
+
+.pc-fin-val.remaining {
+	color: var(--pc-warning);
+}
+
+.pc-plan-stages-badge {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	font-weight: 600;
+}
+
+/* All-Inclusive Banner (Mandate 8e) */
+.pc-all-inclusive-banner {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	padding: 14px 16px;
+	background: var(--pc-surface);
+	border: 1.5px solid var(--pc-primary);
+	border-radius: var(--pc-radius-md);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.06);
+	box-sizing: border-box;
+}
+
+.pc-ai-icon {
+	color: var(--pc-primary);
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.pc-ai-text {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.pc-ai-title {
+	font-size: 0.9375rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+}
+
+.pc-ai-desc {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--pc-text-muted);
+	line-height: 1.45;
+}
+
+/* 3-Tier Comparison Header */
+.pc-tier-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-bottom: 12px;
+}
+
+.pc-tier-label {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--pc-text-muted);
+}
+
+.pc-tier-current-badge {
+	font-size: 0.8125rem;
+	color: var(--pc-primary);
+	background: var(--pc-primary-light);
+	padding: 4px 10px;
+	border-radius: 20px;
+	font-weight: 600;
+}
+
+/* Stages List & Cards */
+.pc-stages-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.pc-section-header-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.pc-section-title {
+	margin: 0;
+	font-size: 1.0625rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pc-section-hint {
+	font-size: 0.8125rem;
+	color: var(--pc-text-muted);
+}
+
+.pc-stages-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.pc-stage-card {
+	background: var(--pc-surface);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	overflow: hidden;
+	transition: all 0.15s ease;
+}
+
+.pc-stage-card.completed {
+	border-left: 5px solid var(--pc-success);
+}
+
+.pc-stage-card.in-progress {
+	border-left: 5px solid var(--pc-primary);
+}
+
+.pc-stage-card.pending {
+	border-left: 5px solid var(--pc-border);
+}
+
+.pc-stage-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 16px;
+	cursor: pointer;
+	user-select: none;
+	transition: background 0.15s ease;
+}
+
+.pc-stage-header:hover {
+	background: var(--pc-surface-hover, rgba(0, 0, 0, 0.02));
+}
+
+.pc-stage-badge-number {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: var(--pc-surface-muted, rgba(13, 148, 136, 0.1));
+	color: var(--pc-primary);
+	font-weight: 700;
+	font-size: 0.875rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.pc-stage-title-col {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.pc-stage-title-line {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pc-stage-title {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--pc-text-main);
+}
+
+.pc-stage-meta-line {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.pc-stage-price-col {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.pc-stage-cost {
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	white-space: nowrap;
+}
+
+.pc-stage-chevron-btn {
+	background: transparent;
+	border: none;
+	padding: 4px;
+	color: var(--pc-text-muted);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.pc-stage-body {
+	padding: 12px 16px 16px 16px;
+	border-top: 1px solid var(--pc-border);
+	background: var(--pc-bg);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.pc-stage-included-pill {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	padding: 6px 12px;
+	border-radius: var(--pc-radius-sm);
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.pc-stage-procedures-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.pc-proc-list-header {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--pc-text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.pc-proc-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.8125rem;
+	color: var(--pc-text-main);
+}
+
+.pc-stage-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	padding-top: 8px;
+}
+
+/* Invoices Toolbar & Friendly Blocks */
+.pc-invoices-toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-bottom: 14px;
+}
+
+.pc-view-mode-wrapper {
+	display: flex;
+	align-items: center;
+}
+
+.pc-mode-toggle-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	padding: 6px 12px;
+	border-radius: var(--pc-radius-sm);
+	cursor: pointer;
+}
+
+.pc-friendly-breakdown-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 10px 0;
+}
+
+.pc-friendly-group-card {
+	background: transparent;
+	border: none;
+	border-top: 1px solid var(--pc-border);
+	border-radius: 0;
+	padding: 12px 2px 4px 2px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.pc-friendly-group-card:first-child {
+	border-top: none;
+	padding-top: 4px;
+}
+
+.pc-friendly-group-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 12px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--pc-border);
+}
+
+.pc-group-icon-title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.pc-group-icon-box {
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.pc-group-name {
+	font-size: 0.9375rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	display: block;
+}
+
+.pc-group-desc {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	margin-top: 2px;
+}
+
+.pc-group-subtotal {
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	white-space: nowrap;
+}
+
+.pc-group-items-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pc-friendly-item-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 6px 0;
+	border-bottom: 1px dashed var(--pc-border);
+}
+
+.pc-friendly-item-row:last-child {
+	border-bottom: none;
+}
+
+.pc-friendly-item-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	flex: 1;
+	min-width: 0;
+}
+
+.pc-friendly-item-name {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--pc-text-main);
+}
+
+.pc-friendly-item-desc {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	line-height: 1.35;
+}
+
+.pc-friendly-item-cost {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--pc-text-main);
+	white-space: nowrap;
+	text-align: right;
+}
+
+.pc-unpaid-actions-row,
+.pc-paid-actions-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	width: 100%;
+}
+
+.pc-sbp-pay-btn {
+	width: 100%;
+	justify-content: center;
+	padding: 10px 16px;
+	font-size: 0.9375rem;
+	font-weight: 700;
+}
+
+.pc-receipt-download-btn,
+.pc-receipt-print-btn,
+.pc-fns-link-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	padding: 7px 12px;
+}
+
+.pc-fiscal-badge {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--pc-success);
+	background: var(--pc-success-light);
+	border: 1px solid var(--pc-success);
+	padding: 4px 10px;
+	border-radius: 12px;
+	margin-right: auto;
+}
+
+
+
