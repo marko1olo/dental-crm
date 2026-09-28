@@ -34,6 +34,13 @@ export interface Lead {
 	notes?: string | null;
 	expectedRevenue?: string;
 	createdAt?: string | Date | null;
+	stageEnteredAt?: string | Date | null;
+	lastContactedAt?: string | Date | null;
+	priority?: "urgent" | "high" | "normal";
+	clinicalTags?: string[];
+	audioRecordUrl?: string | null;
+	transcriptionSnippet?: string | null;
+	audioDurationSeconds?: number;
 }
 
 export interface ConvertLeadToAppointmentPayload {

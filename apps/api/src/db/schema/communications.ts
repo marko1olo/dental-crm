@@ -202,6 +202,9 @@ export const denteTelegramBotConfigs = pgTable(
 			denteTelegramBotConfigUnique: unique(
 				"dente_telegram_bot_configs_org_clinic_config_unique",
 			).on(table.organizationId, table.clinicId, table.botConfigId),
+			organizationIdIdx: index(
+				"dente_telegram_bot_configs_organization_id_idx",
+			).on(table.organizationId),
 		};
 	},
 );
@@ -232,6 +235,9 @@ export const denteTelegramLinkCodes = pgTable(
 			denteTelegramLinkCodeFingerprintUnique: unique(
 				"dente_telegram_link_codes_org_config_fingerprint_unique",
 			).on(table.organizationId, table.botConfigId, table.codeFingerprint),
+			organizationIdIdx: index(
+				"dente_telegram_link_codes_organization_id_idx",
+			).on(table.organizationId),
 			clinicIdIdx: index("dente_telegram_link_codes_clinicId_idx").on(
 				table.clinicId,
 			),
@@ -270,6 +276,9 @@ export const denteTelegramChatLinks = pgTable(
 			denteTelegramChatFingerprintUnique: unique(
 				"dente_telegram_chat_links_org_config_chat_unique",
 			).on(table.organizationId, table.botConfigId, table.chatFingerprint),
+			organizationIdIdx: index(
+				"dente_telegram_chat_links_organization_id_idx",
+			).on(table.organizationId),
 			clinicIdIdx: index("dente_telegram_chat_links_clinicId_idx").on(
 				table.clinicId,
 			),
@@ -302,6 +311,9 @@ export const denteTelegramWebhookEvents = pgTable(
 			denteTelegramWebhookUpdateUnique: unique(
 				"dente_telegram_webhook_events_org_config_update_unique",
 			).on(table.organizationId, table.botConfigId, table.updateId),
+			organizationIdIdx: index(
+				"dente_telegram_webhook_events_organization_id_idx",
+			).on(table.organizationId),
 			clinicIdIdx: index("dente_telegram_webhook_events_clinicId_idx").on(
 				table.clinicId,
 			),
@@ -341,6 +353,9 @@ export const denteTelegramOutboxDeliveryReceipts = pgTable(
 				table.outboxItemId,
 				table.clientMutationId,
 			),
+			organizationIdIdx: index(
+				"dente_telegram_outbox_delivery_receipts_organization_id_idx",
+			).on(table.organizationId),
 			clinicIdIdx: index(
 				"dente_telegram_outbox_delivery_receipts_clinicId_idx",
 			).on(table.clinicId),
@@ -487,6 +502,16 @@ export const crmLeads = pgTable(
 		 * `z.string()`, и строковый тип drizzle совпадает с его контрактом.
 		 */
 		expectedRevenue: numeric("expected_revenue", { precision: 12, scale: 2 }),
+		stageEnteredAt: timestamp("stage_entered_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		lastContactedAt: timestamp("last_contacted_at", { withTimezone: true }),
+		priority: text("priority").notNull().default("normal"),
+		clinicalTags: jsonb("clinical_tags")
+			.$type<string[]>()
+			.default(sql`'[]'::jsonb`),
+		audioRecordUrl: text("audio_record_url"),
+		transcriptionSnippet: text("transcription_snippet"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -494,6 +519,40 @@ export const crmLeads = pgTable(
 	(t) => ({
 		organizationIdIdx: index("crm_leads_organizationId_idx").on(
 			t.organizationId,
+		),
+		statusIdx: index("crm_leads_status_idx").on(t.status),
+		stageEnteredAtIdx: index("crm_leads_stage_entered_at_idx").on(
+			t.stageEnteredAt,
+		),
+	}),
+);
+
+// CRM lead stage transition audit history
+export const crmLeadStageHistory = pgTable(
+	"crm_lead_stage_history",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		leadId: uuid("lead_id")
+			.notNull()
+			.references(() => crmLeads.id, { onDelete: "cascade" }),
+		fromStage: text("from_stage"),
+		toStage: text("to_stage").notNull(),
+		changedByUserId: uuid("changed_by_user_id").references(() => users.id),
+		durationSeconds: integer("duration_seconds"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("crm_lead_stage_history_organization_id_idx").on(
+			t.organizationId,
+		),
+		leadIdIdx: index("crm_lead_stage_history_lead_id_idx").on(t.leadId),
+		createdAtIdx: index("crm_lead_stage_history_created_at_idx").on(
+			t.createdAt,
 		),
 	}),
 );
@@ -810,24 +869,39 @@ export const denteWhatsappBotConfigs = pgTable(
  * контроль самочувствия после приёма не работали вообще. Поломку не было видно,
  * потому что tsconfig исключал src/services из проверки типов.
  */
-export const outgoingNotifications = pgTable("outgoing_notifications", {
-	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id").notNull(),
-	patientId: uuid("patient_id").notNull(),
-	type: text("type").notNull(),
-	payload: jsonb("payload").notNull(),
-	status: text("status").notNull().default("pending"),
-	scheduledAt: timestamp("scheduled_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	sentAt: timestamp("sent_at", { withTimezone: true }),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-});
+export const outgoingNotifications = pgTable(
+	"outgoing_notifications",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id").notNull(),
+		patientId: uuid("patient_id").notNull(),
+		type: text("type").notNull(),
+		payload: jsonb("payload").notNull(),
+		status: text("status").notNull().default("pending"),
+		scheduledAt: timestamp("scheduled_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		sentAt: timestamp("sent_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => ({
+		organizationIdIdx: index("outgoing_notifications_organization_id_idx").on(
+			table.organizationId,
+		),
+		patientIdIdx: index("outgoing_notifications_patient_id_idx").on(
+			table.patientId,
+		),
+		statusIdx: index("outgoing_notifications_status_idx").on(table.status),
+		scheduledAtIdx: index("outgoing_notifications_scheduled_at_idx").on(
+			table.scheduledAt,
+		),
+	}),
+);
 
 export const communicationOutbox = pgTable(
 	"communication_outbox",
@@ -940,6 +1014,12 @@ export const patientCommunicationConsents = pgTable(
 				table.channel,
 				table.scope,
 			),
+			organizationIdIdx: index(
+				"patient_communication_consents_organization_id_idx",
+			).on(table.organizationId),
+			patientIdIdx: index(
+				"patient_communication_consents_patient_id_idx",
+			).on(table.patientId),
 			decidedByUserIdIdx: index(
 				"patient_communication_consents_decidedByUserId_idx",
 			).on(table.decidedByUserId),

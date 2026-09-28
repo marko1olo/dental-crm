@@ -1,6 +1,13 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import {
+	batchUpdateLeadStageSchema,
+	leadPipelineMetricsSchema,
+	leadPriorityEnum,
+	leadStatusEnum,
+	patchLeadStageSchema,
+} from "@dental/shared";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -11,20 +18,15 @@ import {
 	chairs,
 	clinicChairs,
 	crmLeads,
+	crmLeadStageHistory,
 	patients,
 	users,
 } from "../db/schema.js";
+import { getRequestIdentity } from "../security/identity.js";
 import { normalizePatientAdministrativeProfile } from "../utils/patientAdministrativeProfile.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
-export const leadStatusEnum = z.enum([
-	"new",
-	"contacted",
-	"consult_booked",
-	"showed_up",
-	"no_answer",
-	"trash",
-]);
+export { leadStatusEnum };
 
 const leadSchema = z.object({
 	name: z.string().min(1),
@@ -34,6 +36,10 @@ const leadSchema = z.object({
 	expectedRevenue: z.string().optional().nullable(),
 	notes: z.string().optional().nullable(),
 	assignedDoctorId: z.string().uuid().optional().nullable(),
+	priority: leadPriorityEnum.optional(),
+	clinicalTags: z.array(z.string()).optional(),
+	audioRecordUrl: z.string().optional().nullable(),
+	transcriptionSnippet: z.string().optional().nullable(),
 });
 
 const patchLeadSchema = z.object({
@@ -45,6 +51,10 @@ const patchLeadSchema = z.object({
 	status: leadStatusEnum.optional(),
 	notes: z.string().optional().nullable(),
 	assignedDoctorId: z.string().uuid().optional().nullable(),
+	priority: leadPriorityEnum.optional(),
+	clinicalTags: z.array(z.string()).optional(),
+	audioRecordUrl: z.string().optional().nullable(),
+	transcriptionSnippet: z.string().optional().nullable(),
 });
 
 const convertLeadSchema = z.object({
@@ -87,16 +97,434 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 			});
 		}
 		const data = parsed.data;
-		const [lead] = (await db
-			.insert(crmLeads)
-			.values({ ...data, organizationId })
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			.returning()) as any;
+		const identity = getRequestIdentity(req);
+		const changedByUserId =
+			identity?.userId && z.string().uuid().safeParse(identity.userId).success
+				? identity.userId
+				: null;
+		const now = new Date();
+
+		const lead = await db.transaction(async (tx) => {
+			const insertValues: typeof crmLeads.$inferInsert = {
+				organizationId,
+				name: data.name,
+				patientName: data.patientName,
+				phone: data.phone,
+				source: data.source,
+				expectedRevenue: data.expectedRevenue,
+				notes: data.notes,
+				assignedDoctorId: data.assignedDoctorId,
+				priority: data.priority || "normal",
+				clinicalTags: data.clinicalTags ?? [],
+				audioRecordUrl: data.audioRecordUrl,
+				transcriptionSnippet: data.transcriptionSnippet,
+				stageEnteredAt: now,
+				status: "new",
+			};
+			const [created] = await tx
+				.insert(crmLeads)
+				.values(insertValues)
+				.returning();
+
+			if (created) {
+				await tx.insert(crmLeadStageHistory).values({
+					organizationId,
+					leadId: created.id,
+					fromStage: null,
+					toStage: created.status || "new",
+					changedByUserId,
+					durationSeconds: 0,
+					createdAt: now,
+				});
+			}
+
+			return created;
+		});
+
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "LEAD_CREATED",
 			payload: lead,
 		});
 		return lead;
+	});
+
+	app.get("/api/leads/pipeline-metrics", async (req, reply) => {
+		const organizationId = await requireResolvedOrganizationId(
+			req,
+			reply,
+			"leads pipeline metrics read",
+		);
+		if (!organizationId) return;
+
+		const leads = await db
+			.select()
+			.from(crmLeads)
+			.where(eq(crmLeads.organizationId, organizationId));
+
+		const totalLeads = leads.length;
+		const stageCounts: Record<string, number> = {
+			new: 0,
+			contacted: 0,
+			consult_booked: 0,
+			showed_up: 0,
+			no_answer: 0,
+			trash: 0,
+		};
+
+		let slaBreachedCount = 0;
+		let urgentCount = 0;
+		let pipelineExpectedRevenueRub = 0;
+		const now = new Date();
+
+		for (const lead of leads) {
+			const st = (lead.status || "new") as string;
+			stageCounts[st] = (stageCounts[st] || 0) + 1;
+
+			if (lead.priority === "urgent") {
+				urgentCount++;
+			}
+
+			if (st === "new" || st === "contacted") {
+				const enteredAt = lead.stageEnteredAt || lead.createdAt;
+				const elapsedMin = Math.floor(
+					(now.getTime() - enteredAt.getTime()) / (60 * 1000),
+				);
+				if (elapsedMin >= 60) {
+					slaBreachedCount++;
+				}
+			}
+
+			if (lead.expectedRevenue) {
+				const val = Number.parseFloat(lead.expectedRevenue);
+				if (!Number.isNaN(val) && val > 0) {
+					pipelineExpectedRevenueRub += val;
+				}
+			}
+		}
+
+		// Stage duration averages from audit history and active leads
+		const historyRecords = await db
+			.select({
+				fromStage: crmLeadStageHistory.fromStage,
+				durationSeconds: crmLeadStageHistory.durationSeconds,
+			})
+			.from(crmLeadStageHistory)
+			.where(eq(crmLeadStageHistory.organizationId, organizationId));
+
+		const stageDurations: Record<string, number[]> = {
+			new: [],
+			contacted: [],
+			consult_booked: [],
+			showed_up: [],
+			no_answer: [],
+			trash: [],
+		};
+
+		for (const h of historyRecords) {
+			if (
+				h.fromStage &&
+				typeof h.durationSeconds === "number" &&
+				h.durationSeconds >= 0
+			) {
+				const arr = stageDurations[h.fromStage] ?? (stageDurations[h.fromStage] = []);
+				arr.push(h.durationSeconds);
+			}
+		}
+
+		for (const lead of leads) {
+			const st = lead.status || "new";
+			const entered = lead.stageEnteredAt || lead.createdAt;
+			const elapsedSec = Math.max(
+				0,
+				Math.floor((now.getTime() - entered.getTime()) / 1000),
+			);
+			const arr = stageDurations[st] ?? (stageDurations[st] = []);
+			arr.push(elapsedSec);
+		}
+
+		const averageDurationSecondsByStage: Record<string, number> = {};
+		for (const [st, arr] of Object.entries(stageDurations)) {
+			if (arr.length > 0) {
+				const sum = arr.reduce((acc, v) => acc + v, 0);
+				averageDurationSecondsByStage[st] = Math.round(sum / arr.length);
+			} else {
+				averageDurationSecondsByStage[st] = 0;
+			}
+		}
+
+		const countContacted = stageCounts.contacted || 0;
+		const countBooked = stageCounts.consult_booked || 0;
+		const countShowed = stageCounts.showed_up || 0;
+
+		const reachedContactedOrBeyond = countContacted + countBooked + countShowed;
+		const reachedBookedOrBeyond = countBooked + countShowed;
+		const reachedShowedOrBeyond = countShowed;
+		const basePool = Math.max(1, totalLeads);
+
+		const stageConversionRates: Record<string, number> = {
+			new_to_contacted:
+				totalLeads > 0
+					? Math.round((reachedContactedOrBeyond / basePool) * 1000) / 10
+					: 0,
+			contacted_to_consult_booked:
+				reachedContactedOrBeyond > 0
+					? Math.round(
+							(reachedBookedOrBeyond / reachedContactedOrBeyond) * 1000,
+						) / 10
+					: 0,
+			consult_booked_to_showed_up:
+				reachedBookedOrBeyond > 0
+					? Math.round((reachedShowedOrBeyond / reachedBookedOrBeyond) * 1000) /
+						10
+					: 0,
+			overall_conversion:
+				totalLeads > 0
+					? Math.round((reachedShowedOrBeyond / basePool) * 1000) / 10
+					: 0,
+		};
+
+		return {
+			totalLeads,
+			stageCounts,
+			averageDurationSecondsByStage,
+			stageConversionRates,
+			slaBreachedCount,
+			urgentCount,
+			pipelineExpectedRevenueRub:
+				Math.round(pipelineExpectedRevenueRub * 100) / 100,
+		};
+	});
+
+	app.post("/api/leads/batch-stage", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"leads batch stage update",
+		);
+		if (!organizationId) return;
+
+		const parsed = batchUpdateLeadStageSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					parsed.error.issues[0]?.message ||
+					"Проверьте параметры пакетного переноса лидов.",
+			});
+		}
+		const { leadIds, toStage, reason, assignedDoctorId } = parsed.data;
+
+		const identity = getRequestIdentity(req);
+		const changedByUserId =
+			identity?.userId && z.string().uuid().safeParse(identity.userId).success
+				? identity.userId
+				: null;
+		const now = new Date();
+
+		const updatedLeads = await db.transaction(async (tx) => {
+			const leadsToUpdate = await tx
+				.select()
+				.from(crmLeads)
+				.where(
+					and(
+						eq(crmLeads.organizationId, organizationId),
+						inArray(crmLeads.id, leadIds),
+					),
+				)
+				.for("update");
+
+			if (leadsToUpdate.length === 0) {
+				return [];
+			}
+
+			const results: (typeof crmLeads.$inferSelect)[] = [];
+			for (const lead of leadsToUpdate) {
+				const fromStage = lead.status;
+				const stageStart = lead.stageEnteredAt || lead.createdAt;
+				const durationSeconds = Math.max(
+					0,
+					Math.floor((now.getTime() - stageStart.getTime()) / 1000),
+				);
+
+				await tx.insert(crmLeadStageHistory).values({
+					organizationId,
+					leadId: lead.id,
+					fromStage,
+					toStage,
+					changedByUserId,
+					durationSeconds,
+					createdAt: now,
+				});
+
+				const updateFields: Partial<typeof crmLeads.$inferInsert> = {
+					status: toStage,
+					stageEnteredAt: now,
+				};
+				if (assignedDoctorId !== undefined) {
+					updateFields.assignedDoctorId = assignedDoctorId;
+				}
+				if (reason) {
+					updateFields.notes = lead.notes
+						? `${lead.notes}\n[Пакетный перенос]: ${reason}`
+						: `[Пакетный перенос]: ${reason}`;
+				}
+
+				const [updated] = await tx
+					.update(crmLeads)
+					.set(updateFields)
+					.where(
+						and(
+							eq(crmLeads.id, lead.id),
+							eq(crmLeads.organizationId, organizationId),
+						),
+					)
+					.returning();
+
+				if (updated) {
+					results.push(updated);
+				}
+			}
+
+			return results;
+		});
+
+		for (const lead of updatedLeads) {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "LEAD_UPDATED",
+				payload: lead,
+			});
+		}
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "LEADS_BATCH_UPDATED",
+			payload: {
+				toStage,
+				count: updatedLeads.length,
+				leadIds: updatedLeads.map((l) => l.id),
+			},
+		});
+
+		return {
+			success: true,
+			updatedCount: updatedLeads.length,
+			leads: updatedLeads,
+		};
+	});
+
+	app.patch("/api/leads/:id/stage", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"lead stage update",
+		);
+		if (!organizationId) return;
+
+		const { id } = req.params as { id: string };
+		const parsed = patchLeadStageSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					parsed.error.issues[0]?.message || "Проверьте данные смены этапа.",
+			});
+		}
+		const { toStage, notes, priority, clinicalTags, assignedDoctorId } =
+			parsed.data;
+
+		const identity = getRequestIdentity(req);
+		const changedByUserId =
+			identity?.userId && z.string().uuid().safeParse(identity.userId).success
+				? identity.userId
+				: null;
+		const now = new Date();
+
+		const result = await db.transaction(async (tx) => {
+			const [lead] = await tx
+				.select()
+				.from(crmLeads)
+				.where(
+					and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!lead) {
+				return { notFound: true as const };
+			}
+
+			const fromStage = lead.status;
+			const stageStart = lead.stageEnteredAt || lead.createdAt;
+			const durationSeconds = Math.max(
+				0,
+				Math.floor((now.getTime() - stageStart.getTime()) / 1000),
+			);
+
+			await tx.insert(crmLeadStageHistory).values({
+				organizationId,
+				leadId: lead.id,
+				fromStage,
+				toStage,
+				changedByUserId,
+				durationSeconds,
+				createdAt: now,
+			});
+
+			const updateFields: Partial<typeof crmLeads.$inferInsert> = {
+				status: toStage,
+				stageEnteredAt: now,
+			};
+			if (notes !== undefined) updateFields.notes = notes;
+			if (priority !== undefined) updateFields.priority = priority;
+			if (clinicalTags !== undefined) updateFields.clinicalTags = clinicalTags;
+			if (assignedDoctorId !== undefined)
+				updateFields.assignedDoctorId = assignedDoctorId;
+
+			const [updated] = await tx
+				.update(crmLeads)
+				.set(updateFields)
+				.where(
+					and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
+				)
+				.returning();
+
+			return { lead: updated };
+		});
+
+		if ("notFound" in result) {
+			return reply
+				.code(404)
+				.send({ error: "LeadNotFound", message: "Обращение не найдено." });
+		}
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "LEAD_UPDATED",
+			payload: result.lead,
+		});
+
+		return result.lead;
+	});
+
+	app.get("/api/leads/:id/stage-history", async (req, reply) => {
+		const organizationId = await requireResolvedOrganizationId(
+			req,
+			reply,
+			"lead stage history read",
+		);
+		if (!organizationId) return;
+
+		const { id } = req.params as { id: string };
+		const history = await db
+			.select()
+			.from(crmLeadStageHistory)
+			.where(
+				and(
+					eq(crmLeadStageHistory.organizationId, organizationId),
+					eq(crmLeadStageHistory.leadId, id),
+				),
+			)
+			.orderBy(desc(crmLeadStageHistory.createdAt));
+
+		return history;
 	});
 
 	app.patch("/api/leads/:id/status", async (req, reply) => {
@@ -120,20 +548,59 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 			});
 		}
 		const { status } = statusParsed.data;
+		const identity = getRequestIdentity(req);
+		const changedByUserId =
+			identity?.userId && z.string().uuid().safeParse(identity.userId).success
+				? identity.userId
+				: null;
+		const now = new Date();
 
-		const [lead] = await db
-			.update(crmLeads)
-			.set({ status })
-			.where(
-				and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
-			)
-			.returning();
-		if (!lead) return reply.code(404).send({ error: "LeadNotFound" });
+		const result = await db.transaction(async (tx) => {
+			const [lead] = await tx
+				.select()
+				.from(crmLeads)
+				.where(
+					and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!lead) return { notFound: true as const };
+
+			const fromStage = lead.status;
+			const stageStart = lead.stageEnteredAt || lead.createdAt;
+			const durationSeconds = Math.max(
+				0,
+				Math.floor((now.getTime() - stageStart.getTime()) / 1000),
+			);
+
+			await tx.insert(crmLeadStageHistory).values({
+				organizationId,
+				leadId: lead.id,
+				fromStage,
+				toStage: status,
+				changedByUserId,
+				durationSeconds,
+				createdAt: now,
+			});
+
+			const [updated] = await tx
+				.update(crmLeads)
+				.set({ status, stageEnteredAt: now })
+				.where(
+					and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
+				)
+				.returning();
+
+			return { lead: updated };
+		});
+
+		if ("notFound" in result) return reply.code(404).send({ error: "LeadNotFound" });
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "LEAD_UPDATED",
-			payload: lead,
+			payload: result.lead,
 		});
-		return lead;
+		return result.lead;
 	});
 
 	app.patch("/api/leads/:id", async (req, reply) => {
@@ -160,13 +627,69 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const [lead] = await db
-			.update(crmLeads)
-			.set(data)
-			.where(
-				and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
-			)
-			.returning();
+		const [lead] = await db.transaction(async (tx) => {
+			const [current] = await tx
+				.select()
+				.from(crmLeads)
+				.where(
+					and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!current) return [];
+
+			const now = new Date();
+			const updatePayload: Partial<typeof crmLeads.$inferInsert> = {};
+			if (data.name !== undefined) updatePayload.name = data.name;
+			if (data.patientName !== undefined) updatePayload.patientName = data.patientName;
+			if (data.phone !== undefined) updatePayload.phone = data.phone;
+			if (data.source !== undefined) updatePayload.source = data.source;
+			if (data.expectedRevenue !== undefined) updatePayload.expectedRevenue = data.expectedRevenue;
+			if (data.status !== undefined) updatePayload.status = data.status;
+			if (data.notes !== undefined) updatePayload.notes = data.notes;
+			if (data.assignedDoctorId !== undefined) updatePayload.assignedDoctorId = data.assignedDoctorId;
+			if (data.priority !== undefined) updatePayload.priority = data.priority;
+			if (data.clinicalTags !== undefined) updatePayload.clinicalTags = data.clinicalTags;
+			if (data.audioRecordUrl !== undefined) updatePayload.audioRecordUrl = data.audioRecordUrl;
+			if (data.transcriptionSnippet !== undefined) updatePayload.transcriptionSnippet = data.transcriptionSnippet;
+
+			if (data.status && data.status !== current.status) {
+				const fromStage = current.status;
+				const stageStart = current.stageEnteredAt || current.createdAt;
+				const durationSeconds = Math.max(
+					0,
+					Math.floor((now.getTime() - stageStart.getTime()) / 1000),
+				);
+
+				const identity = getRequestIdentity(req);
+				const changedByUserId =
+					identity?.userId &&
+					z.string().uuid().safeParse(identity.userId).success
+						? identity.userId
+						: null;
+
+				await tx.insert(crmLeadStageHistory).values({
+					organizationId,
+					leadId: current.id,
+					fromStage,
+					toStage: data.status,
+					changedByUserId,
+					durationSeconds,
+					createdAt: now,
+				});
+
+				updatePayload.stageEnteredAt = now;
+			}
+
+			return await tx
+				.update(crmLeads)
+				.set(updatePayload)
+				.where(
+					and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
+				)
+				.returning();
+		});
 		if (!lead) return reply.code(404).send({ error: "LeadNotFound" });
 		wsBroker.broadcastToOrganization(organizationId, {
 			type: "LEAD_UPDATED",

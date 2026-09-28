@@ -174,6 +174,7 @@ export * from "./patients/stomxPatientTagsCatalog.js";
 export * from "./storage/index.js";
 export * from "./telephony/index.js";
 export * from "./marketing/index.js";
+export * from "./leads/index.js";
 export * from "./analytics/index.js";
 export * from "./anesthesia/index.js";
 export * from "./insurance/index.js";

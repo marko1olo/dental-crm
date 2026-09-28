@@ -1,0 +1,825 @@
+/**
+ * DENTE Dental CRM — Leads Kanban & Wide Column Focus Workspace Styles
+ *
+ * Mandate 8c (Visual Quality & 10 Themes Parity)
+ * Mandate 8s (Modular Architecture & CSS Isolation)
+ * Mandate 8n (Clinical Ergonomics, Scale Sovereignty & Solo Doctor Autonomy)
+ * UTF-8 without BOM. Strictly <= 800 lines.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* SPEED-TO-LEAD SLA PULSE ANIMATION                                          */
+/* -------------------------------------------------------------------------- */
+
+@keyframes slaBreachPulse {
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+		transform: scale(1);
+	}
+	50% {
+		box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+		transform: scale(1.02);
+	}
+}
+
+.lead-sla-breached-pulse {
+	animation: slaBreachPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Column Header Expand Focus Button */
+.leads-kanban-column-expand-btn {
+	width: 24px;
+	height: 24px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: transparent;
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	padding: 0;
+	line-height: 1;
+}
+
+.leads-kanban-column-expand-btn:hover {
+	background: var(--teal-soft);
+	color: var(--teal-dark, var(--teal));
+	border-color: var(--teal);
+}
+
+.leads-column-sla-breach-indicator {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--rust);
+	background: var(--rust-soft);
+	border: 1px solid var(--rust);
+	padding: 1px 6px;
+	border-radius: 4px;
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* EXPANDED COLUMN FOCUS MODAL (92vw / 90vh)                                  */
+/* -------------------------------------------------------------------------- */
+
+.expanded-focus-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+}
+
+.expanded-focus-modal-container {
+	width: 92vw;
+	height: 90vh;
+	max-width: 1720px;
+	background: var(--paper-strong);
+	border-radius: 14px;
+	border: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+}
+
+/* 1. Header */
+.expanded-focus-header {
+	height: 64px;
+	padding: 12px 20px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper);
+	flex-shrink: 0;
+	gap: 16px;
+}
+
+.expanded-focus-title-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
+
+.expanded-focus-column-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--ink);
+	flex-shrink: 0;
+}
+
+.expanded-focus-title {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+	white-space: nowrap;
+}
+
+.expanded-focus-badge-mode {
+	font-size: 11px;
+	font-weight: 600;
+	background: var(--teal-soft);
+	color: var(--teal-dark, var(--teal));
+	border: 1px solid var(--teal);
+	padding: 2px 6px;
+	border-radius: 6px;
+	white-space: nowrap;
+}
+
+.expanded-focus-subtitle {
+	margin: 2px 0 0 0;
+	font-size: 11.5px;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.expanded-focus-metrics-cluster {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.expanded-focus-metric-pill {
+	height: 28px;
+	padding: 4px 10px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	font-size: 12px;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	white-space: nowrap;
+}
+
+.expanded-focus-metric-pill--revenue {
+	color: var(--teal-dark, var(--teal));
+	font-weight: 600;
+}
+
+.expanded-focus-metric-pill--breached {
+	background: var(--rust-soft);
+	color: var(--rust);
+	border-color: var(--rust);
+	font-weight: 600;
+}
+
+.expanded-focus-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+.expanded-focus-close-btn {
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: transparent;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	line-height: 1;
+}
+
+.expanded-focus-close-btn:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line-strong, var(--line));
+}
+
+/* 2. Filter & Sort Toolbar */
+.expanded-focus-toolbar {
+	padding: 8px 20px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper-soft);
+	flex-shrink: 0;
+	flex-wrap: wrap;
+}
+
+.expanded-focus-search-box {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	min-width: 260px;
+	max-width: 340px;
+	flex: 1;
+}
+
+.expanded-focus-search-input {
+	border: none;
+	outline: none;
+	background: transparent;
+	font-size: 12.5px;
+	color: var(--ink);
+	width: 100%;
+}
+
+.expanded-focus-search-input::placeholder {
+	color: var(--muted);
+}
+
+.expanded-focus-urgency-tabs {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
+.expanded-focus-tab {
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: 1px solid transparent;
+	background: transparent;
+	font-size: 12px;
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.expanded-focus-tab:hover {
+	color: var(--ink);
+}
+
+.expanded-focus-tab.is-active {
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--line);
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.expanded-focus-tab--fresh.is-active {
+	color: var(--ok-fg);
+}
+
+.expanded-focus-tab--warning.is-active {
+	color: var(--amber-dark, var(--amber));
+}
+
+.expanded-focus-tab--breached.is-active {
+	color: var(--rust);
+}
+
+.expanded-focus-sort-cluster {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.expanded-focus-select {
+	height: 30px;
+	padding: 0 8px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12px;
+	cursor: pointer;
+	outline: none;
+}
+
+.expanded-focus-csv-btn {
+	height: 30px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 500;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.expanded-focus-csv-btn:hover {
+	border-color: var(--teal);
+	color: var(--teal-dark, var(--teal));
+}
+
+/* 3. Bulk Action Bar */
+.expanded-focus-bulk-bar {
+	padding: 8px 20px;
+	background: var(--teal-soft);
+	border-bottom: 1px solid var(--teal);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-shrink: 0;
+	flex-wrap: wrap;
+}
+
+.expanded-focus-bulk-count {
+	font-size: 12.5px;
+	color: var(--teal-dark, var(--teal));
+}
+
+.expanded-focus-bulk-link {
+	font-size: 12px;
+	text-decoration: underline;
+	color: var(--teal-dark, var(--teal));
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0;
+}
+
+.expanded-focus-bulk-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.expanded-focus-bulk-primary-btn {
+	height: 30px;
+	padding: 0 12px;
+	border-radius: 6px;
+	background: var(--teal);
+	color: var(--paper-strong, #ffffff);
+	border: none;
+	font-size: 12px;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: opacity 0.15s ease;
+}
+
+.expanded-focus-bulk-primary-btn:hover {
+	opacity: 0.9;
+}
+
+.expanded-focus-bulk-select {
+	height: 30px;
+	padding: 0 8px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12px;
+	cursor: pointer;
+	outline: none;
+}
+
+.expanded-focus-bulk-confirm-btn {
+	height: 30px;
+	padding: 0 10px;
+	border-radius: 6px;
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--line);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.expanded-focus-bulk-secondary-btn {
+	height: 30px;
+	padding: 0 10px;
+	border-radius: 6px;
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	font-size: 12px;
+	font-weight: 500;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	cursor: pointer;
+}
+
+.expanded-focus-bulk-cancel-btn {
+	width: 28px;
+	height: 28px;
+	border-radius: 6px;
+	border: none;
+	background: transparent;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+/* 4. Content Scroll */
+.expanded-focus-content-scroll {
+	flex: 1;
+	overflow-y: auto;
+	min-height: 0;
+	padding: 16px 20px;
+	background: var(--paper-soft);
+}
+
+.expanded-focus-empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 300px;
+	text-align: center;
+}
+
+/* VIEW 1: 3-COLUMN WIDE CARDS GRID */
+.expanded-focus-cards-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 14px;
+}
+
+@media (max-width: 1280px) {
+	.expanded-focus-cards-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 768px) {
+	.expanded-focus-cards-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.expanded-focus-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+	transition: all 0.15s ease;
+	cursor: pointer;
+}
+
+.expanded-focus-card:hover {
+	border-color: var(--teal);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.expanded-focus-card.is-selected {
+	border-color: var(--teal);
+	background: var(--teal-soft);
+}
+
+.expanded-focus-card.has-sla-breach {
+	border-left: 3px solid var(--rust);
+}
+
+.expanded-focus-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.expanded-focus-card-name {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.expanded-focus-checkbox-btn {
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.expanded-focus-sla-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 10.5px;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: 5px;
+	border: 1px solid;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.expanded-focus-card-phone-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.expanded-focus-phone-link {
+	color: inherit;
+	text-decoration: none;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.expanded-focus-phone-link:hover {
+	text-decoration: underline;
+	color: var(--teal);
+}
+
+.expanded-focus-card-notes {
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--ink);
+	background: var(--paper-soft);
+	padding: 6px 10px;
+	border-radius: 6px;
+	max-height: 60px;
+	overflow-y: auto;
+}
+
+.expanded-focus-card-meta-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.expanded-focus-channel-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 500;
+	padding: 2px 6px;
+	border-radius: 4px;
+	border: 1px solid;
+	white-space: nowrap;
+}
+
+.expanded-focus-clinical-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	font-size: 10.5px;
+	font-weight: 600;
+	background: var(--teal-soft);
+	color: var(--teal-dark, var(--teal));
+	border: 1px solid var(--teal);
+	padding: 1px 5px;
+	border-radius: 4px;
+	white-space: nowrap;
+}
+
+.expanded-focus-revenue-badge {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink);
+	background: var(--paper-soft);
+	padding: 2px 6px;
+	border-radius: 4px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.expanded-focus-card-actions-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 4px;
+}
+
+.expanded-focus-action-btn {
+	height: 28px;
+	padding: 0 8px;
+	border-radius: 6px;
+	font-size: 11.5px;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.expanded-focus-action-btn--advance {
+	background: var(--teal-soft);
+	color: var(--teal-dark, var(--teal));
+	border: 1px solid var(--teal);
+	flex: 1;
+}
+
+.expanded-focus-action-btn--advance:hover {
+	background: var(--teal);
+	color: var(--paper-strong, #ffffff);
+}
+
+.expanded-focus-action-btn--schedule {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+}
+
+.expanded-focus-action-btn--schedule:hover {
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.expanded-focus-action-btn--patient {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--line);
+}
+
+/* VIEW 2: CLINICAL SPREADSHEET (32px Dense Table) */
+.expanded-focus-table-container {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	overflow: auto;
+	max-height: 100%;
+}
+
+.expanded-focus-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.expanded-focus-table th {
+	height: 34px;
+	padding: 0 10px;
+	background: var(--paper-soft);
+	color: var(--muted);
+	font-weight: 600;
+	text-align: left;
+	border-bottom: 1px solid var(--line);
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	white-space: nowrap;
+}
+
+.expanded-focus-th-checkbox {
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.expanded-focus-table td {
+	height: 32px;
+	padding: 0 10px;
+	border-bottom: 1px solid var(--line);
+	color: var(--ink);
+	white-space: nowrap;
+}
+
+.expanded-focus-tr {
+	transition: background 0.15s ease;
+	cursor: pointer;
+}
+
+.expanded-focus-tr:hover {
+	background: var(--paper-soft);
+}
+
+.expanded-focus-tr.is-selected {
+	background: var(--teal-soft);
+}
+
+.expanded-focus-tr.is-breached-row {
+	border-left: 3px solid var(--rust);
+}
+
+.expanded-focus-table-name {
+	font-weight: 600;
+	color: var(--ink);
+	max-width: 160px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.expanded-focus-table-source {
+	font-size: 11px;
+	color: var(--muted);
+	max-width: 120px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.expanded-focus-table-notes {
+	font-size: 11.5px;
+	color: var(--ink);
+	max-width: 260px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.expanded-focus-table-sla {
+	font-size: 10.5px;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: 4px;
+	border: 1px solid;
+	display: inline-block;
+	white-space: nowrap;
+}
+
+.expanded-focus-table-action-btn {
+	width: 26px;
+	height: 26px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	padding: 0;
+}
+
+.expanded-focus-table-action-btn:hover {
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+/* 5. Footer Status Bar */
+.expanded-focus-footer {
+	height: 44px;
+	padding: 0 20px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-top: 1px solid var(--line);
+	background: var(--paper);
+	flex-shrink: 0;
+}
+
+.expanded-focus-footer-close-btn {
+	height: 28px;
+	padding: 0 12px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.expanded-focus-footer-close-btn:hover {
+	border-color: var(--line-strong, var(--line));
+	color: var(--ink);
+}
+
+/* Dark theme overrides */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark) .expanded-focus-modal-container {
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}

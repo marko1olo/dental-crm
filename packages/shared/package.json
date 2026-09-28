@@ -160,6 +160,11 @@
 			"types": "./dist/patients/index.d.ts",
 			"import": "./dist/patients/index.js",
 			"default": "./dist/patients/index.js"
+		},
+		"./leads": {
+			"types": "./dist/leads/index.d.ts",
+			"import": "./dist/leads/index.js",
+			"default": "./dist/leads/index.js"
 		}
 	},
 	"scripts": {

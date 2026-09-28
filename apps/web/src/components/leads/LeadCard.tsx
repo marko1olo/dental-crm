@@ -15,11 +15,13 @@ import {
 	ArrowRight,
 	Calendar,
 	Check,
+	Clock,
 	Edit2,
 	Eye,
 	FileText,
 	Globe,
 	Phone,
+	Tag,
 	UserPlus,
 } from "lucide-react";
 import type { Lead } from "../../store/leadsStore";
@@ -28,6 +30,8 @@ import {
 	CHANNEL_DISPLAY_NAMES,
 } from "../telephony/telephonyAttribution";
 import { normalizeMarketingChannel } from "./leadsFunnelTypes";
+import { getLeadSlaStatus } from "./leadsKanbanTypes";
+import { LeadAudioPlayerWidget } from "./LeadAudioPlayerWidget";
 
 const NEXT_STAGE_MAP: Partial<
 	Record<Lead["status"], { status: Lead["status"]; label: string }>
@@ -71,6 +75,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 	onQuickSchedule,
 }) => {
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+	const sla = getLeadSlaStatus(lead);
 	const channelKey = lead.source ? normalizeMarketingChannel(lead.source) : null;
 	const channelBadge =
 		channelKey && CHANNEL_BADGE_COLORS[channelKey]
@@ -116,7 +121,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 					display: "flex",
 					justifyContent: "space-between",
 					alignItems: "flex-start",
-					marginBottom: "8px",
+					marginBottom: "4px",
 					gap: 6,
 				}}
 			>
@@ -184,35 +189,111 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				</div>
 			</div>
 
-			{/* Телефонный номер (прямой клик для звонка) */}
-			{lead.phone && (
+			{/* Speed-to-Lead SLA Urgency Indicator */}
+			<div
+				className={`lead-card-sla-badge ${sla.isBreached ? "lead-sla-breached-pulse" : ""}`}
+				style={{
+					background: sla.badgeBg,
+					color: sla.badgeColor,
+					border: `1px solid ${sla.badgeBorder}`,
+					fontSize: 10.5,
+					fontWeight: 600,
+					padding: "1px 6px",
+					borderRadius: 5,
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 3.5,
+					marginBottom: 6,
+					width: "fit-content",
+				}}
+				title={`Speed-to-Lead SLA: ${sla.formattedDuration}`}
+				data-testid={`lead-sla-badge-${lead.id}`}
+			>
+				<Clock size={10} className="shrink-0" />
+				<span>{sla.label}</span>
+			</div>
+
+			{/* Телефонный номер (прямой клик для звонка) и компактный аудиоплеер */}
+			<div
+				style={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					marginBottom: 6,
+					gap: 6,
+					minWidth: 0,
+				}}
+			>
+				{lead.phone ? (
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: 6,
+							fontSize: 13,
+							color: "var(--muted)",
+							minWidth: 0,
+						}}
+					>
+						<Phone size={12} className="shrink-0" />
+						<a
+							href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
+							onClick={(e) => e.stopPropagation()}
+							style={{
+								color: "inherit",
+								textDecoration: "none",
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+								minWidth: 0,
+							}}
+							title="Позвонить контакту"
+						>
+							{lead.phone}
+						</a>
+					</div>
+				) : (
+					<div />
+				)}
+
+				<LeadAudioPlayerWidget
+					audioUrl={lead.audioRecordUrl}
+					transcriptionSnippet={lead.transcriptionSnippet}
+					durationSeconds={lead.audioDurationSeconds}
+					compact
+				/>
+			</div>
+
+			{/* Клинические теги высокого чека */}
+			{Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 && (
 				<div
 					style={{
 						display: "flex",
-						alignItems: "center",
-						gap: 6,
-						fontSize: 13,
-						color: "var(--muted)",
+						flexWrap: "wrap",
+						gap: 4,
 						marginBottom: 6,
-						minWidth: 0,
 					}}
 				>
-					<Phone size={12} className="shrink-0" />
-					<a
-						href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
-						onClick={(e) => e.stopPropagation()}
-						style={{
-							color: "inherit",
-							textDecoration: "none",
-							overflow: "hidden",
-							textOverflow: "ellipsis",
-							whiteSpace: "nowrap",
-							minWidth: 0,
-						}}
-						title="Позвонить контакту"
-					>
-						{lead.phone}
-					</a>
+					{lead.clinicalTags.map((tag) => (
+						<span
+							key={tag}
+							style={{
+								fontSize: 10,
+								fontWeight: 600,
+								background: "var(--teal-soft)",
+								color: "var(--teal-dark, var(--teal))",
+								border: "1px solid var(--teal)",
+								padding: "1px 5px",
+								borderRadius: 4,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 3,
+							}}
+						>
+							<Tag size={9} />
+							<span>{tag}</span>
+						</span>
+					))}
 				</div>
 			)}
 

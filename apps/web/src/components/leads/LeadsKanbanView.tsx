@@ -1,14 +1,19 @@
 import { AnimatePresence } from "framer-motion";
-import { DollarSign } from "lucide-react";
+import { AlertTriangle, DollarSign, Maximize2 } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { dateInputValuePlusDays } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
+import {
+	readDenteClinicToken,
+	readDenteStaffToken,
+} from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
 import { type Lead, useLeadsStore } from "../../store/leadsStore";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
+import { ExpandedColumnFocusModal } from "./ExpandedColumnFocusModal";
 import { LeadCard } from "./LeadCard";
 import { LeadConvertModal } from "./LeadConvertModal";
 import { LeadFormModal } from "./LeadFormModal";
@@ -19,6 +24,7 @@ import {
 	DEFAULT_LEAD_VISIT_MINUTES,
 	FALLBACK_DEFAULT_CHAIR,
 	FALLBACK_SOLO_DOCTOR,
+	getLeadSlaStatus,
 	isLeadBookingDisabled,
 	resolveLeadBookingChairs,
 	resolveLeadBookingStaff,
@@ -26,6 +32,7 @@ import {
 	type BookableChair,
 	type BookableDoctor,
 } from "./leadsKanbanTypes";
+import "./leadsKanban.css";
 
 // Transparent re-exports for backwards compatibility and test imports
 export {
@@ -127,6 +134,65 @@ export function LeadsKanbanView() {
 
 	// View mode: 4 core funnel stages vs all 6 stages
 	const [viewMode, setViewMode] = useState<"funnel" | "all">("funnel");
+	const [expandedColumnId, setExpandedColumnId] = useState<Lead["status"] | null>(null);
+
+	const handleBatchStatusChange = async (
+		leadIds: string[],
+		nextStatus: Lead["status"],
+	) => {
+		try {
+			const res = await fetch("/api/leads/batch-stage", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"x-dente-staff-token": readDenteStaffToken(),
+					"x-dente-clinic-token": readDenteClinicToken(),
+				},
+				body: JSON.stringify({ leadIds, stage: nextStatus }),
+			});
+
+			if (res.ok) {
+				showToast(`Переведено обращений: ${leadIds.length}`, "success");
+				await fetchLeads();
+				return;
+			}
+		} catch {
+			// Fallback to sequential updates
+		}
+
+		try {
+			await Promise.all(leadIds.map((id) => updateLeadStatus(id, nextStatus)));
+			showToast(`Переведено обращений: ${leadIds.length}`, "success");
+			await fetchLeads();
+		} catch (err: unknown) {
+			const text =
+				err instanceof Error && err.message.trim()
+					? err.message
+					: "Не удалось перенести часть обращений";
+			showToast(text, "error");
+		}
+	};
+
+	const handleBatchAssignDoctor = async (
+		leadIds: string[],
+		doctorId: string,
+	) => {
+		try {
+			await Promise.all(
+				leadIds.map((id) =>
+					updateLeadDetails(id, { assignedDoctorId: doctorId }),
+				),
+			);
+			showToast(`Врач назначен для ${leadIds.length} обращений`, "success");
+			await fetchLeads();
+		} catch (err: unknown) {
+			const text =
+				err instanceof Error && err.message.trim()
+					? err.message
+					: "Не удалось назначить врача для части обращений";
+			showToast(text, "error");
+		}
+	};
 
 	// Filters
 	const [searchQuery, setSearchQuery] = useState("");
@@ -519,6 +585,9 @@ export function LeadsKanbanView() {
 						(acc, l) => acc + (Number(l.expectedRevenue) || 0),
 						0,
 					);
+					const breachedLeadsCount = columnLeads.filter(
+						(l) => getLeadSlaStatus(l).isBreached,
+					).length;
 
 					return (
 						<section
@@ -552,16 +621,49 @@ export function LeadsKanbanView() {
 											{col.label}
 										</h3>
 									</div>
-									<span className="leads-kanban-column-count">
-										{columnLeads.length}
-									</span>
-								</div>
-								{columnRevenue > 0 && (
-									<div className="leads-kanban-column-revenue">
-										<DollarSign size={13} />{" "}
-										{columnRevenue.toLocaleString("ru-RU")} ₽
+									<div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+										<span className="leads-kanban-column-count">
+											{columnLeads.length}
+										</span>
+										<button
+											type="button"
+											onClick={() => setExpandedColumnId(col.id)}
+											className="leads-kanban-column-expand-btn"
+											title={`Распахнуть этап «${col.label}» во весь экран (Focus Workspace)`}
+											aria-label={`Распахнуть этап ${col.label}`}
+											data-testid={`expand-column-${col.id}`}
+										>
+											<Maximize2 size={13} />
+										</button>
 									</div>
-								)}
+								</div>
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "space-between",
+										gap: 6,
+										marginTop: columnRevenue > 0 || breachedLeadsCount > 0 ? 2 : 0,
+									}}
+								>
+									{columnRevenue > 0 ? (
+										<div className="leads-kanban-column-revenue">
+											<DollarSign size={13} />{" "}
+											{columnRevenue.toLocaleString("ru-RU")} ₽
+										</div>
+									) : (
+										<div />
+									)}
+									{breachedLeadsCount > 0 && (
+										<div
+											className="leads-column-sla-breach-indicator lead-sla-breached-pulse"
+											title={`Просрочен регламент ответа у ${breachedLeadsCount} обращений`}
+										>
+											<AlertTriangle size={11} className="shrink-0" />
+											<span>SLA: {breachedLeadsCount}</span>
+										</div>
+									)}
+								</div>
 							</div>
 
 							<div className="leads-kanban-column-cards">
@@ -658,6 +760,37 @@ export function LeadsKanbanView() {
 						onClose={() => setIsLeakDetectorOpen(false)}
 					/>
 				</Suspense>
+			)}
+
+			{/* WIDE COLUMN FOCUS WORKSPACE MODAL */}
+			{expandedColumnId && (
+				<ExpandedColumnFocusModal
+					isOpen={Boolean(expandedColumnId)}
+					onClose={() => setExpandedColumnId(null)}
+					column={
+						COLUMNS.find((c) => c.id === expandedColumnId) || {
+							id: expandedColumnId,
+							label: "Этап воронки",
+							color: "var(--teal-soft)",
+							icon: null,
+						}
+					}
+					leads={leads}
+					staff={staff}
+					onStatusChange={async (leadId, nextStatus) => {
+						await updateLeadStatus(leadId, nextStatus);
+						fetchLeads();
+					}}
+					onBatchStatusChange={handleBatchStatusChange}
+					onBatchAssignDoctor={handleBatchAssignDoctor}
+					onEditLead={(lead) => openEditModal(lead)}
+					onScheduleLead={(leadId) => {
+						setConvertingLeadId(leadId);
+						setIsConvertOpen(true);
+					}}
+					onCreatePatient={handleCreatePatientFromLead}
+					onQuickSchedule={handleQuickSchedule}
+				/>
 			)}
 		</div>
 	);

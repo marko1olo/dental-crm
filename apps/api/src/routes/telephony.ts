@@ -96,6 +96,10 @@ export const telephonyWebhookPayloadSchema = z.object({
 	advertising_channel: z.string().optional(),
 	virtual_number: z.string().optional(),
 	channel: z.string().optional(),
+	transcript: z.string().optional(),
+	transcription: z.string().optional(),
+	transcription_snippet: z.string().optional(),
+	ai_summary: z.string().optional(),
 });
 
 export type TelephonyWebhookPayload = z.infer<
@@ -308,6 +312,14 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 				""
 			).trim();
 
+			const transcriptionSnippet = (
+				data.transcription_snippet ||
+				data.transcript ||
+				data.transcription ||
+				data.ai_summary ||
+				""
+			).trim().slice(0, 1000) || null;
+
 			const rawDuration =
 				data.duration ||
 				data.duration_seconds ||
@@ -466,6 +478,10 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 									source: detectedMarketingChannel,
 									status: "new",
 									notes: `Автоматический лид из входящего звонка ВАТС (${detectedProvider}). Канал: ${detectedChannelLabel}.${virtualTrunkNumber ? ` Номер ВАТС: ${virtualTrunkNumber}.` : ""}${utmDetailStr ? ` UTM: [${utmDetailStr}].` : ""} ${callId ? `call_id: ${callId}` : "прямой вызов"}`,
+									audioRecordUrl: recordingUrl || null,
+									transcriptionSnippet: transcriptionSnippet || null,
+									stageEnteredAt: new Date(),
+									priority: "normal",
 								})
 								.returning();
 							return insertedLeads[0] ?? null;
@@ -562,20 +578,20 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 					}
 				}
 
-				if (matchedPatient) {
-					let verifiedRecUrl: string | null = null;
-					if (recordingUrl) {
-						const ssrfCheck = await validateSsrfSafeRecordingUrl(recordingUrl);
-						if (ssrfCheck.valid) {
-							verifiedRecUrl = recordingUrl;
-						} else {
-							request.log.warn(
-								{ recordingUrl, error: ssrfCheck.error },
-								"[Telephony] Recording URL blocked by SSRF filter",
-							);
-						}
+				let verifiedRecUrl: string | null = null;
+				if (recordingUrl) {
+					const ssrfCheck = await validateSsrfSafeRecordingUrl(recordingUrl);
+					if (ssrfCheck.valid) {
+						verifiedRecUrl = recordingUrl;
+					} else {
+						request.log.warn(
+							{ recordingUrl, error: ssrfCheck.error },
+							"[Telephony] Recording URL blocked by SSRF filter",
+						);
 					}
+				}
 
+				if (matchedPatient) {
 					await db.insert(communicationEvents).values({
 						organizationId: resolvedOrgId,
 						patientId: matchedPatient.id,
@@ -588,6 +604,32 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 						recordingUrl: verifiedRecUrl,
 						durationSeconds: durationSeconds > 0 ? durationSeconds : null,
 					});
+				}
+
+				if (verifiedRecUrl || transcriptionSnippet) {
+					try {
+						await db
+							.update(crmLeads)
+							.set({
+								...(verifiedRecUrl ? { audioRecordUrl: verifiedRecUrl } : {}),
+								...(transcriptionSnippet ? { transcriptionSnippet } : {}),
+								lastContactedAt: new Date(),
+							})
+							.where(
+								and(
+									eq(crmLeads.organizationId, resolvedOrgId),
+									or(
+										eq(crmLeads.phone, callerPhone.e164),
+										ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+									),
+								),
+							);
+					} catch (updateErr) {
+						request.log.warn(
+							{ updateErr, resolvedOrgId },
+							"[Telephony] Failed to update lead with audio recording or transcription",
+						);
+					}
 				}
 
 				return { success: true, event: "ended", durationSeconds };
