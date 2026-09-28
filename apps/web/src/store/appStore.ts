@@ -9,6 +9,12 @@ import { settingsTabFromHash, viewFromHash } from "../utils/routeUtils";
 interface AppStore {
 	isOmnibarOpen: boolean;
 	setOmnibarOpen: (val: boolean) => void;
+	isShortcutsModalOpen: boolean;
+	setShortcutsModalOpen: (val: boolean) => void;
+	isHelpDrawerOpen: boolean;
+	setHelpDrawerOpen: (val: boolean) => void;
+	activeHelpDrawerTab: string;
+	setActiveHelpDrawerTab: (val: string) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	uiPreferencesHydrated: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -482,6 +488,12 @@ export const useAppStore = create<AppStore>((set) => ({
 		})),
 	isOmnibarOpen: false,
 	setOmnibarOpen: (val) => set({ isOmnibarOpen: val }),
+	isShortcutsModalOpen: false,
+	setShortcutsModalOpen: (val) => set({ isShortcutsModalOpen: val }),
+	isHelpDrawerOpen: false,
+	setHelpDrawerOpen: (val) => set({ isHelpDrawerOpen: val }),
+	activeHelpDrawerTab: "odontogram",
+	setActiveHelpDrawerTab: (val) => set({ activeHelpDrawerTab: val }),
 	uiPreferencesHydrated: false,
 	setUiPreferencesHydrated: (val) => set({ uiPreferencesHydrated: val }),
 	dashboard: null,

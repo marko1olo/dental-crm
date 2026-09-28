@@ -40,6 +40,7 @@ import { lazyWithRetry } from "./lib/lazyWithRetry";
 import { AppLoadingState, AppUnlockState } from "./AppBootState";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { showToast } from "./components/GlobalToast";
+import { ClinicalErrorBoundary } from "./components/common/ClinicalErrorBoundary";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useNetworkConnectivity } from "./hooks/useNetworkConnectivity";
@@ -211,6 +212,11 @@ const Omnibar = lazyWithRetry(() =>
 		default: module.Omnibar,
 	})),
 );
+const ClinicalGuidanceHost = lazyWithRetry(() =>
+	import("./components/guidance/ClinicalGuidanceHost").then((module) => ({
+		default: module.ClinicalGuidanceHost,
+	})),
+);
 const VoiceAssistantUI = lazyWithRetry(() =>
 	import("./components/VoiceAssistantUI").then((module) => ({
 		default: module.VoiceAssistantUI,
@@ -245,8 +251,15 @@ export function App() {
 	useOmniPlatform();
 
 	useDesktopShortcuts({
+		onShortcutsOverlay: () => {
+			window.dispatchEvent(new CustomEvent("dente:open-shortcuts-overlay"));
+		},
+		onOpenHelpDrawer: () => {
+			window.dispatchEvent(new CustomEvent("dente:open-help"));
+		},
 		onF1Help: () => {
 			window.dispatchEvent(new CustomEvent("dente:shortcut:f1"));
+			window.dispatchEvent(new CustomEvent("dente:open-shortcuts-overlay"));
 			window.dispatchEvent(new CustomEvent("dente:open-804n-hints"));
 		},
 		onSearchPatient: () => {
@@ -2269,69 +2282,56 @@ export function App() {
 											</section>
 										}
 									>
-										<ScheduleView
-											appointmentLabels={appointmentLabels}
-											appointmentReadinessById={appointmentReadinessById}
-											appointmentReadinessLabels={appointmentReadinessLabels}
-											appointmentScheduleDraftFromAppointment={
-												appointmentScheduleDraftFromAppointment
-											}
-											closeAppointmentEditor={closeAppointmentEditor}
-											createAppointmentFromDraft={createAppointmentFromDraft}
-											dashboard={dashboard}
-											editingAppointmentId={editingAppointmentId}
-											formatTime={formatTime}
-											fromDateTimeLocalValue={fromDateTimeLocalValue}
-											lockScheduleAdminSession={() =>
-												lockTelegramAdminSession("schedule")
-											}
-											newAppointmentError={newAppointmentError}
-											normalizedAppointmentStatus={normalizedAppointmentStatus}
-											normalizedAppointmentStatusFilter={
-												normalizedAppointmentStatusFilter
-											}
-											openAppointmentEditor={openAppointmentEditor}
-											openScheduleWarning={openScheduleWarning}
-											patientName={patientName}
-											recommendedActionPriorityLabels={
-												recommendedActionPriorityLabels
-											}
-											resetNewAppointmentDraft={resetNewAppointmentDraft}
-											saveAppointmentSchedule={saveAppointmentSchedule}
-											shiftWarnings={shiftWarnings}
-											sortedAppointments={sortedAppointments}
-											staffRoleLabels={staffRoleLabels}
-											scheduleAdminSecretDraft={scheduleAdminSecretDraft}
-											scheduleAdminSecretSession={scheduleAdminSecretSession}
-											toDateTimeLocalValue={toDateTimeLocalValue}
-											unlockScheduleAdminSession={() =>
-												unlockTelegramAdminSession("schedule")
-											}
-											updateAppointmentScheduleDraft={
-												updateAppointmentScheduleDraft
-											}
-											updateNewAppointmentDraft={updateNewAppointmentDraft}
-											visibleScheduleSuggestions={visibleScheduleSuggestions}
-											// Нужен для живого обновления сетки, когда запись создал или
-											// перенёс другой администратор.
-											//
-											// ЗДЕСЬ СТОЯЛО «этот ScheduleView отрисован ВЫШЕ
-											// AppLogicProvider, поэтому useAppLogicContext() здесь пуст».
-											// ЭТО НЕВЕРНО и было неверно с тех пор, как провайдер обнял всё
-											// рабочее место: он открывается на строке 2509 и закрывается на
-											// 5070, а этот вызов — на 3947, то есть ВНУТРИ. Утверждение
-											// опасно вдвойне: во-первых, оно объясняло пропсы причиной,
-											// которой нет; во-вторых, «контекст здесь пуст» описывало
-											// выдуманный пустой объект, которого больше не существует —
-											// useAppLogicContext() вне провайдера теперь бросает исключение
-											// (contexts/AppLogicContext.tsx).
-											//
-											// Пропс остаётся, и это осознанно: экран получает loadDashboard
-											// явно, а не выуживает его из общего объекта, так видно, кто чем
-											// пользуется. Менять на чтение из контекста без прогона живого
-											// расписания не за чем.
-											loadDashboard={loadDashboard}
-										/>
+										<ClinicalErrorBoundary
+											workspaceName="Расписание приёмов"
+											workspaceKey="schedule"
+										>
+											<ScheduleView
+												appointmentLabels={appointmentLabels}
+												appointmentReadinessById={appointmentReadinessById}
+												appointmentReadinessLabels={appointmentReadinessLabels}
+												appointmentScheduleDraftFromAppointment={
+													appointmentScheduleDraftFromAppointment
+												}
+												closeAppointmentEditor={closeAppointmentEditor}
+												createAppointmentFromDraft={createAppointmentFromDraft}
+												dashboard={dashboard}
+												editingAppointmentId={editingAppointmentId}
+												formatTime={formatTime}
+												fromDateTimeLocalValue={fromDateTimeLocalValue}
+												lockScheduleAdminSession={() =>
+													lockTelegramAdminSession("schedule")
+												}
+												newAppointmentError={newAppointmentError}
+												normalizedAppointmentStatus={normalizedAppointmentStatus}
+												normalizedAppointmentStatusFilter={
+													normalizedAppointmentStatusFilter
+												}
+												openAppointmentEditor={openAppointmentEditor}
+												openScheduleWarning={openScheduleWarning}
+												patientName={patientName}
+												recommendedActionPriorityLabels={
+													recommendedActionPriorityLabels
+												}
+												resetNewAppointmentDraft={resetNewAppointmentDraft}
+												saveAppointmentSchedule={saveAppointmentSchedule}
+												shiftWarnings={shiftWarnings}
+												sortedAppointments={sortedAppointments}
+												staffRoleLabels={staffRoleLabels}
+												scheduleAdminSecretDraft={scheduleAdminSecretDraft}
+												scheduleAdminSecretSession={scheduleAdminSecretSession}
+												toDateTimeLocalValue={toDateTimeLocalValue}
+												unlockScheduleAdminSession={() =>
+													unlockTelegramAdminSession("schedule")
+												}
+												updateAppointmentScheduleDraft={
+													updateAppointmentScheduleDraft
+												}
+												updateNewAppointmentDraft={updateNewAppointmentDraft}
+												visibleScheduleSuggestions={visibleScheduleSuggestions}
+												loadDashboard={loadDashboard}
+											/>
+										</ClinicalErrorBoundary>
 									</Suspense>
 									{/*
               Утренний обзвон живёт в ScheduleView: кнопка «Подтверждения» рядом
@@ -2403,7 +2403,13 @@ export function App() {
 												teethData={[]}
 											/>
 										) : (
-											<VisitView />
+											<ClinicalErrorBoundary
+												workspaceName="Приём (ЭМК 043/у)"
+												workspaceKey="visit"
+												visitId={dashboard?.activeVisit?.id}
+											>
+												<VisitView />
+											</ClinicalErrorBoundary>
 										)}
 									</Suspense>
 								</WorkspaceRouteErrorBoundary>
@@ -3302,7 +3308,12 @@ export function App() {
 							<Suspense
 								fallback={<AppLoadingState message="Загрузка обращений" />}
 							>
-								<LeadsKanbanView />
+								<ClinicalErrorBoundary
+									workspaceName="Канбан обращений"
+									workspaceKey="leads"
+								>
+									<LeadsKanbanView />
+								</ClinicalErrorBoundary>
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
@@ -3322,6 +3333,9 @@ export function App() {
 					</Suspense>
 					<Suspense fallback={null}>
 						<Omnibar />
+					</Suspense>
+					<Suspense fallback={null}>
+						<ClinicalGuidanceHost />
 					</Suspense>
 					<Suspense fallback={null}>
 						<A2hsPromptModal />

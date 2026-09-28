@@ -1,10 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
 	Banknote,
+	BookOpen,
 	Calendar,
 	Camera,
 	CheckCircle2,
 	FileText,
+	Keyboard,
 	MessageSquare,
 	Search,
 	Settings,
@@ -149,6 +151,28 @@ export function Omnibar() {
 			action: () => {
 				if (typeof window !== "undefined") {
 					window.dispatchEvent(new CustomEvent("dente:toggle-chairside-hud"));
+				}
+			},
+		},
+		{
+			id: "action-shortcuts-overlay",
+			title: "Горячие клавиши врача (Шпаргалка ? / F1)",
+			icon: <Keyboard className="text-[var(--teal)]" />,
+			category: "Справка и обучение",
+			action: () => {
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente:open-shortcuts-overlay"));
+				}
+			},
+		},
+		{
+			id: "action-clinical-help-drawer",
+			title: "Клинические руководства (Шторка быстрых правил)",
+			icon: <BookOpen className="text-[var(--teal)]" />,
+			category: "Справка и обучение",
+			action: () => {
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente:open-help"));
 				}
 			},
 		},

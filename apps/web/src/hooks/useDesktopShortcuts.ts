@@ -23,6 +23,10 @@ export interface UseDesktopShortcutsOptions {
 	onSubmit?: () => void;
 	/** Callback for Ctrl+P / Cmd+P (Print) */
 	onPrint?: () => void;
+	/** Callback for F1 / ?: Clinical keyboard shortcuts overlay */
+	onShortcutsOverlay?: () => void;
+	/** Callback for opening contextual clinical help drawer */
+	onOpenHelpDrawer?: () => void;
 	/** Callback for F1: Nomenclature 804n / clinical help */
 	onF1Help?: () => void;
 	/** Callback for F2: Global quick patient search modal */
@@ -124,7 +128,7 @@ export function isTypingInInputElement(target: EventTarget | null): boolean {
  * Helper to dispatch decoupled custom events for shortcuts across components.
  */
 export function dispatchDesktopShortcut(
-	shortcut: "f1" | "f2" | "f3" | "f4" | "f5" | "f6" | "f7" | "f8" | "f9" | "f10" | "f11" | "f12" | "escape" | "save" | "print" | "ctrl_f" | "tab_1" | "tab_2" | "tab_3" | "tab_4" | "tab_5",
+	shortcut: "f1" | "f2" | "f3" | "f4" | "f5" | "f6" | "f7" | "f8" | "f9" | "f10" | "f11" | "f12" | "escape" | "save" | "print" | "ctrl_f" | "tab_1" | "tab_2" | "tab_3" | "tab_4" | "tab_5" | "shortcuts_overlay" | "help_drawer",
 ): void {
 	if (typeof window === "undefined" || !window.dispatchEvent) return;
 	try {
@@ -141,6 +145,8 @@ export function useDesktopShortcuts(options: UseDesktopShortcutsOptions = {}): v
 		onCloseModal,
 		onSubmit,
 		onPrint,
+		onShortcutsOverlay,
+		onOpenHelpDrawer,
 		onF1Help,
 		onSearchPatient,
 		onNewAppointment,
@@ -166,14 +172,34 @@ export function useDesktopShortcuts(options: UseDesktopShortcutsOptions = {}): v
 			const code = e.code || "";
 			const isInputFocused = isTypingInInputElement(e.target);
 
-			// 0. F1: Nomenclature 804n / clinical help
+			// 0. F1 / ?: Clinical keyboard shortcuts overlay / help
 			if (e.key === "F1" || code === "F1") {
+				if (optionsRef.current.onShortcutsOverlay) {
+					e.preventDefault();
+					e.stopPropagation();
+					optionsRef.current.onShortcutsOverlay();
+					dispatchDesktopShortcut("shortcuts_overlay");
+					return;
+				}
 				if (optionsRef.current.onF1Help) {
 					e.preventDefault();
 					e.stopPropagation();
 					optionsRef.current.onF1Help();
 					dispatchDesktopShortcut("f1");
 					return;
+				}
+			}
+
+			// 0B. '?': Show keyboard shortcuts overlay modal
+			if ((e.key === "?" || (e.shiftKey && (e.key === "/" || e.key === ","))) && !isCtrlOrMeta && !e.altKey) {
+				if (!isInputFocused || !ignoreInputsForSingleKeys) {
+					if (optionsRef.current.onShortcutsOverlay) {
+						e.preventDefault();
+						e.stopPropagation();
+						optionsRef.current.onShortcutsOverlay();
+						dispatchDesktopShortcut("shortcuts_overlay");
+						return;
+					}
 				}
 			}
 

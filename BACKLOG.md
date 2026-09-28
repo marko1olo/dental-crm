@@ -9,6 +9,22 @@
 
 ---
 
+## 2026-09-28 — In-App Clinical Guidance, Keyboard Shortcuts Overlay & Contextual Help Drawers (? / F1, Tier 2 Ergonomics)
+
+- **Gap:** Doctors and receptionists faced a learning curve on complex keyboard workflows (FDI tooth chart navigation, fast 2-click status marking, 3-click cashier splits, autoclave batch tagging, secondary tablet LAN pairing). Existing documentation was in external markdown files; in-app guidance lacked a unified keyboard shortcuts overlay and 0-click contextual cheat sheets, risking doctor cognitive overload or reliance on blocking manuals.
+- **Ship:**
+  - `apps/web/src/lib/keyboardShortcuts.ts`: Complete clinical shortcuts registry (17 shortcuts across 6 categories), `matchesKeyboardShortcut` with cross-layout Cyrillic mappings (`Ctrl+Ы`, `Ctrl+Л`, `Shift+N`), `isTypingInInputElement` form field isolation, `searchShortcuts`, `getShortcutsByCategory`, and `triggerClinicalShortcutEvent`.
+  - `apps/web/src/components/help/`: 4 visual 1-page cheat sheets:
+    * `OdontogramGuide.tsx`: 2-click tooth marking, FDI 11–48 / 51–85, `Shift+N` 1-click autonorm.
+    * `CashierGuide.tsx`: 3-click split payment (Cash + POS Card + Family Balance), 0-click rule (no physical person INN per 54-ФЗ), SBP dynamic QR codes, offline queue.
+    * `SanPiNAutoclaveGuide.tsx`: Autoclave cycles (134°C / 2.1 bar, 121°C / 1.1 bar), batch formula `[YYYYMMDD]-[CYCLE#]-[AUTOCLAVE_ID]`, TSPL/ZPL 2D DataMatrix label printing, 1-click azopyram autonorm.
+    * `LanMeshGuide.tsx`: Tablet pairing via 6-digit PIN and `dente://pair` QR code, UDP 4101 + TCP 4100-4105 Zero-Conf discovery, offline Wi-Fi mesh survivability.
+  - `apps/web/src/components/guidance/`: Global modal overlay `ClinicalGuidanceModal.tsx` (? or F1), reusable card `GuidanceCheatSheet.tsx`, decoupled container `ClinicalGuidanceHost.tsx`.
+  - `apps/web/src/components/common/HelpDrawer.tsx`: Slide-over drawer (Warm Context Tier 2) with active guide switching, search filtering across cheat sheets, print support.
+  - State & Events: Added `isShortcutsModalOpen`, `isHelpDrawerOpen`, `activeHelpDrawerTab` to `appStore.ts`; integrated in `useDesktopShortcuts.ts` and `App.tsx`; registered searchable actions in `Omnibar.tsx`.
+  - Unit tests: `clinicalGuidanceAndShortcuts.test.ts` (24/24 passing).
+- **Verify:** `npm --prefix apps/web run typecheck` exit 0; `npm test -- apps/web/src/tests/clinicalGuidanceAndShortcuts.test.ts` exit 0 (24 passed); `npm run check:encoding` exit 0. Rule 7 3-Tier Ergonomic Architecture verified (Tier 2 Warm Context, max modal depth 1, zero blocking popups on load).
+
 ## 2026-09-27 — Doctor Clinical Preferences & DB Persistence Audit (GET/PUT /api/settings/doctor-preferences, PostgreSQL 18)
 
 - **Gap:** `doctorPreferencesStore.ts` stored preferences (anesthetics, needles, composite materials, adhesives, etchant gels, 6 specialty presets, and Form 043/u templates) exclusively in browser `localStorage` (`dente_doctor_preferences_v1`). A doctor logging in from another computer, tablet, or clearing browser cache lost all clinical favorites and had to reconfigure everything.
