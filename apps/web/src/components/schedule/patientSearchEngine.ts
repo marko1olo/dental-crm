@@ -242,11 +242,11 @@ export function parseSearchQueryForQuickPatient(rawQuery: string): QuickPatientP
 	if (hasLetters && digits.length >= 7) {
 		const phoneMatch =
 			query.match(/(?:\+?7|8)?[\s\-(]*\d{3}[\s\-)]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}/) ||
-			query.match(/\d{7,11}/);
+			query.match(/\+?\d{7,11}/);
 
 		if (phoneMatch) {
 			const phonePart = phoneMatch[0];
-			const namePart = query.replace(phonePart, "").replace(/[,;]/g, " ").trim();
+			const namePart = query.replace(phonePart, "").replace(/[+,;]/g, " ").trim();
 			const phoneDigits = phonePart.replace(/\D/g, "");
 			return {
 				fullName: namePart,

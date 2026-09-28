@@ -382,7 +382,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 				<header className="acceptance-modal-header">
 					<div className="acceptance-modal-title">
 						<FileDown size={20} style={{ color: "var(--teal, #0d9488)" }} />
-						<span>Приходная накладная поставщика (Оприходование & FEFO)</span>
+						<span>Приходная накладная</span>
 						<span
 							style={{
 								fontSize: 11,
@@ -393,7 +393,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 								fontWeight: 700,
 							}}
 						>
-							Мандаты 8e / 8n
+							FEFO контроль
 						</span>
 					</div>
 					<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -723,11 +723,12 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 							type="button"
 							className="acceptance-btn-secondary"
 							onClick={handlePrintTorg12}
-							title="Печать унифицированной формы ТОРГ-12"
+							title="Печать приходной накладной (форма ТОРГ-12)"
 							data-testid="btn-print-torg12"
 						>
 							<Printer size={15} />
-							<span>Печать ТОРГ-12</span>
+							<span>Печать накладной</span>
+							<span className="text-[10px] opacity-60 ml-1 font-mono">ТОРГ-12</span>
 						</button>
 
 						<button

@@ -944,10 +944,10 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 										/>
 										<div>
 											<span className="font-semibold text-slate-900 dark:text-slate-100 block">
-												Подпись медицинской документации (ЭМК / 804н)
+												Подпись медицинской документации (ЭМК)
 											</span>
 											<span className="text-slate-500 dark:text-slate-400 text-[11px]">
-												Право завершать приём, ставить диагнозы МКБ-10 и подписывать дневники 043/у.
+												Право завершать приём, ставить диагнозы и подписывать дневники ЭМК.
 											</span>
 										</div>
 									</label>
@@ -961,7 +961,7 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 										/>
 										<div>
 											<span className="font-semibold text-slate-900 dark:text-slate-100 block">
-												Касса, приём оплат и чеки 54-ФЗ
+												Касса, приём оплат и чеки
 											</span>
 											<span className="text-slate-500 dark:text-slate-400 text-[11px]">
 												Пробитие чеков на онлайн-кассе, наличные/безналичные оплаты и возвраты.
@@ -995,7 +995,7 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 				<footer className="staff-profile-modal-footer">
 					<div className="staff-profile-footer-left">
 						<Shield className="w-4 h-4 text-emerald-500" />
-						<span>152-ФЗ • Защита персональных данных и аудит сессий активны</span>
+						<span>Защита персональных данных и аудит сессий активны</span>
 					</div>
 
 					<div className="staff-profile-footer-actions">

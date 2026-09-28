@@ -1,5 +1,5 @@
 import { Syringe } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { COMMON_ANESTHETICS } from "./carpuleDisposalConstants.js";
 import { getFefoTrafficLight } from "./fefoTrafficLight.js";
 

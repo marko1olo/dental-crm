@@ -1,5 +1,5 @@
 import { FileText, Layers, Package, Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 import {
 	type ConsentPackage,
 	type ConsentPackageKey,

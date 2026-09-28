@@ -22,6 +22,7 @@ import {
 } from "../../cashboxOperations.js";
 import { showToast } from "../../../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders.js";
+import { broadcastPatientBalanceChange } from "../../../../services/storage/index.js";
 import type { PaymentMethodTab, PaymentModalProps } from "./paymentModalTypes.js";
 import { usePaymentSbpAndTerminalExecution } from "./usePaymentSbpAndTerminalExecution.js";
 
@@ -135,6 +136,20 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 	const [isSubmittingDeposit, setIsSubmittingDeposit] = useState<boolean>(false);
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
 
+	const handleBroadcastSuccess: typeof onSuccess = (result) => {
+		try {
+			broadcastPatientBalanceChange({
+				patientId,
+				patientName,
+				deltaRub: totalDueRub,
+				updatedAt: new Date().toISOString(),
+			});
+		} catch {
+			// Non-blocking cross-tab broadcast
+		}
+		onSuccess(result);
+	};
+
 	const sbpAndTerminal = usePaymentSbpAndTerminalExecution({
 		patientId,
 		patientName,
@@ -166,13 +181,13 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 		sbpQrData,
 		isOpen,
 		onClose,
-		onSuccess,
+		onSuccess: handleBroadcastSuccess,
 	});
 
 	const handleCashSubmit = async () => {
 		if (isWarranty100 || totalDueRub <= 0) {
 			showToast(`Визит/счёт оформлен по 100% гарантии (0 ₽) (${effectiveCashier})`, "success");
-			onSuccess({
+			handleBroadcastSuccess({
 				method: "warranty_discount_100",
 				amountKopecks: 0,
 				discountRub: discountCalc.discountRub,
@@ -252,7 +267,7 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 				`Оплата ${effectiveAmountRub} ₽ наличными принята в кассу (${effectiveCashier})`,
 				"success",
 			);
-			onSuccess({
+			handleBroadcastSuccess({
 				method: "cash",
 				amountKopecks: isWarranty100 ? 0 : rubToKopecks(effectiveAmountRub),
 				discountRub,
@@ -280,7 +295,7 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 	const handleSplitSubmit = async () => {
 		if (isWarranty100 || totalDueRub <= 0) {
 			showToast(`Визит/счёт оформлен по 100% гарантии (0 ₽) (${effectiveCashier})`, "success");
-			onSuccess({
+			handleBroadcastSuccess({
 				method: "warranty_discount_100",
 				amountKopecks: 0,
 				discountRub: discountCalc.discountRub,
@@ -404,7 +419,7 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 				`Комбинированная оплата ${totalDueRub} ₽ успешно принята (${effectiveCashier})`,
 				"success",
 			);
-			onSuccess({
+			handleBroadcastSuccess({
 				method: "split",
 				amountKopecks: isWarranty100 ? 0 : discountCalc.totalDueKopecks,
 				discountRub,
@@ -491,7 +506,7 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 					: `Оплата ${totalDueRub} ₽ с аванса/депозита успешно списана`,
 				"success",
 			);
-			onSuccess({
+			handleBroadcastSuccess({
 				method: source,
 				amountKopecks: isWarranty100 ? 0 : discountCalc.totalDueKopecks,
 				discountRub,

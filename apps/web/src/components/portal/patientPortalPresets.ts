@@ -323,7 +323,7 @@ export const SAMPLE_PORTAL_DOCUMENTS: PortalDocumentItem[] = [
 	},
 	{
 		id: "doc-fns-tax-2026",
-		titleRu: "Справка об оплате медицинских услуг для представления в налоговый орган (ФНС КНД 1151156)",
+		titleRu: "Справка об оплате медицинских услуг для налогового вычета (13% НДФЛ)",
 		category: "tax_deduction",
 		codeOrderRu: "Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@",
 		dateIso: "2026-08-28",

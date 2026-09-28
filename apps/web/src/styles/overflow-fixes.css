@@ -98,14 +98,14 @@
 	#root,
 	.app-shell,
 	.app-shell.dente-redesign {
-		max-width: 100vw;
+		max-width: 100%;
 		overflow-x: hidden !important;
 	}
 
 	.app-shell.dente-redesign .workspace,
 	.workspace,
 	.workspace-shell {
-		max-width: 100vw;
+		max-width: 100%;
 		overflow-x: hidden !important;
 		min-width: 0;
 		box-sizing: border-box;
@@ -607,7 +607,7 @@
 	z-index: 50 !important;
 	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15) !important;
 	background: var(--paper-strong, var(--paper, #ffffff)) !important;
-	max-width: 100vw !important;
+	max-width: 100% !important;
 	box-sizing: border-box !important;
 }
 

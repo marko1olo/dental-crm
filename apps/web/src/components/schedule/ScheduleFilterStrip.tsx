@@ -410,21 +410,6 @@ export function ScheduleFilterStrip({
 				</button>
 			</div>
 
-			{/* 1-Click Primary Quick Booking Action for Receptionist (Hick's Law / Studio Clinical HIG, Mandates 8e, 8n) */}
-			{onQuickBooking && (
-				<button
-					type="button"
-					onClick={onQuickBooking}
-					className="schedule-toolbar-primary-quick-booking-btn sm:hidden h-8 min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap"
-					data-testid="schedule-toolbar-primary-quick-booking-btn"
-					title="Быстрая запись (N) / Новая запись пациента на прием"
-					aria-label="Быстрая запись (Запись)"
-				>
-					<Plus size={14} className="shrink-0" aria-hidden="true" />
-					<span className="whitespace-nowrap font-bold">Запись</span>
-				</button>
-			)}
-
 			{/* StomX 3-Stage Day Queue Segmented Tabs [Ожидает приёма | На приёме | Ожидает оплаты] (Mandates 8c, 8d, 8e, 8n) */}
 			{setScheduleStatusFilter && (
 				<div
@@ -515,7 +500,7 @@ export function ScheduleFilterStrip({
 								scheduleStatusFilter === "completed" ? "all" : "completed",
 							)
 						}
-						title="Очередь смены: Ожидает оплаты (приём завершён, готов к кассе 54-ФЗ). 1 клик для фильтрации"
+						title="Очередь смены: Ожидает оплаты (приём завершён, готов к оплате на кассе). 1 клик для фильтрации"
 						aria-label="Фильтр: Ожидает оплаты"
 						aria-pressed={scheduleStatusFilter === "completed"}
 					>
@@ -769,6 +754,29 @@ export function ScheduleFilterStrip({
 					</div>
 				)}
 
+				{/* 1-Click Primary Quick Booking Action for Receptionist (Hick's Law / Studio Clinical HIG, Mandates 8e, 8n) */}
+				{onQuickBooking && (
+					<button
+						type="button"
+						onClick={onQuickBooking}
+						className="schedule-toolbar-primary-quick-booking-btn h-8 min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap"
+						data-testid="schedule-toolbar-primary-quick-booking-btn"
+						title="Быстрая запись (N) / Новая запись пациента на прием"
+						aria-label="Быстрая запись (+ Запись)"
+					>
+						<Plus size={14} className="shrink-0" aria-hidden="true" />
+						<span className="whitespace-nowrap font-bold">+ Запись</span>
+					</button>
+				)}
+
+				<style>{`
+					@media (min-width: 640px) {
+						.schedule-filter-strip .schedule-toolbar-primary-quick-booking-btn {
+							display: inline-flex !important;
+						}
+					}
+				`}</style>
+
 				{/* Secondary Actions Overflow Dropdown Menu */}
 				<div className="relative inline-flex items-center shrink-0 flex-shrink-0 min-w-fit" ref={optionsMenuRef} style={{ flexShrink: 0, minWidth: "fit-content" }}>
 					<button
@@ -786,7 +794,7 @@ export function ScheduleFilterStrip({
 					</button>
 
 					<div
-						className={`schedule-options-dropdown absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[220px] max-w-[calc(100vw-16px)] max-h-[82vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-100 text-xs ${
+						className={`schedule-options-dropdown absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[220px] max-w-[320px] max-h-[82vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-100 text-xs ${
 							isOptionsMenuOpen ? "flex" : "hidden"
 						}`}
 						role="menu"

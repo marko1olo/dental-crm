@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, gt, lt, notInArray, or } from "drizzle-orm";
 import { withTenantCtx } from "../db/rls.js";
 import { appointments, chairs, patients, users } from "../db/schema.js";
+import { getNationalPhoneDigits } from "@dental/shared";
 import { wsBroker } from "./websocketBroker.js";
 
 export type BookingStatus =
@@ -140,11 +141,8 @@ function formatReferenceNumber(): string {
 	return `BKG-${randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 }
 
-function normalizePhoneDigits(phone: string): string {
-	const digits = String(phone ?? "").replace(/\D/g, "");
-	const national = digits.startsWith("8") && digits.length === 11 ? `7${digits.slice(1)}` : digits;
-	return national.length > 10 ? national.slice(-10) : national;
-}
+const normalizePhoneDigits = (phone: string | null | undefined): string =>
+	getNationalPhoneDigits(phone);
 
 function makeReceipt(
 	input: BookingRequestInput,

@@ -17,6 +17,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadContext } from "../accessGuard.js";
+import { replyBadRequest } from "./routeErrors.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import {
 	appointmentFunnel,
@@ -75,7 +76,7 @@ const periodQuerySchema = z.object({
 const MAX_PERIOD_DAYS = 400;
 
 function badRequest(reply: FastifyReply, message: string) {
-	return reply.code(400).send({ error: "ReportValidationError", message });
+	return replyBadRequest(reply, "ReportValidationError", message);
 }
 
 /*

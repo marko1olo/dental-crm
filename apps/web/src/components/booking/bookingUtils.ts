@@ -12,8 +12,8 @@ import {
 	Sparkles,
 	Stethoscope,
 } from "lucide-react";
-import type { BookingDoctorData, BookingSlotItem } from "./BookingDoctorCard";
-import type { CalendarDayItem } from "./BookingSlotPicker";
+import type { BookingDoctorData } from "./BookingDoctorCard";
+import type { BookingSlotItem, CalendarDayItem } from "./BookingSlotPicker";
 
 // ============================================================================
 // Types & Contracts

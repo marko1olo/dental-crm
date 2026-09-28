@@ -416,7 +416,7 @@
 	position: relative;
 }
 
-:is([data-theme="dark"], html.dark, .dark) .smartphone-screen {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .smartphone-screen {
 	background: #0b1120;
 }
 
@@ -528,7 +528,7 @@
 	border-bottom-left-radius: 4px;
 }
 
-:is([data-theme="dark"], html.dark, .dark) .phone-bubble-tg {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .phone-bubble-tg {
 	background: #1e293b;
 	color: #f1f5f9;
 }
@@ -540,7 +540,7 @@
 	border-top-left-radius: 0;
 }
 
-:is([data-theme="dark"], html.dark, .dark) .phone-bubble-wa {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .phone-bubble-wa {
 	background: #054740;
 	color: #e2e8f0;
 }
@@ -551,7 +551,7 @@
 	align-self: flex-start;
 }
 
-:is([data-theme="dark"], html.dark, .dark) .phone-bubble-max {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .phone-bubble-max {
 	background: #2e1065;
 	color: #f3e8ff;
 }
@@ -563,7 +563,7 @@
 	border-radius: 16px 16px 16px 4px;
 }
 
-:is([data-theme="dark"], html.dark, .dark) .phone-bubble-sms {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .phone-bubble-sms {
 	background: #334155;
 	color: #f8fafc;
 }
@@ -577,7 +577,7 @@
 	max-width: 100%;
 }
 
-:is([data-theme="dark"], html.dark, .dark) .phone-bubble-email {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) .phone-bubble-email {
 	background: #1e293b;
 	color: #f8fafc;
 }

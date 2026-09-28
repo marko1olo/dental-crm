@@ -190,7 +190,7 @@ export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 			showToast(
 				nextVal
 					? `2FA (TOTP / SMS) активирована для «${staffMember.fullName}». Требуется одноразовый код при входе вне локальной сети клиники.`
-					: `2FA отключена для «${staffMember.fullName}». Рекомендуется включить согласно 152-ФЗ.`,
+					: `2FA отключена для «${staffMember.fullName}». Рекомендуется включить для защиты персональных данных.`,
 				nextVal ? "success" : "warning",
 			);
 			if (onSaved) onSaved();
@@ -311,7 +311,7 @@ export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 							</p>
 						) : (
 							<p className="m-0 text-rose-700 dark:text-rose-300 font-semibold">
-								Внимание: доступ сотрудника к базе пациентов 152-ФЗ, расписанию и кассе 54-ФЗ
+								Внимание: доступ сотрудника к базе пациентов, расписанию и кассе
 								полностью заблокирован. Токены авторизации отозваны.
 							</p>
 						)}
@@ -524,7 +524,7 @@ export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 				<div className="staff-profile-section-title">
 					<div className="staff-profile-section-title-left">
 						<ShieldCheck className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-						<span>Двухфакторная аутентификация (2FA / 152-ФЗ / ФСТЭК № 21)</span>
+						<span>Двухфакторная аутентификация (2FA / Защита данных)</span>
 					</div>
 					{is2FaEnabled ? (
 						<span className="staff-profile-badge-status active">
@@ -540,8 +540,7 @@ export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
 					<div className="text-xs text-slate-600 dark:text-slate-300 flex-1 leading-relaxed">
 						<p className="m-0">
-							В соответствии с требованиями Приказа ФСТЭК России № 21 и 152-ФЗ,
-							двухфакторная защита предотвращает перехват сессий при входе с удаленных ПК,
+							Двухфакторная защита предотвращает несанкционированный доступ при входе с удаленных ПК,
 							смартфонов и внешних сетей. При входе запрашивается одноразовый TOTP/SMS код.
 						</p>
 					</div>

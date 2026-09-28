@@ -73,7 +73,7 @@ export function EmkServicesSection({
 				</summary>
 				<div className="py-2.5 px-1 flex flex-col gap-2.5 border-t border-[var(--line)]/50">
 					<div className="flex items-center justify-between gap-2 flex-wrap">
-						<span className="text-xs text-[var(--muted)]">Быстрое добавление услуг прайса в Форму 043/у:</span>
+						<span className="text-xs text-[var(--muted)]">Быстрое добавление услуг в дневник приёма:</span>
 						<button
 							type="button"
 							onClick={onOpenPriceSearchModal}

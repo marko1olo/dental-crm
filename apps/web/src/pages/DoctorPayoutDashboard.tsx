@@ -903,8 +903,9 @@ export function DoctorPayoutDashboard() {
 																			type="button"
 																			className="secondary-button"
 																			onClick={() => setPayrollModalDoctor(row)}
+																			title="Зарплатная ведомость Т-51"
 																		>
-																			Расчетный листок Т-51
+																			Зарплатная ведомость
 																		</button>
 																	</div>
 																	<div className="ops-formula-summary">

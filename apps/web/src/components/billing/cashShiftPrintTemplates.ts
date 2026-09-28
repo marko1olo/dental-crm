@@ -51,7 +51,7 @@ export function generateKo1Html(v: Ko1CashInflowVoucher): string {
 	<table class="grid-table">
 		<tr>
 			<td style="width: 30%;"><strong>Принято от:</strong></td>
-			<td>${v.payerFullName}</td>
+			<td>${v.receivedFrom}</td>
 		</tr>
 		<tr>
 			<td><strong>Основание:</strong></td>

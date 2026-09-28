@@ -1,0 +1,26 @@
+/* ==========================================================================
+   DENTE CRM — CANONICAL THEMES RE-EXPORT & ATMOSPHERIC BRIDGE (themes.css)
+   ==========================================================================
+   Authority: .agents/DESIGNER_VISUAL_INQUISITION_BIBLE.md & THE_HAMMER_MASTER_PROMPT.md
+   
+   Re-exports the 10 DENTE themes, atmospheric backgrounds, and glass elevation
+   tokens from theme.css, and guarantees unified surface and shadow tokens.
+   ========================================================================== */
+
+@import "../theme.css";
+
+:root {
+	--shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) {
+	--shadow-lg: 0 16px 36px -6px rgba(0, 0, 0, 0.55), 0 0 1px var(--line);
+}

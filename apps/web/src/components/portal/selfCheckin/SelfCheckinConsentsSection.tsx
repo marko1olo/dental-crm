@@ -28,22 +28,22 @@ export interface StatutoryConsentItem {
 export const DEFAULT_CONSENTS: StatutoryConsentItem[] = [
 	{
 		id: "ids_treatment",
-		code: "ИДС-ТЕР-01",
+		code: "Лечение",
 		titleRu: "Информированное согласие на стоматологическое лечение",
 		categoryRu: "Терапия и диагностика",
-		statutoryBasis: "323-ФЗ ст. 20",
+		statutoryBasis: "Стандарты медпомощи",
 		summaryRu:
 			"Согласие на проведение клинического осмотра, инструментальной диагностики, препарирования полостей и постановки реставраций.",
 		fullTextRu:
-			"Я, пациент клиники, даю информированное добровольное согласие на виды медицинских вмешательств в соответствии со ст. 20 Федерального закона № 323-ФЗ «Об основах охраны здоровья граждан в Российской Федерации». Мне разъяснены цели, методы оказания медицинской помощи, связанный с ними риск, возможные варианты медицинского вмешательства, его последствия, а также предполагаемые результаты.",
+			"Я, пациент клиники, даю информированное добровольное согласие на виды медицинских вмешательств в соответствии со стандартами охраны здоровья граждан. Мне разъяснены цели, методы оказания медицинской помощи, связанный с ними риск, возможные варианты медицинского вмешательства, его последствия, а также предполагаемые результаты.",
 		isSigned: false,
 	},
 	{
 		id: "ids_anesthesia",
-		code: "ИДС-АНЕСТ-01",
+		code: "Обезболивание",
 		titleRu: "Информированное согласие на местное обезболивание",
 		categoryRu: "Анестезия",
-		statutoryBasis: "323-ФЗ ст. 20",
+		statutoryBasis: "Безопасность анестезии",
 		summaryRu:
 			"Согласие на инфильтрационную и проводниковую анестезию современными карпульными препаратами (Артикаин, Мепивакаин).",
 		fullTextRu:
@@ -52,14 +52,14 @@ export const DEFAULT_CONSENTS: StatutoryConsentItem[] = [
 	},
 	{
 		id: "pd_152",
-		code: "ПДН-152",
+		code: "Персональные данные",
 		titleRu: "Согласие на обработку персональных данных",
 		categoryRu: "Персональные данные",
-		statutoryBasis: "152-ФЗ",
+		statutoryBasis: "Конфиденциальность данных",
 		summaryRu:
 			"Согласие на сбор, хранение и обработку персональных данных и сведений, составляющих врачебную тайну, в рамках оказания медпомощи.",
 		fullTextRu:
-			"В соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ «О персональных данных» подтверждаю свое согласие на обработку клиникой моих персональных данных и медицинских сведений в целях ведения электронной медицинской карты и оказания стоматологических услуг.",
+			"Подтверждаю свое согласие на обработку клиникой моих персональных данных и медицинских сведений в целях ведения электронной медицинской карты и оказания стоматологических услуг с соблюдением врачебной тайны.",
 		isSigned: false,
 	},
 ];
@@ -97,11 +97,11 @@ export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProp
 					type="button"
 					className="w-full py-2.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
 					onClick={onSignAllConsentsWithPep}
-					title="Подписать все 3 согласия (ИДС и ПДН) простой электронной подписью 63-ФЗ в 1 клик"
+					title="Подписать все согласия онлайн в 1 клик"
 					data-testid="sign-all-consents-pep-btn"
 				>
 					<ShieldCheck size={16} />
-					<span>Подписать все согласия ПЭП (63-ФЗ) в 1 клик</span>
+					<span>Подписать все согласия онлайн (в 1 клик)</span>
 				</button>
 			</div>
 
@@ -168,7 +168,7 @@ export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProp
 						<div className="selfcheckin-legal-pep-badge">
 							<ShieldCheck size={16} />
 							<span>
-								Электронная подпись (ПЭП)
+								Электронная подпись
 							</span>
 						</div>
 						<div className="flex flex-col gap-2 mt-3">
@@ -179,7 +179,7 @@ export const SelfCheckinConsentsSection: React.FC<SelfCheckinConsentsSectionProp
 								data-testid="consent-sign-pep-single-btn"
 							>
 								<ShieldCheck size={18} />
-								<span>Подтвердить согласие ПЭП (1 клик)</span>
+								<span>Подтвердить согласие (в 1 клик)</span>
 							</button>
 							<button
 								type="button"

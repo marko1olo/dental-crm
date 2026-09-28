@@ -134,7 +134,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 						onClick={() => {
 							openPrintWindow(generatePatientTaxCertificate1151156(data, 2026));
 							onShowToast(
-								"Официальная справка для налогового вычета (ФНС) по форме КНД 1151156 готова к печати!",
+								"Официальная справка для налогового вычета (13% НДФЛ) готова к печати!",
 							);
 						}}
 						data-testid="print-tax-deduction-btn"
@@ -385,7 +385,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 												}}
 											>
 												<Printer size={15} />
-												<span>Печать с QR ФНС</span>
+												<span>Печать чека с QR</span>
 											</button>
 
 											<button

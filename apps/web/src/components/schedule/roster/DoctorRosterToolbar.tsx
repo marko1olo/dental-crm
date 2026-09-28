@@ -217,10 +217,10 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								className="roster-btn roster-btn-secondary"
 								onClick={onExportT13}
 								style={{ minHeight: "34px", height: "34px" }}
-								title="Выгрузить форму Т-13 в CSV для 1C / Excel"
+								title="Табель Т-13: Выгрузить табель учёта рабочего времени в CSV для 1C / Excel"
 							>
 								<FileSpreadsheet size={16} />
-								<span>Табель Т-13 (CSV)</span>
+								<span>Табель учёта времени (CSV)</span>
 							</button>
 							<button
 								type="button"
@@ -573,9 +573,11 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 							className={`roster-tab-btn ${activeTab === "t13" ? "active" : ""}`}
 							onClick={() => onSelectTab("t13")}
 							style={{ minHeight: "34px", height: "34px" }}
+							title="Табель Т-13: Табель учёта рабочего времени"
 						>
 							<FileSpreadsheet size={16} />
-							<span>Табель Т-13</span>
+							<span>Табель учёта времени</span>
+							<span className="text-[10px] opacity-60 ml-1 font-mono">Т-13</span>
 						</button>
 						<button
 							type="button"

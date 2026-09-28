@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { CheckCircle2, FileCheck, Lock, RefreshCw, Smartphone, X } from "lucide-react";
 import type { PatientStatutoryConsent } from "../patientCabinetEngine";
 
@@ -58,7 +58,7 @@ export const ConsentSigningSheet: React.FC<ConsentSigningSheetProps> = ({
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 						<Smartphone size={22} style={{ color: "var(--pc-primary)" }} />
-						<strong style={{ fontSize: "1.0625rem" }}>Подписание ИДС (63-ФЗ)</strong>
+						<strong style={{ fontSize: "1.0625rem" }}>Подписание согласия онлайн</strong>
 					</div>
 					<button
 						type="button"
@@ -86,7 +86,7 @@ export const ConsentSigningSheet: React.FC<ConsentSigningSheetProps> = ({
 						onClick={() => onSetConsentSignMode("sms_otp")}
 					>
 						<Smartphone size={14} />
-						<span>SMS-код (63-ФЗ)</span>
+						<span>SMS-код</span>
 					</button>
 					<button
 						type="button"
@@ -95,7 +95,7 @@ export const ConsentSigningSheet: React.FC<ConsentSigningSheetProps> = ({
 						onClick={() => onSetConsentSignMode("cabinet_pep")}
 					>
 						<FileCheck size={14} />
-						<span>Подтверждение в ЛК (63-ФЗ)</span>
+						<span>Подтверждение в кабинете</span>
 					</button>
 				</div>
 
@@ -158,7 +158,7 @@ export const ConsentSigningSheet: React.FC<ConsentSigningSheetProps> = ({
 								data-testid="verify-otp-btn"
 							>
 								<Lock size={16} />
-								<span>Подписать документ (63-ФЗ ПЭП)</span>
+								<span>Подписать документ онлайн</span>
 							</button>
 						</div>
 					</>
@@ -166,13 +166,13 @@ export const ConsentSigningSheet: React.FC<ConsentSigningSheetProps> = ({
 					<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
 						<div style={{ background: "var(--pc-surface)", padding: "12px", borderRadius: "var(--pc-radius-sm)", fontSize: "0.8125rem", display: "flex", flexDirection: "column", gap: "6px" }}>
 							<div style={{ fontWeight: 700, color: "var(--pc-text-main)" }}>
-								Подтверждение через личный кабинет (63-ФЗ ПЭП / ст. 20 323-ФЗ)
+								Подтверждение через личный кабинет
 							</div>
 							<div style={{ color: "var(--pc-text-muted)" }}>
 								Пациент: <strong>{patientName}</strong> ({phone})
 							</div>
 							<div style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
-								Подтверждая согласие в авторизованном личном кабинете, вы принимаете условия плана лечения и подписываете ИДС простой электронной подписью.
+								Подтверждая согласие в личном кабинете, вы принимаете условия плана лечения и подписываете документ электронной подписью.
 							</div>
 						</div>
 						<button
@@ -182,7 +182,7 @@ export const ConsentSigningSheet: React.FC<ConsentSigningSheetProps> = ({
 							data-testid="confirm-touch-signature-btn"
 						>
 							<CheckCircle2 size={16} />
-							<span>Подтвердить согласие в личном кабинете (63-ФЗ ПЭП)</span>
+							<span>Подтвердить согласие в личном кабинете</span>
 						</button>
 					</div>
 				)}

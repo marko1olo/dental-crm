@@ -280,7 +280,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 				updatedAt: new Date().toISOString(),
 			},
 		});
-		showToast(`Зуб #${toothNumber}: применён 1-клик протокол Ревизии/Распломбировки`, "warn", 3000);
+		showToast(`Зуб #${toothNumber}: применён 1-клик протокол Ревизии/Распломбировки`, "warning", 3000);
 	};
 
 	const handleInsertEndoProtocol = () => {
@@ -291,7 +291,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 			radiologyControl: endoRadiologyControl,
 			updatedAt: new Date().toISOString(),
 		};
-		const text = generateEndoProtocol043(toothNumber, clinicalData);
+		const text = generateEndoProtocol043({ toothNumber, ...clinicalData });
 		if (onInsertToProtocol) {
 			onInsertToProtocol(text);
 			showToast(`Протокол эндодонтии зуба #${toothNumber} вставлен в 043/у!`, "success");

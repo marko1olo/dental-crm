@@ -27,10 +27,12 @@ import {
 	formatRubles,
 	calculateCabinetSummary,
 } from "./patientCabinetEngine.js";
+import { generateExtract043Html } from "./patientExtract043Documents.js";
 export {
 	formatRussianDateIso,
 	formatRubles,
 	calculateCabinetSummary,
+	generateExtract043Html,
 };
 
 // ============================================================================
@@ -101,6 +103,7 @@ export function generatePatientTaxCertificate1151156(
 				given,
 				patronymic,
 			},
+			inn: (data as { inn?: string }).inn || "781429810482",
 			birthDate: data.birthDate || "1984-05-14",
 			identityDocument: {
 				docTypeCode: "21",
@@ -591,6 +594,9 @@ export function generateDocumentSnapshotHtml(
 	doc: GeneratedDocumentSummary,
 	data: PatientPersonalCabinetData,
 ): string {
+	if (doc.kind === "medical_card_extract_043" || doc.kind.includes("043")) {
+		return generateExtract043Html(doc, data);
+	}
 	const clinicName = "ООО «Стоматологическая клиника ДЕНТЕ»";
 	const clinicInn = "7841098765";
 	const clinicLicense = "ЛО-78-01-011842 от 15.06.2021";
@@ -667,72 +673,5 @@ export function generateDocumentSnapshotHtml(
 </html>`;
 }
 
-export function generatePrescription107PrintHtml(
-	rx: PatientPrescriptionItem,
-	data: PatientPersonalCabinetData,
-): string {
-	const clinicName = "ООО «Стоматологическая клиника ДЕНТЕ»";
-	const clinicInn = "7841098765";
-	const clinicLicense = "ЛО-78-01-011842 от 15.06.2021";
-	const clinicAddress = "г. Санкт-Петербург, Невский пр-т, д. 140, лит. А";
-	const rxDate = formatRussianDateIso(rx.dateIso);
-	const doctor = rx.doctorName || data.curatingDoctor || "Д-р Смирнов А. В.";
-	const validity = rx.validityDays ? `${rx.validityDays} дней` : "60 дней";
+export { generatePrescription107PrintHtml } from "./patientPrescriptionDocuments.js";
 
-	return `<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <title>Рецептурный бланк 107-1/у — ${rx.medicationName}</title>
-  <style>
-    @page { size: A4 portrait; margin: 15mm; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #111; margin: 0; padding: 25px; line-height: 1.5; }
-    .rx-container { max-width: 650px; margin: 0 auto; border: 1px solid #94a3b8; border-radius: 8px; padding: 24px; background: #ffffff; }
-    .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 14px; }
-    .header h2 { margin: 0 0 2px 0; font-size: 14px; text-transform: uppercase; }
-    .header p { margin: 2px 0; font-size: 11px; color: #475569; }
-    .rx-box { border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; margin: 16px 0; background: #f8fafc; font-size: 13px; }
-    .stamp-row { margin-top: 35px; display: flex; justify-content: space-between; border-top: 1px dashed #94a3b8; padding-top: 12px; font-size: 11px; }
-    @media print {
-      body { padding: 0; }
-      .rx-container { border: none; padding: 0; }
-    }
-  </style>
-</head>
-<body>
-  <div class="rx-container">
-    <div class="header">
-      <h2>МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ РФ</h2>
-      <p>Форма № 107-1/у (Приказ Минздрава России № 1094н)</p>
-      <p><strong>${clinicName}</strong> &bull; ИНН ${clinicInn} &bull; Лицензия ${clinicLicense}</p>
-      <p>${clinicAddress}</p>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; font-size: 11.5px;">
-      <div><strong>Пациент:</strong> ${data.fullName}</div>
-      <div><strong>Дата выписки:</strong> ${rxDate}</div>
-      <div><strong>Дата рождения:</strong> ${data.birthDate ? formatRussianDateIso(data.birthDate) : "—"}</div>
-      <div><strong>Медицинская карта №:</strong> ${data.cardNumber}</div>
-      <div><strong>Лечащий врач:</strong> ${doctor}</div>
-    </div>
-
-    <div class="rx-box">
-      <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
-        Rp.: ${rx.medicationName} ${rx.dosageRu}
-      </div>
-      <div style="color: #334155; margin-bottom: 8px;">
-        ${rx.instructionRu}
-      </div>
-      <div style="font-size: 11px; color: #64748b;">
-        Курс приема: ${rx.durationRu} &bull; Срок действия рецепта: ${validity}
-      </div>
-    </div>
-
-    <div class="stamp-row">
-      <div>Подпись и личная печать врача: ____________________ (${doctor})</div>
-      <div>М.П. Клиники</div>
-    </div>
-  </div>
-</body>
-</html>`;
-}

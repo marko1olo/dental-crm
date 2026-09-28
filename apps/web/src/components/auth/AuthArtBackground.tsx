@@ -65,10 +65,10 @@ export function AuthArtBackground({
 	const [loaded, setLoaded] = useState(false);
 	const [imgError, setImgError] = useState(false);
 	const [isLight, setIsLight] = useState<boolean>(() => {
-		if (typeof document !== "undefined") {
-			const dataTheme = document.documentElement.getAttribute("data-theme");
+		if (typeof document !== "undefined" && document.documentElement) {
+			const dataTheme = document.documentElement.getAttribute?.("data-theme");
 			if (dataTheme === "light") return true;
-			if (document.documentElement.classList.contains("light")) return true;
+			if (document.documentElement.classList?.contains?.("light")) return true;
 			if (dataTheme && dataTheme !== "light") return false;
 		}
 		const stored = safeLocalStorageGetItem("dente_theme_mode");
@@ -81,11 +81,11 @@ export function AuthArtBackground({
 	});
 
 	useEffect(() => {
-		if (typeof document === "undefined") return;
+		if (typeof document === "undefined" || !document.documentElement) return;
 
 		const checkTheme = () => {
-			const dataTheme = document.documentElement.getAttribute("data-theme");
-			const hasLightClass = document.documentElement.classList.contains("light");
+			const dataTheme = document.documentElement.getAttribute?.("data-theme");
+			const hasLightClass = document.documentElement.classList?.contains?.("light");
 			const stored = safeLocalStorageGetItem("dente_theme_mode");
 			const light =
 				dataTheme === "light" ||
@@ -99,16 +99,23 @@ export function AuthArtBackground({
 
 		checkTheme();
 
-		const observer = new MutationObserver(checkTheme);
-		observer.observe(document.documentElement, {
-			attributes: true,
-			attributeFilter: ["data-theme", "class"],
-		});
+		let observer: MutationObserver | null = null;
+		if (typeof MutationObserver !== "undefined") {
+			observer = new MutationObserver(checkTheme);
+			observer.observe(document.documentElement, {
+				attributes: true,
+				attributeFilter: ["data-theme", "class"],
+			});
+		}
 
-		window.addEventListener("storage", checkTheme);
+		if (typeof window !== "undefined") {
+			window.addEventListener("storage", checkTheme);
+		}
 		return () => {
-			observer.disconnect();
-			window.removeEventListener("storage", checkTheme);
+			if (observer) observer.disconnect();
+			if (typeof window !== "undefined") {
+				window.removeEventListener("storage", checkTheme);
+			}
 		};
 	}, []);
 

@@ -423,7 +423,7 @@ async function runInquisitionCapture() {
         return route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify(url.includes("list") || url.includes("status") ? [] : {}),
+          body: JSON.stringify(url.includes("list") || url.includes("status") || url.includes("/scans") || url.includes("/xray") ? [] : {}),
         });
       });
     }
@@ -644,8 +644,10 @@ async function runInquisitionCapture() {
     await dPage.waitForTimeout(1000);
     await configurePage(dPage, "light");
     await takeProof(dPage, "visit_tab3_diagnostics_desktop_light.png", "Visit Diagnostics", "Desktop Light", '[data-testid="visit-diagnostics-tab"]');
+    await takeProof(dPage, "visit_diagnostics_clean_light.png", "Visit Diagnostics", "Desktop Light", '[data-testid="visit-diagnostics-tab"]');
     await configurePage(dPage, "dark");
     await takeProof(dPage, "visit_tab3_diagnostics_desktop_dark.png", "Visit Diagnostics", "Desktop Dark", '[data-testid="visit-diagnostics-tab"]');
+    await takeProof(dPage, "visit_diagnostics_clean_dark.png", "Visit Diagnostics", "Desktop Dark", '[data-testid="visit-diagnostics-tab"]');
     const emkTabBtn = await dPage.$('[data-testid="visit-subtab-emk"]');
     if (emkTabBtn) await emkTabBtn.click();
     await dPage.waitForTimeout(600);

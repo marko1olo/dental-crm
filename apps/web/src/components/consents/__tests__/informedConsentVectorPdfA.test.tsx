@@ -7,14 +7,14 @@
  * - Confirmation in 1 click with verificationMethod: "tablet_stylus"
  */
 
+import "../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React, { act } from "react";
+globalThis.React = React;
 import { renderToString } from "react-dom/server";
-import {
-	InformedConsentModal,
-	type SignedConsentPayload,
-} from "../InformedConsentModal.js";
+const { InformedConsentModal } = await import("../InformedConsentModal.js");
+import type { SignedConsentPayload } from "../InformedConsentModal.js";
 import {
 	generatePdfA1bDocument,
 	type ConsentPdfAOptions,

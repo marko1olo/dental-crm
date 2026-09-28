@@ -271,16 +271,15 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 
 			<span
 				className={`tooth-number-badge ${isSelected ? "selected" : ""}`}
-				style={{ fontSize: "12px" }}
 			>
 				<span
 					className="tooth-status-dot"
 					style={{ backgroundColor: colors.badgeColor }}
 				/>
-				<span className="tooth-number-text font-black">{number}</span>
+				<span className="tooth-number-text font-black text-[13px] sm:text-[14px] leading-tight select-none">{number}</span>
 				{resorptionVisual && resorptionVisual.stage > 0 && (
 					<span
-						className="ml-1 px-1 py-0.5 rounded text-[10px] font-black leading-none shadow-2xs"
+						className="ml-1 px-1 py-0.5 rounded text-xs font-black leading-none shadow-2xs"
 						style={{
 							backgroundColor: resorptionVisual.badgeBg,
 							color: resorptionVisual.badgeColor,
@@ -311,7 +310,7 @@ export const ToothSVG: React.FC<ToothSvgProps> = memo(({
 			role="button"
 			tabIndex={0}
 			className={`tooth-svg-wrapper group ${isTop ? "top" : "bottom"} ${
-				isSelected ? "selected ring-2 ring-indigo-500/70" : ""
+				isSelected ? "selected ring-2 ring-[var(--teal,#0d9488)]" : ""
 			} ${isSelected && isTouchScreen ? "touch-zoomed" : ""}`}
 			data-tooth-id={number}
 			title={`${getToothFolkAndAnatomicalNameRu(number)} — Статус: ${TOOTH_STATE_LABELS[state]}`}

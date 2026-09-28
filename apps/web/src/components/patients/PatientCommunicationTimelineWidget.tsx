@@ -144,7 +144,7 @@ const TONE_CLASSES: Record<StatusTone, string> = {
 	failed:
 		"bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800",
 	skipped:
-		"bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
+		"bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--glass-border)]",
 };
 
 /**
@@ -288,7 +288,7 @@ export const PatientCommunicationTimelineWidget: React.FC<{
 					) : null}
 
 					{entries.length === 0 ? (
-						<div className="p-4 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400">
+						<div className="p-4 rounded-lg border border-dashed border-[var(--glass-border)] text-xs bg-[var(--paper-soft)] text-[var(--muted)]">
 							Обращений через систему не записано. Здесь появляются SMS,
 							сообщения в Telegram, WhatsApp, ВКонтакте и MAX, письма и звонки,
 							прошедшие через клинику. Звонок с личного телефона врача сюда не
@@ -303,10 +303,10 @@ export const PatientCommunicationTimelineWidget: React.FC<{
 									return (
 										<li
 											key={entry.id}
-											className="p-3 rounded-lg border text-xs bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700"
+											className="p-3 rounded-lg border text-xs bg-[var(--paper-strong)] border-[var(--glass-border)] shadow-2xs"
 										>
 											<div className="flex flex-wrap items-center gap-2">
-												<span className="font-semibold text-slate-900 dark:text-white">
+												<span className="font-semibold text-[var(--ink)]">
 													{entryTitle(entry)}
 												</span>
 												<span
@@ -315,14 +315,14 @@ export const PatientCommunicationTimelineWidget: React.FC<{
 													{view.label}
 												</span>
 												{moment ? (
-													<span className="text-slate-500 dark:text-slate-400">
+													<span className="text-[var(--muted)]">
 														{moment}
 													</span>
 												) : null}
 											</div>
 											{/* Текст сообщения — единственное содержательное поле события;
 											    break-words нужен ссылкам и длинным словам. */}
-											<p className="mt-1 mb-0 text-slate-800 dark:text-slate-200 break-words whitespace-pre-wrap">
+											<p className="mt-1 mb-0 text-[var(--ink)] break-words whitespace-pre-wrap">
 												{entry.message}
 											</p>
 											{entry.recordingUrl ? (
@@ -331,7 +331,7 @@ export const PatientCommunicationTimelineWidget: React.FC<{
 													durationSeconds={entry.durationSeconds ?? null}
 												/>
 											) : null}
-											<p className="mt-1 mb-0 text-slate-500 dark:text-slate-400">
+											<p className="mt-1 mb-0 text-[var(--muted)]">
 												{entry.actorName
 													? `Сотрудник: ${entry.actorName}`
 													: "Автоматически, без участия сотрудника"}
@@ -341,13 +341,13 @@ export const PatientCommunicationTimelineWidget: React.FC<{
 								})}
 							</ul>
 							{log.truncated ? (
-								<p className="mt-2 mb-0 text-xs text-slate-500 dark:text-slate-400">
+								<p className="mt-2 mb-0 text-xs text-[var(--muted)]">
 									Показаны не все обращения: {entries.length} из {total},
 									начиная с самого свежего. Полная переписка — в разделе «
 									{COMMUNICATIONS_SECTION_TITLE}».
 								</p>
 							) : null}
-							<p className="mt-2 mb-0 text-xs text-slate-500 dark:text-slate-400">
+							<p className="mt-2 mb-0 text-xs text-[var(--muted)]">
 								Видно только то, что прошло через клинику: сообщения из
 								мессенджеров, SMS, письма и звонки через телефонию.
 							</p>

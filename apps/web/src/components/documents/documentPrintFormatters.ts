@@ -5,7 +5,8 @@
  * Мандаты: 8b (<=800 строк), 8s (SSOT / Закон единого авторитета).
  */
 
-export { escapeHtml } from "@dental/shared";
+import { escapeHtml } from "@dental/shared";
+export { escapeHtml };
 
 export function formatDateRu(dateStr: string | null | undefined): string {
 	if (!dateStr) return "«___» _________ _____ г.";

@@ -19,6 +19,7 @@ import {
 } from "./AppHelpers";
 import {
 	DocumentNavTabs,
+	DOCUMENT_CATEGORY_KINDS,
 	type DocumentCategoryTab,
 } from "./components/documents/DocumentNavTabs";
 import { type DocumentEdsFilter, type DocumentStatusFilter } from "./components/documents/DocumentRegistryFilterBar";
@@ -214,26 +215,10 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 	);
 
 
-	const clinicalKinds = useMemo(
-		() =>
-			new Set<DocumentKind>([
-				"dental_medical_card_043u",
-				"treatment_plan",
-				"treatment_cost_estimate",
-				"surgical_operation_protocol",
-			]),
-		[],
-	);
-
-	const certificatesSanpinKinds = useMemo(
-		() =>
-			new Set<DocumentKind>([
-				"visit_attendance_certificate",
-				"radiation_dose_sheet",
-				"autoclave_sterilization_log_257u",
-			]),
-		[],
-	);
+	const intakeKinds = DOCUMENT_CATEGORY_KINDS.intake;
+	const clinicalKinds = DOCUMENT_CATEGORY_KINDS.clinical;
+	const financeTaxKinds = DOCUMENT_CATEGORY_KINDS.finance_tax;
+	const certificatesSanpinKinds = DOCUMENT_CATEGORY_KINDS.certificates_sanpin;
 
 	const sanitizedDocumentFactoryGroups = useMemo(() => {
 		const groups = (props.documentFactoryGroups ?? []) as Array<{
@@ -310,6 +295,17 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 
 	const filteredActiveDocuments = useMemo(() => {
 		let list = typedActiveDocuments;
+
+		if (activeCategoryTab === "intake") {
+			list = list.filter((doc) => intakeKinds.has(doc.kind));
+		} else if (activeCategoryTab === "clinical") {
+			list = list.filter((doc) => clinicalKinds.has(doc.kind));
+		} else if (activeCategoryTab === "finance_tax") {
+			list = list.filter((doc) => financeTaxKinds.has(doc.kind));
+		} else if (activeCategoryTab === "certificates_sanpin") {
+			list = list.filter((doc) => certificatesSanpinKinds.has(doc.kind));
+		}
+
 		if (registrySearchQuery.trim()) {
 			const query = registrySearchQuery.toLowerCase().trim();
 			list = list.filter(
@@ -344,6 +340,11 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		return list;
 	}, [
 		typedActiveDocuments,
+		activeCategoryTab,
+		intakeKinds,
+		clinicalKinds,
+		financeTaxKinds,
+		certificatesSanpinKinds,
 		registrySearchQuery,
 		registryStatusFilter,
 		registryEdsFilter,
@@ -378,39 +379,12 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 	const navCategoryCounts = useMemo(() => {
 		return {
 			all: typedActiveDocuments.length,
-			intake: typedActiveDocuments.filter((d) =>
-				[
-					"paid_medical_services_contract",
-					"informed_voluntary_consent",
-					"personal_data_processing_consent",
-					"patient_intake_questionnaire",
-				].includes(d.kind),
-			).length,
-			clinical: typedActiveDocuments.filter((d) =>
-				[
-					"dental_medical_card_043u",
-					"treatment_plan",
-					"treatment_cost_estimate",
-					"surgical_operation_protocol",
-				].includes(d.kind),
-			).length,
-			finance_tax: typedActiveDocuments.filter((d) =>
-				[
-					"payment_invoice",
-					"payment_receipt",
-					"completed_works_act",
-					"tax_deduction_certificate",
-				].includes(d.kind),
-			).length,
-			certificates_sanpin: typedActiveDocuments.filter((d) =>
-				[
-					"visit_attendance_certificate",
-					"radiation_dose_sheet",
-					"autoclave_sterilization_log_257u",
-				].includes(d.kind),
-			).length,
+			intake: typedActiveDocuments.filter((d) => intakeKinds.has(d.kind)).length,
+			clinical: typedActiveDocuments.filter((d) => clinicalKinds.has(d.kind)).length,
+			finance_tax: typedActiveDocuments.filter((d) => financeTaxKinds.has(d.kind)).length,
+			certificates_sanpin: typedActiveDocuments.filter((d) => certificatesSanpinKinds.has(d.kind)).length,
 		};
-	}, [typedActiveDocuments]);
+	}, [typedActiveDocuments, intakeKinds, clinicalKinds, financeTaxKinds, certificatesSanpinKinds]);
 
 	const documentIssueMissingSteps = [
 		!String(documentIssueSignedAt || "").trim()
@@ -696,6 +670,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 
 			{/* 9. РЕЕСТР ДОКУМЕНТОВ И СМАРТ-ФИЛЬТРЫ */}
 			<DocumentRegistryTab
+				activeCategoryTab={activeCategoryTab}
 				registrySearchQuery={registrySearchQuery}
 				setRegistrySearchQuery={setRegistrySearchQuery}
 				registryStatusFilter={registryStatusFilter}

@@ -40,6 +40,7 @@ import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	type ConsentTemplateKey,
 	type ConsentPackageKey,
@@ -55,6 +56,24 @@ import {
 	renderConsentTemplate,
 } from "../consents/consentTemplates";
 import { generateSha256 } from "../consents/consentIntegrityHash";
+
+const CONSENT_KEY_TO_DOCUMENT_KIND: Record<ConsentTemplateKey, string> = {
+	CONSENT_INSPECTION_1051N: "informed_consent",
+	CONSENT_ANESTHESIA: "anesthesia_consent_log",
+	CONSENT_PERSONAL_DATA: "personal_data_processing_consent",
+	CONSENT_THERAPY: "procedure_specific_consent_packet",
+	CONSENT_SURGERY_IMPLANT: "procedure_specific_consent_packet",
+	CONSENT_ORTHOPEDICS: "procedure_specific_consent_packet",
+	CONSENT_ORTHODONTICS: "procedure_specific_consent_packet",
+	CONSENT_HYGIENE_BLEACHING: "procedure_specific_consent_packet",
+	CONSENT_PEDIATRIC: "procedure_specific_consent_packet",
+};
+
+const DOCUMENT_KIND_TO_CONSENT_KEY: Record<string, ConsentTemplateKey> = {
+	informed_consent: "CONSENT_INSPECTION_1051N",
+	anesthesia_consent_log: "CONSENT_ANESTHESIA",
+	personal_data_processing_consent: "CONSENT_PERSONAL_DATA",
+};
 
 export interface VisitConsentsTabPatient {
 	id?: string | null | undefined;
@@ -439,6 +458,160 @@ export function VisitConsentsTab({
 		return itemsWithStatus.filter((item) => item.status === "required_today");
 	}, [itemsWithStatus]);
 
+	// Загрузка ранее сохраненных и выданных документов из бэкенда
+	useEffect(() => {
+		if (!patientId) return;
+		let isSubscribed = true;
+
+		async function loadExistingDocuments() {
+			try {
+				const res = await fetch(`/api/documents?patientId=${encodeURIComponent(patientId)}`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!res.ok) return;
+				const data = (await res.json()) as {
+					documents?: Array<{
+						id?: string;
+						kind?: string;
+						title?: string;
+						status?: string;
+						hash?: string;
+						signatureAttestation?: {
+							signedAt?: string;
+							staffFullName?: string;
+							mode?: string;
+							note?: string;
+						};
+						payload?: Record<string, unknown>;
+						createdAt?: string;
+					}>;
+				};
+				const docs = data?.documents;
+				if (!isSubscribed || !docs || !Array.isArray(docs)) return;
+
+				setConsentRecords((prev) => {
+					const next = { ...prev };
+					let hasUpdates = false;
+
+					for (const doc of docs) {
+						const isDocSigned =
+							doc.status === "issued" ||
+							doc.status === "signed" ||
+							Boolean(doc.signatureAttestation);
+						if (!isDocSigned) continue;
+
+						let consentKey: ConsentTemplateKey | null = null;
+						if (doc.payload?.consentKey && typeof doc.payload.consentKey === "string" && doc.payload.consentKey in next) {
+							consentKey = doc.payload.consentKey as ConsentTemplateKey;
+						} else if (doc.kind && doc.kind in DOCUMENT_KIND_TO_CONSENT_KEY) {
+							consentKey = DOCUMENT_KIND_TO_CONSENT_KEY[doc.kind] ?? null;
+						}
+
+						if (consentKey && !next[consentKey]?.isSigned) {
+							const signedDateStr = doc.signatureAttestation?.signedAt
+								? `${new Date(doc.signatureAttestation.signedAt).toLocaleDateString("ru-RU")}, ${new Date(doc.signatureAttestation.signedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`
+								: doc.createdAt
+									? `${new Date(doc.createdAt).toLocaleDateString("ru-RU")}, ${new Date(doc.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`
+									: `${new Date().toLocaleDateString("ru-RU")}, 09:00`;
+
+							next[consentKey] = {
+								isSigned: true,
+								signedAt: signedDateStr,
+								method: doc.signatureAttestation?.mode === "ukep" ? "tablet" : "paper",
+								doctorName:
+									doc.signatureAttestation?.staffFullName ||
+									substitutionContext.doctorName ||
+									"Врач-стоматолог",
+								notes:
+									doc.signatureAttestation?.note ||
+									"Подписано и зафиксировано в реестре документов клиники",
+								integrityHash:
+									doc.hash || generateSha256(`${consentKey}_${patientId}_${signedDateStr}`),
+							};
+							hasUpdates = true;
+						}
+					}
+
+					if (hasUpdates) {
+						try {
+							safeLocalStorageSetItem(storageKey, JSON.stringify(next));
+						} catch {
+							// ignore storage error
+						}
+						return next;
+					}
+					return prev;
+				});
+			} catch {
+				// Network error / offline fallback: keep local storage records
+			}
+		}
+
+		void loadExistingDocuments();
+
+		return () => {
+			isSubscribed = false;
+		};
+	}, [patientId, storageKey, substitutionContext.doctorName]);
+
+	// Асинхронное сохранение подписанного согласия на бэкенде (/api/documents + /api/documents/:id/issue)
+	const persistConsentToBackend = useCallback(
+		async (key: ConsentTemplateKey, itemTitle: string, record: ConsentRecordState) => {
+			if (!patientId) return;
+			try {
+				const kind = CONSENT_KEY_TO_DOCUMENT_KIND[key] || "informed_consent";
+				const createRes = await fetch("/api/documents", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({
+						patientId,
+						visitId: activeAppointment?.id || undefined,
+						kind,
+						title: itemTitle,
+						payload: {
+							consentKey: key,
+							patientName: substitutionContext.patientName,
+							doctorName: record.doctorName,
+							signedAt: record.signedAt,
+							integrityHash: record.integrityHash,
+							method: record.method,
+							notes: record.notes,
+						},
+					}),
+				});
+
+				if (!createRes.ok) return;
+				const createData = (await createRes.json()) as { document?: { id?: string }; id?: string };
+				const docId = createData?.document?.id || createData?.id;
+				if (!docId) return;
+
+				const nowIso = new Date().toISOString();
+				await fetch(`/api/documents/${encodeURIComponent(docId)}/issue`, {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({
+						signatureAttestation: {
+							mode: "paper_signed",
+							signedAt: nowIso,
+							recipientFullName: substitutionContext.patientName || "Пациент",
+							recipientRole: "patient",
+							staffFullName: record.doctorName || "Врач-стоматолог",
+							staffRole: "doctor",
+							identityChecked: true,
+							documentOpenedAndChecked: true,
+							recipientSigned: true,
+							clinicRepresentativeSigned: true,
+							note: record.notes || "Подписано на бумаге и подшито в медицинскую карту 043/у",
+						},
+					}),
+				});
+			} catch {
+				// Offline / network fallback: safeLocalStorage has already persisted the signed consent
+			}
+		},
+		[activeAppointment?.id, patientId, substitutionContext.doctorName, substitutionContext.patientName],
+	);
+
 	// 1-Клик отметка: Подписано на бумаге
 	const handleTogglePaperSigned = useCallback((key: ConsentTemplateKey, itemTitle: string) => {
 		const current = consentRecords[key];
@@ -451,21 +624,25 @@ export function VisitConsentsTab({
 			showToast(`Отметка о согласии «${itemTitle}» снята`, "info");
 		} else {
 			const nowStr = `${new Date().toLocaleDateString("ru-RU")}, ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+			const newRecord: ConsentRecordState = {
+				isSigned: true,
+				signedAt: nowStr,
+				method: "paper" as const,
+				doctorName: substitutionContext.doctorName || "Врач-стоматолог",
+				notes: "Оригинал подписан на бумаге и подшит в карту 043/у",
+				integrityHash: generateSha256(`${key}_${patientId}_${nowStr}_paper`),
+			};
 			const next = {
 				...consentRecords,
-				[key]: {
-					isSigned: true,
-					signedAt: nowStr,
-					method: "paper" as const,
-					doctorName: substitutionContext.doctorName || "Врач-стоматолог",
-					notes: "Оригинал подписан на бумаге и подшит в карту 043/у",
-					integrityHash: generateSha256(`${key}_${patientId}_${nowStr}_paper`),
-				},
+				[key]: newRecord,
 			};
 			saveConsentRecords(next);
 			showToast(`Согласие «${itemTitle}» отмечено как подписанное на бумаге`, "success");
+
+			// Асинхронная фиксация в реестре документов клиники
+			void persistConsentToBackend(key, itemTitle, newRecord);
 		}
-	}, [consentRecords, patientId, saveConsentRecords, substitutionContext.doctorName]);
+	}, [consentRecords, patientId, persistConsentToBackend, saveConsentRecords, substitutionContext.doctorName]);
 
 	// 1-Клик: Отметить все необходимые согласия на сегодня как подписанные на бумаге
 	const handleMarkAllRequiredTodaySigned = useCallback(() => {
@@ -478,7 +655,7 @@ export function VisitConsentsTab({
 		const next = { ...consentRecords };
 
 		for (const item of unsignedRequiredItems) {
-			next[item.key] = {
+			const rec: ConsentRecordState = {
 				isSigned: true,
 				signedAt: nowStr,
 				method: "paper",
@@ -486,11 +663,13 @@ export function VisitConsentsTab({
 				notes: "Оригинал подписан на бумаге (пакет на сегодня)",
 				integrityHash: generateSha256(`${item.key}_${patientId}_${nowStr}_paper`),
 			};
+			next[item.key] = rec;
+			void persistConsentToBackend(item.key, item.title, rec);
 		}
 
 		saveConsentRecords(next);
 		showToast(`Оформлено на бумаге: ${unsignedRequiredItems.length} согласий`, "success");
-	}, [unsignedRequiredItems, consentRecords, substitutionContext.doctorName, patientId, saveConsentRecords]);
+	}, [unsignedRequiredItems, consentRecords, substitutionContext.doctorName, patientId, persistConsentToBackend, saveConsentRecords]);
 
 	// Печать бланка одного согласия (заполненного)
 	const handlePrintSingleFilled = useCallback((key: ConsentTemplateKey) => {
@@ -559,7 +738,7 @@ export function VisitConsentsTab({
 			<style>{`
 				.vct-root {
 					background: var(--paper);
-					border: 1px solid var(--line);
+					border: 1px solid var(--glass-border);
 					border-radius: var(--radius-xl, 12px);
 					padding: 16px;
 					display: flex;
@@ -577,7 +756,7 @@ export function VisitConsentsTab({
 					flex-wrap: wrap;
 					gap: 12px;
 					padding-bottom: 12px;
-					border-bottom: 1px solid var(--line);
+					border-bottom: 1px solid var(--glass-border);
 				}
 
 				.vct-title-group {
@@ -621,7 +800,7 @@ export function VisitConsentsTab({
 					font-weight: 600;
 					cursor: pointer;
 					transition: all 0.15s ease;
-					border: 1px solid var(--line);
+					border: 1px solid var(--glass-border);
 					background: var(--paper);
 					color: var(--ink);
 					white-space: nowrap;
@@ -632,7 +811,7 @@ export function VisitConsentsTab({
 
 				.vct-btn:hover:not(:disabled) {
 					background: var(--paper-soft);
-					border-color: var(--line-strong, var(--line));
+					border-color: var(--glass-border);
 					color: var(--ink);
 				}
 
@@ -665,11 +844,11 @@ export function VisitConsentsTab({
 				.vct-btn-secondary {
 					background: var(--paper);
 					color: var(--ink);
-					border-color: var(--line);
+					border-color: var(--glass-border);
 				}
 				.vct-btn-secondary:hover:not(:disabled) {
 					background: var(--paper-soft);
-					border-color: var(--line-strong, var(--line));
+					border-color: var(--glass-border);
 					color: var(--ink);
 				}
 
@@ -693,7 +872,7 @@ export function VisitConsentsTab({
 					justify-content: center;
 					border-radius: var(--radius-md, 8px);
 					background: var(--paper);
-					border: 1px solid var(--line);
+					border: 1px solid var(--glass-border);
 					color: var(--muted);
 					cursor: pointer;
 					transition: all 0.15s ease;
@@ -701,7 +880,7 @@ export function VisitConsentsTab({
 				}
 				.vct-btn-icon:hover:not(:disabled) {
 					background: var(--paper-soft);
-					border-color: var(--line-strong, var(--line));
+					border-color: var(--glass-border);
 					color: var(--ink);
 				}
 				.vct-btn-icon.active {
@@ -721,7 +900,7 @@ export function VisitConsentsTab({
 					top: calc(100% + 4px);
 					min-width: 220px;
 					background: var(--paper);
-					border: 1px solid var(--line);
+					border: 1px solid var(--glass-border);
 					border-radius: var(--radius-lg, 10px);
 					box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 					padding: 4px;
@@ -768,7 +947,7 @@ export function VisitConsentsTab({
 
 				.vct-dropdown-divider {
 					height: 1px;
-					background: var(--line);
+					background: var(--glass-border);
 					margin: 2px 0;
 				}
 
@@ -781,7 +960,7 @@ export function VisitConsentsTab({
 					justify-content: space-between;
 					gap: 16px;
 					flex-wrap: wrap;
-					border: 1px solid var(--line);
+					border: 1px solid var(--glass-border);
 					background: var(--paper-soft);
 				}
 
@@ -859,7 +1038,7 @@ export function VisitConsentsTab({
 					align-items: center;
 					justify-content: space-between;
 					gap: 12px;
-					border-bottom: 1px solid var(--line);
+					border-bottom: 1px solid var(--glass-border);
 					padding-bottom: 6px;
 					flex-wrap: wrap;
 				}
@@ -902,7 +1081,7 @@ export function VisitConsentsTab({
 					padding: 1px 6px;
 					border-radius: 9999px;
 					background: var(--paper);
-					border: 1px solid var(--line);
+					border: 1px solid var(--glass-border);
 					color: var(--ink);
 				}
 
@@ -914,7 +1093,7 @@ export function VisitConsentsTab({
 				}
 
 				.vct-consent-card {
-					border: 1px solid var(--line);
+					border: 1px solid var(--glass-border);
 					border-radius: var(--radius-lg, 10px);
 					background: var(--paper);
 					transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -923,7 +1102,7 @@ export function VisitConsentsTab({
 				}
 
 				.vct-consent-card:hover {
-					border-color: var(--line-strong, var(--line));
+					border-color: var(--glass-border);
 					box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
 				}
 
@@ -979,7 +1158,7 @@ export function VisitConsentsTab({
 					padding: 2px 6px;
 					border-radius: 4px;
 					background: var(--paper-soft);
-					border: 1px solid var(--line);
+					border: 1px solid var(--glass-border);
 					color: var(--muted);
 				}
 
@@ -1031,7 +1210,7 @@ export function VisitConsentsTab({
 				.vct-badge-neutral {
 					background: var(--paper-soft);
 					color: var(--muted);
-					border: 1px solid var(--line);
+					border: 1px solid var(--glass-border);
 				}
 
 				.vct-signed-detail {
@@ -1051,7 +1230,7 @@ export function VisitConsentsTab({
 
 				/* Inline Accordion Preview */
 				.vct-inline-preview {
-					border-top: 1px solid var(--line);
+					border-top: 1px solid var(--glass-border);
 					border-bottom-left-radius: var(--radius-lg, 10px);
 					border-bottom-right-radius: var(--radius-lg, 10px);
 					padding: 14px 16px;
@@ -1077,7 +1256,7 @@ export function VisitConsentsTab({
 					display: flex;
 					align-items: center;
 					justify-content: space-between;
-					border-bottom: 1px solid var(--line);
+					border-bottom: 1px solid var(--glass-border);
 					padding-bottom: 6px;
 				}
 
@@ -1138,7 +1317,7 @@ export function VisitConsentsTab({
 
 				.vct-preview-aftercare-box {
 					background: var(--paper-soft);
-					border: 1px solid var(--line);
+					border: 1px solid var(--glass-border);
 					border-radius: var(--radius-md, 6px);
 					padding: 8px 12px;
 					font-size: 11.5px;
@@ -1146,7 +1325,7 @@ export function VisitConsentsTab({
 
 				/* Archive Table */
 				.vct-archive-container {
-					border: 1px solid var(--line);
+					border: 1px solid var(--glass-border);
 					border-radius: var(--radius-lg, 10px);
 					overflow: hidden;
 					background: var(--paper);
@@ -1163,13 +1342,13 @@ export function VisitConsentsTab({
 					padding: 8px 12px;
 					font-weight: 700;
 					color: var(--muted);
-					border-bottom: 1px solid var(--line);
+					border-bottom: 1px solid var(--glass-border);
 					background: var(--paper-soft);
 				}
 
 				.vct-archive-table td {
 					padding: 10px 12px;
-					border-bottom: 1px solid var(--line);
+					border-bottom: 1px solid var(--glass-border);
 					color: var(--ink);
 					vertical-align: middle;
 				}
@@ -1190,7 +1369,7 @@ export function VisitConsentsTab({
 					display: flex;
 					align-items: center;
 					justify-content: space-between;
-					border-top: 1px solid var(--line);
+					border-top: 1px solid var(--glass-border);
 					padding-top: 12px;
 					flex-wrap: wrap;
 					gap: 10px;
@@ -1649,7 +1828,7 @@ export function VisitConsentsTab({
 					<div
 						style={{
 							background: "var(--paper-soft)",
-							border: "1px solid var(--line)",
+							border: "1px solid var(--glass-border)",
 							borderRadius: "10px",
 							padding: "14px 16px",
 							display: "flex",
@@ -1687,7 +1866,7 @@ export function VisitConsentsTab({
 			<div className="vct-footer-bar">
 				<div className="vct-footer-left">
 					<ShieldCheck size={14} style={{ color: "var(--emerald)" }} />
-					<span>Все согласия сохраняются в истории электронной медицинской карты Формы 043/у (срок хранения 25 лет)</span>
+					<span>Все согласия сохраняются в истории электронной медицинской карты (срок хранения 25 лет)</span>
 				</div>
 				<div className="vct-footer-actions">
 					<button
@@ -1695,10 +1874,11 @@ export function VisitConsentsTab({
 						onClick={onFastPrint043u}
 						data-testid="btn-visit-consents-print-043u"
 						className="vct-btn vct-btn-secondary"
-						title="Печать полного дневника 043/у текущего приёма"
+						title="Печать полного дневника приёма (Форма 043/у)"
+						aria-label="Печать Формы 043/у"
 					>
 						<Printer size={13} />
-						<span>Печать Формы 043/у</span>
+						<span>Печать дневника</span>
 					</button>
 					<button
 						type="button"

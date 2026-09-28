@@ -1,10 +1,11 @@
 /* patients-redesign.css - Premium, clean UX for Patients tab using DENTE CSS Variables */
+@import "./modules/patients.css";
 
 .patients-panel {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	padding: 8px 16px;
+	padding: 8px 16px 24px 16px;
 	background: var(--bg);
 	min-height: 100vh;
 	color: var(--ink);
@@ -57,8 +58,8 @@
 	border: 1px solid var(--line-strong);
 	border-radius: 8px;
 	font-size: 0.8125rem;
-	height: 28px;
-	min-height: 28px;
+	height: 36px;
+	min-height: 36px;
 	transition: all 0.2s ease;
 	background: var(--paper-soft);
 	color: var(--ink);
@@ -128,8 +129,8 @@
 }
 
 .patients-header-actions .secondary-button {
-	height: 28px;
-	min-height: 28px;
+	height: 36px;
+	min-height: 36px;
 	padding: 0 0.75rem;
 	font-weight: 600;
 	font-size: 0.8125rem;
@@ -163,8 +164,8 @@
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	height: 28px;
-	min-height: 28px;
+	height: 36px;
+	min-height: 36px;
 	padding: 0 0.75rem;
 	font-weight: 700;
 	font-size: 0.8125rem;
@@ -343,6 +344,7 @@
 		gap: 8px;
 		margin-bottom: 0.75rem;
 		width: 100%;
+		flex-wrap: wrap;
 	}
 }
 
@@ -572,12 +574,37 @@
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
+	flex-shrink: 0;
 	transition: all 0.15s ease;
 }
 
 .patient-row-more-btn:hover {
 	border-color: var(--teal);
 	background: var(--paper);
+}
+
+.patient-row-chevron-btn {
+	height: 32px;
+	width: 32px;
+	min-height: 32px;
+	min-width: 32px;
+	padding: 0;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+}
+
+.patient-row-chevron-btn:hover {
+	border-color: var(--teal);
+	background: var(--teal-soft);
+	color: var(--teal-dark);
 }
 
 .patient-row-menu-dropdown {
@@ -748,549 +775,5 @@
 	color: #5eead4;
 }
 
-/* Detailed Patient Panel */
-.patient-admin-panel {
-	background: var(--paper);
-	border: 1px solid var(--line);
-	border-radius: 16px;
-	padding: 1.5rem;
-	box-shadow: var(--shadow-1);
-	color: var(--ink);
-	display: flex;
-	flex-direction: column;
-	gap: 1rem;
-}
-
-.patient-core-form-grid,
-.patient-admin-form-grid {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 10px 14px;
-}
-
-.patient-core-form-grid .form-span-2,
-.patient-admin-form-grid .form-span-2 {
-	grid-column: 1 / -1;
-}
-
-@media (max-width: 768px) {
-	.patient-core-form-grid,
-	.patient-admin-form-grid {
-		grid-template-columns: 1fr !important;
-		gap: 8px;
-	}
-	.patient-core-form-grid .form-span-2,
-	.patient-admin-form-grid .form-span-2 {
-		grid-column: span 1 !important;
-	}
-}
-
-.patient-core-form-grid label,
-.patient-admin-form-grid label {
-	display: flex;
-	flex-direction: column;
-	gap: 0.35rem;
-	font-size: 12px;
-	font-weight: 700;
-	color: var(--muted);
-}
-
-.patient-core-form-grid input,
-.patient-core-form-grid select,
-.patient-admin-form-grid input,
-.patient-admin-form-grid select {
-	min-height: 36px;
-	padding: 6px 10px;
-	border-radius: 8px;
-	border: 1px solid var(--line-strong);
-	background: var(--paper-soft);
-	color: var(--ink);
-	font-size: 0.875rem;
-	transition: all 0.2s;
-}
-
-.patient-core-form-grid input:focus,
-.patient-core-form-grid select:focus,
-.patient-admin-form-grid input:focus,
-.patient-admin-form-grid select:focus {
-	border-color: var(--teal);
-	outline: none;
-	background: var(--paper);
-	box-shadow: 0 0 0 2px var(--teal-surface);
-}
-
-/* Patient Actions Bar (DEF-PAT-02, Mandate 8p) */
-.patient-admin-actions.sticky-patient-actions {
-	position: static !important;
-	z-index: auto !important;
-	background: transparent !important;
-	padding: 4px 0 !important;
-	border-top: none !important;
-	box-shadow: none !important;
-	margin-top: 4px !important;
-	margin-bottom: 4px !important;
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-	align-items: center;
-}
-
-[data-theme="dark"] .patient-admin-actions.sticky-patient-actions,
-[data-theme="night"] .patient-admin-actions.sticky-patient-actions,
-[data-theme="contrast"] .patient-admin-actions.sticky-patient-actions,
-[data-theme="cyber_xray"] .patient-admin-actions.sticky-patient-actions {
-	background: transparent !important;
-	border-top-color: transparent !important;
-	box-shadow: none !important;
-}
-
-/* Collapsible Details Block */
-.patient-docs-collapsible,
-.patient-secondary-accordion {
-	border: 1px solid var(--line);
-	border-radius: 12px;
-	background: var(--paper-soft);
-	overflow: hidden;
-	transition: all 0.2s ease;
-}
-
-.patient-docs-collapsible summary,
-.patient-secondary-accordion summary {
-	padding: 10px 14px;
-	min-height: 40px;
-	background: var(--paper-soft);
-	color: var(--ink);
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	font-weight: 700;
-	font-size: 13px;
-	user-select: none;
-}
-
-.patient-docs-collapsible summary:hover,
-.patient-secondary-accordion summary:hover {
-	background: var(--paper-strong);
-	color: var(--teal);
-}
-
-.patient-docs-collapsible .settings-advanced-form,
-.patient-secondary-accordion .patient-secondary-accordion__body {
-	padding: 14px;
-	background: var(--paper);
-	border-top: 1px solid var(--line);
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-}
-
-/* Quick Chips */
-.quick-chips-group {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	margin-top: 4px;
-}
-
-.quick-chips-group-title {
-	font-size: 11px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: var(--muted);
-}
-
-.quick-chips-wrap {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	max-width: 100%;
-	overflow: hidden;
-}
-
-.quick-chip {
-	padding: 5px 10px;
-	min-height: 28px;
-	max-width: none;
-	text-overflow: clip;
-	overflow: visible;
-	white-space: nowrap;
-	flex-shrink: 0;
-	font-size: 12px;
-	font-weight: 600;
-	border-radius: 999px;
-	background: var(--paper-soft);
-	color: var(--ink);
-	border: 1px solid var(--line-strong, var(--line)) !important;
-	border-style: solid !important;
-	cursor: pointer;
-	transition: all 0.15s ease;
-}
-
-.quick-chip:hover {
-	background: var(--teal-surface) !important;
-	border-color: var(--teal) !important;
-	border-style: solid !important;
-	color: var(--teal-dark) !important;
-}
-
-/* Widgets Grid */
-.patients-widgets-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(min(30rem, 100%), 1fr));
-	gap: 1rem;
-	margin-top: 1rem;
-}
-
-/* Create Patient Modal Pop-up */
-.create-patient-modal-overlay {
-	position: fixed;
-	inset: 0;
-	z-index: 99999;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background: rgba(0, 0, 0, 0.65);
-	backdrop-filter: blur(8px);
-	padding: 1rem;
-}
-
-.create-patient-modal-card {
-	position: relative;
-	width: 100%;
-	max-width: 560px;
-	max-height: 90vh;
-	overflow-y: auto;
-	background: var(--paper);
-	border: 1px solid var(--line-strong, var(--line));
-	border-radius: 16px;
-	box-shadow: var(--shadow-2, 0 20px 25px -5px rgba(0, 0, 0, 0.3));
-	color: var(--ink);
-	display: flex;
-	flex-direction: column;
-	animation: modalFadeScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes modalFadeScale {
-	from {
-		opacity: 0;
-		transform: scale(0.96) translateY(8px);
-	}
-	to {
-		opacity: 1;
-		transform: scale(1) translateY(0);
-	}
-}
-
-.create-patient-modal-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 1.25rem 1.5rem;
-	border-bottom: 1px solid var(--line);
-}
-
-.create-patient-modal-title-wrap {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-}
-
-.create-patient-modal-icon-badge {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 40px;
-	height: 40px;
-	border-radius: 10px;
-	background: var(--teal-surface);
-	color: var(--teal);
-	border: 1px solid var(--teal-ring);
-	flex-shrink: 0;
-}
-
-.create-patient-modal-title {
-	margin: 0;
-	font-size: 1.15rem;
-	font-weight: 700;
-	color: var(--ink);
-	line-height: 1.3;
-}
-
-.create-patient-modal-subtitle {
-	margin: 2px 0 0 0;
-	font-size: 0.8rem;
-	color: var(--muted);
-	font-weight: 500;
-}
-
-.create-patient-modal-close-btn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 36px;
-	height: 36px;
-	min-width: 36px;
-	min-height: 36px;
-	border-radius: 9px;
-	border: 1px solid var(--line);
-	background: var(--paper-soft);
-	color: var(--muted);
-	cursor: pointer;
-	transition: all 0.15s ease;
-}
-
-.create-patient-modal-close-btn:hover {
-	background: var(--paper);
-	color: var(--ink);
-	border-color: var(--line-strong);
-}
-
-.create-patient-modal-body {
-	padding: 1.5rem;
-	display: flex;
-	flex-direction: column;
-	gap: 1.15rem;
-}
-
-.create-patient-form-field {
-	display: flex;
-	flex-direction: column;
-	gap: 0.35rem;
-	min-width: 0;
-}
-
-.create-patient-label-row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.5rem;
-}
-
-.create-patient-label {
-	font-size: 0.8rem;
-	font-weight: 700;
-	color: var(--ink);
-	display: flex;
-	align-items: center;
-	gap: 0.25rem;
-}
-
-.create-patient-smart-parse-btn {
-	font-size: 0.75rem;
-	font-weight: 600;
-	color: var(--teal);
-	background: var(--teal-surface);
-	border: 1px solid var(--teal-ring);
-	border-radius: 6px;
-	padding: 2px 8px;
-	cursor: pointer;
-	transition: all 0.15s ease;
-}
-
-.create-patient-smart-parse-btn:hover {
-	background: var(--teal);
-	color: var(--on-teal, var(--paper));
-}
-
-.create-patient-input {
-	width: 100%;
-	padding: 8px 12px;
-	border: 1px solid var(--line-strong);
-	border-radius: 9px;
-	font-size: 0.875rem;
-	min-height: 36px;
-	background: var(--paper-soft);
-	color: var(--ink);
-	transition: all 0.2s ease;
-	outline: none;
-}
-
-.create-patient-input:focus {
-	border-color: var(--teal);
-	background: var(--paper);
-	box-shadow: 0 0 0 3px var(--teal-surface);
-}
-
-.create-patient-grid-2 {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	gap: 1rem;
-}
-
-@media (max-width: 480px) {
-	.create-patient-grid-2 {
-		grid-template-columns: 1fr;
-	}
-}
-
-.create-patient-modal-footer {
-	padding: 1rem 1.5rem;
-	border-top: 1px solid var(--line);
-	background: var(--paper-soft);
-	border-radius: 0 0 16px 16px;
-	display: flex;
-	flex-direction: column;
-	gap: 0.75rem;
-}
-
-.patient-create-modal-guidance {
-	margin: 0;
-	font-size: 0.8rem;
-	line-height: 1.4;
-}
-
-.create-patient-modal-actions {
-	display: flex;
-	align-items: center;
-	justify-content: flex-end;
-	gap: 0.75rem;
-}
-
-.create-patient-cancel-btn {
-	min-height: 36px;
-	padding: 0 1rem;
-	font-weight: 600;
-	font-size: 0.875rem;
-}
-
-.create-patient-submit-btn {
-	min-height: 36px;
-	padding: 0 1.25rem;
-	font-weight: 700;
-	font-size: 0.875rem;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.5rem;
-}
-
-/* Mobile Topbar Cleanup: remove redundant + Запись button from topbar on Patients and Finance views (Mandate 8p) */
-@media (max-width: 840px) {
-	.workspace.view-patients .top-actions,
-	.workspace.view-finance .top-actions {
-		display: none !important;
-	}
-}
-
-/* Compact Single-Row Finance Summary Grid (DEF-FIN-01, Mandate 8p & 8c) */
-.finance-summary-grid {
-	display: flex !important;
-	flex-direction: row !important;
-	align-items: center !important;
-	justify-content: space-between !important;
-	gap: 12px !important;
-	padding: 4px 12px !important;
-	min-height: 32px !important;
-	max-height: 36px !important;
-	margin-bottom: 8px !important;
-	flex-wrap: nowrap !important;
-	overflow-x: auto !important;
-}
-
-.finance-summary-grid article {
-	display: flex !important;
-	flex-direction: row !important;
-	align-items: baseline !important;
-	gap: 6px !important;
-	min-height: 24px !important;
-	max-height: 28px !important;
-	padding: 0 4px !important;
-	border: none !important;
-	background: transparent !important;
-	flex-shrink: 0 !important;
-}
-
-.finance-summary-grid span {
-	font-size: 11px !important;
-	font-weight: 700 !important;
-	color: var(--muted) !important;
-	white-space: nowrap !important;
-	line-height: 1 !important;
-}
-
-.finance-summary-grid strong {
-	font-size: 13px !important;
-	font-weight: 800 !important;
-	line-height: 1 !important;
-	white-space: nowrap !important;
-	color: var(--ink) !important;
-}
-
-.finance-summary-grid p {
-	display: none !important;
-}
-
-@media (max-width: 768px) {
-	.finance-summary-grid {
-		display: grid !important;
-		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-		gap: 4px 8px !important;
-		padding: 6px 10px !important;
-		min-height: auto !important;
-		max-height: none !important;
-		margin-bottom: 6px !important;
-	}
-
-	.finance-summary-grid article {
-		display: flex !important;
-		flex-direction: row !important;
-		justify-content: space-between !important;
-		align-items: center !important;
-		min-height: 22px !important;
-		max-height: none !important;
-		padding: 2px 4px !important;
-		border: none !important;
-		background: transparent !important;
-	}
-
-	.finance-summary-grid p {
-		display: none !important;
-	}
-}
-
-/* Payment actions mobile non-overlapping layout (DEF-FIN-02, Mandate 8p) */
-@media (max-width: 860px) {
-	.payment-actions {
-		position: static !important;
-		margin-top: 0 !important;
-		padding: 0 !important;
-		box-shadow: none !important;
-		border-top: none !important;
-		background: transparent !important;
-	}
-
-	.payment-capture {
-		padding-bottom: 140px !important;
-	}
-
-	.finance-panel {
-		padding-bottom: 140px !important;
-	}
-
-	#payment-capture #payment-checkout-bar,
-	#payment-checkout-bar,
-	.payment-checkout-bar {
-		position: fixed !important;
-		bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px)) !important;
-		left: 0 !important;
-		right: 0 !important;
-		z-index: 45 !important;
-		background: var(--paper) !important;
-		padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px)) 12px !important;
-		margin: 0 !important;
-		border-top: 1px solid var(--line) !important;
-		box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15) !important;
-		display: flex !important;
-		flex-direction: row !important;
-		flex-wrap: wrap !important;
-		align-items: center !important;
-		justify-content: space-between !important;
-		gap: 6px !important;
-		width: 100% !important;
-		max-width: 100vw !important;
-		box-sizing: border-box !important;
-	}
-}
+/* Detailed Patient Panel, Quick Chips, Modals & Finance overrides extracted to ./modules/patients.css per Mandate 8b */
 

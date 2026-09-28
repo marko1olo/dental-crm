@@ -374,8 +374,8 @@ export function usePaymentSbpAndTerminalExecution(params: UsePaymentSbpAndTermin
 			}).catch(() => null);
 
 			setSbpStatus("paid");
-			setSbpCheckMessage("Поступление средств по СБП подтверждено кассиром. Формируем чек 54-ФЗ...");
-			showToast("Оплата СБП подтверждена кассиром! Пробиваем фискальный чек 54-ФЗ...", "success");
+			setSbpCheckMessage("Поступление средств по СБП подтверждено кассиром. Формируем кассовый чек...");
+			showToast("Оплата СБП подтверждена кассиром! Формируем кассовый чек...", "success");
 			if (activeMethod === "sbp_qr") {
 				await handleSbpExecutePayment(effectiveSbpOrderId);
 			} else if (activeMethod === "split") {

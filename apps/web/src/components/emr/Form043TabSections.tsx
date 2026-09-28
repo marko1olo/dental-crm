@@ -293,7 +293,7 @@ export const Form043OdontogramTab: React.FC<Form043OdontogramTabProps> = React.m
 // ── Вкладка 5: Дневники визитов ──
 export interface Form043DiariesTabProps {
 	formData: MedicalCardForm043uData;
-	onOpenProtocolGenerator?: () => void;
+	onOpenProtocolGenerator?: (() => void) | undefined;
 	onOpenInternalProtocolGenerator: () => void;
 }
 

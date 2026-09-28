@@ -45,48 +45,17 @@ import {
 	surnameOf,
 } from "./duplicateFuzzyMetrics.js";
 
-type DuplicateReason =
-	/** Совпали фамилия, имя, отчество и дата рождения. */
-	| "same_name_and_birth_date"
-	/** Совпало полное имя, дата рождения есть только у одного. */
-	| "same_name_birth_date_unknown"
-	/** Совпал телефон и фамилия. */
-	| "same_phone_and_surname"
-	/** Совпал только телефон — чаще всего это родственники. */
-	| "same_phone_only"
-	/** Совпала электронная почта. */
-	| "same_email"
-	/** Совпал государственный СНИЛС (11 цифр). */
-	| "same_snils";
-
-/**
- * Карточка в паре. Телефон и дата рождения обязательны в ответе: администратор
- * решает, один это человек или два, и без этих полей решение принимается
- * вслепую — по одним именам отличить дубль от тёзки невозможно.
- */
-type DuplicateSide = {
-	readonly patientId: string;
-	readonly fullName: string;
-	readonly phone: string | null;
-	readonly birthDate: string | null;
-	readonly email: string | null;
-	readonly snils?: string | null;
-};
-
-export type DuplicateCandidate = {
-	readonly leftPatientId: string;
-	readonly leftName: string;
-	readonly left: DuplicateSide;
-	readonly rightPatientId: string;
-	readonly rightName: string;
-	readonly right: DuplicateSide;
-	readonly reason: DuplicateReason;
-	/** 0…1. Ниже 0.5 объединять без проверки человеком нельзя. */
-	readonly confidence: number;
-	/** Человеческое объяснение — его видит администратор. */
-	readonly explanation: string;
-	/** Предупреждение, если совпадение может оказаться роднёй. */
-	readonly caution: string | null;
+import type {
+	DuplicateCandidate,
+	DuplicateReason,
+	DuplicateReport,
+	DuplicateSide,
+} from "@dental/shared";
+export type {
+	DuplicateCandidate,
+	DuplicateReason,
+	DuplicateReport,
+	DuplicateSide,
 };
 
 const REASON_META: Readonly<
@@ -356,14 +325,6 @@ export type FindDuplicatesOptions = {
 	readonly limit?: number;
 };
 
-export type DuplicateReport = {
-	readonly candidates: DuplicateCandidate[];
-	/** Сколько карточек просмотрено. */
-	readonly examinedPatients: number;
-	/** Сколько пар скрыто решением «это не дубли». */
-	readonly dismissedPairs: number;
-	readonly note: string;
-};
 
 export async function findDuplicateCandidates(
 	organizationId: string,

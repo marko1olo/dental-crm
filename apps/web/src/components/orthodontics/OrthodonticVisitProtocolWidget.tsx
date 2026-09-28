@@ -826,7 +826,7 @@ export function OrthodonticVisitProtocolWidget({
 		const totalRub = calculatedServices804n.reduce((acc, s) => acc + s.priceRub, 0);
 		const codesStr = calculatedServices804n.map((s) => s.code).join(", ");
 		showToast(
-			`Начислено ${calculatedServices804n.length} услуг 804н (${codesStr}) на сумму ${totalRub} ₽`,
+			`Начислено ${calculatedServices804n.length} услуг (${codesStr}) на сумму ${totalRub} ₽`,
 			"success",
 			3500,
 		);
@@ -1182,7 +1182,7 @@ export function OrthodonticVisitProtocolWidget({
 
 			const codesList = alignerServices.map((s) => s.code).join(", ");
 			showToast(
-				`Аттачменты внесены в дневник 043/у и услуги 804н (${codesList}) начислены в смету!`,
+				`Аттачменты внесены в дневник приёма и ${alignerServices.length} услуг (${codesList}) начислены в смету!`,
 				"success",
 			);
 		} catch (_err) {
@@ -1456,8 +1456,8 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 			const codesStr = servicesToDispatch.map((s) => s.code).join(", ");
 			showToast(
 				servicesToDispatch.length > 0
-					? `Протокол сохранен в карту 043/у и ${servicesToDispatch.length} услуг 804н (${codesStr}) добавлены в смету!`
-					: "Ортодонтический протокол сохранен в карту 043/у!",
+					? `Протокол сохранен в карту и ${servicesToDispatch.length} услуг (${codesStr}) добавлены в смету!`
+					: "Ортодонтический протокол сохранен в медицинскую карту!",
 				"success",
 			);
 
@@ -1539,7 +1539,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 					window.print();
 				}
 			}
-			showToast("Отправлено на печать: Ортодонтическая карта 043/у", "info");
+			showToast("Отправлено на печать: Ортодонтическая карта", "info");
 		} catch (err) {
 			console.warn("Print error:", err);
 			if (typeof window !== "undefined" && typeof window.print === "function") {
@@ -1551,7 +1551,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 	const handleCopyClipboard = () => {
 		if (navigator?.clipboard?.writeText) {
 			navigator.clipboard.writeText(generatedProtocol).then(() => {
-				showToast("Протокол 043/у скопирован в буфер обмена", "success");
+				showToast("Протокол скопирован в буфер обмена", "success");
 			}).catch(() => {
 				showToast("Не удалось скопировать", "error");
 			});
@@ -1716,10 +1716,11 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							onClick={handlePrintOrthodonticCard}
 							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-95 text-slate-800 dark:text-slate-100 text-xs font-bold flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 shadow-xs transition-all cursor-pointer"
 							data-testid="top-print-ortho-protocol-btn"
-							title="Распечатать карту 043/у (Мандат 8e: печать со штампом в любой момент)"
+							title="Распечатать карту (Мандат 8e: печать со штампом в любой момент)"
+							aria-label="Печать 043/у"
 						>
 							<Printer size={16} />
-							<span className="hidden sm:inline">Печать 043/у</span>
+							<span className="hidden sm:inline">Печать протокола</span>
 						</button>
 
 						<button
@@ -1727,10 +1728,11 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							onClick={handleAddServicesToInvoice}
 							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
 							data-testid="add-ortho-services-to-invoice-btn"
-							title="Начислить услуги Номенклатуры 804н в чек/смету визита (1 клик)"
+							title="Начислить услуги в чек/смету визита (1 клик)"
+							aria-label="Начислить услуги 804н в чек/смету"
 						>
 							<Receipt size={16} />
-							<span>Начислить услуги 804н в чек/смету</span>
+							<span>Начислить услуги в чек</span>
 							<span
 								className="px-1.5 py-0.5 rounded-full text-[11px] font-black bg-white/20 text-white min-w-[20px] text-center"
 								data-testid="ortho-services-count-badge"
@@ -1744,10 +1746,11 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							onClick={handleApplyToVisitNote}
 							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 							data-testid="apply-to-form-043-btn"
-							title="Вставить протокол в карту 043/у и начислить услуги 804н"
+							title="Вставить протокол в карту и начислить услуги"
+							aria-label="В карту 043/у"
 						>
 							<CheckCircle2 size={16} />
-							<span>В карту 043/у</span>
+							<span>В карту</span>
 						</button>
 
 						<button
@@ -1870,7 +1873,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									Быстрые клинические пресеты (1 клик)
 								</span>
 								<span className="text-[11px] font-bold text-amber-700/80 dark:text-amber-400/80">
-									Мгновенное заполнение параметров и дневника 043/у
+									Мгновенное заполнение параметров и дневника приёма
 								</span>
 							</div>
 
@@ -2386,9 +2389,10 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									data-testid="append-attachments-to-soap-btn"
 									className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
 									title="Добавить протокол в дневник визита без стирания ранее набранного текста"
+									aria-label="Внести в дневник 043/у"
 								>
 									<Plus size={15} />
-									<span>Внести в дневник 043/у</span>
+									<span>Внести в дневник</span>
 								</button>
 							</div>
 						</div>
@@ -3032,10 +3036,11 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									onClick={handlePrintOrthodonticCard}
 									className="min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
 									data-testid="print-ortho-protocol-btn"
-									title="Распечатать карту 043/у"
+									title="Распечатать карту"
+									aria-label="Печать 043/у"
 								>
 									<Printer size={13} />
-									<span>Печать 043/у</span>
+									<span>Печать протокола</span>
 								</button>
 								<button
 									type="button"
@@ -3085,7 +3090,8 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 								onClick={handlePrintOrthodonticCard}
 								className="min-h-[48px] px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
 								data-testid="bottom-print-protocol-btn"
-								title="Распечатать карту 043/у"
+								title="Распечатать карту"
+								aria-label="Печать 043/у"
 							>
 								<Printer size={16} />
 								<span className="hidden sm:inline">Печать</span>
@@ -3096,10 +3102,11 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 								onClick={handleAddServicesToInvoice}
 								className="min-h-[48px] px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
 								data-testid="bottom-add-services-to-invoice-btn"
-								title="Начислить услуги 804н в чек/смету"
+								title="Начислить услуги в чек/смету"
+								aria-label="Начислить услуги 804н в чек/смету"
 							>
 								<Receipt size={16} />
-								<span>Начислить услуги 804н ({calculatedServices804n.length})</span>
+								<span>Начислить услуги ({calculatedServices804n.length})</span>
 							</button>
 
 							<button
@@ -3107,9 +3114,11 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 								onClick={handleApplyToVisitNote}
 								className="flex-1 min-h-[48px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
 								data-testid="bottom-apply-protocol-btn"
+								title="Вставить в карту (1 клик)"
+								aria-label="В карту 043/у"
 							>
 								<Check size={18} />
-								<span>Вставить в карту 043/у (1 клик)</span>
+								<span>Вставить в карту (1 клик)</span>
 							</button>
 
 							<button

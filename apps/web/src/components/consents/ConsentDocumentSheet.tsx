@@ -1,5 +1,5 @@
 import { AlertTriangle } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { ConsentSubstitutionContext, RenderedConsentTemplate } from "./consentTemplates.js";
 
 export interface ConsentDocumentSheetProps {

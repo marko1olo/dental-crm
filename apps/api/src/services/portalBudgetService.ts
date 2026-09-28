@@ -408,30 +408,6 @@ export class PortalBudgetService {
 			return budget;
 		}
 
-		// If token is UUID, check treatment_plans
-		if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)) {
-			try {
-				const [planRow] = await db
-					.select()
-					.from(treatmentPlans)
-					.where(eq(treatmentPlans.id, token))
-					.limit(1);
-
-				if (planRow) {
-					await this.generateBudgetPortalToken({
-						planId: planRow.id,
-						organizationId: planRow.organizationId,
-						patientId: planRow.patientId,
-						doctorId: planRow.doctorId ?? undefined,
-						customToken: token,
-					});
-					return memoryCache.get(token) ?? null;
-				}
-			} catch {
-				// db read failure
-			}
-		}
-
 		return null;
 	}
 

@@ -28,7 +28,8 @@ export function useLoyaltyFamily({
 	const [isFamilyModeActive, setIsFamilyModeActive] = useState<boolean>(false);
 	const [selectedFamilyMemberId, setSelectedFamilyMemberId] = useState<string>("");
 	const [newMemberName, setNewMemberName] = useState<string>("");
-	const [newMemberRole, setNewMemberRole] = useState<string>("Супруг / Супруга");
+	const [newMemberRole, setNewMemberRole] = useState<FamilyMember["roleRu"]>("Супруг / Супруга");
+
 
 	const handleCreditFamilyBalance = (amountRub: number) => {
 		if (amountRub <= 0) {

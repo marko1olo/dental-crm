@@ -24,7 +24,7 @@
   right: 16px;
   bottom: 16px;
   z-index: 8900;
-  max-width: calc(100vw - 32px);
+  max-width: calc(100% - 32px);
 }
 
 .chairside-copilot-hud--docked {
@@ -89,7 +89,7 @@
 /* Expanded Main Panel */
 .chairside-hud-panel {
   width: 460px;
-  max-width: calc(100vw - 32px);
+  max-width: calc(100% - 32px);
   max-height: min(85vh, 720px);
   display: flex;
   flex-direction: column;

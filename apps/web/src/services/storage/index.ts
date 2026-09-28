@@ -22,6 +22,9 @@ export {
 	requestPersistentStorage,
 	cacheStatutoryCatalog,
 	getCachedStatutoryCatalog,
+	pruneStaleOfflineSnapshots,
+	scheduleStoragePruneIdle,
+	DEFAULT_STALE_SNAPSHOT_TTL_MS,
 } from "./clinicalCacheStorage";
 
 export {
@@ -33,4 +36,7 @@ export {
 	getStatutoryCatalogCacheStats,
 	type StatutoryCatalogCacheStats,
 } from "./statutoryCatalogCache";
+
+export * from "./crossTabSync";
+
 

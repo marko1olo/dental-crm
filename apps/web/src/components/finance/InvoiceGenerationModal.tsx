@@ -290,7 +290,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 			[itemId]: "REPLACE_WITH_804N_ANALOGUE",
 		}));
 		showToast(
-			"Позиция заменена на актуальный аналог номенклатуры 804н",
+			"Позиция заменена на актуальный аналог из каталога",
 			"success",
 			3000,
 		);
@@ -488,7 +488,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 		if (!effectiveReport.canGenerateInvoice) {
 			showToast(
 				effectiveReport.blockingReasons[0] ||
-					"Формирование счета: проверьте позиции сметы или выберите аналог 804н",
+					"Формирование счета: проверьте позиции сметы или выберите аналог из каталога",
 				"warning",
 				4000,
 			);

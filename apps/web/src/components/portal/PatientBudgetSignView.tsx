@@ -333,7 +333,7 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 
 		ctx.fillStyle = "#115e59";
 		ctx.font = "12px -apple-system, BlinkMacSystemFont, sans-serif";
-		ctx.fillText("ПЭП 63-ФЗ ст. 5 • 152-ФЗ • Подтверждено пациентом", w / 2, h / 2 + 6);
+		ctx.fillText("Электронная подпись • Подтверждено пациентом", w / 2, h / 2 + 6);
 
 		const dateStr = new Date().toLocaleString("ru-RU");
 		ctx.fillStyle = "#64748b";
@@ -601,10 +601,10 @@ export const PatientBudgetSignView: React.FC<PatientBudgetSignViewProps> = ({
 				<div className="patient-budget-card" data-testid="patient-budget-sign-card">
 					<div className="patient-budget-card-title">
 						<ShieldCheck size={18} style={{ color: "var(--teal)" }} />
-						Электронное согласование сметы (ПЭП 63-ФЗ / 152-ФЗ)
+						Электронное согласование сметы онлайн
 					</div>
 					<p style={{ fontSize: "0.8125rem", color: "var(--muted)", margin: "0 0 0.75rem" }}>
-						Распишитесь пальцем/стилусом или согласуйте в 1 клик с формированием юридически значимого штампа простой электронной подписи:
+						Распишитесь пальцем/стилусом или согласуйте в 1 клик с формированием электронной подписи:
 					</p>
 
 					{/* Interactive Touch / Mobile Canvas for Signature or 1-Click PEP Stamp */}

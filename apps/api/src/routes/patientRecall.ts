@@ -28,6 +28,7 @@ import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../accessGuard.js";
+import { replyBadRequest } from "./routeErrors.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { isMachineDeliverableChannel } from "../services/communications/channelRouter.js";
 import { enqueueMessage } from "../services/communications/dispatcher.js";
@@ -63,7 +64,7 @@ const listQuerySchema = z.object({
 const inviteSchema = recallInviteSchema;
 
 function badRequest(reply: FastifyReply, message: string) {
-	return reply.code(400).send({ error: "RecallValidationError", message });
+	return replyBadRequest(reply, "RecallValidationError", message);
 }
 
 export async function registerPatientRecallRoutes(app: FastifyInstance) {

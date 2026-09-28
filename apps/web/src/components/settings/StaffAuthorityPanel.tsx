@@ -64,8 +64,8 @@ type SaveState =
 	| { kind: "failed"; message: string };
 
 const FLAG_TITLES: Record<StaffAuthorityFlagKey, string> = {
-	canSignMedicalRecords: "Подпись медицинской документации (ЭМК / 804н)",
-	canManageMoney: "Касса, приём оплат и возвраты (54-ФЗ)",
+	canSignMedicalRecords: "Подпись медицинской документации (ЭМК)",
+	canManageMoney: "Касса, приём оплат и возвраты",
 	canManageImports: "Перенос картотеки и настройки клиники",
 };
 
@@ -224,10 +224,10 @@ export const StaffAuthorityPanel: React.FC = () => {
 			return;
 		}
 
-		// Барьер 2 (323-ФЗ): Право подписи ЭМК разрешено только дипломированным врачам-клиницистам
+		// Барьер 2: Право подписи ЭМК разрешено только дипломированным врачам-клиницистам
 		if (flag === "canSignMedicalRecords" && nextValue && !canSignMedicalRecords(row.role)) {
 			const msg =
-				`Полномочие «${FLAG_TITLES[flag]}» заблокировано требованиями 323-ФЗ: ` +
+				`Полномочие «${FLAG_TITLES[flag]}» ограничено клиническими стандартами: ` +
 				`для должности «${staffRoleTitle(row.role)}» подписание медицинской документации запрещено. ` +
 				"Право подписи ЭМК имеют исключительно врачи-клиницисты (роли: Врач, Главврач, Владелец).";
 			setSave({ kind: "failed", message: msg });
@@ -357,9 +357,9 @@ export const StaffAuthorityPanel: React.FC = () => {
 						Полномочия сотрудников и права доступа
 					</h4>
 					<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-1">
-						Персональные надбавки к роли: подпись ЭМК, касса 54-ФЗ, импорт данных.
+						Персональные надбавки к роли: подпись ЭМК, касса, импорт данных.
 						То, что даёт роль, снять галочкой нельзя — смените роль в карточке.
-						Подпись ЭМК по 323-ФЗ доступна только дипломированным врачам.
+						Подпись ЭМК доступна исключительно дипломированным врачам-клиницистам.
 					</p>
 				</div>
 				<button
@@ -442,12 +442,12 @@ export const StaffAuthorityPanel: React.FC = () => {
 													{isPiiFull ? (
 														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800 whitespace-nowrap">
 															<ShieldCheck size={12} className="shrink-0" />
-															<span>152-ФЗ: Полный</span>
+															<span>ПДн: Полный</span>
 														</span>
 													) : (
 														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800 whitespace-nowrap">
 															<ShieldAlert size={12} className="shrink-0" />
-															<span>152-ФЗ: Маскирован</span>
+															<span>ПДн: Маскирован</span>
 														</span>
 													)}
 													{isPnlVisible ? (
@@ -464,7 +464,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 													{isMedicalDoctor ? (
 														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap">
 															<ShieldCheck size={12} className="shrink-0" />
-															<span>ЭМК: Врач (323-ФЗ)</span>
+															<span>Врачебная автономия (ЭМК)</span>
 														</span>
 													) : (
 														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
@@ -564,7 +564,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 																	>
 																		<ShieldAlert size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
 																		<span>
-																			Запрещено 323-ФЗ: подпись ЭМК доступна исключительно врачам-клиницистам. Для должности «{staffRoleTitle(row.role)}» заблокировано.
+																			Клинические стандарты: подпись ЭМК доступна исключительно врачам-клиницистам. Для должности «{staffRoleTitle(row.role)}» заблокировано.
 																		</span>
 																	</span>
 																) : null}

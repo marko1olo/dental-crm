@@ -111,11 +111,11 @@ export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 		shortLabel: "Стерилизация",
 		icon: Flame,
 		tabs: [
-			{ id: "autoclave", label: "Автоклавы (Форма 257/у)", shortLabel: "Автоклавы 257/у", category: "sterilization", icon: Flame },
+			{ id: "autoclave", label: "Журнал автоклавирования", shortLabel: "Автоклавирование", category: "sterilization", icon: Flame },
 			{ id: "sterilizers", label: "Парк стерилизаторов клиники", shortLabel: "Парк оборудования", category: "sterilization", icon: Gauge },
-			{ id: "pso", label: "ПСО и Азопирамовая проба (Форма 366/у)", shortLabel: "ПСО / Азопирам", category: "sterilization", icon: FlaskConical },
-			{ id: "cabinet_readiness", label: "Фенолфталеиновая проба и готовность", shortLabel: "Фенолфталеин", category: "sterilization", icon: ShieldCheck },
-			{ id: "retroactive_batch", label: "Сухожаровой шкаф и пакетное закрытие", shortLabel: "Сухожар", category: "sterilization", icon: Sparkles },
+			{ id: "pso", label: "Контроль стерилизации (ПСО и пробы)", shortLabel: "Контроль ПСО", category: "sterilization", icon: FlaskConical },
+			{ id: "cabinet_readiness", label: "Фенолфталеиновая проба и готовность", shortLabel: "Готовность кабинета", category: "sterilization", icon: ShieldCheck },
+			{ id: "retroactive_batch", label: "Сухожаровой шкаф и пакетное закрытие", shortLabel: "Сухожар / Пакет", category: "sterilization", icon: Sparkles },
 		],
 	},
 	{
@@ -124,9 +124,9 @@ export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 		shortLabel: "Дезинфекция",
 		icon: Sparkles,
 		tabs: [
-			{ id: "disinfectants", label: "Дезсредства и рабочие растворы (п. 3582)", shortLabel: "Дезсредства", category: "disinfection", icon: Droplets },
-			{ id: "bactericidal", label: "Бактерицидные установки / Дезар (Ф. 38/у)", shortLabel: "Дезар / УФ", category: "disinfection", icon: Wind },
-			{ id: "cleaning", label: "Генеральные и текущие уборки", shortLabel: "Генуборки", category: "disinfection", icon: Sparkles },
+			{ id: "disinfectants", label: "Дезсредства и рабочие растворы", shortLabel: "Дезсредства", category: "disinfection", icon: Droplets },
+			{ id: "bactericidal", label: "Бактерицидные установки (Дезар / УФ)", shortLabel: "Дезар / УФ", category: "disinfection", icon: Wind },
+			{ id: "cleaning", label: "Журнал генеральных уборок", shortLabel: "Генуборки", category: "disinfection", icon: Sparkles },
 			{ id: "bac_lab", label: "Анти-ВИЧ аптечка и баклаборатория", shortLabel: "Анти-ВИЧ / Бакпосев", category: "disinfection", icon: Activity },
 		],
 	},
@@ -136,10 +136,10 @@ export const SANPIN_CATEGORIES: SanpinCategoryDef[] = [
 		shortLabel: "Отходы и климат",
 		icon: Recycle,
 		tabs: [
-			{ id: "waste", label: "Медотходы классов Б и В (СанПиН 2.1.3684-21)", shortLabel: "Медотходы Б/В", category: "waste_climate", icon: Recycle },
-			{ id: "needle_disposal", label: "Острый инструментарий и УЗ-мойка", shortLabel: "УЗ-мойка / Иглы", category: "waste_climate", icon: Trash2 },
+			{ id: "waste", label: "Утилизация медицинских отходов (Класс Б)", shortLabel: "Медотходы", category: "waste_climate", icon: Recycle },
+			{ id: "needle_disposal", label: "Острый инструментарий и утилизация игл", shortLabel: "Утилизация игл", category: "waste_climate", icon: Trash2 },
 			{ id: "temperature", label: "Температура и влажность холодильников", shortLabel: "T° Холодильников", category: "waste_climate", icon: Thermometer },
-			{ id: "biohazard", label: "Аварийные ситуации и проливы", shortLabel: "Аварийные ситуации", category: "waste_climate", icon: ShieldAlert },
+			{ id: "biohazard", label: "Аварийные ситуации", shortLabel: "Аварийные ситуации", category: "waste_climate", icon: ShieldAlert },
 		],
 	},
 ];
@@ -278,7 +278,7 @@ function DisinfectantsRegisterTab() {
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
 				<h2>ЖУРНАЛ УЧЕТА ПОЛУЧЕНИЯ, РАСХОДА ДЕЗИНФИЦИРУЮЩИХ СРЕДСТВ И ПРИГОТОВЛЕНИЯ РАБОЧИХ РАСТВОРОВ</h2>
-				<p>СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней» (п. 3582)</p>
+				<p title="СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней» (п. 3582)">Дезсредства и рабочие растворы клиники</p>
 			</div>
 
 			<div className="sanpin-control-bar" style={{ minHeight: "36px", margin: "0.4rem 0" }}>
@@ -443,7 +443,7 @@ function BacLabRegisterTab() {
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
 				<h2>ЖУРНАЛ БАКТЕРИОЛОГИЧЕСКОГО КОНТРОЛЯ И СМЫВОВ НА СТЕРИЛЬНОСТЬ</h2>
-				<p>СанПиН 3.3686-21 (п. 3640) / МУК 4.2.2942-11 «Методы санитарно-бактериологических исследований»</p>
+				<p title="СанПиН 3.3686-21 (п. 3640) / МУК 4.2.2942-11 «Методы санитарно-бактериологических исследований»">Контроль стерильности и санитарно-бактериологические исследования</p>
 			</div>
 
 			<div className="sanpin-control-bar" style={{ minHeight: "36px", margin: "0.4rem 0" }}>
@@ -592,8 +592,8 @@ function NeedleDisposalRegisterTab() {
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
-				<h2>ТЕХНОЛОГИЧЕСКИЙ ЖУРНАЛ УЧЕТА МЕДИЦИНСКИХ ОТХОДОВ КЛАССА Б (ОСТРЫЙ ИНСТРУМЕНТАРИЙ, ИГЛЫ, КАРПУЛЫ)</h2>
-				<p>СанПиН 2.1.3684-21 «Санитарно-эпидемиологические требования к содержанию территорий и обращению с отходами» (разд. X)</p>
+				<h2>УТИЛИЗАЦИЯ ОСТРОГО ИНСТРУМЕНТАРИЯ И ИГЛ</h2>
+				<p title="СанПиН 2.1.3684-21 «Санитарно-эпидемиологические требования к содержанию территорий и обращению с отходами» (разд. X)">Обезвреживание карпульных игл, лезвий и колющих отходов класса Б</p>
 			</div>
 
 			<div className="sanpin-control-bar" style={{ minHeight: "36px", margin: "0.4rem 0" }}>
@@ -1214,10 +1214,10 @@ function SanpinRegistersInner() {
 				<div className="sanpin-title-block" style={{ display: "flex", alignItems: "center", gap: "0.65rem", flexShrink: 0 }}>
 					<h1 style={{ fontSize: "1.05rem", fontWeight: 700, margin: 0, display: "flex", alignItems: "center", gap: "0.45rem", color: "var(--ink)" }}>
 						<ShieldCheck size={20} color="var(--brand-primary, #2563eb)" />
-						<span>Журналы СанПиН 3.3686-21</span>
+						<span>Стерилизационная и санитарный контроль</span>
 					</h1>
-					<span className="sanpin-badge-gov" style={{ minHeight: "26px", fontSize: "0.725rem", padding: "0.15rem 0.5rem" }}>
-						<CheckCircle2 size={12} /> 2026 Норма
+					<span className="sanpin-badge-gov" title="Соответствует СанПиН 3.3686-21 и 2.1.3684-21" style={{ minHeight: "26px", fontSize: "0.725rem", padding: "0.15rem 0.5rem" }}>
+						<CheckCircle2 size={12} /> Соответствует СанПиН
 					</span>
 					<span className="sanpin-badge-quality" style={{ minHeight: "26px", fontSize: "0.725rem", padding: "0.15rem 0.5rem" }}>
 						<ShieldCheck size={13} /> Контроль качества: 100% норма (0 отклонений)
@@ -1308,19 +1308,19 @@ function SanpinRegistersInner() {
 						</span>
 					</button>
 
-					{/* БЫСТРАЯ ПЕЧАТЬ: Печать журнала для Роспотребнадзора */}
+					{/* БЫСТРАЯ ПЕЧАТЬ: Печать журнала для проверок */}
 					<button
 						type="button"
 						onClick={handlePrintConsolidatedBinder}
 						className="sanpin-btn-export-cta touch-manipulation"
 						data-testid="sanpin-regulatory-export-btn"
-						title="Нормативная печать журналов СанПиН (Формы 257/у и 366/у) для проверок Роспотребнадзора в 1 клик"
+						title="Нормативная печать журналов (Формы 257/у и 366/у) для проверок в 1 клик"
 					>
 						<Printer size={15} />
-						<span>Печать журнала для Роспотребнадзора</span>
+						<span>Печать журнала для проверок</span>
 					</button>
 
-					{/* Dropdown: [⋮ Опции СанПиН] — All secondary actions aggregated cleanly */}
+					{/* Dropdown: [⋮ Опции] — All secondary actions aggregated cleanly */}
 					<div ref={exportMenuRef} style={{ position: "relative", display: "inline-block", zIndex: 60 }}>
 						<button
 							type="button"
@@ -1328,7 +1328,7 @@ function SanpinRegistersInner() {
 							className="sanpin-btn-options touch-manipulation"
 							aria-expanded={isExportMenuOpen}
 							data-testid="sanpin-options-dropdown-btn"
-							title="Дополнительные опции СанПиН"
+							title="Дополнительные опции"
 						>
 							<MoreVertical size={14} />
 							<span className="hidden sm:inline">Опции</span>
@@ -1410,7 +1410,7 @@ function SanpinRegistersInner() {
 									}}
 								>
 									<Sparkles size={15} color="var(--teal)" />
-									<span>{autoFilling ? "Оформление..." : "Закрыть смену СанПиН (1 клик)"}</span>
+									<span>{autoFilling ? "Оформление..." : "Закрыть смену (1 клик)"}</span>
 								</button>
 
 								{/* Пакетное закрытие */}
@@ -1470,7 +1470,7 @@ function SanpinRegistersInner() {
 									data-testid="print-consolidated-binder-btn"
 								>
 									<FileBadge size={15} color="var(--teal)" />
-									<span>Нормативная выгрузка СанПиН (Формы 257/у и 366/у)</span>
+									<span>Нормативная выгрузка (Формы 257/у и 366/у)</span>
 								</button>
 
 								{/* CSV */}
@@ -1499,7 +1499,7 @@ function SanpinRegistersInner() {
 									data-testid="export-consolidated-csv-btn"
 								>
 									<Download size={15} color="var(--ok-fg)" />
-									<span>Сводный CSV архив</span>
+									<span>Сводный архив (CSV)</span>
 								</button>
 
 								{/* ЭЦП */}
@@ -1827,14 +1827,14 @@ function SanpinRegistersInner() {
 						<div className="sanpin-modal-header" style={{ padding: "1.25rem" }}>
 							<h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.15rem" }}>
 								<Award size={22} color="var(--brand-primary, #2563eb)" />
-								Цифровая заверка журналов смены (ЭЦП / Ответственный сотрудник)
+								Цифровая заверка смены (ЭЦП / Ответственный сотрудник)
 							</h3>
 							<button
 								type="button"
 								onClick={() => setIsNurseSignModalOpen(false)}
 								style={{
-									minWidth: "44px",
-									minHeight: "44px",
+									minWidth: "34px",
+									minHeight: "34px",
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "center",
@@ -1859,8 +1859,9 @@ function SanpinRegistersInner() {
 										fontSize: "0.85rem",
 										lineHeight: 1.4,
 									}}
+									title="Соответствует СанПиН 3.3686-21"
 								>
-									<strong>СанПиН 3.3686-21:</strong> Настоящим подтверждается проверка целостности упаковок, срабатывания химических индикаторов класса 5 во всех точках закладки, отрицательные азопирамовые пробы и наработка ламп за текущую смену.
+									<span style={{ fontWeight: 700, color: "#059669" }}>Контроль смены:</span> Настоящим подтверждается проверка целостности упаковок, срабатывания химических индикаторов класса 5 во всех точках закладки, отрицательные азопирамовые пробы и наработка ламп за текущую смену.
 								</div>
 
 								<div className="sanpin-form-group">
@@ -1873,7 +1874,7 @@ function SanpinRegistersInner() {
 										onChange={(e) => setNurseSignName(e.target.value)}
 										className="sanpin-input"
 										placeholder="Персонал клиники"
-										style={{ minHeight: "44px", fontSize: "0.9rem" }}
+										style={{ minHeight: "36px", height: "36px", fontSize: "0.875rem" }}
 									/>
 								</div>
 
@@ -1887,7 +1888,7 @@ function SanpinRegistersInner() {
 										value={nurseSignPin}
 										onChange={(e) => setNurseSignPin(e.target.value)}
 										className="sanpin-input"
-										style={{ minHeight: "44px", fontSize: "1rem", letterSpacing: "4px" }}
+										style={{ minHeight: "36px", height: "36px", fontSize: "1rem", letterSpacing: "4px" }}
 										placeholder="••••"
 									/>
 								</div>
@@ -1898,7 +1899,7 @@ function SanpinRegistersInner() {
 									type="button"
 									onClick={() => setIsNurseSignModalOpen(false)}
 									className="sanpin-btn sanpin-btn-secondary"
-									style={{ minHeight: "44px", padding: "0.5rem 1.25rem" }}
+									style={{ minHeight: "34px", padding: "0.35rem 1rem" }}
 								>
 									Отмена
 								</button>
@@ -1907,8 +1908,8 @@ function SanpinRegistersInner() {
 									onClick={() => handleBatchNurseSign(undefined, true)}
 									aria-busy={signingShift}
 									className="sanpin-btn sanpin-btn-secondary"
-									style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700 }}
-									title="Пропустить медсестру: подтвердить журналы персоналом клиники"
+									style={{ minHeight: "34px", padding: "0.35rem 0.85rem", fontSize: "0.85rem", fontWeight: 700 }}
+									title="Пропустить медсестру: подтвердить смену персоналом клиники"
 								>
 									Пропустить медсестру (Персонал клиники)
 								</button>
@@ -1916,9 +1917,9 @@ function SanpinRegistersInner() {
 									type="submit"
 									aria-busy={signingShift}
 									className="sanpin-btn sanpin-btn-primary"
-									style={{ minHeight: "44px", padding: "0.5rem 1.5rem", fontSize: "0.95rem", fontWeight: 700 }}
+									style={{ minHeight: "34px", padding: "0.35rem 1.25rem", fontSize: "0.875rem", fontWeight: 700 }}
 								>
-									<FileBadge size={18} />
+									<FileBadge size={16} />
 									{signingShift ? "Заверка..." : "Поставить штамп ЭЦП"}
 								</button>
 							</div>

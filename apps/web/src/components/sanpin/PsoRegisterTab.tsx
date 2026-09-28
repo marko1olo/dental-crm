@@ -120,7 +120,7 @@ export function PsoRegisterTab() {
 			});
 
 			if (res.ok) {
-				showToast("Запись ПСО успешно внесена в журнал (Форма № 366/у)", "success");
+				showToast("Запись контроля ПСО внесена в журнал (Форма № 366/у)", "success");
 				setIsModalOpen(false);
 				fetchLogs();
 			} else {
@@ -146,7 +146,7 @@ export function PsoRegisterTab() {
 				batchItemCount: 100,
 				testedSampleCount: 3,
 				detergentBrand: "Биолот 0.5% + Аламинол 1%",
-				notes: `Азопирамовая проба — 1 клик норма (реакция отрицательная, следов крови и моющих средств не обнаружено по СанПиН 3.3686-21). Партия допущена к стерилизации. [ЭЦП: ${formNurseName}]`,
+				notes: `Азопирамовая проба — 1 клик норма (реакция отрицательная, следов крови и моющих средств не обнаружено). Партия допущена к стерилизации. [ЭЦП: ${formNurseName}]`,
 			};
 
 			const res = await fetch("/api/registers/pso/quick-norm", {
@@ -160,7 +160,7 @@ export function PsoRegisterTab() {
 			});
 
 			if (res.ok) {
-				showToast("Азопирамовая проба: норма (реакция отрицательная, следов крови не обнаружено по СанПиН 3.3686-21)!", "success");
+				showToast("Азопирамовая проба: норма (реакция отрицательная, скрытая кровь отсутствует)!", "success");
 				fetchLogs();
 			} else {
 				// Fallback to standard /api/registers/pso
@@ -183,7 +183,7 @@ export function PsoRegisterTab() {
 					}),
 				});
 				if (fallbackRes.ok) {
-					showToast("Азопирамовая проба: норма (реакция отрицательная, следов крови не обнаружено по СанПиН 3.3686-21)!", "success");
+					showToast("Азопирамовая проба: норма (реакция отрицательная, скрытая кровь отсутствует)!", "success");
 					fetchLogs();
 				} else {
 					const err = await fallbackRes.json();
@@ -275,8 +275,8 @@ export function PsoRegisterTab() {
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
-				<h2>ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ (ФОРМА № 366/у)</h2>
-				<p>СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»</p>
+				<h2>КОНТРОЛЬ СТЕРИЛИЗАЦИИ (ПСО И ПРОБЫ)</h2>
+				<p title="СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»">Журнал учета качества предстерилизационной очистки (Форма № 366/у)</p>
 			</div>
 
 			{/* Table of logs with Integrated Compact Header */}
@@ -366,7 +366,7 @@ export function PsoRegisterTab() {
 								border: "none",
 								boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
 							}}
-							title="1-клик отметка: «Азопирамовая проба — норма (реакция отрицательная, следов крови и моющих средств не обнаружено по СанПиН 3.3686-21)»"
+							title="1-клик отметка: «Азопирамовая проба — норма (реакция отрицательная, следов крови и моющих средств не обнаружено)»"
 							data-testid="quick-pso-norm-btn"
 						>
 							<CheckCircle2 size={15} className="shrink-0" />
@@ -427,7 +427,7 @@ export function PsoRegisterTab() {
 											Журнал предстерилизационной очистки пуст
 										</div>
 										<div style={{ fontSize: "0.825rem", color: "var(--muted, #64748b)", lineHeight: 1.45 }}>
-											Внесите результаты азопирамовой и фенолфталеиновой проб партии инструментов (Форма № 366/у по СанПиН 3.3686-21).
+											Внесите результаты азопирамовой и фенолфталеиновой проб партии инструментов (Форма № 366/у).
 										</div>
 										<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center" }}>
 											<button
@@ -436,7 +436,7 @@ export function PsoRegisterTab() {
 												aria-busy={submitting}
 												className="sanpin-btn sanpin-btn-primary touch-manipulation"
 												style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
-												title="1-клик отметка всей партии инструментов по норме СанПиН 3.3686-21"
+												title="1-клик отметка всей партии инструментов (норма)"
 												data-testid="empty-quick-pso-norm-btn"
 											>
 												<CheckCircle2 size={16} /> Отметка партии в 1 клик («Проба отрицательная, норма»)
@@ -600,7 +600,7 @@ export function PsoRegisterTab() {
 						<div className="sanpin-modal-header" style={{ padding: "1.25rem 1.5rem" }}>
 							<h3 style={{ fontSize: "1.2rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
 								<FlaskConical size={22} color="var(--brand-primary, #2563eb)" />
-								Фиксация пробы ПСО (Форма № 366/у)
+								Контроль предстерилизационной очистки (Форма № 366/у)
 							</h3>
 							<button
 								type="button"
@@ -638,7 +638,7 @@ export function PsoRegisterTab() {
 												setFormAzopyramNeg(true);
 												setFormPhenolNeg(true);
 												setFormDetergent("Биолот 0.5% + Аламинол 1%");
-												setFormNotes("Проба отрицательная, норма (СанПиН 3.3686-21)");
+												setFormNotes("Проба отрицательная, норма");
 											}}
 											className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 											style={{ fontSize: "0.8rem", padding: "0.25rem 0.6rem", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
@@ -679,7 +679,7 @@ export function PsoRegisterTab() {
 											style={{ minHeight: "44px", fontSize: "0.95rem", fontWeight: 700 }}
 										/>
 										<span className="sanpin-form-hint" style={{ fontSize: "0.8rem" }}>
-											СанПиН требует пробу от 1% партии (не менее 3-5 шт)
+											Выборка от 1% партии (не менее 3-5 шт.)
 										</span>
 									</div>
 
@@ -712,7 +712,7 @@ export function PsoRegisterTab() {
 										className="sanpin-select"
 										style={{ minHeight: "44px", fontSize: "0.9rem" }}
 									>
-										<option value="both">Азопирамовая + Фенолфталеиновая (Рекомендуется СанПиН)</option>
+										<option value="both">Азопирамовая + Фенолфталеиновая (Рекомендуется)</option>
 										<option value="azopyram">Только азопирамовая (на скрытую кровь / гемоглобин)</option>
 										<option value="phenolphthalein">Только фенолфталеиновая (на остатки щелочных моющих средств)</option>
 									</select>
@@ -775,6 +775,7 @@ export function PsoRegisterTab() {
 										alignItems: "flex-start",
 										gap: "0.6rem",
 									}}
+									title="Соответствует СанПиН 3.3686-21"
 								>
 									{liveEval.isBatchApproved ? (
 										<CheckCircle2 size={20} color="#059669" style={{ flexShrink: 0, marginTop: "2px" }} />
@@ -784,7 +785,7 @@ export function PsoRegisterTab() {
 									<div>
 										<div style={{ fontWeight: 700, fontSize: "0.9rem", color: liveEval.isBatchApproved ? "#059669" : "#dc2626" }}>
 											{liveEval.isBatchApproved
-												? "Партия соответствует СанПиН 3.3686-21 и допущена к стерилизации"
+												? "Партия соответствует нормативам и допущена к стерилизации"
 												: "ВНИМАНИЕ: Партия НЕ ДОПУСКАЕТСЯ к стерилизации"}
 										</div>
 										{liveEval.rejectionReason && (

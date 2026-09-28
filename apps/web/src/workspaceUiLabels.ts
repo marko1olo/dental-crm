@@ -22,7 +22,7 @@ import {
 } from "@dental/shared";
 
 export const appointmentLabels: Record<Appointment["status"], string> = {
-	planned: "План",
+	planned: "Запланирован",
 	confirmed: "Подтвержден",
 	arrived: "Пришел",
 	in_treatment: "В кресле",

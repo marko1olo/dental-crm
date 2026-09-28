@@ -1189,7 +1189,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			if (hasUnsavedContent) {
 				flushImmediately();
 				e.preventDefault();
-				e.returnValue = "В приеме есть несохраненные данные дневника 043/у. Закрыть страницу?";
+				e.returnValue = "В приеме есть несохраненные данные дневника. Закрыть страницу?";
 				return e.returnValue;
 			}
 		};
@@ -1251,7 +1251,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				setIcdSearch((c) => (c.trim() ? c : soapProtocol.diagnosisIcd10));
 			}
 			showToast(
-				`Протокол для зуба ${finding.toothNumber} добавлен в дневник 043/у`,
+				`Протокол для зуба ${finding.toothNumber} добавлен в дневник приёма`,
 				"success",
 				4000,
 			);
@@ -1302,6 +1302,37 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 
 			if (!activeDoctor) {
 				if (!silent) showToast("Выберите врача для приема", "error");
+				return null;
+			}
+
+			// Fastify API requires strict z.string().uuid() for visitId and patientId
+			if (
+				!visitId ||
+				!UUID_REGEX.test(visitId) ||
+				!patientId ||
+				!UUID_REGEX.test(patientId)
+			) {
+				if (!silent) {
+					showToast(
+						"Приём ещё не открыт в расписании. Откройте приём из расписания, чтобы сохранить дневник.",
+						"warning",
+					);
+				}
+				return null;
+			}
+
+			// Silent autosave on an empty uninitialized diary should not spam the backend
+			const hasDiaryContent = Boolean(
+				diary.anamnesis?.trim() ||
+					diary.statusLocalis?.trim() ||
+					diary.diagnosisIcd10?.trim() ||
+					diary.diagnosisTooth?.trim() ||
+					diary.treatmentDescription?.trim() ||
+					diary.complications?.trim() ||
+					diary.comorbidities?.trim() ||
+					trayBarcode?.trim(),
+			);
+			if (silent && loadState.phase === "empty" && !hasDiaryContent) {
 				return null;
 			}
 			/*
@@ -1510,7 +1541,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				setIcdSearch((c) => (c.trim() ? c : (generated.diagnosisIcd10 ?? c)));
 			}
 			scheduleDebouncedSave();
-			showToast("Дневник 043/у заполнен из зубной формулы", "success", 4000);
+			showToast("Дневник приёма заполнен из зубной формулы", "success", 4000);
 		},
 		[isLocked, isRevising, scheduleDebouncedSave],
 	);
@@ -1586,7 +1617,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				}
 				scheduleDebouncedSave();
 				showToast(
-					`Протокол для ${finding ? `зуба #${finding.toothNumber}` : "приема"} внесен в дневник 043/у`,
+					`Протокол для ${finding ? `зуба #${finding.toothNumber}` : "приема"} внесен в дневник приёма`,
 					"success",
 					4000,
 				);
@@ -2636,8 +2667,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				setLastSavedAt(new Date());
 				showToast(
 					parsed.isExpired
-						? "ВНИМАНИЕ: Лоток привязан, но крафт-пакет просрочен по СанПиН!"
-						: "Лоток привязан и запись стерилизации внесена в форму 043/у",
+						? "ВНИМАНИЕ: Лоток привязан, но срок стерилизации истёк!"
+						: "Лоток привязан и запись стерилизации внесена в медкарту",
 					parsed.isExpired ? "error" : "success",
 					7000,
 				);

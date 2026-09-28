@@ -13,10 +13,9 @@ for (const dir of targetDirs) {
   }
 }
 
-// Read lines 16 to 281 of scripts/capture_schedule_proofs.cjs
-const lines = fs.readFileSync(path.resolve("scripts/capture_schedule_proofs.cjs"), "utf8").split("\n");
-const mockCode = lines.slice(15, 281).join("\n");
-const todayDate = new Date().toISOString().slice(0, 10);
+// Read mockDashboard from scripts/take_inquisition_live_screenshots.cjs
+const lines = fs.readFileSync(path.resolve("scripts/take_inquisition_live_screenshots.cjs"), "utf8").split("\n");
+const mockCode = lines.slice(21, 277).join("\n");
 let mockDashboard;
 eval(mockCode);
 
@@ -92,29 +91,10 @@ async function capture() {
   await page.goto("http://127.0.0.1:5173/#schedule", { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForTimeout(2000);
 
-  // Click [В приём] on Kovalev (app-2)
-  console.log("Looking for appointment [В приём]...");
-  const kovalevCard = page.locator('text=Ковалёв Роман Станиславович').first();
-  if (await kovalevCard.isVisible()) {
-    console.log("Found Kovalev card, clicking [В приём]...");
-    const kovalevParent = kovalevCard.locator('xpath=ancestor::div[contains(@class, "grid-appointment-card") or contains(@data-testid, "appointment")]').first();
-    const startBtn = kovalevParent.locator('button:has-text("В приём")').first();
-    if (await startBtn.isVisible()) {
-      await startBtn.click();
-    } else {
-      await page.locator('button:has-text("В приём")').first().click();
-    }
-  } else {
-    console.log("Clicking any [В приём]...");
-    const startBtn = page.locator('button:has-text("В приём")').first();
-    if (await startBtn.isVisible()) {
-      await startBtn.click();
-    } else {
-      await page.goto("http://127.0.0.1:5173/#visit", { waitUntil: "domcontentloaded" });
-    }
-  }
-
-  await page.waitForTimeout(2000);
+  console.log("Navigating to #visit...");
+  await page.evaluate(() => { window.location.hash = "visit"; });
+  await page.waitForSelector('[data-testid="visit-subtab-diagnostics"]', { state: "visible", timeout: 30000 });
+  await page.waitForTimeout(1000);
 
   // Dismiss any modals/banners
   const dismissBtn = page.locator('button:has-text("Понятно"), [data-testid="btn-dismiss-notice"]');

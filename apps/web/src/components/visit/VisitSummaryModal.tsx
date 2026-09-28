@@ -364,7 +364,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 								{isLocked ? (
 									<span className="inline-flex items-center gap-1 px-3 py-1 min-h-[32px] sm:min-h-[44px] rounded-full text-xs font-semibold bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal)] min-w-0 break-words">
 										<Lock className="w-3 h-3 shrink-0" />
-										<span className="min-w-0 break-words">Подписано 043/у</span>
+										<span className="min-w-0 break-words">Подписано в карте</span>
 									</span>
 								) : (
 									<span className="inline-flex items-center gap-1 px-3 py-1 min-h-[32px] sm:min-h-[44px] rounded-full text-xs font-semibold bg-[var(--amber-soft,rgba(217,119,6,0.12))] text-[var(--amber,#b45309)] border border-[var(--amber,#b45309)] min-w-0 break-words">
@@ -399,12 +399,12 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						<ArrowRight size={12} className="text-[var(--muted)]" />
 						<div className="flex items-center gap-1.5 font-bold text-[var(--teal,var(--brand-primary))]">
 							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] text-xs font-bold">2</span>
-							<span>Шаг 2: Протокол 043/у (1 клик)</span>
+							<span>Шаг 2: Дневник приёма (1 клик)</span>
 						</div>
 						<ArrowRight size={12} className="text-[var(--muted)]" />
 						<div className="flex items-center gap-1.5 font-bold text-[var(--ok-fg)]">
 							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--ok-fg)] text-white text-xs font-bold">3</span>
-							<span>Шаг 3: Печать Формы 043/у</span>
+							<span>Шаг 3: Печать медицинской карты</span>
 						</div>
 						<div className="ml-auto flex items-center gap-2">
 							<button
@@ -566,10 +566,10 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							</div>
 							<div>
 								<div className="font-bold text-sm text-[var(--ink)]">
-									1-Click Синтез дневника 043/у по МКБ-10 и формуле
+									1-Click Синтез дневника по МКБ-10 и формуле
 								</div>
 								<div className="text-xs text-[var(--muted)]">
-									Автозаполнение жалоб (S), статуса (O), диагноза (A) и протокола (P) по стандартам СтАР (Приказ № 834н)
+									Автозаполнение жалоб (S), статуса (O), диагноза (A) и протокола (P) по клиническим стандартам СтАР
 								</div>
 							</div>
 						</div>
@@ -621,7 +621,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							data-testid="summary-synthesize-protocol-btn"
 						>
 							<Sparkles className="w-4 h-4" />
-							<span>Сформировать дневник 043/у по МКБ-10 и формуле</span>
+							<span>Сформировать дневник по МКБ-10 и формуле</span>
 						</button>
 					</div>
 
@@ -681,11 +681,11 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 								}
 							}}
 							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-[var(--teal,var(--line))]/40 bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] text-sm font-bold hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors cursor-pointer"
-							title="Сформировать дневник 043/у по МКБ-10 и формуле зубов"
+							title="Сформировать дневник приёма по МКБ-10 и формуле зубов"
 							data-testid="summary-open-protocol-generator-btn"
 						>
 							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-							<span>Протокол 043/у (1 клик)</span>
+							<span>Дневник приёма (1 клик)</span>
 						</button>
 						{onOpenPrescription ? (
 							<button
@@ -741,9 +741,11 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							}}
 							className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[48px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm sm:text-base font-extrabold hover:bg-[var(--teal-dark)] transition-colors shadow-md cursor-pointer"
 							data-testid="summary-print-btn"
+							title="Печать медицинской карты (Форма 043/у)"
+							aria-label="Печать Формы 043/у"
 						>
 							<Printer className="w-4 h-4" />
-							Печать Формы 043/у
+							Печать медицинской карты
 						</button>
 						<button
 							type="button"

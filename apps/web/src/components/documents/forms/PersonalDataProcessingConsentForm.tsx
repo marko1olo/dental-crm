@@ -203,7 +203,7 @@ export const PersonalDataProcessingConsentForm = React.memo(
 						}}
 					>
 						<Lock size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-						<span>1 клик: Заполнить формулировки 152-ФЗ + ЕГИСЗ Минздрава (Постановление № 140)</span>
+						<span>1 клик: Заполнить стандартные формулировки (Защита персональных данных)</span>
 					</button>
 				</div>
 				<label>

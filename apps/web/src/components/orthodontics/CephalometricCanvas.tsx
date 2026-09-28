@@ -405,7 +405,7 @@ export function CephalometricCanvas({
 						Для проведения цефалометрического анализа требуется реальный рентгеновский снимок пациента.
 					</p>
 					<p className="text-[11px] sm:text-xs text-slate-300 mb-4 sm:mb-5 font-mono font-medium" style={{ color: "var(--muted, #cbd5e1)" }}>
-						Drag & Drop боковой ТРГ / DICOM / JPG / PNG
+						Область загрузки снимка: перетащите ТРГ / DICOM / JPG / PNG
 					</p>
 
 					<div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3 w-full sm:w-auto">

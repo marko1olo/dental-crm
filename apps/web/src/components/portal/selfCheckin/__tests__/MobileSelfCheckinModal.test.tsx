@@ -1,8 +1,10 @@
+import "../../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createElement } from "react";
+import React, { createElement } from "react";
+globalThis.React = React;
 import { renderToStaticMarkup } from "react-dom/server";
-import { MobileSelfCheckinModal } from "../MobileSelfCheckinModal";
+const { MobileSelfCheckinModal } = await import("../MobileSelfCheckinModal");
 
 describe("MobileSelfCheckinModal Component & 1-Touch Checkin Flow", () => {
 	it("renders 1-Touch Checkin screen with 4 digits input and instant ticket button without mandatory 3-signature maze", () => {
@@ -284,10 +286,23 @@ describe("MobileSelfCheckinModal Component & 1-Touch Checkin Flow", () => {
 
 	it("guarantees terminal and touchscreen ergonomics (touch-action: manipulation and touch targets >= 48px)", async () => {
 		const { readFileSync } = await import("node:fs");
+		const { dirname, join } = await import("node:path");
 		const { fileURLToPath } = await import("node:url");
 
+		function readCssWithImports(filePath: string): string {
+			let css = readFileSync(filePath, "utf-8");
+			const dir = dirname(filePath);
+			const importMatches = [...css.matchAll(/@import\s+["']\.\/([^"']+)["'];/g)];
+			for (const match of importMatches) {
+				if (match[1]) {
+					css += "\n" + readCssWithImports(join(dir, match[1]));
+				}
+			}
+			return css;
+		}
+
 		const cssPath = fileURLToPath(new URL("../selfCheckin.css", import.meta.url));
-		const cssContent = readFileSync(cssPath, "utf-8");
+		const cssContent = readCssWithImports(cssPath);
 
 		// Touch action manipulation must be present across interactive touch elements
 		assert.ok(

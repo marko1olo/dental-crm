@@ -566,6 +566,8 @@ export default defineConfig({
 		},
 	},
 	server: {
+		...(process.env.VITE_DISABLE_HMR === "true" ? { hmr: false } : {}),
+		...(process.env.VITE_DISABLE_WATCH === "true" ? { watch: null } : {}),
 		headers: {
 			"Cross-Origin-Opener-Policy": "same-origin",
 			"Cross-Origin-Embedder-Policy": "require-corp",

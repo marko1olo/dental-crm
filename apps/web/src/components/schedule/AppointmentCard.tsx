@@ -43,6 +43,7 @@ import { AppointmentQuickActions } from "./AppointmentQuickActions";
 import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { isTechnicalBreakAppointment } from "./AppointmentModal";
 import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
+import { broadcastVisitStatusChange } from "../../services/storage";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -481,6 +482,17 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 						"success",
 						3000,
 					);
+					try {
+						broadcastVisitStatusChange({
+							visitId: appointment.id,
+							status: normalized,
+							patientId: appointmentPatient?.id,
+							patientName: appointmentPatientName,
+							updatedAt: new Date().toISOString(),
+						});
+					} catch {
+						// Non-blocking cross-tab broadcast
+					}
 				} else {
 					setOptimisticStatus(null);
 					updateAppointmentScheduleDraft(appointment.id, "status", prevStatus);
@@ -747,7 +759,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 							} else {
 								useAppStore.getState().setCurrentView("visit");
 							}
-							showToast("Пациент в кресле: открыта карта 043/у", "success");
+							showToast("Пациент в кресле: открыта медицинская карта", "success");
 						}}
 						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Пациент в кресле (Клавиша 2)"
@@ -802,11 +814,11 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 							showToast(`Открыта карта визита: ${appointmentPatientName}`, "info");
 						}}
 						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
-						title="Открыть дневник приёма 043/у"
+						title="Открыть дневник приёма"
 						data-testid="appointment-action-open-visit-btn"
 					>
 						<FileText size={13} className="text-[var(--teal)]" />
-						<span>Карта 043/у</span>
+						<span>Медкарта</span>
 					</button>
 				</div>
 			);
@@ -823,14 +835,14 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 							}
 							useAppStore.getState().setCurrentView("finance");
-							showToast(`Касса 54-ФЗ: расчёт ${appointmentPatientName}`, "info");
+							showToast(`Касса: расчёт ${appointmentPatientName}`, "info");
 						}}
 						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--good-soft)] text-[var(--good-fg)] border border-[var(--good)]/40 hover:bg-[var(--good-surface)] active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
-						title="Принять оплату по 54-ФЗ"
+						title="Принять оплату"
 						data-testid="appointment-action-billing-btn"
 					>
 						<CreditCard size={13} className="text-[var(--good-fg)]" />
-						<span>Оплата 54-ФЗ</span>
+						<span>Оплата</span>
 					</button>
 					<button
 						type="button"
@@ -982,7 +994,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 					{/* 150ms Hover HUD карточки визита (Apple HIG / StomX Parity) */}
 					{isHoverPreviewOpen && (
 						<div
-							className="appointment-patient-hover-preview absolute top-full left-0 mt-1.5 w-[330px] max-w-[calc(100vw-32px)] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-50 pointer-events-auto select-none"
+							className="appointment-patient-hover-preview absolute top-full left-0 mt-1.5 w-[330px] max-w-[330px] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-50 pointer-events-auto select-none"
 							data-testid="timeline-appointment-hover-preview"
 							onMouseEnter={() => {
 								if (hoverTimeoutRef.current) {
@@ -1017,7 +1029,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 													? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40 hover:bg-rose-500/25"
 													: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20 hover:bg-slate-500/20"
 										}`}
-										title="Касса 54-ФЗ: расчёт пациента"
+										title="Касса: расчёт пациента"
 										data-testid={`timeline-hover-balance-btn-${appointment.id}`}
 									>
 										<CreditCard size={11} className="shrink-0" />
@@ -1026,7 +1038,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 												? `Депозит: +${patientBalance.toLocaleString("ru-RU")} ₽`
 												: patientBalance < 0
 													? `Долг: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
-													: "54-ФЗ: 0 ₽"}
+													: "Оплата: 0 ₽"}
 										</span>
 									</button>
 								) : (
@@ -1209,13 +1221,13 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 												usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 											}
 											useAppStore.getState().setCurrentView("finance");
-											showToast(`Быстрый чек 54-ФЗ: расчёт ${appointmentPatientName}`, "info");
+											showToast(`Быстрый расчёт: ${appointmentPatientName}`, "info");
 										}}
 										className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-										title="Быстрый чек 54-ФЗ: перейти к кассовому расчёту (1 клик)"
+										title="Быстрый расчёт: перейти к оплате (1 клик)"
 									>
 										<CreditCard size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-										<span className="whitespace-nowrap">Быстрый чек 54-ФЗ</span>
+										<span className="whitespace-nowrap">Быстрый расчёт</span>
 									</button>
 								</div>
 							</div>
@@ -1484,10 +1496,10 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 												useAppStore.getState().setCurrentView("patients");
 												showToast(`Открыта карта пациента: ${appointmentPatientName}`, "info");
 											}}
-											title="Открыть амбулаторную карту пациента (043/у)"
+											title="Открыть амбулаторную карту пациента (ЭМК)"
 										>
 											<FileText size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
-											<span>Карта пациента (043/у)</span>
+											<span>Карта пациента (ЭМК)</span>
 										</button>
 										<button
 											type="button"
@@ -1516,12 +1528,12 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 													usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 												}
 												useAppStore.getState().setCurrentView("finance");
-												showToast(`Касса 54-ФЗ: расчёт ${appointmentPatientName}`, "info");
+												showToast(`Касса: расчёт ${appointmentPatientName}`, "info");
 											}}
-											title="Перейти в кассу 54-ФЗ для расчёта"
+											title="Перейти в кассу для расчёта"
 										>
 											<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-											<span>Принять оплату / Касса 54-ФЗ</span>
+											<span>Принять оплату / Касса</span>
 										</button>
 										<button
 											type="button"
@@ -2438,9 +2450,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 								</button>
 							</div>
 
-							{/* 54-FZ Payment status & Balance banner */}
+							{/* Payment status & Balance banner */}
 							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between gap-2">
-								<span className="font-bold text-[var(--muted)]">Статус 54-ФЗ / Баланс:</span>
+								<span className="font-bold text-[var(--muted)]">Статус оплаты / Баланс:</span>
 								{patientBalance !== null ? (
 									<span
 										className={`px-2.5 py-1 rounded-lg text-xs font-black font-mono whitespace-nowrap shrink-0 ${
@@ -2455,10 +2467,10 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 											? `Депозит: +${patientBalance.toLocaleString("ru-RU")} ₽`
 											: patientBalance < 0
 												? `Долг: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
-												: "0 ₽ (Оплачено 54-ФЗ)"}
+												: "0 ₽ (Оплачено)"}
 									</span>
 								) : (
-									<span className="text-xs text-[var(--muted)] whitespace-nowrap shrink-0">0 ₽ (54-ФЗ)</span>
+									<span className="text-xs text-[var(--muted)] whitespace-nowrap shrink-0">0 ₽ (Оплачено)</span>
 								)}
 							</div>
 

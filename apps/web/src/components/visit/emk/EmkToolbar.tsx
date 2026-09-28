@@ -7,7 +7,6 @@ import {
 	ChevronDown,
 	FileText,
 	Scissors,
-	ShieldCheck,
 	Sparkles,
 	Tag,
 } from "lucide-react";
@@ -51,7 +50,6 @@ export function EmkToolbar({
 	const [localActiveTab, setLocalActiveTab] = React.useState<string>("all");
 	const activeEmkTab = propActiveEmkTab ?? localActiveTab;
 	const setActiveEmkTab = propSetActiveEmkTab ?? setLocalActiveTab;
-	const handleApplyNorm = onApplyNorm || onApplyPhysiologicalNorm || (() => {});
 	const handleSchedule = onScheduleNext || (() => onScheduleNextVisit(5));
 	const [isExtraMenuOpen, setIsExtraMenuOpen] = React.useState<boolean>(false);
 	const menuRef = React.useRef<HTMLDivElement | null>(null);
@@ -84,11 +82,11 @@ export function EmkToolbar({
 	const surgeryPreset = React.useMemo(() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "surgery_extraction_simple"), []);
 
 	return (
-		<div className="emk-unified-toolbar flex flex-nowrap items-center justify-start sm:justify-between gap-1 sm:gap-1.5 my-0 py-0.5 border-b border-[var(--line)] w-full min-w-0 max-w-full overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-h-[44px] sm:min-h-[32px] px-1 touch-pan-x">
+		<div className="emk-unified-toolbar flex flex-nowrap items-center justify-start sm:justify-between gap-1 sm:gap-1.5 my-0 py-0.5 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] w-full min-w-0 max-w-full overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-h-[44px] sm:min-h-[32px] px-1 touch-pan-x">
 			{voicePilotNode && (
 				<>
 					{voicePilotNode}
-					<div className="w-px h-4 bg-[var(--line)] shrink-0" />
+					<div className="w-px h-4 bg-[var(--glass-border)] shrink-0" />
 				</>
 			)}
 
@@ -108,8 +106,8 @@ export function EmkToolbar({
 							aria-selected={activeEmkTab === tab.id}
 							className={`emk-tab-button shrink-0 whitespace-nowrap text-xs sm:text-sm min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2.5 sm:px-2.5 py-0 font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center gap-1 touch-manipulation ${
 								activeEmkTab === tab.id
-									? "active bg-[var(--teal-fill,var(--teal))] text-white border-[var(--teal-fill,var(--teal))] shadow-2xs"
-									: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"
+									? "active bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal-fill,var(--teal))] shadow-2xs"
+									: "bg-[var(--paper)] border-[var(--glass-border)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal)] hover:border-[var(--teal)] shadow-2xs"
 							}`}
 							onClick={() => setActiveEmkTab(tab.id)}
 						>
@@ -123,33 +121,19 @@ export function EmkToolbar({
 				})}
 			</div>
 
-			<div className="w-px h-4 bg-[var(--line)] shrink-0 hidden sm:block" />
+			<div className="w-px h-4 bg-[var(--glass-border)] shrink-0 hidden sm:block" />
 
 			{/* СРЕДНЯЯ ЧАСТЬ: 1-Клик SOAP пресеты */}
 			<div
 				className="emk-tier1-quick-soap-bar flex items-center gap-1 overflow-x-auto no-scrollbar whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden shrink-0"
 				data-testid="emk-tier1-quick-soap-bar"
 			>
-				<button
-					type="button"
-					data-testid="btn-quick-soap-norm"
-					onClick={handleApplyNorm}
-					className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
-					title="Соматически здоров / норма (1-клик): зафиксировать физиологическую норму по умолчанию в форме 043/у"
-				>
-					<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-					<span className="whitespace-nowrap shrink-0 min-w-max">
-						<span className="hidden md:inline">Норма (1-клик)</span>
-						<span className="md:hidden">Норма</span>
-					</span>
-				</button>
-
 				{hygienePreset && (
 					<button
 						type="button"
 						data-testid="btn-quick-soap-hygiene"
 						onClick={() => onApplySoapPreset(hygienePreset)}
-						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
+						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
 					>
 						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
 						<span className="whitespace-nowrap shrink-0 min-w-max">Гигиена</span>
@@ -161,7 +145,7 @@ export function EmkToolbar({
 						type="button"
 						data-testid="btn-quick-soap-caries"
 						onClick={() => onApplySoapPreset(cariesPreset)}
-						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
+						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
 					>
 						<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
 						<span className="whitespace-nowrap shrink-0 min-w-max">Кариес</span>
@@ -176,7 +160,7 @@ export function EmkToolbar({
 						className={`shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max ${
 							isExtraMenuOpen || isStarProtocolsOpen
 								? "border-[var(--teal)] bg-[var(--teal-soft)] text-[var(--teal-dark)]"
-								: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--ink)]"
+								: "border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
 						<Tag className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
@@ -186,7 +170,7 @@ export function EmkToolbar({
 
 					{isExtraMenuOpen && (
 						<div
-							className="absolute left-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl min-w-[210px] animate-in fade-in zoom-in-95 duration-100 text-xs"
+							className="absolute left-0 top-full mt-1 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong)] border border-[var(--glass-border)] rounded-xl shadow-xl min-w-[210px] animate-in fade-in zoom-in-95 duration-100 text-xs text-[var(--ink)]"
 							role="menu"
 						>
 							{pulpitisPreset && (
@@ -231,7 +215,7 @@ export function EmkToolbar({
 									<span>Удаление (K04.8)</span>
 								</button>
 							)}
-							<div className="h-px bg-[var(--line)] my-1" />
+							<div className="h-px bg-[var(--glass-border)] my-1" />
 							<button
 								type="button"
 								data-testid="btn-toggle-star-protocols-toolbar"
@@ -268,7 +252,7 @@ export function EmkToolbar({
 				<button
 					type="button"
 					onClick={() => handleSchedule()}
-					className="min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 rounded-lg text-[11px] sm:text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap min-w-max"
+					className="min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 rounded-lg text-[11px] sm:text-xs font-semibold border border-[var(--glass-border)] bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] text-[var(--ink)] shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap min-w-max"
 					data-testid="btn-schedule-next-stage"
 					title="Записать пациента на следующий этап через 5 дней"
 				>
@@ -276,24 +260,11 @@ export function EmkToolbar({
 					<span>+5д</span>
 				</button>
 
-				{onPrint043 && (
-					<button
-						type="button"
-						onClick={onPrint043}
-						className="min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 rounded-lg text-[11px] sm:text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap min-w-max"
-						data-testid="btn-print-form-043"
-						title="Печать Карты стоматологического больного (Форма 043/у)"
-					>
-						<FileText size={12} className="shrink-0 text-[var(--teal)]" />
-						<span>043/у</span>
-					</button>
-				)}
-
 				<span
 					className={`visit-note-status-badge text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-md border transition-all shrink-0 flex-shrink-0 whitespace-nowrap min-w-max inline-flex items-center gap-1 ${
 						hasUnsavedChanges
 							? "ready bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30"
-							: "bg-slate-100 dark:bg-slate-800 text-[var(--muted)] border-[var(--line)]"
+							: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--glass-border)]"
 					}`}
 				>
 					{hasUnsavedChanges ? (

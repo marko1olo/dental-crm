@@ -192,7 +192,7 @@ export function VisitViewModals({
 				onApplyToDiary={(protocolText) => {
 					appendToEMKField("diary", protocolText);
 					showToast(
-						"Протокол оказания экстренной помощи внесён в дневник 043/у",
+						"Протокол оказания экстренной помощи внесён в дневник приёма",
 						"warning",
 					);
 				}}
@@ -233,7 +233,7 @@ export function VisitViewModals({
 					if (soap.plan) appendToEMKField("treatmentPlan", soap.plan);
 					if (soap.recommendations)
 						appendToEMKField("recommendations", soap.recommendations);
-					showToast("SOAP-запись внесена в Форму 043/у", "success");
+					showToast("SOAP-запись внесена в медицинскую карту", "success");
 				}}
 				onApplyCommand={(cmd: DictationCommand) => {
 					if (cmd.toothNumber && cmd.clinicalStatus) {

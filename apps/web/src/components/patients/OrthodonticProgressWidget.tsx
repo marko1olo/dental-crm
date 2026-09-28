@@ -472,7 +472,7 @@ export function OrthodonticProgressWidget({
 	return (
 		<motion.div
 			data-testid="orthodontic-progress-widget"
-			className="ortho-progress-widget bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 mt-4 shadow-sm"
+			className="ortho-progress-widget bg-[var(--paper)] text-[var(--ink)] border border-[var(--glass-border)] rounded-2xl p-5 mt-4 shadow-sm"
 			initial={{ opacity: 0, y: 10 }}
 			animate={{ opacity: 1, y: 0 }}
 		>
@@ -487,7 +487,7 @@ export function OrthodonticProgressWidget({
 						style={{ display: "flex", flexDirection: "column", gap: "12px" }}
 					>
 						<div className="flex justify-between items-center mb-2">
-							<span className="text-sm font-semibold text-slate-900 dark:text-white">
+							<span className="text-sm font-semibold text-[var(--ink)]">
 								{/* БЫЛО: «Настройка трекера (глубокий JSONB)». JSONB — название типа
 								    столбца в базе данных; на экране врача оно не значит ничего. */}
 								Сколько капп пройдено
@@ -495,14 +495,14 @@ export function OrthodonticProgressWidget({
 							<button
 								type="button"
 								onClick={() => setIsEditing(false)}
-								className="bg-transparent border-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-0"
+								className="bg-transparent border-0 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer p-0"
 							>
 								<X size={18} />
 							</button>
 						</div>
 
 						<div className="grid grid-cols-2 gap-3">
-							<label className="flex flex-col gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+							<label className="flex flex-col gap-1.5 text-xs text-[var(--muted)]">
 								Текущая каппа
 								<input
 									type="number"
@@ -512,10 +512,10 @@ export function OrthodonticProgressWidget({
 									onChange={(e) =>
 										setFormCurrent(Math.max(1, Number(e.target.value)))
 									}
-									className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm outline-none"
+									className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] text-sm outline-none"
 								/>
 							</label>
-							<label className="flex flex-col gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+							<label className="flex flex-col gap-1.5 text-xs text-[var(--muted)]">
 								Всего капп
 								<input
 									type="number"
@@ -524,18 +524,18 @@ export function OrthodonticProgressWidget({
 									onChange={(e) =>
 										setFormTotal(Math.max(1, Number(e.target.value)))
 									}
-									className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm outline-none"
+									className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] text-sm outline-none"
 								/>
 							</label>
 						</div>
 
-						<label className="flex flex-col gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+						<label className="flex flex-col gap-1.5 text-xs text-[var(--muted)]">
 							Дата начала
 							<input
 								type="date"
 								value={formStart}
 								onChange={(e) => setFormStart(e.target.value)}
-								className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm w-full outline-none"
+								className="p-2 rounded-lg bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] text-sm w-full outline-none"
 							/>
 						</label>
 
@@ -587,10 +587,10 @@ export function OrthodonticProgressWidget({
 									padding: "16px 0",
 								}}
 							>
-								<div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700">
+								<div className="w-12 h-12 rounded-full bg-[var(--paper-soft)] flex items-center justify-center text-[var(--muted)] border border-[var(--glass-border)]">
 									<Smile size={24} />
 								</div>
-								<p className="m-0 text-sm text-slate-500 dark:text-slate-400 text-center">
+								<p className="m-0 text-sm text-[var(--muted)] text-center">
 									Лечение каппами пока не начато.
 								</p>
 								<button
@@ -609,10 +609,10 @@ export function OrthodonticProgressWidget({
 											<Smile size={20} />
 										</div>
 										<div>
-											<h4 className="m-0 text-sm font-semibold text-slate-900 dark:text-white">
+											<h4 className="m-0 text-sm font-semibold text-[var(--ink)]">
 												Элайнеры
 											</h4>
-											<span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+											<span className="text-xs text-[var(--muted)] flex items-center gap-1">
 												<Calendar size={12} /> с {formatDate(ortho.startDate)}
 											</span>
 										</div>
@@ -620,7 +620,7 @@ export function OrthodonticProgressWidget({
 									<button
 										type="button"
 										onClick={handleStartEdit}
-										className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white px-3.5 py-2 min-h-[44px] sm:min-h-[32px] rounded-xl text-xs font-semibold cursor-pointer inline-flex items-center justify-center"
+										className="bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] hover:bg-[var(--paper-soft)] px-3.5 py-2 min-h-[44px] sm:min-h-[32px] rounded-xl text-xs font-semibold cursor-pointer inline-flex items-center justify-center"
 									>
 										Изменить
 									</button>
@@ -628,9 +628,9 @@ export function OrthodonticProgressWidget({
 
 								<div className="flex flex-col gap-2">
 									<div className="flex justify-between items-end">
-										<span className="text-3xl font-bold text-slate-900 dark:text-white leading-none">
+										<span className="text-3xl font-bold text-[var(--ink)] leading-none">
 											{currentAligner}{" "}
-											<span className="text-base font-medium text-slate-500 dark:text-slate-400">
+											<span className="text-base font-medium text-[var(--muted)]">
 												/ {totalAligners}
 											</span>
 										</span>
@@ -639,7 +639,7 @@ export function OrthodonticProgressWidget({
 										</span>
 									</div>
 
-									<div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+									<div className="h-2 bg-[var(--paper-soft)] rounded-full overflow-hidden">
 										<motion.div
 											initial={{ width: 0 }}
 											animate={{ width: `${progressPercent}%` }}
@@ -650,12 +650,12 @@ export function OrthodonticProgressWidget({
 								</div>
 
 								{weeksRemaining > 0 ? (
-									<p className="m-0 text-xs text-slate-500 dark:text-slate-400">
+									<p className="m-0 text-xs text-[var(--muted)]">
 										{/* БЫЛО: «Осталось примерно 1 капп до завершения этапа» —
 										    число подставлялось к неизменяемому слову. Согласование
 										    берём из общей countLabel, а не считаем на месте. */}
 										Осталось примерно{" "}
-										<strong className="text-slate-900 dark:text-white">
+										<strong className="text-[var(--ink)]">
 											{countLabel(weeksRemaining, "каппа", "каппы", "капп")}
 										</strong>{" "}
 										до конца этапа.
@@ -668,12 +668,12 @@ export function OrthodonticProgressWidget({
 								)}
 
 								{/* 1-Click Clinical Quick Actions */}
-								<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+								<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-[var(--line)]">
 									<button
 										type="button"
 										disabled={saving || currentAligner >= totalAligners}
 										onClick={() => handleQuickIncrement(1)}
-										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer active:scale-95 transition-all"
+										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-bold text-xs flex items-center justify-center gap-1 border border-[var(--glass-border)] cursor-pointer active:scale-95 transition-all"
 										title="Выдать следующую 1 каппу"
 									>
 										<ChevronRight size={14} className="text-teal-600 dark:text-teal-400" />
@@ -695,7 +695,7 @@ export function OrthodonticProgressWidget({
 										type="button"
 										disabled={saving}
 										onClick={handleQuickWireChange}
-										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer active:scale-95 transition-all"
+										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-bold text-xs flex items-center justify-center gap-1 border border-[var(--glass-border)] cursor-pointer active:scale-95 transition-all"
 										title="Зафиксировать смену дуги"
 									>
 										<RotateCw size={14} className="text-blue-600 dark:text-blue-400" />
@@ -706,7 +706,7 @@ export function OrthodonticProgressWidget({
 										type="button"
 										disabled={saving}
 										onClick={handleQuickLigatureActivate}
-										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer active:scale-95 transition-all"
+										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-bold text-xs flex items-center justify-center gap-1 border border-[var(--glass-border)] cursor-pointer active:scale-95 transition-all shadow-2xs"
 										title="Зафиксировать активацию замков / лигатур"
 									>
 										<Sparkles size={14} className="text-amber-500" />

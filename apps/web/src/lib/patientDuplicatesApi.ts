@@ -43,44 +43,27 @@
 import { showToast } from "../components/GlobalToast";
 import { actionFailureToast } from "./panelStateText";
 
-export type DuplicateReason =
-	| "same_name_and_birth_date"
-	| "same_name_birth_date_unknown"
-	| "same_phone_and_surname"
-	| "same_phone_only"
-	| "same_email";
+import type {
+	DuplicateCandidate,
+	DuplicateReason,
+	DuplicateReport,
+	DuplicateSide,
+} from "@dental/shared/patients";
+import {
+	DOUBTFUL_BELOW,
+	duplicatePairKey,
+} from "@dental/shared/patients";
 
-/** Карточка в паре. Телефон и дата рождения нужны, чтобы человек мог сверить. */
-export type DuplicateSide = {
-	patientId: string;
-	fullName: string;
-	phone: string | null;
-	birthDate: string | null;
-	email: string | null;
+export type {
+	DuplicateCandidate,
+	DuplicateReason,
+	DuplicateReport,
+	DuplicateSide,
 };
-
-export type DuplicateCandidate = {
-	leftPatientId: string;
-	leftName: string;
-	left: DuplicateSide;
-	rightPatientId: string;
-	rightName: string;
-	right: DuplicateSide;
-	reason: DuplicateReason;
-	confidence: number;
-	explanation: string;
-	caution: string | null;
+export {
+	DOUBTFUL_BELOW,
+	duplicatePairKey,
 };
-
-export type DuplicateReport = {
-	candidates: DuplicateCandidate[];
-	examinedPatients: number;
-	dismissedPairs: number;
-	note: string;
-};
-
-/** Ниже этого порога пара показывается как сомнительная и требует сверки. */
-export const DOUBTFUL_BELOW = 0.6;
 
 export type RequestHeaders = Record<string, string>;
 
@@ -112,10 +95,6 @@ async function readJson<T>(response: Response): Promise<T> {
 	return payload as T;
 }
 
-/** Устойчивый ключ пары — порядок сторон в ответе уже нормализован сервером. */
-export function duplicatePairKey(candidate: DuplicateCandidate): string {
-	return `${candidate.leftPatientId}|${candidate.rightPatientId}`;
-}
 
 export async function fetchDuplicateReport(
 	headers: RequestHeaders,

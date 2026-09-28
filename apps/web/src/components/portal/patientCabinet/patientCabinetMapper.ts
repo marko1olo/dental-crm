@@ -1,7 +1,9 @@
 import type {
+	GeneratedDocumentSummary,
 	PatientAppointment,
 	PatientInvoiceItem,
 	PatientPersonalCabinetData,
+	PatientPrescriptionItem,
 	PatientStatutoryConsent,
 	PatientTreatmentPlan,
 	TreatmentPlanStage,
@@ -177,6 +179,90 @@ export function mapServerPortalMeToCabinetData(
 		];
 	}
 
+	// Map clinical documents from /api/portal/me
+	const mappedDocuments: GeneratedDocumentSummary[] = documents.map((doc, index) => {
+		const rawDate = doc.issuedAt || doc.createdAt;
+		const dDate = rawDate ? new Date(rawDate as string) : new Date();
+		const dateIso = !Number.isNaN(dDate.getTime())
+			? dDate.toISOString().slice(0, 10)
+			: new Date().toISOString().slice(0, 10);
+		const id = (doc.id as string) || `doc-${index}`;
+
+		return {
+			id,
+			kind: (doc.kind as string) || "document",
+			title: (doc.title as string) || "Медицинский документ",
+			status: (doc.status as string) || "issued",
+			dateIso,
+			totalAmountRub:
+				doc.totalAmountRub !== undefined && doc.totalAmountRub !== null
+					? Number(doc.totalAmountRub)
+					: undefined,
+			visitId: (doc.visitId as string) || undefined,
+			documentNumber:
+				(doc.documentNumber as string) || (doc.number as string) || undefined,
+			sha256: (doc.issuedSnapshotSha256 as string) || undefined,
+			storagePath: (doc.storagePath as string) || undefined,
+			htmlUrl: `/api/portal/documents/${encodeURIComponent(id)}/html`,
+			payloadJson: (doc.payloadJson as string) || undefined,
+		};
+	});
+
+	// Map prescriptions from documents or payload
+	const mappedPrescriptions: PatientPrescriptionItem[] = [];
+	if (Array.isArray((payload as any).prescriptions)) {
+		for (const rx of (payload as any).prescriptions) {
+			mappedPrescriptions.push({
+				id: rx.id || `rx-${mappedPrescriptions.length}`,
+				medicationName: rx.medicationName || rx.name || "Лекарственный препарат",
+				dosageRu: rx.dosageRu || rx.dosage || "",
+				instructionRu: rx.instructionRu || rx.instructions || "По назначению врача",
+				durationRu: rx.durationRu || rx.duration || "5–7 дней",
+				dateIso: rx.dateIso || new Date().toISOString().slice(0, 10),
+				doctorName:
+					rx.doctorName || (adminProfile.curatorFullName as string) || "Лечащий врач",
+				validityDays: rx.validityDays ? Number(rx.validityDays) : 60,
+				status: rx.status || "active",
+				orderNumber: rx.orderNumber,
+			});
+		}
+	}
+	for (const doc of documents) {
+		if (doc.kind === "prescription_medication_order") {
+			const payloadObj =
+				typeof doc.payloadJson === "string"
+					? (() => {
+							try {
+								return JSON.parse(doc.payloadJson);
+							} catch {
+								return null;
+							}
+						})()
+					: (doc.payload as any) || null;
+			if (payloadObj?.prescriptionMedicationOrder) {
+				const pmo = payloadObj.prescriptionMedicationOrder;
+				mappedPrescriptions.push({
+					id: (doc.id as string) || `rx-${mappedPrescriptions.length}`,
+					medicationName: pmo.drugNameRu || doc.title,
+					dosageRu: pmo.dosageFormRu || "",
+					instructionRu:
+						pmo.dosageAndAdministrationRu || "Принимать по назначению врача",
+					durationRu: pmo.treatmentDurationRu || "По схеме",
+					dateIso:
+						(doc.issuedAt as string)?.slice(0, 10) ||
+						new Date().toISOString().slice(0, 10),
+					doctorName:
+						pmo.prescribingDoctorFullName ||
+						(adminProfile.curatorFullName as string) ||
+						"Лечащий врач",
+					validityDays: pmo.validityDays ? Number(pmo.validityDays) : 60,
+					status: doc.status === "issued" ? "active" : "draft",
+					orderNumber: pmo.prescriptionSeriesAndNumber || doc.documentNumber,
+				});
+			}
+		}
+	}
+
 	const loyaltyTierRu =
 		adminProfile.loyaltyTier === "platinum"
 			? "Платиновый VIP (15%)"
@@ -206,5 +292,7 @@ export function mapServerPortalMeToCabinetData(
 		treatmentPlans: mappedPlans,
 		warranties: [],
 		consents: mappedConsents,
+		documents: mappedDocuments,
+		prescriptions: mappedPrescriptions.length > 0 ? mappedPrescriptions : undefined,
 	};
 }

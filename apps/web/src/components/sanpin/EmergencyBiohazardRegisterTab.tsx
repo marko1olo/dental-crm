@@ -135,7 +135,7 @@ export function EmergencyBiohazardRegisterTab() {
 			});
 
 			if (res.ok) {
-				showToast("Аварийная ситуация зарегистрирована, сформирован Акт СанПиН", "success");
+				showToast("Аварийная ситуация зарегистрирована, сформирован акт", "success");
 				setIsModalOpen(false);
 				fetchLogs();
 			} else {
@@ -163,8 +163,8 @@ export function EmergencyBiohazardRegisterTab() {
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
-				<h2>ЖУРНАЛ РЕГИСТРАЦИИ АВАРИЙНЫХ СИТУАЦИЙ ПРИ ОКАЗАНИИ МЕДИЦИНСКОЙ ПОМОЩИ (АПТЕЧКА «АНТИ-ВИЧ»)</h2>
-				<p>СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»</p>
+				<h2>АВАРИЙНЫЕ СИТУАЦИИ И АПТЕЧКА «АНТИ-ВИЧ»</h2>
+				<p title="СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»">Регистрация контактов с биоматериалами и протоколы экстренной профилактики</p>
 			</div>
 
 			<div
@@ -180,7 +180,7 @@ export function EmergencyBiohazardRegisterTab() {
 			>
 				<AlertOctagon size={24} color="#dc2626" style={{ flexShrink: 0, marginTop: "2px" }} />
 				<div style={{ fontSize: "0.85rem", lineHeight: 1.5 }}>
-					<strong style={{ color: "#dc2626" }}>ЭКСТРЕННЫЙ АЛГОРИТМ ПРИ УКОЛАХ И ПОРЕЗАХ (СанПиН 3.3686-21):</strong>
+					<strong style={{ color: "#dc2626" }} title="СанПиН 3.3686-21">ЭКСТРЕННЫЙ АЛГОРИТМ ПРИ УКОЛАХ И ПОРЕЗАХ:</strong>
 					<ol style={{ margin: "0.35rem 0 0 1.25rem", padding: 0 }}>
 						<li>Снять перчатки, выдавить каплю крови из ранки.</li>
 						<li>Вымыть руки проточной водой с мылом, обработать 70% спиртом, края раны смазать 5% спиртовым йодом, заклеить пластырем.</li>
@@ -226,7 +226,7 @@ export function EmergencyBiohazardRegisterTab() {
 					<thead>
 						<tr>
 							<th>Дата и время</th>
-							<th>Акт СанПиН</th>
+							<th>Акт аварии</th>
 							<th>Пострадавший сотрудник</th>
 							<th>Пациент (источник)</th>
 							<th>Характер травмы</th>
@@ -524,8 +524,8 @@ export function EmergencyBiohazardRegisterTab() {
 									<div style={{ fontSize: "0.8rem" }}>
 										<div style={{ fontWeight: 600, color: liveEval.isProtocolCompliant ? "#059669" : "#dc2626" }}>
 											{liveEval.isProtocolCompliant
-												? "Протокол первой помощи по СанПиН 3.3686-21 полностью соблюден"
-												: "ОБНАРУЖЕНЫ НАРУШЕНИЯ РЕГЛАМЕНТА САНПИН:"}
+												? "Протокол первой помощи полностью соблюден"
+												: "ОБНАРУЖЕНЫ НАРУШЕНИЯ РЕГЛАМЕНТА:"}
 										</div>
 										{!liveEval.isProtocolCompliant && (
 											<ul style={{ margin: "0.25rem 0 0 1rem", padding: 0, color: "#dc2626" }}>

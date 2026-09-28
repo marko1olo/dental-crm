@@ -174,7 +174,7 @@ export function convertMarketMaterialToBomLink(
 		inventoryItemId: material.id,
 		itemName: material.nameRu,
 		category,
-		unit: material.defaultUnit,
+		unit: material.defaultUnit as ConsumableItemLink["unit"],
 		quantityPerService: quantity,
 		isMandatory: true,
 		costPriceKopecks,

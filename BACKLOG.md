@@ -9,6 +9,18 @@
 
 ---
 
+## 2026-09-27 — Doctor Clinical Preferences & DB Persistence Audit (GET/PUT /api/settings/doctor-preferences, PostgreSQL 18)
+
+- **Gap:** `doctorPreferencesStore.ts` stored preferences (anesthetics, needles, composite materials, adhesives, etchant gels, 6 specialty presets, and Form 043/u templates) exclusively in browser `localStorage` (`dente_doctor_preferences_v1`). A doctor logging in from another computer, tablet, or clearing browser cache lost all clinical favorites and had to reconfigure everything.
+- **Ship:**
+  - Migration `0202_doctor_clinical_preferences.sql` creating table `doctor_preferences` with RLS tenant isolation (`tenant_isolation`) and composite index on `(organization_id, COALESCE(doctor_id, ...))`. Applied in PostgreSQL (180/180 migrations).
+  - Drizzle schema `doctorPreferences.ts` in `apps/api/src/db/schema/` re-exported via `schema/index.ts`.
+  - Database access layer `doctorPreferencesQuery.ts` (`getDoctorPreferencesFromDb`, `saveDoctorPreferencesInDb` with atomic in-place upsert and race condition fallback).
+  - Fastify routes `doctorPreferencesRoutes.ts` with `GET /api/settings/doctor-preferences` and `PUT /api/settings/doctor-preferences` registered in `server.ts`.
+  - Web client API `doctorPreferencesApi.ts` (`fetchDoctorPreferencesFromApi`, `saveDoctorPreferencesToApi`) and debounced bidirectional sync in `doctorPreferencesStore.ts` (400ms auto-sync on change, auto-load on store initialization).
+  - Integration suite `doctorPreferencesPersistence.test.ts` (6/6 tests passing against live PostgreSQL 18: unauth 401, PUT 200, direct `pg.Client` SQL verification, GET readback, upsert in-place idempotency, and cross-tenant isolation).
+- **Verify:** `npx tsx --test apps/api/src/tests/routes/doctorPreferencesPersistence.test.ts` exit 0 (6/6 passed); `npm run check:encoding` exit 0. Total persistence audit verified 99/99 passing tests across lab orders, 043/u diaries, periodontogram, and CBCT/A06.07.012 integration.
+
 ## 2026-08-01 — AI recognition jobs history (GET /api/ai/recognition-jobs)
 
 **Gap:** `POST /api/ai/recognition-jobs` already created jobs from Settings → ИИ «Лаборатория нейросетей» and showed only the last `recognitionJob` in memory. `GET /api/ai/recognition-jobs` (`listAiRecognitionJobsFromDb`, requireClinicalReadAccess + org) had **zero web callers**. After reload or preset change staff could not see queue/history or reopen a prior draft.

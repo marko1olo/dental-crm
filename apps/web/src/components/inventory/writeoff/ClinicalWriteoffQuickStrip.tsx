@@ -35,7 +35,7 @@ export const ClinicalWriteoffQuickStrip: React.FC<
 				</div>
 				<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 inline-flex items-center gap-1">
 					<Check size={12} className="text-teal-600" aria-hidden="true" />
-					<span>Форма 0504230 / ТОРГ-16: без созыва комиссии</span>
+					<span>Акт списания материалов: без созыва комиссии</span>
 				</span>
 			</div>
 

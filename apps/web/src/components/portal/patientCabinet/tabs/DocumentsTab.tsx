@@ -78,7 +78,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 				<div className="pc-tax-header">
 					<div>
 						<h3 className="pc-tax-main-title">
-							Справка об оплате медицинских услуг за {selectedTaxYear} год (КНД 1151156)
+							Справка для налогового вычета (13% НДФЛ) за {selectedTaxYear} год
 						</h3>
 						<p className="pc-tax-subtitle">
 							Включает все фискальные чеки клиники для представления в налоговые органы
@@ -153,7 +153,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 								onClick={onDownloadTaxCertificateDirect}
 							>
 								<Download size={15} />
-								<span>Скачать справку КНД 1151156 (1 клик)</span>
+								<span>Скачать справку для вычета (1 клик)</span>
 							</button>
 
 							<button
@@ -410,7 +410,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 												}}
 											>
 												<Printer size={14} />
-												<span>Печать выписки</span>
+												<span>Печать выписки 043/у</span>
 											</button>
 										)}
 
@@ -439,7 +439,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 				<div className="pc-card-header">
 					<div className="pc-card-title">
 						<Pill size={20} className="pc-icon-primary" />
-						<span>Электронные рецепты (Приказ Минздрава № 1094н, форма 107-1/у)</span>
+						<span>Электронные рецепты на лекарственные препараты</span>
 					</div>
 					<span className="pc-section-hint">Для предъявления в аптеках РФ</span>
 				</div>

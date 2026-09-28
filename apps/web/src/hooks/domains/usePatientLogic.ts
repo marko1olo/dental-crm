@@ -22,8 +22,8 @@ import {
 } from "../../AppHelpers";
 import {
 	PAYMENT_COMPOSER_PATIENT_UNTRACKED,
-	resetPaymentComposerOnPatientChange,
 	type TrackedComposerPatientId,
+	resetPaymentComposerOnPatientChange,
 } from "../../components/finance/paymentComposerReset";
 import { showToast } from "../../components/GlobalToast";
 import { shouldResetPatientDraftState } from "../../components/patients/patientDraftResetDecision.js";
@@ -32,6 +32,7 @@ import { useDocumentStore } from "../../store/documentStore";
 import { usePatientStore } from "../../store/patientStore";
 import { fetchWithHandling } from "../../utils/networkUtils";
 import { matchesPatientSearch } from "../../utils/patientSearchUtils";
+import { isDemoShowcaseMode, getDemoShowcasePatients } from "../../lib/demoMode";
 
 /** Заготовка приёма из гидратации базы: приёмов нет, объект есть. */
 const NIL_VISIT_UUID = "00000000-0000-0000-0000-000000000000";
@@ -151,11 +152,17 @@ export function usePatientLogic({
 		);
 
 	const activePatient = useMemo(() => {
-		if (!dashboard) return null;
+		const rawPatients: Patient[] =
+			dashboard?.patients && dashboard.patients.length > 0
+				? dashboard.patients
+				: isDemoShowcaseMode()
+					? getDemoShowcasePatients()
+					: [];
+		if (rawPatients.length === 0) return null;
 		return (
-			findPatient(dashboard.patients, dashboard?.activeVisit?.patientId) ??
-			dashboard?.patients?.find((patient) => patient.status === "active") ??
-			dashboard?.patients?.[0] ??
+			findPatient(rawPatients, dashboard?.activeVisit?.patientId) ??
+			rawPatients.find((patient) => patient.status === "active") ??
+			rawPatients[0] ??
 			null
 		);
 	}, [dashboard]);
@@ -173,14 +180,26 @@ export function usePatientLogic({
 		const visit = dashboard?.activeVisit;
 		if (!visit?.id || visit.id === NIL_VISIT_UUID) return null;
 		if (!visit.patientId || visit.patientId === NIL_VISIT_UUID) return null;
-		return findPatient(dashboard?.patients, visit.patientId) ?? null;
+		const rawPatients: Patient[] =
+			dashboard?.patients && dashboard.patients.length > 0
+				? dashboard.patients
+				: isDemoShowcaseMode()
+					? getDemoShowcasePatients()
+					: [];
+		return findPatient(rawPatients, visit.patientId) ?? null;
 	}, [dashboard?.activeVisit, dashboard?.patients]);
 
 	const selectedPatient = useMemo(() => {
-		if (!dashboard) return null;
+		const rawPatients: Patient[] =
+			dashboard?.patients && dashboard.patients.length > 0
+				? dashboard.patients
+				: isDemoShowcaseMode()
+					? getDemoShowcasePatients()
+					: [];
+		if (rawPatients.length === 0) return null;
 		return (
 			(selectedPatientId
-				? findPatient(dashboard.patients, selectedPatientId)
+				? findPatient(rawPatients, selectedPatientId)
 				: null) ?? activePatient
 		);
 	}, [activePatient, dashboard, selectedPatientId]);
@@ -272,9 +291,15 @@ export function usePatientLogic({
 	 * раньше, поэтому выбор пациента по ФИО не меняется.
 	 */
 	const filteredPatients = useMemo(() => {
-		if (!dashboard) return [];
-		if (!query.trim()) return dashboard.patients || [];
-		return (dashboard.patients || []).filter((patient) =>
+		const rawPatients: Patient[] =
+			dashboard?.patients && dashboard.patients.length > 0
+				? dashboard.patients
+				: isDemoShowcaseMode()
+					? getDemoShowcasePatients()
+					: [];
+		if (rawPatients.length === 0) return [];
+		if (!query.trim()) return rawPatients;
+		return rawPatients.filter((patient) =>
 			matchesPatientSearch(patient, query),
 		);
 	}, [dashboard, query]);

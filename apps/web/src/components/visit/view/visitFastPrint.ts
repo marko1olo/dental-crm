@@ -126,7 +126,7 @@ export function executeFastPrint043u({
 	}
 
 	showToast(
-		`Форма 043/у отправлена на печать (${watermarkText})`,
+		`Медицинская карта отправлена на печать (${watermarkText})`,
 		"success",
 		6000,
 	);

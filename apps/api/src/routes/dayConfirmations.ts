@@ -31,6 +31,7 @@ import {
 	users,
 } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
+import { replyBadRequest } from "./routeErrors.js";
 
 const querySchema = z.object({
 	/** Дата в виде ГГГГ-ММ-ДД. По умолчанию — завтра: обзвон делают накануне. */
@@ -171,9 +172,7 @@ export function tomorrowInTimeZone(timeZone: string, now = new Date()): string {
 }
 
 function badRequest(reply: FastifyReply, message: string) {
-	return reply
-		.code(400)
-		.send({ error: "DayConfirmationValidationError", message });
+	return replyBadRequest(reply, "DayConfirmationValidationError", message);
 }
 
 export async function registerDayConfirmationRoutes(app: FastifyInstance) {

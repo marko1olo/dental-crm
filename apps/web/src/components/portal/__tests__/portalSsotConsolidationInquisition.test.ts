@@ -144,6 +144,7 @@ test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d
 				const lines = source.split("\n");
 				for (let i = 0; i < lines.length; i++) {
 					const line = lines[i];
+					if (line === undefined) continue;
 					assert.ok(
 						!emojiRegex.test(line),
 						`Found cartoon emoji in ${path.basename(filePath)}:${i + 1}: ${line.trim()}`,

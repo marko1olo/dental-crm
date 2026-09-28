@@ -65,7 +65,7 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 		updateClinicProfileDraft("appointmentBufferMinutes", String(minutes));
 		showToast(
 			minutes > 0
-				? `Санитарный интервал СанПиН: ${minutes} мин между пациентами`
+				? `Санитарная обработка: ${minutes} мин между пациентами`
 				: "Санитарный интервал отключен (0 мин)",
 			"info",
 		);
@@ -90,7 +90,7 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 							График работы клиники и сетка расписания
 						</h3>
 						<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
-							Часы приёма, дни работы, длительность визитов и санитарные интервалы по СанПиН
+							Часы приёма, дни работы, длительность визитов и интервалы санобработки
 						</p>
 					</div>
 				</div>
@@ -293,12 +293,12 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 					</p>
 				</div>
 
-				{/* Sanitary Interval (СанПиН) */}
+				{/* Sanitary Interval */}
 				<div className="space-y-1.5">
 					<div className="flex items-center justify-between">
 						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1">
 							<ShieldAlert size={14} className="text-indigo-600" />
-							Санитарный интервал (СанПиН 3.3686-21):
+							Санитарная обработка кабинета:
 						</span>
 						<span className="text-xs font-mono font-bold text-indigo-600">
 							{currentBuffer > 0 ? `+${currentBuffer} мин` : "0 мин"}
@@ -308,7 +308,7 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 						{[
 							{ val: 0, label: "Без буфера (0м)" },
 							{ val: 10, label: "10 мин" },
-							{ val: 15, label: "15 мин (СанПиН)" },
+							{ val: 15, label: "15 мин (Санобработка)" },
 						].map((item) => (
 							<button
 								key={item.val}

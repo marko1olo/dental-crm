@@ -162,6 +162,38 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 		return "";
 	}, [resolvedPatient]);
 
+	const criticalSomaticFlags = useMemo(() => {
+		const profile =
+			resolvedPatient.clinicalSafetyProfile ||
+			resolvedPatient.anamnesis?.clinicalSafetyProfile ||
+			resolvedPatient.somaticRiskProfile;
+		if (profile) {
+			const evalResult = evaluatePatientSafetyFlags(profile);
+			return evalResult.activeFlags.filter(
+				(f) =>
+					f.category !== "anesthesia_allergy" &&
+					!f.id.startsWith("allergy_") &&
+					!f.id.includes("allergy") &&
+					f.id !== "anaphylaxis_history",
+			);
+		}
+		const chronicText =
+			resolvedPatient.chronicDiseases ||
+			resolvedPatient.anamnesis?.chronicDiseases ||
+			resolvedPatient.notes;
+		if (typeof chronicText === "string" && chronicText.trim()) {
+			const evalResult = evaluatePatientSafetyFlags(chronicText);
+			return evalResult.activeFlags.filter(
+				(f) =>
+					f.category !== "anesthesia_allergy" &&
+					!f.id.startsWith("allergy_") &&
+					!f.id.includes("allergy") &&
+					f.id !== "anaphylaxis_history",
+			);
+		}
+		return [];
+	}, [resolvedPatient]);
+
 	const diagnosisText = useMemo(() => {
 		const d =
 			resolvedPatient.diagnosis ||
@@ -606,6 +638,33 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 							СТОП-ФАКТОР / АЛЛЕРГИЯ:
 						</span>
 						<span className="truncate font-semibold">{allergyText}</span>
+					</div>
+				</div>
+			)}
+
+			{/* Dedicated Somatic Alert Banner (Антикоагулянты/Аспирин, Диабет, Беременность, ЭКС) */}
+			{criticalSomaticFlags.length > 0 && (
+				<div
+					className="px-2.5 py-1 rounded-lg bg-purple-500/15 border border-purple-500/40 text-purple-950 dark:text-purple-100 text-xs font-black flex items-center gap-2 shadow-xs"
+					data-testid="header-somatic-alert"
+					role="alert"
+				>
+					<HeartPulse size={14} className="text-purple-600 dark:text-purple-400 shrink-0" />
+					<div className="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
+						<span className="uppercase tracking-wider font-black text-[10px] text-purple-700 dark:text-purple-300 shrink-0">
+							СОМАТИЧЕСКИЙ СТАТУС:
+						</span>
+						<div className="flex items-center gap-1.5 flex-wrap">
+							{criticalSomaticFlags.map((flag) => (
+								<span
+									key={flag.id}
+									className="px-1.5 py-0.2 rounded-md bg-purple-600/20 text-purple-900 dark:text-purple-200 border border-purple-500/30 text-[10px] font-bold"
+									title={flag.description}
+								>
+									{flag.shortBadge || flag.titleRu}
+								</span>
+							))}
+						</div>
 					</div>
 				</div>
 			)}

@@ -1,11 +1,26 @@
+import "../../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createElement } from "react";
+import React, { createElement } from "react";
+globalThis.React = React;
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { MobileSelfCheckinModal } from "../MobileSelfCheckinModal";
+function readCssWithImports(filePath: string): string {
+	let css = readFileSync(filePath, "utf-8");
+	const dir = dirname(filePath);
+	const importMatches = [...css.matchAll(/@import\s+["']\.\/([^"']+)["'];/g)];
+	for (const match of importMatches) {
+		if (match[1]) {
+			css += "\n" + readCssWithImports(join(dir, match[1]));
+		}
+	}
+	return css;
+}
+
+const { MobileSelfCheckinModal } = await import("../MobileSelfCheckinModal");
 import {
 	createPhysiologicalNormSomaticQuestionnaire,
 	evaluateSomaticRisks,
@@ -175,7 +190,7 @@ describe("SelfCheckinAutonomyInquisition — Mandates 8c, 8d, 8e, 8s Audit", () 
 
 	it("6. CSS Design Tokens & Kiosk Ergonomics in selfCheckin.css", () => {
 		const cssPath = fileURLToPath(new URL("../selfCheckin.css", import.meta.url));
-		const css = readFileSync(cssPath, "utf-8");
+		const css = readCssWithImports(cssPath);
 
 		// Tokens used
 		assert.ok(

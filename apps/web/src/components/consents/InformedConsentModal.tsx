@@ -5,8 +5,7 @@ import {
 	ShieldCheck,
 	X,
 } from "lucide-react";
-import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	type ConsentPackageKey,

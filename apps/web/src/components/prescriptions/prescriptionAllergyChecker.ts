@@ -15,7 +15,14 @@ export interface PrescriptionDrugItemLike {
 	readonly tradeName: string;
 	readonly latinName: string;
 	readonly category?: string;
+	readonly form?: string | undefined;
+	readonly dosage?: string | undefined;
+	readonly quantity?: string | undefined;
+	readonly dispenseLatin?: string | undefined;
+	readonly signaRussian?: string | undefined;
 }
+
+
 
 export function detectPrescriptionAllergyConflicts(
 	patientAllergies: readonly string[] | string[] | string | null | undefined,

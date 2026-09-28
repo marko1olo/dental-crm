@@ -65,7 +65,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 					<button
 						type="button"
 						onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q5" : "Q1")}
-						className={`quadrant-btn min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
+						className={`quadrant-btn min-h-[32px] h-8 px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 							currentQuadrant === (isPediatricEffective ? "Q5" : "Q1")
 								? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-1 ring-indigo-400/40"
 								: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -74,13 +74,13 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						data-testid={isPediatricEffective ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
 					>
 						<span className="font-extrabold">{isPediatricEffective ? "Q5" : "Q1"}</span>
-						<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black shrink-0">ВЧ·П</span>
+						<span className="text-xs px-1 py-0.2 rounded bg-black/20 font-mono font-black shrink-0">ВЧ·П</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q6" : "Q2")}
-						className={`quadrant-btn min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
+						className={`quadrant-btn min-h-[32px] h-8 px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 							currentQuadrant === (isPediatricEffective ? "Q6" : "Q2")
 								? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-1 ring-indigo-400/40"
 								: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -89,13 +89,13 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						data-testid={isPediatricEffective ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
 					>
 						<span className="font-extrabold">{isPediatricEffective ? "Q6" : "Q2"}</span>
-						<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black shrink-0">ВЧ·Л</span>
+						<span className="text-xs px-1 py-0.2 rounded bg-black/20 font-mono font-black shrink-0">ВЧ·Л</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q8" : "Q4")}
-						className={`quadrant-btn min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
+						className={`quadrant-btn min-h-[32px] h-8 px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 							currentQuadrant === (isPediatricEffective ? "Q8" : "Q4")
 								? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-1 ring-indigo-400/40"
 								: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -104,13 +104,13 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						data-testid={isPediatricEffective ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
 					>
 						<span className="font-extrabold">{isPediatricEffective ? "Q8" : "Q4"}</span>
-						<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black shrink-0">НЧ·П</span>
+						<span className="text-xs px-1 py-0.2 rounded bg-black/20 font-mono font-black shrink-0">НЧ·П</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q7" : "Q3")}
-						className={`quadrant-btn min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
+						className={`quadrant-btn min-h-[32px] h-8 px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 							currentQuadrant === (isPediatricEffective ? "Q7" : "Q3")
 								? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-1 ring-indigo-400/40"
 								: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
@@ -119,7 +119,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						data-testid={isPediatricEffective ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
 					>
 						<span className="font-extrabold">{isPediatricEffective ? "Q7" : "Q3"}</span>
-						<span className="text-[10px] px-1 py-0.2 rounded bg-black/20 font-mono font-black shrink-0">НЧ·Л</span>
+						<span className="text-xs px-1 py-0.2 rounded bg-black/20 font-mono font-black shrink-0">НЧ·Л</span>
 					</button>
 				</div>
 			)}
@@ -134,7 +134,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 					<button
 						type="button"
 						onClick={handleMarkIntactDentition}
-						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 						title="1-клик Санирован / Интактный зубной ряд: вся формула отмечается здоровой без предупреждений и модалок"
 						data-testid="mark-intact-dentition-btn"
 						data-action="tooth-chart-mark-intact-btn"
@@ -146,8 +146,8 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 					<button
 						type="button"
 						onClick={handleMarkProHygieneDone}
-						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
-						title="1-клик Профгигиена выполнена: снятие зубных отложений УЗ + Air-Flow + полировка (A16.07.051) + протокол 043/у"
+						className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						title="1-клик Профгигиена выполнена: снятие зубных отложений УЗ + Air-Flow + полировка + протокол в дневник"
 						data-testid="tooth-chart-mark-pro-hygiene-btn"
 						data-action="tooth-chart-mark-pro-hygiene-btn"
 					>
@@ -158,8 +158,8 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 					<button
 						type="button"
 						onClick={handleApplyFastCariesK021}
-						className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-200 border border-blue-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
-						title="1-клик Быстрая пломба/кариес K02.1 для выбранного зуба: протокол 043/у + световая пломба (A16.07.002.001)"
+						className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-200 border border-blue-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						title="1-клик Быстрая пломба/кариес K02.1 для выбранного зуба: протокол в дневник + световая пломба"
 						data-testid="tooth-chart-apply-fast-caries-btn"
 						data-action="tooth-chart-apply-fast-caries-btn"
 					>
@@ -171,7 +171,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						<button
 							type="button"
 							onClick={handleMarkWisdomTeethMissing}
-							className="min-h-[30px] sm:min-h-[32px] h-7.5 sm:h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+							className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
 							title="1-клик Адентия 8-ок: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
 							data-testid="mark-wisdom-missing-btn"
 							data-action="tooth-chart-mark-wisdom-missing-btn"

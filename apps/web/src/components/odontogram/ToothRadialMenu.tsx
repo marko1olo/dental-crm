@@ -543,7 +543,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1 shrink-0">
 											Поверхности в 1 клик:
 										</span>
-										<span className="text-[11px] text-[var(--odontogram-ink-muted)]">
+										<span className="text-xs text-[var(--odontogram-ink-muted)]">
 											{selectedSurfaces.length > 0 ? selectedSurfaces.join(", ") : "Вся коронка"}
 										</span>
 									</div>
@@ -809,7 +809,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
 								>
 									<Zap size={18} />
-									<span className="whitespace-nowrap">Терапия 043/у</span>
+									<span className="whitespace-nowrap">Терапия</span>
 								</button>
 							)}
 							{onAddToInvoice && (
@@ -976,7 +976,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					>
 						{isPrimaryTooth(toothNumber) ? (
 							<div className="flex items-center gap-1.5">
-								<span className="text-[11px] uppercase font-black text-purple-600 dark:text-purple-400 px-1">Резорбция:</span>
+								<span className="text-xs uppercase font-black text-purple-600 dark:text-purple-400 px-1">Резорбция:</span>
 								<button
 									type="button"
 									onClick={() => {
@@ -1026,7 +1026,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 							<div className="flex flex-col items-center gap-1.5">
 								{/* Quick Surface Combo Chips (1 tap): [MOD], [MO], [OD], [O], [V], [L/P], [B] */}
 								<div className="flex items-center gap-1">
-									<span className="text-[11px] uppercase font-black text-teal-700 dark:text-teal-400 px-1">Поверхности:</span>
+									<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1">Поверхности:</span>
 									{[
 										{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
 										{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
@@ -1048,7 +1048,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 													setSelectedSurfaces(next);
 													onSelectSurfaces?.(next);
 												}}
-												className={`min-h-[44px] sm:min-h-[32px] sm:min-h-[36px] min-w-[44px] px-2.5 py-1.5 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
+												className={`min-h-[44px] sm:min-h-[32px] sm:h-8 min-w-[44px] px-2.5 py-1.5 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 													isMatch
 														? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
 														: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border-[var(--odontogram-border-subtle)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -1064,7 +1064,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 
 								{/* 6-Surface interactive toggle chips */}
 								<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--odontogram-border-subtle)] flex-wrap">
-									<span className="text-[11px] uppercase font-black text-teal-700 dark:text-teal-400 px-1">Отдельно:</span>
+									<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1">Отдельно:</span>
 									{(["O", "V", "L", "M", "D", "C"] as const).map((surf) => {
 										const isActive = selectedSurfaces.includes(surf);
 										return (
@@ -1087,7 +1087,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 
 								{/* Black Classes I-VI quick macros */}
 								<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--odontogram-border-subtle)] flex-wrap">
-									<span className="text-[11px] uppercase font-black text-amber-600 dark:text-amber-400 px-1">Блэк:</span>
+									<span className="text-xs uppercase font-black text-amber-600 dark:text-amber-400 px-1">Блэк:</span>
 									<button
 										type="button"
 										onClick={() => {
@@ -1180,7 +1180,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 
 								{/* Secondary Defects (Кд, Дп, Дк, Г/Фл, В, Гф) */}
 								<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--odontogram-border-subtle)] flex-wrap">
-									<span className="text-[11px] uppercase font-black text-indigo-600 dark:text-indigo-400 px-1">Дефекты:</span>
+									<span className="text-xs uppercase font-black text-indigo-600 dark:text-indigo-400 px-1">Дефекты:</span>
 									<button
 										type="button"
 										onClick={() => {
@@ -1299,7 +1299,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									className="min-h-[36px] text-xs font-black text-teal-700 dark:text-teal-300 hover:bg-teal-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
 								>
 									<Zap size={14} />
-									<span>Терапия 043/у</span>
+									<span>Терапия</span>
 								</button>
 							)}
 							{onAddToInvoice && (

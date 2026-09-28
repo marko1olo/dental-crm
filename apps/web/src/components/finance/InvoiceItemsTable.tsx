@@ -50,7 +50,7 @@ export const InvoiceItemsTable: React.FC<InvoiceItemsTableProps> = ({
 				<thead>
 					<tr className="border-b border-[var(--line)] text-[var(--ink-muted)] uppercase tracking-wider font-semibold">
 						<th className="pb-2 pl-2">Зуб / Услуга</th>
-						<th className="pb-2 text-center">Номенклатура 804н</th>
+						<th className="pb-2 text-center">Код услуги</th>
 						<th className="pb-2 text-right">Цена в плане</th>
 						<th className="pb-2 text-right">Текущий прайс</th>
 						<th className="pb-2 text-right">Дельта</th>
@@ -95,7 +95,7 @@ export const InvoiceItemsTable: React.FC<InvoiceItemsTableProps> = ({
 											<div className="font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-1">
 												<AlertTriangle size={12} />
 												<span>
-													Услуга архивирована. Рекомендуемый аналог 804н:
+													Услуга архивирована. Рекомендуемый аналог:
 												</span>
 											</div>
 											{hasAnalogue ? (
@@ -175,7 +175,7 @@ export const InvoiceItemsTable: React.FC<InvoiceItemsTableProps> = ({
 											Текущий прайс
 										</option>
 										<option value="REPLACE_WITH_804N_ANALOGUE">
-											Аналог 804н
+											Аналог из каталога
 										</option>
 										<option value="ADMIN_OVERRIDE">Согласование</option>
 									</select>

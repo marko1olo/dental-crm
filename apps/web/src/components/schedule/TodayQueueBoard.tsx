@@ -497,7 +497,7 @@ export const TodayQueueBoard: React.FC<TodayQueueBoardProps> = ({
 											type="button"
 											onClick={() => onOpenVisit(item.id)}
 											className="inline-flex h-8 items-center justify-center rounded-md border border-[var(--line)] bg-[var(--paper)] px-2 text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-											title="Открыть медицинскую карту / дневник визита 043/у"
+											title="Открыть медицинскую карту / дневник визита"
 										>
 											Прием
 										</button>
@@ -508,7 +508,7 @@ export const TodayQueueBoard: React.FC<TodayQueueBoardProps> = ({
 											type="button"
 											onClick={() => onOpenPayment(item.id)}
 											className="inline-flex h-8 items-center justify-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 text-xs font-semibold text-amber-800 hover:bg-amber-500/20 dark:text-amber-200"
-											title="Открыть кассу 54-ФЗ для оплаты"
+											title="Открыть кассу для оплаты"
 										>
 											<CreditCard size={12} />
 											Касса

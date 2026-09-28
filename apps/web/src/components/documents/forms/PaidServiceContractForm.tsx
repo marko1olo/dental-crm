@@ -380,7 +380,7 @@ export const PaidServiceContractForm = React.memo(
 			}
 
 			printPaidContract736(contractData);
-			showToast("Договор по ПП РФ № 736 отправлен на печать", "success", 3000);
+			showToast("Договор на оказание медицинских услуг отправлен на печать", "success", 3000);
 		};
 
 		const handleGenerateNewNumber = () => {
@@ -468,7 +468,7 @@ export const PaidServiceContractForm = React.memo(
 							Договор платных медицинских услуг
 						</h3>
 						<p className="text-xs text-[var(--muted,#64748b)] truncate m-0 hidden sm:block">
-							Фиксация номера, сроков, состава услуг, стоимости и обязательных уведомлений пациента по ПП РФ № 736
+							Фиксация номера, сроков, состава услуг, стоимости и обязательных уведомлений пациента
 						</p>
 					</div>
 
@@ -537,7 +537,7 @@ export const PaidServiceContractForm = React.memo(
 										data-testid="btn-paid-contract-print-filled"
 									>
 										<FileText size={14} className="text-teal-600 shrink-0" aria-hidden="true" />
-										<span>Печать договора А4 (ПП РФ № 736)</span>
+										<span>Печать договора на оказание услуг</span>
 									</button>
 
 									<button

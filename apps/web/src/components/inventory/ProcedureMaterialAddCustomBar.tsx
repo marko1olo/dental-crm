@@ -1,9 +1,9 @@
 import { Plus } from "lucide-react";
 import type React from "react";
-import type { WarehouseStockItem } from "./inventoryMath.js";
+import type { InventoryItem } from "./useInventoryLogic.js";
 
 export interface ProcedureMaterialAddCustomBarProps {
-	readonly warehouseItems: readonly WarehouseStockItem[];
+	readonly warehouseItems: readonly InventoryItem[];
 	readonly selectedCustomId: string;
 	readonly onSelectCustomId: (id: string) => void;
 	readonly highlightSelect: boolean;

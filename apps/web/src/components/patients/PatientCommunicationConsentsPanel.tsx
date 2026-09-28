@@ -361,7 +361,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 						data-testid="patient-comm-consents-reload"
 						disabled={loading || saving}
 						onClick={() => void load()}
-						className="px-3.5 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl border border-zinc-600 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50 inline-flex items-center justify-center font-medium"
+						className="px-3.5 py-2 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)] disabled:opacity-50 inline-flex items-center justify-center font-medium cursor-pointer"
 					>
 						Обновить
 					</button>
@@ -378,7 +378,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 			</div>
 
 			{loading && !loaded ? (
-				<p className="text-xs text-zinc-500">Загружаю согласия…</p>
+				<p className="text-xs text-[var(--muted)]">Загружаю согласия…</p>
 			) : null}
 
 			{error && (
@@ -394,7 +394,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 				>
 					<table className="w-full text-left text-xs border-collapse min-w-[420px]">
 						<thead>
-							<tr className="text-zinc-500 border-b border-zinc-800">
+							<tr className="text-[var(--muted)] border-b border-[var(--line)]">
 								<th className="py-2 pr-3 font-medium">Канал</th>
 								{SCOPES.map((sc) => (
 									<th
@@ -408,8 +408,8 @@ export const PatientCommunicationConsentsPanel: React.FC<
 						</thead>
 						<tbody>
 							{CHANNELS.map((ch) => (
-								<tr key={ch.value} className="border-b border-zinc-900/80">
-									<td className="py-2 pr-3 text-zinc-200 font-medium">
+								<tr key={ch.value} className="border-b border-[var(--line)]">
+									<td className="py-2 pr-3 text-[var(--ink)] font-medium">
 										{ch.label}
 									</td>
 									{SCOPES.map((sc) => {
@@ -427,7 +427,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 													className={
 														on
 															? "min-w-[88px] min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600/25 text-emerald-200 border border-emerald-400/35 inline-flex items-center justify-center cursor-pointer transition-colors"
-															: "min-w-[88px] min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-800/80 text-zinc-400 border border-zinc-700 inline-flex items-center justify-center cursor-pointer transition-colors"
+															: "min-w-[88px] min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl text-xs font-medium bg-[var(--paper-strong)] text-[var(--muted)] border border-[var(--glass-border)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center cursor-pointer transition-colors"
 													}
 												>
 													{on ? "Разрешено" : "Запрещено"}

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { CheckCircle2, Info, QrCode, RefreshCw, X } from "lucide-react";
 import {
 	formatRubles,

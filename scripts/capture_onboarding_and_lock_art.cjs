@@ -219,10 +219,11 @@ async function main() {
       await closeWizardBtn.click();
       await page.waitForSelector(".onboarding-overlay", { state: "detached", timeout: 5000 }).catch(() => {});
     }
+    await setTheme(page, "light");
     await page.waitForTimeout(600);
 
     // =========================================================================
-    // 2. CAPTURE DOCTOR PRIVACY SHIELD (49 Dark, 50 Light)
+    // 2. CAPTURE DOCTOR PRIVACY SHIELD (50 Light, 49 Dark)
     // =========================================================================
     console.log("Opening macOS Control Center popover...");
     const controlPill = page.locator(".dnt-clinic-control-pill");
@@ -237,13 +238,13 @@ async function main() {
     console.log("Doctor privacy shield is active!");
     await page.waitForTimeout(1500);
 
-    // Capture Privacy Shield Dark (49_privacy_lock_desktop_dark.png)
-    await setTheme(page, "dark");
-    await saveProof(page, "49_privacy_lock_desktop_dark.png");
-
     // Capture Privacy Shield Light (50_privacy_lock_desktop_light.png)
     await setTheme(page, "light");
     await saveProof(page, "50_privacy_lock_desktop_light.png");
+
+    // Capture Privacy Shield Dark (49_privacy_lock_desktop_dark.png)
+    await setTheme(page, "dark");
+    await saveProof(page, "49_privacy_lock_desktop_dark.png");
 
     // =========================================================================
     // 3. CAPTURE STAFF PIN PAD (47 Light, 48 Dark)

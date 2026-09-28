@@ -70,15 +70,16 @@ export async function signPrescriptionOnBackend(
 	prescriptionId: string,
 	ukepData: {
 		pkcs7Signature: string;
-		certificateSerialNumber?: string;
-		certificateThumbprint?: string;
-		certificateIssuer?: string;
-		certificateValidFrom?: string;
-		certificateValidTo?: string;
-		doctorSnils?: string;
-		signatureAlgorithm?: string;
-		egiszDocumentId?: string;
+		certificateSerialNumber?: string | undefined;
+		certificateThumbprint?: string | undefined;
+		certificateIssuer?: string | undefined;
+		certificateValidFrom?: string | undefined;
+		certificateValidTo?: string | undefined;
+		doctorSnils?: string | undefined;
+		signatureAlgorithm?: string | undefined;
+		egiszDocumentId?: string | undefined;
 	},
+
 ) {
 	const res = await fetch(`/api/prescriptions/${encodeURIComponent(prescriptionId)}/sign-ukep`, {
 		method: "POST",

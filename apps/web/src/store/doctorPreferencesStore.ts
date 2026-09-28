@@ -4,6 +4,10 @@ import {
 	safeLocalStorageSetJson,
 } from "../lib/safeLocalStorage";
 import {
+	fetchDoctorPreferencesFromApi,
+	saveDoctorPreferencesToApi,
+} from "../api/doctorPreferencesApi";
+import {
 	ADHESIVE_OPTIONS,
 	ANESTHETIC_OPTIONS,
 	COMPOSITE_OPTIONS,
@@ -486,16 +490,37 @@ function readStoredPreferences(): DoctorPreferences {
 	};
 }
 
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+function triggerSyncToApi(prefs: DoctorPreferences) {
+	if (typeof window === "undefined") return;
+	if (syncTimer) clearTimeout(syncTimer);
+	syncTimer = setTimeout(() => {
+		void saveDoctorPreferencesToApi(prefs);
+	}, 400);
+}
+
 export interface DoctorPreferencesState {
 	preferences: DoctorPreferences;
 	updatePreferences: (patch: Partial<DoctorPreferences>) => void;
 	resetPreferences: () => void;
 	applySpecialtyPreset: (specialty: DoctorSpecialtyKey) => void;
+	loadServerPreferences: () => Promise<void>;
 }
 
 export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 	(set, get) => ({
 		preferences: readStoredPreferences(),
+		loadServerPreferences: async () => {
+			const serverPrefs = await fetchDoctorPreferencesFromApi();
+			if (serverPrefs && Object.keys(serverPrefs).length > 0) {
+				const merged: DoctorPreferences = {
+					...get().preferences,
+					...serverPrefs,
+				};
+				safeLocalStorageSetJson(DOCTOR_PREFS_KEY, merged, true);
+				set({ preferences: merged });
+			}
+		},
 		updatePreferences: (patch) => {
 			const updated = {
 				...get().preferences,
@@ -503,6 +528,7 @@ export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 			};
 			safeLocalStorageSetJson(DOCTOR_PREFS_KEY, updated, true);
 			set({ preferences: updated });
+			triggerSyncToApi(updated);
 		},
 		resetPreferences: () => {
 			safeLocalStorageSetJson(
@@ -511,6 +537,7 @@ export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 				true,
 			);
 			set({ preferences: { ...DEFAULT_DOCTOR_PREFERENCES } });
+			triggerSyncToApi({ ...DEFAULT_DOCTOR_PREFERENCES });
 		},
 		applySpecialtyPreset: (specialty: DoctorSpecialtyKey) => {
 			let presetPatch: Partial<DoctorPreferences> = { specialty };
@@ -620,6 +647,11 @@ export const useDoctorPreferencesStore = create<DoctorPreferencesState>(
 			};
 			safeLocalStorageSetJson(DOCTOR_PREFS_KEY, updated, true);
 			set({ preferences: updated });
+			triggerSyncToApi(updated);
 		},
 	}),
 );
+
+if (typeof window !== "undefined") {
+	void useDoctorPreferencesStore.getState().loadServerPreferences();
+}

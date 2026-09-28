@@ -968,7 +968,7 @@ export function PatientCreationModal({
 					</div>
 
 					{/* Collapsible Documents Section (СНИЛС, ОМС/ДМС, Паспорт) */}
-					<div className="create-patient-doc-section mt-3 pt-3 border-t border-[var(--line)]">
+					<div className="create-patient-doc-section mt-3 pt-3 border-t border-[var(--glass-border)]">
 						<button
 							type="button"
 							className="create-patient-doc-toggle-btn text-xs font-bold text-[var(--teal)] hover:underline inline-flex items-center gap-1.5 min-h-[36px] bg-transparent border-0 cursor-pointer"
@@ -1102,12 +1102,12 @@ export function PatientCreationModal({
 					</div>
 
 					{/* 1-Click Somatic Physiological Norm Fast Action (Mandate 8e) */}
-					<div className="mt-3 pt-3 border-t border-[var(--line)]">
+					<div className="mt-3 pt-3 border-t border-[var(--glass-border)]">
 						<div
 							className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 transition-all ${
 								isSomaticNorm
 									? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
-									: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)]"
+									: "bg-[var(--paper-soft)] border-[var(--glass-border)] text-[var(--muted)]"
 							}`}
 							data-testid="patient-creation-somatic-norm-banner"
 						>
@@ -1136,12 +1136,12 @@ export function PatientCreationModal({
 								className={`min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 ${
 									isSomaticNorm
 										? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-										: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"
+										: "bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] text-[var(--ink)] border border-[var(--glass-border)] shadow-2xs"
 								}`}
 								title="Мандат 8e: 1 клик для переключения физиологической нормы"
 							>
 								<Check size={13} className="shrink-0" />
-								<span>{isSomaticNorm ? "Норма (1 клик)" : "Применить норму"}</span>
+								<span>{isSomaticNorm ? "Норма" : "Применить норму"}</span>
 							</button>
 						</div>
 					</div>

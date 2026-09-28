@@ -1,9 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════
-   PATIENT WORKSPACE & CLINICAL VISIT MODULE
-   Extracted from main.css (TASK-3.3)
-   Single-surface flat design refactor
-   ═══════════════════════════════════════════════════════════════════ */
-
+/* PATIENT WORKSPACE & CLINICAL VISIT MODULE - Single-surface flat design */
 /* Patient Row & Risk Labels */
 
 .patient-insight-head {
@@ -710,10 +705,7 @@
 	}
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   SHORT LAPTOP VIEWPORT OPTIMIZATIONS (<= 768px height, 1280x720)
-   Mandates 8c, 8d, 8p: Total header above SOAP fields <= 160-180px
-   ═══════════════════════════════════════════════════════════════════ */
+/* SHORT LAPTOP VIEWPORT OPTIMIZATIONS (<= 768px height, 1280x720) */
 @media (max-height: 780px) {
 	/* Hide redundant specialty focus bar on short screens */
 	.specialty-focus-bar {
@@ -781,18 +773,11 @@
 	}
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   PRINT OPTIMIZATIONS (Safari, Chrome, Firefox, Edge)
-   Prevents table rows, treatment stages, and invoices from breaking across pages
-   ═══════════════════════════════════════════════════════════════════ */
+/* PRINT OPTIMIZATIONS (Safari, Chrome, Firefox, Edge) */
 @media print {
-	.treatment-plan-card,
-	.treatment-stage-section,
-	.treatment-estimator-table tr,
-	.prescription-blank-container,
-	.fiscal-receipt-print-wrapper,
-	.sanpin-journal-table tr,
-	.print-avoid-break {
+	.treatment-plan-card, .treatment-stage-section, .treatment-estimator-table tr,
+	.prescription-blank-container, .fiscal-receipt-print-wrapper,
+	.sanpin-journal-table tr, .print-avoid-break {
 		break-inside: avoid !important;
 		page-break-inside: avoid !important;
 	}
@@ -810,5 +795,3 @@
 		color: #000000 !important;
 	}
 }
-
-

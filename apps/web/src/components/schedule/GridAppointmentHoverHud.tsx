@@ -82,7 +82,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 
 	return (
 		<div
-			className={`appointment-patient-hover-preview absolute ${isNearRightEdge ? "right-0 left-auto" : "left-0"} ${isNearBottom ? "bottom-full mb-1.5 top-auto" : "top-full mt-1.5"} w-[330px] max-w-[calc(100vw-32px)] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-50 pointer-events-auto`}
+			className={`appointment-patient-hover-preview absolute ${isNearRightEdge ? "right-0 left-auto" : "left-0"} ${isNearBottom ? "bottom-full mb-1.5 top-auto" : "top-full mt-1.5"} w-[330px] max-w-[330px] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-50 pointer-events-auto`}
 			data-testid="schedule-grid-patient-hover-preview"
 			onMouseEnter={() => {
 				onKeepHovered(a.id);
@@ -104,7 +104,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								usePatientStore.getState().setSelectedPatientId(patObj.id);
 							}
 							useAppStore.getState().setCurrentView("finance");
-							showToast(`Касса 54-ФЗ: расчёт ${pName}`, "info");
+							showToast(`Касса: расчёт ${pName}`, "info");
 						}}
 						className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1 ${
 							pBalance > 0
@@ -115,10 +115,10 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 						}`}
 						title={
 							pBalance > 0
-								? "Аванс / Депозит (54-ФЗ). Нажмите для расчёта на кассе"
+								? "Аванс / Депозит. Нажмите для расчёта на кассе"
 								: pBalance < 0
-									? "Задолженность по 54-ФЗ. Нажмите для расчёта на кассе"
-									: "Оплачено по 54-ФЗ. Нажмите для расчёта на кассе"
+									? "Задолженность. Нажмите для расчёта на кассе"
+									: "Оплачено. Нажмите для расчёта на кассе"
 						}
 						data-testid={`appointment-grid-balance-btn-${a.id}`}
 					>
@@ -128,7 +128,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								? `Депозит: +${pBalance.toLocaleString("ru-RU")} ₽`
 								: pBalance < 0
 									? `Долг: ${Math.abs(pBalance).toLocaleString("ru-RU")} ₽`
-									: "Оплата: 54-ФЗ (0 ₽)"}
+									: "Оплата: 0 ₽"}
 						</span>
 					</button>
 				) : (
@@ -140,14 +140,14 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								usePatientStore.getState().setSelectedPatientId(patObj.id);
 							}
 							useAppStore.getState().setCurrentView("finance");
-							showToast(`Касса 54-ФЗ: расчёт ${pName}`, "info");
+							showToast(`Касса: расчёт ${pName}`, "info");
 						}}
 						className="px-2 py-0.5 rounded-lg text-[11px] font-medium font-mono text-slate-500 bg-slate-500/10 border border-slate-500/20 shrink-0 whitespace-nowrap cursor-pointer hover:bg-slate-500/20 flex items-center gap-1"
-						title="Открыть кассу 54-ФЗ для расчёта"
+						title="Открыть кассу для расчёта"
 						data-testid={`appointment-grid-balance-btn-${a.id}`}
 					>
 						<CreditCard size={10} className="shrink-0" />
-						<span>54-ФЗ: Баланс 0 ₽</span>
+						<span>Баланс: 0 ₽</span>
 					</button>
 				)}
 			</div>
@@ -420,7 +420,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								showToast(`Приём начат: ${pName} в кресле`, "success");
 							}}
 							className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-							title="Начать приём: перевести в статус «На приёме» и открыть карту приёма 043/у (1 клик)"
+							title="Начать приём: перевести в статус «На приёме» и открыть карту приёма (1 клик)"
 						>
 							<Stethoscope size={13} className="shrink-0" />
 							<span className="whitespace-nowrap">Начать приём</span>
@@ -439,13 +439,13 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 									usePatientStore.getState().setSelectedPatientId(patObj.id);
 								}
 								useAppStore.getState().setCurrentView("finance");
-								showToast(`Быстрый чек 54-ФЗ: расчёт ${pName}`, "info");
+								showToast(`Быстрый расчёт: ${pName}`, "info");
 							}}
 							className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-							title="Быстрый чек 54-ФЗ: перейти к кассовому расчёту (1 клик)"
+							title="Быстрый расчёт: перейти к кассовому расчёту (1 клик)"
 						>
 							<CreditCard size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-							<span className="whitespace-nowrap">Быстрый чек 54-ФЗ</span>
+							<span className="whitespace-nowrap">Быстрый расчёт</span>
 						</button>
 					</div>
 				</div>

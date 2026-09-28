@@ -280,7 +280,7 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 				position: "fixed",
 				bottom: "min(24px, 16px)",
 				right: "min(24px, 16px)",
-				width: "min(380px, calc(100vw - 32px))",
+				width: "min(380px, calc(100% - 32px))",
 				maxHeight: isCollapsed ? "60px" : "min(500px, calc(100dvh - 48px))",
 				overflowY: isCollapsed ? "hidden" : "auto",
 				zIndex: 1000,

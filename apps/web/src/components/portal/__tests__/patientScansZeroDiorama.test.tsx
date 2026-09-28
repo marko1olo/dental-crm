@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
+globalThis.React = React;
 import { renderToString } from "react-dom/server";
 import {
 	DEFAULT_PATIENT_SCANS,
 	PatientPlanView,
 	type PatientDiagnosticScan,
 } from "../PatientPlanView.js";
+import { PlanScanViewerModal } from "../scans/PlanScanViewerModal.js";
+import { PlanBeforeAfterGallery } from "../scans/PlanBeforeAfterGallery.js";
 import { getPresetBeforeAfterGalleries } from "../patientWebappEngine.js";
 
 describe("Radiology & Patient Portal Zero-Diorama Law (Mandate 11 & Core Route Rule 7)", () => {
@@ -87,6 +90,84 @@ describe("Radiology & Patient Portal Zero-Diorama Law (Mandate 11 & Core Route R
 		// Placeholder container rendered
 		assert.ok(html.includes('data-testid="scan-placeholder-scan-pending-1"'));
 		assert.ok(html.includes("Снимок обрабатывается"));
+		assert.ok(!html.includes("data:image/svg+xml"));
+	});
+
+	it("PlanScanViewerModal: Renders diagnostic scan viewer with zoom, invert negative, and dose", () => {
+		const scan = DEFAULT_PATIENT_SCANS[0]!;
+		const html = renderToString(
+			<PlanScanViewerModal
+				scan={scan}
+				scans={DEFAULT_PATIENT_SCANS}
+				onClose={() => {}}
+			/>,
+		);
+
+		assert.ok(html.includes('data-testid="plan-scan-viewer-modal"'));
+		assert.ok(html.includes('data-testid="close-scan-modal-btn"'));
+		assert.ok(html.includes('data-testid="scan-switcher-bar"'));
+		assert.ok(html.includes('data-testid="scan-zoom-in-btn"'));
+		assert.ok(html.includes('data-testid="scan-zoom-out-btn"'));
+		assert.ok(html.includes('data-testid="scan-invert-btn"'));
+		assert.ok(html.includes('data-testid="scan-reset-btn"'));
+		assert.ok(html.includes(scan.titleRu));
+		assert.ok(html.includes("Доза:"));
+		assert.ok(html.includes("мкЗв"));
+		assert.ok(html.includes(scan.conclusionRu));
+		assert.ok(html.includes(scan.previewUrl));
+		assert.ok(!html.includes("data:image/svg+xml"));
+	});
+
+	it("PlanScanViewerModal: Renders null when scan is null", () => {
+		const html = renderToString(
+			<PlanScanViewerModal
+				scan={null}
+				onClose={() => {}}
+			/>,
+		);
+
+		assert.strictEqual(html, "");
+	});
+
+	it("PlanScanViewerModal: Renders placeholder when previewUrl is empty", () => {
+		const emptyScan: PatientDiagnosticScan = {
+			id: "scan-empty",
+			titleRu: "Снимок без файла",
+			modality: "rvg",
+			modalityRu: "RVG",
+			dateRu: "01.09.2026",
+			doseMicroSv: 1.5,
+			previewUrl: "",
+			conclusionRu: "Снимок еще загружается",
+		};
+
+		const html = renderToString(
+			<PlanScanViewerModal
+				scan={emptyScan}
+				onClose={() => {}}
+			/>,
+		);
+
+		assert.ok(html.includes('data-testid="modal-scan-empty-placeholder"'));
+		assert.ok(html.includes("Файл снимка не прикреплен"));
+	});
+
+	it("PlanBeforeAfterGallery: Renders photo protocol gallery with wiper slider and VITA shades", () => {
+		const html = renderToString(<PlanBeforeAfterGallery />);
+
+		assert.ok(html.includes('data-testid="plan-before-after-gallery"'));
+		assert.ok(html.includes('data-testid="before-after-wiper-container"'));
+		assert.ok(html.includes('data-testid="before-after-slider-input"'));
+		assert.ok(html.includes("VITA 3D-Master"));
+		assert.ok(html.includes("Клинический фотопротокол"));
+		assert.ok(!html.includes("data:image/svg+xml"));
+	});
+
+	it("PlanBeforeAfterGallery: Renders honest empty state when cases array is empty", () => {
+		const html = renderToString(<PlanBeforeAfterGallery cases={[]} />);
+
+		assert.ok(html.includes('data-testid="plan-before-after-empty"'));
+		assert.ok(html.includes("Клинический фотопротокол формируется"));
 		assert.ok(!html.includes("data:image/svg+xml"));
 	});
 });

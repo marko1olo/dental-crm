@@ -26,6 +26,7 @@ import { EmptyState } from "../../EmptyState";
 import { documentRowLifecycleGuidance } from "../documentAutonomy";
 
 export interface DocumentRegistryTabProps {
+	activeCategoryTab?: DocumentCategoryTab;
 	registrySearchQuery: string;
 	setRegistrySearchQuery: (val: string) => void;
 	registryStatusFilter: DocumentStatusFilter;
@@ -71,6 +72,7 @@ export interface DocumentRegistryTabProps {
 export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.memo(
 	function DocumentRegistryTab(props) {
 		const {
+			activeCategoryTab,
 			registrySearchQuery,
 			setRegistrySearchQuery,
 			registryStatusFilter,
@@ -112,6 +114,7 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 		return (
 			<>
 				<DocumentRegistryFilterBar
+					activeCategoryTab={activeCategoryTab}
 					searchQuery={registrySearchQuery}
 					onSearchChange={setRegistrySearchQuery}
 					statusFilter={registryStatusFilter}

@@ -32,7 +32,6 @@ import {
 	OneCRetailSaleItem,
 	OneCRetailSalesDocument,
 	computeCommerceMlSha256,
-	createRealisticShiftExportPackage,
 	generateCommerceMl209PackageXml,
 	kopecksToRub,
 	rubToKopecks,
@@ -392,39 +391,31 @@ export class CommerceMlService {
 			});
 		}
 
-		// Fallback to sample shift package if database has no records for this period (ensuring pure non-breaking 1C exchange)
-		if (retailSaleItems.length === 0 || paymentBreakdowns.length === 0) {
-			const fallbackPkg = createRealisticShiftExportPackage(
-				startDateIso,
-				clinic,
-				chartOfAccounts,
-			);
-			const xml = generateCommerceMl209PackageXml(fallbackPkg);
-			const sha256 = computeCommerceMlSha256(fallbackPkg);
-			const integrity = validatePackageIntegrity(fallbackPkg);
-
-			exportedPackageHashes.set(fallbackPkg.packageId, {
-				exportedAtIso: fallbackPkg.generatedAtIso,
-				packageId: fallbackPkg.packageId,
-			});
-
-			return { package: fallbackPkg, xml, sha256, integrity };
-		}
-
-		// Balance total payments with total item revenue
+		// Balance total payments with total item revenue (exact kopeck accounting)
 		const totalRevenueKop = totalItemsRevenueKop;
 		const totalPaymentsKop = paymentBreakdowns.reduce(
 			(s, p) => s + p.amountKopecks,
 			0,
 		);
 
-		if (totalPaymentsKop !== totalRevenueKop && paymentBreakdowns.length > 0) {
-			// Adjust primary payment method to balance exactly
-			const diff = totalRevenueKop - totalPaymentsKop;
-			(paymentBreakdowns[0] as any).amountKopecks = Math.max(
-				0,
-				paymentBreakdowns[0]!.amountKopecks + diff,
-			);
+		if (totalPaymentsKop !== totalRevenueKop) {
+			if (paymentBreakdowns.length > 0) {
+				// Adjust primary payment method to balance exactly
+				const diff = totalRevenueKop - totalPaymentsKop;
+				(paymentBreakdowns[0] as any).amountKopecks = Math.max(
+					0,
+					paymentBreakdowns[0]!.amountKopecks + diff,
+				);
+			} else if (totalRevenueKop > 0) {
+				// Allocate to default cash register payment if services exist without explicit payment breakdown
+				paymentBreakdowns.push({
+					id: `pay-auto-${cleanDate}`,
+					tenderType: "cash",
+					tenderTitleRu: "Наличные (Касса клиники)",
+					amountKopecks: totalRevenueKop,
+					accountCode: chartOfAccounts.accountCashDesk,
+				});
+			}
 		}
 
 		const salesDoc: OneCRetailSalesDocument = {
@@ -529,44 +520,6 @@ export class CommerceMlService {
 			});
 		}
 
-		// If no DB transactions, populate realistic CSO sterilization batch write-offs
-		if (writeoffItems.length === 0) {
-			writeoffItems.push(
-				{
-					id: `mat-cso-${cleanDate}-01`,
-					article: "MAT-STER-KRAFT-100",
-					name: "Крафт-пакеты самоклеящиеся для стерилизации 100х200 мм (ЦСО)",
-					batchNumber: "LOT-KP-2026",
-					expirationDateIso: "2028-12-31",
-					unitCode: DEFAULT_OKEI_PIECE_CODE,
-					unitName: "шт",
-					quantity: 12,
-					unitCostKopecks: 8500, // 85.00 RUB
-					totalCostKopecks: 102000, // 1 020.00 RUB
-					debitAccount: chartOfAccounts.accountProductionCost,
-					creditAccount: chartOfAccounts.accountConsumables,
-					costItemTitleRu: "Списание расходных материалов ЦСО (СанПиН 3.3686-21)",
-					csoLogId: `CSO-${cleanDate}-01`,
-					sterilizerCycleNumber: "Ц-142",
-				},
-				{
-					id: `mat-cso-${cleanDate}-02`,
-					article: "MAT-COMP-BODY-A2",
-					name: "Композит светового отверждения Filtek Supreme XTE A2 (3г)",
-					batchNumber: "LOT-FLT-849",
-					expirationDateIso: "2027-11-30",
-					unitCode: DEFAULT_OKEI_PIECE_CODE,
-					unitName: "шт",
-					quantity: 1,
-					unitCostKopecks: 425000,
-					totalCostKopecks: 425000,
-					debitAccount: chartOfAccounts.accountProductionCost,
-					creditAccount: chartOfAccounts.accountMaterials,
-					costItemTitleRu: "Списание пломбировочных материалов (Терапия)",
-				},
-			);
-		}
-
 		const totalMaterialsCostKop = writeoffItems.reduce(
 			(s, it) => s + it.totalCostKopecks,
 			0,
@@ -588,55 +541,58 @@ export class CommerceMlService {
 		writeoffDoc.sha256Hash = computeCommerceMlSha256(writeoffDoc);
 
 		// 6. Doctor Payroll (Accounts 70, 68.01, 69.01)
-		const chiefDoctorGrossEarnedKopecks = Math.round((totalRevenueKop * 25) / 100);
-		const chiefDoctorNdflKopecks = Math.round((chiefDoctorGrossEarnedKopecks * 13) / 100);
-		const chiefDoctorSocialInsuranceKopecks = Math.round((chiefDoctorGrossEarnedKopecks * 30) / 100);
-		const chiefDoctorNetPayoutKopecks = Math.max(0, chiefDoctorGrossEarnedKopecks - chiefDoctorNdflKopecks);
+		let payrollDoc: OneCPayrollDocument | null = null;
+		if (totalRevenueKop > 0) {
+			const chiefDoctorGrossEarnedKopecks = Math.round((totalRevenueKop * 25) / 100);
+			const chiefDoctorNdflKopecks = Math.round((chiefDoctorGrossEarnedKopecks * 13) / 100);
+			const chiefDoctorSocialInsuranceKopecks = Math.round((chiefDoctorGrossEarnedKopecks * 30) / 100);
+			const chiefDoctorNetPayoutKopecks = Math.max(0, chiefDoctorGrossEarnedKopecks - chiefDoctorNdflKopecks);
 
-		const payrollEmployees: OneCPayrollEmployeeItem[] = [
-			{
-				id: "emp-001",
-				employeeTabNumber: "ВР-001",
-				employeeName: clinic.chiefDoctorName || "Главный врач",
-				positionTitleRu: "Врач стоматолог-терапевт",
-				specialtyRu: "Терапевтическая стоматология",
-				calculationTypeTitleRu: "Сдельная оплата труда (25% от выручки)",
-				grossRevenueGeneratedKopecks: totalRevenueKop,
-				grossEarnedKopecks: chiefDoctorGrossEarnedKopecks,
-				ndfl13Kopecks: chiefDoctorNdflKopecks,
-				socialInsuranceTaxesKopecks: chiefDoctorSocialInsuranceKopecks,
-				netPayoutKopecks: chiefDoctorNetPayoutKopecks,
-				debitAccount: chartOfAccounts.accountProductionCost,
-				creditAccountPayroll: chartOfAccounts.accountPayroll,
-				creditAccountNdfl: chartOfAccounts.accountNdfl,
-				creditAccountSocial: chartOfAccounts.accountSocialTaxes,
-				costItemTitleRu: "Оплата труда врачебного персонала",
-			},
-		];
+			const payrollEmployees: OneCPayrollEmployeeItem[] = [
+				{
+					id: "emp-001",
+					employeeTabNumber: "ВР-001",
+					employeeName: clinic.chiefDoctorName || "Главный врач",
+					positionTitleRu: "Врач стоматолог-терапевт",
+					specialtyRu: "Терапевтическая стоматология",
+					calculationTypeTitleRu: "Сдельная оплата труда (25% от выручки)",
+					grossRevenueGeneratedKopecks: totalRevenueKop,
+					grossEarnedKopecks: chiefDoctorGrossEarnedKopecks,
+					ndfl13Kopecks: chiefDoctorNdflKopecks,
+					socialInsuranceTaxesKopecks: chiefDoctorSocialInsuranceKopecks,
+					netPayoutKopecks: chiefDoctorNetPayoutKopecks,
+					debitAccount: chartOfAccounts.accountProductionCost,
+					creditAccountPayroll: chartOfAccounts.accountPayroll,
+					creditAccountNdfl: chartOfAccounts.accountNdfl,
+					creditAccountSocial: chartOfAccounts.accountSocialTaxes,
+					costItemTitleRu: "Оплата труда врачебного персонала",
+				},
+			];
 
-		const totalGross = payrollEmployees.reduce((s, e) => s + e.grossEarnedKopecks, 0);
-		const totalNdfl = payrollEmployees.reduce((s, e) => s + e.ndfl13Kopecks, 0);
-		const totalSocial = payrollEmployees.reduce(
-			(s, e) => s + e.socialInsuranceTaxesKopecks,
-			0,
-		);
-		const totalNet = payrollEmployees.reduce((s, e) => s + e.netPayoutKopecks, 0);
+			const totalGross = payrollEmployees.reduce((s, e) => s + e.grossEarnedKopecks, 0);
+			const totalNdfl = payrollEmployees.reduce((s, e) => s + e.ndfl13Kopecks, 0);
+			const totalSocial = payrollEmployees.reduce(
+				(s, e) => s + e.socialInsuranceTaxesKopecks,
+				0,
+			);
+			const totalNet = payrollEmployees.reduce((s, e) => s + e.netPayoutKopecks, 0);
 
-		const payrollDoc: OneCPayrollDocument = {
-			id: `doc-payroll-${cleanDate}`,
-			documentNumber: `${prefix}-ФОТ-${cleanDate}`,
-			documentDateIso: startDateIso,
-			documentTime: "21:00:00",
-			registrationPeriodIso: `${startDateIso.slice(0, 7)}-01`,
-			periodLabelRu: `Смена ${startDateIso}`,
-			employees: payrollEmployees,
-			totalGrossKopecks: totalGross,
-			totalNdflKopecks: totalNdfl,
-			totalSocialTaxesKopecks: totalSocial,
-			totalNetPayoutKopecks: totalNet,
-			comment: "Отражение заработной платы (Форма Т-51 / Т-13)",
-		};
-		payrollDoc.sha256Hash = computeCommerceMlSha256(payrollDoc);
+			payrollDoc = {
+				id: `doc-payroll-${cleanDate}`,
+				documentNumber: `${prefix}-ФОТ-${cleanDate}`,
+				documentDateIso: startDateIso,
+				documentTime: "21:00:00",
+				registrationPeriodIso: `${startDateIso.slice(0, 7)}-01`,
+				periodLabelRu: `Смена ${startDateIso}`,
+				employees: payrollEmployees,
+				totalGrossKopecks: totalGross,
+				totalNdflKopecks: totalNdfl,
+				totalSocialTaxesKopecks: totalSocial,
+				totalNetPayoutKopecks: totalNet,
+				comment: "Отражение заработной платы (Форма Т-51 / Т-13)",
+			};
+			payrollDoc.sha256Hash = computeCommerceMlSha256(payrollDoc);
+		}
 
 		const pkg: OneCCommerceMlPackage = {
 			packageId: `pkg-${cleanDate}-${prefix}`,
@@ -663,21 +619,66 @@ export class CommerceMlService {
 
 		return { package: pkg, xml, sha256, integrity };
 		} catch (dbError) {
-			const fallbackPkg = createRealisticShiftExportPackage(
-				startDateIso,
+			// Honest empty statutory package on database failure (zero sales, zero simulated data)
+			const cleanDate = startDateIso.replace(/-/g, "");
+			const prefix = (params.clinicProfileOverrides as any)?.prefix1C || "DN";
+			const emptySalesDoc: OneCRetailSalesDocument = {
+				id: `doc-sales-${cleanDate}`,
+				documentNumber: `${prefix}-РОЗН-${cleanDate}`,
+				documentDateIso: startDateIso,
+				documentTime: "20:00:00",
+				periodLabelRu: `Смена ${startDateIso}`,
+				cashRegisterName: clinic.defaultCashRegisterName || "Касса №1 (АТОЛ 27Ф)",
+				warehouseName: clinic.defaultWarehouseName || "Основной склад клиники",
+				items: [],
+				payments: [],
+				totalRevenueKopecks: 0,
+				totalDiscountKopecks: 0,
+				totalVatKopecks: 0,
+				cashierName: clinic.chiefAccountantName || "Кассир",
+				comment: "Выгрузка кассовой смены (пустая смена, 0 продаж)",
+			};
+			emptySalesDoc.sha256Hash = computeCommerceMlSha256(emptySalesDoc);
+
+			const emptyWriteoffDoc: OneCMaterialWriteoffDocument = {
+				id: `doc-writeoff-${cleanDate}`,
+				documentNumber: `${prefix}-СПИС-${cleanDate}`,
+				documentDateIso: startDateIso,
+				documentTime: "20:30:00",
+				periodLabelRu: `Списание материалов за ${startDateIso}`,
+				senderWarehouseName: clinic.defaultWarehouseName || "Основной склад клиники",
+				recipientDepartmentName: "Лечебное отделение (ЦСО)",
+				items: [],
+				totalCostKopecks: 0,
+				responsiblePersonName: clinic.chiefAccountantName || "Ответственное лицо",
+				reasonRu: "Автоматическое списание по нормам BOM и актам стерилизации ЦСО",
+			};
+			emptyWriteoffDoc.sha256Hash = computeCommerceMlSha256(emptyWriteoffDoc);
+
+			const emptyPkg: OneCCommerceMlPackage = {
+				packageId: `pkg-${cleanDate}-${prefix}`,
+				generatedAtIso: new Date().toISOString(),
+				exportPeriodStartIso: startDateIso,
+				exportPeriodEndIso: params.endDateIso,
 				clinic,
 				chartOfAccounts,
-			);
-			const xml = generateCommerceMl209PackageXml(fallbackPkg);
-			const sha256 = computeCommerceMlSha256(fallbackPkg);
-			const integrity = validatePackageIntegrity(fallbackPkg);
+				retailSalesDocument: emptySalesDoc,
+				medicalActs: [],
+				materialWriteoffDocument: emptyWriteoffDoc,
+				payrollDocument: null,
+			};
+			emptyPkg.sha256Hash = computeCommerceMlSha256(emptyPkg);
+
+			const xml = generateCommerceMl209PackageXml(emptyPkg);
+			const sha256 = emptyPkg.sha256Hash;
+			const integrity = validatePackageIntegrity(emptyPkg);
 
 			exportedPackageHashes.set(sha256, {
-				exportedAtIso: fallbackPkg.generatedAtIso,
-				packageId: fallbackPkg.packageId,
+				exportedAtIso: emptyPkg.generatedAtIso,
+				packageId: emptyPkg.packageId,
 			});
 
-			return { package: fallbackPkg, xml, sha256, integrity };
+			return { package: emptyPkg, xml, sha256, integrity };
 		}
 	}
 

@@ -306,10 +306,18 @@
   margin-bottom: 16px;
 }
 
-[data-theme="dark"] .emr043-section-card,
-.dark .emr043-section-card {
-  background: #1e293b;
-  border-color: #334155;
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .emr043-section-card {
+  background: var(--paper-strong, #1e293b);
+  border-color: var(--line, #334155);
 }
 
 .emr043-section-card-title {
@@ -323,9 +331,17 @@
   gap: 8px;
 }
 
-[data-theme="dark"] .emr043-section-card-title,
-.dark .emr043-section-card-title {
-  color: #f8fafc;
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .emr043-section-card-title {
+  color: var(--ink, #f8fafc);
 }
 
 .emr043-grid-2 {
@@ -355,9 +371,17 @@
   color: var(--ink, #0f172a);
 }
 
-[data-theme="dark"] .emr043-field-value,
-.dark .emr043-field-value {
-  color: #f8fafc;
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .emr043-field-value {
+  color: var(--ink, #f8fafc);
 }
 
 /* ── Odontogram Teeth Grid ── */
@@ -370,40 +394,68 @@
 }
 
 .emr043-tooth-cell {
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
+  border: 1px solid var(--line, #cbd5e1);
+  background: var(--paper, #ffffff);
   border-radius: 4px;
   padding: 4px 2px;
   text-align: center;
   font-size: 11px;
+  color: var(--ink);
 }
 
-[data-theme="dark"] .emr043-tooth-cell,
-.dark .emr043-tooth-cell {
-  background: #0f172a;
-  border-color: #334155;
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .emr043-tooth-cell {
+  background: var(--paper, #0f172a);
+  border-color: var(--line, #334155);
+  color: var(--ink, #f8fafc);
 }
 
 .emr043-tooth-cell.pathology {
-  border-color: #ef4444;
-  background: #fef2f2;
+  border-color: var(--rust, #ef4444);
+  background: var(--rust-soft, #fef2f2);
 }
 
-[data-theme="dark"] .emr043-tooth-cell.pathology,
-.dark .emr043-tooth-cell.pathology {
-  background: #450a0a;
-  border-color: #dc2626;
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .emr043-tooth-cell.pathology {
+  background: var(--rust-soft, #450a0a);
+  border-color: var(--rust, #dc2626);
+  color: var(--ink);
 }
 
 .emr043-tooth-cell.filled {
-  border-color: #10b981;
-  background: #f0fdf4;
+  border-color: var(--teal, #10b981);
+  background: var(--teal-soft, #f0fdf4);
 }
 
-[data-theme="dark"] .emr043-tooth-cell.filled,
-.dark .emr043-tooth-cell.filled {
-  background: #064e3b;
-  border-color: #059669;
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .emr043-tooth-cell.filled {
+  background: var(--teal-soft, #064e3b);
+  border-color: var(--teal, #059669);
+  color: var(--ink);
 }
 
 /* ── SOAP Visit Record Cards ── */
@@ -415,10 +467,18 @@
   margin-bottom: 12px;
 }
 
-[data-theme="dark"] .emr043-soap-card,
-.dark .emr043-soap-card {
-  background: #1e293b;
-  border-color: #334155;
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .emr043-soap-card {
+  background: var(--paper-strong, #1e293b);
+  border-color: var(--line, #334155);
 }
 
 .emr043-soap-badge {
@@ -432,8 +492,16 @@
   background: #e0f2fe;
 }
 
-[data-theme="dark"] .emr043-soap-badge,
-.dark .emr043-soap-badge {
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .emr043-soap-badge {
   color: #38bdf8;
   background: #0c4a6e;
 }
@@ -449,22 +517,38 @@
   margin-bottom: 14px;
 }
 
-[data-theme="dark"] .emr043-completeness-bar,
-.dark .emr043-completeness-bar {
-  background: #1e293b;
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .emr043-completeness-bar {
+  background: var(--paper-strong, #1e293b);
 }
 
 .emr043-progress-track {
   flex: 1;
   height: 8px;
-  background: #e2e8f0;
+  background: var(--paper-soft, #e2e8f0);
   border-radius: 4px;
   overflow: hidden;
 }
 
-[data-theme="dark"] .emr043-progress-track,
-.dark .emr043-progress-track {
-  background: #334155;
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .emr043-progress-track {
+  background: var(--paper-soft, #334155);
 }
 
 .emr043-progress-fill {

@@ -93,6 +93,7 @@ export const orthodonticPhotoSlotRecordSchema = z.object({
 	landmarks: z.record(z.string(), orthodonticPoint2DSchema).optional(),
 });
 export type OrthodonticPhotoSlotRecord = z.infer<typeof orthodonticPhotoSlotRecordSchema>;
+export type OrthodonticPhotoSlot = OrthodonticPhotoSlotRecord;
 
 export const orthodonticClinicalFindingsSchema = z.object({
 	angleClassMolarRight: angleClassSchema.default("class_1"),

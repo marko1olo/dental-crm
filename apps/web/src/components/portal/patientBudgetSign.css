@@ -449,3 +449,14 @@
 		padding: 1.5rem;
 	}
 }
+
+/* Mobile touch target ergonomics (>=44px touch targets on mobile/touchscreens) */
+@media (max-width: 640px), (pointer: coarse) {
+	.patient-budget-clear-btn,
+	.patient-budget-stamp-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+		font-size: 0.8125rem;
+	}
+}
+

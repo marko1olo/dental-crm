@@ -106,7 +106,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
 				data-testid="notification-bell-btn"
 			>
 				<Bell size={15} aria-hidden="true" className={unreadCount > 0 ? "animate-pulse" : ""} />
-				<span className="hidden md:inline">Уведомления</span>
+				<span className="hidden 2xl:inline">Уведомления</span>
 
 				{unreadCount > 0 && (
 					<span
@@ -121,7 +121,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
 			{/* Всплывающее компактное окно центра уведомлений (глубина <= 1) */}
 			{isOpen && (
 				<div
-					className="absolute right-0 top-full mt-1.5 w-[360px] sm:w-[440px] max-w-[95vw] h-[480px] max-h-[80vh] z-50 rounded-xl shadow-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] overflow-hidden flex flex-col"
+					className="absolute right-0 top-full mt-1.5 w-[360px] sm:w-[440px] max-w-[440px] h-[480px] max-h-[80vh] z-50 rounded-xl shadow-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] overflow-hidden flex flex-col"
 					data-testid="notification-bell-popover"
 				>
 					<PatientNotificationCenter

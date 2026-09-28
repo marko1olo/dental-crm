@@ -7,8 +7,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 export interface ConsentModalFooterProps {
 	activeMode: "packages" | "single";

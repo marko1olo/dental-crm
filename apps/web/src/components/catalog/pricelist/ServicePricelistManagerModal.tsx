@@ -505,7 +505,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 			return [...addedList, ...Array.from(existingMap.values())];
 		});
 
-		showToast(`Успешно добавлено / обновлено ${approved.length} позиций по стандарту 804н`);
+		showToast(`Успешно добавлено / обновлено ${approved.length} позиций в каталог услуг`);
 		setIsImportModalOpen(false);
 		setIngestedMappingItems([]);
 		setSmartTextInput('');
@@ -726,16 +726,16 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							<Layers size={24} />
 						</div>
 						<div>
-							<div className="pricelist-header-title" title="Прейскурант и Номенклатура медицинских услуг по Приказу Минздрава России № 804н">
+							<div className="pricelist-header-title" title="Прейскурант и Каталог медицинских услуг">
 								Прейскурант услуг
 							</div>
 							<div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
 								{items.length} позиций · Классификатор Минздрава РФ · НДС 0%
 							</div>
 						</div>
-						<div className="pricelist-statutory-badge" title="Соответствует Приказу Минздрава России № 804н">
+						<div className="pricelist-statutory-badge" title="Официальный каталог медицинских услуг">
 							<ShieldCheck size={14} />
-							<span>Номенклатура</span>
+							<span>Каталог</span>
 						</div>
 					</div>
 
@@ -744,7 +744,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							type="button"
 							className="pricelist-btn pricelist-btn-primary"
 							onClick={openAddModal}
-							title="Добавить новую услугу по Номенклатуре 804н"
+							title="Добавить новую услугу в прейскурант"
 							style={{ minHeight: '32px', height: '32px', gap: '5px' }}
 						>
 							<Plus size={16} />
@@ -823,7 +823,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							type="text"
 							className="pricelist-search-input"
 							style={{ height: '34px', fontSize: '0.8125rem', padding: '0 2rem 0 2rem' }}
-							placeholder="Поиск по коду 804н, названию..."
+							placeholder="Поиск по коду услуги, названию..."
 							value={searchTerm}
 							onChange={(e) => setSearchTerm(e.target.value)}
 						/>
@@ -838,7 +838,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 						)}
 					</div>
 
-					{/* 1-Click Fast 804n Selector Dropdown (Zero-Row Bloat) */}
+					{/* 1-Click Fast Service Selector Dropdown (Zero-Row Bloat) */}
 					<select
 						className="pricelist-search-input"
 						style={{ height: '34px', padding: '0 0.5rem', width: 'auto', fontSize: '0.8125rem' }}
@@ -847,9 +847,9 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							setSearchTerm(e.target.value);
 							setSelectedCategory('all');
 						}}
-						title="Мгновенный поиск популярного кода Номенклатуры 804н"
+						title="Мгновенный выбор популярной услуги"
 					>
-						<option value="">Быстрый код 804н...</option>
+						<option value="">Быстрый выбор услуги...</option>
 						<option value="A16.07.002">A16.07.002 Кариес</option>
 						<option value="A16.07.008">A16.07.008 Пульпит</option>
 						<option value="A11.07.012">A11.07.012 Анестезия</option>
@@ -1026,7 +1026,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 									</th>
 									<th style={{ width: '120px', cursor: 'pointer' }} onClick={() => handleToggleSort('code')}>
 										<div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-											<span>Код 804н</span>
+											<span>Код услуги</span>
 											<ArrowUpDown size={12} style={{ opacity: sortField === 'code' ? 1 : 0.35 }} />
 										</div>
 									</th>
@@ -1266,7 +1266,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 				<footer className="pricelist-footer-bar">
 					<div className="pricelist-footer-legal">
 						<ShieldCheck size={16} className="pricelist-legal-icon" />
-						<span>{STATUTORY_VAT_EXEMPTION_NOTE} · Соответствует стандарту Минздрава России № 804н</span>
+						<span>{STATUTORY_VAT_EXEMPTION_NOTE} · Официальный справочник услуг</span>
 					</div>
 
 					<div>
@@ -1294,7 +1294,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 						<header className="pricelist-modal-header" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', gap: '0.5rem', flexWrap: 'nowrap' }}>
 							<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1, overflow: 'hidden' }}>
 								<div className="pricelist-header-title" style={{ fontSize: '1rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
-									{ingestedMappingItems.length > 0 ? 'Сопоставление 804н' : 'Импорт прейскуранта'}
+									{ingestedMappingItems.length > 0 ? 'Сопоставление услуг' : 'Импорт прейскуранта'}
 								</div>
 								{/* Segmented Mode Selector */}
 								{ingestedMappingItems.length === 0 && (
@@ -1323,7 +1323,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 									<div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginLeft: 'auto', flexShrink: 0 }}>
 										<span className="pricelist-statutory-badge hide-on-mobile">
 											<ShieldCheck size={13} />
-											<span>Минздрав 804н</span>
+											<span>Справочник услуг</span>
 										</span>
 										<button
 											type="button"
@@ -1377,7 +1377,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 										<div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 											<div style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>
 												Вставьте скопированный текст из старого прейскуранта клиники, выгрузки Word или распознанного PDF.
-												Алгоритм автоматически выделит цены, очистит наименования и сопоставит услуги с Номенклатурой Минздрава РФ 804н.
+												Алгоритм автоматически выделит цены, очистит наименования и сопоставит услуги с каталогом услуг.
 											</div>
 
 											<textarea
@@ -1425,7 +1425,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 												<textarea
 													className="pricelist-search-input"
 													style={{ height: '120px', fontFamily: 'monospace', fontSize: '0.75rem', padding: '0.5rem' }}
-													placeholder="Код 804н;Коммерческое наименование;Категория;Цена standard..."
+													placeholder="Код услуги;Коммерческое наименование;Категория;Цена standard..."
 													value={csvInputText}
 													onChange={(e) => setCsvInputText(e.target.value)}
 												/>
@@ -1480,10 +1480,10 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 												if (isIngestingApi) return;
 												handleIngestPriceList(smartTextInput, 'text');
 											}}
-											title="Запустить распознавание и сопоставление с классификатором 804н"
+											title="Запустить распознавание и сопоставление с каталогом услуг"
 										>
 											<Sparkles size={14} />
-											<span>{isIngestingApi ? 'Распознавание...' : 'Распознать и сопоставить (804н)'}</span>
+											<span>{isIngestingApi ? 'Распознавание...' : 'Распознать и сопоставить'}</span>
 										</button>
 									) : (
 										<div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1498,10 +1498,10 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 													if (isIngestingApi) return;
 													handleIngestPriceList(csvInputText, 'csv');
 												}}
-												title="Сопоставить строки CSV с Номенклатурой 804н в двухоконном виде"
+												title="Сопоставить строки CSV с каталогом услуг в двухоконном виде"
 											>
 												<ShieldCheck size={14} />
-												<span>Сопоставить с 804н</span>
+												<span>Сопоставить с каталогом</span>
 											</button>
 											<button
 												type="button"
@@ -1555,7 +1555,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 								<div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.75rem' }}>
 									<div>
 										<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-											Код по 804н
+											Код услуги
 										</label>
 										<input
 											type="text"
@@ -1584,7 +1584,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 
 								<div>
 									<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-										Номенклатурное название по Приказу 804н
+										Официальное наименование услуги
 									</label>
 									<input
 										type="text"
@@ -1599,7 +1599,7 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 								<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
 									<div>
 										<label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>
-											Категория (804н)
+											Категория услуги
 										</label>
 										<select
 											className="pricelist-search-input"

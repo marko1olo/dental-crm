@@ -104,6 +104,7 @@ export function getNormalizedAppointmentStatusLabel(
 	if (s === "in_treatment" || s === "in_progress") return "На приёме";
 	if (s === "arrived") return "Ожидает приёма";
 	if (s === "completed") return "Ожидает оплаты";
+	if (s === "planned") return "Запланирован";
 	if (labels) {
 		if (labels[s]) return labels[s];
 		if (labels[status]) return labels[status];

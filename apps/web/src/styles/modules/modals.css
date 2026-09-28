@@ -27,7 +27,7 @@
 	border-radius: 16px;
 	box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
 	color: var(--ink);
-	max-width: 95vw;
+	max-width: calc(100% - 32px);
 	padding: 24px 28px;
 	width: 420px;
 }
@@ -224,6 +224,10 @@
 }
 [data-theme="dark"] .drawer-content,
 [data-theme="night"] .drawer-content,
+[data-theme="oled"] .drawer-content,
+[data-theme="ocean"] .drawer-content,
+[data-theme="emerald"] .drawer-content,
+[data-theme="cyber_xray"] .drawer-content,
 .dark .drawer-content {
 	background: var(--bg-surface, var(--paper, #0f172a));
 	color: var(--text-primary, #f8fafc);
@@ -254,11 +258,16 @@
 	max-height: 85vh;
 	animation: scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 	overflow-y: auto;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	box-shadow: var(--shadow-lg, 0 25px 50px -12px rgba(0, 0, 0, 0.35));
+	color: var(--ink, #0f172a);
 }
 
 @media (max-width: 390px) {
 	.modal-content {
-		width: 100vw;
+		width: 100%;
 		height: 100vh;
 		max-height: 100vh;
 		border-radius: 0;
@@ -365,6 +374,19 @@
 	border-radius: 22px;
 	padding: 1.25rem 0.75rem;
 }
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) ._ccm-center {
+	background: var(--paper-soft, rgba(15, 23, 42, 0.75));
+	border-color: var(--line, rgba(255, 255, 255, 0.15));
+}
 ._ccm-tooth-stage {
 	flex: 1;
 	display: flex;
@@ -448,16 +470,30 @@
 ._ccm-btn[data-color="pink"] {
 	border-left: 3px solid #f472b6;
 }
-[data-theme="dark"] ._ccm-btn,
-[data-theme="night"] ._ccm-btn,
-.dark ._ccm-btn {
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) ._ccm-btn {
 	background: rgba(30, 41, 59, 0.7);
 	border-color: var(--line, rgba(255, 255, 255, 0.15));
 	color: var(--ink, #f8fafc);
 }
-[data-theme="dark"] ._ccm-btn:hover,
-[data-theme="night"] ._ccm-btn:hover,
-.dark ._ccm-btn:hover {
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) ._ccm-btn:hover {
 	background: rgba(51, 65, 85, 0.9);
 }
 ._ccm-warn {
@@ -468,9 +504,16 @@
 	font-size: 0.73rem;
 	color: var(--muted, #78350f);
 }
-[data-theme="dark"] ._ccm-warn,
-[data-theme="night"] ._ccm-warn,
-.dark ._ccm-warn {
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) ._ccm-warn {
 	background: var(--warn-bg, rgba(245, 158, 11, 0.15));
 	border-color: var(--warn-fg, rgba(245, 158, 11, 0.3));
 	color: var(--warn-fg, #fbbf24);
@@ -497,9 +540,16 @@
 ._ccm-close-btn:hover {
 	background: var(--paper-strong, #e2e8f0);
 }
-[data-theme="dark"] ._ccm-close-btn,
-[data-theme="night"] ._ccm-close-btn,
-.dark ._ccm-close-btn {
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) ._ccm-close-btn {
 	background: var(--paper-soft, #1e293b);
 	border-color: var(--line, #334155);
 	color: var(--ink, #f8fafc);
@@ -528,4 +578,42 @@
 }
 .clinical-rules-toggle > summary::-webkit-details-marker {
 	display: none;
+}
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .clinical-rules-toggle {
+	background: var(--paper-strong, #1e293b);
+	border-color: var(--line, #334155);
+}
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .clinical-rules-toggle > summary {
+	background: var(--paper-soft, #0f172a);
+	color: var(--ink, #f8fafc);
+}
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	.dark
+) .clinical-rules-toggle > summary:hover {
+	background: var(--paper-strong, #1e293b);
 }

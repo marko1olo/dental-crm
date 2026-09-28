@@ -119,17 +119,35 @@ export const WORKHORSE_ARCHWIRES: WorkhorseArchwireOption[] = [
 ];
 
 export const BRACKET_SYSTEMS: BracketSystemOption[] = [
-	{ id: "damon_q2", label: "Damon Q2", desc: "Металл · Пассивное самолигирование", category: "brackets" },
-	{ id: "damon_clear", label: "Damon Clear", desc: "Сапфир / керамика · Эстетические", category: "brackets" },
-	{ id: "empower", label: "Empower", desc: "Интерактивное самолигирование", category: "brackets" },
-	{ id: "mini_diamond", label: "Mini Diamond", desc: "Лигатурные классические", category: "brackets" },
-	{ id: "pitts21", label: "Pitts 21", desc: "Квадратный паз .021", category: "brackets" },
-	{ id: "aligners", label: "Элайнеры", desc: "Прозрачные каппы с аттачментами", category: "aligners" },
+	{ id: "damon_q2", label: "Damon Q2", desc: "Металл · Пассивное самолигирование (Ormco, топ-1 рынка)", category: "brackets" },
+	{ id: "damon_clear", label: "Damon Clear 2 (Ormco)", desc: "Керамика / сапфир · Эстетическое самолигирование", category: "brackets" },
+	{ id: "clarity_advanced", label: "3M Clarity Advanced", desc: "Керамические эстетические брекеты с концентратором напряжений", category: "brackets" },
+	{ id: "empower", label: "American Orthodontics Empower", desc: "Интерактивное самолигирование (двойной контроль)", category: "brackets" },
+	{ id: "pitts21", label: "Pitts 21 (OC Orthodontics)", desc: "Квадратный паз .021 · Протокол Smile Arc Protection", category: "brackets" },
+	{ id: "h4_system", label: "H4 (Orthocentric)", desc: "Низкопрофильное пассивное самолигирование", category: "brackets" },
+	{ id: "mini_master", label: "Mini Master / Mini Diamond", desc: "Лигатурные классические брекеты (AO / Ormco)", category: "brackets" },
+	{ id: "mini_diamond", label: "Mini Diamond", desc: "Лигатурные классические (Ormco)", category: "brackets" },
+	// Элайнеры
+	{ id: "aligners", label: "Элайнеры (общий протокол)", desc: "Прозрачные каппы с аттачментами", category: "aligners" },
+	{ id: "aligners_3d_smile", label: "3D Smile (Россия)", desc: "Элайнеры с анализом корней по КЛКТ (топ-1 рынка РФ)", category: "aligners" },
+	{ id: "aligners_flexiligner", label: "FlexiLigner (РФ/Италия)", desc: "Флексы из многослойного термопласта", category: "aligners" },
+	{ id: "aligners_spark", label: "Spark Aligners (Ormco)", desc: "Премиальный материал TruGEN", category: "aligners" },
+	{ id: "aligners_eurokappa", label: "Eurokappa (Россия)", desc: "Отечественные прозрачные каппы", category: "aligners" },
+	{ id: "aligners_invisalign", label: "Invisalign (США)", desc: "Материал SmartTrack и аттачменты SmartForce", category: "aligners" },
+	{ id: "aligners_star_smile", label: "Star Smile (Россия)", desc: "Доступные элайнеры с 3D-сетапом", category: "aligners" },
+	// Пластинки и функциональные аппараты
 	{ id: "removable_plate", label: "Пластинка с винтом", desc: "Съемный пластиночный аппарат с расширяющим винтом", category: "removable_plates" },
 	{ id: "twin_block", label: "Твин-Блок", desc: "Функциональный двухчелюстной аппарат", category: "functional" },
 	{ id: "haas_marco_rosa", label: "Аппарат Марко Роса / Хааса", desc: "RPE быстрое небное расширение на кольцах/каппах", category: "functional" },
 	{ id: "fraenkel", label: "Регулятор функции Френкеля", desc: "Функциональный аппарат", category: "functional" },
 ];
+
+export const ORTHODONTIC_MINISCREW_SYSTEMS = [
+	{ id: "bioray", label: "Bio-Ray (Южная Корея)", desc: "Топ-1 рынка мини-винтов Ø 1.4-2.0 мм" },
+	{ id: "vectortas", label: "VectorTAS (Ormco, США)", desc: "Премиальная система временной скелетной опоры" },
+	{ id: "absoanchor", label: "Dentos AbsoAnchor (Корея)", desc: "Конические микровинты профессора Парка" },
+] as const;
+
 
 export const ARCHWIRE_MATERIALS: ArchwireMaterialOption[] = [
 	{ id: "NiTi", label: "NiTi SuperElastic", desc: "Никель-титан · Первичное нивелирование", badge: "NiTi" },

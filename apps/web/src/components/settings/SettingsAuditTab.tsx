@@ -479,10 +479,10 @@ export function SettingsAuditTab(props: Record<string, any>) {
 					<div className="flex flex-col gap-1 p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
 						<div className="flex items-center gap-1.5 font-bold text-sky-700 dark:text-sky-300">
 							<Eye size={14} className="shrink-0" />
-							<span>Карты 043/у</span>
+							<span>Медкарты (ЭМК)</span>
 						</div>
 						<p className="text-[11px] text-slate-500 dark:text-slate-400 m-0 leading-normal">
-							Учёт каждого открытия медкарты (врачебная тайна ст. 13 323-ФЗ).
+							Учёт каждого открытия медкарты (соблюдение врачебной тайны).
 						</p>
 					</div>
 

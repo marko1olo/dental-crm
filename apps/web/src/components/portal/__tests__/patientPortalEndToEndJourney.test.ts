@@ -13,18 +13,19 @@
  * 7. Cross-Cutting Mandates: Zero disabled buttons (8e), zero cartoon emojis (8d pt 7), Anti-Matryoshka (8d pt 6).
  */
 
+import "../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { PatientCabinetModal } from "../patientCabinet/PatientCabinetModal.js";
-import { OverviewTab, getAppointmentCalendarDates } from "../patientCabinet/tabs/OverviewTab.js";
-import { AppointmentsTab } from "../patientCabinet/tabs/AppointmentsTab.js";
-import { FamilyTab } from "../patientCabinet/tabs/FamilyTab.js";
-import { TreatmentPlanTab } from "../patientCabinet/tabs/TreatmentPlanTab.js";
-import { InvoicesTab } from "../patientCabinet/tabs/InvoicesTab.js";
-import { DocumentsTab } from "../patientCabinet/tabs/DocumentsTab.js";
+const { PatientCabinetModal } = await import("../patientCabinet/PatientCabinetModal.js");
+const { OverviewTab, getAppointmentCalendarDates } = await import("../patientCabinet/tabs/OverviewTab.js");
+const { AppointmentsTab } = await import("../patientCabinet/tabs/AppointmentsTab.js");
+const { FamilyTab } = await import("../patientCabinet/tabs/FamilyTab.js");
+const { TreatmentPlanTab } = await import("../patientCabinet/tabs/TreatmentPlanTab.js");
+const { InvoicesTab } = await import("../patientCabinet/tabs/InvoicesTab.js");
+const { DocumentsTab } = await import("../patientCabinet/tabs/DocumentsTab.js");
 import { PATIENT_CABINET_PRESET_ALEXEY } from "../patientCabinet/patientCabinetPresets.js";
 import {
 	calculateCabinetSummary,
@@ -206,7 +207,7 @@ describe("Patient Portal End-to-End Journey — Alexey Voronov Full Lifecycle", 
 
 		// Unpaid invoice SBP checkout
 		assert.ok(html.includes(`pay-sbp-btn-${unpaidInv.id}`), "Renders 1-click SBP button for unpaid invoice");
-		const sbpPayload = generateSbpQrPayload(unpaidInv, data.patientId);
+		const sbpPayload = generateSbpQrPayload(unpaidInv, { legalName: "Стоматология ДЕНТЕ", inn: "7701234567" });
 		assert.ok(sbpPayload.sbpNspkPayloadString.startsWith("https://qr.nspk.ru/"), "Generates valid NSPK SBP URL");
 		assert.ok(sbpPayload.sbpNspkPayloadString.includes(`sum=${Math.round(unpaidInv.remainingAmountRub * 100)}`), "Enforces integer kopecks");
 

@@ -214,7 +214,7 @@ export function ScheduleMobileBottomSheet({
                 {/* 54-FZ Payment status & Balance banner */}
                 <div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between gap-2">
                   <span className="font-bold text-[var(--muted)]">
-                    Статус 54-ФЗ / Баланс:
+                    Статус оплаты / Баланс:
                   </span>
                   {mBalance !== null ? (
                     <span
@@ -230,11 +230,11 @@ export function ScheduleMobileBottomSheet({
                         ? `Депозит: +${mBalance.toLocaleString("ru-RU")} ₽`
                         : mBalance < 0
                           ? `Долг: ${Math.abs(mBalance).toLocaleString("ru-RU")} ₽`
-                          : "0 ₽ (Оплачено 54-ФЗ)"}
+                          : "0 ₽ (Оплачено)"}
                     </span>
                   ) : (
                     <span className="text-xs text-[var(--muted)] whitespace-nowrap shrink-0">
-                      0 ₽ (54-ФЗ)
+                      0 ₽ (Оплачено)
                     </span>
                   )}
                 </div>

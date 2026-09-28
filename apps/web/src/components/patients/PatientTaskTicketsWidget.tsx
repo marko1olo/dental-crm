@@ -362,9 +362,9 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 					<button
 						type="button"
 						onClick={() => setIsAdding(!isAdding)}
-						className={`ml-1 border-0 rounded-lg px-3 py-1 text-xs font-semibold cursor-pointer flex items-center gap-1 transition-all h-[30px] ${
+						className={`ml-1 rounded-lg px-3 py-1 text-xs font-semibold cursor-pointer flex items-center gap-1 transition-all h-[30px] ${
 							isAdding
-								? "bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
+								? "bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--glass-border)]"
 								: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30 hover:brightness-105"
 						}`}
 					>
@@ -619,7 +619,7 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 										disabled={deletingId === ticket.id}
 										aria-busy={deletingId === ticket.id}
 										onClick={() => handleDelete(ticket.id)}
-										className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] inline-flex items-center justify-center rounded-xl cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+										className="bg-[var(--paper-strong)] text-[var(--muted)] hover:text-rose-600 p-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] inline-flex items-center justify-center rounded-xl cursor-pointer transition-colors border border-[var(--glass-border)] disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
 										title="Удалить задачу"
 									>
 										<Trash2 size={16} />

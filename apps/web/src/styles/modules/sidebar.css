@@ -317,7 +317,7 @@ html.dark .sidebar .nav-item.active,
 	left: 10px !important;
 	right: auto !important;
 	width: 360px !important;
-	max-width: calc(100vw - 24px) !important;
+	max-width: calc(100% - 24px) !important;
 	max-height: calc(100vh - 100px) !important;
 	overflow-y: auto !important;
 	z-index: 9999 !important;

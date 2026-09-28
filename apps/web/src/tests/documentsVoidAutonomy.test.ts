@@ -12,18 +12,20 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import "../../testCssStub.mjs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { documentKindMetadata } from "@dental/shared";
 import { AppLogicProvider } from "../contexts/AppLogicContext";
-import {
+import { documentSourceStatusClassNames } from "../workspaceUiLabels";
+
+const {
 	DEFAULT_VOID_REASON_TEXT,
 	DEFAULT_VOID_STAFF_NAME,
 	DEFAULT_VOID_STAFF_ROLE,
 	DocumentsView,
 	executeDocumentVoidAutonomy,
-} from "../DocumentsView";
-import { documentSourceStatusClassNames } from "../workspaceUiLabels";
+} = await import("../DocumentsView");
 
 interface MockFn {
 	(...args: any[]): any;

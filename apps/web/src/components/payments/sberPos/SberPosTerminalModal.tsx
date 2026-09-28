@@ -31,7 +31,9 @@ import {
 	DEFAULT_SBER_TERMINAL_CONFIG,
 	SBER_HARDWARE_PROFILES,
 } from "./sberPosPresets";
-import "./sberPos.css";
+if (typeof window !== "undefined") {
+	void import("./sberPos.css");
+}
 
 export interface SberPosTerminalModalProps {
 	readonly isOpen: boolean;

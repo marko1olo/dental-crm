@@ -7,3 +7,5 @@
 
 export * from "./clinicalDiaryTemplatesEngine";
 export * from "./ClinicalDiaryTemplatesModal";
+export { PHYSIOLOGICAL_NORM_PRESET } from "./clinicalDiaryTemplatesEngine";
+

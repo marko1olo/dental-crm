@@ -7,6 +7,7 @@ import {
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
 import { showToast } from "../GlobalToast";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 
 interface UserLoginProps {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -20,8 +21,8 @@ export function UserLogin({
 	onSwitchToRegister,
 	onSwitchToClinicMode,
 }: UserLoginProps) {
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
+	const [email, setEmail] = useState(() => (isDemoShowcaseMode() ? "doctor@clinic.com" : ""));
+	const [password, setPassword] = useState(() => (isDemoShowcaseMode() ? "dente2026" : ""));
 	const [showPassword, setShowPassword] = useState(false);
 	const [loading, setLoading] = useState(false);
 

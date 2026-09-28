@@ -151,13 +151,13 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 				label: "Локальная сеть (LAN)",
 				sublabel: "Сервер клиники доступен",
 				bgStyle: {
-					background: "rgba(245, 158, 11, 0.1)",
-					color: "var(--warn, #d97706)",
-					borderColor: "rgba(245, 158, 11, 0.3)",
+					background: "var(--paper)",
+					color: "var(--ink)",
+					borderColor: "var(--line)",
 				},
 				icon: Activity,
 				spin: false,
-				dotStyle: { background: "var(--warn, #d97706)" },
+				dotStyle: { background: "var(--teal, #0d9488)" },
 			};
 		}
 
@@ -168,9 +168,9 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 					? `${pendingMutationCount} на отправку`
 					: "Связь стабильна",
 			bgStyle: {
-				background: "rgba(16, 185, 129, 0.1)",
-				color: "var(--success, #059669)",
-				borderColor: "rgba(16, 185, 129, 0.3)",
+				background: "var(--paper)",
+				color: "var(--ink)",
+				borderColor: "var(--line)",
 			},
 			icon: Wifi,
 			spin: false,
@@ -183,8 +183,13 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 	return (
 		<>
 			<div
-				className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full border transition-all cursor-pointer select-none text-xs h-[32px] shrink-0 flex-shrink-0 whitespace-nowrap ${className}`}
-				style={config.bgStyle}
+				className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border transition-all cursor-pointer select-none text-xs h-8 min-h-[32px] shrink-0 flex-shrink-0 whitespace-nowrap shadow-2xs hover:border-[var(--line-strong)] ${className}`}
+				style={{
+					background: "var(--paper)",
+					borderColor: "var(--line)",
+					color: "var(--ink)",
+					boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
+				}}
 				onClick={handleClick}
 				onKeyDown={handleKeyDown}
 				tabIndex={0}
@@ -202,14 +207,19 @@ export const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
 				</span>
 
 				<IconComponent
-					className={`w-3.5 h-3.5 shrink-0 ${config.spin ? "animate-spin" : ""}`}
+					className={`w-3.5 h-3.5 shrink-0 text-[var(--muted)] ${config.spin ? "animate-spin" : ""}`}
 					aria-hidden="true"
 				/>
 
 				{!compact && (
-					<span className="font-semibold tracking-tight whitespace-nowrap shrink-0">
-						{config.label}
-					</span>
+					<>
+						<span className="hidden 2xl:inline font-semibold tracking-tight whitespace-nowrap shrink-0 text-xs">
+							{config.label}
+						</span>
+						<span className="hidden sm:inline 2xl:hidden font-semibold tracking-tight whitespace-nowrap shrink-0 text-xs">
+							{isLan ? "LAN" : config.label}
+						</span>
+					</>
 				)}
 
 				{pendingMutationCount > 0 && (

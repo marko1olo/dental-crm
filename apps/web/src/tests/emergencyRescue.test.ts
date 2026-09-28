@@ -11,6 +11,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import '../../testCssStub.mjs';
 
 import {
 	EMERGENCY_SCENARIOS,

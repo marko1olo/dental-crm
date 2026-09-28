@@ -47,7 +47,7 @@
 	}
 
 	.fast-checkout-modal-container {
-		width: 100vw;
+		width: 100%;
 		height: 100dvh;
 		max-height: 100dvh;
 		border-radius: 0;

@@ -1,5 +1,5 @@
 import { createHash, randomInt } from "node:crypto";
-import { and, desc, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNull, lt, notInArray, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest } from "fastify";
 import {
 	namedDevelopmentModeActive,
@@ -12,6 +12,7 @@ import {
 } from "../db/documentQuery.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
+	appointments,
 	generatedDocuments,
 	organizations,
 	patientConsents,
@@ -24,6 +25,7 @@ import {
 	treatmentPlanItemsNew,
 	treatmentPlans,
 	treatmentPlanStages,
+	users,
 	visitDiaries,
 	xrayScans,
 } from "../db/schema.js";
@@ -43,9 +45,18 @@ import {
 	verifyToken,
 } from "../utils/cryptoHelper.js";
 
-// Patient portal sessions are short-lived; the patient re-authenticates via OTP.
-export const PORTAL_TOKEN_TTL_SECONDS = 60 * 60 * 12;
+// Patient portal sessions for mobile PWA (per OWASP / 152-FZ / clinical security policy, <= 30 days).
+export const PORTAL_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days (2_592_000s)
 export const PORTAL_TOKEN_KIND = "portal";
+
+// In-memory revocation stores for active portal session invalidation
+export const revokedPortalTokens = new Set<string>();
+export const portalRevokedBeforeByPatient = new Map<string, number>();
+
+export function resetPortalRevokedTokensForTesting(): void {
+	revokedPortalTokens.clear();
+	portalRevokedBeforeByPatient.clear();
+}
 
 /*
  * ЧТО ЗДЕСЬ БЫЛО СЛОМАНО (и почему это худшая дыра в проекте)
@@ -166,6 +177,19 @@ function readBoundedInt(
 	return Math.min(max, Math.max(min, parsed));
 }
 
+// Rate limiting & flood protection stores for OTP requests (10-minute window)
+export const otpIpRequestCounts = new Map<string, { count: number; resetAt: number }>();
+export const otpPhoneRequestCounts = new Map<string, { count: number; resetAt: number }>();
+
+export const OTP_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 минут
+export const OTP_MAX_REQUESTS_PER_IP = 5; // максимум 5 запросов с одного IP за 10 минут
+export const OTP_MAX_REQUESTS_PER_PHONE = 3; // максимум 3 SMS на один номер за 10 минут
+
+export function resetPortalOtpRateLimitsForTesting(): void {
+	otpIpRequestCounts.clear();
+	otpPhoneRequestCounts.clear();
+}
+
 function readPortalOtpPolicy(): PortalOtpPolicy {
 	return {
 		// Шесть цифр — российская норма для SMS-кода: 10^6 вариантов против
@@ -183,13 +207,12 @@ function readPortalOtpPolicy(): PortalOtpPolicy {
 			30,
 			600,
 		),
-		// Пять кодов в час на пациента: больше — это уже не забывчивость, а
-		// перебор или попытка сжечь баланс шлюза.
-		maxPerWindow: readBoundedInt("DENTE_PORTAL_OTP_MAX_PER_WINDOW", 5, 3, 20),
+		// Не более 3 SMS за 10 минут на пациента (защита от флуда и слива баланса шлюза):
+		maxPerWindow: readBoundedInt("DENTE_PORTAL_OTP_MAX_PER_WINDOW", 3, 1, 20),
 		windowSeconds: readBoundedInt(
 			"DENTE_PORTAL_OTP_WINDOW_SECONDS",
-			3600,
-			300,
+			600,
+			60,
 			86_400,
 		),
 		// Сутки: срок нужен не для проверки кода, а чтобы разобрать инцидент
@@ -280,7 +303,10 @@ function renderOtpMessage(policy: PortalOtpPolicy, code: string): string {
  * patients на каждый запрос. На маршруте, ограниченном по частоте, это
  * приемлемо; функциональный индекс вынесен в долг и назван в отчёте.
  */
-async function findUniquePatientByPhone(rawPhone: string): Promise<{
+async function findUniquePatientByPhone(
+	rawPhone: string,
+	targetOrgId?: string,
+): Promise<{
 	id: string;
 	organizationId: string;
 	phone: string | null;
@@ -289,6 +315,11 @@ async function findUniquePatientByPhone(rawPhone: string): Promise<{
 	if (digits.length < 10) return null;
 	const suffix = digits.slice(-10);
 	const found = await withSuperuserBypass(async (tx) => {
+		const baseFilter = sql`regexp_replace(${patients.phone}, '\\D', '', 'g') LIKE ${`%${suffix}`}`;
+		const filter =
+			targetOrgId && targetOrgId !== "default"
+				? and(eq(patients.organizationId, targetOrgId), baseFilter)
+				: baseFilter;
 		return tx
 			.select({
 				id: patients.id,
@@ -296,9 +327,7 @@ async function findUniquePatientByPhone(rawPhone: string): Promise<{
 				phone: patients.phone,
 			})
 			.from(patients)
-			.where(
-				sql`regexp_replace(${patients.phone}, '\\D', '', 'g') LIKE ${`%${suffix}`}`,
-			)
+			.where(filter)
 			.limit(2);
 	});
 	return found.length === 1 ? (found[0] ?? null) : null;
@@ -354,7 +383,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
 	// 1. Send OTP (защищен составным лимитером по связке IP + phone_number)
-	server.post<{ Body: { phone?: unknown } }>(
+	server.post<{ Body: { phone?: unknown; organizationId?: unknown } }>(
 		"/auth/send-otp",
 		{
 			config: {
@@ -382,6 +411,10 @@ export const portalRoutes: FastifyPluginAsync = async (
 				typeof request.body?.phone === "string"
 					? request.body.phone.trim()
 					: "";
+			const targetOrgId =
+				typeof request.body?.organizationId === "string"
+					? request.body.organizationId.trim()
+					: undefined;
 			if (!rawPhone) {
 				reply.status(400);
 				return { error: "PhoneRequired", message: "Укажите номер телефона." };
@@ -426,6 +459,59 @@ export const portalRoutes: FastifyPluginAsync = async (
 					: ("sms" as const),
 			};
 
+			// Защита от брутфорса и флуд-атак на оператора связи (IP и Phone Rate Limiting)
+			const rawIp =
+				(request.headers["x-forwarded-for"] as string) ||
+				request.ip ||
+				request.socket?.remoteAddress ||
+				"127.0.0.1";
+			const clientIp =
+				typeof rawIp === "string" ? rawIp.split(",")[0]?.trim() || "127.0.0.1" : "127.0.0.1";
+
+			const rateLimitBypassed = process.env.DENTE_PORTAL_OTP_BYPASS_RATE_LIMIT === "1";
+
+			if (!rateLimitBypassed) {
+				const nowMs = Date.now();
+				const hasExplicitForwardedIp = Boolean(request.headers["x-forwarded-for"]);
+				const isDevLoopback =
+					developerLogFallbackAllowed() &&
+					!hasExplicitForwardedIp &&
+					(clientIp === "127.0.0.1" || clientIp === "::1" || clientIp === "unknown");
+
+				const effectiveMaxIp = isDevLoopback ? 100 : OTP_MAX_REQUESTS_PER_IP;
+				const effectiveMaxPhone = isDevLoopback ? 100 : OTP_MAX_REQUESTS_PER_PHONE;
+
+				const ipEntry = otpIpRequestCounts.get(clientIp);
+				if (ipEntry && nowMs <= ipEntry.resetAt && ipEntry.count >= effectiveMaxIp) {
+					reply.status(429);
+					return {
+						error: "TooManyRequests",
+						message:
+							"Слишком много запросов на отправку СМС с вашего IP-адреса. Пожалуйста, подождите 10 минут перед следующей попыткой.",
+					};
+				}
+				if (!ipEntry || nowMs > ipEntry.resetAt) {
+					otpIpRequestCounts.set(clientIp, { count: 1, resetAt: nowMs + OTP_RATE_LIMIT_WINDOW_MS });
+				} else {
+					ipEntry.count++;
+				}
+
+				const digits = rawPhone.replace(/\D/g, "");
+				const phoneSuffix = digits.length >= 10 ? digits.slice(-10) : digits;
+				const phoneEntry = otpPhoneRequestCounts.get(phoneSuffix);
+				if (phoneEntry && nowMs <= phoneEntry.resetAt && phoneEntry.count >= effectiveMaxPhone) {
+					// Не разглашаем факт блокировки номера, но защищаем баланс оператора:
+					// возвращаем нейтральный статус 202 без отправки SMS
+					reply.status(202);
+					return neutralAccepted;
+				}
+				if (!phoneEntry || nowMs > phoneEntry.resetAt) {
+					otpPhoneRequestCounts.set(phoneSuffix, { count: 1, resetAt: nowMs + OTP_RATE_LIMIT_WINDOW_MS });
+				} else {
+					phoneEntry.count++;
+				}
+			}
+
 			if (!smsConfigured && !developerLogFallback) {
 				/*
 				 * Ненастроенный шлюз — факт о сервере, а не о пациенте: честный отказ
@@ -461,7 +547,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 				};
 			}
 
-			const patient = await findUniquePatientByPhone(rawPhone);
+			const patient = await findUniquePatientByPhone(rawPhone, targetOrgId);
 			if (!patient) {
 				reply.status(202);
 				return neutralAccepted;
@@ -751,7 +837,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 	);
 
 	// 2. Verify OTP
-	server.post<{ Body: { phone?: unknown; code?: unknown } }>(
+	server.post<{ Body: { phone?: unknown; code?: unknown; organizationId?: unknown } }>(
 		"/auth/verify-otp",
 		async (request, reply) => {
 			/*
@@ -772,6 +858,10 @@ export const portalRoutes: FastifyPluginAsync = async (
 					: "";
 			const code =
 				typeof request.body?.code === "string" ? request.body.code.trim() : "";
+			const targetOrgId =
+				typeof request.body?.organizationId === "string"
+					? request.body.organizationId.trim()
+					: undefined;
 			if (!rawPhone || !code) {
 				reply.status(400);
 				return {
@@ -781,7 +871,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 			}
 
 			const policy = readPortalOtpPolicy();
-			const patient = await findUniquePatientByPhone(rawPhone);
+			const patient = await findUniquePatientByPhone(rawPhone, targetOrgId);
 			if (!patient) {
 				reply.status(401);
 				return invalidOtp;
@@ -934,6 +1024,76 @@ export const portalRoutes: FastifyPluginAsync = async (
 		},
 	);
 
+	// 2.1. Logout / Session Revocation (Protected)
+	server.post("/auth/logout", async (request, reply) => {
+		const authHeader = request.headers.authorization;
+		if (!authHeader?.startsWith("Bearer ")) {
+			reply.status(401);
+			return { error: "Unauthorized", message: "Токен авторизации не предоставлен." };
+		}
+
+		const token = authHeader.slice("Bearer ".length).trim();
+		if (!token) {
+			reply.status(401);
+			return { error: "Unauthorized", message: "Токен авторизации не предоставлен." };
+		}
+
+		if (revokedPortalTokens.has(token)) {
+			reply.status(401);
+			return { error: "SessionRevoked", message: "Сессия уже завершена." };
+		}
+
+		const payload = verifyToken(token, requireAuthTokenSecret());
+		if (
+			!payload ||
+			payload.kind !== PORTAL_TOKEN_KIND ||
+			typeof payload.sub !== "string" ||
+			typeof payload.organizationId !== "string"
+		) {
+			reply.status(401);
+			return { error: "InvalidToken", message: "Недействительный токен сессии." };
+		}
+
+		const patientId = payload.sub;
+		const organizationId = payload.organizationId;
+		const nowSeconds = Math.floor(Date.now() / 1000);
+		const nowIso = new Date().toISOString();
+
+		// Revoke in-memory active token and record revocation threshold for patient
+		revokedPortalTokens.add(token);
+		portalRevokedBeforeByPatient.set(patientId, nowSeconds);
+
+		// Record revocation timestamp in patient's administrative profile for audit trails
+		await withTenantCtx(organizationId, async () => {
+			const [patientRow] = await db
+				.select({ administrativeProfile: patients.administrativeProfile })
+				.from(patients)
+				.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
+				.limit(1);
+
+			if (patientRow) {
+				const currentProfile =
+					(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
+				await db
+					.update(patients)
+					.set({
+						administrativeProfile: {
+							...currentProfile,
+							portalSessionRevokedAt: nowIso,
+						} as any,
+						updatedAt: new Date(),
+					})
+					.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)));
+			}
+		});
+
+		return {
+			success: true,
+			message: "Сессия успешно завершена.",
+			revokedAt: nowIso,
+		};
+	});
+
 	// 3. Get Patient Data (Protected)
 	server.get("/me", async (request, reply) => {
 		const authHeader = request.headers.authorization;
@@ -948,6 +1108,11 @@ export const portalRoutes: FastifyPluginAsync = async (
 			return { error: "Unauthorized" };
 		}
 
+		if (revokedPortalTokens.has(token)) {
+			reply.status(401);
+			return { error: "SessionRevoked", message: "Сессия завершена. Войдите снова." };
+		}
+
 		const payload = verifyToken(token, requireAuthTokenSecret());
 		if (
 			!payload ||
@@ -960,6 +1125,12 @@ export const portalRoutes: FastifyPluginAsync = async (
 		}
 		const patientId = payload.sub;
 		const organizationId = payload.organizationId as string;
+
+		const revokedBefore = portalRevokedBeforeByPatient.get(patientId);
+		if (revokedBefore && typeof payload.iat === "number" && payload.iat <= revokedBefore) {
+			reply.status(401);
+			return { error: "SessionRevoked", message: "Сессия завершена. Войдите снова." };
+		}
 
 		return withTenantCtx(organizationId, async () => {
 			// Defence-in-depth: even though the token is signed and can't be forged,
@@ -1027,8 +1198,27 @@ export const portalRoutes: FastifyPluginAsync = async (
 					),
 				);
 
+			// 152-ФЗ / Врачебная тайна: Защита от утечки служебных заметок врача/ресепшн
+			// («склочный пациент», «неплатежеспособен»), коммерческих заметок куратора и комиссионных ставок.
+			const { notes: _internalNotes, ...safePatient } = patient;
+			let safeAdminProfile = patient.administrativeProfile;
+			if (safeAdminProfile && typeof safeAdminProfile === "object") {
+				const {
+					curatorCommissionPercent: _comm,
+					curatorNotes: _curNotes,
+					dataProcessingBasisNote: _dpNote,
+					...cleanProfile
+				} = safeAdminProfile as Record<string, unknown>;
+				safeAdminProfile = cleanProfile as any;
+			}
+			const sanitizedPatient = {
+				...safePatient,
+				notes: null,
+				administrativeProfile: safeAdminProfile,
+			};
+
 			return {
-				patient,
+				patient: sanitizedPatient,
 				visits,
 				plans,
 				invoices,
@@ -1115,6 +1305,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 		if (!authHeader?.startsWith("Bearer ")) return null;
 		const token = authHeader.slice("Bearer ".length).trim();
 		if (!token) return null;
+		if (revokedPortalTokens.has(token)) return null;
 		const payload = verifyToken(token, requireAuthTokenSecret());
 		if (
 			!payload ||
@@ -1122,6 +1313,10 @@ export const portalRoutes: FastifyPluginAsync = async (
 			typeof payload.sub !== "string" ||
 			typeof payload.organizationId !== "string"
 		) {
+			return null;
+		}
+		const revokedBefore = portalRevokedBeforeByPatient.get(payload.sub);
+		if (revokedBefore && typeof payload.iat === "number" && payload.iat <= revokedBefore) {
 			return null;
 		}
 		return { patientId: payload.sub, organizationId: payload.organizationId };
@@ -1623,6 +1818,19 @@ export const portalRoutes: FastifyPluginAsync = async (
 			allergies.localAnestheticsAllergy ||
 				(allergies.details && /анестетик|новокаин|лидокаин|ультракаин/i.test(allergies.details)),
 		);
+		const hasPenicillinAllergy = Boolean(
+			allergies.antibioticsAllergy ||
+				(allergies.details &&
+					/пенициллин|амоксициллин|амоксиклав|аугментин|ампициллин|цефалоспорин|бета-лактам|penicillin|amoxicillin/i.test(
+						allergies.details,
+					)) ||
+				(Array.isArray(allergies.drugList) &&
+					allergies.drugList.some((d) =>
+						/пенициллин|амоксициллин|амоксиклав|аугментин|ампициллин|цефалоспорин|бета-лактам|penicillin|amoxicillin/i.test(
+							d,
+						),
+					)),
+		);
 		const hasBronchialAsthma = Boolean(
 			respiratory.bronchialAsthma ||
 				(allergies.details && /астма/i.test(allergies.details)),
@@ -1676,7 +1884,20 @@ export const portalRoutes: FastifyPluginAsync = async (
 			});
 		}
 
-		// Danger 3: Blood Coagulation / Anticoagulants
+		// Danger 3: Penicillin / Beta-lactam Antibiotics Allergy
+		if (hasPenicillinAllergy) {
+			alerts.push({
+				id: "alert_penicillin_allergy",
+				severity: "danger",
+				title: "АЛЛЕРГОАНАМНЕЗ: Аллергия на пенициллины и бета-лактамы",
+				message:
+					"Пациент указывает на аллергию к антибиотикам пенициллинового ряда. Категорически противопоказаны Амоксициллин, Амоксиклав, Аугментин, Цефалоспорины.",
+				recommendedAction:
+					"Препараты выбора при антибиотикопрофилактике: Кларитромицин, Азитромицин, Линкомицин или Клиндамицин.",
+			});
+		}
+
+		// Danger 4: Blood Coagulation / Anticoagulants
 		if (hasCoagulation) {
 			alerts.push({
 				id: "alert_coagulation_anticoagulants",
@@ -1738,6 +1959,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 			hasCardiovascularRisk: hasCardio,
 			hasSulfiteAllergy,
 			hasLocalAnestheticsAllergy,
+			hasPenicillinAllergy,
 			hasBronchialAsthma,
 			hasBleedingDisorder: hasCoagulation,
 			hasDiabetes,
@@ -1789,16 +2011,50 @@ export const portalRoutes: FastifyPluginAsync = async (
 					),
 				);
 
-			// If drug allergies were specified, save to patientDrugAllergies
-			if (allergies.hasAllergies && allergies.drugList && allergies.drugList.length > 0) {
+			// Build consolidated drug allergy list for patientDrugAllergies
+			const drugListToInsert: string[] = Array.isArray(allergies.drugList)
+				? [...allergies.drugList]
+				: [];
+
+			if (
+				hasPenicillinAllergy &&
+				!drugListToInsert.some((d) =>
+					/пенициллин|амоксициллин|амоксиклав|аугментин|ампициллин/i.test(d),
+				)
+			) {
+				drugListToInsert.push("Антибиотики пенициллинового ряда (Амоксициллин/Амоксиклав)");
+			}
+			if (
+				hasLocalAnestheticsAllergy &&
+				!drugListToInsert.some((d) =>
+					/анестетик|новокаин|лидокаин|ультракаин/i.test(d),
+				)
+			) {
+				drugListToInsert.push("Местные анестетики");
+			}
+			if (
+				hasSulfiteAllergy &&
+				!drugListToInsert.some((d) => /сульфит/i.test(d))
+			) {
+				drugListToInsert.push("Сульфиты / метабисульфит натрия");
+			}
+
+			if (
+				drugListToInsert.length > 0 &&
+				(allergies.hasAllergies ||
+					hasPenicillinAllergy ||
+					hasLocalAnestheticsAllergy ||
+					hasSulfiteAllergy)
+			) {
 				await db.insert(patientDrugAllergies).values(
-					allergies.drugList.map((drugName) => ({
+					drugListToInsert.map((drugName) => ({
 						organizationId: auth.organizationId,
 						patientId: auth.patientId,
 						allergenGroup: "Лекарственные препараты",
 						drugInnLatin: drugName,
 						reactionSeverity: "high",
-						clinicalManifestations: allergies.details || "Указано пациентом при самочекине",
+						clinicalManifestations:
+							allergies.details || "Указано пациентом при заполнении анкеты здоровья в личном кабинете",
 						isConfirmedByAllergist: false,
 					})),
 				);
@@ -2040,7 +2296,13 @@ export const portalRoutes: FastifyPluginAsync = async (
 
 			const enrichedPlans = dbPlans.map((p) => ({
 				...p,
-				items: planItems.filter((it) => it.planId === p.id),
+				items: planItems
+					.filter((it) => it.planId === p.id)
+					.map((it) => {
+						// 152-ФЗ / Коммерческая тайна: зарплатные ставки и начисления врачу не должны утекать пациенту
+						const { commissionAmount: _comm, ...safeItem } = it;
+						return safeItem;
+					}),
 			}));
 
 			return {
@@ -2663,6 +2925,176 @@ export const portalRoutes: FastifyPluginAsync = async (
 					capturedAtIso: s.capturedAt.toISOString(),
 				})),
 			};
+		});
+	});
+
+	// 17. Get Patient Appointments (Protected)
+	server.get("/appointments", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		return withTenantCtx(auth.organizationId, async () => {
+			const list = await db
+				.select({
+					id: appointments.id,
+					doctorUserId: appointments.doctorUserId,
+					chairId: appointments.chairId,
+					startsAt: appointments.startsAt,
+					endsAt: appointments.endsAt,
+					status: appointments.status,
+					reason: appointments.reason,
+					comment: appointments.comment,
+				})
+				.from(appointments)
+				.where(
+					and(
+						eq(appointments.patientId, auth.patientId),
+						eq(appointments.organizationId, auth.organizationId),
+					),
+				)
+				.orderBy(desc(appointments.startsAt));
+
+			return { success: true, appointments: list };
+		});
+	});
+
+	// 18. Book Appointment with Strict Pessimistic Double-Booking Concurrency Lock (Protected)
+	server.post<{
+		Body: {
+			doctorId?: unknown;
+			startsAt?: unknown;
+			endsAt?: unknown;
+			reason?: unknown;
+			comment?: unknown;
+		};
+	}>("/appointments", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		const doctorId =
+			typeof request.body?.doctorId === "string" ? request.body.doctorId.trim() : "";
+		const startsAtStr =
+			typeof request.body?.startsAt === "string" ? request.body.startsAt.trim() : "";
+		const endsAtStr =
+			typeof request.body?.endsAt === "string" ? request.body.endsAt.trim() : "";
+		const reason =
+			typeof request.body?.reason === "string"
+				? request.body.reason.trim()
+				: "Запись через личный кабинет";
+		const comment =
+			typeof request.body?.comment === "string" ? request.body.comment.trim() : undefined;
+
+		if (!doctorId || !startsAtStr || !endsAtStr) {
+			reply.status(400);
+			return {
+				error: "MissingRequiredFields",
+				message: "Укажите врача, время начала и окончания приёма.",
+			};
+		}
+
+		const startDate = new Date(startsAtStr);
+		const endDate = new Date(endsAtStr);
+		if (
+			Number.isNaN(startDate.getTime()) ||
+			Number.isNaN(endDate.getTime()) ||
+			endDate <= startDate
+		) {
+			reply.status(400);
+			return {
+				error: "InvalidAppointmentTime",
+				message: "Некорректное время приёма.",
+			};
+		}
+
+		return withTenantCtx(auth.organizationId, async () => {
+			return db.transaction(async (tx) => {
+				// 1. Pessimistic hierarchy locking: Lock Doctor row FOR UPDATE
+				const [doctorRow] = await tx
+					.select({ id: users.id })
+					.from(users)
+					.where(
+						and(
+							eq(users.id, doctorId),
+							eq(users.organizationId, auth.organizationId),
+						),
+					)
+					.limit(1)
+					.for("update");
+
+				if (!doctorRow) {
+					reply.status(404);
+					return {
+						error: "DoctorNotFound",
+						message: "Выбранный врач не найден в этой клинике.",
+					};
+				}
+
+				// 2. Lock Patient row FOR UPDATE
+				await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.id, auth.patientId),
+							eq(patients.organizationId, auth.organizationId),
+						),
+					)
+					.limit(1)
+					.for("update");
+
+				// 3. Collision / Overlap check across active appointments
+				const overlapping = await tx
+					.select({ id: appointments.id })
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.organizationId, auth.organizationId),
+							or(
+								eq(appointments.doctorUserId, doctorId),
+								eq(appointments.patientId, auth.patientId),
+							),
+							lt(appointments.startsAt, endDate),
+							gt(appointments.endsAt, startDate),
+							notInArray(appointments.status, ["cancelled", "no_show"]),
+						),
+					)
+					.limit(1);
+
+				if (overlapping.length > 0) {
+					reply.status(409);
+					return {
+						error: "SlotConflict",
+						message:
+							"Выбранное время у врача уже занято другой записью. Пожалуйста, выберите другой интервал.",
+					};
+				}
+
+				// 4. Atomic insertion
+				const [created] = await tx
+					.insert(appointments)
+					.values({
+						organizationId: auth.organizationId,
+						patientId: auth.patientId,
+						doctorUserId: doctorId,
+						status: "planned",
+						startsAt: startDate,
+						endsAt: endDate,
+						reason,
+						comment: comment
+							? `[Личный кабинет] ${comment}`
+							: "Запись через личный кабинет пациента",
+					})
+					.returning();
+
+				reply.status(201);
+				return { success: true, appointment: created };
+			});
 		});
 	});
 };

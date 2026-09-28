@@ -186,7 +186,7 @@ export function VisitSpecialtyFocus() {
 					<div className="flex items-center justify-between pb-2 mb-2 border-b border-[var(--line)]">
 						<span className="font-bold text-xs text-[var(--ink)] flex items-center gap-2">
 							<span className="w-2 h-2 rounded-full bg-[var(--teal,#0d9488)]" />
-							{activeWidgetTitle} (Зуб FDI #{activeTooth || "—"})
+							{activeWidgetTitle} (Зуб {activeTooth || "—"})
 						</span>
 						<button
 							type="button"

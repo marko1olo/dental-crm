@@ -861,7 +861,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 							</span>
 						</h3>
 						<p className="text-xs text-[var(--muted,#64748b)]">
-							Приказ МЗ РФ №804н · Авторасчет по одонтограмме
+							Каталог услуг · Авторасчет по зубной формуле
 						</p>
 					</div>
 				</div>

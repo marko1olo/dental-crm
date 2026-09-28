@@ -1979,8 +1979,8 @@ export const AUTOPILOT_EXTRACTION_K045: DoctorAutopilotPreset = {
 // ── 5. «1-КЛИК ФИЗИОЛОГИЧЕСКАЯ НОРМА (Z01.2)» ──
 export const AUTOPILOT_NORM_HEALTHY: DoctorAutopilotPreset = {
 	id: "autopilot_norm_healthy",
-	title: "1-клик Физиологическая норма (Z01.2) — Соматически здоров / норма осмотра 043/у",
-	shortBadge: "Норма (1-клик)",
+	title: "1-клик Физиологическая норма (Z01.2) — Соматически здоров / норма осмотра",
+	shortBadge: "Норма",
 	category: "therapy",
 	icd10: "Z01.2",
 	icd10Label: "Стоматологическое обследование (патологии не выявлено)",

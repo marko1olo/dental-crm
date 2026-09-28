@@ -5,10 +5,10 @@
 
 .sa-toast {
 	position: fixed;
-	top: 4rem;
-	right: 1.5rem;
-	bottom: auto;
-	left: auto;
+	bottom: 1.5rem !important;
+	right: 1.5rem !important;
+	top: auto !important;
+	left: auto !important;
 	z-index: 99999;
 	display: flex;
 	align-items: center;
@@ -18,17 +18,17 @@
 	font-size: 0.875rem;
 	font-weight: 500;
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-	animation: sa-slide-down 0.25s ease-out;
+	animation: sa-slide-up 0.25s ease-out;
 	max-width: 28rem;
 	max-height: 8rem;
 	overflow: hidden;
 	pointer-events: auto;
 }
 
-@keyframes sa-slide-down {
+@keyframes sa-slide-up {
 	from {
 		opacity: 0;
-		transform: translateY(-10px);
+		transform: translateY(10px);
 	}
 	to {
 		opacity: 1;
@@ -38,21 +38,21 @@
 
 @media (max-width: 840px) {
 	.sa-toast {
-		top: 1rem;
-		bottom: auto;
-		left: 12px;
-		right: 12px;
-		max-width: calc(100vw - 24px);
+		top: auto !important;
+		bottom: 5rem !important;
+		left: 12px !important;
+		right: 12px !important;
+		max-width: calc(100% - 24px) !important;
 	}
 }
 
 @media (max-width: 640px) {
 	.sa-toast {
 		top: auto !important;
-		bottom: 5rem !important;
+		bottom: 5.5rem !important;
 		left: 1rem !important;
 		right: 1rem !important;
-		max-width: calc(100vw - 2rem) !important;
+		max-width: calc(100% - 2rem) !important;
 		max-height: 6rem !important;
 		overflow: hidden !important;
 		border-radius: 8px !important;
@@ -493,6 +493,8 @@ body:has(.payment-modal) .sa-toast,
 	position: relative;
 	width: 100%;
 	height: 100%;
+	min-height: 70vh;
+	flex: 1;
 	overflow: hidden;
 	user-select: none;
 	display: flex;
@@ -546,7 +548,7 @@ body:has(.payment-modal) .sa-toast,
    * обработка остаётся видна, когда трогают яркость.
    */
 	filter: contrast(1.35) brightness(1.05) saturate(0.85)
-		drop-shadow(0 0 2px rgba(255, 255, 255, 0.08)) var(--sa-viewer-filter, none);
+		drop-shadow(0 0 2px rgba(255, 255, 255, 0.08)) var(--sa-viewer-filter-chain, );
 	transform: var(--sa-viewer-transform, none);
 }
 

@@ -4,7 +4,7 @@
  * Reactive state and operations for Hardware Studio:
  * - Load/save device configurations to local storage & broadcast events
  * - Preset auto-fill and 1-click device setup
- * - Diagnostic connection tests (🟢/🟡/⚪)
+ * - Diagnostic connection tests (ready / warning / untested)
  * - 0 disabled buttons per Mandate 8e
  */
 
@@ -95,7 +95,7 @@ export function useHardwareSettings() {
 							protocolTemplate: preset.protocolTemplate,
 							supportedExtensions: [...preset.supportedExtensions],
 							status: "untested" as const,
-							statusMessage: "⚪ Нажмите для проверки связи",
+							statusMessage: "Нажмите для проверки связи",
 						}
 					: dev,
 			);
@@ -110,7 +110,7 @@ export function useHardwareSettings() {
 		if (!target) return;
 
 		setTestingDeviceIds((prev) => new Set(prev).add(id));
-		updateDevice(id, { status: "testing", statusMessage: "⏳ Проверка связи с аппаратом..." });
+		updateDevice(id, { status: "testing", statusMessage: "Проверка связи с аппаратом..." });
 
 		try {
 			const result = await testHardwareConnection(target);
@@ -123,7 +123,7 @@ export function useHardwareSettings() {
 		} catch (err) {
 			updateDevice(id, {
 				status: "not_found",
-				statusMessage: `🟡 Ошибка связи: ${err instanceof Error ? err.message : String(err)}`,
+				statusMessage: `Ошибка связи: ${err instanceof Error ? err.message : String(err)}`,
 				lastCheckedAt: new Date().toISOString(),
 			});
 		} finally {

@@ -16,15 +16,14 @@ import { requireClinicalReadContext } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { appointments, clinics, users } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
+import { replyBadRequest } from "./routeErrors.js";
 import {
 	findWaitlistMatches,
 	type WaitlistMatch,
 } from "../services/schedule/waitlistMatching.js";
 
 function badRequest(reply: FastifyReply, message: string) {
-	return reply
-		.code(400)
-		.send({ error: "WaitlistMatchValidationError", message });
+	return replyBadRequest(reply, "WaitlistMatchValidationError", message);
 }
 
 export async function registerWaitlistMatchRoutes(app: FastifyInstance) {

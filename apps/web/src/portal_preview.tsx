@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { PatientCabinetModal } from "./components/portal/patientCabinet/PatientCabinetModal";
+import { PatientCabinetModal, type PatientCabinetTab } from "./components/portal/patientCabinet/PatientCabinetModal";
 import { DEMO_PATIENT_CABINET } from "./components/portal/patientCabinet/patientCabinetPresets";
 import "./styles/tailwind.css";
 import "./styles/main.css";
@@ -14,7 +14,8 @@ import "./components/portal/patientCabinet/patientCabinet.css";
 const PortalPreviewApp: React.FC = () => {
 	const urlParams = new URLSearchParams(window.location.search);
 	const theme = urlParams.get("theme") || "light";
-	const tab = (urlParams.get("tab") as any) || "overview";
+	const rawTab = urlParams.get("tab") || "overview";
+	const tab = (rawTab === "treatment_plan" || rawTab === "treatmentPlans" || rawTab === "plan" ? "plans" : rawTab) as PatientCabinetTab;
 	const sheet = urlParams.get("sheet") || "";
 
 	useEffect(() => {
@@ -45,7 +46,7 @@ const PortalPreviewApp: React.FC = () => {
 	}, [sheet]);
 
 	return (
-		<div style={{ width: "100vw", height: "100vh", position: "relative" }}>
+		<div style={{ width: "100%", maxWidth: "100%", height: "100vh", position: "relative" }}>
 			<PatientCabinetModal
 				isOpen={true}
 				initialData={DEMO_PATIENT_CABINET}

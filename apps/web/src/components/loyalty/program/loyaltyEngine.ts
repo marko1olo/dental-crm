@@ -18,7 +18,9 @@ import {
 	type GiftCertificatePreset,
 	type PromoCodePreset,
 } from "./loyaltyPresets";
-import type { Fiscal54FzSplitResult } from "./loyaltyFamilyBalance";
+export type { LoyaltyTierDefinition } from "./loyaltyPresets";
+import type { Fiscal54FzSplitResult, LoyaltyLedgerEntry } from "./loyaltyFamilyBalance";
+
 
 export interface LoyaltyAccrualInput {
 	readonly grossInvoiceKop: number;

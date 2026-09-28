@@ -12,6 +12,8 @@ import {
 } from "../db/rls.js";
 import {
 	auditEvents,
+	chairs,
+	clinics,
 	organizations,
 	userInvitations,
 	users,
@@ -1168,6 +1170,32 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 						isActive: true,
 					})
 					.returning({ id: users.id });
+
+				const [clinic] = await tx
+					.insert(clinics)
+					.values({
+						organizationId,
+						name: clinicName || "Основная клиника",
+					})
+					.returning({ id: clinics.id });
+
+				if (clinic) {
+					await tx.insert(chairs).values([
+						{
+							organizationId,
+							clinicId: clinic.id,
+							name: "Кабинет 1 (Терапия)",
+							isActive: true,
+						},
+						{
+							organizationId,
+							clinicId: clinic.id,
+							name: "Кабинет 2 (Хирургия)",
+							isActive: true,
+						},
+					]);
+				}
+
 				return { organization, owner: ownerUser ?? null };
 			});
 

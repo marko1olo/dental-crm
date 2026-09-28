@@ -370,7 +370,7 @@ export function useDoctorShiftRosterOperations({
 		URL.revokeObjectURL(url);
 		setNotification({
 			type: "success",
-			message: "Табель Т-13 успешно экспортирован в CSV (UTF-8 BOM)",
+			message: "Табель учёта рабочего времени успешно экспортирован в CSV (UTF-8 BOM)",
 		});
 		setTimeout(() => setNotification(null), 4000);
 	};

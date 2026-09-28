@@ -68,6 +68,7 @@
 	--shadow: var(--shadow-1);
 	--shadow-sm: var(--shadow-1);
 	--shadow-md: var(--shadow-2);
+	--shadow-lg: var(--shadow-3, 0 16px 36px -6px rgba(0, 0, 0, 0.15));
 
 	/* Текст */
 	--muted-dark: var(--ink-2, var(--ink));

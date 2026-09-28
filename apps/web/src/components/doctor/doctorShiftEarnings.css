@@ -39,7 +39,7 @@
 	top: calc(100% + 6px);
 	right: 0;
 	width: 380px;
-	max-width: calc(100vw - 24px);
+	max-width: 380px;
 	background: var(--paper, #ffffff);
 	border: 1px solid var(--line, #e2e8f0);
 	border-radius: 14px;

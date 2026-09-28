@@ -567,7 +567,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 									<div className="cd-services-804n-box">
 										<div className="cd-services-title">
 											<Stethoscope className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-											<span>Прикрепленные услуги по Номенклатуре 804н ({synthesized.order804nServices.length}):</span>
+											<span>Прикрепленные услуги каталога ({synthesized.order804nServices.length}):</span>
 										</div>
 										<div className="cd-service-chips-row">
 											{synthesized.order804nServices.map((svc) => (
@@ -585,7 +585,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							<footer className="cd-templates-footer">
 								<div className="cd-footer-meta">
 									<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#15803d)]" />
-									<span>Готов к автоматической вставке в ЭМК и печать Формы 043/у (Мандат 8e)</span>
+									<span>Готов к автоматической вставке в медицинскую карту (Мандат 8e)</span>
 								</div>
 
 								<div className="cd-footer-actions">
@@ -622,7 +622,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										onClick={handleApply}
 										className="cd-btn cd-btn-primary"
 										data-testid="cd-apply-btn"
-										title="Мгновенная вставка регламентного протокола в карту 043/у (Мандат 8e)"
+										title="Мгновенная вставка регламентного протокола в карту (Мандат 8e)"
 									>
 										<Sparkles className="w-4 h-4" />
 										<span>Вставить в дневник (1-Click)</span>

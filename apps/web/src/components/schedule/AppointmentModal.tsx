@@ -1204,12 +1204,12 @@ export function AppointmentModal(props: AppointmentModalProps) {
                   usePatientStore.getState().setSelectedPatientId(patientId);
                   useAppStore.getState().setCurrentView("finance");
                   showToast(
-                    `Касса 54-ФЗ: расчёт ${currentPatientName}`,
+                    `Касса: расчёт ${currentPatientName}`,
                     "info",
                   );
                 }}
                 className="h-8 min-h-[32px] px-2 sm:px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
-                title="Принять оплату через кассу 54-ФЗ (1 клик)"
+                title="Оплата 54-ФЗ: Принять оплату через кассу (1 клик)"
                 data-testid="appointment-modal-pay-btn"
               >
                 <CreditCard
@@ -1217,7 +1217,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
                   className="text-emerald-600 dark:text-emerald-400 shrink-0"
                 />
                 <span className="hidden sm:inline whitespace-nowrap">
-                  Оплата 54-ФЗ
+                  Оплата на кассе
                 </span>
                 <span className="sm:hidden">Оплата</span>
               </button>
@@ -1257,19 +1257,19 @@ export function AppointmentModal(props: AppointmentModalProps) {
                         .setSelectedPatientId(patientId);
                       useAppStore.getState().setCurrentView("finance");
                       showToast(
-                        `Касса 54-ФЗ: расчёт ${currentPatientName}`,
+                        `Касса: расчёт ${currentPatientName}`,
                         "info",
                       );
                     }}
                     className="w-full px-3 py-2 text-left text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
-                    title="Принять оплату через кассу 54-ФЗ"
+                    title="Принять оплату на кассе"
                     data-testid="appointment-modal-menu-pay-btn"
                   >
                     <CreditCard
                       size={14}
                       className="text-emerald-600 dark:text-emerald-400 shrink-0"
                     />
-                    <span className="truncate">Касса 54-ФЗ / Оплата</span>
+                    <span className="truncate">Касса / Оплата</span>
                   </button>
                 )}
                 <button

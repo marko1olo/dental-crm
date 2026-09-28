@@ -53,6 +53,9 @@ import "./styles/contrast-fixes.css";
 // Рабочие панели: обзвон, отправка сообщений, рассылки, отчёты. Всё на
 // переменных темы — без зашитых цветов, ломающихся в тёмной и ночной.
 import "./styles/dente-operations.css";
+// Канонические темы и глобальные переопределения для ликвидации белых пятен в темных темах.
+import "./styles/themes.css";
+import "./styles/theme-overrides.css";
 // Табель учета рабочего времени Т-13
 import "./components/payroll/timesheetT13.css";
 // График смен врачей и ростер кабинетов

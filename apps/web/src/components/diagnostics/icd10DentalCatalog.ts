@@ -1,5 +1,5 @@
 export * from "./icd10Types";
-import type { DentalIcd10Item } from "./icd10Types";
+import type { DentalIcd10Item, DentalIcd10RubricMeta } from "./icd10Types";
 import { DENTAL_ICD10_CATALOG_PART1 } from "./icd10CatalogPart1";
 import { DENTAL_ICD10_CATALOG_PART2 } from "./icd10CatalogPart2";
 

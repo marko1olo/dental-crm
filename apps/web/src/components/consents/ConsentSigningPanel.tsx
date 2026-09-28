@@ -7,7 +7,7 @@ import {
 	ShieldCheck,
 	Zap,
 } from "lucide-react";
-import type React from "react";
+import React from "react";
 import {
 	getPointerCoordinates,
 	renderStrokeToSvgPath,

@@ -30,6 +30,7 @@ import {
 	formatMoment,
 	getLocalTasks,
 	saveLocalTask,
+	updateLocalTaskStatus,
 } from "./components/tasks/clinicalTasksPresets";
 import {
 	OPEN_STATUSES,
@@ -393,20 +394,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				if (res.ok) {
 					showToast("Клиническая задача завершена в 1 клик", "success");
 					if (patientId) {
-						const current = getLocalTasks(patientId);
-						const updated = current.map((t) =>
-							t.id === taskId
-								? { ...t, status: "completed" as ClinicalTaskStatus }
-								: t,
-						);
-						try {
-							safeLocalStorageSetItem(
-								`${LOCAL_STORAGE_KEY_PREFIX}${patientId}`,
-								JSON.stringify(updated),
-							);
-						} catch {
-							// Игнорируем квоту локального хранилища
-						}
+						updateLocalTaskStatus(patientId, taskId, "completed");
 					}
 				} else {
 					showToast(

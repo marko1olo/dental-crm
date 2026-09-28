@@ -34,7 +34,10 @@ import {
 import {
 	type FefoTrafficStatus,
 	type FefoTrafficLightInfo,
+	type ExpiryTrafficLight,
+	type FefoTrafficLightOptions,
 	getFefoTrafficLight,
+	getWarehouseFefoTrafficLight,
 	daysLabel,
 } from "./fefoTrafficLight.js";
 import { generateCarpuleDisposalActHtml } from "./carpuleDisposalActHtml.js";
@@ -46,7 +49,10 @@ export {
 	COMMON_ANESTHETICS,
 	type FefoTrafficStatus,
 	type FefoTrafficLightInfo,
+	type ExpiryTrafficLight,
+	type FefoTrafficLightOptions,
 	getFefoTrafficLight,
+	getWarehouseFefoTrafficLight,
 	daysLabel,
 };
 

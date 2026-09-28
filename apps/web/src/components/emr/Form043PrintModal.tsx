@@ -289,7 +289,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 				<div
 					className="emr043-modal-window"
 					style={{
-						maxWidth: isFullscreen ? "99vw" : "1240px",
+						maxWidth: isFullscreen ? "100%" : "1240px",
 						height: isFullscreen ? "98vh" : "94vh",
 					}}
 				>

@@ -683,7 +683,8 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 						>
 							<div>
 								<h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>
-									Табель учета рабочего времени (Форма Т-13 Госкомстата) —{" "}
+									Табель учёта рабочего времени{" "}
+									<span className="text-xs font-normal opacity-60 font-mono">(Т-13)</span> —{" "}
 									{monthNormObj?.nameRu} {selectedYear}
 								</h3>
 								<span
@@ -711,10 +712,11 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 										}
 									}}
 									style={{ minHeight: "44px" }}
-									title="Открыть интерактивный табель Форма Т-13"
+									title="Интерактивный табель учёта рабочего времени (Форма Т-13)"
 								>
 									<CalendarIcon size={16} />
-									<span>Интерактивный табель Т-13</span>
+									<span>Интерактивный табель</span>
+									<span className="text-[10px] opacity-60 ml-1 font-mono">Т-13</span>
 								</button>
 								<button
 									type="button"

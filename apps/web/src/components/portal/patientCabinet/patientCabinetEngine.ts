@@ -17,10 +17,14 @@ import {
 	type DentalHealthIndexResult,
 	type PatientToothInfo,
 	DEFAULT_PATIENT_TEETH,
+	computePatientTeethFromStages,
 } from "../PatientFriendlyOdontogram.js";
 
 // Transparent re-exports of modular domains
 export * from "./patientCabinetDocuments.js";
+export * from "./patientTreatmentPlanDocuments.js";
+export * from "./patientInvoiceDocuments.js";
+export * from "./patientExtract043Documents.js";
 export * from "./patientDentalPassport.js";
 export * from "./patientCabinetAppointments.js";
 
@@ -29,6 +33,7 @@ export {
 	type DentalHealthIndexResult,
 	type PatientToothInfo,
 	DEFAULT_PATIENT_TEETH,
+	computePatientTeethFromStages,
 };
 
 // ============================================================================
@@ -136,6 +141,9 @@ export interface PatientTreatmentPlan {
 	readonly progressPercent: number;
 	readonly status: "in_progress" | "completed" | "on_hold";
 	readonly stages: readonly TreatmentPlanStage[];
+	readonly approvedByPatient?: boolean | undefined;
+	readonly approvedAtIso?: string | undefined;
+	readonly approvalAudit?: ConsentSignatureAudit | undefined;
 }
 
 export interface WarrantyPassportItem {
@@ -208,6 +216,50 @@ export interface PatientStatutoryConsent {
 	readonly pdfDownloadUrl?: string | undefined;
 }
 
+export interface GeneratedDocumentSummary {
+	readonly id: string;
+	readonly kind: string;
+	readonly title: string;
+	readonly status: "draft" | "issued" | "voided" | string;
+	readonly dateIso: string;
+	readonly totalAmountRub?: number | undefined;
+	readonly visitId?: string | undefined;
+	readonly documentNumber?: string | undefined;
+	readonly sha256?: string | undefined;
+	readonly storagePath?: string | undefined;
+	readonly htmlUrl?: string | undefined;
+	readonly payloadJson?: string | undefined;
+}
+
+export interface PatientPrescriptionItem {
+	readonly id: string;
+	readonly medicationName: string;
+	readonly dosageRu: string;
+	readonly instructionRu: string;
+	readonly durationRu: string;
+	readonly dateIso: string;
+	readonly doctorName: string;
+	readonly validityDays?: number | undefined;
+	readonly status?: "active" | "expired" | string | undefined;
+	readonly orderNumber?: string | undefined;
+}
+
+export interface PatientCabinetFamilyMember {
+	readonly id: string;
+	readonly fullName: string;
+	readonly relationshipRu: "Супруг(а)" | "Сын" | "Дочь" | "Родитель" | "Другой родственник" | string;
+	readonly birthDate?: string | undefined;
+	readonly phone?: string | undefined;
+	readonly cardNumber?: string | undefined;
+	readonly avatarInitials?: string | undefined;
+	readonly allowSpendFamilyBalance: boolean;
+	readonly allowBooking: boolean;
+	readonly nextAppointmentDateIso?: string | undefined;
+	readonly nextAppointmentTimeRu?: string | undefined;
+	readonly nextAppointmentTitleRu?: string | undefined;
+	readonly nextAppointmentDoctor?: string | undefined;
+}
+
 export interface PatientPersonalCabinetData {
 	readonly patientId: string;
 	readonly fullName: string;
@@ -220,6 +272,10 @@ export interface PatientPersonalCabinetData {
 	readonly loyaltyBonusBalance: number;
 	readonly loyaltyTierRu: "Базовый" | "Серебряный (5%)" | "Золотой (10%)" | "Платиновый VIP (15%)";
 	readonly cashbackEarnedRub: number;
+	readonly familyBalanceRub?: number | undefined;
+	readonly familyBonusPool?: number | undefined;
+	readonly familyMembersCount?: number | undefined;
+	readonly familyMembers?: readonly PatientCabinetFamilyMember[] | undefined;
 	readonly dmsInsuranceName?: string | undefined;
 	readonly dmsBalanceLimitRub?: number | undefined;
 	readonly invoices: readonly PatientInvoiceItem[];
@@ -248,6 +304,8 @@ export interface PatientPersonalCabinetData {
 		readonly category: string;
 	}> | undefined;
 	readonly somaticRiskLevel?: "high" | "moderate" | "low" | undefined;
+	readonly documents?: readonly GeneratedDocumentSummary[] | undefined;
+	readonly prescriptions?: readonly PatientPrescriptionItem[] | undefined;
 }
 
 export interface PatientCabinetSummary {
@@ -564,7 +622,6 @@ export function signConsentWithPep(
 		status: "signed",
 		signedAtIso,
 		signatureAudit,
-		pdfDownloadUrl: `/portal/documents/consent-${consent.code.toLowerCase()}-${consent.id}.pdf`,
 	};
 }
 

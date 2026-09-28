@@ -18,7 +18,7 @@
  *   * Clinical photo-protocol SD-cards (Canon, Nikon, Sony DCIM 043/u)
  *
  * - 1-click Windows path auto-population (Hot Folders, SLIDA, VDDS, CLI).
- * - Instant connection verification (🟢 Готов к снимкам / 🟡 Каталог не найден / ⚪ Нажмите для проверки).
+ * - Instant connection verification (Готов к снимкам / Каталог не найден / Нажмите для проверки).
  * - 0 disabled buttons per Mandate 8e.
  */
 
@@ -87,7 +87,7 @@ export const HARDWARE_CATEGORY_LABELS: Record<HardwareDeviceCategory, string> = 
 };
 
 export const HARDWARE_PROTOCOL_LABELS: Record<HardwareProtocolType, string> = {
-	hot_folder: "Горячая папка (Hot Folder)",
+	hot_folder: "Папка автозахвата снимков",
 	slida: "SLIDA (Sirona Command Link)",
 	vdds: "VDDS-Media (Интерфейс ПО)",
 	cli_launch: "Командная строка (CLI)",
@@ -185,10 +185,10 @@ export const HARDWARE_PRESETS: readonly HardwarePreset[] = [
 		defaultExecutablePath: "C:\\i-Sensor\\iSensor.exe",
 		defaultHotFolderPath: "C:\\i-Sensor\\Images",
 		protocol: "hot_folder",
-		protocolLabel: "Горячая папка (Hot Folder)",
+		protocolLabel: "Папка автозахвата снимков",
 		protocolTemplate: '"{exe}"',
 		supportedExtensions: [".dcm", ".bmp", ".png", ".jpg"],
-		description: "Популярные радиовизиографы i-Sensor H1/H2, Handy HDR-500/600, мгновенный захват в горячую папку клиники",
+		description: "Популярные радиовизиографы i-Sensor H1/H2, Handy HDR-500/600, мгновенный захват в папку автозахвата клиники",
 		manufacturerCountry: "Китай",
 		badgeText: "Массовый хит",
 	},
@@ -201,7 +201,7 @@ export const HARDWARE_PRESETS: readonly HardwarePreset[] = [
 		defaultExecutablePath: "C:\\NanoPix\\NanoPix.exe",
 		defaultHotFolderPath: "C:\\NanoPix\\Incoming",
 		protocol: "hot_folder",
-		protocolLabel: "Горячая папка (Hot Folder)",
+		protocolLabel: "Папка автозахвата снимков",
 		protocolTemplate: '"{exe}"',
 		supportedExtensions: [".dcm", ".jpg", ".png", ".bmp"],
 		description: "Ультратонкие датчики Eighteeth NanoPix 1/2, авто-сохранение и импорт в электронную карту визита",
@@ -217,7 +217,7 @@ export const HARDWARE_PRESETS: readonly HardwarePreset[] = [
 		defaultExecutablePath: "C:\\XpectVision\\XpectVision.exe",
 		defaultHotFolderPath: "C:\\XpectVision\\Scans",
 		protocol: "hot_folder",
-		protocolLabel: "Горячая папка (Hot Folder)",
+		protocolLabel: "Папка автозахвата снимков",
 		protocolTemplate: '"{exe}"',
 		supportedExtensions: [".dcm", ".dicom", ".png", ".tif"],
 		description: "Инновационные счетно-фотонные датчики прямого преобразования с разрешением до 33 пар линий/мм",
@@ -265,7 +265,7 @@ export const HARDWARE_PRESETS: readonly HardwarePreset[] = [
 		defaultExecutablePath: "C:\\Shining3D\\Aoralscan\\Aoralscan.exe",
 		defaultHotFolderPath: "C:\\Shining3D\\Aoralscan\\Export",
 		protocol: "hot_folder",
-		protocolLabel: "Горячая папка (Hot Folder)",
+		protocolLabel: "Папка автозахвата снимков",
 		protocolTemplate: '"{exe}"',
 		supportedExtensions: [".ply", ".obj", ".stl"],
 		description: "Интраоральные 3D-сканеры Shining 3D Aoralscan 3 / Elite с передачей цветных окклюзионных STL/PLY в карту",
@@ -297,7 +297,7 @@ export const HARDWARE_PRESETS: readonly HardwarePreset[] = [
 		defaultExecutablePath: "C:\\Windows\\explorer.exe",
 		defaultHotFolderPath: "D:\\DCIM\\100CANON",
 		protocol: "hot_folder",
-		protocolLabel: "Горячая папка (Hot Folder)",
+		protocolLabel: "Папка автозахвата снимков",
 		protocolTemplate: "AutoSort --slot-protocol=12_standard",
 		supportedExtensions: [".jpg", ".jpeg", ".cr2", ".cr3", ".nef", ".arw", ".png"],
 		description: "Авто-сортировка макро-снимков с SD-карт зеркальных камер (Canon, Nikon, Sony) по 12/8/6 слотам Формы 043/у",
@@ -340,7 +340,7 @@ export function createDefaultDeviceConfig(preset: HardwarePreset, index = 1): Ha
 		isActive: true,
 		autoAttachToVisit: true,
 		status: "untested",
-		statusMessage: "⚪ Нажмите для проверки связи",
+		statusMessage: "Нажмите для проверки связи",
 		lastCheckedAt: null,
 		latencyMs: null,
 	};
@@ -415,7 +415,7 @@ export interface HardwareConnectionTestResult {
  * Tests hardware connection:
  * - Checks folder availability via Desktop bridge or simulates diagnostic check.
  * - Computes latency.
- * - Generates clear clinical status (🟢 Готов к снимкам / 🟡 Каталог не найден / ⚪ Нажмите для проверки).
+ * - Generates clear clinical status (Готов к снимкам / Каталог не найден / Нажмите для проверки).
  * - Never throws or freezes the UI.
  */
 export async function testHardwareConnection(
@@ -433,7 +433,7 @@ export async function testHardwareConnection(
 				return {
 					success: true,
 					status: "ready",
-					statusMessage: `🟢 Готов к снимкам (${latencyMs} мс, каталог доступен)`,
+					statusMessage: `Готов к снимкам (${latencyMs} мс, каталог доступен)`,
 					latencyMs,
 					folderAccessible: true,
 					details: {
@@ -448,7 +448,7 @@ export async function testHardwareConnection(
 			return {
 				success: false,
 				status: "not_found",
-				statusMessage: `🟡 Каталог не найден: ${watchResult.error || "проверьте путь в проводнике Windows"}`,
+				statusMessage: `Каталог не найден: ${watchResult.error || "проверьте путь в проводнике Windows"}`,
 				latencyMs,
 				folderAccessible: false,
 				details: {
@@ -464,7 +464,7 @@ export async function testHardwareConnection(
 			return {
 				success: false,
 				status: "not_found",
-				statusMessage: `🟡 Ошибка связи с аппаратом: ${errMessage}`,
+				statusMessage: `Ошибка связи с аппаратом: ${errMessage}`,
 				latencyMs,
 				folderAccessible: false,
 				details: {
@@ -489,7 +489,7 @@ export async function testHardwareConnection(
 		return {
 			success: false,
 			status: "not_found",
-			statusMessage: "🟡 Путь к каталогу пуст — заполните путь",
+			statusMessage: "Путь к каталогу пуст — заполните путь",
 			latencyMs,
 			folderAccessible: false,
 			details: {
@@ -505,7 +505,7 @@ export async function testHardwareConnection(
 		return {
 			success: false,
 			status: "not_found",
-			statusMessage: `🟡 Некорректный путь Windows (ожидается C:\\... или \\\\сервер\\папка): «${trimmed}»`,
+			statusMessage: `Некорректный путь Windows (ожидается C:\\... или \\\\сервер\\папка): «${trimmed}»`,
 			latencyMs,
 			folderAccessible: false,
 			details: {
@@ -520,7 +520,7 @@ export async function testHardwareConnection(
 	return {
 		success: true,
 		status: "ready",
-		statusMessage: `🟢 Готов к снимкам (${latencyMs} мс, структура пути корректна)`,
+		statusMessage: `Готов к снимкам (${latencyMs} мс, структура пути корректна)`,
 		latencyMs,
 		folderAccessible: true,
 		details: {

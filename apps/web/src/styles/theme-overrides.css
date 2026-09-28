@@ -1,0 +1,291 @@
+/* ==========================================================================
+   DENTE CRM — GLOBAL THEME OVERRIDES & WHITE-SPOT PURGE (theme-overrides.css)
+   ==========================================================================
+   Authority: .agents/DESIGNER_VISUAL_INQUISITION_BIBLE.md & THE_HAMMER_MASTER_PROMPT.md
+   Section VI & Mandate 8c: Zero Blinding White Spots & Pure Clinical Depth
+   Mandate 8b: Strictly <= 800 lines. UTF-8 without BOM.
+   
+   Eradicates hardcoded white backgrounds (#fff, #ffffff, #f8fafc, #f9fafb, bg-white)
+   and ensures consistent WCAG AAA contrast (>= 4.5:1) across all dark themes:
+   Dark, Night, OLED, Ocean, Emerald, Cyber X-Ray.
+   ========================================================================== */
+
+/* ── 1. HARDCODED TAILWIND & UTILITY WHITE-SPOT PURGE ────────────────────── */
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) :is(
+	.bg-white,
+	.bg-white\/80,
+	.bg-white\/90,
+	.bg-white\/95,
+	[class*="bg-white"],
+	.bg-slate-50,
+	.bg-slate-100,
+	.bg-gray-50,
+	.bg-gray-100,
+	.bg-neutral-50,
+	.bg-zinc-50
+):not([data-preserve-white]):not([data-qr]):not(.qr-code-svg):not(.qr-code-holder):not(.sbp-qr-frame):not(.sbp-qr-wrapper) {
+	background-color: var(--paper-strong) !important;
+	color: var(--ink) !important;
+}
+
+/* ── 2. GLOBAL INLINE STYLE OVERRIDES (CONSTITUTION MANDATE) ─────────────── */
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) :is(
+	[style*="background: #fff" i],
+	[style*="background:#fff" i],
+	[style*="background: #ffffff" i],
+	[style*="background:#ffffff" i],
+	[style*="background: white" i],
+	[style*="background-color: #fff" i],
+	[style*="background-color: #ffffff" i],
+	[style*="background-color: white" i],
+	[style*="background: rgb(255, 255, 255)" i],
+	[style*="background-color: rgb(255, 255, 255)" i]
+):not([data-preserve-white]):not([data-qr]):not(.qr-code-svg):not(.qr-code-holder):not(.sbp-qr-frame):not(.sbp-qr-wrapper) {
+	background-color: var(--paper-strong) !important;
+	color: var(--ink) !important;
+}
+
+/* ── 3. CARDS, PANELS & CONTAINERS HARMONIZATION ─────────────────────────── */
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) :is(
+	.card,
+	.section-card,
+	.panel,
+	.panel-card,
+	.workspace-card,
+	.workspace-section,
+	.entity-card,
+	.data-card,
+	.summary-card,
+	.schedule-panel,
+	.patients-panel,
+	.documents-panel,
+	.visit-zone,
+	.imaging-zone,
+	.finance-zone,
+	.marketing-zone,
+	.settings-zone
+) {
+	background: var(--paper-strong) !important;
+	color: var(--ink) !important;
+	border: 1px solid var(--line) !important;
+	box-shadow: var(--shadow-lg, 0 16px 36px rgba(0, 0, 0, 0.55)), 0 0 1px var(--theme-glow, rgba(45, 212, 191, 0.15)) !important;
+}
+
+/* ── 4. MODALS, DIALOGS, POPOVERS & DROPDOWN MENUS ───────────────────────── */
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) :is(
+	.modal-content,
+	.modal-panel,
+	.dialog-content,
+	.popover,
+	.popover-content,
+	.dropdown-menu,
+	.dropdown-panel,
+	.context-menu,
+	.menu-panel
+) {
+	background-color: var(--paper-strong) !important;
+	color: var(--ink) !important;
+	border: 1px solid var(--line-strong, var(--line)) !important;
+	box-shadow: var(--shadow-lg, 0 20px 50px rgba(0, 0, 0, 0.65)), 0 0 1px var(--theme-glow, rgba(45, 212, 191, 0.2)) !important;
+}
+
+/* ── 5. TABLES & DATA GRIDS ──────────────────────────────────────────────── */
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) :is(
+	.table-container,
+	.data-table,
+	table
+) {
+	background-color: var(--paper-strong) !important;
+	color: var(--ink) !important;
+	border-color: var(--line) !important;
+}
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) :is(
+	thead,
+	th
+) {
+	background-color: var(--paper-strong) !important;
+	color: var(--ink-2, var(--ink)) !important;
+	border-color: var(--line) !important;
+}
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) :is(
+	tbody,
+	tr,
+	td
+) {
+	border-color: var(--line) !important;
+	color: var(--ink) !important;
+}
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) tr:hover td {
+	background-color: var(--teal-surface, rgba(45, 212, 191, 0.1)) !important;
+}
+
+/* ── 6. TEXT CONTRAST & WCAG AAA HARMONY ─────────────────────────────────── */
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) :is(
+	.text-muted,
+	.text-secondary,
+	.muted,
+	.subtext,
+	.field-hint,
+	.settings-advanced-hint,
+	.note,
+	.caption
+) {
+	color: var(--muted) !important;
+}
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) :is(
+	h1, h2, h3, h4, h5, h6,
+	.title,
+	.heading,
+	.font-semibold,
+	.font-bold,
+	strong
+):not(.text-teal):not(.text-red):not(.text-green):not(.text-amber) {
+	color: var(--ink) !important;
+}
+
+/* ── 7. FORM CONTROLS & INPUTS ───────────────────────────────────────────── */
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) :is(
+	input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+	select,
+	textarea
+) {
+	background-color: var(--paper-strong) !important;
+	color: var(--ink) !important;
+	border-color: var(--line) !important;
+}
+
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark
+) :is(
+	input::placeholder,
+	textarea::placeholder
+) {
+	color: var(--muted) !important;
+	opacity: 0.85;
+}
+
+/* ── 8. PRINT MEDIA IMMUNITY (ZERO TONER WASTE & WHITE PAPER PURITY) ─────── */
+@media print {
+	:is(
+		[data-theme="dark"],
+		[data-theme="night"],
+		[data-theme="oled"],
+		[data-theme="ocean"],
+		[data-theme="emerald"],
+		[data-theme="cyber_xray"],
+		html.dark
+	) * {
+		background: #ffffff !important;
+		background-color: #ffffff !important;
+		color: #000000 !important;
+		border-color: #e2e8f0 !important;
+		box-shadow: none !important;
+		text-shadow: none !important;
+	}
+}
+

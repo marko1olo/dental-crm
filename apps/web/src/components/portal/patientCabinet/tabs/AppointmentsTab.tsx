@@ -316,7 +316,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({
 									</div>
 								)}
 
-								{!isPast && apt.status !== "cancelled" && (
+								{!isPast && (
 									<div style={{ display: "flex", flexWrap: "wrap", gap: "8px", paddingTop: "6px", borderTop: "1px solid var(--pc-border, #f1f5f9)" }}>
 										{onOpenReceptionQr && (
 											<button

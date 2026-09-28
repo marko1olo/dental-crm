@@ -22,7 +22,7 @@
   height: 100vh;
   height: 100dvh;
   width: 440px;
-  max-width: 100vw;
+  max-width: 100%;
   background-color: var(--paper, #ffffff);
   color: var(--ink, #0f172a);
   border-left: 1px solid var(--line, rgba(15, 118, 110, 0.15));
@@ -1195,8 +1195,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    width: 100vw;
-    max-width: 100vw;
+    width: 100%;
+    max-width: 100%;
     height: 100vh;
     height: 100dvh;
     border-left: none;

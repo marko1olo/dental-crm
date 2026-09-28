@@ -638,18 +638,12 @@ describe("церемония подписания дневника одинак�
 		);
 	});
 
-	test("пустая полка не даёт подписать приём и не восстанавливает остаток", async () => {
-		// stock_quantity = 0 при непустой устаревшей current_qty.
-		//
-		// ПОПРАВКА К ЗАПИСИ: первоначальный комментарий здесь утверждал, что
-		// `inv.stockQuantity || inv.currentQty` принимал настоящий ноль за
-		// отсутствующее значение и подписание УВЕЛИЧИВАЛО остаток пустой полки.
-		// Это не воспроизводится ни на одной версии маршрута: на 1f65d674b^ пустая
-		// полка отвечала 400 TransactionFailed при остатке 0, ровно как и сейчас.
-		// Причина — drizzle отдаёт numeric строкой, а "0" истинна (см. отдельный
-		// тест ниже). Этот тест не про исправленный дефект, он про инвариант:
-		// подписание приёма не должно ни проходить, ни поднимать остаток, если
-		// материала нет.
+	test("пустая полка не блокирует подписание приёма врачом (мягкий овердрафт) и фиксирует дефицит", async () => {
+		// stock_quantity = 0 при потребности 4.
+		// Согласно Мандату 8 (Врачебная автономия и мягкий овердрафт склада),
+		// отсутствие оприходованной накладной не может блокировать подписание
+		// дневника врачом 043/у. Церемония проходит успешно (200 OK), фиксируя
+		// проводку emergency_overdraft с дефицитом.
 		const scenario = await seedScenario("empty", "0");
 
 		const response = await app.inject({
@@ -666,16 +660,12 @@ describe("церемония подписания дневника одинак�
 				pkcs7Signature: PKCS7,
 			},
 		});
-		assert.equal(response.statusCode, 400, response.body);
+		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
-		assert.equal(body.error, "TransactionFailed");
-		assert.match(body.message, /Недостаточно материалов/);
+		assert.equal(body.success, true);
+		assert.ok(body.id);
 
-		/*
-		 * Все четыре сверки — под тенант-контекстом. Без него SELECT отдаёт ноль
-		 * строк, и «дневника нет», «движений нет» подтверждались бы тем, что политика
-		 * скрыла строки, а не тем, что церемония откатилась.
-		 */
+		// Остаток полки уходит в овердрафт (0 - 4 = -4), дефицит зафиксирован
 		const [item] = await withFixtureTenant(organizationId, async () =>
 			db
 				.select()
@@ -685,11 +675,11 @@ describe("церемония подписания дневника одинак�
 		assert.ok(item);
 		assert.equal(
 			Number(item.stockQuantity),
-			0,
-			"остаток пустой полки не должен вырасти",
+			-4,
+			"остаток пустой полки уходит в мягкий овердрафт (-4)",
 		);
 
-		// Транзакция откатилась целиком: дневник не подписан, журнал пуст, услуга не закрыта.
+		// Дневник подписан
 		const [diary] = await withFixtureTenant(organizationId, async () =>
 			db
 				.select()
@@ -701,18 +691,22 @@ describe("церемония подписания дневника одинак�
 					),
 				),
 		);
-		assert.equal(
-			diary,
-			undefined,
-			"дневник не должен появиться при отказе церемонии",
-		);
+		assert.ok(diary, "дневник должен быть создан и подписан");
+		assert.equal(diary.isLocked, true);
+
+		// Зафиксировано движение склада emergency_overdraft
 		const movements = await withFixtureTenant(organizationId, async () =>
 			db
 				.select()
 				.from(inventoryTransactions)
 				.where(eq(inventoryTransactions.visitId, scenario.visitId)),
 		);
-		assert.equal(movements.length, 0);
+		assert.equal(movements.length, 1);
+		assert.equal(movements[0].isOverdraft, true);
+		assert.equal(movements[0].transactionType, "emergency_overdraft");
+		assert.equal(Number(movements[0].quantityChanged), -4);
+
+		// Услуга закрыта
 		const [treatment] = await withFixtureTenant(organizationId, async () =>
 			db
 				.select()
@@ -720,7 +714,7 @@ describe("церемония подписания дневника одинак�
 				.where(eq(treatmentItems.id, scenario.treatmentItemId)),
 		);
 		assert.ok(treatment);
-		assert.equal(treatment.status, "approved", "услуга не должна закрыться");
+		assert.equal(treatment.status, "completed", "услуга должна успешно закрыться");
 	});
 
 	test("повторная подпись подписанного дневника отклоняется на обоих маршрутах", async () => {

@@ -41,7 +41,7 @@ import {
 	EXPRESS_GUARANTEE_LETTER_PRESETS,
 } from "./dmsInsurancePresets";
 
-export type { PatientGuaranteeLetter, BillItemToSplit, ExpressDmsGuaranteePreset };
+export type { DmsGuaranteeLetter, PatientGuaranteeLetter, BillItemToSplit, ExpressDmsGuaranteePreset };
 export {
 	COMMON_DENTAL_ICD10_DIAGNOSES,
 	FDI_ADULT_TEETH_UPPER,

@@ -52,7 +52,7 @@ export function HardwareCockpitBar({ onTestHotFolder, hotFolderStatus }: Props) 
 			if (onTestHotFolder) {
 				onTestHotFolder();
 			}
-			showToast("Папка снимков C:\\DentalImages\\Incoming доступна (задержка 4 мс)", "success");
+			showToast("Папка автозахвата снимков C:\\DentalImages\\Incoming доступна (задержка 4 мс)", "success");
 		} finally {
 			setTimeout(() => setHotFolderLoading(false), 300);
 		}
@@ -118,12 +118,12 @@ export function HardwareCockpitBar({ onTestHotFolder, hotFolderStatus }: Props) 
 					type="button"
 					className="hw-btn-compact"
 					onClick={handleTestHotFolder}
-					title="Проверить доступность каталога горячего импорта снимков"
+					title="Тестовый опрос папки снимков: Проверить доступность папки автозахвата"
 					data-testid="cockpit-btn-hotfolder"
 				>
 					<RefreshCw size={13} className={hotFolderLoading ? "animate-spin" : ""} />
 					<HardDrive size={13} />
-					<span>Тестовый опрос папки снимков</span>
+					<span>Тест папки автозахвата</span>
 				</button>
 
 				{/* 3. Telephony Ping Button */}

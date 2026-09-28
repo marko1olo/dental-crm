@@ -8,8 +8,10 @@ import {
 	CheckCircle2,
 	Clock,
 	Copy,
+	CreditCard,
 	FastForward,
 	MessageSquare,
+	Phone,
 	PhoneCall,
 	User,
 	UserCheck,
@@ -19,6 +21,8 @@ import {
 import React from "react";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
 import { showToast } from "../GlobalToast";
 import {
 	formatDoctorShortName,
@@ -66,7 +70,7 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 
 	return (
 		<div
-			className={`${isMenuOpen ? "block" : "hidden"} absolute right-0 bottom-full mb-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[210px] max-w-[calc(100vw-32px)] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100`}
+			className={`${isMenuOpen ? "block" : "hidden"} absolute right-0 bottom-full mb-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[210px] max-w-[260px] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100`}
 			onClick={(e) => e.stopPropagation()}
 		>
 			{/* Быстрые переходы: Карточка приема и Профиль пациента */}
@@ -99,6 +103,37 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 					<CalendarCheck size={14} className="text-[var(--teal)] shrink-0" />
 					<span>Прием (детали)</span>
 				</button>
+				<button
+					type="button"
+					onClick={() => {
+						onCloseMenu();
+						if (patObj?.id) {
+							usePatientStore.getState().setSelectedPatientId(patObj.id);
+						}
+						useAppStore.getState().setCurrentView("finance");
+						showToast(`Касса: расчёт ${pName}`, "info");
+					}}
+					className="w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold transition-colors cursor-pointer"
+					title={`Оплата визита (касса): ${pName}`}
+					aria-label={`Оплата визита ${pName}`}
+					data-testid={`menu-pay-btn-${a.id}`}
+				>
+					<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+					<span>Оплата на кассе</span>
+				</button>
+				{patObj?.phone && (
+					<a
+						href={`tel:${patObj.phone}`}
+						onClick={() => onCloseMenu()}
+						className="w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-sky-500/15 text-sky-700 dark:text-sky-300 font-bold transition-colors cursor-pointer"
+						title={`Позвонить ${pName}: ${patObj.phone}`}
+						aria-label={`Позвонить ${pName}`}
+						data-testid={`menu-call-btn-${a.id}`}
+					>
+						<Phone size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
+						<span className="truncate">Позвонить ({patObj.phone})</span>
+					</a>
+				)}
 			</div>
 
 			<div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] pb-1">

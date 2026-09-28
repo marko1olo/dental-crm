@@ -20,6 +20,7 @@ import {
 	type ClassBWasteSummary,
 	CLASS_B_WEIGHT_ESTIMATES,
 	calculateClassBWasteWeightKg,
+	calculateAutoVisitConsumables,
 	executeAutoVisitBomDeduction,
 	roundQuantity,
 } from "@dental/shared";
@@ -430,3 +431,8 @@ export async function executeShiftCloseClassBWasteDisposal(
 		toastMessage,
 	};
 }
+
+export {
+	calculateAutoVisitConsumables,
+	executeAutoVisitBomDeduction,
+};

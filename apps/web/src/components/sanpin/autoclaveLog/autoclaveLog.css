@@ -667,7 +667,7 @@ html[data-theme="dark"] .autoclave-regime-card.selected {
 	.autoclave-log-modal-container {
 		max-height: 100dvh;
 		height: 100dvh;
-		width: 100vw;
+		width: 100%;
 		border-radius: 0;
 		border: none;
 	}

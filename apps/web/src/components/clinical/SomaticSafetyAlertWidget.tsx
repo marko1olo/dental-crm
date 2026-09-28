@@ -322,7 +322,7 @@ export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> =
 						data-testid="somatic-safety-alert-popover"
 						role="dialog"
 						aria-label="Стоматологические стоп-факторы у кресла"
-						className="absolute left-0 top-full mt-1.5 w-[360px] sm:w-[460px] max-w-[95vw] rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-3 text-[var(--ink)] shadow-2xl z-50 flex flex-col gap-2.5 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+						className="absolute left-0 top-full mt-1.5 w-[360px] sm:w-[460px] max-w-[460px] rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] p-3 text-[var(--ink)] shadow-2xl z-50 flex flex-col gap-2.5 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
 					>
 						{/* Заголовок панели подсказки */}
 						<div className="flex items-center justify-between border-b border-[var(--line)] pb-2">

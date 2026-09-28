@@ -47,7 +47,23 @@ import {
 import "./patientCabinet.css";
 import { AuthArtBackground } from "../../auth/AuthArtBackground";
 
-export type PatientCabinetTab = "overview" | "invoices" | "plans" | "documents" | "appointments" | "care" | "passport" | "family";
+export type PatientCabinetTab =
+	| "overview"
+	| "invoices"
+	| "plans"
+	| "treatment_plan"
+	| "treatmentPlans"
+	| "documents"
+	| "appointments"
+	| "care"
+	| "passport"
+	| "family";
+
+export function normalizePatientTab(tab?: string): PatientCabinetTab {
+	if (!tab) return "overview";
+	if (tab === "treatment_plan" || tab === "treatmentPlans" || tab === "plan") return "plans";
+	return (tab as PatientCabinetTab) || "overview";
+}
 
 export interface PatientCabinetModalProps {
 	readonly isOpen?: boolean | undefined;
@@ -77,7 +93,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	onAppointmentBooked,
 }) => {
 	const [data, setData] = useState<PatientPersonalCabinetData>(() => initialData || DEMO_PATIENT_CABINET);
-	const [activeTab, setActiveTab] = useState<PatientCabinetTab>(initialTab);
+	const [activeTab, setActiveTab] = useState<PatientCabinetTab>(() => normalizePatientTab(initialTab));
 
 	// Sheets and Modals State (Depth strictly 1)
 	const [activeSbpInvoice, setActiveSbpInvoice] = useState<PatientInvoiceItem | null>(null);
@@ -182,38 +198,63 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 		setIsCheckingSbpStatus(false);
 	}, []);
 
-	// Handle SBP Payment Check
-	const handleCheckSbpPaymentStatus = useCallback(() => {
+	// Handle SBP Payment Check (Mandates 8e, 8k: honest /api/fiscal/sbp-status query, no fake mocks)
+	const handleCheckSbpPaymentStatus = useCallback(async () => {
 		if (!activeSbpInvoice) return;
 		setIsCheckingSbpStatus(true);
 		setSbpStatusMessage("Запрос подтверждения транзакции в шлюзе НСПК...");
-		setTimeout(() => {
+		try {
+			const orderId = (activeSbpPayload as any)?.orderId || activeSbpPayload?.invoiceNumber || activeSbpInvoice.invoiceNumber || activeSbpInvoice.id;
+			const qrId = activeSbpPayload?.qrId || "";
+			const sumKop = Math.round(activeSbpInvoice.remainingAmountRub * 100);
+			const queryUrl = `/api/fiscal/sbp-status?orderId=${encodeURIComponent(orderId)}&qrId=${encodeURIComponent(qrId)}&invoiceId=${encodeURIComponent(activeSbpInvoice.id)}&sumKop=${sumKop}`;
+
+			const res = await fetch(queryUrl, {
+				headers: { Accept: "application/json" },
+			});
+			if (res.ok) {
+				const statusData = (await res.json().catch(() => null)) as {
+					paid?: boolean;
+					status?: string;
+					fiscalReceiptId?: string | null;
+					fiscalReceiptNumber?: string | null;
+					paidAt?: string | null;
+				} | null;
+
+				if (statusData && (statusData.paid || statusData.status === "paid")) {
+					const updatedInvoice: PatientInvoiceItem = {
+						...activeSbpInvoice,
+						status: "paid",
+						paidAmountRub: activeSbpInvoice.totalAmountRub,
+						remainingAmountRub: 0,
+						paidAtIso: statusData.paidAt || new Date().toISOString(),
+						paymentMethod: "sbp",
+						fiscalReceiptNumber: statusData.fiscalReceiptNumber || statusData.fiscalReceiptId || `ФД-${activeSbpInvoice.invoiceNumber}`,
+					};
+
+					setData((prev) => ({
+						...prev,
+						invoices: prev.invoices.map((inv) =>
+							inv.id === updatedInvoice.id ? updatedInvoice : inv,
+						),
+					}));
+
+					onInvoicePaid?.(updatedInvoice);
+					setSbpStatusMessage("Оплата успешно зачислена! Кассовый чек 54-ФЗ отправлен.");
+					setTimeout(() => {
+						setActiveSbpInvoice(null);
+						setActiveSbpPayload(null);
+					}, 1500);
+					return;
+				}
+			}
+			setSbpStatusMessage("Платёж через СБП пока не поступил от банка. Ожидается проведение транзакции.");
+		} catch {
+			setSbpStatusMessage("Не удалось связаться со шлюзом СБП. Повторите попытку через несколько секунд.");
+		} finally {
 			setIsCheckingSbpStatus(false);
-			const updatedInvoice: PatientInvoiceItem = {
-				...activeSbpInvoice,
-				status: "paid",
-				paidAmountRub: activeSbpInvoice.totalAmountRub,
-				remainingAmountRub: 0,
-				paidAtIso: new Date().toISOString(),
-				paymentMethod: "sbp",
-				fiscalReceiptNumber: `ФД-${Math.floor(100000 + Math.random() * 900000)}`,
-			};
-
-			setData((prev) => ({
-				...prev,
-				invoices: prev.invoices.map((inv) =>
-					inv.id === updatedInvoice.id ? updatedInvoice : inv,
-				),
-			}));
-
-			onInvoicePaid?.(updatedInvoice);
-			setSbpStatusMessage("Оплата успешно зачислена! Кассовый чек 54-ФЗ отправлен.");
-			setTimeout(() => {
-				setActiveSbpInvoice(null);
-				setActiveSbpPayload(null);
-			}, 1500);
-		}, 800);
-	}, [activeSbpInvoice, onInvoicePaid]);
+		}
+	}, [activeSbpInvoice, activeSbpPayload, onInvoicePaid]);
 
 	const handleOpenBankApp = useCallback((bank: SbpBankMember) => {
 		if (!activeSbpPayload) return;
@@ -486,7 +527,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					{[
 						{ tab: "overview" as const, label: "Обзор", icon: Activity },
 						{ tab: "appointments" as const, label: "Записи", icon: Calendar },
-						{ tab: "plans" as const, label: "План лечения", icon: Layers, isMatch: (t: string) => t === "plans" || t === "passport", count: summary.activePlansCount },
+						{ tab: "plans" as const, label: "План лечения", icon: Layers, isMatch: (t: string) => t === "plans" || t === "passport" || t === "treatment_plan" || t === "treatmentPlans", count: summary.activePlansCount },
 						{ tab: "invoices" as const, label: "Счета и оплата", icon: CreditCard, count: summary.unpaidInvoicesCount, countBg: "var(--pc-danger)" },
 						{ tab: "documents" as const, label: "Документы", icon: FileText, isMatch: (t: string) => t === "documents" || t === "care", count: summary.pendingConsentsCount, countBg: "var(--pc-warning)" },
 						{ tab: "family" as const, label: "Семья", icon: User },
@@ -541,7 +582,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 						/>
 					)}
 
-					{(activeTab === "plans" || activeTab === "passport") && (
+					{(activeTab === "plans" || activeTab === "passport" || activeTab === "treatment_plan" || activeTab === "treatmentPlans") && (
 						<TreatmentPlanTab
 							data={data}
 							dentalPassport={dentalPassport}
@@ -629,7 +670,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					{[
 						{ tab: "overview" as const, label: "Обзор", icon: Activity },
 						{ tab: "appointments" as const, label: "Записи", icon: Calendar },
-						{ tab: "plans" as const, label: "План", icon: Layers, isMatch: (t: string) => t === "plans" || t === "passport" },
+						{ tab: "plans" as const, label: "План", icon: Layers, isMatch: (t: string) => t === "plans" || t === "passport" || t === "treatment_plan" || t === "treatmentPlans" },
 						{ tab: "invoices" as const, label: "Счета", icon: CreditCard },
 						{ tab: "documents" as const, label: "Документы", icon: FileText, isMatch: (t: string) => t === "documents" || t === "care" },
 						{ tab: "family" as const, label: "Семья", icon: User },

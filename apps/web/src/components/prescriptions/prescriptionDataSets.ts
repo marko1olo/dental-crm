@@ -92,7 +92,9 @@ export const DENTAL_OUTPATIENT_EXTENDED_DRUGS: readonly DentalPrescriptionDrugPr
 		tradeNameRu: "Цифран СТ",
 		activeSubstanceRu: "Ципрофлоксацин + Тинидазол",
 		category: "antibiotic",
+		categoryLabel: "Антибактериальные",
 		categoryLabelRu: "Антибактериальные",
+
 		latinRp: "Rp.: Tab. 'Cifran ST' (Ciprofloxacini 500 mg + Tinidazoli 600 mg)",
 		formRu: "таблетки покрытые пленочной оболочкой",
 		dosageRu: "500 мг + 600 мг",

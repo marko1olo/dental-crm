@@ -9,22 +9,15 @@
  * 5. Scored results ranking exact & phone/card matches at the top.
  */
 
+import { getNationalPhoneDigits } from "@dental/shared";
 import { levenshteinDistance } from "../lib/stringUtils";
 
 /**
  * Нормализует телефонный номер к каноническому 10-значному национальному представлению
  * Поддерживает форматы: +79991234567, 89991234567, 9991234567, +7 (999) 123-45-67
  */
-export function normalizePhoneToNational(value: string | null | undefined): string {
-	const digits = (value ?? "").replace(/\D/g, "");
-	if (digits.length === 11 && (digits.startsWith("7") || digits.startsWith("8"))) {
-		return digits.slice(1);
-	}
-	if (digits.length === 10) {
-		return digits;
-	}
-	return digits.length > 10 ? digits.slice(-10) : digits;
-}
+export const normalizePhoneToNational = (value: string | null | undefined): string =>
+	getNationalPhoneDigits(value);
 
 /**
  * Нормализует кириллический текст (регистр, замена Ё на Е, удаление лишних знаков)

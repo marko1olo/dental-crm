@@ -18,6 +18,8 @@
 
 export * from "./acceptanceWaybillsTypes.js";
 export * from "./acceptanceWaybillsTemplates.js";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+
 
 import type {
 	AcceptanceFefoStatus,

@@ -184,7 +184,7 @@ export function AutoclaveRegisterTable({
 							borderColor: "var(--teal, #0d9488)",
 							background: "var(--paper-strong, #ffffff)",
 						}}
-						title="1-Клик печать пачки из 10 наклеек крафт-пакетов (срок 30 дней для запечатанных пакетов по СанПиН 3.3686-21) без блокирующих окон"
+						title="1-Клик печать пачки из 10 наклеек крафт-пакетов (срок 30 дней для запечатанных пакетов) без блокирующих окон"
 						data-testid="autoclave-quick-batch-labels-btn"
 					>
 						<Printer size={14} className="shrink-0" /> <span className="shrink-0 whitespace-nowrap">Печать наклеек (10 шт.)</span>
@@ -211,7 +211,7 @@ export function AutoclaveRegisterTable({
 							borderRadius: "8px",
 						}}
 						data-testid="sanpin-autoclave-new-cycle-btn"
-						title="1-клик фоновая фиксация нормативного цикла стерилизации смены (СанПиН 3.3686-21, Форма 257/у)"
+						title="1-клик фоновая фиксация нормативного цикла стерилизации смены (Форма 257/у)"
 					>
 						<Plus size={14} className="shrink-0" />
 						<span className="shrink-0 whitespace-nowrap">

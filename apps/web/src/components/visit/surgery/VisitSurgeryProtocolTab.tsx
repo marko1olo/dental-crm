@@ -215,7 +215,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 			// fallback
 		}
 
-		showToast("Хирургический протокол внесён в карту 043/у", "success");
+		showToast("Хирургический протокол внесён в медицинскую карту", "success");
 	};
 
 	const handlePrintProtocol = () => {
@@ -285,7 +285,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 						<h3 className="text-base font-black text-[var(--ink)] flex items-center gap-2">
 							<span>Хирургический протокол & Имплантологический кокпит</span>
 							<span className="text-xs px-2.5 py-0.5 rounded-lg font-mono font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]">
-								{`Зуб FDI #${effectiveTooth}`}
+								{`Зуб #${effectiveTooth}`}
 							</span>
 						</h3>
 						<p className="text-xs text-[var(--muted)]">
@@ -351,7 +351,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-2">
 					<span className="text-xs font-black uppercase tracking-wider text-[var(--teal,#0d9488)]">
-						Зуб операции (FDI):
+						Зуб операции:
 					</span>
 					<span className="text-sm font-black font-mono px-2.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)]">
 						{`#${effectiveTooth}`}

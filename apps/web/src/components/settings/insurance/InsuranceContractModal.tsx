@@ -166,7 +166,7 @@ export const InsuranceContractModal: React.FC<InsuranceContractModalProps> = ({
 				style={{
 					background: paperBg,
 					width: 560,
-					maxWidth: "96vw",
+					maxWidth: "calc(100% - 32px)",
 					maxHeight: "92vh",
 					overflowY: "auto",
 					borderRadius: 20,

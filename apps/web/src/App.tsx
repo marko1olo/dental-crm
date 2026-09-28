@@ -58,6 +58,11 @@ import {
 	safeLocalStorageSetItem,
 } from "./lib/safeLocalStorage";
 import {
+	isDemoShowcaseMode,
+	disableDemoShowcaseMode,
+	DEMO_SHOWCASE_ORG_ID,
+} from "./lib/demoMode";
+import {
 	DoctorPrivacyShield,
 	getInactivityTimeoutMs,
 } from "./components/auth/DoctorPrivacyShield";
@@ -1046,6 +1051,80 @@ export function App() {
 	const loadDashboardRef = useRef(loadDashboard);
 	loadDashboardRef.current = loadDashboard;
 
+	const demoAutoLoginAttemptedRef = useRef<boolean>(false);
+
+	// Auto-login effect for Demo Showcase Mode (Mandate 8y)
+	useEffect(() => {
+		const checkAndAttemptDemoLogin = async () => {
+			if (!isDemoShowcaseMode() || clinicAuthed) return;
+			demoAutoLoginAttemptedRef.current = true;
+			try {
+				const response = await fetch("/api/auth/login", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						email: "doctor@clinic.com",
+						password: "dente2026",
+					}),
+				});
+				if (response.ok) {
+					const data = await response.json();
+					if (data.clinicToken) {
+						safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, data.clinicToken);
+					}
+					if (data.staffToken) {
+						safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, data.staffToken);
+					}
+					setClinicAuthed(true);
+					if (data.user) {
+						setStaffAuthed(true);
+						setActiveStaffUser(data.user);
+					}
+					void loadDashboardRef.current();
+					return;
+				}
+			} catch (err) {
+				logger.warn(
+					"[Dente] Demo auto-login API call failed, falling back to local demo auth:",
+					err,
+				);
+			}
+
+			// Local demo showcase fallback if backend is offline or unseeded
+			const demoClinicToken = "demo-showcase-clinic-token";
+			const demoStaffToken = "demo-showcase-staff-token";
+			safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, demoClinicToken);
+			safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, demoStaffToken);
+			setClinicAuthed(true);
+			setStaffAuthed(true);
+			setActiveStaffUser({
+				id: "01a00000-0000-0000-0003-000000000001",
+				fullName: "Д-р Демонстрационный А. В.",
+				role: "doctor",
+				email: "doctor@clinic.com",
+				organizationId: DEMO_SHOWCASE_ORG_ID,
+			});
+			void loadDashboardRef.current();
+		};
+
+		if (!demoAutoLoginAttemptedRef.current && isDemoShowcaseMode() && !clinicAuthed) {
+			void checkAndAttemptDemoLogin();
+		}
+
+		const handleHashOrUrlChange = () => {
+			if (isDemoShowcaseMode() && !clinicAuthed) {
+				void checkAndAttemptDemoLogin();
+			}
+		};
+
+		window.addEventListener("hashchange", handleHashOrUrlChange);
+		window.addEventListener("popstate", handleHashOrUrlChange);
+		return () => {
+			window.removeEventListener("hashchange", handleHashOrUrlChange);
+			window.removeEventListener("popstate", handleHashOrUrlChange);
+		};
+	}, [clinicAuthed]);
+
 	// On mount: if clinic token already in localStorage (page refresh / persisted session), load dashboard + restore user profile
 	useEffect(() => {
 		if (
@@ -1437,6 +1516,60 @@ export function App() {
 								</button>
 							</div>
 						)}
+					{isDemoShowcaseMode() && (
+						<div
+							className="demo-showcase-banner"
+							role="status"
+							style={{
+								background:
+									"linear-gradient(90deg, rgba(14, 165, 233, 0.12), rgba(99, 102, 241, 0.12))",
+								borderBottom: "1px solid rgba(14, 165, 233, 0.3)",
+								padding: "4px 16px",
+								fontSize: "12px",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+								color: "var(--ink)",
+							}}
+						>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: "8px",
+								}}
+							>
+								<Sparkles
+									className="w-4 h-4 text-sky-500"
+									aria-hidden="true"
+								/>
+								<span>
+									<strong>ДЕМОНСТРАЦИОННЫЙ РЕЖИМ (SHOWCASE)</strong>: витринная
+									сетка приёмов, модельные пациенты и клинические сценарии
+									(Мандат 8y).
+								</span>
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									disableDemoShowcaseMode();
+									const cleanUrl = window.location.pathname;
+									window.location.href = cleanUrl;
+								}}
+								style={{
+									border: "1px solid rgba(14, 165, 233, 0.4)",
+									borderRadius: "4px",
+									padding: "2px 8px",
+									fontSize: "11px",
+									background: "transparent",
+									cursor: "pointer",
+									color: "inherit",
+								}}
+							>
+								Выйти из демо
+							</button>
+						</div>
+					)}
 					<WorkspaceTopbar
 						clinicName={dashboard.clinicName}
 						onGoToDictation={goToVisitDictation}

@@ -10,21 +10,11 @@ import {
 	Users,
 } from "lucide-react";
 import { formatRussianPhone, getNpsUrgency } from "./omnichannelEngine.js";
-import type { NpsReview, NpsReviewStatus } from "./omnichannelTypes.js";
+import type { NpsReview, NpsReviewStatus, NpsMetrics } from "./omnichannelTypes.js";
 
 export interface OmnichannelNpsTabProps {
-	readonly npsMetrics: {
-		readonly totalReviews: number;
-		readonly promotersCount: number;
-		readonly neutralsCount: number;
-		readonly detractorsCount: number;
-		readonly promotersPct: number;
-		readonly neutralsPct: number;
-		readonly detractorsPct: number;
-		readonly npsScore: number;
-		readonly averageScore: string;
-		readonly criticalPendingCount: number;
-	};
+	readonly npsMetrics: NpsMetrics;
+
 	readonly npsReviews: readonly NpsReview[];
 	readonly filteredNpsReviews: readonly NpsReview[];
 	readonly npsFilterUrgency: string;

@@ -198,11 +198,17 @@ describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Ze
 
 	describe("3. FinanceView Integration (DEF-02, Mandates 8c, 8d, 8e)", () => {
 		it("FinanceView source mounts InvoicesView and renders btn-finance-open-invoices button", () => {
-			const source = fs.readFileSync(financeFilePath, "utf-8");
+			const toolbarPath = path.resolve(__dirname, "../FinanceToolbar.tsx");
+			const modalPath = path.resolve(__dirname, "../FinanceInvoicesModal.tsx");
+			const source = fs.readFileSync(financeFilePath, "utf-8") +
+				(fs.existsSync(toolbarPath) ? fs.readFileSync(toolbarPath, "utf-8") : "") +
+				(fs.existsSync(modalPath) ? fs.readFileSync(modalPath, "utf-8") : "");
 
 			assert.ok(
 				source.includes("import { InvoicesView } from \"./components/billing/InvoicesView.js\"") ||
-				source.includes("import { InvoicesView } from \"./components/billing/InvoicesView\""),
+				source.includes("import { InvoicesView } from \"./components/billing/InvoicesView\"") ||
+				source.includes("import { InvoicesView } from \"../billing/InvoicesView.js\"") ||
+				source.includes("import { InvoicesView } from \"../billing/InvoicesView\""),
 				"FinanceView must import InvoicesView",
 			);
 			assert.ok(

@@ -12,8 +12,9 @@ import {
 	DENTE_CLINIC_TOKEN_KEY,
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
-import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { logger } from "../../utils/logger";
 
 interface ClinicLoginProps {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -22,8 +23,8 @@ interface ClinicLoginProps {
 }
 
 export function ClinicLogin({ onLoginSuccess, onSwitchToUserLogin }: ClinicLoginProps) {
-	const [email, setEmail] = useState("clinic@example.com");
-	const [password, setPassword] = useState("");
+	const [email, setEmail] = useState(() => (isDemoShowcaseMode() ? "clinic@example.com" : ""));
+	const [password, setPassword] = useState(() => (isDemoShowcaseMode() ? "dente2026" : ""));
 	const [showPassword, setShowPassword] = useState(false);
 	const [loading, setLoading] = useState(false);
 

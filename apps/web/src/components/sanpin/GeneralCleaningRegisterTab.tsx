@@ -92,7 +92,7 @@ export function GeneralCleaningRegisterTab() {
 			if (res.ok) {
 				const data = await res.json().catch(() => ({}));
 				showToast(
-					`График генеральных уборок на месяц успешно заполнен (${data.count || 20} уборок по СанПиН 3.3686-21, интервал 7 дней)`,
+					`График генеральных уборок на месяц успешно заполнен (${data.count || 20} уборок, интервал 7 дней)`,
 					"success",
 				);
 				await fetchLogs();
@@ -107,7 +107,7 @@ export function GeneralCleaningRegisterTab() {
 		}
 	};
 
-	// 1-Клик фиксация генеральной уборки по норме СанПиН (Мандаты 8e, 8k)
+	// 1-Клик фиксация генеральной уборки по норме (Мандаты 8e, 8k)
 	const handleQuickRecordNormCleaning = async () => {
 		if (submitting) return;
 		try {
@@ -145,7 +145,7 @@ export function GeneralCleaningRegisterTab() {
 			});
 
 			if (res.ok) {
-				showToast("Уборка по норме СанПиН успешно зафиксирована (Аламинол 5%, 60 мин, УФ 120 мин)", "success");
+				showToast("Уборка по норме успешно зафиксирована (Аламинол 5%, 60 мин, УФ 120 мин)", "success");
 				await fetchLogs();
 			} else {
 				const err = await res.json().catch(() => ({}));
@@ -196,8 +196,8 @@ export function GeneralCleaningRegisterTab() {
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
-				<h2>ЖУРНАЛ ПРОВЕДЕНИЯ ГЕНЕРАЛЬНЫХ УБОРОК И ЗАКЛЮЧИТЕЛЬНОЙ ДЕЗИНФЕКЦИИ</h2>
-				<p>СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»</p>
+				<h2>ЖУРНАЛ ГЕНЕРАЛЬНЫХ УБОРОК</h2>
+				<p title="СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»">График и журнал проведения генеральных уборок и заключительной дезинфекции</p>
 			</div>
 
 			<div className="sanpin-control-bar">
@@ -360,7 +360,7 @@ export function GeneralCleaningRegisterTab() {
 									data-testid="nurse-1click-norm-cleaning-btn"
 								>
 									<Sparkles size={14} color="var(--teal, #0d9488)" />
-									<span>1-Клик норма СанПиН (Аламинол 5%)</span>
+									<span>1-Клик норма (Аламинол 5%)</span>
 								</button>
 								<button
 									type="button"

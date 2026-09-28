@@ -889,13 +889,13 @@ export const VisitPediatricProtocolWidget: React.FC<
 
 		if (isInvasiveProtocol && !representative.consentSigned) {
 			showToast(
-				`Детский протокол зуба ${currentTooth} внесен в 043/у (напоминание: требуется ИДС по 323-ФЗ)`,
+				`Детский протокол зуба ${currentTooth} внесен в карту (напоминание: требуется ИДС)`,
 				"info",
 				3500,
 			);
 		} else {
 			showToast(
-				`Детский протокол зуба ${currentTooth} внесен в Форму 043/у`,
+				`Детский протокол зуба ${currentTooth} внесен в медицинскую карту`,
 				"success",
 				3000,
 			);
@@ -932,7 +932,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			.map((s) => s.code)
 			.join(", ");
 		showToast(
-			`Услуги по коду 804н добавлены в смету (${codes})`,
+			`Услуги добавлены в смету (${codes})`,
 			"success",
 			2500,
 		);
@@ -1016,7 +1016,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 		setResorptionStages({});
 
 		showToast(
-			"1-клик: Физиологическая норма временного прикуса (интактен, тремы, диастемы) внесена в 043/у!",
+			"1-клик: Физиологическая норма временного прикуса (интактен, тремы, диастемы) внесена в карту!",
 			"success",
 			3500,
 		);
@@ -1100,7 +1100,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 		}
 
 		showToast(
-			"1-клик: Адаптационный визит (Tell-Show-Do, игра, подарок, без сверления) внесен в 043/у!",
+			"1-клик: Адаптационный визит (Tell-Show-Do, игра, подарок, без сверления) внесен в карту!",
 			"success",
 			3500,
 		);
@@ -1660,7 +1660,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 					{/* Превью протокола Формы 043/у */}
 					<div>
 						<div className="mb-1 text-xs font-bold text-[var(--ink,#0f172a)]">
-							Превью готовой записи Формы 043/у (автогенерация):
+							Превью готовой записи (автогенерация):
 						</div>
 						<pre className="max-h-48 overflow-y-auto rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 text-[11px] leading-relaxed text-[var(--ink,#0f172a)] font-mono whitespace-pre-wrap">
 							{clinicalCalculation.fullProtocolText043}
@@ -1680,9 +1680,11 @@ export const VisitPediatricProtocolWidget: React.FC<
 						onClick={handleInsertToForm043}
 						className="inline-flex min-h-[48px] sm:min-h-0 sm:h-9 items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-xs sm:text-sm font-extrabold text-white shadow-sm transition hover:bg-teal-700 active:scale-95 cursor-pointer touch-manipulation"
 						data-testid="pediatric-btn-apply-043"
+						title="Внести протокол в медицинскую карту"
+						aria-label="Внести в 043/у"
 					>
 						<FileText className="h-4 w-4 shrink-0" />
-						<span>Внести в 043/у</span>
+						<span>Внести в карту</span>
 					</button>
 
 					{/* Кнопка 1-клик в смету */}

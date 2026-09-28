@@ -133,13 +133,13 @@ export interface PatientShiftQueueResult {
 }
 
 export interface PatientShiftQueueOptions {
-	targetDateKey?: string;
-	nowMs?: number;
-	selectedDoctorId?: string | null;
-	selectedChairId?: string | null;
-	patientsById?: Map<string, { fullName?: string; phone?: string; name?: string }>;
-	staffById?: Map<string, { name?: string; fullName?: string; specialty?: string }>;
-	chairsById?: Map<string, { name?: string; title?: string }>;
+	targetDateKey?: string | undefined;
+	nowMs?: number | undefined;
+	selectedDoctorId?: string | null | undefined;
+	selectedChairId?: string | null | undefined;
+	patientsById?: Map<string, { fullName?: string; phone?: string; name?: string }> | undefined;
+	staffById?: Map<string, { name?: string; fullName?: string; specialty?: string }> | undefined;
+	chairsById?: Map<string, { name?: string; title?: string }> | undefined;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

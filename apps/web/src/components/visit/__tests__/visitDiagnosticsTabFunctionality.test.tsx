@@ -56,7 +56,11 @@ interface MockDomNode {
 	nodeType: number;
 	tagName: string;
 	nodeName: string;
-	style: Record<string, string>;
+	style: Record<string, unknown> & {
+		setProperty: (name: string, value: string) => void;
+		removeProperty: (name: string) => void;
+		getPropertyValue: (name: string) => string;
+	};
 	dataset: Record<string, string>;
 	children: MockDomNode[];
 	childNodes: MockDomNode[];
@@ -66,6 +70,12 @@ interface MockDomNode {
 	rawText: string;
 	textContent: string;
 	className: string;
+	classList: {
+		contains: (token: string) => boolean;
+		add: (...tokens: string[]) => void;
+		remove: (...tokens: string[]) => void;
+		toggle: (token: string) => boolean;
+	};
 	disabled?: boolean;
 	value?: string;
 	selected?: boolean;
@@ -104,6 +114,29 @@ let mockDoc: {
 	defaultView?: unknown;
 };
 
+function createMockStyle(): Record<string, unknown> & {
+	setProperty: (name: string, value: string) => void;
+	removeProperty: (name: string) => void;
+	getPropertyValue: (name: string) => string;
+} {
+	const styleObj: Record<string, unknown> = {
+		setProperty: (name: string, value: string) => {
+			styleObj[name] = value;
+		},
+		removeProperty: (name: string) => {
+			delete styleObj[name];
+		},
+		getPropertyValue: (name: string) => {
+			return (styleObj[name] as string) || "";
+		},
+	};
+	return styleObj as Record<string, unknown> & {
+		setProperty: (name: string, value: string) => void;
+		removeProperty: (name: string) => void;
+		getPropertyValue: (name: string) => string;
+	};
+}
+
 function createMockElement(tag = "div"): MockDomNode {
 	const children: MockDomNode[] = [];
 	const listeners: Record<string, EventListener[]> = {};
@@ -113,7 +146,7 @@ function createMockElement(tag = "div"): MockDomNode {
 		nodeType: 1,
 		tagName: tag.toUpperCase(),
 		nodeName: tag.toUpperCase(),
-		style: {},
+		style: createMockStyle(),
 		dataset: {},
 		children,
 		childNodes: children,
@@ -129,6 +162,30 @@ function createMockElement(tag = "div"): MockDomNode {
 			this.rawText = v;
 		},
 		className: "",
+		classList: {
+			contains: (token: string) => {
+				const tokens = (el.className || "").trim().split(/\s+/);
+				return tokens.includes(token);
+			},
+			add: (...tokens: string[]) => {
+				const current = new Set((el.className || "").trim().split(/\s+/).filter(Boolean));
+				for (const t of tokens) current.add(t);
+				el.className = Array.from(current).join(" ");
+			},
+			remove: (...tokens: string[]) => {
+				const current = new Set((el.className || "").trim().split(/\s+/).filter(Boolean));
+				for (const t of tokens) current.delete(t);
+				el.className = Array.from(current).join(" ");
+			},
+			toggle: (token: string) => {
+				const current = new Set((el.className || "").trim().split(/\s+/).filter(Boolean));
+				const had = current.has(token);
+				if (had) current.delete(token);
+				else current.add(token);
+				el.className = Array.from(current).join(" ");
+				return !had;
+			},
+		},
 		get options() {
 			return children.filter((c) => c.tagName === "OPTION");
 		},
@@ -137,16 +194,40 @@ function createMockElement(tag = "div"): MockDomNode {
 		},
 		selected: false,
 		value: "",
-		getContext: () => ({
-			drawImage: () => {},
-			fillRect: () => {},
-			clearRect: () => {},
-			getImageData: () => ({ data: new Uint8ClampedArray(4) }),
-			putImageData: () => {},
-			beginPath: () => {},
-			stroke: () => {},
-			fill: () => {},
-		}),
+		getContext: () => {
+			const ctx: Record<string, unknown> = {
+				drawImage: () => {},
+				fillRect: () => {},
+				clearRect: () => {},
+				getImageData: () => ({ data: new Uint8ClampedArray(4) }),
+				putImageData: () => {},
+				beginPath: () => {},
+				closePath: () => {},
+				stroke: () => {},
+				fill: () => {},
+				save: () => {},
+				restore: () => {},
+				translate: () => {},
+				scale: () => {},
+				rotate: () => {},
+				resetTransform: () => {},
+				moveTo: () => {},
+				lineTo: () => {},
+				arc: () => {},
+				rect: () => {},
+				fillText: () => {},
+				strokeText: () => {},
+				measureText: () => ({ width: 50 }),
+				setLineDash: () => {},
+				getLineDash: () => [],
+			};
+			return new Proxy(ctx, {
+				get(target, prop) {
+					if (prop in target) return target[prop as string];
+					return () => {};
+				},
+			});
+		},
 		toDataURL: () => "data:image/png;base64,mock",
 		appendChild: (child: MockDomNode) => {
 			children.push(child);
@@ -287,6 +368,12 @@ function initDom() {
 			setTimeout(() => this.onload?.(), 0);
 		}
 	};
+	g.ResizeObserver = class {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+	(win as any).ResizeObserver = g.ResizeObserver;
 
 	return { doc: mockDoc, win };
 }
@@ -567,6 +654,7 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 			});
 
 			const modalDropzone =
+				findByTestId(mockDoc.body, "dicom-viewer-modal") ||
 				findByTestId(mockDoc.body, "dicom-viewer-dropzone") ||
 				findNode(mockDoc.body, (n) => n.textContent.includes("DICOM"));
 			assert.ok(modalDropzone, "DicomViewerModal must open upon clicking btn-open-dicom-viewer-modal");

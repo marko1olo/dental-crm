@@ -320,7 +320,7 @@ export function SettingsPricesTab() {
 							<Search size={14} className="absolute left-2.5 text-[var(--muted)] shrink-0 pointer-events-none" />
 							<input
 								type="text"
-								placeholder="Поиск по услугам или коду 804н..."
+								placeholder="Поиск по услугам или коду..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								className="w-full min-h-[32px] h-7 sm:h-8 pl-8 pr-9 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--teal)] transition-all"
@@ -349,22 +349,22 @@ export function SettingsPricesTab() {
 										? "bg-[var(--teal-soft)] text-[var(--teal-dark)] border-[var(--teal)] font-bold"
 										: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)]"
 								}`}
-								title="Выбрать типовую услугу по номенклатуре Минздрава 804н"
+								title="Выбрать типовую услугу из официального справочника"
 								aria-expanded={is804nCodesMenuOpen}
 							>
 								<Tag size={13} className="text-[var(--teal)] shrink-0" />
-								<span className="hidden sm:inline">Номенклатура 804н</span>
-								<span className="sm:hidden">804н</span>
+								<span className="hidden sm:inline">Справочник услуг</span>
+								<span className="sm:hidden">Услуги</span>
 								<ChevronDown size={11} className={`shrink-0 transition-transform ${is804nCodesMenuOpen ? "rotate-180" : ""}`} />
 							</button>
 
 							{is804nCodesMenuOpen && (
 								<div
-									className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 z-50 flex flex-col gap-1 p-2 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl min-w-[240px] max-w-[calc(100vw-32px)] animate-in fade-in zoom-in-95 duration-100 text-xs"
+									className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 z-50 flex flex-col gap-1 p-2 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl min-w-[240px] max-w-[340px] animate-in fade-in zoom-in-95 duration-100 text-xs"
 									role="menu"
 								>
 									<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] mb-1">
-										Быстрый поиск по Приказу 804н
+										Официальный справочник услуг
 									</div>
 									<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
 										{QUICK_804N_CHIPS.map((chip) => (
@@ -397,7 +397,7 @@ export function SettingsPricesTab() {
 											<Sparkles size={14} className="shrink-0 text-[var(--teal)] group-hover:text-white" />
 											<div className="flex flex-col min-w-0">
 												<span className="font-bold truncate">
-													{isSeedingBaseline ? "Наполнение каталога..." : "Заполнить базовый 804н (30 услуг)"}
+													{isSeedingBaseline ? "Наполнение каталога..." : "Заполнить базовый каталог (30 услуг)"}
 												</span>
 												<span className="text-[10px] opacity-80 truncate">Добавить недостающие типовые услуги с ценами</span>
 											</div>
@@ -426,11 +426,11 @@ export function SettingsPricesTab() {
 								className="secondary-button min-h-[32px] h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-all inline-flex items-center gap-1 cursor-pointer shrink-0"
 								onClick={() => setIsServicePricelistModalOpen(true)}
 								data-testid="open-service-pricelist-modal-btn"
-								title="Справочник услуг и прайс-лист (Приказ Минздрава № 804н / ДМС / VIP)"
+								title="Справочник услуг и прайс-лист клиники"
 							>
 								<ShieldCheck size={14} className="text-[var(--teal)] shrink-0" />
-								<span className="hidden sm:inline">Прейскурант 804н</span>
-								<span className="sm:hidden">804н</span>
+								<span className="hidden sm:inline">Прейскурант</span>
+								<span className="sm:hidden">Прайс</span>
 							</button>
 							<button
 								type="button"
@@ -648,7 +648,7 @@ export function SettingsPricesTab() {
 
 							<div className="staff-form-grid">
 								<div className="staff-form-group">
-									<label htmlFor="service-code-input">Код (внутренний или 804н)</label>
+									<label htmlFor="service-code-input">Код услуги (внутренний или официальный)</label>
 									<input
 										id="service-code-input"
 										type="text"

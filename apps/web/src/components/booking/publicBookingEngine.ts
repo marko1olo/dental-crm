@@ -45,11 +45,11 @@ export interface BookingReceiptData {
 	isNightMode: boolean;
 	message: string;
 	doctorName: string;
-	specialty?: string;
+	specialty?: string | undefined;
 	date: string;
 	time: string;
-	morningConfirmTime?: string;
-	clinicAddress?: string;
+	morningConfirmTime?: string | undefined;
+	clinicAddress?: string | undefined;
 	patientName: string;
 	patientPhone: string;
 	createdAt: string;
@@ -58,7 +58,7 @@ export interface BookingReceiptData {
 export interface CalendarExportPayload {
 	title: string;
 	description: string;
-	location?: string;
+	location?: string | undefined;
 	startsAt: string; // ISO
 	endsAt: string; // ISO
 }
@@ -235,7 +235,7 @@ export function formatRussianDate(dateStr: string): string {
  */
 export function detectTelegramWebApp(): {
 	isTelegram: boolean;
-	user?: { id: number; firstName: string; username?: string };
+	user?: { id: number; firstName: string; username?: string | undefined } | undefined;
 } {
 	if (typeof window === "undefined") {
 		return { isTelegram: false };
@@ -382,8 +382,8 @@ export function generateFallbackSlots(selectedDate: string): BookingSlot[] {
 export interface SendOtpResult {
 	success: boolean;
 	message: string;
-	cooldownSeconds?: number;
-	challengeId?: string;
+	cooldownSeconds?: number | undefined;
+	challengeId?: string | undefined;
 }
 
 /**

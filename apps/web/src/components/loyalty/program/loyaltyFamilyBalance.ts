@@ -58,9 +58,16 @@ export interface FamilyPoolBalanceResult {
 	readonly totalPooledPoints: number;
 	readonly totalFamilyLifetimeSpentKop: number;
 	readonly totalFamilyLifetimeSpentRub: number;
+	readonly sharedPoolTierId?: string | undefined;
+	readonly sharedPoolTierName?: string | undefined;
 	readonly effectiveTier: LoyaltyTierDefinition;
 	readonly members: readonly FamilyMember[];
 }
+
+
+export type FamilyPoolResult = FamilyPoolBalanceResult;
+export type FamilyPointsPool = FamilyPoolBalanceResult;
+
 
 export interface DebitFamilySharedBalanceInput {
 	readonly familyGroupId: string;

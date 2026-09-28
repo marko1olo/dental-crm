@@ -431,7 +431,7 @@ export function HardwareSettingsTab() {
 													{/* Hot Folder Path */}
 													<div className="hw-field-group">
 														<label className="hw-field-label">
-															<span>Каталог горячего импорта (Hot Folder)</span>
+															<span>Папка автозахвата снимков</span>
 															<span className="text-[10px] text-[var(--muted)]">Стандарт Windows</span>
 														</label>
 														<input
@@ -471,7 +471,7 @@ export function HardwareSettingsTab() {
 																})
 															}
 														>
-															<option value="hot_folder">Горячая папка (Hot Folder TWAIN/DICOM)</option>
+															<option value="hot_folder">Папка автозахвата снимков (автоимпорт TWAIN/DICOM)</option>
 															<option value="slida">SLIDA (Sirona Command Link SiCoIn)</option>
 															<option value="vdds">VDDS-Media (Немецкий стоматологический стандарт)</option>
 															<option value="cli_launch">Командная строка CLI с параметрами пациента</option>

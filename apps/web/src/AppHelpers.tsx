@@ -2611,13 +2611,15 @@ export type StaffScheduleSaveState = "idle" | "saving" | "saved" | "error";
 export type AppointmentScheduleDraft = {
 	patientId: string;
 	doctorUserId: string;
-	assistantUserId: string;
+	assistantUserId?: string | null;
 	chairId: string;
 	status: Appointment["status"];
 	startsAt: string;
 	endsAt: string;
-	reason: string;
-	comment: string;
+	reason?: string;
+	comment?: string;
+	notes?: string;
+	cancellationReason?: string;
 };
 export type AppointmentScheduleSaveState =
 	| "idle"
@@ -4054,8 +4056,8 @@ export function newAppointmentDraftFromDashboard(
 	};
 }
 
-export function nullableAppointmentDraftValue(value: string): string | null {
-	const trimmed = value.trim();
+export function nullableAppointmentDraftValue(value?: string | null): string | null {
+	const trimmed = (value ?? "").trim();
 	return trimmed ? trimmed : null;
 }
 

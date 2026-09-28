@@ -53,7 +53,7 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 						</>
 					) : (
 						<>
-							Все 32 зуба (FDI 11–48) <ChevronDown className="w-3.5 h-3.5" />
+							Все 32 зуба (11–48) <ChevronDown className="w-3.5 h-3.5" />
 						</>
 					)}
 				</button>

@@ -154,18 +154,19 @@ export const DEFAULT_043_DATA: MedicalCardForm043uData = {
 export function resolveClinicRequisites(
 	initialClinic?: Partial<ClinicRequisites043>,
 	profile?: {
-		clinicName?: string;
-		legalName?: string;
-		address?: string;
-		phone?: string;
-		ogrn?: string;
-		inn?: string;
-		kpp?: string;
-		medicalLicenseNumber?: string;
-		medicalLicenseIssuedAt?: string;
-		medicalLicenseIssuer?: string;
-		signatoryName?: string;
-	},
+		clinicName?: string | null | undefined;
+		legalName?: string | null | undefined;
+		address?: string | null | undefined;
+		phone?: string | null | undefined;
+		ogrn?: string | null | undefined;
+		inn?: string | null | undefined;
+		kpp?: string | null | undefined;
+		medicalLicenseNumber?: string | null | undefined;
+		medicalLicenseIssuedAt?: string | null | undefined;
+		medicalLicenseIssuer?: string | null | undefined;
+		signatoryName?: string | null | undefined;
+		[key: string]: unknown;
+	} | null | undefined,
 	staff?: { role?: string; specialties?: string[]; fullName?: string }[],
 ): ClinicRequisites043 {
 	const resolvedChiefDoctor =

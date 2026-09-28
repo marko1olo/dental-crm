@@ -352,7 +352,7 @@ export function PatientReclamationsWidget({
 				<button
 					type="button"
 					onClick={() => setIsAdding(true)}
-					className="shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 min-h-[44px] sm:min-h-[32px] text-xs font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all inline-flex items-center justify-center"
+					className="shrink-0 bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--glass-border)] rounded-xl px-4 py-2 min-h-[44px] sm:min-h-[32px] text-xs font-semibold cursor-pointer transition-all inline-flex items-center justify-center shadow-2xs"
 				>
 					+ Фиксировать
 				</button>
@@ -364,7 +364,7 @@ export function PatientReclamationsWidget({
 		return (
 			<div
 				data-testid="patient-reclamations-widget"
-				className="panel-card bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl mt-4 p-4 text-xs text-slate-500 dark:text-slate-400"
+				className="panel-card bg-[var(--paper)] border border-dashed border-[var(--line)] text-[var(--ink)] rounded-xl mt-4 p-4 text-xs text-[var(--muted)]"
 			>
 				{draftDroppedNotice}
 				{panelStateText(RECLAMATIONS_SUBJECT, { phase: "loading" }).title}
@@ -400,7 +400,7 @@ export function PatientReclamationsWidget({
 					<button
 						type="button"
 						onClick={() => setIsAdding(true)}
-						className="shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 min-h-[44px] sm:min-h-[32px] text-xs font-semibold cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-all inline-flex items-center justify-center"
+						className="shrink-0 bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--glass-border)] rounded-xl px-4 py-2 min-h-[44px] sm:min-h-[32px] text-xs font-semibold cursor-pointer transition-all inline-flex items-center justify-center shadow-2xs"
 					>
 						+ Фиксировать
 					</button>
@@ -595,8 +595,8 @@ export function PatientReclamationsWidget({
 									exit={{ opacity: 0, scale: 0.95 }}
 									className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${
 										isUnderReview
-											? "bg-white dark:bg-slate-900 border-rose-200 dark:border-rose-900/60 shadow-sm opacity-100"
-											: "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800 opacity-70"
+											? "bg-[var(--paper)] border-rose-300 dark:border-rose-900/60 shadow-sm opacity-100"
+											: "bg-[var(--paper-soft)] border-[var(--glass-border)] opacity-75"
 									}`}
 								>
 									<div
@@ -644,7 +644,7 @@ export function PatientReclamationsWidget({
 													disabled={deletingId === rec.id}
 													aria-busy={deletingId === rec.id}
 													onClick={() => handleDelete(rec.id)}
-													className="bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-600 p-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] inline-flex items-center justify-center rounded-xl cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+													className="bg-[var(--paper-strong)] text-[var(--muted)] hover:text-rose-600 p-2 min-h-[44px] sm:min-h-[32px] min-w-[44px] inline-flex items-center justify-center rounded-xl cursor-pointer transition-colors border border-[var(--glass-border)] disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
 													title="Удалить безвозвратно"
 												>
 													<Trash2 size={16} />
@@ -653,22 +653,22 @@ export function PatientReclamationsWidget({
 										</div>
 
 										{rec.proposedAction && (
-											<div className="text-xs text-slate-700 dark:text-slate-300 mb-3 leading-relaxed bg-slate-50 dark:bg-slate-800/80 p-3 rounded-lg border-l-2 border-slate-300 dark:border-slate-700">
-												<strong className="block mb-1 text-slate-900 dark:text-white">
+											<div className="text-xs text-[var(--ink)] mb-3 leading-relaxed bg-[var(--paper-soft)] p-3 rounded-lg border-l-2 border-[var(--teal)]">
+												<strong className="block mb-1 text-[var(--ink)]">
 													Предложенное решение:
 												</strong>
 												{rec.proposedAction}
 											</div>
 										)}
 
-										<div className="flex items-center gap-4 flex-wrap mt-3 text-xs text-slate-500 dark:text-slate-400">
+										<div className="flex items-center gap-4 flex-wrap mt-3 text-xs text-[var(--muted)]">
 											<div className="flex items-center gap-1.5 font-medium">
 												<Stethoscope size={14} />
-												<span className="text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+												<span className="text-[var(--ink)] bg-[var(--paper-strong)] border border-[var(--glass-border)] px-2 py-0.5 rounded">
 													{doctor?.fullName || "Неизвестный врач"}
 												</span>
 											</div>
-											<div className="flex items-center gap-1 text-slate-400">
+											<div className="flex items-center gap-1 text-[var(--muted)]">
 												<Calendar size={14} />
 												Зафиксировано:{" "}
 												{new Date(rec.createdAt).toLocaleDateString("ru-RU")}

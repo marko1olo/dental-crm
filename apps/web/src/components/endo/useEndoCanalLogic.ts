@@ -36,14 +36,14 @@ export interface UseEndoCanalLogicProps {
 	readonly initialRotarySystem?: string | undefined;
 	readonly initialRadiologyControl?: string | undefined;
 	readonly onInsertToProtocol?: (
-		protocolText: string,
+		(protocolText: string,
 		canals: EndoCanalData[],
-	) => void;
+	) => void) | undefined;
 	readonly onSaveCanals?: (
-		canals: EndoCanalData[],
+		(canals: EndoCanalData[],
 		clinicalData: EndoToothClinicalData,
-	) => Promise<void> | void;
-	readonly onSave?: (savedCanals: EndoCanalData[], noteText?: string) => void;
+	) => Promise<void> | void) | undefined;
+	readonly onSave?: ((savedCanals: EndoCanalData[], noteText?: string) => void) | undefined;
 	readonly clinicName?: string | undefined;
 	readonly clinicPhone?: string | undefined;
 	readonly doctorName?: string | undefined;

@@ -213,7 +213,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				await onOpenShift();
 			}
 			setLocalIsShiftOpen(true);
-			showToast(`Кассовая смена №${shiftNumber} открыта на ККТ 54-ФЗ!`, "success", 4000);
+			showToast(`Кассовая смена №${shiftNumber} открыта на кассовом аппарате!`, "success", 4000);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : "Ошибка открытия смены";
 			showToast(`Не удалось открыть смену: ${msg}`, "error");
@@ -231,7 +231,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			}
 			setLocalIsShiftOpen(false);
 			showToast(
-				`Смена №${shiftNumber} успешно закрыта! Z-отчет 54-ФЗ отправлен в ОФД`,
+				`Смена №${shiftNumber} успешно закрыта! Z-отчет отправлен в ОФД`,
 				"success",
 				4000,
 			);
@@ -307,7 +307,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 								id="cash-register-modal-title"
 								className="text-base sm:text-lg font-black text-[var(--ink)] flex items-center gap-2 m-0 flex-wrap"
 							>
-								<span>Кассовая смена 54-ФЗ (ФФД 1.2)</span>
+								<span>Кассовая смена</span>
 								<span
 									className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
 										isShiftActive
@@ -392,7 +392,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									Кассовая смена закрыта
 								</h3>
 								<p className="text-xs sm:text-sm text-[var(--muted)] m-0">
-									Откройте смену в 1 клик для фискализации чеков по 54-ФЗ, приема оплат наличными, банковскими картами и СБП.
+									Откройте смену в 1 клик для формирования чеков, приема оплат наличными, банковскими картами и СБП.
 								</p>
 							</div>
 
@@ -405,7 +405,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									data-testid="btn-1click-open-shift"
 								>
 									<Unlock size={16} />
-									<span>Открыть кассовую смену 54-ФЗ</span>
+									<span>Открыть кассовую смену</span>
 								</button>
 							</div>
 						</div>

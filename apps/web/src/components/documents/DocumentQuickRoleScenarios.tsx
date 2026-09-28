@@ -40,17 +40,17 @@ export function DocumentQuickRoleScenarios({
 			role="toolbar"
 			aria-label="Быстрые ролевые сценарии и подсказки для администратора"
 		>
-			{/* 1. НАЛОГОВЫЙ ВЫЧЕТ (КНД 1151156) */}
+			{/* 1. НАЛОГОВЫЙ ВЫЧЕТ (13% НДФЛ) */}
 			<button
 				type="button"
 				className="document-scenario-card"
 				onClick={onOpenTaxAccounting}
 				data-testid="scenario-tax-accounting-btn"
-				title="Справка об оплате медицинских услуг для представления в налоговые органы (КНД 1151156) + XML"
+				title="Справка об оплате медицинских услуг для налогового вычета (13% НДФЛ) + XML"
 			>
 				<div className="document-scenario-left">
 					<Building size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-					<span className="document-scenario-title">Справка в ФНС (КНД 1151156)</span>
+					<span className="document-scenario-title">Справка для налоговой (13%)</span>
 				</div>
 				<span className="document-scenario-badge">Для налогового вычета</span>
 			</button>
@@ -97,19 +97,19 @@ export function DocumentQuickRoleScenarios({
 				<span className="document-scenario-badge">Для суда / страховой / работы</span>
 			</button>
 
-			{/* 4. ПРИЁМ ТЕРАПЕВТА / ЭМК 043/У */}
+			{/* 4. ПРИЁМ ТЕРАПЕВТА / МЕД. КАРТА */}
 			<button
 				type="button"
 				className="document-scenario-card"
 				onClick={onOpenClinicalVisit}
 				data-testid="scenario-clinical-visit-btn"
-				title="Карта 043/у (Приказ Минздрава 834н), дневник приёма и протокол осмотра"
+				title="Медицинская карта, дневник приёма и протокол осмотра"
 			>
 				<div className="document-scenario-left">
 					<Stethoscope size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-					<span className="document-scenario-title">Приём терапевта (043/у)</span>
+					<span className="document-scenario-title">Приём терапевта (мед. карта)</span>
 				</div>
-				<span className="document-scenario-badge">Клиническая карта 043/у</span>
+				<span className="document-scenario-badge">Медицинская карта</span>
 			</button>
 
 			{/* 5. ХИРУРГИЧЕСКИЙ ПАКЕТ */}

@@ -389,7 +389,7 @@ export function AutoclaveEquipmentModal({
 				<div className="sanpin-modal-header" style={{ padding: "1.25rem 1.5rem" }}>
 					<h3 style={{ fontSize: "1.15rem", display: "flex", alignItems: "center", gap: "0.5rem", margin: 0 }}>
 						<ShieldCheck size={22} color="var(--brand-primary, #2563eb)" />
-						<span>Парк стерилизаторов клиники (СанПиН 3.3686-21)</span>
+						<span title="Соответствует СанПиН 3.3686-21">Парк стерилизаторов клиники</span>
 					</h3>
 					<button
 						type="button"

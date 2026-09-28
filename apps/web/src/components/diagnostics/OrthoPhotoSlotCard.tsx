@@ -15,13 +15,13 @@ import type {
 
 export interface OrthoPhotoSlotCardProps {
 	angle: OrthodonticAngleDefinition;
-	slot?: OrthodonticPhotoSlot;
+	slot?: OrthodonticPhotoSlot | undefined;
 	globalGuidelinesEnabled: boolean;
 	isDragOver: boolean;
 	isMenuOpen: boolean;
 	onToggleMenu: () => void;
 	onDragOver: (e: React.DragEvent) => void;
-	onDragLeave: () => void;
+	onDragLeave: (e: React.DragEvent) => void;
 	onDrop: (e: React.DragEvent) => void;
 	onTriggerUpload: () => void;
 	onRotate: (e: React.MouseEvent) => void;

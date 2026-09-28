@@ -19,6 +19,7 @@
 import { z } from "zod";
 import { type Kopecks, formatKopecksRu } from "../utils/money.js";
 import { kopecksToRub } from "../fiscal/kopecksArithmetic.js";
+import { escapeHtml } from "../communications/messageTemplates.js";
 
 // ─── 1. STATUS & DATA SCHEMAS ──────────────────────────────────────────────────
 
@@ -639,15 +640,7 @@ export function generateTransferM11DiscrepancyAct(doc: TransferM11Document): Tra
 
 // ─── 5. STATUTORY HTML PRINT RENDERER (ФОРМА № М-11 ОКУД 0315006) ─────────────
 
-function escapeHtml(str: string | null | undefined): string {
-	if (!str) return "";
-	return str
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
+
 
 /**
  * Renders Form M-11 printable HTML document strictly compliant with Russian standard (ОКУД 0315006).

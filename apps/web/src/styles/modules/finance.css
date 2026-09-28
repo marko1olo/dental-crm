@@ -1,0 +1,45 @@
+/* apps/web/src/styles/modules/finance.css
+ * DENTE Dental CRM — Finance Module & Cashbox Ergonomics (Mandates 8c, 8e, 8n)
+ * Cashier toolbar density, debt summaries, 54-FZ status chips, and safe bottom checkout bar.
+ */
+
+.finance-cashbox-container {
+	position: relative;
+	width: 100%;
+	max-width: 100%;
+}
+
+.payment-total-due-banner {
+	transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Disabled state tokens for cashier buttons at 0 balance */
+button[data-testid="payment-sberpos-button"]:disabled,
+button[data-testid="payment-split-modal-button"]:disabled,
+button[data-testid="payment-manual-card-terminal-button"]:disabled {
+	opacity: 0.4 !important;
+	cursor: not-allowed !important;
+}
+
+/* Desktop cashier density */
+@media (min-width: 641px) {
+	.payment-checkout-bar .primary-button,
+	.payment-checkout-bar .secondary-button {
+		min-height: 36px;
+		height: 36px;
+		font-size: 13px;
+	}
+}
+
+/* Mobile cashier bottom bar positioning */
+@media (max-width: 640px) {
+	.payment-checkout-bar {
+		padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+	}
+
+	.payment-checkout-bar .primary-button {
+		min-height: 44px !important;
+		height: 44px !important;
+		font-size: 13px !important;
+	}
+}

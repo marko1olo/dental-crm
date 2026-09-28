@@ -104,6 +104,7 @@ import { registerFiscalReceiptRoutes } from "./routes/fiscal/index.js";
 import { registerSbpQrRoutes } from "./routes/sbpQr.js";
 import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
+import { registerDoctorPreferencesRoutes } from "./routes/doctorPreferencesRoutes.js";
 import { registerStaffRoutes } from "./routes/staff.js";
 import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSpeechRoutes } from "./routes/speech.js";
@@ -732,6 +733,7 @@ export async function createDenteApiApp(
 	await registerPricelistRoutes(app);
 	await registerScheduleRoutes(app);
 	await registerSettingsRoutes(app);
+	await registerDoctorPreferencesRoutes(app);
 	await registerStaffRoutes(app);
 	await registerSpeechRoutes(app);
 	await registerSpeechLiveRoutes(app);

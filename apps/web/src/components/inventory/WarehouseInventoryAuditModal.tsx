@@ -45,7 +45,9 @@ import {
 	generateTorg16Html,
 	kopecksToRubles,
 	sortAuditItemsByFefo,
+	validateInventoryAuditDraft,
 } from "./warehouseInventoryEngine.js";
+
 import { WarehouseInventoryAuditTable } from "./WarehouseInventoryAuditTable.js";
 import { WarehouseInventoryCommissionDrawer } from "./WarehouseInventoryCommissionDrawer.js";
 import { WarehouseInventoryKpisGrid } from "./WarehouseInventoryKpisGrid.js";
@@ -470,7 +472,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 										: status === "approved"
 											? "Утверждена"
 											: status === "reconciliation"
-												? "Сверка (ИНВ-19)"
+												? "Сверка расхождений"
 												: "Черновик"}
 								</span>
 							</div>
@@ -495,20 +497,22 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 							type="button"
 							className="warehouse-btn warehouse-btn-secondary"
 							onClick={() => handlePrintDocument(generateInv3Html(currentDocument))}
-							title="Печать инвентаризационной описи ИНВ-3"
+							title="Печать инвентаризационной описи (ИНВ-3)"
 						>
 							<Printer size={14} />
-							<span>ИНВ-3</span>
+							<span>Инвентаризационная опись</span>
+							<span className="text-[10px] opacity-60 ml-1 font-mono">ИНВ-3</span>
 						</button>
 
 						<button
 							type="button"
 							className="warehouse-btn warehouse-btn-secondary"
 							onClick={() => handlePrintDocument(generateInv19Html(currentDocument))}
-							title="Печать сличительной ведомости ИНВ-19"
+							title="Печать сличительной ведомости (ИНВ-19)"
 						>
 							<FileSpreadsheet size={14} />
-							<span>ИНВ-19</span>
+							<span>Сличительная ведомость</span>
+							<span className="text-[10px] opacity-60 ml-1 font-mono">ИНВ-19</span>
 						</button>
 
 						<button
@@ -643,10 +647,11 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 								type="button"
 								className="warehouse-btn warehouse-btn-danger"
 								onClick={handleCreateTorg16}
-								title="Сформировать акт списания просроченных материалов ТОРГ-16"
+								title="Сформировать акт списания просроченных материалов (ТОРГ-16)"
 							>
 								<PackageX size={14} />
-								<span>Списать по ТОРГ-16 ({totals.expiredItemsCount})</span>
+								<span>Акт списания просрочки ({totals.expiredItemsCount})</span>
+								<span className="text-[10px] opacity-60 ml-1 font-mono">ТОРГ-16</span>
 							</button>
 						)}
 					</div>
@@ -689,10 +694,10 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 							type="button"
 							className="warehouse-btn warehouse-btn-secondary"
 							onClick={handleExportInv19Csv}
-							title="Выгрузить только расхождения (ИНВ-19) в CSV"
+							title="Выгрузить ведомость расхождений (ИНВ-19) в CSV"
 						>
 							<FileSpreadsheet size={14} />
-							<span>CSV (ИНВ-19)</span>
+							<span>CSV (Расхождения)</span>
 						</button>
 
 						<button

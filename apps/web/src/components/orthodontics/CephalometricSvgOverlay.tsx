@@ -19,7 +19,7 @@ export interface CephalometricSvgOverlayProps {
 	onHoverKey: (key: LandmarkKey | null) => void;
 	onStartDrag: (key: LandmarkKey) => void;
 	onSelectTargetKey: (key: LandmarkKey | null) => void;
-	onRemoveLandmark?: (key: LandmarkKey) => void;
+	onRemoveLandmark?: ((key: LandmarkKey) => void) | undefined;
 	viewBoxWidth: number;
 	viewBoxHeight: number;
 	svgRef: React.RefObject<SVGSVGElement | null>;

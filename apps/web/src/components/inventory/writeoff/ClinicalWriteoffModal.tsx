@@ -380,12 +380,16 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 					<div className="cw-modal-title" id="cw-modal-title">
 						<PackageCheck size={26} className="text-teal-600 shrink-0" />
 						<div className="min-w-0">
-							<div className="font-bold text-lg leading-tight truncate">
-								Клиническое автосписание материалов (Приказ № 804н)
+							<div
+								className="font-bold text-lg leading-tight truncate"
+								title="Клиническое списание материалов по стандартам Минздрава РФ (804н)"
+							>
+								Клиническое списание материалов
 							</div>
 							<div className="text-xs font-normal text-muted flex items-center gap-2 mt-0.5 truncate">
-								<span>Нормы Минздрава РФ</span> • <span>Партии FEFO</span> •{" "}
-								<span>Акты 0504230 / М-11 / ТОРГ-16</span>
+								<span>Клинические нормы</span> • <span>Партии FEFO</span> •{" "}
+								<span>Акты списания материалов</span>
+								<span className="text-[10px] opacity-60 ml-0.5 font-mono">(М-11 / ТОРГ-16)</span>
 							</div>
 						</div>
 					</div>
@@ -616,20 +620,22 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 										type="button"
 										className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
 										onClick={() => handlePrintAct("M11")}
-										title="Печать Требования-накладной М-11"
+										title="Печать Требования-накладной на списание (форма М-11)"
 									>
 										<FileText size={14} className="text-teal-600" />
-										<span>Накладная М-11</span>
+										<span>Накладная на списание</span>
+										<span className="text-[10px] opacity-60 ml-auto font-mono">М-11</span>
 									</button>
 
 									<button
 										type="button"
 										className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
 										onClick={() => handlePrintAct("TORG16")}
-										title="Печать Акта о списании товаров ТОРГ-16"
+										title="Печать Акта о списании материалов (форма ТОРГ-16)"
 									>
 										<FileText size={14} className="text-teal-600" />
-										<span>Акт ТОРГ-16</span>
+										<span>Акт списания материалов</span>
+										<span className="text-[10px] opacity-60 ml-auto font-mono">ТОРГ-16</span>
 									</button>
 
 									<button

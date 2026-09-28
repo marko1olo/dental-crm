@@ -13,6 +13,20 @@ export interface FefoTrafficLightInfo {
 	readonly tooltip: string;
 }
 
+export type ExpiryTrafficLight = FefoTrafficLightInfo;
+
+export interface FefoTrafficLightOptions {
+	/** Порог критического срока (красная зона) в днях. В складском учете: <= 30 дней. */
+	readonly redDays?: number;
+	/** Порог приближающегося срока (желтая зона) в днях. В складском учете: <= 90 дней. */
+	readonly yellowDays?: number;
+	/**
+	 * Включить складской режим FEFO:
+	 * Красный (<= 30 дней), Желтый (<= 90 дней), Зеленый (> 90 дней).
+	 */
+	readonly warehouseMode?: boolean;
+}
+
 /** Русское склонение дней: 1 день, 2 дня, 5 дней. */
 export function daysLabel(count: number): string {
 	const absCount = Math.abs(count);
@@ -27,13 +41,20 @@ export function daysLabel(count: number): string {
 /**
  * Автоматический FEFO-светофор срока годности расходников и анестетиков.
  * First Expired, First Out (СанПиН 3.3686-21, Мандаты 8e, 8n, 8v):
+ * По умолчанию (у кресла врача):
  * 1. Зеленый (green): срок в норме (> 30 дней) — плановое использование.
  * 2. Желтый (yellow): истекает скоро (1..30 дней) — первоочередной отпуск/списание по FEFO.
- * 3. Красный (red): просрочено (<= 0 дней) — запрет применения у кресла, немедленная утилизация (Класс Б).
+ * 3. Красный (red): просрочено (<= 0 дней) — запрет применения у кресла.
+ *
+ * Складской режим (warehouseMode):
+ * 1. Красный: <= 30 дней (критический срок / просрочено)
+ * 2. Желтый: <= 90 дней (31..90 дней — FEFO приоритет)
+ * 3. Зеленый: > 90 дней (норма)
  */
 export function getFefoTrafficLight(
 	expirationDateIso: string | null | undefined,
 	referenceDate: string | Date = new Date(),
+	options?: FefoTrafficLightOptions,
 ): FefoTrafficLightInfo {
 	if (!expirationDateIso || !expirationDateIso.trim()) {
 		return {
@@ -92,7 +113,21 @@ export function getFefoTrafficLight(
 	const daysLeft = Math.round((expUtc - refUtc) / 86400000);
 	const readable = exp.toLocaleDateString("ru-RU");
 
-	// 1. Красный (Просрочен / истекает сегодня)
+	const isWarehouse = options?.warehouseMode === true;
+	const redThreshold =
+		options?.redDays !== undefined
+			? options.redDays
+			: isWarehouse
+				? 30
+				: 0;
+	const yellowThreshold =
+		options?.yellowDays !== undefined
+			? options.yellowDays
+			: isWarehouse
+				? 90
+				: 30;
+
+	// 1. Красный (Просрочен / истекает сегодня / критический срок <= redThreshold)
 	if (daysLeft < 0) {
 		return {
 			status: "red",
@@ -125,8 +160,23 @@ export function getFefoTrafficLight(
 		};
 	}
 
-	// 2. Желтый (FEFO приоритет — истекает скоро)
-	if (daysLeft <= 30) {
+	if (daysLeft <= redThreshold) {
+		return {
+			status: "red",
+			daysLeft,
+			label: `Годен до ${readable} — ${daysLabel(daysLeft)}`,
+			badgeText: "Критический срок (≤30 дн)",
+			className: "inventory-expiry-expired",
+			dotColor: "#ef4444",
+			bgClass: "bg-rose-500/10 dark:bg-rose-950/40",
+			textClass: "text-rose-700 dark:text-rose-300",
+			borderClass: "border-rose-500/30",
+			tooltip: `Критический остаточный срок (${daysLabel(daysLeft)}) — приоритетная утилизация или отпуск по FEFO`,
+		};
+	}
+
+	// 2. Желтый (FEFO приоритет — истекает скоро, <= yellowThreshold)
+	if (daysLeft <= yellowThreshold) {
 		return {
 			status: "yellow",
 			daysLeft,
@@ -141,7 +191,7 @@ export function getFefoTrafficLight(
 		};
 	}
 
-	// 3. Зеленый (FEFO норма)
+	// 3. Зеленый (FEFO норма — > yellowThreshold)
 	return {
 		status: "green",
 		daysLeft,
@@ -154,4 +204,17 @@ export function getFefoTrafficLight(
 		borderClass: "border-emerald-500/30",
 		tooltip: `Срок годности в норме (осталось ${daysLeft} дн., FEFO OK)`,
 	};
+}
+
+/**
+ * Складской FEFO-светофор срока годности (Мандаты 8e, 8n):
+ * 1. Красный: <= 30 дней (критический срок / просрочено)
+ * 2. Желтый: <= 90 дней (31..90 дней — FEFO приоритет)
+ * 3. Зеленый: > 90 дней (срок в норме)
+ */
+export function getWarehouseFefoTrafficLight(
+	expirationDateIso: string | null | undefined,
+	referenceDate: string | Date = new Date(),
+): FefoTrafficLightInfo {
+	return getFefoTrafficLight(expirationDateIso, referenceDate, { warehouseMode: true });
 }

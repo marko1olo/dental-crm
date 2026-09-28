@@ -159,7 +159,7 @@ export const WaitlistCandidateCard: React.FC<WaitlistCandidateCardProps> = ({
 									? "bg-emerald-600 text-white"
 									: "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)]"
 							}`}
-							title="Записать пациента в освободившийся слот в 1 клик с генерацией шаблона 152-ФЗ"
+							title="Записать пациента в освободившийся слот в 1 клик с генерацией шаблона сообщения"
 							data-testid={`waitlist-book-slot-btn-${item.id}`}
 						>
 							<Zap
@@ -212,7 +212,7 @@ export const WaitlistCandidateCard: React.FC<WaitlistCandidateCardProps> = ({
 									? "bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30"
 									: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]"
 							}`}
-							title="Предложить окно через WhatsApp (шаблон 152-ФЗ)"
+							title="Предложить окно через WhatsApp (стандартное уведомление)"
 							data-testid={`waitlist-whatsapp-btn-${item.id}`}
 						>
 							{isContacted ? (
@@ -262,7 +262,7 @@ export const WaitlistCandidateCard: React.FC<WaitlistCandidateCardProps> = ({
 								data-testid={`waitlist-copy-sms-${item.id}`}
 							>
 								<Copy className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
-								<span>Скопировать SMS (152-ФЗ)</span>
+								<span>Скопировать SMS</span>
 							</button>
 
 							{item.patientPhone && (

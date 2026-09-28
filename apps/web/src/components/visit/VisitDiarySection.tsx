@@ -645,7 +645,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			aria-label="Медицинская карта Форма 043/у"
 		>
 			<div className="vde-043-print-sheet print-content">
-				<div className="vde-043-print-toolbar no-print flex items-center justify-between gap-2 p-3 bg-[var(--paper-soft)] border-b border-[var(--line)]">
+				<div className="vde-043-print-toolbar no-print flex items-center justify-between gap-2 p-3 bg-[var(--paper-soft)] border-b border-[var(--glass-border)]">
 					<div className="flex items-center gap-2">
 						<Printer className="w-5 h-5 text-[var(--teal)]" />
 						<h3 className="text-sm font-bold m-0">
@@ -806,7 +806,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию"
 					>
 						<CheckCircle2 className="w-4 h-4 text-emerald-600" />
-						Норма (1-клик)
+						Норма
 					</button>
 					<button
 						type="button"
@@ -832,7 +832,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						</button>
 						{isExtraActionsOpen && (
 							<div
-								className="absolute right-0 top-full mt-1 z-50 min-w-[210px] p-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg flex flex-col gap-1 text-xs"
+								className="absolute right-0 top-full mt-1 z-50 min-w-[210px] p-1 bg-[var(--paper-strong)] border border-[var(--glass-border)] rounded-xl shadow-lg flex flex-col gap-1 text-xs"
 								style={{ minWidth: "210px" }}
 							>
 								<button
@@ -846,7 +846,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										}
 										handleApplyFullPhysiologicalNorm();
 									}}
-									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+									className="sm:hidden flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
 									title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию"
 								>
 									<CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -960,7 +960,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			{!fieldsDisabled && (
 				<details
 					open
-					className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-3 text-xs mb-1"
+					className="group rounded-xl border border-[var(--glass-border)] bg-[var(--paper-soft)] p-3 text-xs mb-1"
 					data-testid="fast-clinical-presets-bar"
 				>
 					<summary className="cursor-pointer font-bold text-xs text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-between select-none list-none">
@@ -1001,7 +1001,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								data-testid="diary-norm-043-btn"
 							>
 								<ShieldCheck className="w-3.5 h-3.5 text-[var(--ok-fg)] shrink-0" />
-								<span className="whitespace-nowrap">Норма (1-клик)</span>
+								<span className="whitespace-nowrap">Норма</span>
 							</button>
 
 							{/* Unified Perio Assessment Pill (Norm + Pathology Dropdown) */}
@@ -1085,7 +1085,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									key={preset.id}
 									type="button"
 									onClick={() => applyClinicalPreset(preset.id)}
-									className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[42px] sm:min-h-[44px] rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--line)] text-xs sm:text-sm font-bold text-[var(--ink)] hover:border-[var(--teal)] transition-all shrink-0 flex-shrink-0 shadow-xs touch-manipulation min-w-max whitespace-nowrap cursor-pointer"
+									className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[42px] sm:min-h-[44px] rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] border border-[var(--glass-border)] shadow-2xs text-xs sm:text-sm font-bold text-[var(--ink)] hover:border-[var(--teal)] transition-all shrink-0 flex-shrink-0 shadow-xs touch-manipulation min-w-max whitespace-nowrap cursor-pointer"
 									title={preset.description}
 									data-testid={`preset-btn-${preset.id}`}
 								>
@@ -1128,7 +1128,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			{/* ── Anesthesia Quick Bar & Dosage Calculator (Tier 2 Warm Context) ── */}
 			{!fieldsDisabled && (
 				<details
-					className="group rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] p-3.5 text-xs mb-2 shadow-xs"
+					className="group rounded-2xl border border-[var(--glass-border)] bg-[var(--paper-soft)] p-3.5 text-xs mb-2 shadow-xs"
 					data-testid="anesthesia-quick-logger-bar"
 				>
 					<summary className="cursor-pointer font-bold text-xs text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-between select-none list-none">
@@ -1385,7 +1385,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										className={`text-xs min-h-[36px] px-2.5 py-1 rounded-lg font-semibold border transition-all cursor-pointer inline-flex items-center gap-1 select-none shrink-0 ${
 											isApplied
 												? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 font-bold"
-												: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
+												: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--glass-border)]"
 										}`}
 										title={
 											isApplied
@@ -1588,7 +1588,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 
 						<div className="vde-043__field">
 							<label className="vde-043__label" htmlFor="diary-tooth">
-								Зуб (FDI)
+								Зуб
 							</label>
 							<input
 								id="diary-tooth"
@@ -1670,7 +1670,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					)}
 					{!fieldsDisabled && (
 						<div
-							className="mt-2 p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-1.5"
+							className="mt-2 p-2.5 rounded-lg border border-[var(--glass-border)] bg-[var(--paper-soft)] flex flex-col gap-1.5"
 							data-testid="patient-recommendations-bar"
 						>
 							<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
@@ -1689,7 +1689,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 											);
 											scheduleDebouncedSave();
 										}}
-										className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-colors shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
+										className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--glass-border)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-colors shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
 										title={rec.text}
 										data-testid={`rec-btn-${rec.id}`}
 									>
@@ -1895,9 +1895,9 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						onClick={() => setShowPreview(true)}
 						className="vde-043__btn vde-043__btn--ghost"
 						data-testid="diary-form-043-open"
-						title="Печать формы 043/у (в черновике или закрытом визите)"
+						title="Печать медицинской карты (Форма 043/у)"
 					>
-						<Printer className="w-3.5 h-3.5" /> Форма 043/у
+						<Printer className="w-3.5 h-3.5" /> Печать карты
 					</button>
 				</div>
 			)}
@@ -2145,7 +2145,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								<div className="flex items-center gap-2">
 									<BarChart2 className="w-5 h-5 text-teal-400" />
 									<h3 className="text-base font-bold text-[var(--ink,#f8fafc)]">
-										Пародонтологическая карта (6 точек зондирования & Статус 043/у)
+										Пародонтологическая карта (6 точек зондирования & Статус)
 									</h3>
 								</div>
 								<button
@@ -2180,7 +2180,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										}));
 										scheduleDebouncedSave();
 										setIsTier3PerioModalOpen(false);
-										ctx.showToast?.("Пародонтограмма перенесена в дневник 043/у", "success");
+										ctx.showToast?.("Пародонтограмма перенесена в дневник приёма", "success");
 									}}
 								/>
 							</Suspense>

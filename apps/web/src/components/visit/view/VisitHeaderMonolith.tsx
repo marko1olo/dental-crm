@@ -333,7 +333,7 @@ export function VisitHeaderMonolith({
 							}}
 							className={`min-h-[26px] h-[26px] px-2 rounded-md flex items-center gap-1 transition-all cursor-pointer ${
 								shiftDayQueue.awaitingPayment > 0
-									? "bg-slate-500/15 text-slate-800 dark:text-slate-200 border border-slate-500/40 hover:bg-slate-500/25"
+									? "bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--glass-border)] hover:bg-[var(--paper-soft)]"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="visit-queue-tab-completed"
@@ -341,12 +341,12 @@ export function VisitHeaderMonolith({
 						>
 							<CheckCircle2
 								size={12}
-								className="shrink-0 text-slate-600 dark:text-slate-400"
+								className="shrink-0 text-[var(--teal,#0d9488)]"
 							/>
 							<span className="text-[11px] whitespace-nowrap">Оплата</span>
 							<span
 								data-testid="visit-queue-count-completed"
-								className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-600 text-white"
+								className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[var(--teal,#0d9488)] text-white"
 							>
 								{shiftDayQueue.awaitingPayment}
 							</span>

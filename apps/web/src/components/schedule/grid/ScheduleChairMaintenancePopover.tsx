@@ -44,7 +44,7 @@ export function ScheduleChairMaintenancePopover({
 
       <div className="flex flex-col gap-1.5">
         <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider">
-          Санитарная обработка (СанПиН 3.3686-21):
+          Санитарная обработка кабинета:
         </span>
         <div className="grid grid-cols-3 gap-1">
           <button
@@ -59,11 +59,11 @@ export function ScheduleChairMaintenancePopover({
               onClose();
             }}
             className="h-7 min-h-[28px] px-1.5 py-0.5 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 flex items-center justify-center gap-1 text-[11px] font-bold text-amber-900 dark:text-amber-200 cursor-pointer transition-all shadow-2xs"
-            title="Санитарный буфер СанПиН 3.3686-21 (15 мин)"
+            title="Санитарная обработка кресла (15 мин)"
             data-testid={`btn-maintenance-sanpin-15-${chair.id}`}
           >
             <Clock size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
-            <span>15м СанПиН</span>
+            <span>15м Санобработка</span>
           </button>
           <button
             type="button"

@@ -744,9 +744,13 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			{/* ── ТУЛБАР 1 СТРОКА (ХИК / HIG: 32-36px кнопки) ── */}
 			<div className="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--paper-soft)] border-b border-[var(--line)] overflow-x-auto scrollbar-none flex-nowrap min-h-[36px]">
 				<div className="flex items-center gap-2 shrink-0">
-					<div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-[var(--muted)]">
+					<div
+						className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-[var(--muted)]"
+						aria-label="Форма 043/у • SOAP"
+						title="Форма 043/у • SOAP"
+					>
 						<FileText className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-						<span>Форма 043/у • SOAP</span>
+						<span>Медицинская карта • Дневник приёма</span>
 					</div>
 
 					{/* Селектор целевого зуба */}
@@ -821,10 +825,11 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
 						data-testid="btn-open-stomt-templates"
 						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer bg-teal-600 hover:bg-teal-700 text-white transition-colors shadow-xs"
-						title="Открыть каталог 448 клинических шаблонов 043/у из StomX"
+						title="Открыть каталог 448 клинических шаблонов из StomX"
+						aria-label="Шаблоны 043/у (448)"
 					>
 						<Sparkles className="w-3.5 h-3.5" />
-						<span>Шаблоны 043/у (448)</span>
+						<span>Клинические шаблоны (448)</span>
 					</button>
 
 					{/* Физиологическая норма в 1 клик (Мандат 8e: никогда не disabled!) */}
@@ -833,12 +838,11 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						onClick={handleApplyNorm}
 						data-testid="btn-soap-physio-norm"
 						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 transition-colors"
-						title="Соматически здоров / норма (1-клик): зафиксировать физиологическую норму в карте 043/у"
-						aria-label="Соматически здоров / Норма (1-клик)"
+						title="Соматически здоров / норма: зафиксировать физиологическую норму в дневнике приёма"
+						aria-label="Соматически здоров / Норма"
 					>
 						<Check className="w-3.5 h-3.5" />
-						<span className="hidden md:inline">Соматически здоров / Норма</span>
-						<span className="md:hidden">Норма</span>
+						<span>Норма</span>
 					</button>
 
 					{/* Переключение режима отображения */}
@@ -882,7 +886,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						disabled={false}
 						data-testid="btn-soap-save"
 						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border border-[var(--teal-surface,var(--teal))] transition-colors"
-						title="Сохранить дневник 043/у сейчас"
+						title="Сохранить дневник приёма сейчас"
 						aria-label="Сохранить дневник"
 					>
 						<Check className="w-3.5 h-3.5 text-[var(--teal)]" />
@@ -940,18 +944,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
 								>
 									<Printer className="w-4 h-4 text-sky-600 shrink-0" />
-									<span>Печать Формы 043/у</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setIsSoapMoreOpen(false);
-										handleApplyNorm();
-									}}
-									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
-								>
-									<Check className="w-4 h-4 text-emerald-600 shrink-0" />
-									<span>Норма в 1 клик</span>
+									<span>Печать карты</span>
 								</button>
 							</div>
 						)}
@@ -990,8 +983,12 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					<div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-[var(--line)]">
 						<div className="flex items-center gap-2">
 							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-							<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
-								Клинические протоколы StomX (448 шаблонов 043/у)
+							<span
+								className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]"
+								aria-label="Клинические протоколы StomX (448 шаблонов 043/у)"
+								title="Клинические протоколы StomX (448 шаблонов 043/у)"
+							>
+								Клинические протоколы StomX (448 протоколов)
 							</span>
 						</div>
 						<button
@@ -1194,7 +1191,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							>
 								Жалобы (Subjective / Complaints)
 							</label>
-							<span className="text-[10px] text-[var(--muted)]">Форма 043/у</span>
+							<span className="text-[10px] text-[var(--muted)]">Дневник</span>
 						</div>
 						<textarea
 							id="soap-complaints"
@@ -1558,7 +1555,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								? "bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] shadow-2xs"
 								: "text-[var(--muted)]"
 						}`}
-						title="Печатный предпросмотр 043/у"
+						title="Печатный предпросмотр"
 					>
 						<Eye className="w-3.5 h-3.5" />
 					</button>

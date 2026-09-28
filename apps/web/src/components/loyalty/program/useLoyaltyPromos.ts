@@ -4,10 +4,13 @@ import { evaluatePromoCode, type Fiscal54FzSplitResult } from "./loyaltyEngine";
 export interface UseLoyaltyPromosProps {
 	readonly invoiceAmountRub: number;
 	readonly setInvoiceAmountRub: (val: number) => void;
-	readonly onRedeemSuccess?: (
-		redeemedPointsRub: number,
-		fiscalSplit: Fiscal54FzSplitResult
-	) => void;
+	readonly onRedeemSuccess?:
+		| ((
+				redeemedPointsRub: number,
+				fiscalSplit: Fiscal54FzSplitResult,
+		  ) => void)
+		| undefined;
+
 	readonly setRedemptionSuccessMsg: (msg: string | null) => void;
 	readonly setActiveTab: (tab: any) => void;
 }

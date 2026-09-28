@@ -226,6 +226,13 @@ import {
 import { mprProjectionCompassLabels, buildMprAxisGuidance } from "./mprControlMath";
 import { actionFailureToast } from "./lib/panelStateText";
 import { safeLocalStorageSetItem } from "./lib/safeLocalStorage";
+import {
+	ensureCrossTabSyncInitialized,
+	onCrossTabVisitStatusChange,
+	onCrossTabPatientBalanceChange,
+	onCrossTabClinicalEntityChange,
+	scheduleStoragePruneIdle,
+} from "./services/storage";
 import { describeMprClinicalPresetProjectionFallback } from "./mprClinicalStatus";
 import {
 	dentalMaterialKindLabels,
@@ -3417,6 +3424,59 @@ export function useAppLogic(): any {
 	]);
 
 	useEffect(() => {
+		ensureCrossTabSyncInitialized();
+		scheduleStoragePruneIdle();
+
+		const unsubVisitStatus = onCrossTabVisitStatusChange((payload) => {
+			logger.info("[useAppLogic] Cross-tab visit status changed:", payload);
+			setDashboard((prev: Dashboard | null) => {
+				if (!prev) return prev;
+				let changed = false;
+				let updatedActiveVisit = prev.activeVisit;
+				if (prev.activeVisit && prev.activeVisit.id === payload.visitId) {
+					updatedActiveVisit = {
+						...prev.activeVisit,
+						status: payload.status as any,
+					};
+					changed = true;
+				}
+				const updatedAppointments = prev.appointments?.map((apt) => {
+					if (apt.id === payload.visitId) {
+						changed = true;
+						return { ...apt, status: payload.status as any };
+					}
+					return apt;
+				});
+				if (!changed) return prev;
+				return {
+					...prev,
+					activeVisit: updatedActiveVisit,
+					appointments: updatedAppointments || prev.appointments,
+				};
+			});
+			void loadDashboard();
+		});
+
+		const unsubBalance = onCrossTabPatientBalanceChange((payload) => {
+			logger.info("[useAppLogic] Cross-tab patient balance changed:", payload);
+			void loadDashboard();
+		});
+
+		const unsubClinical = onCrossTabClinicalEntityChange((payload) => {
+			logger.info("[useAppLogic] Cross-tab clinical entity changed:", payload);
+			if (payload.entityType === "appointment" || payload.entityType === "payment") {
+				void loadDashboard();
+			}
+		});
+
+		return () => {
+			unsubVisitStatus();
+			unsubBalance();
+			unsubClinical();
+		};
+	}, [loadDashboard, setDashboard]);
+
+	useEffect(() => {
 		if (!dashboard) return;
 		void loadSpeechRecordingStrategy({ silent: true });
 	}, [dashboard?.activeVisit?.id, loadSpeechRecordingStrategy, dashboard]);
@@ -5068,7 +5128,7 @@ export function useAppLogic(): any {
 		imagingComparisonCandidates: [],
 		imagingKindOptions,
 		imagingViewerImageStyle: null,
-		inn: documentPatient?.administrativeProfile?.inn ?? "",
+		inn: documentPatient?.administrativeProfile?.taxpayerInn ?? "",
 		lastName: documentPatient?.fullName?.split(" ")[0] ?? "",
 		loadSpeechRecordingRecovery: async () => {},
 		localBridgeStatusState: "",

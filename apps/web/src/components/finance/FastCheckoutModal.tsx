@@ -14,7 +14,6 @@ import {
 	Layers,
 	RefreshCw,
 	ArrowRight,
-	Globe,
 	Users,
 	ChevronDown,
 	Zap,
@@ -25,9 +24,6 @@ import {
 	Send,
 } from "lucide-react";
 import {
-	convertRubToForeignCurrency,
-	type SupportedCurrency,
-	CBR_CURRENCIES,
 	buildFiscalReceiptPayloadSignature,
 	createFiscalCompositeIdempotencyKey,
 } from "@dental/shared";
@@ -166,7 +162,6 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	const [isSimpleCashierMode, setIsSimpleCashierMode] = useState<boolean>(
 		initialSimpleCashierMode ?? true
 	);
-	const [selectedForeignCurrency, setSelectedForeignCurrency] = useState<SupportedCurrency>("USD");
 	const [clientType, setClientType] = useState<ClientLegalType>("physical_person");
 	const [buyerInn, setBuyerInn] = useState<string>("");
 	const [buyerName, setBuyerName] = useState<string>("");
@@ -209,14 +204,6 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		: effectiveBillKop;
 	const targetBillRub = targetBillKop / 100;
 	const effectiveTotalRub = targetBillRub;
-
-	const foreignCalc = useMemo(() => {
-		return convertRubToForeignCurrency({
-			amountRubKopecks: effectiveBillKop,
-			targetCurrency: selectedForeignCurrency,
-			bankSpreadPercent: 2.0,
-		});
-	}, [effectiveBillKop, selectedForeignCurrency]);
 
 	const effectiveSbpAmountRub = sbpAmountRub > 0 ? sbpAmountRub : targetBillRub;
 	const effectiveSbpKopecks = Math.round(effectiveSbpAmountRub * 100);
@@ -648,7 +635,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							cashAmountRub: effectiveCashRub > 0 ? effectiveCashRub : undefined,
 							electronicAmountRub: (effectiveCardRub + effectiveSbpRub) > 0 ? Number((effectiveCardRub + effectiveSbpRub).toFixed(2)) : undefined,
 							clientMutationId: compositeIdempotencyKey,
-							note: `Быстрый расчет 54-ФЗ (${effectiveCashierFullName})${noteSuffix}: ${isSplitPayment ? `сплит (нал: ${effectiveCashRub} ₽, безнал: ${(effectiveCardRub + effectiveSbpRub).toFixed(2)} ₽)` : primaryMethod}`,
+							note: `Быстрый расчет (${effectiveCashierFullName})${noteSuffix}: ${isSplitPayment ? `сплит (нал: ${effectiveCashRub} ₽, безнал: ${(effectiveCardRub + effectiveSbpRub).toFixed(2)} ₽)` : primaryMethod}`,
 						}),
 					}).catch((fetchErr) => {
 						console.warn("[FastCheckoutModal] /api/billing/payments error:", fetchErr);
@@ -728,7 +715,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			);
 			setIsOfflineBuffered(true);
 			showToast(
-				"Платёж сохранён в буфер отложенной фискализации 54-ФЗ. Пациент рассчитан, стойка свободна!",
+				"Платёж сохранён в буфер отложенной фискализации. Пациент рассчитан, стойка свободна!",
 				"success"
 			);
 
@@ -806,11 +793,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			} else {
 				if (isElectronicReceiptOnly) {
 					showToast(
-						`Электронный чек 54-ФЗ отправлен на ${patientPhone || patientEmail || "контакт пациента"} (бумага сэкономлена)!`,
+						`Электронный чек отправлен на ${patientPhone || patientEmail || "контакт пациента"} (бумага сэкономлена)!`,
 						"success"
 					);
 				} else {
-					showToast("Чек 54-ФЗ успешно пробит на кассовом аппарате!", "success");
+					showToast("Кассовый чек успешно напечатан!", "success");
 				}
 
 				if (onPaymentComplete) {
@@ -859,7 +846,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			});
 			setIsOfflineBuffered(true);
 			showToast(
-				"ККТ не отвечает: чек сохранен в локальный буфер отложенной фискализации 54-ФЗ. Пациент отпущен!",
+				"ККТ не отвечает: чек сохранен в локальный буфер отложенной фискализации. Пациент отпущен!",
 				"warning"
 			);
 
@@ -890,7 +877,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				if (data && (data.paid || data.status === "paid")) {
 					setSbpStatus("paid");
 					setSbpCheckMessage("Оплата по СБП подтверждена банком! Формируем фискальный чек...");
-					showToast("Оплата через СБП подтверждена! Чек 54-ФЗ (Тег 1081) сформирован.", "success");
+					showToast("Оплата через СБП подтверждена! Кассовый чек сформирован.", "success");
 					await handleExecutePayment(false);
 					return;
 				}
@@ -927,8 +914,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			}).catch(() => null);
 
 			setSbpStatus("paid");
-			setSbpCheckMessage("Поступление средств по СБП подтверждено кассиром. Формируем чек 54-ФЗ...");
-			showToast("Оплата СБП подтверждена кассиром! Пробиваем фискальный чек 54-ФЗ...", "success");
+			setSbpCheckMessage("Поступление средств по СБП подтверждено кассиром. Формируем кассовый чек...");
+			showToast("Оплата СБП подтверждена кассиром! Печатаем кассовый чек...", "success");
 			await handleExecutePayment(false);
 		} catch {
 			setSbpStatus("paid");
@@ -1080,7 +1067,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			});
 
 			if (printResult.success) {
-				showToast("Чек 54-ФЗ успешно фискализирован на ККТ без повторного изменения баланса!", "success", 4500);
+				showToast("Кассовый чек успешно фискализирован на ККТ без повторного изменения баланса!", "success", 4500);
 				setInterruptedPaymentState(null);
 			} else {
 				const res = await FiscalReceiptQueueManager.flushAllPending();
@@ -1134,7 +1121,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						</div>
 						<div className="min-w-0">
 							<h2 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] truncate flex items-center gap-2 m-0">
-								1-Клик Оплата приема & Фискализация 54-ФЗ
+								1-Клик Оплата приема & Кассовый чек
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5 truncate">
 								{patientName} • Заказ #{orderId} • К оплате: <span className="font-bold font-mono text-teal-700 dark:text-teal-300">{(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
@@ -1220,7 +1207,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						<ArrowRight size={12} className="text-[var(--muted,#64748b)] shrink-0" />
 						<div className={`flex items-center gap-1.5 font-bold min-w-0 ${validation.isValid ? "text-emerald-700 dark:text-emerald-300" : "text-amber-600"}`}>
 							<span className={`inline-flex items-center justify-center w-4 h-4 rounded-full ${validation.isValid ? "bg-emerald-600" : "bg-amber-500"} text-white text-[9px] shrink-0`}>3</span>
-							<span className="truncate">Чек 54-ФЗ</span>
+							<span className="truncate">Кассовый чек</span>
 						</div>
 						<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center min-w-0">
 							<ShieldCheck size={13} className="inline mr-1 shrink-0 text-emerald-500" />
@@ -1297,7 +1284,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								onClick={() => handleQuickPreset("use_deposit")}
 								className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-amber-500/40 bg-[var(--paper,#ffffff)] hover:bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-use-deposit"
-								title="Списать аванс / депозит пациента по Тегу 1215 54-ФЗ с доплатой картой"
+								title="Списать аванс / депозит пациента с зачетом аванса и доплатой картой"
 							>
 								<Coins size={14} className="shrink-0 text-amber-600" />
 								<span className="truncate">Аванс + Карта</span>
@@ -1487,7 +1474,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										<Sparkles size={14} className="text-amber-600 shrink-0" />
 										<span>Округление до сотен: копейки списаны в пользу пациента. К оплате: {(discountCalc.netKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
 									</div>
-									<span className="text-[11px] font-mono text-amber-700 dark:text-amber-300">54-ФЗ / Точность до копейки</span>
+									<span className="text-[11px] font-mono text-amber-700 dark:text-amber-300">Касса / Точность до копейки</span>
 								</div>
 							)}
 							{discountPreset === "warranty_100" && (
@@ -1567,7 +1554,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						<div className="flex items-center justify-between flex-wrap gap-1">
 							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
 								<Sparkles size={14} className="text-teal-600" />
-								Режим фискализации этапа (54-ФЗ):
+								Режим фискализации этапа:
 							</span>
 							<span className="text-[11px] font-mono font-bold text-teal-700 dark:text-teal-300">
 								Тег 1214: {stageCalc.ffdTag1214NameRu}
@@ -1627,7 +1614,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						{stagePaymentMode === "advance_offset_tag1215" && (
 							<div className="mt-1 p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs flex items-center justify-between flex-wrap gap-2 text-purple-950 dark:text-purple-100">
 								<div>
-									<strong>Зачет ранее внесенного аванса:</strong> {(stageCalc.advanceOffsetTag1215Kop / 100).toLocaleString("ru-RU")} ₽ по Тегу 1215 54-ФЗ
+									<strong>Зачет ранее внесенного аванса:</strong> {(stageCalc.advanceOffsetTag1215Kop / 100).toLocaleString("ru-RU")} ₽ (зачет аванса)
 								</div>
 								<div className="font-mono font-bold">
 									К доплате сейчас: {(stageCalc.requiredAmountKop / 100).toLocaleString("ru-RU")} ₽
@@ -1641,7 +1628,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						<div className="flex items-center justify-between flex-wrap gap-2">
 							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
 								<Building2 size={14} className="text-teal-600" />
-								Тип плательщика и 54-ФЗ (Тег 1228):
+								Тип плательщика (реквизиты чека):
 							</span>
 							{clientType === "physical_person" && (
 								<span
@@ -1700,7 +1687,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								{buyerInn && buyerInn.length !== 12 && (
 									<p className="text-[10px] text-amber-600 dark:text-amber-400 m-0 mt-0.5 flex items-center gap-1 font-medium">
 										<ShieldCheck size={12} className="text-emerald-500 shrink-0" />
-										<span>ИНН физлица обычно 12 цифр (для 54-ФЗ опционально, оплата не блокируется)</span>
+										<span>ИНН физлица обычно 12 цифр (для чека опционально, оплата не блокируется)</span>
 									</p>
 								)}
 							</div>
@@ -1842,7 +1829,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						<div className="flex flex-wrap items-center justify-between gap-2">
 							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
 								<Layers size={14} className="text-teal-600" />
-								Разделение оплаты (Сплит 54-ФЗ):
+								Разделение оплаты (Сплит):
 							</span>
 
 							{/* 1-Click Remainder Balancer Buttons */}
@@ -2085,7 +2072,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										Сумма: {effectiveSbpAmountRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</p>
 									<span className="text-[11px] text-emerald-600 dark:text-emerald-400">
-										Транзакция подтверждена • Чек 54-ФЗ успешно сформирован
+										Транзакция подтверждена • Кассовый чек успешно сформирован
 									</span>
 								</div>
 							) : (
@@ -2255,86 +2242,45 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						</div>
 					)}
 
-					{/* Tier 2 (Факультатив: Медтуризм / Мультивалюта ЦБ РФ & Семейный депозит) */}
-					<div className="rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] overflow-hidden transition-all">
-						<button
-							type="button"
-							onClick={() => setIsTier2Open((prev) => !prev)}
-							className="w-full p-3 flex items-center justify-between text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
-							aria-expanded={isTier2Open}
-						>
-							<div className="flex items-center gap-2">
-								<Globe size={14} className="text-teal-600 dark:text-teal-400" />
-								<span>Факультатив: Медтуризм, Валюта ЦБ РФ & Семейный счет (Tier 2)</span>
-							</div>
-							<ChevronDown
-								size={16}
-								className={`transition-transform duration-200 ${isTier2Open ? "rotate-180 text-teal-600" : "text-[var(--muted,#64748b)]"}`}
-							/>
-						</button>
-
-						{isTier2Open && (
-							<div className="p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-4 text-xs">
-								{/* Multi-Currency Medical Tourism Calculator */}
-								<div className="flex flex-col gap-2">
-									<div className="flex items-center justify-between flex-wrap gap-1">
-										<span className="font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-											<Globe size={14} className="text-teal-600" />
-											Многовалютный калькулятор (ЦБ РФ):
-										</span>
-										<span className="text-xs text-[var(--muted,#64748b)] font-mono">
-											Курс ЦБ: 1 {selectedForeignCurrency} = {foreignCalc.officialCbrRateRub.toFixed(2)} ₽
-										</span>
-									</div>
-
-									<div className="flex items-center gap-1.5 flex-wrap">
-										{(["USD", "EUR", "KZT", "BYN", "CNY", "AED"] as SupportedCurrency[]).map((curr) => {
-											const isCurrSelected = selectedForeignCurrency === curr;
-											return (
-												<button
-													key={curr}
-													type="button"
-													onClick={() => setSelectedForeignCurrency(curr)}
-													className={`min-h-[44px] px-3.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-														isCurrSelected
-															? "border-teal-600 bg-teal-500/15 text-teal-900 dark:text-teal-200 shadow-xs"
-															: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-teal-400"
-													}`}
-												>
-													{curr} ({CBR_CURRENCIES[curr]?.symbol})
-												</button>
-											);
-										})}
-									</div>
-
-									<div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-between flex-wrap gap-2 text-teal-950 dark:text-teal-100 font-mono">
-										<div>
-											Сумма в валюте ({selectedForeignCurrency}): <strong className="text-sm">{foreignCalc.targetFormatted}</strong>
-										</div>
-										<div className="text-xs text-[var(--muted,#64748b)]">
-											(включая спред эквайринга +{foreignCalc.bankSpreadPercent}%)
-										</div>
-									</div>
+					{/* Tier 2 (Семейный лицевой счет и депозит) */}
+					{(patientFamilyBalanceRub > 0 || Boolean(familyPayerName)) && (
+						<div className="rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] overflow-hidden transition-all">
+							<button
+								type="button"
+								onClick={() => setIsTier2Open((prev) => !prev)}
+								className="w-full p-3 flex items-center justify-between text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider hover:text-[var(--ink,#0f172a)] cursor-pointer transition-colors"
+								aria-expanded={isTier2Open}
+							>
+								<div className="flex items-center gap-2">
+									<Users size={14} className="text-purple-600" />
+									<span>Семейный лицевой счет (Tier 2)</span>
 								</div>
+								<ChevronDown
+									size={16}
+									className={`transition-transform duration-200 ${isTier2Open ? "rotate-180 text-teal-600" : "text-[var(--muted,#64748b)]"}`}
+								/>
+							</button>
 
-								{/* Family Deposit Info */}
-								<div className="flex flex-col gap-1.5 pt-2 border-t border-[var(--line,#e2e8f0)]">
+							{isTier2Open && (
+								<div className="p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-2 text-xs">
 									<div className="flex items-center justify-between">
 										<span className="font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
 											<Users size={14} className="text-purple-600" />
-											Семейный лицевой счет:
+											Семейный баланс:
 										</span>
 										<span className="text-emerald-700 dark:text-emerald-300 font-bold font-mono">
-											Баланс депозита: {((patientDepositRub || 0) + (patientFamilyBalanceRub || 0)).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+											{((patientDepositRub || 0) + (patientFamilyBalanceRub || 0)).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 										</span>
 									</div>
-									<p className="text-xs text-[var(--muted,#64748b)] m-0">
-										Плательщик: {familyPayerName}. Списание разрешено (Тег 1215 ФФД 1.2).
-									</p>
+									{familyPayerName && (
+										<p className="text-xs text-[var(--muted,#64748b)] m-0">
+											Плательщик: {familyPayerName}. Списание разрешено (Тег 1215 ФФД 1.2).
+										</p>
+									)}
 								</div>
-							</div>
-						)}
-					</div>
+							)}
+						</div>
+					)}
 
 					{/* Emergency Offline Queue Status Banner */}
 					{pendingOfflineCount > 0 && (
@@ -2342,7 +2288,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
 								<WifiOff size={16} className="shrink-0" />
 								<span>
-									<strong>Офлайн-буфер 54-ФЗ:</strong> {pendingOfflineCount} чеков ожидают отправки на ККТ при восстановлении связи.
+									<strong>Офлайн-буфер чеков:</strong> {pendingOfflineCount} чеков ожидают отправки на ККТ при восстановлении связи.
 								</span>
 							</div>
 							<button
@@ -2404,7 +2350,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									>
 										<div className="font-semibold text-[var(--ink)] px-2 py-1 border-b border-[var(--line)] flex items-center justify-between">
 											<span>Опции фискализации</span>
-											<span className="text-[10px] text-[var(--muted)] font-mono">54-ФЗ</span>
+											<span className="text-[10px] text-[var(--muted)] font-mono">ОФД</span>
 										</div>
 
 										<button
@@ -2451,7 +2397,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 												void handleExecutePayment(true);
 											}}
 											disabled={isPrinting}
-											title={isPrinting ? "Идет печать фискального чека 54-ФЗ..." : undefined}
+											title={isPrinting ? "Идет печать кассового чека..." : undefined}
 											className="w-full text-left px-2 py-1.5 rounded-md hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink)] flex items-center gap-1.5 cursor-pointer"
 										>
 											<WifiOff className="w-3.5 h-3.5 text-amber-600" />
@@ -2506,13 +2452,13 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							data-testid="execute-fast-checkout-btn"
 							onClick={() => void handleExecutePayment()}
 							disabled={isPrinting}
-							title={isPrinting ? "Идет печать фискального чека 54-ФЗ..." : undefined}
+							title={isPrinting ? "Идет печать кассового чека..." : undefined}
 							className="w-full sm:w-auto min-h-[44px] sm:min-h-[40px] sm:h-10 px-3 sm:px-6 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98 min-w-0"
 						>
 							{isPrinting ? (
 								<>
 									<Printer className="w-4 h-4 animate-spin shrink-0" />
-									<span className="truncate">Печать фискального чека 54-ФЗ...</span>
+									<span className="truncate">Печать кассового чека...</span>
 								</>
 							) : (
 								<>
@@ -2520,7 +2466,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									<span className="truncate">
 										{targetBillKop === 0
 											? "Закрыть визит: 100% Гарантия / Скидка (0 ₽)"
-											: `Пробить чек 54-ФЗ (${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
+											: `Выбить чек (${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
 									</span>
 								</>
 							)}
@@ -2534,7 +2480,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							aria-hidden="true"
 							className="sr-only"
 						>
-							Пробить чек 54-ФЗ
+							Выбить чек
 						</button>
 					</div>
 				</div>

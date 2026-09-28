@@ -1,0 +1,718 @@
+/* ============================================================================
+   TAX DEDUCTION 13% (NDFL REFUND) WIDGET & DENTAL PASSPORT STYLES
+   ============================================================================ */
+
+.pc-tax-deduction-widget {
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%);
+	border: 1.5px solid rgba(13, 148, 136, 0.35);
+	border-radius: var(--pc-radius-lg);
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	box-shadow: 0 4px 16px rgba(13, 148, 136, 0.08);
+	box-sizing: border-box;
+}
+
+.pc-tax-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.pc-tax-banner-pill {
+	background: var(--pc-primary);
+	color: #ffffff;
+	padding: 8px 14px;
+	border-radius: 9999px;
+	font-size: 0.875rem;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+}
+
+.pc-tax-calc-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.pc-tax-stat-box {
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.pc-tax-stat-box.highlight {
+	border-color: var(--pc-primary);
+	background: rgba(13, 148, 136, 0.04);
+}
+
+.pc-tax-stat-label {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.pc-tax-stat-value {
+	font-size: 1.25rem;
+	font-weight: 900;
+	color: var(--pc-text-main);
+	line-height: 1.2;
+}
+
+.pc-tax-stat-refund {
+	font-size: 0.8125rem;
+	font-weight: 800;
+	color: var(--pc-success);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.pc-tax-steps-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.pc-tax-step-card {
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.pc-tax-step-title {
+	font-size: 0.875rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pc-tax-step-desc {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	line-height: 1.4;
+	margin: 0;
+}
+
+/* Dental Passport Grid & Cards */
+.pc-dental-passport-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 14px;
+}
+
+.pc-dental-passport-card {
+	background: var(--pc-surface);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-lg);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	transition: all 0.2s ease;
+}
+
+.pc-dental-passport-card:hover {
+	border-color: var(--pc-primary);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.pc-tooth-badge {
+	width: 42px;
+	height: 42px;
+	border-radius: 10px;
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	font-size: 1.125rem;
+	font-weight: 900;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.pc-plain-summary-box {
+	background: rgba(13, 148, 136, 0.06);
+	border-left: 3px solid var(--pc-primary);
+	padding: 8px 12px;
+	border-radius: 0 6px 6px 0;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: var(--pc-text-main);
+	line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+	.pc-tax-calc-grid,
+	.pc-tax-steps-grid,
+	.pc-dental-passport-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-tax-deduction-widget {
+		padding: 14px;
+	}
+}
+
+
+
+
+
+
+/* ==========================================================================
+   CARE INTERVENTIONS & MEDICATION REGIMEN ENHANCEMENTS
+   ========================================================================== */
+
+.pc-intervention-chips-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.pc-chip-btn {
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm);
+	color: var(--pc-text-main);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	padding: 8px 10px;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	user-select: none;
+}
+
+.pc-chip-btn:hover {
+	border-color: var(--pc-primary);
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+}
+
+.pc-chip-btn.active {
+	background: var(--pc-primary);
+	border-color: var(--pc-primary);
+	color: var(--paper-strong, #ffffff);
+	box-shadow: 0 3px 10px rgba(13, 148, 136, 0.3);
+}
+
+.pc-meds-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+	margin-top: 8px;
+}
+
+.pc-meds-table th {
+	background: var(--pc-bg);
+	color: var(--pc-text-muted);
+	font-weight: 800;
+	text-align: left;
+	padding: 10px 12px;
+	border-bottom: 2px solid var(--pc-border);
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.pc-meds-table td {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--pc-border);
+	vertical-align: middle;
+}
+
+.pc-meds-table tbody tr:hover {
+	background: var(--pc-primary-light);
+}
+
+.pc-a4-preview-container {
+	border: 1px solid var(--pc-border, #cbd5e1);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+	.pc-intervention-chips-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.pc-meds-table th:nth-child(5),
+	.pc-meds-table td:nth-child(5) {
+		display: none;
+	}
+}
+
+@media (max-width: 480px) {
+	.pc-intervention-chips-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 6px;
+	}
+
+	.pc-chip-btn {
+		font-size: 0.75rem;
+		min-height: 44px;
+		padding: 6px 8px;
+		justify-content: center;
+	}
+}
+
+/* ==========================================================================
+   WAVE 2: SLEEK BOTTOM SHEETS (ANTI-MATRYOSHKA - MANDATE 8d #6)
+   Depth strictly 1 - Inside modal container
+   ========================================================================== */
+
+.pc-sheet-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.65);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	z-index: 50;
+	overscroll-behavior: contain;
+	touch-action: pan-y;
+	animation: pcFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	box-sizing: border-box;
+}
+
+.pc-sheet-window {
+	width: 100%;
+	max-width: 580px;
+	max-height: 90%;
+	background: var(--pc-bg);
+	color: var(--pc-text-main);
+	border: 1px solid var(--pc-border);
+	border-top-left-radius: 24px;
+	border-top-right-radius: 24px;
+	padding: 12px 20px 24px 20px;
+	box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	overflow-y: auto;
+	box-sizing: border-box;
+	animation: pcSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pc-sheet-handle-bar {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	padding-bottom: 4px;
+	cursor: grab;
+}
+
+.pc-sheet-handle {
+	width: 40px;
+	height: 4px;
+	border-radius: 2px;
+	background: var(--pc-border);
+}
+
+@keyframes pcFadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes pcSlideUp {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}
+
+/* ==========================================================================
+   MOBILE PWA BOTTOM NAVIGATION BAR (390PX VIEWPORTS)
+   ========================================================================== */
+
+.pc-mobile-tab-bar {
+	display: none;
+}
+
+@media (max-width: 640px) {
+	.pc-nav-bar {
+		display: none;
+	}
+
+	.pc-mobile-tab-bar {
+		display: flex;
+		position: sticky;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: var(--pc-surface);
+		border-top: 1px solid var(--pc-border);
+		padding: 6px 6px env(safe-area-inset-bottom, 8px) 6px;
+		gap: 2px;
+		z-index: 30;
+		box-sizing: border-box;
+	}
+
+	.pc-mobile-tab-btn {
+		flex: 1;
+		min-height: 48px;
+		min-width: 44px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 3px;
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: var(--pc-text-muted);
+		background: transparent;
+		border: none;
+		border-radius: 8px;
+		cursor: pointer;
+		touch-action: manipulation;
+		transition: all 0.15s ease;
+		padding: 4px 2px;
+	}
+
+	.pc-mobile-tab-btn:hover {
+		color: var(--pc-text-main);
+	}
+
+	.pc-mobile-tab-btn.active {
+		color: var(--pc-primary);
+		background: var(--pc-primary-light);
+	}
+
+	.patient-cabinet-modal {
+		max-width: 100%;
+		height: 100vh;
+		max-height: 100vh;
+		border-radius: 0;
+		border: none;
+	}
+
+	.patient-cabinet-backdrop {
+		padding: 0;
+	}
+}
+
+/* ==========================================================================
+   Patient Status Hero Card & Overview Elements (Mandate 8c & Apple Health)
+   ========================================================================== */
+.pc-status-hero-card {
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.pc-status-hero-top {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.pc-avatar-large {
+	width: 48px;
+	height: 48px;
+	min-width: 48px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, var(--pc-primary), var(--pc-primary-hover));
+	color: #ffffff;
+	font-size: 1.25rem;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+}
+
+.pc-status-hero-details {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	flex: 1;
+	min-width: 0;
+}
+
+.pc-status-name-row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.pc-patient-name {
+	margin: 0;
+	font-size: 1.0625rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	line-height: 1.25;
+}
+
+.pc-badge-card-number {
+	font-size: 0.75rem;
+	font-weight: 600;
+	padding: 2px 8px;
+	border-radius: 6px;
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	color: var(--pc-text-muted);
+}
+
+.pc-doctor-subtitle {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--pc-text-muted);
+}
+
+.pc-doctor-subtitle strong {
+	color: var(--pc-text-main);
+}
+
+.pc-loyalty-strip {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	padding-top: 10px;
+	border-top: 1px solid var(--pc-border);
+}
+
+.pc-loyalty-pill {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	border-radius: var(--pc-radius-sm);
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	font-size: 0.8125rem;
+	flex: 1;
+	min-width: 180px;
+}
+
+.pc-loyalty-text {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+
+.pc-loyalty-label {
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+}
+
+.pc-loyalty-val {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--pc-text-main);
+}
+
+/* Quick Actions Bar & Buttons (Mandates 8c, 8e) */
+.pc-quick-actions-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	padding: 2px 0;
+}
+
+.pc-quick-action-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 8px 14px;
+	min-height: 38px;
+	border-radius: var(--pc-radius-sm);
+	font-size: 0.8125rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+	white-space: nowrap;
+	border: 1px solid transparent;
+}
+
+.pc-quick-action-btn.primary {
+	background: var(--pc-primary);
+	color: #ffffff;
+	border-color: var(--pc-primary);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+}
+
+.pc-quick-action-btn.primary:hover {
+	background: var(--pc-primary-hover);
+}
+
+.pc-quick-action-btn.secondary {
+	background: var(--pc-surface);
+	color: var(--pc-text-main);
+	border: 1px solid var(--pc-border);
+}
+
+.pc-quick-action-btn.secondary:hover {
+	background: var(--pc-surface-hover);
+	border-color: var(--pc-primary);
+}
+
+.pc-quick-action-btn.accent {
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	border: 1px solid var(--pc-primary);
+}
+
+.pc-quick-action-btn.accent:hover {
+	background: var(--pc-primary);
+	color: #ffffff;
+}
+
+/* Calendar Export Strip & Buttons */
+.pc-calendar-export-strip {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin-top: 8px;
+	padding-top: 10px;
+	border-top: 1px solid var(--pc-border);
+}
+
+.pc-cal-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--pc-text-muted);
+}
+
+.pc-cal-buttons {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pc-cal-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	min-height: 30px;
+	border-radius: 6px;
+	background: var(--pc-surface);
+	color: var(--pc-text-main);
+	border: 1px solid var(--pc-border);
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-cal-btn:hover {
+	background: var(--pc-surface-hover);
+	border-color: var(--pc-primary);
+}
+
+/* Invoices Filter Chips & View Mode Buttons */
+.pc-filter-chips-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pc-filter-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 14px;
+	min-height: 34px;
+	border-radius: 20px;
+	background: var(--pc-surface);
+	color: var(--pc-text-muted);
+	border: 1px solid var(--pc-border);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-filter-chip:hover {
+	color: var(--pc-text-main);
+	border-color: var(--pc-border-focus);
+}
+
+.pc-filter-chip.active {
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	border-color: var(--pc-primary);
+	font-weight: 700;
+}
+
+.pc-filter-chip.warning.active {
+	background: var(--pc-warning-light);
+	color: var(--pc-warning);
+	border-color: var(--pc-warning);
+}
+
+.pc-filter-chip.success.active {
+	background: var(--pc-success-light);
+	color: var(--pc-success);
+	border-color: var(--pc-success);
+}
+
+.pc-view-mode-wrapper {
+	display: flex;
+	gap: 6px;
+}
+
+.pc-view-mode-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	min-height: 34px;
+	border-radius: 8px;
+	background: var(--pc-surface);
+	color: var(--pc-text-muted);
+	border: 1px solid var(--pc-border);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.pc-view-mode-btn.active {
+	background: var(--pc-surface-hover);
+	color: var(--pc-text-main);
+	border-color: var(--pc-primary);
+}

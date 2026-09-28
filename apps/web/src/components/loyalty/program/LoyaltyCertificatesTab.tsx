@@ -246,8 +246,9 @@ export const LoyaltyCertificatesTab: React.FC<LoyaltyCertificatesTabProps> = ({
 									</div>
 								</div>
 								<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--warn-fg)" }}>
-									{(activeCertificate.nominalKop / 100).toLocaleString("ru-RU")} ₽
+									{((activeCertificate.nominalKop ?? 0) / 100).toLocaleString("ru-RU")} ₽
 								</div>
+
 							</div>
 
 							<div className="loyalty-cert-serial-code">

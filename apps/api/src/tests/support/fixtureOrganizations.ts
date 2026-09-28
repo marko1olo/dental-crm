@@ -435,7 +435,7 @@ async function purgeOneFixtureOrganization(
 				await tx.execute(sql`SAVEPOINT fixture_purge_step`);
 				try {
 					const deleted = await tx.execute(
-						sql`DELETE FROM ${sql.identifier(table)} WHERE organization_id = ${organizationId}::uuid`,
+						sql`DELETE FROM ${sql.identifier(table)} WHERE organization_id::text = ${organizationId}::text`,
 					);
 					await tx.execute(sql`RELEASE SAVEPOINT fixture_purge_step`);
 					// rowCount — единственное честное свидетельство того, что уборка

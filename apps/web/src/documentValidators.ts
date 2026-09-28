@@ -1,4 +1,8 @@
-import { isDateInputValue, isDateTimeLocalInputValue } from "./AppHelpers";
+import {
+	confirmedDocumentLiteral,
+	isDateInputValue,
+	isDateTimeLocalInputValue,
+} from "./AppHelpers";
 import {
 	normalizeRubAmountInput,
 	validateRubAmountInput,
@@ -1848,3 +1852,32 @@ export const documentPayloadValidators: Record<
 	personal_data_processing_consent: validatePersonalDataProcessingConsent,
 	medical_intervention_refusal: validateMedicalInterventionRefusal,
 };
+
+function requiredDocumentField(value: any, label: string): string | null {
+	return !value || !String(value).trim() ? label : null;
+}
+
+export function validateDocumentPayloadForKind(
+	kind: string,
+	state: any,
+): { valid: boolean; error?: string } {
+	const validator = documentPayloadValidators[kind];
+	if (!validator) {
+		return { valid: true };
+	}
+	const effectiveState = {
+		requiredDocumentField,
+		confirmedDocumentLiteral,
+		...(state || {}),
+	};
+	const result = validator(effectiveState);
+	if (!result) return { valid: true };
+	if (Array.isArray(result)) {
+		if (result.length === 0) return { valid: true };
+		return { valid: false, error: result.join(", ") };
+	}
+	if (typeof result === "string" && result.trim().length > 0) {
+		return { valid: false, error: result };
+	}
+	return { valid: true };
+}

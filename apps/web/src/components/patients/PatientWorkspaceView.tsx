@@ -1,8 +1,10 @@
 import type { Appointment, Dashboard, TreatmentPlanItem } from "@dental/shared";
 import {
+	Activity,
 	Calendar,
 	Camera,
 	Clock,
+	Eye,
 	FileSpreadsheet,
 	FileText,
 	Gift,
@@ -10,6 +12,7 @@ import {
 	Plus,
 	Printer,
 	Receipt,
+	Scan,
 	Shield,
 	Stethoscope,
 	UserCheck,
@@ -26,25 +29,9 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { sliceDomList } from "../../utils/domVirtualizationHelper";
 import { money } from "../../utils/financeUtils";
 import { showToast } from "../GlobalToast";
-import type { DmsGuaranteeLetter } from "../insurance/insuranceMath";
-
-const DmsGuaranteeLetterModal = React.lazy(() =>
-	import("../insurance/DmsGuaranteeLetterModal").then((m) => ({
-		default: m.DmsGuaranteeLetterModal,
-	})),
-);
-
-const DmsRegistryExportModal = React.lazy(() =>
-	import("../insurance/DmsRegistryExportModal").then((m) => ({
-		default: m.DmsRegistryExportModal,
-	})),
-);
-
-const LoyaltyProgramModal = React.lazy(() =>
-	import("../loyalty/program/LoyaltyProgramModal").then((m) => ({
-		default: m.LoyaltyProgramModal,
-	})),
-);
+import { PatientWorkspaceModals } from "./PatientWorkspaceModals";
+import type { DmsGuaranteeLetter } from "../insurance/DmsGuaranteeLetterModal";
+import { usePatientStore } from "../../store/patientStore";
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
 import {
 	printBlankMedicalContract,
@@ -52,95 +39,23 @@ import {
 } from "./blankContractPrint";
 import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
 import { PatientDuplicateAlert } from "./PatientDuplicateAlert";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
+
+const DicomViewerModal = React.lazy(() =>
+	import("../imaging/DicomViewerModal").then((m) => ({
+		default: m.DicomViewerModal,
+	})),
+);
 
 export interface PatientWorkspaceViewProps {
 	patientId: string;
 	patientName?: string | null;
 	dashboard?: Dashboard | null;
-	initialTab?: "timeline" | "plans" | "visits";
+	initialTab?: "timeline" | "plans" | "visits" | "scans";
 	onOpenVisit?: (visitId: string) => void;
 	onOpenPlan?: (planId: string) => void;
 }
-
-const TreatmentPlanCardItem: React.FC<{
-	item: TreatmentPlanItem;
-	onOpenPlan?: (planId: string) => void;
-}> = React.memo(({ item, onOpenPlan }) => {
-	const statusColorClass = useMemo(() => {
-		switch (item.status) {
-			case "completed":
-				return "bg-[var(--ok-bg,rgba(16,185,129,0.12))] text-[var(--ok-fg,#047857)] border border-[var(--ok-border,rgba(16,185,129,0.3))]";
-			case "in_progress":
-				return "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30";
-			case "cancelled":
-				return "bg-[var(--bad-bg,rgba(239,68,68,0.12))] text-[var(--bad-fg,#b91c1c)] border border-[var(--bad-border,rgba(239,68,68,0.3))]";
-			default:
-				return "bg-[var(--warn-bg,rgba(245,158,11,0.12))] text-[var(--warn-fg,#b45309)] border border-[var(--warn-border,rgba(245,158,11,0.3))]";
-		}
-	}, [item.status]);
-
-	const statusLabel = useMemo(() => {
-		switch (item.status) {
-			case "completed":
-				return "Выполнено";
-			case "in_progress":
-				return "В работе";
-			case "cancelled":
-				return "Отменено";
-			default:
-				return "Запланировано";
-		}
-	}, [item.status]);
-
-	return (
-		<div
-			className="treatment-plan-card-item p-3 rounded-lg flex flex-col gap-1.5 bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shadow-xs"
-			style={{ contain: "content", contentVisibility: "auto", containIntrinsicSize: "auto 96px" }}
-		>
-			<div className="flex items-center justify-between gap-2 flex-wrap">
-				<div className="flex items-center gap-1.5 min-w-0">
-					<Stethoscope className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-					<span className="font-bold text-xs text-[var(--ink)] truncate">
-						{item.snapshotServiceName || "Услуга плана лечения"}
-					</span>
-				</div>
-				<span
-					className={`text-[11px] px-2 py-0.5 rounded-md font-bold shrink-0 ${statusColorClass}`}
-				>
-					{statusLabel}
-				</span>
-			</div>
-			{item.toothCode ? (
-				<div className="text-xs text-[var(--muted)]">
-					Зуб / область:{" "}
-					<strong className="text-[var(--ink)]">{item.toothCode}</strong>
-				</div>
-			) : null}
-			<div className="flex items-center justify-between mt-0.5 pt-1.5 border-t border-[var(--line)] text-xs">
-				<div className="flex items-center gap-2">
-					<span className="text-[var(--ink)] font-bold font-mono text-xs">
-						{item.unitPriceRub !== undefined && item.unitPriceRub !== null
-							? money(item.unitPriceRub)
-							: "—"}
-					</span>
-					<span className="inline-flex items-center gap-0.5 text-[10px] text-teal-700 dark:text-teal-300 font-medium">
-						<Shield className="w-2.5 h-2.5" /> Согласовано
-					</span>
-				</div>
-				{onOpenPlan ? (
-					<button
-						type="button"
-						onClick={() => onOpenPlan(item.id)}
-						className="min-h-[32px] px-1.5 text-[var(--teal)] hover:underline font-bold bg-transparent border-0 cursor-pointer text-xs inline-flex items-center"
-					>
-						Открыть план &rarr;
-					</button>
-				) : null}
-			</div>
-		</div>
-	);
-});
-TreatmentPlanCardItem.displayName = "TreatmentPlanCardItem";
+import { TreatmentPlanCardItem } from "./TreatmentPlanCardItem";
 
 const VisitHistoryCardItem: React.FC<{
 	appointment: Appointment;
@@ -180,7 +95,7 @@ const VisitHistoryCardItem: React.FC<{
 	return (
 		<div
 			className="visit-history-card p-3 rounded-lg flex flex-col gap-1.5 bg-[var(--paper-soft)] border border-[var(--line)] transition-colors shadow-xs"
-			style={{ contain: "content", contentVisibility: "auto", containIntrinsicSize: "auto 110px" }}
+			style={{ contentVisibility: "auto", containIntrinsicSize: "auto 110px" }}
 		>
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
@@ -231,8 +146,14 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 			const appLogic = useAppLogicContext();
 			const dashboard = propDashboard ?? appLogic?.dashboard;
 			const [activeTab, setActiveTab] = useState<
-				"timeline" | "plans" | "visits"
-			>(initialTab);
+				"timeline" | "plans" | "visits" | "scans"
+			>(initialTab ?? "timeline");
+			const [isDicomModalOpen, setIsDicomModalOpen] = useState(false);
+			const [selectedScanForDicom, setSelectedScanForDicom] = useState<{
+				url: string;
+				tooth?: string | null;
+				title?: string | null;
+			} | null>(null);
 
 			useEffect(() => {
 				let isMounted = true;
@@ -288,6 +209,65 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 				);
 			}, [dashboard?.patients, patientId]);
 
+			const patientStudies = useMemo(() => {
+				const all = (dashboard?.imagingStudies ?? []) as any[];
+				const filtered = all.filter((s) => String(s?.patientId) === String(patientId));
+				if (filtered.length > 0) return filtered;
+				if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
+					return [
+						{
+							id: `demo-study-rvg-16-${patientId}`,
+							patientId,
+							title: "Прицельный снимок зуба 1.6",
+							kind: "periapical",
+							toothCode: "16",
+							previewUrl: "/radiology/sample_rvg_tooth16.jpg",
+							viewerUrl: "/radiology/sample_rvg_tooth16.jpg",
+							capturedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+							effectiveDoseMicrosv: 2,
+							status: "available",
+						},
+						{
+							id: `demo-study-rvg-36-${patientId}`,
+							patientId,
+							title: "Прицельный снимок зуба 3.6 (периапикальный)",
+							kind: "periapical",
+							toothCode: "36",
+							previewUrl: "/radiology/sample_rvg_tooth36_periapical.jpg",
+							viewerUrl: "/radiology/sample_rvg_tooth36_periapical.jpg",
+							capturedAt: new Date(Date.now() - 86400000 * 14).toISOString(),
+							effectiveDoseMicrosv: 3,
+							status: "available",
+						},
+						{
+							id: `demo-study-cbct-${patientId}`,
+							patientId,
+							title: "3D КЛКТ сегмента верхней челюсти",
+							kind: "cbct",
+							toothCode: "16",
+							previewUrl: "/radiology/sample_rvg_pathology.jpg",
+							viewerUrl: "/radiology/kavo_op300_cbct_slice.dcm",
+							capturedAt: new Date(Date.now() - 86400000 * 30).toISOString(),
+							effectiveDoseMicrosv: 35,
+							status: "available",
+						},
+						{
+							id: `demo-study-trg-${patientId}`,
+							patientId,
+							title: "ТРГ (Телерентгенограмма) боковая",
+							kind: "cephalometric",
+							toothCode: null,
+							previewUrl: "/radiology/sample_trg_cephalogram.jpg",
+							viewerUrl: "/radiology/sample_trg_cephalogram.jpg",
+							capturedAt: new Date(Date.now() - 86400000 * 60).toISOString(),
+							effectiveDoseMicrosv: 12,
+							status: "available",
+						},
+					];
+				}
+				return [];
+			}, [dashboard?.imagingStudies, patientId]);
+
 			// Low-Spec Celeron / 4GB RAM Optimization: Bound DOM render to keep total nodes strictly <= 400
 			// 30 items * ~10 DOM nodes = 300 nodes + ~80 container nodes = 380 DOM nodes total per active tab
 			const DEFAULT_WORKSPACE_PAGE_SIZE = 30;
@@ -342,6 +322,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 			const [isDmsLetterOpen, setIsDmsLetterOpen] = useState(false);
 			const [isDmsRegistryOpen, setIsDmsRegistryOpen] = useState(false);
 			const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
+			const [isCbctModalOpen, setIsCbctModalOpen] = useState(false);
 			const [isDocsMenuOpen, setIsDocsMenuOpen] = useState(false);
 			const docsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -405,7 +386,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 			return (
 				<div
 					data-testid="patient-workspace-view"
-					className="patient-workspace-view flex flex-col gap-2 rounded-xl bg-[var(--paper)] p-2.5 sm:p-3 text-[var(--ink)] border border-[var(--line)] shadow-xs pb-16"
+					className="patient-workspace-view flex flex-col gap-2 rounded-xl bg-[var(--paper)] p-2.5 sm:p-3 text-[var(--ink)] border border-[var(--line)] shadow-xs pb-6"
 				>
 					{/* Clinical Safety & Allergy Red-Flag Emergency Banner (Zero Noise when clean, Mandates 8d, 8p) */}
 					<PatientAllergySafetyBanner
@@ -571,13 +552,33 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 										<button
 											type="button"
 											role="menuitem"
+											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors text-cyan-700 dark:text-cyan-300"
+											onClick={() => {
+												setIsDocsMenuOpen(false);
+												if (patientId) {
+													appLogic?.setSelectedPatientId?.(patientId);
+													usePatientStore.getState().setSelectedPatientId(patientId);
+												}
+												setIsCbctModalOpen(true);
+											}}
+											title="Открыть 3D КЛКТ / КТ-исследование (MPR & Имплантация)"
+											data-testid="patient-workspace-open-cbct-modal-btn"
+										>
+											<Activity className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+											<span>3D КТ / КЛКТ Студия</span>
+										</button>
+
+										<button
+											type="button"
+											role="menuitem"
 											className="w-full text-left px-2.5 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 											onClick={() => {
 												setIsDocsMenuOpen(false);
 												if (patientId) {
 													appLogic?.setSelectedPatientId?.(patientId);
+													usePatientStore.getState().setSelectedPatientId(patientId);
 												}
-												window.location.hash = "radiology";
+												window.location.hash = "imaging";
 											}}
 											title="Открыть рентгенологические и КТ исследования"
 											data-testid="patient-workspace-open-radiology-btn"
@@ -710,6 +711,19 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 									<Calendar className="w-3 h-3 inline mr-1" />
 									Визиты ({patientAppointments.length})
 								</button>
+								<button
+									type="button"
+									className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
+										activeTab === "scans"
+											? "bg-[var(--teal)] text-[var(--on-teal)] border-[var(--teal)] shadow-xs"
+											: "bg-transparent text-[var(--muted)] border-transparent hover:text-[var(--ink)]"
+									}`}
+									onClick={() => setActiveTab("scans")}
+									data-testid="patient-tab-scans"
+								>
+									<Camera className="w-3 h-3 inline mr-1" />
+									Снимки и КТ ({patientStudies.length})
+								</button>
 							</div>
 						</div>
 					</div>
@@ -765,7 +779,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 								</div>
 							) : (
 								<>
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5" style={{ contain: "content" }}>
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
 										{(plansSlice?.visibleItems ?? []).map((item: any) => (
 											<TreatmentPlanCardItem
 												key={item.id}
@@ -806,7 +820,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 								</div>
 							) : (
 								<>
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5" style={{ contain: "content" }}>
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
 										{(visitsSlice?.visibleItems ?? []).map((appt: any) => (
 											<VisitHistoryCardItem
 												key={appt.id}
@@ -839,43 +853,169 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 						</div>
 					)}
 
-					{/* DMS Guarantee Letter Modal */}
-					{isDmsLetterOpen && (
+					{activeTab === "scans" && (
+						<div className="flex flex-col gap-3" data-testid="patient-scans-gallery">
+							<div className="flex items-center justify-between gap-2 flex-wrap">
+								<div>
+									<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] m-0">
+										Рентгенологические снимки и КТ-исследования ({patientStudies.length})
+									</h4>
+									<p className="text-[11px] text-[var(--muted)] m-0 mt-0.5">
+										Мгновенный просмотр 200×200px без задержки и сдвига макета (CLS = 0)
+									</p>
+								</div>
+								<div className="flex items-center gap-2 flex-wrap">
+									<button
+										type="button"
+										onClick={() => {
+											if (patientId) {
+												appLogic?.setSelectedPatientId?.(patientId);
+												usePatientStore.getState().setSelectedPatientId(patientId);
+											}
+											window.location.hash = "imaging";
+										}}
+										className="secondary-button min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
+										title="Перейти в полный рентген-кокпит"
+										data-testid="btn-patient-open-imaging-view"
+									>
+										<Scan size={14} className="text-[var(--teal)]" />
+										<span>Рентген-кокпит</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => setIsCbctModalOpen(true)}
+										className="secondary-button min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
+										title="Открыть 3D КЛКТ MPR студию"
+										data-testid="btn-patient-open-cbct-studio"
+									>
+										<Activity size={14} className="text-cyan-500" />
+										<span>3D КЛКТ Студия</span>
+									</button>
+								</div>
+							</div>
+
+							{patientStudies.length === 0 ? (
+								<div
+									data-testid="patient-scans-empty-state"
+									className="p-8 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] flex flex-col items-center justify-center gap-2"
+								>
+									<Camera size={32} className="text-[var(--muted)] opacity-50" />
+									<div className="font-bold text-[var(--ink)]">Снимки и КТ-исследования пока не прикреплены</div>
+									<p className="max-w-md m-0">
+										В карте пациента пока нет загруженных радиовизиографических или томографических снимков.
+										Вы можете прикрепить снимок в приёме врача или импортировать DICOM через рентген-кокпит.
+									</p>
+								</div>
+							) : (
+								<div
+									data-testid="patient-scans-grid"
+									className="flex items-center gap-3 overflow-x-auto pb-2 pt-1 flex-wrap sm:flex-nowrap"
+								>
+									{patientStudies.map((study: any) => {
+										const isCbct = study.kind === "cbct" || study.modality === "cbct_3d";
+										const thumbSrc = study.previewUrl || study.viewerUrl || "/radiology/sample_rvg_tooth16.jpg";
+										return (
+											<div
+												key={study.id}
+												className="group relative rounded-xl overflow-hidden border border-[var(--line)] bg-[#030712] cursor-pointer shrink-0 shadow-xs hover:border-[var(--teal)] transition-all"
+												style={{
+													width: "200px",
+													height: "200px",
+													minWidth: "200px",
+													minHeight: "200px",
+													maxWidth: "200px",
+													maxHeight: "200px",
+													aspectRatio: "1 / 1",
+												}}
+												data-testid={`patient-scan-card-${study.id}`}
+												onClick={() => {
+													if (isCbct) {
+														setIsCbctModalOpen(true);
+													} else {
+														setSelectedScanForDicom({
+															url: thumbSrc,
+															tooth: study.toothCode,
+															title: study.title,
+														});
+														setIsDicomModalOpen(true);
+													}
+												}}
+												title={isCbct ? "Открыть в 3D КЛКТ Студии" : "Открыть в DICOM / RVG просмотрщике"}
+											>
+												<img
+													src={thumbSrc}
+													alt={study.title || "Рентген-снимок"}
+													loading="lazy"
+													decoding="async"
+													className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+													style={{ width: "100%", height: "100%", objectFit: "cover" }}
+												/>
+												{/* Top Badges */}
+												<div className="absolute top-2 left-2 flex flex-col gap-1 items-start pointer-events-none">
+													<span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-black/75 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40 shadow-xs backdrop-blur-xs">
+														{study.kind === "cbct"
+															? "3D КЛКТ"
+															: study.kind === "opg"
+																? "ОПТГ"
+																: study.kind === "cephalometric" || study.kind === "trg"
+																	? "ТРГ"
+																	: "RVG"}
+													</span>
+													{study.toothCode && (
+														<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/75 text-white border border-white/20 shadow-xs">
+															#{study.toothCode}
+														</span>
+													)}
+												</div>
+												{/* Bottom Overlay */}
+												<div className="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex items-center justify-between text-white text-[10px]">
+													<span className="truncate max-w-[110px] opacity-90">
+														{study.capturedAt ? new Date(study.capturedAt).toLocaleDateString("ru-RU") : "Архив"}
+														{study.effectiveDoseMicrosv ? ` · ${study.effectiveDoseMicrosv} мкЗв` : ""}
+													</span>
+													<span className="text-[var(--teal,#0d9488)] font-semibold flex items-center gap-0.5 group-hover:underline">
+														<Eye size={12} />
+														<span>Открыть</span>
+													</span>
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							)}
+						</div>
+					)}
+
+					{/* DICOM / RVG Viewer Modal for Patient Workspace */}
+					{isDicomModalOpen && (
 						<React.Suspense fallback={null}>
-							<DmsGuaranteeLetterModal
-								isOpen={isDmsLetterOpen}
-								onClose={() => setIsDmsLetterOpen(false)}
-								patient={{
-									id: patientId,
-									fullName: patientName || "",
+							<DicomViewerModal
+								isOpen={isDicomModalOpen}
+								onClose={() => {
+									setIsDicomModalOpen(false);
+									setSelectedScanForDicom(null);
 								}}
-								onSave={handleSaveDmsLetter}
-							/>
-						</React.Suspense>
-					)}
-
-					{/* DMS Registry Export Modal */}
-					{isDmsRegistryOpen && (
-						<React.Suspense fallback={null}>
-							<DmsRegistryExportModal
-								isOpen={isDmsRegistryOpen}
-								onClose={() => setIsDmsRegistryOpen(false)}
-							/>
-						</React.Suspense>
-					)}
-
-					{/* Loyalty & Gift Certificate Modal */}
-					{isLoyaltyModalOpen && (
-						<React.Suspense fallback={null}>
-							<LoyaltyProgramModal
-								isOpen={isLoyaltyModalOpen}
-								onClose={() => setIsLoyaltyModalOpen(false)}
-								patientId={patientId}
+								imageSrc={selectedScanForDicom?.url}
 								patientName={patientName || undefined}
-								medicalCardNumber={patientId ? `043/у-${String(patientId || "").slice(0, 8)}` : "043/у"}
+								toothFdiCode={selectedScanForDicom?.tooth ? String(selectedScanForDicom.tooth) : "16"}
 							/>
 						</React.Suspense>
 					)}
+
+					{/* Patient Workspace Modals: 3D CBCT Studio, DMS Letters, Registry & Loyalty */}
+					<PatientWorkspaceModals
+						patientId={patientId}
+						patientName={patientName || undefined}
+						isDmsLetterOpen={isDmsLetterOpen}
+						setIsDmsLetterOpen={setIsDmsLetterOpen}
+						handleSaveDmsLetter={handleSaveDmsLetter}
+						isDmsRegistryOpen={isDmsRegistryOpen}
+						setIsDmsRegistryOpen={setIsDmsRegistryOpen}
+						isLoyaltyModalOpen={isLoyaltyModalOpen}
+						setIsLoyaltyModalOpen={setIsLoyaltyModalOpen}
+						isCbctModalOpen={isCbctModalOpen}
+						setIsCbctModalOpen={setIsCbctModalOpen}
+					/>
 
 					{/* FAB clearance bottom spacer */}
 					<div

@@ -12,11 +12,12 @@
 
 import { useCallback, useState } from "react";
 import {
+	type InstallmentItemStatus,
 	type InstallmentPlan,
 	type InternalInstallmentScheduleItem,
 	evaluateInstallmentStatus,
 } from "./installmentsEngine.js";
-import { rublesToKopecks } from "@dental/shared";
+import { type Kopecks, rublesToKopecks } from "@dental/shared";
 
 export function isUuid(val?: string | null): boolean {
 	return Boolean(
@@ -68,15 +69,23 @@ export function mapServerContractToInstallmentPlan(serverData: {
 		const isPaid = Boolean(t.isPaid);
 		const dueTime = new Date(t.dueDate).getTime();
 		const isOverdue = !isPaid && dueTime < Date.now();
+		const status: InstallmentItemStatus = isPaid
+			? "paid"
+			: isOverdue
+				? "overdue"
+				: "on_schedule";
 		return {
 			id: t.id,
-			monthIndex: t.trancheNumber,
+			paymentNumber: t.trancheNumber,
+			title:
+				t.trancheNumber === 0
+					? "Первоначальный взнос"
+					: `Платёж №${t.trancheNumber}`,
 			dueDateIso: new Date(t.dueDate).toISOString(),
 			amountKopecks: amountKop,
-			paidKopecks: isPaid ? amountKop : 0,
-			isPaid,
-			isOverdue,
-			paidAtIso: t.paidAt ? new Date(t.paidAt).toISOString() : undefined,
+			paidKopecks: isPaid ? amountKop : (0 as Kopecks),
+			status,
+			...(t.paidAt ? { paidAtIso: new Date(t.paidAt).toISOString() } : {}),
 		};
 	});
 
@@ -107,8 +116,9 @@ export function mapServerContractToInstallmentPlan(serverData: {
 		nextPaymentDueItem: evalResult.nextPaymentDueItem,
 		daysUntilNextPayment: evalResult.daysUntilNextPayment,
 		createdAtIso: new Date(c.createdAt).toISOString(),
-		notes: c.notes || undefined,
+		...(c.notes ? { notes: c.notes } : {}),
 	};
+
 }
 
 export function usePatientInstallmentsApi(options: {

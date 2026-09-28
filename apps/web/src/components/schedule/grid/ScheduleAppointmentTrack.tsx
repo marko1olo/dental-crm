@@ -410,7 +410,7 @@ export function ScheduleAppointmentTrack(props: ScheduleAppointmentTrackProps) {
             const mReasonLabel =
               mBlock.note ||
               (mBlock.reason === "sanitation"
-                ? "Санитарная обработка (СанПиН 3.3686-21)"
+                ? "Санитарная обработка"
                 : mBlock.reason === "tech_break"
                   ? "Технический перерыв"
                   : mBlock.reason === "maintenance"

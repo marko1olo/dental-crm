@@ -155,6 +155,11 @@
 			"types": "./dist/anesthesia/index.d.ts",
 			"import": "./dist/anesthesia/index.js",
 			"default": "./dist/anesthesia/index.js"
+		},
+		"./patients": {
+			"types": "./dist/patients/index.d.ts",
+			"import": "./dist/patients/index.js",
+			"default": "./dist/patients/index.js"
 		}
 	},
 	"scripts": {

@@ -14,16 +14,18 @@
  * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty
  */
 
+import "../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React, { act } from "react";
+globalThis.React = React;
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import {
+const {
 	buildPatientConsentSummary,
 	InformedConsentModal,
-	type PatientConsentSummaryParams,
-} from "../InformedConsentModal.js";
+} = await import("../InformedConsentModal.js");
+import type { PatientConsentSummaryParams } from "../InformedConsentModal.js";
 import {
 	getAllConsentPackages,
 	getAllConsentTemplates,

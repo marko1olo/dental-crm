@@ -1204,7 +1204,7 @@ function DoctorProfitabilityTable({
 						const completion = formatCompletionRate(doc?.completionRate);
 						const marginTitle =
 							doc?.clinicMarginRub !== undefined && doc?.clinicMarginRub !== null
-								? `Маржа клиники: ${money(doc.clinicMarginRub)}${doc.doctorPayrollRub ? ` • Комиссия Т-51: ${money(doc.doctorPayrollRub)}` : ""}`
+								? `Маржа клиники: ${money(doc.clinicMarginRub)}${doc.doctorPayrollRub ? ` • Зарплатная ведомость: ${money(doc.doctorPayrollRub)}` : ""}`
 								: margin.title;
 						return (
 							<tr key={doc?.name ?? "unknown"}>
@@ -1246,11 +1246,11 @@ function DoctorProfitabilityTable({
 			</table>
 			{hasUnknownMetric ? (
 				<p className="mt-2.5 text-xs leading-relaxed text-[var(--muted)]">
-					Прочерк — величина не рассчитывается, а не ноль. Прибыль и комиссия рассчитываются по фактически полученной выручке за вычетом прямых списаний ЗТЛ и сдельной ставки врача (Форма Т-51). Выручка — только фактически полученные платежи.
+					Прочерк — величина не рассчитывается, а не ноль. Прибыль и комиссия рассчитываются по фактически полученной выручке за вычетом прямых списаний ЗТЛ и сдельной ставки врача (Зарплатная ведомость Т-51). Выручка — только фактически полученные платежи.
 				</p>
 			) : (
 				<p className="mt-2.5 text-xs leading-relaxed text-[var(--muted)]">
-					Прибыль и комиссия рассчитываются по фактически полученной выручке за вычетом прямых списаний нарядов ЗТЛ и сдельной ставки врача (Форма Т-51). Выручка — только фактически полученные платежи 54-ФЗ.
+					Прибыль и комиссия рассчитываются по фактически полученной выручке за вычетом прямых списаний нарядов ЗТЛ и сдельной ставки врача (Зарплатная ведомость Т-51). Выручка — только фактически полученные платежи на кассе.
 				</p>
 			)}
 		</div>

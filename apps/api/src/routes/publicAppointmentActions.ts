@@ -26,6 +26,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
+import { escapeHtml } from "@dental/shared";
 import {
 	appointments,
 	clinics,
@@ -74,13 +75,6 @@ function renderPage(
 ): string {
 	const accent =
 		tone === "ok" ? "#0f766e" : tone === "warn" ? "#b45309" : "#b91c1c";
-	const escapeHtml = (value: string) =>
-		value
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/"/g, "&quot;");
-
 	return `<!doctype html>
 <html lang="ru">
 <head>

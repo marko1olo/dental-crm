@@ -49,7 +49,7 @@ interface TaxItem {
 const TAX_ACCOUNTING_ITEMS: readonly TaxItem[] = [
 	{
 		kind: "tax_deduction_certificate",
-		title: "Справка об оплате медицинских услуг для ИФНС (КНД 1151156)",
+		title: "Справка для налогового вычета (13% НДФЛ)",
 		statutoryRef: "Приказ ФНС России от 08.11.2023 № ЕД-7-11/755@",
 		description: "Официальная унифицированная справка для получения социального налогового вычета 13% (НДФЛ).",
 	},
@@ -147,9 +147,9 @@ export function TaxAccountingPackageModal({
 								onChange={(e) => setTaxYear(Number(e.target.value))}
 								style={{ padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--line, #cbd5e1)" }}
 							>
-								<option value={2026}>2026 (КНД 1151156)</option>
-								<option value={2025}>2025 (КНД 1151156)</option>
-								<option value={2024}>2024 (КНД 1151156)</option>
+								<option value={2026}>2026 (вычет 13% НДФЛ)</option>
+								<option value={2025}>2025 (вычет 13% НДФЛ)</option>
+								<option value={2024}>2024 (вычет 13% НДФЛ)</option>
 								<option value={2023}>2023 (архивная справка)</option>
 								<option value={2022}>2022 (архивная справка)</option>
 								<option value={2021}>2021 (архивная справка)</option>

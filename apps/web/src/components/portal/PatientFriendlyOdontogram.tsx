@@ -31,8 +31,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import type React from "react";
-import { memo, useCallback, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 
 export * from "./patientFriendlyOdontogramEngine.js";
 export * from "./PatientToothDetailBox.js";
@@ -106,6 +105,12 @@ const PatientToothButton: React.FC<PatientToothButtonProps> = memo(({
 	);
 });
 PatientToothButton.displayName = "PatientToothButton";
+
+export interface PatientFriendlyOdontogramProps {
+	teeth?: readonly PatientToothInfo[] | PatientToothInfo[];
+	onSelectTooth?: (tooth: PatientToothInfo) => void;
+	showHealthIndexHeader?: boolean;
+}
 
 export const PatientFriendlyOdontogram: React.FC<PatientFriendlyOdontogramProps> = memo(({
 	teeth = DEFAULT_PATIENT_TEETH,

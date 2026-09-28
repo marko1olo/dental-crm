@@ -373,7 +373,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 								{/* Status Picker Popover */}
 								{isStatusPickerOpen && onQuickStatusChange && (
 									<div
-										className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 z-50 p-1.5 rounded-xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[190px] max-w-[calc(100vw-32px)] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100"
+										className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 z-50 p-1.5 rounded-xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[190px] max-w-[240px] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100"
 										onClick={(e) => e.stopPropagation()}
 										data-testid={`appointment-status-picker-popover-${a.id}`}
 									>
@@ -484,14 +484,14 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 													usePatientStore.getState().setSelectedPatientId(patObj.id);
 												}
 												useAppStore.getState().setCurrentView("finance");
-												showToast(`Касса 54-ФЗ: расчёт ${pName}`, "info");
+												showToast(`Касса: расчёт ${pName}`, "info");
 											}}
 											className="w-full text-left min-h-[34px] px-2 py-1 rounded-lg flex items-center gap-2 font-bold transition-colors cursor-pointer border-t border-[var(--line)] pt-1.5 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10"
 											data-testid={`quick-status-picker-pay-${a.id}`}
-											title="Перейти к приёму оплаты на кассе (54-ФЗ)"
+											title="Перейти к приёму оплаты на кассе"
 										>
 											<CreditCard size={13} className="text-emerald-600 dark:text-emerald-400" />
-											<span>Оплата 54-ФЗ</span>
+											<span>Оплата на кассе</span>
 										</button>
 									</div>
 								)}
@@ -566,8 +566,8 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 							)}
 						</div>
 
-						{/* Quick Actions (28px height) */}
-						<div className="appointment-card-actions flex items-center gap-1 pt-1 border-t border-[var(--line)]/40 mt-auto min-w-0 max-w-full overflow-hidden">
+						{/* Quick Actions: Consolidated to <= 2 primary controls (В приём + ...) for anti-bloat in compact 15/30-min slots */}
+						<div className="appointment-card-actions flex items-center justify-between gap-1 pt-1 border-t border-[var(--line)]/40 mt-auto min-w-0 max-w-full overflow-hidden">
 							{/* 1. В приём */}
 							<button
 								type="button"
@@ -579,7 +579,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									useAppStore.getState().setCurrentView("visit");
 									showToast(`Открыт приём: ${pName}`, "info");
 								}}
-								className="appointment-action-visit h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-[var(--teal)]/40 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 text-[var(--teal-dark,var(--teal))] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+								className="appointment-action-visit h-7 min-h-[28px] max-h-[28px] px-2.5 py-0 rounded-md border border-[var(--teal)]/40 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 text-[var(--teal-dark,var(--teal))] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
 								title={`Открыть приём: ${pName}`}
 								aria-label={`Открыть приём ${pName}`}
 								data-testid={`appointment-action-start-${a.id}`}
@@ -588,57 +588,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 								<span className="whitespace-nowrap">В приём</span>
 							</button>
 
-							{/* 2. Оплата */}
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									if (a.patientId) {
-										usePatientStore.getState().setSelectedPatientId(a.patientId);
-									}
-									useAppStore.getState().setCurrentView("finance");
-									showToast(`Касса 54-ФЗ: расчёт ${pName}`, "info");
-								}}
-								className="appointment-action-pay h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
-								title={`Оплата визита (касса 54-ФЗ): ${pName}`}
-								aria-label={`Оплата визита ${pName}`}
-								data-testid={`appointment-action-pay-${a.id}`}
-							>
-								<CreditCard size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-								<span className="appointment-action-label whitespace-nowrap">Оплата</span>
-							</button>
-
-							{/* 3. Позвонить */}
-							{patObj?.phone ? (
-								<a
-									href={`tel:${patObj.phone}`}
-									onClick={(e) => e.stopPropagation()}
-									className="appointment-action-call h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-sky-500/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-800 dark:text-sky-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
-									title={`Позвонить ${pName}: ${patObj.phone}`}
-									aria-label={`Позвонить ${pName}`}
-									data-testid={`appointment-action-call-${a.id}`}
-								>
-									<Phone size={12} className="shrink-0 text-sky-600 dark:text-sky-400" />
-									<span className="appointment-action-label whitespace-nowrap">Позвонить</span>
-								</a>
-							) : (
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										showToast(`Телефон не указан для ${pName}`, "warning");
-									}}
-									className="appointment-action-call h-7 min-h-[28px] max-h-[28px] px-2 py-0 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
-									title={`Телефон не указан для ${pName}`}
-									aria-label={`Телефон не указан для ${pName}`}
-									data-testid={`appointment-action-call-${a.id}`}
-								>
-									<Phone size={12} className="shrink-0 opacity-40" />
-									<span className="appointment-action-label whitespace-nowrap">Позвонить</span>
-								</button>
-							)}
-
-							{/* Overflow Menu Button */}
+							{/* 2. Overflow Menu Button (Contains Pay, Call, Statuses, WhatsApp, Duration) */}
 							<div className="relative ml-auto shrink-0">
 								<button
 									type="button"

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+	AlertOctagon,
 	CreditCard,
 	FileText,
 	HeartPulse,
@@ -16,17 +17,33 @@ import {
 	type PatientClinicalSafetyProfile,
 	DEFAULT_SOMATIC_HEALTHY_NORM,
 	createHealthySomaticNormProfile,
+	evaluatePatientSafetyFlags,
 } from "./safetyMath";
 import {
 	PatientGeneralInfoTab,
 	type PatientGeneralInfo,
 } from "./tabs/PatientGeneralInfoTab";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
 	STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
 	type StomxRepresentativeType,
 	type StomxRepresentativeTypeMeta,
 } from "@dental/shared";
+
+export const DEMO_SHOWCASE_MODAL_PATIENT: PatientGeneralInfo = {
+	id: "01a00000-0000-0000-0000-000000000001",
+	fullName: "Иванов Алексей Сергеевич",
+	phone: "+7 (916) 123-45-67",
+	birthDate: "1992-08-24",
+	doctorClinicalNotes: "Дентофобия (страх бормашины). Аллергоанамнез не отягощен.",
+	acquisitionSource: "Рекомендация знакомых / Сарафанное радио",
+};
+
+export const DEMO_SHOWCASE_MODAL_SAFETY: PatientClinicalSafetyProfile = {
+	...DEFAULT_SOMATIC_HEALTHY_NORM,
+	customChronicNotes: "Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания отрицает. Физиологическая норма.",
+};
 
 export {
 	STOMX_REPRESENTATIVE_CATALOG,
@@ -107,8 +124,15 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 		onNavigateToVisit,
 		onNewAppointment,
 	}) {
-		const effectiveInitialPatient = initialPatient ?? initialPatientDataAlias ?? {};
-		const effectiveInitialSafety = initialSafetyProfile ?? initialSafetyProfileAlias;
+		const isDemo = isDemoShowcaseMode();
+		const effectiveInitialPatient =
+			initialPatient ??
+			initialPatientDataAlias ??
+			(isDemo ? DEMO_SHOWCASE_MODAL_PATIENT : {});
+		const effectiveInitialSafety =
+			initialSafetyProfile ??
+			initialSafetyProfileAlias ??
+			(isDemo ? DEMO_SHOWCASE_MODAL_SAFETY : undefined);
 
 		const [activeTab, setActiveTab] = useState<PatientCardTab>("general");
 		const [patientData, setPatientData] = useState<PatientGeneralInfo>(() => effectiveInitialPatient);
@@ -127,6 +151,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 				setSafetyProfile((prev) => ({ ...prev, ...effectiveInitialSafety }));
 			}
 		}, [effectiveInitialSafety]);
+
+		const safetyEvaluation = React.useMemo(() => {
+			return evaluatePatientSafetyFlags(safetyProfile);
+		}, [safetyProfile]);
 
 		const handleUpdatePatientField = useCallback((field: keyof PatientGeneralInfo, value: any) => {
 			setPatientData((prev) => ({
@@ -159,9 +187,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 		}, [patientData, safetyProfile, onSavePatient, onClose]);
 
 		if (!isOpen) return null;
-		if (typeof document === "undefined") return null;
 
-		return createPortal(
+		const modalContent = (
 			<div
 				className="anamnesis-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs print:p-0 print:bg-white print:static"
 				role="dialog"
@@ -172,11 +199,11 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 				}}
 			>
 				<div
-					className="patient-card-modal bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden print:border-none print:shadow-none print:max-h-none print:rounded-none"
+					className="patient-card-modal bg-[var(--paper-strong)] border border-[var(--glass-border)] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden text-[var(--ink)] print:border-none print:shadow-none print:max-h-none print:rounded-none"
 					onClick={(e) => e.stopPropagation()}
 				>
 					{/* Modal Header */}
-					<div className="flex items-center justify-between px-3.5 py-2.5 sm:p-4 border-b border-[var(--line)] gap-2 min-w-0 print:hidden">
+					<div className="flex items-center justify-between px-3.5 py-2.5 sm:p-4 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] gap-2 min-w-0 print:hidden">
 						<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
 							<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white flex items-center justify-center shrink-0">
 								<User className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -201,7 +228,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-print-patient-card"
 								onClick={handlePrint}
-								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all"
+								className="border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--glass-hover,var(--paper-soft))] min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
 								title="Печать карты пациента (Мандат 8e п. 5)"
 							>
 								<Printer className="w-4 h-4 shrink-0" />
@@ -212,7 +239,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								type="button"
 								data-testid="btn-close-patient-card-modal"
 								onClick={onClose}
-								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[32px] h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shrink-0"
+								className="border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--glass-hover,var(--paper-soft))] min-h-[44px] sm:min-h-[32px] h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs"
 								aria-label="Закрыть окно"
 							>
 								<X className="w-4 h-4" />
@@ -220,8 +247,60 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 						</div>
 					</div>
 
+					{/* Prominent Somatic Safety Alert Banner (Mandates 8e & 8k, Task 3) */}
+					{safetyEvaluation.activeFlags.length > 0 && (
+						<div
+							className={`px-3.5 sm:px-4 py-2 flex items-center justify-between gap-2.5 border-b shrink-0 flex-wrap sm:flex-nowrap print:hidden ${
+								safetyEvaluation.hasCriticalStopFlags
+									? "bg-rose-500/15 border-rose-500/30 text-rose-950 dark:text-rose-100"
+									: "bg-amber-500/15 border-amber-500/30 text-amber-950 dark:text-amber-100"
+							}`}
+							role="alert"
+							data-testid="patient-card-modal-somatic-banner"
+						>
+							<div className="flex items-center gap-2 min-w-0 flex-1">
+								<AlertOctagon
+									className={`w-4 h-4 shrink-0 ${
+										safetyEvaluation.hasCriticalStopFlags
+											? "text-rose-600 dark:text-rose-400 animate-pulse"
+											: "text-amber-600 dark:text-amber-400"
+									}`}
+								/>
+								<div className="flex items-center gap-1.5 flex-wrap min-w-0">
+									<span className="text-[10px] font-black uppercase tracking-wider shrink-0">
+										{safetyEvaluation.hasCriticalStopFlags
+											? "КРИТИЧЕСКИЙ СТОП-ФАКТОР:"
+											: "КЛИНИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ:"}
+									</span>
+									<div className="flex items-center gap-1.5 flex-wrap">
+										{safetyEvaluation.activeFlags.map((flag) => (
+											<span
+												key={flag.id}
+												className={`px-1.5 py-0.2 rounded-md text-[11px] font-extrabold border ${
+													flag.severity === "critical"
+														? "bg-rose-600 text-white border-rose-700"
+														: "bg-amber-500/20 text-amber-900 dark:text-amber-200 border-amber-500/40"
+												}`}
+												title={flag.description}
+											>
+												{flag.shortBadge || flag.titleRu}
+											</span>
+										))}
+									</div>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setActiveTab("anamnesis")}
+								className="text-xs font-bold underline hover:opacity-80 cursor-pointer shrink-0 transition-opacity"
+							>
+								Открыть статус
+							</button>
+						</div>
+					)}
+
 					{/* Navigation Tabs Bar */}
-					<div className="flex items-center justify-between px-3.5 sm:px-4 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] flex-nowrap overflow-x-auto gap-2 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth print:hidden">
+					<div className="flex items-center justify-between px-3.5 sm:px-4 py-2 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] flex-nowrap overflow-x-auto gap-2 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth print:hidden">
 						<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 							{/* Вкладка 1: Основные и паспортные */}
 							<button
@@ -229,8 +308,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								data-testid="tab-patient-general"
 								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "general"
-										? "bg-[var(--teal)] text-white shadow-xs"
-										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
+										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
 								}`}
 								onClick={() => setActiveTab("general")}
 							>
@@ -244,8 +323,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								data-testid="tab-patient-anamnesis"
 								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "anamnesis"
-										? "bg-[var(--teal)] text-white shadow-xs"
-										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
+										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
 								}`}
 								onClick={() => setActiveTab("anamnesis")}
 							>
@@ -259,8 +338,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								data-testid="tab-patient-visits"
 								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "visits"
-										? "bg-[var(--teal)] text-white shadow-xs"
-										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
+										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
 								}`}
 								onClick={() => setActiveTab("visits")}
 							>
@@ -274,8 +353,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								data-testid="tab-patient-family"
 								className={`min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
 									activeTab === "family"
-										? "bg-[var(--teal)] text-white shadow-xs"
-										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+										? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs"
+										: "border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shadow-2xs"
 								}`}
 								onClick={() => setActiveTab("family")}
 							>
@@ -290,10 +369,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							data-testid="btn-somatic-healthy-norm"
 							className="min-h-[44px] sm:min-h-[32px] h-8 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98 shrink-0 whitespace-nowrap select-none"
 							onClick={handleApplyNorm}
-							title="1-клик: Применить физиологическую норму (соматически здоров)"
+							title="Зафиксировать физиологическую норму: соматически здоров"
 						>
 							<ShieldCheck className="w-4 h-4 shrink-0" />
-							<span className="shrink-0 whitespace-nowrap">Соматически здоров / норма (1-клик)</span>
+							<span className="shrink-0 whitespace-nowrap">Норма</span>
 						</button>
 					</div>
 
@@ -313,7 +392,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 					</div>
 
 					{/* Modal Footer */}
-					<div className="flex items-center justify-between p-3 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex-wrap gap-2 print:hidden">
+					<div className="flex items-center justify-between p-3 sm:p-4 border-t border-[var(--glass-border)] bg-[var(--paper-strong)] flex-wrap gap-2 print:hidden">
 						<span className="text-xs text-[var(--muted)] truncate">
 							Медицинская карта пациента • Защита персональных данных
 						</span>
@@ -321,7 +400,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							<button
 								type="button"
 								onClick={onClose}
-								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[32px] h-8 px-4 text-xs font-semibold rounded-lg cursor-pointer select-none transition-all"
+								className="border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--glass-hover,var(--paper-soft))] min-h-[44px] sm:min-h-[32px] h-8 px-4 text-xs font-semibold rounded-lg cursor-pointer select-none transition-all shadow-2xs"
 							>
 								Закрыть
 							</button>
@@ -336,9 +415,12 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 						</div>
 					</div>
 				</div>
-			</div>,
-			document.body,
+			</div>
 		);
+
+		return typeof document !== "undefined" && document.body
+			? createPortal(modalContent, document.body)
+			: modalContent;
 	},
 );
 

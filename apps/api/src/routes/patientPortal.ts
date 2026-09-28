@@ -19,7 +19,12 @@ import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { organizations, patients, payments, visitDiaries } from "../db/schema.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
-import { PORTAL_TOKEN_KIND, PORTAL_TOKEN_TTL_SECONDS } from "./portal.js";
+import {
+	PORTAL_TOKEN_KIND,
+	PORTAL_TOKEN_TTL_SECONDS,
+	portalRevokedBeforeByPatient,
+	revokedPortalTokens,
+} from "./portal.js";
 import {
 	generateTaxCertificateQrSvg,
 	renderOfficialTaxCertificateKnd1151156Html,
@@ -94,14 +99,26 @@ function verifyPortalAuth(
 		return null;
 	}
 	const token = authHeader.slice("Bearer ".length).trim();
+	if (revokedPortalTokens.has(token)) {
+		reply.status(401);
+		reply.send({ error: "SessionRevoked", message: "Сессия завершена. Войдите снова." });
+		return null;
+	}
 	const payload = verifyToken(token, requireAuthTokenSecret());
 	if (!payload || payload.kind !== PORTAL_TOKEN_KIND || !payload.sub || !payload.organizationId) {
 		reply.status(401);
 		reply.send({ error: "Invalid token" });
 		return null;
 	}
+	const patientId = String(payload.sub);
+	const revokedBefore = portalRevokedBeforeByPatient.get(patientId);
+	if (revokedBefore && typeof payload.iat === "number" && payload.iat <= revokedBefore) {
+		reply.status(401);
+		reply.send({ error: "SessionRevoked", message: "Сессия завершена. Войдите снова." });
+		return null;
+	}
 	return {
-		patientId: String(payload.sub),
+		patientId,
 		organizationId: String(payload.organizationId),
 	};
 }

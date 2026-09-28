@@ -366,7 +366,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 	const handleConfirmDisposal = async () => {
 		if (items.length === 0) {
 			showToast(
-				"Очередь списания пуста. Отсканируйте 2D-сканером DataMatrix код на карпуле или добавьте позиции.",
+				"Очередь списания пуста. Отсканируйте DataMatrix код 2D-сканером на карпуле или добавьте позиции.",
 				"warning",
 			);
 			return;

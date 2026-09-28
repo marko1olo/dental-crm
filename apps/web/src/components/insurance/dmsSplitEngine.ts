@@ -6,6 +6,7 @@
  * ============================================================================
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import {
 	type DmsInsurerDefinition,
 	type DmsPolicy,
@@ -13,6 +14,7 @@ import {
 	getDmsInsurerById,
 	isServiceExcludedByDmsRules,
 } from "./insuranceCatalogs.js";
+
 
 export interface DmsGuaranteeLetter {
 	readonly id: string;

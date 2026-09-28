@@ -164,7 +164,7 @@ export function estimateDomMemoryLoad(nodeCount: number): DomMemoryEstimate {
 			estimatedMb,
 			riskLevel: "critical",
 			recommendation:
-				"Критическая нагрузка на DOM! Рекомендуется ограничение до 50 записей во избежание своппинга в pagefile.sys.",
+				"Критическая нагрузка на память интерфейса! Рекомендуется ограничение до 50 записей во избежание замедления рабочего места врача (подкачка pagefile.sys).",
 		};
 	}
 

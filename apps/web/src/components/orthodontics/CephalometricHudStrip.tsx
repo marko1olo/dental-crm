@@ -23,7 +23,7 @@ export type XrayFilterMode = "normal" | "invert" | "bone" | "edge";
 
 export interface CephalometricHudStripProps {
 	filterMode: XrayFilterMode;
-	onFilterModeChange?: (mode: XrayFilterMode) => void;
+	onFilterModeChange?: ((mode: XrayFilterMode) => void) | undefined;
 	zoom: number;
 	onZoomIn: () => void;
 	onZoomOut: () => void;
@@ -31,19 +31,19 @@ export interface CephalometricHudStripProps {
 	isCalibrating: boolean;
 	onToggleCalibrating: () => void;
 	showPolygon: boolean;
-	onTogglePolygon?: () => void;
+	onTogglePolygon?: (() => void) | undefined;
 	showPlanes: boolean;
-	onTogglePlanes?: () => void;
+	onTogglePlanes?: (() => void) | undefined;
 	showLabels: boolean;
-	onToggleLabels?: () => void;
+	onToggleLabels?: (() => void) | undefined;
 	imageUrl: string | null;
 	isAllLandmarksPlaced: boolean;
 	activeTargetKey: LandmarkKey | null;
 	landmarks: LandmarkMap;
 	onSelectTargetKey: (key: LandmarkKey | null) => void;
 	onFileProcess: (file: File) => void;
-	onLoadPreset?: () => void;
-	onResetLandmarks?: () => void;
+	onLoadPreset?: (() => void) | undefined;
+	onResetLandmarks?: (() => void) | undefined;
 }
 
 export function CephalometricHudStrip({

@@ -67,3 +67,60 @@ export interface ClientStorageQuotaInfo {
 	isPersistent: boolean;
 	indexedDbAvailable: boolean;
 }
+
+export interface StoragePruneReport {
+	prunedAt: string;
+	ttlDays: number;
+	prunedClinicalCacheCount: number;
+	prunedDraftsCount: number;
+	prunedMutationsCount: number;
+	prunedSchedulesCount: number;
+	prunedLocalStorageCount: number;
+	totalPrunedCount: number;
+}
+
+export interface VisitStatusChangedPayload {
+	visitId: string;
+	status: string;
+	previousStatus?: string | undefined;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	doctorId?: string | undefined;
+	updatedAt: string;
+	sourceTabId: string;
+}
+
+export interface PatientBalanceChangedPayload {
+	patientId: string;
+	patientName?: string | undefined;
+	balanceRub?: number | undefined;
+	balanceKopecks?: number | undefined;
+	deltaRub?: number | undefined;
+	reason?: string | undefined;
+	updatedAt: string;
+	sourceTabId: string;
+}
+
+export interface ClinicalEntityChangedPayload {
+	entityKind?: string | undefined;
+	entityType?: string | undefined;
+	entityId: string;
+	patientId?: string | undefined;
+	version?: number | undefined;
+	updatedAt: string;
+	sourceTabId: string;
+}
+
+export type CrossTabSyncEventType =
+	| "visit_status_changed"
+	| "patient_balance_changed"
+	| "clinical_entity_changed";
+
+export interface CrossTabSyncEvent<T = unknown> {
+	eventId: string;
+	type: CrossTabSyncEventType;
+	payload: T;
+	timestamp: number;
+	sourceTabId: string;
+}
+

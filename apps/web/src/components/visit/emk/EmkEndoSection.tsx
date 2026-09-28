@@ -88,7 +88,7 @@ export function EmkEndoSection({
 			<div className="py-2.5 px-1 flex flex-col gap-3 border-t border-[var(--line)]/50">
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<span className="text-xs text-[var(--muted)]">
-						Форма 043/у • Протокол инструментации и пломбирования каналов
+						Эндодонтический протокол • Обработка и обтурация каналов
 					</span>
 					{onOpenEndoModal && (
 						<button
@@ -283,7 +283,7 @@ export function EmkEndoSection({
 						data-testid="btn-apply-endo-to-plan"
 					>
 						<Zap className="w-3.5 h-3.5" />
-						<span>+ Внести эндо-протокол в 043/у</span>
+						<span>+ Внести эндо-протокол в дневник</span>
 					</button>
 				</div>
 			</div>

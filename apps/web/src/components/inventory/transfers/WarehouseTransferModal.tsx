@@ -412,11 +412,14 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 					<div className="wh-transfer-title" id="wh-modal-title">
 						<Truck size={24} className="text-teal-600" />
 						<div className="min-w-0">
-							<div className="font-bold text-lg leading-tight truncate">
-								Межфилиальное Перемещение ТМЦ (ТОРГ-13)
+							<div
+								className="font-bold text-lg leading-tight truncate"
+								title="Межфилиальное Перемещение ТМЦ (ТОРГ-13)"
+							>
+								Перемещение материалов <span className="text-xs font-normal opacity-60 ml-1 font-mono">ТОРГ-13</span>
 							</div>
 							<div className="text-xs font-normal text-muted truncate">
-								Централизованная складская логистика • Партионный учет • Акты расхождений ТОРГ-2
+								Складская логистика • Партионный учет • Сверка расхождений
 							</div>
 						</div>
 					</div>

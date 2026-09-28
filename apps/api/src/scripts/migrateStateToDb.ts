@@ -54,6 +54,7 @@ import type {
 	Appointment,
 	Chair,
 	ClinicalRule,
+	CommunicationTask,
 	GeneratedDocument,
 	Patient,
 	Payment,
@@ -65,6 +66,7 @@ import type { PgTable } from "drizzle-orm/pg-core";
 import { pool } from "../db/client.js";
 import { type TenantDb, withTenantCtx } from "../db/rls.js";
 import * as schema from "../db/schema.js";
+import { inMemoryDomainState } from "../sampleData.js";
 import { loadPersistentState } from "../persistentState.js";
 import { hashCredential } from "../utils/cryptoHelper.js";
 
@@ -167,12 +169,10 @@ const tenantScopedTablesInDeletionOrder: ReadonlyArray<{
 	{ name: "service_catalog_items", table: schema.serviceCatalogItems },
 	{ name: "visits", table: schema.visits },
 	{ name: "appointments", table: schema.appointments },
+	{ name: "recent_patient_history", table: schema.recentPatientHistory },
+	{ name: "patient_referrals", table: schema.patientReferrals },
 	{ name: "patient_consents", table: schema.patientConsents },
 	{ name: "patients", table: schema.patients },
-	{ name: "chairs", table: schema.chairs },
-	{ name: "users", table: schema.users },
-	{ name: "clinics", table: schema.clinics },
-	{ name: "organizations", table: schema.organizations },
 ];
 
 function chunkArray<T>(items: readonly T[], size: number): T[][] {
@@ -437,7 +437,7 @@ async function seed(): Promise<void> {
 			medicalLicenseNumber: clinicProfile?.medicalLicenseNumber,
 			medicalLicenseIssuedAt: clinicProfile?.medicalLicenseIssuedAt,
 			medicalLicenseIssuer: clinicProfile?.medicalLicenseIssuer,
-		});
+		}).onConflictDoNothing();
 
 		console.log("Клиника по умолчанию");
 		await tx.insert(schema.clinics).values({
@@ -447,11 +447,11 @@ async function seed(): Promise<void> {
 			address: clinicProfile?.address,
 			phone: clinicProfile?.phone,
 			timezone: clinicProfile?.timezone,
-		});
+		}).onConflictDoNothing();
 
 		console.log(`Сотрудники: ${staffRows.length}`);
 		for (const chunk of chunkArray(staffRows, CHUNK_SIZE)) {
-			await tx.insert(schema.users).values(chunk);
+			await tx.insert(schema.users).values(chunk).onConflictDoNothing();
 		}
 		const staffIds = new Set(staffRows.map((staff) => staff.id));
 
@@ -464,7 +464,7 @@ async function seed(): Promise<void> {
 			isActive: chair.active,
 		}));
 		for (const chunk of chunkArray(chairRows, CHUNK_SIZE)) {
-			await tx.insert(schema.chairs).values(chunk);
+			await tx.insert(schema.chairs).values(chunk).onConflictDoNothing();
 		}
 		const chairIds = new Set(chairRows.map((chair) => chair.id));
 
@@ -688,6 +688,54 @@ async function seed(): Promise<void> {
 		}));
 		for (const chunk of chunkArray(paymentRows, CHUNK_SIZE)) {
 			await tx.insert(schema.payments).values(chunk);
+		}
+
+		const rawTasks: readonly CommunicationTask[] =
+			state.communicationTasks?.length
+				? state.communicationTasks
+				: inMemoryDomainState.communicationTasks;
+		console.log(`Задачи коммуникации: ${rawTasks.length}`);
+		const taskRows = keepResolvable(rawTasks, "communication_tasks", (task) =>
+			patientIds.has(task.patientId),
+		).map((task) => ({
+			id: task.id,
+			organizationId,
+			clinicId: DEFAULT_CLINIC_ID,
+			patientId: task.patientId,
+			appointmentId:
+				task.appointmentId && appointmentIds.has(task.appointmentId)
+					? task.appointmentId
+					: null,
+			visitId:
+				task.visitId && visitIds.has(task.visitId) ? task.visitId : null,
+			documentId:
+				task.documentId && documentIds.has(task.documentId)
+					? task.documentId
+					: null,
+			assignedRole: task.assignedRole,
+			channel: task.channel,
+			intent: ([
+				"appointment_confirmation",
+				"payment_reminder",
+				"post_visit_instruction",
+				"recall",
+				"document_ready",
+				"imaging_review",
+				"transactional_reply",
+			].includes(task.intent)
+				? task.intent
+				: "general") as typeof schema.communicationTasks.$inferInsert.intent,
+			status: task.status,
+			priority: task.priority,
+			dueAt: new Date(task.dueAt),
+			title: task.title,
+			body: task.body,
+			workflowCode: task.workflowCode ?? null,
+			lastEventAt: task.lastEventAt ? new Date(task.lastEventAt) : null,
+			createdAt: new Date(task.createdAt),
+		}));
+		for (const chunk of chunkArray(taskRows, CHUNK_SIZE)) {
+			await tx.insert(schema.communicationTasks).values(chunk);
 		}
 	});
 

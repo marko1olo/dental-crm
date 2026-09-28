@@ -1433,7 +1433,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 						style={{
 							background: paperBg,
 							width: 440,
-							maxWidth: "95vw",
+							maxWidth: "calc(100% - 32px)",
 							borderRadius: 16,
 							padding: 28,
 							border: `1px solid ${borderColor}`,
@@ -1717,7 +1717,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 						style={{
 							background: paperBg,
 							width: 380,
-							maxWidth: "95vw",
+							maxWidth: "calc(100% - 32px)",
 							borderRadius: 16,
 							padding: 28,
 							border: `1px solid ${borderColor}`,

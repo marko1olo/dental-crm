@@ -1,0 +1,694 @@
+/* Treatment Plan Progress Bars */
+.pc-plan-stage-item {
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm);
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.pc-progress-bar-bg {
+	height: 10px;
+	background: rgba(148, 163, 184, 0.2);
+	border-radius: 5px;
+	overflow: hidden;
+}
+
+.pc-progress-bar-fill {
+	height: 100%;
+	background: var(--pc-primary);
+	border-radius: 5px;
+	transition: width 0.4s ease;
+}
+
+/* Warranty Passports */
+.pc-warranty-card {
+	background: var(--pc-bg);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.pc-warranty-countdown-badge {
+	padding: 6px 12px;
+	border-radius: 20px;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.pc-warranty-countdown-badge.normal {
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	border: 1px solid var(--pc-primary);
+}
+
+.pc-warranty-countdown-badge.urgent {
+	background: var(--pc-warning-light);
+	color: var(--pc-warning);
+	border: 1px solid var(--pc-warning);
+}
+
+.pc-warranty-countdown-badge.overdue {
+	background: var(--pc-danger-light);
+	color: var(--pc-danger);
+	border: 1px solid var(--pc-danger);
+}
+
+/* Statutory Consents (323-FZ) */
+.pc-consent-card {
+	background: var(--pc-bg);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.pc-audit-hash-badge {
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-sm);
+	padding: 8px 12px;
+	font-family: monospace;
+	font-size: 0.75rem;
+	color: var(--pc-text-muted);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	overflow-x: auto;
+}
+
+/* Appointments Cards */
+.pc-appointment-card {
+	background: var(--pc-bg);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/* Patient Plan View & Guarantees */
+.patient-plan-view-container {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.emergency-hotline-card {
+	animation: pc-pulse-border 3s infinite ease-in-out;
+}
+
+@keyframes pc-pulse-border {
+	0%, 100% {
+		border-color: var(--pc-danger, #ef4444);
+	}
+	50% {
+		border-color: rgba(239, 68, 68, 0.4);
+	}
+}
+
+.treatment-plan-stage-card {
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.treatment-plan-stage-card:hover {
+	border-color: var(--pc-primary, #0d9488);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.patient-cabinet-modal {
+		height: 98vh;
+		border-radius: 0;
+	}
+
+	.pc-header {
+		padding: 12px 14px;
+	}
+
+	.pc-body {
+		padding: 12px;
+		gap: 14px;
+	}
+
+	.pc-summary-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-bank-buttons-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-otp-digit {
+		width: 40px;
+		height: 48px;
+		font-size: 1.25rem;
+	}
+
+	.pc-nav-bar {
+		padding: 0 8px;
+	}
+
+	.pc-tab-btn {
+		padding: 0 12px;
+		font-size: 0.8125rem;
+	}
+}
+
+/* ── Mobile Smartphone Optimization (<= 480px & iPhone SE 375px) ── */
+@media (max-width: 480px) {
+	.patient-cabinet-backdrop {
+		padding: 0;
+	}
+
+	.patient-cabinet-modal {
+		height: 100vh;
+		max-height: 100vh;
+		border-radius: 0;
+		border: none;
+	}
+
+	.pc-header {
+		padding: 10px 12px;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.pc-header-user {
+		width: 100%;
+		justify-content: flex-start;
+	}
+
+	.pc-header-badges {
+		width: 100%;
+		justify-content: space-between;
+		gap: 6px;
+	}
+
+	.pc-close-btn {
+		min-width: 44px;
+		min-height: 44px;
+		width: 44px;
+		height: 44px;
+		margin-left: auto;
+	}
+
+	.pc-quick-action-btn {
+		min-height: 44px;
+		padding: 10px 16px;
+	}
+
+	.pc-cal-btn {
+		min-height: 44px;
+		padding: 8px 12px;
+	}
+
+	.pc-year-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+
+	.pc-filter-chip {
+		min-height: 44px;
+		padding: 8px 16px;
+	}
+
+	.pc-view-mode-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+
+	.pc-stage-chevron-btn {
+		min-width: 44px;
+		min-height: 44px;
+		padding: 10px;
+	}
+
+	/* Mandate 8p: Purge duplicate profile hero card on mobile (it duplicates sticky .pc-header and wastes 220px) */
+	.pc-status-hero-card {
+		display: none !important;
+	}
+
+	.pc-body {
+		padding: 12px 10px 56px 10px;
+		gap: 12px;
+	}
+
+	.pc-card {
+		padding: 12px 10px;
+	}
+
+	.pc-alert-banner {
+		padding: 10px 12px;
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.pc-alert-banner button {
+		width: 100%;
+		min-height: 44px;
+	}
+
+	.pc-invoice-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 6px;
+	}
+
+	.pc-invoice-actions {
+		flex-direction: column;
+		align-items: stretch;
+		width: 100%;
+	}
+
+	.pc-invoice-actions button,
+	.pc-invoice-actions a {
+		width: 100%;
+		min-height: 44px;
+		justify-content: center;
+	}
+
+	.tax-deduction-quick-card,
+	.next-visit-card,
+	.emergency-hotline-card {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.tax-deduction-quick-card button,
+	.next-visit-card button,
+	.next-visit-card a,
+	.emergency-hotline-card a {
+		width: 100%;
+		min-height: 44px;
+		justify-content: center;
+	}
+
+	.pc-bank-buttons-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-otp-digit {
+		width: 38px;
+		height: 44px;
+		font-size: 1.125rem;
+	}
+}
+
+/* ==========================================================================
+   Touch Screen / Tablet Ergonomics (Mandate 8c: >= 44px Touch Targets)
+   ========================================================================== */
+@media (pointer: coarse) {
+	.pc-close-btn {
+		min-width: 44px;
+		min-height: 44px;
+		width: 44px;
+		height: 44px;
+	}
+
+	.pc-quick-action-btn {
+		min-height: 44px;
+		padding: 10px 16px;
+	}
+
+	.pc-cal-btn {
+		min-height: 44px;
+		padding: 8px 12px;
+	}
+
+	.pc-year-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+
+	.pc-filter-chip {
+		min-height: 44px;
+		padding: 8px 16px;
+	}
+
+	.pc-view-mode-btn {
+		min-height: 44px;
+		padding: 8px 14px;
+	}
+
+	.pc-stage-chevron-btn {
+		min-width: 44px;
+		min-height: 44px;
+		padding: 10px;
+	}
+}
+
+/* ==========================================================================
+   Reschedule & Submodal Dialogs (Mobile 375px & Touch First)
+   ========================================================================== */
+.pc-submodal-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.72);
+	backdrop-filter: blur(5px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1200;
+	padding: 12px;
+	box-sizing: border-box;
+}
+
+.pc-submodal-card {
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-lg);
+	box-shadow: var(--pc-shadow);
+	width: 100%;
+	max-width: 480px;
+	max-height: 90vh;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+}
+
+.pc-submodal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--pc-border);
+	background: var(--pc-surface);
+	position: sticky;
+	top: 0;
+	z-index: 10;
+}
+
+.pc-slot-chips-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+	gap: 6px;
+}
+
+@media (max-width: 400px) {
+	.pc-slot-chips-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 6px;
+	}
+}
+
+.pc-slot-chip-btn {
+	min-height: 44px;
+	border-radius: var(--pc-radius-sm);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: all 0.15s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	padding: 6px 8px;
+	border: 1px solid var(--pc-border);
+	background: var(--pc-bg);
+	color: var(--pc-text-main);
+}
+
+.pc-slot-chip-btn:hover {
+	background: var(--pc-surface-hover);
+	border-color: var(--pc-primary);
+}
+
+.pc-slot-chip-btn.selected {
+	border: 2px solid var(--pc-primary);
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	font-weight: 800;
+}
+
+/* ============================================================
+   РАУНД 85: QR-КОД БЫСТРОЙ РЕГИСТРАЦИИ НА РЕСЕПШЕНЕ (375PX)
+   ============================================================ */
+
+.pc-reception-qr-card {
+	border: 2px solid var(--pc-primary);
+	background: linear-gradient(
+		135deg,
+		var(--pc-surface) 0%,
+		var(--pc-primary-light) 100%
+	);
+	border-radius: var(--pc-radius-md);
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.pc-next-visit-time {
+	font-size: 20px !important;
+	font-weight: 800 !important;
+	color: var(--pc-primary) !important;
+	letter-spacing: 0.02em;
+	line-height: 1.2;
+}
+
+.pc-next-visit-room {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--pc-primary);
+	background: var(--pc-primary-light);
+	padding: 4px 10px;
+	border-radius: 6px;
+}
+
+@media (max-width: 480px) {
+	.pc-reception-qr-card {
+		padding: 12px;
+	}
+
+	.pc-reception-qr-card button {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+/* ============================================================
+   CARE INSTRUCTIONS & FRIENDLY BILLING (WHATSAPP & PHONE QR)
+   ============================================================ */
+
+.pc-care-memo-card {
+	border: 2px solid var(--pc-primary);
+	background: linear-gradient(
+		135deg,
+		var(--pc-surface) 0%,
+		var(--pc-primary-light) 100%
+	);
+	border-radius: var(--pc-radius-lg);
+	padding: 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	box-sizing: border-box;
+}
+
+.pc-care-rec-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 12px;
+}
+
+.pc-care-rec-item {
+	background: var(--pc-bg);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-md);
+	padding: 14px 16px;
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.pc-care-rec-item:hover {
+	border-color: var(--pc-primary);
+	transform: translateY(-1px);
+}
+
+.pc-care-rec-item.urgent {
+	border-color: var(--pc-danger);
+	background: var(--pc-danger-light);
+}
+
+.pc-care-rec-icon {
+	font-size: 28px;
+	line-height: 1;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: var(--pc-surface);
+	border: 1px solid var(--pc-border);
+}
+
+.pc-care-rec-content {
+	flex: 1;
+	min-width: 0;
+}
+
+.pc-care-rec-title {
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	margin: 0 0 4px 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pc-care-rec-desc {
+	font-size: 0.875rem;
+	color: var(--pc-text-muted);
+	margin: 0;
+	line-height: 1.45;
+}
+
+
+.pc-care-actions-bar {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.pc-care-actions-bar button {
+	min-height: 44px;
+	padding: 8px 14px;
+	font-weight: 700;
+	border-radius: var(--pc-radius-md);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+	.pc-care-actions-bar {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+		width: 100%;
+		margin-top: 8px;
+	}
+
+	.pc-care-actions-bar .pc-whatsapp-btn {
+		grid-column: 1 / -1;
+		width: 100%;
+		min-height: 46px;
+	}
+
+	.pc-care-actions-bar button {
+		min-height: 44px;
+		font-size: 0.8125rem;
+		padding: 8px 10px;
+		width: 100%;
+	}
+}
+
+.pc-whatsapp-btn {
+	min-height: 48px;
+	padding: 10px 20px;
+	border-radius: var(--pc-radius-md);
+	font-size: 0.9375rem;
+	font-weight: 800;
+	background: #25d366;
+	color: #ffffff;
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	text-decoration: none;
+	touch-action: manipulation;
+	box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+	transition: all 0.15s ease;
+}
+
+.pc-whatsapp-btn:hover {
+	background: #20ba59;
+	transform: scale(1.02);
+}
+
+.pc-friendly-billing-group {
+	background: var(--pc-surface);
+	border: 1.5px solid var(--pc-border);
+	border-radius: var(--pc-radius-lg);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	box-sizing: border-box;
+}
+
+.pc-friendly-billing-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.pc-friendly-group-title {
+	font-size: 1.0625rem;
+	font-weight: 800;
+	color: var(--pc-text-main);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+}
+
+.pc-friendly-group-sum {
+	font-size: 1.125rem;
+	font-weight: 900;
+	color: var(--pc-primary);
+	font-family: inherit;
+}
+
+@media (max-width: 480px) {
+	.pc-care-rec-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.pc-care-memo-card {
+		padding: 12px;
+	}
+
+	.pc-care-rec-item {
+		padding: 12px;
+		gap: 10px;
+	}
+
+	.pc-whatsapp-btn {
+		width: 100%;
+	}
+}

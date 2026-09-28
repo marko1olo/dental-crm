@@ -273,7 +273,7 @@ export function computePatientSentiment(
 	}
 
 	if (patient?.requiresStrictInformedConsent && somaticRiskFactors.length === 0) {
-		somaticRiskFactors.push("Оформление расширенного информированного добровольного согласия (ИДС 1051н)");
+		somaticRiskFactors.push("Оформление расширенного информированного добровольного согласия (ИДС)");
 	}
 
 	const hasSomaticStopFactor = somaticRiskFactors.length > 0 || Boolean(patient?.requiresStrictInformedConsent);
@@ -580,7 +580,7 @@ export const PatientSentimentBadge: React.FC<PatientSentimentBadgeProps> = ({
 								top: `${popoverPos.top}px`,
 								left: `${popoverPos.left}px`,
 							}}
-							className="w-[320px] max-w-[calc(100vw-24px)] p-3.5 rounded-2xl bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,rgba(255,255,255,0.12))] shadow-2xl z-[9999] animate-in fade-in zoom-in-95 duration-150 space-y-3 pointer-events-auto"
+							className="w-[320px] max-w-[calc(100%-24px)] p-3.5 rounded-2xl bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,rgba(255,255,255,0.12))] shadow-2xl z-[9999] animate-in fade-in zoom-in-95 duration-150 space-y-3 pointer-events-auto"
 							onClick={(e) => e.stopPropagation()}
 							data-testid="patient-sentiment-popover"
 						>

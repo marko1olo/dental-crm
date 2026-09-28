@@ -585,8 +585,8 @@ export function calculateCashChangeKop(
 	cashTenderedKop: number,
 	cashRequiredKop: number,
 ): CashChangeCalculation {
-	const sanitizedTendered = Math.max(0, cashTenderedKop);
-	const sanitizedRequired = Math.max(0, cashRequiredKop);
+	const sanitizedTendered = Number.isFinite(cashTenderedKop) ? Math.max(0, Math.round(cashTenderedKop)) : 0;
+	const sanitizedRequired = Number.isFinite(cashRequiredKop) ? Math.max(0, Math.round(cashRequiredKop)) : 0;
 
 	if (sanitizedRequired === 0) {
 		return {

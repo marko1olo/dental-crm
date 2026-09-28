@@ -1,0 +1,89 @@
+/* apps/web/src/styles/modules/payments.css
+ * DENTE Dental CRM — Cashier & Payment Capture Ergonomics (Mandates 8c, 8e, 8n)
+ * Provides 2-level payment panel styling, desktop 32-36px density,
+ * and 40-44px mobile touch ergonomics.
+ */
+
+.payment-methods-toolbar {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	gap: 6px;
+	margin-bottom: 8px;
+	width: 100%;
+}
+
+.payment-methods-toolbar .quick-chip {
+	min-height: 34px;
+	height: 34px;
+	padding: 4px 8px;
+	font-size: 12px;
+	font-weight: 600;
+	justify-content: center;
+	text-align: center;
+	white-space: nowrap;
+	border-radius: 8px;
+	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.payment-options-accordion {
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--paper-soft);
+	padding: 8px 12px;
+	margin-top: 6px;
+	margin-bottom: 6px;
+	transition: border-color 0.15s ease;
+}
+
+.payment-options-accordion[open] {
+	border-color: var(--line-strong);
+}
+
+.payment-options-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted);
+	user-select: none;
+	list-style: none;
+	transition: color 0.15s ease;
+}
+
+.payment-options-summary::-webkit-details-marker {
+	display: none;
+}
+
+.payment-options-summary:hover {
+	color: var(--ink);
+}
+
+/* Mobile Cashier Ergonomics (pointer: coarse / max-width: 640px) */
+@media (max-width: 640px) {
+	.payment-methods-toolbar {
+		grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+		gap: 4px !important;
+		margin-bottom: 6px !important;
+	}
+
+	.payment-methods-toolbar .quick-chip {
+		min-height: 42px !important;
+		height: 42px !important;
+		padding: 2px 4px !important;
+		font-size: 11px !important;
+		border-radius: 8px !important;
+	}
+
+	.payment-options-accordion {
+		padding: 6px 10px !important;
+		margin-top: 4px !important;
+		margin-bottom: 4px !important;
+	}
+
+	.payment-options-summary {
+		min-height: 36px;
+		font-size: 11.5px;
+	}
+}

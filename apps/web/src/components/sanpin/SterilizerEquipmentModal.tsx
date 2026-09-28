@@ -330,7 +330,7 @@ export function SterilizerEquipmentModal({
 
 	return (
 		<div className="sanpin-modal-overlay">
-			<div className="sanpin-modal" style={{ maxWidth: "780px", width: "95vw", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+			<div className="sanpin-modal" style={{ maxWidth: "780px", width: "min(780px, calc(100% - 32px))", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
 				{/* Header */}
 				<div className="sanpin-modal-header" style={{ flexShrink: 0 }}>
 					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>

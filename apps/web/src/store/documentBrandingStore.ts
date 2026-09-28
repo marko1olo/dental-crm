@@ -49,16 +49,18 @@ export interface DocumentBrandingState {
 	resetToDefaults: () => void;
 }
 
+export interface DocumentBrandColorPalette {
+	label: string;
+	primary: string;
+	primaryDark: string;
+	softBg: string;
+	accentBorder: string;
+	textOnPrimary: string;
+}
+
 export const BRAND_COLOR_PALETTES: Record<
 	DocumentBrandColor,
-	{
-		label: string;
-		primary: string;
-		primaryDark: string;
-		softBg: string;
-		accentBorder: string;
-		textOnPrimary: string;
-	}
+	DocumentBrandColorPalette
 > = {
 	medical_navy: {
 		label: "Классический медицинский (Navy)",

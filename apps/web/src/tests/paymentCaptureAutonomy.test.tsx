@@ -10,6 +10,7 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "node:test";
 import React, { act } from "react";
+(globalThis as any).React = React;
 import { createRoot, type Root } from "react-dom/client";
 import { PaymentCapture } from "../PaymentCapture";
 import { money } from "../AppHelpers";

@@ -34,6 +34,11 @@ import { ScheduleDisconnectedState } from "./components/schedule/view/ScheduleDi
 import { ScheduleViewToolbar } from "./components/schedule/view/ScheduleViewToolbar";
 import { ScheduleViewBody } from "./components/schedule/view/ScheduleViewBody";
 import { ScheduleViewModals } from "./components/schedule/view/ScheduleViewModals";
+import {
+  isDemoShowcaseMode,
+  getDemoShowcaseAppointments,
+  getDemoShowcasePatients,
+} from "./lib/demoMode";
 
 // Zero-downtime re-exports of shifts, drafts, and lock contracts
 export { buildChairDoctorAssignmentsFromShifts, buildChairDoctorAssignmentsByDate } from "./components/schedule/view/scheduleViewShifts";
@@ -193,6 +198,27 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const clinicToday = todayScheduleDate();
   const currentDateKey = scheduleDateFilter || clinicToday || todayScheduleDate();
 
+  const effectiveSortedAppointments = useMemo(() => {
+    if (sortedAppointments && sortedAppointments.length > 0) return sortedAppointments;
+    if (isDemoShowcaseMode()) {
+      return getDemoShowcaseAppointments(currentDateKey);
+    }
+    return [];
+  }, [sortedAppointments, currentDateKey]);
+
+  const effectiveDashboard = useMemo(() => {
+    if (!dashboard) return dashboard;
+    if (!isDemoShowcaseMode()) return dashboard;
+    const hasAppointments = dashboard.appointments && dashboard.appointments.length > 0;
+    const hasPatients = dashboard.patients && dashboard.patients.length > 0;
+    if (hasAppointments && hasPatients) return dashboard;
+    return {
+      ...dashboard,
+      appointments: hasAppointments ? dashboard.appointments : getDemoShowcaseAppointments(currentDateKey),
+      patients: hasPatients ? dashboard.patients : getDemoShowcasePatients(),
+    };
+  }, [dashboard, currentDateKey]);
+
   const {
     savedDoctorShifts,
     setSavedDoctorShifts,
@@ -202,8 +228,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     rosterCabinets,
     rosterAppointments,
   } = useScheduleRosterData({
-    dashboard,
-    sortedAppointments,
+    dashboard: effectiveDashboard,
+    sortedAppointments: effectiveSortedAppointments,
     auth,
     currentDateKey,
   });
@@ -277,10 +303,20 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
     setWaitlistOpen(true);
   }, []);
 
+  const isSoloOrStandardClinic =
+    Boolean(auth?.isSoloDoctor) ||
+    dashboard?.clinicSettings?.profile?.mode === "solo_practice" ||
+    dashboard?.clinicSettings?.profile?.mode === "solo_doctor" ||
+    dashboard?.clinicSettings?.profile?.mode === "one_chair" ||
+    dashboard?.clinicSettings?.profile?.mode === "small_clinic" ||
+    dashboard?.clinicSettings?.profile?.mode === "clinic" ||
+    !dashboard?.clinicSettings?.profile?.mode;
+
   const adminSecretReady = scheduleAdminSecretDraft.trim().length > 0;
   const scheduleAdminSecretNeeded =
-    scheduleAdminSecretDemand?.length > 0 ||
-    scheduleAdminSecretSession?.length > 0;
+    !isSoloOrStandardClinic &&
+    (scheduleAdminSecretDemand?.length > 0 ||
+      scheduleAdminSecretSession?.length > 0);
   const scheduleAdminSecretReason =
     scheduleAdminSecretDemand === "ScheduleAdminSecretMissing"
       ? "Сервер клиники не настроен на изменение расписания: в его настройках не задан секрет администратора. Секрет задаёт тот, кто устанавливал программу — без него запись не сохранится, сколько бы вы ни вводили здесь."
@@ -300,7 +336,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   const scheduleDayGroups = useMemo(
     () =>
       groupAppointmentsByClinicDay(
-        (sortedAppointments ?? []) as DayGroupingAppointment[],
+        (effectiveSortedAppointments ?? []) as DayGroupingAppointment[],
         {
           toClinicLocal: (iso: string) =>
             toDateTimeLocalValue
@@ -314,7 +350,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
         },
       ),
     [
-      sortedAppointments,
+      effectiveSortedAppointments,
       dashboard?.clinicSettings?.profile?.timezone,
       clinicToday,
       toDateTimeLocalValue,
@@ -479,11 +515,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
   ) : null;
 
   return (
-    <div
-      className="panel schedule-panel min-w-0 max-w-full overflow-hidden"
-      id="schedule"
-      data-testid="schedule-view"
-    >
+    <div className="panel schedule-panel" id="schedule" data-testid="schedule-view">
       <ScheduleViewToolbar
         clinicToday={clinicToday}
         scheduleDateFilter={scheduleDateFilter}
@@ -660,7 +692,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
       <ScheduleViewBody
         scheduleViewMode={scheduleViewMode}
-        dashboard={dashboard}
+        dashboard={effectiveDashboard}
         scheduleDateFilter={scheduleDateFilter}
         clinicToday={clinicToday}
         todayScheduleDate={todayScheduleDate}

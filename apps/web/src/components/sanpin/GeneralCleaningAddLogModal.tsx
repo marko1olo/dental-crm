@@ -106,7 +106,7 @@ export function GeneralCleaningAddLogModal({
 		<div className="sanpin-modal-overlay">
 			<div className="sanpin-modal">
 				<div className="sanpin-modal-header">
-					<h3>Проведение генеральной уборки (СанПиН 3.3686-21)</h3>
+					<h3>Проведение генеральной уборки</h3>
 					<button
 						type="button"
 						onClick={onClose}
@@ -125,7 +125,7 @@ export function GeneralCleaningAddLogModal({
 								className="sanpin-btn sanpin-btn-secondary"
 								style={{ fontSize: "0.78rem", padding: "0.3rem 0.6rem" }}
 							>
-								<Sparkles size={13} /> Заполнить норму СанПиН (Аламинол 5%, УФ 120 мин)
+								<Sparkles size={13} /> Заполнить нормой (Аламинол 5%, УФ 120 мин)
 							</button>
 						</div>
 						<div className="sanpin-form-row">

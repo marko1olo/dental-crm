@@ -25,6 +25,7 @@ import {
 
 import {
 	getFefoTrafficLight,
+	getWarehouseFefoTrafficLight,
 	type ExpiryTrafficLight,
 } from "../components/inventory/NurseCarpuleDisposalModal";
 
@@ -36,6 +37,15 @@ import {
 	calculateAutoVisitConsumables,
 	performAutoVisitBomDeduction,
 } from "../components/inventory/autoBomDeductionEngine";
+
+import React from "react";
+import { renderToString } from "react-dom/server";
+import { WarehouseItemsTable } from "../components/warehouse/WarehouseItemsTable";
+import { generateFormM11Html } from "../components/inventory/writeoff/clinicalWriteoffPrintForms";
+import {
+	createSampleDentalWaybill,
+	reconcileOverdraftOnReceipt,
+} from "../components/inventory/acceptanceWaybillsEngine";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -136,7 +146,7 @@ describe("Warehouse & Dental Lab Inquisitor Audit (Mandates 8k, 8n, 8s)", () => 
 				renderedServices: [
 					{
 						serviceCode: "A16.07.002",
-						serviceName: "Восстановление зуба пломбой",
+						name: "Восстановление зуба пломбой",
 						quantity: 1,
 					},
 				],
@@ -154,7 +164,13 @@ describe("Warehouse & Dental Lab Inquisitor Audit (Mandates 8k, 8n, 8s)", () => 
 		it("содержит ровно 5 канонических клинических этапов (Оттиск -> В лаборатории -> Примерка -> Готово -> Фиксация)", () => {
 			assert.equal(CANONICAL_5_CLINICAL_LAB_STATUSES.length, 5);
 
-			const [s1, s2, s3, s4, s5] = CANONICAL_5_CLINICAL_LAB_STATUSES;
+			const s1 = CANONICAL_5_CLINICAL_LAB_STATUSES[0];
+			const s2 = CANONICAL_5_CLINICAL_LAB_STATUSES[1];
+			const s3 = CANONICAL_5_CLINICAL_LAB_STATUSES[2];
+			const s4 = CANONICAL_5_CLINICAL_LAB_STATUSES[3];
+			const s5 = CANONICAL_5_CLINICAL_LAB_STATUSES[4];
+			assert.ok(s1 && s2 && s3 && s4 && s5);
+
 			assert.equal(s1.id, "sent");
 			assert.equal(s1.step, 1);
 			assert.ok(s1.shortLabelRu.includes("Отправлен") || s1.labelRu.includes("Отправлен"));
@@ -202,6 +218,171 @@ describe("Warehouse & Dental Lab Inquisitor Audit (Mandates 8k, 8n, 8s)", () => 
 			assert.ok(canTransitionLabStatus("sent_to_lab", "ready_in_clinic"));
 			assert.ok(canTransitionLabStatus("delivered_to_patient", "warranty_rework"));
 			assert.ok(canTransitionLabStatus("warranty_rework", "sent_to_lab"));
+		});
+	});
+
+	describe("5. Складской FEFO-светофор getWarehouseFefoTrafficLight (Красный ≤30дн, Желтый ≤90дн, Зеленый >90дн)", () => {
+		const refDate = new Date("2026-09-24T00:00:00Z");
+
+		it("красный статус для критических партий с остатком ≤ 30 дней", () => {
+			// 2026-10-10 от 2026-09-24: 16 дней остатка (≤ 30 дней) — на складе это КРАСНЫЙ (критический срок)
+			const red = getWarehouseFefoTrafficLight("2026-10-10", refDate);
+			assert.equal(red.status, "red");
+			assert.equal(red.badgeText, "Критический срок (≤30 дн)");
+			assert.equal(red.dotColor, "#ef4444");
+			assert.equal(red.daysLeft, 16);
+		});
+
+		it("красный статус для просроченных партий (daysLeft < 0) и истекающих сегодня (daysLeft === 0)", () => {
+			const expired = getWarehouseFefoTrafficLight("2026-08-01", refDate);
+			assert.equal(expired.status, "red");
+			assert.equal(expired.badgeText, "Просрочен");
+
+			const today = getWarehouseFefoTrafficLight("2026-09-24", refDate);
+			assert.equal(today.status, "red");
+			assert.equal(today.badgeText, "Истекает сегодня");
+		});
+
+		it("желтый статус для партий с приближающимся сроком 31..90 дней (FEFO приоритет)", () => {
+			// 2026-11-20 от 2026-09-24: 57 дней остатка (31..90 дней) — ЖЕЛТЫЙ (FEFO приоритет)
+			const yellow = getWarehouseFefoTrafficLight("2026-11-20", refDate);
+			assert.equal(yellow.status, "yellow");
+			assert.equal(yellow.badgeText, "FEFO приоритет");
+			assert.equal(yellow.dotColor, "#f59e0b");
+			assert.equal(yellow.daysLeft, 57);
+		});
+
+		it("зеленый статус для свежих партий со сроком > 90 дней (FEFO норма)", () => {
+			// 2027-06-15 от 2026-09-24: > 260 дней остатка (> 90 дней) — ЗЕЛЕНЫЙ
+			const green = getWarehouseFefoTrafficLight("2027-06-15", refDate);
+			assert.equal(green.status, "green");
+			assert.equal(green.badgeText, "FEFO норма");
+			assert.equal(green.dotColor, "#10b981");
+			assert.ok(green.daysLeft > 90);
+		});
+	});
+
+	describe("6. 7-колоночная каноническая таблица остатков склада (WarehouseItemsTable)", () => {
+		const sampleItems = [
+			{
+				id: "w-item-1",
+				name: "Артикаин 1:100 000 (Ультракаин Д-С Форте)",
+				category: "anesthesia",
+				stockQuantity: 45,
+				criticalThreshold: 10,
+				unitCostRub: "95.00",
+				unit: "карп.",
+				sku: "ART-100",
+				lotNumber: "LOT-A2028",
+				expirationDate: "2028-12-31",
+				updatedAt: "2026-09-24T00:00:00.000Z",
+			},
+			{
+				id: "w-item-2",
+				name: "Ватные валики стоматологические стерильные",
+				category: "disposables",
+				stockQuantity: 0, // Нулевой остаток — овердрафт
+				criticalThreshold: 5,
+				unitCostRub: "120.00",
+				unit: "упак.",
+				sku: "ROL-500",
+				lotNumber: "LOT-ROL",
+				expirationDate: "2029-01-01",
+				updatedAt: "2026-09-24T00:00:00.000Z",
+			},
+		];
+
+
+		it("рендерит ровно 7 колонок: Наименование, Категория, Срок годности/Партия, Остаток, Мин. запас, Себестоимость, Действия", () => {
+			const html = renderToString(
+				React.createElement(WarehouseItemsTable, {
+					items: sampleItems,
+					isLoading: false,
+					organizationId: "00000000-0000-0000-0000-000000000001",
+					searchQuery: "",
+					loadError: null,
+					onSelectItem: () => {},
+					onDeductItem: () => {},
+					onReceiveItem: () => {},
+					onDeleteItem: () => {},
+					onEditItem: () => {},
+					onOpenWaybills: () => {},
+					onOpenAddModal: () => {},
+					onRetry: () => {},
+				})
+			);
+
+			// 7 заголовков колонок
+			assert.ok(html.includes("Наименование"), "Заголовок 'Наименование' присутствует");
+			assert.ok(html.includes("Категория"), "Заголовок 'Категория' присутствует");
+			assert.ok(html.includes("Срок годности"), "Заголовок 'Срок годности' присутствует");
+			assert.ok(html.includes("Партия / FEFO"), "Подзаголовок 'Партия / FEFO' присутствует");
+			assert.ok(html.includes("Остаток"), "Заголовок 'Остаток' присутствует");
+			assert.ok(html.includes("Мин. запас"), "Заголовок 'Мин. запас' присутствует");
+			assert.ok(html.includes("Себестоимость"), "Заголовок 'Себестоимость' присутствует");
+			assert.ok(html.includes("Действия"), "Заголовок 'Действия' присутствует");
+
+			// Строки данных
+			assert.ok(html.includes("stock-row-w-item-1"));
+			assert.ok(html.includes("stock-row-w-item-2"));
+
+			// Овердрафт при остатке 0 (Мандат 8n)
+			assert.ok(html.includes('data-testid="soft-overdraft-badge-w-item-2"'));
+			assert.ok(html.includes("Овердрафт"));
+		});
+	});
+
+	describe("7. Накладные М-11 и приёмка ТМЦ (acceptanceWaybills & Form M-11)", () => {
+		it("генерация типовой межотраслевой формы М-11 создает юридически корректный документ", () => {
+			const sampleDoc: any = {
+				actNumber: "СПИС-2026-0042",
+				actDate: "2026-09-24",
+				clinicName: "ООО «ДЕНТЕ» Стоматология",
+				doctorName: "Д-р Воронов А.В.",
+				doctorPosition: "Врач-стоматолог терапевт",
+				statutoryFormType: "M11" as const,
+				totals: {
+					totalStandardCostKopecks: 95000,
+					totalActualCostKopecks: 95000,
+					totalCostKopecks: 95000,
+					totalCostRubles: 950,
+					totalMaterialsQuantity: 10,
+					totalMaterialsCount: 1,
+					costVarianceKopecks: 0,
+					totalItemsCount: 1,
+					overdraftItemsCount: 0,
+				},
+				lines: [
+					{
+						materialId: "m1",
+						nameRu: "Артикаин 1:100 000",
+						sku: "ART-100",
+						category: "anesthesia",
+						unit: "карп.",
+						okeiCode: "796",
+						standardQuantity: 10,
+						actualQuantity: 10,
+						unitCostKopecks: 9500,
+						totalCostKopecks: 95000,
+						lotNumber: "LOT-ART-2028",
+						expiryDate: "2028-12-31",
+					},
+				],
+			};
+
+			const html = generateFormM11Html(sampleDoc);
+			assert.ok(html.includes("Типовая межотраслевая форма № <strong>М-11</strong>"), "Должен содержать заголовок М-11");
+			assert.ok(html.includes("0315003"), "Код по ОКУД 0315003 формы М-11 должен присутствовать");
+			assert.ok(html.includes("ТРЕБОВАНИЕ-НАКЛАДНАЯ"), "Наименование ТРЕБОВАНИЕ-НАКЛАДНАЯ должно присутствовать");
+			assert.ok(html.includes("Артикаин 1:100 000"), "Позиция номенклатуры должна быть в таблице");
+			assert.ok(html.includes("950.00"), "Сумма накладной должна быть в документе");
+		});
+
+		it("reconcileOverdraftOnReceipt автоматически уменьшает дефицит при поступлении приходной накладной", () => {
+			const reconciled = reconcileOverdraftOnReceipt(-5, 20);
+			assert.equal(reconciled.overdraftResolved, true, "Дефицит валиков должен быть полностью погашен приходом");
+			assert.equal(reconciled.clearedDeficit, 5, "Должно быть погашено 5 единиц овердрафта");
+			assert.equal(reconciled.newStockQuantity, 15, "Новый остаток должен стать +15");
 		});
 	});
 });

@@ -17,10 +17,10 @@ export interface DocumentRegistryFilterBarProps {
 	readonly totalCount: number;
 	readonly filteredCount: number;
 	readonly onResetFilters: () => void;
-	readonly availableKinds?: ReadonlyArray<{ readonly kind: string; readonly label: string }>;
-	readonly activeCategoryTab?: DocumentCategoryTab;
-	readonly onSelectCategoryTab?: (tab: DocumentCategoryTab) => void;
-	readonly categoryCounts?: Record<DocumentCategoryTab, number>;
+	readonly availableKinds?: ReadonlyArray<{ readonly kind: string; readonly label: string }> | undefined;
+	readonly activeCategoryTab?: DocumentCategoryTab | undefined;
+	readonly onSelectCategoryTab?: ((tab: DocumentCategoryTab) => void) | undefined;
+	readonly categoryCounts?: Record<DocumentCategoryTab, number> | undefined;
 }
 
 export function DocumentRegistryFilterBar({

@@ -1,5 +1,5 @@
 import { PackageCheck, ShieldCheck, Sparkles, Syringe, Zap } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface NurseCarpule1ClickPackagesProps {
 	readonly onPackageClick: (

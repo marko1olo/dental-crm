@@ -15,11 +15,13 @@
  * - Design Tokens & Theme Hygiene: Enforcing CSS variables (var(--paper), var(--ink), var(--teal))
  */
 
+import "../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import React from "react";
+globalThis.React = React;
 import { renderToString } from "react-dom/server";
 import {
 	CONSENT_ANESTHESIA,
@@ -41,7 +43,7 @@ import {
 	substitutePlaceholders,
 	type ConsentTemplateKey,
 } from "../consentTemplates.js";
-import { InformedConsentModal } from "../InformedConsentModal.js";
+const { InformedConsentModal } = await import("../InformedConsentModal.js");
 
 describe("Red Team Inquisition: Informed Voluntary Consents (1051n & 323-FZ)", () => {
 	const mockPatient = {

@@ -40,6 +40,7 @@ import type {
 import { staffAuthorityFlags } from "../security/permissions.js";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
+export * from "./doctorPreferencesQuery.js";
 
 
 

@@ -271,17 +271,17 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 	return (
 		<section
 			aria-label="Терапевтический протокол лечения зуба"
-			className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/90 ${className}`}
+			className={`rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] p-4 shadow-sm ${className}`}
 		>
 			{/* ВЕРХНИЙ ТУЛБАР В 1 СТРОКУ (Мандат 8d: 32-36px, Хик) */}
-			<div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+			<div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] pb-3">
 				<div className="flex items-center gap-2">
 					<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-400 shrink-0">
 						<Zap className="h-5 w-5" />
 					</div>
 					<div>
 						<div className="flex items-center gap-2">
-							<h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+							<h3 className="text-sm font-semibold text-[var(--ink)]">
 								Терапевтический протокол: Зуб {effectiveTooth}
 							</h3>
 							<span className="rounded bg-teal-100 px-2 py-0.5 text-xs font-mono font-bold text-teal-800 dark:bg-teal-900/60 dark:text-teal-300">
@@ -291,7 +291,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 								{blackClass === "class_I" ? "I класс" : blackClass === "class_II" ? "II класс (MOD)" : blackClass === "class_III" ? "III класс" : blackClass === "class_IV" ? "IV класс (Угол)" : blackClass === "class_V" ? "V класс (Шейка)" : "VI класс"}
 							</span>
 						</div>
-						<p className="text-xs text-slate-500 dark:text-slate-400">
+						<p className="text-xs text-[var(--muted)]">
 							Фиксация кариеса и реставраций за &le; 30 секунд без лишней бюрократии
 						</p>
 					</div>
@@ -311,7 +311,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 					<button
 						type="button"
 						onClick={() => setShowDetailsAccordion((prev) => !prev)}
-						className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+						className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] transition hover:bg-[var(--paper-soft)] cursor-pointer"
 						title="Показать / скрыть подробности протокола"
 					>
 						<span>Параметры</span>
@@ -322,7 +322,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 
 			{/* 1-КЛИК КЛИНИЧЕСКИЕ ПРОТОКОЛЫ (МАНДАТ 8e, 8k: ТАЧ-ТАРГЕТЫ >= 48px) */}
 			<div className="mb-4">
-				<div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+				<div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
 					1-Клик протоколы у кресла:
 				</div>
 				<div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
@@ -336,7 +336,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 								className={`flex min-h-[52px] flex-col justify-center rounded-xl border p-2.5 text-left transition active:scale-[0.98] cursor-pointer touch-manipulation ${
 									isCurrent
 										? "border-teal-600 bg-teal-50/90 text-teal-950 shadow-sm ring-1 ring-teal-500 dark:border-teal-400 dark:bg-teal-950/60 dark:text-teal-100"
-										: "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-200 dark:hover:bg-slate-800"
+										: "border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`therapy-preset-btn-${preset.id}`}
 							>
@@ -344,7 +344,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 									<Sparkles className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
 									<span className="truncate">{preset.shortLabelRu}</span>
 								</div>
-								<div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+								<div className="mt-0.5 text-[11px] text-[var(--muted)] truncate">
 									{preset.id === "caries_composite"
 										? "OptiBond FL + Filtek"
 										: preset.id === "failed_filling_replacement"
@@ -360,9 +360,9 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 			</div>
 
 			{/* 1-КЛИК ПОВЕРХНОСТИ ЗУБА (ТАЧ-ТАРГЕТЫ >= 44-48px) */}
-			<div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800/80 dark:bg-slate-800/40">
+			<div className="mb-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-3">
 				<div className="mb-2 flex items-center justify-between">
-					<span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+					<span className="text-xs font-semibold text-[var(--ink)]">
 						Поверхности в 1 клик:
 					</span>
 					<span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
@@ -384,7 +384,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 								className={`min-h-[44px] px-3 rounded-lg text-xs font-mono font-bold border transition cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 									isMatch
 										? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
-										: "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700"
+										: "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-soft)]"
 								}`}
 								title={preset.descriptionRu}
 								data-testid={`therapy-surf-preset-${preset.id}`}
@@ -396,8 +396,8 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 				</div>
 
 				{/* Отдельные поверхности */}
-				<div className="flex flex-wrap items-center gap-1.5 border-t border-slate-200/60 pt-2 dark:border-slate-700/60">
-					<span className="text-[11px] text-slate-500 dark:text-slate-400 mr-1">По отдельности:</span>
+				<div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--line)] pt-2">
+					<span className="text-[11px] text-[var(--muted)] mr-1">По отдельности:</span>
 					{(["O", "V", "L", "M", "D", "C"] as const).map((surf) => {
 						const isActive = selectedSurfaces.includes(surf);
 						return (
@@ -408,7 +408,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 								className={`min-h-[44px] min-w-[44px] px-2.5 rounded-lg text-xs font-mono font-bold border transition cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 									isActive
 										? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
-										: "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700"
+										: "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-soft)]"
 								}`}
 								title={`Поверхность ${surf}`}
 							>
@@ -421,10 +421,10 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 
 			{/* СПОЙЛЕР ДЕТАЛЕЙ (МАТЕРИАЛЫ, ОТТЕНКИ, БОНД) */}
 			{showDetailsAccordion && (
-				<div className="mb-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-800/50 animate-fadeIn">
+				<div className="mb-4 space-y-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-3.5 animate-fadeIn">
 					{/* Выбор композита */}
 					<div>
-						<label className="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300">
+						<label className="mb-1 block text-xs font-medium text-[var(--ink)]">
 							Композитный материал:
 						</label>
 						<div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
@@ -447,7 +447,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 										className={`min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-medium border text-left transition truncate cursor-pointer ${
 											isSelected
 												? "border-teal-600 bg-teal-50 font-bold text-teal-900 dark:border-teal-400 dark:bg-teal-950/50 dark:text-teal-200"
-												: "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+												: "border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 										}`}
 										title={info.indicationRu}
 									>
@@ -460,7 +460,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 
 					{/* Выбор адгезива */}
 					<div>
-						<label className="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300">
+						<label className="mb-1 block text-xs font-medium text-[var(--ink)]">
 							Адгезивная система:
 						</label>
 						<div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
@@ -476,7 +476,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 											className={`min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-medium border text-left transition truncate cursor-pointer ${
 												isSelected
 													? "border-teal-600 bg-teal-50 font-bold text-teal-900 dark:border-teal-400 dark:bg-teal-950/50 dark:text-teal-200"
-													: "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+													: "border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 											}`}
 											title={info.protocolSummaryRu}
 										>
@@ -490,15 +490,15 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 
 					{/* Опции для фронтальных зубов: Оттенки */}
 					{isAnterior && (
-						<div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+						<div className="grid grid-cols-2 gap-2 pt-1 border-t border-[var(--line)]">
 							<div>
-								<label className="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">
+								<label className="mb-1 block text-[11px] font-medium text-[var(--muted)]">
 									Оттенок дентина:
 								</label>
 								<select
 									value={shadeDentin}
 									onChange={(e) => setShadeDentin(e.target.value)}
-									className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+									className="min-h-[44px] w-full rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 text-xs text-[var(--ink)]"
 								>
 									<option value="A1B">A1 Body</option>
 									<option value="A2B">A2 Body</option>
@@ -509,13 +509,13 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 								</select>
 							</div>
 							<div>
-								<label className="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">
+								<label className="mb-1 block text-[11px] font-medium text-[var(--muted)]">
 									Оттенок эмали:
 								</label>
 								<select
 									value={shadeEnamel}
 									onChange={(e) => setShadeEnamel(e.target.value)}
-									className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+									className="min-h-[44px] w-full rounded-lg border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 text-xs text-[var(--ink)]"
 								>
 									<option value="A1E">A1 Enamel</option>
 									<option value="A2E">A2 Enamel</option>
@@ -530,7 +530,7 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 			)}
 
 			{/* НИЖНИЙ ПЛАНШЕТ ДЕЙСТВИЙ: 1-КЛИК ВНЕСЕНИЕ В 043/у И В СМЕТУ (МАНДАТ 8e: КНОПКИ ВСЕГДА АКТИВНЫ) */}
-			<div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+			<div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-[var(--line)]">
 				<div className="flex items-center gap-2">
 					{/* Кнопка 1-клик в 043/у */}
 					<button
@@ -556,10 +556,10 @@ export const VisitTherapyProtocolWidget: React.FC<VisitTherapyProtocolWidgetProp
 				</div>
 
 				<div className="text-right">
-					<div className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">
+					<div className="text-xs font-mono font-bold text-[var(--ink)]">
 						{soapResult.diagnosisIcd10}
 					</div>
-					<div className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
+					<div className="text-[11px] text-[var(--muted)] truncate max-w-[200px]">
 						{BLACK_CAVITY_CLASS_LABELS[blackClass]}
 					</div>
 				</div>

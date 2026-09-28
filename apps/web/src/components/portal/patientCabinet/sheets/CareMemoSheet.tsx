@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Heart, Printer, Send, X } from "lucide-react";
 import type { PatientCareMemo } from "../patientCareInstructionsEngine";
 

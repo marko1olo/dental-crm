@@ -387,7 +387,13 @@ export interface DentalPrescriptionDrugPreset {
 	readonly recommendedForIcd10: readonly string[];
 	readonly defaultValidityDays?: "15" | "30" | "60" | "365";
 	readonly isPkuStrictAccounting?: boolean;
+	readonly categoryLabelRu?: string;
+	readonly adultDosageStandard?: string;
+	readonly pediatricDosageStandard?: string;
+	readonly validityDays?: number;
+	readonly specialInstructions?: string;
 }
+
 
 export const DENTAL_PRESCRIPTION_DRUG_CATALOG: readonly DentalPrescriptionDrugPreset[] = [
 	// ── НПВС и анальгетики ──

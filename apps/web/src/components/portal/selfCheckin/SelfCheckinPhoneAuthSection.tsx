@@ -166,8 +166,8 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 						<p>
 							При чекине в 1 касание согласие на медицинское
 							вмешательство и обработку персональных данных
-							подтверждается простой электронной подписью по номеру
-							телефона (ПЭП 63-ФЗ).
+							подтверждается электронной подписью по номеру
+							телефона.
 						</p>
 						<div className="flex flex-wrap gap-2 pt-1">
 							<button

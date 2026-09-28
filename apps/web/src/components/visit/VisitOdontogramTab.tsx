@@ -7,10 +7,6 @@ import { EgiszMonitor } from "../EgiszMonitor";
 import { OdontogramModule } from "../odontogram/OdontogramModule";
 import { VisitDiarySection } from "./VisitDiarySection";
 import { realVisitFieldId } from "./visitIdentity";
-import {
-	safeLocalStorageGetItem,
-	safeLocalStorageSetItem,
-} from "../../lib/safeLocalStorage";
 
 export interface VisitOdontogramTabPatient {
 	id: string;
@@ -52,33 +48,16 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function resolveValidVisitUuid(
 	openVisitId: string | null,
+	openVisitAppointmentId: string | null,
 	appointmentId: string | null,
-	patientId: string | null | undefined,
 ): string | null {
-	if (openVisitId && UUID_REGEX.test(openVisitId)) {
-		return openVisitId;
+	if (!openVisitId || !UUID_REGEX.test(openVisitId)) {
+		return null;
 	}
-	if (appointmentId && UUID_REGEX.test(appointmentId)) {
-		return appointmentId;
+	if (openVisitAppointmentId && appointmentId && openVisitAppointmentId !== appointmentId) {
+		return null;
 	}
-	if (!patientId) return null;
-	const cacheKey = `dente_draft_visit_uuid_${patientId}`;
-	try {
-		const cached = safeLocalStorageGetItem(cacheKey);
-		if (cached && UUID_REGEX.test(cached)) {
-			return cached;
-		}
-		const generated =
-			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-				? crypto.randomUUID()
-				: "00000000-0000-4000-8000-000000000001";
-		safeLocalStorageSetItem(cacheKey, generated);
-		return generated;
-	} catch {
-		return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-			? crypto.randomUUID()
-			: "00000000-0000-4000-8000-000000000001";
-	}
+	return openVisitId;
 }
 
 export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(function VisitOdontogramTab(props: VisitOdontogramTabProps = {}) {
@@ -114,9 +93,8 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 	);
 	const appointmentId = realVisitFieldId(activeAppointment?.id);
 
-	// Mandate 8e: Doctor autonomy — diary is never blocked for active patient
-	// Fastify API requires a valid UUID (z.string().uuid()). Never prepend pseudo-prefixes like `visit-` or `draft-visit-`.
-	const diaryVisitId = resolveValidVisitUuid(openVisitId, appointmentId, activePatient?.id);
+	// Mandate 8e: Doctor autonomy — diary requires real visit in PostgreSQL, never fake or appointment UUID
+	const diaryVisitId = resolveValidVisitUuid(openVisitId, openVisitAppointmentId, appointmentId);
 	const diaryPatientId =
 		realVisitFieldId(
 			activeVisit && typeof activeVisit === "object"

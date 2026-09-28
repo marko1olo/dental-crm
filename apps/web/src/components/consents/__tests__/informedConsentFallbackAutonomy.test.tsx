@@ -15,15 +15,15 @@
  * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty
  */
 
+import "../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React, { act } from "react";
+globalThis.React = React;
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import {
-	InformedConsentModal,
-	type SignedConsentPayload,
-} from "../InformedConsentModal.js";
+const { InformedConsentModal } = await import("../InformedConsentModal.js");
+import type { SignedConsentPayload } from "../InformedConsentModal.js";
 
 function createMockFn<T extends (...args: any[]) => any>(impl?: T) {
 	const calls: any[][] = [];

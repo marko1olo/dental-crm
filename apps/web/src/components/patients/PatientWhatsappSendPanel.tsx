@@ -250,23 +250,23 @@ export const PatientWhatsappSendPanel: React.FC<
 
 	return (
 		<section
-			className="rounded-2xl border border-emerald-500/25 bg-zinc-950/80 p-4 shadow-[0_0_40px_-18px_rgba(16,185,129,0.28)]"
+			className="rounded-2xl border border-emerald-500/25 bg-[var(--paper)] p-4 shadow-sm"
 			data-testid="patient-whatsapp-send-panel"
 			aria-label="Отправить сообщение в WhatsApp"
 		>
 			<div className="mb-3">
 				<div className="flex items-center justify-between gap-2 flex-wrap">
-					<h3 className="text-sm font-bold text-emerald-200 tracking-wide flex items-center gap-1.5">
-						<MessageSquare size={16} className="text-emerald-400" />
+					<h3 className="text-sm font-bold text-emerald-700 dark:text-emerald-200 tracking-wide flex items-center gap-1.5">
+						<MessageSquare size={16} className="text-emerald-500 dark:text-emerald-400" />
 						<span>WhatsApp пациенту</span>
 					</h3>
 					{phoneHint && (
-						<span className="text-xs font-mono font-semibold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-lg border border-emerald-800/60">
+						<span className="text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/30">
 							{phoneHint}
 						</span>
 					)}
 				</div>
-				<p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+				<p className="text-xs text-[var(--muted)] mt-1 leading-relaxed">
 					Прямая отправка через Cloud API или быстрый чат wa.me. Подставляются имя пациента
 					{nameHint ? ` (${nameHint})` : ""}, лечащий врач и параметры записи.
 				</p>
@@ -274,21 +274,21 @@ export const PatientWhatsappSendPanel: React.FC<
 
 			{/* Быстрые шаблоны с подстановкой данных */}
 			<div className="mb-3 space-y-1.5">
-				<span className="text-xs font-bold text-zinc-400 flex items-center gap-1">
-					<Sparkles size={12} className="text-amber-400" />
+				<span className="text-xs font-bold text-[var(--muted)] flex items-center gap-1">
+					<Sparkles size={12} className="text-amber-500" />
 					Быстрые шаблоны:
 				</span>
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
 					<button
 						type="button"
 						onClick={() => applyTemplate("reminder")}
-						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 border border-[var(--glass-border)] hover:border-emerald-500/40 text-[var(--ink)] hover:text-emerald-600 dark:hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center cursor-pointer"
 					>
 						<span className="flex items-center gap-1">
-							<Calendar size={12} className="text-amber-400" />
+							<Calendar size={12} className="text-amber-500" />
 							<span>Напоминание</span>
 						</span>
-						<span className="text-[10px] text-zinc-500 font-normal truncate">
+						<span className="text-[10px] text-[var(--muted)] font-normal truncate">
 							{upcomingAppointment ? "К визиту" : "Плановый приём"}
 						</span>
 					</button>
@@ -296,13 +296,13 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("confirmation")}
-						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 border border-[var(--glass-border)] hover:border-emerald-500/40 text-[var(--ink)] hover:text-emerald-600 dark:hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center cursor-pointer"
 					>
 						<span className="flex items-center gap-1">
-							<CheckCircle2 size={12} className="text-emerald-400" />
+							<CheckCircle2 size={12} className="text-emerald-500" />
 							<span>Подтверждение</span>
 						</span>
-						<span className="text-[10px] text-zinc-500 font-normal truncate">
+						<span className="text-[10px] text-[var(--muted)] font-normal truncate">
 							Ответ ДА / НЕТ
 						</span>
 					</button>
@@ -310,13 +310,13 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("hygiene")}
-						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 border border-[var(--glass-border)] hover:border-emerald-500/40 text-[var(--ink)] hover:text-emerald-600 dark:hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center cursor-pointer"
 					>
 						<span className="flex items-center gap-1">
-							<Sparkles size={12} className="text-cyan-400" />
+							<Sparkles size={12} className="text-cyan-500" />
 							<span>Профгигиена</span>
 						</span>
-						<span className="text-[10px] text-zinc-500 font-normal truncate">
+						<span className="text-[10px] text-[var(--muted)] font-normal truncate">
 							Раз в 6 месяцев
 						</span>
 					</button>
@@ -324,13 +324,13 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("checkup")}
-						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 border border-[var(--glass-border)] hover:border-emerald-500/40 text-[var(--ink)] hover:text-emerald-600 dark:hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center cursor-pointer"
 					>
 						<span className="flex items-center gap-1">
-							<Stethoscope size={12} className="text-purple-400" />
+							<Stethoscope size={12} className="text-purple-500" />
 							<span>Осмотр</span>
 						</span>
-						<span className="text-[10px] text-zinc-500 font-normal truncate">
+						<span className="text-[10px] text-[var(--muted)] font-normal truncate">
 							После лечения
 						</span>
 					</button>
@@ -338,13 +338,13 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("xray")}
-						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 border border-[var(--glass-border)] hover:border-emerald-500/40 text-[var(--ink)] hover:text-emerald-600 dark:hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center cursor-pointer"
 					>
 						<span className="flex items-center gap-1">
-							<Scan size={12} className="text-cyan-400" />
+							<Scan size={12} className="text-cyan-500" />
 							<span>Снимок КТ</span>
 						</span>
-						<span className="text-[10px] text-zinc-500 font-normal truncate">
+						<span className="text-[10px] text-[var(--muted)] font-normal truncate">
 							Диагностика
 						</span>
 					</button>
@@ -352,13 +352,13 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("treatment_plan")}
-						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 border border-[var(--glass-border)] hover:border-emerald-500/40 text-[var(--ink)] hover:text-emerald-600 dark:hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center cursor-pointer"
 					>
 						<span className="flex items-center gap-1">
-							<ClipboardList size={12} className="text-indigo-400" />
+							<ClipboardList size={12} className="text-indigo-500" />
 							<span>План лечения</span>
 						</span>
-						<span className="text-[10px] text-zinc-500 font-normal truncate">
+						<span className="text-[10px] text-[var(--muted)] font-normal truncate">
 							Сметы готовы
 						</span>
 					</button>
@@ -366,13 +366,13 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						onClick={() => applyTemplate("route")}
-						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 border border-[var(--glass-border)] hover:border-emerald-500/40 text-[var(--ink)] hover:text-emerald-600 dark:hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center cursor-pointer"
 					>
 						<span className="flex items-center gap-1">
-							<MapPin size={12} className="text-rose-400" />
+							<MapPin size={12} className="text-rose-500" />
 							<span>Маршрут</span>
 						</span>
-						<span className="text-[10px] text-zinc-500 font-normal truncate">
+						<span className="text-[10px] text-[var(--muted)] font-normal truncate">
 							Схема и парковка
 						</span>
 					</button>
@@ -409,7 +409,7 @@ export const PatientWhatsappSendPanel: React.FC<
 					rows={4}
 					maxLength={4000}
 					placeholder="Введите текст сообщения или выберите быстрый шаблон выше…"
-					className="w-full min-h-[96px] px-3 py-2 text-sm rounded-xl border border-zinc-700 bg-zinc-900/80 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 disabled:opacity-50"
+					className="w-full min-h-[96px] px-3 py-2 text-sm rounded-xl border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-emerald-500/40 disabled:opacity-50"
 				/>
 			</label>
 
@@ -420,7 +420,7 @@ export const PatientWhatsappSendPanel: React.FC<
 						data-testid="patient-whatsapp-send-submit"
 						disabled={busy}
 						onClick={() => void send()}
-						className="min-h-[44px] sm:min-h-[32px] px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white border border-emerald-400/40 disabled:opacity-50 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm"
+						className="min-h-[44px] sm:min-h-[32px] px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white border border-emerald-400/40 disabled:opacity-50 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
 					>
 						<Send size={14} />
 						<span>{busy ? "Отправляю…" : "Отправить в WhatsApp"}</span>
@@ -431,7 +431,7 @@ export const PatientWhatsappSendPanel: React.FC<
 							<button
 								type="button"
 								onClick={handleOpenWebWhatsApp}
-								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-emerald-300 border border-zinc-700 hover:border-emerald-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 text-emerald-600 dark:text-emerald-300 border border-[var(--glass-border)] hover:border-emerald-500/30 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
 								title="Открыть в веб-версии WhatsApp"
 							>
 								<MessageSquare size={14} />
@@ -443,7 +443,7 @@ export const PatientWhatsappSendPanel: React.FC<
 								href={`https://t.me/+${cleanPhone}`}
 								target="_blank"
 								rel="noreferrer"
-								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-sky-300 border border-zinc-700 hover:border-sky-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 text-sky-600 dark:text-sky-300 border border-[var(--glass-border)] hover:border-sky-500/30 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
 								title="Написать пациенту в Telegram"
 							>
 								<span>Telegram</span>
@@ -452,7 +452,7 @@ export const PatientWhatsappSendPanel: React.FC<
 
 							<a
 								href={`sms:+${cleanPhone}?body=${encodeURIComponent(message.trim() || "")}`}
-								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-indigo-300 border border-zinc-700 hover:border-indigo-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 text-indigo-600 dark:text-indigo-300 border border-[var(--glass-border)] hover:border-indigo-500/30 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
 								title="Отправить SMS"
 							>
 								<span>SMS</span>
@@ -460,7 +460,7 @@ export const PatientWhatsappSendPanel: React.FC<
 
 							<a
 								href={`tel:+${cleanPhone}`}
-								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-teal-300 border border-zinc-700 hover:border-teal-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
+								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 text-xs font-semibold rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] active:scale-95 text-teal-600 dark:text-teal-300 border border-[var(--glass-border)] hover:border-teal-500/30 inline-flex items-center justify-center gap-1.5 transition-all cursor-pointer"
 								title={`Позвонить на ${phoneHint}`}
 							>
 								<Phone size={14} />
@@ -471,7 +471,7 @@ export const PatientWhatsappSendPanel: React.FC<
 				</div>
 
 				<span
-					className="text-xs text-zinc-500 font-medium"
+					className="text-xs text-[var(--muted)] font-medium"
 					data-testid="patient-whatsapp-send-hint"
 				>
 					{message.trim().length > 0

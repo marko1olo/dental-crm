@@ -172,6 +172,26 @@ export function saveLocalTask(patientId: string, task: ClinicalTask): void {
 	}
 }
 
+export function updateLocalTaskStatus(
+	patientId: string,
+	taskId: string,
+	status: ClinicalTask["status"],
+): void {
+	try {
+		const current = getLocalTasks(patientId);
+		const updated = current.map((t) =>
+			t.id === taskId ? { ...t, status } : t,
+		);
+		safeLocalStorageSetItem(
+			`${LOCAL_STORAGE_KEY_PREFIX}${patientId}`,
+			JSON.stringify(updated),
+		);
+	} catch {
+		// Ignore storage quota errors
+	}
+}
+
+
 export const PHASE_OPTIONS: readonly PhaseOption[] = [
 	{
 		code: "PHASE_1_THERAPY",

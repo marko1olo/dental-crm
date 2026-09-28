@@ -155,7 +155,7 @@ export function MedicalWasteRegisterTab() {
 
 			if (res.ok) {
 				showToast(
-					"Отходы смены зафиксированы по СанПиН 2.1.3684-21 (Желтый пакет 2.5 кг + Контейнер игл 0.8 кг)",
+					"Отходы смены зафиксированы (Желтый пакет 2.5 кг + Контейнер игл 0.8 кг)",
 					"success",
 				);
 				await fetchLogs();
@@ -204,7 +204,7 @@ export function MedicalWasteRegisterTab() {
 			});
 
 			if (res.ok) {
-				showToast("Запись движения отходов внесена в журнал (СанПиН 2.1.3684-21)", "success");
+				showToast("Запись движения отходов внесена в журнал", "success");
 				setIsModalOpen(false);
 				fetchLogs();
 			} else {
@@ -235,8 +235,8 @@ export function MedicalWasteRegisterTab() {
 	return (
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
-				<h2>ТЕХНОЛОГИЧЕСКИЙ ЖУРНАЛ УЧЕТА МЕДИЦИНСКИХ ОТХОДОВ КЛАССОВ А, Б, В, Г</h2>
-				<p>СанПиН 2.1.3684-21 «Санитарно-эпидемиологические требования к обращению с медицинскими отходами»</p>
+				<h2>УТИЛИЗАЦИЯ МЕДИЦИНСКИХ ОТХОДОВ</h2>
+				<p title="СанПиН 2.1.3684-21 «Санитарно-эпидемиологические требования к обращению с медицинскими отходами»">Технологический учет образования и передачи отходов классов А, Б, В, Г</p>
 			</div>
 
 			{/* Mini summary cards for waste categories */}
@@ -312,7 +312,7 @@ export function MedicalWasteRegisterTab() {
 							gap: "0.45rem",
 							whiteSpace: "nowrap",
 						}}
-						title="1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг) по СанПиН 2.1.3684-21"
+						title="1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг)"
 						data-testid="nurse-waste-quick-shift-tab-btn"
 					>
 						<Sparkles size={16} />
@@ -324,10 +324,10 @@ export function MedicalWasteRegisterTab() {
 						onClick={() => setIsWasteJournalModalOpen(true)}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{ minHeight: "34px", height: "34px", padding: "0 1.1rem", fontSize: "0.875rem", fontWeight: 700, background: "#0d9488" }}
-						title="Интерактивный технологический журнал учета отходов СанПиН 2.1.3684-21 и печать термоэтикеток"
+						title="Интерактивный технологический журнал учета отходов и печать термоэтикеток"
 						data-testid="open-waste-journal-modal-btn"
 					>
-						<Tag size={16} /> <span>Термоэтикетка 58x40 мм / Журнал СанПиН</span>
+						<Tag size={16} /> <span>Термоэтикетка 58x40 мм / Журнал отходов</span>
 					</button>
 					<button type="button" onClick={() => window.print()} className="sanpin-btn sanpin-btn-secondary">
 						<Printer size={15} /> Печать журнала отходов
@@ -468,7 +468,7 @@ export function MedicalWasteRegisterTab() {
 				<div className="sanpin-modal-overlay">
 					<div className="sanpin-modal">
 						<div className="sanpin-modal-header">
-							<h3>Регистрация медицинских отходов (СанПиН 2.1.3684-21)</h3>
+							<h3>Регистрация медицинских отходов</h3>
 							<button type="button" onClick={() => setIsModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--muted)" }} aria-label="Закрыть"><X size={18} /></button>
 						</div>
 						<form onSubmit={handleSubmit}>

@@ -252,10 +252,7 @@ export function CashboxView({
 		setIsSubmittingZeroReceipt(true);
 		try {
 			const idempotencyKey = createCompositeIdempotencyKey(
-				"cashbox-0-receipt",
-				patientId || "walkin",
-				String(Date.now()),
-				zeroReceiptMutationSeq++,
+				`cashbox-0-receipt-${patientId || "walkin"}-${Date.now()}-${zeroReceiptMutationSeq++}`,
 			);
 
 			const notesReason = isWarranty

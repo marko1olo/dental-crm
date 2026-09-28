@@ -750,7 +750,7 @@ export const OdontogramModule = React.memo(({
 		);
 
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("Клинический статус зубной формулы внесен в Дневник 043/у", "success", 4000);
+		showToast("Клинический статус зубной формулы внесен в дневник приёма", "success", 4000);
 	}, [teethData]);
 
 	const handleApplyToothState = useCallback(
@@ -1680,14 +1680,14 @@ export const OdontogramModule = React.memo(({
 												},
 											}),
 										);
-										showToast(`Протокол для зуба #${num} внесён в Дневник 043/у`, "success");
+										showToast(`Протокол для зуба #${num} внесён в дневник приёма`, "success");
 										setMenuConfig(null);
 									}}
-
+									aria-label="Вставить в дневник 043/у"
 									className="col-span-2 flex items-center justify-center min-h-[48px] sm:min-h-[36px] p-3 sm:p-2 rounded-xl border transition-all duration-200 font-bold text-sm bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/25 hover:bg-teal-500/20 cursor-pointer min-w-0 text-center leading-tight"
 								>
 									<Sparkles className="w-4 h-4 inline mr-2 shrink-0" />
-									<span className="min-w-0 break-words">Вставить в дневник 043/у</span>
+									<span className="min-w-0 break-words">Вставить в дневник</span>
 								</button>
 							</div>
 						</>,
@@ -1803,7 +1803,7 @@ export const OdontogramModule = React.memo(({
 											},
 										}),
 									);
-									showToast("Протокол пародонтограммы добавлен в дневник 043/у", "success", 4000);
+									showToast("Протокол пародонтограммы добавлен в дневник приёма", "success", 4000);
 								} catch {
 									// Safe fallback
 								}
@@ -2038,7 +2038,7 @@ export const OdontogramModule = React.memo(({
 							<table className="w-full border-collapse text-left text-xs border border-slate-300">
 								<thead>
 									<tr className="bg-slate-100 border-b border-slate-300 text-slate-900 font-bold">
-										<th className="py-1.5 px-2 border-r border-slate-300 w-16 text-center">Зуб FDI</th>
+										<th className="py-1.5 px-2 border-r border-slate-300 w-16 text-center">Зуб</th>
 										<th className="py-1.5 px-2 border-r border-slate-300">Народное / Обиходное название</th>
 										<th className="py-1.5 px-2 border-r border-slate-300">Анатомическое название</th>
 										<th className="py-1.5 px-2 border-r border-slate-300">Поверхности</th>

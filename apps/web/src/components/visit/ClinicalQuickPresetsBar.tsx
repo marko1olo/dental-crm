@@ -143,8 +143,8 @@ export const ClinicalQuickPresetsBar: React.FC<
 							</span>
 						</h4>
 						<p className="text-[11px] text-[var(--muted)]">
-							Пакетное заполнение: статус зуба на схеме • протокол 043/у •
-							анестезия • номенклатура 804н
+							Пакетное заполнение: статус зуба на схеме • дневник приёма •
+							анестезия • каталог услуг
 						</p>
 					</div>
 				</div>
@@ -161,7 +161,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 							}
 						}}
 						className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
-						title="1-клик норма Формы 043/у (Z01.2): соматически здоров, норма прикуса и пародонта (Мандат 8e / 8n)"
+						title="1-клик норма (Z01.2): соматически здоров, норма прикуса и пародонта (Мандат 8e / 8n)"
 						data-testid="btn-quick-apply-physio-norm"
 					>
 						<ShieldCheck size={15} className="shrink-0" />
@@ -173,11 +173,11 @@ export const ClinicalQuickPresetsBar: React.FC<
 							type="button"
 							onClick={onOpenTemplatesModal}
 							className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
-							title="Открыть полный каталог клинических протоколов Формы 043/у со списанием материалов"
+							title="Открыть полный каталог клинических протоколов со списанием материалов"
 							data-testid="btn-open-soap-templates-modal-bar"
 						>
 							<BookOpen size={15} className="shrink-0" />
-							<span>Все шаблоны 043/у</span>
+							<span>Все шаблоны</span>
 						</button>
 					)}
 
@@ -186,18 +186,18 @@ export const ClinicalQuickPresetsBar: React.FC<
 							type="button"
 							onClick={onOpenPriceSearch}
 							className="min-h-[48px] sm:min-h-[32px] sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-0 rounded-lg text-xs font-extrabold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation active:scale-[0.98]"
-							title="Быстрый поиск и добавление процедур из прайса клиники в протокол и счет"
+							title="Быстрый поиск и добавление процедур из каталога услуг в протокол и счет"
 							data-testid="btn-quick-add-from-pricelist"
 						>
 							<PlusCircle size={15} className="shrink-0" />
-							<span>Каталог 804н</span>
+							<span>Каталог услуг</span>
 						</button>
 					)}
 				</div>
 			</div>
 
 			{/* ── АКТИВНЫЙ ЗУБ FDI (ДИНАМИЧЕСКИЙ ВЫБОР ДЛЯ SMART-BUNDLE) ── */}
-			<div className="p-2 sm:p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between gap-2 flex-wrap shadow-2xs">
+			<div className="p-2 sm:p-2.5 rounded-xl bg-[var(--paper-strong)] border border-[var(--glass-border)] flex items-center justify-between gap-2 flex-wrap shadow-2xs">
 				<div className="flex items-center gap-1.5">
 					<span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-[var(--teal,var(--brand-primary))] flex items-center gap-1">
 						<Activity size={13} className="shrink-0" />
@@ -205,7 +205,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 					</span>
 					<span className="text-xs sm:text-sm font-black font-mono px-2 py-0.5 rounded-lg bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)] shadow-2xs">
 						{currentTooth
-							? `Зуб FDI #${currentTooth}`
+							? `Зуб ${currentTooth}`
 							: "Не выбран (общий осмотр)"}
 					</span>
 				</div>
@@ -222,9 +222,9 @@ export const ClinicalQuickPresetsBar: React.FC<
 							className={`min-h-[44px] sm:min-h-[28px] sm:h-7 px-2 py-0.5 rounded-md text-xs font-mono font-black border transition-all cursor-pointer touch-manipulation active:scale-95 ${
 								currentTooth === t
 									? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
-									: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
+									: "bg-[var(--paper-soft)] border-[var(--glass-border)] text-[var(--ink)] hover:border-[var(--teal)]"
 							}`}
-							title={`Выбрать активным зуб FDI ${t}`}
+							title={`Выбрать активным зуб ${t}`}
 							data-testid={`btn-select-active-tooth-${t}`}
 						>
 							{t}
@@ -233,7 +233,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 					<select
 						value={currentTooth ?? 16}
 						onChange={(e) => handleToothSelect(Number(e.target.value))}
-						className="min-h-[44px] sm:min-h-[28px] sm:h-7 px-2 py-0.5 text-xs font-mono font-bold rounded-md border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
+						className="min-h-[44px] sm:min-h-[28px] sm:h-7 px-2 py-0.5 text-xs font-mono font-bold rounded-md border border-[var(--glass-border)] bg-[var(--paper-soft)] text-[var(--ink)]"
 						title="Выбрать любой другой зуб из формулы"
 					>
 						{[
@@ -288,7 +288,7 @@ export const ClinicalQuickPresetsBar: React.FC<
 										: preset.shortBadge;
 
 						const subtext = isNorm
-							? "Осмотр: Здоров, норма 043/у"
+							? "Осмотр: Здоров, норма"
 							: isHygiene
 								? "Осмотр, Air-Flow, фторирование"
 								: isCaries

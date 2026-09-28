@@ -19,6 +19,7 @@ import { money } from "../../AppHelpers.js";
 import { showToast } from "../GlobalToast.js";
 import {
 	getFefoTrafficLight,
+	getWarehouseFefoTrafficLight,
 	type FefoTrafficLightInfo,
 } from "../inventory/NurseCarpuleDisposalModal.js";
 import type { InventoryItem } from "../inventory/inventoryDataMappers.js";
@@ -139,6 +140,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 				className="inventory-view-table"
 				style={{
 					width: "100%",
+					tableLayout: "fixed",
 					borderCollapse: "collapse",
 					textAlign: "left",
 				}}
@@ -153,34 +155,11 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 					}}
 				>
 					<tr>
-						{/* 1. Артикул / Штрихкод */}
-						<th
-							className="inventory-col-sku"
-							style={{
-								padding: "8px 8px",
-								fontSize: 11,
-								color: "var(--muted)",
-								fontWeight: 600,
-								borderBottom: "1px solid var(--line)",
-								textTransform: "uppercase",
-								letterSpacing: 0.5,
-								whiteSpace: "nowrap",
-								width: 105,
-								minWidth: 100,
-								maxWidth: 110,
-							}}
-						>
-							<div className="leading-tight">
-								<div>АРТИКУЛ</div>
-								<div className="text-[10px] opacity-75 font-normal tracking-normal">ШТРИХКОД</div>
-							</div>
-						</th>
-
-						{/* 2. Наименование */}
+						{/* 1. Наименование */}
 						<th
 							className="inventory-col-name"
 							style={{
-								padding: "8px 8px",
+								padding: "8px 10px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
@@ -188,13 +167,12 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								minWidth: 180,
 							}}
 						>
 							Наименование
 						</th>
 
-						{/* 3. Категория */}
+						{/* 2. Категория */}
 						<th
 							className="inventory-col-category"
 							style={{
@@ -207,11 +185,30 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
 								width: 105,
-								minWidth: 100,
-								maxWidth: 110,
 							}}
 						>
 							Категория
+						</th>
+
+						{/* 3. Срок годности / Партия */}
+						<th
+							className="inventory-col-fefo"
+							style={{
+								padding: "8px 8px",
+								fontSize: 11,
+								color: "var(--muted)",
+								fontWeight: 600,
+								borderBottom: "1px solid var(--line)",
+								textTransform: "uppercase",
+								letterSpacing: 0.5,
+								whiteSpace: "nowrap",
+								width: 165,
+							}}
+						>
+							<div className="leading-tight">
+								<div>Срок годности</div>
+								<div className="text-[10px] opacity-75 font-normal tracking-normal">Партия / FEFO</div>
+							</div>
 						</th>
 
 						{/* 4. Остаток */}
@@ -226,18 +223,16 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 85,
-								minWidth: 80,
-								maxWidth: 90,
+								width: 90,
 								textAlign: "right",
 							}}
 						>
 							Остаток
 						</th>
 
-						{/* 5. Срок годности / FEFO */}
+						{/* 5. Мин. запас */}
 						<th
-							className="inventory-col-fefo"
+							className="inventory-col-threshold"
 							style={{
 								padding: "8px 8px",
 								fontSize: 11,
@@ -247,22 +242,18 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 145,
-								minWidth: 140,
-								maxWidth: 155,
+								width: 85,
+								textAlign: "right",
 							}}
 						>
-							<div className="leading-tight">
-								<div>СРОК ГОДНОСТИ</div>
-								<div className="text-[10px] opacity-75 font-normal tracking-normal">FEFO ПРИОРИТЕТ</div>
-							</div>
+							Мин. запас
 						</th>
 
-						{/* 6. Партия / Поставщик */}
+						{/* 6. Себестоимость (копейки) */}
 						<th
-							className="inventory-col-lot"
+							className="inventory-col-cost"
 							style={{
-								padding: "8px 8px",
+								padding: "8px 18px 8px 8px",
 								fontSize: 11,
 								color: "var(--muted)",
 								fontWeight: 600,
@@ -270,14 +261,13 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
 								whiteSpace: "nowrap",
-								width: 115,
-								minWidth: 110,
-								maxWidth: 125,
+								width: 135,
+								textAlign: "right",
 							}}
 						>
 							<div className="leading-tight">
-								<div>ПАРТИЯ</div>
-								<div className="text-[10px] opacity-75 font-normal tracking-normal">ПОСТАВЩИК</div>
+								<div>Себестоимость</div>
+								<div className="text-[10px] opacity-75 font-normal tracking-normal">за единицу</div>
 							</div>
 						</th>
 
@@ -292,10 +282,8 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 								borderBottom: "1px solid var(--line)",
 								textTransform: "uppercase",
 								letterSpacing: 0.5,
-								textAlign: "right",
-								width: 160,
-								minWidth: 155,
-								maxWidth: 165,
+								textAlign: "center",
+								width: 190,
 								whiteSpace: "nowrap",
 							}}
 						>
@@ -361,7 +349,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 												data-testid="empty-state-acceptance-waybills-btn"
 											>
 												<FileText size={14} />
-												<span>Оформить накладную (FEFO)</span>
+												<span>Приходная накладная</span>
 											</button>
 											<button
 												type="button"
@@ -389,7 +377,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 									: null;
 							const catInfo = getCategoryBadge(item.category);
 							const fefoInfo: FefoTrafficLightInfo | null = item.expirationDate
-								? getFefoTrafficLight(item.expirationDate)
+								? getWarehouseFefoTrafficLight(item.expirationDate)
 								: null;
 
 							return (
@@ -401,37 +389,7 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 									}}
 									data-testid={`stock-row-${item.id}`}
 								>
-									{/* 1. Артикул / Штрихкод */}
-									<td
-										className="inventory-col-sku"
-										style={{
-											padding: "8px 10px",
-											verticalAlign: "middle",
-											whiteSpace: "nowrap",
-										}}
-									>
-										<div className="flex flex-col items-start gap-0.5 whitespace-nowrap">
-											{item.barcode ? (
-												<span
-													className="font-mono text-[11px] text-[var(--ink)] tracking-tight px-1 py-0.2 rounded bg-[var(--paper-soft)] border border-[var(--line)] select-all truncate max-w-[105px]"
-													title={`Штрихкод: ${item.barcode}`}
-												>
-													{item.barcode}
-												</span>
-											) : (
-												<span className="text-[11px] text-[var(--muted)] font-mono">
-													{item.sku ? item.sku : "—"}
-												</span>
-											)}
-											{item.barcode && item.sku && (
-												<span className="text-[10px] text-[var(--muted)] font-mono truncate max-w-[105px]">
-													{item.sku}
-												</span>
-											)}
-										</div>
-									</td>
-
-									{/* 2. Наименование */}
+									{/* 1. Наименование */}
 									<td
 										className="inventory-col-name"
 										style={{
@@ -441,10 +399,10 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 									>
 										<div className="flex items-center gap-2 min-w-0">
 											{isLowStock && (
-												<span title="Критический остаток" className="inline-flex shrink-0">
+												<span title={isOverdraft ? "Овердрафт: остаток 0 или ниже" : "Критический остаток"} className="inline-flex shrink-0">
 													<AlertTriangle
 														size={14}
-														className="text-rose-600 dark:text-rose-400 shrink-0"
+														className={isOverdraft ? "text-amber-600 dark:text-amber-400 shrink-0" : "text-rose-600 dark:text-rose-400 shrink-0"}
 													/>
 												</span>
 											)}
@@ -456,27 +414,19 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 												>
 													{item.name}
 												</div>
-												<div className="text-[11px] text-[var(--muted)] flex items-center gap-2 mt-0.5">
-													{unitCost !== null && (
-														<span>
-															{money(unitCost)}&nbsp;/&nbsp;{item.unit || "шт."}
-														</span>
-													)}
-													{lineValue !== null && lineValue > 0 && (
-														<span className="opacity-75">
-															итого: {money(lineValue)}
-														</span>
-													)}
+												<div className="text-[10px] text-[var(--muted)] font-mono flex items-center gap-2 mt-0.5 truncate">
+													{item.sku && <span>SKU: {item.sku}</span>}
+													{item.barcode && <span>ШК: {item.barcode}</span>}
 												</div>
 											</div>
 										</div>
 									</td>
 
-									{/* 3. Категория */}
+									{/* 2. Категория */}
 									<td
 										className="inventory-col-category"
 										style={{
-											padding: "8px 10px",
+											padding: "8px 8px",
 											verticalAlign: "middle",
 											whiteSpace: "nowrap",
 										}}
@@ -488,35 +438,11 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 										</span>
 									</td>
 
-									{/* 4. Остаток */}
-									<td
-										className="inventory-col-stock"
-										style={{
-											padding: "8px 10px",
-											verticalAlign: "middle",
-											textAlign: "right",
-											whiteSpace: "nowrap",
-										}}
-									>
-										<div className="flex flex-col items-end gap-0.5 whitespace-nowrap">
-											<span
-												className={`inventory-stock-badge ${
-													isOverdraft ? "overdraft" : isLowStock ? "low" : "normal"
-												}`}
-											>
-												{item.stockQuantity}&nbsp;{item.unit || "шт."}
-											</span>
-											<span className="text-[10px] text-[var(--muted)] font-mono">
-												мин:&nbsp;{item.criticalThreshold}&nbsp;{item.unit || "шт."}
-											</span>
-										</div>
-									</td>
-
-									{/* 5. Срок годности / FEFO */}
+									{/* 3. Срок годности / Партия */}
 									<td
 										className="inventory-col-fefo"
 										style={{
-											padding: "8px 10px",
+											padding: "8px 8px",
 											verticalAlign: "middle",
 											whiteSpace: "nowrap",
 										}}
@@ -546,45 +472,104 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 														до {formatExpDate(item.expirationDate)}
 													</span>
 												</div>
-												<span
-													className={`inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${fefoInfo.bgClass} ${fefoInfo.textClass}`}
-													data-testid="fefo-traffic-badge"
-													title={fefoInfo.tooltip || fefoInfo.label}
-												>
-													{fefoInfo.status === "yellow" && fefoInfo.daysLeft > 0
-														? `FEFO ПРИОРИТЕТ (${fefoInfo.daysLeft} дн)`
-														: fefoInfo.badgeText}
-												</span>
+												<div className="flex items-center gap-1.5 flex-wrap">
+													<span
+														className={`inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${fefoInfo.bgClass} ${fefoInfo.textClass}`}
+														data-testid="fefo-traffic-badge"
+														title={fefoInfo.tooltip || fefoInfo.label}
+													>
+														{fefoInfo.status === "yellow" && fefoInfo.daysLeft > 0
+															? `FEFO (${fefoInfo.daysLeft} дн)`
+															: fefoInfo.badgeText}
+													</span>
+													{item.lotNumber && (
+														<span
+															className="text-[10px] text-[var(--muted)] font-mono truncate max-w-[75px]"
+															title={`Партия: ${item.lotNumber}`}
+														>
+															{item.lotNumber}
+														</span>
+													)}
+												</div>
 											</div>
 										) : (
-											<span className="text-xs text-[var(--muted)] italic">
-												Бессрочно
-											</span>
+											<div className="flex flex-col items-start gap-0.5 whitespace-nowrap">
+												<span className="text-xs text-[var(--muted)] italic">
+													Бессрочно
+												</span>
+												{item.lotNumber && (
+													<span className="text-[10px] text-[var(--muted)] font-mono truncate max-w-[90px]">
+														Партия: {item.lotNumber}
+													</span>
+												)}
+											</div>
 										)}
 									</td>
 
-									{/* 6. Партия / Поставщик */}
+									{/* 4. Остаток */}
 									<td
-										className="inventory-col-lot"
+										className="inventory-col-stock"
 										style={{
-											padding: "8px 10px",
+											padding: "8px 8px",
 											verticalAlign: "middle",
+											textAlign: "right",
 											whiteSpace: "nowrap",
 										}}
 									>
-										<div className="flex flex-col items-start gap-0.5 whitespace-nowrap">
-											<div
-												className="text-xs font-bold font-mono text-[var(--ink)] truncate max-w-[115px]"
-												title={item.lotNumber ? `Партия: ${item.lotNumber}` : "Без номера партии"}
+										<div className="flex flex-col items-end gap-0.5 whitespace-nowrap">
+											<span
+												className={`inventory-stock-badge ${
+													isOverdraft ? "overdraft" : isLowStock ? "low" : "normal"
+												}`}
 											>
-												{item.lotNumber ? item.lotNumber : "—"}
-											</div>
-											<div
-												className="text-[11px] text-[var(--muted)] truncate max-w-[115px]"
-												title={item.supplier || "Стомторг"}
-											>
-												{item.supplier || "Стомторг"}
-											</div>
+												{item.stockQuantity}&nbsp;{item.unit || "шт."}
+											</span>
+											{isOverdraft && (
+												<span
+													className="text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1 rounded border border-amber-500/30"
+													data-testid={`soft-overdraft-badge-${item.id}`}
+													title="Мягкий овердрафт: не блокирует прием пациента (Мандат 8n)"
+												>
+													Овердрафт
+												</span>
+											)}
+										</div>
+									</td>
+
+									{/* 5. Мин. запас */}
+									<td
+										className="inventory-col-threshold"
+										style={{
+											padding: "8px 8px",
+											verticalAlign: "middle",
+											textAlign: "right",
+											whiteSpace: "nowrap",
+										}}
+									>
+										<span className="font-mono text-xs text-[var(--muted)]">
+											{item.criticalThreshold}&nbsp;{item.unit || "шт."}
+										</span>
+									</td>
+
+									{/* 6. Себестоимость (копейки) */}
+									<td
+										className="inventory-col-cost"
+										style={{
+											padding: "8px 18px 8px 8px",
+											verticalAlign: "middle",
+											textAlign: "right",
+											whiteSpace: "nowrap",
+										}}
+									>
+										<div className="flex flex-col items-end gap-0.5 whitespace-nowrap">
+											<span className="font-mono text-xs font-semibold text-[var(--ink)]">
+												{unitCost !== null ? money(unitCost) : "—"}
+											</span>
+											{lineValue !== null && lineValue > 0 && (
+												<span className="text-[10px] text-[var(--muted)] font-mono">
+													∑&nbsp;{money(lineValue)}
+												</span>
+											)}
 										</div>
 									</td>
 
@@ -592,13 +577,13 @@ export const WarehouseItemsTable: React.FC<WarehouseItemsTableProps> = ({
 									<td
 										className="inventory-col-actions"
 										style={{
-											padding: "8px 6px",
+											padding: "8px 8px",
 											verticalAlign: "middle",
-											textAlign: "right",
+											textAlign: "center",
 											whiteSpace: "nowrap",
 										}}
 									>
-										<div className="flex items-center justify-end gap-1 whitespace-nowrap shrink-0">
+										<div className="flex items-center justify-center gap-1 whitespace-nowrap shrink-0">
 											<button
 												type="button"
 												onClick={() => onDeductItem(item)}
