@@ -17,11 +17,7 @@ import {
 	formatRadiationDose,
 } from "./radiologyMath";
 import { SAMPLE_PATIENT_RVG_URL } from "./types";
-import {
-	createDicomSecondaryCaptureFile,
-	triggerBinaryDownload,
-} from "../visiograph/VisiographDicomExporter";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { useVisitStore } from "../../store/visitStore";
 import {
 	RvgFiltersToolbar,
 	DEFAULT_RVG_FILTERS,
@@ -36,13 +32,16 @@ import {
 	type SensorCaptureStatus,
 } from "./directRvgTypes";
 import {
+	exportDirectRvgImageOrDicom,
 	getDirectRvgExportFileName,
+	persistRvgScanToServer,
 	validateRadiologyUploadFile,
 } from "./directRvgFileValidation";
 import { DirectRvgFdiSelector } from "./DirectRvgFdiSelector";
 import { DirectRvgProjectionSelector } from "./DirectRvgProjectionSelector";
 import { DirectRvgViewportToolbar } from "./DirectRvgViewportToolbar";
 import { DirectRvgFooter } from "./DirectRvgFooter";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 if (typeof document !== "undefined") { import("./rvgCapture.css"); }
 
 // Transparent re-exports
@@ -384,6 +383,62 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			})();
 		}
 
+		// 1. Automatically bind RVG scan finding to active visit diary & reactive FDI tooth formula
+		try {
+			const primaryToothCode = selectedTeeth[0] || initialToothFdi || "16";
+			const rvgDiaryStatement = `[Прицельный снимок RVG] Зуб #${selectedTeeth.join(", ")}: доза ${calculatedDoseMicrosv} мкЗв. ${clinicalNotes}`;
+
+			// Append to objectiveStatus in active visit note
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const current = prev.objectiveStatus || "";
+				const updated = current.trim() ? `${current.trim()}\n${rvgDiaryStatement}` : rvgDiaryStatement;
+				return { ...prev, objectiveStatus: updated };
+			});
+
+			// Reactively associate with tooth in visit formula
+			if (primaryToothCode) {
+				const store = useVisitStore.getState();
+				const currentState = store.visitToothStateByCode[primaryToothCode];
+				if (!currentState || currentState === "idle") {
+					store.setToothState(primaryToothCode, "treatment");
+				}
+			}
+		} catch (err) {
+			console.warn("[DirectRvgCaptureModal] Failed to update visit store:", err);
+		}
+
+		// 2. Dispatch global SOAP event for EMR protocol integration
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: {
+							objectiveStatus: `[Прицельный снимок RVG] Зуб #${selectedTeeth.join(", ")}: доза ${calculatedDoseMicrosv} мкЗв. ${clinicalNotes}`,
+						},
+						immediate: true,
+						mode: "smart_append",
+					},
+				}),
+			);
+		} catch {
+			// ignore
+		}
+
+		// 3. Dispatch reactive scan event for tooth chart and gallery
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-rvg-scan-saved", {
+					detail: {
+						study: studyRecord,
+						toothFdi: selectedTeeth[0] || initialToothFdi || "16",
+						teethFdi: selectedTeeth,
+					},
+				}),
+			);
+		} catch {
+			// ignore
+		}
+
 		showToast(`Снимок зуба ${selectedTeeth.join(", ")} сохранён в медицинскую карту ${patientCardNumber}`, "success");
 		setIsSaving(false);
 		onClose();
@@ -455,59 +510,18 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			},
 		};
 
-		if (onExportDicom) {
-			onExportDicom(studyRecord);
-		}
-
-		// Attempt genuine Part 10 DICOM generation if canvas is available
-		let dicomBytes: Uint8Array | null = null;
-		const canvas = canvasRef.current;
-		if (canvas && canvas.width > 0 && canvas.height > 0) {
-			try {
-				dicomBytes = createDicomSecondaryCaptureFile(canvas, {
-					patientId: patientId || "PAT-001",
-					patientFullName: patientName || "UNKNOWN^PATIENT",
-					clinicName: "ООО «Денте Стоматология»",
-					doctorFullName: doctorName || "Лечащий врач",
-					modality: "IO",
-					toothCode: selectedTeeth.join(", "),
-					scaleMmPerPixel: currentSensor?.pixelSpacing || 0.035,
-				});
-			} catch (err) {
-				console.warn(
-					"DirectRvgCaptureModal: Failed to generate DICOM buffer, falling back to honest image export",
-					err,
-				);
-			}
-		}
-
-		const exportInfo = getDirectRvgExportFileName(
+		exportDirectRvgImageOrDicom({
+			study: studyRecord,
+			canvas: canvasRef.current,
 			selectedTeeth,
+			patientId,
+			patientName,
 			patientCardNumber,
-			Boolean(dicomBytes && dicomBytes.length > 0),
+			doctorName,
 			capturedImage,
-		);
-
-		if (dicomBytes && dicomBytes.length > 0) {
-			triggerBinaryDownload(dicomBytes, exportInfo.filename, exportInfo.mimeType);
-			showToast(
-				`Файл цифрового снимка DICOM Part 10 (.dcm) для зуба ${selectedTeeth.join(", ")} успешно экспортирован`,
-				"success",
-			);
-		} else {
-			// Honest image download fallback with genuine .jpg / .png extension — NEVER masquerading JPEG as .dcm
-			const link = document.createElement("a");
-			link.href = capturedImage;
-			link.download = exportInfo.filename;
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-			const extLabel = exportInfo.filename.split(".").pop()?.toUpperCase() || "IMAGE";
-			showToast(
-				`Файл цифрового снимка (${extLabel}) для зуба ${selectedTeeth.join(", ")} успешно экспортирован`,
-				"success",
-			);
-		}
+			pixelSpacingMm: currentSensor?.pixelSpacing || 0.035,
+			onExportDicom,
+		});
 	};
 
 	if (!isOpen) return null;
@@ -537,9 +551,9 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 						</div>
 						<div className="rvg-header-titles min-w-0 flex-1">
 							<h2 id={`${modalId}-title`} className="rvg-header-title min-w-0">
-								<span className="truncate">Прямой захват RVG и студия фильтрации</span>
+								<span className="truncate">Зона радиовизиографии: прямой захват с датчика</span>
 								<span className="text-xs px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-mono font-normal shrink-0">
-									USB 3.0 CMOS Direct
+									Прямой TWAIN / USB
 								</span>
 							</h2>
 							<p

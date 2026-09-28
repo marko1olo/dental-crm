@@ -389,18 +389,18 @@ export function auditMandibularNerveSafety(
 		status = "danger";
 		audioAlarm = true;
 		if (netClearanceWall <= 0) {
-			message = "КРИТИЧЕСКАЯ ОШИБКА: ПЕРФОРАЦИЯ НИЖНЕЧЕЛЮСТНОГО КАНАЛА! Немедленно измените длину или наклон имплантата!";
+			message = "Критическое предупреждение (КРИТИЧЕСКИЙ РИСК): ПЕРФОРАЦИЯ НИЖНЕЧЕЛЮСТНОГО КАНАЛА. Измените длину или наклон имплантата.";
 		} else {
-			message = "КРИТИЧЕСКИЙ РИСК: Дистанция до нерва " + netClearanceWall.toFixed(1) + " мм (< 1.5 мм). Высокий риск нейропатии и парестезии губы!";
+			message = "КРИТИЧЕСКИЙ РИСК: дистанция до нерва " + netClearanceWall.toFixed(1) + " мм (< 1.5 мм). Риск нейропатии и парестезии губы.";
 		}
 	} else if (netClearanceWall < MANDIBULAR_NERVE_SAFETY_MARGIN_MM) {
 		status = "warning";
 		audioAlarm = false;
-		message = "ВНИМАНИЕ: Зона приближения к нерву (" + netClearanceWall.toFixed(1) + " мм). Требуется запас не менее 2.0 мм по протоколу Misch!";
+		message = "ВНИМАНИЕ: зона приближения к нерву (" + netClearanceWall.toFixed(1) + " мм). Рекомендуемый запас не менее 2.0 мм по протоколу Misch.";
 	} else {
 		status = "safe";
 		audioAlarm = false;
-		message = "БЕЗОПАСНО: Клиренс до канала " + netClearanceWall.toFixed(1) + " мм (соответствует хирургическому стандарту >= 2.0 мм).";
+		message = "БЕЗОПАСНО: клиренс до канала " + netClearanceWall.toFixed(1) + " мм (соответствует хирургическому стандарту >= 2.0 мм).";
 	}
 
 	return {
@@ -477,7 +477,7 @@ export function auditMaxillarySinusSafety(
 
 	if (isPerforation) {
 		status = "danger";
-		message = "ВНИМАНИЕ: Перфорация дна гайморовой пазухи (зуб 16/верхний моляр). Необходим синус-лифтинг или уменьшение длины имплантата!";
+		message = "Предупреждение: перфорация дна гайморовой пазухи (зуб 16/верхний моляр). Показан синус-лифтинг или уменьшение длины имплантата.";
 	} else if (netClearanceWall < sinusMarginMm) {
 		status = "warning";
 		message = "Зона дна гайморовой пазухи: остаточная высота кости " + netClearanceWall.toFixed(1) + " мм. Показан закрытый синус-лифтинг.";

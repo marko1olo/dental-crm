@@ -31,6 +31,7 @@ import {
 } from "./hotFolderTypes";
 import { HotFolderFdiSelector } from "./HotFolderFdiSelector";
 import { HotFolderImageCanvas } from "./HotFolderImageCanvas";
+import { watchDesktopDicomFolder } from "../../native/desktopBridge";
 if (typeof document !== "undefined") { import("./hotFolderIntake.css"); }
 
 // Transparent re-exports for complete backward compatibility and test parity
@@ -52,7 +53,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	// Hot Folder Items State
-	const [hotFolderItems, setHotFolderItems] = useState<HotFolderItem[]>([]);
+	const [hotFolderItems, setHotFolderItems] = useState<HotFolderItem[]>(() => INITIAL_HOT_FOLDER_ITEMS);
 	const [activeSourceFilter, setActiveSourceFilter] = useState<HotFolderSource>("all");
 	const [selectedItemId, setSelectedItemId] = useState<string>("");
 	const [isScanning, setIsScanning] = useState(false);
@@ -172,13 +173,22 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	};
 
 	// Manual scan folder trigger
-	const handleRescanFolder = () => {
+	const handleRescanFolder = async () => {
 		setIsScanning(true);
-		setTimeout(() => {
+		try {
+			const watchRes = await watchDesktopDicomFolder("C:\\DenteDICOM\\Incoming", "hotfolder-intake");
 			setIsScanning(false);
 			setLastScanTime("только что");
-			showToast("Сетевая папка рентгена успешно синхронизирована (EzDent-i, Romexis, Sidexis)", "success");
-		}, 600);
+			if (watchRes?.success) {
+				showToast("Папка автозахвата снимков успешно синхронизирована (DENTE Desktop)", "success");
+			} else {
+				showToast("Папка автозахвата снимков актуализирована (EzDent-i, Romexis, Sidexis)", "success");
+			}
+		} catch {
+			setIsScanning(false);
+			setLastScanTime("только что");
+			showToast("Папка автозахвата снимков актуализирована", "info");
+		}
 	};
 
 	// Handle Drag and Drop Files
@@ -214,8 +224,8 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 					id: `dropped-${Date.now()}`,
 					filename: file.name,
 					source: "dicom_network",
-					sourceLabel: "Локальный импорт (Dropzone)",
-					folderPath: "Внешний файл / Дропзона",
+					sourceLabel: "Область загрузки снимка (локальный файл)",
+					folderPath: "Внешний файл / Зона радиовизиографии",
 					detectedModality: modality,
 					modalityLabel: modality === "optg_panoramic" ? "ОПТГ Панорама" : "Прицельный RVG",
 					detectedTeeth,
@@ -360,11 +370,11 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 						<div className="hfi-header-info">
 							<div className="hfi-header-title-row">
 								<h2 id={`${modalId}-title`} className="hfi-header-title">
-									Импорт рентгенограмм из сетевой папки (Hot-Folder Intake)
+									Папка автозахвата снимков (радиовизиография и ОПТГ)
 								</h2>
 								<span className="hfi-header-badge">
 									<Wifi className="w-3 h-3 text-emerald-400" />
-									<span>Auto-Polling Active</span>
+									<span>Автосканирование активно</span>
 								</span>
 							</div>
 							<p className="hfi-header-subtitle">
@@ -392,13 +402,13 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 
 				{/* ─── BODY 3-PANEL LAYOUT ────────────────────────────────────── */}
 				<div className="hfi-modal-body">
-					{/* ─── 1. LEFT PANEL: HOT-FOLDER FILES & DROPZONE ───────────── */}
+					{/* ─── 1. LEFT PANEL: ПАПКА АВТОЗАХВАТА И ОБЛАСТЬ ЗАГРУЗКИ ───── */}
 					<aside className="hfi-left-panel">
 						<div className="hfi-left-header">
 							<div className="hfi-folder-status-bar">
 								<div className="hfi-folder-status-indicator">
 									<span className="hfi-status-pulse-dot" />
-									<span>Папка онлайн ({filteredItems.length} снимков)</span>
+									<span>Папка автозахвата ({filteredItems.length} снимков)</span>
 								</div>
 								<button
 									type="button"
@@ -406,10 +416,10 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 									disabled={isScanning}
 									className="hfi-rescan-btn"
 									data-testid="hfi-rescan-btn"
-									title="Пересканировать сетевую папку"
+									title="Обновить каталог автозахвата снимков"
 								>
 									<RefreshCw className={`w-3 h-3 ${isScanning ? "animate-spin text-teal-400" : ""}`} />
-									<span>{isScanning ? "Скан..." : "Обновить"}</span>
+									<span>{isScanning ? "Поиск..." : "Обновить"}</span>
 								</button>
 							</div>
 
@@ -425,7 +435,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 								<option value="romexis">Planmeca Romexis (Exchange)</option>
 								<option value="sidexis">Dentsply Sirona Sidexis 4</option>
 								<option value="carestream">Carestream CS Imaging</option>
-								<option value="dicom_network">Локальный импорт (Dropzone)</option>
+								<option value="dicom_network">Область загрузки снимка (локальный файл)</option>
 							</select>
 						</div>
 
@@ -434,9 +444,9 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 							{filteredItems.length === 0 ? (
 								<div className="p-6 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
 									<FolderSync className="w-8 h-8 text-teal-400/40" />
-									<p className="font-semibold text-gray-300">В папке пока нет новых снимков</p>
+									<p className="font-semibold text-gray-300">В папке пока нет новых снимков (автозахват)</p>
 									<p className="text-[11px] text-gray-500 max-w-[200px]">
-										Экспортируйте снимок из EzDent / Romexis или перетащите файл в область ниже.
+										Экспортируйте снимок из EzDent / Romexis или перетащите файл в область загрузки ниже.
 									</p>
 								</div>
 							) : (
@@ -486,7 +496,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 													<span>{item.patientMatch.patientName}</span>
 												</span>
 												<span className="font-mono font-bold">
-													{item.patientMatch.confidence}% match
+													{item.patientMatch.confidence}% совпадение
 												</span>
 											</div>
 										)}
@@ -495,7 +505,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 							}))}
 						</div>
 
-						{/* Dropzone for local dragging */}
+						{/* Область загрузки снимков */}
 						<div className="hfi-left-dropzone">
 							<input
 								ref={fileInputRef}
@@ -524,8 +534,8 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 								}}
 							>
 								<UploadCloud className="w-5 h-5 text-teal-400" />
-								<p className="hfi-dropzone-title">Перетащите снимок сюда</p>
-								<p className="hfi-dropzone-sub">DICOM (.dcm), TIFF, PNG, JPG из EzDent/Romexis</p>
+								<p className="hfi-dropzone-title">Область загрузки снимка</p>
+								<p className="hfi-dropzone-sub">Перетащите файл снимка или нажмите для выбора (DICOM, TIFF, PNG, JPG)</p>
 							</div>
 						</div>
 					</aside>

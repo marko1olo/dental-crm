@@ -173,6 +173,39 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 	const crossSectionOffscreenRef = useRef<HTMLCanvasElement | null>(null);
 	const crossSectionImgDataRef = useRef<ImageData | null>(null);
 
+	// Deterministic release of offscreen canvas backing stores and ImageData caches on modal close or unmount
+	useEffect(() => {
+		const releaseOffscreens = () => {
+			const offscreens = [
+				axialOffscreenRef,
+				coronalOffscreenRef,
+				sagittalOffscreenRef,
+				panoOffscreenRef,
+				crossSectionOffscreenRef,
+			];
+			for (const offRef of offscreens) {
+				if (offRef.current) {
+					offRef.current.width = 0;
+					offRef.current.height = 0;
+					offRef.current = null;
+				}
+			}
+			axialImgDataRef.current = null;
+			coronalImgDataRef.current = null;
+			sagittalImgDataRef.current = null;
+			panoImgDataRef.current = null;
+			crossSectionImgDataRef.current = null;
+		};
+
+		if (!isOpen) {
+			releaseOffscreens();
+		}
+
+		return () => {
+			releaseOffscreens();
+		};
+	}, [isOpen]);
+
 	// LAYER 1: BASE SLICES EXTRACTION & DRAWING
 	useEffect(() => {
 		if (!volume || !isOpen) return;

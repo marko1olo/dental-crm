@@ -188,13 +188,13 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 					onClick={handleExportToEmr}
 					className="px-2 sm:px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white shadow-xs transition-colors cursor-pointer"
 					data-testid="cbct-btn-export-emr"
-					title="Сохранить снимок и протокол планирования в карту 043/у"
+					title="Сохранить снимок и протокол планирования в медицинскую карту"
 				>
 					<Camera className="w-3.5 h-3.5" />
 					<span className="hidden sm:inline">В ЭМК</span>
 				</button>
 
-				{/* Primary Action 1b: 1-Click CBCT 804n to Visit Finance & Treatment Plan */}
+				{/* Primary Action 1b: 1-Click CBCT to Visit Finance & Treatment Plan */}
 				{handleExportCbctToFinance && (
 					<button
 						type="button"

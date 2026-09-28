@@ -173,7 +173,7 @@ export function applyRadiologyProtocolToForm043(
 			typeof params.protocol === "string"
 				? "Протокол рентгенодиагностики"
 				: `«${params.protocol.titleRu}»`;
-		showToast(`${label} внесен в дневник 043/у`, "success", 3500);
+		showToast(`${label} внесён в дневник приёма`, "success", 3500);
 	}
 
 	return statement;

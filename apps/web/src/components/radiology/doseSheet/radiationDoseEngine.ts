@@ -278,7 +278,7 @@ export function calculatePatientCumulativeDose(
 		"Принцип ALARA (As Low As Reasonably Achievable) соблюден. Лучевая нагрузка минимальна, используются цифровые низкодозовые приемники и защитные СИЗ.";
 	if (safetyZone === "red") {
 		alaraComplianceNotes =
-			"Внимание: Годовой профилактический порог 1.0 мЗв превышен. Обязательна запись обоснования по жизненным показаниям в форме 043/у.";
+			"Внимание: Годовой профилактический порог 1.0 мЗв превышен. Обязательна запись обоснования по клиническим показаниям в медицинской карте.";
 	} else if (safetyZone === "yellow") {
 		alaraComplianceNotes =
 			"Накопленная доза умеренная. Рекомендуется ограничить объемные КЛКТ 3D и отдавать приоритет прицельным визиограммам с коллимацией.";
@@ -367,8 +367,8 @@ export function evaluateDoseCompliance(
 
 	let status: DoseComplianceResult["status"] = "safe";
 	let zone: RadiationSafetyZone = "green";
-	let warningMessage = "Лучевая нагрузка находится в оптимальных нормативных границах СанПиН 2.6.1.2523-09.";
-	let protocolActionRequired = "Стандартный протокол: применение СИЗ (воротник 0.35 мм Pb), запись в лист дозовых нагрузок формы 043/у.";
+	let warningMessage = "Лучевая нагрузка находится в оптимальных границах (НРБ-99/2009, до 1.0 мЗв).";
+	let protocolActionRequired = "Стандартный протокол: применение СИЗ (воротник 0.35 мм Pb), запись в лист дозовых нагрузок медицинской карты.";
 	let requiresDoctorClinicalJustification = false;
 	let recommendedIntervalDays = 0;
 	// Мандат 8e: аппаратная съемка НИКОГДА не блокируется
@@ -377,15 +377,15 @@ export function evaluateDoseCompliance(
 	if (totalAfterStudyMsv >= RADIATION_SAFETY_LIMITS_MSV.CRITICAL_EXCEEDED_THRESHOLD_MSV) {
 		status = "limit_exceeded";
 		zone = "red";
-		warningMessage = `Клиническое предупреждение (СанПиН 2.6.1.1192-03): Суммарная доза (${totalAfterStudyMsv} мЗв) достигла или превысила профилактический лимит (${limitMsv} мЗв). Согласно Мандату 8e, блокировка аппарата ЗАПРЕЩЕНА: исследование выполняется по клиническим показаниям под личную ответственность лечащего врача с записью в карту 043/у.`;
+		warningMessage = `Клиническое предупреждение (НРБ-99/2009): Суммарная доза (${totalAfterStudyMsv} мЗв) достигла или превысила профилактический лимит (${limitMsv} мЗв). Согласно Мандату 8e, блокировка аппарата ЗАПРЕЩЕНА: исследование выполняется по клиническим показаниям под личную ответственность лечащего врача с записью в медицинскую карту.`;
 		protocolActionRequired =
-			"Автономия врача (Мандат 8e): съемка не блокируется. Врач вносит клиническое обоснование в форму 043/у (по острой боли, контроль пломбирования каналов или хирургический контроль). Никаких стационарных комиссий и начмедов.";
+			"Автономия врача (Мандат 8e): съемка не блокируется. Врач вносит клиническое обоснование в медицинскую карту (по острой боли, контроль пломбирования каналов или хирургический контроль). Никаких стационарных комиссий и начмедов.";
 		requiresDoctorClinicalJustification = true;
 		recommendedIntervalDays = RADIATION_SAFETY_LIMITS_MSV.RECOMMENDED_CBCT_INTERVAL_DAYS;
 	} else if (totalAfterStudyMsv >= RADIATION_SAFETY_LIMITS_MSV.WARNING_THRESHOLD_MSV) {
 		status = "warning";
 		zone = "yellow";
-		warningMessage = `Предупреждение: Накопленная доза (${totalAfterStudyMsv} мЗв) составила ${percentOfLimit}% от годового лимита СанПиН.`;
+		warningMessage = `Предупреждение: Накопленная доза (${totalAfterStudyMsv} мЗв) составила ${percentOfLimit}% от годового диагностического лимита (1.0 мЗв, НРБ-99/2009).`;
 		protocolActionRequired =
 			"Протокол повышенного контроля: рекомендована оптимизация рентген-назначений и использование узкого поля облучения (коллимации). Съемка не блокируется.";
 		requiresDoctorClinicalJustification = false;

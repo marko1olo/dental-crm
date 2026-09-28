@@ -36,6 +36,7 @@ import { useVisitStore } from "../../store/visitStore.js";
 import { logger } from "../../utils/logger.js";
 import { showToast } from "../GlobalToast.js";
 import { TOOTH_STATE_LABELS, type ToothState } from "../odontogram/ToothChart.js";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 const DicomViewport = React.lazy(() =>
 	import("./DicomViewport.js").then((m) => ({
@@ -80,9 +81,21 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	onInsertToProtocol,
 }) => {
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const defaultScanSrc =
+		imageSrc ||
+		((isDemoShowcaseMode() || isDemoPatientId(patientName))
+			? (toothFdiCode === "16"
+				? "/radiology/sample_rvg_tooth16.jpg"
+				: "/radiology/sample_rvg_tooth36_periapical.jpg")
+			: null);
 	const [currentImageSrc, setCurrentImageSrc] = useState<string | null>(
-		imageSrc || null,
+		defaultScanSrc,
 	);
+	useEffect(() => {
+		if (imageSrc) {
+			setCurrentImageSrc(imageSrc);
+		}
+	}, [imageSrc]);
 	const [isDragOver, setIsDragOver] = useState(false);
 	const [viewportState, setViewportState] = useState<DicomViewportState>(
 		DEFAULT_DICOM_VIEWPORT_STATE,
@@ -454,6 +467,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 
 	return (
 		<div
+			data-testid="dicom-viewer-modal"
 			style={{
 				position: "fixed",
 				inset: 0,
@@ -1261,34 +1275,63 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						<UploadCloud size={36} />
 					</div>
 					<div style={{ fontSize: "17px", fontWeight: 700, color: "#f8fafc", marginBottom: "8px" }}>
-						Перетащите дентальный снимок (RVG / DICOM / PNG / TIFF)
+						Область загрузки снимка: перетащите файл (RVG / DICOM / PNG / TIFF)
 					</div>
 					<div style={{ fontSize: "13px", color: "#94a3b8", maxWidth: "480px", lineHeight: "1.5", marginBottom: "20px" }}>
 						Мгновенное открытие снимка &lt;50мс в полном разрешении датчика. Никаких задержек и ожидания ИИ.
 					</div>
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							fileInputRef.current?.click();
-						}}
-						style={{
-							padding: "10px 20px",
-							borderRadius: "8px",
-							border: "none",
-							backgroundColor: "#0d9488",
-							color: "#ffffff",
-							fontSize: "14px",
-							fontWeight: 600,
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: "8px",
-							boxShadow: "0 4px 12px rgba(13, 148, 136, 0.3)",
-						}}
-					>
-						<FileUp size={16} /> Выбрать файл со снимком
-					</button>
+					<div style={{ display: "flex", gap: "10px", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								fileInputRef.current?.click();
+							}}
+							style={{
+								padding: "10px 20px",
+								borderRadius: "8px",
+								border: "none",
+								backgroundColor: "#0d9488",
+								color: "#ffffff",
+								fontSize: "14px",
+								fontWeight: 600,
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "8px",
+								boxShadow: "0 4px 12px rgba(13, 148, 136, 0.3)",
+							}}
+						>
+							<FileUp size={16} /> Выбрать файл со снимком
+						</button>
+						<button
+							type="button"
+							data-testid="btn-dicom-load-demo"
+							onClick={(e) => {
+								e.stopPropagation();
+								setCurrentImageSrc(
+									toothFdiCode === "16"
+										? "/radiology/sample_rvg_tooth16.jpg"
+										: "/radiology/sample_rvg_tooth36_periapical.jpg",
+								);
+							}}
+							style={{
+								padding: "10px 16px",
+								borderRadius: "8px",
+								border: "1px solid #334155",
+								backgroundColor: "#1e293b",
+								color: "#e2e8f0",
+								fontSize: "14px",
+								fontWeight: 500,
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "8px",
+							}}
+						>
+							Показать демо-снимок (клинический пример)
+						</button>
+					</div>
 				</div>
 			) : (
 				<div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden" }}>

@@ -58,7 +58,7 @@ export const VisitSummaryRadiologyGallery: React.FC<
 				<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--teal)] flex items-center gap-1.5">
 					<Scan className="w-4 h-4" />
 					<span>
-						Рентгенологическое обследование и 3D-снапшоты (Форма № 043/у)
+						Рентгенологическое обследование и 3D-снимки
 					</span>
 				</h4>
 				<span className="text-xs font-semibold text-[var(--muted)]">
@@ -81,7 +81,7 @@ export const VisitSummaryRadiologyGallery: React.FC<
 						<div className="relative w-full sm:w-28 h-28 shrink-0 rounded-lg overflow-hidden border border-[var(--line)] bg-black flex items-center justify-center group">
 							<img
 								src={snap.thumbnailDataUri || snap.imageDataUri}
-								alt={snap.title || `Снимок зуба ${snap.toothCode || "043/у"}`}
+								alt={snap.title || (snap.toothCode ? `Снимок зуба ${snap.toothCode}` : "Рентгенологический снимок")}
 								loading="lazy"
 								decoding="async"
 								className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
@@ -96,7 +96,7 @@ export const VisitSummaryRadiologyGallery: React.FC<
 									onZoomImage({
 										url: snap.imageDataUri,
 										title: snap.toothCode
-											? `Снимок зуба FDI № ${snap.toothCode}`
+											? `Снимок зуба ${snap.toothCode}`
 											: snap.title || "Рентгенологический снимок",
 									})
 								}
@@ -113,8 +113,8 @@ export const VisitSummaryRadiologyGallery: React.FC<
 								<div className="flex items-center justify-between gap-1">
 									<span className="font-bold text-[var(--ink)] truncate">
 										{snap.toothCode
-											? `Зуб FDI № ${snap.toothCode}`
-											: snap.title || "3D Снимок 043/у"}
+											? `Зуб ${snap.toothCode}`
+											: snap.title || "3D снимок"}
 									</span>
 									{snap.boneDensity && (
 										<span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0 min-w-0 break-words">

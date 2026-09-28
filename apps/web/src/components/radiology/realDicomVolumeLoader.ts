@@ -382,7 +382,9 @@ export async function buildVolumeFromDicomBuffers(
         : new Uint16Array(entry.buffer, offset, sliceVoxelCount);
     } else {
       const sliceArrayBuf = entry.buffer.slice(offset, offset + sliceVoxelCount * 2);
-      rawSlice = isSigned ? new Int16Array(sliceArrayBuf) : new Uint16Array(sliceArrayBuf);
+      const validEvenLength = sliceArrayBuf.byteLength - (sliceArrayBuf.byteLength % 2);
+      const safeBuf = validEvenLength === sliceArrayBuf.byteLength ? sliceArrayBuf : sliceArrayBuf.slice(0, validEvenLength);
+      rawSlice = isSigned ? new Int16Array(safeBuf) : new Uint16Array(safeBuf);
     }
 
     for (let i = 0; i < sliceVoxelCount; i++) {

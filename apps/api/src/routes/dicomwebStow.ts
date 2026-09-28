@@ -77,9 +77,16 @@ export function parseDicomBufferForStow(buffer: Buffer): {
  * POST /api/dicomweb/studies/:studyUid
  */
 export function registerDicomwebStowRoutes(app: FastifyInstance) {
+	const parsersToAdd: string[] = [];
 	if (!app.hasContentTypeParser("application/dicom")) {
+		parsersToAdd.push("application/dicom");
+	}
+	if (!app.hasContentTypeParser("application/octet-stream")) {
+		parsersToAdd.push("application/octet-stream");
+	}
+	if (parsersToAdd.length > 0) {
 		app.addContentTypeParser(
-			["application/dicom", "application/octet-stream"],
+			parsersToAdd,
 			{ parseAs: "buffer" },
 			(_req, body, done) => {
 				done(null, body);

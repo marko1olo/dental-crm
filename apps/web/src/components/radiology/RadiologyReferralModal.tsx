@@ -253,7 +253,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 	const patientBirth = patient?.birthDate || "____-__-__";
 	const patientPhone = patient?.phone || "+7 (___) ___-__-__";
 	const patientCard =
-		patient?.medicalCardNumber || patient?.cardNumber || "043/у-0012";
+		patient?.medicalCardNumber || patient?.cardNumber || "МК-0012";
 	const docName = doctorName || "Лечащий врач";
 	const clinic = clinicName || 'ООО "Денте Клиник"';
 
@@ -439,7 +439,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 						<div>
 							<div className="flex items-center justify-between mb-2">
 								<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-									1. Вид исследования (СанПиН / ALARA):
+									1. Вид исследования (Стандарт ALARA):
 								</span>
 								{/* Estimated Dose Badge >= 13-14px bold per mandate */}
 								<div
@@ -780,7 +780,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 
 							{/* Radiation Safety Notice */}
 							<div className="p-3 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-[11px] text-[var(--ink)] leading-snug">
-								<strong>Примечание по радиационной безопасности (СанПиН 2.6.1.1192-03):</strong>{" "}
+								<strong>Примечание по радиационной безопасности (НРБ-99/2009):</strong>{" "}
 								Исследование обосновано клинической необходимостью. Принцип нормирования и
 								оптимизации (ALARA) соблюден. Результат и расчетная эффективная доза подлежат
 								внесению в карту пациента.

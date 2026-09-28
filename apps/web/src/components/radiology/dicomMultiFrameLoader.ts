@@ -560,7 +560,9 @@ export async function buildVolumeFromMultiFrameDicom(
           : new Uint16Array(buffer, frameOffset, sliceVoxelCount);
       } else {
         const sliceBuf = buffer.slice(frameOffset, frameOffset + frameByteLength);
-        rawSlice = isSigned ? new Int16Array(sliceBuf) : new Uint16Array(sliceBuf);
+        const validEvenLength = sliceBuf.byteLength - (sliceBuf.byteLength % 2);
+        const safeBuf = validEvenLength === sliceBuf.byteLength ? sliceBuf : sliceBuf.slice(0, validEvenLength);
+        rawSlice = isSigned ? new Int16Array(safeBuf) : new Uint16Array(safeBuf);
       }
 
       for (let i = 0; i < sliceVoxelCount; i++) {

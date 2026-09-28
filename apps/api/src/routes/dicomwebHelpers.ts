@@ -7,6 +7,9 @@ import { and, eq, isNotNull } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
+import { getRequestIdentity } from "../security/identity.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
+
 
 /** DICOM Standard Data Dictionary Tags */
 export const TAG_SOP_INSTANCE_UID = "x00080018";
@@ -333,3 +336,60 @@ export async function streamDicomFileResponse(
 	reply.header("Content-Length", size);
 	return reply.send(createReadStream(filePath));
 }
+
+/**
+ * 152-ФЗ / 323-ФЗ ст. 13: Доступ к КТ / DICOM исследованиям разрешен только клиническому персоналу.
+ */
+export function enforceClinicalDicomAccess(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	resourceNameRu: string,
+): boolean {
+	const identity = getRequestIdentity(request);
+	const staffRole =
+		identity.role ??
+		(request as unknown as { user?: { role?: string | null } }).user?.role ??
+		null;
+	const evalAccess = evaluateClinicalAccess(staffRole);
+	if (!evalAccess.hasClinicalAccess) {
+		reply.code(403).send({
+			error: "PermissionDenied",
+			permission: "clinical.dicom.read",
+			role: staffRole,
+			message: `Доступ к ${resourceNameRu} ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.`,
+		});
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Проверка валидности UUID и существования организации.
+ */
+export async function verifyDicomOrganization(
+	organizationId: string,
+	reply: FastifyReply,
+	customErrorMessage?: string,
+): Promise<boolean> {
+	if (!UUID_SHAPE.test(organizationId)) {
+		reply.code(403).send({
+			error: "OrganizationUnknown",
+			message: customErrorMessage ?? "Организация из токена не существует.",
+		});
+		return false;
+	}
+
+	if (db) {
+		const orgKnown = await organizationExists(organizationId);
+		if (!orgKnown) {
+			reply.code(403).send({
+				error: "OrganizationUnknown",
+				message: customErrorMessage ?? "Организация из токена не существует.",
+			});
+			return false;
+		}
+	}
+
+	return true;
+}
+

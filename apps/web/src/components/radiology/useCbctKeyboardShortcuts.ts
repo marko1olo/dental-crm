@@ -203,6 +203,7 @@ export interface CbctKeyboardShortcutsOptions<TPreset extends string = CbctPrese
 	readonly onSelectTool?: (tool: CbctToolModeShortcut) => void;
 	readonly onSelectPreset?: (preset: TPreset) => void;
 	readonly onToggleHelp?: () => void;
+	readonly onClose?: () => void;
 }
 
 /**
@@ -242,6 +243,14 @@ export function handleCbctKeyDown<TPreset extends string = CbctPresetType>(
 	// Do not intercept hotkeys if user is typing inside an input/textarea
 	if (isEditableElement(event.target)) {
 		return false;
+	}
+
+	// Escape closes the studio modal with memory disposal
+	if (event.key === "Escape") {
+		event.preventDefault?.();
+		event.stopPropagation?.();
+		options.onClose?.();
+		return true;
 	}
 
 	// Avoid colliding with system browser shortcuts (Ctrl+C, Ctrl+V, etc.)

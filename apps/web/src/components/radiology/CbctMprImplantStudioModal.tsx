@@ -39,13 +39,7 @@ import {
 } from "./boneDensityMischMath";
 import { CbctLeftToolDock, type CbctToolMode } from "./CbctLeftToolDock";
 import { showToast } from "../GlobalToast";
-import {
-	exportImplantToTreatmentPlan,
-	exportImplantToDiary043,
-	exportImplantToScheduleDraft,
-	exportPdfImplantReport,
-	addCbctToFinanceAndPlan,
-} from "./ctImplantIntegrationBridge";
+import { useCbctStudioExports } from "./mpr/useCbctStudioExports";
 import {
 	type StudioMode,
 	type ViewLayoutMode,
@@ -61,6 +55,7 @@ import { CbctMprViewportsGrid } from "./mpr/CbctMprViewportsGrid";
 import { useCbctSliceRenderer } from "./mpr/useCbctSliceRenderer";
 import { useCbctInteractionHandlers } from "./mpr/useCbctInteractionHandlers";
 import { useCbctDicomLoader } from "./mpr/useCbctDicomLoader";
+import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
 
 // Re-exports for zero-downtime backwards compatibility
 export type { StudioMode, ViewLayoutMode, CbctMprImplantStudioModalProps };
@@ -428,108 +423,67 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		crossSectionOverlayCanvasRef,
 	});
 
-	const handleExportToPlan = useCallback(() => {
-		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
-		const item = exportImplantToTreatmentPlan({
-			patientId,
-			patientName: patientDisplayName,
-			doctorId: study?.doctorId,
-			doctorName: study?.doctorName,
-			toothFdi: targetTooth,
-			implantSpec: currentImplantSpec,
-			angulationDeg: implantAngulationDeg,
-			ridgeHeightMm: 22.0,
-			ridgeWidthMm: 8.0,
-			mischClass: displayBoneClass,
-			meanHU: displayMeanHU,
-			nerveClearanceMm: displayNerveClearanceMm,
-			recommendedTorqueNcm: displayTorque,
-			drillingProtocol: displayDrillingProtocol,
-			isNerveWarning: nerveAuditResult.isWarning,
-			isNerveDanger: nerveAuditResult.isDangerous,
-		});
-		if (onApplyToPlan) {
-			onApplyToPlan(item);
+	const {
+		handleExportToPlan,
+		handleExportToSchedule,
+		handleExportToEmr,
+		handleExportCbctToFinance,
+		handleExportPdfReport,
+	} = useCbctStudioExports({
+		patientId,
+		patientDisplayName,
+		study,
+		activeCrossSection,
+		currentImplantSpec,
+		currentImplantPose,
+		currentCanal,
+		implantAngulationDeg,
+		displayBoneClass,
+		displayMeanHU,
+		displayNerveClearanceMm,
+		displayTorque,
+		displayDrillingProtocol,
+		nerveAuditResult,
+		huSamplingResult,
+		mischClassification,
+		onApplyToPlan,
+		onApplyToDiary043,
+	});
+
+	const modalContainerRef = useRef<HTMLDivElement | null>(null);
+
+	const handleCloseStudio = useCallback(() => {
+		if (modalContainerRef.current) {
+			teardownViewportCanvases(modalContainerRef.current);
 		}
-	}, [
-		patientId, patientDisplayName, study, activeCrossSection, currentImplantSpec,
-		implantAngulationDeg, displayBoneClass, displayMeanHU, displayNerveClearanceMm,
-		displayTorque, displayDrillingProtocol, nerveAuditResult, onApplyToPlan,
-	]);
+		if (volume) {
+			disposeCbctVolume(volume);
+			setVolume(null);
+		}
+		onClose();
+	}, [volume, onClose]);
 
-	const handleExportToSchedule = useCallback(() => {
-		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
-		exportImplantToScheduleDraft({
-			patientId,
-			patientName: patientDisplayName,
-			toothFdi: targetTooth,
-			implantSpec: currentImplantSpec,
-			angulationDeg: implantAngulationDeg,
-			ridgeHeightMm: 22.0,
-			ridgeWidthMm: 8.0,
-			mischClass: displayBoneClass,
-			meanHU: displayMeanHU,
-			nerveClearanceMm: displayNerveClearanceMm,
-			recommendedTorqueNcm: displayTorque,
-			drillingProtocol: displayDrillingProtocol,
-		});
-	}, [
-		patientId, patientDisplayName, activeCrossSection, currentImplantSpec,
-		implantAngulationDeg, displayBoneClass, displayMeanHU, displayNerveClearanceMm,
-		displayTorque, displayDrillingProtocol,
-	]);
+	// Deterministic teardown of WebGL & 2D canvas backing stores and volume memory (Mandate 8c & Frontend Rules)
+	useEffect(() => {
+		if (!isOpen) {
+			if (modalContainerRef.current) {
+				teardownViewportCanvases(modalContainerRef.current);
+			}
+			if (volume) {
+				disposeCbctVolume(volume);
+				setVolume(null);
+			}
+		}
 
-	const handleExportToEmr = useCallback(async () => {
-		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
-		exportImplantToDiary043(
-			{
-				patientId,
-				patientName: patientDisplayName,
-				doctorId: study?.doctorId,
-				doctorName: study?.doctorName,
-				toothFdi: targetTooth,
-				implantSpec: currentImplantSpec,
-				angulationDeg: implantAngulationDeg,
-				ridgeHeightMm: 22.0,
-				ridgeWidthMm: 8.0,
-				mischClass: displayBoneClass,
-				meanHU: displayMeanHU,
-				nerveClearanceMm: displayNerveClearanceMm,
-				recommendedTorqueNcm: displayTorque,
-				drillingProtocol: displayDrillingProtocol,
-				isNerveWarning: nerveAuditResult.isWarning,
-				isNerveDanger: nerveAuditResult.isDangerous,
-			},
-			onApplyToDiary043,
-		);
-	}, [
-		patientId, patientDisplayName, study, activeCrossSection, currentImplantSpec,
-		implantAngulationDeg, displayBoneClass, displayMeanHU, displayNerveClearanceMm,
-		displayTorque, displayDrillingProtocol, nerveAuditResult, onApplyToDiary043,
-	]);
-
-	const handleExportCbctToFinance = useCallback(() => {
-		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
-		addCbctToFinanceAndPlan({
-			patientId,
-			toothFdi: targetTooth,
-			doctorName: study?.doctorName,
-		});
-	}, [activeCrossSection, patientId, study]);
-
-	const handleExportPdfReport = useCallback(() => {
-		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
-		exportPdfImplantReport({
-			targetTooth,
-			currentImplantPose,
-			currentCanal,
-			huSamplingResult,
-			patientDisplayName,
-			study,
-			mischClassification,
-			nerveAuditResult,
-		});
-	}, [activeCrossSection, currentImplantPose, currentCanal, huSamplingResult, patientDisplayName, study, mischClassification, nerveAuditResult]);
+		return () => {
+			if (modalContainerRef.current) {
+				teardownViewportCanvases(modalContainerRef.current);
+			}
+			if (volume) {
+				disposeCbctVolume(volume);
+			}
+		};
+	}, [isOpen, volume]);
 
 	// Hotkeys hook
 	useCbctKeyboardShortcuts({
@@ -560,6 +514,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		},
 		onToggleMode: () => setStudioMode((prev) => (prev === "implant" ? "diagnostic" : "implant")),
 		onTogglePanel: () => setIsSidebarOpen((prev) => !prev),
+		onClose: handleCloseStudio,
 	});
 
 	if (!isOpen) return null;
@@ -575,6 +530,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			}`}
 		>
 			<div
+				ref={modalContainerRef}
 				className="flex-1 flex flex-col w-full h-full min-h-0 bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden shadow-2xl relative"
 				onDragOver={(e) => {
 					e.preventDefault();
@@ -609,7 +565,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					setViewLayout={setViewLayout}
 					isFullscreen={isFullscreen}
 					handleToggleFullscreenModal={() => setIsFullscreen((prev) => !prev)}
-					onClose={onClose}
+					onClose={handleCloseStudio}
 					activePresetId={activePreset}
 					onSelectPreset={(p) => {
 						setActivePreset(p);

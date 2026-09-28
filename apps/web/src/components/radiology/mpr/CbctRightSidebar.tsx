@@ -710,7 +710,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 									onClick={handleExportToPlan}
 									className="w-full py-2 px-2 rounded-md bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all min-h-[42px] shadow-sm shadow-cyan-500/20 active:scale-98 cursor-pointer"
 									data-testid="add-implant-to-plan-btn"
-									title="Сохранить имплантат и замеры кости в план лечения (МЗ РФ 804н A16.07.054) и зубную формулу"
+									title="Сохранить имплантат и замеры кости в план лечения и зубную формулу"
 								>
 									<Save className="w-3.5 h-3.5 shrink-0" />
 									<span className="truncate">+ В план & смету</span>
@@ -723,7 +723,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 									title="Добавить услугу КТ челюстей (A06.07.012, 3800 ₽) в финансовый акт визита и план"
 								>
 									<Check className="w-3.5 h-3.5 shrink-0" />
-									<span className="truncate">+ КТ в акт (804н)</span>
+									<span className="truncate">+ КТ в смету приёма</span>
 								</button>
 							</div>
 
@@ -734,7 +734,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 									className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 hover:border-cyan-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
 									data-testid="cbct-btn-export-emr"
 									data-testid-legacy="copy-diary-btn"
-									title="Записать протокол КТ и замеры кости в ЭМК и дневник 043/у"
+									title="Записать протокол КТ и замеры кости в ЭМК и дневник приёма"
 								>
 									<FileText className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
 									<span className="truncate">В ЭМК</span>

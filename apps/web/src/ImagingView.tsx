@@ -8,6 +8,7 @@ import {
 	ExternalLink,
 	FileText,
 	FlipHorizontal,
+	Hand,
 	History,
 	Image as ImageIcon,
 	MoreVertical,
@@ -15,12 +16,14 @@ import {
 	RefreshCw,
 	RotateCcw,
 	RotateCw,
+	Ruler,
 	Sparkles,
 	UploadCloud,
 	X,
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
+import type { ViewerRulerMeasurement } from "./components/imaging/ShadowAnalystImageSlider";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { readDenteClinicToken } from "./lib/safeLocalStorage";
 import { decodeHeicImage } from "./services/imaging/heicDecoder";
@@ -264,8 +267,11 @@ function RvgSensorVectorVisualizer({
 					<span className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]">
 						65 kV · 0.08 s
 					</span>
-					<span className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]">
-						1.2 µSv · СанПиН норма
+					<span
+						className="px-2 py-0.5 rounded bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)]"
+						title="Лучевая нагрузка в пределах безопасной нормы"
+					>
+						1.2 µSv · Безопасная доза
 					</span>
 				</div>
 
@@ -304,6 +310,7 @@ function ImagingStudyThumbnail({
 		return (
 			<div
 				className="w-12 h-12 rounded-lg bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] flex flex-col items-center justify-center text-[var(--teal,#0d9488)] shrink-0 select-none"
+				style={{ width: "48px", height: "48px", minWidth: "48px", minHeight: "48px", aspectRatio: "1 / 1" }}
 				title={study?.title || "Рентген-снимок"}
 			>
 				<svg viewBox="0 0 28 28" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -321,6 +328,8 @@ function ImagingStudyThumbnail({
 			alt=""
 			loading="lazy"
 			decoding="async"
+			className="w-12 h-12 object-cover rounded-lg shrink-0 aspect-square border border-[var(--line,#334155)] bg-[var(--paper-soft,#1e293b)]"
+			style={{ width: "48px", height: "48px", minWidth: "48px", minHeight: "48px", aspectRatio: "1 / 1" }}
 			onError={() => setHasError(true)}
 		/>
 	);
@@ -718,6 +727,20 @@ export function ImagingView(props: ImagingViewProps) {
 		aiDiagnoses: Record<string, string>;
 	} | null>(null);
 
+	// Калиброванная линейка и панорамирование снимка
+	const [isRulerActive, setIsRulerActive] = useState(false);
+	const [isPanActive, setIsPanActive] = useState(false);
+	const [rulerMeasurements, setRulerMeasurements] = useState<ViewerRulerMeasurement[]>([]);
+
+	// Физическая калибровка пикселей для измерений (мм/пикс) в зависимости от модальности снимка
+	const currentPixelSpacingMm = useMemo(() => {
+		const kind = selectedImagingStudy?.kind;
+		if (kind === "rvg" || kind === "periapical" || kind === "bitewing") return 0.04;
+		if (kind === "panoramic" || kind === "opg") return 0.10;
+		if (kind === "cbct" || kind === "ct") return 0.125;
+		return 0.04;
+	}, [selectedImagingStudy?.kind]);
+
 	// Реальный CSS-трансформ и фильтры на основе текущего состояния просмотрщика
 	const computedViewerImageStyle = useMemo<React.CSSProperties>(() => {
 		if (props.imagingViewerImageStyle) return props.imagingViewerImageStyle;
@@ -733,6 +756,11 @@ export function ImagingView(props: ImagingViewProps) {
 			filters.push("invert(1)");
 		}
 		const transforms: string[] = [];
+		const panX = s.pan?.x ?? 0;
+		const panY = s.pan?.y ?? 0;
+		if (panX !== 0 || panY !== 0) {
+			transforms.push(`translate(${panX}px, ${panY}px)`);
+		}
 		if (typeof s.zoom === "number" && s.zoom !== 1) {
 			transforms.push(`scale(${s.zoom})`);
 		}
@@ -745,9 +773,9 @@ export function ImagingView(props: ImagingViewProps) {
 		return {
 			filter: filters.length > 0 ? filters.join(" ") : "none",
 			transform: transforms.length > 0 ? transforms.join(" ") : "none",
-			transition: "transform 0.12s ease-out, filter 0.12s ease-out",
+			transition: isPanActive ? "none" : "transform 0.12s ease-out, filter 0.12s ease-out",
 		};
-	}, [props.imagingViewerImageStyle, imagingViewerState, defaultImagingViewerState]);
+	}, [props.imagingViewerImageStyle, imagingViewerState, defaultImagingViewerState, isPanActive]);
 
 	// Аутентифицированная загрузка превью снимка через blob URL для устранения 403 Forbidden в <img>
 	const [authedPreviewBlobUrl, setAuthedPreviewBlobUrl] = useState<string | null>(null);
@@ -1343,28 +1371,23 @@ export function ImagingView(props: ImagingViewProps) {
 				</div>
 			</section>
 
-			{/* Десктопная сетка контекста (>=640px) */}
-			<section className="imaging-patient-strip hidden sm:grid gap-1.5 sm:gap-2.5" aria-label="Контекст снимков">
-				<article className="min-w-0 w-full">
-					<span>Пациент</span>
-					<strong className="break-words [word-break:normal] [overflow-wrap:break-word] min-w-0 font-bold">
+			{/* Десктопная полоса контекста (>=640px) в 1 компактную строку */}
+			<section className="imaging-patient-strip hidden sm:flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs shrink-0" aria-label="Контекст снимков">
+				<article className="flex items-center gap-2 min-w-0">
+					<span className="text-[var(--muted)] font-medium text-xs">Пациент:</span>
+					<strong className="truncate font-bold text-[var(--ink)] text-xs">
 						{activePatient?.fullName ?? "Пациент не выбран"}
 					</strong>
-					<small className="truncate">{activeAppointment?.reason ?? "текущий прием"}</small>
+					<small className="text-[var(--muted)] text-[11px] truncate">({activeAppointment?.reason ?? "текущий прием"})</small>
 				</article>
-				<div className="grid grid-cols-2 sm:contents gap-1.5 sm:gap-0">
-					<article className="min-w-0">
-						<span>В ленте</span>
-						<strong>{activeImagingStudies?.length ?? 0}</strong>
-						<small className="truncate">локально и на сервере</small>
+				<div className="flex items-center gap-3 shrink-0 text-xs">
+					<article className="flex items-center gap-1.5">
+						<span className="text-[var(--muted)] text-[11px]">В ленте:</span>
+						<strong className="text-[var(--ink)] font-semibold">{activeImagingStudies?.length ?? 0}</strong>
 					</article>
-					<article className="min-w-0">
-						<span>Режим</span>
-						<strong className="truncate">{selectedImagingViewerPlan?.label ?? "просмотрщик"}</strong>
-						<small className="truncate">
-							{selectedImagingViewerPlan?.warnings[0] ??
-								"клинический просмотр"}
-						</small>
+					<article className="flex items-center gap-1.5">
+						<span className="text-[var(--muted)] text-[11px]">Режим:</span>
+						<strong className="text-[var(--teal)] font-semibold">{selectedImagingViewerPlan?.label ?? "просмотрщик"}</strong>
 					</article>
 				</div>
 			</section>
@@ -1476,8 +1499,8 @@ export function ImagingView(props: ImagingViewProps) {
 					browserPickedImagingFolder ? (
 						<>
 							<div
-								className="imaging-viewer-stage"
-								style={{ position: "relative" }}
+								className="imaging-viewer-stage min-h-[70vh] flex-1"
+								style={{ position: "relative", minHeight: "70vh" }}
 								onWheel={(e) => {
 									if (localImageIds?.length > 0 || selectedImagingStudy?.kind === "cbct") return;
 									e.preventDefault();
@@ -1539,8 +1562,20 @@ export function ImagingView(props: ImagingViewProps) {
 								) : effectivePreviewUrl && !previewLoadError ? (
 									<ShadowAnalystImageSlider
 										imageUrl={effectivePreviewUrl}
-										enhanced={enhancementOn && !!selectedStudySummary}
+										enhanced={enhancementOn}
 										viewerStyle={computedViewerImageStyle}
+										isRulerActive={isRulerActive}
+										pixelSpacingMm={currentPixelSpacingMm}
+										measurements={rulerMeasurements}
+										onMeasurementsChange={setRulerMeasurements}
+										isPanActive={isPanActive}
+										pan={imagingViewerState.pan || { x: 0, y: 0 }}
+										onPanChange={(pan) =>
+											setImagingViewerState((state: any) => ({
+												...state,
+												pan,
+											}))
+										}
 									/>
 								) : (
 									<RvgSensorVectorVisualizer
@@ -1563,80 +1598,74 @@ export function ImagingView(props: ImagingViewProps) {
 							</div>
 
 							<div
-								className="imaging-viewer-meta"
+								className="imaging-viewer-meta flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 border-b border-[var(--line)]"
 								style={{
 									position: "static",
 									background: "var(--paper-soft, #1e293b)",
 									color: "var(--ink, #f8fafc)",
+									padding: "6px 12px",
 								}}
 							>
-								<strong>
-									{selectedImagingStudy?.title ?? "Локальный предпросмотр"}
-								</strong>
-								<span>
-									{selectedImagingStudy
-										? `${imagingKindLabels[selectedImagingStudy.kind]} · ${selectedImagingStudy.toothCode || selectedImagingStudy.region || "Область не указана"}`
-										: "Локальные файлы DICOM (КТ)"}
-								</span>
-								{/* Карточка без файла: быстрый призыв к прикреплению снимка в 1 клик (Мандат 8e) */}
-								{selectedImagingStudy && !selectedStudyHasFile ? (
-									<div
-										data-testid="imaging-study-file-missing"
-										className="flex items-center justify-between gap-2 p-2.5 my-2 rounded-lg border border-dashed text-xs"
+								<div className="flex items-center gap-2 min-w-0">
+									<strong className="text-xs sm:text-sm font-bold truncate">
+										{selectedImagingStudy?.title ?? "Локальный предпросмотр"}
+									</strong>
+									<span className="text-[11px] text-[var(--muted)]">
+										{selectedImagingStudy
+											? `${imagingKindLabels[selectedImagingStudy.kind]} · ${selectedImagingStudy.toothCode || selectedImagingStudy.region || "Область не указана"}`
+											: "Локальные файлы DICOM (КТ)"}
+									</span>
+								</div>
+								<div className="flex items-center gap-2 shrink-0">
+									{selectedImagingStudy && !selectedStudyHasFile ? (
+										<div
+											data-testid="imaging-study-file-missing"
+											className="inline-flex items-center gap-1.5"
+										>
+											<button
+												type="button"
+												className="primary-button font-medium text-xs py-1 px-2.5 inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
+												style={{ color: "#ffffff" }}
+												onClick={() => pickBrowserImagingFiles()}
+												data-testid="imaging-attach-file-button"
+												title="Прикрепить файл снимка (DICOM, RVG, JPEG, PNG, TIFF) к карточке"
+											>
+												<UploadCloud size={13} style={{ color: "#ffffff" }} />
+												<span style={{ color: "#ffffff" }}>Прикрепить снимок</span>
+											</button>
+										</div>
+									) : null}
+									<button
+										type="button"
+										className={
+											selectedStudySummary ? "secondary-button text-xs py-1 px-2.5" : "primary-button text-xs py-1 px-2.5"
+										}
+										disabled={
+											isAnalyzingAI ||
+											!selectedImagingStudy ||
+											!selectedStudyHasFile
+										}
+										onClick={handleAnalyzeAI}
+										title={
+											selectedImagingStudy && !selectedStudyHasFile
+												? "Разбор недоступен: к карточке не загружен файл снимка"
+												: "Разобрать снимок помощником"
+										}
 										style={{
-											borderColor: "var(--line, #cbd5e1)",
-											background: "var(--paper, #f8fafc)",
-											color: "var(--ink, #0f172a)",
+											display: "inline-flex",
+											alignItems: "center",
+											gap: "0.35rem",
+											maxWidth: "fit-content",
 										}}
 									>
-										<div className="flex items-center gap-1.5 min-w-0">
-											<UploadCloud size={16} className="text-teal-600 shrink-0" />
-											<span className="truncate">К карточке пока не прикреплен файл</span>
-										</div>
-										<button
-											type="button"
-											className="primary-button font-medium text-xs py-1 px-3 inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer"
-											style={{ color: "#ffffff" }}
-											onClick={() => pickBrowserImagingFiles()}
-											data-testid="imaging-attach-file-button"
-											title="Прикрепить файл снимка (DICOM, RVG, JPEG, PNG, TIFF) к карточке"
-										>
-											<UploadCloud size={14} style={{ color: "#ffffff" }} />
-											<span style={{ color: "#ffffff" }}>Прикрепить снимок</span>
-										</button>
-									</div>
-								) : null}
-								<button
-									type="button"
-									className={
-										selectedStudySummary ? "secondary-button" : "primary-button"
-									}
-									disabled={
-										isAnalyzingAI ||
-										!selectedImagingStudy ||
-										!selectedStudyHasFile
-									}
-									onClick={handleAnalyzeAI}
-									title={
-										selectedImagingStudy && !selectedStudyHasFile
-											? "Разбор недоступен: к карточке не загружен файл снимка"
-											: "Разобрать снимок помощником"
-									}
-									style={{
-										display: "inline-flex",
-										alignItems: "center",
-										gap: "0.5rem",
-										marginTop: "0.5rem",
-										maxWidth: "fit-content",
-									}}
-								>
-									<Bot aria-hidden="true" size={16} />
-									{isAnalyzingAI
-										? "Разбираю снимок..."
-										: selectedStudySummary
-											? "Разобрать заново"
-											: "Разобрать снимок помощником"}
-								</button>
+										<Bot aria-hidden="true" size={14} />
+										<span>{isAnalyzingAI
+											? "Разбираю..."
+											: selectedStudySummary
+												? "Заново"
+												: "ИИ-помощник"}</span>
+									</button>
+								</div>
 							</div>
 
 							{/* Врачебный контроль находок ИИ: без подтверждения врача формула не меняется! */}
@@ -1805,162 +1834,248 @@ export function ImagingView(props: ImagingViewProps) {
 							) && (
 								<div style={{ display: "contents" }}>
 									<div
-										className="imaging-viewer-toolbar"
+										className="imaging-viewer-toolbar flex flex-col gap-1.5 p-2 bg-[var(--paper-soft)] border-t border-[var(--line)]"
 										role="toolbar"
 										aria-label="Настройки рентген-снимка"
 									>
-										<div className="imaging-viewer-tools flex flex-nowrap overflow-x-auto items-center gap-1 min-h-[36px]">
+										<div className="imaging-viewer-tools flex flex-wrap items-center justify-between gap-1.5 min-h-[32px]">
+											<div className="flex items-center gap-1.5 flex-wrap">
+												{/* Group 1: [ ↺ | ↻ | ⇄ ] Rotation & Orientation Segmented Controls */}
+												<div
+													className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5"
+													role="group"
+													aria-label="Ориентация и поворот"
+												>
+													<button
+														className="viewer-tool-button h-7 px-2 rounded text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
+														type="button"
+														title="Повернуть влево"
+														aria-label="Повернуть снимок влево"
+														onClick={() =>
+															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+															setImagingViewerState((state: any) => ({
+																...state,
+																rotationDeg: state.rotationDeg - 90,
+															}))
+														}
+													>
+														<RotateCcw size={13} aria-hidden="true" />
+													</button>
+													<button
+														className="viewer-tool-button h-7 px-2 rounded text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
+														type="button"
+														title="Повернуть вправо"
+														aria-label="Повернуть снимок вправо"
+														onClick={() =>
+															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+															setImagingViewerState((state: any) => ({
+																...state,
+																rotationDeg: state.rotationDeg + 90,
+															}))
+														}
+													>
+														<RotateCw size={13} aria-hidden="true" />
+													</button>
+													<button
+														className={`viewer-tool-button h-7 px-2 rounded text-xs transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${imagingViewerState.flipHorizontal ? "bg-[var(--teal)] text-white font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+														type="button"
+														title="Зеркально"
+														aria-label="Зеркально отразить снимок"
+														aria-pressed={imagingViewerState.flipHorizontal}
+														onClick={() =>
+															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+															setImagingViewerState((state: any) => ({
+																...state,
+																flipHorizontal: !state.flipHorizontal,
+															}))
+														}
+													>
+														<FlipHorizontal size={13} aria-hidden="true" />
+													</button>
+													<button
+														className="viewer-tool-button h-7 px-1.5 rounded text-[11px] font-bold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
+														type="button"
+														title="Повернуть на 180° (верхняя / нижняя челюсть)"
+														aria-label="Повернуть снимок на 180 градусов"
+														onClick={() =>
+															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+															setImagingViewerState((state: any) => ({
+																...state,
+																rotationDeg: (state.rotationDeg + 180) % 360,
+															}))
+														}
+													>
+														180°
+													</button>
+												</div>
+
+												{/* Group 2: [ - | + | 100% ] Zoom Segmented Controls */}
+												<div
+													className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5"
+													role="group"
+													aria-label="Масштаб снимка"
+												>
+													<button
+														className="viewer-tool-button h-7 px-2 rounded text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
+														type="button"
+														title="Уменьшить"
+														aria-label="Уменьшить снимок"
+														onClick={() =>
+															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+															setImagingViewerState((state: any) => ({
+																...state,
+																zoom: Math.max(0.75, Number(((state.zoom || 1) - 0.1).toFixed(2))),
+															}))
+														}
+													>
+														<ZoomOut size={13} aria-hidden="true" />
+													</button>
+													<button
+														className="viewer-tool-button h-7 px-2 rounded text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer shrink-0"
+														type="button"
+														title="Увеличить"
+														aria-label="Увеличить снимок"
+														onClick={() =>
+															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+															setImagingViewerState((state: any) => ({
+																...state,
+																zoom: Math.min(2.5, Number(((state.zoom || 1) + 0.1).toFixed(2))),
+															}))
+														}
+													>
+														<ZoomIn size={13} aria-hidden="true" />
+													</button>
+													<button
+														className={`viewer-tool-button h-7 px-2 rounded text-[11px] font-bold transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${Math.abs((imagingViewerState.zoom || 1) - 1.0) < 0.05 ? "bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)]" : "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+														type="button"
+														title="Сбросить масштаб (100%)"
+														aria-label="Сбросить масштаб до 100%"
+														onClick={() =>
+															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+															setImagingViewerState((state: any) => ({
+																...state,
+																zoom: 1.0,
+																pan: { x: 0, y: 0 },
+															}))
+														}
+													>
+														100%
+													</button>
+													<button
+														className={`viewer-tool-button h-7 px-2 rounded text-xs transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${isPanActive ? "bg-[var(--teal)] text-white font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+														type="button"
+														title="Панорамирование (перетаскивание снимка)"
+														aria-label="Панорамирование снимка"
+														aria-pressed={isPanActive}
+														onClick={() => {
+															setIsPanActive((prev) => !prev);
+															if (!isPanActive) setIsRulerActive(false);
+														}}
+													>
+														<Hand size={13} aria-hidden="true" />
+													</button>
+												</div>
+
+												{/* Group 3: [ Негатив | CLAHE | Линейка ] Clinical Contrast & Enhancement Segmented Controls */}
+												<div
+													className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper)] p-0.5 shadow-2xs shrink-0 gap-0.5"
+													role="group"
+													aria-label="Фильтры контраста и измерения"
+												>
+													<button
+														className={`viewer-tool-button h-7 px-2.5 rounded text-xs font-semibold gap-1 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${imagingViewerState.inverted ? "bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+														type="button"
+														title="Инверсия (Негатив для верхушек корней и эндодонтии)"
+														aria-label="Инвертировать снимок в негатив"
+														aria-pressed={imagingViewerState.inverted}
+														onClick={() =>
+															// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+															setImagingViewerState((state: any) => ({
+																...state,
+																inverted: !state.inverted,
+															}))
+														}
+													>
+														<Contrast size={13} aria-hidden="true" />
+														<span>Негатив</span>
+													</button>
+													<button
+														className={`viewer-tool-button h-7 px-2.5 rounded text-xs font-semibold gap-1 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${enhancementOn ? "bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+														type="button"
+														title="Включить/выключить улучшение снимка (CLAHE симуляция)"
+														aria-label="Переключить CLAHE улучшение снимка"
+														aria-pressed={enhancementOn}
+														onClick={() => setEnhancementOn((prev) => !prev)}
+													>
+														<Sparkles size={13} aria-hidden="true" />
+														<span>CLAHE</span>
+													</button>
+													<button
+														className={`viewer-tool-button h-7 px-2.5 rounded text-xs font-semibold gap-1 transition-all inline-flex items-center justify-center cursor-pointer shrink-0 ${isRulerActive ? "bg-[var(--teal)] text-white shadow-2xs font-bold" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"}`}
+														type="button"
+														title="Калиброванная линейка (измерение расстояний в мм)"
+														aria-label="Включить режим калиброванной линейки"
+														aria-pressed={isRulerActive}
+														onClick={() => {
+															setIsRulerActive((prev) => !prev);
+															if (!isRulerActive) setIsPanActive(false);
+														}}
+													>
+														<Ruler size={13} aria-hidden="true" />
+														<span>Линейка</span>
+														{rulerMeasurements.length > 0 && (
+															<span className="ml-0.5 px-1 py-0.2 bg-teal-800 text-[10px] rounded-full text-white">
+																{rulerMeasurements.length}
+															</span>
+														)}
+													</button>
+													{rulerMeasurements.length > 0 && (
+														<button
+															type="button"
+															className="viewer-tool-button h-7 px-1.5 rounded text-[11px] text-[var(--muted)] hover:text-red-400 hover:bg-[var(--paper-soft)] transition-all cursor-pointer"
+															title="Удалить все измерения линейки"
+															onClick={() => setRulerMeasurements([])}
+														>
+															Очистить
+														</button>
+													)}
+												</div>
+											</div>
+
+											{/* Secondary Reset Button */}
 											<button
-												className="viewer-tool-button shrink-0"
+												className="viewer-tool-button h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center gap-1 text-xs shrink-0 cursor-pointer shadow-2xs"
 												type="button"
-												title="Повернуть влево"
-												aria-label="Повернуть снимок влево"
-												onClick={() =>
-													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-													setImagingViewerState((state: any) => ({
-														...state,
-														rotationDeg: state.rotationDeg - 90,
-													}))
-												}
-											>
-												<RotateCcw aria-hidden="true" />
-											</button>
-											<button
-												className="viewer-tool-button shrink-0"
-												type="button"
-												title="Повернуть вправо"
-												aria-label="Повернуть снимок вправо"
-												onClick={() =>
-													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-													setImagingViewerState((state: any) => ({
-														...state,
-														rotationDeg: state.rotationDeg + 90,
-													}))
-												}
-											>
-												<RotateCw aria-hidden="true" />
-											</button>
-											<button
-												className={`viewer-tool-button shrink-0 ${imagingViewerState.flipHorizontal ? "active" : ""}`}
-												type="button"
-												title="Зеркально"
-												aria-label="Зеркально отразить снимок"
-												aria-pressed={imagingViewerState.flipHorizontal}
-												onClick={() =>
-													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-													setImagingViewerState((state: any) => ({
-														...state,
-														flipHorizontal: !state.flipHorizontal,
-													}))
-												}
-											>
-												<FlipHorizontal aria-hidden="true" />
-											</button>
-											<button
-												className="viewer-tool-button shrink-0 font-bold text-xs"
-												type="button"
-												title="Повернуть на 180° (верхняя / нижняя челюсть)"
-												aria-label="Повернуть снимок на 180 градусов"
-												onClick={() =>
-													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-													setImagingViewerState((state: any) => ({
-														...state,
-														rotationDeg: (state.rotationDeg + 180) % 360,
-													}))
-												}
-											>
-												180°
-											</button>
-											<button
-												className={`viewer-tool-button shrink-0 ${imagingViewerState.inverted ? "active" : ""}`}
-												type="button"
-												title="Инверсия (Негатив для верхушек корней и эндодонтии)"
-												aria-label="Инвертировать снимок в негатив"
-												aria-pressed={imagingViewerState.inverted}
-												onClick={() =>
-													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-													setImagingViewerState((state: any) => ({
-														...state,
-														inverted: !state.inverted,
-													}))
-												}
-											>
-												<Contrast aria-hidden="true" />
-											</button>
-											<button
-												className="viewer-tool-button shrink-0"
-												type="button"
-												title="Уменьшить"
-												aria-label="Уменьшить снимок"
-												onClick={() =>
-													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-													setImagingViewerState((state: any) => ({
-														...state,
-														zoom: Math.max(0.75, state.zoom - 0.1),
-													}))
-												}
-											>
-												<ZoomOut aria-hidden="true" />
-											</button>
-											<button
-												className="viewer-tool-button shrink-0"
-												type="button"
-												title="Увеличить"
-												aria-label="Увеличить снимок"
-												onClick={() =>
-													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-													setImagingViewerState((state: any) => ({
-														...state,
-														zoom: Math.min(1.8, state.zoom + 0.1),
-													}))
-												}
-											>
-												<ZoomIn aria-hidden="true" />
-											</button>
-											<button
-												className="viewer-tool-button shrink-0"
-												type="button"
-												title="Сбросить"
+												title="Сбросить все параметры просмотра"
 												aria-label="Сбросить настройки снимка"
 												onClick={() => {
-													setImagingViewerState(defaultImagingViewerState);
+													setImagingViewerState({
+														...defaultImagingViewerState,
+														pan: { x: 0, y: 0 },
+													});
 													setImagingViewerActiveTool("window_level");
 													setCtPlanningActiveQuickActionId(null);
 													setCtPlanningImplantPlan(null);
+													setIsRulerActive(false);
+													setIsPanActive(false);
+													setRulerMeasurements([]);
 												}}
 											>
-												<RefreshCw aria-hidden="true" />
+												<RefreshCw size={12} aria-hidden="true" />
+												<span className="text-[11px] font-medium">Сброс</span>
 											</button>
-
-											{/* Переключатель усиления — появляется, когда разбор снимка есть */}
-											{selectedStudySummary && (
-												<label
-													className="sa-enhance-toggle sa-enhance-toggle--toolbar shrink-0"
-													title="Включить/выключить улучшение снимка (CLAHE симуляция)"
-												>
-													<input
-														type="checkbox"
-														checked={enhancementOn}
-														onChange={(e) => setEnhancementOn(e.target.checked)}
-													/>
-													<span className="sa-enhance-slider" />
-													<span className="sa-enhance-label">Enhanced</span>
-												</label>
-											)}
 										</div>
-										<div className="viewer-slider-grid grid grid-cols-2 gap-2 w-full static mt-1">
-											<label className="text-xs font-semibold text-[var(--muted)] flex flex-col gap-1">
-												<span className="flex justify-between items-center">
-													<span>Яркость</span>
-													<span className="text-[10px] text-[var(--teal,#0d9488)] font-mono">
-														{Math.round((imagingViewerState.brightness ?? 1) * 100)}%
-													</span>
-												</span>
+
+										{/* Compact Single-Line Slider Bar for Brightness & Contrast */}
+										<div className="viewer-slider-grid flex flex-wrap sm:flex-nowrap items-center gap-3 w-full static pt-1 px-0.5">
+											<label className="text-[11px] font-medium text-[var(--muted)] flex items-center gap-2 flex-1 min-w-[140px]">
+												<span className="shrink-0 font-semibold text-[var(--ink)]">Яркость:</span>
 												<input
 													min="0.65"
 													max="1.45"
 													step="0.05"
 													type="range"
+													className="flex-1 h-1.5 accent-[var(--teal,#0d9488)] cursor-pointer"
 													value={imagingViewerState.brightness}
 													onChange={(event) =>
 														// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -1970,19 +2085,18 @@ export function ImagingView(props: ImagingViewProps) {
 														}))
 													}
 												/>
-											</label>
-											<label className="text-xs font-semibold text-[var(--muted)] flex flex-col gap-1">
-												<span className="flex justify-between items-center">
-													<span>Контраст</span>
-													<span className="text-[10px] text-[var(--teal,#0d9488)] font-mono">
-														{Math.round((imagingViewerState.contrast ?? 1) * 100)}%
-													</span>
+												<span className="text-[10px] text-[var(--teal,#0d9488)] font-mono w-8 text-right font-bold">
+													{Math.round((imagingViewerState.brightness ?? 1) * 100)}%
 												</span>
+											</label>
+											<label className="text-[11px] font-medium text-[var(--muted)] flex items-center gap-2 flex-1 min-w-[140px]">
+												<span className="shrink-0 font-semibold text-[var(--ink)]">Контраст:</span>
 												<input
 													min="0.75"
 													max="1.85"
 													step="0.05"
 													type="range"
+													className="flex-1 h-1.5 accent-[var(--teal,#0d9488)] cursor-pointer"
 													value={imagingViewerState.contrast}
 													onChange={(event) =>
 														// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -1992,6 +2106,9 @@ export function ImagingView(props: ImagingViewProps) {
 														}))
 													}
 												/>
+												<span className="text-[10px] text-[var(--teal,#0d9488)] font-mono w-8 text-right font-bold">
+													{Math.round((imagingViewerState.contrast ?? 1) * 100)}%
+												</span>
 											</label>
 										</div>
 										<section

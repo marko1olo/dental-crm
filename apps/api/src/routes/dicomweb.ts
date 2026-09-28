@@ -9,9 +9,9 @@ import { requireClinicalReadAccess } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import * as schema from "../db/schema.js";
-import { getRequestIdentity, requireOrganizationId } from "../security/identity.js";
+import { requireOrganizationId } from "../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
-import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
+
 
 import {
 	TAG_STUDY_INSTANCE_UID,
@@ -32,7 +32,10 @@ import {
 	streamDicomFileResponse,
 	sampleDicomOwnerOrganizationId,
 	sampleDicomPath,
+	enforceClinicalDicomAccess,
+	verifyDicomOrganization,
 } from "./dicomwebHelpers.js";
+
 import { registerDicomwebStowRoutes } from "./dicomwebStow.js";
 
 // Re-export public helpers for test suites and external consumers
@@ -69,22 +72,7 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 			const organizationId = requireOrganizationId(request, reply);
 			if (!organizationId) return;
 
-			// 152-ФЗ / 323-ФЗ ст. 13: Доступ к КТ / DICOM исследованиям разрешен только клиническому персоналу
-			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.dicom.read",
-					role: staffRole,
-					message:
-						"Доступ к реестру КТ / DICOM исследований ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
-				});
-			}
+			if (!enforceClinicalDicomAccess(request, reply, "реестру КТ / DICOM исследований")) return;
 
 			await auditMedicalAccessFromRequest(request, {
 				organizationId,
@@ -92,12 +80,8 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 				diagnosis: "Поиск КТ / DICOM исследований (QIDO-RS)",
 			});
 
-			if (!UUID_SHAPE.test(organizationId)) {
-				return reply.code(403).send({
-					error: "OrganizationUnknown",
-					message: "Организация из токена не существует.",
-				});
-			}
+			if (!(await verifyDicomOrganization(organizationId, reply))) return;
+
 
 			const queryStudyUid = normalizeUid(request.query.StudyInstanceUID);
 			const queryPatientId = request.query.PatientID?.trim();
@@ -200,21 +184,7 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 			const organizationId = requireOrganizationId(request, reply);
 			if (!organizationId) return;
 
-			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.dicom.read",
-					role: staffRole,
-					message:
-						"Доступ к сериям КТ / DICOM ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
-				});
-			}
+			if (!enforceClinicalDicomAccess(request, reply, "сериям КТ / DICOM")) return;
 
 			const studyUid = normalizeUid(request.params.studyUid);
 			if (!studyUid) {
@@ -224,12 +194,8 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 				});
 			}
 
-			if (!UUID_SHAPE.test(organizationId)) {
-				return reply.code(403).send({
-					error: "OrganizationUnknown",
-					message: "Организация из токена не существует.",
-				});
-			}
+			if (!(await verifyDicomOrganization(organizationId, reply))) return;
+
 
 			const rows = await withTenantCtx(organizationId, async () => {
 				const orgKnown = await organizationExists(organizationId);
@@ -314,21 +280,7 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 			const organizationId = requireOrganizationId(request, reply);
 			if (!organizationId) return;
 
-			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.dicom.read",
-					role: staffRole,
-					message:
-						"Доступ к объектам КТ / DICOM ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
-				});
-			}
+			if (!enforceClinicalDicomAccess(request, reply, "объектам КТ / DICOM")) return;
 
 			const studyUid = normalizeUid(request.params.studyUid);
 			const seriesUid = normalizeUid(request.params.seriesUid);
@@ -339,12 +291,8 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 				});
 			}
 
-			if (!UUID_SHAPE.test(organizationId)) {
-				return reply.code(403).send({
-					error: "OrganizationUnknown",
-					message: "Организация из токена не существует.",
-				});
-			}
+			if (!(await verifyDicomOrganization(organizationId, reply))) return;
+
 
 			const rows = await withTenantCtx(organizationId, async () => {
 				const orgKnown = await organizationExists(organizationId);
@@ -440,21 +388,7 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 			const organizationId = requireOrganizationId(request, reply);
 			if (!organizationId) return;
 
-			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.dicom.read",
-					role: staffRole,
-					message:
-						"Доступ к метаданным серии ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
-				});
-			}
+			if (!enforceClinicalDicomAccess(request, reply, "метаданным серии")) return;
 
 			const studyUid = normalizeUid(request.params.studyUid);
 			const seriesUid = normalizeUid(request.params.seriesUid);
@@ -465,12 +399,8 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 				});
 			}
 
-			if (!UUID_SHAPE.test(organizationId)) {
-				return reply.code(403).send({
-					error: "OrganizationUnknown",
-					message: "Организация из токена не существует.",
-				});
-			}
+			if (!(await verifyDicomOrganization(organizationId, reply))) return;
+
 
 			const instances = await withTenantCtx(organizationId, async () => {
 				const orgKnown = await organizationExists(organizationId);
@@ -575,22 +505,8 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 			const organizationId = requireOrganizationId(request, reply);
 			if (!organizationId) return;
 
-			// 152-ФЗ / 323-ФЗ ст. 13: Доступ к КТ / DICOM снимку разрешен только клиническому персоналу
-			const identity = getRequestIdentity(request);
-			const staffRole =
-				identity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.dicom.read",
-					role: staffRole,
-					message:
-						"Доступ к КТ / DICOM снимку ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
-				});
-			}
+			if (!enforceClinicalDicomAccess(request, reply, "КТ / DICOM снимку")) return;
+
 
 			const studyUid = normalizeUid(request.params.studyUid);
 			const seriesUid = normalizeUid(request.params.seriesUid);
@@ -712,22 +628,8 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 			const organizationId = requireOrganizationId(request, reply);
 			if (!organizationId) return;
 
-			// 152-ФЗ / 323-ФЗ ст. 13: Доступ к кадрам КТ / DICOM разрешен только клиническому персоналу
-			const reqIdentity = getRequestIdentity(request);
-			const staffRole =
-				reqIdentity.role ??
-				(request as unknown as { user?: { role?: string | null } }).user?.role ??
-				null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
-			if (!evalAccess.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "clinical.dicom.read",
-					role: staffRole,
-					message:
-						"Доступ к кадрам КТ / DICOM ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
-				});
-			}
+			if (!enforceClinicalDicomAccess(request, reply, "кадрам КТ / DICOM")) return;
+
 
 			const studyUid = normalizeUid(request.params.studyUid);
 			const seriesUid = normalizeUid(request.params.seriesUid);
