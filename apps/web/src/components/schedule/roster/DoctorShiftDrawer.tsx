@@ -16,6 +16,7 @@ import {
 	type ShiftArchetypeId,
 	type StaffMember,
 } from "./doctorShiftRosterPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import {
 	calculateShiftDurationHours,
 	type DoctorShift,
@@ -38,8 +39,8 @@ export interface DoctorShiftDrawerProps {
 export function DoctorShiftDrawer({
 	editingShift,
 	isNewShift,
-	staffList = DEFAULT_CLINIC_STAFF,
-	cabinets = CLINIC_CABINETS_CATALOG,
+	staffList: propStaffList,
+	cabinets: propCabinets,
 	weekStartDateIso,
 	onClose,
 	onChangeEditingShift,
@@ -48,25 +49,56 @@ export function DoctorShiftDrawer({
 }: DoctorShiftDrawerProps) {
 	if (!editingShift) return null;
 
+	const staffList =
+		propStaffList !== undefined
+			? propStaffList
+			: isDemoShowcaseMode()
+				? DEFAULT_CLINIC_STAFF
+				: [];
+	const cabinets =
+		propCabinets !== undefined
+			? propCabinets
+			: isDemoShowcaseMode()
+				? CLINIC_CABINETS_CATALOG
+				: [];
+
 	const handleSave = () => {
 		const effectiveDoc =
 			staffList.find((s) => s.id === editingShift.doctorId) ||
 			staffList.find((s) => s.isDoctor) ||
 			staffList[0] ||
-			DEFAULT_CLINIC_STAFF[0]!;
+			(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0]! : undefined);
+
+		if (!effectiveDoc) {
+			alert("Не выбран врач для сохранения смены.");
+			return;
+		}
 
 		const effectiveCab =
 			cabinets.find((c) => c.id === editingShift.cabinetId) ||
 			cabinets[0] ||
-			CLINIC_CABINETS_CATALOG[0]!;
+			(isDemoShowcaseMode() ? CLINIC_CABINETS_CATALOG[0]! : undefined);
+
+		if (!effectiveCab) {
+			alert("Не выбран кабинет для смены.");
+			return;
+		}
 
 		const effectiveChair =
 			effectiveCab.chairs.find((ch) => ch.id === editingShift.chairId) ||
-			effectiveCab.chairs[0] || {
-				id: "chair-1a",
-				name: "Кресло 1А",
-				equipment: "",
-			};
+			effectiveCab.chairs[0] ||
+			(isDemoShowcaseMode()
+				? {
+						id: "chair-1a",
+						name: "Кресло 1А",
+						equipment: "",
+					}
+				: undefined);
+
+		if (!effectiveChair) {
+			alert("Не выбрано кресло для смены.");
+			return;
+		}
 
 		const effectiveDate = editingShift.dateIso || weekStartDateIso;
 

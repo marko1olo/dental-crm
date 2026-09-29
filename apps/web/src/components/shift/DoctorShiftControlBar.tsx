@@ -160,10 +160,10 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = ({
 						type="button"
 						onClick={onOpenPayrollModal}
 						className="min-h-[36px] sm:min-h-[32px] sm:h-8 px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-50 dark:bg-teal-950/50 border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
-						title="Зарплатная ведомость Т-51: Открыть детальный расчет зарплаты за смену без запроса в бухгалтерию"
+						title="Расчет зарплаты врачей: Открыть детальный расчет зарплаты за смену без запроса в бухгалтерию"
 					>
 						<Calculator size={14} />
-						<span>Зарплатная ведомость</span>
+						<span>Расчет зарплаты</span>
 					</button>
 				</div>
 			</div>

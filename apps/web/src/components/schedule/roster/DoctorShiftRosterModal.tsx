@@ -18,6 +18,7 @@ import {
 	type DoctorChairRosterTemplate,
 	DOCTOR_CHAIR_ROSTER_TEMPLATES,
 } from "./doctorShiftRosterPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import {
 	type DoctorShift,
 } from "./doctorShiftRosterEngine";
@@ -96,11 +97,24 @@ export function DoctorShiftRosterModal(props: DoctorShiftRosterModalProps) {
 	const {
 		isOpen,
 		onClose,
-		staffList = DEFAULT_CLINIC_STAFF,
-		cabinets = CLINIC_CABINETS_CATALOG,
+		staffList: propStaffList,
+		cabinets: propCabinets,
 		clinicName = 'ООО "Денте Клиник"',
 		onOpenT13Timesheet,
 	} = props;
+
+	const staffList =
+		propStaffList !== undefined
+			? propStaffList
+			: isDemoShowcaseMode()
+				? DEFAULT_CLINIC_STAFF
+				: [];
+	const cabinets =
+		propCabinets !== undefined
+			? propCabinets
+			: isDemoShowcaseMode()
+				? CLINIC_CABINETS_CATALOG
+				: [];
 
 	const {
 		weekStartDateIso,

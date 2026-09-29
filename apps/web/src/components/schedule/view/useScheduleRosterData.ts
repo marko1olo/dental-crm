@@ -14,6 +14,7 @@ import {
   DEFAULT_CLINIC_STAFF,
   CLINIC_CABINETS_CATALOG,
 } from "../roster/doctorShiftRosterPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { buildChairDoctorAssignmentsByDate } from "./scheduleViewShifts";
 
 export interface UseScheduleRosterDataParams {
@@ -148,7 +149,7 @@ export function useScheduleRosterData({
     const rawStaff = (dashboard?.clinicSettings?.staff ?? []).filter(
       (s) => s.active !== false,
     );
-    if (rawStaff.length === 0) return DEFAULT_CLINIC_STAFF;
+    if (rawStaff.length === 0) return isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF : [];
 
     return rawStaff.map((s, index) => {
       const isDoctor =
@@ -244,7 +245,7 @@ export function useScheduleRosterData({
     const rawChairs = (dashboard?.clinicSettings?.chairs ?? []).filter(
       (c) => c.active !== false,
     );
-    if (rawChairs.length === 0) return CLINIC_CABINETS_CATALOG;
+    if (rawChairs.length === 0) return isDemoShowcaseMode() ? CLINIC_CABINETS_CATALOG : [];
 
     const roomMap = new Map<string, typeof rawChairs>();
     rawChairs.forEach((chair, idx) => {

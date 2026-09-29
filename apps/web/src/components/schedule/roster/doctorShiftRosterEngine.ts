@@ -13,6 +13,7 @@ import {
 	type StaffMember,
 	type T13TimeCode,
 } from "./doctorShiftRosterPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 
 export * from "./rosterLaborComplianceT13";
 export * from "./rosterDefaultSchedule";
@@ -187,7 +188,7 @@ export function getIsoWeekKey(dateIso: string): string {
  */
 export function detectRosterConflicts(
 	shifts: DoctorShift[],
-	staffList: StaffMember[] = DEFAULT_CLINIC_STAFF,
+	staffList: StaffMember[] = isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF : [],
 	options: {
 		practiceType?: "private_outpatient" | "hospital_statutory";
 		allowWeeklyOvertime?: boolean;

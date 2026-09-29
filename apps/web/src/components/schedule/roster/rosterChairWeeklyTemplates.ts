@@ -12,6 +12,7 @@ import {
 	type DoctorChairRosterTemplateId,
 	DOCTOR_CHAIR_ROSTER_TEMPLATES,
 } from "./doctorShiftRosterPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { DoctorShift } from "./doctorShiftRosterEngine";
 
 /**
@@ -62,7 +63,9 @@ export function applyDoctorChairWeeklyTemplate(
 
 	const foundDoc =
 		staffList.find((s) => s.id === doctorId) ||
-		DEFAULT_CLINIC_STAFF.find((s) => s.id === doctorId);
+		(isDemoShowcaseMode()
+			? DEFAULT_CLINIC_STAFF.find((s) => s.id === doctorId)
+			: undefined);
 	const doc =
 		foundDoc || {
 			id: doctorId,
@@ -85,7 +88,9 @@ export function applyDoctorChairWeeklyTemplate(
 	const otherDoc =
 		(doctorBId ? staffList.find((s) => s.id === doctorBId) : null) ||
 		staffList.find((s) => s.isDoctor && s.id !== doc.id) ||
-		DEFAULT_CLINIC_STAFF.find((s) => s.isDoctor && s.id !== doc.id) ||
+		(isDemoShowcaseMode()
+			? DEFAULT_CLINIC_STAFF.find((s) => s.isDoctor && s.id !== doc.id)
+			: null) ||
 		doc;
 
 	// Determine dates belonging to the active template

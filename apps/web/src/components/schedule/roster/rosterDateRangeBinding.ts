@@ -10,6 +10,7 @@ import {
 	type StaffMember,
 	type MedicalStaffRole,
 } from "./doctorShiftRosterPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { DoctorShift } from "./doctorShiftRosterEngine";
 import { addDaysToDateIso } from "./rosterWeekCopyAndRotate";
 
@@ -74,7 +75,9 @@ export function applyDoctorChairDateRange(
 
 	const foundDoc =
 		staffList.find((s) => s.id === doctorId) ||
-		DEFAULT_CLINIC_STAFF.find((s) => s.id === doctorId);
+		(isDemoShowcaseMode()
+			? DEFAULT_CLINIC_STAFF.find((s) => s.id === doctorId)
+			: undefined);
 	const doc =
 		foundDoc || {
 			id: doctorId,

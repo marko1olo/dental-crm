@@ -29,6 +29,7 @@ import {
 	CLINIC_CABINETS_CATALOG,
 	DEFAULT_CLINIC_STAFF,
 } from "./doctorShiftRosterPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { RosterConflict } from "./doctorShiftRosterEngine";
 
 export interface DoctorRosterToolbarProps {
@@ -114,7 +115,11 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 
 		const doctors = React.useMemo(() => {
 			const list = (staffList || []).filter((s) => s.isDoctor);
-			return list.length > 0 ? list : DEFAULT_CLINIC_STAFF.filter((s) => s.isDoctor);
+			return list.length > 0
+				? list
+				: isDemoShowcaseMode()
+					? DEFAULT_CLINIC_STAFF.filter((s) => s.isDoctor)
+					: [];
 		}, [staffList]);
 
 		const allChairs = React.useMemo(() => {
@@ -124,7 +129,12 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 				cabinetId: string;
 				cabinetName: string;
 			}> = [];
-			const sourceCabs = cabinets && cabinets.length > 0 ? cabinets : CLINIC_CABINETS_CATALOG;
+			const sourceCabs =
+				cabinets && cabinets.length > 0
+					? cabinets
+					: isDemoShowcaseMode()
+						? CLINIC_CABINETS_CATALOG
+						: [];
 			for (const cab of sourceCabs) {
 				for (const chair of cab.chairs || []) {
 					list.push({

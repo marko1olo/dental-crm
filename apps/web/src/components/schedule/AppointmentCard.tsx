@@ -1020,7 +1020,7 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 												usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 											}
 											useAppStore.getState().setCurrentView("finance");
-											showToast(`Касса 54-ФЗ: расчёт ${appointmentPatientName}`, "info");
+											showToast(`Касса: расчёт ${appointmentPatientName}`, "info");
 										}}
 										className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1 ${
 											patientBalance > 0

@@ -16,6 +16,7 @@ import {
 	type DoctorChairRosterTemplateId,
 	DOCTOR_CHAIR_ROSTER_TEMPLATES,
 } from "./doctorShiftRosterPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import {
 	calculateStaffRosterStats,
 	detectRosterConflicts,
@@ -57,8 +58,8 @@ export interface UseDoctorShiftRosterOperationsParams {
 
 export function useDoctorShiftRosterOperations({
 	initialShifts,
-	staffList = DEFAULT_CLINIC_STAFF,
-	cabinets = CLINIC_CABINETS_CATALOG,
+	staffList: propStaffList,
+	cabinets: propCabinets,
 	appointments = [],
 	clinicName = 'ООО "Денте Клиник"',
 	onSave,
@@ -67,6 +68,19 @@ export function useDoctorShiftRosterOperations({
 	currentDate,
 	weekStartDateIso: initialWeekStartDateIso,
 }: UseDoctorShiftRosterOperationsParams) {
+	const staffList =
+		propStaffList !== undefined
+			? propStaffList
+			: isDemoShowcaseMode()
+				? DEFAULT_CLINIC_STAFF
+				: [];
+	const cabinets =
+		propCabinets !== undefined
+			? propCabinets
+			: isDemoShowcaseMode()
+				? CLINIC_CABINETS_CATALOG
+				: [];
+
 	// Base date: Monday of current/active week
 	const defaultMonday = useMemo(
 		() => getMondayOfWeekIso(initialWeekStartDateIso || currentDate),
@@ -88,6 +102,7 @@ export function useDoctorShiftRosterOperations({
 	const [shifts, setShifts] = useState<DoctorShift[]>(() => {
 		if (initialShifts && initialShifts.length > 0) return initialShifts;
 		if (Array.isArray(initialShifts) && initialShifts.length === 0) return [];
+		if (staffList.length === 0 || cabinets.length === 0) return [];
 		return generateWeeklyScheduleForStaffAndCabinets(
 			defaultMonday,
 			staffList,
@@ -295,7 +310,16 @@ export function useDoctorShiftRosterOperations({
 		const defaultDoc =
 			staffList.find((s) => s.isDoctor) ||
 			staffList[0] ||
-			DEFAULT_CLINIC_STAFF[0]!;
+			(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0]! : undefined);
+
+		if (!defaultDoc) {
+			setNotification({
+				type: "error",
+				message:
+					"В клинике нет добавленных сотрудников. Добавьте врача в штат для создания смен.",
+			});
+			return;
+		}
 		const defaultAsst = defaultDoc.defaultAssistantId
 			? staffList.find((s) => s.id === defaultDoc.defaultAssistantId) || null
 			: null;

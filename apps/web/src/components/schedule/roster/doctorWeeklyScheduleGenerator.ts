@@ -24,6 +24,7 @@ import {
 	type DoctorChairRosterTemplateId,
 	DOCTOR_CHAIR_ROSTER_TEMPLATES,
 } from "./doctorShiftRosterPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { DoctorShift } from "./doctorShiftRosterEngine";
 
 export * from "./rosterWeekCopyAndRotate";
@@ -63,6 +64,7 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 	const fallbackDoctors = DEFAULT_CLINIC_STAFF.filter((s) => s.isDoctor);
 	const effectiveDoctors =
 		doctors.length > 0 ? doctors : fallbackDoctors;
+	if (effectiveDoctors.length === 0) return [];
 
 	function allocateChairForDoctor(
 		doc: StaffMember,

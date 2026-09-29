@@ -12,6 +12,7 @@ import {
 	type StaffMember,
 	type MedicalStaffRole,
 } from "./doctorShiftRosterPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { DoctorShift } from "./doctorShiftRosterEngine";
 
 /**
@@ -93,7 +94,9 @@ export function applyCellShiftPreset(
 
 	const foundDoc = doctorId
 		? staffList.find((s) => s.id === doctorId) ||
-			DEFAULT_CLINIC_STAFF.find((s) => s.id === doctorId)
+			(isDemoShowcaseMode()
+				? DEFAULT_CLINIC_STAFF.find((s) => s.id === doctorId)
+				: undefined)
 		: null;
 	const doc =
 		foundDoc ||
@@ -111,7 +114,11 @@ export function applyCellShiftPreset(
 				}
 			: staffList.find((s) => s.isDoctor) ||
 				staffList[0] ||
-				DEFAULT_CLINIC_STAFF[0]!);
+				(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0]! : undefined));
+
+	if (!doc) {
+		return currentShifts;
+	}
 
 	const asst =
 		assistantId !== undefined

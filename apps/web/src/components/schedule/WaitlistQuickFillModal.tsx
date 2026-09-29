@@ -25,6 +25,7 @@ import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { logger } from "../../utils/logger";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
@@ -63,6 +64,39 @@ export interface WaitlistPatientEntry {
 	updatedAt?: string;
 	alreadyBooked?: boolean;
 }
+
+const DEMO_SHOWCASE_WAITLIST_ENTRIES: WaitlistPatientEntry[] = [
+	{
+		id: "demo-waitlist-1",
+		patientId: "demo-patient-volkov",
+		patientName: "Волков Сергей Николаевич",
+		patientPhone: "+7 (916) 111-22-33",
+		preferredDoctorId: "doc-smirnov",
+		preferredDoctorName: "Д-р Смирнов А.П.",
+		priorityLevel: "acute_pain",
+		treatmentCategory: "Терапия",
+		preferredDays: "weekdays",
+		preferredTimeOfDay: ["morning", "day"],
+		notes: "Острая боль 4.6, просит принять как можно раньше",
+		status: "waiting",
+		createdAt: new Date(Date.now() - 3600 * 1000 * 12).toISOString(),
+	},
+	{
+		id: "demo-waitlist-2",
+		patientId: "demo-patient-morozova",
+		patientName: "Морозова Елена Викторовна",
+		patientPhone: "+7 (926) 444-55-66",
+		preferredDoctorId: "doc-smirnov",
+		preferredDoctorName: "Д-р Смирнов А.П.",
+		priorityLevel: "treatment_plan",
+		treatmentCategory: "Ортодонтия",
+		preferredDays: "any",
+		preferredTimeOfDay: ["day", "evening"],
+		notes: "Активация дуги по плану лечения",
+		status: "waiting",
+		createdAt: new Date(Date.now() - 3600 * 1000 * 24).toISOString(),
+	},
+];
 
 import type { TargetSlotInfo } from "./waitlistCancellationEngine";
 export type { TargetSlotInfo };
@@ -486,10 +520,20 @@ export function WaitlistQuickFillModal({
 			});
 			if (res.ok) {
 				const data = await res.json();
-				setItems(Array.isArray(data) ? data : []);
+				const list = Array.isArray(data) ? data : [];
+				if (list.length === 0 && isDemoShowcaseMode()) {
+					setItems(DEMO_SHOWCASE_WAITLIST_ENTRIES);
+				} else {
+					setItems(list);
+				}
+			} else if (isDemoShowcaseMode()) {
+				setItems(DEMO_SHOWCASE_WAITLIST_ENTRIES);
 			}
 		} catch (e) {
 			logger.error("Failed to load waitlist", e);
+			if (isDemoShowcaseMode()) {
+				setItems(DEMO_SHOWCASE_WAITLIST_ENTRIES);
+			}
 		} finally {
 			setIsLoading(false);
 		}

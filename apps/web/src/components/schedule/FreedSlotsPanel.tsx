@@ -22,6 +22,7 @@ import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { showToast } from "../GlobalToast";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 
@@ -53,6 +54,48 @@ type FreedSlotsReport = {
 	slots: FreedSlot[];
 	horizonDays: number;
 	note: string;
+};
+
+const DEMO_SHOWCASE_FREED_REPORT: FreedSlotsReport = {
+	slots: [
+		{
+			appointmentId: "demo-freed-slot-1",
+			startsAt: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
+			endsAt: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
+			status: "cancelled",
+			doctorName: "Д-р Смирнов А.П.",
+			freedBecause: "Пациент перенёс визит на следующую неделю",
+			candidatesTotal: 2,
+			topMatches: [
+				{
+					entryId: "demo-waitlist-1",
+					patientId: "demo-pat-ivanov",
+					patientName: "Иванов Иван Иванович",
+					phone: "+7 (999) 123-45-67",
+					priorityLevel: "urgent",
+					waitingDays: 2,
+					sameDoctor: true,
+					timeFits: true,
+					alreadyBooked: false,
+					reason: "Острая боль / срочный приём",
+				},
+				{
+					entryId: "demo-waitlist-2",
+					patientId: "demo-pat-petrova",
+					patientName: "Петрова Анна Сергеевна",
+					phone: "+7 (999) 765-43-21",
+					priorityLevel: "treatment_plan",
+					waitingDays: 5,
+					sameDoctor: true,
+					timeFits: true,
+					alreadyBooked: false,
+					reason: "Этап ортопедии (ждёт освободившегося окна)",
+				},
+			],
+		},
+	],
+	horizonDays: 7,
+	note: "Демонстрационный режим: показано освободившееся окно с автоматическим подбором кандидатов из листа ожидания",
 };
 
 /** «29 июля, 13:30» — так, как это произносят вслух, а не 2026-07-29T13:30. */
@@ -148,6 +191,11 @@ export const FreedSlotsPanel: React.FC = () => {
 					headers: auth ? auth.denteClinicalReadHeaders() : {},
 				});
 			} catch {
+				if (isDemoShowcaseMode()) {
+					setReport(DEMO_SHOWCASE_FREED_REPORT);
+					setError(null);
+					return;
+				}
 				setReport(null);
 				setError(
 					"Сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть.",
@@ -166,13 +214,27 @@ export const FreedSlotsPanel: React.FC = () => {
 				return null;
 			})) as (FreedSlotsReport & { message?: string }) | null;
 			if (!response.ok) {
+				if (isDemoShowcaseMode()) {
+					setReport(DEMO_SHOWCASE_FREED_REPORT);
+					setError(null);
+					return;
+				}
 				setReport(null);
 				setError(loadFailureText(response.status, payload?.message ?? null));
 				return;
 			}
 			if (!payload || !Array.isArray(payload.slots)) {
+				if (isDemoShowcaseMode()) {
+					setReport(DEMO_SHOWCASE_FREED_REPORT);
+					setError(null);
+					return;
+				}
 				setReport(null);
 				setError("Сервер ответил, но списка окон в ответе нет.");
+				return;
+			}
+			if (payload.slots.length === 0 && isDemoShowcaseMode()) {
+				setReport(DEMO_SHOWCASE_FREED_REPORT);
 				return;
 			}
 			setReport(payload);
@@ -185,10 +247,27 @@ export const FreedSlotsPanel: React.FC = () => {
 		void load();
 	}, [load]);
 
-	// Панель молчит, когда окон нет: пустой блок «свободных окон нет» в расписании
-	// каждый день — это шум, а не сообщение.
-	if (report !== null && (report?.slots ?? []).length === 0 && !error)
-		return null;
+	if (report !== null && (report?.slots ?? []).length === 0 && !error) {
+		return (
+			<section className="panel ops-panel" data-testid="freed-slots-panel">
+				<div className="panel-heading">
+					<h2>Освободившиеся окна</h2>
+					<span className="status-pill status-planned">0</span>
+				</div>
+				<p
+					style={{
+						color: "var(--muted, #64748b)",
+						fontSize: "0.8125rem",
+						padding: "1rem",
+						margin: 0,
+					}}
+				>
+					На ближайшие дни отменённых приёмов нет. При отмене слота система
+					автоматически предложит кандидатов из листа ожидания.
+				</p>
+			</section>
+		);
+	}
 
 	return (
 		<section className="panel ops-panel" data-testid="freed-slots-panel">

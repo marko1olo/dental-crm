@@ -8,6 +8,7 @@ import {
 	DEFAULT_CLINIC_STAFF,
 	type StaffMember,
 } from "./doctorShiftRosterPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { DoctorShift } from "./rosterLaborComplianceT13";
 
 /**
@@ -15,12 +16,18 @@ import type { DoctorShift } from "./rosterLaborComplianceT13";
  */
 export function createDefaultWeeklySchedule(
 	startDateIso: string,
-	staffList: StaffMember[] = DEFAULT_CLINIC_STAFF,
-	cabinets: CabinetDefinition[] = CLINIC_CABINETS_CATALOG,
+	staffList: StaffMember[] = isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF : [],
+	cabinets: CabinetDefinition[] = isDemoShowcaseMode() ? CLINIC_CABINETS_CATALOG : [],
 ): DoctorShift[] {
+	if (staffList.length === 0 || cabinets.length === 0) {
+		return [];
+	}
 	const shifts: DoctorShift[] = [];
 	const startDate = new Date(startDateIso);
-	const fallbackDoc = staffList[0] || DEFAULT_CLINIC_STAFF[0]!;
+	const fallbackDoc =
+		staffList[0] ||
+		(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0]! : undefined);
+	if (!fallbackDoc) return [];
 
 	// Create 7 days of shifts
 	for (let d = 0; d < 7; d++) {

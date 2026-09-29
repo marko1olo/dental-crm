@@ -10,6 +10,7 @@
 
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { safeLocalStorageGetJson } from "../../lib/safeLocalStorage";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
 	DEFAULT_CLINIC_STAFF,
 	CLINIC_CABINETS_CATALOG,
@@ -495,8 +496,15 @@ export function applyCellShiftPreset(
 		chairId,
 		presetType,
 		doctorId,
-		staffList = DEFAULT_CLINIC_STAFF,
+		staffList: propStaffList,
 	} = params;
+
+	const staffList =
+		propStaffList !== undefined
+			? propStaffList
+			: isDemoShowcaseMode()
+				? DEFAULT_CLINIC_STAFF
+				: [];
 
 	// Filter out any existing shift on this chair and date
 	const filtered = currentShifts.filter(
@@ -507,7 +515,15 @@ export function applyCellShiftPreset(
 		return filtered;
 	}
 
-	const foundDoc = staffList.find((s) => s.id === doctorId) || DEFAULT_CLINIC_STAFF[0]!;
+	const foundDoc =
+		staffList.find((s) => s.id === doctorId) ||
+		staffList.find((s) => s.isDoctor) ||
+		staffList[0] ||
+		(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0]! : undefined);
+
+	if (!foundDoc) {
+		return filtered;
+	}
 
 	let startTime = "08:00";
 	let endTime = "14:00";

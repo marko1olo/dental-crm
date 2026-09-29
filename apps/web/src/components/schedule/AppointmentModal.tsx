@@ -1209,7 +1209,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
                   );
                 }}
                 className="h-8 min-h-[32px] px-2 sm:px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
-                title="Оплата 54-ФЗ: Принять оплату через кассу (1 клик)"
+                title="Принять оплату через кассу (1 клик)"
                 data-testid="appointment-modal-pay-btn"
               >
                 <CreditCard

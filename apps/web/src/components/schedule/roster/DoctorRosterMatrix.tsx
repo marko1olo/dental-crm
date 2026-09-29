@@ -289,8 +289,47 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 							</tr>
 						</thead>
 						<tbody>
-							{cabinets.map((cab) =>
-								cab.chairs.map((chair) => (
+							{cabinets.length === 0 ? (
+								<tr>
+									<td
+										colSpan={weekDays.length + 1}
+										style={{ textAlign: "center", padding: "3rem 1rem" }}
+									>
+										<div
+											style={{
+												display: "flex",
+												flexDirection: "column",
+												alignItems: "center",
+												gap: "0.75rem",
+											}}
+										>
+											<div
+												style={{
+													color: "var(--muted, #64748b)",
+													fontSize: "0.875rem",
+												}}
+											>
+												В клинике пока не настроены кабинеты и рабочие места.
+											</div>
+											<a
+												href="/settings?tab=clinic"
+												className="roster-btn roster-btn-secondary"
+												style={{
+													textDecoration: "none",
+													display: "inline-flex",
+													alignItems: "center",
+													gap: "0.5rem",
+													minHeight: "36px",
+												}}
+											>
+												+ Настроить кабинеты и кресла
+											</a>
+										</div>
+									</td>
+								</tr>
+							) : (
+								cabinets.map((cab) =>
+									cab.chairs.map((chair) => (
 									<tr key={chair.id}>
 										<td className="roster-lane-header">
 											<div
@@ -447,7 +486,7 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 										})}
 									</tr>
 								)),
-							)}
+							))}`
 						</tbody>
 					</table>
 				)}
@@ -470,7 +509,46 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 								</tr>
 							</thead>
 							<tbody>
-								{staffList.map((staff) => {
+								{staffList.length === 0 ? (
+									<tr>
+										<td
+											colSpan={weekDays.length + 2}
+											style={{ textAlign: "center", padding: "3rem 1rem" }}
+										>
+											<div
+												style={{
+													display: "flex",
+													flexDirection: "column",
+													alignItems: "center",
+													gap: "0.75rem",
+												}}
+											>
+												<div
+													style={{
+														color: "var(--muted, #64748b)",
+														fontSize: "0.875rem",
+													}}
+												>
+													В штате клиники пока нет сотрудников.
+												</div>
+												<a
+													href="/settings?tab=staff"
+													className="roster-btn roster-btn-secondary"
+													style={{
+														textDecoration: "none",
+														display: "inline-flex",
+														alignItems: "center",
+														gap: "0.5rem",
+														minHeight: "36px",
+													}}
+												>
+													+ Добавить сотрудника в штат
+												</a>
+											</div>
+										</td>
+									</tr>
+								) : (
+									staffList.map((staff) => {
 									const userShifts = shifts.filter(
 										(s) =>
 											(s.doctorId === staff.id || s.assistantId === staff.id) &&
@@ -663,7 +741,8 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 											</td>
 										</tr>
 									);
-								})}
+								})
+							)}
 							</tbody>
 						</table>
 					</div>
@@ -683,8 +762,7 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 						>
 							<div>
 								<h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>
-									Табель учёта рабочего времени{" "}
-									<span className="text-xs font-normal opacity-60 font-mono">(Т-13)</span> —{" "}
+									Табель рабочего времени —{" "}
 									{monthNormObj?.nameRu} {selectedYear}
 								</h3>
 								<span
@@ -712,11 +790,10 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 										}
 									}}
 									style={{ minHeight: "44px" }}
-									title="Интерактивный табель учёта рабочего времени (Форма Т-13)"
+									title="Интерактивный табель рабочего времени"
 								>
 									<CalendarIcon size={16} />
 									<span>Интерактивный табель</span>
-									<span className="text-[10px] opacity-60 ml-1 font-mono">Т-13</span>
 								</button>
 								<button
 									type="button"
@@ -768,7 +845,46 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 									</tr>
 								</thead>
 								<tbody>
-									{t13Matrix.map((row) => (
+									{t13Matrix.length === 0 ? (
+										<tr>
+											<td
+												colSpan={36}
+												style={{ textAlign: "center", padding: "3rem 1rem" }}
+											>
+												<div
+													style={{
+														display: "flex",
+														flexDirection: "column",
+														alignItems: "center",
+														gap: "0.75rem",
+													}}
+												>
+													<div
+														style={{
+															color: "var(--muted, #64748b)",
+															fontSize: "0.875rem",
+														}}
+													>
+														Нет данных для формирования табеля Т-13 (сотрудники не добавлены).
+													</div>
+													<a
+														href="/settings?tab=staff"
+														className="roster-btn roster-btn-secondary"
+														style={{
+															textDecoration: "none",
+															display: "inline-flex",
+															alignItems: "center",
+															gap: "0.5rem",
+															minHeight: "36px",
+														}}
+													>
+														+ Добавить врачей и ассистентов
+													</a>
+												</div>
+											</td>
+										</tr>
+									) : (
+										t13Matrix.map((row) => (
 										<React.Fragment key={row.tabNumber}>
 											{/* Codes Row */}
 											<tr>
@@ -857,7 +973,8 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 												))}
 											</tr>
 										</React.Fragment>
-									))}
+									))
+								)}
 								</tbody>
 							</table>
 						</div>
@@ -895,8 +1012,47 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 								</tr>
 							</thead>
 							<tbody>
-								{cabinets.map((cab) =>
-									cab.chairs.map((chair) => (
+								{cabinets.length === 0 ? (
+									<tr>
+										<td
+											colSpan={weekDays.length + 1}
+											style={{ textAlign: "center", padding: "3rem 1rem" }}
+										>
+											<div
+												style={{
+													display: "flex",
+													flexDirection: "column",
+													alignItems: "center",
+													gap: "0.75rem",
+												}}
+											>
+												<div
+													style={{
+														color: "var(--muted, #64748b)",
+														fontSize: "0.875rem",
+													}}
+												>
+													Для расчета загрузки кресел добавьте хотя бы одно рабочее место.
+												</div>
+												<a
+													href="/settings?tab=clinic"
+													className="roster-btn roster-btn-secondary"
+													style={{
+														textDecoration: "none",
+														display: "inline-flex",
+														alignItems: "center",
+														gap: "0.5rem",
+														minHeight: "36px",
+													}}
+												>
+													+ Настроить кресла
+												</a>
+											</div>
+										</td>
+									</tr>
+								) : (
+									cabinets.map((cab) =>
+										cab.chairs.map((chair) => (
 										<tr key={chair.id}>
 											<td className="roster-lane-header">
 												<div>{cab.name}</div>
@@ -952,7 +1108,7 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 											})}
 										</tr>
 									)),
-								)}
+							))}`
 							</tbody>
 						</table>
 					</div>
