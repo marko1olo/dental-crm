@@ -90,10 +90,10 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 							className="secondary-button text-xs py-1 px-2.5 flex items-center gap-1.5 documents-open-autoclave-log-257-btn"
 							type="button"
 							onClick={() => setIsAutoclaveLogOpen(true)}
-							title="Открыть нормативный журнал контроля стерилизации (Форма 257/у СанПиН)"
+							title="Открыть журнал контроля стерилизации и автоклавирования"
 						>
 							<Shield size={14} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
-							Журнал 257/у
+							Журнал стерилизации
 						</button>
 					</div>
 				</div>

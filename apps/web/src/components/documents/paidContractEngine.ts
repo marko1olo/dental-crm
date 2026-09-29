@@ -13,6 +13,8 @@
  * 7. Федеральным законом от 22.05.2003 № 54-ФЗ (фискальные чеки).
  */
 
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+
 export interface PaidContractClinicRequisites {
 	fullName: string; // e.g. Общество с ограниченной ответственностью «Денте Стоматология»
 	shortName: string; // ООО «Денте»
@@ -812,6 +814,7 @@ export function createDefaultPaidContract(params: {
 	patientPhone?: string | undefined;
 	patientSnils?: string | undefined;
 	cardNumber?: string | undefined;
+	directorFullName?: string | undefined;
 	doctorFullName?: string | undefined;
 	doctorSpecialty?: string | undefined;
 	clinicFullName?: string | undefined;
@@ -894,7 +897,9 @@ export function createDefaultPaidContract(params: {
 			email: "info@dente-clinic.ru",
 			website: "https://dente-clinic.ru",
 			directorTitle: "Генеральный директор",
-			directorFullName: "Смирнов Алексей Викторович",
+			directorFullName:
+				params.directorFullName ||
+				(isDemoShowcaseMode() ? "Смирнов Алексей Викторович" : ""),
 			actingOnBasis: "Устава",
 		},
 		patient: {
@@ -987,8 +992,12 @@ export function createDefaultPaidContract(params: {
 			"Федеральный закон № 152-ФЗ и Постановление Правительства РФ № 140 (обработка ПДн и передача сведений в РЭМД ЕГИСЗ Минздрава России).",
 		informedConsentRef:
 			"Приказ Минздрава России № 1051н и ст. 20 Федерального закона № 323-ФЗ (Информированное добровольное согласие на медицинское вмешательство).",
-		doctorFullName: params.doctorFullName || "Петров Петр Петрович",
-		doctorSpecialty: params.doctorSpecialty || "Врач-стоматолог-терапевт",
+		doctorFullName:
+			params.doctorFullName ||
+			(isDemoShowcaseMode() ? "Петров Петр Петрович" : ""),
+		doctorSpecialty:
+			params.doctorSpecialty ||
+			(isDemoShowcaseMode() ? "Врач-стоматолог-терапевт" : ""),
 		signedAt: formattedDate,
 		signMethod: "paper",
 		confirmedDisclosures: {
@@ -1103,8 +1112,8 @@ ${cl.fullName} (${cl.shortName})
 Р/с: ${cl.checkingAccount} в ${cl.bankName}, БИК: ${cl.bik}, К/с: ${cl.correspondentAccount}
 Тел: ${cl.phone}, Email: ${cl.email}
 
-${cl.directorTitle}: _____________________ / ${cl.directorFullName} /
-Лечащий врач: _____________________ / ${contract.doctorFullName} /
+${cl.directorTitle}: _____________________ / ${cl.directorFullName || "________________________"} /
+Лечащий врач: _____________________ / ${contract.doctorFullName || "________________________"} /
 М.П.
 
 ПАЦИЕНТ / ЗАКАЗЧИК:
@@ -1333,14 +1342,14 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
 
   <div class="section-title">1. Предмет договора и условия оказания услуг</div>
   <p>1.1. Исполнитель обязуется оказать Пациенту платные стоматологические медицинские услуги в соответствии с клиническими рекомендациями (протоколами лечения) и стандартами медицинской помощи РФ, а Заказчик (Пациент) обязуется принять и оплатить оказанные услуги в соответствии со сметой и условиями настоящего Договора.</p>
-  <p>1.2. Основание обращения: <u>${contract.clinicalReason || "Первичная консультация и осмотр врача-стоматолога"}</u>. Медкарта № <strong>${pt.cardNumber || "043/у"}</strong>.</p>
+  <p>1.2. Основание обращения: <u>${contract.clinicalReason || "Первичная консультация и осмотр врача-стоматолога"}</u>. Медкарта № <strong>${pt.cardNumber || "б/н"}</strong>.</p>
   <p>1.3. Согласованный перечень и стоимость платных медицинских услуг:</p>
 
   <table class="services-table">
     <thead>
       <tr>
         <th style="width:25px;">№</th>
-        <th>Наименование медицинской услуги (Номенклатура 804н)</th>
+        <th>Наименование медицинской услуги</th>
         <th style="width:65px;">Зуб (FDI)</th>
         <th style="width:35px;">Кол.</th>
         <th style="width:80px;">Цена</th>
@@ -1388,8 +1397,8 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
       Тел: ${cl.phone}<br><br>
       ${cl.directorTitle}:<br>
       <div class="sign-underline"></div>
-      <div style="font-size:6.5pt; color:#64748b;">(подпись, М.П.) / ${cl.directorFullName} /</div>
-      Врач: _________________ / ${contract.doctorFullName} /
+      <div style="font-size:6.5pt; color:#64748b;">(подпись, М.П.) / ${cl.directorFullName || "________________________"} /</div>
+      Врач: _________________ / ${contract.doctorFullName || "________________________"} /
     </div>
 
     <div class="req-col">

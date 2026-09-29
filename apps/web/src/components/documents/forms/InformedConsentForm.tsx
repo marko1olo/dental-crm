@@ -435,7 +435,7 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 								setInformedConsentQuestionsAnswered(true);
 								setInformedConsentRisksUnderstood(true);
 								setInformedConsentWithdrawUnderstood(true);
-								showToast("ИДС заполнено по стандарту Минздрава РФ № 1051н (1 клик)", "success", 3000);
+								showToast("Согласие на лечение заполнено нормой в 1 клик", "success", 3000);
 							}}
 						>
 							<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />

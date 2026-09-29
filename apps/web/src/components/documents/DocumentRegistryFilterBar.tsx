@@ -146,7 +146,7 @@ export function DocumentRegistryFilterBar({
 							className={`document-filter-chip ${activeCategoryTab === "certificates_sanpin" ? "active" : ""}`}
 							onClick={() => onSelectCategoryTab("certificates_sanpin")}
 						>
-							СанПиН{categoryCounts?.certificates_sanpin !== undefined ? ` (${categoryCounts.certificates_sanpin})` : ""}
+							Стерилизация{categoryCounts?.certificates_sanpin !== undefined ? ` (${categoryCounts.certificates_sanpin})` : ""}
 						</button>
 					</div>
 				)}

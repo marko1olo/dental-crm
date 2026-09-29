@@ -295,7 +295,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 			setGeneralTreatmentPlan(norm.generalTreatmentPlan);
 
 			showToast(
-				"Вся Форма 043/у заполнена физиологической нормой (1 клик). Врач правит только патологию!",
+				"Вся медицинская карта заполнена физиологической нормой (1 клик). Врач правит только патологию!",
 				"success",
 				4000,
 			);
@@ -388,7 +388,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 			setRevisionCount((c) => c + 1);
 			setIsRevising(false);
 			setReviseSnapshot(null);
-			showToast("Исправление зафиксировано («Исправленному верить»). Ревизия 043/у сохранена.", "success", 4000);
+			showToast("Исправление зафиксировано («Исправленному верить»). Ревизия карты сохранена.", "success", 4000);
 		}, []);
 
 		const currentToothRecord: FdiToothRecord = odontogram[selectedTooth] ?? {
@@ -568,7 +568,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 						}
 					}
 					e.preventDefault();
-					e.returnValue = "В карте 043/у есть несохраненные данные зубной формулы. Закрыть вкладку?";
+					e.returnValue = "В медицинской карте есть несохраненные данные зубной формулы. Закрыть вкладку?";
 					return e.returnValue;
 				}
 			};
@@ -580,8 +580,8 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 		return (
 			<div className="document-form-container form-043u-wrapper">
 				<DocumentPayloadCard
-					title="Медицинская карта стоматологического пациента (Форма № 043/у)"
-					description="Официальная форма Минздрава РФ с зубной формулой FDI, индексами КПУ/CPITN, анамнезом жизни, СОПР и дневниками приёма (Форма 043/у)"
+					title="Медицинская карта стоматологического пациента"
+					description="Официальная форма Минздрава РФ с зубной формулой FDI, индексами КПУ/CPITN, анамнезом жизни, СОПР и дневниками приёма"
 				>
 					<div
 						className="document-form-nav-tabs"
@@ -628,11 +628,11 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								data-testid="btn-043-global-norm-1click"
 								className="btn btn-sm btn-success"
 								onClick={handleApplyGlobalNorm}
-								title="1-клик: Заполнить всю Форму 043/у физиологической нормой (зубная формула, CPITN, СОПР, анамнез). Врач правит только патологию!"
+								title="1-клик: Заполнить всю медицинскую карту физиологической нормой (зубная формула, CPITN, СОПР, анамнез). Врач правит только патологию!"
 								style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 							>
 								<ShieldCheck style={{ width: "16px", height: "16px" }} />
-								Норма 043/у (1-клик)
+								Норма (1-клик)
 							</button>
 							{reviseSnapshot !== null && (
 								<button
@@ -659,7 +659,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 											handleBeginRevise();
 										}
 									}}
-									title="Внести исправление в закрытую карту 043/у («Исправленному верить») без задержек и согласований"
+									title="Внести исправление в закрытую медицинскую карту («Исправленному верить») без задержек и согласований"
 									style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 								>
 									<FileEdit style={{ width: "16px", height: "16px" }} />
@@ -744,7 +744,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										}
 									}
 								}}
-								title="Печать чистого бланка Формы 043/у со строками «________» для ручного заполнения на приёме"
+								title="Печать чистого бланка медицинской карты со строками «________» для ручного заполнения на приёме"
 								style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 							>
 								<Printer style={{ width: "16px", height: "16px" }} />
@@ -802,11 +802,11 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 										}
 									}
 								}}
-								title="Печать карты 043/у в любой момент"
+								title="Печать медицинской карты в любой момент"
 								style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 							>
 								<Printer style={{ width: "16px", height: "16px" }} />
-								Печать 043/у
+								Печать карты
 							</button>
 						</div>
 					</div>

@@ -225,7 +225,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 				className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
 				role="dialog"
 				aria-modal="true"
-				aria-label="Генератор клинических протоколов 043/у"
+				aria-label="Генератор клинических протоколов"
 				onClick={(e) => {
 					if (e.target === e.currentTarget) onClose();
 				}}
@@ -240,7 +240,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 							<div>
 								<div className="flex items-center gap-2">
 									<h2 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)]">
-										Генератор протоколов 043/у (Минздрав РФ № 834н)
+										Генератор клинических протоколов
 									</h2>
 									<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] border border-[var(--ok-fg,#059669)]/30">
 										<ShieldCheck className="w-3.5 h-3.5" />
@@ -274,7 +274,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 						<ChevronRight size={14} className="text-[var(--muted,#64748b)]" />
 						<div className="flex items-center gap-1.5 font-bold text-[var(--teal,#0d9488)]">
 							<span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] text-[10px]">2</span>
-							<span>Шаг 2: Экспертиза 043/у</span>
+							<span>Шаг 2: Клиническая проверка</span>
 						</div>
 						<ChevronRight size={14} className="text-[var(--muted,#64748b)]" />
 						<div className="flex items-center gap-1.5 font-bold text-[var(--ok-fg,#059669)]">
@@ -283,7 +283,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 						</div>
 						<div className="ml-auto flex items-center gap-1 text-[var(--muted,#64748b)] text-[11px]">
 							<ShieldCheck size={13} className="text-[var(--ok-fg,#059669)]" />
-							<span>Готов к синхронизации с Формой 043/у</span>
+							<span>Готов к переносу в медицинскую карту</span>
 						</div>
 					</div>
 
@@ -615,7 +615,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 												: "text-[var(--muted,#64748b)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 										}`}
 									>
-										Разделы 043/у
+										Разделы дневника
 									</button>
 									<button
 										type="button"
@@ -671,7 +671,7 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 										data-testid="apply-emr-protocol-btn"
 									>
 										<Sparkles className="w-4 h-4" />
-										<span>Применить в дневник 043/у (1 клик)</span>
+										<span>Применить в дневник приёма (1 клик)</span>
 									</button>
 								</div>
 							</div>

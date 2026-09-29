@@ -86,7 +86,7 @@ export interface DentalStatusAndIndices043 {
 	xrayRadiationDoseMsv?: number | null; // Суммарная доза облучения (мЗв)
 }
 
-/** Эпикриз, результаты лечения и план диспансерного наблюдения */
+/** Эпикриз, результаты лечения и план контрольного наблюдения */
 export interface EpicrisisAndDispensary043 {
 	treatmentSummary: string; // Сводка проведенного лечения
 	treatmentOutcome: "complete_cure" | "remission_stable" | "improvement" | "treatment_in_progress" | "referred_specialized";

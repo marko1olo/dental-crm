@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { useDocumentStore } from "../../../store/documentStore";
 import { AnamnesisField } from "../AnamnesisField";
 import {
@@ -260,14 +261,14 @@ export const AnesthesiaConsentLogForm = React.memo(
 						Серия / Партия карпулы
 						<input
 							placeholder="напр. ART-2026 / 84019"
-							defaultValue="ART-2026 / 84019"
+							defaultValue={isDemoShowcaseMode() ? "ART-2026 / 84019" : undefined}
 						/>
 					</label>
 					<label>
 						Срок годности (ГГГГ-ММ)
 						<input
 							placeholder="напр. 2027-06"
-							defaultValue="2027-06"
+							defaultValue={isDemoShowcaseMode() ? "2027-06" : undefined}
 						/>
 					</label>
 				</div>
@@ -276,14 +277,14 @@ export const AnesthesiaConsentLogForm = React.memo(
 						АД (мм рт. ст.) / ЧСС (уд/мин)
 						<input
 							placeholder="напр. 120/80 мм рт. ст., 72 уд/мин"
-							defaultValue="120/80 мм рт. ст., 72 уд/мин"
+							defaultValue={isDemoShowcaseMode() ? "120/80 мм рт. ст., 72 уд/мин" : undefined}
 						/>
 					</label>
 					<label>
 						Медсестра / Ассистент
 						<input
 							placeholder="ФИО ассистента"
-							defaultValue="Смирнова А. В."
+							defaultValue={isDemoShowcaseMode() ? "Смирнова А. В." : undefined}
 						/>
 					</label>
 				</div>

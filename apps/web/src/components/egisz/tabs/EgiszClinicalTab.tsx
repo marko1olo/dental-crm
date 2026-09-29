@@ -332,7 +332,7 @@ export const EgiszClinicalTab: React.FC<EgiszClinicalTabProps> = ({
 				<div style={{ border: "1px solid var(--line)", borderRadius: "8px", padding: "0.875rem", background: "var(--paper)" }}>
 					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
 						<div style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink)" }}>
-							Оказанные медицинские услуги (804н)
+							Оказанные медицинские услуги
 						</div>
 						<button
 							type="button"

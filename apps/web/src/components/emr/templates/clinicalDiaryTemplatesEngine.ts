@@ -16,6 +16,7 @@ import {
 	CLINICAL_1CLICK_TEMPLATES_CATALOG,
 	CLINICAL_CATEGORY_LABELS,
 	type Order804nServiceItem,
+	PHYSIOLOGICAL_NORM_PRESET,
 } from "./clinicalDiaryTemplatesCatalogData";
 
 /** Параметры синтеза готового дневника при 1 клике */
@@ -48,6 +49,7 @@ export interface SynthesizedDiaryResult {
 	readonly homeCareRecommendations: string;
 	readonly unifiedSoapText: string;
 	readonly order804nServices: readonly Order804nServiceItem[];
+	readonly totalEstimatedKopecks?: number | undefined;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -116,6 +118,11 @@ export function synthesize1ClickSoapDiary(
 ): SynthesizedDiaryResult {
 	const normalizedKey = (templateIdOrCode || "").trim().toLowerCase();
 	const template =
+		(normalizedKey === PHYSIOLOGICAL_NORM_PRESET.id.toLowerCase() ||
+		normalizedKey === PHYSIOLOGICAL_NORM_PRESET.icd10Code.toLowerCase() ||
+		normalizedKey === PHYSIOLOGICAL_NORM_PRESET.shortTitle.toLowerCase()
+			? PHYSIOLOGICAL_NORM_PRESET
+			: null) ||
 		CLINICAL_1CLICK_TEMPLATES_CATALOG.find(
 			(t) =>
 				t.id.toLowerCase() === normalizedKey ||
@@ -151,6 +158,12 @@ export function synthesize1ClickSoapDiary(
 
 	const recommendations = template.defaultRecommendations;
 	const procedureProtocol = template.defaultProcedureProtocol;
+
+	// Расчет оценочной стоимости номенклатурных услуг в копейках
+	const totalEstimatedKopecks = template.order804nServices.reduce((sum, s) => {
+		const qty = s.defaultQuantity ?? 1;
+		return sum + (s.priceKopecks ?? 0) * qty;
+	}, 0);
 
 	// Форматирование единого текста дневника Формы 043/у
 	const unifiedSoapText = formatStatutoryUnifiedSoapText({
@@ -189,6 +202,7 @@ export function synthesize1ClickSoapDiary(
 		homeCareRecommendations: recommendations,
 		unifiedSoapText,
 		order804nServices: template.order804nServices,
+		totalEstimatedKopecks: totalEstimatedKopecks > 0 ? totalEstimatedKopecks : undefined,
 	};
 }
 
@@ -249,7 +263,11 @@ export function formatStatutoryUnifiedSoapText(params: {
 		parts.push(`ОКАЗАННЫЕ УСЛУГИ (НОМЕНКЛАТУРА 804н):`);
 		for (const s of params.order804nServices) {
 			const qty = s.defaultQuantity && s.defaultQuantity > 1 ? ` (x${s.defaultQuantity})` : "";
-			parts.push(`• ${s.code} — ${s.nameRu}${qty}`);
+			const price =
+				typeof s.priceKopecks === "number" && s.priceKopecks > 0
+					? ` — ${(s.priceKopecks / 100).toLocaleString("ru-RU")} ₽`
+					: "";
+			parts.push(`• ${s.code} — ${s.nameRu}${qty}${price}`);
 		}
 	}
 
@@ -303,6 +321,12 @@ export function getCore1ClickTemplates(): readonly Clinical1ClickTemplate[] {
 /** Получить шаблон по его ID или коду МКБ-10 */
 export function getClinicalTemplateById(idOrCode: string): Clinical1ClickTemplate | undefined {
 	const norm = (idOrCode || "").trim().toLowerCase();
+	if (
+		norm === PHYSIOLOGICAL_NORM_PRESET.id.toLowerCase() ||
+		norm === PHYSIOLOGICAL_NORM_PRESET.icd10Code.toLowerCase()
+	) {
+		return PHYSIOLOGICAL_NORM_PRESET;
+	}
 	return CLINICAL_1CLICK_TEMPLATES_CATALOG.find(
 		(t) => t.id.toLowerCase() === norm || t.icd10Code.toLowerCase() === norm,
 	);

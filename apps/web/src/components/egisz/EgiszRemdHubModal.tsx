@@ -260,7 +260,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 					patientId: state.fnsPayload.taxpayer?.inn || "taxpayer",
 					visitId: state.fnsPayload.documentNumber || `FNS-${Date.now()}`,
 				});
-				showToast(`Справка ФНС КНД 1151156 успешно передана в шлюз (ID: ${txId})`, "success");
+				showToast(`Справка для налогового вычета успешно передана в шлюз (ID: ${txId})`, "success");
 				if (onSentSuccess) {
 					onSentSuccess({
 						type: activeDocType,
@@ -326,7 +326,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 						</div>
 						<div style={{ minWidth: 0 }}>
 							<div className="egisz-main-title" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-								СЭМД ЕГИСЗ CDA R2 &bull; РЭМД Минздрава & ФНС КНД 1151156 — Хаб электронных медицинских документов
+								СЭМД ЕГИСЗ CDA R2 &bull; РЭМД Минздрава & Справки для налогового вычета — Хаб электронных медицинских документов
 								<span className="egisz-moh-badge egisz-badge-teal" style={{ marginLeft: "0.5rem", fontSize: "0.75rem", padding: "0.15rem 0.45rem", borderRadius: "4px", fontWeight: 700 }}>Минздрав РФ</span>
 							</div>
 							<div className="egisz-sub-title" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -371,7 +371,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									setActiveTab("clinical");
 								}}
 							>
-								105 &bull; 043/у
+								105 &bull; Медкарта
 							</button>
 							<button
 								type="button"
@@ -381,7 +381,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 									setActiveTab("tax_deduction");
 								}}
 							>
-								Справка ФНС (КНД 1151156)
+								Справка для налогового вычета
 							</button>
 						</div>
 
@@ -405,7 +405,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 							onClick={() => setActiveTab("clinical")}
 						>
 							<FileText size={16} />
-							Стоматологический протокол (043/у)
+							Стоматологический протокол (медкарта)
 						</button>
 					) : (
 						<button
@@ -414,7 +414,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 							onClick={() => setActiveTab("tax_deduction")}
 						>
 							<Receipt size={16} />
-							Налоговый вычет (КНД 1151156)
+							Справка для налогового вычета
 						</button>
 					)}
 

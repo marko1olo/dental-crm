@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import type { MedicalCardExtract003vuPayload, MedicalExtractTreatmentStage } from "@dental/shared";
 
@@ -14,17 +15,24 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 		const [initialConsultationDiagnosis, setInitialConsultationDiagnosis] = useState(
 			initialPayload?.initialConsultationDiagnosis ??
 			(initialPayload as any)?.diagnosisOnAdmission ??
-			"K04.0 Начальный пульпит зуба 2.6",
+			(isDemoShowcaseMode() ? "K04.0 Начальный пульпит зуба 2.6" : ""),
 		);
 		const [clinicalDiagnosis, setClinicalDiagnosis] = useState(
-			initialPayload?.primaryDiagnosisText ?? "K04.0 Хронический фиброзный пульпит зуба 2.6",
+			initialPayload?.primaryDiagnosisText ??
+			(isDemoShowcaseMode() ? "K04.0 Хронический фиброзный пульпит зуба 2.6" : ""),
 		);
 		const [recommendations, setRecommendations] = useState(
-			initialPayload?.followUpRecommendations ?? "Диспансерный осмотр через 6 месяцев, контрольная прицельная визиография зуба 2.6.",
+			initialPayload?.followUpRecommendations ??
+			(isDemoShowcaseMode()
+				? "Контрольный осмотр и профгигиена через 6 месяцев, контрольная прицельная визиография зуба 2.6."
+				: ""),
 		);
 		const [stages, setStages] = useState<MedicalExtractTreatmentStage[]>(() => {
-			return (
-				initialPayload?.treatmentStagesTimeline ?? [
+			if (initialPayload?.treatmentStagesTimeline) {
+				return initialPayload.treatmentStagesTimeline;
+			}
+			if (isDemoShowcaseMode()) {
+				return [
 					{
 						treatmentDate: "2026-08-10",
 						toothOrAnatomicalArea: "26",
@@ -42,8 +50,9 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 						performedIntervention: "Постоянная обтурация корневых каналов методом латеральной компакции гуттаперчи с силером AH-Plus, реставрация коронковой части светоотверждаемым композитом",
 						attendingDoctorFullName: defaultDoctor,
 					},
-				]
-			);
+				];
+			}
+			return [];
 		});
 
 		const addStageRow = () => {
@@ -72,6 +81,7 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 						<input
 							type="text"
 							className="form-control"
+							placeholder="напр. K04.0 Начальный пульпит зуба 2.6"
 							value={initialConsultationDiagnosis}
 							onChange={(e) => setInitialConsultationDiagnosis(e.target.value)}
 						/>
@@ -82,6 +92,7 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 						<input
 							type="text"
 							className="form-control"
+							placeholder="напр. K04.0 Хронический фиброзный пульпит зуба 2.6"
 							value={clinicalDiagnosis}
 							onChange={(e) => setClinicalDiagnosis(e.target.value)}
 						/>
@@ -111,15 +122,30 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 								</tr>
 							</thead>
 							<tbody>
-								{stages.map((st, idx) => (
-									<tr key={idx}>
-										<td>{st.treatmentDate}</td>
-										<td>{st.toothOrAnatomicalArea || "—"}</td>
-										<td>{st.diagnosisText || st.diagnosisIcd10}</td>
-										<td>{st.performedIntervention}</td>
-										<td>{st.attendingDoctorFullName}</td>
+								{stages.length === 0 ? (
+									<tr>
+										<td
+											colSpan={5}
+											style={{
+												textAlign: "center",
+												padding: "16px",
+												color: "var(--muted, #64748b)",
+											}}
+										>
+											Этапы лечения не добавлены. Нажмите «+ Добавить этап»
+										</td>
 									</tr>
-								))}
+								) : (
+									stages.map((st, idx) => (
+										<tr key={idx}>
+											<td>{st.treatmentDate}</td>
+											<td>{st.toothOrAnatomicalArea || "—"}</td>
+											<td>{st.diagnosisText || st.diagnosisIcd10}</td>
+											<td>{st.performedIntervention}</td>
+											<td>{st.attendingDoctorFullName}</td>
+										</tr>
+									))
+								)}
 							</tbody>
 						</table>
 					</div>
@@ -129,6 +155,7 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 						<textarea
 							className="form-control"
 							rows={2}
+							placeholder="Рекомендации по уходу, контрольным осмотрам, гигиене"
 							value={recommendations}
 							onChange={(e) => setRecommendations(e.target.value)}
 						/>

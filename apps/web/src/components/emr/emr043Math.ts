@@ -267,7 +267,7 @@ export function validateForm043uCompleteness(data: MedicalCardForm043uData): For
 	// Эпикриз (Раздел 5)
 	check(Boolean(data.epicrisis?.treatmentSummary?.trim()), "treatmentSummary", "Эпикриз / сводка лечения", "epicrisis", "warning");
 	check(Boolean(data.epicrisis?.treatmentOutcome), "treatmentOutcome", "Результат лечения / исход", "epicrisis", "warning");
-	check(Boolean(data.epicrisis?.dispensaryGroup), "dispensaryGroup", "Группа диспансерного наблюдения", "epicrisis", "warning");
+	check(Boolean(data.epicrisis?.dispensaryGroup), "dispensaryGroup", "Группа контрольного наблюдения", "epicrisis", "warning");
 
 	const score = Math.round((passedChecks / Math.max(1, totalChecks)) * 100);
 	const criticalMissing = missingFields.filter((m) => m.severity === "critical");

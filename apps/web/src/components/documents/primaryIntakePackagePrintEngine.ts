@@ -15,6 +15,7 @@
  * - Двойной механизм печати: всплывающее окно `window.open` + скрытый `iframe` при блокировке поп-апов.
  */
 
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { escapeHtml, formatDateRu } from "./documentPrintFormatters";
 
 export interface PrimaryIntakePackagePrintOptions {
@@ -105,7 +106,8 @@ export function generatePrimaryIntakePackageHtml(
 		escapeHtml(clinic?.licenseNumber) || "ЛО41-01137-77/00584930";
 	const clinicPhone = escapeHtml(clinic?.phone) || "";
 	const clinicDirector =
-		escapeHtml(clinic?.directorFullName) || "Иванов И.И.";
+		escapeHtml(clinic?.directorFullName) ||
+		(isDemoShowcaseMode() ? "Иванов И.И." : "________________________");
 	const clinicDirectorTitle =
 		escapeHtml(clinic?.directorTitle) || "Главный врач";
 

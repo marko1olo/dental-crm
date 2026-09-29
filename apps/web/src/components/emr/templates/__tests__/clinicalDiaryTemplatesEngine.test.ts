@@ -9,6 +9,7 @@ import {
 	filterClinicalTemplates,
 	getCore1ClickTemplates,
 	getClinicalTemplateById,
+	PHYSIOLOGICAL_NORM_PRESET,
 } from "../clinicalDiaryTemplatesEngine";
 
 describe("clinicalDiaryTemplatesEngine — 1. Core Catalog & 1-Click Presets", () => {
@@ -40,6 +41,19 @@ describe("clinicalDiaryTemplatesEngine — 1. Core Catalog & 1-Click Presets", (
 			for (const svc of tmpl.order804nServices) {
 				assert.match(svc.code, /^[A-Z]\d{2}\.\d{2}/, `804n code ${svc.code} must match standard format`);
 				assert.ok(svc.nameRu.length > 0, `804n service name must not be empty`);
+			}
+		}
+	});
+
+	it("every 804n service item in catalog and norm preset has exact priceKopecks (integer > 0)", () => {
+		for (const tmpl of [...CLINICAL_1CLICK_TEMPLATES_CATALOG, PHYSIOLOGICAL_NORM_PRESET]) {
+			for (const svc of tmpl.order804nServices) {
+				assert.ok(
+					typeof svc.priceKopecks === "number" &&
+						Number.isInteger(svc.priceKopecks) &&
+						svc.priceKopecks > 0,
+					`Service ${svc.code} in template ${tmpl.id} must have exact positive integer priceKopecks`,
+				);
 			}
 		}
 	});
@@ -80,8 +94,11 @@ describe("clinicalDiaryTemplatesEngine — 3. 1-Click Synthesis of Core Protocol
 		assert.match(res.assessmentDiagnosisText, /K02.1.*зуба 16/);
 		assert.match(res.objectiveStatusLocalis, /зуба 16 \(верхний правый первый моляр\)/);
 		assert.match(res.procedureProtocol, /коффердам/i);
+		assert.match(res.procedureProtocol, /селективное протравливание.*37% H3PO4/i);
 		assert.match(res.procedureProtocol, /OptiBond|Prime&Bond/i);
-		assert.match(res.procedureProtocol, /Filtek|Estelite/i);
+		assert.match(res.procedureProtocol, /Filtek Ultimate.*оттенок A2/i);
+		assert.match(res.procedureProtocol, /Sof-Lex.*Enhance.*Prisma Gloss/i);
+		assert.equal(res.totalEstimatedKopecks, 480000); // 350000 + 80000 + 50000
 
 		// Unified text checks
 		assert.match(res.unifiedSoapText, /ЖАЛОБЫ \(S\):/);
@@ -90,7 +107,8 @@ describe("clinicalDiaryTemplatesEngine — 3. 1-Click Synthesis of Core Protocol
 		assert.match(res.unifiedSoapText, /КЛИНИЧЕСКИЙ ДИАГНОЗ ПО МКБ-10 \(A\):/);
 		assert.match(res.unifiedSoapText, /ПРОТОКОЛ ЛЕЧЕНИЯ \(P\):/);
 		assert.match(res.unifiedSoapText, /ОКАЗАННЫЕ УСЛУГИ \(НОМЕНКЛАТУРА 804н\):/);
-		assert.match(res.unifiedSoapText, /A16\.07\.002\.001/);
+		assert.match(res.unifiedSoapText, /A16\.07\.002\.001.*3\s500\s₽/);
+		assert.match(res.unifiedSoapText, /A16\.07\.031.*800\s₽/);
 		assert.match(res.unifiedSoapText, /Врач: Волкова Екатерина Сергеевна/);
 	});
 
@@ -104,9 +122,13 @@ describe("clinicalDiaryTemplatesEngine — 3. 1-Click Synthesis of Core Protocol
 		assert.equal(res.toothNumber, 26);
 		assert.match(res.subjectiveComplaints, /ночное время/);
 		assert.match(res.objectiveStatusLocalis, /пульпа кровоточит/);
-		assert.match(res.procedureProtocol, /WaveOne|ProTaper/);
-		assert.match(res.procedureProtocol, /NaOCl.*EDTA/);
-		assert.match(res.procedureProtocol, /AH Plus/);
+		assert.match(res.procedureProtocol, /WaveOne Gold|ProTaper Gold/i);
+		assert.match(res.procedureProtocol, /NaOCl.*ультразвук/i);
+		assert.match(res.procedureProtocol, /17% EDTA/i);
+		assert.match(res.procedureProtocol, /непрерывн.*волн/i);
+		assert.match(res.procedureProtocol, /AH Plus/i);
+		assert.match(res.procedureProtocol, /РВГ-контроль|RVG/i);
+		assert.ok(typeof res.totalEstimatedKopecks === "number" && res.totalEstimatedKopecks > 0);
 		assert.ok(res.order804nServices.some((s) => s.code.startsWith("A16.07.030")));
 		assert.ok(res.order804nServices.some((s) => s.code.startsWith("A16.07.008")));
 	});
@@ -118,8 +140,10 @@ describe("clinicalDiaryTemplatesEngine — 3. 1-Click Synthesis of Core Protocol
 
 		assert.equal(res.icd10Code, "K04.5");
 		assert.match(res.assessmentDiagnosisText, /Хронический апикальный периодонтит/);
-		assert.match(res.procedureProtocol, /Кальсепт|Metapex/);
+		assert.match(res.procedureProtocol, /Кальсепт|Metapex/i);
+		assert.match(res.procedureProtocol, /герметич.*повязк/i);
 		assert.match(res.homeCareRecommendations, /Нимесил/);
+		assert.ok(typeof res.totalEstimatedKopecks === "number" && res.totalEstimatedKopecks > 0);
 		assert.ok(res.order804nServices.some((s) => s.code === "A16.07.091"));
 	});
 
@@ -160,6 +184,21 @@ describe("clinicalDiaryTemplatesEngine — 3. 1-Click Synthesis of Core Protocol
 		assert.ok(res.order804nServices.some((s) => s.code === "A16.07.001"));
 	});
 
+	it("synthesizes Complex Tooth Extraction K01.1 protocol with flap, sectioning, and sutures", () => {
+		const res = synthesize1ClickSoapDiary("tooth_extraction_complex_k01_1", {
+			toothNumber: 38,
+		});
+
+		assert.equal(res.icd10Code, "K01.1");
+		assert.match(res.assessmentDiagnosisText, /K01\.1/);
+		assert.match(res.procedureProtocol, /слизисто-надкостничн.*лоскут/i);
+		assert.match(res.procedureProtocol, /сепарация|разъединение|фрагмент/i);
+		assert.match(res.procedureProtocol, /Альвостим с йодоформом/i);
+		assert.match(res.procedureProtocol, /шв.*Викрил/i);
+		assert.ok(typeof res.totalEstimatedKopecks === "number" && res.totalEstimatedKopecks > 0);
+		assert.ok(res.order804nServices.some((s) => s.code === "A16.07.001.002"));
+	});
+
 	it("synthesizes Hygiene Air-Flow protocol with ultrasonic scaling and remineralization", () => {
 		const res = synthesize1ClickSoapDiary("hygiene_airflow_k05_3");
 
@@ -169,7 +208,19 @@ describe("clinicalDiaryTemplatesEngine — 3. 1-Click Synthesis of Core Protocol
 		assert.match(res.procedureProtocol, /Cleanic/);
 		assert.match(res.procedureProtocol, /Clinpro White Varnish/);
 		assert.match(res.homeCareRecommendations, /Белая диета/);
+		assert.ok(typeof res.totalEstimatedKopecks === "number" && res.totalEstimatedKopecks > 0);
 		assert.ok(res.order804nServices.some((s) => s.code === "A16.07.051"));
+	});
+
+	it("synthesizes 1-Click Physiological Norm Z01.2 according to Mandate 8e", () => {
+		const res = synthesize1ClickSoapDiary("somatic_healthy_norm");
+
+		assert.equal(res.icd10Code, "Z01.2");
+		assert.match(res.assessmentDiagnosisText, /Z01\.2/);
+		assert.match(res.objectiveStatusLocalis, /Врач правит только патологию/);
+		assert.equal(res.order804nServices[0]?.code, "B01.065.001");
+		assert.equal(res.order804nServices[0]?.priceKopecks, 150000);
+		assert.equal(res.totalEstimatedKopecks, 150000);
 	});
 });
 

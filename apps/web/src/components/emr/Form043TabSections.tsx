@@ -395,7 +395,7 @@ export const Form043EpicrisisTab: React.FC<Form043EpicrisisTabProps> = React.mem
 					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
 						<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
 							<Award className="w-4 h-4 text-sky-600" />
-							5. Эпикриз, результаты лечения и план диспансерного наблюдения
+							5. Эпикриз, результаты лечения и план контрольного наблюдения
 						</h3>
 					</div>
 					<div className="emr043-grid-2">
@@ -408,7 +408,7 @@ export const Form043EpicrisisTab: React.FC<Form043EpicrisisTabProps> = React.mem
 							<div className="emr043-field-value font-bold text-[var(--ok-fg,#059669)]">{formData.epicrisis.treatmentOutcomeLabel}</div>
 						</div>
 						<div>
-							<div className="emr043-field-label">Диспансерная группа:</div>
+							<div className="emr043-field-label">Группа контрольного наблюдения:</div>
 							<div className="emr043-field-value font-bold text-sky-700">{formData.epicrisis.dispensaryGroupLabel}</div>
 						</div>
 						<div>

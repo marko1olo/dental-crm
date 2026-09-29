@@ -3,7 +3,12 @@ import { describe, test } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createDefaultPaidContract } from "../paidContractEngine";
+import {
+	createDefaultPaidContract,
+	generatePaidContractText,
+	generatePaidContractHtml,
+} from "../paidContractEngine";
+import { generatePrimaryIntakePackageHtml } from "../primaryIntakePackagePrintEngine";
 import {
 	DEFAULT_TELEGRAM_PREVIEW_PATIENT,
 	buildDefaultTelegramPreview,
@@ -57,7 +62,8 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		const content = fs.readFileSync(fullPath, "utf-8");
 
 		assert.ok(
-			content.includes('const patientName = patient?.fullName || "";'),
+			content.includes('const patientName = patient?.fullName || "";') ||
+				content.includes('const patientName = patient?.fullName || patientNameProp || "";'),
 			"В PrescriptionPrintModal patientName должен иметь дефолтное значение пустой строки",
 		);
 	});
@@ -97,5 +103,30 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 			!preview.text.includes(SYNTHETIC_MOCK_NAME),
 			"Текст превью не должен содержать синтетический мок ФИО",
 		);
+	});
+
+	test("Dual-mode zero-mock (Mandate 8y): paidContractEngine defaults doctor and director to empty string in production with underlines in signatures", () => {
+		const contract = createDefaultPaidContract({});
+		assert.equal(contract.doctorFullName, "", "Doctor full name must default to empty in production");
+		assert.equal(contract.clinic.directorFullName, "", "Director full name must default to empty in production");
+
+		const text = generatePaidContractText(contract);
+		assert.ok(text.includes("/ ________________________ /"), "Must output underlines for empty doctor and director signatures in text");
+
+		const html = generatePaidContractHtml(contract);
+		assert.ok(html.includes("/ ________________________ /"), "Must output underlines for empty doctor and director signatures in HTML");
+	});
+
+	test("Dual-mode zero-mock (Mandate 8y): primaryIntakePackagePrintEngine defaults director to underlines in production", () => {
+		const html = generatePrimaryIntakePackageHtml({
+			clinic: {
+				fullName: "ООО Стоматология",
+			},
+			patient: {
+				fullName: "Тестовый Пациент",
+			},
+		});
+		assert.ok(!html.includes("Иванов И.И."), "Production primary intake package must not render synthetic Ivanov I.I.");
+		assert.ok(html.includes("________________________"), "Production primary intake package must render signature underline for missing director");
 	});
 });

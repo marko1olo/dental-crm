@@ -22,7 +22,7 @@ export const SummaryWorkStatement039uForm: React.FC<SummaryWorkStatement039uForm
 			<div className="document-form-container form-039u-wrapper">
 				<DocumentPayloadCard
 					title="Сводная ведомость учета работы врача-стоматолога (Форма № 039/у-88)"
-					description="Ежемесячная/квартальная сводка лечебной работы и выработки УЕТ по Приказу Минздрава РФ № 804н"
+					description="Ежемесячная/квартальная сводка лечебной работы и выработки УЕТ"
 				>
 					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
 						<div>

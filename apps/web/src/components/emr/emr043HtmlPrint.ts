@@ -576,8 +576,8 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
   <div class="section-title">4. Дневник посещений и протоколы лечения</div>
   ${diariesHtml}
 
-  <!-- 5. Эпикриз и диспансеризация -->
-  <div class="section-title">5. Эпикриз, результаты лечения и план диспансерного наблюдения</div>
+  <!-- 5. Эпикриз и контрольное наблюдение -->
+  <div class="section-title">5. Эпикриз, результаты лечения и план контрольного наблюдения</div>
   <table class="data-table">
     <tr>
       <td style="width:25%;"><strong>Сводка лечения (Эпикриз):</strong></td>
@@ -586,7 +586,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
     <tr>
       <td><strong>Исход лечения:</strong></td>
       <td><strong>${escapeHtml(epicrisis.treatmentOutcomeLabel || "Полное выздоровление / стойкая ремиссия")}</strong></td>
-      <td style="width:20%;"><strong>Диспансерная группа:</strong></td>
+      <td style="width:20%;"><strong>Группа контрольного наблюдения:</strong></td>
       <td><strong>${escapeHtml(epicrisis.dispensaryGroupLabel || "Д-I (Практически здоров)")}</strong></td>
     </tr>
     <tr>

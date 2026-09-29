@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import {
 	calculateDaily037uTotals,
@@ -21,8 +22,11 @@ export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFo
 			initialPayload?.doctorFullName ?? "",
 		);
 		const [records, setRecords] = useState<DailyPatientRecord037u[]>(() => {
-			return (
-				(initialPayload as any)?.patientRecords ?? [
+			if ((initialPayload as any)?.patientRecords) {
+				return (initialPayload as any).patientRecords;
+			}
+			if (isDemoShowcaseMode()) {
+				return [
 					{
 						sequenceNumber: 1,
 						patientFullName: "Смирнов Алексей Петрович",
@@ -42,8 +46,9 @@ export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFo
 						uetAnesthesia: 0.5,
 						totalUetForVisit: 2.5,
 					},
-				]
-			);
+				];
+			}
+			return [];
 		});
 
 		// Auto calculate totals
@@ -81,7 +86,7 @@ export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFo
 			<div className="document-form-container form-037u-wrapper">
 				<DocumentPayloadCard
 					title="Листок ежедневного учета работы врача-стоматолога (Форма № 037/у-88)"
-					description="Ежедневный журнал приёма с автоматическим расчетом трудоемкости в УЕТ (Приказ № 50 / № 804н)"
+					description="Ежедневный журнал приёма с автоматическим расчетом трудоемкости в УЕТ"
 				>
 					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
 						<div>
@@ -138,46 +143,62 @@ export const DailyDentistWorkSheet037uForm: React.FC<DailyDentistWorkSheet037uFo
 								</tr>
 							</thead>
 							<tbody>
-								{records.map((r, idx) => (
-									<tr key={idx}>
-										<td>{r.sequenceNumber}</td>
-										<td>
-											<input
-												type="text"
-												className="form-control form-control-sm"
-												value={r.patientFullName}
-												onChange={(e) => {
-													const val = e.target.value;
-													setRecords((prev) =>
-														prev.map((item, i) =>
-															i === idx ? { ...item, patientFullName: val } : item,
-														),
-													);
-												}}
-											/>
-										</td>
-										<td>
-											<input
-												type="text"
-												style={{ width: "80px" }}
-												className="form-control form-control-sm"
-												value={r.diagnosisIcd10}
-												onChange={(e) => {
-													const val = e.target.value;
-													setRecords((prev) =>
-														prev.map((item, i) =>
-															i === idx ? { ...item, diagnosisIcd10: val } : item,
-														),
-													);
-												}}
-											/>
-										</td>
-										<td>{r.performedProceduresSummary}</td>
-										<td>
-											<strong>{r.totalUetForVisit.toFixed(1)}</strong>
+								{records.length === 0 ? (
+									<tr>
+										<td
+											colSpan={5}
+											style={{
+												textAlign: "center",
+												padding: "16px",
+												color: "var(--muted, #64748b)",
+											}}
+										>
+											Пациенты за смену ещё не добавлены. Нажмите «+ Добавить пациента»
 										</td>
 									</tr>
-								))}
+								) : (
+									records.map((r, idx) => (
+										<tr key={idx}>
+											<td>{r.sequenceNumber}</td>
+											<td>
+												<input
+													type="text"
+													className="form-control form-control-sm"
+													placeholder="ФИО пациента"
+													value={r.patientFullName}
+													onChange={(e) => {
+														const val = e.target.value;
+														setRecords((prev) =>
+															prev.map((item, i) =>
+																i === idx ? { ...item, patientFullName: val } : item,
+															),
+														);
+													}}
+												/>
+											</td>
+											<td>
+												<input
+													type="text"
+													style={{ width: "80px" }}
+													className="form-control form-control-sm"
+													value={r.diagnosisIcd10}
+													onChange={(e) => {
+														const val = e.target.value;
+														setRecords((prev) =>
+															prev.map((item, i) =>
+																i === idx ? { ...item, diagnosisIcd10: val } : item,
+															),
+														);
+													}}
+												/>
+											</td>
+											<td>{r.performedProceduresSummary}</td>
+											<td>
+												<strong>{r.totalUetForVisit.toFixed(1)}</strong>
+											</td>
+										</tr>
+									))
+								)}
 							</tbody>
 						</table>
 					</div>

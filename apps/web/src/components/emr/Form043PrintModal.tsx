@@ -319,7 +319,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 							)}
 							<div>
 								<h2 className="emr043-header-title">
-									Медицинская карта № {formData.passport.medicalCardNumber} (Форма 043/у)
+									Медицинская карта № {formData.passport.medicalCardNumber}
 								</h2>
 								<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
 									Пациент: <strong>{formData.passport.patientFullName}</strong> ({ageText}) • Врач: <strong>{formData.passport.attendingDoctorFullName}</strong>
@@ -342,7 +342,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 										background: "var(--paper, #f8fafc)",
 										height: "32px",
 									}}
-									title="Масштаб предварительного просмотра листа Формы 043/у"
+									title="Масштаб предварительного просмотра листа карты"
 								>
 									<button
 										type="button"
@@ -497,7 +497,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 													setIsMoreMenuOpen(false);
 												}}
 												data-testid="btn-043-more-save"
-												title="Сохранить медицинскую карту 043/у"
+												title="Сохранить медицинскую карту"
 											>
 												<Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
 												<span>Сохранить карту</span>
@@ -605,7 +605,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 							onClick={() => setActiveTab("diaries")}
 						>
 							<Calendar className="w-3.5 h-3.5 shrink-0" />
-							<span>4. Дневники визитов (Форма 043/у)</span>
+							<span>4. Дневники визитов</span>
 							<span style={{ fontSize: "11px", fontWeight: "bold", opacity: 0.8 }}>({formData.visitDiaries.length})</span>
 						</button>
 						<button
@@ -614,7 +614,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 							onClick={() => setActiveTab("epicrisis")}
 						>
 							<Award className="w-3.5 h-3.5 shrink-0" />
-							<span>5. Эпикриз и диспансеризация</span>
+							<span>5. Эпикриз и контрольное наблюдение</span>
 						</button>
 					</nav>
 
@@ -708,7 +708,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 							/>
 						)}
 
-						{/* Вкладка 6: Эпикриз и диспансеризация */}
+						{/* Вкладка 6: Эпикриз и контрольное наблюдение */}
 						{activeTab === "epicrisis" && (
 							<Form043EpicrisisTab formData={formData} />
 						)}

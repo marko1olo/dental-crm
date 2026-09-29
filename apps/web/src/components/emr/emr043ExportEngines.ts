@@ -144,11 +144,11 @@ export function generate043XmlCda(data: MedicalCardForm043uData): string {
       <component>
         <section>
           <code code="EPICRISIS" codeSystem="1.2.643.5.1.13" displayName="Эпикриз"/>
-          <title>Эпикриз и диспансерный план</title>
+          <title>Эпикриз и план контрольного наблюдения</title>
           <text>
             <paragraph>Сводка лечения: ${escapeXml(data.epicrisis.treatmentSummary)}</paragraph>
             <paragraph>Исход: ${escapeXml(data.epicrisis.treatmentOutcomeLabel)}</paragraph>
-            <paragraph>Диспансерная группа: ${escapeXml(data.epicrisis.dispensaryGroupLabel)}</paragraph>
+            <paragraph>Группа контрольного наблюдения: ${escapeXml(data.epicrisis.dispensaryGroupLabel)}</paragraph>
             <paragraph>Контрольный осмотр через: ${data.epicrisis.plannedRecallIntervalMonths} мес.</paragraph>
           </text>
         </section>
@@ -216,9 +216,9 @@ export function generate043PlainText(data: MedicalCardForm043uData): string {
 		lines.push(`  Врач: ${vd.doctorFullName}`);
 	});
 	lines.push(`--------------------------------------------------------------------------------`);
-	lines.push(`5. ЭПИКРИЗ И ДИСПАНСЕРИЗАЦИЯ`);
+	lines.push(`5. ЭПИКРИЗ И КОНТРОЛЬНОЕ НАБЛЮДЕНИЕ`);
 	lines.push(`Сводка: ${data.epicrisis.treatmentSummary}`);
-	lines.push(`Исход: ${data.epicrisis.treatmentOutcomeLabel} | Диспансерная группа: ${data.epicrisis.dispensaryGroupLabel}`);
+	lines.push(`Исход: ${data.epicrisis.treatmentOutcomeLabel} | Группа контрольного наблюдения: ${data.epicrisis.dispensaryGroupLabel}`);
 	lines.push(`Контрольный осмотр: через ${data.epicrisis.plannedRecallIntervalMonths} мес.`);
 	lines.push(`Рекомендации: ${data.epicrisis.preventivePlanRecommendations}`);
 

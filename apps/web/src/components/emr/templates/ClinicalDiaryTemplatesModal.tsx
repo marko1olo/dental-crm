@@ -24,8 +24,11 @@ import {
 	synthesize1ClickSoapDiary,
 	getToothAnatomicalDescription,
 	formatStatutoryUnifiedSoapText,
+	PHYSIOLOGICAL_NORM_PRESET,
 } from "./clinicalDiaryTemplatesEngine";
 import "./clinicalDiaryTemplates.css";
+
+export { PHYSIOLOGICAL_NORM_PRESET };
 
 export interface ClinicalDiaryTemplatesModalProps {
 	readonly isOpen: boolean;
@@ -40,54 +43,6 @@ export interface ClinicalDiaryTemplatesModalProps {
 }
 
 const COMMON_TEETH_PRESETS = [16, 26, 36, 46, 11, 21, 31, 41, 14, 24, 34, 44];
-
-/**
- * Мандат 8e (п. 3): Физиологическая норма по умолчанию в 1 клик.
- * Заполняет анамнез и клинический статус эталонной физиологической нормой.
- * Врач правит только локально выявленные патологии!
- */
-export const PHYSIOLOGICAL_NORM_PRESET: Clinical1ClickTemplate = {
-	id: "somatic_healthy_norm",
-	title: "Соматически здоров / Физиологическая норма",
-	shortTitle: "Физиологическая норма",
-	category: "preventive",
-	icd10Code: "Z01.2",
-	icd10Title: "Стоматологическое обследование / Соматически сохранен",
-	badge: "Мандат 8e",
-	icon: "shield",
-	isCore1Click: true,
-	toothTargetRequired: false,
-	defaultSubjectiveComplaints:
-		"Жалоб на момент осмотра активно не предъявляет. Обратился с целью планового профилактического осмотра и санации полости рта.",
-	defaultAnamnesisMorbi:
-		"Соматический анамнез не отягощен. Соматически сохранен, аллергологический статус без особенностей. Перенесенные и сопутствующие соматические заболевания отрицает. Вирусные гепатиты B/C, ВИЧ-инфекцию, туберкулез отрицает. Ранее проходил регулярные профилактические осмотры.",
-	defaultObjectiveStatus:
-		"Общее состояние удовлетворительное, сознание ясное. Конфигурация лица не изменена, лицо симметрично, открывание рта свободное, безболезненное, в полном объеме. Регионарные лимфатические узлы (подчелюстные, шейные) не пальпируются, безболезненные, лимфоузлы не увеличены. Слизистая оболочка полости рта, десен, щек, твердого и мягкого неба бледно-розовая, умеренно увлажнена, чистая, без патологических элементов и высыпаний. Прикус физиологический (ортогнатический, норма прикуса). Зубные ряды интактные / санированные, патологической подвижности зубов нет. Десна интактна, кровоточивости при зондировании зубодесневой борозды нет (индекс гигиены OHI-S = 0). Врач правит только патологию!",
-	defaultPercussion: "negative",
-	defaultThermalTest: "indifferent",
-	defaultProbing: "none",
-	defaultEodMicroamperes: 2,
-	defaultProcedureProtocol:
-		"1. Полный клинический осмотр стоматологического пациента по форме 043/у (внешний осмотр, пальпация лимфатических узлов, осмотр преддверия и собственно полости рта).\n" +
-		"2. Оценка окклюзии, состояния височно-нижнечелюстных суставов и физиологической нормы прикуса.\n" +
-		"3. Онкоскрининг слизистой оболочки полости рта (визуальный осмотр, пальпация). Патологических изменений слизистой оболочки, пародонта и твердых тканей зубов не выявлено.\n" +
-		"4. Проведена беседа по гигиене полости рта, индивидуальный подбор средств ухода.",
-	defaultAnesthesia: "Без анестезии",
-	defaultMaterials: [
-		"Индивидуальный стерильный смотровой лоток",
-		"Стоматологическое зеркало и зонд диагностический",
-	],
-	defaultRecommendations:
-		"Соблюдение правил индивидуальной гигиены полости рта (чистка зубов 2 раза в день фторсодержащей пастой, использование флосса). Профилактический осмотр у врача-стоматолога через 6 месяцев.",
-	order804nServices: [
-		{
-			code: "B01.065.001",
-			nameRu: "Прием (осмотр, консультация) врача-стоматолога-терапевта первичный",
-			isMandatory: true,
-			defaultQuantity: 1,
-		},
-	],
-};
 
 function renderTemplateIcon(iconName: string, className = "w-4 h-4 shrink-0") {
 	switch (iconName) {
@@ -180,47 +135,6 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 
 		// Автогенерация синтезированного дневника
 		const synthesized = useMemo(() => {
-			if (selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id) {
-				const toothDesc = toothNumberInput ? getToothAnatomicalDescription(toothNumberInput) : "зубных рядов";
-				const toothNumStr = toothNumberInput ? `зуба ${toothNumberInput}` : "";
-				const unifiedSoapText = formatStatutoryUnifiedSoapText({
-					template: PHYSIOLOGICAL_NORM_PRESET,
-					toothDesc,
-					toothNumStr,
-					subjective: PHYSIOLOGICAL_NORM_PRESET.defaultSubjectiveComplaints,
-					anamnesis: PHYSIOLOGICAL_NORM_PRESET.defaultAnamnesisMorbi,
-					statusLocalis: PHYSIOLOGICAL_NORM_PRESET.defaultObjectiveStatus,
-					diagnosisText: `${PHYSIOLOGICAL_NORM_PRESET.icd10Code} ${PHYSIOLOGICAL_NORM_PRESET.icd10Title}`,
-					procedureProtocol: PHYSIOLOGICAL_NORM_PRESET.defaultProcedureProtocol,
-					anesthesia: PHYSIOLOGICAL_NORM_PRESET.defaultAnesthesia,
-					materialsStr: PHYSIOLOGICAL_NORM_PRESET.defaultMaterials.join(", "),
-					recommendations: PHYSIOLOGICAL_NORM_PRESET.defaultRecommendations,
-					order804nServices: PHYSIOLOGICAL_NORM_PRESET.order804nServices,
-					doctorFullName: doctorFullName ?? null,
-					doctorSpecialty: doctorSpecialty ?? null,
-				});
-
-				return {
-					templateId: PHYSIOLOGICAL_NORM_PRESET.id,
-					title: PHYSIOLOGICAL_NORM_PRESET.title,
-					icd10Code: PHYSIOLOGICAL_NORM_PRESET.icd10Code,
-					icd10Title: PHYSIOLOGICAL_NORM_PRESET.icd10Title,
-					toothNumber: toothNumberInput ? parseInt(toothNumberInput, 10) || null : null,
-					toothNameRu: toothNumberInput ? toothDesc : null,
-					subjectiveComplaints: PHYSIOLOGICAL_NORM_PRESET.defaultSubjectiveComplaints,
-					anamnesisMorbi: PHYSIOLOGICAL_NORM_PRESET.defaultAnamnesisMorbi,
-					objectiveStatusLocalis: PHYSIOLOGICAL_NORM_PRESET.defaultObjectiveStatus,
-					assessmentDiagnosisText: `${PHYSIOLOGICAL_NORM_PRESET.icd10Code} ${PHYSIOLOGICAL_NORM_PRESET.icd10Title}`,
-					assessmentIcd10Code: PHYSIOLOGICAL_NORM_PRESET.icd10Code,
-					procedureProtocol: PHYSIOLOGICAL_NORM_PRESET.defaultProcedureProtocol,
-					anesthesiaDetails: PHYSIOLOGICAL_NORM_PRESET.defaultAnesthesia,
-					appliedMaterials: PHYSIOLOGICAL_NORM_PRESET.defaultMaterials.join(", "),
-					homeCareRecommendations: PHYSIOLOGICAL_NORM_PRESET.defaultRecommendations,
-					unifiedSoapText,
-					order804nServices: PHYSIOLOGICAL_NORM_PRESET.order804nServices,
-				};
-			}
-
 			return synthesize1ClickSoapDiary(selectedTemplateId, {
 				toothNumber: toothNumberInput,
 				doctorFullName: doctorFullName ?? null,
@@ -290,7 +204,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 				className="cd-templates-backdrop"
 				role="dialog"
 				aria-modal="true"
-				aria-label="1-Click Клинические протоколы и шаблоны Формы 043/у"
+				aria-label="1-Click Клинические протоколы и дневники приёма"
 				onClick={(e) => {
 					if (e.target === e.currentTarget) onClose();
 				}}
@@ -305,11 +219,11 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-2 flex-wrap">
 									<h2 className="cd-templates-title truncate">
-										1-Click Клинические протоколы и дневники приёма (043/у)
+										1-Click Клинические протоколы и дневники приёма
 									</h2>
 									<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#15803d)] border border-[var(--ok-fg,#15803d)]/30 shrink-0 whitespace-nowrap">
 										<ShieldCheck className="w-3.5 h-3.5" />
-										Минздрав РФ № 834н / 804н
+										Клинические стандарты СтАР
 									</span>
 								</div>
 								<p className="cd-templates-subtitle truncate">
@@ -349,7 +263,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							<Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
 							<span>Соматически здоров / Физиологическая норма</span>
 							<span className="cd-dominant-norm-badge">
-								043/у 1-Click
+								1-Click Норма
 							</span>
 							{selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id && (
 								<Check className="w-3.5 h-3.5 shrink-0" />
@@ -454,7 +368,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 												<span className="cd-card-icd-tag shrink-0">{tmpl.icd10Code}</span>
 											</div>
 											<div className="cd-card-category-tag truncate">
-												{CLINICAL_CATEGORY_LABELS[tmpl.category]} · {tmpl.order804nServices.length} услуг 804н
+												{CLINICAL_CATEGORY_LABELS[tmpl.category]} · {tmpl.order804nServices.length} услуг
 											</div>
 										</button>
 									);
@@ -540,8 +454,8 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 									<div className="cd-soap-textarea-label">
 										<span>
 											{selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id
-												? "Единый протокол приема (Редактируемый дневник 043/у) — Врач правит только патологию:"
-												: "Единый протокол приема (Редактируемый дневник 043/у):"}
+												? "Единый протокол приема (Редактируемый дневник) — Врач правит только патологию:"
+												: "Единый протокол приема (Редактируемый дневник):"}
 										</span>
 										{isCustomEdited && (
 											<span className="text-amber-600 font-normal">
@@ -558,22 +472,37 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										className="cd-soap-textarea"
 										rows={14}
 										data-testid="cd-soap-textarea"
-										aria-label="Текст дневниковой записи 043/у"
+										aria-label="Текст дневниковой записи"
 									/>
 								</div>
 
 								{/* Nomenclature 804n Services Attached */}
 								{synthesized.order804nServices.length > 0 && (
 									<div className="cd-services-804n-box">
-										<div className="cd-services-title">
-											<Stethoscope className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-											<span>Прикрепленные услуги каталога ({synthesized.order804nServices.length}):</span>
+										<div className="cd-services-title flex items-center justify-between">
+											<div className="flex items-center gap-1.5">
+												<Stethoscope className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+												<span>Прикрепленные услуги каталога ({synthesized.order804nServices.length}):</span>
+											</div>
+											{typeof synthesized.totalEstimatedKopecks === "number" && synthesized.totalEstimatedKopecks > 0 && (
+												<span className="text-xs font-bold text-[var(--teal,#0d9488)]" data-testid="cd-services-total-price">
+													Итого: {(synthesized.totalEstimatedKopecks / 100).toLocaleString("ru-RU")} ₽
+												</span>
+											)}
 										</div>
 										<div className="cd-service-chips-row">
 											{synthesized.order804nServices.map((svc) => (
 												<div key={svc.code} className="cd-service-chip">
 													<span className="cd-service-code">{svc.code}</span>
 													<span>{svc.nameRu}</span>
+													{svc.defaultQuantity && svc.defaultQuantity > 1 && (
+														<span className="text-xs opacity-75">x{svc.defaultQuantity}</span>
+													)}
+													{typeof svc.priceKopecks === "number" && svc.priceKopecks > 0 && (
+														<span className="cd-service-price-tag">
+															{(svc.priceKopecks / 100).toLocaleString("ru-RU")} ₽
+														</span>
+													)}
 												</div>
 											))}
 										</div>

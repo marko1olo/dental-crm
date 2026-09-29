@@ -107,13 +107,13 @@ describe("Wave 108: StomX 448 Templates & 1-Tap SOAP Integrator Suite", () => {
 		);
 
 		// Заголовок и селектор
-		assert.ok(html.includes("Форма 043/у • SOAP"), "Рендерится заголовок Форма 043/у");
+		assert.ok(html.includes("Медицинская карта • Дневник приёма"), "Рендерится заголовок");
 		assert.ok(html.includes("soap-select-tooth"), "Рендерится селектор зуба");
 		assert.ok(html.includes("46 зуб"), "Выбран 46 зуб");
 
 		// Кнопка шаблонов 448
 		assert.ok(html.includes("btn-open-stomt-templates"), "Присутствует data-testid='btn-open-stomt-templates'");
-		assert.ok(html.includes("Шаблоны 043/у (448)"), "Кнопка содержит текст 'Шаблоны 043/у (448)'");
+		assert.ok(html.includes("Клинические шаблоны (448)"), "Кнопка содержит текст 'Клинические шаблоны (448)'");
 
 		// Норма в 1 клик (Мандат 8e)
 		assert.ok(html.includes("btn-soap-physio-norm"), "Присутствует кнопка 1-клик нормы");
@@ -134,8 +134,8 @@ describe("Wave 108: StomX 448 Templates & 1-Tap SOAP Integrator Suite", () => {
 
 		// Заголовок панели
 		assert.ok(
-			html.includes("Клинические протоколы StomX (448 шаблонов 043/у)"),
-			"Заголовок панели отражает 448 шаблонов 043/у",
+			html.includes("Клинические протоколы StomX (448 протоколов)"),
+			"Заголовок панели отражает 448 протоколов",
 		);
 
 		// Фильтр 'Все протоколы (448)'
