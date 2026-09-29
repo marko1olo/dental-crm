@@ -1,10 +1,16 @@
 import {
 	Activity,
 	ArrowRight,
+	BookOpen,
+	Crown,
+	FileText,
+	Printer,
+	RotateCcw,
 	ShieldCheck,
 	Sparkles,
 	Users,
 	Wallet,
+	X,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -31,23 +37,30 @@ import {
 	type FamilyGroup,
 	type FamilyMember,
 	type FamilyTopupMethod,
+	type FamilyLedgerEntry,
 	FAMILY_TOPUP_METHODS,
 	PATIENT_ID_PATTERN,
+	formatFamilyBalanceLabel,
+	formatAvailableForDebitLabel,
+	safeFamilyMemberName,
 	refusalToast,
 	WALLET_PANEL_SUBJECT,
 } from "./familyWalletHelpers";
+import { printFamilyLedgerStatement } from "./familyBillingPrint";
 import { FamilyMembersList } from "./FamilyMembersList";
 import { FamilyBonusSection } from "./FamilyBonusSection";
 import { FamilyTopupSection } from "./FamilyTopupSection";
 import "./FamilyWalletPanel.css";
 import { logger } from "../../utils/logger";
 
-export type { FamilyMember, FamilyGroup, FamilyTopupMethod };
+export type { FamilyMember, FamilyGroup, FamilyTopupMethod, FamilyLedgerEntry };
 export {
 	WALLET_PANEL_SUBJECT,
 	refusalToast,
 	PATIENT_ID_PATTERN,
 	FAMILY_TOPUP_METHODS,
+	formatFamilyBalanceLabel,
+	formatAvailableForDebitLabel,
 };
 export { FamilyMembersList } from "./FamilyMembersList";
 export { FamilyBonusSection } from "./FamilyBonusSection";
@@ -66,121 +79,34 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 }) => {
 	const [family, setFamily] = useState<FamilyGroup | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
-	// Отказ сервера хранится ОТДЕЛЬНО от «семьи нет»: раньше и то и другое
-	// сводилось к family=null, и панель просто исчезала. `status` — код ответа,
-	// null — до сервера не дошли вовсе.
 	const [loadFailure, setLoadFailure] = useState<{
 		status: number | null;
 	} | null>(null);
 	const [isPaying, setIsPaying] = useState(false);
 	const [isToppingUp, setIsToppingUp] = useState(false);
 	const [isCombinedBillingModalOpen, setIsCombinedBillingModalOpen] = useState(false);
-	/*
-	 * СУММЫ ХРАНЯТСЯ СТРОКОЙ — ТЕМ, ЧТО НАБРАЛ ЧЕЛОВЕК.
-	 *
-	 * БЫЛО: числом, а поля стояли type="number" с `Number(e.target.value)` и
-	 * `Math.trunc(Number(e.target.value))`. Отсюда потеря набранного:
-	 *  • браузер у числового поля отдаёт ПУСТУЮ строку, как только набранное не
-	 *    является числом по его правилам. Русская запятая — именно такой случай:
-	 *    администратор набирал «1500,50», на запятой поле мгновенно пустело
-	 *    (state 0 → value ""), и все набранные цифры исчезали без слов;
-	 *  • Math.trunc молча съедал копейки: «1500.50» превращалось в 1500 прямо
-	 *    под руками, и человек не видел, что сумма изменилась.
-	 * Теперь набранное остаётся на экране как есть, а разбирает его тот же
-	 * normalizeRubAmountInput, что и форма приёма оплаты, — «1500,50» там и здесь
-	 * означает одно и то же. Копейки не отбрасываются молча: сервер их не
-	 * принимает, и об этом сказано словами под полем.
-	 */
+	const [isLedgerOpen, setIsLedgerOpen] = useState(false);
+	const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+
 	const [topupInput, setTopupInput] = useState("");
-	/*
-	 * Чем внесли аванс. Способ НЕ гасится при смене пациента: это настройка
-	 * рабочего места кассира, а не данные пациента, — так же как способ оплаты в
-	 * форме приёма оплаты (components/finance/paymentComposerReset.ts).
-	 */
 	const [topupMethod, setTopupMethod] = useState<FamilyTopupMethod>("cash");
-	/*
-	 * ПОЛЕ СУММЫ СПИСАНИЯ НАЧИНАЕТСЯ ПУСТЫМ, А НЕ С ДОЛГА ПАЦИЕНТА.
-	 *
-	 * БЫЛО: useState(remainingDebtRub || 0). Две беды сразу.
-	 *
-	 * Первая: начальное значение useState берётся ОДИН раз за жизнь компонента, а
-	 * панель при переходе к другому пациенту не размонтируется — меняется только
-	 * patientId. В поле оставался долг ПРЕДЫДУЩЕГО человека. Администратор
-	 * открывал Иванова с долгом 15 000 ₽, переключался на Петрова, у которого
-	 * долг 1 000 ₽, нажимал «Списать с баланса» — и с семейного счёта Петрова
-	 * уходило 15 000 ₽. Ровно та же подстановка чужих денег, от которой уже
-	 * защищён сброс формы приёма оплаты (components/finance/paymentComposerReset.ts).
-	 *
-	 * Вторая: подставленная сумма в кассе опасна и сама по себе. Пациент платит
-	 * часть, а одно нажатие по привычке списывает весь долг целиком.
-	 *
-	 * Теперь сумму подставляет только явное нажатие по кнопке «Долг: N ₽» — тем
-	 * же приёмом, что и в форме приёма оплаты выше на этом же экране.
-	 */
 	const [amountInput, setAmountInput] = useState("");
-	/*
-	 * КЛЮЧ ИДЕМПОТЕНТНОСТИ ПРИВЯЗАН К ОДНОЙ КОНКРЕТНОЙ ОПЕРАЦИИ.
-	 *
-	 * Ключ обязан жить между повторами: без него повторная отправка после обрыва
-	 * связи списала бы деньги второй раз. Но жить он должен ровно у ТОЙ операции,
-	 * для которой выдан, — иначе он превращается в обратную беду.
-	 *
-	 * БЫЛО: `useRef<string | null>`, один ключ на панель. После обрыва связи ключ
-	 * намеренно сохранялся (для безопасного повтора), а сбрасывался только при
-	 * успехе. Ни смена пациента, ни смена суммы его не трогали. Сервер же ищет
-	 * повтор ТОЛЬКО по паре (organizationId, clientMutationId) — ни пациента, ни
-	 * сумму он не сверяет (routes/finance_family.ts) — и на найденный повтор
-	 * отвечает 200 с ранее созданным платежом и `duplicate: true`.
-	 *
-	 * Отсюда ложный успех: администратор списывал 15 000 ₽ у Иванова, связь
-	 * обрывалась, он переходил к Петрову, набирал 1 000 ₽, нажимал «Списать» — и
-	 * запрос уходил с ТЕМ ЖЕ ключом. Сервер узнавал в нём платёж Иванова, ничего
-	 * не списывал и отвечал успехом. Панель писала «Оплата списана с семейного
-	 * кошелька», очищала поле — а у Петрова не списано ничего, долг открыт, оплаты
-	 * в журнале нет. Администратор отпускал человека как оплатившего. То же самое
-	 * при смене суммы у одного пациента: повтор «на 3 000 ₽» подтверждался
-	 * успехом, хотя списаны были прежние 500 ₽.
-	 *
-	 * СТАЛО: рядом с ключом хранится подпись операции — те самые поля, которые
-	 * уходят в тело запроса и двигают деньги. Совпала подпись — это повтор, ключ
-	 * тот же, второго списания не будет. Изменилась хоть одна — это ДРУГАЯ
-	 * операция, и она получает новый ключ. Отдельного сброса при смене пациента не
-	 * нужно: пациент входит в подпись, и одно правило не может разойтись с другим.
-	 *
-	 * Само правило вынесено в familyWalletMutationKey.ts и проверяется прогоном
-	 * (familyWalletMutationKey.test.ts): здесь, внутри панели, исполнить его в
-	 * тесте было нельзя, а ошибка в нём стоит денег живого человека.
-	 */
+
+	// Семейный гроссбух: история операций по общему депозиту
+	const [ledgerEntries, setLedgerEntries] = useState<FamilyLedgerEntry[]>([]);
+
+	// Состояние формы возврата средств на депозит
+	const [refundAmountInput, setRefundAmountInput] = useState("");
+	const [refundTargetPatientId, setRefundTargetPatientId] = useState<string>(patientId);
+	const [refundReason, setRefundReason] = useState("Отмена визита / возврат за неоказанные услуги");
+	const [refundDestination, setRefundDestination] = useState<"family_deposit" | "cash_payout">("family_deposit");
+	const [isRefunding, setIsRefunding] = useState(false);
+
 	const topupMutationRef = useRef<MutationTicket | null>(null);
 	const payMutationRef = useRef<MutationTicket | null>(null);
 
 	const isPatientDatabaseId = PATIENT_ID_PATTERN.test(patientId);
-	// Номер запроса вместо флага cancelled: тот же счётчик защищает и повторную
-	// загрузку по кнопке, и обновление после списания, а не только первый показ.
 	const requestGenerationRef = useRef(0);
-	/*
-	 * ЧЕЙ КОШЕЛЁК СЕЙЧАС НА ЭКРАНЕ.
-	 *
-	 * Одного счётчика запросов не хватало, и вот почему. Счётчик задаёт только
-	 * ПОРЯДОК: применяется ответ на самый последний запрос. А самый последний
-	 * запрос мог оказаться запросом по ПРЕЖНЕМУ пациенту. Обновление после
-	 * успешного списания вызывает loadFamily из того замыкания, в котором нажали
-	 * кнопку, — то есть с прежним patientId; номер поколения такой запрос берёт в
-	 * момент вызова и потому становится «самым свежим».
-	 *
-	 * Что из этого выходило. Администратор нажимал «Списать с баланса» у Иванова,
-	 * связь медленная, и не дожидаясь ответа переключался на Петрова. Ответ по
-	 * списанию приходил, обновление уходило по ИВАНОВУ и перебивало уже начатую
-	 * загрузку Петрова. На экране Петрова оказывался баланс семьи Иванова —
-	 * чужие деньги как свои, — и следующее списание кассир считал по этому
-	 * балансу. Подпись «Оплата за:» при этом молча исчезала (Петрова нет в списке
-	 * членов чужой семьи), но объяснения этому на экране не было.
-	 *
-	 * Поэтому ответ применяется только если он про того пациента, который на
-	 * экране сейчас. Проверка добавлена внутрь isStale, а не отдельной ветвью:
-	 * isStale уже стоит перед КАЖДЫМ применением ответа, и новое условие
-	 * автоматически действует во всех этих местах, включая ветку отказа.
-	 */
 	const selectedPatientIdRef = useRef(patientId);
 
 	/**
@@ -190,8 +116,6 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	const loadFamily = useCallback(async () => {
 		const generation = requestGenerationRef.current + 1;
 		requestGenerationRef.current = generation;
-		// Устарел не только тот ответ, поверх которого уже пошёл новый запрос, но и
-		// любой ответ про пациента, которого на экране больше нет.
 		const isStale = () =>
 			requestGenerationRef.current !== generation ||
 			selectedPatientIdRef.current !== patientId;
@@ -205,6 +129,9 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				const data = (await res.json()) as FamilyGroup;
 				if (isStale()) return;
 				setFamily(data);
+				if (data.ledger && Array.isArray(data.ledger)) {
+					setLedgerEntries(data.ledger);
+				}
 				setLoadFailure(null);
 				return;
 			}
@@ -233,6 +160,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 		setLoadFailure(null);
 		setAmountInput("");
 		setTopupInput("");
+		setRefundTargetPatientId(patientId);
 		if (!isPatientDatabaseId) {
 			setIsLoading(false);
 			return;
@@ -277,11 +205,24 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 		setTargetPatientId(patientId);
 	}, [patientId]);
 
+	// Определение главы семьи
+	const headMember =
+		(family?.members ?? []).find(
+			(member) => member.id === family?.headPatientId || member.isHead,
+		) || (family?.members ?? [])[0];
+	const headFullName =
+		headMember?.fullName?.trim() || family?.headPatientName?.trim() || "Глава семьи";
+
 	const payerName =
 		(family?.members ?? []).find((member) => member.id === targetPatientId)
 			?.fullName?.trim() ||
 		(family?.members ?? []).find((member) => member.id === patientId)
-			?.fullName?.trim();
+			?.fullName?.trim() ||
+		headFullName;
+
+	const targetMemberName =
+		(family?.members ?? []).find((member) => member.id === targetPatientId)
+			?.fullName?.trim() || payerName;
 
 	const parsedAmount = normalizeRubAmountInput(amountInput);
 	const amount = parsedAmount ?? 0;
@@ -361,6 +302,24 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			const payResult = (await res.json().catch(() => null)) as {
 				duplicate?: boolean;
 			} | null;
+
+			// Фиксация записи в семейном гроссбухе
+			setLedgerEntries((prev) => [
+				{
+					id: `debit-${Date.now()}`,
+					createdAt: new Date().toISOString(),
+					entryType: "debit",
+					amountRub: amount,
+					amountKopecks: Math.round(amount * 100),
+					payerFullName: headFullName,
+					targetPatientId,
+					targetPatientFullName: targetMemberName,
+					notes: "Списание за лечение с семейного депозита",
+					clientMutationId: mutationId,
+				},
+				...prev,
+			]);
+
 			showToast(
 				payResult?.duplicate
 					? "Эта оплата уже была списана раньше — второй раз деньги не списаны."
@@ -439,6 +398,24 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 			})) as {
 				duplicate?: boolean;
 			} | null;
+
+			// Фиксация пополнения в семейном гроссбухе
+			setLedgerEntries((prev) => [
+				{
+					id: `topup-${Date.now()}`,
+					createdAt: new Date().toISOString(),
+					entryType: "deposit",
+					amountRub: topupAmount,
+					amountKopecks: Math.round(topupAmount * 100),
+					payerPatientId: patientId,
+					payerFullName: payerName,
+					method: topupMethod,
+					notes: `Пополнение семейного счёта (${topupMethod})`,
+					clientMutationId: mutationId,
+				},
+				...prev,
+			]);
+
 			showToast(
 				topupResult?.duplicate
 					? `Этот аванс уже был зачислен раньше — ${money(topupAmount)} второй раз не зачислены.`
@@ -459,6 +436,95 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 		} finally {
 			setIsToppingUp(false);
 		}
+	};
+
+	// Возврат средств на семейный депозит (Refund Routing)
+	const handleExecuteRefund = async () => {
+		if (!family || isRefunding) return;
+		const parsedRefund = normalizeRubAmountInput(refundAmountInput);
+		const refundAmount = parsedRefund ?? 0;
+		if (refundAmount <= 0) {
+			showToast("Введите корректную сумму возврата", "error");
+			return;
+		}
+
+		if (refundDestination === "cash_payout") {
+			showToast(
+				"Внимание: возврат наличными требует обязательного пробития фискального чека «Возврат прихода» (54-ФЗ) на кассе!",
+				"warning",
+				5000,
+			);
+			setIsRefundModalOpen(false);
+			return;
+		}
+
+		setIsRefunding(true);
+		try {
+			const mutationId = `refund-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+			const targetRefundMember = (family.members ?? []).find((m) => m.id === refundTargetPatientId);
+			const targetName = targetRefundMember?.fullName?.trim() || "Пациент";
+
+			const res = await fetch("/api/finance/family/topup", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					patientId: refundTargetPatientId || patientId,
+					familyGroupId: family.id,
+					amountRub: refundAmount,
+					method: "other",
+					comment: `Возврат средств на семейный депозит за пациента ${targetName}: ${refundReason.trim()}`,
+					clientMutationId: mutationId,
+				}),
+			});
+
+			if (!res.ok) {
+				const errPayload = await res.json().catch(() => null);
+				showToast(errPayload?.message || "Не удалось вернуть средства на депозит", "error");
+				return;
+			}
+
+			// Фиксация в семейном гроссбухе
+			setLedgerEntries((prev) => [
+				{
+					id: `refund-${Date.now()}`,
+					createdAt: new Date().toISOString(),
+					entryType: "refund_deposit",
+					amountRub: refundAmount,
+					amountKopecks: Math.round(refundAmount * 100),
+					payerFullName: headFullName,
+					targetPatientId: refundTargetPatientId,
+					targetPatientFullName: targetName,
+					notes: `Возврат на семейный депозит: ${refundReason.trim()}`,
+					clientMutationId: mutationId,
+				},
+				...prev,
+			]);
+
+			showToast(
+				`Средства (${money(refundAmount)}) успешно возвращены на семейный депозит!`,
+				"success",
+			);
+			setRefundAmountInput("");
+			setIsRefundModalOpen(false);
+			void loadFamily();
+		} catch (e) {
+			logger.error("[family wallet] ошибка возврата на депозит:", e);
+			showToast("Ошибка связи при оформлении возврата", "error");
+		} finally {
+			setIsRefunding(false);
+		}
+	};
+
+	const handlePrintLedger = () => {
+		printFamilyLedgerStatement({
+			clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+			familyGroupName: family?.name?.trim() || "Семейная группа",
+			headFullName,
+			currentBalanceRub: balanceVal,
+			entries: ledgerEntries,
+		});
 	};
 
 	if (isLoading)
@@ -488,23 +554,44 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 			<div className="family-wallet-header">
 				<div>
-					<h3 className="family-wallet-title-row">
-						<Wallet size={20} />
-						Семейный Кошелек: {family.name?.trim() || "без названия"}
-					</h3>
-					<p className="family-wallet-subtitle">
-						Единый счет для семьи ({(family.members ?? []).length} чел.)
+					<div className="flex items-center gap-2 flex-wrap">
+						<h3 className="family-wallet-title-row">
+							<Wallet size={20} />
+							Семейный Кошелек: {family.name?.trim() || "без названия"}
+						</h3>
+						<span
+							className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-500/15 text-teal-800 dark:text-teal-200 border border-teal-500/30"
+							data-testid="badge-family-balance-head"
+						>
+							<Crown size={12} className="text-amber-500" />
+							{formatFamilyBalanceLabel(balanceVal, headFullName)}
+						</span>
+					</div>
+
+					<p className="family-wallet-subtitle flex items-center gap-2 flex-wrap">
+						<span>Единый счет для семьи ({(family.members ?? []).length} чел.)</span>
+						<span>·</span>
+						<span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+							<ShieldCheck size={13} className="text-emerald-500" />
+							Защита от овердрафта: баланс ≥ 0 ₽
+						</span>
 					</p>
 				</div>
-				<div className="flex items-center gap-3">
+
+				<div className="flex items-center gap-2.5 flex-wrap">
 					<div className="family-wallet-balance-container">
 						<div className="family-wallet-balance">{money(animatedBalance)}</div>
-						<p className="family-wallet-balance-label">
+						<p
+							className="family-wallet-balance-label"
+							title="Сумма, доступная для списания за лечение любого члена семьи"
+							data-testid="badge-available-for-debit"
+						>
 							<ShieldCheck size={12} />
-							ДОСТУПНЫЙ БАЛАНС
+							{formatAvailableForDebitLabel(balanceVal)}
 						</p>
 					</div>
 
+					{/* Кнопка семейного расчета 54-ФЗ */}
 					<button
 						type="button"
 						onClick={() => setIsCombinedBillingModalOpen(true)}
@@ -515,8 +602,136 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 						<Sparkles size={15} className="animate-pulse" />
 						<span>Семейный расчет 54-ФЗ</span>
 					</button>
+
+					{/* Кнопка Гроссбуха (история операций) */}
+					<button
+						type="button"
+						onClick={() => setIsLedgerOpen((prev) => !prev)}
+						className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+							isLedgerOpen
+								? "bg-teal-600 text-white border-teal-600"
+								: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)]"
+						}`}
+						title="Открыть общий семейный гроссбух: история списаний, пополнений и возвратов"
+						data-testid="btn-toggle-family-ledger"
+					>
+						<BookOpen size={14} />
+						<span>Гроссбух ({ledgerEntries.length})</span>
+					</button>
+
+					{/* Кнопка возврата средств на депозит */}
+					<button
+						type="button"
+						onClick={() => setIsRefundModalOpen(true)}
+						className="min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 transition-all flex items-center gap-1.5 cursor-pointer"
+						title="Оформить возврат средств за отмененный визит обратно на семейный депозит"
+						data-testid="btn-open-family-refund-modal"
+					>
+						<RotateCcw size={14} />
+						<span>Возврат на депозит</span>
+					</button>
 				</div>
 			</div>
+
+			{/* Секция: Семейный гроссбух (история операций) */}
+			{isLedgerOpen && (
+				<div className="mt-4 p-4 rounded-xl border border-teal-500/30 bg-[var(--paper-soft,#f8fafc)] space-y-3 animate-in fade-in duration-150" data-testid="family-ledger-container">
+					<div className="flex items-center justify-between flex-wrap gap-2">
+						<div className="flex items-center gap-2">
+							<BookOpen size={18} className="text-teal-600" />
+							<h4 className="font-extrabold text-xs sm:text-sm m-0 text-[var(--ink,#0f172a)]">
+								Семейный гроссбух: история списаний и депозитов
+							</h4>
+						</div>
+
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={handlePrintLedger}
+								className="min-h-[36px] px-3 rounded-lg border border-[var(--line,#cbd5e1)] text-xs font-bold flex items-center gap-1 hover:bg-[var(--paper,#ffffff)] cursor-pointer"
+								title="Распечатать официальную выписку по семейному счету (А4)"
+								data-testid="btn-print-family-ledger"
+							>
+								<Printer size={13} />
+								<span>Печать выписки</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setIsLedgerOpen(false)}
+								className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-[var(--muted,#64748b)] cursor-pointer"
+								aria-label="Скрыть гроссбух"
+							>
+								<X size={16} />
+							</button>
+						</div>
+					</div>
+
+					<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] overflow-hidden shadow-2xs">
+						{ledgerEntries.length === 0 ? (
+							<div className="p-6 text-center text-xs text-[var(--muted,#64748b)]">
+								Операций по семейному кошельку в текущей сессии пока не зафиксировано.
+							</div>
+						) : (
+							<div className="overflow-x-auto">
+								<table className="w-full text-xs text-left border-collapse">
+									<thead className="bg-slate-100 dark:bg-slate-800 text-[var(--muted,#64748b)] font-bold border-b border-[var(--line,#e2e8f0)]">
+										<tr>
+											<th className="py-2.5 px-3">Дата/время</th>
+											<th className="py-2.5 px-3">Тип</th>
+											<th className="py-2.5 px-3">Плательщик</th>
+											<th className="py-2.5 px-3">За кого</th>
+											<th className="py-2.5 px-3">Основание</th>
+											<th className="py-2.5 px-3 text-right">Сумма</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
+										{ledgerEntries.map((entry) => {
+											const isPlus =
+												entry.entryType === "deposit" ||
+												entry.entryType === "refund_deposit";
+											return (
+												<tr key={entry.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/40">
+													<td className="py-2.5 px-3 whitespace-nowrap font-mono text-[11px]">
+														{new Date(entry.createdAt).toLocaleDateString("ru-RU")}
+													</td>
+													<td className="py-2.5 px-3">
+														<span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+															isPlus
+																? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300"
+																: "bg-rose-500/15 text-rose-800 dark:text-rose-300"
+														}`}>
+															{entry.entryType === "deposit"
+																? "Пополнение"
+																: entry.entryType === "refund_deposit"
+																	? "Возврат на депозит"
+																	: "Списание"}
+														</span>
+													</td>
+													<td className="py-2.5 px-3 font-medium">
+														{entry.payerFullName || headFullName}
+													</td>
+													<td className="py-2.5 px-3 font-medium">
+														{entry.targetPatientFullName || "—"}
+													</td>
+													<td className="py-2.5 px-3 text-[11px] text-[var(--muted,#64748b)] truncate max-w-[200px]" title={entry.notes}>
+														{entry.actNumber || entry.visitId || entry.notes || "—"}
+													</td>
+													<td className={`py-2.5 px-3 text-right font-mono font-bold whitespace-nowrap ${
+														isPlus ? "text-emerald-600" : "text-rose-600"
+													}`}>
+														{isPlus ? "+" : "−"} {money(entry.amountRub)}
+													</td>
+												</tr>
+											);
+										})}
+									</tbody>
+								</table>
+							</div>
+						)}
+					</div>
+				</div>
+			)}
 
 			{/* Списание с семейного баланса */}
 			<div className="family-wallet-actions">
@@ -527,9 +742,9 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					>
 						Сумма списания (₽)
 					</label>
-					{payerName && (
+					{targetMemberName && (
 						<p className="family-wallet-payer">
-							Оплата за: <strong>{payerName}</strong>
+							Оплата за: <strong>{targetMemberName}</strong>
 						</p>
 					)}
 					<input
@@ -592,12 +807,13 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				onSelectAmount={(val) => setAmountInput(String(val))}
 			/>
 
-			{/* Список членов семейной группы и перевод */}
+			{/* Список членов семейной группы и выбор цели списания */}
 			<FamilyMembersList
 				members={family.members ?? []}
 				targetPatientId={targetPatientId}
 				patientId={patientId}
 				isPaying={isPaying}
+				headPatientId={family.headPatientId || headMember?.id}
 				onSelectTargetPatient={setTargetPatientId}
 			/>
 
@@ -620,8 +836,8 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				familyGroupName={family.name?.trim() || "Семья"}
 				availableFamilyWalletRub={balanceVal}
 				initialPayer={{
-					payerId: patientId,
-					payerFullName: payerName || "Плательщик семьи",
+					payerId: headMember?.id || patientId,
+					payerFullName: headFullName,
 				}}
 				onCheckoutComplete={async () => {
 					setIsCombinedBillingModalOpen(false);
@@ -629,6 +845,154 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					void loadFamily();
 				}}
 			/>
+
+			{/* Модальное окно возврата на семейный депозит (Refund Routing) */}
+			{isRefundModalOpen && (
+				<div
+					className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="family-refund-title"
+					onClick={(e) => {
+						if (e.target === e.currentTarget) setIsRefundModalOpen(false);
+					}}
+				>
+					<div className="w-full max-w-lg rounded-2xl shadow-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+						<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-3 bg-[var(--paper-soft,#f8fafc)]">
+							<div className="flex items-center gap-2.5">
+								<div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-600 shrink-0">
+									<RotateCcw size={18} />
+								</div>
+								<div>
+									<h3 id="family-refund-title" className="text-sm sm:text-base font-extrabold m-0 text-[var(--ink,#0f172a)]">
+										Возврат средств на семейный депозит
+									</h3>
+									<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
+										Семья: <strong>{family.name?.trim() || "Без названия"}</strong> (Глава: {headFullName})
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsRefundModalOpen(false)}
+								className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] cursor-pointer"
+								aria-label="Закрыть"
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						<div className="p-4 sm:p-5 space-y-4">
+							<div>
+								<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
+									За какого члена семьи оформляется возврат:
+								</label>
+								<select
+									value={refundTargetPatientId}
+									onChange={(e) => setRefundTargetPatientId(e.target.value)}
+									className="w-full h-11 px-3.5 rounded-xl border border-[var(--line,#cbd5e1)] text-xs font-bold bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)]"
+								>
+									{(family.members ?? []).map((m) => (
+										<option key={m.id} value={m.id}>
+											{safeFamilyMemberName(m)} {m.id === headMember?.id ? "(Глава семьи)" : ""}
+										</option>
+									))}
+								</select>
+							</div>
+
+							<div>
+								<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
+									Сумма возврата (₽):
+								</label>
+								<input
+									type="text"
+									inputMode="decimal"
+									value={refundAmountInput}
+									placeholder="0"
+									onChange={(e) => setRefundAmountInput(e.target.value)}
+									className="w-full h-11 px-3.5 rounded-xl border border-[var(--line,#cbd5e1)] font-mono font-bold text-base bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)]"
+								/>
+							</div>
+
+							<div>
+								<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
+									Причина возврата:
+								</label>
+								<input
+									type="text"
+									value={refundReason}
+									onChange={(e) => setRefundReason(e.target.value)}
+									className="w-full h-10 px-3 rounded-xl border border-[var(--line,#cbd5e1)] text-xs bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)]"
+									placeholder="Отмена процедуры, изменение плана лечения"
+								/>
+							</div>
+
+							<div>
+								<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1.5">
+									Направление возврата средств:
+								</label>
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+									<button
+										type="button"
+										onClick={() => setRefundDestination("family_deposit")}
+										className={`min-h-[44px] p-2.5 rounded-xl border text-xs font-bold text-left transition-all cursor-pointer ${
+											refundDestination === "family_deposit"
+												? "border-teal-600 bg-teal-500/10 text-teal-800 dark:text-teal-200"
+												: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"
+										}`}
+									>
+										<div className="font-extrabold flex items-center gap-1">
+											<Wallet size={13} className="text-teal-600" />
+											<span>На семейный депозит</span>
+										</div>
+										<div className="text-[11px] font-normal mt-0.5">
+											(Деньги остаются на счете семьи)
+										</div>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => setRefundDestination("cash_payout")}
+										className={`min-h-[44px] p-2.5 rounded-xl border text-xs font-bold text-left transition-all cursor-pointer ${
+											refundDestination === "cash_payout"
+												? "border-rose-600 bg-rose-500/10 text-rose-800 dark:text-rose-200"
+												: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"
+										}`}
+									>
+										<div className="font-extrabold flex items-center gap-1">
+											<RotateCcw size={13} className="text-rose-600" />
+											<span>Выплата из кассы (54-ФЗ)</span>
+										</div>
+										<div className="text-[11px] font-normal mt-0.5">
+											(Чек «Возврат прихода»)
+										</div>
+									</button>
+								</div>
+							</div>
+						</div>
+
+						<div className="p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] flex items-center justify-end gap-2 bg-[var(--paper-soft,#f8fafc)]">
+							<button
+								type="button"
+								onClick={() => setIsRefundModalOpen(false)}
+								className="min-h-[44px] px-4 rounded-xl border border-[var(--line,#cbd5e1)] text-xs font-bold cursor-pointer"
+							>
+								Отмена
+							</button>
+
+							<button
+								type="button"
+								onClick={handleExecuteRefund}
+								disabled={isRefunding}
+								className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-extrabold cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+								data-testid="btn-confirm-family-refund"
+							>
+								{isRefunding ? "Выполняется..." : "Подтвердить возврат"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

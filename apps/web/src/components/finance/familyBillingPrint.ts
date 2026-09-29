@@ -186,3 +186,134 @@ ${certs
 		w.document.close();
 	}
 }
+
+export interface PrintFamilyLedgerOptions {
+	readonly clinicName: string;
+	readonly familyGroupName: string;
+	readonly headFullName: string;
+	readonly currentBalanceRub: number;
+	readonly entries: readonly {
+		readonly id: string;
+		readonly createdAt: string;
+		readonly entryType: "deposit" | "debit" | "refund_deposit" | "refund_payout";
+		readonly amountRub: number;
+		readonly payerFullName?: string | undefined;
+		readonly targetPatientFullName?: string | undefined;
+		readonly visitId?: string | undefined;
+		readonly actNumber?: string | undefined;
+		readonly notes?: string | undefined;
+	}[];
+}
+
+export function printFamilyLedgerStatement(options: PrintFamilyLedgerOptions): void {
+	const { clinicName, familyGroupName, headFullName, currentBalanceRub, entries } = options;
+
+	const html = `
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<title>Семейный гроссбух — ${familyGroupName}</title>
+	<style>
+		@page { size: A4; margin: 15mm; }
+		body { font-family: "Times New Roman", Times, serif; font-size: 13px; line-height: 1.3; color: #000; padding: 10px; }
+		.header { text-align: center; margin-bottom: 20px; }
+		.title { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+		.meta { font-size: 12px; color: #444; margin-bottom: 15px; }
+		.summary-box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; }
+		table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+		th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; }
+		th { background: #f2f2f2; text-align: center; font-weight: bold; }
+		.amount-plus { color: #000; font-weight: bold; text-align: right; }
+		.amount-minus { color: #000; font-weight: bold; text-align: right; }
+		.signatures { margin-top: 30px; display: flex; justify-content: space-between; font-size: 12px; }
+	</style>
+</head>
+<body>
+	<div class="header">
+		<h3>${clinicName}</h3>
+		<div class="title">ВЫПИСКА ИЗ СЕМЕЙНОГО ГРОССБУХА (ДЕПОЗИТ И СПИСАНИЯ)</div>
+		<div class="meta">Дата формирования: ${new Date().toLocaleString("ru-RU")}</div>
+	</div>
+
+	<div class="summary-box">
+		<div>
+			<strong>Семейная группа:</strong> ${familyGroupName}<br>
+			<strong>Глава семьи (ответственный):</strong> ${headFullName || "Не указан"}
+		</div>
+		<div style="text-align: right;">
+			<strong>Текущий доступный баланс:</strong><br>
+			<span style="font-size: 16px; font-weight: bold;">${currentBalanceRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
+		</div>
+	</div>
+
+	<table>
+		<thead>
+			<tr>
+				<th>№</th>
+				<th>Дата и время</th>
+				<th>Тип операции</th>
+				<th>Кто внёс (плательщик)</th>
+				<th>За кого списано (пациент)</th>
+				<th>Основание (визит / акт)</th>
+				<th>Сумма (руб.)</th>
+			</tr>
+		</thead>
+		<tbody>
+			${
+				entries.length === 0
+					? `<tr><td colspan="7" style="text-align: center; color: #666; padding: 15px;">Операций по семейному счёту пока не зафиксировано.</td></tr>`
+					: entries
+							.map((entry, idx) => {
+								const typeRu =
+									entry.entryType === "deposit"
+										? "Пополнение депозита"
+										: entry.entryType === "refund_deposit"
+											? "Возврат на депозит"
+											: entry.entryType === "refund_payout"
+												? "Выплата наличными (54-ФЗ)"
+												: "Списание за лечение";
+								const isPlus =
+									entry.entryType === "deposit" ||
+									entry.entryType === "refund_deposit";
+								const sign = isPlus ? "+" : "−";
+								return `
+					<tr>
+						<td style="text-align: center;">${idx + 1}</td>
+						<td style="white-space: nowrap;">${new Date(entry.createdAt).toLocaleDateString("ru-RU")}</td>
+						<td>${typeRu}</td>
+						<td>${entry.payerFullName || "—"}</td>
+						<td>${entry.targetPatientFullName || "—"}</td>
+						<td>${entry.actNumber || entry.visitId || entry.notes || "—"}</td>
+						<td class="${isPlus ? "amount-plus" : "amount-minus"}">
+							${sign} ${entry.amountRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+						</td>
+					</tr>
+					`;
+							})
+							.join("")
+			}
+		</tbody>
+	</table>
+
+	<div class="signatures">
+		<div>
+			Администратор / Кассир: __________________ / _______________ /
+		</div>
+		<div>
+			Плательщик (глава семьи): __________________ / _______________ /
+		</div>
+	</div>
+
+	<script>window.print();</script>
+</body>
+</html>
+	`;
+
+	const w = window.open("", "_blank");
+	if (w) {
+		w.document.write(html);
+		w.document.close();
+	}
+}
+

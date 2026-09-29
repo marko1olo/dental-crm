@@ -57,12 +57,17 @@ export const FamilyBillingPaymentTab: React.FC<FamilyBillingPaymentTabProps> = (
 						/>
 						<span className="flex items-center gap-1.5">
 							<Wallet size={16} className="text-emerald-500" />
-							Списать с семейного баланса (Тег 1215: Зачет аванса)
+							Зачесть семейный аванс (безналичный расчет)
 						</span>
 					</label>
-					<span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
-						Доступно: {availableFamilyWalletRub.toLocaleString("ru-RU")} ₽
-					</span>
+					<div className="flex items-center gap-2 flex-wrap">
+						<span className="font-mono text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+							Доступно для списания: {availableFamilyWalletRub.toLocaleString("ru-RU")} ₽
+						</span>
+						<span className="text-[11px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-[var(--line,#e2e8f0)]">
+							Овердрафт: Запрещен (баланс ≥ 0 ₽)
+						</span>
+					</div>
 				</div>
 
 				{useFamilyWallet && (

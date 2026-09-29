@@ -1,0 +1,37 @@
+{
+  "subagent": "Subagent 2: Family Wallet, Cross-Patient Ledger & Deposit Inquisitor",
+  "status": "completed",
+  "current_phase": "verification_and_reporting",
+  "completed_steps": [
+    "Constitutional documents read (.agents/THE_HAMMER_MASTER_PROMPT.md, .agents/AGENTS.md)",
+    "Initialized memory file",
+    "Ran baseline unit tests (100% passing)",
+    "Full-file audit of all scoped files in apps/web/src/components/finance/",
+    "Implemented Family Ledger (гроссбух) data structures, formatters, and UI in familyWalletHelpers.ts and FamilyWalletPanel.tsx",
+    "Implemented Refund Routing (automatic refund to family deposit account vs cash payout with 54-FZ return of income)",
+    "Implemented Merged/Archived Family Members protection (balance consolidation, link validation)",
+    "Implemented Overdraft Protection (strict zero overdraft vs soft warning with head debt tracking)",
+    "Implemented clear clinical Russian badges («Семейный баланс: 42 150 ₽ (Глава семьи: Иванов С.П.)», «Доступно для списания: 42 150 ₽»)",
+    "Fixed PaymentFamilyDepositView missing 1-click combo buttons when personal deposit is 0 but family balance > 0",
+    "Added printable Family Ledger Statement (выписка из семейного гроссбуха) in familyBillingPrint.ts",
+    "Added 7 comprehensive test cases to familyCombinedBilling.test.ts and 3 test cases to cashShiftAndFamilyWallet.test.ts (17 tests total, 100% passing)",
+    "Verified encoding with npm run check:encoding (6274 files clean, Exit Code 0)",
+    "Per-file git add of strictly owned files"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "PaymentFamilyDepositView": "RESOLVED: Added complete 1-click combos for Family Balance (split with Card, Cash, SBP).",
+    "FamilyWalletPanel": "RESOLVED: Added Family Ledger section/table with print statement, refund to deposit modal, and head of family badges.",
+    "RefundRouting": "RESOLVED: Implemented calculateFamilyRefundRouting and modal action ensuring money returns strictly to deposit.",
+    "MergedArchived": "RESOLVED: Added validateFamilyMemberStatus and visual badges preventing balance disappearance upon merge/archive.",
+    "OverdraftProtection": "RESOLVED: Added checkOverdraftStatus and UI indicators preventing negative balances."
+  },
+  "test_results": {
+    "familyCombinedBilling.test.ts": "10/10 PASS (Exit Code 0)",
+    "cashShiftAndFamilyWallet.test.ts": "7/7 PASS (Exit Code 0)",
+    "familyWalletMutationKey.test.ts": "9/9 PASS (Exit Code 0)",
+    "squadEtaBillingAndFamilyWallet.test.tsx": "5/5 PASS (Exit Code 0)",
+    "warrantyAndOverdraftBillingAutonomy.test.tsx": "7/7 PASS (Exit Code 0)",
+    "check:encoding": "6274 files PASS (Exit Code 0)"
+  }
+}

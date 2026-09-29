@@ -26,6 +26,11 @@ import {
 } from "@dental/shared";
 import { FamilyBillingPaymentTab } from "./FamilyBillingPaymentTab";
 import { printSbpQrReceipt, printTaxCertificates } from "./familyBillingPrint";
+import {
+	formatFamilyBalanceLabel,
+	formatAvailableForDebitLabel,
+	safeFamilyMemberName,
+} from "./familyWalletHelpers";
 
 export { FamilyBillingPaymentTab } from "./FamilyBillingPaymentTab";
 export { printSbpQrReceipt, printTaxCertificates } from "./familyBillingPrint";
@@ -66,7 +71,12 @@ export function FamilyCombinedBillingModal({
 		() => new Set(initialItems.map((i) => i.id)),
 	);
 	const [useFamilyWallet, setUseFamilyWallet] = useState<boolean>(true);
-	const [customWalletOffsetRub] = useState<number>(availableFamilyWalletRub);
+	const [customWalletOffsetRub, setCustomWalletOffsetRub] = useState<number>(availableFamilyWalletRub);
+
+	React.useEffect(() => {
+		setCustomWalletOffsetRub(availableFamilyWalletRub);
+	}, [availableFamilyWalletRub]);
+
 	const [additionalPaymentMethod, setAdditionalPaymentMethod] = useState<"sbp" | "card" | "cash">("sbp");
 	const [cashReceivedRub, setCashReceivedRub] = useState<number>(0);
 	const [isCopiedSbpLink, setIsCopiedSbpLink] = useState(false);
@@ -183,18 +193,21 @@ export function FamilyCombinedBillingModal({
 							<Users size={22} />
 						</div>
 						<div>
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-2 flex-wrap">
 								<h2 id="family-billing-title" className="text-base sm:text-lg font-black m-0 text-[var(--ink,#0f172a)]">
 									Семейный расчет и объединенный чек 54-ФЗ
 								</h2>
 								<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
 									{familyGroupName}
 								</span>
+								<span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30">
+									{formatFamilyBalanceLabel(availableFamilyWalletRub, initialPayer.payerFullName)}
+								</span>
 							</div>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5 flex items-center gap-2 flex-wrap">
-								<span>Плательщик: <strong>{initialPayer.payerFullName}</strong></span>
+								<span>Плательщик: <strong>{initialPayer.payerFullName || "Ответственный плательщик"}</strong></span>
 								{initialPayer.payerInn && <span>· ИНН: <strong className="font-mono">{initialPayer.payerInn}</strong></span>}
-								<span>· Доступный баланс семьи: <strong className="text-emerald-600">{availableFamilyWalletRub.toLocaleString("ru-RU")} ₽</strong></span>
+								<span>· <strong className="text-emerald-600">{formatAvailableForDebitLabel(availableFamilyWalletRub)}</strong></span>
 								<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
 									<ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
 									<span>54-ФЗ: ИНН с физлиц НЕ требуется</span>

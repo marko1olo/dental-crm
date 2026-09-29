@@ -5,9 +5,10 @@
  */
 
 import React from "react";
-import { Banknote, CheckCircle, CreditCard, Sparkles, Users, Wallet, Zap } from "lucide-react";
+import { Banknote, CheckCircle, CreditCard, QrCode, Sparkles, Users, Wallet, Zap } from "lucide-react";
 import { kopecksToRub, rubToKopecks } from "@dental/shared";
 import type { PaymentMethodTab } from "./paymentModalTypes.js";
+import { formatAvailableForDebitLabel, formatMoneyClean } from "../../familyWalletHelpers";
 
 export interface PaymentFamilyDepositViewProps {
 	readonly patientDepositRub?: number | undefined;
@@ -36,6 +37,11 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 	setSplitSbpRub,
 	setActiveMethod,
 }) => {
+	const displayAmount =
+		amountRub && amountRub.trim() && amountRub !== "NaN"
+			? `${amountRub} ₽`
+			: formatMoneyClean(totalDueRub);
+
 	return (
 		<div className="space-y-4" data-testid="payment-family-deposit-view">
 			<div className="space-y-3">
@@ -47,7 +53,7 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 						</h3>
 					</div>
 					<span className="text-xs font-mono font-bold text-[var(--muted,#64748b)]">
-						К списанию: {amountRub} ₽
+						К списанию: {displayAmount}
 					</span>
 				</div>
 
@@ -67,7 +73,7 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 							{patientDepositRub >= totalDueRub
 								? "Средств на лицевом счете достаточно для полной оплаты."
 								: patientDepositRub > 0
-									? `Доступно ${patientDepositRub} ₽. Недостает ${(totalDueRub - patientDepositRub).toFixed(2)} ₽.`
+									? `Доступно ${formatMoneyClean(patientDepositRub)}. Недостает ${formatMoneyClean(Math.max(0, totalDueRub - patientDepositRub))}.`
 									: "На лицевом счете пациента нет авансовых средств."}
 						</p>
 						<button
@@ -78,9 +84,9 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 								isSubmittingDeposit
 									? "Выполняется списание с депозита..."
 									: patientDepositRub >= totalDueRub
-										? `Списать ${amountRub} ₽ с личного депозита пациента`
+										? `Списать ${displayAmount} с личного депозита пациента`
 										: patientDepositRub > 0
-											? `Зачесть ${patientDepositRub} ₽ с аванса + остаток ${(totalDueRub - patientDepositRub).toFixed(2)} ₽ оплатить картой (в 1 клик)`
+											? `Зачесть ${formatMoneyClean(patientDepositRub)} с аванса + остаток ${formatMoneyClean(Math.max(0, totalDueRub - patientDepositRub))} оплатить картой (в 1 клик)`
 											: "Нажмите для проверки баланса или пополнения"
 							}
 							className="w-full min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
@@ -89,12 +95,12 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 							{patientDepositRub >= totalDueRub ? (
 								<>
 									<CheckCircle size={14} />
-									<span>Списать {amountRub} ₽ с депозита</span>
+									<span>Списать {displayAmount} с депозита</span>
 								</>
 							) : patientDepositRub > 0 ? (
 								<>
 									<Zap size={14} />
-									<span>Зачесть аванс {patientDepositRub} ₽ + остаток картой</span>
+									<span>Зачесть аванс {formatMoneyClean(patientDepositRub)} + остаток картой</span>
 								</>
 							) : (
 								<span>На депозите нет средств (0 ₽)</span>
@@ -117,7 +123,7 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 							{patientFamilyBalanceRub >= totalDueRub
 								? "Семейный баланс покрывает 100% стоимости счета."
 								: patientFamilyBalanceRub > 0
-									? `Доступно ${patientFamilyBalanceRub} ₽. Недостает ${(totalDueRub - patientFamilyBalanceRub).toFixed(2)} ₽.`
+									? `${formatAvailableForDebitLabel(patientFamilyBalanceRub)}. Недостает ${formatMoneyClean(Math.max(0, totalDueRub - patientFamilyBalanceRub))}.`
 									: "Семейный баланс пуст или не подключен."}
 						</p>
 						<button
@@ -128,9 +134,9 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 								isSubmittingDeposit
 									? "Выполняется списание с семейного баланса..."
 									: patientFamilyBalanceRub >= totalDueRub
-										? `Списать ${amountRub} ₽ с семейного баланса`
+										? `Списать ${displayAmount} с семейного баланса`
 										: patientFamilyBalanceRub > 0
-											? `Зачесть ${patientFamilyBalanceRub} ₽ из семьи + остаток ${(totalDueRub - patientFamilyBalanceRub).toFixed(2)} ₽ оплатить картой (в 1 клик)`
+											? `Зачесть ${formatMoneyClean(patientFamilyBalanceRub)} из семьи + остаток ${formatMoneyClean(Math.max(0, totalDueRub - patientFamilyBalanceRub))} оплатить картой (в 1 клик)`
 											: "Нажмите для проверки семейного счета или пополнения"
 							}
 							className="w-full min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
@@ -139,12 +145,12 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 							{patientFamilyBalanceRub >= totalDueRub ? (
 								<>
 									<CheckCircle size={14} />
-									<span>Списать {amountRub} ₽ с семейного счета</span>
+									<span>Списать {displayAmount} с семейного счета</span>
 								</>
 							) : patientFamilyBalanceRub > 0 ? (
 								<>
 									<Zap size={14} />
-									<span>Зачесть из семьи {patientFamilyBalanceRub} ₽ + остаток картой</span>
+									<span>Зачесть из семьи {formatMoneyClean(patientFamilyBalanceRub)} + остаток картой</span>
 								</>
 							) : (
 								<span>Семейный баланс пуст (0 ₽)</span>
@@ -153,7 +159,7 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 					</div>
 				</div>
 
-				{/* Insufficient Balance 1-Click Combo Resolver */}
+				{/* 1-Click Combo Resolvers for Partial Balances */}
 				{patientDepositRub < totalDueRub &&
 					patientFamilyBalanceRub < totalDueRub &&
 					(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
@@ -161,10 +167,12 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 							<div className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
 								<Sparkles size={14} className="shrink-0" />
 								<span>
-									Недостаточно средств для 100% оплаты со счета. Примените 1-клик комбо:
+									Недостаточно средств для 100% оплаты со счета. Примените 1-клик сплит-комбо:
 								</span>
 							</div>
+
 							<div className="flex items-center gap-2 flex-wrap">
+								{/* Личный аванс + остаток Картой */}
 								{patientDepositRub > 0 && (
 									<button
 										type="button"
@@ -178,12 +186,15 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 											setSplitSbpRub(0);
 											setActiveMethod("split");
 										}}
-										className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+										className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+										data-testid="btn-combo-deposit-card"
 									>
 										<CreditCard size={13} />
-										<span>Зачесть аванс {patientDepositRub} ₽ + остаток Картой</span>
+										<span>Зачесть аванс {formatMoneyClean(patientDepositRub)} + остаток Картой</span>
 									</button>
 								)}
+
+								{/* Личный аванс + остаток Наличными */}
 								{patientDepositRub > 0 && (
 									<button
 										type="button"
@@ -198,9 +209,76 @@ export const PaymentFamilyDepositView: React.FC<PaymentFamilyDepositViewProps> =
 											setActiveMethod("split");
 										}}
 										className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+										data-testid="btn-combo-deposit-cash"
 									>
 										<Banknote size={13} />
-										<span>Зачесть аванс {patientDepositRub} ₽ + остаток Наличными</span>
+										<span>Зачесть аванс {formatMoneyClean(patientDepositRub)} + остаток Наличными</span>
+									</button>
+								)}
+
+								{/* Семейный баланс + остаток Картой */}
+								{patientFamilyBalanceRub > 0 && (
+									<button
+										type="button"
+										onClick={() => {
+											const totalKop = rubToKopecks(totalDueRub);
+											const famKop = Math.min(totalKop, rubToKopecks(patientFamilyBalanceRub));
+											const remKop = Math.max(0, totalKop - famKop);
+											setSplitDepositRub(kopecksToRub(famKop));
+											setSplitCardRub(kopecksToRub(remKop));
+											setSplitCashRub(0);
+											setSplitSbpRub(0);
+											setActiveMethod("split");
+										}}
+										className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+										data-testid="btn-combo-family-card"
+									>
+										<CreditCard size={13} />
+										<span>Зачесть из семьи {formatMoneyClean(patientFamilyBalanceRub)} + остаток Картой</span>
+									</button>
+								)}
+
+								{/* Семейный баланс + остаток Наличными */}
+								{patientFamilyBalanceRub > 0 && (
+									<button
+										type="button"
+										onClick={() => {
+											const totalKop = rubToKopecks(totalDueRub);
+											const famKop = Math.min(totalKop, rubToKopecks(patientFamilyBalanceRub));
+											const remKop = Math.max(0, totalKop - famKop);
+											setSplitDepositRub(kopecksToRub(famKop));
+											setSplitCashRub(kopecksToRub(remKop));
+											setSplitCardRub(0);
+											setSplitSbpRub(0);
+											setActiveMethod("split");
+										}}
+										className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+										data-testid="btn-combo-family-cash"
+									>
+										<Banknote size={13} />
+										<span>Зачесть из семьи {formatMoneyClean(patientFamilyBalanceRub)} + остаток Наличными</span>
+									</button>
+								)}
+
+								{/* Семейный баланс + остаток СБП QR */}
+								{patientFamilyBalanceRub > 0 && (
+									<button
+										type="button"
+										onClick={() => {
+											const totalKop = rubToKopecks(totalDueRub);
+											const famKop = Math.min(totalKop, rubToKopecks(patientFamilyBalanceRub));
+											const remKop = Math.max(0, totalKop - famKop);
+											setSplitDepositRub(kopecksToRub(famKop));
+											setSplitSbpRub(kopecksToRub(remKop));
+											setSplitCardRub(0);
+											setSplitCashRub(0);
+											setActiveMethod("split");
+										}}
+										className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-700 hover:bg-teal-800 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+										data-testid="btn-combo-family-sbp"
+									>
+										<QrCode size={13} />
+										<span>Зачесть из семьи {formatMoneyClean(patientFamilyBalanceRub)} + остаток СБП QR</span>
 									</button>
 								)}
 							</div>
