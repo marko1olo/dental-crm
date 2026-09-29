@@ -747,3 +747,386 @@ export function buildEscPosAppointmentTicketBuffer(
 
 	return builder.build();
 }
+
+// ============================================================================
+// 6. SBP (СБП) DYNAMIC QR PAYMENT BUFFER & KOPECK-EXACT RECEIPTS
+// ============================================================================
+
+export interface EscPosSbpPaymentPayload {
+	readonly clinicName?: string | undefined;
+	readonly clinicPhone?: string | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly patientFullName?: string | undefined;
+	readonly appointmentSummary?: string | undefined;
+	readonly billNumber?: string | undefined;
+	/** Exact integer kopecks (e.g. 550000 = 5500.00 руб) */
+	readonly totalKopecks: number;
+	/** Dynamic SBP QR URL (e.g. https://qr.nspk.ru/AD100004...) */
+	readonly sbpQrUrl: string;
+	readonly paperWidthMm?: 58 | 80 | undefined;
+	readonly autoCut?: boolean | undefined;
+	readonly expiresAtIso?: string | undefined;
+}
+
+/**
+ * Builds an ESC/POS slip with dynamic SBP QR code for fast chairside payment.
+ */
+export function buildEscPosSbpPaymentBuffer(payload: EscPosSbpPaymentPayload): Uint8Array {
+	const paperWidth = payload.paperWidthMm ?? 58;
+	const builder = new EscPosBufferBuilder(paperWidth);
+
+	builder.init();
+
+	// 1. Header
+	builder.align("center");
+	builder.bold(true);
+	builder.line(payload.clinicName || "DENTE СТОМАТОЛОГИЯ");
+	builder.bold(false);
+	builder.line("ОПЛАТА ПО QR-КОДУ (СБП)");
+	builder.separator("=");
+
+	// 2. Bill & Patient Details
+	builder.align("left");
+	if (payload.billNumber) {
+		builder.twoColumns("Счет №:", payload.billNumber);
+	}
+	if (payload.doctorFullName) {
+		builder.line(`Врач: ${payload.doctorFullName}`);
+	}
+	if (payload.patientFullName) {
+		builder.line(`Пациент: ${payload.patientFullName}`);
+	}
+	if (payload.appointmentSummary) {
+		builder.line(`Услуги: ${payload.appointmentSummary}`);
+	}
+	builder.separator("-");
+
+	// 3. Exact Total in Rubles & Kopecks
+	const rubles = (payload.totalKopecks / 100).toFixed(2);
+	builder.align("right");
+	builder.doubleBoth(true);
+	builder.line(`К ОПЛАТЕ: ${rubles} ₽`);
+	builder.doubleBoth(false);
+	builder.separator("-");
+
+	// 4. SBP QR Code
+	builder.align("center");
+	builder.feed(1);
+	builder.qrCode(payload.sbpQrUrl, {
+		moduleSize: paperWidth === 80 ? 6 : 5,
+		centerAlign: true,
+	});
+	builder.feed(1);
+
+	builder.bold(true);
+	builder.line("ОТСКАНИРУЙТЕ В ПРИЛОЖЕНИИ БАНКА");
+	builder.bold(false);
+	builder.line("Система Быстрых Платежей (СБП)");
+	builder.line("Комиссия для пациента: 0%");
+
+	if (payload.expiresAtIso) {
+		const expDate = new Date(payload.expiresAtIso);
+		if (!Number.isNaN(expDate.getTime())) {
+			builder.line(`Действителен до: ${expDate.toLocaleTimeString("ru-RU")}`);
+		}
+	}
+
+	if (payload.clinicPhone) {
+		builder.separator("-");
+		builder.line(`Справки по тел.: ${payload.clinicPhone}`);
+	}
+
+	// 5. Paper Feed & Cut
+	builder.feed(4);
+	if (payload.autoCut !== false) {
+		builder.cut(true);
+	}
+
+	return builder.build();
+}
+
+export interface EscPosKopeckReceiptItem {
+	readonly name: string;
+	readonly priceKopecks: number;
+	readonly quantity: number;
+	readonly amountKopecks: number;
+	readonly medicalServiceCode804n?: string | undefined;
+	readonly markingCode?: string | undefined;
+}
+
+export interface EscPosKopeckReceiptPayload {
+	readonly clinicName?: string | undefined;
+	readonly clinicAddress?: string | undefined;
+	readonly inn?: string | undefined;
+	readonly kpp?: string | undefined;
+	readonly licenseNumber?: string | undefined;
+	readonly cashierFullName: string;
+	readonly cashierInn?: string | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly customerContact?: string | undefined;
+	readonly operationType?: "income" | "income_return" | undefined;
+	readonly items: readonly EscPosKopeckReceiptItem[];
+	readonly totalKopecks: number;
+	readonly cashKopecks?: number | undefined;
+	readonly electronicKopecks?: number | undefined;
+	readonly sbpKopecks?: number | undefined;
+	readonly prepaidKopecks?: number | undefined;
+	readonly fnSerial?: string | undefined;
+	readonly fiscalDocNum?: string | undefined;
+	readonly fiscalSign?: string | undefined;
+	readonly fnsQrString?: string | undefined;
+	readonly paperWidthMm?: 58 | 80 | undefined;
+	readonly autoCut?: boolean | undefined;
+	readonly timestamp?: Date | string | undefined;
+}
+
+/**
+ * Builds a kopeck-exact 54-FZ thermal receipt buffer to prevent floating point inaccuracies.
+ */
+export function buildEscPosKopeckReceiptBuffer(payload: EscPosKopeckReceiptPayload): Uint8Array {
+	const convertedItems: EscPosFiscalReceiptItem[] = payload.items.map((item) => ({
+		name: item.name,
+		priceRub: item.priceKopecks / 100,
+		quantity: item.quantity,
+		amountRub: item.amountKopecks / 100,
+		medicalServiceCode804n: item.medicalServiceCode804n,
+		markingCode: item.markingCode,
+	}));
+
+	return buildEscPosFiscalReceiptBuffer({
+		clinicName: payload.clinicName,
+		clinicAddress: payload.clinicAddress,
+		inn: payload.inn,
+		kpp: payload.kpp,
+		licenseNumber: payload.licenseNumber,
+		cashierFullName: payload.cashierFullName,
+		cashierInn: payload.cashierInn,
+		customerContact: payload.customerContact,
+		operationType: payload.operationType,
+		items: convertedItems,
+		totalRub: payload.totalKopecks / 100,
+		cashRub: payload.cashKopecks !== undefined ? payload.cashKopecks / 100 : undefined,
+		electronicRub: payload.electronicKopecks !== undefined ? payload.electronicKopecks / 100 : undefined,
+		sbpRub: payload.sbpKopecks !== undefined ? payload.sbpKopecks / 100 : undefined,
+		prepaidRub: payload.prepaidKopecks !== undefined ? payload.prepaidKopecks / 100 : undefined,
+		fnSerial: payload.fnSerial,
+		fiscalDocNum: payload.fiscalDocNum,
+		fiscalSign: payload.fiscalSign,
+		fnsQrString: payload.fnsQrString,
+		paperWidthMm: payload.paperWidthMm,
+		autoCut: payload.autoCut,
+		timestamp: payload.timestamp,
+	});
+}
+
+// ============================================================================
+// 7. REAL-TIME ESC/POS STATUS COMMANDS & PARSER
+// ============================================================================
+
+export const ESC_POS_STATUS_COMMANDS = {
+	/** DLE EOT 1: Transmit printer status */
+	QUERY_PRINTER_STATUS: new Uint8Array([0x10, 0x04, 0x01]),
+	/** DLE EOT 2: Transmit offline status */
+	QUERY_OFFLINE_STATUS: new Uint8Array([0x10, 0x04, 0x02]),
+	/** DLE EOT 3: Transmit error status */
+	QUERY_ERROR_STATUS: new Uint8Array([0x10, 0x04, 0x03]),
+	/** DLE EOT 4: Transmit roll paper sensor status */
+	QUERY_PAPER_STATUS: new Uint8Array([0x10, 0x04, 0x04]),
+} as const;
+
+/**
+ * Parses real-time ESC/POS DLE EOT response byte into normalized PrinterStatusReport.
+ */
+export function parseEscPosStatusByte(
+	statusType: 1 | 2 | 3 | 4,
+	byte: number,
+): {
+	online: boolean;
+	paperPresent: boolean;
+	coverClosed: boolean;
+	hasError: boolean;
+	status: "online" | "offline" | "paper_out" | "cover_open" | "error";
+	errorMessage?: string | undefined;
+} {
+	if (statusType === 1) {
+		// Printer status: Bit 3: 0 = Online, 1 = Offline
+		const isOffline = (byte & 0x08) !== 0;
+		return {
+			online: !isOffline,
+			paperPresent: true,
+			coverClosed: true,
+			hasError: isOffline,
+			status: isOffline ? "offline" : "online",
+			errorMessage: isOffline ? "Принтер переведен в автономный режим (Offline)" : undefined,
+		};
+	}
+
+	if (statusType === 2) {
+		// Offline status: Bit 2 = Cover open (0x04), Bit 5 = Out of paper (0x20), Bit 6 = Error (0x40)
+		const coverOpen = (byte & 0x04) !== 0;
+		const paperOut = (byte & 0x20) !== 0;
+		const errorOccurred = (byte & 0x40) !== 0;
+
+		let status: "online" | "offline" | "paper_out" | "cover_open" | "error" = "online";
+		let msg: string | undefined;
+
+		if (coverOpen) {
+			status = "cover_open";
+			msg = "Крышка принтера открыта";
+		} else if (paperOut) {
+			status = "paper_out";
+			msg = "Закончилась термолента";
+		} else if (errorOccurred) {
+			status = "error";
+			msg = "Аппаратная ошибка механизма принтера";
+		}
+
+		return {
+			online: !coverOpen && !paperOut && !errorOccurred,
+			paperPresent: !paperOut,
+			coverClosed: !coverOpen,
+			hasError: errorOccurred,
+			status,
+			errorMessage: msg,
+		};
+	}
+
+	if (statusType === 3) {
+		// Error status: Bit 2 = Mechanical error, Bit 3 = Cutter error, Bit 5 = Unrecoverable error
+		const cutterError = (byte & 0x08) !== 0;
+		const mechError = (byte & 0x04) !== 0;
+		const unrecoverable = (byte & 0x20) !== 0;
+		const hasErr = cutterError || mechError || unrecoverable;
+
+		return {
+			online: !hasErr,
+			paperPresent: true,
+			coverClosed: true,
+			hasError: hasErr,
+			status: hasErr ? "error" : "online",
+			errorMessage: cutterError
+				? "Замятие или ошибка ножа автоотрезчика"
+				: mechError
+					? "Механическая ошибка термоголовки"
+					: unrecoverable
+						? "Критическая неисправимая ошибка принтера"
+						: undefined,
+		};
+	}
+
+	// statusType === 4: Paper sensor status
+	// Bit 2, 3 = Paper near end (0x0C)
+	// Bit 5, 6 = Paper empty (0x60)
+	const paperEmpty = (byte & 0x60) !== 0;
+	const paperNearEnd = (byte & 0x0c) !== 0;
+
+	return {
+		online: !paperEmpty,
+		paperPresent: !paperEmpty,
+		coverClosed: true,
+		hasError: paperEmpty,
+		status: paperEmpty ? "paper_out" : "online",
+		errorMessage: paperEmpty
+			? "Бумага отсутствует (датчик рулона)"
+			: paperNearEnd
+				? "Термолента заканчивается (рулон почти пуст)"
+				: undefined,
+	};
+}
+
+// ============================================================================
+// 8. ESC/POS HARDWARE TEST PATTERN GENERATOR
+// ============================================================================
+
+export interface EscPosTestPatternOptions {
+	readonly paperWidthMm?: 58 | 80 | undefined;
+	readonly clinicName?: string | undefined;
+	readonly deviceName?: string | undefined;
+	readonly interfaceName?: string | undefined;
+}
+
+/**
+ * Builds a comprehensive hardware test pattern receipt for ESC/POS thermal printers.
+ */
+export function buildEscPosHardwareTestPatternBuffer(
+	options: EscPosTestPatternOptions = {},
+): Uint8Array {
+	const paperWidth = options.paperWidthMm ?? 58;
+	const builder = new EscPosBufferBuilder(paperWidth);
+
+	builder.init();
+
+	// 1. Header
+	builder.align("center");
+	builder.doubleBoth(true);
+	builder.line("DENTE CRM");
+	builder.doubleBoth(false);
+	builder.bold(true);
+	builder.line("ТЕСТ ТЕРМОПРИНТЕРА ESC/POS");
+	builder.bold(false);
+	builder.separator("=");
+
+	// 2. Hardware Info
+	builder.align("left");
+	builder.twoColumns("Устройство:", options.deviceName || "Thermal ESC/POS");
+	builder.twoColumns("Интерфейс:", options.interfaceName || "USB / TCP 9100");
+	builder.twoColumns("Ширина ленты:", `${paperWidth} мм`);
+	builder.twoColumns("Кодовая страница:", "CP866 (Russian)");
+	const now = new Date();
+	builder.twoColumns("Время теста:", `${now.toLocaleDateString("ru-RU")} ${now.toLocaleTimeString("ru-RU")}`);
+	builder.separator("-");
+
+	// 3. Russian Cyrillic CP866 Alphabet Verification
+	builder.line("ТЕСТ РУССКОГО ШРИФТА CP866:");
+	builder.line("АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ");
+	builder.line("абвгдеёжзийклмнопрстуфхцчшщъыьэюя");
+	builder.line("Символы: № !\"#$%&'()*+,-./0123456789 ₽");
+	builder.separator("-");
+
+	// 4. Styles Verification
+	builder.line("СТИЛИ ПЕЧАТИ:");
+	builder.bold(true);
+	builder.line("• Жирный текст (Bold ON)");
+	builder.bold(false);
+	builder.underline(1);
+	builder.line("• Подчеркнутый текст (Underline ON)");
+	builder.underline(0);
+	builder.invert(true);
+	builder.line("• Инверсный белый на черном (Invert)");
+	builder.invert(false);
+	builder.doubleHeight(true);
+	builder.line("• Двойная высота (2x Height)");
+	builder.doubleHeight(false);
+	builder.doubleWidth(true);
+	builder.line("• Двойная ширина (2x Width)");
+	builder.doubleWidth(false);
+	builder.separator("-");
+
+	// 5. 2D QR Code & 1D Barcode
+	builder.align("center");
+	builder.line("2D QR-КОД (СБП / 54-ФЗ):");
+	builder.feed(1);
+	builder.qrCode("https://dente.clinic/hardware/test", {
+		moduleSize: paperWidth === 80 ? 5 : 4,
+		centerAlign: true,
+	});
+	builder.feed(1);
+
+	builder.line("1D ШТРИХКОД (CODE 128):");
+	builder.barcode128("DENTE-TEST-01", { centerAlign: true, heightDots: 48 });
+	builder.feed(1);
+
+	// 6. Test Result
+	builder.align("center");
+	builder.bold(true);
+	builder.line("ТЕСТ УСПЕШНО ЗАВЕРШЕН [OK]");
+	builder.bold(false);
+	builder.line("Оборудование готово к работе");
+
+	// 7. Cut
+	builder.feed(4);
+	builder.cut(true);
+
+	return builder.build();
+}
+

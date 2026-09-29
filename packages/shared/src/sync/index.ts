@@ -5,4 +5,6 @@ export * from "./mesh.js";
 export * from "./lanMesh.js";
 export * from "./backup.js";
 export * from "./crdtSyncEngine.js";
+export * from "./vectorClockEngine.js";
+export * from "./multiSubnetScanner.js";
 

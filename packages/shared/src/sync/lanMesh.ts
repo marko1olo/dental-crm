@@ -23,6 +23,11 @@
  */
 
 import { z } from "zod";
+import {
+	hmacSha256Hex,
+	safeRandomBytesHex,
+	timingSafeStringEqual,
+} from "./hashing.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Zod Schemas & Domain Types
@@ -120,7 +125,17 @@ export const meshSyncStatusBadgeSchema = z.object({
 	masterNodeId: z.string().nullable(),
 	activePeersCount: z.number().int().nonnegative(),
 	queuedMutationsCount: z.number().int().nonnegative(),
-	syncMode: z.enum(["streaming", "offline_queued", "sync_deferred", "read_only"]),
+	syncMode: z.enum([
+		"streaming",
+		"offline_queued",
+		"sync_deferred",
+		"read_only",
+		"temporary_master_active",
+	]),
+	isTemporaryMaster: z.boolean().optional(),
+	temporaryMasterNodeId: z.string().nullable().optional(),
+	leaseTerm: z.number().int().nonnegative().optional(),
+	consecutiveMissedHeartbeats: z.number().int().nonnegative().optional(),
 	warningBadge: z
 		.object({
 			code: z.string(),
@@ -131,6 +146,123 @@ export const meshSyncStatusBadgeSchema = z.object({
 		.optional(),
 });
 export type MeshSyncStatusBadge = z.infer<typeof meshSyncStatusBadgeSchema>;
+
+export const DEFAULT_LEASE_HEARTBEAT_INTERVAL_MS = 5000;
+export const MISSED_HEARTBEATS_FAILOVER_THRESHOLD = 2;
+export const DEFAULT_LEASE_FAILOVER_TIMEOUT_MS = 10000; // 2 * 5000ms threshold
+
+export const masterLeaseHeartbeatSchema = z.object({
+	leaseId: z.string().min(1).max(128),
+	masterNodeId: z.string().min(1).max(128),
+	clinicId: z.string().min(1).max(128),
+	term: z.number().int().nonnegative(),
+	issuedAt: z.number().nonnegative(),
+	expiresAt: z.number().nonnegative(),
+	leaseDurationMs: z.number().int().positive().default(5000),
+	schemaVersion: z.union([z.number().int().nonnegative(), z.string()]),
+	appVersion: z.string(),
+	signature: z.string().min(16),
+});
+export type MasterLeaseHeartbeat = z.infer<typeof masterLeaseHeartbeatSchema>;
+
+export function getLeaseSigningPayload(params: {
+	leaseId: string;
+	clinicId: string;
+	masterNodeId: string;
+	term: number;
+	issuedAt: number;
+	expiresAt: number;
+	schemaVersion: number | string;
+	appVersion: string;
+}): string {
+	const normalizedSchema = normalizeSchemaVersion(params.schemaVersion);
+	return `${params.leaseId}:${params.clinicId}:${params.masterNodeId}:${params.term}:${params.issuedAt}:${params.expiresAt}:${normalizedSchema}:${params.appVersion}`;
+}
+
+export function createMasterLeaseHeartbeat(params: {
+	masterNodeId: string;
+	clinicId: string;
+	term: number;
+	schemaVersion: number | string;
+	appVersion: string;
+	leaseDurationMs?: number | undefined;
+	secret?: string | undefined;
+	issuedAt?: number | undefined;
+	leaseId?: string | undefined;
+}): MasterLeaseHeartbeat {
+	const leaseId = params.leaseId || `lease-${Date.now()}-${safeRandomBytesHex(4)}`;
+	const issuedAt = params.issuedAt ?? Date.now();
+	const leaseDurationMs = params.leaseDurationMs ?? DEFAULT_LEASE_HEARTBEAT_INTERVAL_MS;
+	const expiresAt = issuedAt + leaseDurationMs;
+	const secret = params.secret || `dente-mesh-secret-${params.clinicId}`;
+
+	const signingPayload = getLeaseSigningPayload({
+		leaseId,
+		clinicId: params.clinicId,
+		masterNodeId: params.masterNodeId,
+		term: params.term,
+		issuedAt,
+		expiresAt,
+		schemaVersion: params.schemaVersion,
+		appVersion: params.appVersion,
+	});
+
+	const signature = hmacSha256Hex(secret, signingPayload);
+
+	return {
+		leaseId,
+		masterNodeId: params.masterNodeId,
+		clinicId: params.clinicId,
+		term: params.term,
+		issuedAt,
+		expiresAt,
+		leaseDurationMs,
+		schemaVersion: params.schemaVersion,
+		appVersion: params.appVersion,
+		signature,
+	};
+}
+
+export function verifyMasterLeaseHeartbeat(
+	lease: MasterLeaseHeartbeat,
+	options: {
+		secret?: string | undefined;
+		expectedClinicId?: string | undefined;
+		now?: number | undefined;
+		clockSkewToleranceMs?: number | undefined;
+	} = {},
+): { valid: boolean; reason?: string | undefined } {
+
+	const parseRes = masterLeaseHeartbeatSchema.safeParse(lease);
+	if (!parseRes.success) {
+		return { valid: false, reason: "Malformed lease schema" };
+	}
+
+	const data = parseRes.data;
+
+	if (options.expectedClinicId && data.clinicId !== options.expectedClinicId) {
+		return {
+			valid: false,
+			reason: `Clinic mismatch: expected '${options.expectedClinicId}', got '${data.clinicId}'`,
+		};
+	}
+
+	const secret = options.secret || `dente-mesh-secret-${data.clinicId}`;
+	const expectedPayload = getLeaseSigningPayload(data);
+	const expectedSignature = hmacSha256Hex(secret, expectedPayload);
+
+	if (!timingSafeStringEqual(data.signature, expectedSignature)) {
+		return { valid: false, reason: "Invalid cryptographic lease signature" };
+	}
+
+	const now = options.now ?? Date.now();
+	const tolerance = options.clockSkewToleranceMs ?? 2000;
+	if (now > data.expiresAt + tolerance) {
+		return { valid: false, reason: `Lease expired at ${data.expiresAt} (current time: ${now})` };
+	}
+
+	return { valid: true };
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. Schema & Protocol Version Negotiation Engine
@@ -275,7 +407,10 @@ export interface PeerElectionCandidate {
  * 2. If multiple nodes claim 'master', tie-break by highest schema version, then lowest nodeId.
  * 3. If no 'master' exists, an 'admin' node is eligible, or the node with lowest nodeId.
  */
-export function electMasterNode<T extends PeerElectionCandidate>(candidates: T[]): T | null {
+export function electMasterNode<T extends PeerElectionCandidate>(
+	candidates: T[],
+	options: { allowTemporaryConsensus?: boolean } = {},
+): T | null {
 	const activeCandidates = candidates.filter(
 		(c) => c.status === "online" || c.status === "read_only" || c.status === "sync_deferred",
 	);
@@ -304,13 +439,155 @@ export function electMasterNode<T extends PeerElectionCandidate>(candidates: T[]
 		})[0]!;
 	}
 
-	// 3. If no master or admin server is online, return null (satellites buffer offline)
+	// 3. Dynamic consensus failover: all active satellites participate
+	if (options.allowTemporaryConsensus) {
+		return activeCandidates.sort((a, b) => {
+			const schemaA = normalizeSchemaVersion(a.schemaVersion);
+			const schemaB = normalizeSchemaVersion(b.schemaVersion);
+			if (schemaA !== schemaB) return schemaB - schemaA;
+			return a.nodeId.localeCompare(b.nodeId);
+		})[0]!;
+	}
+
+	// 4. If no master or admin server is online and consensus failover not enabled, return null (satellites buffer offline)
 	return null;
 }
 
+/**
+ * Instant consensus election among satellites when the primary Master is dead.
+ * Requirement: highest schema version + lowest nodeId becomes the temporary active Master.
+ */
+export function electConsensusMasterNode<T extends PeerElectionCandidate>(candidates: T[]): T | null {
+	return electMasterNode(candidates, { allowTemporaryConsensus: true });
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. Offline Mesh Mutation Queue
+// 4. Offline Mesh Mutation Queue & Local Mutation Ring Buffer
 // ─────────────────────────────────────────────────────────────────────────────
+
+export interface LocalMutationRingBufferOptions {
+	capacity?: number;
+}
+
+/**
+ * Thread-safe, fixed-capacity circular ring buffer for satellite workstation mutations.
+ * Guarantees zero disruption to active doctor sessions when disconnected from Master.
+ * Bounded memory usage with O(1) idempotency lookup and FIFO overflow protection.
+ */
+export class LocalMutationRingBuffer {
+	private readonly capacity: number;
+	private readonly buffer: (QueuedMeshMutation | null)[];
+	private head = 0; // next write slot
+	private count = 0;
+	private overflowCount = 0;
+	private readonly indexByKey = new Map<string, number>();
+
+	constructor(options: LocalMutationRingBufferOptions = {}) {
+		this.capacity = Math.max(1, options.capacity ?? 5000);
+		this.buffer = new Array(this.capacity).fill(null);
+	}
+
+	push(mutation: Omit<QueuedMeshMutation, "attempts"> & { attempts?: number }): {
+		buffered: boolean;
+		isDuplicate: boolean;
+	} {
+		const fullMutation: QueuedMeshMutation = {
+			...mutation,
+			attempts: mutation.attempts ?? 0,
+		};
+
+		// 1. In-place deduplication if idempotencyKey already in ring buffer
+		const existingSlot = this.indexByKey.get(fullMutation.idempotencyKey);
+		if (existingSlot !== undefined && this.buffer[existingSlot] !== null) {
+			this.buffer[existingSlot] = fullMutation;
+			return { buffered: true, isDuplicate: true };
+		}
+
+		// 2. FIFO overflow if capacity reached
+		if (this.count >= this.capacity) {
+			const old = this.buffer[this.head];
+			if (old) {
+				this.indexByKey.delete(old.idempotencyKey);
+				this.overflowCount++;
+			}
+		} else {
+			this.count++;
+		}
+
+		const slot = this.head;
+		this.buffer[slot] = fullMutation;
+		this.indexByKey.set(fullMutation.idempotencyKey, slot);
+		this.head = (this.head + 1) % this.capacity;
+
+		return { buffered: true, isDuplicate: false };
+	}
+
+	has(idempotencyKey: string): boolean {
+		const slot = this.indexByKey.get(idempotencyKey);
+		return slot !== undefined && this.buffer[slot] !== null;
+	}
+
+	getDroppedCount(): number {
+		return this.overflowCount;
+	}
+
+	peekAll(): QueuedMeshMutation[] {
+		const items: QueuedMeshMutation[] = [];
+		for (const item of this.buffer) {
+			if (item !== null) {
+				items.push(item);
+			}
+		}
+		return items.sort((a, b) => a.timestamp - b.timestamp);
+	}
+
+	peekBatch(limit = 50): QueuedMeshMutation[] {
+		return this.peekAll().slice(0, Math.max(1, limit));
+	}
+
+	acknowledge(idempotencyKeys: string[]): number {
+		let removed = 0;
+		for (const key of idempotencyKeys) {
+			const slot = this.indexByKey.get(key);
+			if (slot !== undefined && this.buffer[slot] !== null) {
+				this.buffer[slot] = null;
+				this.indexByKey.delete(key);
+				this.count = Math.max(0, this.count - 1);
+				removed++;
+			}
+		}
+		return removed;
+	}
+
+	recordFailure(idempotencyKeys: string[]): void {
+		for (const key of idempotencyKeys) {
+			const slot = this.indexByKey.get(key);
+			if (slot !== undefined && this.buffer[slot] !== null) {
+				this.buffer[slot]!.attempts += 1;
+			}
+		}
+	}
+
+	size(): number {
+		return this.count;
+	}
+
+	getCapacity(): number {
+		return this.capacity;
+	}
+
+	getOverflowCount(): number {
+		return this.overflowCount;
+	}
+
+	clear(): void {
+		this.buffer.fill(null);
+		this.indexByKey.clear();
+		this.head = 0;
+		this.count = 0;
+		this.overflowCount = 0;
+	}
+}
 
 /**
  * Thread-safe, idempotent in-memory offline mutation queue for satellite workstations.
@@ -320,9 +597,11 @@ export function electMasterNode<T extends PeerElectionCandidate>(candidates: T[]
 export class OfflineMeshMutationQueue {
 	private readonly queue = new Map<string, QueuedMeshMutation>();
 	private readonly maxQueueSize: number;
+	private readonly ringBuffer: LocalMutationRingBuffer;
 
 	constructor(options: { maxQueueSize?: number } = {}) {
 		this.maxQueueSize = options.maxQueueSize ?? 5000;
+		this.ringBuffer = new LocalMutationRingBuffer({ capacity: this.maxQueueSize });
 	}
 
 	/**
@@ -340,6 +619,7 @@ export class OfflineMeshMutationQueue {
 			attempts: mutation.attempts ?? 0,
 		};
 		this.queue.set(fullMutation.idempotencyKey, fullMutation);
+		this.ringBuffer.push(fullMutation);
 		return true;
 	}
 
@@ -367,6 +647,7 @@ export class OfflineMeshMutationQueue {
 				removed++;
 			}
 		}
+		this.ringBuffer.acknowledge(idempotencyKeys);
 		return removed;
 	}
 
@@ -380,16 +661,23 @@ export class OfflineMeshMutationQueue {
 				item.attempts += 1;
 			}
 		}
+		this.ringBuffer.recordFailure(idempotencyKeys);
 	}
 
 	size(): number {
 		return this.queue.size;
 	}
 
+	getRingBuffer(): LocalMutationRingBuffer {
+		return this.ringBuffer;
+	}
+
 	clear(): void {
 		this.queue.clear();
+		this.ringBuffer.clear();
 	}
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. Zero-Conf Peer Discovery Beacon Generator
@@ -443,6 +731,40 @@ export function parseMeshDiscoveryBeacon(buffer: Buffer | string): LanMeshDiscov
 	return null;
 }
 
+export const lanMeshLeaseHeartbeatPacketSchema = z.object({
+	magic: z.literal("DENTE_MESH_LEASE"),
+	lease: masterLeaseHeartbeatSchema,
+});
+export type LanMeshLeaseHeartbeatPacket = z.infer<typeof lanMeshLeaseHeartbeatPacketSchema>;
+
+/**
+ * Creates a raw UDP broadcast/multicast lease heartbeat packet buffer.
+ */
+export function createMeshLeaseHeartbeatPacket(lease: MasterLeaseHeartbeat): Buffer {
+	const packet: LanMeshLeaseHeartbeatPacket = {
+		magic: "DENTE_MESH_LEASE",
+		lease,
+	};
+	return Buffer.from(JSON.stringify(packet), "utf8");
+}
+
+/**
+ * Parses and validates an incoming raw UDP lease heartbeat packet buffer.
+ */
+export function parseMeshLeaseHeartbeatPacket(buffer: Buffer | string): MasterLeaseHeartbeat | null {
+	try {
+		const rawString = typeof buffer === "string" ? buffer : buffer.toString("utf8");
+		const parsedJson = JSON.parse(rawString);
+		const result = lanMeshLeaseHeartbeatPacketSchema.safeParse(parsedJson);
+		if (result.success) {
+			return result.data.lease;
+		}
+	} catch {
+		// Ignore malformed packets from other network services
+	}
+	return null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 6. LAN Mesh Topology Manager
 // ─────────────────────────────────────────────────────────────────────────────
@@ -455,11 +777,20 @@ export interface LanMeshTopologyOptions {
 	port: number;
 	appVersion: string;
 	schemaVersion: number | string;
-	peerTimeoutMs?: number;
-	onPeerDiscovered?: (peer: LanMeshPeerSummary) => void;
-	onPeerLost?: (nodeId: string) => void;
-	onMasterChanged?: (newMaster: LanMeshPeerSummary | null) => void;
-	onStatusBadgeChanged?: (badge: MeshSyncStatusBadge) => void;
+	peerTimeoutMs?: number | undefined;
+	enableLeaseFailover?: boolean | undefined;
+	leaseSecret?: string | undefined;
+	leaseDurationMs?: number | undefined;
+	onPeerDiscovered?: ((peer: LanMeshPeerSummary) => void) | undefined;
+	onPeerLost?: ((nodeId: string) => void) | undefined;
+	onMasterChanged?: ((newMaster: LanMeshPeerSummary | null) => void) | undefined;
+	onStatusBadgeChanged?: ((badge: MeshSyncStatusBadge) => void) | undefined;
+	onLeaseFailoverTriggered?: ((details: {
+		deadMasterId: string | null;
+		electedMasterId: string;
+		isLocalElected: boolean;
+		term: number;
+	}) => void) | undefined;
 }
 
 /**
@@ -477,8 +808,26 @@ export class LanMeshTopologyManager {
 	private readonly peerTimeoutMs: number;
 	private readonly peers = new Map<string, LanMeshPeerSummary>();
 	private readonly mutationQueue = new OfflineMeshMutationQueue();
+	private readonly ringBuffer: LocalMutationRingBuffer;
 	private activeMasterId: string | null = null;
 	private activeWarningBadge: MeshSyncStatusBadge["warningBadge"] | undefined;
+
+	// Lease & Consensus Failover State
+	private currentTerm = 1;
+	private activeLease: MasterLeaseHeartbeat | null = null;
+	private lastMasterHeartbeatAt = 0;
+	private consecutiveMissedHeartbeats = 0;
+	private isTemporaryMaster = false;
+	private temporaryMasterNodeId: string | null = null;
+	private readonly enableLeaseFailover: boolean;
+	private readonly leaseSecret?: string | undefined;
+	private readonly leaseDurationMs: number;
+	private readonly onLeaseFailoverTriggered?: ((details: {
+		deadMasterId: string | null;
+		electedMasterId: string;
+		isLocalElected: boolean;
+		term: number;
+	}) => void) | undefined;
 
 	private readonly onPeerDiscovered?: ((peer: LanMeshPeerSummary) => void) | undefined;
 	private readonly onPeerLost?: ((nodeId: string) => void) | undefined;
@@ -494,6 +843,12 @@ export class LanMeshTopologyManager {
 		this.appVersion = options.appVersion;
 		this.schemaVersion = options.schemaVersion;
 		this.peerTimeoutMs = options.peerTimeoutMs ?? 15000;
+		this.enableLeaseFailover = options.enableLeaseFailover ?? false;
+		this.leaseSecret = options.leaseSecret;
+		this.leaseDurationMs = options.leaseDurationMs ?? DEFAULT_LEASE_HEARTBEAT_INTERVAL_MS;
+		this.onLeaseFailoverTriggered = options.onLeaseFailoverTriggered;
+
+		this.ringBuffer = this.mutationQueue.getRingBuffer();
 
 		this.onPeerDiscovered = options.onPeerDiscovered;
 		this.onPeerLost = options.onPeerLost;
@@ -502,8 +857,10 @@ export class LanMeshTopologyManager {
 
 		if (this.role === "master") {
 			this.activeMasterId = this.nodeId;
+			this.lastMasterHeartbeatAt = Date.now();
 		}
 	}
+
 
 	/**
 	 * Generates handshake payload representing the local node and its known peer list.
@@ -636,6 +993,198 @@ export class LanMeshTopologyManager {
 	}
 
 	/**
+	 * Directly registers or updates a peer in the topology table (e.g. from AutoJoin PIN pairing).
+	 */
+	addOrUpdatePeer(peer: LanMeshPeerSummary): void {
+		const isNew = !this.peers.has(peer.nodeId);
+		this.peers.set(peer.nodeId, {
+			...peer,
+			lastSeen: peer.lastSeen || Date.now(),
+		});
+
+		if (isNew && this.onPeerDiscovered) {
+			this.onPeerDiscovered(peer);
+		}
+
+		this.recalculateMasterElection();
+		this.notifyStatusBadge();
+	}
+
+	/**
+	 * Prunes peers whose last heartbeat exceeds `peerTimeoutMs`.
+	 */
+	/**
+	 * Creates a cryptographically signed lease heartbeat.
+	 * Can be emitted by the primary Master or an elected Temporary Master.
+	 */
+	createLeaseHeartbeat(now?: number): MasterLeaseHeartbeat {
+		const issuedAt = now ?? Date.now();
+		const lease = createMasterLeaseHeartbeat({
+			masterNodeId: this.nodeId,
+			clinicId: this.clinicId,
+			term: this.currentTerm,
+			schemaVersion: this.schemaVersion,
+			appVersion: this.appVersion,
+			leaseDurationMs: this.leaseDurationMs,
+			secret: this.leaseSecret,
+			issuedAt,
+		});
+
+		this.activeLease = lease;
+		this.lastMasterHeartbeatAt = issuedAt;
+		return lease;
+	}
+
+	/**
+	 * Ingests and verifies an incoming Master Lease Heartbeat.
+	 * Resets missed heartbeat counters and relinquishes temporary master if primary returns.
+	 */
+	processMasterLeaseHeartbeat(
+		lease: MasterLeaseHeartbeat,
+		secret?: string | undefined,
+		now?: number | undefined,
+	): { accepted: boolean; reason?: string | undefined } {
+		const verification = verifyMasterLeaseHeartbeat(lease, {
+			secret: secret || this.leaseSecret,
+			expectedClinicId: this.clinicId,
+			now: now ?? lease.issuedAt,
+		});
+
+		if (!verification.valid) {
+			return { accepted: false, reason: verification.reason };
+		}
+
+		this.lastMasterHeartbeatAt = lease.issuedAt || Date.now();
+		this.consecutiveMissedHeartbeats = 0;
+		this.activeLease = lease;
+
+		if (lease.term > this.currentTerm) {
+			this.currentTerm = lease.term;
+		}
+
+		// If this node was acting as temporary master, relinquish immediately upon primary master return
+		if (this.isTemporaryMaster || this.temporaryMasterNodeId) {
+			this.isTemporaryMaster = false;
+			this.temporaryMasterNodeId = null;
+		}
+		this.activeMasterId = lease.masterNodeId;
+
+		// Ensure master is registered in peer table as online
+		const existingPeer = this.peers.get(lease.masterNodeId);
+		if (existingPeer) {
+			this.peers.set(lease.masterNodeId, {
+				...existingPeer,
+				status: "online",
+				lastSeen: lease.issuedAt || Date.now(),
+			});
+		} else {
+			this.peers.set(lease.masterNodeId, {
+				nodeId: lease.masterNodeId,
+				role: "master",
+				ip: "127.0.0.1",
+				port: 4100,
+				appVersion: lease.appVersion,
+				schemaVersion: lease.schemaVersion,
+				lastSeen: lease.issuedAt || Date.now(),
+				status: "online",
+			});
+		}
+
+		this.recalculateMasterElection();
+		this.notifyStatusBadge();
+		return { accepted: true };
+	}
+
+	/**
+	 * Evaluates Master lease freshness.
+	 * If satellites miss 2 consecutive heartbeats (10s threshold), Master is marked dead.
+	 * Satellites initiate instant consensus election: highest schema version + lowest nodeId
+	 * becomes the temporary active Master.
+	 */
+	checkMasterLeaseHealth(now = Date.now()): {
+		masterAlive: boolean;
+		failoverTriggered: boolean;
+		electedMasterId: string | null;
+		isLocalElected: boolean;
+	} {
+		if (this.role === "master") {
+			return {
+				masterAlive: true,
+				failoverTriggered: false,
+				electedMasterId: this.nodeId,
+				isLocalElected: true,
+			};
+		}
+
+		if (this.lastMasterHeartbeatAt > 0) {
+			const elapsed = now - this.lastMasterHeartbeatAt;
+			if (elapsed >= DEFAULT_LEASE_FAILOVER_TIMEOUT_MS) {
+				// Master missed >= 2 consecutive heartbeats (10s threshold) -> marked dead
+				this.consecutiveMissedHeartbeats = Math.max(
+					MISSED_HEARTBEATS_FAILOVER_THRESHOLD,
+					Math.floor(elapsed / DEFAULT_LEASE_HEARTBEAT_INTERVAL_MS),
+				);
+
+				const prevMaster = this.activeMasterId;
+				if (prevMaster && this.peers.has(prevMaster)) {
+					const p = this.peers.get(prevMaster)!;
+					this.peers.set(prevMaster, { ...p, status: "offline" });
+				}
+
+				// Instant consensus election: highest schema version + lowest nodeId
+				const candidates: PeerElectionCandidate[] = [
+					{
+						nodeId: this.nodeId,
+						role: this.role,
+						schemaVersion: this.schemaVersion,
+						lastSeen: now,
+						status: "online",
+					},
+					...Array.from(this.peers.values()).filter(
+						(p) => p.status !== "offline" && p.nodeId !== prevMaster,
+					),
+				];
+
+				const elected = electConsensusMasterNode(candidates);
+				if (elected) {
+					this.currentTerm += 1;
+					this.temporaryMasterNodeId = elected.nodeId;
+					this.activeMasterId = elected.nodeId;
+					this.isTemporaryMaster = elected.nodeId === this.nodeId;
+
+					if (this.onLeaseFailoverTriggered) {
+						this.onLeaseFailoverTriggered({
+							deadMasterId: prevMaster,
+							electedMasterId: elected.nodeId,
+							isLocalElected: this.isTemporaryMaster,
+							term: this.currentTerm,
+						});
+					}
+
+					if (this.onMasterChanged) {
+						this.onMasterChanged(this.getMasterNode());
+					}
+
+					this.notifyStatusBadge();
+					return {
+						masterAlive: false,
+						failoverTriggered: true,
+						electedMasterId: elected.nodeId,
+						isLocalElected: this.isTemporaryMaster,
+					};
+				}
+			}
+		}
+
+		return {
+			masterAlive: true,
+			failoverTriggered: false,
+			electedMasterId: this.activeMasterId,
+			isLocalElected: this.isTemporaryMaster,
+		};
+	}
+
+	/**
 	 * Prunes peers whose last heartbeat exceeds `peerTimeoutMs`.
 	 */
 	pruneStalePeers(now = Date.now()): string[] {
@@ -648,6 +1197,10 @@ export class LanMeshTopologyManager {
 					this.onPeerLost(nodeId);
 				}
 			}
+		}
+
+		if (this.enableLeaseFailover) {
+			this.checkMasterLeaseHealth(now);
 		}
 
 		if (staleNodeIds.length > 0) {
@@ -672,7 +1225,13 @@ export class LanMeshTopologyManager {
 			...Array.from(this.peers.values()),
 		];
 
-		const elected = electMasterNode(candidates);
+		const elected =
+			this.enableLeaseFailover &&
+			(this.consecutiveMissedHeartbeats >= MISSED_HEARTBEATS_FAILOVER_THRESHOLD ||
+				this.isTemporaryMaster)
+				? electConsensusMasterNode(candidates)
+				: electMasterNode(candidates);
+
 		const newMasterId = elected ? elected.nodeId : null;
 
 		if (newMasterId !== this.activeMasterId) {
@@ -706,7 +1265,7 @@ export class LanMeshTopologyManager {
 
 	getMasterNode(): LanMeshPeerSummary | null {
 		if (this.activeMasterId === this.nodeId) {
-			if (this.role === "master" || this.role === "admin") {
+			if (this.role === "master" || this.role === "admin" || this.isTemporaryMaster) {
 				return {
 					nodeId: this.nodeId,
 					role: this.role,
@@ -725,11 +1284,43 @@ export class LanMeshTopologyManager {
 
 	isMasterOnline(): boolean {
 		const master = this.getMasterNode();
-		return Boolean(master && (master.role === "master" || master.role === "admin"));
+		if (!master) return false;
+		if (master.role === "master" || master.role === "admin") return true;
+		if (
+			this.isTemporaryMaster ||
+			(this.temporaryMasterNodeId && this.temporaryMasterNodeId === master.nodeId)
+		) {
+			return true;
+		}
+		return false;
 	}
 
 	getMutationQueue(): OfflineMeshMutationQueue {
 		return this.mutationQueue;
+	}
+
+	getRingBuffer(): LocalMutationRingBuffer {
+		return this.ringBuffer;
+	}
+
+	isTemporaryMasterActive(): boolean {
+		return this.isTemporaryMaster;
+	}
+
+	getTemporaryMasterNodeId(): string | null {
+		return this.temporaryMasterNodeId;
+	}
+
+	getLeaseTerm(): number {
+		return this.currentTerm;
+	}
+
+	getConsecutiveMissedHeartbeats(): number {
+		return this.consecutiveMissedHeartbeats;
+	}
+
+	getActiveLease(): MasterLeaseHeartbeat | null {
+		return this.activeLease;
 	}
 
 	/**
@@ -740,7 +1331,12 @@ export class LanMeshTopologyManager {
 		const queuedCount = this.mutationQueue.size();
 
 		let syncMode: MeshSyncStatusBadge["syncMode"] = "streaming";
-		if (!isMasterOnline) {
+		if (
+			this.isTemporaryMaster ||
+			(this.temporaryMasterNodeId && this.temporaryMasterNodeId === this.activeMasterId)
+		) {
+			syncMode = "temporary_master_active";
+		} else if (!isMasterOnline) {
 			syncMode = "offline_queued";
 		} else if (this.activeWarningBadge?.code === "INCOMPATIBLE_SCHEMA") {
 			syncMode = "sync_deferred";
@@ -754,6 +1350,10 @@ export class LanMeshTopologyManager {
 			activePeersCount: this.peers.size,
 			queuedMutationsCount: queuedCount,
 			syncMode,
+			isTemporaryMaster: this.isTemporaryMaster,
+			temporaryMasterNodeId: this.temporaryMasterNodeId,
+			leaseTerm: this.currentTerm,
+			consecutiveMissedHeartbeats: this.consecutiveMissedHeartbeats,
 			warningBadge: this.activeWarningBadge,
 		};
 	}
@@ -764,3 +1364,4 @@ export class LanMeshTopologyManager {
 		}
 	}
 }
+
