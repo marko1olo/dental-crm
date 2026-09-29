@@ -171,7 +171,7 @@ describe("clinicalSoapPresets — Практичный клинический с
 		assert.ok(formatted.objectiveStatus.startsWith("Зуб 26:"), "Status Localis должен содержать префикс зуба 26");
 		assert.ok(formatted.diagnosis.includes("Зуб 26"), "Диагноз должен содержать номер зуба 26");
 		assert.ok(formatted.treatmentPlan.includes("A16.07.002.001"), "План лечения должен содержать код услуги 804н");
-		assert.ok(formatted.treatmentPlan.includes("Списание со склада (Норма 804н):"), "План лечения должен содержать ведомость списания");
+		assert.ok(formatted.treatmentPlan.includes("Списание со склада (Норма расхода):") || formatted.treatmentPlan.includes("Списание со склада (Норма 804н):"), "План лечения должен содержать ведомость списания");
 		assert.ok(formatted.materialsToDeduct.length > 0, "Материалы к списанию должны быть возвращены");
 	});
 

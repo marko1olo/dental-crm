@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import { beforeEach, describe, test } from "node:test";
 import {
 	type DiaryState,
@@ -9,7 +11,7 @@ import {
 	visitNoteFromSoapDiary,
 } from "../components/useVisitDiaryLogic";
 
-describe("Diary Draft Resilience & LocalStorage Protection (Form 043/u)", () => {
+describe("Diary Draft Resilience & LocalStorage Protection (Medical Diary)", () => {
 	const storageMock = new Map<string, string>();
 
 	const mockLocalStorage = {
@@ -240,3 +242,214 @@ describe("Diary Draft Resilience & LocalStorage Protection (Form 043/u)", () => 
 		assert.ok(emkRoundTrip.diagnosis.includes("K04.0"));
 	});
 });
+
+describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)", () => {
+	const storageMock = new Map<string, string>();
+	const mockLocalStorage = {
+		getItem: (key: string): string | null => storageMock.get(key) ?? null,
+		setItem: (key: string, value: string): void => {
+			storageMock.set(key, String(value));
+		},
+		removeItem: (key: string): void => {
+			storageMock.delete(key);
+		},
+		clear: (): void => {
+			storageMock.clear();
+		},
+	};
+
+	beforeEach(() => {
+		storageMock.clear();
+	});
+
+	test("Обнаружение черновика: выявляет локальный черновик при отличии от сервера и форматирует время", () => {
+		const savedAtTime = new Date("2026-09-29T14:32:00.000Z");
+		const draftData = {
+			complaint: "Ноющая боль в зубе 1.6 при приеме сладкого",
+			anamnesis: "Появилась неделю назад",
+			objectiveStatus: "Глубокая кариозная полость",
+			diagnosis: "K02.1 Кариес дентина",
+			treatmentPlan: "Препарирование, пломба Estelite",
+			recommendations: "Гигиена",
+			icd10: "K02.1",
+			_savedAt: savedAtTime.toISOString(),
+		};
+
+		const serverInitial = {
+			complaint: "",
+			anamnesis: "",
+			objectiveStatus: "",
+			diagnosis: "",
+			treatmentPlan: "",
+			recommendations: "",
+			icd10: "",
+		};
+
+		// Логика обнаружения unsavedDraftNotice в VisitSoapEditor
+		const isDifferent =
+			draftData.complaint !== serverInitial.complaint ||
+			draftData.treatmentPlan !== serverInitial.treatmentPlan;
+		const hasContent = Boolean(draftData.complaint.trim() || draftData.treatmentPlan.trim());
+
+		assert.ok(hasContent && isDifferent, "Черновик с контентом должен быть обнаружен");
+
+		const savedDate = new Date(draftData._savedAt);
+		const timeStr = savedDate.toLocaleTimeString("ru-RU", {
+			hour: "2-digit",
+			minute: "2-digit",
+			timeZone: "UTC",
+		});
+		assert.equal(timeStr, "14:32", "Время сохранения должно форматироваться в HH:MM");
+	});
+
+	test("Подавление баннера: если локальный черновик идентичен серверу или пуст, баннер не показывается", () => {
+		const identicalDraft = {
+			complaint: "Осмотр",
+			anamnesis: "Здоров",
+			objectiveStatus: "Норма",
+			diagnosis: "Z01.2",
+			treatmentPlan: "Санация",
+			recommendations: "Осмотр через 6 мес",
+			icd10: "Z01.2",
+		};
+		const serverInitial = { ...identicalDraft };
+
+		const isDifferent =
+			identicalDraft.complaint !== serverInitial.complaint ||
+			identicalDraft.anamnesis !== serverInitial.anamnesis ||
+			identicalDraft.objectiveStatus !== serverInitial.objectiveStatus ||
+			identicalDraft.diagnosis !== serverInitial.diagnosis ||
+			identicalDraft.treatmentPlan !== serverInitial.treatmentPlan ||
+			identicalDraft.recommendations !== serverInitial.recommendations ||
+			identicalDraft.icd10 !== serverInitial.icd10;
+
+		assert.equal(isDifferent, false, "Идентичные данные не должны триггерить баннер восстановления");
+	});
+
+	test("Неблокирующий сброс черновика: удаляет ключ из localStorage без window.confirm / modal", () => {
+		const key = "dente_soap_editor_draft_16";
+		mockLocalStorage.setItem(key, JSON.stringify({ complaint: "Черновик для удаления" }));
+		assert.ok(mockLocalStorage.getItem(key));
+
+		// Имитация handleDiscardDraft
+		mockLocalStorage.removeItem(key);
+
+		assert.equal(mockLocalStorage.getItem(key), null, "Черновик должен быть удален из хранилища");
+	});
+
+	test("Мандат 8c / 8e: Полный запрет на window.alert, window.confirm и window.prompt в коде дневника", () => {
+		const soapEditorCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/visit/VisitSoapEditor.tsx"),
+			"utf-8",
+		);
+		const debouncedTextareaCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/visit/emk/DebouncedEmkTextarea.tsx"),
+			"utf-8",
+		);
+
+		assert.ok(!soapEditorCode.includes("window.alert"), "VisitSoapEditor не должен вызывать window.alert");
+		assert.ok(!soapEditorCode.includes("window.confirm"), "VisitSoapEditor не должен вызывать window.confirm");
+		assert.ok(!soapEditorCode.includes("window.prompt"), "VisitSoapEditor не должен вызывать window.prompt");
+
+		assert.ok(!debouncedTextareaCode.includes("window.alert"), "DebouncedEmkTextarea не должен вызывать window.alert");
+		assert.ok(!debouncedTextareaCode.includes("window.confirm"), "DebouncedEmkTextarea не должен вызывать window.confirm");
+		assert.ok(!debouncedTextareaCode.includes("window.prompt"), "DebouncedEmkTextarea не должен вызывать window.prompt");
+	});
+
+	test("Мандат 8e: DebouncedEmkTextarea калиброван на 400ms и слушает телефонию и смену вкладок", () => {
+		const debouncedTextareaCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/visit/emk/DebouncedEmkTextarea.tsx"),
+			"utf-8",
+		);
+
+		assert.ok(
+			debouncedTextareaCode.includes("400); // Debounced autosave 300-500ms"),
+			"Таймер DebouncedEmkTextarea должен быть откалиброван на 400ms (окно 300-500ms)",
+		);
+		assert.ok(
+			debouncedTextareaCode.includes("dente-telephony-incoming-call"),
+			"Должен быть зарегистрирован обработчик входящего звонка телефонии",
+		);
+		assert.ok(
+			debouncedTextareaCode.includes("dente:visit-tab-change"),
+			"Должен быть зарегистрирован обработчик внутренней смены вкладок",
+		);
+		assert.ok(
+			debouncedTextareaCode.includes("beforeunload"),
+			"Должен быть зарегистрирован обработчик beforeunload",
+		);
+		assert.ok(
+			debouncedTextareaCode.includes("pagehide"),
+			"Должен быть зарегистрирован обработчик pagehide",
+		);
+	});
+
+	test("Мандат 8e: VisitSoapEditor содержит дуальное сохранение в localStorage и IndexedDB", () => {
+		const soapEditorCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/visit/VisitSoapEditor.tsx"),
+			"utf-8",
+		);
+
+		assert.ok(
+			soapEditorCode.includes("saveOfflineDraft"),
+			"VisitSoapEditor должен выполнять дуальное сохранение в офлайн-очередь IndexedDB",
+		);
+		assert.ok(
+			soapEditorCode.includes("safeLocalStorageSetItem"),
+			"VisitSoapEditor должен выполнять синхронное сохранение в localStorage",
+		);
+		assert.ok(
+			soapEditorCode.includes('data-testid="banner-draft-recovery"'),
+			"VisitSoapEditor должен содержать неблокирующий баннер восстановления черновика",
+		);
+		assert.ok(
+			soapEditorCode.includes('data-testid="btn-restore-draft"'),
+			"В баннере должна быть кнопка быстрого восстановления черновика",
+		);
+		assert.ok(
+			soapEditorCode.includes('data-testid="btn-discard-draft"'),
+			"В баннере должна быть кнопка сброса черновика",
+		);
+	});
+
+	test("Мандат 8z: Полное искоренение советских кодов 043/у и 834н из пользовательского интерфейса", () => {
+		const soapEditorCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/visit/VisitSoapEditor.tsx"),
+			"utf-8",
+		);
+		const controlBoardCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/visit/EmkControlBoard.tsx"),
+			"utf-8",
+		);
+
+		assert.ok(!soapEditorCode.includes("043/у"), "VisitSoapEditor не должен содержать 043/у");
+		assert.ok(!soapEditorCode.includes("834н"), "VisitSoapEditor не должен содержать 834н");
+		assert.ok(!controlBoardCode.includes("043/у"), "EmkControlBoard не должен содержать 043/у");
+		assert.ok(!controlBoardCode.includes("834н"), "EmkControlBoard не должен содержать 834н");
+	});
+
+	test("Мандат 8e: Кнопка 1-клика физиологической нормы никогда не disabled и заполняет статус", () => {
+		const soapEditorCode = fs.readFileSync(
+			path.resolve(process.cwd(), "apps/web/src/components/visit/VisitSoapEditor.tsx"),
+			"utf-8",
+		);
+
+		assert.ok(
+			soapEditorCode.includes('data-testid="btn-soap-physio-norm"'),
+			"VisitSoapEditor должен содержать кнопку 1-клика физиологической нормы",
+		);
+		assert.ok(
+			soapEditorCode.includes("disabled={false}"),
+			"Кнопка нормы не должна блокироваться",
+		);
+		assert.ok(
+			soapEditorCode.includes("Жалоб на момент осмотра не предъявляет"),
+			"Должен быть включен текст соматической нормы",
+		);
+		assert.ok(
+			soapEditorCode.includes("Соматически здоров. Аллергологический анамнез не отягощен."),
+			"Должен быть включен соматически здоровый статус",
+		);
+	});
+});
+

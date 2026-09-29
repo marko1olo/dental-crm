@@ -14,6 +14,7 @@ import {
 import {
 	BookOpen,
 	Check,
+	Clock,
 	Copy,
 	Crown,
 	Edit3,
@@ -32,6 +33,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	safeLocalStorageGetItem,
+	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
 import { sliceDomList } from "../../utils/domVirtualizationHelper";
@@ -93,7 +95,7 @@ const SPECIALTY_BADGE_COLORS: Record<OutpatientSpecialty, string> = {
 const resolvedProtocolsCache = new Map<number, OutpatientProtocolTemplate>();
 
 /**
- * Преобразует шаблон StomX из каталога 448 шаблонов в полноценный клинический протокол Формы 043/у (SOAP).
+ * Преобразует шаблон StomX из каталога 448 шаблонов в полноценный клинический протокол медицинской карты (SOAP).
  * Результат кэшируется в RAM для 0 ms разрешения при поиске на слабых CPU/HDD.
  */
 export function resolveProtocolFromTemplate(
@@ -134,7 +136,7 @@ export function resolveProtocolFromTemplate(
 }
 
 /**
- * Редактор амбулаторной карты 043/у (SOAP) с быстрым выбором протоколов StomX
+ * Редактор медицинской карты (SOAP) с быстрым выбором протоколов StomX
  */
 export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 	initialValues,
@@ -250,18 +252,95 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		[selectedTooth],
 	);
 
+	// Мандат 8e / 8c: Неблокирующий баннер обнаружения черновика («Обнаружен несохранённый черновик от 14:32 — [Восстановить] [Сбросить]»)
+	const [unsavedDraftNotice, setUnsavedDraftNotice] = useState<{
+		draftValues: VisitSoapNoteValues;
+		timeStr: string;
+	} | null>(null);
+
 	useEffect(() => {
 		try {
 			const saved = safeLocalStorageGetItem(soapStorageKey);
-			if (saved && (!initialValues?.complaint && !initialValues?.treatmentPlan)) {
+			if (saved) {
 				const parsed = JSON.parse(saved);
 				if (parsed && typeof parsed === "object") {
-					setValues((prev) => ({ ...prev, ...parsed }));
+					const candidate: VisitSoapNoteValues = {
+						complaint: parsed.complaint || "",
+						anamnesis: parsed.anamnesis || "",
+						objectiveStatus: parsed.objectiveStatus || "",
+						diagnosis: parsed.diagnosis || "",
+						treatmentPlan: parsed.treatmentPlan || "",
+						recommendations: parsed.recommendations || "",
+						icd10: parsed.icd10 || "",
+					};
+
+					const hasContent = Boolean(
+						candidate.complaint?.trim() ||
+						candidate.anamnesis?.trim() ||
+						candidate.objectiveStatus?.trim() ||
+						candidate.diagnosis?.trim() ||
+						candidate.treatmentPlan?.trim() ||
+						candidate.recommendations?.trim() ||
+						candidate.icd10?.trim()
+					);
+
+					// Проверяем, отличается ли локальный черновик от серверных initialValues
+					const isDifferent =
+						(candidate.complaint || "") !== (initialValues?.complaint || "") ||
+						(candidate.anamnesis || "") !== (initialValues?.anamnesis || "") ||
+						(candidate.objectiveStatus || "") !== (initialValues?.objectiveStatus || "") ||
+						(candidate.diagnosis || "") !== (initialValues?.diagnosis || "") ||
+						(candidate.treatmentPlan || "") !== (initialValues?.treatmentPlan || "") ||
+						(candidate.recommendations || "") !== (initialValues?.recommendations || "") ||
+						(candidate.icd10 || "") !== (initialValues?.icd10 || "");
+
+					if (hasContent && isDifferent) {
+						if (!initialValues?.complaint && !initialValues?.treatmentPlan) {
+							setValues((prev) => ({ ...prev, ...candidate }));
+						}
+
+						const savedDate = parsed._savedAt || parsed.savedAt
+							? new Date(parsed._savedAt || parsed.savedAt)
+							: new Date();
+						const timeStr = !Number.isNaN(savedDate.getTime())
+							? savedDate.toLocaleTimeString("ru-RU", {
+									hour: "2-digit",
+									minute: "2-digit",
+								})
+							: "недавнего времени";
+
+						setUnsavedDraftNotice({
+							draftValues: candidate,
+							timeStr,
+						});
+					} else {
+						setUnsavedDraftNotice(null);
+					}
 				}
 			}
 		} catch {
-			// ignore storage quota errors
+			// ignore storage quota / parse errors
 		}
+	}, [soapStorageKey, initialValues]);
+
+	const handleRestoreDraft = useCallback(() => {
+		if (!unsavedDraftNotice) return;
+		const restored = unsavedDraftNotice.draftValues;
+		setValues(restored);
+		valuesRef.current = restored;
+		setSaveStatus("saved");
+		setUnsavedDraftNotice(null);
+		onChangeRef.current?.(restored);
+		onSaveRef.current?.(restored);
+	}, [unsavedDraftNotice]);
+
+	const handleDiscardDraft = useCallback(() => {
+		try {
+			safeLocalStorageRemoveItem(soapStorageKey);
+		} catch (err: unknown) {
+			console.warn("[VisitSoapEditor] Failed to discard draft:", err);
+		}
+		setUnsavedDraftNotice(null);
 	}, [soapStorageKey]);
 
 	// Синхронизация при внешних изменениях activeTooth
@@ -327,7 +406,20 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			onChangeRef.current?.(values);
 			onSaveRef.current?.(values);
 			try {
-				safeLocalStorageSetItem(soapStorageKey, JSON.stringify(values));
+				const draftPayload = {
+					...values,
+					_savedAt: new Date().toISOString(),
+					_version: 1,
+				};
+				safeLocalStorageSetItem(soapStorageKey, JSON.stringify(draftPayload));
+				void import("../../utils/offlineMutationQueue").then(({ saveOfflineDraft }) => {
+					void saveOfflineDraft(
+						soapStorageKey,
+						"DIARY_043_DRAFT",
+						selectedTooth ? `tooth-${selectedTooth}` : "general",
+						draftPayload,
+					);
+				}).catch(() => {});
 			} catch (err: unknown) {
 				console.warn("[VisitSoapEditor] Failed to cache soap note values:", err);
 			}
@@ -335,7 +427,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		}, debounceMs);
 
 		return () => clearTimeout(timer);
-	}, [values, saveStatus, soapStorageKey]);
+	}, [values, saveStatus, soapStorageKey, selectedTooth]);
 
 	// Немедленный сброс несохраненного черновика строго при размонтировании, смене вкладок или скрытии страницы (Мандат 8e, 8n)
 	const flushDraft = useCallback(() => {
@@ -343,10 +435,23 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			onChangeRef.current?.(valuesRef.current);
 			onSaveRef.current?.(valuesRef.current);
 			try {
+				const draftPayload = {
+					...valuesRef.current,
+					_savedAt: new Date().toISOString(),
+					_version: 1,
+				};
 				safeLocalStorageSetItem(
 					soapStorageKeyRef.current,
-					JSON.stringify(valuesRef.current),
+					JSON.stringify(draftPayload),
 				);
+				void import("../../utils/offlineMutationQueue").then(({ saveOfflineDraft }) => {
+					void saveOfflineDraft(
+						soapStorageKeyRef.current,
+						"DIARY_043_DRAFT",
+						selectedTooth ? `tooth-${selectedTooth}` : "general",
+						draftPayload,
+					);
+				}).catch(() => {});
 			} catch (err: unknown) {
 				console.warn(
 					"[VisitSoapEditor] Failed to cache soap note values on flush:",
@@ -355,7 +460,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			}
 			setSaveStatus("saved");
 		}
-	}, []);
+	}, [selectedTooth]);
 
 	useEffect(() => {
 		const handleVisibilityChange = () => {
@@ -819,7 +924,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						)
 					)}
 
-					{/* Кнопка "Шаблоны 043/у (448)" (Мандат 8e: никогда не disabled!) */}
+					{/* Кнопка "Клинические шаблоны (448)" (Мандат 8e: никогда не disabled!) */}
 					<button
 						type="button"
 						onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
@@ -976,6 +1081,44 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					</span>
 				</div>
 			</div>
+
+			{/* ── ТИХИЙ НЕБЛОКИРУЮЩИЙ БАННЕР ОБНАРУЖЕНИЯ ЧЕРНОВИКА (МАНДАТЫ 8C, 8E) ── */}
+			{unsavedDraftNotice && (
+				<div
+					data-testid="banner-draft-recovery"
+					role="alert"
+					className="flex items-center justify-between gap-3 px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs shrink-0"
+				>
+					<div className="flex items-center gap-2 min-w-0">
+						<Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+						<span className="font-medium truncate">
+							Обнаружен несохранённый черновик от {unsavedDraftNotice.timeStr}
+						</span>
+					</div>
+					<div className="flex items-center gap-1.5 shrink-0">
+						<button
+							type="button"
+							onClick={handleRestoreDraft}
+							data-testid="btn-restore-draft"
+							className="min-h-[26px] h-[26px] px-2.5 text-xs font-bold rounded-md bg-teal-600 hover:bg-teal-700 text-white cursor-pointer transition-colors shadow-2xs inline-flex items-center gap-1"
+							aria-label="Восстановить черновик"
+						>
+							<Check className="w-3 h-3" />
+							<span>Восстановить</span>
+						</button>
+						<button
+							type="button"
+							onClick={handleDiscardDraft}
+							data-testid="btn-discard-draft"
+							className="min-h-[26px] h-[26px] px-2 text-xs font-semibold rounded-md bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] cursor-pointer transition-colors inline-flex items-center gap-1"
+							aria-label="Сбросить черновик"
+						>
+							<X className="w-3 h-3 text-[var(--muted)]" />
+							<span>Сбросить</span>
+						</button>
+					</div>
+				</div>
+			)}
 
 			{/* ── ВЫПАДАЮЩАЯ ПАНЕЛЬ ШАБЛОНОВ STOMX ── */}
 			{isTemplatesOpen && (
@@ -1402,7 +1545,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					</div>
 				</div>
 			) : (
-				/* ── РЕЖИМ ПЕЧАТНОГО ПРЕДПРОСМОТРА 043/У (МАНДАТ 8E) ── */
+				/* ── РЕЖИМ ПЕЧАТНОГО ПРЕДПРОСМОТРА МЕДИЦИНСКОЙ КАРТЫ (МАНДАТ 8E) ── */
 				<div className="p-4 bg-[var(--paper)] font-serif text-[var(--ink)] text-xs leading-relaxed space-y-3 border border-[var(--line)] rounded-xl relative overflow-hidden">
 					{/* Водяной знак штампа (Мандат 8e) */}
 					<div

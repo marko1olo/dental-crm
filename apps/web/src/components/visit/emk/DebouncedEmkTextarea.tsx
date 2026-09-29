@@ -52,7 +52,7 @@ export function DebouncedEmkTextarea({
 				lastCommittedValueRef.current = nextVal;
 				onCommitRef.current(fieldKey, nextVal);
 			}
-		}, 600); // Debounced autosave 500-1000ms (Мандаты 8e, 8n)
+		}, 400); // Debounced autosave 300-500ms (Мандаты 8e, 8n)
 	};
 
 	const handleBlur = () => {

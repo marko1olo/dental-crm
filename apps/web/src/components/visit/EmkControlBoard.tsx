@@ -300,7 +300,7 @@ function RejectionModal({
 								marginBottom: "8px",
 							}}
 						>
-							Укажите клинические замечания к разделам ф. 043/у:
+							Укажите клинические замечания к разделам медицинской карты:
 						</label>
 						<div
 							style={{
@@ -828,7 +828,7 @@ export function EmkControlBoard({ dashboard }: EmkControlBoardProps) {
 							marginBottom: "4px",
 						}}
 					>
-						Средняя полнота карт 043/у
+						Средняя полнота медицинских карт
 					</div>
 					<div
 						style={{
@@ -1193,7 +1193,7 @@ export function EmkControlBoard({ dashboard }: EmkControlBoardProps) {
 										<div
 											style={{ fontSize: "10px", color: "var(--ink-2, #64748b)" }}
 										>
-											Полнота 043/у
+											Полнота карты
 										</div>
 									</div>
 
@@ -1371,7 +1371,7 @@ export function EmkControlBoard({ dashboard }: EmkControlBoardProps) {
 												color: "var(--ink, #0f172a)",
 											}}
 										>
-											Структура разделов формы 043/у (Приказ Минздрава № 834н):
+											Структура разделов медицинской карты (стандарты Минздрава):
 										</div>
 										<div
 											style={{
