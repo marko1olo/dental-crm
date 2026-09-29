@@ -198,7 +198,7 @@ export class HardwarePrinter {
 		payload.items.forEach((item, index) => {
 			appendLine(`${index + 1}. ${item.name}`);
 			if (item.medicalServiceCode804n) {
-				appendLine(`   Код 804н: ${item.medicalServiceCode804n}`);
+				appendLine(`   Код услуги: ${item.medicalServiceCode804n}`);
 			}
 			if (item.markingCode) {
 				appendLine(`   [М] DataMatrix: ${item.markingCode.slice(0, 16)}...`);
@@ -461,7 +461,7 @@ export class HardwarePrinter {
 				(item, idx) => `
 			<div style="margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed #ddd;">
 				<div style="font-weight: bold; font-size: 11px;">${idx + 1}. ${item.name}</div>
-				${item.medicalServiceCode804n ? `<div style="font-size: 10px; color: #555;">Код 804н: ${item.medicalServiceCode804n}</div>` : ""}
+				${item.medicalServiceCode804n ? `<div style="font-size: 10px; color: #555;">Код услуги: ${item.medicalServiceCode804n}</div>` : ""}
 				${item.markingCode ? `<div style="font-size: 10px; color: #555;">[М] DataMatrix: ${item.markingCode.slice(0, 16)}...</div>` : ""}
 				<div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 2px;">
 					<span>${item.quantity} шт. &times; ${item.priceRub.toFixed(2)} ₽</span>

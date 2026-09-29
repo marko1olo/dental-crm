@@ -235,6 +235,10 @@ export interface DoctorPreferences {
 	favoriteBracketSystem?: string;
 	favoriteProsthoImpression?: string;
 	favoriteProsthoCement?: string;
+	// Digital signature & facsimile settings (ст. 70 323-ФЗ, Приказ МЗ 947н)
+	digitalSignatureMode?: "ukep" | "simple" | "facsimile";
+	signatureTitle?: string;
+	autoStampEmkOnClose?: boolean;
 }
 
 export const DEFAULT_DOCTOR_PREFERENCES: DoctorPreferences = {
@@ -275,6 +279,9 @@ export const DEFAULT_DOCTOR_PREFERENCES: DoctorPreferences = {
 		"chlorhexidine_005",
 		"holisal_gel",
 	],
+	digitalSignatureMode: "simple",
+	signatureTitle: "Врач-стоматолог",
+	autoStampEmkOnClose: true,
 };
 
 export const DURATION_PRESETS = [15, 30, 45, 60, 90, 120] as const;

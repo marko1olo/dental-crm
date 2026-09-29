@@ -35,7 +35,7 @@ export const DOCTOR_TABS: readonly DoctorTabDefinition[] = [
 	{
 		id: "preferences",
 		label: "Клинические пресеты",
-		description: "Длительность, анестетики, рецепты 107-1/у, материалы",
+		description: "Длительность, анестетики, шаблоны рецептов, материалы",
 		icon: Stethoscope,
 	},
 	{

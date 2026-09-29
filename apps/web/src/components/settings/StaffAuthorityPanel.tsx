@@ -356,7 +356,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 						<Shield className="text-[var(--teal)]" size={16} />
 						Полномочия сотрудников и права доступа
 					</h4>
-					<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-1">
+					<p className="text-xs text-[var(--muted)] m-0 mt-1">
 						Персональные надбавки к роли: подпись ЭМК, касса, импорт данных.
 						То, что даёт роль, снять галочкой нельзя — смените роль в карточке.
 						Подпись ЭМК доступна исключительно дипломированным врачам-клиницистам.
@@ -379,7 +379,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 			<div className="settings-card-body">
 				{!clinicLoaded ? (
 					<p
-						className="text-sm text-slate-500 m-0"
+						className="text-sm text-[var(--muted)] m-0"
 						data-testid="staff-authority-waiting"
 					>
 						Данные клиники ещё не прочитаны — список полномочий появится после
@@ -389,7 +389,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 
 				{clinicLoaded && rows.length === 0 ? (
 					<p
-						className="text-sm text-slate-500 m-0"
+						className="text-sm text-[var(--muted)] m-0"
 						data-testid="staff-authority-empty"
 					>
 						Активных сотрудников нет. Добавьте сотрудника ниже — здесь появятся
@@ -398,9 +398,9 @@ export const StaffAuthorityPanel: React.FC = () => {
 				) : null}
 
 				{rows.length > 0 ? (
-					<div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
+					<div className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-xs">
 						<ul
-							className="m-0 p-0 list-none divide-y divide-slate-200 dark:divide-slate-800"
+							className="m-0 p-0 list-none divide-y divide-[var(--line)]"
 							data-testid="staff-authority-list"
 						>
 							{rows.map((row) => {
@@ -415,7 +415,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 								return (
 									<li
 										key={row.staffId}
-										className="bg-white dark:bg-slate-900 transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+										className="bg-[var(--paper)] transition-colors hover:bg-[var(--paper-soft)]"
 										data-testid={`staff-authority-row-${row.staffId}`}
 									>
 									<button
@@ -426,15 +426,15 @@ export const StaffAuthorityPanel: React.FC = () => {
 										data-testid={`staff-authority-toggle-${row.staffId}`}
 									>
 										<div className="flex items-center gap-3 min-w-0">
-											<div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-300 shrink-0">
+											<div className="w-8 h-8 rounded-full bg-[var(--paper-soft)] flex items-center justify-center font-bold text-xs text-[var(--ink)] shrink-0">
 												{row.name.charAt(0)}
 											</div>
 											<div className="min-w-0">
 												<div className="flex items-center gap-2 flex-wrap">
-													<span className="text-sm font-semibold text-slate-900 dark:text-white break-words leading-snug">
+													<span className="text-sm font-semibold text-[var(--ink)] break-words leading-snug">
 														{row.name}
 													</span>
-													<span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium whitespace-nowrap">
+													<span className="text-xs px-2 py-0.5 rounded-md bg-[var(--paper-soft)] text-[var(--muted)] font-medium whitespace-nowrap">
 														{staffRoleTitle(row.role)}
 													</span>
 												</div>
@@ -456,7 +456,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 															<span>P&L: Доступен</span>
 														</span>
 													) : (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] whitespace-nowrap">
 															<Lock size={12} className="shrink-0" />
 															<span>P&L: Скрыт (Изоляция)</span>
 														</span>
@@ -467,7 +467,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 															<span>Врачебная автономия (ЭМК)</span>
 														</span>
 													) : (
-														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)] whitespace-nowrap">
 															<Lock size={12} className="shrink-0" />
 															<span>ЭМК: Без подписи</span>
 														</span>
@@ -477,7 +477,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 										</div>
 
 										<div className="flex items-center gap-3">
-											<span className="text-xs px-2 py-1 rounded bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-medium">
+											<span className="text-xs px-2 py-1 rounded bg-[var(--paper-soft)] text-[var(--ink)] font-medium">
 												{grantCount} из 3 прав
 											</span>
 											<span className="text-xs font-medium text-[var(--teal)]">
@@ -488,7 +488,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 
 									{open ? (
 										<div
-											className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800"
+											className="px-4 pb-4 pt-1 border-t border-[var(--line)]"
 											data-testid={`staff-authority-editor-${row.staffId}`}
 										>
 											<div className="flex flex-col gap-3 mt-3">
@@ -515,14 +515,14 @@ export const StaffAuthorityPanel: React.FC = () => {
 															key={flag}
 															className={`flex items-start gap-3 text-sm p-2.5 rounded-xl transition-colors min-h-[44px] touch-manipulation ${
 																isLawLocked
-																	? "bg-slate-50/60 dark:bg-slate-800/30 opacity-80 cursor-not-allowed"
-																	: "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
+																	? "bg-[var(--paper-soft)]/60 opacity-80 cursor-not-allowed"
+																	: "cursor-pointer hover:bg-[var(--paper-soft)]"
 															}`}
 															data-testid={`staff-authority-flag-${row.staffId}-${flag}`}
 														>
 															<input
 																type="checkbox"
-																className="mt-1 w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-[var(--teal)] focus:ring-[var(--teal)]"
+																className="mt-1 w-4 h-4 rounded border-[var(--line)] text-[var(--teal)] focus:ring-[var(--teal)]"
 																checked={on}
 																disabled={isInteractiveDisabled}
 																onChange={(e) => {
@@ -533,16 +533,16 @@ export const StaffAuthorityPanel: React.FC = () => {
 															/>
 															<div className="flex-1 min-w-0">
 																<div className="flex items-center gap-2 flex-wrap">
-																	<span className="font-semibold text-slate-900 dark:text-white">
+																	<span className="font-semibold text-[var(--ink)]">
 																		{FLAG_TITLES[flag]}
 																	</span>
 																	{isSaving ? (
-																		<span className="text-xs text-slate-400 font-normal">
+																		<span className="text-xs text-[var(--muted)] font-normal">
 																			сохраняем…
 																		</span>
 																	) : null}
 																</div>
-																<span className="text-xs text-slate-500 block mt-0.5">
+																<span className="text-xs text-[var(--muted)] block mt-0.5">
 																	{FLAG_HINTS[flag]}
 																</span>
 																{lockedOn ? (

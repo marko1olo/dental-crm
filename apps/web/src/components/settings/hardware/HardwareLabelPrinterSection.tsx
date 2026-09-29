@@ -53,7 +53,7 @@ export function HardwareLabelPrinterSection() {
 			const testLabelHtml = `
 				<div style="font-family: monospace; width: 220px; padding: 6px; border: 1px dashed black; font-size: 11px;">
 					<div style="text-align: center; font-weight: bold; font-size: 12px; margin-bottom: 4px;">
-						${activePreset === "kraft_sanpin" ? "СТЕРИЛЬНО (СанПиН 3.3686-21)" : "ПРОБИРКА PRP / PRF"}
+						${activePreset === "kraft_sanpin" ? "СТЕРИЛЬНО (Стерилизация упаковки)" : "ПРОБИРКА PRP / PRF"}
 					</div>
 					${
 						activePreset === "kraft_sanpin"
@@ -78,13 +78,13 @@ export function HardwareLabelPrinterSection() {
 			`;
 
 			await printer.printThermalLabelHtml(testLabelHtml, {
-				title: activePreset === "kraft_sanpin" ? "Этикетка СанПиН" : "Этикетка PRP",
+				title: activePreset === "kraft_sanpin" ? "Этикетка упаковки" : "Этикетка PRP",
 				downloadFilename: `${activePreset}_label.html`,
 			});
 
 			showToast(
 				activePreset === "kraft_sanpin"
-					? "Этикетка крафт-пакета (СанПиН 3.3686-21) отправлена на принтер"
+					? "Этикетка крафт-пакета (Стерилизация) отправлена на принтер"
 					: "Этикетка пробирки плазмолифтинга (PRP) отправлена на принтер",
 				"success",
 			);
@@ -113,7 +113,7 @@ export function HardwareLabelPrinterSection() {
 			>
 				<div>
 					<div style={{ fontWeight: 600, fontSize: "13px", color: "var(--ink)" }}>
-						Принтеры этикеток (СанПиН 3.3686-21 и пробирки PRP/PRF)
+						Принтеры этикеток (Стерилизация оборудования и пробирки PRP/PRF)
 					</div>
 					<div style={{ fontSize: "11px", color: "var(--muted)", marginTop: "2px" }}>
 						Прямая термопечать штрихкодов стерилизации для ЦСО и биоматериалов плазмолифтинга.
@@ -129,7 +129,7 @@ export function HardwareLabelPrinterSection() {
 						data-testid="label-tab-sanpin"
 					>
 						<ShieldCheck size={13} />
-						<span>Крафт-пакеты (СанПиН)</span>
+						<span>Стерилизация упаковок</span>
 					</button>
 					<button
 						type="button"
@@ -338,7 +338,7 @@ export function HardwareLabelPrinterSection() {
 						}}
 					>
 						<div style={{ textAlign: "center", fontWeight: "bold", borderBottom: "1px solid black", paddingBottom: "2px", marginBottom: "4px" }}>
-							{activePreset === "kraft_sanpin" ? "СТЕРИЛЬНО (СанПиН 3.3686-21)" : "БИОМАТЕРИАЛ PRP"}
+							{activePreset === "kraft_sanpin" ? "СТЕРИЛЬНО" : "БИОМАТЕРИАЛ PRP"}
 						</div>
 
 						{activePreset === "kraft_sanpin" ? (
@@ -385,7 +385,7 @@ export function HardwareLabelPrinterSection() {
 					</button>
 
 					<div style={{ fontSize: "11px", color: "var(--muted)", maxWidth: "260px" }}>
-						Соответствует ГОСТ Р ИСО 11607-1 и СанПиН 3.3686-21 для стоматологических ЦСО.
+						Соответствует стандартам стерилизации для стоматологических ЦСО.
 					</div>
 				</div>
 			</div>

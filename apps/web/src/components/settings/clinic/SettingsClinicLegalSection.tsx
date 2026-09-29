@@ -115,7 +115,7 @@ export const SettingsClinicLegalSection: React.FC<SettingsClinicLegalSectionProp
 			<div className="clinic-legal-summary">
 				<div>
 					<p className="eyebrow">Юридический профиль</p>
-					<h3>Реквизиты клиники для договоров и чеков 54-ФЗ</h3>
+					<h3>Реквизиты клиники для договоров и кассовых чеков</h3>
 				</div>
 				<div className="legal-readiness-badge">
 					<strong>{legalReadinessPercent}%</strong>
@@ -163,7 +163,7 @@ export const SettingsClinicLegalSection: React.FC<SettingsClinicLegalSectionProp
 				<summary className="settings-advanced-toggle">
 					<span className="settings-advanced-label">
 						<FileText size={16} className="settings-advanced-icon inline mr-1 text-[var(--teal)]" />
-						Для договоров, чеков 54-ФЗ и налоговых документов
+						Для договоров, кассовых чеков и налоговых документов
 					</span>
 					<span className="settings-advanced-hint">
 						ИНН, лицензия, банк, подписант
@@ -387,6 +387,61 @@ export const SettingsClinicLegalSection: React.FC<SettingsClinicLegalSectionProp
 								"Режим отображения формулы по умолчанию"}
 						</small>
 					</label>
+
+					{/* Logo & Stamp Branding Section */}
+					<div className="form-span-2 pt-3 border-t border-[var(--border)] mt-1" data-testid="clinic-branding-section">
+						<div className="font-semibold text-sm mb-1 text-[var(--ink)]">
+							Фирменный стиль и атрибуты документов (Логотип и факсимиле)
+						</div>
+						<small className="field-note mb-3 block">
+							Используются в медицинской карте, согласии на лечение, договорах, счетах и актах выполненных услуг
+						</small>
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+							<label>
+								URL логотипа клиники
+								<input
+									type="text"
+									placeholder="https://... или data:image/png;base64,..."
+									value={clinicProfileDraft.logoUrl || ""}
+									data-testid="input-clinic-logo-url"
+									onChange={(event: TextInputChangeEvent) =>
+										updateClinicProfileDraft("logoUrl", event.target.value)
+									}
+								/>
+								<small className="field-note">
+									Прямая ссылка на PNG/SVG или Data URL (рекомендуется до 400x120px)
+								</small>
+							</label>
+							<label>
+								URL факсимиле / печати клиники
+								<input
+									type="text"
+									placeholder="https://... или data:image/png;base64,..."
+									value={clinicProfileDraft.stampUrl || ""}
+									data-testid="input-clinic-stamp-url"
+									onChange={(event: TextInputChangeEvent) =>
+										updateClinicProfileDraft("stampUrl", event.target.value)
+									}
+								/>
+								<small className="field-note">
+									Оттиск синей печати на прозрачном фоне для электронных актов
+								</small>
+							</label>
+						</div>
+						{clinicProfileDraft.logoUrl && (
+							<div className="mt-2 flex items-center gap-3 p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
+								<span className="text-xs text-[var(--muted)]">Превью логотипа:</span>
+								<img
+									src={clinicProfileDraft.logoUrl}
+									alt="Логотип клиники"
+									className="max-h-10 max-w-[160px] object-contain rounded"
+									onError={(e) => {
+										(e.target as HTMLElement).style.display = "none";
+									}}
+								/>
+							</div>
+						)}
+					</div>
 
 					{/* Background Wallpaper Art & Waiting Lounge Link */}
 					<div className="form-span-2 pt-3 border-t border-[var(--border)] mt-1">

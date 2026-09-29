@@ -330,24 +330,24 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 			<div
 				className={
 					isModalView
-						? "flex items-center justify-between gap-3 flex-wrap pb-2 border-b border-slate-200 dark:border-slate-800"
+						? "flex items-center justify-between gap-3 flex-wrap pb-2 border-b border-[var(--line)]"
 						: "settings-card-header flex items-center justify-between gap-3 flex-wrap"
 				}
 			>
 				{!isModalView ? (
 					<div>
-						<h4 className="m-0 flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
+						<h4 className="m-0 flex items-center gap-2 text-base font-bold text-[var(--ink)]">
 							<Percent size={16} className="text-[var(--teal)]" />
 							Ставки врачей и сдельная мотивация (% от кассы)
 						</h4>
-						<p className="text-xs text-slate-600 dark:text-slate-400 m-0 mt-1">
+						<p className="text-xs text-[var(--muted)] m-0 mt-1">
 							Процент, по которому клиника начисляет зарплату врачам от приёма.
 							Фактический расчёт с учётом ЗТЛ и материалов ведётся в разделе выплат врачам.
 						</p>
 					</div>
 				) : (
 					<div className="flex items-center gap-2">
-						<span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+						<span className="text-xs font-semibold text-[var(--ink)]">
 							Врачей в штате: <strong>{doctors.length}</strong>
 						</span>
 					</div>
@@ -379,7 +379,7 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 
 				{load.kind === "loading" && rows.length === 0 ? (
 					<p
-						className="text-sm text-slate-500 m-0"
+						className="text-sm text-[var(--muted)] m-0"
 						data-testid="staff-commissions-loading"
 					>
 						Загружаем ставки…
@@ -388,7 +388,7 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 
 				{load.kind === "ready" && rows.length === 0 ? (
 					<p
-						className="text-sm text-slate-500 m-0"
+						className="text-sm text-[var(--muted)] m-0"
 						data-testid="staff-commissions-empty"
 					>
 						Врачей в штате пока нет. Добавьте сотрудника с ролью «Врач» — здесь
@@ -417,7 +417,7 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 								data-testid="staff-commissions-table"
 							>
 								<thead>
-									<tr className="text-left text-xs text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold bg-slate-50/50 dark:bg-slate-800/50">
+									<tr className="text-left text-xs text-[var(--ink)] border-b border-[var(--line)] font-bold bg-[var(--paper-soft)]">
 										<th scope="col" className="py-2.5 px-3 font-bold">
 											Врач-клиницист
 										</th>
@@ -440,10 +440,10 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 										return (
 											<tr
 												key={row.userId}
-												className="border-b border-slate-100 dark:border-slate-800/80 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+												className="border-b border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors"
 												data-testid={`staff-commission-row-${row.userId}`}
 											>
-												<td className="py-2.5 pr-3 font-medium text-slate-900 dark:text-white">
+												<td className="py-2.5 pr-3 font-medium text-[var(--ink)]">
 													{row.name}
 												</td>
 												<td className="py-2.5 pr-3">
@@ -455,26 +455,26 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 															onChange={(e) => setDraft(e.target.value)}
 															placeholder="0–100"
 															aria-label={`Ставка для ${row.name}`}
-															className="w-24 px-2.5 py-1 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+															className="w-24 px-2.5 py-1 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
 															data-testid={`staff-commission-draft-${row.userId}`}
 														/>
 													) : row.rate ? (
 														<span
-															className="font-semibold text-slate-900 dark:text-white"
+															className="font-semibold text-[var(--ink)]"
 															data-testid={`staff-commission-pct-${row.userId}`}
 														>
 															{percentLabel(row.rate.commissionPct)}
 														</span>
 													) : (
 														<span
-															className="text-slate-400 text-xs"
+															className="text-[var(--muted)] text-xs"
 															data-testid={`staff-commission-pct-${row.userId}`}
 														>
 															не задана
 														</span>
 													)}
 												</td>
-												<td className="py-2.5 pr-3 text-xs text-slate-500">
+												<td className="py-2.5 pr-3 text-xs text-[var(--muted)]">
 													{row.rate?.effectiveFrom
 														? formatEffectiveFrom(row.rate.effectiveFrom)
 														: "—"}
@@ -531,15 +531,15 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 								return (
 									<div
 										key={`mobile-comm-${row.userId}`}
-										className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col gap-3 shadow-2xs"
+										className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex flex-col gap-3 shadow-2xs"
 										data-testid={`staff-commission-mobile-card-${row.userId}`}
 									>
 										<div className="flex items-center justify-between gap-2">
 											<div className="min-w-0">
-												<span className="font-bold text-xs text-slate-900 dark:text-white block truncate">
+												<span className="font-bold text-xs text-[var(--ink)] block truncate">
 													{row.name}
 												</span>
-												<span className="text-[11px] text-slate-500 block mt-0.5">
+												<span className="text-[11px] text-[var(--muted)] block mt-0.5">
 													Действует с: {row.rate?.effectiveFrom ? formatEffectiveFrom(row.rate.effectiveFrom) : "—"}
 												</span>
 											</div>
@@ -549,7 +549,7 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 														{percentLabel(row.rate.commissionPct)}
 													</span>
 												) : (
-													<span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+													<span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--paper-soft)] text-[var(--muted)]">
 														не задана
 													</span>
 												)}
@@ -557,9 +557,9 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 										</div>
 
 										{isEditing ? (
-											<div className="flex flex-col gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+											<div className="flex flex-col gap-2 pt-2 border-t border-[var(--line)]">
 												<div className="flex items-center gap-2">
-													<label className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+													<label className="text-xs text-[var(--muted)] font-medium">
 														Ставка (%):
 													</label>
 													<input
@@ -569,7 +569,7 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 														onChange={(e) => setDraft(e.target.value)}
 														placeholder="0–100"
 														aria-label={`Ставка для ${row.name}`}
-														className="flex-1 min-h-[44px] px-3 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+														className="flex-1 min-h-[44px] px-3 py-2 text-sm rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
 													/>
 												</div>
 												<div className="flex items-center gap-2">
@@ -592,7 +592,7 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 												</div>
 											</div>
 										) : (
-											<div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+											<div className="pt-2 border-t border-[var(--line)] flex justify-end">
 												<button
 													type="button"
 													className="secondary-button min-h-[44px] w-full text-xs font-semibold justify-center"

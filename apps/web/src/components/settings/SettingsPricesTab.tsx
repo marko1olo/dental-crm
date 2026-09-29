@@ -8,6 +8,7 @@ import {
 	CheckCircle2,
 	ChevronDown,
 	Database,
+	Download,
 	Edit3,
 	FolderTree,
 	Plus,
@@ -17,9 +18,14 @@ import {
 	Sparkles,
 	Tag,
 	Trash2,
+	Upload,
 	X,
 } from "lucide-react";
 import "./SettingsPricesTab.css";
+import {
+	exportPricelistToCsv,
+	importPricelistFromCsv,
+} from "../catalog/pricelist/servicePricelistEngine";
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { money } from "../../AppHelpers";
@@ -54,30 +60,13 @@ export function SettingsPricesTab() {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {
-		dashboard,
-		pricelistSourceKindLabels,
-		pricelistSourceKind,
-		setPricelistSourceKind,
-		clearPricelistImage,
-		setPricelistAnalysis,
-		pricelistRecognitionServiceGroups,
-		pricelistRecognitionBrandGroups,
-		pricelistText,
-		setPricelistText,
-		pricelistImageName,
-		attachPricelistImage,
-		usePricelistAi,
-		setUsePricelistAi,
-		analyzePricelist,
-		isPricelistAnalyzing,
-		pricelistImageBase64,
-		pricelistAnalysis,
-		pricelistParserModeLabels,
-		serviceCategoryLabels,
-		specialtyLabels,
-		createServiceCatalogItem,
-		updateServiceCatalogItem,
-		deleteServiceCatalogItem,
+		dashboard, pricelistSourceKindLabels, pricelistSourceKind, setPricelistSourceKind,
+		clearPricelistImage, setPricelistAnalysis, pricelistRecognitionServiceGroups,
+		pricelistRecognitionBrandGroups, pricelistText, setPricelistText, pricelistImageName,
+		attachPricelistImage, usePricelistAi, setUsePricelistAi, analyzePricelist,
+		isPricelistAnalyzing, pricelistImageBase64, pricelistAnalysis, pricelistParserModeLabels,
+		serviceCategoryLabels, specialtyLabels, createServiceCatalogItem,
+		updateServiceCatalogItem, deleteServiceCatalogItem,
 	} = mergedProps;
 
 	const [activeTab, setActiveTab] = useState<"catalog" | "ai_import">(
@@ -154,8 +143,7 @@ export function SettingsPricesTab() {
 		const groups: Record<string, any[]> = {};
 		filteredCatalog.forEach((item) => {
 			const cat = item.category || "other";
-			if (!groups[cat]) groups[cat] = [];
-			groups[cat].push(item);
+			(groups[cat] ??= []).push(item);
 		});
 		return groups;
 	}, [filteredCatalog]);
@@ -179,11 +167,8 @@ export function SettingsPricesTab() {
 		setIsSaving(true);
 		try {
 			const servicePayload = { ...editServiceForm, basePriceRub };
-			if (editServiceId === "new") {
-				await createServiceCatalogItem(servicePayload);
-			} else {
-				await updateServiceCatalogItem(editServiceId, servicePayload);
-			}
+			if (editServiceId === "new") await createServiceCatalogItem(servicePayload);
+			else await updateServiceCatalogItem(editServiceId, servicePayload);
 			setEditServiceId(null);
 			// biome-ignore lint/suspicious/noExplicitAny: error handling
 		} catch (error: any) {
@@ -214,6 +199,57 @@ export function SettingsPricesTab() {
 			createServiceCatalogItem,
 			updateServiceCatalogItem,
 		});
+	};
+
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+	const handleExportCsv = () => {
+		const items: ServicePricelistItem[] = typedServiceCatalog.map(
+			(s: ServiceCatalogItem) => ({
+				id: s.id, code804n: s.code || "", commercialTitle: s.title, statutoryTitle804n: s.title,
+				// biome-ignore lint/suspicious/noExplicitAny: category cast
+				category: (s.category || "therapy") as any,
+				// biome-ignore lint/suspicious/noExplicitAny: specialty cast
+				specialty: (s.specialty || "therapist") as any,
+				basePriceRub: Math.round(((s as any).priceRub ?? ((s as any).priceKopecks ? (s as any).priceKopecks / 100 : 0))), unitCostRub: 0, labCostRub: 0,
+				durationMinutes: s.durationMinutes || 30, isActive: s.active !== false,
+				vatRate: "exempt", icd10Codes: [], tags: [],
+			}),
+		);
+		const blob = new Blob([exportPricelistToCsv(items)], { type: "text/csv;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = `dente_pricelist_${new Date().toISOString().slice(0, 10)}.csv`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+		showToast(`Прайс-лист (${items.length} услуг) экспортирован в CSV`, "success");
+	};
+
+	const handleImportCsvFile = async (e: ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		try {
+			const text = await file.text();
+			const result = importPricelistFromCsv(text);
+			if (result.invalidRows.length > 0 && result.validItems.length === 0) {
+				showToast(`Ошибка импорта CSV: ${result.invalidRows[0]?.error || "Неверный формат"}`, "error");
+				return;
+			}
+			await handleSaveCatalog(result.validItems);
+			showToast(`Импортировано ${result.validItems.length} услуг из CSV`, "success");
+			if (typeof mergedProps.refreshDashboard === "function") {
+				await mergedProps.refreshDashboard();
+			} else if (typeof appLogic?.refreshDashboard === "function") {
+				await appLogic.refreshDashboard();
+			}
+		} catch (err) {
+			showToast(`Ошибка чтения CSV: ${err instanceof Error ? err.message : String(err)}`, "error");
+		} finally {
+			if (fileInputRef.current) fileInputRef.current.value = "";
+		}
 	};
 
 	const handleSeedBaseline804n = async (replace = false) => {
@@ -259,14 +295,14 @@ export function SettingsPricesTab() {
 
 			showToast(
 				seededCount > 0
-					? `Базовый прейскурант 804н успешно заполнен (${seededCount} услуг)`
-					: "Базовый прейскурант 804н актуален (услуги уже присутствуют в каталоге)",
+					? `Базовый прейскурант услуг успешно заполнен (${seededCount} услуг)`
+					: "Базовый прейскурант услуг актуален (услуги уже присутствуют в каталоге)",
 				"success",
 			);
 			setIs804nCodesMenuOpen(false);
 		} catch (error: any) {
-			console.error("[pricelist] Ошибка наполнения базового прейскуранта 804н:", error);
-			showToast(error?.message || "Не удалось наполнить базовый прейскурант 804н", "error");
+			console.error("[pricelist] Ошибка наполнения базового прейскуранта услуг:", error);
+			showToast(error?.message || "Не удалось наполнить базовый прейскурант услуг", "error");
 		} finally {
 			setIsSeedingBaseline(false);
 		}
@@ -424,6 +460,35 @@ export function SettingsPricesTab() {
 							<button
 								type="button"
 								className="secondary-button min-h-[32px] h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-all inline-flex items-center gap-1 cursor-pointer shrink-0"
+								onClick={handleExportCsv}
+								data-testid="export-pricelist-csv-btn"
+								title="Экспортировать прайс-лист в Excel CSV (RFC 4180)"
+							>
+								<Download size={13} className="text-[var(--teal)] shrink-0" />
+								<span className="hidden lg:inline">Экспорт CSV</span>
+								<span className="lg:hidden">CSV</span>
+							</button>
+							<button
+								type="button"
+								className="secondary-button min-h-[32px] h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-all inline-flex items-center gap-1 cursor-pointer shrink-0"
+								onClick={() => fileInputRef.current?.click()}
+								data-testid="import-pricelist-csv-btn"
+								title="Импортировать услуги из CSV-файла"
+							>
+								<Upload size={13} className="text-[var(--teal)] shrink-0" />
+								<span className="hidden lg:inline">Импорт CSV</span>
+								<span className="lg:hidden">Импорт</span>
+							</button>
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept=".csv,text/csv"
+								className="hidden"
+								onChange={handleImportCsvFile}
+							/>
+							<button
+								type="button"
+								className="secondary-button min-h-[32px] h-7 sm:h-8 px-2 sm:px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-all inline-flex items-center gap-1 cursor-pointer shrink-0"
 								onClick={() => setIsServicePricelistModalOpen(true)}
 								data-testid="open-service-pricelist-modal-btn"
 								title="Справочник услуг и прайс-лист клиники"
@@ -513,7 +578,7 @@ export function SettingsPricesTab() {
 											Каталог услуг пуст
 										</h4>
 										<p className="text-xs text-[var(--muted)] leading-relaxed max-w-sm">
-											Быстро наполните прейскурант клиники 30 основными услугами по Приказу Минздрава РФ № 804н с рекомендованными ценами для соло-врача и небольших клиник (Мандаты 8e, 8n).
+											Быстро наполните прейскурант клиники 30 основными стоматологическими услугами с рекомендованными ценами для соло-врача и небольших клиник (Мандаты 8e, 8n).
 										</p>
 									</div>
 									<div className="flex flex-col sm:flex-row items-center gap-2 mt-2 w-full justify-center">
@@ -528,7 +593,7 @@ export function SettingsPricesTab() {
 											<span>
 												{isSeedingBaseline
 													? "Наполнение каталога..."
-													: "Заполнить рекомендованный прейскурант 804н (30 базовых услуг)"}
+													: "Заполнить рекомендованный прейскурант (30 базовых услуг)"}
 											</span>
 										</button>
 									</div>

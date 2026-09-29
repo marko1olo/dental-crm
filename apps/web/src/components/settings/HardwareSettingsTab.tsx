@@ -167,7 +167,7 @@ export function HardwareSettingsTab() {
 					style={{ height: "30px", fontSize: "12px", fontWeight: 600 }}
 				>
 					<Printer size={14} />
-					<span>Фискальные регистраторы (54-ФЗ)</span>
+					<span>Касса и чеки</span>
 				</button>
 
 				<button
@@ -180,7 +180,7 @@ export function HardwareSettingsTab() {
 					style={{ height: "30px", fontSize: "12px", fontWeight: 600 }}
 				>
 					<Barcode size={14} />
-					<span>Сканеры маркировки (DataMatrix / МДЛП)</span>
+					<span>Сканеры маркировки и штрихкодов</span>
 				</button>
 
 				<button
@@ -193,7 +193,7 @@ export function HardwareSettingsTab() {
 					style={{ height: "30px", fontSize: "12px", fontWeight: 600 }}
 				>
 					<Tag size={14} />
-					<span>Принтеры этикеток (СанПиН 3.3686-21)</span>
+					<span>Принтеры этикеток (Стерилизация)</span>
 				</button>
 			</div>
 

@@ -162,12 +162,12 @@ export function OwnerPriceList804nSection() {
 
 	const handleResetOverrides = () => {
 		setPriceOverrides({});
-		showToast("Цены сброшены к базовому прейскуранту 804н", "info");
+		showToast("Цены сброшены к базовому прейскуранту услуг", "info");
 	};
 
 	const handleCopyCode = (code: string) => {
 		navigator.clipboard.writeText(code);
-		showToast(`Код 804н «${code}» скопирован`, "success");
+		showToast(`Код услуги «${code}» скопирован`, "success");
 	};
 
 	return (
@@ -180,10 +180,10 @@ export function OwnerPriceList804nSection() {
 					</div>
 					<div>
 						<h3 className="m-0 text-base font-bold text-[var(--ink)]">
-							Прейскурант 804н и калькуляция маржинальности
+							Прейскурант услуг и калькуляция маржинальности
 						</h3>
 						<p className="m-0 text-xs text-[var(--muted)]">
-							Приказ Минздрава РФ № 804н. Прозрачный учет себестоимости материалов и лаборатории ЗТЛ.
+							Номенклатура медицинских услуг. Прозрачный учет себестоимости материалов и лаборатории ЗТЛ.
 						</p>
 					</div>
 				</div>
@@ -207,7 +207,7 @@ export function OwnerPriceList804nSection() {
 			{/* Сводная финансовая панель */}
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
 				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-					<span className="text-[11px] text-[var(--muted)] block">Всего позиций 804н</span>
+					<span className="text-[11px] text-[var(--muted)] block">Всего позиций в прейскуранте</span>
 					<span className="text-lg font-bold text-[var(--ink)] mt-0.5 block">
 						{stats.totalServices} услуг
 					</span>
@@ -244,7 +244,7 @@ export function OwnerPriceList804nSection() {
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							placeholder="Поиск по коду 804н (A16.07.002) или названию услуги..."
+							placeholder="Поиск по коду услуги (A16.07.002) или названию услуги..."
 							className="w-full text-xs pl-8 pr-2.5 py-1.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--teal)]"
 						/>
 					</div>
@@ -310,7 +310,7 @@ export function OwnerPriceList804nSection() {
 			{/* Таблица / список услуг с прозрачной маржинальностью */}
 			<div className="border border-[var(--line)] rounded-xl overflow-hidden bg-[var(--paper)]">
 				<div className="hidden sm:grid grid-cols-12 gap-2 p-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] text-[11px] font-bold text-[var(--muted)]">
-					<div className="col-span-2">Код 804н</div>
+					<div className="col-span-2">Код услуги</div>
 					<div className="col-span-4">Услуга / Номенклатура</div>
 					<div className="col-span-2 text-right">Розница (пациент)</div>
 					<div className="col-span-2 text-right">Материалы + ЗТЛ</div>
@@ -332,13 +332,13 @@ export function OwnerPriceList804nSection() {
 									key={service.id}
 									className="p-3 sm:p-2.5 grid grid-cols-1 sm:grid-cols-12 gap-2 sm:items-center hover:bg-[var(--paper-soft)] transition-colors"
 								>
-									{/* Код 804н */}
+									{/* Код услуги */}
 									<div className="sm:col-span-2 flex items-center gap-1.5">
 										<button
 											type="button"
 											onClick={() => handleCopyCode(service.code804n)}
 											className="font-mono text-[11px] font-bold text-[var(--teal-dark)] bg-[var(--teal-soft)] px-2 py-0.5 rounded border border-[var(--teal-soft)] flex items-center gap-1 cursor-pointer hover:opacity-80"
-											title="Скопировать код 804н"
+											title="Скопировать код услуги"
 										>
 											<span>{service.code804n}</span>
 											<Copy size={10} />

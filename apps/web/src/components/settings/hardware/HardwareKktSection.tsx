@@ -231,7 +231,7 @@ export function HardwareKktSection() {
 			>
 				<div>
 					<div style={{ fontWeight: 600, fontSize: "13px", color: "var(--ink)" }}>
-						Фискальные регистраторы и онлайн-кассы (54-ФЗ / ФФД 1.2)
+						Фискальные регистраторы и онлайн-кассы
 					</div>
 					<div style={{ fontSize: "11px", color: "var(--muted)", marginTop: "2px" }}>
 						Прямой LAN / COM-порт протокол АТОЛ и ШТРИХ-М без посредников и задержек облака.

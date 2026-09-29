@@ -51,28 +51,10 @@ import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import { StaffSecurityTab } from "./StaffSecurityTab";
+import { StaffProfileRequisitesSection } from "./StaffProfileRequisitesSection";
+import { StaffProfilePayrollSection } from "./StaffProfilePayrollSection";
 import { CREATABLE_STAFF_ROLES, staffRoleTitle } from "./settingsInviteRoles";
 import "./staffProfile.css";
-
-const DENTAL_SPECIALTIES_LIST = [
-	{ id: "universal", label: "Стоматолог общей практики" },
-	{ id: "therapist", label: "Терапевт" },
-	{ id: "surgeon", label: "Хирург" },
-	{ id: "orthopedist", label: "Ортопед" },
-	{ id: "orthodontist", label: "Ортодонт" },
-	{ id: "periodontist", label: "Пародонтолог" },
-	{ id: "implantologist", label: "Имплантолог" },
-	{ id: "pediatric", label: "Детский стоматолог" },
-	{ id: "hygienist", label: "Гигиенист" },
-	{ id: "radiologist", label: "Рентгенолог" },
-];
-
-const PRICE_CATEGORIES = [
-	{ id: "standard", label: "Стандартная категория" },
-	{ id: "first", label: "Первая категория" },
-	{ id: "highest", label: "Высшая категория" },
-	{ id: "vip", label: "Ведущий специалист / VIP" },
-];
 
 export interface StaffProfileCardProps {
 	readonly staffMember: StaffProfileExtended;
@@ -405,14 +387,14 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 				</header>
 
 				{/* Mobile Segmented Control (Mandate 8c: >= 44x44px touch targets) */}
-				<div className="md:hidden flex border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 p-1 gap-1">
+				<div className="md:hidden flex border-b border-[var(--line)] bg-[var(--paper-soft)] p-1 gap-1">
 					<button
 						type="button"
 						onClick={() => setActiveTabMobile("requisites")}
 						className={`flex-1 min-h-[44px] px-2 py-2 text-xs font-semibold rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer ${
 							activeTabMobile === "requisites"
-								? "bg-white dark:bg-slate-800 text-teal-600 shadow-sm"
-								: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+								? "bg-[var(--paper)] text-teal-600 shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						1. Реквизиты
@@ -422,8 +404,8 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 						onClick={() => setActiveTabMobile("payroll")}
 						className={`flex-1 min-h-[44px] px-2 py-2 text-xs font-semibold rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer ${
 							activeTabMobile === "payroll"
-								? "bg-white dark:bg-slate-800 text-teal-600 shadow-sm"
-								: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+								? "bg-[var(--paper)] text-teal-600 shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						2. Ставки и филиалы
@@ -433,8 +415,8 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 						onClick={() => setActiveTabMobile("security")}
 						className={`flex-1 min-h-[44px] px-2 py-2 text-xs font-semibold rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer ${
 							activeTabMobile === "security"
-								? "bg-white dark:bg-slate-800 text-teal-600 shadow-sm"
-								: "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+								? "bg-[var(--paper)] text-teal-600 shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						3. Безопасность
@@ -444,471 +426,58 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 				{/* Body (3-Column Grid) */}
 				<form onSubmit={handleSave} className="staff-profile-modal-body">
 					<div className="staff-profile-3col-grid">
-						{/* КОЛОНКА 1: Персональные данные, контакты, реквизиты */}
-						<div
-							className={`staff-profile-column ${
-								activeTabMobile !== "requisites" ? "hidden md:flex" : ""
-							}`}
-						>
-							<section className="staff-profile-card-section">
-								<h4 className="staff-profile-section-title">
-									<span className="staff-profile-section-title-left">
-										<User className="w-4 h-4" />
-										<span>Персональные данные</span>
-									</span>
-								</h4>
+						<StaffProfileRequisitesSection
+							fullName={fullName}
+							setFullName={setFullName}
+							phone={phone}
+							setPhone={setPhone}
+							email={email}
+							setEmail={setEmail}
+							snils={snils}
+							setSnils={setSnils}
+							inn={inn}
+							setInn={setInn}
+							medicalBookNumber={medicalBookNumber}
+							setMedicalBookNumber={setMedicalBookNumber}
+							medicalBookCheckupDate={medicalBookCheckupDate}
+							setMedicalBookCheckupDate={setMedicalBookCheckupDate}
+							minzdravAccreditationDate={minzdravAccreditationDate}
+							setMinzdravAccreditationDate={setMinzdravAccreditationDate}
+							clinicalNotes={clinicalNotes}
+							setClinicalNotes={setClinicalNotes}
+							managementNotes={managementNotes}
+							setManagementNotes={setManagementNotes}
+							canSeeManagementNotes={canSeeManagementNotes}
+							snilsValidation={snilsValidation}
+							innValidation={innValidation}
+							medicalBookValidation={medicalBookValidation}
+							accreditationValidation={accreditationValidation}
+							activeTabMobile={activeTabMobile}
+						/>
 
-								<div className="staff-profile-form-group">
-									<label htmlFor="staff-fullname">ФИО сотрудника *</label>
-									<input
-										id="staff-fullname"
-										type="text"
-										value={fullName}
-										onChange={(e) => setFullName(e.target.value)}
-										placeholder="Иванов Иван Иванович"
-										required
-									/>
-								</div>
-
-								<div className="grid grid-cols-2 gap-2">
-									<div className="staff-profile-form-group">
-										<label htmlFor="staff-phone">Телефон</label>
-										<input
-											id="staff-phone"
-											type="tel"
-											value={phone}
-											onChange={(e) => setPhone(e.target.value)}
-											placeholder="+7 (999) 000-00-00"
-										/>
-									</div>
-									<div className="staff-profile-form-group">
-										<label htmlFor="staff-email">Email (Логин)</label>
-										<input
-											id="staff-email"
-											type="email"
-											value={email}
-											onChange={(e) => setEmail(e.target.value)}
-											placeholder="doctor@clinic.ru"
-										/>
-									</div>
-								</div>
-							</section>
-
-							<section className="staff-profile-card-section">
-								<h4 className="staff-profile-section-title">
-									<span className="staff-profile-section-title-left">
-										<FileText className="w-4 h-4" />
-										<span>Реквизиты и документы РФ</span>
-									</span>
-								</h4>
-
-								{/* СНИЛС */}
-								<div className="staff-profile-form-group">
-									<label htmlFor="staff-snils">
-										<span>СНИЛС (ЕГИСЗ / ФРМР)</span>
-										{snilsValidation && (
-											<span
-												className={`text-[11px] font-medium inline-flex items-center ${
-													snilsValidation.isValid
-														? "text-emerald-600 dark:text-emerald-400"
-														: "text-rose-600 dark:text-rose-400"
-												}`}
-											>
-												{snilsValidation.isValid ? (
-													<>
-														<CheckCircle2 size={13} className="inline mr-1 shrink-0" />
-														<span>Контрольное число совпадает</span>
-													</>
-												) : (
-													<>
-														<X size={13} className="inline mr-1 shrink-0" />
-														<span>Ошибка</span>
-													</>
-												)}
-											</span>
-										)}
-									</label>
-									<input
-										id="staff-snils"
-										type="text"
-										value={snils}
-										onChange={(e) => setSnils(e.target.value)}
-										placeholder="000-000-000 00"
-										maxLength={14}
-									/>
-								</div>
-
-								{/* ИНН */}
-								<div className="staff-profile-form-group">
-									<label htmlFor="staff-inn">
-										<span>ИНН (ФНС)</span>
-										{innValidation && (
-											<span
-												className={`text-[11px] font-medium inline-flex items-center ${
-													innValidation.isValid
-														? "text-emerald-600 dark:text-emerald-400"
-														: "text-rose-600 dark:text-rose-400"
-												}`}
-											>
-												{innValidation.isValid ? (
-													<>
-														<CheckCircle2 size={13} className="inline mr-1 shrink-0" />
-														<span>Валиден (ФНС)</span>
-													</>
-												) : (
-													<>
-														<X size={13} className="inline mr-1 shrink-0" />
-														<span>Неверный ИНН</span>
-													</>
-												)}
-											</span>
-										)}
-									</label>
-									<input
-										id="staff-inn"
-										type="text"
-										value={inn}
-										onChange={(e) => setInn(e.target.value)}
-										placeholder="12-значный ИНН физлица"
-										maxLength={12}
-									/>
-								</div>
-
-								{/* Медкнижка ЛМК */}
-								<div className="grid grid-cols-2 gap-2">
-									<div className="staff-profile-form-group">
-										<label htmlFor="staff-medbook">№ Медкнижки (ЛМК)</label>
-										<input
-											id="staff-medbook"
-											type="text"
-											value={medicalBookNumber}
-											onChange={(e) => setMedicalBookNumber(e.target.value)}
-											placeholder="ЛМК-000000"
-										/>
-									</div>
-									<div className="staff-profile-form-group">
-										<label htmlFor="staff-medbook-date">Медосмотр до</label>
-										<input
-											id="staff-medbook-date"
-											type="date"
-											value={medicalBookCheckupDate}
-											onChange={(e) =>
-												setMedicalBookCheckupDate(e.target.value)
-											}
-										/>
-									</div>
-								</div>
-
-								{medicalBookValidation && (
-									<div
-										className={`staff-compliance-status-box ${
-											medicalBookValidation.status === "valid"
-												? "valid"
-												: medicalBookValidation.status === "expiring_soon"
-													? "expiring"
-													: "expired"
-										}`}
-									>
-										{medicalBookValidation.status === "valid" ? (
-											<CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-										) : (
-											<AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-										)}
-										<span>{medicalBookValidation.message}</span>
-									</div>
-								)}
-
-								{/* Периодическая аккредитация Минздрава */}
-								<div className="staff-profile-form-group">
-									<label htmlFor="staff-accreditation-date">
-										Дата аккредитации Минздрава РФ
-									</label>
-									<input
-										id="staff-accreditation-date"
-										type="date"
-										value={minzdravAccreditationDate}
-										onChange={(e) =>
-											setMinzdravAccreditationDate(e.target.value)
-										}
-									/>
-								</div>
-
-								{accreditationValidation && (
-									<div
-										className={`staff-compliance-status-box ${
-											accreditationValidation.status === "valid"
-												? "valid"
-												: accreditationValidation.status === "expiring_soon"
-													? "expiring"
-													: "expired"
-										}`}
-									>
-										{accreditationValidation.status === "valid" ? (
-											<CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-										) : (
-											<AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-										)}
-										<span>{accreditationValidation.message}</span>
-									</div>
-								)}
-							</section>
-
-							{/* Заметки и разграничение доступа */}
-							<section className="staff-profile-card-section">
-								<h4 className="staff-profile-section-title">
-									<span className="staff-profile-section-title-left">
-										<FileText className="w-4 h-4" />
-										<span>Клинические и внутренние заметки</span>
-									</span>
-								</h4>
-
-								<div className="staff-profile-form-group">
-									<label htmlFor="staff-clinical-notes">
-										Общие клинические заметки (видны администраторам)
-									</label>
-									<textarea
-										id="staff-clinical-notes"
-										value={clinicalNotes}
-										onChange={(e) => setClinicalNotes(e.target.value)}
-										placeholder="График стажировок, особенности ассистирования..."
-									/>
-								</div>
-
-								{canSeeManagementNotes ? (
-									<div className="staff-management-notes-box">
-										<div className="staff-management-notes-header">
-											<Lock className="w-3.5 h-3.5" />
-											<span>Заметки руководства (Главврач / Директор)</span>
-										</div>
-										<textarea
-											value={managementNotes}
-											onChange={(e) => setManagementNotes(e.target.value)}
-											placeholder="Конфиденциальные HR-заметки, испытательный срок, персональные условия..."
-											className="text-xs"
-										/>
-									</div>
-								) : (
-									<div className="text-xs text-slate-600 dark:text-slate-300 italic p-2.5 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center gap-2">
-										<Lock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-										<span>Заметки руководства скрыты (доступны только руководству и директору).</span>
-									</div>
-								)}
-							</section>
-						</div>
-
-						{/* КОЛОНКА 2: Роль, филиалы, кабинеты, тарификация */}
-						<div
-							className={`staff-profile-column ${
-								activeTabMobile !== "payroll" ? "hidden md:flex" : ""
-							}`}
-						>
-							<section className="staff-profile-card-section">
-								<h4 className="staff-profile-section-title">
-									<span className="staff-profile-section-title-left">
-										<Stethoscope className="w-4 h-4" />
-										<span>Роль и специальности</span>
-									</span>
-								</h4>
-
-								<div className="staff-profile-form-group">
-									<label htmlFor="staff-role-select">Должность в клинике</label>
-									<select
-										id="staff-role-select"
-										value={role}
-										onChange={(e) => setRole(e.target.value as StaffRole)}
-									>
-										{CREATABLE_STAFF_ROLES.map((r) => (
-											<option key={r} value={r}>
-												{staffRoleTitle(r)}
-											</option>
-										))}
-									</select>
-								</div>
-
-								<div className="staff-profile-form-group">
-									<label>Специализации врача</label>
-									<div className="flex flex-wrap gap-1.5 mt-1">
-										{DENTAL_SPECIALTIES_LIST.map((spec) => {
-											const isSelected = specialties.includes(spec.id);
-											return (
-												<button
-													key={spec.id}
-													type="button"
-													onClick={() => handleSpecialtyToggle(spec.id)}
-													className={`text-xs px-3 py-1.5 min-h-[44px] rounded-lg border transition-all inline-flex items-center justify-center cursor-pointer ${
-														isSelected
-															? "bg-teal-600 text-white border-teal-600 font-semibold shadow-xs"
-															: "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-teal-500"
-													}`}
-												>
-													{spec.label}
-												</button>
-											);
-										})}
-									</div>
-								</div>
-							</section>
-
-							<section className="staff-profile-card-section">
-								<h4 className="staff-profile-section-title">
-									<span className="staff-profile-section-title-left">
-										<Building2 className="w-4 h-4" />
-										<span>Привязка филиалов и кабинетов</span>
-									</span>
-								</h4>
-
-								<div className="staff-profile-form-group">
-									<label>Филиалы клиники</label>
-									{clinicsList.length === 0 ? (
-										<span className="text-xs text-slate-400">
-											Филиалы не настроены (основной филиал)
-										</span>
-									) : (
-										<div className="flex flex-col gap-1.5">
-											{clinicsList.map((clinic: any) => {
-												const checked = assignedBranches.includes(clinic.id);
-												return (
-													<label
-														key={clinic.id}
-														className="flex items-center gap-2 text-xs font-normal cursor-pointer"
-													>
-														<input
-															type="checkbox"
-															checked={checked}
-															onChange={() => handleBranchToggle(clinic.id)}
-															className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-														/>
-														<span>{clinic.name || "Филиал"}</span>
-													</label>
-												);
-											})}
-										</div>
-									)}
-								</div>
-
-								<div className="staff-profile-form-group">
-									<label>Рабочие кабинеты и кресла</label>
-									{chairsList.length === 0 ? (
-										<span className="text-xs text-slate-400">
-											Кресла клиники не настроены
-										</span>
-									) : (
-										<div className="grid grid-cols-2 gap-1.5">
-											{chairsList.map((chair: any) => {
-												const checked = assignedChairIds.includes(chair.id);
-												return (
-													<label
-														key={chair.id}
-														className="flex items-center gap-2 text-xs font-normal cursor-pointer p-1.5 rounded border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50"
-													>
-														<input
-															type="checkbox"
-															checked={checked}
-															onChange={() => handleChairToggle(chair.id)}
-															className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-														/>
-														<span className="truncate" title={chair.name || "Кресло"}>
-															{chair.name || "Кресло"}
-														</span>
-													</label>
-												);
-											})}
-										</div>
-									)}
-								</div>
-							</section>
-
-							<section className="staff-profile-card-section">
-								<h4 className="staff-profile-section-title">
-									<span className="staff-profile-section-title-left">
-										<DollarSign className="w-4 h-4" />
-										<span>Тарификация и ставки ЗП</span>
-									</span>
-								</h4>
-
-								<div className="staff-profile-form-group">
-									<label htmlFor="staff-price-category">Прайс-категория</label>
-									<select
-										id="staff-price-category"
-										value={priceCategory}
-										onChange={(e) => setPriceCategory(e.target.value)}
-									>
-										{PRICE_CATEGORIES.map((cat) => (
-											<option key={cat.id} value={cat.id}>
-												{cat.label}
-											</option>
-										))}
-									</select>
-								</div>
-
-								<div className="grid grid-cols-2 gap-2">
-									<div className="staff-profile-form-group">
-										<label htmlFor="staff-salary-rub">Окладная часть (₽)</label>
-										<input
-											id="staff-salary-rub"
-											type="number"
-											min={0}
-											step={1000}
-											value={baseSalaryRub}
-											onChange={(e) =>
-												setBaseSalaryRub(Number(e.target.value) || 0)
-											}
-											placeholder="50 000"
-										/>
-									</div>
-									<div className="staff-profile-form-group">
-										<label htmlFor="staff-commission-pct">Ставка ЗП (%)</label>
-										<input
-											id="staff-commission-pct"
-											type="number"
-											min={0}
-											max={100}
-											step={0.5}
-											value={commissionPct}
-											onChange={(e) =>
-												setCommissionPct(Number(e.target.value) || 0)
-											}
-											placeholder="25 %"
-										/>
-									</div>
-								</div>
-
-								<div className="grid grid-cols-2 gap-2">
-									<div className="staff-profile-form-group">
-										<label htmlFor="staff-mat-deduction">
-											Удержание расходников (%)
-										</label>
-										<input
-											id="staff-mat-deduction"
-											type="number"
-											min={0}
-											max={100}
-											value={materialCostDeductionPct}
-											onChange={(e) =>
-												setMaterialCostDeductionPct(Number(e.target.value) || 0)
-											}
-											placeholder="0 %"
-										/>
-									</div>
-									<div className="staff-profile-form-group">
-										<label htmlFor="staff-lab-deduction">
-											Удержание ЗТЛ (%)
-										</label>
-										<input
-											id="staff-lab-deduction"
-											type="number"
-											min={0}
-											max={100}
-											value={labCostDeductionPct}
-											onChange={(e) =>
-												setLabCostDeductionPct(Number(e.target.value) || 0)
-											}
-											placeholder="0 %"
-										/>
-									</div>
-								</div>
-							</section>
-						</div>
+						<StaffProfilePayrollSection
+							role={role}
+							setRole={setRole}
+							specialties={specialties}
+							handleSpecialtyToggle={handleSpecialtyToggle}
+							clinicsList={clinicsList}
+							assignedBranches={assignedBranches}
+							handleBranchToggle={handleBranchToggle}
+							chairsList={chairsList}
+							assignedChairIds={assignedChairIds}
+							handleChairToggle={handleChairToggle}
+							priceCategory={priceCategory}
+							setPriceCategory={setPriceCategory}
+							baseSalaryRub={baseSalaryRub}
+							setBaseSalaryRub={setBaseSalaryRub}
+							commissionPct={commissionPct}
+							setCommissionPct={setCommissionPct}
+							materialCostDeductionPct={materialCostDeductionPct}
+							setMaterialCostDeductionPct={setMaterialCostDeductionPct}
+							labCostDeductionPct={labCostDeductionPct}
+							setLabCostDeductionPct={setLabCostDeductionPct}
+							activeTabMobile={activeTabMobile}
+						/>
 
 						{/* КОЛОНКА 3: Безопасность, шкала энтропии, сессии и права */}
 						<div
@@ -940,47 +509,47 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 											onChange={(e) =>
 												setCanSignMedicalRecords(e.target.checked)
 											}
-											className="rounded mt-0.5 text-teal-600 focus:ring-teal-500"
+											className="rounded mt-0.5 border-[var(--line)] text-teal-600 focus:ring-teal-500"
 										/>
 										<div>
-											<span className="font-semibold text-slate-900 dark:text-slate-100 block">
+											<span className="font-semibold text-[var(--ink)] block">
 												Подпись медицинской документации (ЭМК)
 											</span>
-											<span className="text-slate-500 dark:text-slate-400 text-[11px]">
+											<span className="text-[var(--muted)] text-[11px]">
 												Право завершать приём, ставить диагнозы и подписывать дневники ЭМК.
 											</span>
 										</div>
 									</label>
 
-									<label className="flex items-start gap-2.5 text-xs cursor-pointer pt-2 border-t border-slate-100 dark:border-slate-800">
+									<label className="flex items-start gap-2.5 text-xs cursor-pointer pt-2 border-t border-[var(--line)]">
 										<input
 											type="checkbox"
 											checked={canManageMoney}
 											onChange={(e) => setCanManageMoney(e.target.checked)}
-											className="rounded mt-0.5 text-teal-600 focus:ring-teal-500"
+											className="rounded mt-0.5 border-[var(--line)] text-teal-600 focus:ring-teal-500"
 										/>
 										<div>
-											<span className="font-semibold text-slate-900 dark:text-slate-100 block">
+											<span className="font-semibold text-[var(--ink)] block">
 												Касса, приём оплат и чеки
 											</span>
-											<span className="text-slate-500 dark:text-slate-400 text-[11px]">
+											<span className="text-[var(--muted)] text-[11px]">
 												Пробитие чеков на онлайн-кассе, наличные/безналичные оплаты и возвраты.
 											</span>
 										</div>
 									</label>
 
-									<label className="flex items-start gap-2.5 text-xs cursor-pointer pt-2 border-t border-slate-100 dark:border-slate-800">
+									<label className="flex items-start gap-2.5 text-xs cursor-pointer pt-2 border-t border-[var(--line)]">
 										<input
 											type="checkbox"
 											checked={canManageImports}
 											onChange={(e) => setCanManageImports(e.target.checked)}
-											className="rounded mt-0.5 text-teal-600 focus:ring-teal-500"
+											className="rounded mt-0.5 border-[var(--line)] text-teal-600 focus:ring-teal-500"
 										/>
 										<div>
-											<span className="font-semibold text-slate-900 dark:text-slate-100 block">
+											<span className="font-semibold text-[var(--ink)] block">
 												Управление переносом данных и прайсом
 											</span>
-											<span className="text-slate-500 dark:text-slate-400 text-[11px]">
+											<span className="text-[var(--muted)] text-[11px]">
 												Импорт картотеки пациентов из сторонних программ и правка прейскуранта.
 											</span>
 										</div>

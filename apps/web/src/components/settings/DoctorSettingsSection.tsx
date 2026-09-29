@@ -123,7 +123,7 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 							</span>
 						</div>
 						<p className="text-xs text-[var(--muted)] mt-0.5 line-clamp-2 sm:truncate max-w-xl">
-							Персональные клинические стандарты врача: шаблоны 043/у, пресеты анестезии и материалы
+							Персональные клинические стандарты врача: шаблоны медицинской карты, пресеты анестезии и материалы
 						</p>
 					</div>
 				</div>
@@ -313,7 +313,7 @@ export const DoctorSettingsSection: React.FC<DoctorSettingsSectionProps> = ({
 				)}
 
 				{activeSubTab === "procedure-boms" && (
-					<ErrorBoundary moduleName="Техкарты расхода материалов 804н">
+					<ErrorBoundary moduleName="Техкарты расхода материалов">
 						<MaterialBomsSettingsPanel
 							{...(props?.auth?.currentUser?.organizationId
 								? { organizationId: props.auth.currentUser.organizationId }

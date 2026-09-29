@@ -81,7 +81,7 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 	const [allowAutonomousBuffer, setAllowAutonomousBuffer] = useState(true);
 
 	const handleSaveTaxation = () => {
-		showToast("Настройки налогообложения и 54-ФЗ успешно сохранены", "success");
+		showToast("Настройки налогообложения и кассы успешно сохранены", "success");
 	};
 
 	const currentSystem = TAXATION_SYSTEMS.find((s) => s.id === activeTaxation)!;
@@ -97,7 +97,7 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 					<div>
 						<div className="flex items-center gap-2">
 							<h4 className="font-bold text-base text-[var(--ink)]">
-								Налогообложение (СНО) и фискализация 54-ФЗ
+								Налогообложение (СНО) и касса
 							</h4>
 							<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
 								ФФД {ffdVersion}
@@ -177,7 +177,7 @@ export const TaxationAndFiscalizationCard: React.FC = () => {
 			<div className="space-y-3 pt-2 border-t border-[var(--line)]">
 				<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 					<CreditCard size={14} className="text-blue-600" />
-					Разрешенные способы расчетов по 54-ФЗ (Сплит-платежи):
+					Разрешенные способы расчетов (сплит-платежи):
 				</label>
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
 					{[

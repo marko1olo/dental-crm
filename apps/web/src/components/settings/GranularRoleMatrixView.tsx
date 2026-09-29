@@ -157,12 +157,12 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 			data-testid="granular-role-matrix-panel"
 		>
 			{/* TIER 1 CONTROLS: 2-Level Role Category Switcher + Role Tabs + Module Selector */}
-			<div className="flex flex-col gap-2 pb-2 border-b border-slate-200 dark:border-slate-800 min-w-0">
+			<div className="flex flex-col gap-2 pb-2 border-b border-[var(--line)] min-w-0">
 				{/* Level 1: Category Selector + Module Filter + Super-Rights Filter */}
 				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 min-w-0">
 					{/* Category Selector Tabs */}
 					<div
-						className="flex flex-wrap items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 shrink-0 gap-2"
+						className="flex flex-wrap items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shrink-0 gap-2"
 						role="tablist"
 						aria-label="Категория ролей матрицы доступа"
 						data-testid="rbac-category-switcher"
@@ -174,8 +174,8 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							onClick={() => handleCategoryChange("clinical")}
 							className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation flex-1 sm:flex-initial ${
 								activeCategory === "clinical"
-									? "bg-white dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 shadow-xs border border-slate-200 dark:border-teal-700/60"
-									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+									? "bg-[var(--paper)] text-[var(--teal-dark)] shadow-xs border border-[var(--teal)]/40"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="rbac-category-clinical"
 						>
@@ -189,8 +189,8 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							onClick={() => handleCategoryChange("administrative")}
 							className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation flex-1 sm:flex-initial ${
 								activeCategory === "administrative"
-									? "bg-white dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 shadow-xs border border-slate-200 dark:border-teal-700/60"
-									: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+									? "bg-[var(--paper)] text-[var(--teal-dark)] shadow-xs border border-[var(--teal)]/40"
+									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							data-testid="rbac-category-administrative"
 						>
@@ -207,7 +207,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 							className={`px-3 py-2 min-h-[44px] rounded-lg text-xs font-semibold border flex items-center gap-1.5 cursor-pointer touch-manipulation transition-colors ${
 								onlySuperRights
 									? "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-700 shadow-xs"
-									: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 							}`}
 							data-testid="rbac-filter-super-rights"
 							title="Фильтровать только полномочия повышенной ответственности (P&L, Зарплаты, Персональные данные, Подпись карты)"
@@ -219,7 +219,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 						<div className="flex items-center gap-1.5 shrink-0">
 							<label
 								htmlFor="rbac-module-filter"
-								className="text-xs font-semibold text-slate-700 dark:text-slate-300 shrink-0"
+								className="text-xs font-semibold text-[var(--ink)] shrink-0"
 							>
 								Модуль:
 							</label>
@@ -227,7 +227,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 								id="rbac-module-filter"
 								value={selectedModuleFilter}
 								onChange={(e) => setSelectedModuleFilter(e.target.value)}
-								className="px-3 py-2 h-11 min-h-[44px] rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white cursor-pointer touch-manipulation"
+								className="px-3 py-2 h-11 min-h-[44px] rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] cursor-pointer touch-manipulation"
 								aria-label="Фильтр по функциональному модулю"
 							>
 								<option value="all">Все модули ({PERMISSION_DEFINITIONS.length})</option>
@@ -237,7 +237,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 								<option value="finance_cashier">Касса и платежи</option>
 								<option value="finance_reports">P&L и финансы</option>
 								<option value="payroll">Зарплата и сделка</option>
-								<option value="inventory">Склад и СанПиН</option>
+								<option value="inventory">Склад и стерилизация</option>
 								<option value="settings">Настройки клиники</option>
 								<option value="egisz">ЕГИСЗ Минздрава</option>
 								<option value="communications">Коммуникации</option>
@@ -266,8 +266,8 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 								onClick={() => handleRoleSelect(roleKey)}
 								className={`px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-semibold transition-all text-center whitespace-normal break-words sm:whitespace-nowrap border cursor-pointer touch-manipulation flex items-center justify-center gap-1.5 ${
 									isSelected
-										? "bg-teal-500/15 dark:bg-teal-500/25 text-teal-800 dark:text-teal-200 border-teal-500/60 dark:border-teal-500 shadow-xs font-bold ring-1 ring-teal-500/40"
-										: "bg-slate-100/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200/80 dark:hover:bg-slate-700"
+										? "bg-teal-500/15 text-teal-800 dark:text-teal-200 border-teal-500/60 dark:border-teal-500 shadow-xs font-bold ring-1 ring-teal-500/40"
+										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--line)]"
 								}`}
 								data-testid={`role-matrix-tab-${roleKey}`}
 							>
@@ -279,23 +279,23 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 			</div>
 
 			{/* ACTIVE ROLE SUMMARY STRIP & COUNTERS */}
-			<div className="py-2.5 px-3.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 min-w-0 text-xs">
+			<div className="py-2.5 px-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 min-w-0 text-xs">
 				<div className="flex flex-col gap-1 min-w-0 flex-1">
 					<div className="flex items-center gap-1.5 flex-wrap">
-						<span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
+						<span className="font-bold text-[var(--ink)] text-xs sm:text-sm">
 							{activeRoleMeta.title}
 						</span>
-						<span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-mono font-medium">
+						<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--line)] text-[var(--ink)] font-mono font-medium">
 							role: {activeRoleMeta.role}
 						</span>
 						<span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800">
 							{grantedPermsCount} разрешено
 						</span>
-						<span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300 font-medium">
+						<span className="text-[11px] px-2 py-0.5 rounded-full bg-[var(--line)] text-[var(--muted)] font-medium">
 							{blockedPermsCount} заблокировано
 						</span>
 					</div>
-					<p className="text-slate-700 dark:text-slate-300 text-[11px] leading-snug break-words m-0 min-w-0">
+					<p className="text-[var(--muted)] text-[11px] leading-snug break-words m-0 min-w-0">
 						{activeRoleMeta.description}
 					</p>
 				</div>

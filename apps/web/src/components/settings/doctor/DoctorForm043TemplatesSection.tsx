@@ -98,7 +98,7 @@ export function DoctorForm043TemplatesSection() {
 					</div>
 					<div>
 						<h4 className="font-extrabold text-sm sm:text-base text-[var(--ink)] m-0">
-							Шаблоны дневников Формы 043/у с автозаполнением тегов
+							Шаблоны дневников медицинской карты с автозаполнением тегов
 						</h4>
 						<p className="text-xs text-[var(--muted)] m-0 mt-0.5">
 							Умная подстановка тегов &#123;зуб&#125;, &#123;диагноз&#125;, &#123;материал&#125;, &#123;анестезия&#125;, &#123;изоляция&#125;
@@ -208,7 +208,7 @@ export function DoctorForm043TemplatesSection() {
 					<div className="flex items-center gap-2">
 						<Sparkles size={14} className="text-teal-600" />
 						<span className="text-xs font-bold text-[var(--ink)]">
-							Живой предпросмотр дневника 043/у: {currentTemplate.title}
+							Живой предпросмотр дневника приёма: {currentTemplate.title}
 						</span>
 					</div>
 

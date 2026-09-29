@@ -22,7 +22,7 @@ const CLINICAL_SAMPLES = [
 		desc: "Карпульная анестезия 1:100000",
 	},
 	{
-		label: "Крафт-пакет (СанПиН 3.3686-21)",
+		label: "Стерилизационная упаковка",
 		code: "SANPIN:CSO-2026-09-27-AUTOCLAVE-1",
 		desc: "Партия стерилизации автоклава",
 	},
@@ -318,7 +318,7 @@ export function HardwareScannerSection() {
 
 					{scanResult.kraftPackageId && (
 						<div style={{ padding: "8px", background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "6px" }}>
-							<span style={{ color: "var(--muted)", fontSize: "11px" }}>Идентификатор пакета СанПиН 3.3686-21:</span>
+							<span style={{ color: "var(--muted)", fontSize: "11px" }}>Идентификатор упаковки стерилизации:</span>
 							<div style={{ fontWeight: 600, color: "var(--success, green)" }}>{scanResult.kraftPackageId}</div>
 						</div>
 					)}

@@ -292,11 +292,11 @@ export function SettingsProtocolsTab() {
 						className="secondary-button"
 						style={{ display: "flex", alignItems: "center", gap: "6px", minHeight: "44px" }}
 						onClick={() => setIsAutoclaveModalOpen(true)}
-						title="Журнал контроля работы стерилизаторов (Форма № 257/у СанПиН 3.3686-21)"
+						title="Журнал контроля работы стерилизаторов и автоклавирования"
 						data-testid="protocols-open-autoclave-log-btn"
 					>
 						<ShieldCheck size={16} style={{ color: "var(--teal)" }} />
-						<span>Журнал стерилизации (Форма 257/у)</span>
+						<span>Журнал контроля стерилизации</span>
 					</button>
 					<button
 						type="button"

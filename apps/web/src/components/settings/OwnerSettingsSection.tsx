@@ -81,14 +81,14 @@ const OWNER_TABS: Array<{
 }> = [
 	{
 		id: "clinic",
-		label: "Реквизиты, юрлицо и 54-ФЗ",
+		label: "Реквизиты, юрлицо и касса",
 		description: "ИНН, ОГРН, лицензия, кассовый аппарат ККТ, филиалы",
 		icon: Building2,
 	},
 	{
 		id: "prices",
-		label: "Прайс-лист 804н",
-		description: "Номенклатура МЗ РФ, анализ рентабельности и цен",
+		label: "Прейскурант услуг",
+		description: "Номенклатура услуг, анализ рентабельности и цен",
 		icon: DollarSign,
 	},
 	{
@@ -100,7 +100,7 @@ const OWNER_TABS: Array<{
 	{
 		id: "procedure-boms",
 		label: "Техкарты расхода материалов",
-		description: "Нормы списания расходников по протоколам 804н",
+		description: "Нормы списания расходников по протоколам процедур",
 		icon: Layers,
 	},
 	{
@@ -129,8 +129,8 @@ const OWNER_TABS: Array<{
 	},
 	{
 		id: "audit",
-		label: "Журнал аудита (152-ФЗ)",
-		description: "Безопасность ПДн, действия сотрудников, логи входов",
+		label: "Журнал аудита",
+		description: "Безопасность данных, действия сотрудников, логи входов",
 		icon: Lock,
 	},
 	{
@@ -232,7 +232,7 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 							</span>
 						</div>
 						<p className="text-xs text-[var(--muted)] mt-0.5">
-							Юридические реквизиты, фискализация 54-ФЗ, прайс-лист 804н, мотивация врачей и защита бизнеса
+							Юридические реквизиты, касса и чеки, прейскурант услуг, мотивация врачей и защита бизнеса
 						</p>
 					</div>
 				</div>
@@ -245,9 +245,9 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 						</span>
 					</div>
 					<div className="p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-right">
-						<span className="text-[10px] text-[var(--muted)] block">Касса 54-ФЗ</span>
+						<span className="text-[10px] text-[var(--muted)] block">Касса и чеки</span>
 						<span className="font-bold text-teal-600 dark:text-teal-400">
-							ФФД 1.2 Готова
+							Готова к работе
 						</span>
 					</div>
 				</div>
@@ -303,7 +303,7 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 							</span>
 						</div>
 						<span className="text-[11px] text-[var(--muted)] mt-1.5">
-							Удобное разделение смен, касса 54-ФЗ, общая картотека, склад
+							Удобное разделение смен, онлайн-касса, общая картотека, склад
 						</span>
 					</button>
 
@@ -356,7 +356,7 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 			{/* Sub-Tab Content Rendering */}
 			<div className="pt-2">
 				{activeSubTab === "clinic" && (
-					<ErrorBoundary moduleName="Реквизиты и 54-ФЗ">
+					<ErrorBoundary moduleName="Реквизиты и касса">
 						<div className="space-y-6">
 							<TaxationAndFiscalizationCard />
 							<SettingsClinicTab props={props} settingsTab="clinic" />
@@ -365,7 +365,7 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 				)}
 
 				{activeSubTab === "prices" && (
-					<ErrorBoundary moduleName="Прайс-лист 804н">
+					<ErrorBoundary moduleName="Прейскурант услуг">
 						<div className="space-y-4">
 							{typedPricelistResponseWarnings.length > 0 && (
 								<section
@@ -453,7 +453,7 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 				)}
 
 				{activeSubTab === "procedure-boms" && (
-					<ErrorBoundary moduleName="Техкарты расхода материалов 804н">
+					<ErrorBoundary moduleName="Техкарты расхода материалов">
 						<MaterialBomsSettingsPanel
 							{...(props?.auth?.currentUser?.organizationId
 								? { organizationId: props.auth.currentUser.organizationId }
@@ -498,7 +498,7 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 				)}
 
 				{activeSubTab === "audit" && (
-					<ErrorBoundary moduleName="Журнал аудита 152-ФЗ">
+					<ErrorBoundary moduleName="Журнал аудита">
 						<div className="space-y-6">
 							<AuditLogsPanel />
 							<SettingsAuditTab {...props} settingsTab="audit" />

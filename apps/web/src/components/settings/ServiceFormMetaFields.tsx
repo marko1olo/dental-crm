@@ -107,7 +107,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 					</select>
 				</div>
 				<div className="staff-form-group">
-					<label htmlFor="service-vat-select">Ставка НДС (54-ФЗ)</label>
+					<label htmlFor="service-vat-select">Ставка НДС</label>
 					<select
 						id="service-vat-select"
 						value={editServiceForm.vatRate || "vat_exempt"}
