@@ -42,6 +42,12 @@ import {
 import { parseKopecks } from "@dental/shared";
 import { formatWarrantyYearsText, type TreatmentPlanTier, type TreatmentPlanTierId } from "./types";
 import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
+import {
+	calculateInstallmentScheduleKopecks,
+	calculateStagedPaymentScheduleKopecks,
+	formatPlanPriceRub,
+	isPlanPriceImmutable,
+} from "./planPricing";
 
 export interface TreatmentPlan3TierComparisonProps {
 	readonly tiers: readonly TreatmentPlanTier[];
@@ -154,20 +160,39 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 		const isSelected = activeTierId === tier.tierId;
 		const isExpandedStages = expandedStagesTierId === tier.tierId;
 
-		// Financial Calculations in whole rubles with kopeck-exact precision
+		// Financial Calculations in whole rubles with kopeck-exact precision (Mandates 8b, 8e, 8n)
+		const safeTotalRub = Number.isFinite(tier.totalRub) ? tier.totalRub : 0;
+		const effectiveTotalKopecks =
+			tier.totalKopecks || (safeTotalRub > 0 ? parseKopecks(safeTotalRub) : 0);
+
+		// Kopeck-exact installment 0% calculation
+		const exactInstallment = calculateInstallmentScheduleKopecks(
+			effectiveTotalKopecks,
+			installmentMonths,
+		);
 		const monthlyPayment =
 			tier.installments?.[installmentMonths]?.monthlyPaymentRub ??
-			Math.round(tier.totalRub / installmentMonths || 0);
+			exactInstallment.monthlyPaymentRub;
 
-		const effectiveTotalKopecks = tier.totalKopecks || parseKopecks(tier.totalRub);
 		const discount5PctKopecks = Math.round(effectiveTotalKopecks * 0.05);
 		const discount5PctAmount = Math.round(discount5PctKopecks / 100);
-		const priceWith5PctDiscount = Math.max(0, Math.round((effectiveTotalKopecks - discount5PctKopecks) / 100));
+		const priceWith5PctDiscount = Math.max(
+			0,
+			Math.round((effectiveTotalKopecks - discount5PctKopecks) / 100),
+		);
 
 		// Staged 30/40/30 from exact kopeck schedule
-		const stage1Rub = tier.stagedSchedule?.stage1AdvanceTherapyRub ?? Math.round(tier.totalRub * 0.3);
-		const stage2Rub = tier.stagedSchedule?.stage2SurgeryImplantRub ?? Math.round(tier.totalRub * 0.4);
-		const stage3Rub = tier.stagedSchedule?.stage3OrthopedicsRub ?? (tier.totalRub - stage1Rub - stage2Rub);
+		const exactStaged = calculateStagedPaymentScheduleKopecks(effectiveTotalKopecks, [30, 40, 30]);
+		const stage1Rub = tier.stagedSchedule?.stage1AdvanceTherapyRub ?? exactStaged.stage1Rub;
+		const stage2Rub = tier.stagedSchedule?.stage2SurgeryImplantRub ?? exactStaged.stage2Rub;
+		const stage3Rub =
+			tier.stagedSchedule?.stage3OrthopedicsRub ?? (safeTotalRub - stage1Rub - stage2Rub);
+
+		const isTierImmutable =
+			isPlanPriceImmutable(tier.workflowStatus) || Boolean(tier.isPriceLocked);
+		const hasPriceDrift = Boolean(
+			tier.hasPriceDrift || (tier.catalogDriftRub && Math.abs(tier.catalogDriftRub) > 0),
+		);
 
 		return (
 			<div
@@ -223,9 +248,32 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 								Полная стоимость:
 							</span>
 							<span className="text-lg sm:text-xl font-black text-[var(--ink,#0f172a)] font-mono whitespace-nowrap">
-								{tier.totalRub.toLocaleString("ru-RU")} ₽
+								{formatPlanPriceRub(tier.totalRub)}
 							</span>
 						</div>
+
+						{/* Price lock guarantee badge when tier is approved/in_progress (Mandates 8e, 8n) */}
+						{isTierImmutable && (
+							<div
+								className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20"
+								data-testid={`tier-locked-badge-${tier.tierId}`}
+								title="Смета тарифа утверждена: цены и график платежей заморожены (Мандат 8e, 8n)"
+							>
+								<ShieldCheck size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+								<span>Смета зафиксирована по гарантии</span>
+							</div>
+						)}
+
+						{/* Price drift badge if catalog updated */}
+						{hasPriceDrift && tier.catalogDriftRub !== undefined && (
+							<div
+								className="text-[10px] text-slate-600 dark:text-slate-400 font-medium bg-slate-200/50 dark:bg-slate-800/50 px-2 py-0.5 rounded border border-slate-300/50 dark:border-slate-700/50"
+								data-testid={`tier-drift-badge-${tier.tierId}`}
+								title="Цены в действующем каталоге изменились, смета тарифа сохранена неизменной"
+							>
+								В прайсе: {formatPlanPriceRub(safeTotalRub + tier.catalogDriftRub)} · В плане зафиксировано: {formatPlanPriceRub(safeTotalRub)}
+							</div>
+						)}
 
 						{/* Mode 1: Installment 0% */}
 						{activePaymentMode === "installment" && (
@@ -246,19 +294,19 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 								<div className="flex justify-between text-[var(--muted,#64748b)] gap-2">
 									<span>1. Аванс/Санация (30%):</span>
 									<strong className="font-mono text-[var(--ink,#0f172a)] whitespace-nowrap">
-										{stage1Rub.toLocaleString("ru-RU")} ₽
+										{formatPlanPriceRub(stage1Rub)}
 									</strong>
 								</div>
 								<div className="flex justify-between text-[var(--muted,#64748b)] gap-2">
 									<span>2. Хирургия/Имплант (40%):</span>
 									<strong className="font-mono text-[var(--ink,#0f172a)] whitespace-nowrap">
-										{stage2Rub.toLocaleString("ru-RU")} ₽
+										{formatPlanPriceRub(stage2Rub)}
 									</strong>
 								</div>
 								<div className="flex justify-between text-[var(--muted,#64748b)] gap-2">
 									<span>3. Ортопедия (30%):</span>
 									<strong className="font-mono text-[var(--ink,#0f172a)] whitespace-nowrap">
-										{stage3Rub.toLocaleString("ru-RU")} ₽
+										{formatPlanPriceRub(stage3Rub)}
 									</strong>
 								</div>
 							</div>
@@ -270,20 +318,20 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 								<div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold gap-2">
 									<span>Скидка 5% за 100% оплату:</span>
 									<span className="font-mono whitespace-nowrap">
-										-{discount5PctAmount.toLocaleString("ru-RU")} ₽
+										-{formatPlanPriceRub(discount5PctAmount)}
 									</span>
 								</div>
 								<div className="flex justify-between text-slate-800 dark:text-slate-200 font-bold gap-2">
 									<span>Итого со скидкой:</span>
 									<span className="font-mono text-[var(--teal,var(--brand-primary))] whitespace-nowrap">
-										{priceWith5PctDiscount.toLocaleString("ru-RU")} ₽
+										{formatPlanPriceRub(priceWith5PctDiscount)}
 									</span>
 								</div>
 							</div>
 						)}
 
 						{/* NDFL Deduction box */}
-						{showNdflBreakdown && tier.ndflRefundRub > 0 && (
+						{showNdflBreakdown && (tier.ndflRefundRub ?? 0) > 0 && (
 							<div
 								className="pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/30 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-0.5"
 								title={tier.ndflDetails?.codeDescription || "Налоговый вычет по НК РФ"}
@@ -296,13 +344,13 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 										</span>
 									</span>
 									<span className="font-mono font-bold whitespace-nowrap">
-										+{tier.ndflRefundRub.toLocaleString("ru-RU")} ₽
+										+{formatPlanPriceRub(tier.ndflRefundRub)}
 									</span>
 								</div>
 								<div className="flex justify-between text-[10px] text-emerald-700 dark:text-emerald-400 gap-2">
 									<span>С учетом возврата:</span>
 									<span className="font-bold font-mono whitespace-nowrap">
-										{tier.priceWithNdflRefundRub.toLocaleString("ru-RU")} ₽
+										{formatPlanPriceRub(tier.priceWithNdflRefundRub)}
 									</span>
 								</div>
 							</div>
@@ -357,7 +405,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 												Этап {stg.stageNumber}: {stg.title.split(":")[1]?.trim() || stg.title}
 											</span>
 											<span className="font-mono text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0">
-												{stg.totalRub.toLocaleString("ru-RU")} ₽
+												{formatPlanPriceRub(stg.totalRub)}
 											</span>
 										</div>
 										<p className="text-[10px] text-[var(--muted,#64748b)] m-0 truncate" title={stg.clinicalGoal}>

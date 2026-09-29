@@ -59,6 +59,7 @@ import {
 	validateRubAmountInput,
 } from "../../rubAmountInput";
 import type { ToothState } from "../odontogram/ToothChart";
+import type { TreatmentPlanItem } from "./types";
 
 /**
  * Услуга прайса в том виде, в каком она нужна расчёту.
@@ -622,3 +623,359 @@ export function validateDraftPlanRows(
 	}
 	return { ok: true, items, totalKopecks: sumKopecks(lineTotals) };
 }
+
+/**
+ * Статусы утвержденности плана лечения.
+ * Согласно Мандату 8e и 8n, утвержденные планы ('approved', 'in_progress', 'active', 'agreed', 'accepted', 'signed', 'completed')
+ * имеют НАМЕРТВО замороженные цены услуг и общую сумму (price snapshot).
+ */
+export type TreatmentPlanStatus =
+	| "draft"
+	| "presented"
+	| "approved"
+	| "in_progress"
+	| "active"
+	| "agreed"
+	| "accepted"
+	| "signed"
+	| "completed"
+	| "rejected";
+
+export function isPlanPriceImmutable(
+	status: TreatmentPlanStatus | string | null | undefined,
+): boolean {
+	if (!status) return false;
+	const s = status.trim().toLowerCase();
+	return (
+		s === "approved" ||
+		s === "in_progress" ||
+		s === "active" ||
+		s === "agreed" ||
+		s === "accepted" ||
+		s === "signed" ||
+		s === "completed"
+	);
+}
+
+export interface PriceDriftInfo {
+	readonly isDrifted: boolean;
+	readonly currentCatalogPriceRub: number | null;
+	readonly snapshotPriceRub: number;
+	readonly driftRub: number;
+	readonly isArchived: boolean;
+	readonly isNotFound: boolean;
+	readonly badgeText: string;
+}
+
+/**
+ * Определение дрейфа цен между утвержденным снимком плана и актуальным каталогом (Мандат 8e, 8n).
+ * При изменении цен в прайс-листе замороженные цены утвержденного плана НЕ пересчитываются,
+ * а врачу показывается спокойный информативный бейдж.
+ */
+export function detectPriceDrift(
+	snapshotPriceRub: number,
+	catalogItem: PlanPriceCatalogItem | null | undefined,
+	_isPlanImmutable = false,
+): PriceDriftInfo {
+	const safeSnapshotPrice = Number.isFinite(snapshotPriceRub) ? Math.max(0, snapshotPriceRub) : 0;
+
+	if (!catalogItem) {
+		return {
+			isDrifted: false,
+			currentCatalogPriceRub: null,
+			snapshotPriceRub: safeSnapshotPrice,
+			driftRub: 0,
+			isArchived: false,
+			isNotFound: true,
+			badgeText: "Позиция не найдена в текущем прайс-листе",
+		};
+	}
+
+	const isArchived = !catalogItem.active;
+	const currentCatalogPriceRub = Number.isFinite(catalogItem.basePriceRub)
+		? Math.max(0, catalogItem.basePriceRub)
+		: safeSnapshotPrice;
+	const driftRub = currentCatalogPriceRub - safeSnapshotPrice;
+	const isDrifted = Math.abs(driftRub) > 0.001;
+
+	let badgeText = "Цена актуальна";
+	if (isArchived) {
+		badgeText = "Услуга архивирована в каталоге";
+	} else if (isDrifted) {
+		const formattedCatalog = Math.round(currentCatalogPriceRub)
+			.toLocaleString("ru-RU")
+			.replace(/[\u00A0\u202F]/g, " ");
+		const formattedSnapshot = Math.round(safeSnapshotPrice)
+			.toLocaleString("ru-RU")
+			.replace(/[\u00A0\u202F]/g, " ");
+		badgeText = `В прайсе: ${formattedCatalog} ₽ · В плане зафиксировано: ${formattedSnapshot} ₽`;
+	}
+
+	return {
+		isDrifted,
+		currentCatalogPriceRub,
+		snapshotPriceRub: safeSnapshotPrice,
+		driftRub,
+		isArchived,
+		isNotFound: false,
+		badgeText,
+	};
+}
+
+export interface InstallmentScheduleKopecks {
+	readonly months: 3 | 6 | 12 | 24;
+	readonly totalKopecks: Kopecks;
+	readonly monthlyPaymentKopecks: Kopecks;
+	readonly monthlyPaymentRub: number;
+	readonly partsKopecks: readonly Kopecks[];
+	readonly remainderKopecks: Kopecks;
+}
+
+/**
+ * Точный копеечный расчет рассрочки 0% без переплат (Мандат 8b, 8e).
+ * Сумма всех ежемесячных платежей гарантированно равна итогу плана до копейки (kopeck-exact).
+ */
+export function calculateInstallmentScheduleKopecks(
+	totalKopecks: Kopecks,
+	months: 3 | 6 | 12 | 24,
+): InstallmentScheduleKopecks {
+	if (!Number.isInteger(totalKopecks) || totalKopecks <= 0) {
+		return {
+			months,
+			totalKopecks: 0,
+			monthlyPaymentKopecks: 0,
+			monthlyPaymentRub: 0,
+			partsKopecks: Array(months).fill(0),
+			remainderKopecks: 0,
+		};
+	}
+
+	const basePart = Math.floor(totalKopecks / months);
+	const remainder = totalKopecks - basePart * months;
+	const parts: Kopecks[] = [];
+
+	for (let i = 0; i < months; i++) {
+		// Распределяем копеечный остаток на первые месяцы
+		const part = i < remainder ? basePart + 1 : basePart;
+		parts.push(part);
+	}
+
+	const monthlyPaymentKopecks = parts[0] ?? basePart;
+	const monthlyPaymentRub = Math.round(monthlyPaymentKopecks / 100);
+
+	return {
+		months,
+		totalKopecks,
+		monthlyPaymentKopecks,
+		monthlyPaymentRub,
+		partsKopecks: parts,
+		remainderKopecks: remainder,
+	};
+}
+
+export interface StagedPaymentBreakdownKopecks {
+	readonly totalKopecks: Kopecks;
+	readonly stage1Kopecks: Kopecks;
+	readonly stage2Kopecks: Kopecks;
+	readonly stage3Kopecks: Kopecks;
+	readonly stage1Rub: number;
+	readonly stage2Rub: number;
+	readonly stage3Rub: number;
+}
+
+/**
+ * Копеечный расчет поэтапной оплаты (по умолчанию 30% аванс / 40% хирургия / 30% ортопедия).
+ * Сумма этапов точно сходится с итогом сметы без погрешностей округления.
+ */
+export function calculateStagedPaymentScheduleKopecks(
+	totalKopecks: Kopecks,
+	ratios: readonly [number, number, number] = [30, 40, 30],
+): StagedPaymentBreakdownKopecks {
+	if (!Number.isInteger(totalKopecks) || totalKopecks <= 0) {
+		return {
+			totalKopecks: 0,
+			stage1Kopecks: 0,
+			stage2Kopecks: 0,
+			stage3Kopecks: 0,
+			stage1Rub: 0,
+			stage2Rub: 0,
+			stage3Rub: 0,
+		};
+	}
+
+	const stage1Kopecks = Math.round((totalKopecks * ratios[0]) / 100);
+	const stage2Kopecks = Math.round((totalKopecks * ratios[1]) / 100);
+	const stage3Kopecks = Math.max(0, totalKopecks - stage1Kopecks - stage2Kopecks);
+
+	return {
+		totalKopecks,
+		stage1Kopecks,
+		stage2Kopecks,
+		stage3Kopecks,
+		stage1Rub: Math.round(stage1Kopecks / 100),
+		stage2Rub: Math.round(stage2Kopecks / 100),
+		stage3Rub: Math.round(stage3Kopecks / 100),
+	};
+}
+
+export type ArchivedServiceAction = "keep_agreed_price" | "replace_from_catalog";
+
+/**
+ * Разрешение ситуации с деактивированной / архивной услугой номенклатуры (Zero Dead-Ends).
+ * 2 чистых действия в 1 клик для врача:
+ * 1. «Выполнить по согласованной цене» — цена плана фиксируется, услуга разблокируется.
+ * 2. «Заменить на актуальную из прайса» — подставляется активная позиция каталога с новой ценой.
+ */
+export function resolveArchivedPlanItem(
+	item: TreatmentPlanItem,
+	action: ArchivedServiceAction,
+	replacementCatalogItem?: PlanPriceCatalogItem | null,
+): TreatmentPlanItem {
+	if (action === "keep_agreed_price") {
+		return {
+			...item,
+			isPriceLocked: true,
+			isArchivedInCatalog: true,
+			archivedResolution: "keep_agreed_price",
+			requiresManualPricing: false,
+		};
+	}
+
+	if (action === "replace_from_catalog" && replacementCatalogItem) {
+		const newPrice = Number.isFinite(replacementCatalogItem.basePriceRub)
+			? Math.max(0, replacementCatalogItem.basePriceRub)
+			: item.priceRub;
+		return {
+			...item,
+			name: replacementCatalogItem.title,
+			priceId: replacementCatalogItem.id,
+			priceRub: newPrice,
+			unitPriceRub: newPrice,
+			isArchivedInCatalog: false,
+			archivedResolution: "replace_from_catalog",
+			requiresManualPricing: false,
+		};
+	}
+
+	return {
+		...item,
+		archivedResolution: "replace_from_catalog",
+	};
+}
+
+/**
+ * Форматирование суммы в рублях на понятном русском языке.
+ * Запрет на сырые «NULL», «NaN ₽», «404 Not Found» или машинный мусор в UI.
+ */
+export function formatPlanPriceRub(
+	amountRub: number | string | null | undefined,
+	fallbackText = "Цена не указана",
+): string {
+	if (amountRub === null || amountRub === undefined || amountRub === "") {
+		return fallbackText;
+	}
+	const num =
+		typeof amountRub === "string"
+			? Number(amountRub.replace(/\s+/g, "").replace(",", "."))
+			: amountRub;
+	if (!Number.isFinite(num)) {
+		return fallbackText;
+	}
+	const formatted = Math.round(num)
+		.toLocaleString("ru-RU")
+		.replace(/[\u00A0\u202F]/g, " ");
+	return `${formatted} ₽`;
+}
+
+export interface PlanItemDriftAudit {
+	readonly itemId: string;
+	readonly itemName: string;
+	readonly code804n: string;
+	readonly snapshotPriceRub: number;
+	readonly currentCatalogPriceRub: number | null;
+	readonly driftRub: number;
+	readonly isDrifted: boolean;
+	readonly isArchived: boolean;
+	readonly isNotFound: boolean;
+	readonly badgeText: string;
+}
+
+export interface PlanDriftAuditResult {
+	readonly isImmutable: boolean;
+	readonly totalSnapshotKopecks: Kopecks;
+	readonly totalCatalogKopecks: Kopecks;
+	readonly totalDriftKopecks: Kopecks;
+	readonly hasDrift: boolean;
+	readonly driftedItemsCount: number;
+	readonly archivedItemsCount: number;
+	readonly items: readonly PlanItemDriftAudit[];
+}
+
+export function auditTreatmentPlanDrift(
+	items: readonly TreatmentPlanItem[],
+	catalog: readonly PlanPriceCatalogItem[],
+	planStatus?: string,
+): PlanDriftAuditResult {
+	const isImmutable = isPlanPriceImmutable(planStatus);
+	const activeCatalog = catalog;
+
+	let totalSnapshotKopecks: Kopecks = 0;
+	let totalCatalogKopecks: Kopecks = 0;
+	let driftedItemsCount = 0;
+	let archivedItemsCount = 0;
+
+	const auditedItems: PlanItemDriftAudit[] = [];
+
+	for (const item of items) {
+		const snapshotKopecks = Math.round(
+			(item.unitPriceRub || item.priceRub || 0) * (item.quantity || 1) * 100,
+		);
+		totalSnapshotKopecks += snapshotKopecks;
+
+		// Match in catalog by priceId or title
+		const catalogMatch =
+			(item.priceId ? activeCatalog.find((c) => c.id === item.priceId) : undefined) ||
+			activeCatalog.find(
+				(c) => c.title.trim().toLowerCase() === item.name.trim().toLowerCase(),
+			);
+
+		const driftInfo = detectPriceDrift(
+			item.unitPriceRub || item.priceRub || 0,
+			catalogMatch,
+			isImmutable,
+		);
+
+		if (driftInfo.isDrifted) driftedItemsCount++;
+		if (driftInfo.isArchived) archivedItemsCount++;
+
+		const catPrice =
+			driftInfo.currentCatalogPriceRub ?? (item.unitPriceRub || item.priceRub || 0);
+		const catKopecks = Math.round(catPrice * (item.quantity || 1) * 100);
+		totalCatalogKopecks += catKopecks;
+
+		auditedItems.push({
+			itemId: item.id,
+			itemName: item.name,
+			code804n: item.code804n,
+			snapshotPriceRub: item.unitPriceRub || item.priceRub || 0,
+			currentCatalogPriceRub: driftInfo.currentCatalogPriceRub,
+			driftRub: driftInfo.driftRub,
+			isDrifted: driftInfo.isDrifted,
+			isArchived: driftInfo.isArchived,
+			isNotFound: driftInfo.isNotFound,
+			badgeText: driftInfo.badgeText,
+		});
+	}
+
+	return {
+		isImmutable,
+		totalSnapshotKopecks,
+		totalCatalogKopecks,
+		totalDriftKopecks: totalCatalogKopecks - totalSnapshotKopecks,
+		hasDrift: driftedItemsCount > 0 || archivedItemsCount > 0,
+		driftedItemsCount,
+		archivedItemsCount,
+		items: auditedItems,
+	};
+}
+

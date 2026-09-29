@@ -1,0 +1,31 @@
+{
+  "subagent": "Subagent 1: Treatment Plans Price Drift & Deprecated Nomenclature Inquisitor",
+  "status": "completed",
+  "current_phase": "done",
+  "completed_steps": [
+    "constitutional_routine_completed",
+    "read_target_files",
+    "verified_existing_tests_pass",
+    "architectural_design_approved",
+    "implement_planPricing_enhancements",
+    "update_treatment_plans_types",
+    "enhance_TreatmentPlanStageItemRow",
+    "enhance_MissingPriceAlert",
+    "enhance_TreatmentPlan3TierComparison",
+    "add_unit_tests_planPricing",
+    "add_unit_tests_planPriceValidation",
+    "run_targeted_tests",
+    "verify_clean_code_and_encoding",
+    "per_file_git_add_and_report"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Plan immutability invariant (Mandates 8e, 8n) verified: Approved/in_progress plans keep frozen price snapshots when catalog prices drift.",
+    "Informative price drift badge implemented: 'В прайсе: X ₽ · В плане зафиксировано: Y ₽' calmly alerts doctor without breaking agreed totals.",
+    "Zero Dead-Ends for deprecated/archived services: Banner provides 2 clean 1-click actions: 'Выполнить по согласованной цене' (locks price) and 'Заменить на актуальную из прайса'.",
+    "Kopeck-exact money calculations (Mandate 8b): calculateInstallmentScheduleKopecks and calculateStagedPaymentScheduleKopecks mathematically distribute odd kopeck remainders so sum of parts strictly equals total with zero loss.",
+    "formatPlanPriceRub prevents machine gibberish (NaN ₽, null ₽, NULL, 404), providing clean Russian locale formatting.",
+    "All 61 unit tests in planPricing.test.ts and planPriceValidation.test.ts pass with Exit Code 0.",
+    "check:encoding: 6267 files passed with zero errors."
+  ]
+}

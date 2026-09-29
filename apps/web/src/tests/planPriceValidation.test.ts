@@ -350,3 +350,96 @@ describe("Comprehensive Treatment Plan Validation Report", () => {
 		assert.equal(act.totalPayableRub, report.resolvedNetRub);
 	});
 });
+
+describe("Treatment Plan Immutability & Price Drift Invariant (Mandates 8e, 8n)", () => {
+	const catalog = SAMPLE_CURRENT_PRICELIST;
+
+	it("preserves frozen snapshot price and computes clinic absorption when price is locked", () => {
+		const approvedPlan: TreatmentPlanValidationPayload = {
+			planId: "plan-approved-001",
+			planNumber: "ПЛ-2026/999",
+			planTitle: "Терапевтический план санации",
+			patientName: "Сидорова Анна Павловна",
+			patientId: "pat-999",
+			doctorId: "doc-1",
+			doctorFullName: "Д-р Иванов И.И.",
+			createdAtIso: new Date().toISOString(),
+			items: [
+				{
+					itemId: "item-photo",
+					toothNumber: 21,
+					code804n: "A16.07.002",
+					serviceId: "srv_karies_photopolymer",
+					serviceTitle: "Лечение кариеса с постановкой световой пломбы",
+					category: "Терапия",
+					planUnitPriceRub: 4800,
+					planDiscountRub: 0,
+					planDiscountPercent: 0,
+					quantity: 1,
+					planLineTotalRub: 4800,
+				},
+			],
+		};
+
+		const report = validateTreatmentPlanPrices(
+			approvedPlan,
+			catalog,
+			PLAN_PRICE_POLICY_PRESETS.standard_30,
+		);
+
+		assert.equal(report.items[0]?.selectedResolution, "LOCK_ORIGINAL_PRICE");
+		assert.equal(report.items[0]?.effectiveUnitPriceRub, 4800);
+		assert.equal(report.items[0]?.clinicAbsorptionRub, 400);
+		assert.equal(report.resolvedNetRub, 4800);
+		assert.equal(report.totalClinicAbsorptionRub, 400);
+		assert.equal(report.canGenerateWorkOrder, true);
+	});
+
+	it("guarantees Zero Dead-Ends for doctor when handling archived services in approved plan", () => {
+		const planWithArchived: TreatmentPlanValidationPayload = {
+			planId: "plan-archived-002",
+			planNumber: "ПЛ-2026/888",
+			planTitle: "Ортопедический план",
+			patientName: "Ковалев Игорь Сергеевич",
+			patientId: "pat-888",
+			doctorId: "doc-2",
+			doctorFullName: "Д-р Смирнова Е.В.",
+			createdAtIso: new Date().toISOString(),
+			items: [
+				{
+					itemId: "item-archived-crown",
+					toothNumber: 46,
+					code804n: "A16.07.004.002",
+					serviceId: "srv_old_cermet_crown",
+					serviceTitle: "Коронка металлокерамическая на сплаве CoCr (Устаревшая позиция)",
+					category: "Ортопедия",
+					planUnitPriceRub: 14000,
+					planDiscountRub: 0,
+					planDiscountPercent: 0,
+					quantity: 1,
+					planLineTotalRub: 14000,
+				},
+			],
+		};
+
+		const report = validateTreatmentPlanPrices(
+			planWithArchived,
+			catalog,
+			PLAN_PRICE_POLICY_PRESETS.standard_30,
+		);
+
+		assert.equal(report.archivedItemsCount, 1);
+		assert.equal(report.canGenerateWorkOrder, true);
+		assert.equal(report.canGenerateCompletedAct, true);
+
+		const locked = applyBatchResolutionToAllItems(
+			planWithArchived,
+			catalog,
+			PLAN_PRICE_POLICY_PRESETS.standard_30,
+			"LOCK_ORIGINAL_PRICE",
+		);
+		assert.equal(locked.items[0]?.selectedResolution, "LOCK_ORIGINAL_PRICE");
+		assert.equal(locked.items[0]?.effectiveUnitPriceRub, 14000);
+	});
+});
+

@@ -4,28 +4,39 @@
  */
 
 import React from "react";
-import { FlaskConical, Trash2, Zap } from "lucide-react";
+import { Archive, Check, FlaskConical, Lock, RefreshCw, Trash2, Zap } from "lucide-react";
 import type { TreatmentPlanItem } from "./types";
 import { MissingPriceAlert } from "./MissingPriceAlert";
+import { formatPlanPriceRub, isPlanPriceImmutable } from "./planPricing";
 
 export interface TreatmentPlanStageItemRowProps {
 	readonly item: TreatmentPlanItem;
+	readonly planStatus?: "draft" | "approved" | "in_progress" | "completed" | string | undefined;
+	readonly currentCatalogPriceRub?: number | undefined;
+	readonly isArchivedInCatalog?: boolean | undefined;
 	readonly onOpenLabOrder?: ((teeth?: number[]) => void) | undefined;
 	readonly onOneClickLabOrder?: ((teeth?: number[]) => void) | undefined;
 	readonly onUpdateItemQuantity?: ((itemId: string, newQty: number) => void) | undefined;
 	readonly onUpdateItemPrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
 	readonly onUpdateItem?: ((updatedItem: TreatmentPlanItem) => void) | undefined;
 	readonly onRemoveItem?: ((itemId: string) => void) | undefined;
+	readonly onKeepAgreedPrice?: ((itemId: string) => void) | undefined;
+	readonly onReplaceWithCatalogItem?: ((itemId: string, newCatalogPriceRub?: number) => void) | undefined;
 }
 
 export const TreatmentPlanStageItemRow: React.FC<TreatmentPlanStageItemRowProps> = ({
 	item,
+	planStatus,
+	currentCatalogPriceRub,
+	isArchivedInCatalog,
 	onOpenLabOrder,
 	onOneClickLabOrder,
 	onUpdateItemQuantity,
 	onUpdateItemPrice,
 	onUpdateItem,
 	onRemoveItem,
+	onKeepAgreedPrice,
+	onReplaceWithCatalogItem,
 }) => {
 	const isLabOrderEligible =
 		item.category === "Ортопедия" ||
@@ -36,6 +47,23 @@ export const TreatmentPlanStageItemRow: React.FC<TreatmentPlanStageItemRowProps>
 		item.code804n.startsWith("A16.07.004") ||
 		item.code804n.startsWith("A16.07.005") ||
 		item.code804n.startsWith("A16.07.006");
+
+	const effectiveStatus = planStatus || item.planStatus || "draft";
+	const isImmutable = isPlanPriceImmutable(effectiveStatus) || Boolean(item.isPriceLocked);
+	const catalogPrice =
+		currentCatalogPriceRub !== undefined ? currentCatalogPriceRub : item.currentCatalogPriceRub;
+	const isArchived =
+		isArchivedInCatalog !== undefined ? isArchivedInCatalog : Boolean(item.isArchivedInCatalog);
+	const itemUnitPrice = Number.isFinite(item.unitPriceRub)
+		? item.unitPriceRub
+		: Number.isFinite(item.priceRub)
+			? item.priceRub
+			: 0;
+	const hasPriceDrift =
+		catalogPrice !== undefined &&
+		Number.isFinite(catalogPrice) &&
+		Math.abs(catalogPrice - itemUnitPrice) > 0.001;
+	const isAgreedPriceKept = item.archivedResolution === "keep_agreed_price";
 
 	return (
 		<div className="flex flex-col gap-2 px-4 py-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors">
@@ -149,7 +177,21 @@ export const TreatmentPlanStageItemRow: React.FC<TreatmentPlanStageItemRowProps>
 						</span>
 					) : null}
 
-					<div className="text-right">
+					<div className="text-right flex flex-col items-end gap-0.5">
+						{/* Calm price drift badge if catalog price differs from locked plan price (Mandates 8e, 8n) */}
+						{hasPriceDrift && catalogPrice !== undefined && (
+							<div
+								className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap"
+								data-testid={`price-drift-badge-${item.id}`}
+								title="Цены утвержденного плана зафиксированы и не меняются при обновлении каталога (Мандат 8e, 8n)"
+							>
+								<Lock size={10} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>
+									В прайсе: {Math.round(catalogPrice).toLocaleString("ru-RU")} ₽ · В плане зафиксировано: {Math.round(itemUnitPrice).toLocaleString("ru-RU")} ₽
+								</span>
+							</div>
+						)}
+
 						<span
 							className={`text-xs font-bold font-mono ${
 								item.requiresManualPricing || (item.priceRub || 0) === 0
@@ -157,7 +199,7 @@ export const TreatmentPlanStageItemRow: React.FC<TreatmentPlanStageItemRowProps>
 									: "text-[var(--ink,#0f172a)]"
 							}`}
 						>
-							{(item.priceRub || 0).toLocaleString("ru-RU")} ₽
+							{formatPlanPriceRub(item.priceRub)}
 						</span>
 						{(item.discountRub || 0) > 0 && (
 							<div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
@@ -180,6 +222,73 @@ export const TreatmentPlanStageItemRow: React.FC<TreatmentPlanStageItemRowProps>
 					)}
 				</div>
 			</div>
+
+			{/* Archived Service Alert Banner with 2 Clean 1-Click Actions (Zero Dead-Ends) */}
+			{isArchived && !isAgreedPriceKept && (
+				<div
+					className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl border bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-100 text-xs mt-1"
+					data-testid={`archived-service-alert-${item.id}`}
+				>
+					<div className="flex items-center gap-2 min-w-0">
+						<Archive size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
+						<div className="min-w-0">
+							<span className="font-bold text-amber-900 dark:text-amber-200 block">
+								Услуга архивирована в каталоге
+							</span>
+							<span className="text-[11px] text-amber-800/80 dark:text-amber-300/80 truncate block">
+								Позиция выведена из действующего прайса клиники. План лечения доступен.
+							</span>
+						</div>
+					</div>
+
+					<div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+						<button
+							type="button"
+							onClick={() => {
+								onKeepAgreedPrice?.(item.id);
+								if (onUpdateItem) {
+									onUpdateItem({
+										...item,
+										isPriceLocked: true,
+										isArchivedInCatalog: true,
+										archivedResolution: "keep_agreed_price",
+										requiresManualPricing: false,
+									});
+								}
+							}}
+							className="h-7 min-h-[28px] max-h-[28px] px-2.5 py-1 rounded-md text-[11px] font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 cursor-pointer transition-colors shrink-0 flex items-center gap-1"
+							title="Выполнить процедуру по согласованной цене плана без изменения сметы"
+							data-testid={`keep-agreed-price-btn-${item.id}`}
+						>
+							<Check size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<span>Выполнить по согласованной цене</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => {
+								onReplaceWithCatalogItem?.(item.id, catalogPrice);
+								if (onUpdateItem && catalogPrice !== undefined) {
+									onUpdateItem({
+										...item,
+										priceRub: catalogPrice,
+										unitPriceRub: catalogPrice,
+										isArchivedInCatalog: false,
+										archivedResolution: "replace_from_catalog",
+										requiresManualPricing: false,
+									});
+								}
+							}}
+							className="h-7 min-h-[28px] max-h-[28px] px-2.5 py-1 rounded-md text-[11px] font-bold text-teal-800 dark:text-teal-200 bg-teal-500/20 hover:bg-teal-500/30 border border-teal-500/30 cursor-pointer transition-colors shrink-0 flex items-center gap-1"
+							title="Заменить процедуру на актуальную услугу из прайс-листа клиники"
+							data-testid={`replace-from-catalog-btn-${item.id}`}
+						>
+							<RefreshCw size={12} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>Заменить на актуальную из прайса</span>
+						</button>
+					</div>
+				</div>
+			)}
 
 			{/* Missing Price Alert Banner */}
 			{(item.requiresManualPricing || item.priceRub === 0) && (

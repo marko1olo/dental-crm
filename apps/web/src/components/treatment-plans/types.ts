@@ -76,6 +76,12 @@ export interface TreatmentPlanItem {
 	readonly barcode?: string | undefined;
 	readonly sku?: string | undefined;
 	readonly isRetail?: boolean | undefined;
+	readonly currentCatalogPriceRub?: number | undefined;
+	readonly isArchivedInCatalog?: boolean | undefined;
+	readonly isPriceLocked?: boolean | undefined;
+	readonly planStatus?: "draft" | "approved" | "in_progress" | "completed" | undefined;
+	readonly archivedResolution?: "keep_agreed_price" | "replace_from_catalog" | undefined;
+	readonly catalogDriftRub?: number | undefined;
 }
 
 export type TreatmentPlanStageStatus = "draft" | "agreed" | "in_progress" | "completed";
@@ -188,6 +194,9 @@ export interface TreatmentPlanTier {
 	readonly ndflDetails: NdflDeductionResult;
 	readonly stagedSchedule?: StagedPaymentScheduleBreakdown | undefined;
 	readonly workflowStatus?: TreatmentPlanWorkflowStatus | undefined;
+	readonly catalogDriftRub?: number | undefined;
+	readonly hasPriceDrift?: boolean | undefined;
+	readonly isPriceLocked?: boolean | undefined;
 }
 
 export interface DigitalSignatureAgreementData {

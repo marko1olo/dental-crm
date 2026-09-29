@@ -6,6 +6,7 @@ export interface MissingPriceAlertProps {
 	readonly item: TreatmentPlanItem;
 	readonly onUpdatePrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
 	readonly onUpdateItem?: ((updatedItem: TreatmentPlanItem) => void) | undefined;
+	readonly onKeepAgreedPrice?: ((itemId: string) => void) | undefined;
 	readonly variant?: "full" | "inline" | "compact" | undefined;
 	readonly className?: string | undefined;
 }
@@ -19,6 +20,7 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 	item,
 	onUpdatePrice,
 	onUpdateItem,
+	onKeepAgreedPrice,
 	variant = "full",
 	className = "",
 }) => {
@@ -64,6 +66,24 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 				isWarranty: true,
 				warrantyDiscountPercent: 100,
 				warrantyPriceRub: 0,
+			};
+			onUpdateItem(updated);
+		}
+	};
+
+	// 1-клик: Выполнить по согласованной цене для архивной или ранее утвержденной услуги (Мандат 8e, 8n)
+	const handleKeepAgreedPrice = () => {
+		setError(null);
+		setIsEditing(false);
+		if (onKeepAgreedPrice) {
+			onKeepAgreedPrice(item.id);
+		}
+		if (onUpdateItem) {
+			const updated: TreatmentPlanItem = {
+				...item,
+				isPriceLocked: true,
+				archivedResolution: "keep_agreed_price",
+				requiresManualPricing: false,
 			};
 			onUpdateItem(updated);
 		}
@@ -197,6 +217,18 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 							<ShieldCheck size={10} />
 							<span>Гарантия 0 ₽</span>
 						</button>
+						{Boolean(item.isArchivedInCatalog || item.priceRub > 0) && (
+							<button
+								type="button"
+								onClick={handleKeepAgreedPrice}
+								className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-600 text-white hover:bg-teal-700 cursor-pointer transition-colors shadow-xs"
+								data-testid={`inline-keep-agreed-btn-${item.id}`}
+								title="1-клик: Выполнить по согласованной цене плана"
+							>
+								<Check size={10} />
+								<span>По плану</span>
+							</button>
+						)}
 					</div>
 				)}
 
@@ -304,6 +336,19 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 							<ShieldCheck size={13} />
 							<span>Гарантия 0 ₽</span>
 						</button>
+
+						{Boolean(item.isArchivedInCatalog || item.priceRub > 0) && (
+							<button
+								type="button"
+								onClick={handleKeepAgreedPrice}
+								className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white cursor-pointer transition-colors shadow-xs"
+								data-testid={`full-keep-agreed-btn-${item.id}`}
+								title="1-клик: Выполнить по согласованной цене плана"
+							>
+								<Check size={13} />
+								<span>По согласованной цене</span>
+							</button>
+						)}
 					</div>
 				)}
 			</div>
