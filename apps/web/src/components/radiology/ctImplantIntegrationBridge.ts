@@ -445,7 +445,7 @@ export function exportPdfImplantReport(params: ExportPdfReportParams): void {
 		toothFdi: params.targetTooth,
 		implantPose: params.currentImplantPose,
 		canal: params.currentCanal,
-		envelope: derivedEnvelope,
+		envelope: derivedEnvelope ?? null,
 		huSampling: params.huSamplingResult,
 		patientName: params.patientDisplayName,
 		clinicName: "Стоматологический центр DENTE",

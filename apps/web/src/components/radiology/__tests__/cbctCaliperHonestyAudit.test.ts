@@ -55,7 +55,7 @@ import {
 import { measureAlveolarRidgeCrossSection } from "../dentalCurveEngine";
 import type { AlveolarRidgeCaliperMeasurement } from "../cbctCaliperNerveMath";
 import type { CrossSectionImplantPose, MandibularCanalCrossSection, VirtualImplantSpec } from "../implantSafetyEngine";
-import type { HUZoneSampling, MischClassificationResult } from "../boneDensityMischMath";
+import { classifyMischBoneQuality, type HUZoneSampling, type MischClassificationResult } from "../boneDensityMischMath";
 
 const TEST_IMPLANT_SPEC: VirtualImplantSpec = {
 	id: "straumann-blx-40-10",
@@ -77,28 +77,15 @@ const TEST_IMPLANT_POSE: CrossSectionImplantPose = {
 	targetToothFdi: 36,
 };
 
-const TEST_MISCH_RESULT: MischClassificationResult = {
-	mischClass: "D2",
-	classNameRu: "Плотная кортикальная и пористая губчатая кость (D2: 850–1250 HU)",
-	isImmediateLoadingEligible: true,
-	estimatedInsertionTorqueNcm: { minNcm: 35, expectedNcm: 40, maxNcm: 45 },
-	estimatedIsqScore: { minIsq: 70, expectedIsq: 75, maxIsq: 80 },
-	recommendedDrillingRpm: "800–1200 об/мин с обильным внешним охлаждением 0.9% NaCl",
-	underdrillingRecommended: false,
-	corticalTapRequired: false,
-	healingPeriodWeeks: 12,
-};
-
 const TEST_HU_SAMPLING: HUZoneSampling = {
 	overallMeanHU: 920,
 	coronalCrestalHU: 1100,
 	trabecularCoreHU: 780,
 	apicalBaseHU: 880,
-	standardDeviationHU: 65,
-	sampleCount: 150,
-	mischClass: "D2",
 	status: "measured",
 };
+
+const TEST_MISCH_RESULT: MischClassificationResult = classifyMischBoneQuality(TEST_HU_SAMPLING);
 
 describe("Wave 28 Domain 2 — Alveolar Ridge Honesty & Zero-Falsification Audit (BUG-010)", () => {
 	describe("1. buildCbctReportData — Absence of Hardcoded Fallbacks", () => {

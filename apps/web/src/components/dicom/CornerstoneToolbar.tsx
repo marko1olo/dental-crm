@@ -15,7 +15,7 @@ import {
 	VISIOGRAPH_PRESETS_LIST,
 	VISIOGRAPH_WINDOW_PRESETS,
 	type VisiographPresetId,
-} from "../visiograph/VisiographWindowPresets";
+} from "./VisiographWindowPresets";
 
 export interface CornerstoneToolbarProps {
 	patientName?: string | undefined;
