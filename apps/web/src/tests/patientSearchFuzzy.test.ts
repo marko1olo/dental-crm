@@ -2,19 +2,23 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { Patient } from "@dental/shared";
 import {
+	convertKeyboardMistype,
 	fuzzyMatchToken,
 	isFuzzyNameMatch,
 	matchesPatientSearch,
+	mergePatientRecordsNonDestructive,
 	normalizeCyrillicText,
+	normalizePhoneE164,
 	normalizePhoneToNational,
 	scorePatientSearch,
+	transliterateLatinToCyrillic,
 	type PatientSearchableFields,
-} from "../utils/patientSearchUtils";
+} from "../components/patients/patientSearchFuzzy";
 import {
 	findPotentialDuplicates,
 	highlightSearchMatches,
 	searchPatientsQuick,
-} from "../components/schedule/patientSearchEngine";
+} from "../components/patients/patientSearchFuzzy";
 
 describe("Fuzzy Levenshtein Patient Search & Duplication Guard Suite", () => {
 	const samplePatients: Patient[] = [
@@ -306,6 +310,169 @@ describe("Fuzzy Levenshtein Patient Search & Duplication Guard Suite", () => {
 				phone: "999-44-33",
 			});
 			assert.equal(dups.some((d) => d.patient.id === "pat-child"), true);
+		});
+	});
+
+	describe("7. Transliteration & Keyboard Layout Mistype Tolerance", () => {
+		it("transliterates Latin surnames to Cyrillic accurately", () => {
+			assert.equal(transliterateLatinToCyrillic("Ivanov"), "иванов");
+			assert.equal(transliterateLatinToCyrillic("Shcherbakov"), "щербаков");
+			assert.equal(transliterateLatinToCyrillic("Kuznetsov"), "кузнецов");
+			assert.equal(transliterateLatinToCyrillic("Tsoy"), "цой");
+		});
+
+		it("converts wrong keyboard layout typing (QWERTY to JCUKEN)", () => {
+			assert.equal(convertKeyboardMistype("Bdfyjd"), "иванов");
+			assert.equal(convertKeyboardMistype("Cvbhyjd"), "смирнов");
+		});
+
+		it("finds patient when search query is entered in Latin ('Ivanov' -> 'Иванов')", () => {
+			const res = searchPatientsQuick(samplePatients, "Ivanov");
+			assert.equal(res.length >= 1, true);
+			assert.equal(res[0]?.patient.id, "pat-ivanov");
+		});
+
+		it("finds patient when search query is typed in wrong layout ('Bdfyjd' -> 'Иванов')", () => {
+			const res = searchPatientsQuick(samplePatients, "Bdfyjd");
+			assert.equal(res.length >= 1, true);
+			assert.equal(res[0]?.patient.id, "pat-ivanov");
+		});
+	});
+
+	describe("8. E.164 and Multi-format Phone Normalization", () => {
+		it("normalizes diverse phone string formats to canonical E.164", () => {
+			assert.equal(normalizePhoneE164("+7 (999) 123-45-67"), "+79991234567");
+			assert.equal(normalizePhoneE164("89991234567"), "+79991234567");
+			assert.equal(normalizePhoneE164("9991234567"), "+79991234567");
+			assert.equal(normalizePhoneE164("+79991234567"), "+79991234567");
+		});
+
+		it("detects duplicates across E.164 format and last 4 digits", () => {
+			const dups = findPotentialDuplicates(samplePatients, {
+				phone: "+79991234567",
+			});
+			assert.equal(dups.length >= 1, true);
+			assert.equal(dups[0]?.patient.id, "pat-ivanov");
+			assert.equal(dups[0]?.score >= 90, true);
+		});
+	});
+
+	describe("9. Birth Date + Fuzzy FIO Duplicate Detection", () => {
+		it("detects duplicate when birth date matches and FIO has 1-2 typos", () => {
+			// 'Ивонов Иван' with birth date '1988-03-15' vs 'Иванов Иван Иванович' (1988-03-15)
+			const dups = findPotentialDuplicates(samplePatients, {
+				fullName: "Ивонов Иван",
+				birthDate: "1988-03-15",
+			});
+			assert.equal(dups.length >= 1, true);
+			assert.equal(dups[0]?.patient.id, "pat-ivanov");
+			assert.equal(dups[0]?.duplicateReason, "birth_date_and_name");
+			assert.equal(dups[0]?.score >= 90, true);
+		});
+
+		it("detects duplicate when birth date matches and word order is swapped", () => {
+			const dups = findPotentialDuplicates(samplePatients, {
+				fullName: "Алексей Смирнов",
+				birthDate: "1992-07-20",
+			});
+			assert.equal(dups.length >= 1, true);
+			assert.equal(dups[0]?.patient.id, "pat-smirnov");
+			assert.equal(dups[0]?.score >= 95, true);
+		});
+	});
+
+	describe("10. Non-Destructive Patient Merge (Kopeck-exact Balance & Strict UNION)", () => {
+		it("sums deposit and family balances with exact kopeck precision", () => {
+			const primary = {
+				id: "prim-1",
+				fullName: "Иванов Иван Иванович",
+				balanceRub: 1500.5,
+				phone: "+79991234567",
+				status: "active",
+			} as unknown as Patient;
+
+			const duplicate = {
+				id: "dup-1",
+				fullName: "Иванов И.И.",
+				balanceRub: 2499.5,
+				phone: "+79991234567",
+				status: "active",
+			} as unknown as Patient;
+
+			const result = mergePatientRecordsNonDestructive(primary, duplicate);
+			assert.equal(result.combinedBalanceRub, 4000.0);
+			assert.equal(result.primaryPatient.balanceRub, 4000.0);
+			assert.equal(result.archivedDuplicatePatient.status, "archived");
+			assert.equal(result.archivedDuplicatePatient.mergedIntoPatientId, "prim-1");
+		});
+
+		it("performs STRICT UNION of allergies and somatic safety flags without data loss", () => {
+			const primary = {
+				id: "prim-2",
+				fullName: "Петров Петр Петрович",
+				allergies: "Аллергия на пенициллины",
+				clinicalSafetyProfile: {
+					hasHypertension: true,
+					hasLidocaineAllergy: false,
+				},
+				status: "active",
+			} as unknown as Patient;
+
+			const duplicate = {
+				id: "dup-2",
+				fullName: "Петров П.",
+				allergies: "Аллергия на лидокаин, аспирин",
+				clinicalSafetyProfile: {
+					hasPacemakerExs: true,
+					hasLidocaineAllergy: true,
+				},
+				status: "active",
+			} as unknown as Patient;
+
+			const result = mergePatientRecordsNonDestructive(primary, duplicate);
+
+			// Check allergies union
+			assert.equal(result.unitedAllergies.includes("Аллергия на пенициллины"), true);
+			assert.equal(result.unitedAllergies.includes("Аллергия на лидокаин"), true);
+			assert.equal(result.unitedAllergies.includes("аспирин"), true);
+
+			// Check somatic safety flags union (BOTH hypertension and pacemaker must be true)
+			const mergedSafety = (result.primaryPatient as any).clinicalSafetyProfile;
+			assert.equal(mergedSafety.hasHypertension, true);
+			assert.equal(mergedSafety.hasPacemakerExs, true);
+			assert.equal(mergedSafety.hasLidocaineAllergy, true);
+
+			assert.equal(result.unitedSafetyFlags.includes("Кардиостимулятор (ЭКС)"), true);
+			assert.equal(result.unitedSafetyFlags.includes("Гипертония"), true);
+			assert.equal(result.unitedSafetyFlags.includes("Аллергия на лидокаин"), true);
+		});
+	});
+
+	describe("11. PatientWorkspaceModals & Transliterated/Mistype Duplicate Matching", () => {
+		it("detects duplicates when search or incoming candidate uses Latin transliteration ('Ivanov')", () => {
+			const dups = findPotentialDuplicates(samplePatients, {
+				fullName: "Ivanov Ivan",
+				phone: "+79991234567",
+			});
+			assert.equal(dups.length >= 1, true);
+			assert.equal(dups[0]?.patient.id, "pat-ivanov");
+			assert.equal(dups[0]?.score >= 90, true);
+		});
+
+		it("detects duplicates when incoming candidate is typed in wrong keyboard layout ('Bdfyjd')", () => {
+			const dups = findPotentialDuplicates(samplePatients, {
+				fullName: "Bdfyjd Bdfy",
+				phone: "+79991234567",
+			});
+			assert.equal(dups.length >= 1, true);
+			assert.equal(dups[0]?.patient.id, "pat-ivanov");
+			assert.equal(dups[0]?.score >= 90, true);
+		});
+
+		it("exports PatientWorkspaceModals and PatientDuplicateMergeModal components", async () => {
+			const modalsModule = await import("../components/patients/PatientWorkspaceModals");
+			assert.equal(typeof modalsModule.PatientWorkspaceModals, "object"); // React.memo is object
+			assert.equal(typeof modalsModule.PatientDuplicateMergeModal, "object");
 		});
 	});
 });

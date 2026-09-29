@@ -14,6 +14,7 @@
 import type { Patient } from "@dental/shared";
 import {
 	AlertOctagon,
+	AlertTriangle,
 	Calendar,
 	Check,
 	CreditCard,
@@ -34,10 +35,14 @@ import React, {
 	useState,
 } from "react";
 import {
+	findPotentialDuplicates,
 	highlightSearchMatches,
-	parseSearchQueryForQuickPatient,
 	searchPatientsQuick,
 	type PatientSearchResultItem,
+	type PotentialDuplicateItem,
+} from "./patientSearchFuzzy";
+import {
+	parseSearchQueryForQuickPatient,
 	type QuickPatientPrefill,
 } from "../schedule/patientSearchEngine";
 import {
@@ -116,6 +121,24 @@ export function PatientSearchAutocomplete({
 	}, [query]);
 
 	const canQuickCreate = allowQuickCreate && query.trim().length > 0;
+
+	// Интеллектуальное выявление дубликата при быстром создании пациента
+	const potentialDuplicateForCreate: PotentialDuplicateItem | null = useMemo(() => {
+		if (!canQuickCreate) return null;
+		const name = quickPrefill.fullName.trim();
+		const phone = quickPrefill.phone.trim();
+		if (name.length < 3 && phone.replace(/\D/g, "").length < 4) {
+			return null;
+		}
+		const dups = findPotentialDuplicates(patients, {
+			fullName: name,
+			phone: phone,
+			thresholdScore: 70,
+			limit: 1,
+		});
+		return dups[0] ?? null;
+	}, [patients, canQuickCreate, quickPrefill]);
+
 	const totalNavigableCount = searchResults.length + (canQuickCreate ? 1 : 0);
 
 	const handleSelect = useCallback(
@@ -434,7 +457,54 @@ export function PatientSearchAutocomplete({
 
 					{/* 1-Click Fast Patient Creation Action (Mandate 8e: 5-sec intake, no passport/snils required) */}
 					{canQuickCreate && (
-						<div className="p-1.5 border-t border-[var(--glass-border)] bg-[var(--paper-soft)] shrink-0">
+						<div className="p-1.5 border-t border-[var(--glass-border)] bg-[var(--paper-soft)] shrink-0 flex flex-col gap-1.5">
+							{/* Ненавязчивый баннер при создании пациента: «Найден похожий пациент: Иванов И.И. (+7 999 ...). Открыть существующего или продолжить?» */}
+							{potentialDuplicateForCreate && (
+								<div
+									data-testid="patient-search-duplicate-hint"
+									className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs flex flex-col gap-1.5 text-amber-900 dark:text-amber-100 animate-in fade-in duration-100"
+								>
+									<div className="flex items-start gap-1.5">
+										<AlertTriangle
+											size={14}
+											className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"
+										/>
+										<div className="min-w-0 flex-1">
+											<p className="font-bold m-0 leading-tight">
+												Найден похожий пациент: {potentialDuplicateForCreate.patient.fullName}
+												{potentialDuplicateForCreate.patient.phone
+													? ` (${potentialDuplicateForCreate.patient.phone})`
+													: ""}
+											</p>
+											<p className="m-0 text-[11px] text-[var(--muted)] leading-tight">
+												{potentialDuplicateForCreate.explanation ||
+													"Возможен повторный ввод уже существующей карты"}
+											</p>
+										</div>
+									</div>
+									<div className="flex items-center gap-2 pt-0.5">
+										<button
+											type="button"
+											data-testid="open-existing-patient-btn"
+											onClick={() =>
+												handleSelect(potentialDuplicateForCreate.patient)
+											}
+											className="h-6 px-2.5 rounded-md text-[11px] font-bold bg-[var(--teal)] text-white hover:bg-[var(--teal)]/90 cursor-pointer transition-colors shadow-xs"
+										>
+											Открыть существующего
+										</button>
+										<button
+											type="button"
+											data-testid="continue-quick-create-btn"
+											onClick={handleTriggerQuickCreate}
+											className="h-6 px-2 rounded-md text-[11px] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
+										>
+											Продолжить создание
+										</button>
+									</div>
+								</div>
+							)}
+
 							<button
 								type="button"
 								data-testid="patient-search-quick-create-btn"

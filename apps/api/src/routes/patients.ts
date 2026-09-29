@@ -254,6 +254,65 @@ export type PatientDuplicateResult = {
 	readonly caution: string | null;
 };
 
+const QWERTY_TO_JCUKEN_MAP: Record<string, string> = {
+	q: "й", w: "ц", e: "у", r: "к", t: "е", y: "н", u: "г", i: "ш", o: "щ", p: "з",
+	"[": "х", "{": "Х", "]": "ъ", "}": "Ъ",
+	a: "ф", s: "ы", d: "в", f: "а", g: "п", h: "р", j: "о", k: "л", l: "д",
+	";": "ж", ":": "Ж", "'": "э", '"': "Э",
+	z: "я", x: "ч", c: "с", v: "м", b: "и", n: "т", m: "ь",
+	",": "б", "<": "Б", ".": "ю", ">": "Ю",
+	"`": "ё", "~": "Ё",
+};
+
+function convertQwertyMistype(raw: string): string {
+	return (raw ?? "").replace(/[a-zA-Z[\]{};':",.<>`~]/g, (char) => {
+		const lower = char.toLowerCase();
+		const mapped = QWERTY_TO_JCUKEN_MAP[lower];
+		if (!mapped) return char;
+		return char === char.toUpperCase() && char !== char.toLowerCase()
+			? mapped.toUpperCase()
+			: mapped;
+	});
+}
+
+const LATIN_TO_CYR_RULES: readonly [RegExp, string][] = [
+	[/shch/gi, "щ"],
+	[/yo/gi, "ё"],
+	[/zh/gi, "ж"],
+	[/ch/gi, "ч"],
+	[/sh/gi, "ш"],
+	[/yu/gi, "ю"],
+	[/ya/gi, "я"],
+	[/ts/gi, "ц"],
+	[/tc/gi, "ц"],
+	[/kh/gi, "х"],
+	[/iy\b/gi, "ий"],
+	[/yy\b/gi, "ый"],
+	[/([aeiouyаеёиоуыэюя])y/gi, "$1й"],
+	[/y([aeiouаеёиоуыэюя])/gi, "й$1"],
+	[/a/gi, "а"], [/b/gi, "б"], [/v/gi, "в"], [/w/gi, "в"],
+	[/g/gi, "г"], [/d/gi, "д"], [/e/gi, "е"], [/z/gi, "з"],
+	[/i/gi, "и"], [/j/gi, "й"], [/k/gi, "к"], [/l/gi, "л"],
+	[/m/gi, "м"], [/n/gi, "н"], [/o/gi, "о"], [/p/gi, "п"],
+	[/r/gi, "р"], [/s/gi, "с"], [/t/gi, "т"], [/u/gi, "у"],
+	[/f/gi, "ф"], [/h/gi, "х"], [/c/gi, "к"], [/x/gi, "кс"],
+	[/y/gi, "ы"],
+];
+
+function transliterateLatinToCyrillic(raw: string): string {
+	let res = raw ?? "";
+	for (const [pattern, rep] of LATIN_TO_CYR_RULES) {
+		res = res.replace(pattern, (match) => {
+			const firstChar = match.charAt(0);
+			if (firstChar && firstChar === firstChar.toUpperCase()) {
+				return rep.charAt(0).toUpperCase() + rep.slice(1);
+			}
+			return rep;
+		});
+	}
+	return res;
+}
+
 function findPatientDuplicate(
 	patientsList: readonly PatientDuplicateCandidate[],
 	input: PatientDuplicateInput,
@@ -264,53 +323,68 @@ function findPatientDuplicate(
 		return null;
 	}
 
+	const candidatesToTry: PatientDuplicateInput[] = [input];
+	if (input.fullName && /[a-zA-Z]/.test(input.fullName)) {
+		const qwertyConverted = convertQwertyMistype(input.fullName);
+		if (qwertyConverted !== input.fullName) {
+			candidatesToTry.push({ ...input, fullName: qwertyConverted });
+		}
+		const transliterated = transliterateLatinToCyrillic(input.fullName);
+		if (transliterated !== input.fullName && transliterated !== qwertyConverted) {
+			candidatesToTry.push({ ...input, fullName: transliterated });
+		}
+	}
+
 	let bestMatch: PatientDuplicateResult | null = null;
 
-	for (const patient of patientsList) {
-		if (patient.id === ignoredPatientId) continue;
-		if (patient.status !== "active" || patient.mergedIntoPatientId) continue;
+	for (const trialInput of candidatesToTry) {
+		for (const patient of patientsList) {
+			if (patient.id === ignoredPatientId) continue;
+			if (patient.status !== "active" || patient.mergedIntoPatientId) continue;
 
-		const evaluation = evaluatePatientMatch(
-			{
-				id: patient.id,
-				fullName: patient.fullName,
-				birthDate: patient.birthDate,
-				phone: patient.phone,
-				snils:
-					patient.snils ??
-					(patient.administrativeProfile?.snils as string | undefined) ??
-					null,
-				status: patient.status,
-				mergedIntoPatientId: patient.mergedIntoPatientId,
-				administrativeProfile: patient.administrativeProfile,
-			},
-			{
-				fullName: input.fullName ?? "",
-				birthDate: input.birthDate,
-				phone: input.phone,
-				snils:
-					input.snils ??
-					(input.administrativeProfile?.snils as string | undefined) ??
-					null,
-				administrativeProfile: input.administrativeProfile,
-			},
-			options,
-		);
+			const evaluation = evaluatePatientMatch(
+				{
+					id: patient.id,
+					fullName: patient.fullName,
+					birthDate: patient.birthDate,
+					phone: patient.phone,
+					snils:
+						patient.snils ??
+						(patient.administrativeProfile?.snils as string | undefined) ??
+						null,
+					status: patient.status,
+					mergedIntoPatientId: patient.mergedIntoPatientId,
+					administrativeProfile: patient.administrativeProfile,
+				},
+				{
+					fullName: trialInput.fullName ?? "",
+					birthDate: trialInput.birthDate,
+					phone: trialInput.phone,
+					snils:
+						trialInput.snils ??
+						(trialInput.administrativeProfile?.snils as string | undefined) ??
+						null,
+					administrativeProfile: trialInput.administrativeProfile,
+				},
+				options,
+			);
 
-		if (evaluation && evaluation.isDuplicate) {
-			if (!bestMatch || evaluation.matchScore > bestMatch.matchScore) {
-				bestMatch = {
-					isDuplicate: true,
-					isNameOnlyDuplicate: evaluation.isNameOnlyDuplicate,
-					candidate: patient,
-					matchScore: evaluation.matchScore,
-					matchConfidencePercent: evaluation.matchConfidencePercent,
-					reasons: evaluation.reasons,
-					explanation: evaluation.explanation,
-					caution: evaluation.caution,
-				};
+			if (evaluation && evaluation.isDuplicate) {
+				if (!bestMatch || evaluation.matchScore > bestMatch.matchScore) {
+					bestMatch = {
+						isDuplicate: true,
+						isNameOnlyDuplicate: evaluation.isNameOnlyDuplicate,
+						candidate: patient,
+						matchScore: evaluation.matchScore,
+						matchConfidencePercent: evaluation.matchConfidencePercent,
+						reasons: evaluation.reasons,
+						explanation: evaluation.explanation,
+						caution: evaluation.caution,
+					};
+				}
 			}
 		}
+		if (bestMatch && bestMatch.matchScore >= 0.95) break;
 	}
 
 	return bestMatch;
@@ -2114,5 +2188,74 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 		);
 		await PatientArchiveReasonService.unarchivePatient(orgId, patientId);
 		return reply.send({ success: true });
+	});
+
+	/**
+	 * POST /api/patients/:patientId/merge
+	 * Неразрушающее слияние дублирующей карточки в основную карточку (:patientId).
+	 * Переносит все визиты, приёмы, планы лечения, баланс с точностью до копейки,
+	 * объединяет аллергии и соматический статус, сохраняет 152-ФЗ аудит.
+	 */
+	app.post("/api/patients/:patientId/merge", async (request, reply) => {
+		const orgId = requireClinicOrganizationId(request, reply);
+		if (!orgId) return reply;
+
+		const { patientId } = request.params as { patientId?: string };
+		if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId)) {
+			return sendPatientRouteValidationError(reply);
+		}
+
+		const body = (request.body && typeof request.body === "object" ? request.body : {}) as {
+			duplicatePatientId?: string;
+			reason?: string;
+		};
+
+		if (!body.duplicatePatientId || !PATIENT_ID_UUID_PATTERN.test(body.duplicatePatientId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Укажите корректный UUID объединяемой (дублирующей) карточки пациента.",
+			});
+		}
+
+		if (body.duplicatePatientId === patientId) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Нельзя объединить карточку саму с собой.",
+			});
+		}
+
+		const identity = getRequestIdentity(request);
+		const { mergePatients } = await import("../services/patients/patientMerge.js");
+
+		const result = await mergePatients({
+			organizationId: orgId,
+			primaryPatientId: patientId,
+			duplicatePatientId: body.duplicatePatientId,
+			performedByUserId: identity.userId ?? null,
+			reason: body.reason ?? null,
+		});
+
+		if (!result.ok) {
+			return reply.code(409).send({
+				error: "PatientMergeRejected",
+				message: result.reason,
+			});
+		}
+
+		const movedTotal = Object.values(result.movedRows).reduce(
+			(total, count) => total + count,
+			0,
+		);
+
+		return reply.send({
+			success: true,
+			...result,
+			summary:
+				`Карточки пациентов успешно объединены. Перенесено связанных записей: ${movedTotal}` +
+				(result.filledFields.length > 0
+					? `. Дозаполнено в основной карточке: ${result.filledFields.join(", ")}`
+					: "") +
+				". Вторая карточка архивирована с перенаправлением (152-ФЗ аудит сохранен).",
+		});
 	});
 }

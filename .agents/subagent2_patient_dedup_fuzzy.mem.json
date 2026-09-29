@@ -1,0 +1,39 @@
+{
+  "subagent": "Subagent 2: Patient Deduplication, Merging & Fuzzy Search Inquisitor",
+  "status": "completed",
+  "current_step": "completed",
+  "completed_steps": [
+    "constitutional_routine_passed",
+    "reconnaissance_files",
+    "implement_fuzzy_search_and_translit",
+    "implement_backend_merge_and_duplicates_routes",
+    "implement_frontend_autocomplete_and_modals",
+    "run_targeted_unit_tests",
+    "verify_and_doc_sync",
+    "git_add_and_report"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "fuzzy_search": "Levenshtein distance (1 typo for short words, 2 typos for long words), strict defense for short surnames (Ли, Ким, Пак, Цой, Хан, Али <= 3 chars without typos), token-sort permutations, score ranking, and visual highlight chunks implemented.",
+    "transliteration_and_layout": "Transliteration of digraphs/trigraphs (shch, yo, zh, ch, sh, yu, ya, ts, tc, kh, etc.) and keyboard mistype conversion (QWERTY <-> JCUKEN) implemented for both search and duplicate detection.",
+    "e164_normalization": "National 10-digit and E.164 normalization (+7, 8, no prefix, last 4 digits) implemented.",
+    "non_destructive_merge": "Kopeck-exact integer addition for deposit and family balances, strict UNION for allergies and somatic safety flags without data loss, relinking of visits/images/treatment plans, duplicate marked as archived with mergedIntoPatientId for 152-FZ audit log.",
+    "modal_ergonomics": "PatientWorkspaceModals equipped with PatientDuplicateMergeModal, listening to dente-open-duplicate-merge-modal, 1-click execution, side-by-side comparison, zero nested card matryoshkas, desktop density.",
+    "backend_routes": "POST /api/patients/:patientId/merge registered in apps/api/src/routes/patients.ts; findPatientDuplicate enhanced with transliteration and layout mistype tolerance."
+  },
+  "files_in_scope": [
+    "apps/web/src/components/patients/PatientSearchAutocomplete.tsx",
+    "apps/web/src/components/patients/patientSearchFuzzy.ts",
+    "apps/web/src/utils/patientSearchFuzzy.ts",
+    "apps/web/src/components/patients/PatientWorkspaceModals.tsx",
+    "apps/api/src/routes/patients.ts",
+    "apps/web/src/tests/patientSearchFuzzy.test.ts",
+    ".agents/subagent2_patient_dedup_fuzzy.mem.json"
+  ],
+  "test_results": {
+    "total_tests": 33,
+    "passed_tests": 33,
+    "failed_tests": 0,
+    "command": "node --max-old-space-size=4096 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/tests/patientSearchFuzzy.test.ts"
+  }
+}
