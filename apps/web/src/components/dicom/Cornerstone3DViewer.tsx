@@ -47,7 +47,6 @@ import {
 	panoramicReadyLabel,
 } from "./panoramicArch";
 import { isLowSpecHardware } from "../../utils/deviceDetection.js";
-import { Activity, Box, ShieldAlert } from "lucide-react";
 import {
 	type ExtendedMischClass,
 	type ImplantData,
@@ -62,7 +61,6 @@ import {
 } from "./cornerstoneTypes";
 import { CornerstoneToolbar } from "./CornerstoneToolbar";
 import { CornerstoneHudOverlays } from "./CornerstoneHudOverlays";
-import { CornerstonePlanningQuadrant } from "./CornerstonePlanningQuadrant";
 import { CornerstoneEmptyDropzone } from "./CornerstoneEmptyDropzone";
 import {
 	CornerstoneMprViewports,
@@ -105,7 +103,6 @@ export function Cornerstone3DViewer({
 	const sagittalRef = useRef<HTMLDivElement>(null);
 	const coronalRef = useRef<HTMLDivElement>(null);
 	const volume3dRef = useRef<HTMLDivElement>(null);
-	const [activeQuadrantTab, setActiveQuadrantTab] = useState<"volume3d" | "planning">("volume3d");
 	const [active3DPresetId, setActive3DPresetId] = useState<string>("bone");
 	const active3DPresetIdRef = useRef<string>("bone");
 	active3DPresetIdRef.current = active3DPresetId;
@@ -837,18 +834,6 @@ export function Cornerstone3DViewer({
 		};
 	}, [isInitialized, effectiveImageIds.length]);
 
-	// When 4th quadrant tab switches back to 3D volume, trigger renderingEngine.resize()
-	useEffect(() => {
-		if (activeQuadrantTab === "volume3d") {
-			const renderingEngine = cornerstone.getRenderingEngine(renderingEngineIdRef.current);
-			if (renderingEngine) {
-				renderingEngine.resize();
-				const vp = renderingEngine.getViewport(VIEWPORT_IDS.volume3d);
-				vp?.render();
-			}
-		}
-	}, [activeQuadrantTab]);
-
 	if (effectiveImageIds.length === 0) {
 		return (
 			<CornerstoneEmptyDropzone
@@ -975,229 +960,14 @@ export function Cornerstone3DViewer({
 					onViewportClickForNerve={handleViewportClickForNerve}
 				/>
 
-				{/* 4TH QUADRANT: 3D VOLUME RENDERING & SURGICAL PLANNING */}
-				<div
-					data-testid="fourth-quadrant-container"
-					style={{
-						position: "relative",
-						backgroundColor: "var(--paper-strong, #171717)",
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "stretch",
-						justifyContent: "flex-start",
-						overflow: "hidden",
-					}}
-				>
-					{/* TOP HEADER TOGGLE / TABS: 3D ОБЪЁМ vs ХИРУРГИЧЕСКИЙ ПРОТОКОЛ */}
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between",
-							gap: "8px",
-							padding: "6px 8px",
-							backgroundColor: "rgba(0,0,0,0.75)",
-							borderBottom: "1px solid var(--line-strong, rgba(255,255,255,0.12))",
-							backdropFilter: "blur(6px)",
-							flexShrink: 0,
-							zIndex: 15,
-						}}
-					>
-						{/* Mode Switcher Tabs */}
-						<div
-							role="tablist"
-							aria-label="Режимы 4-го квадранта"
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								backgroundColor: "rgba(255,255,255,0.06)",
-								borderRadius: "6px",
-								padding: "2px",
-								border: "1px solid rgba(255,255,255,0.1)",
-								gap: "2px",
-							}}
-						>
-							<button
-								type="button"
-								role="tab"
-								aria-selected={activeQuadrantTab === "volume3d"}
-								onClick={() => setActiveQuadrantTab("volume3d")}
-								data-testid="quadrant-tab-volume3d"
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "5px",
-									height: "26px",
-									padding: "0 10px",
-									borderRadius: "4px",
-									fontSize: "11px",
-									fontWeight: activeQuadrantTab === "volume3d" ? 700 : 500,
-									border: "none",
-									cursor: "pointer",
-									backgroundColor:
-										activeQuadrantTab === "volume3d"
-											? "var(--brand-primary, #2563eb)"
-											: "transparent",
-									color: activeQuadrantTab === "volume3d" ? "#fff" : "var(--muted, #a1a1aa)",
-									transition: "all 0.15s ease",
-								}}
-							>
-								<Box className="w-3.5 h-3.5 text-cyan-300" />
-								<span>3D Объём (Volume 3D)</span>
-							</button>
-
-							<button
-								type="button"
-								role="tab"
-								aria-selected={activeQuadrantTab === "planning"}
-								onClick={() => setActiveQuadrantTab("planning")}
-								data-testid="quadrant-tab-planning"
-								style={{
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "5px",
-									height: "26px",
-									padding: "0 10px",
-									borderRadius: "4px",
-									fontSize: "11px",
-									fontWeight: activeQuadrantTab === "planning" ? 700 : 500,
-									border: "none",
-									cursor: "pointer",
-									backgroundColor:
-										activeQuadrantTab === "planning"
-											? "var(--brand-primary, #2563eb)"
-											: "transparent",
-									color: activeQuadrantTab === "planning" ? "#fff" : "var(--muted, #a1a1aa)",
-									transition: "all 0.15s ease",
-								}}
-							>
-								<Activity className="w-3.5 h-3.5 text-emerald-400" />
-								<span>Хирургический протокол</span>
-								{hasAnyNerveCollision ? (
-									<span
-										style={{
-											width: "6px",
-											height: "6px",
-											borderRadius: "50%",
-											backgroundColor: "#ef4444",
-											display: "inline-block",
-										}}
-									/>
-								) : implants.length > 0 ? (
-									<span
-										style={{
-											backgroundColor: "rgba(255,255,255,0.2)",
-											borderRadius: "8px",
-											padding: "0 4px",
-											fontSize: "10px",
-											fontWeight: 700,
-										}}
-									>
-										{implants.length}
-									</span>
-								) : null}
-							</button>
-						</div>
-
-						{/* Right badge: Nerve alert or Active 3D Preset */}
-						{activeQuadrantTab === "planning" ? (
-							hasAnyNerveCollision ? (
-								<span
-									style={{
-										backgroundColor: "rgba(239,68,68,0.2)",
-										border: "1px solid #ef4444",
-										color: "var(--rose-300, #fca5a5)",
-										padding: "2px 8px",
-										borderRadius: "6px",
-										fontSize: "11px",
-										fontWeight: "bold",
-										display: "inline-flex",
-										alignItems: "center",
-										gap: "4px",
-									}}
-								>
-									<ShieldAlert className="w-3.5 h-3.5 text-red-400 animate-pulse" />
-									Коллизия &lt; 1.5 мм
-								</span>
-							) : null
-						) : (
-							<span
-								style={{
-									fontSize: "11px",
-									color: "var(--cyan-300, #67e8f9)",
-									backgroundColor: "rgba(34,211,238,0.12)",
-									border: "1px solid rgba(34,211,238,0.3)",
-									padding: "2px 8px",
-									borderRadius: "6px",
-									display: "inline-flex",
-									alignItems: "center",
-									gap: "4px",
-								}}
-							>
-								<span>GPU WebGL</span>
-							</span>
-						)}
-					</div>
-
-					{/* 3D VOLUME VIEWPORT (DOM stays mounted for WebGL continuity) */}
-					<div
-						style={{
-							display: activeQuadrantTab === "volume3d" ? "flex" : "none",
-							flex: 1,
-							width: "100%",
-							height: "100%",
-							minHeight: "300px",
-							position: "relative",
-						}}
-					>
-						<CornerstoneVolume3DViewport
-							volume3dRef={volume3dRef}
-							activePresetId={active3DPresetId}
-							onSelectPreset={handleSelect3DPreset}
-							onResetCamera={handleReset3DCamera}
-							onRotateOrientation={handleRotate3DOrientation}
-						/>
-					</div>
-
-					{/* SURGICAL PLANNING PROTOCOL PANEL */}
-					<div
-						data-testid="surgical-planning-quadrant"
-						style={{
-							display: activeQuadrantTab === "planning" ? "flex" : "none",
-							flexDirection: "column",
-							flex: 1,
-							overflowY: "auto",
-							padding: "10px 12px",
-							gap: "10px",
-						}}
-					>
-						<CornerstonePlanningQuadrant
-							hasAnyNerveCollision={hasAnyNerveCollision}
-							restoredMarkup={restoredMarkup}
-							activePlatform={activePlatform}
-							activeSystemSpec={activeSystemSpec}
-							selectedSystemId={selectedSystemId}
-							handleSelectSystem={handleSelectSystem}
-							selectedDiameter={selectedDiameter}
-							handleSelectDiameter={handleSelectDiameter}
-							availableLengthsForDiameter={availableLengthsForDiameter}
-							selectedLength={selectedLength}
-							setSelectedLength={setSelectedLength}
-							selectedFdiCode={selectedFdiCode}
-							setSelectedFdiCode={setSelectedFdiCode}
-							placeImplantModel={placeImplantModel}
-							implants={implants}
-							focusOnImplant={focusOnImplant}
-							removeImplant={removeImplant}
-							latestImplant={latestImplant ?? null}
-							handleExportSnapshotTo043={handleExportSnapshotTo043}
-							isExportingSnapshot={isExportingSnapshot}
-							aiProtocolLog={aiProtocolLog}
-							handleAddCbctToFinance={handleAddCbctToFinance}
-							showInternalHeader={false}
-						/>
-					</div>
-				</div>
+				{/* 4TH QUADRANT: REAL 3D VOLUME RENDERING (ROMEXIS 4-VIEWPORT GRID) */}
+				<CornerstoneVolume3DViewport
+					volume3dRef={volume3dRef}
+					activePresetId={active3DPresetId}
+					onSelectPreset={handleSelect3DPreset}
+					onResetCamera={handleReset3DCamera}
+					onRotateOrientation={handleRotate3DOrientation}
+				/>
 			</div>
 		</div>
 	);

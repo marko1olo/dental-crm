@@ -248,8 +248,8 @@ describe("FEAT-001: 3D Volume Rendering & 4th Quadrant Architect Test Suite", ()
 		});
 	});
 
-	// ─── 7. CORNERSTONE 3D VIEWER: 4TH QUADRANT DUAL-MODE INTEGRATION ─────────
-	describe("7. Cornerstone3DViewer: ViewportType.VOLUME_3D & Dual-Mode 4th Quadrant Tabs", () => {
+	// ─── 7. CORNERSTONE 3D VIEWER: ROMEXIS 4-VIEWPORT GRID INTEGRATION ─────────
+	describe("7. Cornerstone3DViewer: ViewportType.VOLUME_3D & Romexis 4-Viewport Grid", () => {
 		it("Cornerstone3DViewer.tsx registers ViewportType.VOLUME_3D in viewportInputArray", () => {
 			const source = fs.readFileSync(
 				path.resolve(__dirname, "../Cornerstone3DViewer.tsx"),
@@ -276,37 +276,50 @@ describe("FEAT-001: 3D Volume Rendering & 4th Quadrant Architect Test Suite", ()
 			);
 		});
 
-		it("Cornerstone3DViewer.tsx defaults activeQuadrantTab to 'volume3d'", () => {
+		it("Cornerstone3DViewer.tsx strictly evicts tablist and tab buttons (No tabs in 4th quadrant)", () => {
 			const source = fs.readFileSync(
 				path.resolve(__dirname, "../Cornerstone3DViewer.tsx"),
 				"utf-8",
 			);
-			assert.ok(
-				source.includes('useState<"volume3d" | "planning">("volume3d")'),
-				"Default 4th quadrant tab must be 'volume3d' (surgeons see 3D Volume immediately)",
+			assert.strictEqual(
+				source.includes('data-testid="quadrant-tab-volume3d"'),
+				false,
+				"Must NOT contain quadrant-tab-volume3d button",
+			);
+			assert.strictEqual(
+				source.includes('data-testid="quadrant-tab-planning"'),
+				false,
+				"Must NOT contain quadrant-tab-planning button",
+			);
+			assert.strictEqual(
+				source.includes('role="tablist"'),
+				false,
+				"Must NOT contain tablist role in 4th quadrant",
+			);
+			assert.strictEqual(
+				source.includes("activeQuadrantTab"),
+				false,
+				"Must NOT have activeQuadrantTab state",
+			);
+			assert.strictEqual(
+				source.includes("<CornerstonePlanningQuadrant"),
+				false,
+				"Must NOT render CornerstonePlanningQuadrant in the 4th quadrant of MPR",
 			);
 		});
 
-		it("Cornerstone3DViewer.tsx renders tab toggle buttons for 3D Volume and Planning Panel", () => {
+		it("Cornerstone3DViewer.tsx unconditionally renders CornerstoneVolume3DViewport in the 4th quadrant", () => {
 			const source = fs.readFileSync(
 				path.resolve(__dirname, "../Cornerstone3DViewer.tsx"),
 				"utf-8",
 			);
 			assert.ok(
-				source.includes('data-testid="quadrant-tab-volume3d"'),
-				"Must render button with data-testid='quadrant-tab-volume3d'",
+				source.includes("<CornerstoneVolume3DViewport"),
+				"Must unconditionally render CornerstoneVolume3DViewport",
 			);
 			assert.ok(
-				source.includes('data-testid="quadrant-tab-planning"'),
-				"Must render button with data-testid='quadrant-tab-planning'",
-			);
-			assert.ok(
-				source.includes("3D Объём (Volume 3D)"),
-				"Must include button label '3D Объём (Volume 3D)'",
-			);
-			assert.ok(
-				source.includes("Хирургический протокол"),
-				"Must include button label 'Хирургический протокол'",
+				source.includes("volume3dRef={volume3dRef}"),
+				"Must bind volume3dRef to CornerstoneVolume3DViewport",
 			);
 		});
 

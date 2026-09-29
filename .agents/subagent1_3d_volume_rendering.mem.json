@@ -1,5 +1,5 @@
 {
-  "task": "FEAT-001: 3D Volume Rendering & 4th Quadrant Architect",
+  "task": "FEAT-001: 3D Volume Rendering & 4th Quadrant Architect (Romexis 4-Viewport Grid)",
   "status": "completed",
   "completed_steps": [
     "Read THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, DICOM_VIEWER_AUDIT.md",
@@ -11,18 +11,21 @@
     "Implemented setupVolume3DToolGroup with TrackballRotateTool (LMB), ZoomTool (MMB), PanTool (RMB)",
     "Implemented applyVolume3DPreset, resetVolume3DCamera, and setVolume3DOrientation helpers",
     "Created CornerstoneVolume3DViewport component with HUD telemetry, preset selector, orthogonal orientation chips, reset button, and guidance tip in CornerstoneMprViewports.tsx",
-    "Added showInternalHeader prop to CornerstonePlanningQuadrant.tsx for seamless tab embedding",
-    "Integrated 3D Volume into Cornerstone3DViewer.tsx: ViewportType.VOLUME_3D, separate tool group, TrackballRotateTool registration, quadrant tab toggle (3D Volume vs Surgical Planning), WebGL DOM persistence, window resize/ResizeObserver handling, and complete teardown/cleanup",
-    "Created 20 comprehensive unit tests in apps/web/src/components/dicom/__tests__/cornerstone3DVolume.test.ts",
-    "Executed targeted unit tests: 41/41 passing (20 new + 21 existing P0 hotfix tests) in 3.68s",
-    "Executed encoding gate: npm run check:encoding passed (6290 files checked, 0 errors)",
+    "Added showInternalHeader prop to CornerstonePlanningQuadrant.tsx",
+    "RED TEAM CORRECTION: Evicted 4th quadrant tab switcher (activeQuadrantTab, tablist, quadrant-tab buttons) and evicted CornerstonePlanningQuadrant from the radiology grid.",
+    "ENFORCED ROMEXIS 4-VIEWPORT GRID: 4th quadrant unconditionally and directly renders CornerstoneVolume3DViewport with ViewportType.VOLUME_3D always open and active.",
+    "Updated unit tests in apps/web/src/components/dicom/__tests__/cornerstone3DVolume.test.ts to strictly assert presence of 4th volume viewport and absence of tabs/planning form in grid.",
+    "Executed targeted unit tests: 41/41 passing (20 new + 21 existing P0 hotfix tests) in 4.30s",
+    "Executed typecheck: npm run typecheck -w @dental/web passed with 0 errors (Exit code 0)",
+    "Executed encoding gate: npm run check:encoding passed (6289 files checked, 0 errors)",
     "Conducted git diff self-audit: zero unintended edits, strictly within scoped files"
   ],
   "pending_steps": [],
   "findings": [
+    "In professional radiological workstations (Planmeca Romexis, OnDemand3D, Ez3D-i, KaVo), all 4 viewports (Axial, Coronal, Sagittal, and 3D Volume) must be visible simultaneously on screen at all times without hiding any viewport behind tabs.",
     "Cornerstone3D ViewportType.VOLUME_3D uses VTK volume actors under the hood. Its setProperties({ preset }) API natively accepts both built-in preset strings (e.g. 'CT-Bone') and custom ViewportPreset objects.",
-    "To avoid mouse binding conflicts with MPR CrosshairsTool on Primary LMB, the 3D volume viewport MUST use its own dedicated ToolGroup (volume3dToolGroupIdRef).",
-    "WebGL contexts in Cornerstone3D can be lost or zeroed if DOM elements are unmounted or set to display: none without dimensions. By keeping both the 3D Volume canvas container and the Planning panel mounted in DOM via display: flex/none and invoking renderingEngine.resize() on tab switch, WebGL context and volume actors remain fully intact.",
+    "To avoid mouse binding conflicts with MPR CrosshairsTool on Primary LMB, the 3D volume viewport uses its own dedicated ToolGroup (volume3dToolGroupIdRef).",
+    "Directly rendering CornerstoneVolume3DViewport in the 4th quadrant eliminates all tab state, unneeded resize effects on tab switch, and DOM wrapper bloat.",
     "Window resizing and container dimension changes are actively observed via ResizeObserver and window 'resize' listener, triggering renderingEngine.resize() and viewport.render() to prevent aspect ratio distortion or canvas stretch."
   ]
 }
