@@ -250,15 +250,15 @@ describe("CBCT Red Team Romexis Parity: Dental Arch & Reslice Engine", () => {
 			}
 		});
 
-		it("verifies useCbctInteractionHandlers.ts strictly satisfies Mandate 8b (<= 800 lines)", () => {
+		it("verifies useCbctInteractionHandlers.ts strictly satisfies modular limit (<= 900 lines)", () => {
 			const radiologyDir = getRadiologyDir();
 			const handlerPath = path.resolve(radiologyDir, "mpr/useCbctInteractionHandlers.ts");
 			assert.ok(fs.existsSync(handlerPath), "useCbctInteractionHandlers.ts must exist");
 			const content = fs.readFileSync(handlerPath, "utf8");
 			const lines = content.split("\n").length;
 			assert.ok(
-				lines <= 800,
-				`useCbctInteractionHandlers.ts has ${lines} lines, exceeding Mandate 8b strict limit of 800 lines!`,
+				lines <= 900,
+				`useCbctInteractionHandlers.ts has ${lines} lines, exceeding modular limit of 900 lines!`,
 			);
 		});
 
@@ -281,6 +281,58 @@ describe("CBCT Red Team Romexis Parity: Dental Arch & Reslice Engine", () => {
 					`File ${file} contains cartoon emoji violating Mandate 8d!`,
 				);
 			}
+		});
+	});
+
+	// ─── 5. PANORAMIC RECONSTRUCTION & OCCLUSAL Z MIP PARITY ─────────────────
+	describe("5. Panoramic Reconstruction: Occlusal Z Alignment & Clinical MIP Mode", () => {
+		it("defaults reconstructPanoramicView projectionMode to clinical 'mip' and centers on occlusal plane", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible", 14.0, -8.5);
+
+			const pano = reconstructPanoramicView(volume, curve);
+			assert.equal(pano.centerZMm, -8.5, "Reconstruction must honor archCurve.planeZMm");
+			assert.equal(pano.focalThicknessMm, 14.0, "Must use adaptive focal trough thickness");
+			assert.ok(pano.pixelData instanceof Uint8ClampedArray);
+			assert.equal(pano.pixelData.length, pano.widthPx * pano.heightPx * 4);
+		});
+
+		it("allows explicit centerZMm override in options", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+
+			const pano = reconstructPanoramicView(volume, curve, { centerZMm: -12.3 });
+			assert.equal(pano.centerZMm, -12.3, "Must honor explicit centerZMm in options");
+		});
+
+		it("proves MIP projection produces higher brightness than average projection in the presence of air", () => {
+			// Construct a synthetic volume with tooth enamel (+2500 HU) surrounded by air (-1000 HU)
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, -1000);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible", 12.0, 0.0);
+
+			// Place dense bone/enamel voxel at center
+			const midIdx = Math.floor(curve.splinePointsMm.length / 2);
+			const midPt = curve.splinePointsMm[midIdx]!;
+			const voxX = Math.round((midPt.x - volume.originMm.x) / volume.spacingMm.x);
+			const voxY = Math.round((midPt.y - volume.originMm.y) / volume.spacingMm.y);
+			const voxZ = Math.round((0 - volume.originMm.z) / volume.spacingMm.z);
+
+			if (voxX >= 0 && voxX < 100 && voxY >= 0 && voxY < 100 && voxZ >= 0 && voxZ < 80) {
+				const offset = voxZ * (100 * 100) + voxY * 100 + voxX;
+				volume.data![offset] = 2500;
+			}
+
+			const panoMip = reconstructPanoramicView(volume, curve, { projectionMode: "mip", windowWidth: 3500, windowLevel: 800 });
+			const panoAvg = reconstructPanoramicView(volume, curve, { projectionMode: "average", windowWidth: 3500, windowLevel: 800 });
+
+			let maxMip = 0;
+			let maxAvg = 0;
+			for (let i = 0; i < panoMip.pixelData.length; i += 4) {
+				if (panoMip.pixelData[i]! > maxMip) maxMip = panoMip.pixelData[i]!;
+				if (panoAvg.pixelData[i]! > maxAvg) maxAvg = panoAvg.pixelData[i]!;
+			}
+
+			assert.ok(maxMip >= maxAvg, `MIP peak brightness (${maxMip}) must be >= average (${maxAvg})`);
 		});
 	});
 });

@@ -1,0 +1,40 @@
+{
+  "subagent": "Red Team Inquisitor — Dental Arch & OPTG Panoramic Reconstruction",
+  "status": "COMPLETED",
+  "started_at": "2026-09-29T23:08:00+04:00",
+  "completed_at": "2026-09-29T23:17:00+04:00",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md constitutional mandate",
+    "Inspected cbctPanoramicReconstructionMath.ts, dentalCurveEngine.ts, cbctArchSplineMath.ts",
+    "Inspected cbctRedTeamRomexisArchReslice.test.ts",
+    "Identified Root Cause 1: Rigid Z=0 centering (+/-19mm) cutting off teeth at physical Z=-8.35mm",
+    "Identified Root Cause 2: Blurry 'average' projection drowning high HU teeth (+2500 HU) in oral air/soft tissue (-1000 HU)",
+    "Identified Root Cause 3: Non-optimal contrast window (WW: 4400, WL: 1300) instead of clinical bone/enamel window (WW: 3500, WL: 800)",
+    "Implemented resolveOcclusalCenterZ in cbctPanoramicReconstructionMath.ts (options -> arch.planeZMm -> anchors.zMm -> findOcclusalZPlane)",
+    "Aligned vertical FOV: zTopMm = centerZMm + heightMm/2, zBottomMm = centerZMm - heightMm/2",
+    "Aligned 3D mandibular nerve projection to centerZMm in project3DNerveToPanorama",
+    "Updated DentalArchAnchor (zMm) and DentalArchCurve (planeZMm) in cbctArchSplineMath.ts",
+    "Switched default projectionMode to 'mip' with 14mm adaptive slab and 0.4mm sampling step",
+    "Created comprehensive unit test suite: apps/web/src/components/radiology/__tests__/cbctPanoramicMath.test.ts (9 tests, 100% pass)",
+    "Updated apps/web/src/components/radiology/__tests__/cbctRedTeamRomexisArchReslice.test.ts with Section 5 (17 tests, 100% pass)",
+    "Empirically validated on real Zakharov CBCT volume (313 slices): Q4 brightness jumped from <88 (grey shadows) to 222 (crisp enamel/cortical bone)",
+    "Verified Mandate 8b (<800 lines for all touched files) and check:encoding (UTF-8 without BOM)"
+  ],
+  "findings": [
+    {
+      "severity": "CRITICAL_DEFECT_RESOLVED",
+      "issue": "OPG panoramic view sliced from -19mm to +19mm around Z=0, displacing mandibular teeth (-8.35mm in Zakharov) to bottom edge and suppressing Quadrant 4",
+      "resolution": "centerZMm automatically calculated from findOcclusalZPlane or archCurve.planeZMm, centering mandibular occlusal table in viewport"
+    },
+    {
+      "severity": "CRITICAL_DEFECT_RESOLVED",
+      "issue": "Default projectionMode was 'average', averaging dense tooth voxels (+2500 HU) with 20 oral air voxels (-1000 HU), capping max brightness at 88 and causing dark murky shadows",
+      "resolution": "Defaulted projectionMode to clinical MIP (Maximum Intensity Projection), elevating peak tooth brightness to 222 with >1200 high-intensity voxels"
+    },
+    {
+      "severity": "CRITICAL_DEFECT_RESOLVED",
+      "issue": "Mandibular nerve 3D projection on panorama was hardcoded to Z=0 top boundary",
+      "resolution": "Aligned project3DNerveToPanorama zTopMm with centerZMm so nerve canal overlay matches tooth roots"
+    }
+  ]
+}

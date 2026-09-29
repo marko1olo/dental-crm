@@ -20,11 +20,13 @@ import {
 	type DentalArchCurve,
 	calculateArchTangentsAndNormals,
 } from "./cbctArchSplineMath";
+import { findOcclusalZPlane } from "./cbctAutoArchEngine";
 
 export interface PanoramicReconstructionResult {
 	readonly widthPx: number;
 	readonly heightPx: number;
 	readonly focalThicknessMm: number;
+	readonly centerZMm?: number;
 	readonly pixelData: Uint8ClampedArray; // RGBA grayscale image
 	readonly toothMarkersOnPano: ReadonlyArray<{
 		readonly toothFdi: string;
@@ -33,31 +35,78 @@ export interface PanoramicReconstructionResult {
 	}>;
 }
 
+export interface PanoramicReconstructionOptions {
+	readonly heightMm?: number;
+	readonly heightPx?: number;
+	readonly widthPx?: number;
+	readonly centerZMm?: number;
+	readonly windowWidth?: number;
+	readonly windowLevel?: number;
+	readonly projectionMode?: "mip" | "average" | "ray_sum" | "raysum" | "minip" | string;
+	readonly focalTroughThicknessMm?: number;
+	readonly sampleStepMm?: number;
+	readonly invert?: boolean;
+}
+
+/**
+ * Resolves the optimal Z height (mm) for the panoramic reconstruction.
+ * Prioritizes:
+ * 1. Explicit user-provided centerZMm in options
+ * 2. Explicit planeZMm or centerZMm in DentalArchCurve
+ * 3. Average Z coordinate from 3D anchor points (archCurve.anchors)
+ * 4. Analytical detection via findOcclusalZPlane from the CBCT voxel volume density profile
+ * 5. Fallback to 0.0 mm
+ */
+export function resolveOcclusalCenterZ(
+	volume: CbctVoxelVolume,
+	archCurve: DentalArchCurve,
+	userCenterZMm?: number,
+): number {
+	if (typeof userCenterZMm === "number" && Number.isFinite(userCenterZMm)) {
+		return userCenterZMm;
+	}
+	if (typeof (archCurve as any).planeZMm === "number" && Number.isFinite((archCurve as any).planeZMm)) {
+		return (archCurve as any).planeZMm;
+	}
+	if (typeof (archCurve as any).centerZMm === "number" && Number.isFinite((archCurve as any).centerZMm)) {
+		return (archCurve as any).centerZMm;
+	}
+	if (archCurve.anchors && archCurve.anchors.length > 0) {
+		const zList = archCurve.anchors
+			.map((a: any) => a.zMm ?? (typeof a.positionMm?.z === "number" ? a.positionMm.z : undefined))
+			.filter((z): z is number => typeof z === "number" && Number.isFinite(z));
+		if (zList.length > 0) {
+			return Number((zList.reduce((sum, val) => sum + val, 0) / zList.length).toFixed(2));
+		}
+	}
+	try {
+		return findOcclusalZPlane(volume, archCurve.jawType);
+	} catch {
+		return 0.0;
+	}
+}
+
 /**
  * Reconstructs a full panoramic radiograph (OPG) by sweeping along the dental spline.
+ * Default projectionMode is clinical "mip" for crisp, high-contrast bone and enamel visualization.
  */
 export function reconstructPanoramicView(
 	volume: CbctVoxelVolume,
 	archCurve: DentalArchCurve,
-	options: {
-		heightMm?: number;
-		heightPx?: number;
-		widthPx?: number;
-		windowWidth?: number;
-		windowLevel?: number;
-		projectionMode?: string;
-		invert?: boolean;
-	} = {},
+	options: PanoramicReconstructionOptions = {},
 ): PanoramicReconstructionResult {
 	const {
 		heightMm = 38.0,
 		heightPx = 220,
 		widthPx,
-		windowWidth = 4400,
-		windowLevel = 1300,
-		projectionMode = "average",
+		windowWidth = 3500,
+		windowLevel = 800,
+		projectionMode = "mip",
+		centerZMm: userCenterZMm,
 		invert = false,
-	} = options as { heightMm?: number; heightPx?: number; widthPx?: number; windowWidth?: number; windowLevel?: number; projectionMode?: string; invert?: boolean };
+	} = options;
+
+	const centerZMm = resolveOcclusalCenterZ(volume, archCurve, userCenterZMm);
 
 	const splinePoints = archCurve.splinePointsMm;
 	const vectorField = calculateArchTangentsAndNormals(splinePoints);
@@ -65,17 +114,22 @@ export function reconstructPanoramicView(
 	const outH = heightPx;
 	const pixelBuffer = new Uint8ClampedArray(outW * outH * 4);
 
-	// Focal trough slab sampling
-	const focalRadiusMm = archCurve.focalTroughThicknessMm / 2.0;
-	const slabSamples = Math.max(3, Math.round(focalRadiusMm / 0.5));
+	// Adaptive focal trough slab sampling (default 12-16 mm, dense sampling step 0.35 - 0.4 mm)
+	const effectiveThickness = options.focalTroughThicknessMm ?? archCurve.focalTroughThicknessMm ?? 14.0;
+	const focalRadiusMm = effectiveThickness / 2.0;
+	const sampleStepMm = options.sampleStepMm ?? 0.4;
+	const slabSamples = Math.max(4, Math.round(focalRadiusMm / sampleStepMm));
 
-	const zTopMm = heightMm / 2.0;
-	const zBottomMm = -heightMm / 2.0;
+	const zTopMm = centerZMm + heightMm / 2.0;
+	const zBottomMm = centerZMm - heightMm / 2.0;
 	const zStepMm = (zTopMm - zBottomMm) / outH;
 	const nNodes = vectorField.length;
 	const totalLengthMm = archCurve.totalArcLengthMm || 100;
 
-	const lut = get16BitLut(windowWidth, windowLevel, invert);
+	// Enhanced clinical OPG contrast LUT: maps bone/enamel range cleanly
+	const effectiveWW = windowWidth ?? (volume.defaultWindowWidth && volume.defaultWindowWidth <= 3800 ? volume.defaultWindowWidth : 3500);
+	const effectiveWL = windowLevel ?? (volume.defaultWindowLevel && volume.defaultWindowLevel <= 1000 && volume.defaultWindowLevel >= 500 ? volume.defaultWindowLevel : 800);
+	const lut = get16BitLut(effectiveWW, effectiveWL, invert);
 
 	// Sweep along the spline with constant physical arc-length distance
 	const denomW = Math.max(1, outW - 1);
@@ -118,7 +172,7 @@ export function reconstructPanoramicView(
 		for (let row = 0; row < outH; row++) {
 			const zMm = zTopMm - row * zStepMm;
 
-			// MIP along focal trough thickness with continuous anti-aliased sub-voxel sampling
+			// Ray sampling along focal trough normal with continuous anti-aliased sub-voxel interpolation
 			let maxHU = -32768;
 			let minHU = 32767;
 			let sumHU = 0;
@@ -138,8 +192,18 @@ export function reconstructPanoramicView(
 			}
 
 			let finalHU = maxHU;
-			if (projectionMode === "minip") finalHU = minHU;
-			else if (projectionMode === "average") finalHU = sampleCount > 0 ? Math.round(sumHU / sampleCount) : maxHU;
+			if (projectionMode === "minip") {
+				finalHU = minHU;
+			} else if (projectionMode === "average") {
+				finalHU = sampleCount > 0 ? Math.round(sumHU / sampleCount) : maxHU;
+			} else if (projectionMode === "ray_sum" || projectionMode === "raysum") {
+				// Clinical weighted ray-sum: blends 70% MIP sharpness with 30% soft tissue average
+				const avgHU = sampleCount > 0 ? sumHU / sampleCount : maxHU;
+				finalHU = Math.round(0.7 * maxHU + 0.3 * Math.max(0, avgHU));
+			} else {
+				// Default: clinical MIP (Maximum Intensity Projection)
+				finalHU = maxHU;
+			}
 
 			const gray = lut[(finalHU + 32768) & 0xffff]!;
 			const idx = (row * outW + col) * 4;
@@ -194,7 +258,8 @@ export function reconstructPanoramicView(
 	return {
 		widthPx: outW,
 		heightPx: outH,
-		focalThicknessMm: archCurve.focalTroughThicknessMm,
+		focalThicknessMm: effectiveThickness,
+		centerZMm,
 		pixelData: pixelBuffer,
 		toothMarkersOnPano: toothMarkers,
 	};
@@ -225,6 +290,7 @@ export interface Projected3DNerveResult {
 
 export interface Project3DNerveOptions {
 	readonly heightMm?: number; // Panoramic vertical field of view in mm (default 38.0 mm)
+	readonly centerZMm?: number; // Center of panoramic vertical field of view in mm (default 0 or archCurve.planeZMm)
 	readonly safetyMarginMm?: number; // Safety buffer in mm (default 2.0 mm)
 	readonly canalDiameterMm?: number; // Canal diameter in mm (default 2.8 mm)
 }
@@ -241,6 +307,7 @@ export function project3DNerveToPanorama(
 	options: Project3DNerveOptions = {},
 ): Projected3DNerveResult {
 	const heightMm = options.heightMm ?? 38.0;
+	const centerZMm = options.centerZMm ?? (archCurve.planeZMm ?? 0.0);
 	const safetyMarginMm = options.safetyMarginMm ?? MANDIBULAR_NERVE_SAFETY_MARGIN_MM;
 	const canalDiameterMm = options.canalDiameterMm ?? 2.8;
 
@@ -261,7 +328,7 @@ export function project3DNerveToPanorama(
 	const vectorField = calculateArchTangentsAndNormals(archCurve.splinePointsMm);
 	const totalLengthMm = archCurve.totalArcLengthMm || 100.0;
 	const denomW = Math.max(1, panoWidthPx - 1);
-	const zTopMm = heightMm / 2.0;
+	const zTopMm = centerZMm + heightMm / 2.0;
 	const pxPerMmY = panoHeightPx / heightMm;
 	const pxPerMmX = denomW / totalLengthMm;
 	const safetyBufferPx = Number((safetyMarginMm * pxPerMmY).toFixed(2));

@@ -20,6 +20,7 @@ export interface DentalArchAnchor {
 	readonly labelRu: string;
 	readonly positionMm: Point2D; // X (Right-Left) and Y (Anterior-Posterior) in physical mm
 	readonly isQuadrantRight: boolean;
+	readonly zMm?: number;
 }
 
 export interface DentalArchCurve {
@@ -29,6 +30,7 @@ export interface DentalArchCurve {
 	readonly splinePointsMm: readonly Point2D[];
 	readonly totalArcLengthMm: number;
 	readonly focalTroughThicknessMm: number; // 5..20 mm (default 12 mm)
+	readonly planeZMm?: number;
 }
 
 // ─── DEFAULT ANATOMICAL DENTAL ARCH ANCHORS (ADULT DENTITION) ───────────────
@@ -235,6 +237,7 @@ export function buildDentalArchCurve(
 	anchors: readonly DentalArchAnchor[],
 	jawType: "mandible" | "maxilla" = "mandible",
 	focalTroughThicknessMm = 12.0,
+	planeZMm?: number,
 ): DentalArchCurve {
 	const spline = fitSmoothDentalArchSpline(anchors, 8);
 	const totalLength = calculateArchLengthMm(spline);
@@ -246,6 +249,7 @@ export function buildDentalArchCurve(
 		splinePointsMm: spline,
 		totalArcLengthMm: totalLength,
 		focalTroughThicknessMm,
+		...(typeof planeZMm === "number" && Number.isFinite(planeZMm) ? { planeZMm } : {}),
 	};
 }
 
@@ -253,12 +257,13 @@ export function createDentalArchCurve(
 	jawTypeOrAnchors: "mandible" | "maxilla" | readonly DentalArchAnchor[] = "mandible",
 	jawType: "mandible" | "maxilla" = "mandible",
 	focalTroughThicknessMm = 12.0,
+	planeZMm?: number,
 ): DentalArchCurve {
 	if (typeof jawTypeOrAnchors === "string") {
 		const anchors = jawTypeOrAnchors === "mandible" ? DEFAULT_MANDIBULAR_ARCH_ANCHORS : DEFAULT_MAXILLARY_ARCH_ANCHORS;
-		return buildDentalArchCurve(anchors, jawTypeOrAnchors, focalTroughThicknessMm);
+		return buildDentalArchCurve(anchors, jawTypeOrAnchors, focalTroughThicknessMm, planeZMm);
 	}
-	return buildDentalArchCurve(jawTypeOrAnchors, jawType, focalTroughThicknessMm);
+	return buildDentalArchCurve(jawTypeOrAnchors, jawType, focalTroughThicknessMm, planeZMm);
 }
 
 /**
@@ -268,7 +273,7 @@ export function createDentalArchCurve(
 export function updateDentalArchAnchorPosition(
 	archCurve: DentalArchCurve,
 	anchorIndexOrFdiOrId: number | string,
-	newPositionMm: Point2D,
+	newPositionMm: Point2D | (Point2D & { readonly zMm?: number }),
 ): DentalArchCurve {
 	let modified = false;
 	const anchors = archCurve.anchors.map((anchor, idx) => {
@@ -278,12 +283,14 @@ export function updateDentalArchAnchorPosition(
 			anchor.toothFdi === String(anchorIndexOrFdiOrId);
 		if (isTarget) {
 			modified = true;
+			const zVal = "zMm" in newPositionMm ? (newPositionMm as any).zMm : anchor.zMm;
 			return {
 				...anchor,
 				positionMm: {
 					x: Number(newPositionMm.x.toFixed(2)),
 					y: Number(newPositionMm.y.toFixed(2)),
 				},
+				...(typeof zVal === "number" && Number.isFinite(zVal) ? { zMm: Number(zVal.toFixed(2)) } : {}),
 			};
 		}
 		return anchor;
@@ -293,7 +300,7 @@ export function updateDentalArchAnchorPosition(
 		return archCurve;
 	}
 
-	return buildDentalArchCurve(anchors, archCurve.jawType, archCurve.focalTroughThicknessMm);
+	return buildDentalArchCurve(anchors, archCurve.jawType, archCurve.focalTroughThicknessMm, archCurve.planeZMm);
 }
 
 export interface DentalArchAnchorHitResult {
