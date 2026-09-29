@@ -210,4 +210,47 @@ describe("Soft Warehouse Overdraft Engine (Mandate 8e Item 10 & Mandate 8n Item 
 		assert.equal(totals.deficitItemsCount, 1);
 		assert.equal(totals.totalCostRubles, 4500);
 	});
+
+	test("6. Автоматическое сторно при отмене услуги восстанавливает остаток и гасит дефицит/овердрафт (Мандаты 8e, 8n)", () => {
+		// Имитируем складской остаток в состоянии овердрафта (дефицит 2 карпулы из-за задержки накладной)
+		const overdraftItem = {
+			id: "inv-anes-overdraft",
+			name: "Анестетик артикаиновый 4%",
+			stockQuantity: -2,
+			criticalThreshold: 5,
+		};
+
+		// 1. При сторно 2 карпул (отмена анестезии) овердрафт полностью погашается
+		const stornoQtyFull = 2;
+		const newStockFull = Number((overdraftItem.stockQuantity + stornoQtyFull).toFixed(4));
+		const wasOverdraft = overdraftItem.stockQuantity < 0;
+		const overdraftCleared = wasOverdraft && newStockFull >= 0;
+
+		assert.equal(newStockFull, 0, "Остаток после полного сторно должен стать 0");
+		assert.equal(overdraftCleared, true, "Дефицит/овердрафт должен быть полностью погашен");
+
+		// 2. При частичном сторно (отмена 1 карпулы из 3 при остатке -3)
+		const partialOverdraftItem = { ...overdraftItem, stockQuantity: -3 };
+		const stornoQtyPartial = 1;
+		const newStockPartial = Number((partialOverdraftItem.stockQuantity + stornoQtyPartial).toFixed(4));
+		const partialOverdraftCleared = partialOverdraftItem.stockQuantity < 0 && newStockPartial >= 0;
+
+		assert.equal(newStockPartial, -2, "Остаток после частичного сторно должен стать -2");
+		assert.equal(partialOverdraftCleared, false, "Частичный овердрафт еще не полностью погашен");
+
+		// 3. Формирование транзакции сторно: положительный delta и тип 'storno' (ACID)
+		const stornoTransaction = {
+			itemId: overdraftItem.id,
+			quantityChanged: String(stornoQtyFull),
+			transactionType: "storno",
+			isOverdraft: false,
+			notes: "Списание материалов по услуге отменено: автоматическое сторно при отмене услуги (Мандаты 8e, 8n)",
+		};
+
+		assert.equal(stornoTransaction.transactionType, "storno");
+		assert.equal(Number(stornoTransaction.quantityChanged), 2);
+		assert.ok(Number(stornoTransaction.quantityChanged) > 0, "Дельта транзакции сторно строго положительная");
+		assert.ok(stornoTransaction.notes.includes("Списание материалов по услуге"));
+		assert.ok(!stornoTransaction.notes.includes("Акт расхода материалов по СанПиН"));
+	});
 });

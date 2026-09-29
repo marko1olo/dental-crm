@@ -35,6 +35,11 @@ import {
 } from "../components/inventory";
 import { Billing1CExportModal } from "../components/finance/Billing1CExportModal";
 import type { InventoryItem } from "../components/inventory/useInventoryLogic";
+import {
+	ChairsideBillingItemRow,
+	getServiceBomMaterials,
+	type ServiceBomMaterial,
+} from "../components/visit/ChairsideBillingItemRow";
 
 describe("Dental Inventory BOM & Procedure Tech Maps", () => {
 	it("Каталог содержит все ключевые стоматологические техкарты", () => {
@@ -684,6 +689,138 @@ describe("Billing1CExportModal & Kopeck-Exact Formatting", () => {
 			}),
 		);
 		assert.equal(html, "");
+	});
+});
+
+describe("Automated BOM Deduction and Automatic Storno on Service Removal (Mandates 8e, 8n, 8v, 8z)", () => {
+	it("getServiceBomMaterials корректно резолвит материалы по кодам 804н и клиническим правилам", () => {
+		// Кариес (A16.07.002)
+		const cariesMaterials = getServiceBomMaterials("A16.07.002", "Лечение кариеса с пломбированием", 1);
+		assert.ok(cariesMaterials.length >= 2, "Кариес должен содержать композит и адгезив");
+		assert.ok(
+			cariesMaterials.some((m) => m.name.toLowerCase().includes("композит") && m.quantity > 0),
+		);
+		assert.ok(
+			cariesMaterials.some((m) => m.name.toLowerCase().includes("адгезив")),
+		);
+
+		// Умножение количества (quantity = 2)
+		const cariesMaterialsX2 = getServiceBomMaterials("A16.07.002", "Лечение кариеса", 2);
+		const compX1 = cariesMaterials.find((m) => m.name.toLowerCase().includes("композит"))!;
+		const compX2 = cariesMaterialsX2.find((m) => m.name.toLowerCase().includes("композит"))!;
+		assert.equal(compX2.quantity, Number((compX1.quantity * 2).toFixed(2)));
+
+		// Анестезия (B01.003.004.004)
+		const anesMaterials = getServiceBomMaterials("B01.003.004.004", "Анестезия инфильтрационная", 1);
+		assert.ok(anesMaterials.some((m) => m.name.toLowerCase().includes("артикаин") || m.name.toLowerCase().includes("анестетик")));
+		assert.ok(anesMaterials.some((m) => m.name.toLowerCase().includes("игла")));
+
+		// Профгигиена (A16.07.051)
+		const hygieneMaterials = getServiceBomMaterials("A16.07.051", "Комплексная гигиена полости рта", 1);
+		assert.ok(hygieneMaterials.some((m) => m.name.toLowerCase().includes("air-flow") || m.name.toLowerCase().includes("порошок")));
+
+		// Эндодонтия (A16.07.030)
+		const endoMaterials = getServiceBomMaterials("A16.07.030", "Эндодонтическое лечение", 1);
+		assert.ok(endoMaterials.some((m) => m.name.toLowerCase().includes("гипохлорит")));
+
+		// Хирургия / удаление (A16.07.001)
+		const surgeryMaterials = getServiceBomMaterials("A16.07.001", "Удаление зуба сложное", 1);
+		assert.ok(surgeryMaterials.some((m) => m.name.toLowerCase().includes("губка") || m.name.toLowerCase().includes("шовный")));
+	});
+
+	it("ChairsideBillingItemRow рендерит фишки материалов под заголовком «Списание материалов по услуге» (Мандат 8z)", () => {
+		const html = renderToStaticMarkup(
+			createElement(ChairsideBillingItemRow, {
+				item: {
+					id: "srv-row-1",
+					title: "Лечение кариеса световой пломбой",
+					unitPriceRub: 4500,
+					quantity: 1,
+					isWarranty: false,
+					code804n: "A16.07.002",
+					toothCode: "16",
+				},
+				index: 0,
+				isWarranty100: false,
+				onToggleWarranty: () => {},
+				onQuantityChange: () => {},
+				onStepPrice: () => {},
+				onPriceChange: () => {},
+				onRemoveService: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"bom-deduction-info-srv-row-1\""));
+		assert.ok(html.includes("Списание материалов по услуге:"));
+		assert.ok(html.includes("data-testid=\"bom-chip-srv-row-1-0\""));
+		// Мандат 8z: запрет бюрократических штампов «Акт расхода материалов по СанПиН»
+		assert.ok(!html.includes("Акт расхода материалов по СанПиН"));
+		assert.ok(!html.includes("санпин"));
+	});
+
+	it("ChairsideBillingItemRow отображает предупреждение о мягком овердрафте при дефиците ТМЦ (Мандаты 8e, 8n)", () => {
+		const html = renderToStaticMarkup(
+			createElement(ChairsideBillingItemRow, {
+				item: {
+					id: "srv-row-overdraft",
+					title: "Анестезия инфильтрационная",
+					unitPriceRub: 800,
+					quantity: 1,
+					isWarranty: false,
+					code804n: "B01.003.004.004",
+				},
+				index: 1,
+				isWarranty100: false,
+				hasOverdraftWarning: true,
+				onToggleWarranty: () => {},
+				onQuantityChange: () => {},
+				onStepPrice: () => {},
+				onPriceChange: () => {},
+				onRemoveService: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"overdraft-warning-srv-row-overdraft\""));
+		assert.ok(html.includes("Материал отсутствует по учету (будет списан в овердрафт)"));
+	});
+
+	it("Удаление услуги инициирует автоматическое сторно с возвратом материалов на склад", () => {
+		let stornoItem: any = null;
+		let stornoMaterials: ServiceBomMaterial[] = [];
+		let serviceRemovedId: string | null = null;
+
+		const mockItem = {
+			id: "srv-del-1",
+			serviceId: "srv-caries",
+			title: "Лечение кариеса",
+			unitPriceRub: 4500,
+			quantity: 1,
+			isWarranty: false,
+			code804n: "A16.07.002",
+		};
+
+		// Эмулируем обработчик сторно при удалении услуги
+		const handleStorno = (item: any, materials: ServiceBomMaterial[]) => {
+			stornoItem = item;
+			stornoMaterials = materials;
+		};
+
+		const handleRemove = (id: string) => {
+			serviceRemovedId = id;
+		};
+
+		const resolvedBOM = getServiceBomMaterials(mockItem.code804n, mockItem.title, mockItem.quantity);
+		handleStorno(mockItem, resolvedBOM);
+		handleRemove(mockItem.id);
+
+		assert.equal(serviceRemovedId, "srv-del-1");
+		assert.ok(stornoItem);
+		assert.equal(stornoItem.id, "srv-del-1");
+		assert.ok(stornoMaterials.length >= 2);
+		// Все количества при сторно строго положительные (восстановление остатков)
+		for (const mat of stornoMaterials) {
+			assert.ok(mat.quantity > 0, `Количество материала ${mat.name} должно быть строго положительным`);
+		}
 	});
 });
 

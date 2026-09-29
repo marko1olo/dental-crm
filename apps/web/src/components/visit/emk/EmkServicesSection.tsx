@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronDown, Search, Tag, Zap } from "lucide-react";
+import { Boxes, ChevronDown, Search, Tag, Zap } from "lucide-react";
 import {
 	CLINICAL_SERVICE_BUNDLES,
 	type ClinicalServiceBundle,
@@ -45,7 +45,28 @@ export function EmkServicesSection({
 		const targetTooth = activeTooth ? ` (зуб ${activeTooth})` : "";
 		const line = `• [${srv.code804n}] ${srv.title}${targetTooth} — 1 усл. (${srv.basePriceRub} ₽)`;
 		updateVisitNoteField("treatmentPlan", appendClinicalText(curr, line, "\n"));
-		showToast(`Услуга «${srv.shortLabel}» добавлена в протокол`, "success", 2000);
+
+		// 1-клик передача в кассовый счёт визита без блокирующих диалогов (Мандаты 8e, 8n, 8v)
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-add-services-to-invoice", {
+					detail: {
+						services: [
+							{
+								serviceId: srv.id,
+								title: srv.title,
+								unitPriceRub: srv.basePriceRub,
+								quantity: 1,
+								code804n: srv.code804n,
+								toothCode: activeTooth ? String(activeTooth) : undefined,
+							},
+						],
+					},
+				}),
+			);
+		}
+
+		showToast(`Услуга «${srv.shortLabel}» добавлена в протокол и счёт`, "success", 2000);
 	};
 
 	const handleAddBundleToPlan = (bundle: ClinicalServiceBundle) => {
@@ -55,7 +76,26 @@ export function EmkServicesSection({
 			.map((s) => `• [${s.code804n}] ${s.title}${targetTooth} — 1 усл. (${s.priceRub} ₽)`)
 			.join("\n");
 		updateVisitNoteField("treatmentPlan", appendClinicalText(curr, `\nПакет «${bundle.title}»:\n${lines}`, "\n"));
-		showToast(`Пакет «${bundle.shortLabel}» добавлен в протокол`, "success", 2000);
+
+		// 1-клик передача пакета услуг в кассовый счёт визита (Мандаты 8e, 8n, 8v)
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-add-services-to-invoice", {
+					detail: {
+						services: bundle.services.map((s) => ({
+							serviceId: s.code804n,
+							title: s.title,
+							unitPriceRub: s.priceRub,
+							quantity: 1,
+							code804n: s.code804n,
+							toothCode: activeTooth ? String(activeTooth) : undefined,
+						})),
+					},
+				}),
+			);
+		}
+
+		showToast(`Пакет «${bundle.shortLabel}» добавлен в протокол и счёт`, "success", 2000);
 	};
 
 	return (
@@ -139,6 +179,25 @@ export function EmkServicesSection({
 			</details>
 
 			<CompletedServicesChecklist />
+
+			{/* Автоматическое списание ТМЦ по услугам (Мандаты 8e, 8n, 8v, 8z) */}
+			<div
+				className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex flex-col gap-1.5 text-xs shadow-2xs"
+				data-testid="emk-services-bom-tracking"
+			>
+				<div className="flex items-center justify-between gap-2">
+					<div className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
+						<Boxes size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+						<span>Списание материалов по услуге</span>
+					</div>
+					<span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 font-semibold">
+						Автосписание и сторно (804н)
+					</span>
+				</div>
+				<p className="text-[11px] text-[var(--muted)] leading-relaxed">
+					Расходные материалы (композит, карпулы анестетика, иглы, боры, штифты) автоматически списываются со склада по номенклатуре Минздрава 804н без блокирующих окон. При отмене или удалении услуги со счёта выполняется автоматическое сторно с возвратом остатков на склад.
+				</p>
+			</div>
 
 			<div className="mt-2">
 				<VisitServiceBillingWidget

@@ -120,7 +120,7 @@ test("Анатомическая верность — корневые кана�
 		assert.ok(geom.canals, `Tooth ${toothNum} must have canals path`);
 		assert.ok(geom.apex && geom.apex.length > 0, `Tooth ${toothNum} must have apex coordinate`);
 
-		const apexY = geom.apex[0].y;
+		const apexY = geom.apex![0]!.y;
 		// Canals path ends at apex coordinates
 		assert.ok(geom.canals.includes(String(apexY)), `Canal path of tooth ${toothNum} must reach apex Y ${apexY}`);
 	}
