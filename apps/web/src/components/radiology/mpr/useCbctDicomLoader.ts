@@ -297,6 +297,50 @@ interface DemoCbctManifest {
 		setWindowWidth,
 	]);
 
+	const handleLoadImageIds = useCallback(
+		async (imageIds: readonly string[]) => {
+			if (!imageIds || imageIds.length === 0) return;
+			setDicomLoadingStatus(`Загрузка ${imageIds.length} срезов КТ...`);
+			setDicomProgress(5);
+			try {
+				let loaded = 0;
+				const files: File[] = [];
+				for (let i = 0; i < imageIds.length; i++) {
+					const id = imageIds[i]!;
+					const cleanUrl = id.replace(/^wadouri:/, "");
+					const res = await fetch(cleanUrl);
+					if (!res.ok) throw new Error(`HTTP ${res.status} при загрузке среза ${i + 1}`);
+					const blob = await res.blob();
+					files.push(new File([blob], `slice_${String(i).padStart(3, "0")}.dcm`, { type: "application/dicom" }));
+					loaded++;
+					if (i % 5 === 0 || i === imageIds.length - 1) {
+						setDicomProgress(5 + Math.round((loaded / imageIds.length) * 40));
+						setDicomLoadingStatus(`Загружено ${loaded} из ${imageIds.length} срезов...`);
+					}
+				}
+				const vol = await buildVolumeFromDicomFiles(files, (pct, msg) => {
+					setDicomProgress(45 + Math.round(pct * 0.55));
+					setDicomLoadingStatus(msg);
+				});
+				setVolume(vol);
+				setLoadedSliceCount(vol.dimensions.depth);
+				setPatientDisplayName(resolvedPatientName);
+				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
+				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
+				const arch = alignArchAndCrosshair(vol);
+				setDicomLoadingStatus(null);
+				setDicomProgress(100);
+				showToast(`Загружена 3D КЛКТ: ${vol.dimensions.depth} срезов, дуга ОПТГ ${arch.totalArcLengthMm.toFixed(1)} мм`, "success");
+			} catch (err: unknown) {
+				setDicomLoadingStatus(null);
+				setDicomProgress(0);
+				const msg = err instanceof Error ? err.message : "Ошибка загрузки срезов";
+				showToast(msg, "error");
+			}
+		},
+		[alignArchAndCrosshair, resolvedPatientName, setLoadedSliceCount, setPatientDisplayName, setVolume, setWindowLevel, setWindowWidth],
+	);
+
 	return {
 		dicomLoadingStatus,
 		dicomProgress,
@@ -306,6 +350,7 @@ interface DemoCbctManifest {
 		zipInputRef,
 		handleDicomFilesChange,
 		handleLoadFromDicomweb,
+		handleLoadImageIds,
 		handleSelectDicomFolder,
 		handleSelectDicomZip,
 		handleDropFiles,

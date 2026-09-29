@@ -220,4 +220,35 @@ describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {
 			);
 		});
 	});
+
+	// ─── 5. CRASH RESILIENCE & BOUNDARY SAFETY ───────────────────────────────
+	describe("5. Crash Resilience & Boundary Safety", () => {
+		it("handles disposed volume safely without throwing unhandled exceptions", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			(volume as any).isDisposed = true;
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+
+			const pano = reconstructPanoramicView(volume, curve);
+			assert.ok(pano.pixelData instanceof Uint8ClampedArray);
+			assert.equal(pano.pixelData.length, pano.widthPx * pano.heightPx * 4);
+			assert.equal(pano.toothMarkersOnPano.length, 0);
+		});
+
+		it("handles empty dental arch curve safely", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			const emptyCurve = {
+				id: "empty",
+				jawType: "mandible" as const,
+				anchors: [],
+				splinePointsMm: [],
+				totalArcLengthMm: 0,
+				focalTroughThicknessMm: 12.0,
+			};
+
+			const pano = reconstructPanoramicView(volume, emptyCurve);
+			assert.ok(pano.pixelData instanceof Uint8ClampedArray);
+			assert.equal(pano.pixelData.length, pano.widthPx * pano.heightPx * 4);
+			assert.equal(pano.toothMarkersOnPano.length, 0);
+		});
+	});
 });

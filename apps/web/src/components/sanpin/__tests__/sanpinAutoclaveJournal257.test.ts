@@ -11,10 +11,17 @@ import {
 	generateForm257PrintHtml,
 	generateRegulatorySanpinInspectionHtml,
 	detectMissingSterilizationDays,
+	generateBatchForm257Records,
 	type ChamberPointEvaluation,
 	type Form257Record,
 	type BiologicalControlTestRecord,
 } from "../autoclaveLog/autoclaveLogEngine.js";
+import {
+	validateSterilizationCycleParameters,
+} from "../autoclave/autoclaveEngine.js";
+import {
+	AUTOCLAVE_CYCLES,
+} from "../autoclave/autoclavePresets.js";
 import {
 	STATUTORY_STERILIZATION_REGIMES,
 	STATUTORY_CHEMICAL_INDICATORS,
@@ -496,6 +503,68 @@ describe("SanPiN 3.3686-21 — Autoclave Journal (Form № 257/у)", () => {
 			assert.ok(html.includes("table-layout: fixed"));
 			assert.ok(html.includes("word-break: break-word"));
 			assert.ok(html.includes("Медсестра ЦСО") || html.includes("Главная медсестра"));
+		});
+	});
+
+	describe("7. Batch Form 257 Records Generation with Target Dates (SanPiN Missing Days Backfill)", () => {
+		it("generates records only for targetDates specified without touching omitted dates", () => {
+			const targetDates = ["2026-09-08", "2026-09-15"];
+			const generated = generateBatchForm257Records({
+				targetDates,
+				cyclesPerDay: 2,
+				packsPerCycle: 12,
+			});
+
+			assert.equal(generated.length, 4); // 2 dates * 2 cycles
+			const generatedDates = Array.from(new Set(generated.map((r) => r.date))).sort();
+			assert.deepEqual(generatedDates, targetDates);
+			for (const rec of generated) {
+				assert.equal(rec.status, "sterile_passed");
+				assert.ok(rec.chamberPoints.length === 5);
+			}
+		});
+
+		it("returns empty array when neither targetDates nor valid range is provided", () => {
+			const empty = generateBatchForm257Records({});
+			assert.equal(empty.length, 0);
+		});
+	});
+
+	describe("8. Direct Physical & Thermodynamic Safety in autoclaveEngine.ts", () => {
+		it("rejects zero and negative exposure times", () => {
+			const cycle = AUTOCLAVE_CYCLES.cycle_134_wrapped;
+			const resZero = validateSterilizationCycleParameters(cycle, 134, 2.1, 0);
+			assert.equal(resZero.isApproved, false);
+			assert.ok(resZero.violations.some((v) => v.includes("Физически невозможная выдержка")));
+
+			const resNeg = validateSterilizationCycleParameters(cycle, 134, 2.1, -5);
+			assert.equal(resNeg.isApproved, false);
+			assert.ok(resNeg.violations.some((v) => v.includes("Физически невозможная выдержка")));
+		});
+
+		it("rejects zero and negative temperatures", () => {
+			const cycle = AUTOCLAVE_CYCLES.cycle_134_wrapped;
+			const resZero = validateSterilizationCycleParameters(cycle, 0, 2.1, 5);
+			assert.equal(resZero.isApproved, false);
+			assert.ok(resZero.violations.some((v) => v.includes("Физически невозможная температура")));
+
+			const resNeg = validateSterilizationCycleParameters(cycle, -10, 2.1, 5);
+			assert.equal(resNeg.isApproved, false);
+			assert.ok(resNeg.violations.some((v) => v.includes("Физически невозможная температура")));
+		});
+
+		it("rejects negative pressure", () => {
+			const cycle = AUTOCLAVE_CYCLES.cycle_134_wrapped;
+			const res = validateSterilizationCycleParameters(cycle, 134, -0.5, 5);
+			assert.equal(res.isApproved, false);
+			assert.ok(res.violations.some((v) => v.includes("Физически невозможное давление")));
+		});
+
+		it("rejects thermodynamic impossibility: steam at 134°C with 0 bar pressure", () => {
+			const cycle = AUTOCLAVE_CYCLES.cycle_134_wrapped;
+			const res = validateSterilizationCycleParameters(cycle, 134, 0, 5);
+			assert.equal(res.isApproved, false);
+			assert.ok(res.violations.some((v) => v.includes("Термодинамическая ошибка")));
 		});
 	});
 });

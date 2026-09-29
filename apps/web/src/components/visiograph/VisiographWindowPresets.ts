@@ -17,6 +17,7 @@ export {
 	computeVoiRange,
 	huToGrayscale,
 	VISIOGRAPH_WINDOW_PRESETS,
+	BASE_VISIOGRAPH_PRESETS_LIST,
 	VISIOGRAPH_PRESETS_LIST,
 	CDVIEWER_CLINICAL_PRESETS,
 } from "../dicom/VisiographWindowPresets";

@@ -684,5 +684,12 @@ describe("CBCT Interactive Tools Audit (Red Team Inquisitor Verification)", () =
 			assert.equal(clampSlab(15.4), 15);
 			assert.equal(clampSlab(50), 30);
 		});
+
+		it("detects handle hover on ruler and angle to return grab cursor", () => {
+			const projectedRulers = [{ id: "r1", plane: "axial" as const, startPx: { x: 50, y: 50 }, endPx: { x: 100, y: 100 } }];
+			const hit = hitTestMeasurementHandle({ x: 52, y: 49 }, projectedRulers, [], 12);
+			assert.ok(hit, "Must hit handle within 12px");
+			assert.equal(getCbctToolCursor("ruler", false, hit !== null), "grab");
+		});
 	});
 });

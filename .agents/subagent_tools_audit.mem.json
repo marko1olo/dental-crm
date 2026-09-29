@@ -1,19 +1,20 @@
 {
   "subagent": "CBCT Interactive Tools Auditor & Red Team Inquisitor",
   "started_at": "2026-09-29T23:16:00+04:00",
+  "completed_at": "2026-09-29T23:49:00+04:00",
   "status": "COMPLETED",
   "completed_steps": [
     "Read THE_HAMMER_MASTER_PROMPT.md",
     "Read AGENTS.md",
-    "Audit 8 mouse tools in apps/web/src/components/radiology/mpr/useCbctInteractionHandlers.ts",
-    "Audit quick access buttons in apps/web/src/components/radiology/CbctLeftToolDock.tsx",
+    "Audit all 8 mouse tools in apps/web/src/components/radiology/mpr/useCbctInteractionHandlers.ts",
+    "Audit quick access dock controls in apps/web/src/components/radiology/CbctLeftToolDock.tsx",
     "Audit cursor & measurement math in cbctOverlayMeasurementRenderers.ts & cbctOverlayDecorationMath.ts",
-    "Inspect existing test apps/web/src/components/radiology/__tests__/cbctAngleCaliper.test.ts",
-    "Implement comprehensive test apps/web/src/components/radiology/__tests__/cbctInteractiveToolsAudit.test.ts",
-    "Run node test suite for cbctInteractiveToolsAudit.test.ts and verify Exit Code 0 (37/37 pass)",
+    "Implement comprehensive test suite in apps/web/src/components/radiology/__tests__/cbctInteractiveToolsAudit.test.ts (38 tests)",
+    "Run node test suite for cbctInteractiveToolsAudit.test.ts and verify Exit Code 0 (38/38 pass)",
     "Run node test suite for cbctAngleCaliper.test.ts and verify Exit Code 0 (34/34 pass)",
-    "Fix Mandate 8b line limit in useCbctInteractionHandlers.ts (compacted to 879 lines <= 900 ceiling)",
+    "Fix Mandate 8b line limit in useCbctInteractionHandlers.ts (compacted to 886 lines <= 900 ceiling)",
     "Verify cbctRedTeamRomexisArchReslice.test.ts (17/17 pass including Mandate 8b line limit)",
+    "Add measurement handle hover hit-testing to handleCanvasMouseMove for tactile cursor 'grab' feedback",
     "Perform per-file git add on strictly scoped files"
   ],
   "pending_steps": [],
@@ -27,6 +28,7 @@
     "Tool 7 (angle): Fixed 2-click bug by implementing 3-step state progression (arm1 -> vertex -> arm2 -> finalize), handle dragging (0/1/2), and live arc calculation.",
     "Tool 8 (probe): Wired live HU sampling in handleCanvasMouseMove with tissue classification.",
     "Quick actions in CbctLeftToolDock: Wired onResetView for 1-click reset, slab thickness clamping, and LUT inversion.",
-    "Mandate 8b: useCbctInteractionHandlers.ts reduced from 1089 to 879 lines (passing <= 900 ceiling), CbctLeftToolDock.tsx is 704 lines (passing <= 800 ceiling)."
+    "Measurement Handle Hover: Wired handle hit-testing in handleCanvasMouseMove to trigger 'grab' cursor dynamically on ruler and angle handles.",
+    "Mandate 8b: useCbctInteractionHandlers.ts reduced to 886 lines (<= 900 ceiling), CbctLeftToolDock.tsx is 704 lines (<= 800 ceiling)."
   ]
 }

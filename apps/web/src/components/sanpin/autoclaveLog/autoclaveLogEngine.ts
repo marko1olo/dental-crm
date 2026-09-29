@@ -1403,8 +1403,9 @@ export function generateRegulatorySanpinInspectionHtml(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface GenerateBatchForm257Options {
-	readonly startDate: string; // YYYY-MM-DD
-	readonly endDate: string; // YYYY-MM-DD
+	readonly startDate?: string | undefined; // YYYY-MM-DD
+	readonly endDate?: string | undefined; // YYYY-MM-DD
+	readonly targetDates?: readonly string[] | undefined; // Explicit list of dates (e.g. from missing days audit)
 	readonly excludeSundays?: boolean | undefined; // default true
 	readonly cyclesPerDay?: number | undefined; // default 2
 	readonly packsPerCycle?: number | undefined; // default 14
@@ -1420,7 +1421,8 @@ export interface GenerateBatchForm257Options {
 
 /**
  * Пакетная генерация записей журнала работы стерилизаторов (Форма № 257/у)
- * за указанный период (день, неделя, месяц, квартал) для проверок Роспотребнадзора (СанПиН 3.3686-21).
+ * за указанный период (день, неделя, месяц, квартал) или точечный список дат
+ * для проверок Роспотребнадзора (СанПиН 3.3686-21).
  */
 export function generateBatchForm257Records(
 	options: GenerateBatchForm257Options,
@@ -1428,6 +1430,7 @@ export function generateBatchForm257Records(
 	const {
 		startDate,
 		endDate,
+		targetDates,
 		excludeSundays = true,
 		cyclesPerDay = 2,
 		packsPerCycle = 14,
@@ -1438,35 +1441,55 @@ export function generateBatchForm257Records(
 		isHeadNurseVerified = true,
 	} = options;
 
-	const [startY, startM, startD] = startDate.split("-").map(Number);
-	const [endY, endM, endD] = endDate.split("-").map(Number);
+	const datesToProcess: string[] = [];
 
-	if (!startY || !startM || !startD || !endY || !endM || !endD) {
-		return [];
+	if (targetDates && targetDates.length > 0) {
+		const uniqueSorted = Array.from(new Set(targetDates.map((d) => d.slice(0, 10)))).sort();
+		for (const dStr of uniqueSorted) {
+			const [y, m, d] = dStr.split("-").map(Number);
+			if (y && m && d) {
+				const curDate = new Date(Date.UTC(y, m - 1, d));
+				if (excludeSundays && curDate.getUTCDay() === 0) {
+					continue;
+				}
+				datesToProcess.push(dStr);
+			}
+		}
+	} else if (startDate && endDate) {
+		const [startY, startM, startD] = startDate.split("-").map(Number);
+		const [endY, endM, endD] = endDate.split("-").map(Number);
+
+		if (!startY || !startM || !startD || !endY || !endM || !endD) {
+			return [];
+		}
+
+		const startUtc = Date.UTC(startY, startM - 1, startD);
+		const endUtc = Date.UTC(endY, endM - 1, endD);
+
+		if (startUtc > endUtc) {
+			return [];
+		}
+
+		const MS_PER_DAY = 24 * 60 * 60 * 1000;
+		for (let time = startUtc; time <= endUtc; time += MS_PER_DAY) {
+			const curDate = new Date(time);
+			if (excludeSundays && curDate.getUTCDay() === 0) {
+				continue;
+			}
+			const yyyy = curDate.getUTCFullYear();
+			const mm = String(curDate.getUTCMonth() + 1).padStart(2, "0");
+			const dd = String(curDate.getUTCDate()).padStart(2, "0");
+			datesToProcess.push(`${yyyy}-${mm}-${dd}`);
+		}
 	}
 
-	const startUtc = Date.UTC(startY, startM - 1, startD);
-	const endUtc = Date.UTC(endY, endM - 1, endD);
-
-	if (startUtc > endUtc) {
+	if (datesToProcess.length === 0) {
 		return [];
 	}
 
 	const records: Form257Record[] = [];
-	const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-	for (let time = startUtc; time <= endUtc; time += MS_PER_DAY) {
-		const curDate = new Date(time);
-		const dayOfWeek = curDate.getUTCDay(); // 0 is Sunday
-
-		if (excludeSundays && dayOfWeek === 0) {
-			continue;
-		}
-
-		const yyyy = curDate.getUTCFullYear();
-		const mm = String(curDate.getUTCMonth() + 1).padStart(2, "0");
-		const dd = String(curDate.getUTCDate()).padStart(2, "0");
-		const dateStr = `${yyyy}-${mm}-${dd}`;
+	for (const dateStr of datesToProcess) {
 
 		const count = Math.max(1, cyclesPerDay);
 

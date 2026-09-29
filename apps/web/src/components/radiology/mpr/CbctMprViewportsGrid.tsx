@@ -468,6 +468,8 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					onMouseLeave={() => onHoverViewport?.(null)}
 					onDoubleClick={() => handleToggleMaximize("panoramic")}
 					switcherSlot={renderFourthQuadrantSwitcher()}
+					isMaximized={maximizedViewport === "panoramic"}
+					onToggleMaximize={() => handleToggleMaximize("panoramic")}
 				/>
 			);
 		}

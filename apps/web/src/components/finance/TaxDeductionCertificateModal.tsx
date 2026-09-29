@@ -387,7 +387,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 				identityDocumentNumber: passportNumber,
 			},
 			familyMembers,
-			payments,
+			payments: yearPayments,
 			startCertificateNumber: certificateNumber,
 		});
 	}, [
@@ -408,7 +408,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 		passportSeries,
 		passportNumber,
 		familyMembers,
-		payments,
+		yearPayments,
 		certificateNumber,
 	]);
 

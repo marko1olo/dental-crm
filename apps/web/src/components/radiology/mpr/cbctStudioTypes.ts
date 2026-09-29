@@ -50,6 +50,7 @@ export interface CbctMprImplantStudioModalProps {
 	readonly initialStudioMode?: StudioMode | undefined;
 	readonly initialSidebarOpen?: boolean | undefined;
 	readonly initialCaliper?: AlveolarRidgeCaliperMeasurement | null | undefined;
+	readonly initialImageIds?: readonly string[] | undefined;
 }
 
 export function getDefaultViewportTransforms(): Record<CbctViewportType, ViewportTransform> {

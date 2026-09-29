@@ -106,16 +106,29 @@ export function reconstructPanoramicView(
 		invert = false,
 	} = options;
 
+	const effectiveThickness = options.focalTroughThicknessMm ?? archCurve?.focalTroughThicknessMm ?? 14.0;
+	const outH = heightPx;
+
+	if (!volume || !volume.data || volume.isDisposed || !archCurve || !archCurve.splinePointsMm || archCurve.splinePointsMm.length === 0) {
+		const safeW = widthPx ?? 500;
+		return {
+			widthPx: safeW,
+			heightPx: outH,
+			focalThicknessMm: effectiveThickness,
+			centerZMm: userCenterZMm ?? 0.0,
+			pixelData: new Uint8ClampedArray(safeW * outH * 4),
+			toothMarkersOnPano: [],
+		};
+	}
+
 	const centerZMm = resolveOcclusalCenterZ(volume, archCurve, userCenterZMm);
 
 	const splinePoints = archCurve.splinePointsMm;
 	const vectorField = calculateArchTangentsAndNormals(splinePoints);
-	const outW = widthPx ?? Math.max(500, Math.round(archCurve.totalArcLengthMm / (volume.spacingMm.x || 0.35)));
-	const outH = heightPx;
+	const outW = widthPx ?? Math.max(500, Math.round(archCurve.totalArcLengthMm / (volume.spacingMm?.x || 0.35)));
 	const pixelBuffer = new Uint8ClampedArray(outW * outH * 4);
 
 	// Adaptive focal trough slab sampling (default 12-16 mm, dense sampling step 0.35 - 0.4 mm)
-	const effectiveThickness = options.focalTroughThicknessMm ?? archCurve.focalTroughThicknessMm ?? 14.0;
 	const focalRadiusMm = effectiveThickness / 2.0;
 	const sampleStepMm = options.sampleStepMm ?? 0.4;
 	const slabSamples = Math.max(4, Math.round(focalRadiusMm / sampleStepMm));

@@ -11,7 +11,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Box, Compass, RotateCcw, Sparkles } from "lucide-react";
+import { Box, Compass, Maximize2, Minimize2, RotateCcw, Sparkles } from "lucide-react";
 import type { CbctVoxelVolume, Point3D } from "../cbctMprMath";
 
 export type Volume3DPresetId = "skull" | "dense_bone" | "soft_tissue" | "mip";
@@ -74,6 +74,8 @@ export interface CbctVolume3DViewportProps {
 	readonly onMouseLeave?: () => void;
 	readonly onDoubleClick?: () => void;
 	readonly switcherSlot?: React.ReactNode;
+	readonly isMaximized?: boolean;
+	readonly onToggleMaximize?: () => void;
 }
 
 function cleanZero(val: number): number {
@@ -109,6 +111,8 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	onMouseLeave,
 	onDoubleClick,
 	switcherSlot,
+	isMaximized = false,
+	onToggleMaximize,
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const [activePreset, setActivePreset] = useState<Volume3DPresetId>("skull");
@@ -122,6 +126,30 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	const dragStartPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 	const dragStartAnglesRef = useRef<{ yaw: number; pitch: number }>({ yaw: 35, pitch: 20 });
 	const dragStartPanRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+	// Touch interaction handlers for mobile/tablets
+	const touchStartDistRef = useRef<number | null>(null);
+	const touchStartZoomRef = useRef<number>(1.0);
+
+	// Observe container resize to auto-update canvas dimensions
+	const [canvasDims, setCanvasDims] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas || typeof ResizeObserver === "undefined") return;
+
+		const ro = new ResizeObserver((entries) => {
+			for (const entry of entries) {
+				const { width, height } = entry.contentRect;
+				if (width > 0 && height > 0) {
+					setCanvasDims({ width: Math.floor(width), height: Math.floor(height) });
+				}
+			}
+		});
+
+		ro.observe(canvas);
+		return () => ro.disconnect();
+	}, []);
 
 	// Quick camera orientation shortcuts
 	const handleSetOrientation = useCallback((orientation: "coronal" | "sagittal" | "isometric") => {
@@ -183,6 +211,49 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 		e.preventDefault();
 		const zoomDelta = e.deltaY < 0 ? 1.1 : 0.91;
 		setZoom((prev) => Math.max(0.4, Math.min(5.0, prev * zoomDelta)));
+	}, []);
+
+	// Touch interaction handlers for mobile/tablets
+	const handleTouchStart = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+		if (e.touches.length === 1) {
+			const touch = e.touches[0]!;
+			isDraggingRef.current = true;
+			dragButtonRef.current = 0;
+			dragStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+			dragStartAnglesRef.current = { yaw, pitch };
+			touchStartDistRef.current = null;
+		} else if (e.touches.length === 2) {
+			isDraggingRef.current = false;
+			const t1 = e.touches[0]!;
+			const t2 = e.touches[1]!;
+			touchStartDistRef.current = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+			touchStartZoomRef.current = zoom;
+		}
+	}, [yaw, pitch, zoom]);
+
+	const handleTouchMove = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+		if (e.touches.length === 1 && isDraggingRef.current) {
+			const touch = e.touches[0]!;
+			const dx = touch.clientX - dragStartPosRef.current.x;
+			const dy = touch.clientY - dragStartPosRef.current.y;
+			const nextYaw = (dragStartAnglesRef.current.yaw + dx * 0.6) % 360;
+			const nextPitch = Math.max(-85, Math.min(85, dragStartAnglesRef.current.pitch + dy * 0.6));
+			setYaw(nextYaw);
+			setPitch(nextPitch);
+		} else if (e.touches.length === 2 && touchStartDistRef.current !== null) {
+			const t1 = e.touches[0]!;
+			const t2 = e.touches[1]!;
+			const curDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+			if (curDist > 10 && touchStartDistRef.current > 10) {
+				const factor = curDist / touchStartDistRef.current;
+				setZoom(Math.max(0.4, Math.min(5.0, touchStartZoomRef.current * factor)));
+			}
+		}
+	}, []);
+
+	const handleTouchEnd = useCallback(() => {
+		isDraggingRef.current = false;
+		touchStartDistRef.current = null;
 	}, []);
 
 	// Render Volume Raycasting on canvas
@@ -363,7 +434,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 		}
 
 		ctx.putImageData(imgData, 0, 0);
-	}, [volume, activePreset, yaw, pitch, zoom, pan]);
+	}, [volume, activePreset, yaw, pitch, zoom, pan, canvasDims]);
 
 	const activePresetSpec = CBCT_VOLUME_3D_PRESETS.find((p) => p.id === activePreset) ?? CBCT_VOLUME_3D_PRESETS[0]!;
 
@@ -454,6 +525,23 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					>
 						<RotateCcw className="w-3 h-3" />
 					</button>
+
+					{/* Maximize / Restore Button */}
+					{onToggleMaximize && (
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								onToggleMaximize();
+							}}
+							title={isMaximized ? "Свернуть в сетку (Esc)" : "Развернуть 3D объем на весь экран"}
+							className="p-1 rounded text-zinc-400 hover:text-cyan-300 hover:bg-zinc-800 transition-colors cursor-pointer"
+							data-testid="cbct-btn-toggle-maximize-3d"
+							aria-label={isMaximized ? "Свернуть 3D" : "Развернуть 3D"}
+						>
+							{isMaximized ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
+						</button>
+					)}
 				</div>
 			</div>
 
@@ -466,6 +554,10 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					onMouseUp={handleMouseUp}
 					onMouseLeave={handleMouseUp}
 					onWheel={handleWheel}
+					onTouchStart={handleTouchStart}
+					onTouchMove={handleTouchMove}
+					onTouchEnd={handleTouchEnd}
+					onTouchCancel={handleTouchEnd}
 					onContextMenu={(e) => e.preventDefault()}
 					className="absolute inset-0 w-full h-full object-contain cursor-grab active:cursor-grabbing z-0"
 					data-testid="cbct-volume-3d-canvas"

@@ -2,7 +2,7 @@
   "subagent": "Red Team Inquisitor — Dental Arch & OPTG Panoramic Reconstruction",
   "status": "COMPLETED",
   "started_at": "2026-09-29T23:08:00+04:00",
-  "completed_at": "2026-09-29T23:17:00+04:00",
+  "completed_at": "2026-09-29T23:50:00+04:00",
   "completed_steps": [
     "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md constitutional mandate",
     "Inspected cbctPanoramicReconstructionMath.ts, dentalCurveEngine.ts, cbctArchSplineMath.ts",
@@ -15,10 +15,11 @@
     "Aligned 3D mandibular nerve projection to centerZMm in project3DNerveToPanorama",
     "Updated DentalArchAnchor (zMm) and DentalArchCurve (planeZMm) in cbctArchSplineMath.ts",
     "Switched default projectionMode to 'mip' with 14mm adaptive slab and 0.4mm sampling step",
-    "Created comprehensive unit test suite: apps/web/src/components/radiology/__tests__/cbctPanoramicMath.test.ts (9 tests, 100% pass)",
-    "Updated apps/web/src/components/radiology/__tests__/cbctRedTeamRomexisArchReslice.test.ts with Section 5 (17 tests, 100% pass)",
+    "Added boundary safety & crash resilience guards for null/disposed volumes and empty spline curves",
+    "Created comprehensive unit test suite: apps/web/src/components/radiology/__tests__/cbctPanoramicMath.test.ts (11 tests, 100% pass)",
+    "Updated apps/web/src/components/radiology/__tests__/cbctRedTeamRomexisArchReslice.test.ts with Section 5 (17 tests, 100% pass, 28/28 total)",
     "Empirically validated on real Zakharov CBCT volume (313 slices): Q4 brightness jumped from <88 (grey shadows) to 222 (crisp enamel/cortical bone)",
-    "Verified Mandate 8b (<800 lines for all touched files) and check:encoding (UTF-8 without BOM)"
+    "Verified Mandate 8b (<800 lines for all touched files: 405, 457, 218, 293 lines) and check:encoding (6313 files UTF-8 without BOM)"
   ],
   "findings": [
     {
@@ -35,6 +36,17 @@
       "severity": "CRITICAL_DEFECT_RESOLVED",
       "issue": "Mandibular nerve 3D projection on panorama was hardcoded to Z=0 top boundary",
       "resolution": "Aligned project3DNerveToPanorama zTopMm with centerZMm so nerve canal overlay matches tooth roots"
+    },
+    {
+      "severity": "HARDENING_RESOLVED",
+      "issue": "Defensive crash guards for disposed volumes, missing volume data, and empty arch splines were missing in reconstructPanoramicView",
+      "resolution": "Added early return returning safe zero-filled pixel buffer without unhandled exceptions or crashes"
     }
-  ]
+  ],
+  "test_metrics": {
+    "total_tests": 28,
+    "passing_tests": 28,
+    "failing_tests": 0,
+    "duration_ms": 3083
+  }
 }

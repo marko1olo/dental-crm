@@ -8,6 +8,7 @@
     "apps/web/src/components/radiology/mpr/CbctRightSidebar.tsx",
     "apps/web/src/components/radiology/mpr/cbctStudioTypes.ts",
     "apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx",
+    "apps/web/src/components/radiology/implantSafetyEngine.ts",
     "apps/web/src/components/radiology/__tests__/"
   ],
   "forbidden_scope": [
@@ -28,6 +29,7 @@
     "Replaced falsified 22.0/8.0 fallbacks with real caliper measurements or strictly null ('Не измерялась (—)' / '—') across treatment plan rationale, SOAP 043/u diary, schedule draft, and PDF report",
     "Audited cbctExportEngine.ts (renderCbctReportHtml & buildCbctReportData) to guarantee bone table renders both ridgeWidthMm and ridgeHeightMm honestly and safely without .toFixed crashes on null",
     "Audited and verified PDF export button in CbctRightSidebar.tsx and CbctMprImplantStudioModal.tsx, wiring activeCaliper directly into exportPdfImplantReport",
+    "Purged fake default envelope (22.0/8.0) in implantSafetyEngine.ts (performCbctPlanningAudit) and updated Form 043/u surgery protocol to output 'Не измерялась (—)' and 'Потребность в НКР/GBR: Не определена (замеры гребня не проводились)' when unmeasured",
     "Added and ran unit tests in apps/web/src/components/radiology/__tests__/ for caliper honesty (cbctCaliperHonestyAudit.test.ts, ctImplantIntegrationBridge.test.ts, cbctExportEngine.test.ts, cbctRedTeamCaliperMath.test.ts) — 59/59 passing",
     "Verified zero hardcoded falsifications exist across all modified files",
     "Passed check:encoding and check:css-tokens verification gates",
@@ -38,7 +40,8 @@
     "Identified BUG-010 in useCbctStudioExports.ts: hardcoded ridgeHeightMm: 22.0, ridgeWidthMm: 8.0 in handleExportToPlan, handleExportToSchedule, and handleExportToEmr.",
     "Identified BUG-010 in ctImplantIntegrationBridge.ts: hardcoded envelope with basePoint 22.0, ridgeWidthMm: 8.0, ridgeHeightMm: 22.0 in exportPdfImplantReport, plus mandatory non-nullable CtImplantBridgeParams requiring fabricated numbers.",
     "Identified BUG-010 in cbctExportEngine.ts: buildCbctReportData hardcoding ridgeHeightMm: 22.0, and renderCbctReportHtml calling bone.ridgeWidthMm.toFixed(1) without null-safety and omitting ridgeHeightMm completely.",
-    "Resolved all falsification sites: introduced null-safe effective ridge measurement pipeline supporting activeCaliper ?? ridgeHeightMm ?? crossSectionMeasurement ?? null.",
+    "Identified BUG-010 in implantSafetyEngine.ts: performCbctPlanningAudit falling back to defaultEnvelope with 22.0/8.0 when envelope was undefined, falsifying residual bone margins and GBR indications.",
+    "Resolved all falsification sites: introduced null-safe effective ridge measurement pipeline supporting activeCaliper ?? ridgeHeightMm ?? crossSectionMeasurement ?? null, with honest 'Не измерялась (—)' when unmeasured.",
     "Verified all files strictly adhere to Mandate 8b (<= 800 lines): CbctRightSidebar.tsx (782 lines), CbctMprImplantStudioModal.tsx (748 lines), ctImplantIntegrationBridge.ts (681 lines), useCbctStudioExports.ts (204 lines)."
   ]
 }

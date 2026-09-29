@@ -83,6 +83,7 @@ export const CbctMprImplantStudioModal: React.FC<
 	initialCaliper,
 	initialViewLayout,
 	initialVolume,
+	initialImageIds,
 }) => {
 	const modalId = useId();
 
@@ -352,6 +353,13 @@ export const CbctMprImplantStudioModal: React.FC<
 		jawType, resolvedPatientName: patientDisplayName, setVolume, setLoadedSliceCount,
 		setPatientDisplayName, setWindowWidth, setWindowLevel, setArchCurve, setShowDentalArch, setCrosshairMm,
 	});
+
+	// Auto-load slices if initialImageIds is provided and volume is not yet set
+	useEffect(() => {
+		if (isOpen && !volume && initialImageIds && initialImageIds.length > 0) {
+			dicomLoader.handleLoadImageIds(initialImageIds);
+		}
+	}, [isOpen, volume, initialImageIds, dicomLoader.handleLoadImageIds]);
 
 	// Interaction handlers hook
 	const interactions = useCbctInteractionHandlers({

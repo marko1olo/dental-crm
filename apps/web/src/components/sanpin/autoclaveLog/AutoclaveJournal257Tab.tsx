@@ -139,14 +139,20 @@ export function AutoclaveJournal257Tab({
 		return "за всё время";
 	}, [startDate, endDate]);
 
-	// Пакетная генерация циклов Формы 257/у за выбранный период
+	// Пакетная генерация циклов Формы 257/у за выбранный период или точечно по пропущенным датам
 	const handleGenerateBatchForPeriod = () => {
+		const targetDates =
+			missingDaysAudit?.missingDates && missingDaysAudit.missingDates.length > 0
+				? missingDaysAudit.missingDates
+				: undefined;
+
 		const start = startDate || "2026-09-01";
 		const end = endDate || "2026-09-30";
 		const generated = generateBatchForm257Records({
-			startDate: start,
-			endDate: end,
-			excludeSundays: true,
+			startDate: targetDates ? undefined : start,
+			endDate: targetDates ? undefined : end,
+			targetDates,
+			excludeSundays: targetDates ? false : true,
 			cyclesPerDay: 2,
 			packsPerCycle: 14,
 			sterilizerId: selectedSterilizerId !== "all" ? selectedSterilizerId : "autoclave-melag-vacuklav-23b",

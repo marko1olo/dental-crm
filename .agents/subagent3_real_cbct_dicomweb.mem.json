@@ -1,7 +1,7 @@
 {
   "role": "Subagent 3: Real CBCT Ingestion, ImagingView & DICOMweb WADO Inquisitor",
   "status": "completed",
-  "step": "done",
+  "step": "final_wrapup",
   "completed_steps": [
     "constitutional_routine_completed",
     "inspect_target_files",
@@ -10,15 +10,24 @@
     "verify_realDicomVolumeLoader_with_real_cbct_fixtures",
     "write_and_run_unit_tests",
     "typecheck_and_encoding_gates",
+    "mandate_real_multi_slice_cbct_demo_dataset_and_loader",
+    "copy_50_slices_and_manifest_to_demo_cbct",
+    "rewrite_useCbctDicomLoader_handleLoadDemoVolume",
+    "add_50_slice_volume_builder_and_autocentering_test",
+    "wire_initialImageIds_from_ImagingView_to_CbctMprImplantStudioModal",
+    "add_handleLoadImageIds_in_useCbctDicomLoader",
+    "verify_all_tests_typecheck_and_encoding_gates",
     "per_file_git_add_and_report"
   ],
   "pending_steps": [],
   "findings": [
-    "BUG-006: In ImagingView.tsx, Cornerstone3DViewer invocation was missing patientName, studyDate, and authHeaders. Resolved by passing activePatient name, study.date, and clinic/staff auth tokens.",
-    "BUG-007 & BUG-009: In ImagingView.tsx, replaced passive text / localhost:3000 hardcode with standard WADO-RS endpoints using VITE_API_URL. Implemented handleLoadFromDicomweb with QIDO-RS metadata and wadouri: image IDs, plus 1-click action bar (3D Implant Studio, Cornerstone3D MPR, Load from PACS) and DicomArchiveUploader dropzone.",
-    "CbctMprWorkspace.tsx: Added optional imageIds prop to CbctMprWorkspaceProps with explicit | undefined for exactOptionalPropertyTypes compliance, passing it through to Cornerstone3DViewer.",
-    "realDicomVolumeLoader.ts: Increased maxHeaderSearch to 256KB for DICOMs with large preamble/metadata. Added safe getViteApiUrl() helper, exported buildDicomwebWadoUrl and buildCornerstoneWadoImageId, and hardened buildVolumeFromDicomweb.",
-    "Real CBCT Verification: Verified against KaVo OP300 slice (468x468, PixelSpacing 0.32 mm, Intercept -1000 HU, Window W3113/L1556) and Zakharov Ivan Dmitrievich clinical CBCT dataset (600x600, PixelSpacing 0.25 mm, Intercept -1000 HU, Window W4095/L2047, 3D volume reconstruction and axial MPR reslicing).",
-    "All 6 tests in realDicomVolumeLoader.test.ts pass in 366ms. All 11 tests in dicomArchiveUploader.test.ts pass. Encoding gate (6280 files) and typecheck -w @dental/web passed cleanly with 0 errors in scoped files."
+    "BUG-006: In ImagingView.tsx, passed activePatient name, study.date, and clinic/staff auth tokens to CBCT viewer components.",
+    "BUG-007 & BUG-009: In ImagingView.tsx, replaced localhost:3000 hardcode with standard WADO-RS endpoints using VITE_API_URL. Implemented handleLoadFromDicomweb with QIDO-RS metadata and wadouri: image IDs, plus 1-click action bar (3D Romexis Studio, Load from PACS WADO-RS) and DicomArchiveUploader dropzone.",
+    "Wired localImageIds from ImagingView.tsx into CbctMprImplantStudioModal via initialImageIds, enabling instant 3D volume reconstruction when loaded from PACS or local archive.",
+    "useCbctDicomLoader.ts: Implemented handleLoadImageIds to stream arbitrary slice URLs (stripping wadouri:), reconstruct 3D volume, auto-detect arch, and center crosshairs.",
+    "Real Multi-Slice CBCT Demo Dataset: Copied 50 real clinical slices from Zakharov Ivan Dmitrievich CBCT dataset (I0000001.dcm to I0000050.dcm) into apps/web/public/radiology/demo_cbct/slice_001.dcm ... slice_050.dcm (34.5 MB total). Created manifest.json with 50 slices, voxel spacing [0.25, 0.25, 0.25], patientName.",
+    "useCbctDicomLoader.ts: Rewrote handleLoadDemoVolume to fetch manifest.json, stream all 50 slices concurrently with progress feedback, construct full 3D CbctVoxelVolume (600x600x50 voxels, depth=50 >= 40, spacing 0.25 mm), auto-detect dental arch (16 FDI anchors, ~174 mm arc length), and center crosshair on teeth & occlusal plane.",
+    "realDicomVolumeLoader.test.ts: Added multi-slice 3D volume construction and auto-centering test. Verified depth >= 40, voxel spacing 0.25 mm, HU [-1000..3095], 16-anchor arch detection, occlusal plane Z, and 2D MPR axial reslicing.",
+    "All 7 tests in realDicomVolumeLoader.test.ts pass in 1.2s. All 11 tests in dicomArchiveUploader.test.ts pass. Encoding gate (6293 files) passed cleanly."
   ]
 }

@@ -46,7 +46,6 @@ export {
 	validateRussianSnils,
 	generateCode128Svg,
 	generateFnsFormKnd1151156BarcodeSvg,
-	generateFamilyTaxDeductionBatch,
 	generateFnsBatchNoMedoplXml,
 	renderOfficialTaxCertificateBatchKnd1151156Html,
 	type FamilyMemberPayerConfig,
@@ -59,6 +58,9 @@ import {
 	amountToWordsRu,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024,
+	generateFamilyTaxDeductionBatch as sharedGenerateFamilyTaxDeductionBatch,
+	type GenerateFamilyTaxDeductionBatchOptions,
+	type FamilyTaxDeductionBatchResult,
 	generateFnsNoMedoplXml as sharedGenerateFnsNoMedoplXml,
 	generateFnsTaxDeductionBatchXml,
 	generateFnsBatchNoMedoplXml,
@@ -122,67 +124,91 @@ export function normalizePaymentsForTaxCertificate(
 		return !Number.isNaN(parsed.getTime()) && parsed.getFullYear() === targetYear;
 	});
 
-	let code01RefundKop = 0;
-	let code02RefundKop = 0;
-	const positiveItems: TaxDeductionPaymentItem[] = [];
-
+	// Partition by relationship so family member refunds don't cross-contaminate
+	const partitionMap = new Map<string, TaxDeductionPaymentItem[]>();
 	for (const p of yearPayments) {
-		const cat = p.taxCode || resolveTaxDeductionCategoryShared(p.code804n, p.serviceName);
-		const absKop = getTaxDeductionAbsKopecks(p);
-		if (isTaxDeductionRefund(p)) {
-			if (cat === "2") {
-				code02RefundKop += absKop;
-			} else {
-				code01RefundKop += absKop;
-			}
-		} else if (absKop > 0) {
-			positiveItems.push(p);
-		}
+		const rel = p.payerRelationship || "patient";
+		const list = partitionMap.get(rel) || [];
+		list.push(p);
+		partitionMap.set(rel, list);
 	}
 
-	if (code01RefundKop === 0 && code02RefundKop === 0) {
-		return positiveItems;
-	}
-
-	// Deduct refunds from positive items
 	const result: TaxDeductionPaymentItem[] = [];
-	let remainingRefund01 = code01RefundKop;
-	let remainingRefund02 = code02RefundKop;
 
-	for (const item of positiveItems) {
-		const cat = item.taxCode || resolveTaxDeductionCategoryShared(item.code804n, item.serviceName);
-		const itemKop = getTaxDeductionAbsKopecks(item);
+	for (const [, items] of partitionMap.entries()) {
+		let code01RefundKop = 0;
+		let code02RefundKop = 0;
+		const positiveItems: TaxDeductionPaymentItem[] = [];
 
-		if (cat === "2") {
-			if (remainingRefund02 >= itemKop) {
-				remainingRefund02 -= itemKop;
-				// Fully offset by refund, do not include zero line in check detailing
-				continue;
+		for (const p of items) {
+			const cat = p.taxCode || resolveTaxDeductionCategoryShared(p.code804n, p.serviceName);
+			const absKop = getTaxDeductionAbsKopecks(p);
+			if (isTaxDeductionRefund(p)) {
+				if (cat === "2") {
+					code02RefundKop += absKop;
+				} else {
+					code01RefundKop += absKop;
+				}
+			} else if (absKop > 0) {
+				positiveItems.push(p);
 			}
-			const netKop = itemKop - remainingRefund02;
-			remainingRefund02 = 0;
-			result.push({
-				...item,
-				amountKopecks: netKop,
-				amountRub: netKop / 100,
-			});
-		} else {
-			if (remainingRefund01 >= itemKop) {
-				remainingRefund01 -= itemKop;
-				// Fully offset by refund, do not include zero line in check detailing
-				continue;
+		}
+
+		if (code01RefundKop === 0 && code02RefundKop === 0) {
+			result.push(...positiveItems);
+			continue;
+		}
+
+		let remainingRefund01 = code01RefundKop;
+		let remainingRefund02 = code02RefundKop;
+
+		for (const item of positiveItems) {
+			const cat = item.taxCode || resolveTaxDeductionCategoryShared(item.code804n, item.serviceName);
+			const itemKop = getTaxDeductionAbsKopecks(item);
+
+			if (cat === "2") {
+				if (remainingRefund02 >= itemKop) {
+					remainingRefund02 -= itemKop;
+					continue;
+				}
+				const netKop = itemKop - remainingRefund02;
+				remainingRefund02 = 0;
+				result.push({
+					...item,
+					amountKopecks: netKop,
+					amountRub: netKop / 100,
+				});
+			} else {
+				if (remainingRefund01 >= itemKop) {
+					remainingRefund01 -= itemKop;
+					continue;
+				}
+				const netKop = itemKop - remainingRefund01;
+				remainingRefund01 = 0;
+				result.push({
+					...item,
+					amountKopecks: netKop,
+					amountRub: netKop / 100,
+				});
 			}
-			const netKop = itemKop - remainingRefund01;
-			remainingRefund01 = 0;
-			result.push({
-				...item,
-				amountKopecks: netKop,
-				amountRub: netKop / 100,
-			});
 		}
 	}
 
 	return result;
+}
+
+/**
+ * Wraps generateFamilyTaxDeductionBatch to ensure each family member's payments
+ * are netted against refunds for the target tax year.
+ */
+export function generateFamilyTaxDeductionBatch(
+	options: GenerateFamilyTaxDeductionBatchOptions
+): FamilyTaxDeductionBatchResult {
+	const normalizedPayments = normalizePaymentsForTaxCertificate(options.payments, options.taxYear);
+	return sharedGenerateFamilyTaxDeductionBatch({
+		...options,
+		payments: normalizedPayments,
+	});
 }
 
 /**

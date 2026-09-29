@@ -135,15 +135,11 @@ export const VISIOGRAPH_WINDOW_PRESETS: Record<
 	},
 };
 
-export const VISIOGRAPH_PRESETS_LIST: VisiographWindowPreset[] = [
+export const BASE_VISIOGRAPH_PRESETS_LIST: VisiographWindowPreset[] = [
 	VISIOGRAPH_WINDOW_PRESETS.bone,
 	VISIOGRAPH_WINDOW_PRESETS.enamel_dentin,
 	VISIOGRAPH_WINDOW_PRESETS.soft_tissue,
 	VISIOGRAPH_WINDOW_PRESETS.endodontic_canal,
-	VISIOGRAPH_WINDOW_PRESETS.airway,
-	VISIOGRAPH_WINDOW_PRESETS.skull,
-	VISIOGRAPH_WINDOW_PRESETS.endoscopy,
-	VISIOGRAPH_WINDOW_PRESETS.soft_tissue_bone,
 ];
 
 export const CDVIEWER_CLINICAL_PRESETS: VisiographWindowPreset[] = [
@@ -151,6 +147,11 @@ export const CDVIEWER_CLINICAL_PRESETS: VisiographWindowPreset[] = [
 	VISIOGRAPH_WINDOW_PRESETS.skull,
 	VISIOGRAPH_WINDOW_PRESETS.endoscopy,
 	VISIOGRAPH_WINDOW_PRESETS.soft_tissue_bone,
+];
+
+export const VISIOGRAPH_PRESETS_LIST: VisiographWindowPreset[] = [
+	...BASE_VISIOGRAPH_PRESETS_LIST,
+	...CDVIEWER_CLINICAL_PRESETS,
 ];
 
 /**

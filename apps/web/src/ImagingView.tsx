@@ -3226,6 +3226,7 @@ export function ImagingView(props: ImagingViewProps) {
 						patientName={activePatient?.name ?? activePatient?.fullName ?? "3D КЛКТ исследование"}
 						patientId={activePatient?.id}
 						study={selectedImagingStudy as any}
+						initialImageIds={localImageIds}
 						onApplyToDiary043={(diaryText) => {
 							if (!diaryText) return;
 							try {

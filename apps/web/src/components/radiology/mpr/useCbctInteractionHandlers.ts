@@ -679,6 +679,12 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			if (hitHandle) setHoveredHandle({ plane, handle: hitHandle.position });
 			else if (hoveredHandle?.plane === plane) setHoveredHandle(null);
 
+			const projR = rulers.filter((r) => r.plane === plane).map((r) => ({ id: r.id, plane: r.plane, startPx: worldMmToSlicePx(r.startMm, plane, volume), endPx: worldMmToSlicePx(r.endMm, plane, volume) }));
+			const projA = angles.filter((a) => a.plane === plane).map((a) => ({ id: a.id, plane: a.plane, startPx: worldMmToSlicePx(a.startMm, plane, volume), vertexPx: worldMmToSlicePx(a.vertexMm, plane, volume), endPx: worldMmToSlicePx(a.endMm, plane, volume) }));
+			const handleHit = hitTestMeasurementHandle(pointerPx, projR, projA, 12);
+			if (handleHit) setHoveredMeasurementHandle({ id: handleHit.id, handleIndex: handleHit.handleIndex, plane });
+			else if (hoveredMeasurementHandle?.plane === plane) setHoveredMeasurementHandle(null);
+
 			if (plane === "axial" && showDentalArch && archCurve) {
 				const archHit = hitTestDentalArchControlPoint(
 					pointerPx,
@@ -697,7 +703,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 				setHoveredArchAnchorIdx(null);
 			}
 		}
-	}, [volume, isDraggingArchAnchor, transforms, crosshairMm, obliqueAngles, draggingMeasurementHandle, isDraggingWL, isPanning, isDraggingZoom, activeRuler, activeAngle, activeTool, isShiftRotating, activeRotationHandle, isDraggingCrosshair, isDraggingNerveNode, hoveredHandle, showDentalArch, archCurve, hoveredArchAnchorIdx, setArchCurve, setRulers, setAngles, setActiveProbe, setWindowWidth, setWindowLevel, setTransforms, setActiveRuler, setActiveAngle, setObliqueAngles, setCrosshairMm, setHoveredArchAnchorIdx]);
+	}, [volume, isDraggingArchAnchor, transforms, crosshairMm, obliqueAngles, draggingMeasurementHandle, isDraggingWL, isPanning, isDraggingZoom, activeRuler, activeAngle, activeTool, isShiftRotating, activeRotationHandle, isDraggingCrosshair, isDraggingNerveNode, hoveredHandle, showDentalArch, archCurve, hoveredArchAnchorIdx, rulers, angles, hoveredMeasurementHandle, setArchCurve, setRulers, setAngles, setActiveProbe, setWindowWidth, setWindowLevel, setTransforms, setActiveRuler, setActiveAngle, setObliqueAngles, setCrosshairMm, setHoveredArchAnchorIdx, setHoveredMeasurementHandle]);
 
 	const handleCanvasMouseUp = useCallback(() => {
 		if (rafCrosshairIdRef.current !== null) { cancelAnimationFrame(rafCrosshairIdRef.current); rafCrosshairIdRef.current = null; }
@@ -729,8 +735,9 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		setIsDraggingCrosshair(null); setActiveRotationHandle(null); setIsShiftRotating(null);
 		setIsPanning(null); setIsDraggingZoom(null); setIsDraggingWL(null); setIsDraggingNerveNode(null);
 		if (draggingMeasurementHandle) setDraggingMeasurementHandle(null);
+		if (hoveredMeasurementHandle) setHoveredMeasurementHandle(null);
 		hasDraggedZoomRef.current = false;
-	}, [activeRuler, draggingMeasurementHandle, isDraggingZoom, transforms, setArchCurve, setRulers, setSelectedMeasurement, setActiveRuler, setTransforms, setDraggingMeasurementHandle, setIsDraggingArchAnchor]);
+	}, [activeRuler, draggingMeasurementHandle, hoveredMeasurementHandle, isDraggingZoom, transforms, setArchCurve, setRulers, setSelectedMeasurement, setActiveRuler, setTransforms, setDraggingMeasurementHandle, setHoveredMeasurementHandle, setIsDraggingArchAnchor]);
 
 	const handleCanvasDoubleClick = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		e.preventDefault();

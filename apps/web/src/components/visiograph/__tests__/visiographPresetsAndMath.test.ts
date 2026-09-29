@@ -1,6 +1,7 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import {
+	BASE_VISIOGRAPH_PRESETS_LIST,
 	CLINICAL_VISIOGRAPH_FILTERS,
 	computeVoiRange,
 	huToGrayscale,
@@ -55,14 +56,29 @@ describe("3D Visiograph & DICOM HU Presets Calibration", () => {
 		assert.strictEqual(range.upper, 1050);
 	});
 
-	test("all 4 clinical presets are registered in VISIOGRAPH_PRESETS_LIST", () => {
-		assert.strictEqual(VISIOGRAPH_PRESETS_LIST.length, 4);
+	test("all 4 clinical presets are registered in BASE_VISIOGRAPH_PRESETS_LIST", () => {
+		assert.strictEqual(BASE_VISIOGRAPH_PRESETS_LIST.length, 4);
+		const ids = BASE_VISIOGRAPH_PRESETS_LIST.map((p) => p.id);
+		assert.deepStrictEqual(ids, [
+			"bone",
+			"enamel_dentin",
+			"soft_tissue",
+			"endodontic_canal",
+		]);
+	});
+
+	test("all 8 clinical and CDViewer presets are registered in VISIOGRAPH_PRESETS_LIST", () => {
+		assert.strictEqual(VISIOGRAPH_PRESETS_LIST.length, 8);
 		const ids = VISIOGRAPH_PRESETS_LIST.map((p) => p.id);
 		assert.deepStrictEqual(ids, [
 			"bone",
 			"enamel_dentin",
 			"soft_tissue",
 			"endodontic_canal",
+			"airway",
+			"skull",
+			"endoscopy",
+			"soft_tissue_bone",
 		]);
 	});
 

@@ -149,6 +149,7 @@ export interface AlveolarContainmentResult {
 	readonly isApexContained: boolean;
 	readonly requiresGbrAugmentation: boolean;
 	readonly clinicalWarningRu?: string | undefined;
+	readonly isUnmeasured?: boolean | undefined;
 }
 
 export interface ComprehensiveCbctPlanAudit {
@@ -532,18 +533,17 @@ export function performCbctPlanningAudit(
 			? auditMandibularNerveSafety(params.implantPose, params.canal)
 			: createUnmeasuredNerveSafety();
 
-	const defaultEnvelope: AlveolarRidgeEnvelope = {
-		crestPoint: { x: 0, y: 0 },
-		basePoint: { x: 0, y: 22.0 },
-		buccalCrestPoint: { x: -4.0, y: 0 },
-		lingualCrestPoint: { x: 4.0, y: 0 },
-		ridgeWidthMm: 8.0,
-		ridgeHeightMm: 22.0,
-	};
-	const boneContainment = auditAlveolarBoneContainment(
-		params.implantPose,
-		params.envelope ?? defaultEnvelope,
-	);
+	const boneContainment: AlveolarContainmentResult = params.envelope
+		? auditAlveolarBoneContainment(params.implantPose, params.envelope)
+		: {
+				residualBuccalBoneMm: 0,
+				residualLingualBoneMm: 0,
+				isBuccalBoneAdequate: false,
+				isLingualBoneAdequate: false,
+				isApexContained: true,
+				requiresGbrAugmentation: false,
+				isUnmeasured: true,
+			};
 	const boneQuality = analyzeMischBoneQuality(params.huSampling, params.implantPose.implantSpec.diameterMm);
 	const isPlanApproved =
 		nerveSafety.safetyStatus !== "unmeasured" && !nerveSafety.isDangerous && !nerveSafety.isWarning;
@@ -591,16 +591,24 @@ export function performCbctPlanningAudit(
 					: nerveSafety.isWarning
 						? "ВНИМАНИЕ: ЗОНА ПРИБЛИЖЕНИЯ К НЕРВУ"
 						: "СОБЛЮДЕН (>=2.0 мм)"),
-		"   - Вестибулярная костная стенка: " + boneContainment.residualBuccalBoneMm.toFixed(1) + " мм",
-		"   - Оральная костная стенка: " + boneContainment.residualLingualBoneMm.toFixed(1) + " мм",
+		"   - Вестибулярная костная стенка: " +
+			(params.envelope && !boneContainment.isUnmeasured
+				? boneContainment.residualBuccalBoneMm.toFixed(1) + " мм"
+				: "Не измерялась (—)"),
+		"   - Оральная костная стенка: " +
+			(params.envelope && !boneContainment.isUnmeasured
+				? boneContainment.residualLingualBoneMm.toFixed(1) + " мм"
+				: "Не измерялась (—)"),
 		"",
 		"3. " + formatMischProtocolToDiaryText(params.huSampling, boneQuality, params.toothFdi),
 		"",
 		"4. ЗАКЛЮЧЕНИЕ И ПЛАН ЛЕЧЕНИЯ:",
 		"   - Допуск к операции: " + approvalStatusText,
-		boneContainment.requiresGbrAugmentation
-			? "   - Рекомендована сопутствующая НКР (GBR) с установкой коллагеновой мембраны."
-			: "   - Дополнительной костной пластики не требуется.",
+		params.envelope && !boneContainment.isUnmeasured
+			? boneContainment.requiresGbrAugmentation
+				? "   - Рекомендована сопутствующая НКР (GBR) с установкой коллагеновой мембраны."
+				: "   - Дополнительной костной пластики не требуется."
+			: "   - Потребность в НКР/GBR: Не определена (замеры гребня не проводились).",
 		"============================================================",
 	];
 
