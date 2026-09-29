@@ -29,6 +29,16 @@ import {
 	LabOrderStageSchema,
 } from '../components/lab/orders/labWorkOrderEngine.js';
 
+import {
+	addWorkingDaysRu,
+	calculateLabReadinessDate,
+	checkFittingAppointmentCollision,
+	detectLabDeadlineAlert,
+	processPartialDeliveryAndRework,
+	createDentalLabOrderRecord,
+	type DentalLabOrderRecord,
+} from '../components/lab/dentalLabOrderEngine.js';
+
 describe('Statutory Dental Laboratory Work Order & Tracking Studio Suite', () => {
 
 	describe('1. Statutory Russian Dental Prosthetic Types & Material Presets', () => {
@@ -394,6 +404,247 @@ describe('Statutory Dental Laboratory Work Order & Tracking Studio Suite', () =>
 			assert.equal(order.labName, 'ЗТЛ «МастерДент» Партнер');
 			assert.equal(order.schedule.workingDaysRequired, 10);
 			assert.ok(order.schedule.expectedFittingDate);
+		});
+	});
+
+	describe('9. Fitting Appointment Guard & Collision Detection (Mandates 8e, 8n)', () => {
+		it('calculates expected readiness date taking into account Russian working days (skipping weekends)', () => {
+			// Friday 2026-10-02 + 5 working days -> Friday 2026-10-09
+			const friday = new Date(2026, 9, 2); // 2026-10-02 (Friday)
+			const readiness = calculateLabReadinessDate(friday, 5);
+			const expectedIso = '2026-10-09';
+			assert.equal(readiness, expectedIso);
+
+			// Express preset (2 working days) starting Thursday -> Monday
+			const thursday = new Date(2026, 9, 1); // 2026-10-01 (Thursday)
+			const expressReadiness = calculateLabReadinessDate(thursday, 2);
+			assert.equal(expressReadiness, '2026-10-05'); // Mon 2026-10-05
+		});
+
+		it('detects collision when appointment is scheduled earlier than lab readiness date with verbatim warning', () => {
+			const deadline = '2026-10-15';
+			const scheduledVisit = '2026-10-12'; // 3 days before lab readiness
+			const collision = checkFittingAppointmentCollision(deadline, scheduledVisit);
+
+			assert.equal(collision.hasCollision, true);
+			assert.equal(collision.daysGap, 3);
+			assert.ok(collision.warningRu);
+			assert.ok(collision.warningRu.includes('Внимание: прием на примерку назначен раньше готовности лаборатории!'));
+			assert.ok(collision.warningRu.includes('дефицит: 3 дн.'));
+		});
+
+		it('returns no collision when fitting appointment is scheduled on or after readiness date', () => {
+			const deadline = '2026-10-15';
+			const sameDay = checkFittingAppointmentCollision(deadline, '2026-10-15');
+			assert.equal(sameDay.hasCollision, false);
+
+			const laterDay = checkFittingAppointmentCollision(deadline, '2026-10-18');
+			assert.equal(laterDay.hasCollision, false);
+
+			const noVisit = checkFittingAppointmentCollision(deadline, undefined);
+			assert.equal(noVisit.hasCollision, false);
+		});
+	});
+
+	describe('10. 1-Click Delay Alert & Reschedule Guard (Mandates 8b, 8e)', () => {
+		it('detects delay when order status is "delayed" and triggers CRITICAL_TODAY alert with amber badge', () => {
+			const alert = detectLabDeadlineAlert({
+				orderId: 'lab-ord-delay-1',
+				orderNumber: 'ЗТЛ-2026-99',
+				patientName: 'Кузнецов Павел',
+				dueDate: '2026-10-20',
+				status: 'delayed',
+			});
+
+			assert.equal(alert.isDelayedAlert, true);
+			assert.equal(alert.severity, 'CRITICAL_TODAY');
+			assert.ok(alert.badgeLabelRu?.includes('Задерживается'));
+			assert.ok(alert.actionPromptRu?.includes('Перенести прием'));
+		});
+
+		it('detects overdue deadline and alerts with reschedule prompt', () => {
+			const pastDate = '2020-01-01';
+			const alert = detectLabDeadlineAlert({
+				orderId: 'lab-ord-overdue-1',
+				orderNumber: 'ЗТЛ-2026-100',
+				patientName: 'Сидорова Елена',
+				dueDate: pastDate,
+				status: 'in_progress',
+			});
+
+			assert.equal(alert.isDelayedAlert, true);
+			assert.equal(alert.severity, 'OVERDUE');
+			assert.ok(alert.badgeLabelRu?.includes('Просрочен'));
+			assert.ok(alert.actionPromptRu?.includes('Перенести прием'));
+		});
+
+		it('triggers collision alert if visit date is earlier than deadline', () => {
+			const alert = detectLabDeadlineAlert({
+				orderId: 'lab-ord-coll-1',
+				orderNumber: 'ЗТЛ-2026-101',
+				patientName: 'Морозов Дмитрий',
+				dueDate: '2026-10-25',
+				scheduledVisitDate: '2026-10-22',
+				status: 'in_progress',
+			});
+
+			assert.equal(alert.isDelayedAlert, true);
+			assert.ok(alert.warningRu?.includes('Внимание: прием на примерку назначен раньше готовности лаборатории!'));
+		});
+	});
+
+	describe('11. Shade Fidelity & Anatomical Optics Presets (VITA Classical, Bleach, 3D-Master, Translucency, Stump ND1-ND9)', () => {
+		it('accurately preserves VITA Classical, Bleach, and 3D-Master shades with stump preparation', () => {
+			const orderClassical = createDentalLabOrderRecord({
+				orderNumber: 'ЗТЛ-SHADE-1',
+				patientId: 'pat-1',
+				patientName: 'Орлов Виктор',
+				doctorId: 'doc-1',
+				doctorName: 'Д-р Петров',
+				constructionType: 'single_crown',
+				material: 'zirconia_multilayer',
+				colorVita: 'A2',
+				shadeSystem: 'classical',
+				teeth: [11],
+				stumpShade: 'ND2',
+				translucency: 'HT',
+				priceRub: 18000,
+			});
+
+			assert.equal(orderClassical.colorVita, 'A2');
+			assert.equal(orderClassical.stumpShade, 'ND2');
+			assert.equal(orderClassical.translucency, 'HT');
+			assert.equal(orderClassical.anatomicalFeatures?.stumpShade, 'ND2');
+
+			const order3d = createDentalLabOrderRecord({
+				orderNumber: 'ЗТЛ-SHADE-2',
+				patientId: 'pat-2',
+				patientName: 'Орлова Анна',
+				doctorId: 'doc-1',
+				doctorName: 'Д-р Петров',
+				constructionType: 'veneer',
+				material: 'emax_press',
+				colorVita: '2M2',
+				shadeSystem: '3d_master',
+				teeth: [21],
+				stumpShade: 'ND1',
+				translucency: 'UTML',
+				mamelons: true,
+				opalescence: true,
+				priceRub: 22000,
+			});
+
+			assert.equal(order3d.colorVita, '2M2');
+			assert.equal(order3d.shadeSystem, '3d_master');
+			assert.equal(order3d.translucency, 'UTML');
+			assert.equal(order3d.anatomicalFeatures?.mamelons, true);
+			assert.equal(order3d.anatomicalFeatures?.opalescence, true);
+		});
+
+		it('preserves bleach shades and multi-zone stratification specifications', () => {
+			const orderBleach = createDentalLabOrderRecord({
+				orderNumber: 'ЗТЛ-SHADE-3',
+				patientId: 'pat-3',
+				patientName: 'Соколова Екатерина',
+				doctorId: 'doc-2',
+				doctorName: 'Д-р Ильин',
+				constructionType: 'veneer',
+				material: 'emax_press',
+				colorVita: 'BL2',
+				shadeSystem: 'bleach',
+				teeth: [12, 11, 21, 22],
+				priceRub: 80000,
+			});
+
+			assert.equal(orderBleach.colorVita, 'BL2');
+			assert.equal(orderBleach.shadeSystem, 'bleach');
+			assert.equal(orderBleach.teeth?.length, 4);
+		});
+	});
+
+	describe('12. Partial Delivery & Warranty Rework without Deadlock (0 ₽ Law / Mandates 8e, 8n)', () => {
+		it('splits 4-crown bridge where 3 units are accepted and 1 unit requires warranty rework', () => {
+			// Original 4-unit bridge: teeth [14, 15, 16, 17], price 40,000 ₽
+			const originalOrder = createDentalLabOrderRecord({
+				orderNumber: 'ЗТЛ-2026-44',
+				patientId: 'pat-bridge-1',
+				patientName: 'Климов Роман Викторович',
+				doctorId: 'doc-1',
+				doctorName: 'Д-р Семенов С. С.',
+				constructionType: 'bridge_zirconia',
+				material: 'zirconia_multilayer',
+				colorVita: 'A3',
+				teeth: [14, 15, 16, 17],
+				priceRub: 40000,
+			});
+
+			// 3 units ready (14, 15, 17), 1 unit rework (16) due to margin fit defect
+			const splitResult = processPartialDeliveryAndRework({
+				originalOrder,
+				deliveredTeeth: [14, 15, 17],
+				reworkTeeth: [16],
+				reworkReason: 'Краевое прилегание уступа зуба 16, скол глазури',
+				warrantyLiabilityType: 'lab_defect',
+			});
+
+			// 1. Accepted order checks
+			const { deliveredOrder, reworkOrder, summaryMessageRu } = splitResult;
+			assert.ok(deliveredOrder);
+			assert.equal(deliveredOrder.status, 'ready_in_clinic');
+			assert.deepEqual(deliveredOrder.teeth, [14, 15, 17]);
+			assert.equal(deliveredOrder.deliveredTeeth?.length, 3);
+			assert.equal(deliveredOrder.isPartialDelivery, true);
+			// Proportional price: 40,000 * (3/4) = 30,000 ₽
+			assert.equal(deliveredOrder.priceRub, 30000);
+
+			// 2. Warranty rework order checks (0 ₽ Law)
+			assert.ok(reworkOrder);
+			assert.equal(reworkOrder.status, 'warranty_rework');
+			assert.deepEqual(reworkOrder.teeth, [16]);
+			assert.equal(reworkOrder.reworkTeeth?.length, 1);
+			assert.equal(reworkOrder.isWarrantyRework, true);
+			// Patient price MUST be strictly 0 ₽!
+			assert.equal(reworkOrder.priceRub, 0);
+			// Lab defect -> lab cost is 0 ₽
+			assert.equal(reworkOrder.warrantyLiabilityType, 'lab_defect');
+			// Traceability to parent
+			assert.equal(reworkOrder.originalOrderId, originalOrder.id);
+			assert.equal(reworkOrder.originalOrderNumber, originalOrder.orderNumber);
+			assert.ok(reworkOrder.orderNumber.includes('-REW-1'));
+			assert.ok(reworkOrder.reworkReason?.includes('Краевое прилегание'));
+
+			// 3. No deadlock: statuses are clear and summary is generated
+			assert.ok(summaryMessageRu.includes('Частичная приемка'));
+			assert.ok(summaryMessageRu.includes('0 ₽'));
+			assert.ok(summaryMessageRu.includes('ЗТЛ-2026-44'));
+		});
+
+		it('handles clinic warranty liability correctly where clinic absorbs lab cost but patient pays 0 ₽', () => {
+			const originalOrder = createDentalLabOrderRecord({
+				orderNumber: 'ЗТЛ-2026-55',
+				patientId: 'pat-single-1',
+				patientName: 'Михайлов Артем',
+				doctorId: 'doc-2',
+				doctorName: 'Д-р Ильин',
+				constructionType: 'single_crown',
+				material: 'emax_press',
+				colorVita: 'B1',
+				teeth: [24, 25],
+				priceRub: 30000,
+			});
+
+			const splitResult = processPartialDeliveryAndRework({
+				originalOrder,
+				deliveredTeeth: [24],
+				reworkTeeth: [25],
+				reworkReason: 'Коррекция контактного пункта по решению клиники',
+				warrantyLiabilityType: 'clinic_warranty',
+			});
+
+			// Patient still pays 0 ₽!
+			assert.equal(splitResult.reworkOrder.priceRub, 0);
+			assert.equal(splitResult.reworkOrder.warrantyLiabilityType, 'clinic_warranty');
+			assert.equal(splitResult.deliveredOrder.priceRub, 15000);
 		});
 	});
 

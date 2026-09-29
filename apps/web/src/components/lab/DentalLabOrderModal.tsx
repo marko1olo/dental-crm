@@ -1,6 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import {
+	AlertTriangle,
 	CheckCircle2,
 	Copy,
 	FlaskConical,
@@ -205,6 +206,37 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 						</div>
 					)}
 
+					{/* ─── FITTING APPOINTMENT COLLISION GUARD BANNER (Mandate 8e, 8n) ─── */}
+					{form.fittingCollision?.hasCollision && (
+						<div
+							className="p-3.5 rounded-2xl bg-amber-500/15 border-2 border-amber-500/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+							data-testid="lab-order-fitting-collision-banner"
+						>
+							<div className="flex items-start gap-2.5 min-w-0">
+								<AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+								<div>
+									<div className="font-extrabold text-amber-950 dark:text-amber-100 text-xs">
+										Внимание: прием на примерку назначен раньше готовности лаборатории!
+									</div>
+									<div className="text-[11px] text-amber-900/80 dark:text-amber-300/80 mt-0.5">
+										{form.fittingCollision.warningRu || "Визит на примерку назначен раньше расчетной даты готовности конструкции в ЗТЛ."}
+									</div>
+								</div>
+							</div>
+							<div className="flex items-center gap-2 shrink-0">
+								<button
+									type="button"
+									onClick={() => form.setActiveTab("stages")}
+									className="min-h-[36px] px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer shrink-0"
+									data-testid="btn-lab-inspect-collision-stages"
+								>
+									<Clock className="w-3.5 h-3.5" />
+									<span>Скорректировать этапы / сроки</span>
+								</button>
+							</div>
+						</div>
+					)}
+
 					{/* ═══ TAB 1: MAIN SPECS & ODONTOGRAM ═══════════════════════════ */}
 					{form.activeTab === "main" && (
 						<div className="space-y-4">
@@ -301,6 +333,8 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							setMamelons={form.setMamelons}
 							calcifications={form.calcifications}
 							setCalcifications={form.setCalcifications}
+							opalescence={form.opalescence}
+							setOpalescence={form.setOpalescence}
 						/>
 					)}
 
@@ -315,6 +349,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 							setCeramicTrialDate={form.setCeramicTrialDate}
 							currentStage={form.currentStage}
 							setCurrentStage={form.setCurrentStage}
+							scheduledVisitDate={form.scheduledVisitDate}
 						/>
 					)}
 
@@ -355,6 +390,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 								translucency={form.translucency}
 								mamelons={form.mamelons}
 								calcifications={form.calcifications}
+								opalescence={form.opalescence}
 								impressionType={form.impressionType}
 								frameworkTrialDate={form.frameworkTrialDate}
 								ceramicTrialDate={form.ceramicTrialDate}

@@ -36,12 +36,16 @@ export interface DentalLabOrderData {
 	shadeStump?: string | null;
 	translucency?: string;
 	mamelons?: boolean;
+	opalescence?: boolean;
 	calcifications?: boolean;
 	occlusalScheme?: string;
 	contactTightness?: string;
 	surfaceTexture?: string;
 	cementGapMicrons?: number;
 	status?: string;
+	scheduledVisitDate?: string | null;
+	fittingDate?: string | null;
+	fittingCollisionWarning?: string;
 	currentStage?: LabOrderStageKey;
 	stageHistory?: Array<{ stage: LabOrderStageKey; timestamp: string; note?: string }>;
 	dueDate?: string | null;
@@ -80,7 +84,11 @@ export interface DentalLabOrderModalProps {
 	readonly treatmentPlanAgeDays?: number | undefined;
 	readonly isPlanExpired?: boolean | undefined;
 	readonly initialTab?: "main" | "shades" | "stages" | "print" | undefined;
+	readonly scheduledVisitDate?: string | undefined;
+	readonly fittingDate?: string | undefined;
 	readonly onOrderSaved?: ((order: DentalLabOrderData) => void) | undefined;
+	readonly onRescheduleAppointment?: ((orderId: string, newDate: string) => void) | undefined;
+	readonly onPartialDelivery?: ((result: any) => void) | undefined;
 }
 
 export interface LabTrackingDrawerProps {

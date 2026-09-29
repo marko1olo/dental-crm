@@ -10,7 +10,7 @@
  * • Соответствие Закону о защите прав пациентов (323-ФЗ, 152-ФЗ) и запрет эмодзи в меддокументах (Мандат 8d).
  */
 
-import React, { useState, useEffect, useId } from "react";
+import React, { useState, useEffect, useId, useMemo } from "react";
 import {
 	CalendarCheck,
 	MessageSquare,
@@ -25,12 +25,21 @@ import {
 	Calendar,
 	CheckCircle2,
 	Clock,
+	Split,
+	RefreshCw,
+	AlertTriangle,
+	ShieldAlert,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import {
 	openWhatsAppChat,
 	generateOrthopedicReadyMessage,
 } from "../../store/telephonyClinical";
+import {
+	processPartialDeliveryAndRework,
+	type PartialDeliveryResult,
+	type DentalLabOrderRecord,
+} from "./dentalLabOrderEngine";
 
 export interface ReadyInClinicLabOrder {
 	readonly id?: string | undefined;
@@ -47,6 +56,11 @@ export interface ReadyInClinicLabOrder {
 	readonly clinicName?: string | undefined;
 	readonly clinicPhone?: string | undefined;
 	readonly bookingUrl?: string | undefined;
+	readonly priceRub?: number | undefined;
+	readonly clinicSharePct?: number | undefined;
+	readonly doctorSharePct?: number | undefined;
+	readonly isPartialDelivery?: boolean | undefined;
+	readonly isWarrantyRework?: boolean | undefined;
 }
 
 export interface DentalLabReadyInClinicModalProps {
@@ -54,6 +68,7 @@ export interface DentalLabReadyInClinicModalProps {
 	readonly onClose: () => void;
 	readonly order: ReadyInClinicLabOrder | null;
 	readonly onScheduleAppointment?: ((draft: Record<string, unknown>) => void) | undefined;
+	readonly onPartialDelivery?: ((result: PartialDeliveryResult) => void) | undefined;
 }
 
 export function generateReadyInClinicSmsTemplate(
@@ -98,6 +113,7 @@ export function DentalLabReadyInClinicModal({
 	onClose,
 	order,
 	onScheduleAppointment,
+	onPartialDelivery,
 }: DentalLabReadyInClinicModalProps) {
 	const phoneInputId = useId();
 	const [activeTab, setActiveTab] = useState<"whatsapp" | "sms">("whatsapp");
@@ -106,6 +122,28 @@ export function DentalLabReadyInClinicModal({
 	const [whatsappMessage, setWhatsappMessage] = useState<string>("");
 	const [isAppointmentScheduled, setIsAppointmentScheduled] = useState<boolean>(false);
 	const [isCopied, setIsCopied] = useState<boolean>(false);
+
+	const allTeeth = useMemo(() => {
+		if (!order?.toothFdi) return [16];
+		if (Array.isArray(order.toothFdi)) {
+			return order.toothFdi.map((t) => (typeof t === "number" ? t : Number.parseInt(String(t), 10) || String(t)));
+		}
+		if (typeof order.toothFdi === "string") {
+			const parts = order.toothFdi.split(/[\s,;-]+/).filter(Boolean);
+			if (parts.length > 0) {
+				return parts.map((t) => Number.parseInt(t, 10) || t);
+			}
+		}
+		if (typeof order.toothFdi === "number") {
+			return [order.toothFdi];
+		}
+		return [16];
+	}, [order?.toothFdi]);
+
+	const [showPartialDelivery, setShowPartialDelivery] = useState<boolean>(false);
+	const [reworkTeeth, setReworkTeeth] = useState<(number | string)[]>([]);
+	const [reworkReason, setReworkReason] = useState<string>("Краевое прилегание / коррекция окклюзии");
+	const [warrantyLiability, setWarrantyLiability] = useState<"lab_defect" | "clinic_warranty">("lab_defect");
 
 	useEffect(() => {
 		if (order && isOpen) {
@@ -118,8 +156,62 @@ export function DentalLabReadyInClinicModal({
 			setWhatsappMessage(generateReadyInClinicWhatsAppTemplate(order, clinicName, clinicPhone, bookingUrl));
 			setIsAppointmentScheduled(false);
 			setIsCopied(false);
+			setReworkTeeth([]);
+			setShowPartialDelivery(false);
 		}
 	}, [order, isOpen]);
+
+	const toggleReworkTooth = (tooth: number | string) => {
+		setReworkTeeth((prev) =>
+			prev.includes(tooth) ? prev.filter((t) => t !== tooth) : [...prev, tooth]
+		);
+	};
+
+	const handleExecutePartialDelivery = () => {
+		if (!order) return;
+		const deliveredTeeth = allTeeth.filter((t) => !reworkTeeth.includes(t));
+		if (deliveredTeeth.length === 0 || reworkTeeth.length === 0) {
+			showToast("Для разделения наряда выберите хотя бы 1 принятый зуб и 1 зуб на переделку", "warning");
+			return;
+		}
+
+		const synthRecord: DentalLabOrderRecord = ({
+			id: order.id || `lab-rec-${order.orderNumber}`,
+			orderNumber: order.orderNumber,
+			patientId: order.patientId || "pat-1",
+			patientName: order.patientName,
+			doctorId: order.doctorId || "doc-1",
+			doctorName: order.doctorName || "Врач-ортопед",
+			constructionType: (order.constructionType as any) || "crown_zirconia",
+			material: order.material || "zirconia_multilayer",
+			colorVita: order.colorVita || "A2",
+			teeth: allTeeth,
+			priceRub: order.priceRub ?? 15000,
+			status: "ready_in_clinic",
+			dueDate: new Date().toISOString().slice(0, 10),
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+		} as unknown as DentalLabOrderRecord);
+
+		const result = processPartialDeliveryAndRework({
+			originalOrder: synthRecord,
+			deliveredTeeth,
+			reworkTeeth,
+			reworkReason: reworkReason.trim() || "Рекламация по гарантии",
+			warrantyLiabilityType: warrantyLiability,
+		});
+
+		if (onPartialDelivery) {
+			onPartialDelivery(result);
+		}
+
+		showToast(
+			`Наряд №${order.orderNumber} разделен: принято ${deliveredTeeth.join(", ")}, рекламация ${reworkTeeth.join(", ")} создана на 0 ₽!`,
+			"success",
+			5000,
+		);
+		onClose();
+	};
 
 	if (!isOpen || !order) return null;
 
@@ -456,6 +548,110 @@ export function DentalLabReadyInClinicModal({
 										<span>{isCopied ? "Скопировано" : "Скопировать SMS"}</span>
 									</button>
 								</div>
+							</div>
+						)}
+					</div>
+
+					{/* 3-Й БЛОК: ЧАСТИЧНАЯ СДАЧА И ГАРАНТИЙНАЯ РЕКЛАМАЦИЯ БЕЗ ДЕДЛОКА (0 ₽ ДЛЯ ПАЦИЕНТА) */}
+					<div
+						className="p-4 rounded-xl border border-amber-500/30 bg-amber-50/40 dark:bg-amber-950/20 space-y-3"
+						data-testid="partial-delivery-section"
+					>
+						<div className="flex items-center justify-between flex-wrap gap-2">
+							<div className="flex items-center gap-2">
+								<Split className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+								<span className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
+									3. Частичная сдача и рекламация единиц (0 ₽ для пациента)
+								</span>
+							</div>
+							<button
+								type="button"
+								onClick={() => setShowPartialDelivery((prev) => !prev)}
+								className="text-xs font-bold text-amber-700 dark:text-amber-300 hover:underline cursor-pointer inline-flex items-center gap-1"
+								data-testid="partial-delivery-toggle-btn"
+							>
+								<RefreshCw className="w-3.5 h-3.5" />
+								<span>{showPartialDelivery ? "Скрыть рекламацию" : "Разделить наряд / рекламация единицы"}</span>
+							</button>
+						</div>
+
+						{showPartialDelivery && (
+							<div className="space-y-3 pt-2 border-t border-amber-500/20" data-testid="partial-delivery-panel">
+								<div className="text-[11px] text-[var(--muted,#64748b)]">
+									Кликните по зубу, который требует гарантийной переделки в лаборатории. Остальные зубы будут оформлены как сданные. Пациенту счет за переделку строго 0 ₽.
+								</div>
+
+								<div className="flex items-center gap-2 flex-wrap">
+									<span className="text-xs font-bold text-[var(--ink,#0f172a)]">Единицы:</span>
+									{allTeeth.map((t) => {
+										const isRework = reworkTeeth.includes(t);
+										return (
+											<button
+												key={String(t)}
+												type="button"
+												onClick={() => toggleReworkTooth(t)}
+												data-testid={`partial-delivery-tooth-btn-${t}`}
+												className={`min-h-[36px] px-3 py-1 rounded-xl text-xs font-bold cursor-pointer transition-all border ${
+													isRework
+														? "bg-rose-500/15 border-rose-500 text-rose-700 dark:text-rose-300"
+														: "bg-emerald-500/15 border-emerald-500 text-emerald-700 dark:text-emerald-300"
+												}`}
+											>
+												Зуб {t}: {isRework ? "Переделка (0 ₽)" : "Принят"}
+											</button>
+										);
+									})}
+								</div>
+
+								{reworkTeeth.length > 0 && (
+									<div className="space-y-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-amber-500/30">
+										<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+											<div>
+												<label className="block text-[11px] font-bold text-[var(--ink,#0f172a)] mb-1">
+													Причина рекламации / замечания:
+												</label>
+												<input
+													type="text"
+													value={reworkReason}
+													onChange={(e) => setReworkReason(e.target.value)}
+													placeholder="Краевое прилегание, окклюзия, цвет..."
+													className="w-full h-9 px-3 rounded-lg border border-[var(--line,#cbd5e1)] text-xs bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)]"
+													data-testid="partial-rework-reason-input"
+												/>
+											</div>
+
+											<div>
+												<label className="block text-[11px] font-bold text-[var(--ink,#0f172a)] mb-1">
+													Ответственность по гарантии:
+												</label>
+												<select
+													value={warrantyLiability}
+													onChange={(e) => setWarrantyLiability(e.target.value as any)}
+													className="w-full h-9 px-3 rounded-lg border border-[var(--line,#cbd5e1)] text-xs bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-bold"
+													data-testid="partial-liability-select"
+												>
+													<option value="lab_defect">Брак лаборатории (0 ₽ клинике, 0 ₽ пациенту)</option>
+													<option value="clinic_warranty">Гарантия клиники (клиника оплачивает ЗТЛ, 0 ₽ пациенту)</option>
+												</select>
+											</div>
+										</div>
+
+										<div className="flex items-center justify-between flex-wrap gap-2 pt-1">
+											<span className="text-[11px] text-amber-800 dark:text-amber-200 font-medium">
+												Принято: {allTeeth.filter((t) => !reworkTeeth.includes(t)).join(", ") || "нет"} · На переделку: {reworkTeeth.join(", ")}
+											</span>
+											<button
+												type="button"
+												onClick={handleExecutePartialDelivery}
+												className="min-h-[38px] px-4 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+												data-testid="lab-partial-delivery-btn"
+											>
+												<Split className="w-3.5 h-3.5" />
+												<span>Разделить наряд: сдать готовые + рекламация (0 ₽)</span>
+											</button>
+										</div>
+									</div>
+								)}
 							</div>
 						)}
 					</div>

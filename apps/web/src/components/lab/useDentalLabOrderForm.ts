@@ -23,6 +23,7 @@ import {
 	ONE_CLICK_LAB_DEFAULTS,
 	formatJawScopeLabel,
 } from "./labMath";
+import { checkFittingAppointmentCollision } from "./dentalLabOrderEngine";
 import { buildLabOrderMessengerSummary } from "./dentalLabModalPresets";
 
 export type LabModalTabKey = "main" | "shades" | "stages" | "print";
@@ -50,6 +51,7 @@ export function useDentalLabOrderForm({
 	clinicPhone = "",
 	clinicName = "Денте",
 	initialTab = "main",
+	scheduledVisitDate: propScheduledVisitDate,
 }: DentalLabOrderModalProps) {
 	const [activeTab, setActiveTab] = useState<LabModalTabKey>(initialTab as LabModalTabKey);
 
@@ -92,6 +94,7 @@ export function useDentalLabOrderForm({
 	const [translucency, setTranslucency] = useState<string>("HT");
 	const [mamelons, setMamelons] = useState<boolean>(false);
 	const [calcifications, setCalcifications] = useState<boolean>(false);
+	const [opalescence, setOpalescence] = useState<boolean>(false);
 
 	// Occlusal Specs
 	const [occlusalScheme, setOcclusalScheme] = useState<string>("mutually_protected");
@@ -102,6 +105,7 @@ export function useDentalLabOrderForm({
 	// Stages & Deadlines
 	const [currentStage, setCurrentStage] = useState<LabOrderStageKey>("sent_to_lab");
 	const [dueDate, setDueDate] = useState<string>("");
+	const [scheduledVisitDate, setScheduledVisitDate] = useState<string>("");
 	const [frameworkTrialDate, setFrameworkTrialDate] = useState<string>("");
 	const [ceramicTrialDate, setCeramicTrialDate] = useState<string>("");
 	const [clinicalNotes, setClinicalNotes] = useState<string>("");
@@ -179,12 +183,20 @@ export function useDentalLabOrderForm({
 			setTranslucency(initialOrder.translucency || "HT");
 			setMamelons(Boolean(initialOrder.mamelons));
 			setCalcifications(Boolean(initialOrder.calcifications));
+			setOpalescence(Boolean(initialOrder.opalescence));
 			setOcclusalScheme(initialOrder.occlusalScheme || "mutually_protected");
 			setContactTightness(initialOrder.contactTightness || "normal");
 			setSurfaceTexture(initialOrder.surfaceTexture || "natural_anatomy");
 			setCementGapMicrons(initialOrder.cementGapMicrons ?? 30);
 			setCurrentStage(initialOrder.currentStage || "sent_to_lab");
 			setDueDate(initialOrder.dueDate ? initialOrder.dueDate.slice(0, 10) : "");
+			setScheduledVisitDate(
+				initialOrder.scheduledVisitDate
+					? initialOrder.scheduledVisitDate.slice(0, 10)
+					: propScheduledVisitDate
+					? propScheduledVisitDate.slice(0, 10)
+					: ""
+			);
 			setFrameworkTrialDate(initialOrder.frameworkTrialDate ? initialOrder.frameworkTrialDate.slice(0, 10) : "");
 			setCeramicTrialDate(initialOrder.ceramicTrialDate ? initialOrder.ceramicTrialDate.slice(0, 10) : "");
 			setClinicalNotes(initialOrder.clinicalNotes || "");
@@ -197,6 +209,10 @@ export function useDentalLabOrderForm({
 			setFormPatientName(patientName || "Пациент");
 			setFormDoctorId(doctorId || "");
 			setFormDoctorName(doctorName || "Лечащий врач");
+			setMamelons(false);
+			setCalcifications(false);
+			setOpalescence(false);
+			setScheduledVisitDate(propScheduledVisitDate ? propScheduledVisitDate.slice(0, 10) : "");
 			if (initialTeeth && initialTeeth.length > 0) {
 				const parsed = initialTeeth
 					.map((t) => (typeof t === "number" ? t : Number.parseInt(String(t), 10)))
@@ -223,7 +239,7 @@ export function useDentalLabOrderForm({
 			dCeramic.setDate(dCeramic.getDate() + 5);
 			setCeramicTrialDate(dCeramic.toISOString().slice(0, 10));
 		}
-	}, [isOpen, initialOrder, patientId, patientName, doctorId, doctorName, initialToothFdi, initialTeeth]);
+	}, [isOpen, initialOrder, patientId, patientName, doctorId, doctorName, initialToothFdi, initialTeeth, propScheduledVisitDate]);
 
 	// ─── TOOTH PICKER HELPERS ──────────────────────────────────────────────────
 	const toggleTooth = (tooth: number) => {
@@ -251,6 +267,11 @@ export function useDentalLabOrderForm({
 	const { doctorAmountRub } = useMemo(() => {
 		return calculateLabFinancialSplit(totalLabPriceRub, doctorSharePct);
 	}, [totalLabPriceRub, doctorSharePct]);
+
+	const fittingCollision = useMemo(() => {
+		const targetVisit = scheduledVisitDate || propScheduledVisitDate;
+		return checkFittingAppointmentCollision(dueDate, targetVisit);
+	}, [dueDate, scheduledVisitDate, propScheduledVisitDate]);
 
 	const handleApplyOneClickDefaults = () => {
 		setConstructionType(ONE_CLICK_LAB_DEFAULTS.restorationTypeSingle);
@@ -467,6 +488,7 @@ export function useDentalLabOrderForm({
 				translucency,
 				mamelons,
 				calcifications,
+				opalescence,
 				occlusalScheme,
 				contactTightness,
 				surfaceTexture,
@@ -475,6 +497,8 @@ export function useDentalLabOrderForm({
 				frameworkTrialDate,
 				ceramicTrialDate,
 				dueDate,
+				scheduledVisitDate: scheduledVisitDate || undefined,
+				fittingCollisionWarning: fittingCollision.hasCollision ? fittingCollision.warningRu : undefined,
 				clinicSharePct,
 				doctorSharePct,
 				doctorDeductionRub: doctorAmountRub,
@@ -647,6 +671,8 @@ export function useDentalLabOrderForm({
 		setMamelons,
 		calcifications,
 		setCalcifications,
+		opalescence,
+		setOpalescence,
 		occlusalScheme,
 		setOcclusalScheme,
 		contactTightness,
@@ -659,6 +685,9 @@ export function useDentalLabOrderForm({
 		setCurrentStage,
 		dueDate,
 		setDueDate,
+		scheduledVisitDate,
+		setScheduledVisitDate,
+		fittingCollision,
 		frameworkTrialDate,
 		setFrameworkTrialDate,
 		ceramicTrialDate,

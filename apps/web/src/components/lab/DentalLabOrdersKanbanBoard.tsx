@@ -46,6 +46,8 @@ export interface DentalLabOrdersKanbanBoardProps {
 	readonly onTechnicianComment: (order: DentalLabWorkflowOrder) => void;
 	readonly onRepeatFitting: (order: DentalLabWorkflowOrder) => void;
 	readonly onRequestWarrantyRework: (order: DentalLabWorkflowOrder) => void;
+	readonly onRescheduleAppointment?: ((order: DentalLabWorkflowOrder) => void) | undefined;
+	readonly onPartialDelivery?: ((order: DentalLabWorkflowOrder) => void) | undefined;
 }
 
 export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProps> = ({
@@ -61,6 +63,8 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 	onTechnicianComment,
 	onRepeatFitting,
 	onRequestWarrantyRework,
+	onRescheduleAppointment,
+	onPartialDelivery,
 }) => {
 	return (
 		<main className="ztl-kanban-board">
@@ -90,7 +94,8 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 
 						<div className="ztl-column-cards">
 							{stageSlice.visibleItems.map((order) => {
-								const hasDelay = order.isDelayedAlert || order.delayAlert.isDelayedAlert;
+								const isDelayedStage = (order as any).currentStage === "delayed" || (order as any).status === "delayed";
+								const hasDelay = isDelayedStage || order.isDelayedAlert || order.delayAlert?.isDelayedAlert || order.delayAlert?.status === "OVERDUE" || order.delayAlert?.status === "VISIT_CONFLICT";
 								const preset = ORTHOPEDIC_WORK_TYPES[order.workTypeId] || ORTHOPEDIC_WORK_TYPES.crown_emax;
 
 								return (
@@ -117,6 +122,13 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 											</div>
 										)}
 
+										{(order as any).isPartialDelivery && (
+											<div style={{ marginTop: "3px", fontSize: "10.5px", color: "var(--teal, #0d9488)", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
+												<CheckCircle2 size={11} />
+												<span className="truncate">Частичная поставка: готовы [{(order as any).deliveredTeeth?.join(", ") || order.selectedTeeth.join(", ")}]</span>
+											</div>
+										)}
+
 										<h4 className="ztl-card-patient-name truncate min-w-0" title={order.patientName}>
 											{order.patientName}
 										</h4>
@@ -125,8 +137,84 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 											{order.doctorName}
 										</p>
 
-										<div className="ztl-card-work-type truncate min-w-0" title={`${preset.shortNameRu} (${order.shadeCode})`}>
-											{preset.shortNameRu} ({order.shadeCode})
+										{/* Надежная передача расцветки VITA (Shade Fidelity) & анатомических особенностей */}
+										<div className="ztl-card-work-type min-w-0" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px", marginTop: "3px" }} title={`${preset.shortNameRu} • VITA: ${order.shadeCode}`}>
+											<span style={{ fontWeight: 600 }}>{preset.shortNameRu}</span>
+											<span
+												style={{
+													background: "var(--teal-surface, rgba(13, 148, 136, 0.1))",
+													color: "var(--teal, #0d9488)",
+													border: "1px solid var(--teal-soft, rgba(13, 148, 136, 0.3))",
+													padding: "1px 5px",
+													borderRadius: "4px",
+													fontWeight: 700,
+													fontSize: "10.5px",
+												}}
+												data-testid={`ztl-card-shade-${order.id}`}
+											>
+												VITA: {order.shadeCode}
+											</span>
+											{order.translucency && (
+												<span
+													style={{
+														background: "var(--paper-soft, #f1f5f9)",
+														color: "var(--ink, #334155)",
+														border: "1px solid var(--line, #cbd5e1)",
+														padding: "1px 4px",
+														borderRadius: "4px",
+														fontSize: "10px",
+														fontWeight: 600,
+													}}
+													title="Прозрачность режущего края"
+													data-testid={`ztl-card-translucency-${order.id}`}
+												>
+													{order.translucency}
+												</span>
+											)}
+											{((order as any).mamelons || (order as any).opalescence || (order as any).calcifications) && (
+												<span
+													style={{
+														background: "#ede9fe",
+														color: "#6d28d9",
+														border: "1px solid #ddd6fe",
+														padding: "1px 4px",
+														borderRadius: "4px",
+														fontSize: "10px",
+														fontWeight: 600,
+													}}
+													title={[
+														(order as any).mamelons ? "Мамелоны" : "",
+														(order as any).opalescence ? "Опалесценция" : "",
+														(order as any).calcifications ? "Кальцификаты" : "",
+													].filter(Boolean).join(" • ")}
+													data-testid={`ztl-card-effects-${order.id}`}
+												>
+													{(order as any).opalescence && (order as any).mamelons
+														? "Мамелоны+Опалесц."
+														: (order as any).mamelons
+														? "Мамелоны"
+														: (order as any).opalescence
+														? "Опалесценция"
+														: "Кальцификаты"}
+												</span>
+											)}
+											{(order as any).stumpShadeCode && (
+												<span
+													style={{
+														background: "#fef3c7",
+														color: "#92400e",
+														border: "1px solid #fde68a",
+														padding: "1px 4px",
+														borderRadius: "4px",
+														fontSize: "10px",
+														fontWeight: 600,
+													}}
+													title="Цвет культи зуба (IPS Natural Die)"
+													data-testid={`ztl-card-stump-${order.id}`}
+												>
+													{(order as any).stumpShadeCode}
+												</span>
+											)}
 										</div>
 
 										<div className="ztl-card-lab-name min-w-0" title={order.labName}>
@@ -177,10 +265,72 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 											</div>
 										)}
 
-										{/* Блок задержки ЗТЛ */}
+										{/* 1-Click Delay Alert: тревожный янтарный бейдж с быстрым переносом приема */}
 										{hasDelay && (
-											<div className="ztl-card-alert-badge" role="alert">
-												{order.delayAlert.alertMessageRu}
+											<div
+												className="ztl-card-alert-badge ztl-delay-amber-badge"
+												role="alert"
+												style={{
+													display: "flex",
+													flexDirection: "column",
+													gap: "5px",
+													backgroundColor: "rgba(245, 158, 11, 0.12)",
+													border: "1px solid rgba(245, 158, 11, 0.45)",
+													borderRadius: "8px",
+													padding: "7px 9px",
+													marginTop: "5px",
+												}}
+												data-testid={`ztl-card-delay-alert-${order.id}`}
+											>
+												<div style={{ display: "flex", alignItems: "center", gap: "5px", color: "var(--amber-fg, #b45309)", fontWeight: 700, fontSize: "11px" }}>
+													<RotateCcw size={12} className="shrink-0 text-amber-600" />
+													<span className="truncate">{order.delayAlert?.alertMessageRu || "Задерживается лабораторией. Требуется перенос визита."}</span>
+												</div>
+												<button
+													type="button"
+													className="ztl-btn-card-action ztl-delay-reschedule-btn"
+													style={{
+														alignSelf: "flex-start",
+														backgroundColor: "#d97706",
+														color: "#ffffff",
+														border: "none",
+														fontWeight: 700,
+														fontSize: "10.5px",
+														padding: "3px 8px",
+														borderRadius: "5px",
+														cursor: "pointer",
+														display: "inline-flex",
+														alignItems: "center",
+														gap: "4px",
+														boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+													}}
+													onClick={(e) => {
+														e.stopPropagation();
+														if (onRescheduleAppointment) {
+															onRescheduleAppointment(order);
+														} else if (typeof window !== "undefined") {
+															const rescheduleDraft = {
+																patientId: order.patientId,
+																patientName: order.patientName,
+																orderNumber: order.orderNumber,
+																dueDate: order.expectedLabDateIso,
+																reason: "Перенос приема из-за задержки ЗТЛ",
+															};
+															try {
+																window.localStorage.setItem("dente_schedule_quick_booking_draft", JSON.stringify(rescheduleDraft));
+																window.dispatchEvent(new CustomEvent("dente-open-quick-booking", { detail: rescheduleDraft }));
+																window.location.hash = "#schedule";
+															} catch {
+																// ignore
+															}
+														}
+													}}
+													data-testid={`ztl-delay-reschedule-btn-${order.id}`}
+													title="Перейти к записи пациента в расписании для переноса (1 клик)"
+												>
+													<Calendar size={11} />
+													<span>Перенести запись (1 клик)</span>
+												</button>
 											</div>
 										)}
 
@@ -467,6 +617,89 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 															>
 																<Calendar size={14} className="shrink-0 text-indigo-600" />
 																<span>Повторная примерка</span>
+															</button>
+														)}
+
+														<button
+															type="button"
+															style={{
+																display: "flex",
+																alignItems: "center",
+																gap: "8px",
+																padding: "8px 10px",
+																borderRadius: "6px",
+																border: "none",
+																background: "transparent",
+																color: "#d97706",
+																fontSize: "12px",
+																fontWeight: 600,
+																cursor: "pointer",
+																width: "100%",
+																textAlign: "left",
+																minHeight: "36px",
+															}}
+															onClick={() => {
+																setActiveCardMenuOrderId(null);
+																if (onRescheduleAppointment) {
+																	onRescheduleAppointment(order);
+																} else if (typeof window !== "undefined") {
+																	const rescheduleDraft = {
+																		patientId: order.patientId,
+																		patientName: order.patientName,
+																		orderNumber: order.orderNumber,
+																		dueDate: order.expectedLabDateIso,
+																		reason: "Перенос приема из-за задержки ЗТЛ",
+																	};
+																	try {
+																		window.localStorage.setItem("dente_schedule_quick_booking_draft", JSON.stringify(rescheduleDraft));
+																		window.dispatchEvent(new CustomEvent("dente-open-quick-booking", { detail: rescheduleDraft }));
+																		window.location.hash = "#schedule";
+																	} catch {
+																		// ignore
+																	}
+																}
+															}}
+															title="Перейти к записи пациента для переноса визита"
+															role="menuitem"
+															data-testid={`ztl-card-reschedule-${order.id}`}
+														>
+															<Calendar size={14} className="shrink-0 text-amber-600" />
+															<span>Перенести запись (ЗТЛ задержка)</span>
+														</button>
+
+														{order.selectedTeeth.length > 1 && (
+															<button
+																type="button"
+																style={{
+																	display: "flex",
+																	alignItems: "center",
+																	gap: "8px",
+																	padding: "8px 10px",
+																	borderRadius: "6px",
+																	border: "none",
+																	background: "transparent",
+																	color: "var(--teal, #0d9488)",
+																	fontSize: "12px",
+																	fontWeight: 600,
+																	cursor: "pointer",
+																	width: "100%",
+																	textAlign: "left",
+																	minHeight: "36px",
+																}}
+																onClick={() => {
+																	setActiveCardMenuOrderId(null);
+																	if (onPartialDelivery) {
+																		onPartialDelivery(order);
+																	} else {
+																		onRequestWarrantyRework(order);
+																	}
+																}}
+																title="Оформить частичную приемку и гарантийную переделку дефектной единицы (0 ₽)"
+																role="menuitem"
+																data-testid={`ztl-card-partial-delivery-${order.id}`}
+															>
+																<CheckCircle2 size={14} className="shrink-0 text-teal-600" />
+																<span>Частичная сдача / Рекламация (0 ₽)</span>
 															</button>
 														)}
 

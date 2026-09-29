@@ -35,6 +35,8 @@ export interface DentalLabShadeSelectorProps {
 	setMamelons: (m: boolean) => void;
 	calcifications: boolean;
 	setCalcifications: (c: boolean) => void;
+	opalescence?: boolean;
+	setOpalescence?: (o: boolean) => void;
 }
 
 export function DentalLabShadeSelector({
@@ -60,6 +62,8 @@ export function DentalLabShadeSelector({
 	setMamelons,
 	calcifications,
 	setCalcifications,
+	opalescence,
+	setOpalescence,
 }: DentalLabShadeSelectorProps) {
 	const currentPrimaryShade =
 		shadeSystem === "3d_master"
@@ -681,6 +685,18 @@ export function DentalLabShadeSelector({
 							/>
 							Кальцификаты / белые пятна
 						</label>
+						{setOpalescence && (
+							<label className="min-h-[44px] inline-flex items-center gap-2.5 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300">
+								<input
+									type="checkbox"
+									checked={Boolean(opalescence)}
+									onChange={(e) => setOpalescence(e.target.checked)}
+									className="w-5 h-5 rounded accent-[var(--teal)] border-slate-300 dark:border-slate-700 cursor-pointer"
+									data-testid="opalescence-checkbox"
+								/>
+								Опалесценция (эмалевый гало-эффект)
+							</label>
+						)}
 					</div>
 				</div>
 			</div>

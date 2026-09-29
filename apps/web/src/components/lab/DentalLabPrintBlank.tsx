@@ -35,6 +35,7 @@ export interface DentalLabPrintBlankProps {
 	translucency: string;
 	mamelons: boolean;
 	calcifications: boolean;
+	opalescence?: boolean;
 	occlusalScheme?: string;
 	contactTightness?: string;
 	surfaceTexture?: string;
@@ -75,6 +76,7 @@ export function DentalLabPrintBlank({
 	translucency,
 	mamelons,
 	calcifications,
+	opalescence,
 	occlusalScheme,
 	contactTightness,
 	surfaceTexture,
@@ -301,6 +303,7 @@ export function DentalLabPrintBlank({
 						</div>
 						<div>
 							• <strong>Оптические свойства:</strong> {translucency} {mamelons ? "(Мамелоны)" : ""}{" "}
+							{opalescence ? "(Опалесценция)" : ""}{" "}
 							{calcifications ? "(Кальцификаты)" : ""}
 						</div>
 						<div>

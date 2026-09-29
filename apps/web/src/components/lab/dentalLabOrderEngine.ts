@@ -177,7 +177,8 @@ export type DentalLabOrderStatus =
 	| "ready_in_clinic"      // 3. «Готов / В клинике»
 	| "try_in"               // 4. «Примерка»
 	| "delivered_to_patient" // 5. «Сдан пациенту»
-	| "warranty_rework";     // 6. «Переделка (гарантия)»
+	| "warranty_rework"      // 6. «Переделка (гарантия)»
+	| "delayed";             // 7. «Задерживается»
 
 export interface DentalLabStatusDef {
 	readonly id: DentalLabOrderStatus;
@@ -244,6 +245,15 @@ export const DENTAL_LAB_STATUSES: Record<DentalLabOrderStatus, DentalLabStatusDe
 		badgeClass: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border-rose-300 dark:border-rose-700",
 		colorHex: "#f43f5e",
 	},
+	delayed: {
+		id: "delayed",
+		stepIndex: 7,
+		labelRu: "Задерживается",
+		shortLabelRu: "Задержка",
+		descriptionRu: "Срок изготовления превышен или задерживается лабораторией. Требуется перенос приема.",
+		badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border-amber-400 dark:border-amber-600",
+		colorHex: "#f59e0b",
+	},
 };
 
 export const DENTAL_LAB_STATUS_ORDER: readonly DentalLabOrderStatus[] = [
@@ -253,6 +263,7 @@ export const DENTAL_LAB_STATUS_ORDER: readonly DentalLabOrderStatus[] = [
 	"try_in",
 	"delivered_to_patient",
 	"warranty_rework",
+	"delayed",
 ];
 
 /**
@@ -509,7 +520,7 @@ export function calculateZtlWageFinancials(params: CalculateZtlFinancialsParams)
 
 // ─── 6. АЛЕРТ ДЕДЛАЙНА И КОНТРОЛЬ ПРИХОДА РАБОТЫ ─────────────────────────────
 
-export type LabDeadlineAlertSeverity = "CRITICAL_TODAY" | "OVERDUE" | "URGENT_TODAY" | "INFO" | "OK";
+export type LabDeadlineAlertSeverity = "CRITICAL_TODAY" | "OVERDUE" | "URGENT_TODAY" | "INFO" | "OK" | "VISIT_CONFLICT";
 
 export interface LabDeadlineAlertResult {
 	readonly hasAlert: boolean;
@@ -519,18 +530,29 @@ export interface LabDeadlineAlertResult {
 	readonly messageRu: string;
 	readonly actionRu: string;
 	readonly daysUntilDeadline: number;
+	readonly badgeLabelRu?: string;
+	readonly actionPromptRu?: string;
+	readonly warningRu?: string;
 }
 
 export interface CheckLabOrderAlertParams {
 	readonly status: DentalLabOrderStatus;
-	readonly deadlineDate: string | Date; // Дата примерки / сдачи
-	readonly scheduledVisitDate?: string | Date | null | undefined; // Дата приема пациента
+	readonly deadlineDate?: string | Date | undefined;
+	readonly dueDate?: string | Date | undefined;
+	readonly scheduledVisitDate?: string | Date | null | undefined;
 	readonly todayDate?: string | Date | undefined;
 	readonly patientName?: string | undefined;
 	readonly toothNotation?: string | undefined;
+	readonly orderId?: string | undefined;
+	readonly orderNumber?: string | undefined;
 }
 
-export function parseDateOnly(val: string | Date): Date {
+export function parseDateOnly(val?: string | Date | null): Date {
+	if (!val) {
+		const d = new Date();
+		d.setHours(0, 0, 0, 0);
+		return d;
+	}
 	const d = typeof val === "string" ? new Date(val) : new Date(val.getTime());
 	d.setHours(0, 0, 0, 0);
 	return d;
@@ -550,13 +572,102 @@ export function formatRuDate(iso: string): string {
 }
 
 /**
+ * Добавление рабочих дней ЗТЛ с пропуском суббот и воскресений.
+ */
+export function addWorkingDaysRu(startDate: Date | string, daysToAdd: number): Date {
+	const result = parseDateOnly(startDate);
+	let added = 0;
+	while (added < daysToAdd) {
+		result.setDate(result.getDate() + 1);
+		const dayOfWeek = result.getDay();
+		if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+			added++;
+		}
+	}
+	return result;
+}
+
+/**
+ * Расчет плановой даты готовности ЗТЛ с учетом рабочих дней лаборатории.
+ */
+export function calculateLabReadinessDate(
+	startDate: Date | string = new Date(),
+	turnaroundWorkingDays = 5,
+): string {
+	const d = addWorkingDaysRu(startDate, Math.max(1, turnaroundWorkingDays));
+	return toIsoDate(d);
+}
+
+export interface FittingCollisionGuardResult {
+	readonly hasCollision: boolean;
+	readonly warningRu: string | null;
+	readonly daysGap: number;
+	readonly deadlineDateIso: string;
+	readonly scheduledVisitDateIso: string | null;
+}
+
+/**
+ * Защита от коллизий визита примерки и срока готовности ЗТЛ:
+ * Если визит на примерку/фиксацию в расписании назначен РАНЬШЕ расчетного срока готовности ЗТЛ,
+ * формируется тревожное предупреждение: «Внимание: прием на примерку назначен раньше готовности лаборатории!».
+ */
+export function checkFittingAppointmentCollision(
+	deadlineDate: string | Date,
+	scheduledVisitDate?: string | Date | null,
+): FittingCollisionGuardResult {
+	const deadline = parseDateOnly(deadlineDate);
+	const deadlineIso = toIsoDate(deadline);
+	if (!scheduledVisitDate) {
+		return {
+			hasCollision: false,
+			warningRu: null,
+			daysGap: 0,
+			deadlineDateIso: deadlineIso,
+			scheduledVisitDateIso: null,
+		};
+	}
+	const visit = parseDateOnly(scheduledVisitDate);
+	const visitIso = toIsoDate(visit);
+	const diffMs = deadline.getTime() - visit.getTime();
+	const daysGap = Math.round(diffMs / (1000 * 60 * 60 * 24));
+	const hasCollision = daysGap > 0;
+
+	return {
+		hasCollision,
+		warningRu: hasCollision
+			? `Внимание: прием на примерку назначен раньше готовности лаборатории! (дефицит: ${daysGap} дн., готовность: ${deadlineIso}, визит: ${visitIso})`
+			: null,
+		daysGap: hasCollision ? daysGap : 0,
+		deadlineDateIso: deadlineIso,
+		scheduledVisitDateIso: visitIso,
+	};
+}
+
+/**
  * Проверяет дедлайн наряда ЗТЛ и выявляет критический алерт:
- * «Работа из ЗТЛ еще не поступила в клинику!», если у пациента назначен визит на сегодня,
- * а статус все еще «В работе» или «Отправлен в ЗТЛ».
+ * 1. Коллизия графика: визит назначен РАНЬШЕ готовности ЗТЛ.
+ * 2. Прием на сегодня, а работа еще не в клинике.
+ * 3. Задержка или просрочка со стороны лаборатории.
  */
 export function detectLabDeadlineAlert(params: CheckLabOrderAlertParams): LabDeadlineAlertResult {
 	const today = params.todayDate ? parseDateOnly(params.todayDate) : parseDateOnly(new Date());
 	const todayIso = toIsoDate(today);
+
+	// Если статус «Задерживается» — немедленно формируется тревожный янтарный алерт
+	if (params.status === "delayed") {
+		return {
+			hasAlert: true,
+			isDelayedAlert: true,
+			severity: "CRITICAL_TODAY",
+			badgeTextRu: "Задерживается ЗТЛ",
+			badgeLabelRu: "Задерживается ЗТЛ",
+			messageRu: "Лаборатория задерживает изготовление работы. Требуется перенос приема пациента.",
+			warningRu: "Лаборатория задерживает изготовление работы. Требуется перенос приема пациента.",
+			actionRu: "Перенести прием пациента в расписании (1 клик).",
+			actionPromptRu: "Перенести прием пациента в расписании (1 клик).",
+			daysUntilDeadline: -1,
+		};
+	}
 
 	// Если работа уже в клинике, на примерке или сдана — алерта непоступления нет
 	if (params.status === "ready_in_clinic") {
@@ -565,6 +676,7 @@ export function detectLabDeadlineAlert(params: CheckLabOrderAlertParams): LabDea
 			isDelayedAlert: false,
 			severity: "OK",
 			badgeTextRu: "В клинике (Готов)",
+			badgeLabelRu: "В клинике (Готов)",
 			messageRu: "Работа доставлена в клинику и готова к примерке или фиксации.",
 			actionRu: "Пригласить пациента на прием.",
 			daysUntilDeadline: 0,
@@ -577,6 +689,7 @@ export function detectLabDeadlineAlert(params: CheckLabOrderAlertParams): LabDea
 			isDelayedAlert: false,
 			severity: "OK",
 			badgeTextRu: "Примерка",
+			badgeLabelRu: "Примерка",
 			messageRu: "Конструкция на этапе клинической примерки в полости рта.",
 			actionRu: "Зафиксировать результат примерки.",
 			daysUntilDeadline: 0,
@@ -589,6 +702,7 @@ export function detectLabDeadlineAlert(params: CheckLabOrderAlertParams): LabDea
 			isDelayedAlert: false,
 			severity: "OK",
 			badgeTextRu: "Сдан пациенту",
+			badgeLabelRu: "Сдан пациенту",
 			messageRu: "Работа успешно установлена и сдана пациенту.",
 			actionRu: "Наряд закрыт.",
 			daysUntilDeadline: 0,
@@ -601,6 +715,7 @@ export function detectLabDeadlineAlert(params: CheckLabOrderAlertParams): LabDea
 			isDelayedAlert: true,
 			severity: "INFO",
 			badgeTextRu: "Переделка (гарантия)",
+			badgeLabelRu: "Переделка (гарантия)",
 			messageRu: "Наряд находится на гарантийной переделке / доработке.",
 			actionRu: "Ожидайте повторной доставки из ЗТЛ.",
 			daysUntilDeadline: 0,
@@ -608,15 +723,49 @@ export function detectLabDeadlineAlert(params: CheckLabOrderAlertParams): LabDea
 	}
 
 	// Статусы: "sent_to_lab" или "in_progress" (работа НЕ в клинике)
+	const rawDeadline = params.deadlineDate || params.dueDate;
+	if (!rawDeadline) {
+		return {
+			hasAlert: false,
+			isDelayedAlert: false,
+			severity: "OK",
+			badgeTextRu: "Срок не задан",
+			badgeLabelRu: "Срок не задан",
+			messageRu: "",
+			warningRu: "",
+			actionRu: "",
+			actionPromptRu: "",
+			daysUntilDeadline: 0,
+		};
+	}
+
 	const visitDate = params.scheduledVisitDate ? parseDateOnly(params.scheduledVisitDate) : null;
 	const visitIso = visitDate ? toIsoDate(visitDate) : null;
 
-	const deadline = parseDateOnly(params.deadlineDate);
+	const deadline = parseDateOnly(rawDeadline);
 	const deadlineIso = toIsoDate(deadline);
 	const diffMs = deadline.getTime() - today.getTime();
 	const daysUntilDeadline = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-	// ГЛАВНЫЙ КЛИНИЧЕСКИЙ АЛЕРТ: визит пациента назначен на СЕГОДНЯ (или раньше), а работа еще в ЗТЛ!
+	// 1. ЗАЩИТА ОТ КОЛЛИЗИЙ (Fitting Appointment Guard):
+	// Если визит на примерку назначен РАНЬШЕ расчетного срока готовности ЗТЛ
+	if (visitDate && visitDate.getTime() < deadline.getTime()) {
+		const collisionDays = Math.round((deadline.getTime() - visitDate.getTime()) / (1000 * 60 * 60 * 24));
+		return {
+			hasAlert: true,
+			isDelayedAlert: true,
+			severity: "CRITICAL_TODAY",
+			badgeTextRu: "Прием раньше готовности ЗТЛ!",
+			badgeLabelRu: "Прием раньше готовности ЗТЛ!",
+			messageRu: `Внимание: прием на примерку назначен раньше готовности лаборатории! (дефицит: ${collisionDays} дн.)`,
+			warningRu: `Внимание: прием на примерку назначен раньше готовности лаборатории! (дефицит: ${collisionDays} дн.)`,
+			actionRu: `Перенести прием на дату не ранее расчетной готовности лаборатории (${formatRuDate(deadlineIso)}, разница ${collisionDays} дн.).`,
+			actionPromptRu: `Перенести прием на дату не ранее расчетной готовности лаборатории (${formatRuDate(deadlineIso)}, разница ${collisionDays} дн.).`,
+			daysUntilDeadline,
+		};
+	}
+
+	// 2. ГЛАВНЫЙ КЛИНИЧЕСКИЙ АЛЕРТ: визит пациента назначен на СЕГОДНЯ (или раньше), а работа еще в ЗТЛ!
 	if (visitIso && visitIso <= todayIso) {
 		const toothLabel = params.toothNotation ? ` (зуб ${params.toothNotation})` : "";
 		return {
@@ -624,27 +773,31 @@ export function detectLabDeadlineAlert(params: CheckLabOrderAlertParams): LabDea
 			isDelayedAlert: true,
 			severity: "CRITICAL_TODAY",
 			badgeTextRu: "Работа еще не поступила в клинику!",
+			badgeLabelRu: "Работа еще не поступила в клинику!",
 			messageRu: `Работа из ЗТЛ еще не поступила в клинику! У пациента ${params.patientName || ""}${toothLabel} назначен прием на ${formatRuDate(visitIso)}, а статус в ЗТЛ еще «${DENTAL_LAB_STATUSES[params.status].labelRu}».`,
 			actionRu: "Срочно связаться с лабораторией/курьером или предупредить врача и регистратора!",
 			daysUntilDeadline,
 		};
 	}
 
-	// Дедлайн ЗТЛ просрочен (сегодня > дата дедлайна)
+	// 3. Дедлайн ЗТЛ просрочен (сегодня > дата дедлайна)
 	if (daysUntilDeadline < 0) {
 		const overdueDays = Math.abs(daysUntilDeadline);
 		return {
 			hasAlert: true,
 			isDelayedAlert: true,
 			severity: "OVERDUE",
-			badgeTextRu: `Просрочено ЗТЛ на ${overdueDays} дн.`,
+			badgeTextRu: `Просрочен ЗТЛ на ${overdueDays} дн.`,
+			badgeLabelRu: `Просрочен ЗТЛ на ${overdueDays} дн.`,
 			messageRu: `Лаборатория не сдала работу к плановому сроку ${formatRuDate(deadlineIso)} (задержка ${overdueDays} дн.).`,
-			actionRu: "Запросить у техника статус изготовления.",
+			warningRu: `Лаборатория не сдала работу к плановому сроку ${formatRuDate(deadlineIso)} (задержка ${overdueDays} дн.).`,
+			actionRu: "Перенести прием пациента и запросить у техника статус изготовления.",
+			actionPromptRu: "Перенести прием пациента и запросить у техника статус изготовления.",
 			daysUntilDeadline,
 		};
 	}
 
-	// Срок сдачи сегодня
+	// 4. Срок сдачи сегодня
 	if (daysUntilDeadline === 0) {
 		return {
 			hasAlert: true,
@@ -681,25 +834,151 @@ export interface DentalLabOrderRecord {
 	readonly labName: string;
 	readonly technicianName?: string | undefined;
 	readonly teethFdi: readonly number[];
+	readonly teeth?: readonly (number | string)[] | undefined;
 	readonly constructionType: DentalLabConstructionType;
 	readonly materialRu: string;
+	readonly material?: string | undefined;
 	readonly vitaShade: string;
+	readonly colorVita?: string | undefined;
+	readonly shadeSystem?: "classical" | "3d_master" | "bleach" | undefined;
 	readonly translucency?: string | undefined;
 	readonly stumpShade?: string | undefined;
 	readonly sentDate: string;     // YYYY-MM-DD
 	readonly deadlineDate: string; // YYYY-MM-DD (дата примерки/сдачи)
+	readonly dueDate?: string | undefined;
 	readonly status: DentalLabOrderStatus;
 	readonly patientPriceKopecks: number;
+	readonly priceRub?: number | undefined;
 	readonly ztlCostKopecks: number;
 	readonly doctorSharePercent: number;
 	readonly scheduledVisitDate?: string | undefined; // YYYY-MM-DD
 	readonly appointmentId?: string | undefined;
 	readonly isWarrantyRemake?: boolean | undefined;
+	readonly isWarrantyRework?: boolean | undefined;
 	readonly warrantyReason?: string | undefined;
+	readonly reworkReason?: string | undefined;
 	readonly clinicalNotes?: string | undefined;
 	readonly attachedScanUrl?: string | undefined;
+	// Поддержка частичной поставки и гарантийной переделки
+	readonly deliveredTeeth?: readonly number[] | undefined;
+	readonly reworkTeeth?: readonly number[] | undefined;
+	readonly isPartialDelivery?: boolean | undefined;
+	readonly originalOrderId?: string | undefined;
+	readonly originalOrderNumber?: string | undefined;
+	readonly warrantyLiabilityType?: "clinic_warranty" | "lab_defect" | "patient_fault" | undefined;
+	readonly fittingCollisionWarning?: string | undefined;
+	readonly anatomicalFeatures?: {
+		readonly opalescence?: boolean | undefined;
+		readonly mamelons?: boolean | undefined;
+		readonly calcifications?: boolean | undefined;
+		readonly translucencyLevel?: string | undefined;
+		readonly stumpShade?: string | undefined;
+	} | undefined;
 	readonly createdAt: string;
 	readonly updatedAt: string;
+}
+
+export interface PartialDeliveryParams {
+	readonly order?: DentalLabOrderRecord | undefined;
+	readonly originalOrder?: DentalLabOrderRecord | undefined;
+	readonly readyTeeth?: readonly (number | string)[] | undefined;
+	readonly deliveredTeeth?: readonly (number | string)[] | undefined;
+	readonly reworkTeeth: readonly (number | string)[];
+	readonly reworkReason: string;
+	readonly liabilityType?: "clinic_warranty" | "lab_defect" | "patient_fault" | undefined;
+	readonly warrantyLiabilityType?: "clinic_warranty" | "lab_defect" | "patient_fault" | undefined;
+}
+
+export interface PartialDeliveryResult {
+	readonly deliveredOrder: DentalLabOrderRecord;
+	readonly reworkOrder: DentalLabOrderRecord;
+	readonly summaryRu: string;
+	readonly summaryMessageRu: string;
+}
+
+/**
+ * Обработка сценария частичной поставки и гарантийной переделки:
+ * Из наряда на несколько единиц (например 4 коронки) готовые (3 ед.) принимаются в клинике
+ * и могут быть сданы пациенту, а дефектная (1 ед.) отправляется на гарантийную переделку (0 ₽ для пациента).
+ * Заказ не зависает в мертвом тупике.
+ */
+export function processPartialDeliveryAndRework(params: PartialDeliveryParams): PartialDeliveryResult {
+	const order = params.originalOrder || params.order;
+	if (!order) {
+		throw new Error("processPartialDeliveryAndRework: missing order or originalOrder parameter");
+	}
+	const readyRaw = params.readyTeeth || params.deliveredTeeth || [];
+	const reworkRaw = params.reworkTeeth || [];
+	const readyTeeth: number[] = readyRaw.map((t) => typeof t === "number" ? t : Number.parseInt(String(t), 10) || 0).filter(Boolean);
+	const reworkTeeth: number[] = reworkRaw.map((t) => typeof t === "number" ? t : Number.parseInt(String(t), 10) || 0).filter(Boolean);
+	const liabilityType = params.warrantyLiabilityType || params.liabilityType || "lab_defect";
+	const reworkReason = params.reworkReason || "Гарантийная рекламация";
+
+	const allTeeth = order.teethFdi || (order.teeth as readonly number[]) || [16];
+	const totalCount = Math.max(1, allTeeth.length);
+	const readyCount = readyTeeth.length;
+	const reworkCount = reworkTeeth.length;
+
+	const pricePerUnitKop = Math.round(order.patientPriceKopecks / totalCount);
+	const costPerUnitKop = Math.round(order.ztlCostKopecks / totalCount);
+
+	const deliveredPatientPriceKop = pricePerUnitKop * readyCount;
+	const deliveredZtlCostKop = costPerUnitKop * readyCount;
+
+	const now = new Date().toISOString();
+
+	// 1. Принятая часть наряда: доступна для записи и фиксации
+	const deliveredOrder: DentalLabOrderRecord = {
+		...order,
+		teethFdi: readyTeeth,
+		teeth: readyTeeth,
+		deliveredTeeth: readyTeeth,
+		reworkTeeth,
+		isPartialDelivery: true,
+		patientPriceKopecks: deliveredPatientPriceKop,
+		priceRub: Math.round(deliveredPatientPriceKop / 100),
+		ztlCostKopecks: deliveredZtlCostKop,
+		status: "ready_in_clinic",
+		clinicalNotes: `${order.clinicalNotes || ""}\n• ЧАСТИЧНАЯ ПРИЕМКА: Зубы [${readyTeeth.join(", ")}] готовы в клинике к фиксации. Зубы [${reworkTeeth.join(", ")}] направлены на гарантийную переделку.`.trim(),
+		updatedAt: now,
+	};
+
+	// 2. Гарантийная переделка: строго 0 ₽ для пациента!
+	const reworkZtlCostKop = liabilityType === "lab_defect" ? 0 : costPerUnitKop * reworkCount;
+
+	const reworkOrder: DentalLabOrderRecord = {
+		...order,
+		id: `${order.id}-REW-1`,
+		orderNumber: `${order.orderNumber}-REW-1`,
+		teethFdi: reworkTeeth,
+		teeth: reworkTeeth,
+		deliveredTeeth: undefined,
+		reworkTeeth,
+		isPartialDelivery: true,
+		originalOrderId: order.id,
+		originalOrderNumber: order.orderNumber,
+		status: "warranty_rework",
+		patientPriceKopecks: 0, // 0 ₽ для пациента
+		priceRub: 0,
+		ztlCostKopecks: reworkZtlCostKop,
+		isWarrantyRemake: true,
+		isWarrantyRework: true,
+		warrantyReason: reworkReason || "Гарантийная доработка одиночной единицы",
+		reworkReason: reworkReason || "Гарантийная доработка одиночной единицы",
+		warrantyLiabilityType: liabilityType,
+		clinicalNotes: `• ГАРАНТИЙНАЯ ПЕРЕДЕЛКА ЕДИНИЦЫ (0 ₽ ДЛЯ ПАЦИЕНТА)\n• Исходный наряд ЗТЛ: № ${order.orderNumber}\n• Зубы на доработку: [${reworkTeeth.join(", ")}]\n• Причина рекламации: ${reworkReason || "Коррекция прилегания/окклюзии/оттенка"}\n• Тип ответственности: ${liabilityType === "lab_defect" ? "Брак ЗТЛ (0 ₽)" : "Гарантия клиники"}`,
+		createdAt: now,
+		updatedAt: now,
+	};
+
+	const summaryRu = `Частичная приемка оформлена: наряд № ${order.orderNumber}, зубы ${readyTeeth.join(", ")} готовы к примерке/фиксации, зуб(ы) ${reworkTeeth.join(", ")} направлены на гарантийную переделку (0 ₽ для пациента).`;
+
+	return {
+		deliveredOrder,
+		reworkOrder,
+		summaryRu,
+		summaryMessageRu: summaryRu,
+	};
 }
 
 /**
@@ -739,26 +1018,35 @@ export function canTransitionLabStatus(from: DentalLabOrderStatus, to: DentalLab
 	return true; // Свобода врача и администратора
 }
 
-/**
- * Фабрика наряда ЗТЛ с клиническими значениями по умолчанию.
- */
-export function createDentalLabOrderRecord(partial: Partial<DentalLabOrderRecord>): DentalLabOrderRecord {
+export function createDentalLabOrderRecord(partial: any): DentalLabOrderRecord {
 	const construction = partial.constructionType || "crown_zirconia";
 	const def = DENTAL_LAB_CONSTRUCTIONS[construction];
 	const sentDate = partial.sentDate || toIsoDate(new Date());
-	const deadline = partial.deadlineDate || (() => {
-		const d = new Date();
-		d.setDate(d.getDate() + (def?.standardTurnaroundDays ?? 5));
-		return toIsoDate(d);
-	})();
-	const teeth = partial.teethFdi && partial.teethFdi.length > 0 ? partial.teethFdi : [16];
+	const deadline = partial.deadlineDate || partial.dueDate || calculateLabReadinessDate(sentDate, def?.standardTurnaroundDays ?? 5);
+	const collision = checkFittingAppointmentCollision(deadline, partial.scheduledVisitDate);
+
+	const rawTeeth = partial.teethFdi || partial.teeth || [16];
+	const teeth: number[] = Array.isArray(rawTeeth)
+		? rawTeeth.map((t: any) => typeof t === "number" ? t : Number.parseInt(String(t), 10) || 16)
+		: [16];
+
+	const totalPatientPriceKop = partial.patientPriceKopecks ?? (partial.priceRub != null ? partial.priceRub * 100 : (def?.defaultPatientPriceKopecks ?? 2400000) * teeth.length);
+	const unitPatientPriceKop = Math.round(totalPatientPriceKop / Math.max(1, teeth.length));
+	const totalZtlCostKop = partial.ztlCostKopecks ?? (def?.defaultZtlCostKopecks ?? 750000) * teeth.length;
+	const unitZtlCostKop = Math.round(totalZtlCostKop / Math.max(1, teeth.length));
+
 	const financials = calculateZtlWageFinancials({
 		unitsCount: teeth.length,
-		patientPriceKopecks: partial.patientPriceKopecks ?? (def?.defaultPatientPriceKopecks ?? 2400000),
-		ztlCostKopecks: partial.ztlCostKopecks ?? (def?.defaultZtlCostKopecks ?? 750000),
+		patientPriceKopecks: unitPatientPriceKop,
+		ztlCostKopecks: unitZtlCostKop,
 		doctorSharePercent: partial.doctorSharePercent ?? 20,
+		isWarrantyRework: partial.isWarrantyRemake || partial.isWarrantyRework,
+		warrantyLiabilityType: partial.warrantyLiabilityType,
 	});
+
+	const shade = partial.vitaShade || partial.colorVita || "A2";
 	const now = new Date().toISOString();
+
 	return {
 		id: partial.id || `ztl-ord-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
 		orderNumber: partial.orderNumber || `ЗТЛ-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900) + 100)}`,
@@ -769,23 +1057,45 @@ export function createDentalLabOrderRecord(partial: Partial<DentalLabOrderRecord
 		labName: partial.labName || "CAD/CAM Центр Дентал-Мастер",
 		technicianName: partial.technicianName,
 		teethFdi: teeth,
+		teeth,
 		constructionType: construction,
-		materialRu: partial.materialRu || def?.defaultMaterialRu || "Диоксид циркония Katana ML",
-		vitaShade: partial.vitaShade || "A2",
+		materialRu: partial.materialRu || partial.material || def?.defaultMaterialRu || "Диоксид циркония Katana ML",
+		material: partial.material || partial.materialRu || def?.defaultMaterialRu || "Диоксид циркония Katana ML",
+		vitaShade: shade,
+		colorVita: shade,
+		shadeSystem: partial.shadeSystem || "classical",
 		translucency: partial.translucency || "MT",
 		stumpShade: partial.stumpShade || "ND2",
 		sentDate,
 		deadlineDate: deadline,
+		dueDate: deadline,
 		status: partial.status || "sent_to_lab",
 		patientPriceKopecks: financials.patientPriceKopecks,
+		priceRub: Math.round(financials.patientPriceKopecks / 100),
 		ztlCostKopecks: financials.ztlCostKopecks,
 		doctorSharePercent: financials.doctorSharePercent,
 		scheduledVisitDate: partial.scheduledVisitDate,
 		appointmentId: partial.appointmentId,
-		isWarrantyRemake: partial.isWarrantyRemake || false,
-		warrantyReason: partial.warrantyReason,
+		isWarrantyRemake: partial.isWarrantyRemake || partial.isWarrantyRework || false,
+		isWarrantyRework: partial.isWarrantyRemake || partial.isWarrantyRework || false,
+		warrantyReason: partial.warrantyReason || partial.reworkReason,
+		reworkReason: partial.warrantyReason || partial.reworkReason,
 		clinicalNotes: partial.clinicalNotes,
 		attachedScanUrl: partial.attachedScanUrl,
+		deliveredTeeth: partial.deliveredTeeth,
+		reworkTeeth: partial.reworkTeeth,
+		isPartialDelivery: partial.isPartialDelivery || false,
+		originalOrderId: partial.originalOrderId,
+		originalOrderNumber: partial.originalOrderNumber,
+		warrantyLiabilityType: partial.warrantyLiabilityType,
+		fittingCollisionWarning: collision.warningRu ?? partial.fittingCollisionWarning,
+		anatomicalFeatures: {
+			translucencyLevel: partial.translucency || partial.anatomicalFeatures?.translucencyLevel || "MT",
+			mamelons: partial.mamelons ?? partial.anatomicalFeatures?.mamelons ?? false,
+			opalescence: partial.opalescence ?? partial.anatomicalFeatures?.opalescence ?? false,
+			calcifications: partial.calcifications ?? partial.anatomicalFeatures?.calcifications ?? false,
+			stumpShade: partial.stumpShade || partial.anatomicalFeatures?.stumpShade,
+		},
 		createdAt: partial.createdAt || now,
 		updatedAt: partial.updatedAt || now,
 	};
