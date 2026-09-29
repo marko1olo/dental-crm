@@ -577,26 +577,18 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					className="flex-1 relative min-h-0 min-w-0 w-full h-full select-none"
 					data-testid="cbct-mpr-quad-grid"
 				>
-					{/* Desktop 2x2 Grid with dynamic split columns & rows */}
+					{/* Single Unified Responsive 2x2 Grid: eliminates duplicate canvas DOM mounting that overwrites canvas refs */}
 					<div
-						className="hidden lg:grid w-full h-full gap-1"
+						className="grid w-full h-full gap-1 grid-cols-1 lg:grid-cols-2"
 						style={{
 							gridTemplateColumns: `${(splitX * 100).toFixed(2)}% calc(${((1 - splitX) * 100).toFixed(2)}% - 4px)`,
 							gridTemplateRows: `${(splitY * 100).toFixed(2)}% calc(${((1 - splitY) * 100).toFixed(2)}% - 4px)`,
 						}}
 					>
-						{renderAxialViewport("flex flex-col w-full h-full")}
-						{renderCoronalViewport("flex flex-col w-full h-full")}
-						{renderSagittalViewport("flex flex-col w-full h-full")}
-						{renderPanoramicViewport("flex flex-col w-full h-full")}
-					</div>
-
-					{/* Mobile fallback (tabs) */}
-					<div className="flex lg:hidden w-full h-full">
-						{renderAxialViewport(mobileActiveTab === "axial" ? "flex-1 flex flex-col w-full h-full" : "hidden")}
-						{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col w-full h-full" : "hidden")}
-						{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col w-full h-full" : "hidden")}
-						{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col w-full h-full" : "hidden")}
+						{renderAxialViewport(mobileActiveTab === "axial" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
+						{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
+						{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
+						{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
 					</div>
 
 					{/* Interactive Splitter Controls (Desktop only) */}
