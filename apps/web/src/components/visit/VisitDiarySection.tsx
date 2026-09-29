@@ -642,14 +642,14 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			data-testid="form-043-preview"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Медицинская карта Форма 043/у"
+			aria-label="Медицинская карта стоматологического пациента"
 		>
 			<div className="vde-043-print-sheet print-content">
 				<div className="vde-043-print-toolbar no-print flex items-center justify-between gap-2 p-3 bg-[var(--paper-soft)] border-b border-[var(--glass-border)]">
 					<div className="flex items-center gap-2">
 						<Printer className="w-5 h-5 text-[var(--teal)]" />
 						<h3 className="text-sm font-bold m-0">
-							Печатная форма 043/у (Приказ МЗ РФ № 834н)
+							Печатная форма медицинской карты
 						</h3>
 					</div>
 					<div className="flex items-center gap-2">
@@ -684,7 +684,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				<div className="vde-043-print-body" id="print-043">
 					<PremiumDocumentPrintSheet
 						documentTitle="МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА"
-						documentSubtitle="Форма № 043/у (Утверждена Приказом Минздрава России № 834н)"
+						documentSubtitle="Медицинская карта стоматологического пациента"
 						patient={{
 							fullName: patientFullName !== "—" ? patientFullName : null,
 							birthDate: patientBirthDate || null,
@@ -729,7 +729,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					</div>
 					<div>
 						<h2 className="vde-043__title">
-							Дневник приёма · Форма 043/у
+							Медицинская карта • Дневник приёма
 						</h2>
 						<div className="vde-043__meta">
 							{isSaving ? (
@@ -814,9 +814,9 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						data-testid="diary-print-043"
 						onClick={() => setShowPreview(true)}
 						className="vde-043__btn vde-043__btn--print"
-						title="Печать формы 043/у (в черновике со штампом ЧЕРНОВИК или в закрытом визите)"
+						title="Печать медицинской карты (в черновике со штампом ЧЕРНОВИК или в закрытом визите)"
 					>
-						<Printer className="w-4 h-4" /> Печать 043/у
+						<Printer className="w-4 h-4" /> Печать карты
 					</button>
 					<div className="relative inline-block" ref={moreActionsRef} style={{ position: "relative" }}>
 						<button
@@ -978,7 +978,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									type="button"
 									onClick={() => populateFromOdontogram(activeTeeth)}
 									className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--teal-surface)] text-[var(--teal-dark)] hover:bg-[var(--teal-soft)] border border-[var(--teal)] text-xs sm:text-sm font-bold transition-colors shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
-									title="Сформировать структурированный дневник 043/у из отметок на зубной формуле"
+									title="Сформировать структурированный дневник из отметок на зубной формуле"
 									data-testid="populate-diary-from-odontogram-btn"
 								>
 									<FileText size={15} className="shrink-0" />
@@ -1038,7 +1038,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									>
 										<div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-[var(--line,#334155)] flex items-center justify-between">
 											<span>Патологии пародонта (МКБ-10)</span>
-											<span className="text-[10px] text-teal-400">1 клик в 043/у</span>
+											<span className="text-[10px] text-teal-400">1 клик в дневник</span>
 										</div>
 										<div className="max-h-80 overflow-y-auto py-1 divide-y divide-[var(--line-subtle,#1e293b)]">
 											{PERIO_PATHOLOGY_PRESETS.map((preset) => (
@@ -1202,7 +1202,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								ensureRevisingIfLocked();
 								const drugName =
 									DENTAL_ANESTHETICS[drugId]?.tradeNamesRu[0] ?? "Анестетик";
-								const disposalNote = `[СанПиН 3.3686-21] Утилизация: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, дезинфекция 1 клик без комиссии, списание по FEFO в 1 клик без комиссии).`;
+								const disposalNote = `Утилизация: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, дезинфекция 1 клик без комиссии, списание по FEFO в 1 клик без комиссии).`;
 								applyAnesthesiaPreset(disposalNote);
 
 								// Автоматическое списание со склада по FEFO (Мандат 8e, 8v, 8n)
@@ -1217,7 +1217,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										body: JSON.stringify({
 											visitId,
 											items: [{ name: drugName, quantity: count }],
-											reason: `Списание карпулы анестетика у кресла (СанПиН 3.3686-21 Класс Б, визит ${visitId})`,
+											reason: `Списание карпулы анестетика у кресла (отходы Класса Б, визит ${visitId})`,
 											allowOverdraft: true,
 										}),
 									})
@@ -1895,7 +1895,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						onClick={() => setShowPreview(true)}
 						className="vde-043__btn vde-043__btn--ghost"
 						data-testid="diary-form-043-open"
-						title="Печать медицинской карты (Форма 043/у)"
+						title="Печать медицинской карты"
 					>
 						<Printer className="w-3.5 h-3.5" /> Печать карты
 					</button>
@@ -2090,13 +2090,79 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							if (isLocked && !isRevising) {
 								beginRevise();
 							}
+							const combinedAnamnesis = [
+								res.subjectiveComplaints?.trim(),
+								res.anamnesisMorbi?.trim(),
+							]
+								.filter(Boolean)
+								.join("\n\n");
+
+							const treatmentParts: string[] = [];
+							if (res.procedureProtocol?.trim()) {
+								treatmentParts.push(res.procedureProtocol.trim());
+							}
+							if (res.anesthesiaDetails?.trim()) {
+								treatmentParts.push(`Анестезия: ${res.anesthesiaDetails.trim()}`);
+							}
+							if (res.appliedMaterials?.trim()) {
+								treatmentParts.push(`Материалы: ${res.appliedMaterials.trim()}`);
+							}
+							if (res.homeCareRecommendations?.trim()) {
+								treatmentParts.push(`Рекомендации: ${res.homeCareRecommendations.trim()}`);
+							}
+							if (res.order804nServices && res.order804nServices.length > 0) {
+								const svcLines = res.order804nServices.map((s) => {
+									const qty = s.defaultQuantity && s.defaultQuantity > 1 ? ` (x${s.defaultQuantity})` : "";
+									const price =
+										typeof s.priceKopecks === "number" && s.priceKopecks > 0
+											? ` — ${(s.priceKopecks / 100).toLocaleString("ru-RU")} ₽`
+											: "";
+									return `• ${s.code} ${s.nameRu}${qty}${price}`;
+								});
+								treatmentParts.push(`Оказанные услуги (804н):\n${svcLines.join("\n")}`);
+
+								// Прямая передача структурированных услуг 804н в активный счёт/смету визита (Мандаты 8b, 8e, 8n)
+								if (typeof window !== "undefined") {
+									const billableItems = res.order804nServices.map((s, idx) => {
+										const priceRub = typeof s.priceKopecks === "number" && s.priceKopecks > 0 ? s.priceKopecks / 100 : 0;
+										const qty = s.defaultQuantity && s.defaultQuantity > 1 ? s.defaultQuantity : 1;
+										const tooth = res.toothNumber ?? diary.diagnosisTooth;
+										return {
+											id: `protocol-${s.code}-${Date.now()}-${idx}`,
+											code: s.code,
+											code804n: s.code,
+											title: s.nameRu,
+											name: s.nameRu,
+											quantity: qty,
+											priceRub,
+											unitPriceRub: priceRub,
+											priceKopecks: s.priceKopecks ?? Math.round(priceRub * 100),
+											toothNumber: tooth ? Number(tooth) || tooth : undefined,
+											toothCode: tooth ? String(tooth) : undefined,
+										};
+									});
+									window.dispatchEvent(
+										new CustomEvent("dente-add-services-to-invoice", {
+											detail: {
+												services: billableItems,
+												toothNumber: res.toothNumber ?? (diary.diagnosisTooth ? Number(diary.diagnosisTooth) || diary.diagnosisTooth : undefined),
+												toothCode: res.toothNumber ? String(res.toothNumber) : diary.diagnosisTooth,
+												replaceExisting: true,
+												source: "clinical_diary_protocol",
+											},
+										}),
+									);
+								}
+							}
+							const combinedTreatment = treatmentParts.join("\n\n");
+
 							setDiary((prev) =>
 								mergeSoapDiaryState(
 									prev,
 									{
-										anamnesis: res.anamnesisMorbi,
+										anamnesis: combinedAnamnesis,
 										statusLocalis: res.objectiveStatusLocalis,
-										treatmentDescription: res.procedureProtocol,
+										treatmentDescription: combinedTreatment,
 										diagnosisIcd10: res.assessmentIcd10Code,
 										diagnosisTooth: res.toothNumber ? String(res.toothNumber) : prev.diagnosisTooth,
 									},
@@ -2123,6 +2189,39 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								setIcdSearch(icd);
 							}
 							scheduleDebouncedSave();
+						}}
+						onApplyServices={(services) => {
+							if (typeof window !== "undefined" && services && services.length > 0) {
+								const billableItems = services.map((s, idx) => {
+									const priceRub = typeof s.priceKopecks === "number" && s.priceKopecks > 0 ? s.priceKopecks / 100 : 0;
+									const qty = s.defaultQuantity && s.defaultQuantity > 1 ? s.defaultQuantity : 1;
+									const tooth = diary.diagnosisTooth;
+									return {
+										id: `protocol-${s.code}-${Date.now()}-${idx}`,
+										code: s.code,
+										code804n: s.code,
+										title: s.nameRu,
+										name: s.nameRu,
+										quantity: qty,
+										priceRub,
+										unitPriceRub: priceRub,
+										priceKopecks: s.priceKopecks ?? Math.round(priceRub * 100),
+										toothNumber: tooth ? Number(tooth) || tooth : undefined,
+										toothCode: tooth ? String(tooth) : undefined,
+									};
+								});
+								window.dispatchEvent(
+									new CustomEvent("dente-add-services-to-invoice", {
+										detail: {
+											services: billableItems,
+											toothNumber: diary.diagnosisTooth ? Number(diary.diagnosisTooth) || diary.diagnosisTooth : undefined,
+											toothCode: diary.diagnosisTooth || undefined,
+											replaceExisting: true,
+											source: "clinical_diary_modal_services",
+										},
+									}),
+								);
+							}
 						}}
 					/>
 				</Suspense>

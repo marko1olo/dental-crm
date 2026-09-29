@@ -19,6 +19,8 @@ export const procedureSpecificConsentProcedureSchema = z.enum([
 	"egisz_refusal",
 	"medical_intervention_refusal",
 	"warranty_policy",
+	"warranty_passport",
+	"somatic_health_questionnaire",
 	"xray_dose_load_sheet",
 	// Канонические и legacy типы
 	"therapy_endo_restoration",

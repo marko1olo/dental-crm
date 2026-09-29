@@ -686,7 +686,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		onChange?.(normValues);
 
 		const fullText = [
-			`=== МЕДИЦИНСКАЯ КАРТА 043/У (ЗУБ ${targetTooth}) ===`,
+			`=== МЕДИЦИНСКАЯ КАРТА (ЗУБ ${targetTooth}) ===`,
 			`[Жалобы]: ${normValues.complaint}`,
 			`[Анамнез]: ${normValues.anamnesis}`,
 			`[Объективный статус]: ${normValues.objectiveStatus}`,
@@ -709,10 +709,10 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		setSaveStatus("saved");
 	}, [soapStorageKey, values]);
 
-	// Копирование целостной записи 043/у в буфер
+	// Копирование целостной записи в буфер
 	const handleCopyFullText = useCallback(() => {
 		const fullText = [
-			`=== МЕДИЦИНСКАЯ КАРТА 043/У (ЗУБ ${selectedTooth ?? "Общий"}) ===`,
+			`=== МЕДИЦИНСКАЯ КАРТА (ЗУБ ${selectedTooth ?? "Общий"}) ===`,
 			`[Жалобы]: ${values.complaint || "Не указаны"}`,
 			`[Анамнез]: ${values.anamnesis || "Соматически здоров"}`,
 			`[Объективный статус]: ${values.objectiveStatus || "Без патологии"}`,
@@ -746,8 +746,8 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 				<div className="flex items-center gap-2 shrink-0">
 					<div
 						className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-[var(--muted)]"
-						aria-label="Форма 043/у • SOAP"
-						title="Форма 043/у • SOAP"
+						aria-label="Медицинская карта • Дневник приёма"
+						title="Медицинская карта • Дневник приёма"
 					>
 						<FileText className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 						<span>Медицинская карта • Дневник приёма</span>
@@ -826,7 +826,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						data-testid="btn-open-stomt-templates"
 						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer bg-teal-600 hover:bg-teal-700 text-white transition-colors shadow-xs"
 						title="Открыть каталог 448 клинических шаблонов из StomX"
-						aria-label="Шаблоны 043/у (448)"
+						aria-label="Клинические шаблоны (448)"
 					>
 						<Sparkles className="w-3.5 h-3.5" />
 						<span>Клинические шаблоны (448)</span>
@@ -985,8 +985,8 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
 							<span
 								className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]"
-								aria-label="Клинические протоколы StomX (448 шаблонов 043/у)"
-								title="Клинические протоколы StomX (448 шаблонов 043/у)"
+								aria-label="Клинические протоколы StomX (448 протоколов)"
+								title="Клинические протоколы StomX (448 протоколов)"
 							>
 								Клинические протоколы StomX (448 протоколов)
 							</span>
@@ -1453,7 +1453,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								onClick={() => window.print()}
 								data-testid="btn-soap-print-action"
 								className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 text-xs font-bold rounded-lg bg-[var(--teal,var(--brand-primary))] text-white hover:opacity-90 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors font-sans"
-								title="Распечатать медицинскую карту Форма 043/у"
+								title="Распечатать медицинскую карту"
 							>
 								<Printer className="w-3.5 h-3.5" />
 								<span>Напечатать (Ctrl+P)</span>
@@ -1463,7 +1463,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 
 					<div className="border-b-2 border-[var(--line-strong,var(--ink))] pb-2 text-center relative z-10">
 						<div className="font-sans font-black text-sm uppercase tracking-wide">
-							МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (Форма № 043/у)
+							МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА
 						</div>
 						<div className="font-sans text-[10px] text-[var(--muted)]">
 							Дневник амбулаторного приема • Зуб:{" "}
@@ -1503,7 +1503,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 					</div>
 
 					<div className="pt-3 border-t border-[var(--line)] flex items-center justify-between text-[11px] text-[var(--muted)] font-sans relative z-10">
-						<span>Форма 043/у • Приказ Минздрава России № 834н</span>
+						<span>Медицинская карта стоматологического пациента</span>
 						<span>Подпись врача: _________________ / {isLocked ? (isCorrectionMode ? "Исправленному верить" : "Подписано врачом") : "Черновик"}</span>
 					</div>
 				</div>

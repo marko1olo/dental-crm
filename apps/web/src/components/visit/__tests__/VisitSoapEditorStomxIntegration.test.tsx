@@ -48,7 +48,7 @@ describe("VisitSoapEditor & Form 043/u StomX 448 Protocols Integration", () => {
 			}),
 		);
 
-		assert.ok(html.includes("Форма 043/у • SOAP"), "Renders title");
+		assert.ok(html.includes("Медицинская карта • Дневник приёма"), "Renders title");
 		assert.ok(html.includes("btn-soap-physio-norm"), "Renders 1-click physiological norm button (Mandate 8e)");
 		assert.ok(html.includes("btn-open-stomt-templates"), "Renders StomX 448 templates toggle button");
 		assert.ok(html.includes("soap-select-tooth"), "Renders FDI tooth selector");

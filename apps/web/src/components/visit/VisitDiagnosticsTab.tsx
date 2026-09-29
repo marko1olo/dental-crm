@@ -605,6 +605,9 @@ export function VisitDiagnosticsTab(props?: {
 					patientId={activePatient?.id}
 					toothCode={initialToothNumber ? String(initialToothNumber) : undefined}
 					onInsertToProtocol={props?.onInsertToProtocol}
+					onConnectRvg={() => setIsDirectRvgModalOpen(true)}
+					onReferToRadiology={() => setIsRadiologyModalOpen(true)}
+					onUploadDicom={() => setIsDicomViewerModalOpen(true)}
 				/>
 			</div>
 
@@ -1109,7 +1112,16 @@ export function VisitDiagnosticsTab(props?: {
 							: undefined)
 					}
 					patientName={visitPatientName ?? activePatient?.fullName}
+					patientId={visitPatientId ?? activePatient?.id}
 					toothFdiCode={initialToothNumber ? String(initialToothNumber) : "36"}
+					onConnectRvg={() => {
+						setIsDicomViewerModalOpen(false);
+						setIsDirectRvgModalOpen(true);
+					}}
+					onReferToRadiology={() => {
+						setIsDicomViewerModalOpen(false);
+						setIsRadiologyModalOpen(true);
+					}}
 					onInsertToProtocol={(text) => {
 						if (props?.onInsertToProtocol) {
 							props.onInsertToProtocol(text);

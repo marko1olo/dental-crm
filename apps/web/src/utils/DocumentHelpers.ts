@@ -673,7 +673,7 @@ export const taxApplicationFormOptions: Array<{
 	value: TaxDeductionApplicationForm;
 	label: string;
 }> = [
-	{ value: "knd_1151156", label: "КНД 1151156, расходы с 2024" },
+	{ value: "knd_1151156", label: "Справка для налогового вычета (с 2024)" },
 	{ value: "legacy_2021_2023", label: "Старая справка, оплаты 2021-2023" },
 ];
 

@@ -741,8 +741,8 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							}}
 							className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[48px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm sm:text-base font-extrabold hover:bg-[var(--teal-dark)] transition-colors shadow-md cursor-pointer"
 							data-testid="summary-print-btn"
-							title="Печать медицинской карты (Форма 043/у)"
-							aria-label="Печать Формы 043/у"
+							title="Печать медицинской карты"
+							aria-label="Печать медицинской карты"
 						>
 							<Printer className="w-4 h-4" />
 							Печать медицинской карты

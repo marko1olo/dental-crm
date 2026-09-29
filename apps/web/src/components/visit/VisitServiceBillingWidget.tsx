@@ -9,6 +9,7 @@ import { kopecksToRub, rubToKopecks } from "@dental/shared";
 import { showToast } from "../GlobalToast.js";
 import { PaymentModal } from "../finance/PaymentModal.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
+import { isDemoShowcaseMode, isDemoPatientId } from "../../lib/demoMode.js";
 
 export * from "./visitBillingTypes.js";
 import {
@@ -20,26 +21,17 @@ import {
 } from "./visitBillingTypes.js";
 
 export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps> = ({
-	visitId,
-	patientId = "pat-walkin",
-	patientName = "Пациент",
-	patientPhone = "",
-	patientDepositRub = 0,
-	patientFamilyBalanceRub = 0,
-	doctorName = "Врач-стоматолог",
-	cashierName,
-	clinicLegalName = "ООО «ДЕНТЕ»",
-	initialServices,
-	onServicesChange,
-	onSave,
-	onOpenPayment,
-	onAddBillingItem,
-	readOnly = false,
-	className = "",
+	visitId, patientId = "pat-walkin", patientName = "Пациент", patientPhone = "",
+	patientDepositRub = 0, patientFamilyBalanceRub = 0, doctorName = "Врач-стоматолог",
+	cashierName, clinicLegalName = "ООО «ДЕНТЕ»", initialServices, onServicesChange,
+	onSave, onOpenPayment, onAddBillingItem, readOnly = false, className = "",
 }) => {
-	const [services, setServices] = useState<VisitBillingServiceItem[]>(() =>
-		initialServices && initialServices.length > 0 ? [...initialServices] : [...DEFAULT_CHAIRSIDE_SERVICES]
-	);
+	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
+	const [services, setServices] = useState<VisitBillingServiceItem[]>(() => {
+		if (initialServices && initialServices.length > 0) return [...initialServices];
+		if (isDemoShowcaseMode() || isDemoPatientId(patientId)) return [...DEFAULT_CHAIRSIDE_SERVICES];
+		return [];
+	});
 
 	const [globalDiscountPercent, setGlobalDiscountPercent] = useState<number>(0);
 	const [isGlobalWarranty100, setIsGlobalWarranty100] = useState<boolean>(false);
@@ -97,8 +89,9 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 
 			setServices((prev) => {
 				const isPlaceholder =
-					prev.length === DEFAULT_CHAIRSIDE_SERVICES.length &&
-					prev.every((item, idx) => item.id === DEFAULT_CHAIRSIDE_SERVICES[idx]?.id);
+					prev.length === 0 ||
+					(prev.length === DEFAULT_CHAIRSIDE_SERVICES.length &&
+						prev.every((item, idx) => item.id === DEFAULT_CHAIRSIDE_SERVICES[idx]?.id));
 				const shouldReplace = Boolean(detail.replaceExisting) || isPlaceholder;
 				const next = shouldReplace ? newItems : [...prev, ...newItems];
 				onServicesChange?.(next);
@@ -140,8 +133,9 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 			};
 			setServices((prev) => {
 				const isPlaceholder =
-					prev.length === DEFAULT_CHAIRSIDE_SERVICES.length &&
-					prev.every((pItem, idx) => pItem.id === DEFAULT_CHAIRSIDE_SERVICES[idx]?.id);
+					prev.length === 0 ||
+					(prev.length === DEFAULT_CHAIRSIDE_SERVICES.length &&
+						prev.every((pItem, idx) => pItem.id === DEFAULT_CHAIRSIDE_SERVICES[idx]?.id));
 				const next = isPlaceholder ? [newItem] : [...prev, newItem];
 				onServicesChange?.(next);
 				return next;
@@ -376,21 +370,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 
 	const handlePrintEstimate = () => {
 		const printRows = services
-			.map(
-				(s, idx) => `<tr>
-					<td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${idx + 1}</td>
-					<td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${s.code804n}</td>
-					<td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">
-						${s.title}${s.toothCode ? ` (зуб ${s.toothCode})` : ""}
-						${s.isWarranty ? '<span style="color: #15803d; font-weight: bold;"> [Гарантия 100%]</span>' : ""}
-					</td>
-					<td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${s.quantity}</td>
-					<td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${s.unitPriceRub.toLocaleString("ru-RU")} ₽</td>
-					<td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">
-						${s.isWarranty ? "0 ₽" : `${(s.unitPriceRub * s.quantity).toLocaleString("ru-RU")} ₽`}
-					</td>
-				</tr>`
-			)
+			.map((s, idx) => `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${idx + 1}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${s.code804n}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${s.title}${s.toothCode ? ` (зуб ${s.toothCode})` : ""}${s.isWarranty ? '<span style="color: #15803d; font-weight: bold;"> [Гарантия 100%]</span>' : ""}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${s.quantity}</td><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">${s.unitPriceRub.toLocaleString("ru-RU")} ₽</td><td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">${s.isWarranty ? "0 ₽" : `${(s.unitPriceRub * s.quantity).toLocaleString("ru-RU")} ₽`}</td></tr>`)
 			.join("");
 
 		const html = `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Смета оказанных стоматологических услуг</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:30px;color:#0f172a}.header{border-bottom:2px solid #0f172a;padding-bottom:12px;margin-bottom:16px}h1{margin:0 0 6px 0;font-size:18px;font-weight:800}.clinic{font-size:12px;color:#475569}.patient{margin:12px 0;font-size:13px}table{width:100%;border-collapse:collapse;margin:16px 0;font-size:12px}th,td{padding:8px 10px;border-bottom:1px solid #cbd5e1;text-align:left}th{background:#f8fafc;font-weight:700;border-bottom:2px solid #94a3b8}.total-box{margin-top:20px;text-align:right;font-size:13px}.total-due{font-size:16px;font-weight:800;color:#0f172a;margin-top:6px}</style></head><body><div class="header"><h1>СМЕТА ОКАЗАННЫХ СТОМАТОЛОГИЧЕСКИХ УСЛУГ</h1><div class="clinic">${clinicLegalName} • Прейскурант услуг</div></div><div class="patient"><div><strong>Пациент:</strong> ${patientName}</div><div><strong>Лечащий врач:</strong> ${doctorName}</div><div><strong>Дата:</strong> ${new Date().toLocaleDateString("ru-RU")}</div></div><table><thead><tr><th>№</th><th>Код услуги</th><th>Наименование услуги</th><th style="text-align:center;">Кол-во</th><th style="text-align:right;">Цена</th><th style="text-align:right;">Сумма</th></tr></thead><tbody>${printRows}</tbody></table><div class="total-box"><div>Сумма по прейскуранту: <strong>${totals.rawTotalRub.toLocaleString("ru-RU")} ₽</strong></div>${totals.discountRub > 0 ? `<div style="color:#b45309;">Скидка врача: <strong>-${totals.discountRub.toLocaleString("ru-RU")} ₽ (${totals.effectiveDiscountPercent}%)</strong></div>` : ""}<div class="total-due">Итого к оплате: ${totals.isWarranty100 ? "0 ₽ (Скидка 100% — Гарантийный прием)" : `${totals.totalDueRub.toLocaleString("ru-RU")} ₽`}</div></div></body></html>`;
@@ -522,8 +502,24 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 			{/* Services List with Inline Price Editing & Step Buttons (+500 ₽ / -500 ₽) */}
 			<div className="space-y-2" data-testid="chairside-services-list">
 				{services.length === 0 ? (
-					<div className="p-8 text-center border-2 border-dashed border-[var(--line,#e2e8f0)] rounded-xl text-xs text-[var(--muted,#64748b)]">
-						Нет добавленных услуг. Нажмите «+ Добавить услугу».
+					<div
+						className="p-8 text-center border-2 border-dashed border-[var(--line,#e2e8f0)] rounded-xl text-xs text-[var(--muted,#64748b)] space-y-2.5"
+						data-testid="billing-empty-state"
+					>
+						<p className="m-0 font-medium text-[var(--ink,#0f172a)] text-xs">
+							Услуги приёма ещё не добавлены. Примените клинический протокол или выберите услугу из прейскуранта.
+						</p>
+						{!readOnly && (
+							<button
+								type="button"
+								onClick={handleAddService}
+								className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 font-bold hover:bg-teal-100 transition-colors cursor-pointer text-xs"
+								data-testid="btn-empty-add-service"
+							>
+								<Plus size={14} />
+								<span>+ Выбрать услугу из прейскуранта</span>
+							</button>
+						)}
 					</div>
 				) : (
 					services.map((item, index) => {

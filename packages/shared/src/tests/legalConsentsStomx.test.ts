@@ -2,9 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	CLINICAL_CONSENT_PRESETS,
+	STOMX_ALL_49_DOCUMENTS_REGISTRY,
 	STOMX_LEGAL_CONSENTS_CATALOG,
 	STOMX_SPECIALIZED_CONSENT_PRESETS,
 	generateStomxConsentHtml,
+	getAllStomx49Documents,
+	getStomxDocumentRegistryItem,
 	getStomxTemplateMetadata,
 	renderStomxTemplateText,
 	resolveStomxVariableToken,
@@ -12,7 +15,7 @@ import {
 	type StomxVariableContext,
 } from "../index.js";
 
-test("STOMX_SPECIALIZED_CONSENT_PRESETS contains all 20 specialized procedures with authentic clinical text", () => {
+test("STOMX_SPECIALIZED_CONSENT_PRESETS contains all 22 specialized procedures with authentic clinical text", () => {
 	const specializedProcedures: ProcedureSpecificConsentProcedure[] = [
 		"veneers",
 		"implantation",
@@ -34,9 +37,11 @@ test("STOMX_SPECIALIZED_CONSENT_PRESETS contains all 20 specialized procedures w
 		"egisz_refusal",
 		"medical_intervention_refusal",
 		"warranty_policy",
+		"warranty_passport",
+		"somatic_health_questionnaire",
 	];
 
-	assert.equal(specializedProcedures.length, 20, "Must have exactly 20 specialized procedures");
+	assert.equal(specializedProcedures.length, 22, "Must have exactly 22 specialized procedures");
 
 	for (const proc of specializedProcedures) {
 		const preset = STOMX_SPECIALIZED_CONSENT_PRESETS[proc];
@@ -113,12 +118,25 @@ test("Clinical specifics for key dental procedures match StomX standards and Rus
 	const warranty = STOMX_SPECIALIZED_CONSENT_PRESETS.warranty_policy;
 	assert.ok(warranty);
 	assert.ok(warranty.procedureName.toLowerCase().includes("гаранти"));
+
+	// 11. Warranty passport (StomX #54)
+	const passport = STOMX_SPECIALIZED_CONSENT_PRESETS.warranty_passport;
+	assert.ok(passport);
+	assert.ok(passport.procedureName.toLowerCase().includes("гарантийный паспорт"));
+	assert.ok(passport.patientSpecificRiskFactors.some((r) => r.toLowerCase().includes("гигиен") || r.toLowerCase().includes("бруксизм")));
+	assert.ok(passport.aftercareAndLimits.some((l) => l.toLowerCase().includes("6 месяцев") || l.toLowerCase().includes("осмотр")));
+
+	// 12. Somatic health questionnaire (StomX #53)
+	const health = STOMX_SPECIALIZED_CONSENT_PRESETS.somatic_health_questionnaire;
+	assert.ok(health);
+	assert.ok(health.procedureName.toLowerCase().includes("анкета общего состояния"));
+	assert.ok(health.patientSpecificRiskFactors.some((r) => r.toLowerCase().includes("антикоагулянт") || r.toLowerCase().includes("бисфосфонат") || r.toLowerCase().includes("диабет")));
 });
 
-test("STOMX_LEGAL_CONSENTS_CATALOG contains all 21 templates including SanPiN radiation sheet", () => {
-	assert.equal(STOMX_LEGAL_CONSENTS_CATALOG.length, 21, "Catalog must have exactly 21 templates");
+test("STOMX_LEGAL_CONSENTS_CATALOG contains all 23 templates including SanPiN radiation sheet and warranty passport", () => {
+	assert.equal(STOMX_LEGAL_CONSENTS_CATALOG.length, 23, "Catalog must have exactly 23 templates");
 
-	const expectedStomxIds = [58, 60, 73, 72, 76, 63, 74, 59, 61, 70, 68, 69, 67, 65, 64, 71, 77, 80, 81, 82, 15];
+	const expectedStomxIds = [58, 60, 73, 72, 76, 63, 74, 59, 61, 70, 68, 69, 67, 65, 64, 71, 77, 80, 81, 82, 15, 54, 53];
 	for (const stomxId of expectedStomxIds) {
 		const found = STOMX_LEGAL_CONSENTS_CATALOG.find((t) => t.id === stomxId);
 		assert.ok(found, `Template with StomX ID #${stomxId} must exist in catalog`);
@@ -145,6 +163,48 @@ test("STOMX_LEGAL_CONSENTS_CATALOG contains all 21 templates including SanPiN ra
 	assert.ok(warrantyMeta, "Warranty policy must be retrievable by alias");
 	assert.equal(warrantyMeta?.id, 82);
 	assert.ok(warrantyMeta?.statutoryBasis.includes("2300-1"));
+
+	// StomX #54: Warranty passport
+	const passportMeta = getStomxTemplateMetadata(54);
+	assert.ok(passportMeta, "Template #54 must be retrievable by ID");
+	assert.equal(passportMeta?.id, 54);
+	assert.ok(passportMeta?.name.includes("Гарантийный паспорт"));
+
+	// StomX #53: Health questionnaire
+	const healthMeta = getStomxTemplateMetadata(53);
+	assert.ok(healthMeta, "Template #53 must be retrievable by ID");
+	assert.equal(healthMeta?.id, 53);
+	assert.ok(healthMeta?.name.includes("Анкета общего состояния здоровья"));
+});
+
+test("STOMX_ALL_49_DOCUMENTS_REGISTRY accounts for 100% of authentic StomX templates", () => {
+	const allDocs = getAllStomx49Documents();
+	assert.equal(allDocs.length, 49, "Registry must contain exactly 49 documents from StomX");
+
+	const uniqueIds = new Set(allDocs.map((d) => d.id));
+	assert.equal(uniqueIds.size, 49, "All 49 document IDs must be strictly unique");
+
+	for (const doc of allDocs) {
+		assert.ok(doc.id > 0, `Document ID must be positive: ${doc.id}`);
+		assert.ok(doc.name.trim().length > 3, `Document #${doc.id} must have a non-empty name`);
+		assert.ok(doc.statutoryBasis.trim().length > 3, `Document #${doc.id} must have a statutoryBasis`);
+		assert.ok(doc.targetDenteModule.trim().length > 1, `Document #${doc.id} must map to a DENTE module`);
+	}
+
+	// Verify retrieval by ID and by name
+	const doc54 = getStomxDocumentRegistryItem(54);
+	assert.ok(doc54);
+	assert.equal(doc54?.id, 54);
+	assert.ok(doc54?.name.includes("Гарантийный паспорт"));
+
+	const doc80 = getStomxDocumentRegistryItem("ЕГИСЗ");
+	assert.ok(doc80);
+	assert.equal(doc80?.id, 80);
+
+	const doc81 = getStomxDocumentRegistryItem(81);
+	assert.ok(doc81);
+	assert.equal(doc81?.id, 81);
+	assert.ok(doc81?.name.includes("Отказ от лечения") || doc81?.name.includes("медицинского вмешательства"));
 });
 
 test("resolveStomxVariableToken handles StomX variable tokens with clean fallback", () => {

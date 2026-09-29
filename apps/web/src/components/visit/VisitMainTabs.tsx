@@ -92,7 +92,7 @@ export function VisitMainTabs({
 			>
 				<FileText size={14} className="shrink-0" />
 				<span className="whitespace-nowrap flex-shrink-0 min-w-max">
-					<span className="sm:hidden">043/у</span>
+					<span className="sm:hidden">Карта</span>
 					<span className="hidden sm:inline">ЭМК и Диктовка</span>
 				</span>
 			</button>

@@ -57,7 +57,7 @@ import {
 } from "../consents/consentTemplates";
 import { generateSha256 } from "../consents/consentIntegrityHash";
 
-const CONSENT_KEY_TO_DOCUMENT_KIND: Record<ConsentTemplateKey, string> = {
+const CONSENT_KEY_TO_DOCUMENT_KIND: Partial<Record<ConsentTemplateKey, string>> = {
 	CONSENT_INSPECTION_1051N: "informed_consent",
 	CONSENT_ANESTHESIA: "anesthesia_consent_log",
 	CONSENT_PERSONAL_DATA: "personal_data_processing_consent",
@@ -292,7 +292,7 @@ export function VisitConsentsTab({
 				signedAt: `${initialDate}, 09:10`,
 				method: "paper",
 				doctorName: "Регистратура",
-				notes: "Оригинал подписан при первичном оформлении карты 043/у",
+				notes: "Оригинал подписан при первичном оформлении медицинской карты",
 				integrityHash: generateSha256(`PDN_${patientId}_${initialDate}`),
 			};
 			defaults.CONSENT_INSPECTION_1051N = {
@@ -300,7 +300,7 @@ export function VisitConsentsTab({
 				signedAt: `${initialDate}, 09:15`,
 				method: "paper",
 				doctorName: activeDoctor?.fullName || "Врач-стоматолог",
-				notes: "Оригинал ИДС 1051н подшит в медицинскую карту",
+				notes: "Оригинал согласия на лечение подшит в медицинскую карту",
 				integrityHash: generateSha256(`INSP_${patientId}_${initialDate}`),
 			};
 		}
@@ -369,10 +369,10 @@ export function VisitConsentsTab({
 	}, [activePatient, activeDoctor, dashboard, visitNoteForm?.diagnosis, selectedToothForMenu]);
 
 	// Анализ клинического контекста визита: какие согласия объективно требуются сегодня
-	const requiredFlags = useMemo<Record<ConsentTemplateKey, boolean>>(() => {
+	const requiredFlags = useMemo<Partial<Record<ConsentTemplateKey, boolean>>>(() => {
 		const textContext = `${visitNoteForm?.diagnosis || ""} ${visitNoteForm?.treatmentPlan || ""} ${visitNoteForm?.complaint || ""} ${visitNoteForm?.anamnesis || ""}`.toLowerCase();
 
-		const flags: Record<ConsentTemplateKey, boolean> = {
+		const flags: Partial<Record<ConsentTemplateKey, boolean>> = {
 			CONSENT_INSPECTION_1051N: false,
 			CONSENT_ANESTHESIA: false,
 			CONSENT_THERAPY: false,
@@ -601,7 +601,7 @@ export function VisitConsentsTab({
 							documentOpenedAndChecked: true,
 							recipientSigned: true,
 							clinicRepresentativeSigned: true,
-							note: record.notes || "Подписано на бумаге и подшито в медицинскую карту 043/у",
+							note: record.notes || "Подписано на бумаге и подшито в медицинскую карту",
 						},
 					}),
 				});
@@ -629,7 +629,7 @@ export function VisitConsentsTab({
 				signedAt: nowStr,
 				method: "paper" as const,
 				doctorName: substitutionContext.doctorName || "Врач-стоматолог",
-				notes: "Оригинал подписан на бумаге и подшит в карту 043/у",
+				notes: "Оригинал подписан на бумаге и подшит в медицинскую карту",
 				integrityHash: generateSha256(`${key}_${patientId}_${nowStr}_paper`),
 			};
 			const next = {
@@ -1874,8 +1874,8 @@ export function VisitConsentsTab({
 						onClick={onFastPrint043u}
 						data-testid="btn-visit-consents-print-043u"
 						className="vct-btn vct-btn-secondary"
-						title="Печать полного дневника приёма (Форма 043/у)"
-						aria-label="Печать Формы 043/у"
+						title="Печать полного дневника приёма (медицинская карта)"
+						aria-label="Печать медицинской карты"
 					>
 						<Printer size={13} />
 						<span>Печать дневника</span>

@@ -16,10 +16,17 @@ import {
   CONSENT_PERSONAL_DATA,
   CONSENT_INSPECTION_1051N,
   CONSENT_PEDIATRIC,
+  CONSENT_EGISZ_REFUSAL,
+  CONSENT_TREATMENT_REFUSAL,
+  CONSENT_WARRANTY_PASSPORT,
+  CONSENT_WARRANTY_POLICY,
+  CONSENT_SEDATION,
+  CONSENT_PHOTOPROTOCOL,
+  CONSENT_HEALTH_QUESTIONNAIRE,
 } from './statutoryTemplates';
 
 /**
- * Словарь всех стандартных согласий
+ * Словарь всех стандартных согласий (9 базовых статутных + 7 регламентных StomX)
  */
 export const CONSENT_TEMPLATES: Record<ConsentTemplateKey, ConsentTemplate> = {
 	CONSENT_PERSONAL_DATA,
@@ -31,6 +38,13 @@ export const CONSENT_TEMPLATES: Record<ConsentTemplateKey, ConsentTemplate> = {
 	CONSENT_ORTHOPEDICS,
 	CONSENT_HYGIENE_BLEACHING,
 	CONSENT_PEDIATRIC,
+	CONSENT_EGISZ_REFUSAL,
+	CONSENT_TREATMENT_REFUSAL,
+	CONSENT_WARRANTY_PASSPORT,
+	CONSENT_WARRANTY_POLICY,
+	CONSENT_SEDATION,
+	CONSENT_PHOTOPROTOCOL,
+	CONSENT_HEALTH_QUESTIONNAIRE,
 };
 
 /**
@@ -103,9 +117,31 @@ export function getConsentPackage(key: ConsentPackageKey): ConsentPackageDefinit
 }
 
 /**
- * Получить список всех шаблонов в каталоге
+ * Получить список всех шаблонов в каталоге.
+ * @param includeExtended Если true — возвращает все 16 шаблонов (включая правовые регламенты StomX).
+ * По умолчанию false для строгой обратной совместимости с тестами 9 базовых статутных согласий.
  */
-export function getAllConsentTemplates(): ConsentTemplate[] {
+export function getAllConsentTemplates(includeExtended = false): ConsentTemplate[] {
+	if (!includeExtended) {
+		return [
+			CONSENT_PERSONAL_DATA,
+			CONSENT_INSPECTION_1051N,
+			CONSENT_ANESTHESIA,
+			CONSENT_THERAPY,
+			CONSENT_SURGERY_IMPLANT,
+			CONSENT_ORTHODONTICS,
+			CONSENT_ORTHOPEDICS,
+			CONSENT_HYGIENE_BLEACHING,
+			CONSENT_PEDIATRIC,
+		];
+	}
+	return Object.values(CONSENT_TEMPLATES);
+}
+
+/**
+ * Получить абсолютно все доступные шаблоны (16 шт.)
+ */
+export function getAllAvailableConsentTemplates(): ConsentTemplate[] {
 	return Object.values(CONSENT_TEMPLATES);
 }
 
@@ -136,5 +172,12 @@ export const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
 	CONSENT_PERSONAL_DATA: "Защита персональных данных",
 	CONSENT_INSPECTION_1051N: "Информированное согласие (ИДС)",
 	CONSENT_PEDIATRIC: "Детская стоматология (до 15 лет)",
+	CONSENT_EGISZ_REFUSAL: "Отказ от передачи в ЕГИСЗ",
+	CONSENT_TREATMENT_REFUSAL: "Отказ от лечения (1051н)",
+	CONSENT_WARRANTY_PASSPORT: "Гарантийный паспорт",
+	CONSENT_WARRANTY_POLICY: "Положение о гарантиях",
+	CONSENT_SEDATION: "Седация (ЗАКС / в/в)",
+	CONSENT_PHOTOPROTOCOL: "Фотопротокол (152-ФЗ)",
+	CONSENT_HEALTH_QUESTIONNAIRE: "Анкета здоровья (анамнез)",
 };
 

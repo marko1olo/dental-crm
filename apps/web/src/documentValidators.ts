@@ -695,7 +695,7 @@ export function validateTaxDeductionApplication(
 		(taxApplicationForm === "knd_1151156" &&
 		normalizedInn &&
 		normalizedInn.length !== 12
-			? "Для КНД 1151156 ИНН физического лица должен быть 12-значным. Если ИНН нет, оставьте поле пустым и заполните документ заявителя."
+			? "Для справки на налоговый вычет ИНН физического лица должен быть 12-значным. Если ИНН нет, оставьте поле пустым и заполните документ заявителя."
 			: null) ??
 		(isDateInputValue(taxApplicationTaxpayerBirthDate)
 			? null

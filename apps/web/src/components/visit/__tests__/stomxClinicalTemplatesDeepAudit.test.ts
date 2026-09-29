@@ -394,7 +394,7 @@ describe("StomX Clinical Templates & Protocols Inquisitor Audit", () => {
 				}),
 			);
 
-			assert.ok(html.includes("Клинические протоколы StomX (448 шаблонов 043/у)"));
+			assert.ok(html.includes("Клинические протоколы StomX (448 протоколов)"));
 			assert.ok(html.includes("Все протоколы (448)"));
 			assert.ok(html.includes("Терапия"));
 			assert.ok(html.includes("Ортопедия"));

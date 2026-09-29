@@ -46,6 +46,7 @@ describe("VisitServiceBillingWidget — Chairside Billing & Inline Price Editing
 			createElement(VisitServiceBillingWidget, {
 				doctorName: "Д-р Иванов А.С.",
 				patientName: "Смирнова Е.В.",
+				initialServices: DEFAULT_CHAIRSIDE_SERVICES,
 			})
 		);
 
@@ -55,6 +56,19 @@ describe("VisitServiceBillingWidget — Chairside Billing & Inline Price Editing
 		assert.ok(html.includes("Восстановление зуба пломбой"), "Must render second service");
 		assert.ok(html.includes("A25.07.001"), "Must render 804n code");
 		assert.ok(html.includes("зуб 36"), "Must render tooth code");
+	});
+
+	it("renders honest empty state in production when no services are added to visit", () => {
+		const html = renderToStaticMarkup(
+			createElement(VisitServiceBillingWidget, {
+				doctorName: "Д-р Иванов А.С.",
+				patientName: "Смирнова Е.В.",
+				initialServices: [],
+			})
+		);
+
+		assert.ok(html.includes("Услуги приёма ещё не добавлены"), "Must render empty message");
+		assert.ok(html.includes("Выбрать услугу из прейскуранта"), "Must render price list button");
 	});
 
 	it("renders inline step buttons (+500 ₽ and -500 ₽) for each service", () => {

@@ -548,7 +548,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 
 	if (!isOpen) return null;
 
-	const allTemplates = getAllConsentTemplates();
+	const allTemplates = getAllConsentTemplates(true);
 
 	const modalContent = (
 		<div

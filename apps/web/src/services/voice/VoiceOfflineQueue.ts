@@ -110,7 +110,7 @@ export function formatRestoredDictationsBadge(count: number): string {
 		phrase = "надиктованных сообщений";
 	}
 
-	return `📡 Восстановлено ${safeCount} ${phrase} после обрыва сети`;
+	return `Восстановлено ${safeCount} ${phrase} после обрыва сети`;
 }
 
 interface StorageDriver {

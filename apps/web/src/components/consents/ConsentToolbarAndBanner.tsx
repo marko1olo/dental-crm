@@ -192,8 +192,8 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 			<div className="consent-meta-grid">
 				<div className="consent-meta-item min-w-0">
 					<span className="consent-meta-label">Пациент</span>
-					<span className="consent-meta-value truncate" title={substitutionContext.patientName || ""}>
-						{substitutionContext.patientName}
+					<span className="consent-meta-value truncate" title={substitutionContext.patientName || "Бланк для ручного заполнения («________»)"}>
+						{substitutionContext.patientName || <em style={{ color: "var(--muted, #64748b)" }}>Бланк («________»)</em>}
 					</span>
 					{substitutionContext.birthDate && (
 						<span className="consent-meta-label truncate">Д.Р.: {substitutionContext.birthDate}</span>
@@ -202,22 +202,22 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 
 				<div className="consent-meta-item min-w-0">
 					<span className="consent-meta-label">Лечащий врач</span>
-					<span className="consent-meta-value truncate" title={substitutionContext.doctorName || ""}>
-						{substitutionContext.doctorName}
+					<span className="consent-meta-value truncate" title={substitutionContext.doctorName || "Врач не назначен"}>
+						{substitutionContext.doctorName || <em style={{ color: "var(--muted, #64748b)" }}>Не назначен</em>}
 					</span>
 				</div>
 
 				<div className="consent-meta-item min-w-0">
 					<span className="consent-meta-label">Диагноз (МКБ-10)</span>
-					<span className="consent-meta-value truncate" title={substitutionContext.diagnosisIcd || ""}>
-						{substitutionContext.diagnosisIcd}
+					<span className="consent-meta-value truncate" title={substitutionContext.diagnosisIcd || "Не указан"}>
+						{substitutionContext.diagnosisIcd || <em style={{ color: "var(--muted, #64748b)" }}>Не указан</em>}
 					</span>
 				</div>
 
 				<div className="consent-meta-item min-w-0">
 					<span className="consent-meta-label">Зубы / Зона</span>
-					<span className="consent-meta-value truncate" title={substitutionContext.toothNumbers || ""}>
-						{substitutionContext.toothNumbers}
+					<span className="consent-meta-value truncate" title={substitutionContext.toothNumbers || "Полость рта"}>
+						{substitutionContext.toothNumbers || <span style={{ color: "var(--muted, #64748b)" }}>Полость рта</span>}
 					</span>
 					{substitutionContext.toothNumbers && (
 						<div className="consent-teeth-badges">

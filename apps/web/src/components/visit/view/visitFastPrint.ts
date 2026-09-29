@@ -214,5 +214,5 @@ export function executeFastPrintInformedConsent({
 			}, 1000);
 		}, 150);
 	}
-	showToast(`ИДС 1051н отправлено на печать (${watermarkText})`, "success", 4000);
+	showToast(`Согласие на лечение отправлено на печать (${watermarkText})`, "success", 4000);
 }

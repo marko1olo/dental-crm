@@ -2153,8 +2153,8 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				showToast(
 					detail ??
 						(linkRes.status === 400
-							? `Лоток ${trayBarcode} не зарегистрирован в электронном журнале (бумажный журнал СанПиН). Лоток зафиксирован в 043/у без блокировки подписи.`
-							: `Штрихкод лотка: ${requestFailureCause(linkRes.status)}. Подпись 043/у продолжена.`),
+							? `Лоток ${trayBarcode} не зарегистрирован в электронном журнале (бумажный журнал учёта). Лоток зафиксирован в медицинской карте без блокировки подписи.`
+							: `Штрихкод лотка: ${requestFailureCause(linkRes.status)}. Подписание карты продолжено.`),
 					"warning",
 					8000,
 				);

@@ -61,7 +61,7 @@ th { background: #f8fafc; font-weight: 700; padding: 10px 12px; border-bottom: 2
 <body>
 <div class="header">
   <h1>СМЕТА ОКАЗАННЫХ СТОМАТОЛОГИЧЕСКИХ УСЛУГ</h1>
-  <div class="clinic">${clinicLegalName} • Номенклатура Минздрава РФ № 804н</div>
+  <div class="clinic">${clinicLegalName} • Прейскурант услуг</div>
 </div>
 <div class="patient">
   <div><strong>Пациент:</strong> ${patientName}</div>
@@ -72,7 +72,7 @@ th { background: #f8fafc; font-weight: 700; padding: 10px 12px; border-bottom: 2
   <thead>
     <tr>
       <th>№</th>
-      <th>Код 804н</th>
+      <th>Код услуги</th>
       <th>Наименование услуги</th>
       <th style="text-align: center;">Кол-во</th>
       <th style="text-align: right;">Цена</th>

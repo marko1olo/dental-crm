@@ -470,7 +470,7 @@ export function VoiceDictationAssistantModal({
 													</span>
 													{cmd.soapSection && (
 														<span className="dnt-voice-badge dnt-voice-badge--soap">
-															043/у: {cmd.soapSection}
+															Дневник: {cmd.soapSection}
 														</span>
 													)}
 													{cmd.category === "anesthesia" && (
