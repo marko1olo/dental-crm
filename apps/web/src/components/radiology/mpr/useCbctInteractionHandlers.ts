@@ -34,6 +34,11 @@ import {
 	worldMmToSlicePx,
 	worldMmToVoxel,
 } from "../cbctMprMath";
+import {
+	DEFAULT_OBLIQUE_ROTATION,
+	computeObliquePlaneBasis,
+} from "../cbctObliqueMatrixMath";
+import { calculateWheelSliceDelta } from "../cbctObliqueMath";
 import type {
 	DentalArchCurve,
 	PanoramicReconstructionResult,
@@ -431,9 +436,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		}
 
 		if (e.shiftKey || activeTool === "rotate") {
-			const vox = worldMmToVoxel(crosshairMm, volume);
-			const zPx = volume.dimensions.depth - 1 - vox.z;
-			const centerPx = plane === "axial" ? { x: vox.x, y: vox.y } : plane === "coronal" ? { x: vox.x, y: zPx } : { x: vox.y, y: zPx };
+			const centerPx = worldMmToSlicePx(crosshairMm, plane, volume);
 			const rotDeg = plane === "axial" ? obliqueAngles.axialAngleDeg : plane === "coronal" ? obliqueAngles.coronalTiltDeg : obliqueAngles.sagittalTiltDeg;
 			setIsShiftRotating({ plane, centerPx, startPointerPx: pointerPx, initialAngleDeg: rotDeg });
 			return;
@@ -512,9 +515,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		}
 
 		// Crosshair / rotation handle hit tests
-		const vox = worldMmToVoxel(crosshairMm, volume);
-		const zPx = volume.dimensions.depth - 1 - vox.z;
-		const centerPx = plane === "axial" ? { x: vox.x, y: vox.y } : plane === "coronal" ? { x: vox.x, y: zPx } : { x: vox.y, y: zPx };
+		const centerPx = worldMmToSlicePx(crosshairMm, plane, volume);
 		const rotDeg = plane === "axial" ? obliqueAngles.axialAngleDeg : plane === "coronal" ? obliqueAngles.coronalTiltDeg : obliqueAngles.sagittalTiltDeg;
 		const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
 		const centerScreen = slicePxToScreenPx(centerPx, currentTransform);
@@ -610,9 +611,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 
 		// Hover Detection
 		if (!isShiftRotating && !activeRotationHandle && !isDraggingCrosshair && isDraggingNerveNode === null && !draggingMeasurementHandle) {
-			const vox = worldMmToVoxel(crosshairMm, volume);
-			const zPx = volume.dimensions.depth - 1 - vox.z;
-			const centerPx = plane === "axial" ? { x: vox.x, y: vox.y } : plane === "coronal" ? { x: vox.x, y: zPx } : { x: vox.y, y: zPx };
+			const centerPx = worldMmToSlicePx(crosshairMm, plane, volume);
 			const rotDeg = plane === "axial" ? obliqueAngles.axialAngleDeg : plane === "coronal" ? obliqueAngles.coronalTiltDeg : obliqueAngles.sagittalTiltDeg;
 			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
 			const centerScreen = slicePxToScreenPx(centerPx, currentTransform);
@@ -687,9 +686,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		}
 		const canvas = e.currentTarget;
 		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
-		const vox = worldMmToVoxel(crosshairMm, volume);
-		const zPx = volume.dimensions.depth - 1 - vox.z;
-		const centerPx = plane === "axial" ? { x: vox.x, y: vox.y } : plane === "coronal" ? { x: vox.x, y: zPx } : { x: vox.y, y: zPx };
+		const centerPx = worldMmToSlicePx(crosshairMm, plane, volume);
 		if (hitTestCrosshairCenter({ x, y }, centerPx, 18)) {
 			setObliqueAngles((prev) => resetPlaneObliqueAngle(prev, plane));
 			return;
@@ -726,7 +723,9 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			return;
 		}
 		const step = e.shiftKey ? 5 : 1;
-		const delta = (e.deltaY > 0 ? -1 : 1) * step;
+		const delta = calculateWheelSliceDelta(e.deltaY, step);
+		if (delta === 0) return;
+
 		if (viewport === "cross_section" || viewport === "panoramic") {
 			if (crossSections.length > 0) {
 				setActiveCrossSectionIdx((prev) => {
@@ -746,22 +745,105 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		}
 		if (volume) {
 			setCrosshairMm((prev) => {
-				let nx = prev.x;
-				let ny = prev.y;
-				let nz = prev.z;
-				if (viewport === "axial") {
-					nz += delta * volume.spacingMm.z;
-				} else if (viewport === "coronal") {
-					ny += delta * volume.spacingMm.y;
-				} else if (viewport === "sagittal") {
-					nx += delta * volume.spacingMm.x;
-				} else {
-					return prev;
-				}
+				const isMpr = viewport === "axial" || viewport === "coronal" || viewport === "sagittal";
+				if (!isMpr) return prev;
+
+				// Oblique slice normal calculation (Standards: Romexis 6.x, Ez3D-i)
+				// Computes rotated 3D normal vector of the active viewport plane
+				const basis = computeObliquePlaneBasis(viewport, prev, obliqueAngles ?? DEFAULT_OBLIQUE_ROTATION);
+				const normal = basis.normal;
+
+				// Physical step in mm along normal: spacing along primary axis
+				const baseSpacingMm = viewport === "axial"
+					? volume.spacingMm.z
+					: viewport === "coronal"
+					? volume.spacingMm.y
+					: volume.spacingMm.x;
+				const stepMm = baseSpacingMm * delta;
+
+				const nx = prev.x + normal.x * stepMm;
+				const ny = prev.y + normal.y * stepMm;
+				const nz = prev.z + normal.z * stepMm;
+
 				return clampCoordinateToVolume({ x: nx, y: ny, z: nz }, volume);
 			});
 		}
-	}, [activeTool, crossSections, volume, setTransforms, setActiveCrossSectionIdx, setCrosshairMm]);
+	}, [activeTool, crossSections, volume, obliqueAngles, setTransforms, setActiveCrossSectionIdx, setCrosshairMm]);
+
+	// Global mouseup window listener to prevent stuck cursor when dragging outside canvas
+	useEffect(() => {
+		const isAnyDragging =
+			isDraggingCrosshair !== null ||
+			activeRotationHandle !== null ||
+			isShiftRotating !== null ||
+			isPanning !== null ||
+			isDraggingWL !== null ||
+			isDraggingPano ||
+			isDraggingArchAnchor !== null ||
+			draggingMeasurementHandle !== null ||
+			dragImplantPart !== null;
+
+		if (!isAnyDragging) return;
+
+		const handleGlobalMouseUp = () => {
+			handleCanvasMouseUp();
+			handlePanoMouseUp();
+			handleCrossSectionMouseUp();
+		};
+
+		window.addEventListener("mouseup", handleGlobalMouseUp);
+		return () => {
+			window.removeEventListener("mouseup", handleGlobalMouseUp);
+		};
+	}, [
+		isDraggingCrosshair,
+		activeRotationHandle,
+		isShiftRotating,
+		isPanning,
+		isDraggingWL,
+		isDraggingPano,
+		isDraggingArchAnchor,
+		draggingMeasurementHandle,
+		dragImplantPart,
+		handleCanvasMouseUp,
+		handlePanoMouseUp,
+		handleCrossSectionMouseUp,
+	]);
+
+	// Native non-passive wheel listeners on canvas refs to prevent parasitic page scroll behind modal
+	useEffect(() => {
+		const canvases = [
+			axialCanvasRef.current,
+			coronalCanvasRef.current,
+			sagittalCanvasRef.current,
+			panoCanvasRef.current,
+			crossSectionCanvasRef.current,
+		];
+
+		const onNativeWheel = (e: WheelEvent) => {
+			e.preventDefault();
+		};
+
+		for (const canvas of canvases) {
+			if (canvas) {
+				canvas.addEventListener("wheel", onNativeWheel, { passive: false });
+			}
+		}
+
+		return () => {
+			for (const canvas of canvases) {
+				if (canvas) {
+					canvas.removeEventListener("wheel", onNativeWheel);
+				}
+			}
+		};
+	}, [
+		axialCanvasRef,
+		coronalCanvasRef,
+		sagittalCanvasRef,
+		panoCanvasRef,
+		crossSectionCanvasRef,
+	]);
 
 	return {
 		activeRotationHandle,

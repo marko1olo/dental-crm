@@ -490,6 +490,10 @@ export class CbctVolumeGlContext {
 				gl.deleteProgram(this.program);
 				this.program = null;
 			}
+			const loseCtx = gl.getExtension ? gl.getExtension("WEBGL_lose_context") : null;
+			if (loseCtx && typeof (loseCtx as unknown as { loseContext?: () => void }).loseContext === "function") {
+				(loseCtx as unknown as { loseContext: () => void }).loseContext();
+			}
 		}
 
 		this.gl = null;

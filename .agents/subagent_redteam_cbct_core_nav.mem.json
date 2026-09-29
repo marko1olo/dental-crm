@@ -1,0 +1,27 @@
+{
+  "role": "Subagent Red Team Inquisitor: Base CBCT Core Navigation, Oblique Axis Rotation & WebGL2 GPU Rendering",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md constitutional routine",
+    "Initialized memory checkpoint",
+    "Audit and fix types in apps/web/src/components/radiology/__tests__/cbctWebGlEngine.test.ts (synthetic volume fields minHU, maxHU, defaultWindowWidth, defaultWindowLevel, physicalSizeMm, DEFAULT_OBLIQUE_ROTATION)",
+    "Audit and fix hardware shader 1-voxel black border cutoff bug in apps/web/src/components/radiology/mpr/webgl/cbctMprShaders.ts with half-voxel margin eps",
+    "Audit and fix VRAM context leak in apps/web/src/components/radiology/mpr/webgl/CbctVolumeGlContext.ts by invoking WEBGL_lose_context on dispose",
+    "Audit and fix coronal/sagittal canvas height calculation in apps/web/src/components/radiology/mpr/useCbctSliceRenderer.ts for anisotropic volumes",
+    "Audit and fix mouse wheel slice delta inversion, oblique 3D normal vector slice stepping, outside-canvas mouseup drag cleanup, and passive page-scroll prevention in apps/web/src/components/radiology/mpr/useCbctInteractionHandlers.ts",
+    "Audit and fix type narrowing in apps/web/src/components/radiology/__tests__/cbctHardwareGpuTorture.test.ts",
+    "Executed 7 radiology unit test suites: 160 tests PASS (0 fail, 0 skipped)",
+    "Run typecheck: npm run typecheck -w @dental/web -> Exit code 0",
+    "Run check:encoding -> 6295 files checked, 0 errors",
+    "Per-file git add strictly scoped to assigned files and verbatim reporting back to parent orchestrator"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "DEFECT: Shader boundary black ring artifact at uvw > 1.0 due to rasterization rounding. Fixed with half-voxel eps clamp.",
+    "DEFECT: Inverted wheel slice scrolling in useCbctInteractionHandlers. Fixed via calculateWheelSliceDelta.",
+    "DEFECT: Wheel slice scrolling ignored oblique plane tilt and moved along raw orthogonal Z. Fixed via basis.normal * stepMm projection.",
+    "DEFECT: Mouse drag sticking on cursor when mouse released outside canvas element. Fixed with window.addEventListener('mouseup') listener.",
+    "DEFECT: Browser page scrolled while wheel-scrubbing CBCT slices. Fixed by attaching non-passive wheel event listeners with preventDefault().",
+    "DEFECT: Coronal/Sagittal viewport overlay canvas height unscaled for anisotropic volumes. Fixed using Math.round((depth * spZ) / spX_or_Y)."
+  ]
+}

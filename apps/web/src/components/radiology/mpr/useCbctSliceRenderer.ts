@@ -639,8 +639,10 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 			const canvas = coronalOverlayCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
+				const spX = volume.spacingMm.x || 0.2;
+				const spZ = volume.spacingMm.z || 0.2;
 				const w = volume.dimensions.width;
-				const h = volume.dimensions.depth;
+				const h = Math.max(1, Math.round((volume.dimensions.depth * spZ) / spX));
 				if (canvas.width !== w || canvas.height !== h) {
 					canvas.width = w;
 					canvas.height = h;
@@ -658,8 +660,10 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 			const canvas = sagittalOverlayCanvasRef.current;
 			const ctx = canvas.getContext("2d");
 			if (ctx) {
+				const spY = volume.spacingMm.y || 0.2;
+				const spZ = volume.spacingMm.z || 0.2;
 				const w = volume.dimensions.height;
-				const h = volume.dimensions.depth;
+				const h = Math.max(1, Math.round((volume.dimensions.depth * spZ) / spY));
 				if (canvas.width !== w || canvas.height !== h) {
 					canvas.width = w;
 					canvas.height = h;

@@ -58,12 +58,14 @@ uniform bool u_trilinear;       // true = sub-voxel trilinear, false = nearest n
  * Handles volume boundaries cleanly by returning -1000 HU (ambient air).
  */
 float sampleHUTrilinear(vec3 uvw) {
-    if (uvw.x < 0.0 || uvw.x > 1.0 || uvw.y < 0.0 || uvw.y > 1.0 || uvw.z < 0.0 || uvw.z > 1.0) {
+    float eps = 0.5 / max(1.0, min(u_volumeDim.x, min(u_volumeDim.y, u_volumeDim.z)));
+    if (uvw.x < -eps || uvw.x > 1.0 + eps || uvw.y < -eps || uvw.y > 1.0 + eps || uvw.z < -eps || uvw.z > 1.0 + eps) {
         return -1000.0;
     }
 
-    vec3 maxCoord = u_volumeDim - 1.0;
-    vec3 voxelPos = uvw * maxCoord;
+    vec3 maxCoord = max(vec3(1.0), u_volumeDim - 1.0);
+    vec3 clampedUvw = clamp(uvw, vec3(0.0), vec3(1.0));
+    vec3 voxelPos = clampedUvw * maxCoord;
     vec3 i = floor(voxelPos);
     vec3 f = voxelPos - i;
 
@@ -94,11 +96,13 @@ float sampleHUTrilinear(vec3 uvw) {
  * Samples nearest neighbor HU value for fast preview scrubbing.
  */
 float sampleHUNearest(vec3 uvw) {
-    if (uvw.x < 0.0 || uvw.x > 1.0 || uvw.y < 0.0 || uvw.y > 1.0 || uvw.z < 0.0 || uvw.z > 1.0) {
+    float eps = 0.5 / max(1.0, min(u_volumeDim.x, min(u_volumeDim.y, u_volumeDim.z)));
+    if (uvw.x < -eps || uvw.x > 1.0 + eps || uvw.y < -eps || uvw.y > 1.0 + eps || uvw.z < -eps || uvw.z > 1.0 + eps) {
         return -1000.0;
     }
-    ivec3 vox = ivec3(round(uvw * (u_volumeDim - 1.0)));
-    vox = clamp(vox, ivec3(0), ivec3(u_volumeDim - 1.0));
+    vec3 maxCoord = max(vec3(1.0), u_volumeDim - 1.0);
+    ivec3 vox = ivec3(round(clamp(uvw, vec3(0.0), vec3(1.0)) * maxCoord));
+    vox = clamp(vox, ivec3(0), ivec3(maxCoord));
     return float(texelFetch(u_volume, vox, 0).r);
 }
 
