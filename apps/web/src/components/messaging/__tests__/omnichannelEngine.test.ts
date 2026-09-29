@@ -9,6 +9,7 @@ import {
 	formatCurrencyRu,
 	formatKopecksRu,
 	formatRussianPhone,
+	maskRussianPhone,
 	generateAppointmentConfirmationText,
 	generateNpsSurveyText,
 	generateSbpPaymentShareText,
@@ -206,6 +207,13 @@ describe("omnichannelEngine — Pure Logic, NPS Math & Template Engines", () => 
 			assert.equal(formatRussianPhone("9031112233"), "+7 (903) 111-22-33");
 		});
 
+		it("masks Russian phone numbers for 152-ФЗ compliance", () => {
+			assert.equal(maskRussianPhone("+79164501234"), "+7 (916) ***-**-34");
+			assert.equal(maskRussianPhone("89257809911"), "+7 (925) ***-**-11");
+			assert.equal(maskRussianPhone("9031112233"), "+7 (903) ***-**-33");
+			assert.equal(maskRussianPhone("123"), "+7 (***) ***-**-**");
+		});
+
 		it("formats currency in rubles and kopecks", () => {
 			assert.ok(formatCurrencyRu(14500).includes("14"));
 			assert.ok(formatKopecksRu(1450000).includes("14"));
@@ -241,4 +249,66 @@ describe("omnichannelEngine — Pure Logic, NPS Math & Template Engines", () => 
 			assert.ok(hasPromoter, "Includes promoter review");
 		});
 	});
+
+	describe("6. Mandate 8d & 8z Zero-Emoji Law: Patient-Facing Communications Invariant", () => {
+		const EMOJI_REGEX =
+			/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]|\uD83E[\uDD00-\uDDFF]/;
+		const testContact = DEFAULT_CONTACTS[0]!;
+
+		it("ensures all dynamic generators produce 100% emoji-free text", () => {
+			const reminder = generateVisitReminderText(testContact, "Клиника DENTE", "Арбат 24");
+			assert.ok(!EMOJI_REGEX.test(reminder), "Reminder text must not contain emojis");
+
+			const conf = generateAppointmentConfirmationText(testContact, "Клиника DENTE");
+			assert.ok(!EMOJI_REGEX.test(conf), "Confirmation text must not contain emojis");
+
+			const plan = generateTreatmentPlanText(testContact, "Клиника DENTE");
+			assert.ok(!EMOJI_REGEX.test(plan), "Treatment plan text must not contain emojis");
+
+			const nps = generateNpsSurveyText(testContact, "Клиника DENTE");
+			assert.ok(!EMOJI_REGEX.test(nps), "NPS survey text must not contain emojis");
+
+			const sbp = generateSbpPaymentShareText({
+				patientName: "Волкова М.С.",
+				sumRub: 25000,
+				orderId: "ORD-99",
+				nspkUrl: "https://qr.nspk.ru/SBP-ORD-99",
+				clinicName: "DENTE",
+			});
+			assert.ok(!EMOJI_REGEX.test(sbp), "SBP payment text must not contain emojis");
+		});
+
+		it("ensures all seed templates and action buttons are 100% emoji-free", () => {
+			for (const tpl of DEFAULT_TEMPLATES) {
+				assert.ok(
+					!EMOJI_REGEX.test(tpl.templateText),
+					`Template ${tpl.id} text must not contain emojis`,
+				);
+				for (const btn of tpl.interactiveButtons ?? []) {
+					assert.ok(
+						!EMOJI_REGEX.test(btn.title),
+						`Template ${tpl.id} button ${btn.id} title must not contain emojis`,
+					);
+				}
+			}
+		});
+
+		it("ensures all sample chat messages are 100% emoji-free", () => {
+			for (const [patientId, messages] of Object.entries(DEFAULT_MESSAGES_BY_PATIENT)) {
+				for (const msg of messages) {
+					assert.ok(
+						!EMOJI_REGEX.test(msg.body),
+						`Message ${msg.id} for ${patientId} must not contain emojis`,
+					);
+					for (const btn of msg.interactivePayload?.buttons ?? []) {
+						assert.ok(
+							!EMOJI_REGEX.test(btn.title),
+							`Message ${msg.id} button ${btn.id} must not contain emojis`,
+						);
+					}
+				}
+			}
+		});
+	});
 });
+

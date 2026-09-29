@@ -150,6 +150,19 @@ export function formatRussianPhone(phone: string): string {
 }
 
 /**
+ * Маскирует номер телефона для соблюдения 152-ФЗ РФ (скрывает средние цифры):
+ * Пример: "+7 (916) 450-12-34" -> "+7 (916) ***-**-34"
+ */
+export function maskRussianPhone(phone: string): string {
+	const digits = phone.replace(/\D/g, "");
+	if (digits.length < 10) return "+7 (***) ***-**-**";
+	const main = digits.slice(-10);
+	const code = main.slice(0, 3);
+	const last2 = main.slice(-2);
+	return `+7 (${code}) ***-**-${last2}`;
+}
+
+/**
  * Форматирует сумму в рублях с копейками.
  */
 export function formatCurrencyRu(sumRub: number): string {
@@ -183,7 +196,7 @@ export function generateVisitReminderText(
 	const cabStr = appt?.cabinet ? ` (кабинет ${appt.cabinet})` : "";
 	const reasonStr = appt?.reason ? `\nПовод: ${appt.reason}` : "";
 
-	return `Здравствуйте, ${contact.fullName}!\nНапоминаем о вашем приеме в клинике ${clinicName}:\n📅 ${dateStr}${cabStr}\n👨‍⚕️ Врач: ${docStr}${reasonStr}\n📍 Адрес: ${clinicAddress}\n\nПожалуйста, подтвердите ваш визит или свяжитесь с нами, если планы изменились.`;
+	return `Здравствуйте, ${contact.fullName}!\nНапоминаем о вашем приеме в клинике ${clinicName}:\nДата и время: ${dateStr}${cabStr}\nВрач: ${docStr}${reasonStr}\nАдрес: ${clinicAddress}\n\nПожалуйста, подтвердите ваш визит или свяжитесь с нами, если планы изменились.`;
 }
 
 export function generateAppointmentConfirmationText(
@@ -194,7 +207,7 @@ export function generateAppointmentConfirmationText(
 	const dateStr = appt ? `${appt.date} в ${appt.time}` : "на запланированное время";
 	const docStr = appt?.doctorName || "вашему лечащему врачу";
 
-	return `Здравствуйте, ${contact.fullName}!\nВы успешно записаны на прием в ${clinicName}.\n🗓 Дата и время: ${dateStr}\n👨‍⚕️ Доктор: ${docStr}\n\nЖдем вас! Для отмены или переноса просто напишите ответное сообщение в этот чат.`;
+	return `Здравствуйте, ${contact.fullName}!\nВы успешно записаны на прием в ${clinicName}.\nДата и время: ${dateStr}\nВрач: ${docStr}\n\nЖдем вас! Для отмены или переноса просто напишите ответное сообщение в этот чат.`;
 }
 
 export function generateTreatmentPlanText(
@@ -206,7 +219,7 @@ export function generateTreatmentPlanText(
 	const teeth = plan?.teethFdi && plan.teethFdi.length > 0 ? ` (зубы ${plan.teethFdi.join(", ")})` : "";
 	const sum = plan ? formatCurrencyRu(plan.totalRub) : "по смете";
 
-	return `Здравствуйте, ${contact.fullName}!\nВаш лечащий врач подготовил электронный план лечения:\n🦷 ${planTitle}${teeth}\n💰 Итоговая сумма этапов: ${sum}\n\nС планом и этапами можно ознакомиться в приложенном файле. Если у вас возникнут вопросы, наш координатор лечения на связи!`;
+	return `Здравствуйте, ${contact.fullName}!\nВаш лечащий врач подготовил электронный план лечения:\nПлан: ${planTitle}${teeth}\nИтоговая сумма этапов: ${sum}\n\nС планом и этапами можно ознакомиться в приложенном файле. Если у вас возникнут вопросы, наш координатор лечения на связи!`;
 }
 
 export function generateNpsSurveyText(
@@ -224,7 +237,7 @@ export function generateSbpPaymentShareText(params: {
 	nspkUrl: string;
 	clinicName: string;
 }): string {
-	return `Здравствуйте, ${params.patientName}!\nСчет на оплату медицинских услуг в клинике ${params.clinicName}:\n📋 Заказ №${params.orderId}\n💵 Сумма к оплате: ${formatCurrencyRu(params.sumRub)}\n⚡ Оплата через СБП без комиссии по ссылке:\n${params.nspkUrl}\n\nПосле оплаты чек будет автоматически отправлен вам в этот чат.`;
+	return `Здравствуйте, ${params.patientName}!\nСчет на оплату медицинских услуг в клинике ${params.clinicName}:\nЗаказ №${params.orderId}\nСумма к оплате: ${formatCurrencyRu(params.sumRub)}\nОплата через СБП без комиссии по ссылке:\n${params.nspkUrl}\n\nПосле оплаты чек будет автоматически отправлен вам в этот чат.`;
 }
 
 /**
@@ -242,10 +255,10 @@ export const DEFAULT_TEMPLATES: readonly OmnichannelTemplate[] = [
 		title: "Напоминание о приеме (за 24ч)",
 		description: "Отправка пациенту точной даты, времени, кабинета, врача и рекомендаций по подготовке",
 		templateText:
-			"Здравствуйте, {patientName}!\nНапоминаем о вашем визите в клинику {clinicName}:\n📅 {appointmentDate} в {appointmentTime} (кабинет {cabinet})\n👨‍⚕️ Врач: {doctorName}\n📍 Адрес: {clinicAddress}\n\nПодтвердите, пожалуйста, визит нажатием кнопки ниже.",
+			"Здравствуйте, {patientName}!\nНапоминаем о вашем визите в клинику {clinicName}:\nДата и время: {appointmentDate} в {appointmentTime} (кабинет {cabinet})\nВрач: {doctorName}\nАдрес: {clinicAddress}\n\nПодтвердите, пожалуйста, визит нажатием кнопки ниже.",
 		interactiveButtons: [
-			{ id: "btn-confirm", title: "✅ Подтверждаю", action: "confirm_visit", variant: "primary" },
-			{ id: "btn-reschedule", title: "🔄 Перенести", action: "request_reschedule", variant: "secondary" },
+			{ id: "btn-confirm", title: "Подтверждаю", action: "confirm_visit", variant: "primary" },
+			{ id: "btn-reschedule", title: "Перенести", action: "request_reschedule", variant: "secondary" },
 		],
 		variables: [
 			"{patientName}",
@@ -265,9 +278,9 @@ export const DEFAULT_TEMPLATES: readonly OmnichannelTemplate[] = [
 		title: "Подтверждение успешной брони",
 		description: "Сообщение сразу после создания визита в расписании или онлайн-записи",
 		templateText:
-			"Здравствуйте, {patientName}!\nВы успешно записаны на прием в {clinicName}.\n🗓 Дата и время: {appointmentDate} в {appointmentTime}\n👨‍⚕️ Доктор: {doctorName}\n📍 Адрес: {clinicAddress}\n\nЖдем вас! Для отмены или переноса просто напишите в этот чат.",
+			"Здравствуйте, {patientName}!\nВы успешно записаны на прием в {clinicName}.\nДата и время: {appointmentDate} в {appointmentTime}\nВрач: {doctorName}\nАдрес: {clinicAddress}\n\nЖдем вас! Для отмены или переноса просто напишите в этот чат.",
 		interactiveButtons: [
-			{ id: "btn-map", title: "📍 Маршрут на карте", action: "open_map", variant: "secondary" },
+			{ id: "btn-map", title: "Маршрут на карте", action: "open_map", variant: "secondary" },
 		],
 		variables: [
 			"{patientName}",
@@ -286,9 +299,9 @@ export const DEFAULT_TEMPLATES: readonly OmnichannelTemplate[] = [
 		title: "Электронный план лечения",
 		description: "Отправка согласованной сметы, формулы зубов FDI и ссылки на PDF",
 		templateText:
-			"Здравствуйте, {patientName}!\nВаш лечащий врач подготовил электронный план лечения:\n🦷 Смета: {treatmentPlanTitle}\n💰 Сумма к оплате: {treatmentSum}\n\nОзнакомьтесь с этапами в прикрепленном документе. Координатор лечения на связи для согласования времени визитов.",
+			"Здравствуйте, {patientName}!\nВаш лечащий врач подготовил электронный план лечения:\nСмета: {treatmentPlanTitle}\nСумма к оплате: {treatmentSum}\n\nОзнакомьтесь с этапами в прикрепленном документе. Координатор лечения на связи для согласования времени визитов.",
 		interactiveButtons: [
-			{ id: "btn-pay-deposit", title: "💳 Внести аванс СБП", action: "pay_sbp", variant: "primary" },
+			{ id: "btn-pay-deposit", title: "Внести аванс СБП", action: "pay_sbp", variant: "primary" },
 		],
 		variables: [
 			"{patientName}",
@@ -306,8 +319,8 @@ export const DEFAULT_TEMPLATES: readonly OmnichannelTemplate[] = [
 		templateText:
 			"Здравствуйте, {patientName}!\nБлагодарим за визит в {clinicName}.\n\nОцените, пожалуйста, качество приема у доктора ({doctorName}) по шкале от 1 до 10, где 10 — отлично, а 1 — крайне плохо.\n\nПросто отправьте цифру в ответном сообщении!",
 		interactiveButtons: [
-			{ id: "btn-nps-10", title: "⭐⭐⭐⭐⭐ 10/10", action: "score_10", variant: "primary" },
-			{ id: "btn-nps-8", title: "⭐⭐⭐⭐ 8/10", action: "score_8", variant: "secondary" },
+			{ id: "btn-nps-10", title: "10 из 10", action: "score_10", variant: "primary" },
+			{ id: "btn-nps-8", title: "8 из 10", action: "score_8", variant: "secondary" },
 		],
 		variables: [
 			"{patientName}",
@@ -323,9 +336,9 @@ export const DEFAULT_TEMPLATES: readonly OmnichannelTemplate[] = [
 		title: "QR-код и ссылка СБП",
 		description: "Быстрая оплата услуг без комиссии через Систему Быстрых Платежей НСПК",
 		templateText:
-			"Здравствуйте, {patientName}!\nСчет на оплату медицинских услуг в {clinicName}:\n📋 Заказ №{orderId}\n💵 Сумма: {treatmentSum}\n⚡ Ссылка для оплаты через СБП:\n{paymentLink}\n\nЭлектронный кассовый чек 54-ФЗ поступит сразу после оплаты.",
+			"Здравствуйте, {patientName}!\nСчет на оплату медицинских услуг в {clinicName}:\nЗаказ №{orderId}\nСумма: {treatmentSum}\nСсылка для оплаты через СБП:\n{paymentLink}\n\nЭлектронный кассовый чек 54-ФЗ поступит сразу после оплаты.",
 		interactiveButtons: [
-			{ id: "btn-open-sbp", title: "⚡ Оплатить в приложении банка", action: "open_bank", variant: "primary" },
+			{ id: "btn-open-sbp", title: "Оплатить в приложении банка (СБП)", action: "open_bank", variant: "primary" },
 		],
 		variables: [
 			"{patientName}",
@@ -473,13 +486,13 @@ export const DEFAULT_MESSAGES_BY_PATIENT: Record<string, OmnichannelMessage[]> =
 			senderName: "DENTE Bot",
 			senderType: "automated_bot",
 			timestamp: "2026-08-28T14:10:00.000Z",
-			body: "Здравствуйте, Алексей Викторович!\nНапоминаем о вашем визите в клинику DENTE Dental Clinic:\n📅 29.08.2026 в 15:00 (кабинет 302)\n👨‍⚕️ Врач: Лечащий врач\n📍 Адрес: Адрес клиники\n\nПодтвердите, пожалуйста, визит нажатием кнопки ниже.",
+			body: "Здравствуйте, Алексей Викторович!\nНапоминаем о вашем визите в клинику DENTE Dental Clinic:\nДата и время: 29.08.2026 в 15:00 (кабинет 302)\nВрач: Лечащий врач\nАдрес: Адрес клиники\n\nПодтвердите, пожалуйста, визит нажатием кнопки ниже.",
 			status: "read",
 			templateCategory: "visit_reminder",
 			interactivePayload: {
 				buttons: [
-					{ id: "btn-confirm", title: "✅ Подтверждаю", action: "confirm_visit", variant: "primary" },
-					{ id: "btn-reschedule", title: "🔄 Перенести", action: "request_reschedule", variant: "secondary" },
+					{ id: "btn-confirm", title: "Подтверждаю", action: "confirm_visit", variant: "primary" },
+					{ id: "btn-reschedule", title: "Перенести", action: "request_reschedule", variant: "secondary" },
 				],
 			},
 		},

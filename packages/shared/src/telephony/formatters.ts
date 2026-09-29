@@ -103,6 +103,20 @@ export function formatPhoneDisplay(phone: string | null | undefined): string {
 }
 
 /**
+ * Formats a phone number with 152-FZ privacy masking (e.g. for reception displays, logs or public mode).
+ * Example: "+79991234567" -> "+7 (999) ***-**-67"
+ */
+export function maskPhoneDisplay(phone: string | null | undefined): string {
+	if (!phone) return "—";
+	const digits = normalizePhoneDigits(phone);
+	if (digits.length < 10) return "+7 (***) ***-**-**";
+	const main = digits.slice(-10);
+	const code = main.slice(0, 3);
+	const last2 = main.slice(-2);
+	return `+7 (${code}) ***-**-${last2}`;
+}
+
+/**
  * Extracts 2-letter uppercase initials from full name.
  * Example: "Иванов Иван Иванович" -> "ИИ"
  */

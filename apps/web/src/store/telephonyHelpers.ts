@@ -7,6 +7,7 @@ export {
 	getNationalPhoneDigits,
 	fuzzyMatchPhone,
 	formatPhoneDisplay,
+	maskPhoneDisplay,
 	formatPatientInitials,
 	getAvatarColor,
 	resolvePatientFromPhone,

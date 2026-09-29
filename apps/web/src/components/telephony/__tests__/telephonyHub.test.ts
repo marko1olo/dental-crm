@@ -11,6 +11,7 @@ import {
 	formatDurationTimer,
 	formatPatientInitials,
 	formatPhoneDisplay,
+	maskPhoneDisplay,
 	fuzzyMatchPhone,
 	generateAppointmentConfirmationMessage,
 	generateSmsConfirmationUrl,
@@ -231,6 +232,16 @@ describe("Telephony & Reception Live Hub Suite", () => {
 			assert.equal(formatPhoneDisplay("9161234567"), "+7 (916) 123-45-67");
 			assert.equal(formatPhoneDisplay(null), "—");
 			assert.equal(formatPhoneDisplay(""), "—");
+		});
+
+		test("maskPhoneDisplay masks phone numbers for 152-ФЗ compliance", () => {
+			assert.equal(maskPhoneDisplay("79161234567"), "+7 (916) ***-**-67");
+			assert.equal(maskPhoneDisplay("89161234567"), "+7 (916) ***-**-67");
+			assert.equal(maskPhoneDisplay("+7 (916) 123-45-67"), "+7 (916) ***-**-67");
+			assert.equal(maskPhoneDisplay("9161234567"), "+7 (916) ***-**-67");
+			assert.equal(maskPhoneDisplay("123"), "+7 (***) ***-**-**");
+			assert.equal(maskPhoneDisplay(null), "—");
+			assert.equal(maskPhoneDisplay(""), "—");
 		});
 
 		test("formatPatientInitials returns 2-letter uppercase initials", () => {

@@ -619,7 +619,7 @@ export const denteTelegramHandoffTargets: Record<
 		view: "documents",
 		hash: "documents",
 		title: "Налоговые документы",
-		detail: "Открыт раздел КНД 1151156, заявлений, справок и фискальных оплат.",
+		detail: "Открыт раздел справок для налогового вычета, заявлений и оплат.",
 		documentKind: "tax_deduction_certificate",
 	},
 	billing: {
