@@ -20,6 +20,7 @@ import {
 	Phone,
 	Search,
 	ShieldAlert,
+	Sparkles,
 	User,
 	UserPlus,
 	X,
@@ -325,6 +326,16 @@ export function PatientSearchAutocomplete({
 															),
 														)}
 													</span>
+													{item.isFuzzy && (
+														<span
+															className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 inline-flex items-center gap-0.5 shrink-0"
+															title={`Нечеткое совпадение: ${item.suggestedName || p.fullName}`}
+															data-testid="patient-search-fuzzy-badge"
+														>
+															<Sparkles size={9} className="text-amber-500 shrink-0" />
+															<span>Опечатка?</span>
+														</span>
+													)}
 													{somaticBadge && (
 														<span
 															className={`px-1.5 py-0.2 rounded text-[10px] font-extrabold inline-flex items-center gap-0.5 shrink-0 ${
@@ -367,6 +378,29 @@ export function PatientSearchAutocomplete({
 														<span className="inline-flex items-center gap-1 shrink-0">
 															<Calendar size={10} className="shrink-0" />
 															<span>{p.birthDate}</span>
+														</span>
+													)}
+													{((p as any).cardNumber || item.cardHighlights) && (
+														<span className="inline-flex items-center gap-1 shrink-0 font-mono text-[10px]">
+															<CreditCard size={10} className="shrink-0 text-[var(--muted)]" />
+															<span>
+																{item.cardHighlights ? (
+																	item.cardHighlights.map((part, pIdx) =>
+																		part.isMatch ? (
+																			<mark
+																				key={pIdx}
+																				className="bg-[var(--teal)]/25 text-[var(--teal-dark,var(--teal))] font-bold rounded-xs px-0.5"
+																			>
+																				{part.text}
+																			</mark>
+																		) : (
+																			<span key={pIdx}>{part.text}</span>
+																		),
+																	)
+																) : (
+																	`№${(p as any).cardNumber}`
+																)}
+															</span>
 														</span>
 													)}
 												</div>

@@ -482,13 +482,13 @@ export function PatientSearchModal({
 												</span>
 											)}
 
-											{(patient as SearchablePatient).cardNumber && (
+											{((patient as SearchablePatient).cardNumber || (patient as any).cardNumber || item.cardHighlights) && (
 												<span className="flex items-center gap-1 font-mono">
 													<CreditCard className="w-3 h-3 text-slate-400" />
 													{item.cardHighlights ? (
 														<RenderHighlightedParts parts={item.cardHighlights} />
 													) : (
-														`№${(patient as SearchablePatient).cardNumber}`
+														`№${(patient as SearchablePatient).cardNumber || (patient as any).cardNumber}`
 													)}
 												</span>
 											)}

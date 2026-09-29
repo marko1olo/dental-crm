@@ -18,9 +18,11 @@ import {
 	AlertTriangle,
 	Calendar,
 	Check,
+	ExternalLink,
 	EyeOff,
 	FileText,
 	Megaphone,
+	Phone,
 	Plus,
 	Printer,
 	ShieldCheck,
@@ -52,7 +54,10 @@ import {
 } from "../../utils/inputSanitation";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
-import { searchPatientsQuick } from "../schedule/patientSearchEngine";
+import {
+	findPotentialDuplicates,
+	type PotentialDuplicateItem,
+} from "../schedule/patientSearchEngine";
 import {
 	DENTAL_ADVERTISING_SOURCES,
 	loadPatientFieldRequirements,
@@ -121,13 +126,14 @@ export function PatientCreationModal({
 			: "website_online",
 	);
 
-	const potentialDuplicates = useMemo(() => {
-		const name = (newPatientName ?? "").trim();
-		if (name.length < 3) return [];
-		return searchPatientsQuick(patients, name, 3).filter(
-			(item) => item.score >= 35,
-		);
-	}, [patients, newPatientName]);
+	const potentialDuplicates: PotentialDuplicateItem[] = useMemo(() => {
+		return findPotentialDuplicates(patients, {
+			fullName: newPatientName,
+			phone: newPatientPhone,
+			thresholdScore: 35,
+			limit: 3,
+		});
+	}, [patients, newPatientName, newPatientPhone]);
 
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
 	const [smartParsedData, setSmartParsedData] = useState<ReturnType<
@@ -412,7 +418,7 @@ export function PatientCreationModal({
 			}
 			useAppStore.getState().setCurrentView("visit");
 			showToast(
-				"Пациент создан. Открыт амбулаторный приём 043/у (дежурный врач)",
+				"Пациент создан. Открыт амбулаторный приём (дежурный врач)",
 				"success",
 			);
 		} catch {
@@ -457,7 +463,7 @@ export function PatientCreationModal({
 								Новый пациент
 							</h2>
 							<p className="create-patient-modal-subtitle">
-								Регистрация амбулаторной карточки 043/у
+								Регистрация медицинской карты пациента
 							</p>
 						</div>
 					</div>
@@ -804,32 +810,99 @@ export function PatientCreationModal({
 										</p>
 									</div>
 								</div>
-								<div className="space-y-1 pl-6">
-									{potentialDuplicates.map((item) => (
-										<button
-											key={item.patient.id}
-											type="button"
-											onClick={() => {
-												setSelectedPatientId(item.patient.id);
-												onClose();
-											}}
-											className="w-full text-left p-2 rounded-lg bg-[var(--paper)] border border-amber-500/30 hover:border-amber-500 hover:bg-amber-500/10 transition-colors flex items-center justify-between gap-2 cursor-pointer"
-										>
-											<span
-												className="font-bold text-[var(--ink)] truncate min-w-0 flex-1"
-												title={`${item.patient.fullName}${item.patient.phone ? ` · ${item.patient.phone}` : ""}${item.patient.birthDate ? ` · д.р. ${item.patient.birthDate}` : ""}`}
+								<div className="space-y-1.5 pl-6">
+									{potentialDuplicates.map((item) => {
+										const p = item.patient;
+										const reasonLabel =
+											item.duplicateReason === "both"
+												? "ФИО и Телефон"
+												: item.duplicateReason === "phone"
+													? "Совпадение по телефону"
+													: item.duplicateReason === "fuzzy_name"
+														? `Похожее ФИО (${item.score}%)`
+														: "Совпадение по ФИО";
+
+										return (
+											<div
+												key={p.id}
+												className="w-full p-2.5 rounded-lg bg-[var(--paper)] border border-amber-500/30 hover:border-amber-500/60 transition-colors flex items-center justify-between gap-2.5 flex-wrap sm:flex-nowrap"
 											>
-												{item.patient.fullName}
-												{item.patient.phone ? ` · ${item.patient.phone}` : ""}
-												{item.patient.birthDate
-													? ` · д.р. ${item.patient.birthDate}`
-													: ""}
-											</span>
-											<span className="text-[11px] text-[var(--teal)] font-semibold shrink-0">
-												Открыть карту &rarr;
-											</span>
-										</button>
-									))}
+												<div className="min-w-0 flex-1">
+													<div className="flex items-center gap-1.5 flex-wrap">
+														<span className="font-bold text-[var(--ink)] truncate text-xs">
+															{item.fullNameHighlights.map((part, pIdx) =>
+																part.isMatch ? (
+																	<mark
+																		key={pIdx}
+																		className="bg-amber-300/60 dark:bg-amber-800/80 text-amber-950 dark:text-amber-100 rounded px-0.5 font-extrabold"
+																	>
+																		{part.text}
+																	</mark>
+																) : (
+																	<span key={pIdx}>{part.text}</span>
+																),
+															)}
+														</span>
+														<span
+															className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/40 shrink-0"
+															data-testid="duplicate-reason-badge"
+														>
+															{reasonLabel}
+														</span>
+													</div>
+													<div className="text-[11px] text-[var(--muted)] flex items-center gap-2 mt-0.5 flex-wrap">
+														{p.phone && (
+															<span className="font-mono flex items-center gap-1">
+																<Phone size={10} className="shrink-0 opacity-70" />
+																<span>
+																	{item.phoneHighlights.map((part, pIdx) =>
+																		part.isMatch ? (
+																			<mark
+																				key={pIdx}
+																				className="bg-amber-300/60 dark:bg-amber-800/80 text-amber-950 dark:text-amber-100 rounded px-0.5 font-extrabold"
+																			>
+																				{part.text}
+																			</mark>
+																		) : (
+																			<span key={pIdx}>{part.text}</span>
+																		),
+																	)}
+																</span>
+															</span>
+														)}
+														{p.birthDate && (
+															<span>д.р. {p.birthDate}</span>
+														)}
+													</div>
+												</div>
+												<div className="flex items-center gap-1.5 shrink-0">
+													<button
+														type="button"
+														onClick={() => {
+															setSelectedPatientId(p.id);
+															onClose();
+														}}
+														className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[var(--teal)] text-white hover:brightness-110 transition-all cursor-pointer shadow-xs min-h-[30px]"
+														data-testid="select-existing-patient-btn"
+														title="Выбрать эту карту и закрыть форму создания"
+													>
+														Выбрать эту карту
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															window.open(`/patients?id=${p.id}`, "_blank", "noopener,noreferrer");
+														}}
+														className="p-1.5 rounded-md text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--glass-border)] transition-colors cursor-pointer min-h-[30px] min-w-[30px] flex items-center justify-center"
+														title="Открыть карту в новом окне"
+														aria-label="Открыть карту в новом окне"
+													>
+														<ExternalLink size={13} />
+													</button>
+												</div>
+											</div>
+										);
+									})}
 								</div>
 							</div>
 						)}
@@ -1206,7 +1279,7 @@ export function PatientCreationModal({
 							className="secondary-button quick-create-visit-action"
 							onClick={handleCreateAndOpenVisit}
 							disabled={isPatientCreating}
-							title="Создать карту и сразу открыть приём 043/у (для дежурного врача)"
+							title="Создать карту и сразу открыть приём (для дежурного врача)"
 							data-testid="patient-creation-submit-and-visit-btn"
 							style={{
 								display: "inline-flex",
@@ -1230,7 +1303,7 @@ export function PatientCreationModal({
 							title={
 								isPatientCreating
 									? "Создание карточки..."
-									: "Создать амбулаторную карту пациента 043/у (без блокировки по СНИЛС/паспорту)"
+									: "Создать медицинскую карту пациента (без блокировки по СНИЛС/паспорту)"
 							}
 							data-testid="patient-creation-submit-btn"
 							style={{

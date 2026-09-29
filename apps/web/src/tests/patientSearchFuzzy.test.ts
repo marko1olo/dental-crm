@@ -11,6 +11,7 @@ import {
 	type PatientSearchableFields,
 } from "../utils/patientSearchUtils";
 import {
+	findPotentialDuplicates,
 	highlightSearchMatches,
 	searchPatientsQuick,
 } from "../components/schedule/patientSearchEngine";
@@ -263,6 +264,48 @@ describe("Fuzzy Levenshtein Patient Search & Duplication Guard Suite", () => {
 		it("highlights phone digits in formatted phone string", () => {
 			const parts = highlightSearchMatches("+7 (999) 123-45-67", "123");
 			assert.equal(parts.some((p) => p.text === "123" && p.isMatch), true);
+		});
+	});
+
+	describe("6. Multi-Field Duplicate Prevention & Fuzzy Highlighting", () => {
+		it("detects duplicates across different phone formats ('8 (999) 123-45-67' vs '+79991234567')", () => {
+			const dups = findPotentialDuplicates(samplePatients, {
+				phone: "8 (999) 123-45-67",
+			});
+			assert.equal(dups.length >= 1, true);
+			assert.equal(dups[0]?.patient.id, "pat-ivanov");
+			assert.equal(dups[0]?.duplicateReason, "phone");
+			assert.equal(dups[0]?.score >= 90, true);
+		});
+
+		it("detects swapped token order with high duplicate score and highlights", () => {
+			const dups = findPotentialDuplicates(samplePatients, {
+				fullName: "Алексей Смирнов",
+			});
+			assert.equal(dups.length >= 1, true);
+			assert.equal(dups[0]?.patient.id, "pat-smirnov");
+			assert.equal(dups[0]?.score >= 90, true);
+			assert.equal(dups[0]?.fullNameHighlights.some((h) => h.isMatch), true);
+		});
+
+		it("detects duplicates when typo in name is paired with matching phone", () => {
+			const dups = findPotentialDuplicates(samplePatients, {
+				fullName: "Кузницоф Дмитрий",
+				phone: "+7 925 444-55-66",
+			});
+			assert.equal(dups.length >= 1, true);
+			assert.equal(dups[0]?.patient.id, "pat-kuznetsov");
+			assert.equal(dups[0]?.duplicateReason, "both");
+			assert.equal(dups[0]?.score, 100);
+			assert.equal(dups[0]?.phoneHighlights.some((h) => h.isMatch), true);
+		});
+
+		it("detects child patient duplicates via representative phone", () => {
+			const dups = findPotentialDuplicates(samplePatients, {
+				fullName: "Кузнецова Анна",
+				phone: "999-44-33",
+			});
+			assert.equal(dups.some((d) => d.patient.id === "pat-child"), true);
 		});
 	});
 });

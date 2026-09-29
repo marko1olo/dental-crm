@@ -9,8 +9,10 @@ import {
 	Clock,
 	Copy,
 	CreditCard,
+	ExternalLink,
 	FileText,
 	Flame,
+	Phone,
 	PhoneCall,
 	Plus,
 	Search,
@@ -33,7 +35,9 @@ import {
 	normalizePhoneToNational,
 } from "../../utils/patientSearchUtils";
 import {
+	findPotentialDuplicates,
 	searchPatientsQuick,
+	type PotentialDuplicateItem,
 } from "./patientSearchEngine";
 import {
 	APPOINTMENT_TYPE_PRESETS,
@@ -691,12 +695,15 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		return searchPatientsQuick(patients, q, 10);
 	}, [patients, searchQuery]);
 
-	// Duplication Guard: check if new patient name already exists in clinic database
-	const potentialDuplicates = useMemo(() => {
-		const name = newPatientFullName.trim();
-		if (name.length < 3) return [];
-		return searchPatientsQuick(patients, name, 3).filter((item) => item.score >= 35);
-	}, [patients, newPatientFullName]);
+	// Duplication Guard: check if new patient name or phone already exists in clinic database
+	const potentialDuplicates: PotentialDuplicateItem[] = useMemo(() => {
+		return findPotentialDuplicates(patients, {
+			fullName: newPatientFullName,
+			phone: newPatientPhone,
+			thresholdScore: 35,
+			limit: 3,
+		});
+	}, [patients, newPatientFullName, newPatientPhone]);
 
 	// Recalculate endsAt based on startsAtLocal and durationMinutes
 	const endsAtLocal = useMemo(() => {
@@ -1890,23 +1897,94 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 												</p>
 											</div>
 										</div>
-										<div className="space-y-1 pl-6">
-											{potentialDuplicates.map((item) => (
-												<button
-													key={item.patient.id}
-													type="button"
-													onClick={() => selectPatient(item.patient)}
-													className="w-full min-h-[44px] text-left p-2 rounded-lg bg-[var(--paper)] border border-amber-500/30 hover:border-amber-500 hover:bg-amber-500/10 transition-colors flex items-center justify-between gap-2 cursor-pointer"
-												>
-													<span className="font-bold text-[var(--ink)]">
-														{item.patient.fullName}
-														{item.patient.phone ? ` (${item.patient.phone})` : ""}
-													</span>
-													<span className="text-[11px] text-[var(--teal)] font-semibold shrink-0">
-														Выбрать карту &rarr;
-													</span>
-												</button>
-											))}
+										<div className="space-y-1.5 pl-6">
+											{potentialDuplicates.map((item) => {
+												const p = item.patient;
+												const reasonLabel =
+													item.duplicateReason === "both"
+														? "ФИО и Телефон"
+														: item.duplicateReason === "phone"
+															? "Совпадение по телефону"
+															: item.duplicateReason === "fuzzy_name"
+																? `Похожее ФИО (${item.score}%)`
+																: "Совпадение по ФИО";
+
+												return (
+													<div
+														key={p.id}
+														className="w-full min-h-[44px] p-2.5 rounded-lg bg-[var(--paper)] border border-amber-500/30 hover:border-amber-500/60 transition-colors flex items-center justify-between gap-2.5 flex-wrap sm:flex-nowrap"
+													>
+														<div className="min-w-0 flex-1">
+															<div className="flex items-center gap-1.5 flex-wrap">
+																<span className="font-bold text-[var(--ink)] truncate text-xs">
+																	{item.fullNameHighlights.map((part, pIdx) =>
+																		part.isMatch ? (
+																			<mark
+																				key={pIdx}
+																				className="bg-amber-300/60 dark:bg-amber-800/80 text-amber-950 dark:text-amber-100 rounded px-0.5 font-extrabold"
+																			>
+																				{part.text}
+																			</mark>
+																		) : (
+																			<span key={pIdx}>{part.text}</span>
+																		),
+																	)}
+																</span>
+																<span
+																	className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/40 shrink-0"
+																	data-testid="duplicate-reason-badge"
+																>
+																	{reasonLabel}
+																</span>
+															</div>
+															<div className="text-[11px] text-[var(--muted)] flex items-center gap-2 mt-0.5 flex-wrap">
+																{p.phone && (
+																	<span className="font-mono flex items-center gap-1">
+																		<Phone size={10} className="shrink-0 opacity-70" />
+																		<span>
+																			{item.phoneHighlights.map((part, pIdx) =>
+																				part.isMatch ? (
+																					<mark
+																						key={pIdx}
+																						className="bg-amber-300/60 dark:bg-amber-800/80 text-amber-950 dark:text-amber-100 rounded px-0.5 font-extrabold"
+																					>
+																						{part.text}
+																					</mark>
+																				) : (
+																					<span key={pIdx}>{part.text}</span>
+																				),
+																			)}
+																		</span>
+																	</span>
+																)}
+																{p.birthDate && <span>д.р. {p.birthDate}</span>}
+															</div>
+														</div>
+														<div className="flex items-center gap-1.5 shrink-0">
+															<button
+																type="button"
+																onClick={() => selectPatient(p)}
+																className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[var(--teal)] text-white hover:brightness-110 transition-all cursor-pointer shadow-xs min-h-[32px]"
+																data-testid="quick-booking-select-duplicate-btn"
+																title="Выбрать эту карту для быстрой записи"
+															>
+																Выбрать карту
+															</button>
+															<button
+																type="button"
+																onClick={() => {
+																	window.open(`/patients?id=${p.id}`, "_blank", "noopener,noreferrer");
+																}}
+																className="p-1.5 rounded-md text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--glass-border)] transition-colors cursor-pointer min-h-[32px] min-w-[32px] flex items-center justify-center"
+																title="Открыть карту в новом окне"
+																aria-label="Открыть карту в новом окне"
+															>
+																<ExternalLink size={13} />
+															</button>
+														</div>
+													</div>
+												);
+											})}
 										</div>
 									</div>
 								)}

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { Patient } from "@dental/shared";
 import {
+	findPotentialDuplicates,
 	highlightSearchMatches,
 	searchPatientsQuick,
 } from "../patientSearchEngine";
@@ -98,5 +99,88 @@ describe("Patient Quick Search & Highlighting Engine", () => {
 		const emptyRes = searchPatientsQuick(samplePatients, "");
 		assert.equal(emptyRes.length, 3);
 		assert.equal(emptyRes[0]?.score, 0);
+	});
+
+	it("1.6 findPotentialDuplicates — Name duplicate detection (exact and fuzzy typo)", () => {
+		// Exact name
+		const exactDups = findPotentialDuplicates(samplePatients, {
+			fullName: "Иванов Иван",
+		});
+		assert.equal(exactDups.length >= 1, true);
+		assert.equal(exactDups[0]?.patient.id, "pat-1");
+		assert.equal(exactDups[0]?.score >= 90, true);
+		assert.equal(exactDups[0]?.duplicateReason, "name");
+		assert.equal(exactDups[0]?.fullNameHighlights.some((h) => h.isMatch), true);
+
+		// Fuzzy typo name («Ивонов»)
+		const fuzzyDups = findPotentialDuplicates(samplePatients, {
+			fullName: "Ивонов Иван",
+		});
+		assert.equal(fuzzyDups.length >= 1, true);
+		assert.equal(fuzzyDups[0]?.patient.id, "pat-1");
+		assert.equal(fuzzyDups[0]?.duplicateReason, "fuzzy_name");
+		assert.equal(fuzzyDups[0]?.score >= 60, true);
+	});
+
+	it("1.7 findPotentialDuplicates — Phone duplicate detection (exact national digits and format invariant)", () => {
+		// Phone match with 8 instead of +7
+		const phoneDups = findPotentialDuplicates(samplePatients, {
+			phone: "89259998877",
+		});
+		assert.equal(phoneDups.length, 1);
+		assert.equal(phoneDups[0]?.patient.id, "pat-2");
+		assert.equal(phoneDups[0]?.duplicateReason, "phone");
+		assert.equal(phoneDups[0]?.score >= 90, true);
+		assert.equal(phoneDups[0]?.phoneHighlights.some((h) => h.isMatch), true);
+
+		// Last 4 digits match ("4567")
+		const last4Dups = findPotentialDuplicates(samplePatients, {
+			phone: "4567",
+		});
+		assert.equal(last4Dups.length, 1);
+		assert.equal(last4Dups[0]?.patient.id, "pat-1");
+		assert.equal(last4Dups[0]?.score >= 80, true);
+		assert.equal(last4Dups[0]?.duplicateReason, "phone");
+	});
+
+	it("1.8 findPotentialDuplicates — Combined name and phone detection with reason 'both'", () => {
+		const bothDups = findPotentialDuplicates(samplePatients, {
+			fullName: "Иванов Иван",
+			phone: "+7 916 123-45-67",
+		});
+		assert.equal(bothDups.length, 1);
+		assert.equal(bothDups[0]?.patient.id, "pat-1");
+		assert.equal(bothDups[0]?.duplicateReason, "both");
+		assert.equal(bothDups[0]?.score, 100);
+	});
+
+	it("1.9 findPotentialDuplicates — Token order swap ('Иван Иванов' vs 'Иванов Иван Иванович')", () => {
+		const swappedDups = findPotentialDuplicates(samplePatients, {
+			fullName: "Иван Иванов",
+		});
+		assert.equal(swappedDups.length >= 1, true);
+		assert.equal(swappedDups[0]?.patient.id, "pat-1");
+		assert.equal(swappedDups[0]?.score >= 90, true);
+	});
+
+	it("1.10 findPotentialDuplicates — Short inputs or non-matches return empty array", () => {
+		// Short name (<3 chars) and no phone
+		const shortRes = findPotentialDuplicates(samplePatients, {
+			fullName: "Ив",
+		});
+		assert.equal(shortRes.length, 0);
+
+		// Short phone (<4 digits)
+		const shortPhone = findPotentialDuplicates(samplePatients, {
+			phone: "12",
+		});
+		assert.equal(shortPhone.length, 0);
+
+		// Completely different patient
+		const noMatch = findPotentialDuplicates(samplePatients, {
+			fullName: "Совершенно Другой Пациент",
+			phone: "+7 (999) 000-11-22",
+		});
+		assert.equal(noMatch.length, 0);
 	});
 });
