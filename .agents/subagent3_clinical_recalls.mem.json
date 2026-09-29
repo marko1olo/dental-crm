@@ -1,0 +1,23 @@
+{
+  "subagent": "Subagent 3: Clinical Recalls & Prophylaxis Intervals Inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md in full compliance with constitutional routine",
+    "Audited full scope files: patientRecallEngine.ts, recallClinicalTriggers.ts, recallDateMath.ts, PatientRecallsTableView.tsx, PatientRecallsKanbanView.tsx, and patientRecall.test.ts",
+    "Implemented Multi-Recall Separation (evaluateMultiRecallChannels, createMultiRecallRecordsForPatient): guarantees hygiene/periodontics (3/6m), implant monitoring (3-6m / 1-12m), orthodontic activation (4-6w), and pediatric checkup (3m) maintain independent timers and never overwrite one another",
+    "Implemented False Recall Reset Prevention (isProfessionalHygieneProcedure, shouldResetRecallTimer, processVisitForPatientRecalls): guarantees routine therapeutic visits (caries filling A16.07.002, pulpitis A16.07.030, extraction) DO NOT reset hygiene recalls; only A16.07.051 or professional hygiene procedures reset hygiene recall timers",
+    "Implemented 1-Click Ergonomics (postponeRecallRecord, markRecallRecordScheduled): 1-click 'Postpone 2 weeks', 'Postpone 1 month', and 'Contacted - Booked appointment'",
+    "Implemented Automated Inactive Exclusion (isPatientEligibleForRecall): automatically excludes archived and deceased patients from calling queues and recall registries without orphaned records",
+    "Eliminated clerical and bureaucratic jargon in UI (formatHumanRecallBadge, formatRussianDaysPlural, formatRussianMonthAccusative): clean human-readable badges ('Срок подошел', 'Просрочен на 12 дней', 'Запланирован на ноябрь', 'Записан на прием', 'Визит завершен') in both Table and Kanban views",
+    "Expanded test suite in apps/web/src/tests/patientRecall.test.ts from 20 to 35 targeted unit tests, covering 100% of critical requirements with Exit Code 0",
+    "Verified all recall unit tests in apps/web/src/components/recalls/__tests__ (54 tests passing)",
+    "Verified zero BOM and strict UTF-8 with npm run check:encoding (6265 files passed)",
+    "Executed per-file git add on changed files strictly within assigned scope"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Previously, evaluateClinicalRecallTrigger used a waterfall if/else structure which collapsed all patient recall triggers into a single trigger, losing hygiene timers for implant and ortho patients.",
+    "Previously, there was no clinical validation of visit procedures against A16.07.051, creating risk that a simple filling could reset a hygiene countdown.",
+    "UI badges previously used bureaucratic call-center jargon ('Пора звать', '+42 дн. (риск)', 'План', 'Визит'); now completely replaced with natural Russian phrases with correct grammatical declensions."
+  ]
+}

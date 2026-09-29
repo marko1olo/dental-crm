@@ -11,11 +11,23 @@ import {
 	calculateDaysOverdue,
 	calculateRecallMetrics,
 	calculateRecallProfile,
+	createMultiRecallRecordsForPatient,
 	evaluateClinicalCycleSuggestion,
+	evaluateMultiRecallChannels,
 	filterAndSortRecallCandidates,
+	formatHumanRecallBadge,
 	formatIsoDateOnly,
+	formatRussianDaysPlural,
+	formatRussianMonthAccusative,
+	isPatientEligibleForRecall,
+	isProfessionalHygieneProcedure,
+	markRecallRecordScheduled,
+	postponeRecallRecord,
+	processVisitForPatientRecalls,
 	resolveUrgencyStatus,
+	shouldResetRecallTimer,
 	type PatientRecallCandidate,
+	type PatientRecallRecord,
 	type RecallCycleType,
 } from "../components/recalls/patientRecallEngine";
 import {
@@ -438,5 +450,445 @@ describe("Omnichannel Templates & 1-Click Booking Links (recallTemplates.ts)", (
 		const expensiveObj = script.objections.find((o) => o.id === "expensive");
 		assert.ok(expensiveObj);
 		assert.match(expensiveObj.clinicalRationale, /Стоимость профгигиены/);
+	});
+});
+
+describe("Patient Recall Engine - Multi-Recall Channel Separation (Mandate 1)", () => {
+	it("separates hygiene (6m) and implant monitoring (milestones 1-12m) for an adult with implants without overwriting", () => {
+		const patientInput = {
+			lastVisitDate: "2026-03-01",
+			lastCleaningDate: "2026-03-01",
+			implantSurgeryDate: "2026-01-15",
+			hasImplants: true,
+			implantsCount: 2,
+			referenceDate: "2026-06-01",
+		};
+
+		const evaluation = evaluateMultiRecallChannels(patientInput);
+		assert.equal(evaluation.hasMultipleRecalls, true);
+		assert.equal(evaluation.triggers.length, 2);
+
+		const channels = evaluation.triggers.map((t) => t.channelId);
+		assert.ok(channels.includes("hygiene_periodontal"));
+		assert.ok(channels.includes("implant_monitoring"));
+
+		// Generate independent records
+		const records = createMultiRecallRecordsForPatient(
+			{
+				id: "pat-impl-1",
+				fullName: "Барабаш Сергей Владимирович",
+				phone: "+79161234567",
+			},
+			patientInput,
+		);
+
+		assert.equal(records.length, 2);
+		const hygieneRec = records.find((r) => r.channelId === "hygiene_periodontal");
+		const implantRec = records.find((r) => r.channelId === "implant_monitoring");
+
+		assert.ok(hygieneRec);
+		assert.ok(implantRec);
+		assert.notEqual(hygieneRec.id, implantRec.id);
+		assert.equal(hygieneRec.id, "pat-impl-1_hygiene_periodontal");
+		assert.equal(implantRec.id, "pat-impl-1_implant_monitoring");
+
+		// Hygiene due date: 2026-03-01 + 6 months = 2026-09-01
+		assert.equal(hygieneRec.dueDate, "2026-09-01");
+		// Implant check: independent milestone timer from surgery date
+		assert.equal(implantRec.cycleType, "implant_monitoring");
+	});
+
+	it("separates orthodontic braces activation (4 weeks) and periodontal maintenance (3 months) without overwriting", () => {
+		const orthoPerioInput = {
+			lastVisitDate: "2026-04-01",
+			lastCleaningDate: "2026-03-15",
+			lastOrthoAdjustmentDate: "2026-04-01",
+			hasBraces: true,
+			maxPocketDepthMm: 5,
+			hasBleedingOnProbing: true,
+			referenceDate: "2026-04-20",
+		};
+
+		const evaluation = evaluateMultiRecallChannels(orthoPerioInput);
+		assert.equal(evaluation.hasMultipleRecalls, true);
+		assert.equal(evaluation.triggers.length, 2);
+
+		const orthoTrig = evaluation.triggers.find((t) => t.channelId === "orthodontic_activation");
+		const perioTrig = evaluation.triggers.find((t) => t.channelId === "hygiene_periodontal");
+
+		assert.ok(orthoTrig);
+		assert.ok(perioTrig);
+		// Ortho interval: strictly 4 weeks / 28 days
+		assert.equal(orthoTrig.intervalWeeks, 4);
+		assert.equal(orthoTrig.formattedDueDate, "2026-04-29");
+
+		// Perio interval: 3 months
+		assert.equal(perioTrig.intervalMonths, 3);
+		assert.equal(perioTrig.mappedCycleType, "periodontal_maintenance");
+		assert.equal(perioTrig.formattedDueDate, "2026-06-15");
+	});
+
+	it("separates pediatric check (3 months) and orthodontic check for children with appliances", () => {
+		const childInput = {
+			lastVisitDate: "2026-05-01",
+			isChildUnder14: true,
+			age: 10,
+			hasOrthodonticAppliance: true,
+			referenceDate: "2026-05-10",
+		};
+
+		const evaluation = evaluateMultiRecallChannels(childInput);
+		assert.equal(evaluation.hasMultipleRecalls, true);
+
+		const channels = evaluation.triggers.map((t) => t.channelId);
+		assert.ok(channels.includes("pediatric_prophylaxis"));
+		assert.ok(channels.includes("orthodontic_activation"));
+		assert.ok(channels.includes("hygiene_periodontal"));
+	});
+});
+
+describe("Patient Recall Engine - False Recall Reset Prevention (Mandate 2)", () => {
+	it("routine caries filling (A16.07.002) DOES NOT reset professional hygiene recall timer", () => {
+		const hygieneRecall: PatientRecallRecord = {
+			id: "rec-1",
+			patientId: "pat-1",
+			fullName: "Ковалев Андрей Иванович",
+			phone: "+79031112233",
+			cycleType: "standard_prophylaxis",
+			clinicalTriggerType: "hygiene_6m",
+			lastVisitDate: "2026-01-10",
+			dueDate: "2026-07-10",
+			daysOverdue: 20,
+			urgencyStatus: "due_now",
+			status: "due_now",
+		};
+
+		// Patient visited clinic on 2026-07-30 for caries filling of tooth 16
+		const therapeuticVisit = {
+			visitDate: "2026-07-30",
+			procedures: [
+				{
+					code804n: "A16.07.002",
+					name: "Восстановление зуба пломбой I, V, VI класс по Блэку с использованием светоотверждаемых материалов",
+				},
+				{
+					code804n: "A11.07.027",
+					name: "Наложение коффердама (раббердама)",
+				},
+			],
+			isCompleted: true,
+		};
+
+		// Verify detector: neither procedure is professional hygiene
+		assert.equal(isProfessionalHygieneProcedure(therapeuticVisit.procedures[0]!), false);
+		assert.equal(isProfessionalHygieneProcedure(therapeuticVisit.procedures[1]!), false);
+
+		// Verify reset decider: MUST be false
+		const shouldReset = shouldResetRecallTimer(hygieneRecall, therapeuticVisit.procedures);
+		assert.equal(shouldReset, false);
+
+		// Process visit through engine
+		const result = processVisitForPatientRecalls([hygieneRecall], therapeuticVisit, "2026-07-30");
+		assert.equal(result.resetCount, 0);
+		assert.equal(result.unchangedCount, 1);
+
+		// Hygiene recall timer MUST remain untouched!
+		const resultingRecall = result.updatedRecalls[0]!;
+		assert.equal(resultingRecall.dueDate, "2026-07-10");
+		assert.equal(resultingRecall.lastVisitDate, "2026-01-10");
+		assert.equal(resultingRecall.daysOverdue, 20);
+	});
+
+	it("endodontic pulpitis treatment (A16.07.030) or tooth extraction DOES NOT reset hygiene recall", () => {
+		const hygieneRecall: PatientRecallRecord = {
+			id: "rec-2",
+			patientId: "pat-2",
+			fullName: "Смирнова Елена Викторовна",
+			phone: "+79032223344",
+			cycleType: "standard_prophylaxis",
+			clinicalTriggerType: "hygiene_6m",
+			lastVisitDate: "2026-02-01",
+			dueDate: "2026-08-01",
+			daysOverdue: 15,
+			urgencyStatus: "due_now",
+			status: "due_now",
+		};
+
+		const surgeryVisit = {
+			visitDate: "2026-08-16",
+			procedures: [
+				{ code804n: "A16.07.001", name: "Удаление постоянного зуба простое (зуб 3.8)" },
+				{ code804n: "A16.07.030", name: "Инструментальная и медикаментозная обработка корневого канала" },
+			],
+		};
+
+		assert.equal(shouldResetRecallTimer(hygieneRecall, surgeryVisit.procedures), false);
+
+		const result = processVisitForPatientRecalls([hygieneRecall], surgeryVisit, "2026-08-16");
+		assert.equal(result.resetCount, 0);
+		assert.equal(result.unchangedCount, 1);
+		assert.equal(result.updatedRecalls[0]!.dueDate, "2026-08-01");
+	});
+
+	it("professional hygiene procedure (A16.07.051 / Air-Flow / УЗ) DOES reset hygiene recall timer", () => {
+		const hygieneRecall: PatientRecallRecord = {
+			id: "rec-3",
+			patientId: "pat-3",
+			fullName: "Федоров Дмитрий Олегович",
+			phone: "+79033334455",
+			cycleType: "standard_prophylaxis",
+			clinicalTriggerType: "hygiene_6m",
+			lastVisitDate: "2026-01-15",
+			dueDate: "2026-07-15",
+			daysOverdue: 25,
+			urgencyStatus: "due_now",
+			status: "due_now",
+		};
+
+		const hygieneVisit = {
+			visitDate: "2026-08-10",
+			procedures: [
+				{
+					code804n: "A16.07.051",
+					name: "Профессиональная гигиена полости рта и зубов (УЗ скейлинг + Air-Flow + полировка)",
+				},
+			],
+			isCompleted: true,
+		};
+
+		assert.equal(isProfessionalHygieneProcedure(hygieneVisit.procedures[0]!), true);
+		assert.equal(shouldResetRecallTimer(hygieneRecall, hygieneVisit.procedures), true);
+
+		const result = processVisitForPatientRecalls([hygieneRecall], hygieneVisit, "2026-08-10");
+		assert.equal(result.resetCount, 1);
+		assert.equal(result.unchangedCount, 0);
+
+		// New due date: 2026-08-10 + 6 months = 2027-02-10
+		const updated = result.updatedRecalls[0]!;
+		assert.equal(updated.lastVisitDate, "2026-08-10");
+		assert.equal(updated.dueDate, "2027-02-10");
+		assert.equal(updated.urgencyStatus, "upcoming");
+	});
+
+	it("subcodes (A16.07.051.001) and ultrasonic scaling (A22.07.001) correctly recognized as hygiene", () => {
+		assert.equal(
+			isProfessionalHygieneProcedure({ code804n: "A16.07.051.001", name: "Снятие зубных отложений УЗ" }),
+			true,
+		);
+		assert.equal(
+			isProfessionalHygieneProcedure({ code804n: "A22.07.001", name: "Ультразвуковое удаление зубного камня" }),
+			true,
+		);
+		assert.equal(
+			isProfessionalHygieneProcedure({ code804n: "A16.07.020", name: "Удаление поддесневых отложений" }),
+			true,
+		);
+	});
+});
+
+describe("Patient Recall Engine - 1-Click Ergonomics & Automated Inactive Exclusion", () => {
+	it("postponeRecallRecord moves due date by 2 weeks (14 days) and records notes", () => {
+		const record: PatientRecallRecord = {
+			id: "rec-p1",
+			patientId: "pat-p1",
+			fullName: "Васильев Петр Петрович",
+			phone: "+79110001122",
+			cycleType: "standard_prophylaxis",
+			lastVisitDate: "2026-02-01",
+			dueDate: "2026-08-01",
+			daysOverdue: 10,
+			urgencyStatus: "due_now",
+			status: "due_now",
+		};
+
+		const postponed = postponeRecallRecord(record, "2_weeks", "Пациент в отпуске на море", "2026-08-11");
+		// 2026-08-11 (ref) + 14 days = 2026-08-25
+		assert.equal(postponed.dueDate, "2026-08-25");
+		assert.equal(postponed.status, "declined");
+		assert.equal(postponed.postponedUntil, "2026-08-25");
+		assert.match(postponed.clinicalNotes || "", /Отложено на 2 недели/);
+		assert.match(postponed.clinicalNotes || "", /Пациент в отпуске на море/);
+	});
+
+	it("postponeRecallRecord moves due date by 1 month", () => {
+		const record: PatientRecallRecord = {
+			id: "rec-p2",
+			patientId: "pat-p2",
+			fullName: "Григорьева Мария Сергеевна",
+			phone: "+79112223344",
+			cycleType: "standard_prophylaxis",
+			lastVisitDate: "2026-01-10",
+			dueDate: "2026-07-10",
+			daysOverdue: 0,
+			urgencyStatus: "due_now",
+			status: "due_now",
+		};
+
+		const postponed = postponeRecallRecord(record, "1_month", "Командировка", "2026-07-10");
+		// 2026-07-10 + 1 month = 2026-08-10
+		assert.equal(postponed.dueDate, "2026-08-10");
+		assert.match(postponed.clinicalNotes || "", /Отложено на 1 месяц/);
+	});
+
+	it("markRecallRecordScheduled sets status to scheduled and urgency to upcoming", () => {
+		const record: PatientRecallRecord = {
+			id: "rec-p3",
+			patientId: "pat-p3",
+			fullName: "Зайцев Константин Николаевич",
+			phone: "+79113334455",
+			cycleType: "standard_prophylaxis",
+			lastVisitDate: "2026-01-15",
+			dueDate: "2026-07-15",
+			daysOverdue: 5,
+			urgencyStatus: "due_now",
+			status: "due_now",
+		};
+
+		const scheduled = markRecallRecordScheduled(record, "2026-07-25", "appt-100");
+		assert.equal(scheduled.status, "scheduled");
+		assert.equal(scheduled.urgencyStatus, "upcoming");
+		assert.equal(scheduled.scheduledDate, "2026-07-25");
+		assert.equal(scheduled.scheduledAppointmentId, "appt-100");
+	});
+
+	it("automatically excludes archived and deceased patients from calling queues", () => {
+		const activeCandidate: PatientRecallRecord = {
+			id: "c-active",
+			patientId: "pat-act",
+			fullName: "Живой Пациент",
+			phone: "+79160000001",
+			cycleType: "standard_prophylaxis",
+			lastVisitDate: "2026-01-01",
+			dueDate: "2026-07-01",
+			daysOverdue: 10,
+			urgencyStatus: "due_now",
+			status: "due_now",
+		};
+
+		const archivedCandidate: PatientRecallRecord = {
+			...activeCandidate,
+			id: "c-archived",
+			patientId: "pat-arc",
+			fullName: "Архивный Пациент",
+			isArchived: true,
+		};
+
+		const deceasedCandidate: PatientRecallRecord = {
+			...activeCandidate,
+			id: "c-deceased",
+			patientId: "pat-dec",
+			fullName: "Умерший Пациент",
+			isDeceased: true,
+		};
+
+		const inactiveCandidate: PatientRecallRecord = {
+			...activeCandidate,
+			id: "c-inactive",
+			patientId: "pat-inact",
+			fullName: "Неактивный Пациент",
+			patientStatus: "archived",
+		};
+
+		// Direct eligibility check
+		assert.equal(isPatientEligibleForRecall(activeCandidate), true);
+		assert.equal(isPatientEligibleForRecall(archivedCandidate), false);
+		assert.equal(isPatientEligibleForRecall(deceasedCandidate), false);
+		assert.equal(isPatientEligibleForRecall(inactiveCandidate), false);
+
+		// Filtering candidate list: excludes archived/deceased automatically
+		const allList = [activeCandidate, archivedCandidate, deceasedCandidate, inactiveCandidate];
+		const filtered = filterAndSortRecallCandidates(allList, {});
+		assert.equal(filtered.length, 1);
+		assert.equal(filtered[0]?.fullName, "Живой Пациент");
+
+		// If explicitly requesting includeArchived: true
+		const withArchived = filterAndSortRecallCandidates(allList, { includeArchived: true });
+		assert.equal(withArchived.length, 4);
+	});
+});
+
+describe("Patient Recall Engine - Human-Readable UI Badges Without Bureaucracy", () => {
+	it("formats 'due_now' as 'Срок подошел'", () => {
+		const badge = formatHumanRecallBadge({
+			urgencyStatus: "due_now",
+			daysOverdue: 0,
+			dueDate: "2026-08-15",
+		});
+		assert.equal(badge.badgeText, "Срок подошел");
+		assert.equal(badge.badgeClass, "due_now");
+	});
+
+	it("formats overdue with correct Russian day plurals: 'Просрочен на 12 дней', 'Просрочен на 1 день', 'Просрочен на 3 дня'", () => {
+		assert.equal(formatRussianDaysPlural(1), "1 день");
+		assert.equal(formatRussianDaysPlural(2), "2 дня");
+		assert.equal(formatRussianDaysPlural(3), "3 дня");
+		assert.equal(formatRussianDaysPlural(4), "4 дня");
+		assert.equal(formatRussianDaysPlural(5), "5 дней");
+		assert.equal(formatRussianDaysPlural(11), "11 дней");
+		assert.equal(formatRussianDaysPlural(12), "12 дней");
+		assert.equal(formatRussianDaysPlural(21), "21 день");
+		assert.equal(formatRussianDaysPlural(24), "24 дня");
+		assert.equal(formatRussianDaysPlural(25), "25 дней");
+
+		const badge12 = formatHumanRecallBadge({
+			urgencyStatus: "overdue_30",
+			daysOverdue: 12,
+			dueDate: "2026-08-01",
+		});
+		assert.equal(badge12.badgeText, "Просрочен на 12 дней");
+
+		const badge1 = formatHumanRecallBadge({
+			urgencyStatus: "overdue_30",
+			daysOverdue: 1,
+			dueDate: "2026-08-14",
+		});
+		assert.equal(badge1.badgeText, "Просрочен на 1 день");
+
+		const badge90 = formatHumanRecallBadge({
+			urgencyStatus: "overdue_90",
+			daysOverdue: 95,
+			dueDate: "2026-05-10",
+		});
+		assert.equal(badge90.badgeText, "Просрочен на 95 дней");
+	});
+
+	it("formats upcoming with target month name in accusative case: 'Запланирован на ноябрь'", () => {
+		assert.equal(formatRussianMonthAccusative("2026-11-15"), "ноябрь");
+		assert.equal(formatRussianMonthAccusative("2026-05-20"), "май");
+		assert.equal(formatRussianMonthAccusative("2026-01-10"), "январь");
+
+		const badgeNov = formatHumanRecallBadge({
+			urgencyStatus: "upcoming",
+			daysOverdue: -45,
+			dueDate: "2026-11-20",
+			referenceDate: "2026-10-01",
+		});
+		assert.equal(badgeNov.badgeText, "Запланирован на ноябрь");
+
+		const badgeDec = formatHumanRecallBadge({
+			urgencyStatus: "upcoming",
+			daysOverdue: -60,
+			dueDate: "2026-12-05",
+			referenceDate: "2026-10-01",
+		});
+		assert.equal(badgeDec.badgeText, "Запланирован на декабрь");
+	});
+
+	it("formats scheduled and completed statuses cleanly without jargon", () => {
+		const scheduledBadge = formatHumanRecallBadge({
+			urgencyStatus: "upcoming",
+			daysOverdue: 0,
+			dueDate: "2026-09-01",
+			status: "scheduled",
+		});
+		assert.equal(scheduledBadge.badgeText, "Записан на прием");
+
+		const completedBadge = formatHumanRecallBadge({
+			urgencyStatus: "completed",
+			daysOverdue: 0,
+			dueDate: "2026-08-10",
+			status: "completed",
+		});
+		assert.equal(completedBadge.badgeText, "Визит завершен");
 	});
 });

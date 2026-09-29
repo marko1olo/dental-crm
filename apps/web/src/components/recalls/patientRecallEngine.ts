@@ -16,6 +16,7 @@ export * from "./recallLegacyCandidates";
 
 import type {
 	PatientRecallRecord,
+	RecallContactStatus,
 	RecallCycleType,
 	RecallFilterOptions,
 	RecallPeriodFilter,
@@ -27,13 +28,56 @@ import {
 } from "./recallCycleCatalog";
 import {
 	addCalendarMonthsSafe,
+	addDaysSafe,
 	addWeeksSafe,
 	calculateDaysOverdue,
 	calculateImplantRecallMilestones,
 	formatIsoDateOnly,
 	resolveUrgencyStatus,
 } from "./recallDateMath";
-import { resolveCandidateTriggerType } from "./recallClinicalTriggers";
+import {
+	evaluateMultiRecallChannels,
+	resolveCandidateTriggerType,
+	shouldResetRecallTimer,
+	type ClinicalProcedureIdentifier,
+	type PatientClinicalStatusInput,
+} from "./recallClinicalTriggers";
+
+declare module "./recallCycleCatalog" {
+	interface PatientRecallRecord {
+		readonly isArchived?: boolean | undefined;
+		readonly isDeceased?: boolean | undefined;
+		readonly patientStatus?: string | undefined;
+		readonly postponedUntil?: string | undefined;
+		readonly postponeReason?: string | undefined;
+		readonly channelId?: string | undefined;
+	}
+
+	interface RecallFilterOptions {
+		readonly includeArchived?: boolean | undefined;
+	}
+}
+
+/**
+ * Проверка права пациента на участие в диспансерном учете.
+ * Исключает архивированных и умерших пациентов без orphaned-записей в очередях.
+ */
+export function isPatientEligibleForRecall(candidate: {
+	readonly isArchived?: boolean | undefined;
+	readonly isDeceased?: boolean | undefined;
+	readonly patientStatus?: string | undefined;
+}): boolean {
+	if (candidate.isArchived === true) return false;
+	if (candidate.isDeceased === true) return false;
+	if (
+		candidate.patientStatus === "archived" ||
+		candidate.patientStatus === "deceased" ||
+		candidate.patientStatus === "inactive"
+	) {
+		return false;
+	}
+	return true;
+}
 
 /**
  * Проверка вхождения даты планового визита в выбранный период выборки
@@ -276,6 +320,11 @@ export function filterAndSortRecallCandidates(
 	const queryDigits = rawQuery.replace(/\D/g, "");
 
 	const filtered = candidates.filter((c) => {
+		// Автоматическая очистка: recalls для архивированных или умерших пациентов исключаются из очередей
+		if (!options.includeArchived && !isPatientEligibleForRecall(c)) {
+			return false;
+		}
+
 		if (options.status && options.status !== "all") {
 			if (options.status === "due_now") {
 				const isPending = c.status === "pending" || c.status === "due_now";
@@ -370,3 +419,199 @@ export function filterAndSortRecallCandidates(
 		return 0;
 	});
 }
+
+/**
+ * 1-Click перенос срока планового осмотра (пациент в отпуске / отъезд / личные причины)
+ */
+export function postponeRecallRecord(
+	record: PatientRecallRecord,
+	duration: "2_weeks" | "1_month" | number,
+	reason = "Пациент в отпуске / перенос визита",
+	referenceDate?: Date | string,
+): PatientRecallRecord {
+	const ref = referenceDate ?? new Date();
+	const baseDate = record.dueDate;
+	const parsedDue = new Date(baseDate);
+	const parsedRef = typeof ref === "string" ? new Date(ref) : ref;
+
+	// Если плановый срок уже давно наступил или просрочен, откладываем от referenceDate
+	const effectiveFrom = parsedDue.getTime() < parsedRef.getTime() ? parsedRef : parsedDue;
+
+	let newDueDate: Date;
+	let durationDesc: string;
+	if (duration === "2_weeks") {
+		newDueDate = addWeeksSafe(effectiveFrom, 2);
+		durationDesc = "2 недели";
+	} else if (duration === "1_month") {
+		newDueDate = addCalendarMonthsSafe(effectiveFrom, 1);
+		durationDesc = "1 месяц";
+	} else {
+		newDueDate = addDaysSafe(effectiveFrom, duration);
+		durationDesc = `${duration} дн.`;
+	}
+
+	const formattedDueDate = formatIsoDateOnly(newDueDate);
+	const daysOverdue = calculateDaysOverdue(newDueDate, ref);
+	const urgencyStatus = resolveUrgencyStatus(newDueDate, ref, false);
+
+	const note = `[Отложено на ${durationDesc} до ${formattedDueDate}: ${reason}]`;
+	const updatedNotes = record.clinicalNotes
+		? `${record.clinicalNotes}\n${note}`
+		: note;
+
+	return {
+		...record,
+		dueDate: formattedDueDate,
+		daysOverdue,
+		urgencyStatus,
+		status: "declined", // в каноническом канбане "Отказ / Перенос"
+		clinicalNotes: updatedNotes,
+		postponedUntil: formattedDueDate,
+		postponeReason: reason,
+	};
+}
+
+/**
+ * 1-Click подтверждение записи пациента: «Связались — записан на прием»
+ */
+export function markRecallRecordScheduled(
+	record: PatientRecallRecord,
+	scheduledDate?: string,
+	scheduledAppointmentId?: string,
+): PatientRecallRecord {
+	return {
+		...record,
+		status: "scheduled",
+		urgencyStatus: "upcoming",
+		scheduledDate: scheduledDate ?? record.dueDate,
+		scheduledAppointmentId: scheduledAppointmentId ?? `appt-${record.id}-${Date.now()}`,
+	};
+}
+
+/**
+ * Создание независимых карточек диспансерного контроля для пациента (Multi-Recall Separation).
+ * Гарантирует, что импланты, ортодонтия, детство и гигиена существуют как независимые сущности с отдельными таймерами.
+ */
+export function createMultiRecallRecordsForPatient(
+	patient: {
+		readonly id: string;
+		readonly fullName: string;
+		readonly phone?: string | null | undefined;
+		readonly email?: string | null | undefined;
+		readonly birthDate?: string | null | undefined;
+		readonly age?: number | undefined;
+		readonly attendingDoctorId?: string | undefined;
+		readonly attendingDoctorName?: string | undefined;
+		readonly isArchived?: boolean | undefined;
+		readonly isDeceased?: boolean | undefined;
+	},
+	clinicalData: PatientClinicalStatusInput,
+): PatientRecallRecord[] {
+	if (!isPatientEligibleForRecall(patient)) {
+		return [];
+	}
+
+	const multiResult = evaluateMultiRecallChannels(clinicalData);
+	const refDate = clinicalData.referenceDate ?? new Date();
+
+	return multiResult.triggers.map((trigger) => {
+		const daysOverdue = calculateDaysOverdue(trigger.nextDueDate, refDate);
+		const urgencyStatus = resolveUrgencyStatus(trigger.nextDueDate, refDate, false);
+		const cycleDef = RECALL_CYCLE_CATALOG[trigger.mappedCycleType];
+
+		const recordId = `${patient.id}_${trigger.channelId}`;
+
+		return {
+			id: recordId,
+			patientId: patient.id,
+			fullName: patient.fullName,
+			phone: patient.phone ?? null,
+			email: patient.email ?? null,
+			birthDate: patient.birthDate,
+			age: patient.age,
+			cycleType: trigger.mappedCycleType,
+			clinicalTriggerType: trigger.triggerType,
+			channelId: trigger.channelId,
+			lastVisitDate: formatIsoDateOnly(
+				clinicalData.lastVisitDate ? new Date(clinicalData.lastVisitDate) : new Date(),
+			),
+			dueDate: trigger.formattedDueDate,
+			daysOverdue,
+			urgencyStatus,
+			status: "due_now",
+			attendingDoctorId: patient.attendingDoctorId,
+			attendingDoctorName: patient.attendingDoctorName,
+			clinicalNotes: trigger.clinicalRationale,
+			historicalRevenueRub: cycleDef?.estimatedAverageCheckRub ?? 6500,
+			isArchived: patient.isArchived,
+			isDeceased: patient.isDeceased,
+		};
+	});
+}
+
+/**
+ * Обработка завершенного визита пациента с защитой от ложного сброса диспансерных таймеров (Mandate 2).
+ * Обычные терапевтические визиты (кариес, пломбирование A16.07.002, пульпит A16.07.030)
+ * НЕ СБРАСЫВАЮТ таймер профессиональной гигиены!
+ * Таймер гигиены сбрасывается ТОЛЬКО если оказана услуга A16.07.051 или комплексная гигиена.
+ */
+export function processVisitForPatientRecalls(
+	currentRecalls: readonly PatientRecallRecord[],
+	visit: {
+		readonly visitDate: string; // YYYY-MM-DD
+		readonly procedures: readonly ClinicalProcedureIdentifier[];
+		readonly isCompleted?: boolean | undefined;
+	},
+	referenceDate?: Date | string,
+): {
+	readonly updatedRecalls: PatientRecallRecord[];
+	readonly resetCount: number;
+	readonly unchangedCount: number;
+} {
+	const ref = referenceDate ?? new Date();
+	let resetCount = 0;
+	let unchangedCount = 0;
+
+	const updatedRecalls = currentRecalls.map((recall) => {
+		const shouldReset = shouldResetRecallTimer(
+			{
+				cycleType: recall.cycleType,
+				clinicalTriggerType: recall.clinicalTriggerType,
+			},
+			visit.procedures,
+		);
+
+		if (!shouldReset) {
+			unchangedCount++;
+			return recall;
+		}
+
+		resetCount++;
+		const cycleDef = RECALL_CYCLE_CATALOG[recall.cycleType];
+		const intervalMonths =
+			recall.customIntervalValue && recall.customIntervalValue > 0
+				? recall.customIntervalValue
+				: (cycleDef?.defaultIntervalMonths ?? 6);
+
+		const newDueDate = addCalendarMonthsSafe(visit.visitDate, intervalMonths);
+		const formattedDueDate = formatIsoDateOnly(newDueDate);
+		const daysOverdue = calculateDaysOverdue(newDueDate, ref);
+		const urgencyStatus = resolveUrgencyStatus(newDueDate, ref, false);
+
+		return {
+			...recall,
+			lastVisitDate: visit.visitDate,
+			dueDate: formattedDueDate,
+			daysOverdue,
+			urgencyStatus,
+			status: "due_now" as RecallContactStatus,
+		};
+	});
+
+	return {
+		updatedRecalls,
+		resetCount,
+		unchangedCount,
+	};
+}
+

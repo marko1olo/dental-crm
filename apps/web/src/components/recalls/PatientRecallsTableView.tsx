@@ -3,6 +3,7 @@ import {
 	Calendar,
 	Check,
 	ChevronDown,
+	Clock,
 	Eye,
 	MessageCircle,
 	PhoneCall,
@@ -10,6 +11,7 @@ import {
 } from "lucide-react";
 import {
 	RECALL_CYCLE_CATALOG,
+	formatHumanRecallBadge,
 	type PatientRecallRecord,
 	type RecallContactStatus,
 } from "./patientRecallEngine";
@@ -28,7 +30,9 @@ export interface PatientRecallsTableViewProps {
 	readonly onTelegram: (candidate: PatientRecallRecord) => void;
 	readonly onCopySms: (candidate: PatientRecallRecord) => void;
 	readonly onStatusUpdate: (candidateId: string, status: RecallContactStatus) => void;
+	readonly onPostpone?: ((candidate: PatientRecallRecord, duration: "2_weeks" | "1_month") => void) | undefined;
 }
+
 
 export const PatientRecallsTableView: React.FC<PatientRecallsTableViewProps> = ({
 	filteredCandidates,
@@ -44,6 +48,7 @@ export const PatientRecallsTableView: React.FC<PatientRecallsTableViewProps> = (
 	onTelegram,
 	onCopySms,
 	onStatusUpdate,
+	onPostpone,
 }) => {
 	return (
 		<div className="recall-table-wrap">
@@ -95,13 +100,23 @@ export const PatientRecallsTableView: React.FC<PatientRecallsTableViewProps> = (
 								</td>
 
 								<td>
-									<span className={`recall-badge recall-badge--${candidate.urgencyStatus}`}>
-										{candidate.urgencyStatus === "due_now" && "Пора звать"}
-										{candidate.urgencyStatus === "overdue_30" && `+${candidate.daysOverdue} дн.`}
-										{candidate.urgencyStatus === "overdue_90" && `+${candidate.daysOverdue} дн. (риск)`}
-										{candidate.urgencyStatus === "upcoming" && `через ${Math.abs(candidate.daysOverdue)} дн.`}
-										{candidate.urgencyStatus === "completed" && "Завершено"}
-									</span>
+									{(() => {
+										const badge = formatHumanRecallBadge({
+											urgencyStatus: candidate.urgencyStatus,
+											daysOverdue: candidate.daysOverdue,
+											dueDate: candidate.dueDate,
+											status: candidate.status,
+										});
+										return (
+											<span
+												className={`recall-badge recall-badge--${badge.badgeClass}`}
+												title={badge.badgeTitle}
+												data-testid={`recall-badge-${candidate.id}`}
+											>
+												{badge.badgeText}
+											</span>
+										);
+									})()}
 								</td>
 
 								<td>
@@ -129,10 +144,10 @@ export const PatientRecallsTableView: React.FC<PatientRecallsTableViewProps> = (
 											)
 										}
 									>
-										<option value="due_now">Пора звать</option>
+										<option value="due_now">Срок подошел</option>
 										<option value="invited">Приглашен</option>
-										<option value="scheduled">Записался</option>
-										<option value="completed">Завершен</option>
+										<option value="scheduled">Записан на прием</option>
+										<option value="completed">Визит завершен</option>
 										<option value="declined">Отказ / Перенос</option>
 									</select>
 								</td>
@@ -147,11 +162,11 @@ export const PatientRecallsTableView: React.FC<PatientRecallsTableViewProps> = (
 											position: "relative",
 										}}
 									>
-										{/* Primary Action: Записать */}
+										{/* Primary Action: Записать в расписание */}
 										<button
 											type="button"
 											className="recall-action-btn recall-action-btn--book"
-											title="Записать пациента на прием"
+											title="Записать пациента на прием в расписание"
 											style={{ minHeight: "36px", padding: "6px 12px" }}
 											onClick={() => onBook(candidate)}
 											data-testid={`recall-book-btn-${candidate.id}`}
@@ -160,7 +175,26 @@ export const PatientRecallsTableView: React.FC<PatientRecallsTableViewProps> = (
 											<span>Записать</span>
 										</button>
 
-										{/* Direct 1-Click Preview Action (Mandate 8i Anti-Simulator) */}
+										{/* 1-Click Fast Action: Связались — записан на прием */}
+										<button
+											type="button"
+											className="recall-action-btn"
+											title="Связались — пациент уже записан на прием (1 клик)"
+											style={{
+												minHeight: "36px",
+												padding: "6px 10px",
+												background: candidate.status === "scheduled" ? "var(--color-success-bg, #ecfdf5)" : undefined,
+												color: candidate.status === "scheduled" ? "var(--color-success, #059669)" : undefined,
+												borderColor: candidate.status === "scheduled" ? "var(--color-success, #059669)" : undefined,
+											}}
+											onClick={() => onStatusUpdate(candidate.id, "scheduled")}
+											data-testid={`recall-fast-scheduled-btn-${candidate.id}`}
+										>
+											<Check size={14} />
+											<span>Записан</span>
+										</button>
+
+										{/* Direct 1-Click Preview Action */}
 										<button
 											type="button"
 											className={`recall-action-btn ${isRealPreviewActive ? "recall-action-btn--script active" : ""}`}
@@ -178,7 +212,7 @@ export const PatientRecallsTableView: React.FC<PatientRecallsTableViewProps> = (
 											<button
 												type="button"
 												className="recall-action-btn"
-												title="Каналы связи и речевой скрипт"
+												title="Каналы связи, скрипты и отложить визит"
 												style={{
 													minHeight: "36px",
 													padding: "6px 10px",
@@ -216,7 +250,7 @@ export const PatientRecallsTableView: React.FC<PatientRecallsTableViewProps> = (
 													border: "1px solid var(--rm-border)",
 													borderRadius: "8px",
 													boxShadow: "var(--shadow-3)",
-													minWidth: "160px",
+													minWidth: "180px",
 												}}
 											>
 												{/* WhatsApp */}
@@ -273,7 +307,7 @@ export const PatientRecallsTableView: React.FC<PatientRecallsTableViewProps> = (
 													)}
 												</button>
 
-												{/* Предпросмотр с расчетом SMS сегментов */}
+												{/* Предпросмотр */}
 												<button
 													type="button"
 													className={`recall-action-btn ${isRealPreviewActive ? "active" : ""}`}
@@ -303,6 +337,49 @@ export const PatientRecallsTableView: React.FC<PatientRecallsTableViewProps> = (
 												>
 													<PhoneCall size={15} />
 													<span>Скрипт</span>
+												</button>
+
+												{/* Divider */}
+												<div style={{ height: "1px", background: "var(--rm-border)", margin: "4px 0" }} />
+
+												{/* 1-Click: Отложить на 2 недели */}
+												<button
+													type="button"
+													className="recall-action-btn"
+													title="Отложить на 2 недели (пациент в отпуске)"
+													style={{ width: "100%", justifyContent: "flex-start", minHeight: "34px", fontSize: "0.8125rem" }}
+													onClick={() => {
+														setOpenContactDropdownId(null);
+														if (onPostpone) {
+															onPostpone(candidate, "2_weeks");
+														} else {
+															onStatusUpdate(candidate.id, "declined");
+														}
+													}}
+													data-testid={`recall-postpone-2w-btn-${candidate.id}`}
+												>
+													<Clock size={14} />
+													<span>Отложить на 2 недели</span>
+												</button>
+
+												{/* 1-Click: Отложить на 1 месяц */}
+												<button
+													type="button"
+													className="recall-action-btn"
+													title="Отложить на 1 месяц"
+													style={{ width: "100%", justifyContent: "flex-start", minHeight: "34px", fontSize: "0.8125rem" }}
+													onClick={() => {
+														setOpenContactDropdownId(null);
+														if (onPostpone) {
+															onPostpone(candidate, "1_month");
+														} else {
+															onStatusUpdate(candidate.id, "declined");
+														}
+													}}
+													data-testid={`recall-postpone-1m-btn-${candidate.id}`}
+												>
+													<Clock size={14} />
+													<span>Отложить на 1 месяц</span>
 												</button>
 											</div>
 										</div>
