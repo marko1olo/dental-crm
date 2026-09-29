@@ -18,9 +18,10 @@ import {
 	toTransferableScalarData,
 } from "../../utils/math/mprMath";
 import { mapCtCoordinatesToFdiNumber } from "../../utils/dicom/fdiMapper";
+import { logger } from "../../utils/logger";
 import {
 	type ImplantData,
-	VIEWPORT_IDS,
+	VIEWPORT_IDS as BASE_VIEWPORT_IDS,
 	classifyExtendedBoneDensity,
 	implantProtocolLog,
 } from "./cornerstoneTypes";
@@ -40,6 +41,83 @@ import {
 	readVolumeScalarData,
 } from "./panoramicArch";
 import type { PanoramicVolumeInput } from "./PanoramicRendererWindow";
+
+export const VIEWPORT_IDS = {
+	...BASE_VIEWPORT_IDS,
+	volume3d: "VOLUME_3D",
+} as const;
+
+/**
+ * Custom transfer function optimized for maxillofacial CBCT:
+ * - HU < 150: completely transparent (air, fat, fluids, soft tissue)
+ * - HU 150..400: trabecular / cancellous bone with warm ivory-apricot color
+ * - HU 400..1200: cortical bone with bright bone ivory color
+ * - HU 1200..2000+: dense enamel, dental crowns and titanium implants
+ */
+export const DENTAL_SKULL_BONE_PRESET = {
+	name: "Dental-Skull-Bone",
+	gradientOpacity: "4 0 1 255 1",
+	specularPower: "15",
+	scalarOpacity: "10 -1000 0 150 0 350 0.25 800 0.70 2000 0.85",
+	specular: "0.25",
+	shade: "1",
+	ambient: "0.15",
+	colorTransfer: "20 -1000 0 0 0 150 0.7 0.3 0.2 350 0.85 0.65 0.45 800 0.95 0.88 0.75 2000 1 1 1",
+	diffuse: "0.85",
+	interpolation: "1",
+} as const;
+
+export interface Volume3DPresetSpec {
+	id: string;
+	name: string;
+	label: string;
+	description: string;
+	huRange: string;
+	preset: any;
+}
+
+export const VOLUME_3D_PRESETS: readonly Volume3DPresetSpec[] = [
+	{
+		id: "bone",
+		name: "CT-Bone",
+		label: "Кость (CT-Bone)",
+		description: "Стандартная клиническая реконструкция костной ткани",
+		huRange: "150..2000 HU",
+		preset: "CT-Bone",
+	},
+	{
+		id: "skull_jaw",
+		name: "Dental-Skull-Bone",
+		label: "Череп / Челюсти",
+		description: "Оптимизировано для челюстно-лицевой хирургии и имплантации",
+		huRange: "150..2000 HU",
+		preset: DENTAL_SKULL_BONE_PRESET,
+	},
+	{
+		id: "dense_bone",
+		name: "CT-Bones",
+		label: "Плотная кость / Зубы",
+		description: "Высококонтрастная кортикальная пластинка и зубной ряд",
+		huRange: "400..3000 HU",
+		preset: "CT-Bones",
+	},
+	{
+		id: "tissue_bone",
+		name: "CT-Chest-Vessels",
+		label: "Ткани + Кость",
+		description: "Визуализация мягкотканного контура лица и кости",
+		huRange: "-200..1500 HU",
+		preset: "CT-Chest-Vessels",
+	},
+	{
+		id: "airway",
+		name: "CT-Air",
+		label: "Дыхательные пути",
+		description: "Просвет воздухоносных путей и верхнечелюстных пазух",
+		huRange: "-1000..-200 HU",
+		preset: "CT-Air",
+	},
+] as const;
 
 export function setupMprToolGroup(toolGroupId: string, renderingEngineId: string): void {
 	let toolGroup = cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
@@ -73,6 +151,119 @@ export function setupMprToolGroup(toolGroupId: string, renderingEngineId: string
 	toolGroup.addViewport(VIEWPORT_IDS.axial, renderingEngineId);
 	toolGroup.addViewport(VIEWPORT_IDS.sagittal, renderingEngineId);
 	toolGroup.addViewport(VIEWPORT_IDS.coronal, renderingEngineId);
+}
+
+/**
+ * Configures the dedicated 3D Volume viewport tool group with TrackballRotateTool (Primary LMB),
+ * ZoomTool (Auxiliary MMB) and PanTool (Secondary RMB).
+ */
+export function setupVolume3DToolGroup(toolGroupId: string, renderingEngineId: string): void {
+	let toolGroup = cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
+	if (!toolGroup) {
+		toolGroup = cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId)!;
+	}
+
+	try {
+		toolGroup.addTool(cornerstoneTools.TrackballRotateTool.toolName);
+		toolGroup.setToolActive(cornerstoneTools.TrackballRotateTool.toolName, {
+			bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Primary }],
+		});
+	} catch {
+		// Tool already registered
+	}
+
+	try {
+		toolGroup.addTool(cornerstoneTools.ZoomTool.toolName);
+		toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
+			bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Auxiliary }],
+		});
+	} catch {
+		// Tool already registered
+	}
+
+	try {
+		toolGroup.addTool(cornerstoneTools.PanTool.toolName);
+		toolGroup.setToolActive(cornerstoneTools.PanTool.toolName, {
+			bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Secondary }],
+		});
+	} catch {
+		// Tool already registered
+	}
+
+	try {
+		toolGroup.addViewport(VIEWPORT_IDS.volume3d, renderingEngineId);
+	} catch {
+		// Viewport already added
+	}
+}
+
+/**
+ * Applies a 3D volume rendering preset or transfer function to the specified viewport.
+ */
+export function applyVolume3DPreset(
+	viewport: any,
+	presetInput: string | Record<string, any>,
+): boolean {
+	if (!viewport) return false;
+	try {
+		if (typeof viewport.setProperties === "function") {
+			viewport.setProperties({ preset: presetInput });
+			if (typeof viewport.render === "function") {
+				viewport.render();
+			}
+			return true;
+		}
+	} catch (err) {
+		logger.warn("[applyVolume3DPreset] Could not apply preset to volume3d:", err);
+	}
+	return false;
+}
+
+/**
+ * Resets camera orientation, zoom and pan for the 3D Volume viewport.
+ */
+export function resetVolume3DCamera(viewport: any): boolean {
+	if (!viewport) return false;
+	try {
+		if (typeof viewport.resetCamera === "function") {
+			viewport.resetCamera({ resetPan: true, resetZoom: true, resetToCenter: true });
+			if (typeof viewport.render === "function") {
+				viewport.render();
+			}
+			return true;
+		}
+	} catch (err) {
+		logger.warn("[resetVolume3DCamera] Failed to reset 3D camera:", err);
+	}
+	return false;
+}
+
+/**
+ * Rotates the 3D volume camera to a canonical clinical orientation (axial, sagittal, coronal).
+ */
+export function setVolume3DOrientation(
+	viewport: any,
+	orientation: "axial" | "sagittal" | "coronal",
+): boolean {
+	if (!viewport) return false;
+	try {
+		const map: Record<string, any> = {
+			axial: cornerstone.Enums.OrientationAxis.AXIAL,
+			sagittal: cornerstone.Enums.OrientationAxis.SAGITTAL,
+			coronal: cornerstone.Enums.OrientationAxis.CORONAL,
+		};
+		const target = map[orientation];
+		if (target && typeof viewport.applyViewOrientation === "function") {
+			viewport.applyViewOrientation(target);
+			if (typeof viewport.render === "function") {
+				viewport.render();
+			}
+			return true;
+		}
+	} catch (err) {
+		logger.warn("[setVolume3DOrientation] Failed to set orientation:", err);
+	}
+	return false;
 }
 
 export interface ImplantPlacementParams {

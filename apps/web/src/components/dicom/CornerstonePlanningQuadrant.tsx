@@ -44,6 +44,7 @@ export interface CornerstonePlanningQuadrantProps {
 	isExportingSnapshot: boolean;
 	aiProtocolLog: string | null;
 	handleAddCbctToFinance?: (() => void) | undefined;
+	showInternalHeader?: boolean;
 }
 
 export const CornerstonePlanningQuadrant: React.FC<CornerstonePlanningQuadrantProps> = ({
@@ -69,21 +70,23 @@ export const CornerstonePlanningQuadrant: React.FC<CornerstonePlanningQuadrantPr
 	isExportingSnapshot,
 	aiProtocolLog,
 	handleAddCbctToFinance,
+	showInternalHeader = true,
 }) => {
 	return (
 		<>
 			{/* QUADRANT HEADER */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					gap: "8px",
-					borderBottom: "1px solid var(--line-strong, rgba(255,255,255,0.12))",
-					paddingBottom: "8px",
-					flexShrink: 0,
-				}}
-			>
+			{showInternalHeader && (
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						gap: "8px",
+						borderBottom: "1px solid var(--line-strong, rgba(255,255,255,0.12))",
+						paddingBottom: "8px",
+						flexShrink: 0,
+					}}
+				>
 				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
 					<Activity className="w-4 h-4 text-cyan-400 shrink-0" />
 					<span
@@ -152,6 +155,7 @@ export const CornerstonePlanningQuadrant: React.FC<CornerstonePlanningQuadrantPr
 					</span>
 				)}
 			</div>
+			)}
 
 			{/* SECTION 1: IMPLANT SYSTEM & SIZING SELECTOR */}
 			<div
