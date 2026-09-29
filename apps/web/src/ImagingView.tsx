@@ -506,7 +506,7 @@ export function ImagingView(props: ImagingViewProps) {
 	const [isDicomwebLoading, setIsDicomwebLoading] = useState(false);
 	const [dicomwebLoadProgress, setDicomwebLoadProgress] = useState<string | null>(null);
 
-	const handleLoadFromDicomweb = useCallback(async () => {
+	const handleLoadFromDicomweb = useCallback(async (options?: { silentOnError?: boolean }) => {
 		if (!selectedImagingStudy) return;
 		setIsDicomwebLoading(true);
 		setDicomwebLoadProgress("Подключение к DICOMweb WADO-RS...");
@@ -578,12 +578,28 @@ export function ImagingView(props: ImagingViewProps) {
 			showToast(`Загружено ${wadoImageIds.length} срезов из DICOMweb PACS`, "success");
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : "Сбой загрузки из DICOMweb";
-			showToast(msg, "error");
+			if (!options?.silentOnError) {
+				showToast(msg, "error");
+			}
 		} finally {
 			setIsDicomwebLoading(false);
 			setDicomwebLoadProgress(null);
 		}
-	}, [selectedImagingStudy, activePatient?.id, authHeaders]);
+	}, [selectedImagingStudy, activePatient?.id, authHeaders, showToast]);
+
+	// Autoload DICOMweb WADO-RS when a CBCT study with PACS linkage is selected and localImageIds is empty
+	useEffect(() => {
+		if (!selectedImagingStudy || selectedImagingStudy.kind !== "cbct") return;
+		if (localImageIds && localImageIds.length > 0) return;
+		if (isDicomwebLoading) return;
+
+		const studyAny = selectedImagingStudy as Record<string, unknown>;
+		const studyUid = (studyAny.dicomStudyUid ?? studyAny.studyInstanceUid ?? studyAny.studyUid) as string | undefined;
+
+		if (studyUid || studyAny.hasDicomweb) {
+			handleLoadFromDicomweb({ silentOnError: true });
+		}
+	}, [selectedImagingStudy, localImageIds, isDicomwebLoading, handleLoadFromDicomweb]);
 
 	const handleCameraPhotoCapture = async (
 		event: React.ChangeEvent<HTMLInputElement>,
@@ -1624,24 +1640,40 @@ export function ImagingView(props: ImagingViewProps) {
 										/>
 									</Suspense>
 								) : selectedImagingStudy?.kind === "cbct" ? (
-									<div className="w-full h-full flex flex-col gap-4 p-4">
+									<div
+										data-testid="cbct-study-active-card"
+										className="w-full h-full flex flex-col gap-4 p-4 min-h-[500px]"
+									>
 										{/* 1-click CBCT Quick Launch Action Bar per BUG-007 / BUG-009 */}
-										<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-											<div className="flex flex-col gap-1 text-left">
+										<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 shadow-xs">
+											<div className="flex flex-col gap-1 text-left min-w-0">
 												<div className="flex items-center gap-2">
-													<span className="inline-block w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse" />
-													<strong className="text-sm font-semibold text-[var(--ink)]">
-														Исследование КЛКТ: {selectedImagingStudy.title || "Томограмма 3D"}
+													<span className="inline-block w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse shrink-0" />
+													<strong className="text-sm font-semibold text-[var(--ink)] truncate">
+														КЛКТ 3D: {selectedImagingStudy.title || "Томограмма 3D"}
 													</strong>
+													<span className="px-2 py-0.5 text-[11px] font-medium rounded bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 shrink-0">
+														PACS WADO-RS
+													</span>
 												</div>
-												<p className="text-xs text-[var(--muted)]">
-													Запустите 3D-разбор в 1 клик, откройте просмотрщик или загрузите срезы из PACS WADO-RS
-												</p>
+												<div className="flex items-center gap-2 text-xs text-[var(--muted)]">
+													{isDicomwebLoading ? (
+														<span className="text-cyan-600 dark:text-cyan-400 font-medium flex items-center gap-1.5">
+															<RefreshCw size={12} className="animate-spin" />
+															{dicomwebLoadProgress ?? "Подключение к PACS архиву..."}
+														</span>
+													) : (
+														<span>
+															Автономный доступ: 3D Студия Romexis, мультипланарная реконструкция Cornerstone3D или загрузка из архива
+														</span>
+													)}
+												</div>
 											</div>
 
-											<div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+											<div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0">
 												<button
 													type="button"
+													data-testid="btn-open-cbct-studio"
 													onClick={() => setIsCbctStudioOpen(true)}
 													className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer flex-1 sm:flex-none"
 													title="Открыть Romexis 3D Студию с панорамой, осями и расчётом безопасности нерва"
@@ -1652,6 +1684,7 @@ export function ImagingView(props: ImagingViewProps) {
 
 												<button
 													type="button"
+													data-testid="btn-open-cornerstone-workspace"
 													onClick={() => setIsCbctWorkspaceOpen(true)}
 													className="px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--surface-50)] hover:bg-[var(--surface-100)] text-[var(--ink)] transition-colors flex items-center justify-center gap-1.5 cursor-pointer flex-1 sm:flex-none"
 													title="Открыть Cornerstone3D MPR просмотрщик"
@@ -1662,7 +1695,8 @@ export function ImagingView(props: ImagingViewProps) {
 
 												<button
 													type="button"
-													onClick={handleLoadFromDicomweb}
+													data-testid="btn-load-dicomweb-pacs"
+													onClick={() => handleLoadFromDicomweb()}
 													disabled={isDicomwebLoading}
 													className="px-3 py-2 text-xs font-semibold rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 flex-1 sm:flex-none"
 													title="Запросить метаданные и срезы через WADO-RS"
@@ -1673,15 +1707,10 @@ export function ImagingView(props: ImagingViewProps) {
 											</div>
 										</div>
 
-										<Suspense fallback={null}>
-											<DicomArchiveUploader onImagesLoaded={setLocalImageIds} />
-										</Suspense>
-
-										<div className="imaging-cbct-hint p-3 rounded-lg border border-dashed border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--muted)] flex items-start gap-2.5">
-											<div className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-1.5 shrink-0" />
-											<p>
-												<strong>Подключение DICOMweb WADO-RS активно.</strong> Срезы КЛКТ формируются по адресу <code>{`${import.meta.env.VITE_API_URL ?? ""}/api/dicomweb/...`}</code>. Исследования могут открываться напрямую через WADO-RS из архива клиники, в Romexis 3D Студии с авто-определением зубной дуги, либо загружаться из локальной папки / ZIP-архива.
-											</p>
+										<div className="flex-1 flex flex-col min-h-[360px] rounded-xl border border-[var(--line)] bg-[var(--paper)] p-2">
+											<Suspense fallback={<div className="p-4 text-xs text-[var(--muted)]">Подготовка загрузчика архивов...</div>}>
+												<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full flex-1" />
+											</Suspense>
 										</div>
 									</div>
 								) : effectivePreviewUrl && !previewLoadError ? (
