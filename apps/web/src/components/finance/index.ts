@@ -25,4 +25,6 @@ export * from "./invoiceEngine";
 export * from "./cashboxOperations";
 export * from "./FinanceView";
 export * from "./CashRegisterModal";
+export * from "./FastCheckoutModal.js";
+export * from "./CheckoutSplitModal.js";
 export type { FlexibleFiscalItem } from "./FiscalReceipt54FzModal.js";

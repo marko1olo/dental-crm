@@ -143,7 +143,7 @@ export class KktLanPrinterService {
 				fnPresent: false,
 				fnFiscalized: false,
 				latencyMs: 0,
-				error: "ККТ временно заблокирована защитой от сбоев (Circuit Breaker OPEN). Повторная проверка через несколько секунд.",
+				error: "Кассовый аппарат временно недоступен (защита от сбоев). Повторная проверка через несколько секунд.",
 				checkedAt: nowIso,
 			};
 		}
@@ -232,7 +232,7 @@ export class KktLanPrinterService {
 			fnPresent: false,
 			fnFiscalized: false,
 			latencyMs: 0,
-			error: `ККТ недоступна в локальной сети (${cfg.host}:${cfg.port})`,
+			error: `Кассовый аппарат недоступен в локальной сети (${cfg.host}:${cfg.port})`,
 			checkedAt: nowIso,
 		};
 	}
@@ -305,6 +305,21 @@ export class KktLanPrinterService {
 		const cfg = { ...this.defaultConfig, ...overrideConfig };
 		const now = new Date();
 		const fnSerial = "9960440302145896";
+
+		// Mandate 8e: Гарантийный прием и 100% скидки (0.00 ₽) — фискальный чек в ККТ не направляется
+		if (payload.totalRub <= 0) {
+			return {
+				success: true,
+				status: "printed",
+				fiscalSign: "0000000000",
+				fiscalDocNum: "0",
+				fnSerial,
+				printedAt: now.toISOString(),
+				qrString: "",
+				ofdVerificationUrl: "",
+			};
+		}
+
 		const fiscalDocNum = this.nextFiscalDocNum();
 		const fiscalSign = this.computeFiscalSign(fnSerial, fiscalDocNum, now, payload.totalRub, payload.operationType);
 
@@ -328,7 +343,7 @@ export class KktLanPrinterService {
 				fnSerial,
 				qrString,
 				ofdVerificationUrl: ofdUrl,
-				error: "ККТ временно заблокирована защитой от сбоев (Circuit Breaker OPEN). Повторите позже.",
+				error: "Кассовый аппарат временно недоступен (защита от сбоев). Чек помещен в буфер отложенной печати.",
 			};
 		}
 
@@ -380,7 +395,7 @@ export class KktLanPrinterService {
 				fnSerial,
 				qrString,
 				ofdVerificationUrl: ofdUrl,
-				error: desktopResult.error || "ККТ недоступна в локальной сети",
+				error: desktopResult.error || "Кассовый аппарат недоступен в локальной сети",
 			};
 		}
 
@@ -439,7 +454,7 @@ export class KktLanPrinterService {
 					printedAt: data.receiptIssuedAt || now.toISOString(),
 					qrString: data.qrString || qrString,
 					ofdVerificationUrl: data.ofdVerificationUrl || ofdUrl,
-					error: isOffline ? data.hardwareWarning || "ККТ временно недоступна (чек помещен в очередь)" : undefined,
+					error: isOffline ? data.hardwareWarning || "Кассовый аппарат временно недоступен (чек помещен в очередь отложенной печати)" : undefined,
 				};
 			}
 		} catch (err: unknown) {
@@ -466,7 +481,7 @@ export class KktLanPrinterService {
 			fnSerial,
 			qrString,
 			ofdVerificationUrl: ofdUrl,
-			error: "Ошибка печати чека",
+			error: "Кассовый аппарат недоступен. Чек сохранен для отложенной печати.",
 		};
 	}
 }

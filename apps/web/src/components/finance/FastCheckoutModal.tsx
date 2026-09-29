@@ -163,6 +163,16 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		method: string;
 	} | null>(null);
 	const [isSubmittingManualCard, setIsSubmittingManualCard] = useState<boolean>(false);
+	const [kktHardwareStatus, setKktHardwareStatus] = useState<{
+		online: boolean;
+		paperOk: boolean;
+		error?: string | undefined;
+		isChecking: boolean;
+	}>({
+		online: true,
+		paperOk: true,
+		isChecking: false,
+	});
 
 	useEffect(() => {
 		if (isOpen) {
@@ -182,6 +192,26 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			} else {
 				setSelectedStageId("full_plan");
 			}
+
+			// Проверка статуса кассового регистратора без блокировки интерфейса (Мандаты 8e, 8n)
+			setKktHardwareStatus((prev) => ({ ...prev, isChecking: true }));
+			void KktLanPrinterService.checkDeviceHealth()
+				.then((status) => {
+					setKktHardwareStatus({
+						online: status.online,
+						paperOk: status.paperOk,
+						error: status.error,
+						isChecking: false,
+					});
+				})
+				.catch(() => {
+					setKktHardwareStatus({
+						online: false,
+						paperOk: false,
+						error: "Кассовый аппарат временно недоступен в сети",
+						isChecking: false,
+					});
+				});
 		}
 		if (!isOpen) {
 			inFlightRef.current = false;
@@ -646,7 +676,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			: "card";
 
 		const recordCrmPayment = async (noteSuffix = "") => {
-			if (!patientId || effectiveTotalRub <= 0) return;
+			if (!patientId) return;
 			try {
 				const headers = denteAdminSecretRequestHeaders({
 					"Content-Type": "application/json",
@@ -660,13 +690,15 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						body: JSON.stringify({
 							patientId,
 							amountRub: effectiveTotalRub,
-							method: isSplitPayment ? "split" : primaryMethod,
+							method: targetBillKop === 0 ? "warranty" : (isSplitPayment ? "split" : primaryMethod),
 							cashAmountKopecks: cashKop > 0 ? cashKop : undefined,
 							electronicAmountKopecks: electronicKop > 0 ? electronicKop : undefined,
 							cashAmountRub: effectiveCashRub > 0 ? effectiveCashRub : undefined,
 							electronicAmountRub: (effectiveCardRub + effectiveSbpRub) > 0 ? Number((effectiveCardRub + effectiveSbpRub).toFixed(2)) : undefined,
 							clientMutationId: compositeIdempotencyKey,
-							note: `Быстрый расчет (${effectiveCashierFullName})${noteSuffix}: ${isSplitPayment ? `сплит (нал: ${effectiveCashRub} ₽, безнал: ${(effectiveCardRub + effectiveSbpRub).toFixed(2)} ₽)` : primaryMethod}`,
+							note: targetBillKop === 0
+								? `Акт гарантийного обслуживания / списания услуг (${effectiveCashierFullName}): скидка 100%, 0.00 ₽`
+								: `Быстрый расчет (${effectiveCashierFullName})${noteSuffix}: ${isSplitPayment ? `сплит (нал: ${effectiveCashRub} ₽, безнал: ${(effectiveCardRub + effectiveSbpRub).toFixed(2)} ₽)` : primaryMethod}`,
 						}),
 					}).catch((fetchErr) => {
 						console.warn("[FastCheckoutModal] /api/billing/payments error:", fetchErr);
@@ -699,14 +731,19 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			}
 		);
 
-		// 0. Гарантийный прием / 100% скидка (Мандат 8e, п. 7) — защита от аппаратной ошибки ККТ "Сумма чека не может быть 0"
+		// 0. Гарантийный прием / 100% скидка (Мандат 8e) — чек в ККТ не направляется, оформляется внутренний Акт гарантийного обслуживания
 		if (targetBillKop === 0) {
+			await recordCrmPayment(" [Акт гарантийного обслуживания / списания услуг (скидка 100%, 0.00 ₽)]");
 			showToast(
-				"Гарантийный прием оформлен (скидка 100%, 0 ₽). Визит успешно закрыт без фискализации!",
-				"success"
+				"Оформлен Акт гарантийного обслуживания / списания услуг (скидка 100%, 0 ₽). Визит закрыт без обращения к кассе!",
+				"success",
+				4000
 			);
 			if (onPaymentComplete) {
-				onPaymentComplete(payload);
+				onPaymentComplete({
+					...payload,
+					offlineBuffered: false,
+				});
 			}
 			setTimeout(() => {
 				setIsPrinting(false);
@@ -716,7 +753,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			return;
 		}
 
-		// 1. Принудительный буфер отложенной фискализации или сетевой офлайн (Mandate 8e — пациент не ждет у стойки)
+		// 1. Принудительный буфер отложенной фискализации или сетевой офлайн (Мандаты 8e, 8n — стойка никогда не блокируется)
 		if (forceOfflineBuffer || (typeof navigator !== "undefined" && navigator.onLine === false)) {
 			FiscalReceiptQueueManager.enqueueReceipt(
 				{
@@ -740,17 +777,18 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					taxationSystem: "usn_income_expense",
 				},
 				forceOfflineBuffer
-					? "Ручной перевод в буфер отложенной фискализации (ККТ временно офлайн)"
-					: "Офлайн-режим (потеря сетевого соединения с ККТ)",
+					? "Оплата через автономный терминал (без ККТ) / чек пробить позже"
+					: "Кассовый аппарат временно недоступен в сети",
 				compositeIdempotencyKey
 			);
 			setIsOfflineBuffered(true);
 			showToast(
-				"Платёж сохранён в буфер отложенной фискализации. Пациент рассчитан, стойка свободна!",
-				"success"
+				"Оплата принята через автономный терминал! Фискальный чек поставлен в очередь отложенной печати. Пациент рассчитан.",
+				"success",
+				4000
 			);
 
-			await recordCrmPayment(" [отложенная фискализация]");
+			await recordCrmPayment(" [автономный терминал / отложенный чек]");
 
 			if (onPaymentComplete) {
 				onPaymentComplete({ ...payload, offlineBuffered: true });
@@ -1072,7 +1110,13 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		}
 	};
 
-	// 54-FZ Fiscalization Retry: Resends receipt to KKT/OFD without altering account balance or ledger (Mandate 8e)
+	// Резервный оффлайн-чекаут при сбое/таймауте ККТ (Мандаты 8e, 8n)
+	const handleAcceptPaymentOfflineFallback = async () => {
+		showToast("Принимаем оплату через автономный терминал (без ККТ)... Чек поставлен в очередь отложенной печати!", "info", 3000);
+		await handleExecutePayment(true);
+	};
+
+	// Повторная отправка чека в кассовый аппарат без повторного списания с пациента (Мандат 8e)
 	const handleRetryFiscalizationDirect = async () => {
 		setIsFlushingQueue(true);
 		try {
@@ -1172,53 +1216,66 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				{/* Body Content (pb-28 clearance per Mandates 8d, 8p) */}
 				<div className="p-3 sm:p-4 pb-28 sm:pb-24 overflow-y-auto flex flex-col gap-4 flex-1 min-h-0">
 					{/* Acquiring & Fiscalization Emergency Fault-Tolerance Banner (Mandates 8e, 8n) */}
-					{interruptedPaymentState?.isInterrupted && (
+					{(!kktHardwareStatus.online || !kktHardwareStatus.paperOk || interruptedPaymentState?.isInterrupted) && (
 						<div
 							className="p-3.5 rounded-xl bg-amber-500/15 dark:bg-amber-950/50 border border-amber-500/40 space-y-2.5"
 							data-testid="banner-fast-checkout-interrupted"
 						>
 							<div className="flex items-start justify-between gap-2">
 								<div className="flex items-center gap-2">
-									<AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+									<WifiOff className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
 									<div>
 										<h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 m-0">
-											Внимание: обрыв связи или задержка ответа ККТ / эквайринга
+											Кассовый аппарат временно недоступен или закончилась бумага
 										</h4>
 										<p className="text-[11px] text-amber-800 dark:text-amber-300 m-0 leading-tight">
-											{interruptedPaymentState.reason}. Если оплата по терминалу прошла успешно, подтвердите её вручную без повторного списания с карты пациента.
+											{interruptedPaymentState?.reason || kktHardwareStatus.error || "Связь с кассовым аппаратом отсутствует. Программа не блокирует расчет пациента! Примите оплату через автономный терминал — чек будет поставлен в очередь отложенной печати."}
 										</p>
 									</div>
 								</div>
-								<button
-									type="button"
-									onClick={() => setInterruptedPaymentState(null)}
-									className="text-amber-600 dark:text-amber-400 hover:text-amber-800 text-xs font-bold cursor-pointer"
-								>
-									Скрыть
-								</button>
+								{interruptedPaymentState && (
+									<button
+										type="button"
+										onClick={() => setInterruptedPaymentState(null)}
+										className="text-amber-600 dark:text-amber-400 hover:text-amber-800 text-xs font-bold cursor-pointer"
+									>
+										Скрыть
+									</button>
+								)}
 							</div>
 							<div className="flex items-center gap-2 flex-wrap pt-1">
 								<button
 									type="button"
-									onClick={() => handleManualCardTerminalConfirm(interruptedPaymentState.amountRub)}
+									onClick={() => void handleAcceptPaymentOfflineFallback()}
+									disabled={isPrinting}
+									className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+									data-testid="btn-emergency-autonomous-checkout"
+									title="Принять оплату через автономный терминал (чек ставится в очередь отложенной печати)"
+								>
+									<Check className="w-4 h-4" />
+									<span>Оплата через автономный терминал (без ККТ)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleManualCardTerminalConfirm(interruptedPaymentState?.amountRub)}
 									disabled={isSubmittingManualCard}
-									title={isSubmittingManualCard ? "Идет фиксация..." : "Зафиксировать оплату в CRM без повторного списания с карты"}
+									title="Зафиксировать оплату картой в CRM без повторного списания с карты"
 									className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
 									data-testid="btn-fast-manual-card-confirm"
 								>
-									<Check className="w-4 h-4" />
-									<span>Оплата картой подтверждена на терминале вручную</span>
+									<CreditCard className="w-4 h-4" />
+									<span>Оплата картой подтверждена на терминале</span>
 								</button>
 								<button
 									type="button"
 									onClick={handleRetryFiscalizationDirect}
 									disabled={isFlushingQueue}
-									title={isFlushingQueue ? "Отправка на ККТ..." : "Повторно отправить чек на фискализацию в ККТ без повторного списания"}
+									title="Повторно отправить чек на печать в кассу"
 									className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
 									data-testid="btn-fast-retry-fiscalization"
 								>
 									<RefreshCw size={14} className={isFlushingQueue ? "animate-spin" : ""} />
-									<span>Повторить фискализацию чека</span>
+									<span>Повторить печать чека</span>
 								</button>
 							</div>
 						</div>
@@ -1242,7 +1299,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						</div>
 						<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 flex items-center min-w-0">
 							<ShieldCheck size={13} className="inline mr-1 shrink-0 text-emerald-500" />
-							<span className="truncate">54-ФЗ: ИНН с физлиц НЕ требуется</span>
+							<span className="truncate">Для пациентов-физлиц ИНН не требуется</span>
 						</span>
 						<button
 							type="button"
@@ -1285,7 +1342,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								onClick={() => handleQuickPreset("100_card")}
 								className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-100-card"
-								title="Оплатить 100% банковской картой через терминал (Тег 1081)"
+								title="Оплатить 100% банковской картой через терминал"
 							>
 								<CreditCard size={14} className="shrink-0 text-blue-600" />
 								<span className="truncate">Картой 100%</span>
@@ -1295,7 +1352,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								onClick={() => handleQuickPreset("100_cash")}
 								className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-100-cash"
-								title="Оплатить 100% наличными ровно в кассу без сдачи (Тег 1031)"
+								title="Оплатить 100% наличными ровно в кассу без сдачи"
 							>
 								<Banknote size={14} className="shrink-0 text-emerald-600" />
 								<span className="truncate">Без сдачи (Нал 100%)</span>
@@ -1580,15 +1637,15 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						</div>
 					</div>
 
-					{/* Stage Advance Mode Selection (100% / Аванс 30% / Аванс 50% / Зачет аванса Тег 1215) */}
+					{/* Stage Advance Mode Selection (100% / Аванс 30% / Аванс 50% / Зачет аванса) */}
 					<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex flex-col gap-2">
 						<div className="flex items-center justify-between flex-wrap gap-1">
 							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
 								<Sparkles size={14} className="text-teal-600" />
-								Режим фискализации этапа:
+								Режим чека для этапа:
 							</span>
 							<span className="text-[11px] font-mono font-bold text-teal-700 dark:text-teal-300">
-								Тег 1214: {stageCalc.ffdTag1214NameRu}
+								{stageCalc.ffdTag1214NameRu}
 							</span>
 						</div>
 						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1637,7 +1694,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-purple-400"
 								}`}
 							>
-								<span>Зачет аванса (1215)</span>
+								<span>Зачет аванса</span>
 								<span className="text-xs font-mono opacity-80">Доплата {(stageCalc.requiredAmountKop / 100).toLocaleString("ru-RU")} ₽</span>
 							</button>
 						</div>
@@ -1654,7 +1711,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						)}
 					</div>
 
-					{/* Payer Type & 54-FZ INN Panel (ст. 4.7 № 54-ФЗ: с физлиц ИНН КАТЕГОРИЧЕСКИ НЕ ТРЕБУЕТСЯ) */}
+					{/* Payer Type & INN Panel (с физлиц ИНН КАТЕГОРИЧЕСКИ НЕ ТРЕБУЕТСЯ) */}
 					<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-2" data-testid="payer-type-section">
 						<div className="flex items-center justify-between flex-wrap gap-2">
 							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
@@ -1667,7 +1724,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									data-testid="inn-physical-not-required-badge"
 								>
 									<ShieldCheck size={14} className="inline mr-1 shrink-0 text-emerald-500" />
-									По 54-ФЗ для физлиц не требуется (ИНН не обязателен)
+									Для пациентов-физлиц ИНН не требуется (без ограничений)
 								</span>
 							)}
 						</div>
@@ -1727,7 +1784,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								<div className="space-y-1">
 									<label className="text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1">
 										<FileText size={12} className="text-teal-600" />
-										<span>ИНН организации / ИП (Тег 1228, 10 или 12 цифр): *</span>
+										<span>ИНН организации / ИП (10 или 12 цифр): *</span>
 									</label>
 									<input
 										type="text"
@@ -1741,7 +1798,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								</div>
 								<div className="space-y-1">
 									<label className="text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1">
-										<span>Наименование покупателя (Тег 1227):</span>
+										<span>Наименование организации / ИП:</span>
 									</label>
 									<input
 										type="text"
@@ -1950,11 +2007,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 
 						{/* Quick Split Input Fields Grid */}
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-							{/* Card (Tag 1081) */}
+							{/* Card */}
 							<div className="p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
 								<label className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
 									<CreditCard size={14} className="text-blue-600" />
-									<span>Карта (Тег 1081)</span>
+									<span>Банковская карта</span>
 								</label>
 								<div className="relative">
 									<input
@@ -1972,11 +2029,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								</div>
 							</div>
 
-							{/* Cash (Tag 1031) */}
+							{/* Cash */}
 							<div className="p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
 								<label className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
 									<Banknote size={14} className="text-emerald-600" />
-									<span>Наличные (Тег 1031)</span>
+									<span>Наличные</span>
 								</label>
 								<div className="relative">
 									<input
@@ -2000,11 +2057,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								</div>
 							</div>
 
-							{/* SBP QR (Tag 1081) */}
+							{/* SBP QR */}
 							<div className="p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
 								<label className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
 									<QrCode size={14} className="text-purple-600" />
-									<span>СБП QR (Тег 1081)</span>
+									<span>СБП QR</span>
 								</label>
 								<div className="relative">
 									<input
@@ -2022,12 +2079,12 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								</div>
 							</div>
 
-							{/* Deposit / Prepayment (Tag 1215) */}
+							{/* Deposit / Prepayment */}
 							<div className="p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
 								<label className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center justify-between gap-1.5">
 									<div className="flex items-center gap-1.5">
 										<Coins size={14} className="text-amber-600" />
-										<span>Депозит / Аванс (Тег 1215)</span>
+										<span>Депозит / Аванс</span>
 									</div>
 									{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
 										<span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-300 font-semibold" data-testid="deposit-balance-badge">
@@ -2052,11 +2109,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								</div>
 							</div>
 
-							{/* Loyalty / Bonus Points (Tag 1216) */}
+							{/* Loyalty / Bonus Points */}
 							<div className="p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
 								<label className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
 									<Sparkles size={14} className="text-indigo-600" />
-									<span>Бонусные баллы (Тег 1216)</span>
+									<span>Бонусные баллы</span>
 								</label>
 								<div className="relative">
 									<input
@@ -2098,7 +2155,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									<div className="w-11 h-11 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-300">
 										<Check size={24} />
 									</div>
-									<p className="font-extrabold text-sm m-0">Оплачено по СБП (Тег 1081 «Безналичные / Электронные»)</p>
+									<p className="font-extrabold text-sm m-0">Оплачено по СБП (Безналичный расчет)</p>
 									<p className="text-xs font-mono font-bold m-0 text-emerald-700 dark:text-emerald-300">
 										Сумма: {effectiveSbpAmountRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</p>
@@ -2126,7 +2183,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 											Отсканируйте камерой телефона или в приложении любого банка
 										</p>
 										<p className="text-[var(--muted)] m-0 font-mono text-[11px]">
-											Сумма СБП: {effectiveSbpAmountRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ • Без комиссии для пациента (Тег 1081)
+											Сумма СБП: {effectiveSbpAmountRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ • Без комиссии для пациента
 										</p>
 										{sbpCheckMessage && (
 											<p className="text-[11px] text-teal-700 dark:text-teal-300 font-medium m-0">
@@ -2305,7 +2362,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									</div>
 									{familyPayerName && (
 										<p className="text-xs text-[var(--muted,#64748b)] m-0">
-											Плательщик: {familyPayerName}. Списание разрешено (Тег 1215 ФФД 1.2).
+											Плательщик: {familyPayerName}. Списание разрешено (Зачет аванса семьи).
 										</p>
 									)}
 								</div>
@@ -2357,7 +2414,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				{/* Footer Actions (Fixed Sticky Bar — Fitts's Law) */}
 				<div className="sticky bottom-0 z-50 p-3 sm:py-2.5 sm:px-4 border-t border-[var(--line)] bg-[var(--paper)] flex items-center justify-between sm:justify-end flex-wrap gap-2.5 shrink-0 shadow-lg">
 					<div className="text-xs text-[var(--muted)] mr-auto hidden sm:block min-w-0 truncate">
-						ФФД 1.2 • {patientPhone ? `Чек будет отправлен на ${patientPhone}` : "Печать фискального чека"}
+						Касса и чеки • {patientPhone ? `Чек будет отправлен на ${patientPhone}` : "Печать кассового чека"}
 					</div>
 					<div className="w-full sm:w-auto flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 relative">
 						<div className="flex items-center gap-2 w-full sm:w-auto">
@@ -2380,8 +2437,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 										className="absolute bottom-full right-0 mb-2 w-64 rounded-xl border border-[var(--line)] bg-[var(--paper)] p-2 shadow-xl z-50 text-xs flex flex-col gap-1.5"
 									>
 										<div className="font-semibold text-[var(--ink)] px-2 py-1 border-b border-[var(--line)] flex items-center justify-between">
-											<span>Опции фискализации</span>
-											<span className="text-[10px] text-[var(--muted)] font-mono">ОФД</span>
+											<span>Настройки кассового чека</span>
+											<span className="text-[10px] text-[var(--muted)] font-mono">Чеки</span>
 										</div>
 
 										<button
@@ -2478,6 +2535,30 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							</button>
 						</div>
 
+						{/* Резервный 1-клик чекаут через автономный терминал (Мандаты 8e, 8n) */}
+						<button
+							type="button"
+							data-testid="btn-autonomous-terminal-checkout"
+							onClick={() => void handleAcceptPaymentOfflineFallback()}
+							disabled={isPrinting}
+							className="min-h-[44px] sm:min-h-[40px] sm:h-10 px-3 sm:px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98 transition-all truncate"
+							title="Принять оплату через автономный терминал без блокировки: чек ставится в очередь отложенной печати (Мандаты 8e, 8n)"
+						>
+							<WifiOff size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
+							<span className="truncate">Оплата через автономный терминал (без ККТ)</span>
+						</button>
+						<button
+							type="button"
+							data-testid="btn-offline-checkout-fallback"
+							onClick={() => void handleAcceptPaymentOfflineFallback()}
+							disabled={isPrinting}
+							tabIndex={-1}
+							aria-hidden="true"
+							className="sr-only"
+						>
+							Принять оплату (чек пробить позже)
+						</button>
+
 						<button
 							type="button"
 							data-testid="execute-fast-checkout-btn"
@@ -2496,7 +2577,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									<Check className="w-4 h-4 shrink-0" />
 									<span className="truncate">
 										{targetBillKop === 0
-											? "Закрыть визит: 100% Гарантия / Скидка (0 ₽)"
+											? "Оформить акт гарантийного обслуживания (0 ₽)"
 											: `Выбить чек (${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
 									</span>
 								</>

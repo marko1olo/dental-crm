@@ -163,9 +163,33 @@ export class FiscalReceiptQueueManager {
 	 */
 	public static enqueueReceipt(
 		payload: FiscalReceiptPrintPayload,
-		reason = "KKT hardware offline or out of paper",
+		reason = "Кассовый аппарат временно недоступен или закончилась бумага",
 		queueId?: string,
 	): QueuedFiscalReceiptItem {
+		const id = queueId || generateUuidV7();
+		const now = new Date().toISOString();
+
+		// Mandate 8e: Гарантийный прием и 100% скидки (0.00 ₽) — фискальный чек в ККТ не направляется
+		if (payload.totalRub <= 0) {
+			const item: QueuedFiscalReceiptItem = {
+				id,
+				paymentId: undefined,
+				visitId: payload.visitId,
+				receiptType: payload.operationType,
+				status: "printed",
+				payload,
+				retryCount: 0,
+				lastError: null,
+				printedAt: now,
+				createdAt: now,
+				updatedAt: now,
+			};
+			this.inMemoryQueue.set(id, item);
+			this.notifyListeners();
+			this.saveToStorage();
+			return item;
+		}
+
 		// Enforce capacity bounds
 		if (this.inMemoryQueue.size >= this.MAX_QUEUE_CAPACITY) {
 			// Find and evict oldest printed receipts first
@@ -192,9 +216,6 @@ export class FiscalReceiptQueueManager {
 			}
 		}
 
-		const id = queueId || generateUuidV7();
-		const now = new Date().toISOString();
-
 		const item: QueuedFiscalReceiptItem = {
 			id,
 			paymentId: undefined,
@@ -215,6 +236,17 @@ export class FiscalReceiptQueueManager {
 	}
 
 	/**
+	 * Instant 1-click fallback: queues receipt as offline buffered when KKT hardware is offline or cashier uses autonomous terminal.
+	 */
+	public static enqueueOfflineFallback(
+		payload: FiscalReceiptPrintPayload,
+		reason = "Оплата через автономный терминал (без ККТ) / чек отложен",
+		queueId?: string,
+	): QueuedFiscalReceiptItem {
+		return this.enqueueReceipt(payload, reason, queueId);
+	}
+
+	/**
 	 * Retries printing a specific queued receipt.
 	 * Implements Dead Letter Queue (DLQ) state when exceeding MAX_RETRY_LIMIT.
 	 */
@@ -230,6 +262,29 @@ export class FiscalReceiptQueueManager {
 
 		const nextRetryCount = item.retryCount + 1;
 		const now = new Date().toISOString();
+
+		// Mandate 8e: Гарантийный прием и 100% скидки (0.00 ₽) — фискальный чек в ККТ не направляется
+		if (item.payload.totalRub <= 0) {
+			const updatedItem: QueuedFiscalReceiptItem = {
+				...item,
+				status: "printed",
+				printedAt: item.printedAt || now,
+				lastError: null,
+				retryCount: nextRetryCount,
+				updatedAt: now,
+			};
+			this.inMemoryQueue.set(id, updatedItem);
+			this.notifyListeners();
+			this.saveToStorage();
+			return {
+				success: true,
+				status: "printed",
+				fiscalSign: "0000000000",
+				fiscalDocNum: "0",
+				fnSerial: "9960440302145896",
+				printedAt: updatedItem.printedAt!,
+			};
+		}
 
 		// Dead Letter Queue transition
 		if (nextRetryCount > this.MAX_RETRY_LIMIT) {
@@ -280,7 +335,7 @@ export class FiscalReceiptQueueManager {
 		const updatedItem: QueuedFiscalReceiptItem = {
 			...item,
 			status: "hardware_offline",
-			lastError: printResult.error || "Касса по-прежнему недоступна",
+			lastError: printResult.error || "Кассовый аппарат по-прежнему недоступен",
 			retryCount: nextRetryCount,
 			updatedAt: now,
 		};
@@ -311,7 +366,7 @@ export class FiscalReceiptQueueManager {
 				const updated: QueuedFiscalReceiptItem = {
 					...item,
 					status: "hardware_offline",
-					lastError: health.error || "ККТ недоступна или нет бумаги",
+					lastError: health.error || "Кассовый аппарат недоступен или закончилась бумага",
 					retryCount: item.retryCount + 1,
 					updatedAt: new Date().toISOString(),
 				};
