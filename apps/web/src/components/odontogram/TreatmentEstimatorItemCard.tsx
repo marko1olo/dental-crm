@@ -1,11 +1,13 @@
 import type React from "react";
-import { ShieldCheck, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowRightLeft, RotateCcw, ShieldCheck, Trash2 } from "lucide-react";
 import {
 	calculateTreatmentWarranty,
 	type EstimatorContract,
 	estimatorRowMoney,
+	type GhostToothConflict,
 	isDeciduousFdiToothNumber,
 	type PlanItem,
+	type PlanItemCollision,
 } from "./treatmentEstimatorPricing";
 
 export interface TreatmentEstimatorItemCardProps {
@@ -15,6 +17,10 @@ export interface TreatmentEstimatorItemCardProps {
 	onRemove: (idx: number) => void;
 	onSetPhase: (idx: number, phase: number) => void;
 	formatRub: (kopecks: number) => string;
+	ghostConflict?: GhostToothConflict | null | undefined;
+	collision?: PlanItemCollision | null | undefined;
+	onReplaceWithImplant?: ((toothNumber: number) => void) | undefined;
+	onRestoreToothStatus?: ((toothNumber: number) => void) | undefined;
 }
 
 export const TreatmentEstimatorItemCard: React.FC<TreatmentEstimatorItemCardProps> = ({
@@ -24,6 +30,10 @@ export const TreatmentEstimatorItemCard: React.FC<TreatmentEstimatorItemCardProp
 	onRemove,
 	onSetPhase,
 	formatRub,
+	ghostConflict,
+	collision,
+	onReplaceWithImplant,
+	onRestoreToothStatus,
 }) => {
 	const warranty = calculateTreatmentWarranty(item);
 	const rowMoney = estimatorRowMoney(item, contract);
@@ -96,6 +106,77 @@ export const TreatmentEstimatorItemCard: React.FC<TreatmentEstimatorItemCardProp
 							</span>
 						)}
 					</div>
+
+					{/* Янтарный бейдж защиты от «зубов-призраков» (Ghost Teeth Invalidation) */}
+					{ghostConflict && (
+						<div
+							className="mt-2 p-2.5 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50/90 dark:bg-amber-950/60 text-amber-900 dark:text-amber-100 text-xs"
+							role="alert"
+							data-testid={`ghost-tooth-warning-${item.toothNumber}`}
+						>
+							<div className="flex items-start gap-2">
+								<AlertTriangle
+									size={15}
+									className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"
+									aria-hidden="true"
+								/>
+								<div className="flex-1 min-w-0">
+									<div className="font-bold leading-snug">
+										{ghostConflict.warningBadgeText}
+									</div>
+									<div className="mt-2 flex items-center gap-2 flex-wrap">
+										{onReplaceWithImplant &&
+											item.toothNumber !== undefined &&
+											!isDeciduousFdiToothNumber(item.toothNumber) && (
+												<button
+													type="button"
+													onClick={() => onReplaceWithImplant(item.toothNumber!)}
+													className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-md bg-amber-600 hover:bg-amber-700 text-white transition-colors cursor-pointer"
+													title="Заменить на имплантацию в 1 клик"
+													data-testid={`btn-ghost-replace-implant-${item.toothNumber}`}
+												>
+													<ArrowRightLeft size={12} />
+													<span>Заменить на имплантацию</span>
+												</button>
+											)}
+										{onRestoreToothStatus && item.toothNumber !== undefined && (
+											<button
+												type="button"
+												onClick={() => onRestoreToothStatus(item.toothNumber!)}
+												className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-md bg-white dark:bg-zinc-800 border border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors cursor-pointer"
+												title="Восстановить статус зуба на формуле (врачебная автономия)"
+												data-testid={`btn-ghost-restore-tooth-${item.toothNumber}`}
+											>
+												<RotateCcw size={12} />
+												<span>Восстановить статус на формуле</span>
+											</button>
+										)}
+										<button
+											type="button"
+											onClick={() => onRemove(globalIdx)}
+											className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-md bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-200 hover:bg-rose-200 dark:hover:bg-rose-900/70 transition-colors cursor-pointer"
+											title="Удалить недействительную услугу"
+											data-testid={`btn-ghost-remove-item-${item.toothNumber}`}
+										>
+											<Trash2 size={12} />
+											<span>Удалить услугу</span>
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/* Предупреждение о коллизии альтернативных планов на один зуб */}
+					{collision && (
+						<div
+							className="mt-1.5 flex items-center gap-1.5 p-2 rounded-md bg-amber-500/10 text-amber-900 dark:text-amber-200 border border-amber-500/30 text-xs font-semibold"
+							data-testid={`card-collision-badge-${item.toothNumber}`}
+						>
+							<AlertTriangle size={13} className="text-amber-600 shrink-0" />
+							<span className="truncate">{collision.messageRu}</span>
+						</div>
+					)}
 				</div>
 				<button
 					type="button"

@@ -157,3 +157,35 @@ export function toothHistoryEventsFromResponseBody(
 		.map(toothHistoryEventFromServer)
 		.filter((event): event is ToothHistoryEvent => event !== null);
 }
+
+/**
+ * Объединение истории локуса при сменном прикусе (например, молочный 85 ➔ постоянный 45).
+ * События молочного зуба-предшественника не затираются, а маркируются и встраиваются в общую хронологию.
+ */
+export function mergeLocusHistoryEvents(
+	currentToothEvents: readonly ToothHistoryEvent[],
+	predecessorToothEvents: readonly ToothHistoryEvent[],
+	predecessorToothNumber: number,
+): ToothHistoryEvent[] {
+	const mappedPredecessor: ToothHistoryEvent[] = predecessorToothEvents.map(
+		(evt) => ({
+			kind: evt.kind,
+			dateIso: evt.dateIso,
+			description: evt.description
+				? `[Молочный зуб #${predecessorToothNumber}] ${evt.description}`
+				: `[Молочный зуб #${predecessorToothNumber}] Запись в карте`,
+			author: evt.author,
+		}),
+	);
+
+	const combined = [...currentToothEvents, ...mappedPredecessor];
+
+	// Хронологическая сортировка: от свежих к более старым
+	return combined.sort((a, b) => {
+		if (!a.dateIso && !b.dateIso) return 0;
+		if (!a.dateIso) return 1;
+		if (!b.dateIso) return -1;
+		return Date.parse(b.dateIso) - Date.parse(a.dateIso);
+	});
+}
+

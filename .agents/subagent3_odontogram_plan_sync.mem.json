@@ -1,0 +1,30 @@
+{
+  "role": "Subagent 3: Odontogram ↔ Treatment Plan Ghost Teeth & Sync Inquisitor",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md",
+    "Read AGENTS.md",
+    "Run initial targeted unit tests to check baseline (Exit Code 0)",
+    "Read all files in target scope fully (800 lines max per chunk)",
+    "Audit ghost teeth detection and invalidation logic",
+    "Audit mixed dentition (85 -> 45 locus) and anatomical tooth type handling",
+    "Audit treatment plan collision handling (optimal vs budget)",
+    "Audit localization and clean dental terminology (no [object Object], undefined)",
+    "Implement enhancements in treatmentEstimatorPricing.ts (getLocusSuccessorToothNumber, getLocusPredecessorToothNumber, getRelatedLocusToothNumbers, getLocusTransitionDescription, detectGhostTeethConflicts, getGhostToothConflict, convertGhostItemToImplant, detectPlanItemCollisions, resolvePlanItemCollision, formatSurfacesText, surfaceSuffix, formatToothFdiLabel)",
+    "Implement locus merging in toothHistoryEvents.ts (mergeLocusHistoryEvents preserving deciduous predecessor notes with [Молочный зуб #XX])",
+    "Update TreatmentEstimatorItemCard.tsx with ghost teeth amber warning badge, 1-click replacement with implant, tooth restoration on odontogram, and plan collision warnings",
+    "Update TreatmentEstimatorAlerts.tsx with dedicated ghost teeth alert banner and multi-plan collision resolution drawer",
+    "Update TreatmentEstimator.tsx with useMemo for ghost conflicts and collisions, dispatching dente-odontogram-update on restore, and 1-click implant conversion",
+    "Update ToothContextDrawer.tsx with mixed dentition locus transition indicator badge",
+    "Write comprehensive unit tests in treatmentEstimatorPricing.test.ts (52 tests passing: ghost teeth detection, 1-click conversion, deciduous successor/predecessor math, locus history preservation, pediatric vs adult catalog pricing, multi-plan collisions, anti-garbage localization)",
+    "Verify odontogramZeroBillAndRevisionAutonomy.test.tsx (12 tests passing: exact kopecks, locked diary sync, radial menu boundaries, high contrast, zero cartoon emojis)",
+    "Verify TypeScript compliance across all scoped files"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Ghost Teeth Invalidation & Invariants: Restorative/endodontic/orthopedic treatments assigned to missing/extracted teeth now trigger an amber warning badge with 1-click actions: «Заменить на имплантацию», «Восстановить статус на формуле (врачебная автономия)», or «Удалить услугу». Legitimate treatments for missing teeth (implant, surgical guide) are correctly recognized as valid and do not trigger false ghost warnings.",
+    "Mixed Dentition & Locus Tracking: Deciduous teeth (51..85) cleanly map to permanent successors (11..45, e.g. 85 -> 45) via getLocusSuccessorToothNumber and getLocusPredecessorToothNumber. Permanent molars (16..18, 26..28, etc.) correctly return null for predecessors. mergeLocusHistoryEvents combines and chronologically sorts history across transition boundaries while prepending [Молочный зуб #XX]. Pricing resolution prioritizes pediatric services for deciduous teeth.",
+    "Multi-Plan Collisions: Treatment alternatives (e.g. preservation vs extraction/implant in Optimal vs Economy tiers) are detected via detectPlanItemCollisions, alerting the doctor and allowing 1-click resolution via resolvePlanItemCollision without doubled totals.",
+    "Zero Garbage & Sanctity of Terminology: formatSurfacesText eliminates [object Object] leaks by robustly converting objects/strings, surfaceSuffix ensures clean formatting, and formatToothFdiLabel eliminates 'Tooth undefined' leaks."
+  ]
+}

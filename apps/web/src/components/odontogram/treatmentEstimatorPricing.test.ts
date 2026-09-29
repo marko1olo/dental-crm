@@ -26,6 +26,9 @@ import { formatKopecksRu, parseKopecks, RU_MONEY_NBSP } from "@dental/shared";
 import type { PlanPriceCatalogItem } from "../treatment-plans/planPricing";
 import {
 	calculateTreatmentWarranty,
+	convertGhostItemToImplant,
+	detectGhostTeethConflicts,
+	detectPlanItemCollisions,
 	type EstimatorToothInput,
 	estimatorContractFrom,
 	estimatorDismissalKeys,
@@ -36,11 +39,22 @@ import {
 	estimatorStagesBreakdown,
 	estimatorTotals,
 	exportEstimatorToCashier54Fz,
+	formatSurfacesText,
+	formatToothFdiLabel,
+	getGhostToothConflict,
+	getLocusPredecessorToothNumber,
+	getLocusSuccessorToothNumber,
+	getLocusTransitionDescription,
+	getRelatedLocusToothNumbers,
 	isDeciduousFdiToothNumber,
+	isToothMissingOrExtracted,
 	type PlanItem,
 	planItemFromServer,
 	reconcileAutoSuggestions,
+	resolvePlanItemCollision,
+	surfaceSuffix,
 } from "./treatmentEstimatorPricing";
+import { mergeLocusHistoryEvents, type ToothHistoryEvent } from "./toothHistoryEvents";
 
 /** Суммы, которых не назначала ни одна клиника. Ни одна не имеет права появиться. */
 const INVENTED_PRICES_RUB = [
@@ -929,3 +943,346 @@ test("1-клик экспорт сметы в кассу 54-ФЗ формиру�
 	assert.equal(cashierExport.totalRub, 27000);
 	assert.equal(cashierExport.totalKopecks, 2_700_000);
 });
+
+/* ─────────── 8. Защита от «зубов-призраков» (Ghost Teeth Invalidation) ─────────── */
+
+test("удаленный зуб со старым терапевтическим лечением опознается как конфликт зуба-призрака", () => {
+	const currentTeeth: EstimatorToothInput[] = [
+		{ toothNumber: 46, state: "Missing" },
+		{ toothNumber: 11, state: "Caries" },
+	];
+
+	// В смете висит коронка на уже удаленный 46 зуб
+	const ghostItem: PlanItem = {
+		id: "plan-crown-46",
+		toothNumber: 46,
+		name: "Коронка из диоксида циркония",
+		priceId: "svc-crown",
+		price: 28000,
+		quantity: 1,
+		discount: 0,
+		phase: 3,
+		suggestion: "crown",
+	};
+
+	const conflict = getGhostToothConflict(ghostItem, currentTeeth);
+	assert.ok(conflict, "Конфликт зуба-призрака обязан быть обнаружен");
+	assert.equal(conflict.toothNumber, 46);
+	assert.equal(conflict.toothState, "Missing");
+	assert.equal(
+		conflict.warningBadgeText,
+		"Зуб 46 удален на формуле! Требуется корректировка плана (имплантация/мостовидный протез вместо коронки)",
+	);
+	assert.match(conflict.message, /зуб #46/i);
+	assert.match(conflict.message, /врачебная автономия/);
+});
+
+test("имплантат и навигационный шаблон на удаленном зубе НЕ считаются зубами-призраками", () => {
+	const currentTeeth: EstimatorToothInput[] = [
+		{ toothNumber: 46, state: "Missing" },
+	];
+
+	const implantItem: PlanItem = {
+		toothNumber: 46,
+		name: "Установка имплантата Straumann",
+		priceId: "svc-implant",
+		price: 45000,
+		quantity: 1,
+		discount: 0,
+		phase: 2,
+		suggestion: "implant",
+	};
+
+	const guideItem: PlanItem = {
+		toothNumber: 46,
+		name: "Хирургический навигационный шаблон",
+		priceId: "svc-guide",
+		price: 12000,
+		quantity: 1,
+		discount: 0,
+		phase: 2,
+		suggestion: "implantGuide",
+	};
+
+	assert.equal(getGhostToothConflict(implantItem, currentTeeth), null);
+	assert.equal(getGhostToothConflict(guideItem, currentTeeth), null);
+});
+
+test("1-клик замена позиции зуба-призрака преобразует терапию в имплантацию на этапе хирургии", () => {
+	const catalog = [
+		service("svc-implant", "Установка дентального имплантата", "surgery", 35000),
+	];
+
+	const ghostItem: PlanItem = {
+		toothNumber: 46,
+		name: "Пломбирование зуба",
+		priceId: "svc-caries",
+		price: 3500,
+		quantity: 1,
+		discount: 0,
+		phase: 1,
+		suggestion: "caries",
+	};
+
+	const converted = convertGhostItemToImplant(ghostItem, catalog);
+	assert.equal(converted.toothNumber, 46);
+	assert.equal(converted.phase, 2, "Хирургический этап II");
+	assert.equal(converted.suggestion, "implant");
+	assert.equal(converted.priceId, "svc-implant");
+	assert.equal(converted.price, 35000);
+});
+
+test("детектор конфликтов зубов-призраков находит все невалидные позиции плана", () => {
+	const currentTeeth: EstimatorToothInput[] = [
+		{ toothNumber: 36, state: "extracted" },
+		{ toothNumber: 46, state: "Missing" },
+		{ toothNumber: 11, state: "Healthy" },
+	];
+
+	const items: PlanItem[] = [
+		{
+			toothNumber: 36,
+			name: "Эндодонтическое лечение пульпита 36",
+			priceId: "s-1",
+			price: 8000,
+			quantity: 1,
+			discount: 0,
+			phase: 1,
+			suggestion: "pulpitis",
+		},
+		{
+			toothNumber: 46,
+			name: "Коронка металлокерамическая 46",
+			priceId: "s-2",
+			price: 15000,
+			quantity: 1,
+			discount: 0,
+			phase: 3,
+			suggestion: "crown",
+		},
+		{
+			toothNumber: 11,
+			name: "Лечение кариеса 11",
+			priceId: "s-3",
+			price: 3000,
+			quantity: 1,
+			discount: 0,
+			phase: 1,
+			suggestion: "caries",
+		},
+	];
+
+	const conflicts = detectGhostTeethConflicts(items, currentTeeth);
+	assert.equal(conflicts.length, 2);
+	assert.equal(conflicts[0]?.toothNumber, 36);
+	assert.equal(
+		conflicts[0]?.warningBadgeText,
+		"Зуб 36 удален на формуле! Требуется корректировка плана (имплантация/мостовидный протез вместо эндодонтии)",
+	);
+	assert.equal(conflicts[1]?.toothNumber, 46);
+	assert.equal(
+		conflicts[1]?.warningBadgeText,
+		"Зуб 46 удален на формуле! Требуется корректировка плана (имплантация/мостовидный протез вместо коронки)",
+	);
+});
+
+/* ─────────── 9. Сменный прикус и перенумерация локуса (85 -> 45) ─────────── */
+
+test("сменный прикус: молочный 85 связывается с постоянным преемником 45", () => {
+	assert.equal(getLocusSuccessorToothNumber(85), 45);
+	assert.equal(getLocusSuccessorToothNumber(51), 11);
+	assert.equal(getLocusSuccessorToothNumber(55), 15);
+	assert.equal(getLocusSuccessorToothNumber(73), 33);
+	// Постоянный зуб не имеет преемника (он уже постоянный)
+	assert.equal(getLocusSuccessorToothNumber(45), null);
+	assert.equal(getLocusSuccessorToothNumber(16), null);
+});
+
+test("сменный прикус: постоянный 45 связывается с молочным предшественником 85", () => {
+	assert.equal(getLocusPredecessorToothNumber(45), 85);
+	assert.equal(getLocusPredecessorToothNumber(11), 51);
+	assert.equal(getLocusPredecessorToothNumber(15), 55);
+	assert.equal(getLocusPredecessorToothNumber(33), 73);
+	// Постоянные моляры (16..18, 46..48) не имеют молочных предшественников
+	assert.equal(getLocusPredecessorToothNumber(46), null);
+	assert.equal(getLocusPredecessorToothNumber(16), null);
+	assert.equal(getLocusPredecessorToothNumber(27), null);
+});
+
+test("связанные номера локуса объединяют молочный и постоянный зубы", () => {
+	assert.deepEqual(getRelatedLocusToothNumbers(85), [85, 45]);
+	assert.deepEqual(getRelatedLocusToothNumbers(45), [45, 85]);
+	assert.deepEqual(getRelatedLocusToothNumbers(46), [46]);
+});
+
+test("описание перехода локуса формирует профессиональный текст", () => {
+	assert.equal(
+		getLocusTransitionDescription(85),
+		"Сменный локус: молочный зуб #85 ➔ постоянный преемник #45",
+	);
+	assert.equal(
+		getLocusTransitionDescription(45),
+		"Сменный локус: постоянный зуб #45 (предшественник: молочный #85)",
+	);
+	assert.equal(getLocusTransitionDescription(46), null);
+});
+
+test("история локуса не затирает события молочного зуба при смене на постоянный", () => {
+	const adultEvents: ToothHistoryEvent[] = [
+		{
+			kind: "diary",
+			dateIso: "2026-05-10T10:00:00Z",
+			description: "Прорезывание постоянного премоляра 45, герметизация фиссур",
+			author: "Барабаш С.В.",
+		},
+	];
+
+	const primaryEvents: ToothHistoryEvent[] = [
+		{
+			kind: "diary",
+			dateIso: "2023-02-15T14:30:00Z",
+			description: "Лечение пульпита молочного моляра, цинк-эвгенольная паста",
+			author: "Барабаш С.В.",
+		},
+		{
+			kind: "state_change",
+			dateIso: "2025-11-20T09:00:00Z",
+			description: "Физиологическая резорбция корней, удаление подвижного молочного зуба",
+			author: "Барабаш С.В.",
+		},
+	];
+
+	const merged = mergeLocusHistoryEvents(adultEvents, primaryEvents, 85);
+	assert.equal(merged.length, 3);
+	// Проверяем хронологический порядок (самое свежее первым)
+	assert.equal(merged[0]?.description, "Прорезывание постоянного премоляра 45, герметизация фиссур");
+	assert.equal(
+		merged[1]?.description,
+		"[Молочный зуб #85] Физиологическая резорбция корней, удаление подвижного молочного зуба",
+	);
+	assert.equal(
+		merged[2]?.description,
+		"[Молочный зуб #85] Лечение пульпита молочного моляра, цинк-эвгенольная паста",
+	);
+});
+
+test("сметчик корректно разделяет детские и взрослые услуги в прайсе для молочного зуба", () => {
+	const mixedCatalog: PlanPriceCatalogItem[] = [
+		service("svc-adult-caries", "Лечение кариеса постоянного зуба", "therapy", 4500),
+		service("svc-child-caries", "Лечение кариеса молочного зуба", "therapy", 2800),
+	];
+
+	// Взрослый зуб 45 выбирает взрослую услугу
+	const adultItems = build([tooth(45, "Caries")], mixedCatalog);
+	assert.equal(adultItems.length, 1);
+	assert.equal(adultItems[0]?.priceId, "svc-adult-caries");
+	assert.equal(adultItems[0]?.price, 4500);
+
+	// Молочный зуб 85 выбирает детскую услугу
+	const childItems = build([tooth(85, "Caries")], mixedCatalog);
+	assert.equal(childItems.length, 1);
+	assert.equal(childItems[0]?.priceId, "svc-child-caries");
+	assert.equal(childItems[0]?.price, 2800);
+});
+
+/* ─────────── 10. Коллизии между несколькими планами на один зуб ─────────── */
+
+test("коллизия между альтернативными планами (сохранение vs удаление) обнаруживается", () => {
+	const conflictingItems: PlanItem[] = [
+		// Оптимальный план: сохранение коронкой/вкладкой
+		{
+			id: "opt-1",
+			toothNumber: 46,
+			name: "Керамическая вкладка e.max (сохранение)",
+			priceId: "s-1",
+			price: 22000,
+			quantity: 1,
+			discount: 0,
+			phase: 3,
+			suggestion: "crown",
+		},
+		// Эконом план: удаление и съемный протез
+		{
+			id: "eco-1",
+			toothNumber: 46,
+			name: "Хирургическое удаление зуба сложное",
+			priceId: "s-2",
+			price: 3500,
+			quantity: 1,
+			discount: 0,
+			phase: 2,
+		},
+	];
+
+	const collisions = detectPlanItemCollisions(conflictingItems);
+	assert.equal(collisions.length, 1);
+	assert.equal(collisions[0]?.toothNumber, 46);
+	assert.equal(collisions[0]?.type, "preservation_vs_replacement");
+	assert.match(collisions[0]?.messageRu ?? "", /сохранение vs удаление/);
+});
+
+test("разрешение коллизии в 1 клик оставляет только выбранный сценарий без задвоения сумм", () => {
+	const conflictingItems: PlanItem[] = [
+		{
+			id: "opt-1",
+			toothNumber: 46,
+			name: "Керамическая вкладка e.max",
+			priceId: "s-1",
+			price: 22000,
+			quantity: 1,
+			discount: 0,
+			phase: 3,
+		},
+		{
+			id: "eco-1",
+			toothNumber: 46,
+			name: "Удаление зуба",
+			priceId: "s-2",
+			price: 3500,
+			quantity: 1,
+			discount: 0,
+			phase: 2,
+		},
+	];
+
+	// Врач оставляет оптимальный сценарий ("opt-1")
+	const resolved = resolvePlanItemCollision(conflictingItems, 46, "opt-1");
+	assert.equal(resolved.length, 1);
+	assert.equal(resolved[0]?.id, "opt-1");
+	assert.equal(resolved[0]?.price, 22000);
+
+	const totals = estimatorTotals(resolved, null);
+	assert.equal(totals.payableKopecks, 2_200_000); // 22 000 руб, без задвоения с 3500 руб!
+});
+
+/* ─────────── 11. Отсутствие технического мусора (Чистая локализация) ─────────── */
+
+test("formatSurfacesText исключает утечки [object Object] при любых типах данных", () => {
+	assert.equal(formatSurfacesText(undefined), "");
+	assert.equal(formatSurfacesText(null), "");
+	assert.equal(formatSurfacesText([]), "");
+	assert.equal(formatSurfacesText(["M", "O", "D"]), "M, O, D");
+	assert.equal(formatSurfacesText("[object Object]"), "");
+
+	// Объектные элементы в массиве поверхностей
+	const objSurfaces = [{ name: "Вестибулярная" }, { surface: "Окклюзионная" }];
+	assert.equal(formatSurfacesText(objSurfaces), "Вестибулярная, Окклюзионная");
+	assert.doesNotMatch(formatSurfacesText(objSurfaces), /\[object Object\]/);
+});
+
+test("surfaceSuffix чисто форматирует суффикс без мусора", () => {
+	assert.equal(surfaceSuffix(undefined), "");
+	assert.equal(surfaceSuffix([]), "");
+	assert.equal(surfaceSuffix(["окклюзионная"]), " (Поверхности: окклюзионная)");
+	assert.equal(surfaceSuffix([{ name: "дистальная" }]), " (Поверхности: дистальная)");
+	assert.doesNotMatch(surfaceSuffix([{ invalid: true }]), /\[object Object\]/);
+});
+
+test("formatToothFdiLabel никогда не выдает 'Tooth undefined'", () => {
+	assert.equal(formatToothFdiLabel(undefined), "Позиция плана (без привязки к зубу)");
+	assert.equal(formatToothFdiLabel(null), "Позиция плана (без привязки к зубу)");
+	assert.equal(formatToothFdiLabel(99), "Позиция плана (без привязки к зубу)");
+	assert.equal(formatToothFdiLabel(46), "Зуб 46");
+	assert.doesNotMatch(formatToothFdiLabel(undefined), /undefined/i);
+});
+

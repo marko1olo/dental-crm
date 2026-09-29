@@ -42,6 +42,13 @@ import {
 	type PlanItem,
 	planItemFromServer,
 	reconcileAutoSuggestions,
+	convertGhostItemToImplant,
+	detectGhostTeethConflicts,
+	detectPlanItemCollisions,
+	type EstimatorToothInput,
+	type GhostToothConflict,
+	type PlanItemCollision,
+	type PlanPriceCatalogItem,
 } from "./treatmentEstimatorPricing";
 import { TreatmentEstimatorAlerts } from "./TreatmentEstimatorAlerts";
 import { TreatmentEstimatorItemCard } from "./TreatmentEstimatorItemCard";
@@ -294,6 +301,78 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	const issueMessages = useMemo(() => estimatorIssueMessages(items), [items]);
 	const saveBlock = useMemo(() => estimatorSaveBlock(items), [items]);
 
+	const ghostConflicts = useMemo(() => {
+		const toothInputs: EstimatorToothInput[] = currentTeeth.map((t) => ({
+			toothNumber: t.toothNumber,
+			state: t.state,
+			surfaces: t.surfaces,
+		}));
+		return detectGhostTeethConflicts(items, toothInputs);
+	}, [items, currentTeeth]);
+
+	const planCollisions = useMemo(
+		() => detectPlanItemCollisions(items),
+		[items],
+	);
+
+	const handleReplaceWithImplant = (toothNumber: number) => {
+		const catalogSource = dashboard?.serviceCatalog;
+		const catalog: readonly PlanPriceCatalogItem[] = Array.isArray(catalogSource)
+			? catalogSource
+			: [];
+		setItems((prev) =>
+			prev.map((it) => {
+				if (it.toothNumber === toothNumber) {
+					return convertGhostItemToImplant(it, catalog);
+				}
+				return it;
+			}),
+		);
+		showToast(
+			`Позиция по зубу #${toothNumber} заменена на имплантацию`,
+			"success",
+			3500,
+		);
+	};
+
+	const handleRestoreToothStatus = (toothNumber: number) => {
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-odontogram-update", {
+					detail: {
+						patientId,
+						states: [{ toothNumber, state: "Caries" }],
+					},
+				}),
+			);
+		}
+		showToast(
+			`Статус зуба #${toothNumber} восстановлен на формуле (врачебная автономия)`,
+			"success",
+			3500,
+		);
+	};
+
+	const handleRemoveItemByTooth = (toothNumber: number) => {
+		const removed = items.filter((it) => it.toothNumber === toothNumber);
+		setItems((prev) => prev.filter((it) => it.toothNumber !== toothNumber));
+		for (const r of removed) {
+			const keys = estimatorDismissalKeys(r);
+			if (keys.length > 0) {
+				setDismissedSuggestions((prev) => {
+					const next = new Set(prev);
+					for (const k of keys) next.add(k);
+					return next;
+				});
+			}
+		}
+		showToast(
+			`Услуги по зубу #${toothNumber} удалены из плана лечения`,
+			"info",
+			3000,
+		);
+	};
+
 	const savePlan = async () => {
 		if (planLoad.phase !== "ready") {
 			showToast(
@@ -535,6 +614,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							itemsCount={items.length}
 							onRetryPlan={() => setReloadToken((token) => token + 1)}
 							onRetryContract={() => setReloadToken((token) => token + 1)}
+							ghostConflicts={ghostConflicts}
+							collisions={planCollisions}
+							onReplaceWithImplant={handleReplaceWithImplant}
+							onRestoreToothStatus={handleRestoreToothStatus}
+							onRemoveItemByTooth={handleRemoveItemByTooth}
 						/>
 
 						{phases.map((phase) => {
@@ -552,6 +636,12 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 									<div className="phase-items-list">
 										{phaseItems.map((item) => {
 											const globalIdx = items.indexOf(item);
+											const itemGhostConflict = item.toothNumber !== undefined
+												? ghostConflicts.find((c) => c.toothNumber === item.toothNumber)
+												: null;
+											const itemCollision = item.toothNumber !== undefined
+												? planCollisions.find((c) => c.toothNumber === item.toothNumber)
+												: null;
 											return (
 												<TreatmentEstimatorItemCard
 													key={globalIdx}
@@ -561,6 +651,10 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 													onRemove={removeItem}
 													onSetPhase={setPhase}
 													formatRub={rub}
+													ghostConflict={itemGhostConflict}
+													collision={itemCollision}
+													onReplaceWithImplant={handleReplaceWithImplant}
+													onRestoreToothStatus={handleRestoreToothStatus}
 												/>
 											);
 										})}

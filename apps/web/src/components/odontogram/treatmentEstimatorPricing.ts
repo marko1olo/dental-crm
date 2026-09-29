@@ -128,6 +128,75 @@ export function isDeciduousFdiToothNumber(value: number): boolean {
 }
 
 /**
+ * Сменный прикус: постоянный зуб-преемник для молочного зуба.
+ * Например: молочный 85 (нижний правый второй моляр) -> постоянный 45 (второй премоляр).
+ * Квадранты FDI:
+ * 51..55 -> 11..15 (-40)
+ * 61..65 -> 21..25 (-40)
+ * 71..75 -> 31..35 (-40)
+ * 81..85 -> 41..45 (-40)
+ */
+export function getLocusSuccessorToothNumber(
+	deciduousToothNumber: number,
+): number | null {
+	if (!isDeciduousFdiToothNumber(deciduousToothNumber)) return null;
+	const quad = Math.floor(deciduousToothNumber / 10);
+	const pos = deciduousToothNumber % 10;
+	if (quad >= 5 && quad <= 8 && pos >= 1 && pos <= 5) {
+		return (quad - 4) * 10 + pos;
+	}
+	return null;
+}
+
+/**
+ * Сменный прикус: молочный зуб-предшественник для постоянного зуба.
+ * Например: постоянный 45 -> молочный 85 (+40).
+ * Постоянные моляры (16..18, 26..28, 36..38, 46..48) не имеют молочных предшественников.
+ */
+export function getLocusPredecessorToothNumber(
+	adultToothNumber: number,
+): number | null {
+	if (
+		!isValidFdiToothNumber(adultToothNumber) ||
+		isDeciduousFdiToothNumber(adultToothNumber)
+	) {
+		return null;
+	}
+	const quad = Math.floor(adultToothNumber / 10);
+	const pos = adultToothNumber % 10;
+	if (quad >= 1 && quad <= 4 && pos >= 1 && pos <= 5) {
+		return (quad + 4) * 10 + pos;
+	}
+	return null;
+}
+
+/** Связанные номера зубов локуса в сменном прикусе (молочный + постоянный). */
+export function getRelatedLocusToothNumbers(toothNumber: number): number[] {
+	if (isDeciduousFdiToothNumber(toothNumber)) {
+		const succ = getLocusSuccessorToothNumber(toothNumber);
+		return succ !== null ? [toothNumber, succ] : [toothNumber];
+	}
+	const pred = getLocusPredecessorToothNumber(toothNumber);
+	return pred !== null ? [toothNumber, pred] : [toothNumber];
+}
+
+/** Человеческое описание перехода сменного прикуса по локусу. */
+export function getLocusTransitionDescription(
+	toothNumber: number,
+): string | null {
+	if (isDeciduousFdiToothNumber(toothNumber)) {
+		const succ = getLocusSuccessorToothNumber(toothNumber);
+		return succ !== null
+			? `Сменный локус: молочный зуб #${toothNumber} ➔ постоянный преемник #${succ}`
+			: null;
+	}
+	const pred = getLocusPredecessorToothNumber(toothNumber);
+	return pred !== null
+		? `Сменный локус: постоянный зуб #${toothNumber} (предшественник: молочный #${pred})`
+		: null;
+}
+
+/**
  * Правила для состояния зуба.
  *
  * Словарь «состояние зуба → что искать в прайсе» ОДИН на приложение
@@ -299,14 +368,38 @@ function catalogPriceRub(service: PlanPriceCatalogItem): number | null {
 export function resolveEstimatorService(
 	rule: EstimatorRule,
 	catalog: readonly PlanPriceCatalogItem[],
+	toothNumber?: number,
 ): EstimatorResolution {
-	const matched = catalog.filter((service) => {
+	let matched = catalog.filter((service) => {
 		if (service.category !== rule.match.category) return false;
 		const title = normalizeTitle(service.title);
 		return rule.match.keywords.some((keyword) =>
 			title.includes(normalizeTitle(keyword)),
 		);
 	});
+
+	// Интеллектуальное разделение для сменного прикуса (молочный vs постоянный зуб)
+	if (toothNumber !== undefined && matched.length > 1) {
+		const isDeciduous = isDeciduousFdiToothNumber(toothNumber);
+		if (isDeciduous) {
+			const pediatrics = matched.filter((s) => {
+				const norm = normalizeTitle(s.title);
+				return norm.includes("молочн") || norm.includes("детск");
+			});
+			if (pediatrics.length > 0) {
+				matched = pediatrics;
+			}
+		} else {
+			const adults = matched.filter((s) => {
+				const norm = normalizeTitle(s.title);
+				return !norm.includes("молочн") && !norm.includes("детск");
+			});
+			if (adults.length > 0) {
+				matched = adults;
+			}
+		}
+	}
+
 	// Выключенная услуга в смету не попадает: клиника её уже не оказывает.
 	const matches = matched.filter((service) => service.active);
 	const disabled = matched.filter((service) => !service.active);
@@ -374,10 +467,45 @@ function capitalizeFirst(text: string): string {
 	return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
 
-function surfaceSuffix(surfaces: readonly string[] | undefined): string {
-	return surfaces && surfaces.length > 0
-		? ` (Поверхности: ${surfaces.join(", ")})`
-		: "";
+/** Очистка и безопасное форматирование поверхностей зуба (без [object Object]). */
+export function formatSurfacesText(surfaces: unknown): string {
+	if (!surfaces) return "";
+	if (Array.isArray(surfaces)) {
+		const cleaned = surfaces
+			.map((s) => {
+				if (typeof s === "string") return s.trim();
+				if (typeof s === "object" && s !== null) {
+					const rec = s as Record<string, unknown>;
+					const val = rec.name ?? rec.code ?? rec.surface ?? rec.label;
+					if (typeof val === "string") return val.trim();
+				}
+				return "";
+			})
+			.filter((s) => s.length > 0 && s !== "[object Object]");
+		return cleaned.length > 0 ? cleaned.join(", ") : "";
+	}
+	if (typeof surfaces === "string") {
+		const trimmed = surfaces.trim();
+		return trimmed !== "[object Object]" ? trimmed : "";
+	}
+	return "";
+}
+
+export function surfaceSuffix(surfaces: unknown): string {
+	const text = formatSurfacesText(surfaces);
+	return text.length > 0 ? ` (Поверхности: ${text})` : "";
+}
+
+/** Человеческое название номера зуба по FDI (без «Tooth undefined»). */
+export function formatToothFdiLabel(toothNumber?: number | null): string {
+	if (
+		toothNumber === undefined ||
+		toothNumber === null ||
+		!isValidFdiToothNumber(toothNumber)
+	) {
+		return "Позиция плана (без привязки к зубу)";
+	}
+	return `Зуб ${toothNumber}`;
 }
 
 /**
@@ -394,7 +522,7 @@ export function planItemFromRule(
 	tooth: EstimatorToothInput,
 	catalog: readonly PlanPriceCatalogItem[],
 ): PlanItem {
-	const resolution = resolveEstimatorService(rule, catalog);
+	const resolution = resolveEstimatorService(rule, catalog, tooth.toothNumber);
 	const baseName =
 		resolution.serviceTitle ?? capitalizeFirst(rule.match.humanName);
 	return {
@@ -1577,3 +1705,232 @@ export function exportEstimatorToCashier54Fz(
 		createdAtIso: new Date().toISOString(),
 	};
 }
+
+/* ─────────────────────────── ЗАЩИТА ОТ ЗУБОВ-ПРИЗРАКОВ И КОЛЛИЗИЙ ─────────────────────────── */
+
+/** Проверка, считается ли статус зуба на формуле отсутствующим / удаленным. */
+export function isToothMissingOrExtracted(state?: string | null): boolean {
+	if (!state) return false;
+	const s = state.trim().toLowerCase();
+	return (
+		s === "missing" ||
+		s === "extracted" ||
+		s === "удален" ||
+		s === "удалён" ||
+		s === "отсутствует"
+	);
+}
+
+/** Конфликт «зуба-призрака» (терапия/ортопедия на удаленный зуб). */
+export interface GhostToothConflict {
+	readonly toothNumber: number;
+	readonly toothState: string;
+	readonly itemName: string;
+	readonly itemSuggestion?: EstimatorSuggestionKey | undefined;
+	readonly warningBadgeText: string;
+	readonly message: string;
+	readonly replacementKind: "implant" | "bridge_or_prosthesis";
+}
+
+/**
+ * Проверка позиции плана на конфликт с удаленным зубом.
+ * Если зуб на формуле удален/отсутствует, но в плане висит терапия или одиночная коронка.
+ */
+export function getGhostToothConflict(
+	item: PlanItem,
+	teeth: readonly EstimatorToothInput[],
+): GhostToothConflict | null {
+	if (item.toothNumber === undefined) return null;
+	const tooth = teeth.find((t) => t.toothNumber === item.toothNumber);
+	if (!tooth || !isToothMissingOrExtracted(tooth.state)) return null;
+
+	// Имплантат и шаблон — валидные хирургические услуги для удаленного зуба!
+	if (item.suggestion === "implant" || item.suggestion === "implantGuide") {
+		return null;
+	}
+	const nameLower = (item.name || "").toLowerCase();
+	if (
+		nameLower.includes("имплант") ||
+		nameLower.includes("шаблон") ||
+		nameLower.includes("синус") ||
+		nameLower.includes("протез съемн") ||
+		nameLower.includes("бюгель") ||
+		nameLower.includes("мостовидн")
+	) {
+		return null;
+	}
+
+	let treatmentKind = "терапии";
+	if (
+		item.suggestion === "crown" ||
+		nameLower.includes("коронк") ||
+		nameLower.includes("вкладк")
+	) {
+		treatmentKind = "коронки";
+	} else if (
+		item.suggestion === "caries" ||
+		nameLower.includes("кариес") ||
+		nameLower.includes("пломб")
+	) {
+		treatmentKind = "пломбы";
+	} else if (
+		item.suggestion === "pulpitis" ||
+		item.suggestion === "periodontitis" ||
+		nameLower.includes("пульпит") ||
+		nameLower.includes("канал") ||
+		nameLower.includes("эндодонт")
+	) {
+		treatmentKind = "эндодонтии";
+	}
+
+	const warningBadgeText = `Зуб ${item.toothNumber} удален на формуле! Требуется корректировка плана (имплантация/мостовидный протез вместо ${treatmentKind})`;
+	const message = `На зуб #${item.toothNumber} назначена услуга «${item.name}», однако в зубной формуле этот зуб отмечен как удаленный (${tooth.state}). Требуется корректировка плана (имплантация/мостовидный протез вместо ${treatmentKind}), либо восстановление статуса зуба на формуле (врачебная автономия).`;
+
+	return {
+		toothNumber: item.toothNumber,
+		toothState: tooth.state,
+		itemName: item.name,
+		itemSuggestion: item.suggestion,
+		warningBadgeText,
+		message,
+		replacementKind: "implant",
+	};
+}
+
+/** Найти все конфликты «зубов-призраков» в плане лечения. */
+export function detectGhostTeethConflicts(
+	items: readonly PlanItem[],
+	teeth: readonly EstimatorToothInput[],
+): readonly GhostToothConflict[] {
+	const conflicts: GhostToothConflict[] = [];
+	for (const item of items) {
+		const conflict = getGhostToothConflict(item, teeth);
+		if (conflict) conflicts.push(conflict);
+	}
+	return conflicts;
+}
+
+export type { PlanPriceCatalogItem };
+
+/**
+ * 1-клик замена позиции «зуба-призрака» на имплантацию.
+ */
+export function convertGhostItemToImplant(
+	item: PlanItem,
+	catalog: readonly PlanPriceCatalogItem[],
+): PlanItem {
+	if (item.toothNumber === undefined) return item;
+	if (isDeciduousFdiToothNumber(item.toothNumber)) {
+		const { suggestion: _removedSuggestion, ...rest } = item;
+		return {
+			...rest,
+			name: `Удаление корня молочного зуба ${item.toothNumber}`,
+			phase: 2,
+		};
+	}
+	const implantRule: EstimatorRule = {
+		key: "implant",
+		phase: 2,
+		match: PLAN_SERVICE_RULES.Planned_Implant ?? {
+			category: "surgery",
+			keywords: ["имплант"],
+			humanName: "установка имплантата",
+		},
+	};
+	return planItemFromRule(
+		implantRule,
+		{ toothNumber: item.toothNumber, state: "Planned_Implant" },
+		catalog,
+	);
+}
+
+/** Коллизия альтернативных планов / услуг на один и тот же зуб. */
+export interface PlanItemCollision {
+	readonly toothNumber: number;
+	readonly items: readonly PlanItem[];
+	readonly type: "preservation_vs_replacement" | "duplicate_treatment";
+	readonly messageRu: string;
+}
+
+/**
+ * Определение коллизий между несколькими позициями на один зуб.
+ * Например: сохранение (пломба/вкладка/коронка) и удаление/имплант на один и тот же зуб.
+ */
+export function detectPlanItemCollisions(
+	items: readonly PlanItem[],
+): readonly PlanItemCollision[] {
+	const itemsByTooth = new Map<number, PlanItem[]>();
+	for (const item of items) {
+		if (item.toothNumber === undefined) continue;
+		const list = itemsByTooth.get(item.toothNumber) ?? [];
+		list.push(item);
+		itemsByTooth.set(item.toothNumber, list);
+	}
+
+	const collisions: PlanItemCollision[] = [];
+	for (const [toothNumber, toothItems] of itemsByTooth.entries()) {
+		if (toothItems.length <= 1) continue;
+
+		const hasPreservation = toothItems.some(
+			(i) =>
+				i.suggestion === "caries" ||
+				i.suggestion === "pulpitis" ||
+				i.suggestion === "periodontitis" ||
+				i.suggestion === "crown" ||
+				(i.name || "").toLowerCase().includes("пломб") ||
+				(i.name || "").toLowerCase().includes("вкладк") ||
+				(i.name || "").toLowerCase().includes("коронк"),
+		);
+
+		const hasReplacementOrExtraction = toothItems.some(
+			(i) =>
+				i.suggestion === "implant" ||
+				i.suggestion === "implantGuide" ||
+				(i.name || "").toLowerCase().includes("имплант") ||
+				(i.name || "").toLowerCase().includes("удален") ||
+				(i.name || "").toLowerCase().includes("съемн") ||
+				(i.name || "").toLowerCase().includes("протез"),
+		);
+
+		if (hasPreservation && hasReplacementOrExtraction) {
+			collisions.push({
+				toothNumber,
+				items: toothItems,
+				type: "preservation_vs_replacement",
+				messageRu: `Зуб ${toothNumber}: коллизия альтернативных планов (сохранение vs удаление/имплантация). Проверьте сценарий лечения во избежание задвоения сметы.`,
+			});
+		} else {
+			// Проверка на дублирование одинаковых услуг
+			const keys = toothItems.map((i) => i.suggestion ?? i.priceId ?? i.name);
+			const hasDupes = keys.some((k, idx) => keys.indexOf(k) !== idx);
+			if (hasDupes) {
+				collisions.push({
+					toothNumber,
+					items: toothItems,
+					type: "duplicate_treatment",
+					messageRu: `Зуб ${toothNumber}: задвоение одинаковых услуг в смете.`,
+				});
+			}
+		}
+	}
+
+	return collisions;
+}
+
+/**
+ * 1-клик разрешение коллизии на зубе: оставить только выбранную услугу.
+ */
+export function resolvePlanItemCollision(
+	items: readonly PlanItem[],
+	toothNumber: number,
+	keepItemIndexOrId: number | string,
+): PlanItem[] {
+	return items.filter((item, idx) => {
+		if (item.toothNumber !== toothNumber) return true;
+		if (typeof keepItemIndexOrId === "number") {
+			return idx === keepItemIndexOrId;
+		}
+		return item.id === keepItemIndexOrId;
+	});
+}
+

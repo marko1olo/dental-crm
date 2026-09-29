@@ -21,6 +21,7 @@ import { ToothPediatricContext } from "./ToothPediatricContext";
 import { calculateAnesthesiaSafety, type AnesthesiaCalculationResult } from "../anesthesia/anesthesiaEngine";
 import { showToast } from "../GlobalToast";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
+import { getLocusTransitionDescription } from "../odontogram/treatmentEstimatorPricing";
 import "./ToothContextDrawer.css";
 
 export interface SuggestedRecall {
@@ -287,6 +288,15 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 								</span>
 							</div>
 							<p className="dente-tooth-folk-name truncate min-w-0" title={folkAndAnatomical}>{folkAndAnatomical}</p>
+							{getLocusTransitionDescription(toothNumber) && (
+								<p
+									className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-500/10 border border-teal-500/20 px-1.5 py-0.5 rounded mt-1 truncate min-w-0"
+									data-testid="tooth-locus-transition-badge"
+									title={getLocusTransitionDescription(toothNumber) || ""}
+								>
+									{getLocusTransitionDescription(toothNumber)}
+								</p>
+							)}
 						</div>
 					</div>
 
