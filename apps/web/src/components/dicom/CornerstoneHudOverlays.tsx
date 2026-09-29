@@ -5,7 +5,10 @@ import {
 	ShieldCheck,
 	X,
 } from "lucide-react";
-import type { ImplantData } from "./cornerstoneTypes";
+import {
+	type ImplantData,
+	MANDIBULAR_NERVE_DANGER_THRESHOLD_MM,
+} from "./cornerstoneTypes";
 import type { CtPlanningMarkup } from "./ctPlanningPersistence";
 import type { AlveolarRidgeCaliperMeasurement } from "../radiology/radiologyMath";
 import type { PanoramicVolumeInput } from "./PanoramicRendererWindow";
@@ -156,7 +159,7 @@ export const CornerstoneHudOverlays: React.FC<CornerstoneHudOverlaysProps> = ({
 											: (restoredMarkup?.nervePoints?.length ?? 0) < 5
 												? "точки"
 												: "точек"
-								  } (коридор безопасности 2.0 мм)`}
+								  } (коридор безопасности ${MANDIBULAR_NERVE_DANGER_THRESHOLD_MM.toFixed(1)} мм)`}
 						</span>
 					</div>
 
@@ -361,7 +364,7 @@ export const CornerstoneHudOverlays: React.FC<CornerstoneHudOverlaysProps> = ({
 								)}
 								<span>
 									{isNerveCollisionDanger && typeof latestImplant.distanceToNerve === "number"
-										? `[ОПАСНО] Нижнечелюстной канал ${latestImplant.distanceToNerve.toFixed(1)} мм (< 2.0 мм)!`
+										? `[ОПАСНО] Нижнечелюстной канал ${latestImplant.distanceToNerve.toFixed(1)} мм (< ${MANDIBULAR_NERVE_DANGER_THRESHOLD_MM.toFixed(1)} мм)!`
 										: isNerveUnmapped || typeof latestImplant.distanceToNerve !== "number"
 											? "[ВНИМАНИЕ] Нижнечелюстной нерв не размечен"
 											: `[НОРМА] Нижнечелюстной канал: ${latestImplant.distanceToNerve.toFixed(1)} мм (норма)`}

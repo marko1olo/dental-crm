@@ -9,11 +9,13 @@ import {
 import {
 	VISIOGRAPH_WINDOW_PRESETS,
 	type VisiographPresetId,
-} from "../visiograph/VisiographWindowPresets";
+} from "./VisiographWindowPresets";
 import {
 	calculateImplantBoneDensity,
 	distancePointToSpline,
 	mat3ToMat4Direction,
+	type Point2D,
+	toTransferableScalarData,
 } from "../../utils/math/mprMath";
 import { mapCtCoordinatesToFdiNumber } from "../../utils/dicom/fdiMapper";
 import {
@@ -26,8 +28,18 @@ import {
 	getImplantSystem,
 	getPlatformForDiameter,
 } from "./implantCatalog";
-import type { CtPlanningMarkup } from "./ctPlanningPersistence";
-import { readVolumeScalarData } from "./panoramicArch";
+import {
+	archFromStoredControlPoints,
+	type CtPlanningMarkup,
+	type WorldPoint3,
+} from "./ctPlanningPersistence";
+import {
+	buildPanoramicArch,
+	type DrawnArchAnnotation,
+	type PanoramicIssue,
+	readVolumeScalarData,
+} from "./panoramicArch";
+import type { PanoramicVolumeInput } from "./PanoramicRendererWindow";
 
 export function setupMprToolGroup(toolGroupId: string, renderingEngineId: string): void {
 	let toolGroup = cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
@@ -52,6 +64,7 @@ export function setupMprToolGroup(toolGroupId: string, renderingEngineId: string
 	toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
 		bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Auxiliary }],
 	});
+	toolGroup.addTool(cornerstoneTools.PanTool.toolName);
 	toolGroup.addTool(cornerstoneTools.LengthTool.toolName);
 	toolGroup.addTool(cornerstoneTools.SplineROITool.toolName);
 	toolGroup.addTool(cornerstoneTools.EllipticalROITool.toolName);
@@ -69,6 +82,7 @@ export interface ImplantPlacementParams {
 	selectedLength: number;
 	selectedFdiCode: string;
 	restoredMarkup: CtPlanningMarkup | null;
+	renderingEngineId?: string;
 }
 
 export interface ImplantPlacementResult {
@@ -100,7 +114,9 @@ export function computeImplantPlacement(params: ImplantPlacementParams): {
 		return { result: null, error: "Установка имплантата заблокирована: исследование КЛКТ не загружено. Планирование на пустом холсте запрещено стандартом клиники" };
 	}
 
-	const renderingEngine = cornerstone.getRenderingEngine("my-engine");
+	const renderingEngine = params.renderingEngineId
+		? cornerstone.getRenderingEngine(params.renderingEngineId)
+		: (cornerstone.getRenderingEngine("my-engine") ?? cornerstone.getRenderingEngines?.()?.[0]);
 	const axialVp = renderingEngine?.getViewport(VIEWPORT_IDS.axial);
 	const focal = axialVp?.getCamera()?.focalPoint;
 	if (!focal || focal.length < 3 || !Number.isFinite(focal[0]) || !Number.isFinite(focal[1]) || !Number.isFinite(focal[2])) {
@@ -269,18 +285,6 @@ export function computeClickWorldCoords(
 		z: Number(worldZ.toFixed(2)),
 	};
 }
-
-import {
-	buildPanoramicArch,
-	type DrawnArchAnnotation,
-	type PanoramicIssue,
-} from "./panoramicArch";
-import {
-	archFromStoredControlPoints,
-	type WorldPoint3,
-} from "./ctPlanningPersistence";
-import type { PanoramicVolumeInput } from "./PanoramicRendererWindow";
-import { type Point2D, toTransferableScalarData } from "../../utils/math/mprMath";
 
 export function generatePanorexVolumeInput(params: {
 	element: HTMLElement | null;

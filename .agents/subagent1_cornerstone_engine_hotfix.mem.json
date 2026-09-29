@@ -1,0 +1,36 @@
+{
+  "subagent": "Subagent 1: Cornerstone3D Engine P0 Lifecycle & Presets Inquisitor",
+  "started_at": "2026-09-29T21:12:00Z",
+  "completed_at": "2026-09-29T21:17:30Z",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md in full",
+    "Read AGENTS.md in full",
+    "Read DICOM_VIEWER_AUDIT.md in full",
+    "Initialized memory file",
+    "Read target files in apps/web/src/components/dicom/",
+    "Fixed BUG-001 (P0): Dynamic renderingEngineId via useRef, removed all hardcoded 'my-engine' instances",
+    "Fixed BUG-002 & BUG-003 (P0): Global init guard _csGlobalInitialized and safe addTool try-catch to survive re-mounts",
+    "Fixed BUG-004 (P0): Real toggleInvert state and setProperties({ invert }) across all active viewports",
+    "Fixed BUG-005 (P0): Registered PanTool in init() and setupMprToolGroup()",
+    "Fixed BUG-008: Synchronized mandibular nerve danger threshold with MANDIBULAR_NERVE_DANGER_THRESHOLD_MM (1.5mm) in CornerstoneHudOverlays.tsx",
+    "Fixed FEAT-009: Eliminated mid-file imports in cornerstoneEngineHelper.ts, consolidated at top of file",
+    "Implemented FEAT-002: Added CDViewer reverse-engineered LPF WL presets (Airway, Skull, Endoscopy, Soft Tissue+Bone) in apps/web/src/components/dicom/VisiographWindowPresets.ts",
+    "Implemented FEAT-008: Created useCornerstoneKeyboardShortcuts.ts hook (zoom +/-, reset R, invert I, presets 1..8) and connected in Cornerstone3DViewer.tsx",
+    "Created comprehensive test suite apps/web/src/components/dicom/__tests__/cornerstoneEngineP0Hotfix.test.ts (21/21 passing)",
+    "Verified zero regressions on cbctMprWorkspace.test.ts, wave224DiagnosticCtImplantInquisition.test.ts, and visiographPresetsAndMath.test.ts (38/38 passing)",
+    "Verified check:encoding (6280 files, 0 errors) and check:css-tokens (0 errors)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "BUG-001: 'my-engine' was hardcoded in 7 places in Cornerstone3DViewer.tsx and 1 place in cornerstoneEngineHelper.ts. Replaced with dynamic renderingEngineIdRef.",
+    "BUG-002/BUG-003: Double-mount crashes avoided with module-level flag _csGlobalInitialized and try-catch around addTool calls.",
+    "BUG-004: toggleInvert was an empty stub () => {}. Implemented real inversion via IVolumeViewport.setProperties({ invert }).",
+    "BUG-005: PanTool was not registered in init or toolGroup, crashing with 'Tool not found'. Now properly registered.",
+    "BUG-008: Nerve threshold text '2.0 мм' was out of sync with MANDIBULAR_NERVE_DANGER_THRESHOLD_MM (1.5mm). Synchronized dynamically.",
+    "FEAT-009: 12 lines of imports in the middle of cornerstoneEngineHelper.ts (lines 273-284) moved to file header.",
+    "FEAT-002: Airway (W2000, L-800), Skull (W2500, L600), Endoscopy (W800, L-200), Soft Tissue+Bone (W2800, L400) from CDViewer LPF reverse engineering successfully added.",
+    "FEAT-008: useCornerstoneKeyboardShortcuts adds professional hotkey support with input typing detection.",
+    "Verified real scans: kavo_op300_cbct_slice.dcm and kavo_op300_cbct_slice_anonymized.dcm pass 16-bit header and rescale checks."
+  ]
+}

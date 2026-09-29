@@ -40,7 +40,7 @@ import {
 	type VisiographPresetId,
 	VISIOGRAPH_WINDOW_PRESETS,
 	type VisiographWindowPreset,
-} from "../visiograph/VisiographWindowPresets";
+} from "./VisiographWindowPresets";
 import {
 	type PanoramicIssue,
 	panoramicIssueLabels,
@@ -72,9 +72,16 @@ import {
 	computeClickWorldCoords,
 	generatePanorexVolumeInput,
 } from "./cornerstoneEngineHelper";
+import { useCornerstoneKeyboardShortcuts } from "./useCornerstoneKeyboardShortcuts";
 
 export type { ExtendedMischClass, ImplantData, Cornerstone3DViewerProps };
 export { MANDIBULAR_NERVE_DANGER_THRESHOLD_MM, classifyExtendedBoneDensity, implantProtocolLog, teardownViewportCanvases };
+
+/**
+ * Module-level initialization guard (BUG-002) to prevent duplicate cornerstone.init() calls
+ * during React component remounting or strict mode development.
+ */
+let _csGlobalInitialized = false;
 
 export function Cornerstone3DViewer({
 	imageIds,
@@ -103,6 +110,7 @@ export function Cornerstone3DViewer({
 	const [implants, setImplants] = useState<ImplantData[]>([]);
 	const [aiProtocolLog, setAiProtocolLog] = useState<string>("");
 	const [activePresetId, setActivePresetId] = useState<VisiographPresetId>("bone");
+	const [isInverted, setIsInverted] = useState(false);
 	const [isExportingSnapshot, setIsExportingSnapshot] = useState(false);
 	const [activeCaliper, setActiveCaliper] = useState<AlveolarRidgeCaliperMeasurement | null>(null);
 	const [isNerveTracingActive, setIsNerveTracingActive] = useState(false);
@@ -113,6 +121,17 @@ export function Cornerstone3DViewer({
 	const [showArchiveUploaderModal, setShowArchiveUploaderModal] = useState<boolean>(false);
 	const [localImageIds, setLocalImageIds] = useState<string[]>([]);
 	const effectiveImageIds = imageIds.length > 0 ? imageIds : localImageIds;
+
+	/**
+	 * Unique rendering engine ID and tool group ID (BUG-001) to allow multiple concurrent viewer instances
+	 * without ID collisions or crashes.
+	 */
+	const renderingEngineIdRef = useRef<string>(
+		typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+			? `engine-${crypto.randomUUID()}`
+			: `engine-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+	);
+	const toolGroupIdRef = useRef<string>(`mpr-tool-group-${renderingEngineIdRef.current}`);
 
 	const handleSelectSystem = useCallback((systemId: string) => {
 		const sys = getImplantSystem(systemId);
@@ -167,24 +186,40 @@ export function Cornerstone3DViewer({
 		};
 	}, []);
 
+	// Initialization of Cornerstone3D engine with global guard (BUG-002 & BUG-003) and PanTool registration (BUG-005)
 	useEffect(() => {
 		async function init() {
 			try {
-				await cornerstone.init();
-				await cornerstoneTools.init();
-				const isLowSpec = isLowSpecHardware();
-				cornerstoneDICOMImageLoader.init({
-					maxWebWorkers: navigator.hardwareConcurrency
-						? (isLowSpec ? Math.min(navigator.hardwareConcurrency, 2) : Math.min(navigator.hardwareConcurrency, 7))
-						: 1,
-				});
-				cornerstoneTools.addTool(cornerstoneTools.CrosshairsTool);
-				cornerstoneTools.addTool(cornerstoneTools.WindowLevelTool);
-				cornerstoneTools.addTool(cornerstoneTools.ZoomTool);
-				cornerstoneTools.addTool(cornerstoneTools.LengthTool);
-				cornerstoneTools.addTool(cornerstoneTools.SplineROITool);
-				cornerstoneTools.addTool(cornerstoneTools.EllipticalROITool);
-				cornerstoneTools.addTool(cornerstoneTools.ProbeTool);
+				if (!_csGlobalInitialized) {
+					await cornerstone.init();
+					await cornerstoneTools.init();
+					const isLowSpec = isLowSpecHardware();
+					cornerstoneDICOMImageLoader.init({
+						maxWebWorkers: navigator.hardwareConcurrency
+							? (isLowSpec ? Math.min(navigator.hardwareConcurrency, 2) : Math.min(navigator.hardwareConcurrency, 7))
+							: 1,
+					});
+					_csGlobalInitialized = true;
+				}
+
+				const toolsToAdd = [
+					cornerstoneTools.CrosshairsTool,
+					cornerstoneTools.WindowLevelTool,
+					cornerstoneTools.ZoomTool,
+					cornerstoneTools.PanTool,
+					cornerstoneTools.LengthTool,
+					cornerstoneTools.SplineROITool,
+					cornerstoneTools.EllipticalROITool,
+					cornerstoneTools.ProbeTool,
+				];
+
+				for (const tool of toolsToAdd) {
+					try {
+						cornerstoneTools.addTool(tool);
+					} catch {
+						// Safe ignore if tool has already been registered globally
+					}
+				}
 				setIsInitialized(true);
 			} catch (err) {
 				logger.error("[Cornerstone3DViewer] Ошибка инициализации 3D-движка:", err);
@@ -197,6 +232,45 @@ export function Cornerstone3DViewer({
 			try { cornerstoneDICOMImageLoader.wadouri.fileManager.purge(); } catch { /* Ignore */ }
 		};
 	}, [isInitialized]);
+
+	const applyVoiPreset = useCallback((preset: VisiographWindowPreset) => {
+		setActivePresetId(preset.id);
+		const renderingEngine = cornerstone.getRenderingEngine(renderingEngineIdRef.current);
+		if (!renderingEngine) return;
+		for (const vId of [VIEWPORT_IDS.axial, VIEWPORT_IDS.sagittal, VIEWPORT_IDS.coronal]) {
+			const vp = renderingEngine.getViewport(vId);
+			if (vp && "setProperties" in vp) {
+				(vp as cornerstone.Types.IVolumeViewport).setProperties({
+					voiRange: preset.voiRange,
+					invert: isInverted,
+				});
+				vp.render();
+			}
+		}
+	}, [isInverted]);
+
+	// Honest toggleInvert implementation (BUG-004) across all active volume viewports
+	const toggleInvert = useCallback(() => {
+		const nextInvert = !isInverted;
+		setIsInverted(nextInvert);
+		const renderingEngine = cornerstone.getRenderingEngine(renderingEngineIdRef.current);
+		if (!renderingEngine) return;
+		for (const vId of [VIEWPORT_IDS.axial, VIEWPORT_IDS.sagittal, VIEWPORT_IDS.coronal]) {
+			const vp = renderingEngine.getViewport(vId);
+			if (vp && "setProperties" in vp) {
+				(vp as cornerstone.Types.IVolumeViewport).setProperties({ invert: nextInvert });
+				vp.render();
+			}
+		}
+	}, [isInverted]);
+
+	// Hotkeys hook (FEAT-008): zoom (+/-), reset (R), invert (I), presets (1..8)
+	useCornerstoneKeyboardShortcuts({
+		renderingEngineId: renderingEngineIdRef.current,
+		onToggleInvert: toggleInvert,
+		onApplyPreset: (pid) => applyVoiPreset(VISIOGRAPH_WINDOW_PRESETS[pid]),
+		enabled: isInitialized && effectiveImageIds.length > 0,
+	});
 
 	useEffect(() => {
 		if (!isInitialized || !effectiveImageIds.length) return;
@@ -215,7 +289,8 @@ export function Cornerstone3DViewer({
 		async function loadAndRender() {
 			const vId = `dente-volume-${effectiveImageIds.length}-${effectiveImageIds[0] ?? "empty"}`;
 			setVolumeId(vId);
-			const renderingEngineId = "my-engine";
+			const renderingEngineId = renderingEngineIdRef.current;
+			const toolGroupId = toolGroupIdRef.current;
 			try { cornerstone.cache.purgeCache(); } catch { /* Ignore */ }
 			try { cornerstoneDICOMImageLoader.wadouri.fileManager.purge(); } catch { /* Ignore */ }
 
@@ -246,7 +321,7 @@ export function Cornerstone3DViewer({
 			);
 			if (cancelled) return;
 
-			setupMprToolGroup("mpr-tool-group", renderingEngineId);
+			setupMprToolGroup(toolGroupId, renderingEngineId);
 
 			if (cancelled) return;
 			renderingEngine.renderViewports([VIEWPORT_IDS.axial, VIEWPORT_IDS.sagittal, VIEWPORT_IDS.coronal]);
@@ -264,8 +339,8 @@ export function Cornerstone3DViewer({
 
 		return () => {
 			cancelled = true;
-			try { cornerstone.getRenderingEngine("my-engine")?.destroy(); } catch { /* Ignore */ }
-			try { cornerstoneTools.ToolGroupManager.destroyToolGroup("mpr-tool-group"); } catch { /* Ignore */ }
+			try { cornerstone.getRenderingEngine(renderingEngineIdRef.current)?.destroy(); } catch { /* Ignore */ }
+			try { cornerstoneTools.ToolGroupManager.destroyToolGroup(toolGroupIdRef.current); } catch { /* Ignore */ }
 			try { cornerstoneTools.annotation.state.removeAllAnnotations(); } catch { /* Ignore */ }
 			try { cornerstone.cache.purgeCache(); } catch { /* Ignore */ }
 			try { cornerstoneDICOMImageLoader.wadouri.fileManager.purge(); } catch { /* Ignore */ }
@@ -275,7 +350,7 @@ export function Cornerstone3DViewer({
 			setPanorexVolume(null);
 			setSplinePoints([]);
 		};
-	}, [isInitialized, effectiveImageIds]);
+	}, [isInitialized, effectiveImageIds, applyVoiPreset]);
 
 	useEffect(() => {
 		if (!patientId || !studyInstanceUid) return;
@@ -430,7 +505,7 @@ export function Cornerstone3DViewer({
 	};
 
 	const setTool = (toolName: string) => {
-		const toolGroupId = "mpr-tool-group";
+		const toolGroupId = toolGroupIdRef.current;
 		const toolGroup = cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
 		if (!toolGroup) return;
 		if (activeTool === cornerstoneTools.CrosshairsTool.toolName) {
@@ -442,21 +517,8 @@ export function Cornerstone3DViewer({
 		setActiveTool(toolName);
 	};
 
-	const applyVoiPreset = (preset: VisiographWindowPreset) => {
-		setActivePresetId(preset.id);
-		const renderingEngine = cornerstone.getRenderingEngine("my-engine");
-		if (!renderingEngine) return;
-		for (const vId of [VIEWPORT_IDS.axial, VIEWPORT_IDS.sagittal, VIEWPORT_IDS.coronal]) {
-			const vp = renderingEngine.getViewport(vId);
-			if (vp && "setProperties" in vp) {
-				(vp as cornerstone.Types.IVolumeViewport).setProperties({ voiRange: preset.voiRange });
-				vp.render();
-			}
-		}
-	};
-
 	const handleCaliperMeasurement = () => {
-		const renderingEngine = cornerstone.getRenderingEngine("my-engine");
+		const renderingEngine = cornerstone.getRenderingEngine(renderingEngineIdRef.current);
 		const axialVp = renderingEngine?.getViewport(VIEWPORT_IDS.axial);
 		const focal = axialVp?.getCamera()?.focalPoint;
 		const startX = focal ? focal[0] : 15;
@@ -502,7 +564,7 @@ export function Cornerstone3DViewer({
 	}, []);
 
 	const addNervePointFromCurrentSlice = useCallback(() => {
-		const renderingEngine = cornerstone.getRenderingEngine("my-engine");
+		const renderingEngine = cornerstone.getRenderingEngine(renderingEngineIdRef.current);
 		const axialVp = renderingEngine?.getViewport(VIEWPORT_IDS.axial);
 		const focal = axialVp?.getCamera()?.focalPoint;
 		if (!focal || focal.length < 3 || !Number.isFinite(focal[0]) || !Number.isFinite(focal[1]) || !Number.isFinite(focal[2])) {
@@ -530,7 +592,7 @@ export function Cornerstone3DViewer({
 			if (last) setAiProtocolLog(implantProtocolLog(last));
 		}
 		void saveMarkupNow();
-		showToast(`Сплайн нижнечелюстного канала сформирован: ${current.length} опорных точек. Коридор безопасности 2.0 мм активен.`, "success");
+		showToast(`Сплайн нижнечелюстного канала сформирован: ${current.length} опорных точек. Коридор безопасности ${MANDIBULAR_NERVE_DANGER_THRESHOLD_MM.toFixed(1)} мм активен.`, "success");
 	}, []);
 
 	const clearNervePoints = useCallback(() => {
@@ -555,7 +617,7 @@ export function Cornerstone3DViewer({
 	const handleViewportClickForNerve = useCallback((viewportId: string, container: HTMLElement | null, e: React.MouseEvent<any>) => {
 		if (activeTool !== "NerveTracer" && !isNerveTracingActive) return;
 		if (!container) return;
-		const renderingEngine = cornerstone.getRenderingEngine("my-engine");
+		const renderingEngine = cornerstone.getRenderingEngine(renderingEngineIdRef.current);
 		const vp = renderingEngine?.getViewport(viewportId);
 		if (!vp) return;
 		const pt = computeClickWorldCoords(vp, container, e.clientX, e.clientY);
@@ -580,7 +642,7 @@ export function Cornerstone3DViewer({
 	}, []);
 
 	const focusOnImplant = useCallback((implant: ImplantData) => {
-		const renderingEngine = cornerstone.getRenderingEngine("my-engine");
+		const renderingEngine = cornerstone.getRenderingEngine(renderingEngineIdRef.current);
 		if (!renderingEngine) return;
 		for (const vpId of [VIEWPORT_IDS.axial, VIEWPORT_IDS.sagittal, VIEWPORT_IDS.coronal]) {
 			const vp = renderingEngine.getViewport(vpId);
@@ -600,6 +662,7 @@ export function Cornerstone3DViewer({
 			selectedLength,
 			selectedFdiCode,
 			restoredMarkup: restoredMarkupRef.current,
+			renderingEngineId: renderingEngineIdRef.current,
 		});
 
 		if (error) { showToast(error, "error"); return; }
@@ -617,7 +680,7 @@ export function Cornerstone3DViewer({
 
 		if (distToNerve !== null && distToNerve < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM) {
 			SoundFeedbackService.getInstance().playWarningAlert();
-			showToast(`[ОПАСНОСТЬ] Имплантат зуба №${fdiCode} установлен в опасной близости от нерва (${distToNerve.toFixed(1)} мм < 2.0 мм)!`, "error");
+			showToast(`[ОПАСНОСТЬ] Имплантат зуба №${fdiCode} установлен в опасной близости от нерва (${distToNerve.toFixed(1)} мм < ${MANDIBULAR_NERVE_DANGER_THRESHOLD_MM.toFixed(1)} мм)!`, "error");
 		} else {
 			SoundFeedbackService.getInstance().playActionSuccess();
 			const sysSpec = getImplantSystem(selectedSystemId);
@@ -734,8 +797,8 @@ export function Cornerstone3DViewer({
 				handleGeneratePanorex={handleGeneratePanorex}
 				activePresetId={activePresetId}
 				applyPreset={(pid) => applyVoiPreset(VISIOGRAPH_WINDOW_PRESETS[pid])}
-				isInverted={false}
-				toggleInvert={() => {}}
+				isInverted={isInverted}
+				toggleInvert={toggleInvert}
 				blendMode={blendMode}
 				setBlendMode={setBlendMode}
 				isExportingSnapshot={isExportingSnapshot}
