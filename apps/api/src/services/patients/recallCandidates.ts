@@ -27,24 +27,33 @@
  * человеку рассылкой не является.
  */
 
-import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import {
 	recallBandSchema,
 	recallCandidateSchema,
+	recallCohortSchema,
 	recallReportSchema,
 	type RecallBand,
 	type RecallCandidate,
+	type RecallCohort,
 	type RecallReport,
 } from "@dental/shared/recalls";
 import { db } from "../../db/client.js";
-import { appointments, patients } from "../../db/schema.js";
+import {
+	appointments,
+	patientImplantInstallations,
+	patients,
+	users,
+} from "../../db/schema.js";
 
 export {
 	recallBandSchema,
 	recallCandidateSchema,
+	recallCohortSchema,
 	recallReportSchema,
 	type RecallBand,
 	type RecallCandidate,
+	type RecallCohort,
 	type RecallReport,
 };
 
@@ -96,7 +105,7 @@ export type RecallOptions = {
 	readonly limit?: number;
 	/** Включать ли тех, кто ни разу не дошёл. */
 	readonly includeNeverArrived?: boolean;
-	/** Фильтр по полосе диспансеризации (due, overdue, probably_lost, never_arrived). */
+	/** Фильтр по полосе контрольного профосмотра (due, overdue, probably_lost, never_arrived). */
 	readonly band?: RecallBand;
 	readonly filterBand?: RecallBand;
 };
@@ -131,6 +140,20 @@ export async function findRecallCandidates(
 		SELECT max(a.starts_at) FROM ${appointments} a
 		WHERE a.patient_id = ${patients}."id" AND a.status = 'completed'
 	)`;
+	const lastDoctorId = sql<string | null>`(
+		SELECT a.doctor_user_id FROM ${appointments} a
+		WHERE a.patient_id = ${patients}."id" AND a.status = 'completed'
+		ORDER BY a.starts_at DESC LIMIT 1
+	)`;
+	const lastReason = sql<string | null>`(
+		SELECT a.reason FROM ${appointments} a
+		WHERE a.patient_id = ${patients}."id" AND a.status = 'completed'
+		ORDER BY a.starts_at DESC LIMIT 1
+	)`;
+	const implantCount = sql<number>`(
+		SELECT count(*) FROM ${patientImplantInstallations} pii
+		WHERE pii.patient_id = ${patients}."id"
+	)`;
 	const futureCount = sql<number>`(
 		SELECT count(*) FROM ${appointments} a
 		WHERE a.patient_id = ${patients}."id"
@@ -149,11 +172,12 @@ export async function findRecallCandidates(
 			email: patients.email,
 			/*
 			 * Псевдонимы обязательны. Без .as() выражение возвращается драйвером под
-			 * служебным именем вида «?column?», и поле в объекте оказывается пустым:
-			 * список выходил пустым при том, что те же подзапросы в WHERE работали
-			 * верно и отсеивали записанных на будущее.
+			 * служебным именем вида «?column?», и поле в объекте оказывается пустым.
 			 */
 			lastCompletedAt: lastCompleted.as("last_completed_at"),
+			lastDoctorId: lastDoctorId.as("last_doctor_id"),
+			lastReason: lastReason.as("last_reason"),
+			implantCount: implantCount.as("implant_count"),
 			futureAppointments: futureCount.as("future_appointments"),
 			totalAppointments: anyAppointment.as("total_appointments"),
 		})
@@ -178,6 +202,22 @@ export async function findRecallCandidates(
 		)
 		.limit(limit + 50);
 
+	const doctorIds = [
+		...new Set(
+			rows
+				.map((r) => r.lastDoctorId)
+				.filter((id): id is string => Boolean(id)),
+		),
+	];
+	const doctorRows =
+		doctorIds.length > 0
+			? await db
+					.select({ id: users.id, fullName: users.fullName })
+					.from(users)
+					.where(inArray(users.id, doctorIds))
+			: [];
+	const doctorById = new Map(doctorRows.map((d) => [d.id, d.fullName]));
+
 	const candidates: RecallCandidate[] = [];
 	const byBand: Record<RecallBand, number> = {
 		due: 0,
@@ -197,6 +237,42 @@ export async function findRecallCandidates(
 		byBand[band] = (byBand[band] ?? 0) + 1;
 		if (targetBand && band !== targetBand) continue;
 
+		const hasImplants = Number(row.implantCount) > 0;
+		const reasonText = (row.lastReason ?? "").toLowerCase();
+		const isOrtho =
+			reasonText.includes("ортодонт") ||
+			reasonText.includes("брекет") ||
+			reasonText.includes("ретейнер") ||
+			reasonText.includes("элайнер") ||
+			reasonText.includes("retention");
+
+		let cohortType: RecallCohort = "hygiene_therapy";
+		let suggestedIntervalMonths = 6;
+		let clinicalReason = BAND_LABELS[band] || "Плановый осмотр";
+
+		if (band === "never_arrived") {
+			clinicalReason = BAND_LABELS.never_arrived;
+			cohortType = "general";
+		} else if (hasImplants) {
+			cohortType = "implant";
+			suggestedIntervalMonths = monthsSince !== null && monthsSince <= 5 ? 3 : 6;
+			clinicalReason =
+				suggestedIntervalMonths === 3
+					? "Осмотр остеоинтеграции и состояния периимплантных тканей (3 мес)."
+					: "Контроль остеоинтеграции и профилактика периимплантита (6 мес).";
+		} else if (isOrtho) {
+			cohortType = "orthodontic_retention";
+			suggestedIntervalMonths = 3;
+			clinicalReason =
+				"Контрольный осмотр ортодонтического ретейнера / ретенционного аппарата (3 мес).";
+		} else {
+			cohortType = "hygiene_therapy";
+			suggestedIntervalMonths = 6;
+			clinicalReason =
+				BAND_LABELS[band] ||
+				"Плановая профессиональная гигиена полости рта и профилактический осмотр.";
+		}
+
 		candidates.push({
 			patientId: row.patientId,
 			fullName: row.fullName,
@@ -205,7 +281,18 @@ export async function findRecallCandidates(
 			lastCompletedAt: lastAt ? lastAt.toISOString() : null,
 			monthsSinceLastVisit: monthsSince,
 			band,
-			reason: BAND_LABELS[band] || "Плановый осмотр",
+			reason: clinicalReason,
+			cohortType,
+			suggestedIntervalMonths,
+			attendingDoctorId: row.lastDoctorId ?? null,
+			attendingDoctorName: row.lastDoctorId
+				? (doctorById.get(row.lastDoctorId) ?? null)
+				: null,
+			lastProcedureCategory: hasImplants
+				? "implant"
+				: isOrtho
+					? "orthodontics"
+					: "hygiene_therapy",
 		});
 	}
 

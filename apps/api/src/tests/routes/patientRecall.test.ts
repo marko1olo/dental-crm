@@ -12,6 +12,7 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	appointments,
+	auditEvents,
 	chairs,
 	clinics,
 	communicationOutbox,
@@ -110,7 +111,8 @@ describe("возврат пациентов", () => {
 				// ключа здесь означал бы, что фикстура сеет не туда, куда думает.
 				await db
 					.insert(organizations)
-					.values({ id: ORG_ID, name: "Клиника возврата" });
+					.values({ id: ORG_ID, name: "Клиника возврата" })
+					.onConflictDoNothing();
 				await db.insert(users).values({
 					id: DOCTOR_ID,
 					organizationId: ORG_ID,
@@ -324,5 +326,64 @@ describe("возврат пациентов", () => {
 			JSON.parse(response.body).message.includes("позвонить"),
 			response.body,
 		);
+	});
+
+	test("кандидат содержит когорту, интервал и лечащего врача", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/patients/recall-candidates",
+			headers: ORG_HEADERS,
+		});
+		assert.equal(response.statusCode, 200, response.body);
+		const body = JSON.parse(response.body) as {
+			candidates: {
+				patientId: string;
+				band: string;
+				cohortType?: string;
+				suggestedIntervalMonths?: number;
+				attendingDoctorName?: string;
+			}[];
+		};
+
+		const due = body.candidates.find((row) => row.patientId === DUE_PATIENT);
+		assert.ok(due, "пациент должен быть в списке");
+		assert.equal(due.cohortType, "hygiene_therapy");
+		assert.equal(due.suggestedIntervalMonths, 6);
+		assert.equal(due.attendingDoctorName, "Врач Возвратов");
+	});
+
+	test("переход статуса контрольного осмотра сохраняется в audit_events и возвращает 200", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const response = await app.inject({
+			method: "PATCH",
+			url: `/api/patients/recall-candidates/${DUE_PATIENT}/status`,
+			headers: ORG_HEADERS,
+			payload: {
+				status: "CONFIRMED",
+				channel: "phone",
+				note: "Пациент согласился на осмотр в пятницу",
+			},
+		});
+		assert.equal(response.statusCode, 200, response.body);
+		const body = JSON.parse(response.body) as { ok: boolean; status: string };
+		assert.equal(body.ok, true);
+		assert.equal(body.status, "CONFIRMED");
+
+		const [audit] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({
+					action: auditEvents.action,
+					entityType: auditEvents.entityType,
+					entityId: auditEvents.entityId,
+				})
+				.from(auditEvents)
+				.where(eq(auditEvents.entityId, DUE_PATIENT)),
+		);
+		assert.ok(audit, "событие аудита должно быть создано");
+		assert.equal(audit.action, "RECALL_STATUS_CONFIRMED");
+		assert.equal(audit.entityType, "patient_recall");
 	});
 });

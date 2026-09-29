@@ -125,7 +125,7 @@ export interface RecallCycleDefinition {
 }
 
 /**
- * Каталог клинических циклов диспансерного наблюдения и профилактических вызовов.
+ * Каталог клинических циклов контрольного наблюдения и профилактических вызовов (реколлов).
  */
 export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleDefinition>> = {
 	standard_prophylaxis: {
@@ -178,7 +178,7 @@ export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleD
 
 	implant_monitoring: {
 		id: "implant_monitoring",
-		title: "Диспансерный контроль остеоинтеграции и имплантатов",
+		title: "Контрольный осмотр остеоинтеграции и имплантатов",
 		shortTitle: "Импланты (1, 3, 6, 12 мес.)",
 		intervalUnit: "milestone_sequence",
 		defaultIntervalValue: 3,
@@ -347,7 +347,7 @@ export const RECALL_CYCLE_CATALOG: Readonly<Record<RecallCycleType, RecallCycleD
 };
 
 /**
- * Интерфейс карточки диспансерного пациента.
+ * Интерфейс карточки пациента на контрольный осмотр (реколл).
  */
 export interface PatientRecallRecord {
 	readonly id: string;
@@ -391,7 +391,7 @@ export interface PatientRecallRecord {
 export type PatientRecallCandidate = PatientRecallRecord;
 
 /**
- * Определяет канонический тип сервисного звонка StomX для кандидата диспансерного учета
+ * Определяет канонический тип сервисного звонка StomX для кандидата на плановый профосмотр
  */
 export function determineTaskCallTypeForCandidate(c: PatientRecallRecord): StomxTaskCallType {
 	if (c.taskCallType) return c.taskCallType;

@@ -20,6 +20,14 @@ export const recallBandSchema = z.enum([
 ]);
 export type RecallBand = z.infer<typeof recallBandSchema>;
 
+export const recallCohortSchema = z.enum([
+	"hygiene_therapy",
+	"implant",
+	"orthodontic_retention",
+	"general",
+]);
+export type RecallCohort = z.infer<typeof recallCohortSchema>;
+
 /**
  * Кандидат на возврат/профосмотр.
  * Совместим с SQL-запросом к PostgreSQL 18 на бэкенде
@@ -42,6 +50,11 @@ export const recallCandidateSchema = z.object({
 	band: recallBandSchema,
 	/** Человекочитаемая причина, почему пациент в списке. */
 	reason: z.string(),
+	cohortType: recallCohortSchema.optional(),
+	suggestedIntervalMonths: z.number().int().positive().optional(),
+	attendingDoctorId: z.string().uuid().nullable().optional(),
+	attendingDoctorName: z.string().nullable().optional(),
+	lastProcedureCategory: z.string().nullable().optional(),
 });
 export type RecallCandidate = z.infer<typeof recallCandidateSchema>;
 

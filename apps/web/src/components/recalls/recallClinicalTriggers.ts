@@ -101,7 +101,7 @@ export function calculatePediatricRecallTrigger(
 		formattedDueDate: formatIsoDateOnly(nextDueDate),
 		clinicalRationale:
 			"Высокая скорость деминерализации незрелой эмали временных и сменных зубов у детей требует " +
-			"диспансерного контроля гигиены, фторирования и герметизации фиссур каждые 3–4 месяца.",
+			"контрольного осмотра гигиены, фторирования и герметизации фиссур каждые 3–4 месяца.",
 		mappedCycleType: "pediatric_fluoridation",
 	};
 }

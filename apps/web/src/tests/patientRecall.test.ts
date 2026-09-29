@@ -416,7 +416,7 @@ describe("Omnichannel Templates & 1-Click Booking Links (recallTemplates.ts)", (
 		const smsMessage = generateSmsRecallMessage(candidate, {
 			clinicName: "DENTE",
 		});
-		assert.match(smsMessage, /Михаил, прошло полгода с осмотра в DENTE/);
+		assert.match(smsMessage, /Михаил, прошло 6 мес с визита в DENTE/);
 		assert.match(smsMessage, /booking\?patient_id=p1/);
 	});
 

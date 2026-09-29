@@ -41,6 +41,7 @@ export {
 	fromCanonicalRecallStatus,
 	CANONICAL_RECALL_STATUS_CONFIG,
 	sendRecallCandidateInvite,
+	sendRecallCandidateStatusUpdate,
 } from "./patientRecallEngine";
 
 export type {
@@ -62,6 +63,8 @@ export type {
 	RecallUrgencyStatus,
 	RecallInviteRequest,
 	RecallInviteResponse,
+	RecallStatusUpdateRequest,
+	RecallStatusUpdateResponse,
 } from "./patientRecallEngine";
 
 export {

@@ -1,7 +1,7 @@
 /**
  * Patient Recalls & Dispensary Hub Modal (DOMAIN: RECALLS)
  *
- * Touch-First интерфейс диспансерного учета, автоматических вызовов и когортного анализа удержания (Retention Rate & LTV).
+ * Touch-First интерфейс плановых профосмотров, автоматических вызовов и когортного анализа удержания (Retention Rate & LTV).
  * Интегрирован со специализированными интервалами (гигиена, импланты, ортодонтия, детство),
  * 1-кликовой отправкой (WhatsApp / Telegram / SMS) и речевыми скриптами с отработкой возражений.
  */
@@ -9,24 +9,10 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-	AlertTriangle,
-	BarChart3,
-	Calendar,
-	CheckCircle2,
-	Clock,
-	LayoutGrid,
-	Lightbulb,
-	List,
-	Phone,
-	PhoneCall,
-	RefreshCw,
-	RotateCcw,
-	Search,
-	Send,
-	ShieldCheck,
-	Sparkles,
-	Users,
-	X,
+	AlertTriangle, BarChart3, Calendar, CheckCircle2, Clock,
+	LayoutGrid, Lightbulb, List, Phone, PhoneCall,
+	RefreshCw, RotateCcw, Search, Send, ShieldCheck,
+	Sparkles, Users, X,
 } from "lucide-react";
 import type {
 	RecallCandidate,
@@ -38,23 +24,15 @@ import { useScheduleStore } from "../../store/scheduleStore";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import {
-	addCalendarMonthsSafe,
-	buildTelegramUrl,
-	buildWhatsAppUrl,
-	calculateCohortRetention,
-	calculateRecallMetrics,
-	determineTaskCallTypeForCandidate,
-	filterAndSortRecallCandidates,
-	formatIsoDateOnly,
-	generatePdnProtectedRecallMessage,
-	sendRecallCandidateInvite,
+	addCalendarMonthsSafe, buildTelegramUrl, buildWhatsAppUrl,
+	calculateCohortRetention, calculateRecallMetrics,
+	determineTaskCallTypeForCandidate, filterAndSortRecallCandidates,
+	formatIsoDateOnly, generatePdnProtectedRecallMessage,
+	sendRecallCandidateInvite, sendRecallCandidateStatusUpdate,
 	toCanonicalRecallStatus,
-	type CanonicalRecallWorkflowStatus,
-	type ClinicalRecallTriggerType,
-	type PatientRecallRecord,
-	type RecallContactStatus,
-	type RecallCycleType,
-	type RecallPeriodFilter,
+	type CanonicalRecallWorkflowStatus, type ClinicalRecallTriggerType,
+	type PatientRecallRecord, type RecallContactStatus,
+	type RecallCycleType, type RecallPeriodFilter,
 	type RecallUrgencyStatus,
 } from "./patientRecallEngine";
 import { CLINICAL_CALLING_SCRIPTS } from "./recallTemplates";
@@ -74,7 +52,8 @@ export function mapRecallCandidateToRecord(
 	candidate: RecallCandidate,
 ): PatientRecallRecord {
 	const months = candidate.monthsSinceLastVisit ?? 6;
-	const daysOverdue = Math.max(0, (months - 6) * 30);
+	const interval = candidate.suggestedIntervalMonths ?? 6;
+	const daysOverdue = Math.max(0, (months - interval) * 30);
 
 	let urgencyStatus: RecallUrgencyStatus = "due_now";
 	if (candidate.band === "probably_lost") {
@@ -90,9 +69,18 @@ export function mapRecallCandidateToRecord(
 		: formatIsoDateOnly(addCalendarMonthsSafe(new Date(), -months));
 
 	const dueDateTime = candidate.lastCompletedAt
-		? addCalendarMonthsSafe(new Date(candidate.lastCompletedAt), 6)
+		? addCalendarMonthsSafe(new Date(candidate.lastCompletedAt), interval)
 		: new Date();
 	const dueDate = formatIsoDateOnly(dueDateTime);
+
+	let cycleType: RecallCycleType = "standard_prophylaxis";
+	if (candidate.cohortType === "implant") {
+		cycleType = "implant_monitoring";
+	} else if (candidate.cohortType === "orthodontic_retention") {
+		cycleType = "orthodontic_retention";
+	} else if (candidate.cohortType === "hygiene_therapy") {
+		cycleType = "standard_prophylaxis";
+	}
 
 	return {
 		id: candidate.patientId,
@@ -100,7 +88,9 @@ export function mapRecallCandidateToRecord(
 		fullName: candidate.fullName,
 		phone: candidate.phone ?? null,
 		email: candidate.email ?? null,
-		cycleType: "standard_prophylaxis",
+		cycleType,
+		attendingDoctorId: candidate.attendingDoctorId ?? undefined,
+		attendingDoctorName: candidate.attendingDoctorName ?? undefined,
 		lastVisitDate,
 		dueDate,
 		daysOverdue,
@@ -175,7 +165,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 			setFetchError(
 				err instanceof Error
 					? err.message
-					: "Не удалось загрузить список диспансерных пациентов.",
+					: "Не удалось загрузить список пациентов на контрольный осмотр.",
 			);
 		} finally {
 			setIsLoading(false);
@@ -211,7 +201,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 	const [copiedCandidateId, setCopiedCandidateId] = useState<string | null>(null);
 	const [statusNotice, setStatusNotice] = useState<string | null>(null);
 
-	// Метрики диспансеризации и LTV
+	// Метрики плановых профосмотров и LTV
 	const metrics = useMemo(() => {
 		return calculateRecallMetrics(candidates);
 	}, [candidates]);
@@ -290,6 +280,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 		candidateId: string,
 		newStatus: RecallContactStatus,
 		channel?: "whatsapp" | "telegram" | "sms" | "phone",
+		note?: string,
 	) => {
 		setCandidates((prev) =>
 			prev.map((c) => {
@@ -306,6 +297,16 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 				return updated;
 			}),
 		);
+
+		// Persist recall status transition to PostgreSQL 18
+		void sendRecallCandidateStatusUpdate({
+			patientId: candidateId,
+			status: newStatus,
+			channel,
+			note,
+		}).catch((err) => {
+			console.error("[PatientRecallsHubModal] Failed to persist recall status:", err);
+		});
 
 		if (onStatusChange) {
 			void onStatusChange(candidateId, newStatus);
@@ -486,7 +487,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 						</div>
 						<div>
 							<h2 id="recalls-hub-title" className="recall-header-title">
-								Диспансерный учет и вызов пациентов (Recalls Hub)
+								Плановые профосмотры и возврат пациентов (Recalls Hub)
 							</h2>
 							<p className="recall-header-subtitle">
 								<Phone size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} aria-hidden="true" />
@@ -548,7 +549,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 				{/* Metrics Ribbon */}
 				<section
 					className="recall-metrics-grid recall-metrics-ribbon"
-					aria-label="Сводные метрики диспансеризации"
+					aria-label="Сводные метрики плановых профосмотров"
 					style={{
 						display: "flex",
 						flexWrap: "wrap",
@@ -616,7 +617,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 						}}
 					>
 						<RefreshCw size={16} className="animate-spin" />
-						<span>Загрузка списка диспансерных пациентов из базы данных...</span>
+						<span>Загрузка списка пациентов на контрольный осмотр из базы данных...</span>
 					</div>
 				) : null}
 

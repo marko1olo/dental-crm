@@ -1,7 +1,7 @@
 /**
  * Clinical Patient Recalls & Hygiene Dispensary Engine (DOMAIN: RECALLS)
  *
- * Диспансерный учет, профилактические осмотры и когортный возврат пациентов.
+ * Плановые профосмотры, профилактическая гигиена и когортный возврат пациентов.
  * Соответствует клиническим рекомендациям Стоматологической Ассоциации России (СтАР),
  * протоколам периодонтологии (EFP/AAP), этапам остеоинтеграции имплантатов и стандартам ортодонтии.
  */
@@ -260,7 +260,7 @@ export function evaluateClinicalCycleSuggestion(clinicalData: {
 
 	return {
 		suggestedCycle: "standard_prophylaxis",
-		reason: "Плановая диспансеризация: комплексная гигиена и онкоскрининг каждые 6 месяцев.",
+		reason: "Плановый профосмотр: комплексная гигиена и онкоскрининг каждые 6 месяцев.",
 		recommendedIntervalValue: 6,
 		recommendedIntervalMonths: 6,
 		intervalUnit: "months",

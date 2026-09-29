@@ -11,7 +11,7 @@
  * действующему договору.
  */
 
-import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	recallBandSchema,
@@ -24,6 +24,8 @@ import {
 	type RecallInviteRequest,
 	type RecallInviteResponse,
 } from "@dental/shared/recalls";
+import { db } from "../db/client.js";
+import { auditEvents, communicationEvents } from "../db/schema.js";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
@@ -37,6 +39,7 @@ import {
 	recallCandidateBelongsTo,
 	type RecallOptions,
 } from "../services/patients/recallCandidates.js";
+import { wsBroker } from "../services/websocketBroker.js";
 
 export {
 	recallBandSchema,
@@ -63,6 +66,12 @@ const listQuerySchema = z.object({
 
 const inviteSchema = recallInviteSchema;
 
+const statusUpdateSchema = z.object({
+	status: z.string().min(1).max(50),
+	channel: z.string().max(30).optional(),
+	note: z.string().max(1000).optional(),
+});
+
 function badRequest(reply: FastifyReply, message: string) {
 	return replyBadRequest(reply, "RecallValidationError", message);
 }
@@ -73,7 +82,7 @@ export async function registerPatientRecallRoutes(app: FastifyInstance) {
 		"/api/patients/recall-candidates",
 		{
 			schema: {
-				summary: "Список кандидатов на профилактический осмотр и диспансеризацию",
+				summary: "Список кандидатов на профилактический осмотр и плановую профгигиену",
 				tags: ["patients", "recalls"],
 				querystring: {
 					type: "object",
@@ -201,4 +210,110 @@ export async function registerPatientRecallRoutes(app: FastifyInstance) {
 				: "Приглашение поставлено в очередь. Оно уйдёт, если пациент давал согласие на такие сообщения.",
 		};
 	});
+
+	/**
+	 * Фиксация перехода статуса контрольного осмотра / возврата пациента
+	 * с записью в audit_events, communication_events и трансляцией через wsBroker.
+	 */
+	const handleStatusUpdate = async (request: FastifyRequest, reply: FastifyReply) => {
+		const context = await requireClinicalMutationContext(
+			request,
+			reply,
+			"recall status update",
+		);
+		if (!context) return;
+		if (
+			!enforcePermissionWhenStaffKnown(request, reply, "patients.write") &&
+			!enforcePermissionWhenStaffKnown(request, reply, "communications.write")
+		) {
+			return;
+		}
+
+		const { patientId } = request.params as { patientId: string };
+		if (!patientId) {
+			return badRequest(reply, "Не указан идентификатор пациента.");
+		}
+
+		if (
+			!(await recallCandidateBelongsTo(
+				context.organizationId,
+				patientId,
+			))
+		) {
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в этой клинике.",
+			});
+		}
+
+		const parsed = statusUpdateSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return badRequest(reply, "Укажите новый статус пациента.");
+		}
+
+		const { status, channel, note } = parsed.data;
+		const normalizedAction = `RECALL_STATUS_${status.toUpperCase()}`;
+
+		const actorUserId = (request.user as { id?: string } | undefined)?.id ?? null;
+
+		// 1. Фиксация в аудит-логе (Mandate 8a PostgreSQL 18 Law)
+		await db.insert(auditEvents).values({
+			organizationId: context.organizationId,
+			actorUserId,
+			entityType: "patient_recall",
+			entityId: patientId,
+			action: normalizedAction,
+			reason: note ?? `Обновление статуса профосмотра: ${status}`,
+		});
+
+		// 2. Если указан канал коммуникации — протоколируем событие связи
+		const validCommChannels = ["sms", "whatsapp", "telegram", "phone", "email"] as const;
+		const commChannel = channel
+			? validCommChannels.find((c) => c === channel.toLowerCase())
+			: undefined;
+
+		if (commChannel) {
+			let commStatus: "queued" | "sent" | "delivered" | "failed" = "queued";
+			const lowerStatus = status.toLowerCase();
+			if (["sent", "reached", "contacted", "confirmed", "scheduled"].includes(lowerStatus)) {
+				commStatus = "delivered";
+			} else if (["cancelled", "declined", "no_answer", "failed"].includes(lowerStatus)) {
+				commStatus = "failed";
+			}
+
+			await db.insert(communicationEvents).values({
+				organizationId: context.organizationId,
+				patientId,
+				actorUserId,
+				channel: commChannel,
+				direction: "outbound",
+				status: commStatus,
+				message: note ?? `Контрольный вызов: ${status}`,
+			});
+		}
+
+		// 3. Вебсокет-оповещение для мгновенной синхронизации канбана и таблицы у всех операторов
+		const updatedAt = new Date().toISOString();
+		wsBroker.broadcastToOrganization(context.organizationId, {
+			type: "PATIENT_RECALL_UPDATED",
+			payload: {
+				patientId,
+				status,
+				channel: commChannel ?? channel ?? null,
+				note: note ?? null,
+				updatedAt,
+			},
+		});
+
+		return reply.code(200).send({
+			ok: true,
+			patientId,
+			status,
+			updatedAt,
+			message: "Статус контрольного осмотра сохранён.",
+		});
+	};
+
+	app.patch("/api/patients/recall-candidates/:patientId/status", handleStatusUpdate);
+	app.post("/api/patients/recall-candidates/:patientId/status", handleStatusUpdate);
 }
