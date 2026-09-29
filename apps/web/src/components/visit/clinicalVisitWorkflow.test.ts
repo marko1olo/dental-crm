@@ -30,7 +30,20 @@ import {
 	extractProceduresFromDiary,
 	CLINICAL_STANDARD_PRICE_CATALOG,
 	type ClinicalEstimateItem,
+	createDoctorChairSession,
+	switchDoctorChair,
+	calculateChairTimerMetrics,
+	markAnesthesiaAdministered,
+	updateChairSessionStatus,
+	abortOrRescheduleVisit,
+	formatTimerSeconds,
+	getIsolatedVisitDraftStorageKey,
+	type DoctorChairSession,
 } from "./clinicalVisitWorkflow";
+import {
+	getIsolatedVisitDraftKey,
+	verifyZeroDraftCollision,
+} from "./useVisitSave";
 
 describe("Clinical Visit & SOAP Diary Ergonomics Engine", () => {
 	const initialEmptyDiary: DiaryState = {
@@ -749,6 +762,272 @@ describe("Clinical Visit & SOAP Diary Ergonomics Engine", () => {
 			assert.ok(result.sbpQrUrl.startsWith("https://qr.nspk.ru/"));
 			assert.ok(result.sbpQrUrl.includes("sum=531000"));
 			assert.ok(result.sbpQrUrl.includes("cur=RUB"));
+		});
+	});
+
+	describe("Multi-Chair Solo Doctor Concurrent Workflow & Independent Chair Clocks", () => {
+		it("creates independent chair sessions for Chair 1 and Chair 2", () => {
+			const session1 = createDoctorChairSession({
+				chairId: "chair-1",
+				chairName: "Кресло 1",
+				visitId: "vis-101",
+				patientId: "pat-101",
+				patientName: "Сидоров А.В.",
+				doctorName: "Д-р Смирнова А.С.",
+				isDoctorPresent: true,
+			});
+			const session2 = createDoctorChairSession({
+				chairId: "chair-2",
+				chairName: "Кресло 2",
+				visitId: "vis-102",
+				patientId: "pat-102",
+				patientName: "Петров В.С.",
+				doctorName: "Д-р Смирнова А.С.",
+				isDoctorPresent: false,
+			});
+
+			assert.equal(session1.chairId, "chair-1");
+			assert.equal(session1.isDoctorPresent, true);
+			assert.equal(session1.status, "active");
+
+			assert.equal(session2.chairId, "chair-2");
+			assert.equal(session2.isDoctorPresent, false);
+			assert.equal(session2.status, "paused");
+		});
+
+		it("switches doctor from Chair 1 to Chair 2, pausing doctor timer on Chair 1 and activating Chair 2", () => {
+			const startIso = "2026-09-29T10:00:00.000Z";
+			const switchTimeIso = "2026-09-29T10:10:00.000Z"; // 10 minutes later
+
+			const session1 = createDoctorChairSession({
+				chairId: "chair-1",
+				chairName: "Кресло 1",
+				visitId: "vis-101",
+				patientId: "pat-101",
+				patientName: "Сидоров А.В.",
+				doctorName: "Д-р Смирнова А.С.",
+				isDoctorPresent: true,
+				startedAt: startIso,
+			});
+			const session2 = createDoctorChairSession({
+				chairId: "chair-2",
+				chairName: "Кресло 2",
+				visitId: "vis-102",
+				patientId: "pat-102",
+				patientName: "Петров В.С.",
+				doctorName: "Д-р Смирнова А.С.",
+				isDoctorPresent: false,
+				startedAt: startIso,
+			});
+
+			const { updatedSessions, activeSession, previousSession } = switchDoctorChair(
+				[session1, session2],
+				"chair-2",
+				{ nowIso: switchTimeIso },
+			);
+
+			assert.equal(activeSession?.chairId, "chair-2");
+			assert.equal(activeSession?.isDoctorPresent, true);
+			assert.equal(activeSession?.status, "active");
+
+			assert.equal(previousSession?.chairId, "chair-1");
+			const updated1 = updatedSessions.find((s) => s.chairId === "chair-1")!;
+			assert.equal(updated1.isDoctorPresent, false);
+			assert.equal(updated1.status, "paused");
+			// Doctor spent 10 min = 600 sec at Chair 1
+			assert.equal(updated1.doctorWorkSeconds, 600);
+		});
+
+		it("handles anesthesia waiting period: Chair 1 enters waiting_anesthesia when doctor departs", () => {
+			const startIso = "2026-09-29T10:00:00.000Z";
+			const anesIso = "2026-09-29T10:05:00.000Z"; // Anesthesia given at 10:05
+			const switchIso = "2026-09-29T10:07:00.000Z"; // Doctor switches to Chair 2 at 10:07 (2 min into 8 min wait)
+
+			let s1 = createDoctorChairSession({
+				chairId: "chair-1",
+				chairName: "Кресло 1",
+				visitId: "vis-101",
+				patientId: "pat-101",
+				patientName: "Сидоров А.В.",
+				doctorName: "Д-р Смирнова А.С.",
+				isDoctorPresent: true,
+				startedAt: startIso,
+			});
+			const s2 = createDoctorChairSession({
+				chairId: "chair-2",
+				chairName: "Кресло 2",
+				visitId: "vis-102",
+				patientId: "pat-102",
+				patientName: "Петров В.С.",
+				doctorName: "Д-р Смирнова А.С.",
+				isDoctorPresent: false,
+				startedAt: startIso,
+			});
+
+			// Administer anesthesia on Chair 1
+			const withAnes = markAnesthesiaAdministered([s1, s2], "chair-1", {
+				drugName: "Ультракаин Д-С",
+				durationMinutes: 8,
+				nowIso: anesIso,
+			});
+
+			// Switch to Chair 2
+			const { updatedSessions } = switchDoctorChair(withAnes, "chair-2", { nowIso: switchIso });
+			const chair1AfterSwitch = updatedSessions.find((s) => s.chairId === "chair-1")!;
+
+			assert.equal(chair1AfterSwitch.isDoctorPresent, false);
+			assert.equal(chair1AfterSwitch.status, "waiting_anesthesia");
+			assert.equal(chair1AfterSwitch.anesthesiaDrugName, "Ультракаин Д-С");
+
+			// Calculate timer metrics at 10:07: 6 minutes remaining of anesthesia
+			const metrics = calculateChairTimerMetrics(chair1AfterSwitch, switchIso);
+			assert.equal(metrics.anesthesiaRemainingSeconds, 6 * 60);
+			assert.equal(metrics.isAnesthesiaReady, false);
+			assert.ok(metrics.tabLabel.includes("Ожидание анестезии 6 мин"));
+		});
+
+		it("calculates independent chair clocks: total chair time keeps ticking while doctor work time is frozen on background chair", () => {
+			const startIso = "2026-09-29T10:00:00.000Z";
+			const switchIso = "2026-09-29T10:15:00.000Z"; // Doctor worked 15 min at Chair 1
+			const laterIso = "2026-09-29T10:35:00.000Z"; // 20 min later (total 35 min from start)
+
+			const s1 = createDoctorChairSession({
+				chairId: "chair-1",
+				chairName: "Кресло 1",
+				visitId: "vis-101",
+				patientId: "pat-101",
+				patientName: "Сидоров А.В.",
+				doctorName: "Д-р Смирнова А.С.",
+				isDoctorPresent: true,
+				startedAt: startIso,
+			});
+			const s2 = createDoctorChairSession({
+				chairId: "chair-2",
+				chairName: "Кресло 2",
+				visitId: "vis-102",
+				patientId: "pat-102",
+				patientName: "Петров В.С.",
+				doctorName: "Д-р Смирнова А.С.",
+				isDoctorPresent: false,
+				startedAt: startIso,
+			});
+
+			const { updatedSessions } = switchDoctorChair([s1, s2], "chair-2", { nowIso: switchIso });
+			const chair1Background = updatedSessions.find((s) => s.chairId === "chair-1")!;
+			const chair2Active = updatedSessions.find((s) => s.chairId === "chair-2")!;
+
+			// At 10:35:
+			const metrics1 = calculateChairTimerMetrics(chair1Background, laterIso);
+			const metrics2 = calculateChairTimerMetrics(chair2Active, laterIso);
+
+			// Chair 1: Patient was in chair 35 min (2100 sec), but Doctor was present only 15 min (900 sec)
+			assert.equal(metrics1.totalChairSeconds, 35 * 60);
+			assert.equal(metrics1.doctorActiveSeconds, 15 * 60);
+			assert.equal(metrics1.chairTimeFormatted, "35:00");
+			assert.equal(metrics1.doctorTimeFormatted, "15:00");
+
+			// Chair 2: Patient was in chair 35 min (2100 sec), Doctor was present from 10:15 to 10:35 = 20 min (1200 sec)
+			assert.equal(metrics2.totalChairSeconds, 35 * 60);
+			assert.equal(metrics2.doctorActiveSeconds, 20 * 60);
+			assert.equal(metrics2.chairTimeFormatted, "35:00");
+			assert.equal(metrics2.doctorTimeFormatted, "20:00");
+		});
+
+		it("correctly formats timer seconds into standard MM:SS and H:MM:SS", () => {
+			assert.equal(formatTimerSeconds(0), "00:00");
+			assert.equal(formatTimerSeconds(59), "00:59");
+			assert.equal(formatTimerSeconds(60), "01:00");
+			assert.equal(formatTimerSeconds(754), "12:34");
+			assert.equal(formatTimerSeconds(3600), "1:00:00");
+			assert.equal(formatTimerSeconds(3665), "1:01:05");
+		});
+	});
+
+	describe("Autosave Safety & Zero Data Collisions Across Chairs", () => {
+		it("guarantees isolated draft storage keys for Chair 1 and Chair 2", () => {
+			const key1 = getIsolatedVisitDraftStorageKey("vis-chair-1");
+			const key2 = getIsolatedVisitDraftStorageKey("vis-chair-2");
+
+			assert.equal(key1, "dente_visit_draft_vis-chair-1");
+			assert.equal(key2, "dente_visit_draft_vis-chair-2");
+			assert.notEqual(key1, key2);
+
+			const hookKey1 = getIsolatedVisitDraftKey("vis-chair-1");
+			const hookKey2 = getIsolatedVisitDraftKey("vis-chair-2");
+			assert.equal(hookKey1, "dente_visit_draft_vis-chair-1");
+			assert.equal(hookKey2, "dente_visit_draft_vis-chair-2");
+			assert.equal(verifyZeroDraftCollision("vis-chair-1", "vis-chair-2"), true);
+		});
+	});
+
+	describe("Doctor Autonomy: Interrupted / Aborted & Rescheduled Visits (Mandate 8e)", () => {
+		it("allows doctor to abort visit without requiring 100% protocol completion", () => {
+			const abortedResult = abortOrRescheduleVisit({
+				visitId: "VIS-ABORT-1",
+				patientId: "pat-200",
+				patientName: "Ковалев Игорь Сергеевич",
+				doctorName: "Д-р Смирнова А.С.",
+				mode: "aborted",
+				reason: "Острая аллергическая реакция на анестетик",
+				diary: {
+					anamnesis: "Появилась гиперемия кожных покровов и тахикардия.",
+				},
+			});
+
+			assert.equal(abortedResult.status, "aborted");
+			assert.equal(abortedResult.isAbortedOrRescheduled, true);
+			assert.equal(abortedResult.form043uSaved, true);
+			assert.equal(abortedResult.totalNetRub, 0);
+			assert.equal(abortedResult.totalNetKop, 0);
+			assert.equal(abortedResult.sbpQrUrl, ""); // No QR payment forced
+			assert.ok(abortedResult.statusBannerText.includes("Приём прерван: Острая аллергическая реакция"));
+			assert.ok(abortedResult.statusBannerText.includes("без обязательных полей"));
+		});
+
+		it("preserves performed procedures if any before abortion and zeroes out consultation fee if none", () => {
+			const withProcedures = abortOrRescheduleVisit({
+				visitId: "VIS-ABORT-2",
+				patientId: "pat-201",
+				patientName: "Васильева Елена Павловна",
+				doctorName: "Д-р Смирнова А.С.",
+				mode: "emergency_interrupted",
+				reason: "Гипертонический криз АД 190/110",
+				performedItems: [
+					{
+						id: "anes-1",
+						code: "A11.07.012",
+						name: "Анестезия инфильтрационная",
+						quantity: 1,
+						priceRub: 800,
+						totalRub: 800,
+						category: "anesthesia",
+					},
+				],
+			});
+
+			assert.equal(withProcedures.status, "emergency_interrupted");
+			assert.equal(withProcedures.items.length, 1);
+			assert.equal(withProcedures.items[0]?.code, "A11.07.012");
+			assert.equal(withProcedures.totalNetRub, 800);
+			assert.ok(withProcedures.statusBannerText.includes("Экстренное завершение"));
+		});
+
+		it("supports rescheduling visit with date and reason", () => {
+			const rescheduleResult = abortOrRescheduleVisit({
+				visitId: "VIS-RESCHED-1",
+				patientId: "pat-202",
+				patientName: "Григорьев Артем Денисович",
+				doctorName: "Д-р Смирнова А.С.",
+				mode: "rescheduled",
+				reason: "Требуется предварительное КТ исследование",
+				rescheduledDateIso: "2026-10-05T14:00:00.000Z",
+			});
+
+			assert.equal(rescheduleResult.status, "rescheduled");
+			assert.equal(rescheduleResult.isAbortedOrRescheduled, true);
+			assert.equal(rescheduleResult.form043uSaved, true);
+			assert.ok(rescheduleResult.statusBannerText.includes("Приём перенесен"));
+			assert.ok(rescheduleResult.statusBannerText.includes("Требуется предварительное КТ исследование"));
 		});
 	});
 });

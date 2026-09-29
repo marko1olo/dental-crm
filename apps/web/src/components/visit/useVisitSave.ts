@@ -101,6 +101,37 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 	const storeSelectedSpecialty = useVisitStore((s) => s.selectedSpecialty);
 	const selectedSpecialty = options.selectedSpecialty ?? storeSelectedSpecialty;
 	const activeVisit = useAppStore((s) => s.dashboard?.activeVisit);
+	const effectiveVisitId = visitId || activeVisit?.id;
+	const previousVisitIdRef = useRef<string | null>(effectiveVisitId || null);
+
+	// Изоляция параллельных визитов соло-врача (Zero Data Collisions):
+	// при переключении между Креслом 1 и Креслом 2 немедленно сбрасываем
+	// черновик предыдущего визита в его личный ключ, исключая перезапись данных
+	useEffect(() => {
+		if (
+			previousVisitIdRef.current &&
+			effectiveVisitId &&
+			previousVisitIdRef.current !== effectiveVisitId &&
+			previousVisitIdRef.current !== "no-active-visit"
+		) {
+			const oldVisitId = previousVisitIdRef.current;
+			if (debounceTimerRef.current) {
+				clearTimeout(debounceTimerRef.current);
+				debounceTimerRef.current = null;
+			}
+			const formToSave = currentFormRef.current;
+			if (formToSave) {
+				const draftPayload = visitNoteDraftFromForm(formToSave, [
+					"Автосохранение при переключении кресла соло-врача.",
+				]);
+				void saveVisitDraft(oldVisitId, draftPayload, organizationId || activeVisit?.organizationId, { immediate: true });
+			}
+			lastSavedSignatureRef.current = "";
+			previousVisitIdRef.current = effectiveVisitId;
+		} else if (effectiveVisitId && !previousVisitIdRef.current) {
+			previousVisitIdRef.current = effectiveVisitId;
+		}
+	}, [effectiveVisitId, organizationId, activeVisit?.organizationId]);
 
 	const computeSignature = useCallback((form?: VisitNoteForm, tr?: string): string => {
 		if (!form && !tr) return "";
@@ -481,3 +512,62 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 		isSaving: saveState === "saving",
 	};
 }
+
+/**
+ * Изолированный ключ локального хранилища для черновика визита.
+ * Исключает коллизии между параллельными визитами на соседних креслах (Мандаты 8e, 8n).
+ */
+export function getIsolatedVisitDraftKey(visitId: string): string {
+	const sanitized = (visitId || "anonymous").trim().replace(/[^a-zA-Z0-9_-]/g, "_");
+	return `dente_visit_draft_${sanitized}`;
+}
+
+export function loadIsolatedVisitDraft<T = VisitNoteForm>(visitId: string): T | null {
+	if (!visitId || visitId === "no-active-visit") return null;
+	try {
+		const syncDraft = loadVisitDraftSync<T>(visitId);
+		if (syncDraft?.data && typeof syncDraft.data === "object") {
+			return syncDraft.data as T;
+		}
+		if (typeof localStorage !== "undefined") {
+			const raw = localStorage.getItem(getIsolatedVisitDraftKey(visitId));
+			if (raw) {
+				const parsed = JSON.parse(raw);
+				return (parsed?.data ?? parsed) as T;
+			}
+		}
+	} catch {
+		// Non-blocking parse error fallback
+	}
+	return null;
+}
+
+export function saveIsolatedVisitDraft<T = VisitNoteForm>(
+	visitId: string,
+	data: T,
+	organizationId?: string,
+): void {
+	if (!visitId || visitId === "no-active-visit") return;
+	try {
+		void saveVisitDraft(visitId, data, organizationId, { immediate: true });
+		if (typeof localStorage !== "undefined") {
+			localStorage.setItem(
+				getIsolatedVisitDraftKey(visitId),
+				JSON.stringify({
+					visitId,
+					data,
+					savedAt: new Date().toISOString(),
+				}),
+			);
+		}
+	} catch {
+		// Ignore storage quota errors
+	}
+}
+
+export function verifyZeroDraftCollision(visitIdA: string, visitIdB: string): boolean {
+	const keyA = getIsolatedVisitDraftKey(visitIdA);
+	const keyB = getIsolatedVisitDraftKey(visitIdB);
+	return keyA !== keyB;
+}
+
