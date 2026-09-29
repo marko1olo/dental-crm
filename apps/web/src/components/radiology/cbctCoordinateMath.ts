@@ -28,8 +28,24 @@ export function worldMmToSlicePx(
 	plane: CbctViewportType,
 	volume: CbctVoxelVolume,
 ): { x: number; y: number } {
+	const continuous = worldMmToSlicePxContinuous(pointMm, plane, volume);
+	return {
+		x: Math.round(continuous.x),
+		y: Math.round(continuous.y),
+	};
+}
+
+/**
+ * Continuous sub-pixel accurate conversion from 3D physical world point (mm) to slice pixel coordinates.
+ * Eliminates discontinuous 1-pixel shudder / jitter during continuous mouse dragging.
+ */
+export function worldMmToSlicePxContinuous(
+	pointMm: Point3D,
+	plane: CbctViewportType,
+	volume: CbctVoxelVolume,
+): { x: number; y: number } {
 	const sp = volume.spacingMm;
-	const vox = worldMmToVoxel(pointMm, volume);
+	const vox = worldMmToVoxelContinuous(pointMm, volume);
 	const depthMax = volume.dimensions.depth - 1;
 	const isIsotropicZ = Math.abs((sp?.z || 0.2) - (sp?.x || 0.2)) < 1e-4;
 
@@ -44,7 +60,7 @@ export function worldMmToSlicePx(
 			const spZ = sp?.z || 0.2;
 			const heightPx = Math.max(1, Math.round((volume.dimensions.depth * spZ) / spX));
 			const maxSliceY = heightPx - 1;
-			const y = maxSliceY - Math.round((vox.z * spZ) / spX);
+			const y = maxSliceY - (vox.z * spZ) / spX;
 			return { x: vox.x, y: Math.max(0, Math.min(maxSliceY, y)) };
 		}
 		case "sagittal": {
@@ -55,7 +71,7 @@ export function worldMmToSlicePx(
 			const spZ = sp?.z || 0.2;
 			const heightPx = Math.max(1, Math.round((volume.dimensions.depth * spZ) / spY));
 			const maxSliceY = heightPx - 1;
-			const y = maxSliceY - Math.round((vox.z * spZ) / spY);
+			const y = maxSliceY - (vox.z * spZ) / spY;
 			return { x: vox.y, y: Math.max(0, Math.min(maxSliceY, y)) };
 		}
 		default:

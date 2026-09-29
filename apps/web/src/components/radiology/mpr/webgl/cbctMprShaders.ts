@@ -58,14 +58,12 @@ uniform bool u_trilinear;       // true = sub-voxel trilinear, false = nearest n
  * Handles volume boundaries cleanly by returning -1000 HU (ambient air).
  */
 float sampleHUTrilinear(vec3 uvw) {
-    float eps = 0.5 / max(1.0, min(u_volumeDim.x, min(u_volumeDim.y, u_volumeDim.z)));
-    if (uvw.x < -eps || uvw.x > 1.0 + eps || uvw.y < -eps || uvw.y > 1.0 + eps || uvw.z < -eps || uvw.z > 1.0 + eps) {
+    if (uvw.x < 0.0 || uvw.x > 1.0 || uvw.y < 0.0 || uvw.y > 1.0 || uvw.z < 0.0 || uvw.z > 1.0) {
         return -1000.0;
     }
 
     vec3 maxCoord = max(vec3(1.0), u_volumeDim - 1.0);
-    vec3 clampedUvw = clamp(uvw, vec3(0.0), vec3(1.0));
-    vec3 voxelPos = clampedUvw * maxCoord;
+    vec3 voxelPos = uvw * maxCoord;
     vec3 i = floor(voxelPos);
     vec3 f = voxelPos - i;
 
@@ -96,8 +94,7 @@ float sampleHUTrilinear(vec3 uvw) {
  * Samples nearest neighbor HU value for fast preview scrubbing.
  */
 float sampleHUNearest(vec3 uvw) {
-    float eps = 0.5 / max(1.0, min(u_volumeDim.x, min(u_volumeDim.y, u_volumeDim.z)));
-    if (uvw.x < -eps || uvw.x > 1.0 + eps || uvw.y < -eps || uvw.y > 1.0 + eps || uvw.z < -eps || uvw.z > 1.0 + eps) {
+    if (uvw.x < 0.0 || uvw.x > 1.0 || uvw.y < 0.0 || uvw.y > 1.0 || uvw.z < 0.0 || uvw.z > 1.0) {
         return -1000.0;
     }
     vec3 maxCoord = max(vec3(1.0), u_volumeDim - 1.0);
@@ -128,15 +125,19 @@ void main() {
         }
         finalHU = maxHU;
     } else if (u_slabMode == 2) {
-        // Slab MinIP: Minimum Intensity Projection
+        // Slab MinIP: Minimum Intensity Projection (air-discarding to prevent boundary collapse)
         float minHU = 32767.0;
+        int validCount = 0;
         int halfSteps = u_slabSteps / 2;
         for (int s = -halfSteps; s <= halfSteps; s++) {
             vec3 p = baseUvw + float(s) * u_axisNorm;
             float hu = sampleHU(p);
-            minHU = min(minHU, hu);
+            if (hu > -999.0) {
+                minHU = min(minHU, hu);
+                validCount++;
+            }
         }
-        finalHU = minHU;
+        finalHU = validCount > 0 ? minHU : -1000.0;
     } else {
         // Slab Average IP
         float sumHU = 0.0;
@@ -157,13 +158,12 @@ void main() {
     float gray = clamp((finalHU - low) / safeWW, 0.0, 1.0);
 
     if (u_invert) {
-        // Negative / White Paper mode with anti-blinding air threshold
-        // Air voxels (HU < -600) remain deep dark (#090d16 -> 10/255)
-        if (finalHU < -600.0) {
-            gray = 10.0 / 255.0;
-        } else {
-            gray = 1.0 - gray;
-        }
+        // Negative / White Paper mode with smooth anti-blinding air transition
+        // DICOM PS 3.3 linear VOI LUT negative: gray = 1.0 - gray;
+        float airFactor = smoothstep(-650.0, -550.0, finalHU);
+        float darkAir = 10.0 / 255.0;
+        float invertedGray = 1.0 - gray;
+        gray = mix(darkAir, invertedGray, airFactor);
     }
 
     fragColor = vec4(gray, gray, gray, 1.0);

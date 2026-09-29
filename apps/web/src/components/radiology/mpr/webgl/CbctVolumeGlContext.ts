@@ -16,7 +16,10 @@ import type {
 	Point3D,
 	SlabProjectionMode,
 } from "../../cbctMprMath";
-import { worldMmToSlicePx } from "../../cbctCoordinateMath";
+import {
+	worldMmToSlicePx,
+	worldMmToSlicePxContinuous,
+} from "../../cbctCoordinateMath";
 import {
 	type ObliqueRotationAngles,
 	computeObliquePlaneBasis,
@@ -33,6 +36,7 @@ export interface GlSliceRenderOptions {
 	slabMode?: SlabProjectionMode | undefined;
 	slabThicknessMm?: number | undefined;
 	interpolation?: "nearest" | "trilinear" | undefined;
+	expandObliqueDiagonal?: boolean | undefined;
 }
 
 export interface GlSliceCoordinates {
@@ -46,6 +50,42 @@ export interface GlSliceCoordinates {
 	axisNorm: [number, number, number];
 	slabModeCode: number;
 	slabSteps: number;
+}
+
+/**
+ * Downsamples 3D voxel buffer by integer stride step (e.g. 2x) for low-spec GPU compatibility.
+ * Guarantees volumes exceeding gl.MAX_3D_TEXTURE_SIZE (256/512) fit into hardware VRAM without crash.
+ */
+export function downsampleVolumeData(
+	srcData: Int16Array,
+	srcDim: { width: number; height: number; depth: number },
+	step: number,
+): { data: Int16Array; width: number; height: number; depth: number } {
+	const dstW = Math.max(1, Math.ceil(srcDim.width / step));
+	const dstH = Math.max(1, Math.ceil(srcDim.height / step));
+	const dstD = Math.max(1, Math.ceil(srcDim.depth / step));
+	const dstData = new Int16Array(dstW * dstH * dstD);
+
+	const srcW = srcDim.width;
+	const srcSlice = srcDim.width * srcDim.height;
+	const dstSlice = dstW * dstH;
+
+	for (let dz = 0; dz < dstD; dz++) {
+		const sz = dz * step;
+		const srcZOffset = sz * srcSlice;
+		const dstZOffset = dz * dstSlice;
+		for (let dy = 0; dy < dstH; dy++) {
+			const sy = dy * step;
+			const srcYOffset = srcZOffset + sy * srcW;
+			const dstYOffset = dstZOffset + dy * dstW;
+			for (let dx = 0; dx < dstW; dx++) {
+				const sx = dx * step;
+				dstData[dstYOffset + dx] = srcData[srcYOffset + sx] ?? -1000;
+			}
+		}
+	}
+
+	return { data: dstData, width: dstW, height: dstH, depth: dstD };
 }
 
 /**
@@ -90,7 +130,23 @@ export function computeGlSliceCoordinates(
 	}
 
 	const basis = computeObliquePlaneBasis(plane, crosshairMm, angles);
-	const pivotPx = worldMmToSlicePx(crosshairMm, plane, volume);
+
+	// Check if slice plane is rotated obliquely: expand viewport span to accommodate full 3D diagonal sqrt(W^2 + H^2)
+	const hasObliqueRotation =
+		Math.abs(angles?.axialAngleDeg ?? 0) > 0.01 ||
+		Math.abs(angles?.coronalTiltDeg ?? 0) > 0.01 ||
+		Math.abs(angles?.sagittalTiltDeg ?? 0) > 0.01;
+
+	const shouldExpandDiagonal = options?.expandObliqueDiagonal ?? true;
+
+	if (hasObliqueRotation && shouldExpandDiagonal) {
+		const diagPx = Math.max(1, Math.round(Math.hypot(widthPx, heightPx)));
+		widthPx = diagPx;
+		heightPx = diagPx;
+	}
+
+	// Use continuous sub-pixel coordinates for pivot to prevent 1-pixel discontinuous phase shudder
+	const pivotPx = worldMmToSlicePxContinuous(crosshairMm, plane, volume);
 
 	const maxCoordX = Math.max(1, dim.width - 1);
 	const maxCoordY = Math.max(1, dim.height - 1);
@@ -169,6 +225,7 @@ export class CbctVolumeGlContext {
 	private volumeTexture: WebGLTexture | null = null;
 	private activeVolumeId: string | null = null;
 	private isInitialized = false;
+	private vao: WebGLVertexArrayObject | null = null;
 
 	// Uniform locations cache
 	private uniforms: {
@@ -278,6 +335,11 @@ export class CbctVolumeGlContext {
 		this.program = program;
 		gl.useProgram(program);
 
+		this.vao = gl.createVertexArray ? gl.createVertexArray() : null;
+		if (this.vao && gl.bindVertexArray) {
+			gl.bindVertexArray(this.vao);
+		}
+
 		this.uniforms = {
 			volume: gl.getUniformLocation(program, "u_volume"),
 			volumeDim: gl.getUniformLocation(program, "u_volumeDim"),
@@ -333,20 +395,49 @@ export class CbctVolumeGlContext {
 		gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
+		// Hardware check: Query driver limit for 3D texture dimensions (WebGL2 min guaranteed = 256)
+		const max3dSize =
+			(typeof gl.getParameter === "function" && gl.MAX_3D_TEXTURE_SIZE !== undefined
+				? (gl.getParameter(gl.MAX_3D_TEXTURE_SIZE) as number)
+				: 2048) || 2048;
+		let step = 1;
+		while (
+			Math.ceil(volume.dimensions.width / step) > max3dSize ||
+			Math.ceil(volume.dimensions.height / step) > max3dSize ||
+			Math.ceil(volume.dimensions.depth / step) > max3dSize
+		) {
+			step *= 2;
+		}
+
+		let uploadData = volume.data;
+		let uploadWidth = volume.dimensions.width;
+		let uploadHeight = volume.dimensions.height;
+		let uploadDepth = volume.dimensions.depth;
+
+		if (step > 1) {
+			console.warn(
+				`[CbctVolumeGlContext] Volume dimensions (${volume.dimensions.width}x${volume.dimensions.height}x${volume.dimensions.depth}) exceed GPU MAX_3D_TEXTURE_SIZE (${max3dSize}). Downsampling ${step}x for low-spec GPU compatibility.`,
+			);
+			const downsampled = downsampleVolumeData(volume.data, volume.dimensions, step);
+			uploadData = downsampled.data;
+			uploadWidth = downsampled.width;
+			uploadHeight = downsampled.height;
+			uploadDepth = downsampled.depth;
+		}
+
 		// Upload 16-bit signed integer volume data directly into VRAM
-		const { width, height, depth } = volume.dimensions;
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2); // 16-bit short alignment
 		gl.texImage3D(
 			gl.TEXTURE_3D,
 			0,
 			gl.R16I,
-			width,
-			height,
-			depth,
+			uploadWidth,
+			uploadHeight,
+			uploadDepth,
 			0,
 			gl.RED_INTEGER,
 			gl.SHORT,
-			volume.data,
+			uploadData,
 		);
 
 		this.volumeTexture = texture;
@@ -355,7 +446,7 @@ export class CbctVolumeGlContext {
 		// Update volume dimensions uniform
 		if (this.uniforms?.volumeDim) {
 			gl.useProgram(this.program);
-			gl.uniform3f(this.uniforms.volumeDim, width, height, depth);
+			gl.uniform3f(this.uniforms.volumeDim, uploadWidth, uploadHeight, uploadDepth);
 		}
 
 		return true;
@@ -386,13 +477,23 @@ export class CbctVolumeGlContext {
 
 		const coords = computeGlSliceCoordinates(volume, plane, crosshairMm, angles, options);
 
-		if (canvas.width !== coords.widthPx || canvas.height !== coords.heightPx) {
+		// Avoid shrinking canvas to prevent continuous WebGL framebuffer reallocation thrashing
+		if (targetCanvas) {
+			if (canvas.width < coords.widthPx || canvas.height < coords.heightPx) {
+				canvas.width = Math.max(canvas.width, coords.widthPx);
+				canvas.height = Math.max(canvas.height, coords.heightPx);
+			}
+		} else if (canvas.width !== coords.widthPx || canvas.height !== coords.heightPx) {
 			canvas.width = coords.widthPx;
 			canvas.height = coords.heightPx;
 		}
 
 		gl.viewport(0, 0, coords.widthPx, coords.heightPx);
 		gl.useProgram(this.program);
+
+		if (this.vao && gl.bindVertexArray) {
+			gl.bindVertexArray(this.vao);
+		}
 
 		// Bind 3D texture to unit 0
 		gl.activeTexture(gl.TEXTURE0);
@@ -423,7 +524,18 @@ export class CbctVolumeGlContext {
 			}
 			const targetCtx = targetCanvas.getContext("2d");
 			if (targetCtx) {
-				targetCtx.drawImage(canvas, 0, 0);
+				const sourceY = canvas.height - coords.heightPx;
+				targetCtx.drawImage(
+					canvas,
+					0,
+					sourceY,
+					coords.widthPx,
+					coords.heightPx,
+					0,
+					0,
+					coords.widthPx,
+					coords.heightPx,
+				);
 			}
 		}
 
@@ -449,6 +561,18 @@ export class CbctVolumeGlContext {
 		coronal: GlSliceCoordinates;
 		sagittal: GlSliceCoordinates;
 	} | null {
+		// Pre-size offscreen canvas to maximum dimension across all 3 planes once to prevent framebuffer reallocation thrashing
+		if (this.canvas) {
+			const maxDim = Math.max(
+				volume.dimensions.width,
+				Math.max(volume.dimensions.height, volume.dimensions.depth),
+			);
+			if (this.canvas.width < maxDim || this.canvas.height < maxDim) {
+				this.canvas.width = Math.max(this.canvas.width, maxDim);
+				this.canvas.height = Math.max(this.canvas.height, maxDim);
+			}
+		}
+
 		const axialCoords = this.renderSlice(volume, "axial", crosshairMm, angles, options, targets?.axial);
 		if (!axialCoords) return null;
 
@@ -472,6 +596,10 @@ export class CbctVolumeGlContext {
 	public dispose(): void {
 		const gl = this.gl;
 		if (gl) {
+			if (this.vao && gl.deleteVertexArray) {
+				gl.deleteVertexArray(this.vao);
+				this.vao = null;
+			}
 			if (this.volumeTexture) {
 				gl.deleteTexture(this.volumeTexture);
 				this.volumeTexture = null;

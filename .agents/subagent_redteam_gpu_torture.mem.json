@@ -1,0 +1,82 @@
+{
+  "role": "Red Team Inquisitor — GPU Engine & Low-Spec Torture Auditor",
+  "status": "completed",
+  "started_at": "2026-09-29T22:48:30+04:00",
+  "completed_at": "2026-09-29T23:00:15+04:00",
+  "mandate_compliance": {
+    "mandate_8b_line_limits": {
+      "CbctVolumeGlContext.ts": 569,
+      "cbctMprShaders.ts": 148,
+      "cbctCoordinateMath.ts": 297,
+      "cbctHardwareGpuTorture.test.ts": 502,
+      "cbctWebGlEngine.test.ts": 503,
+      "status": "PASS (all <= 800 lines)"
+    },
+    "mandate_8t_typecheck": {
+      "command": "npm run typecheck -w @dental/web",
+      "exit_code": 0,
+      "status": "PASS (0 type errors)"
+    }
+  },
+  "test_suites": [
+    {
+      "file": "apps/web/src/components/radiology/__tests__/cbctHardwareGpuTorture.test.ts",
+      "total": 16,
+      "passed": 16,
+      "failed": 0,
+      "duration_ms": 271.6
+    },
+    {
+      "file": "apps/web/src/components/radiology/__tests__/cbctWebGlEngine.test.ts",
+      "total": 20,
+      "passed": 20,
+      "failed": 0,
+      "duration_ms": 301.8
+    },
+    {
+      "file": "apps/web/src/tests/realDicomVolumeLoader.test.ts",
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "duration_ms": 1325.9
+    }
+  ],
+  "self_fixes_applied": [
+    {
+      "id": "DEFECT-GPU-001",
+      "title": "Low-Spec MAX_3D_TEXTURE_SIZE Driver Limit & Automatic 2x Decimation Fallback",
+      "file": "apps/web/src/components/radiology/mpr/webgl/CbctVolumeGlContext.ts",
+      "fix": "Added safe driver query gl.getParameter(gl.MAX_3D_TEXTURE_SIZE) with fallback; implemented downsampleVolumeData() providing automatic 2x/4x stride decimation when volume dimensions exceed GPU driver texture limits."
+    },
+    {
+      "id": "DEFECT-GPU-002",
+      "title": "Drawing Buffer Thrashing Elimination & Explicit Core WebGL2 VAO Lifecycle",
+      "file": "apps/web/src/components/radiology/mpr/webgl/CbctVolumeGlContext.ts",
+      "fix": "Pre-sized offscreen canvas in renderAllPlanes to max(W, H, D) to eliminate 180 buffer reallocations/sec; created, bound, and cleanly disposed Core WebGL2 Vertex Array Object (VAO)."
+    },
+    {
+      "id": "DEFECT-GPU-003",
+      "title": "Oblique Slice FOV Truncation Repair via Diagonal Span Expansion",
+      "file": "apps/web/src/components/radiology/mpr/webgl/CbctVolumeGlContext.ts",
+      "fix": "Expanded slice widthPx and heightPx to full 3D diagonal sqrt(W^2 + H^2) when rotated obliquely, ensuring zero anatomical cutoff (TMJ, wisdom teeth, ramus)."
+    },
+    {
+      "id": "DEFECT-GPU-004",
+      "title": "MinIP Air Dropout & Border Smearing Elimination",
+      "file": "apps/web/src/components/radiology/mpr/webgl/cbctMprShaders.ts",
+      "fix": "Removed eps border smearing from sampleHUTrilinear; in MinIP loop, discarded out-of-bounds air samples (hu > -999.0), preventing bone blackout."
+    },
+    {
+      "id": "DEFECT-GPU-005",
+      "title": "Invert / White Paper Mode Sigmoid Smooth Transition",
+      "file": "apps/web/src/components/radiology/mpr/webgl/cbctMprShaders.ts",
+      "fix": "Replaced harsh -600 HU step discontinuity with continuous sigmoid smoothstep(-650.0, -550.0, finalHU) and smooth dark air blending."
+    },
+    {
+      "id": "DEFECT-GPU-006",
+      "title": "Sub-Pixel Phase Shudder Elimination",
+      "file": "apps/web/src/components/radiology/cbctCoordinateMath.ts",
+      "fix": "Created worldMmToSlicePxContinuous and integrated into computeGlSliceCoordinates, eliminating 1-pixel discontinuous phase jumps during crosshair scrubbing."
+    }
+  ]
+}

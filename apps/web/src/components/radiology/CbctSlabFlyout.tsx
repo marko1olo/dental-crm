@@ -105,13 +105,13 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 						Толщина сляба
 					</span>
 					<span className="font-mono text-cyan-300 font-bold text-xs bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
-						{slabThicknessMm.toFixed(1)} мм
+						{slabThicknessMm <= 0.25 ? "0.0 мм (1 воксель)" : `${slabThicknessMm.toFixed(1)} мм`}
 					</span>
 				</div>
 
 				{/* Quick millimeter presets */}
 				<div className="flex items-center gap-1 overflow-x-auto pb-1">
-					{[1, 2, 3, 5, 10, 15, 30].map((t) => (
+					{[0, 0.5, 1, 2, 3, 5, 10, 15, 30].map((t) => (
 						<button
 							key={t}
 							type="button"
@@ -123,16 +123,16 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 									: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
 							}`}
 						>
-							<span data-testid={`cbct-slab-thickness-${t}`}>{t}мм</span>
+							<span data-testid={`cbct-slab-thickness-${t}`}>{t === 0 ? "0 мм" : `${t}мм`}</span>
 						</button>
 					))}
 				</div>
 
 				<input
 					type="range"
-					min={1.0}
+					min={0.0}
 					max={30.0}
-					step={0.5}
+					step={0.25}
 					value={slabThicknessMm}
 					onChange={(e) =>
 						onChangeSlabThicknessMm?.(Number.parseFloat(e.target.value))

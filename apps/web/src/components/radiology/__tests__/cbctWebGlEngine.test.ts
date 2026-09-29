@@ -204,7 +204,10 @@ describe("CBCT Hardware WebGL2 GPU Engine (FEAT-010)", () => {
 			const dot = ux * vx + uy * vy + uz * vz;
 
 			// Scaled by texture dimension aspect ratio, but directional vectors are orthogonal
-			assert.ok(Math.abs(dot) < 0.15, `Basis vectors not orthogonal: dot product = ${dot}`);
+			const lenU = Math.hypot(ux, uy, uz);
+			const lenV = Math.hypot(vx, vy, vz);
+			const normDot = (ux * vx + uy * vy + uz * vz) / (lenU * lenV);
+			assert.ok(Math.abs(normDot) < 0.15, `Basis vectors not orthogonal: dot product = ${normDot}`);
 		});
 
 		it("correctly calculates slab thickness steps and normal vector displacement", () => {
