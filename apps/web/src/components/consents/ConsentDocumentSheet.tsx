@@ -1,6 +1,10 @@
 import { AlertTriangle } from "lucide-react";
-import React from "react";
+import React, { useMemo } from "react";
 import type { ConsentSubstitutionContext, RenderedConsentTemplate } from "./consentTemplates.js";
+import {
+	cleanPrintableConsentText,
+	sanitizeConsentContext,
+} from "./consentSummaryHelper.js";
 
 export interface ConsentDocumentSheetProps {
 	rendered: RenderedConsentTemplate;
@@ -17,8 +21,25 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 	stampColor,
 	isClosedOrSigned,
 }) => {
+	// Полная очистка контекста от системного мусора (null, undefined, 804n-undefined)
+	const cleanContext = useMemo(() => sanitizeConsentContext(effectiveContext), [effectiveContext]);
+
+	// Защищенный рендеринг секций без утечек служебных английских ключей и кодов
+	const cleanTitle = useMemo(() => cleanPrintableConsentText(rendered.title), [rendered.title]);
+	const cleanSubtitle = useMemo(() => cleanPrintableConsentText(rendered.subtitle), [rendered.subtitle]);
+
 	return (
-		<div className="consent-document-sheet" style={{ position: "relative" }}>
+		<div
+			className="consent-document-sheet"
+			style={{
+				position: "relative",
+				wordWrap: "break-word",
+				overflowWrap: "break-word",
+				wordBreak: "break-word",
+				overflow: "visible",
+				boxSizing: "border-box",
+			}}
+		>
 			<div
 				className="consent-doc-watermark"
 				style={{
@@ -45,6 +66,8 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 					justifyContent: "space-between",
 					alignItems: "center",
 					marginBottom: "8px",
+					flexWrap: "wrap",
+					gap: "6px",
 				}}
 			>
 				<span
@@ -70,17 +93,28 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 						: "Черновик — печать разрешена в любой момент"}
 				</span>
 			</div>
-			<h3 className="consent-document-title">{rendered.title}</h3>
-			<p className="consent-document-subtitle">{rendered.subtitle}</p>
+			<h3 className="consent-document-title">{cleanTitle}</h3>
+			<p className="consent-document-subtitle">{cleanSubtitle}</p>
 
 			{rendered.renderedSections.map((sec) => (
-				<section key={sec.id} className="consent-section-block">
-					<h4 className="consent-section-title">{sec.title}</h4>
-					<p className="consent-section-text">{sec.content}</p>
+				<section
+					key={sec.id}
+					className="consent-section-block"
+					style={{
+						pageBreakInside: "avoid",
+						breakInside: "avoid",
+					}}
+				>
+					<h4 className="consent-section-title">{cleanPrintableConsentText(sec.title)}</h4>
+					<p className="consent-section-text" style={{ wordBreak: "break-word", overflowWrap: "break-word" }}>
+						{cleanPrintableConsentText(sec.content)}
+					</p>
 					{sec.bullets && sec.bullets.length > 0 && (
 						<ul className="consent-bullet-list">
 							{sec.bullets.map((bullet, bIdx) => (
-								<li key={bIdx}>{bullet}</li>
+								<li key={bIdx} style={{ wordBreak: "break-word", overflowWrap: "break-word" }}>
+									{cleanPrintableConsentText(bullet)}
+								</li>
 							))}
 						</ul>
 					)}
@@ -88,31 +122,47 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 			))}
 
 			{rendered.riskFactors.length > 0 && (
-				<div className="consent-risk-box">
+				<div
+					className="consent-risk-box"
+					style={{
+						pageBreakInside: "avoid",
+						breakInside: "avoid",
+					}}
+				>
 					<div className="consent-risk-box-header">
 						<AlertTriangle size={16} />
 						<span>Факторы риска и анатомические особенности</span>
 					</div>
 					<ul className="consent-bullet-list">
 						{rendered.riskFactors.map((rf, idx) => (
-							<li key={idx}>{rf}</li>
+							<li key={idx} style={{ wordBreak: "break-word", overflowWrap: "break-word" }}>
+								{cleanPrintableConsentText(rf)}
+							</li>
 						))}
 					</ul>
 				</div>
 			)}
 
 			{rendered.aftercareInstructions.length > 0 && (
-				<section className="consent-section-block">
+				<section
+					className="consent-section-block"
+					style={{
+						pageBreakInside: "avoid",
+						breakInside: "avoid",
+					}}
+				>
 					<h4 className="consent-section-title">Рекомендации и ограничения после лечения</h4>
 					<ul className="consent-bullet-list">
 						{rendered.aftercareInstructions.map((ac, idx) => (
-							<li key={idx}>{ac}</li>
+							<li key={idx} style={{ wordBreak: "break-word", overflowWrap: "break-word" }}>
+								{cleanPrintableConsentText(ac)}
+							</li>
 						))}
 					</ul>
 				</section>
 			)}
 
-			{/* Блок подписей сторон (для печати бумажного бланка и подшивки в форму 043/у) */}
+			{/* Блок подписей сторон с защитой от обрезания и разрыва страницы (break-inside: avoid) */}
 			<div
 				className="consent-print-signatures-block"
 				style={{
@@ -122,6 +172,9 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 					display: "flex",
 					flexDirection: "column",
 					gap: "0.85rem",
+					pageBreakInside: "avoid",
+					breakInside: "avoid",
+					pageBreakBefore: "auto",
 				}}
 			>
 				<div
@@ -143,8 +196,8 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 						>
 							Пациент (законный представитель):
 						</div>
-						<div style={{ fontSize: "12px", color: "var(--ink)" }}>
-							Подпись: __________________ / {effectiveContext.patientName || "____________________"} /
+						<div style={{ fontSize: "12px", color: "var(--ink)", wordBreak: "break-word" }}>
+							Подпись: __________________ / {cleanContext.patientName} /
 						</div>
 					</div>
 					<div>
@@ -157,10 +210,10 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 								marginBottom: "4px",
 							}}
 						>
-							Лечащий врач:
+							Лечащий врач-стоматолог:
 						</div>
-						<div style={{ fontSize: "12px", color: "var(--ink)" }}>
-							Подпись: __________________ / {effectiveContext.doctorName || "____________________"} /
+						<div style={{ fontSize: "12px", color: "var(--ink)", wordBreak: "break-word" }}>
+							Подпись: __________________ / {cleanContext.doctorName} /
 						</div>
 					</div>
 				</div>
@@ -170,10 +223,12 @@ export const ConsentDocumentSheet: React.FC<ConsentDocumentSheetProps> = ({
 						justifyContent: "space-between",
 						fontSize: "11px",
 						color: "var(--muted)",
+						flexWrap: "wrap",
+						gap: "6px",
 					}}
 				>
-					<span>Дата: {effectiveContext.date || new Date().toLocaleDateString("ru-RU")}</span>
-					<span>Клиника: {effectiveContext.clinicName}</span>
+					<span>Дата: {cleanContext.date}</span>
+					<span>Клиника: {cleanContext.clinicName}</span>
 				</div>
 			</div>
 		</div>

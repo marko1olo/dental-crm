@@ -378,6 +378,15 @@
 	margin: 0 auto;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 	box-sizing: border-box;
+	word-break: break-word;
+	overflow-wrap: break-word;
+	overflow: visible;
+}
+
+.consent-print-signatures-block {
+	page-break-inside: avoid;
+	break-inside: avoid;
+	page-break-before: auto;
 }
 
 [data-theme="dark"] .consent-document-sheet,
@@ -728,5 +737,15 @@ html.dark .consent-document-sheet .consent-document-subtitle {
 		border: 1px solid #999999 !important;
 		color: #000000 !important;
 		page-break-inside: avoid;
+		break-inside: avoid;
+	}
+
+	.consent-print-signatures-block {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+		page-break-before: auto !important;
+		margin-top: 18pt !important;
+		padding-top: 10pt !important;
+		border-top: 1px solid #000000 !important;
 	}
 }

@@ -33,6 +33,14 @@ import {
 	simplifyStrokePoints,
 	smoothStrokeToBezierCurves,
 } from "../components/consents/signaturePadMath.js";
+import {
+	buildAddendumConsentSummary,
+	cleanPrintableConsentText,
+	detectConsentScopeMismatch,
+	sanitizeConsentContext,
+	sanitizeConsentFieldValue,
+	STATUTORY_CONSENT_KEY_LABELS,
+} from "../components/consents/consentSummaryHelper.js";
 
 test("Informed Consents Library: all 9 statutory Russian dental consent templates integrity (323-FZ & 152-FZ & 1051n)", () => {
 	const templates = getAllConsentTemplates();
@@ -399,3 +407,137 @@ test("InformedConsentTemplates: statutory templates contract verification", () =
 	assert.equal(typeof renderConsentTemplate, "function");
 	assert.equal(typeof getAllConsentTemplates, "function");
 });
+
+test("Informed Consents Dynamic Scope Invalidation: detects scope mismatch when therapy is signed and surgery/orthopedics added", () => {
+	// 1. Пациент подписал только терапевтическое согласие (CONSENT_THERAPY)
+	const signedKeys = ["CONSENT_THERAPY", "CONSENT_PERSONAL_DATA"];
+
+	// 2. Врач добавляет хирургические манипуляции (удаление, имплантат, синус-лифтинг)
+	const surgicalProcedures = [
+		"Лечение кариеса 1.6",
+		"Удаление зуба 2.8 сложное с разъединением корней",
+		"Установка дентального имплантата Dentium 3.6",
+		"Открытый синус-лифтинг в области 2.6",
+	];
+
+	const surgeryMismatch = detectConsentScopeMismatch({
+		signedConsentKeys: signedKeys,
+		additionalProcedures: surgicalProcedures,
+	});
+	assert.equal(surgeryMismatch.hasMismatch, true, "Must detect scope mismatch when surgery is added to therapy consent");
+	assert.ok(surgeryMismatch.uncoveredTemplateKeys.includes("CONSENT_SURGERY_IMPLANT"));
+	assert.equal(surgeryMismatch.mismatchedItems.length, 1);
+	assert.equal(surgeryMismatch.mismatchedItems[0]?.domainKey, "CONSENT_SURGERY_IMPLANT");
+	assert.ok(surgeryMismatch.warningTitle.includes("Внимание: добавлены процедуры, не покрытые текущим ИДС 1051н"));
+	assert.equal(surgeryMismatch.suggestedActionLabel, "Сформировать доп. согласие на новые процедуры");
+
+	// 3. Врач добавляет ортопедические манипуляции (коронки, слепки, препарирование)
+	const orthoProcedures = [
+		"Лечение пульпита 1.5",
+		"Препарирование зуба под металлокерамическую коронку 1.6",
+		"Снятие анатомического слепка",
+	];
+	const orthoMismatch = detectConsentScopeMismatch({
+		signedConsentKeys: signedKeys,
+		additionalProcedures: orthoProcedures,
+	});
+	assert.equal(orthoMismatch.hasMismatch, true, "Must detect mismatch for orthopedics");
+	assert.ok(orthoMismatch.uncoveredTemplateKeys.includes("CONSENT_ORTHOPEDICS"));
+	assert.equal(orthoMismatch.mismatchedItems[0]?.domainKey, "CONSENT_ORTHOPEDICS");
+
+	// 4. Пациент имеет только терапевтические процедуры — несоответствия нет
+	const pureTherapyProcedures = [
+		"Профессиональная гигиена полости рта",
+		"Лечение кариеса дентина 1.1",
+		"Наложение изолирующей системы коффердам",
+	];
+	const noMismatch = detectConsentScopeMismatch({
+		signedConsentKeys: signedKeys,
+		additionalProcedures: pureTherapyProcedures,
+	});
+	assert.equal(noMismatch.hasMismatch, false, "Must not report mismatch when all procedures are covered");
+	assert.equal(noMismatch.mismatchedItems.length, 0);
+
+	// 5. Все согласия подписаны — несоответствия нет даже для хирургии
+	const allSigned = ["CONSENT_THERAPY", "CONSENT_SURGERY_IMPLANT", "CONSENT_ORTHOPEDICS"];
+	const coveredSurgery = detectConsentScopeMismatch({
+		signedConsentKeys: allSigned,
+		additionalProcedures: surgicalProcedures,
+	});
+	assert.equal(coveredSurgery.hasMismatch, false, "Surgery is covered by CONSENT_SURGERY_IMPLANT");
+});
+
+test("Informed Consents Dynamic Scope Invalidation: buildAddendumConsentSummary generates legal memo without emoji", () => {
+	const signedKeys = ["CONSENT_THERAPY"];
+	const procedures = ["Операция удаления ретинированного зуба 3.8", "Имплантация Nobel Biocare 4.6"];
+	const mismatch = detectConsentScopeMismatch({
+		signedConsentKeys: signedKeys,
+		additionalProcedures: procedures,
+	});
+
+	assert.equal(mismatch.hasMismatch, true);
+	const memo = buildAddendumConsentSummary({
+		patientName: "Петров П.П.",
+		doctorName: "Кузнецов А.В.",
+		clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
+		uncoveredTemplateKeys: mismatch.uncoveredTemplateKeys,
+		toothNumbers: "3.8, 4.6",
+	});
+
+	// Проверяем юридическую чистоту и отсутствие эмодзи/мусора
+	assert.ok(memo.includes("ДОПОЛНИТЕЛЬНОЕ ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ"));
+	assert.ok(memo.includes("Приказ Минздрава РФ № 1051н"));
+	assert.ok(memo.includes("Федеральный закон № 323-ФЗ"));
+	assert.ok(memo.includes("Петров П.П."));
+	assert.ok(memo.includes("Кузнецов А.В."));
+	assert.ok(memo.includes("3.8, 4.6"));
+	assert.ok(memo.includes("Врачебная автономия сохранена"));
+	assert.ok(!/[🚨⚠️❌💡🔥🦷📌]/.test(memo), "Must NOT contain emojis in official legal document text");
+});
+
+test("Informed Consents Clean Print & Sanitation: eliminates systemic garbage, null/undefined, and raw English keys", () => {
+	// 1. cleanPrintableConsentText
+	const dirtyText = "Услуга: id: 804n-undefined. План: null, зуб: undefined, сумма: NaN руб. Данные: [object Object], код: therapy_general, хирургия: surgery_implant.";
+	const cleaned = cleanPrintableConsentText(dirtyText);
+
+	assert.ok(!cleaned.includes("id: 804n-undefined"), "Must scrub 'id: 804n-undefined'");
+	assert.ok(!cleaned.includes("null"), "Must scrub 'null'");
+	assert.ok(!cleaned.includes("undefined"), "Must scrub 'undefined'");
+	assert.ok(!cleaned.includes("NaN"), "Must scrub 'NaN'");
+	assert.ok(!cleaned.includes("[object Object]"), "Must scrub '[object Object]'");
+	assert.ok(cleaned.includes("Терапевтическое лечение"), "Must translate therapy_general");
+	assert.ok(cleaned.includes("Хирургическое вмешательство и имплантация"), "Must translate surgery_implant");
+
+	// 2. sanitizeConsentFieldValue
+	assert.equal(sanitizeConsentFieldValue("id: 804n-undefined"), "По клиническим показаниям (Приказ Минздрава РФ № 1051н)");
+	assert.equal(sanitizeConsentFieldValue("null"), "—");
+	assert.equal(sanitizeConsentFieldValue("undefined"), "—");
+	assert.equal(sanitizeConsentFieldValue("NaN"), "—");
+	assert.equal(sanitizeConsentFieldValue("[object Object]"), "—");
+	assert.equal(sanitizeConsentFieldValue("therapy_general"), "Терапевтическое лечение (кариес, пульпит, периодонтит)");
+	assert.equal(sanitizeConsentFieldValue("  Зуб 1.6  "), "Зуб 1.6");
+
+	// 3. sanitizeConsentContext
+	const dirtyContext: ConsentSubstitutionContext = {
+		patientName: "Иванов И.И.",
+		diagnosisIcd: "id: 804n-undefined K02.1",
+		toothNumbers: "null",
+		clinicName: "undefined",
+		doctorName: "Петров П.П.",
+	};
+	const sanitized = sanitizeConsentContext(dirtyContext);
+	assert.equal(sanitized.patientName, "Иванов И.И.");
+	assert.ok(!sanitized.diagnosisIcd?.includes("undefined"));
+	assert.ok(!sanitized.diagnosisIcd?.includes("804n-undefined"));
+	assert.notEqual(sanitized.toothNumbers, "null");
+	assert.notEqual(sanitized.clinicName, "undefined");
+	assert.equal(sanitized.doctorName, "Петров П.П.");
+
+	// 4. STATUTORY_CONSENT_KEY_LABELS dictionary completeness
+	assert.ok(STATUTORY_CONSENT_KEY_LABELS.therapy);
+	assert.ok(STATUTORY_CONSENT_KEY_LABELS.surgery);
+	assert.ok(STATUTORY_CONSENT_KEY_LABELS.orthopedics);
+	assert.ok(STATUTORY_CONSENT_KEY_LABELS.orthodontics);
+	assert.ok(STATUTORY_CONSENT_KEY_LABELS.hygiene);
+});
+

@@ -56,6 +56,12 @@ import {
 	renderConsentTemplate,
 } from "../consents/consentTemplates";
 import { generateSha256 } from "../consents/consentIntegrityHash";
+import {
+	detectConsentScopeMismatch,
+	cleanPrintableConsentText,
+	sanitizeConsentContext,
+	type ConsentScopeMismatchResult,
+} from "../consents/consentSummaryHelper";
 
 const CONSENT_KEY_TO_DOCUMENT_KIND: Partial<Record<ConsentTemplateKey, string>> = {
 	CONSENT_INSPECTION_1051N: "informed_consent",
@@ -350,7 +356,7 @@ export function VisitConsentsTab({
 				? String(selectedToothForMenu)
 				: (selectedToothForMenu?.code || "По клиническому плану");
 
-		return {
+		return sanitizeConsentContext({
 			patientName: activePatient?.fullName || activePatient?.name || "Пациент",
 			birthDate: activePatient?.birthDate || "—",
 			passport: activePatient?.passport || activePatient?.documentNumber || "—",
@@ -365,7 +371,7 @@ export function VisitConsentsTab({
 			date: new Date().toLocaleDateString("ru-RU"),
 			snils: activePatient?.snils || null,
 			phone: activePatient?.phone || null,
-		};
+		});
 	}, [activePatient, activeDoctor, dashboard, visitNoteForm?.diagnosis, selectedToothForMenu]);
 
 	// Анализ клинического контекста визита: какие согласия объективно требуются сегодня
@@ -420,6 +426,28 @@ export function VisitConsentsTab({
 
 		return flags;
 	}, [visitNoteForm, consentRecords, isVisitClosed]);
+
+	// Список ключей всех подписанных согласий пациента
+	const signedConsentKeys = useMemo<ConsentTemplateKey[]>(() => {
+		return Object.entries(consentRecords)
+			.filter(([_, rec]) => rec.isSigned)
+			.map(([k]) => k as ConsentTemplateKey);
+	}, [consentRecords]);
+
+	// Детекция изменений в плане лечения (Consent Scope Mismatch по 1051н и ст. 20 323-ФЗ)
+	const consentScopeMismatch = useMemo<ConsentScopeMismatchResult>(() => {
+		return detectConsentScopeMismatch({
+			signedConsentKeys,
+			treatmentPlanText: visitNoteForm?.treatmentPlan,
+			diagnosisText: visitNoteForm?.diagnosis,
+			complaintText: visitNoteForm?.complaint,
+			anamnesisText: visitNoteForm?.anamnesis,
+			objectiveStatusText: visitNoteForm?.objectiveStatus,
+			additionalProcedures: selectedToothForMenu
+				? [typeof selectedToothForMenu === "number" ? String(selectedToothForMenu) : (selectedToothForMenu?.code || "")]
+				: [],
+		});
+	}, [signedConsentKeys, visitNoteForm, selectedToothForMenu]);
 
 	// Список всех согласий с вычисленным статусом
 	const itemsWithStatus = useMemo(() => {
@@ -708,6 +736,72 @@ export function VisitConsentsTab({
 		showToast("Пакет согласий на сегодня сформирован и отправлен на печать", "success");
 	}, [requiredFlags, substitutionContext, isVisitClosed]);
 
+	// 1-Клик: Сформировать доп. согласие на новые процедуры (печать + фиксация)
+	const handleFormAddendumConsent = useCallback(() => {
+		if (consentScopeMismatch.uncoveredTemplateKeys.length === 0) {
+			showToast("Все процедуры текущего визита уже покрыты соглашением", "info");
+			return;
+		}
+
+		const nowStr = `${new Date().toLocaleDateString("ru-RU")}, ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+		const next = { ...consentRecords };
+
+		for (const tplKey of consentScopeMismatch.uncoveredTemplateKeys) {
+			const conf = CLINICAL_CONSENTS_LIST.find((c) => c.key === tplKey);
+			const title = conf?.title || tplKey;
+			const rec: ConsentRecordState = {
+				isSigned: true,
+				signedAt: nowStr,
+				method: "paper",
+				doctorName: substitutionContext.doctorName || "Врач-стоматолог",
+				notes: "Дополнительное информированное согласие на добавленные инвазивные процедуры (Приказ Минздрава 1051н)",
+				integrityHash: generateSha256(`ADDENDUM_${tplKey}_${patientId}_${nowStr}`),
+			};
+			next[tplKey] = rec;
+			void persistConsentToBackend(tplKey, title, rec);
+		}
+
+		saveConsentRecords(next);
+
+		// Автоматически отправляем на печать дополнительное согласие на добавленные процедуры
+		if (consentScopeMismatch.uncoveredTemplateKeys.length === 1 && consentScopeMismatch.uncoveredTemplateKeys[0]) {
+			handlePrintSingleFilled(consentScopeMismatch.uncoveredTemplateKeys[0]);
+		} else {
+			handlePrintTodayPackage();
+		}
+
+		showToast("Сформировано и отправлено на печать доп. согласие на новые процедуры (1051н)", "success");
+	}, [consentScopeMismatch, consentRecords, substitutionContext.doctorName, patientId, persistConsentToBackend, saveConsentRecords, handlePrintSingleFilled, handlePrintTodayPackage]);
+
+	// 1-Клик: Отметить доп. согласие подписанным на бумаге без печати
+	const handleMarkAddendumSigned = useCallback(() => {
+		if (consentScopeMismatch.uncoveredTemplateKeys.length === 0) {
+			showToast("Все процедуры текущего визита уже покрыты соглашением", "info");
+			return;
+		}
+
+		const nowStr = `${new Date().toLocaleDateString("ru-RU")}, ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+		const next = { ...consentRecords };
+
+		for (const tplKey of consentScopeMismatch.uncoveredTemplateKeys) {
+			const conf = CLINICAL_CONSENTS_LIST.find((c) => c.key === tplKey);
+			const title = conf?.title || tplKey;
+			const rec: ConsentRecordState = {
+				isSigned: true,
+				signedAt: nowStr,
+				method: "paper",
+				doctorName: substitutionContext.doctorName || "Врач-стоматолог",
+				notes: "Дополнительное информированное согласие на добавленные процедуры подписано на бумаге",
+				integrityHash: generateSha256(`ADDENDUM_${tplKey}_${patientId}_${nowStr}`),
+			};
+			next[tplKey] = rec;
+			void persistConsentToBackend(tplKey, title, rec);
+		}
+
+		saveConsentRecords(next);
+		showToast("Дополнительное согласие на новые процедуры отмечено подписанным", "success");
+	}, [consentScopeMismatch, consentRecords, substitutionContext.doctorName, patientId, persistConsentToBackend, saveConsentRecords]);
+
 	// Тоггл аккордеона быстрого просмотра
 	const toggleCardExpand = useCallback((key: string) => {
 		setExpandedCards((prev) => ({
@@ -952,6 +1046,23 @@ export function VisitConsentsTab({
 				}
 
 				/* Hot Path Banner */
+				.vct-scope-mismatch-banner {
+					background: var(--amber-surface, #fffbeb);
+					border: 1px solid var(--amber, #d97706);
+					border-radius: var(--radius-lg, 10px);
+					padding: 12px 16px;
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					gap: 16px;
+					flex-wrap: wrap;
+				}
+
+				[data-theme="dark"] .vct-scope-mismatch-banner {
+					background: rgba(217, 119, 6, 0.14);
+					border-color: rgba(217, 119, 6, 0.45);
+				}
+
 				.vct-package-banner {
 					border-radius: var(--radius-lg, 10px);
 					padding: 12px 16px;
@@ -1425,6 +1536,84 @@ export function VisitConsentsTab({
 					</button>
 				</div>
 			</div>
+
+			{/* ═══ ЮРИДИЧЕСКИЙ ИНДИКАТОР: CONSENT SCOPE MISMATCH (МАНДАТ 8e) ═══ */}
+			{consentScopeMismatch.hasMismatch && (
+				<div
+					className="vct-scope-mismatch-banner"
+					data-testid="banner-consent-scope-mismatch"
+				>
+					<div className="vct-package-info">
+						<div
+							className="vct-package-icon-box"
+							style={{
+								background: "rgba(217, 119, 6, 0.18)",
+								color: "var(--amber, #d97706)",
+							}}
+						>
+							<AlertTriangle size={20} />
+						</div>
+						<div>
+							<div
+								style={{
+									fontSize: "13.5px",
+									fontWeight: 700,
+									color: "var(--amber-dark, #b45309)",
+									display: "flex",
+									alignItems: "center",
+									gap: "6px",
+									flexWrap: "wrap",
+								}}
+							>
+								<span>{consentScopeMismatch.warningTitle}</span>
+								<span
+									style={{
+										fontSize: "10.5px",
+										fontWeight: 600,
+										padding: "1px 6px",
+										borderRadius: "4px",
+										background: "rgba(217, 119, 6, 0.15)",
+										color: "var(--amber, #d97706)",
+									}}
+								>
+									Врачебная автономия
+								</span>
+							</div>
+							<div className="vct-package-desc" style={{ marginTop: "4px" }}>
+								В плане приёма выявлены инвазивные процедуры:{" "}
+								<strong>{consentScopeMismatch.uncoveredProcedureNames.join(", ")}</strong>. Ранее подписанные пациентом согласия не покрывают эти вмешательства. Программа не блокирует оказание помощи (Мандат Врачебной Автономии), но фиксирует юридический риск ст. 20 323-ФЗ.
+							</div>
+						</div>
+					</div>
+					<div className="vct-package-actions">
+						<button
+							type="button"
+							onClick={handleFormAddendumConsent}
+							data-testid="btn-create-addendum-consent"
+							className="vct-btn vct-btn-primary"
+							style={{
+								background: "var(--amber, #d97706)",
+								borderColor: "var(--amber-dark, #b45309)",
+								color: "#ffffff",
+								fontWeight: 700,
+							}}
+							title="1-клик: сформировать дополнительное согласие на новые процедуры и отправить на печать"
+						>
+							<FileText size={14} />
+							<span>{consentScopeMismatch.suggestedActionLabel}</span>
+						</button>
+						<button
+							type="button"
+							onClick={handleMarkAddendumSigned}
+							className="vct-btn vct-btn-secondary"
+							title="Отметить доп. согласие на бумаге подписанным пациентом"
+						>
+							<Check size={14} />
+							<span>Отметить на бумаге</span>
+						</button>
+					</div>
+				</div>
+			)}
 
 			{/* ═══ HOT PATH БАННЕР: «1-КЛИК ПАКЕТ НА СЕГОДНЯ» (МАНДАТ 8e) ═══ */}
 			{unsignedRequiredItems.length > 0 ? (

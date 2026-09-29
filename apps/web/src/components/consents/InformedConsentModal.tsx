@@ -1,4 +1,5 @@
 import {
+	AlertTriangle,
 	Check,
 	Copy,
 	Lock,
@@ -41,8 +42,12 @@ import {
 } from "./signaturePadMath.js";
 import {
 	buildPatientConsentSummary,
+	cleanPrintableConsentText,
+	detectConsentScopeMismatch,
+	sanitizeConsentContext,
 	type PatientConsentSummaryParams,
 	type SignedConsentPayload,
+	type ConsentScopeMismatchResult,
 } from "./consentSummaryHelper.js";
 import { ConsentDocumentSheet } from "./ConsentDocumentSheet.js";
 import { ConsentSigningPanel } from "./ConsentSigningPanel.js";
@@ -203,7 +208,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 
 	// Контекст подстановки
 	const substitutionContext = useMemo<ConsentSubstitutionContext>(() => {
-		return {
+		return sanitizeConsentContext({
 			patientName: patient?.fullName || null,
 			birthDate: patient?.birthDate || null,
 			passport: patient?.passport || null,
@@ -218,7 +223,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			date: new Date().toLocaleDateString("ru-RU"),
 			snils: patient?.snils || null,
 			phone: patient?.phone || null,
-		};
+		});
 	}, [
 		patient,
 		doctorName,
@@ -268,6 +273,17 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 		return renderConsentTemplate(currentTemplate, effectiveContext);
 	}, [currentTemplate, effectiveContext]);
 
+	// Детекция Consent Scope Mismatch (непокрытые инвазивные процедуры)
+	const scopeMismatch = useMemo<ConsentScopeMismatchResult>(() => {
+		const coveredKeys = activeMode === "packages" ? currentPackage.templateKeys : [activeDocKey];
+		return detectConsentScopeMismatch({
+			signedConsentKeys: coveredKeys,
+			treatmentPlanText: customDiagnosis || diagnosisIcd,
+			diagnosisText: customDiagnosis || diagnosisIcd,
+			additionalProcedures: customTeeth || toothNumbers ? [customTeeth || toothNumbers || ""] : [],
+		});
+	}, [activeMode, currentPackage.templateKeys, activeDocKey, customDiagnosis, diagnosisIcd, customTeeth, toothNumbers]);
+
 	// Расчет криптографического отпечатка SHA-256
 	const integrityRecord = useMemo(() => {
 		return generateConsentIntegrityHash({
@@ -302,9 +318,9 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				patientBirthDate: effectiveContext.birthDate || undefined,
 				medicalCardNumber: patient?.cardNumber || undefined,
 				doctorName: effectiveContext.doctorName || "Лечащий врач",
-				documentTitle: rendered.title,
+				documentTitle: cleanPrintableConsentText(rendered.title),
 				documentCode: currentTemplate.code,
-				documentText: rendered.fullTextContent,
+				documentText: cleanPrintableConsentText(rendered.fullTextContent),
 				signedAtIso: new Date().toISOString(),
 				integrityHash: integrityRecord.hash,
 				strokes: verificationMethod === "tablet_stylus" ? strokes : undefined,
@@ -606,6 +622,64 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 
 				{/* Тело модального окна */}
 				<div className="consent-modal-body">
+					{/* Индикатор изменения процедур (Consent Scope Mismatch по Приказу 1051н) */}
+					{scopeMismatch.hasMismatch && (
+						<div
+							className="consent-scope-mismatch-banner"
+							data-testid="modal-consent-scope-mismatch"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+								gap: "12px",
+								padding: "10px 14px",
+								borderRadius: "8px",
+								background: "var(--amber-surface, #fffbeb)",
+								border: "1px solid var(--amber, #d97706)",
+								color: "var(--ink)",
+								fontSize: "12px",
+								flexWrap: "wrap",
+							}}
+						>
+							<div style={{ display: "flex", alignItems: "flex-start", gap: "8px", flex: 1, minWidth: "260px" }}>
+								<AlertTriangle size={18} style={{ color: "var(--amber, #d97706)", flexShrink: 0, marginTop: "2px" }} />
+								<div>
+									<div style={{ fontWeight: 700, color: "var(--amber-dark, #b45309)" }}>
+										{scopeMismatch.warningTitle}
+									</div>
+									<div style={{ color: "var(--muted)", marginTop: "2px", lineHeight: 1.35 }}>
+										{scopeMismatch.warningMessage}
+									</div>
+								</div>
+							</div>
+							<button
+								type="button"
+								className="consent-mode-btn active"
+								style={{
+									height: "28px",
+									padding: "0 10px",
+									fontSize: "11.5px",
+									fontWeight: 600,
+									background: "var(--amber, #d97706)",
+									borderColor: "var(--amber-dark, #b45309)",
+									color: "#ffffff",
+									cursor: "pointer",
+									borderRadius: "6px",
+									whiteSpace: "nowrap",
+								}}
+								onClick={() => {
+									if (scopeMismatch.uncoveredTemplateKeys[0]) {
+										setActiveMode("single");
+										setActiveKey(scopeMismatch.uncoveredTemplateKeys[0]);
+										showToast("Сформировано доп. согласие на добавленную процедуру", "info");
+									}
+								}}
+							>
+								<span>{scopeMismatch.suggestedActionLabel}</span>
+							</button>
+						</div>
+					)}
+
 					{/* Просмотр текста согласия */}
 					<ConsentDocumentSheet
 						rendered={rendered}
