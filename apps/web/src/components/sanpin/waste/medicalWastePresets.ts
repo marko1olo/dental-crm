@@ -367,7 +367,7 @@ export const SANPIN_STORAGE_LOCATIONS: readonly WasteStorageLocationDefinition[]
 		maxAllowedStorageHours: 24, // Не более 24 часов
 		maxAllowedStorageDays: 1,
 		appliesToClasses: ["class_A", "class_B", "class_G"],
-		descriptionRu: "Накопление необеззараженных отходов класса Б при комнатной температуре допускается не более 24 часов (СанПиН 2.1.3684-21 п. 174).",
+		descriptionRu: "Накопление необеззараженных отходов класса Б при комнатной температуре допускается не более 24 часов.",
 	},
 	{
 		id: "waste_refrigerator_2_8",

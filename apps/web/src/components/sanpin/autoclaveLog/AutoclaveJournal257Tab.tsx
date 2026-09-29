@@ -13,6 +13,7 @@ import {
 	FileBadge,
 	FileSpreadsheet,
 	Filter,
+	Plus,
 	Printer,
 	Search,
 	ShieldCheck,
@@ -46,6 +47,7 @@ export interface AutoclaveJournal257TabProps {
 	readonly onDeleteRecord?: (id: string) => void;
 	readonly onVerifyRecord?: (id: string, headNurseName: string) => void;
 	readonly onBatchAddRecords?: (records: Form257Record[]) => void;
+	readonly onOpenNewCycle?: () => void;
 	readonly clinicInfo?: ClinicLegalInfo;
 }
 
@@ -54,6 +56,7 @@ export function AutoclaveJournal257Tab({
 	onDeleteRecord,
 	onVerifyRecord,
 	onBatchAddRecords,
+	onOpenNewCycle,
 	clinicInfo = DEFAULT_CLINIC_LEGAL_INFO,
 }: AutoclaveJournal257TabProps) {
 	const [searchQuery, setSearchQuery] = useState<string>("");
@@ -459,7 +462,41 @@ export function AutoclaveJournal257Tab({
 
 			{/* Form 257/u Records Table */}
 			<div className="journal257-table-wrapper">
-				{filteredRecords.length === 0 ? (
+				{records.length === 0 ? (
+					<div
+						className="autoclave-empty-state"
+						data-testid="autoclave-journal-empty-state"
+						style={{
+							padding: "3.5rem 1.5rem",
+							textAlign: "center",
+							color: "var(--muted, #64748b)",
+							display: "flex",
+							flexDirection: "column",
+							alignItems: "center",
+							justifyContent: "center",
+						}}
+					>
+						<ShieldCheck size={48} style={{ opacity: 0.4, marginBottom: "0.75rem", color: "var(--teal, #0d9488)" }} />
+						<div style={{ fontWeight: 600, fontSize: "1.125rem", color: "var(--ink, #0f172a)" }}>
+							Журнал стерилизации пуст
+						</div>
+						<div style={{ fontSize: "0.875rem", marginTop: "0.375rem", maxWidth: "420px", lineHeight: 1.4 }}>
+							В клинике пока не зарегистрировано ни одного цикла работы стерилизаторов (Форма № 257/у).
+						</div>
+						{onOpenNewCycle && (
+							<button
+								type="button"
+								onClick={onOpenNewCycle}
+								className="autoclave-btn autoclave-btn-primary"
+								style={{ marginTop: "1.25rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
+								data-testid="btn-register-first-cycle"
+							>
+								<Plus size={16} />
+								<span>Зарегистрировать первый цикл</span>
+							</button>
+						)}
+					</div>
+				) : filteredRecords.length === 0 ? (
 					<div style={{ padding: "3rem 1.5rem", textAlign: "center", color: "var(--muted, #64748b)" }}>
 						<ShieldCheck size={40} style={{ margin: "0 auto 0.75rem auto", opacity: 0.4 }} />
 						<div style={{ fontWeight: 600, fontSize: "1rem" }}>Записи не найдены</div>

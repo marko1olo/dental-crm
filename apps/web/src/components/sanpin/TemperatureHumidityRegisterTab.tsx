@@ -242,7 +242,7 @@ export function TemperatureHumidityRegisterTab() {
 							measurementPeriod: period,
 							temperatureCelsius: isFridge ? 4.2 : 21.5,
 							relativeHumidityPercent: isFridge ? undefined : 48,
-							notes: `1-Клик норма смены (${period}): СанПиН 3.3686-21`,
+							notes: `1-Клик норма смены (${period}): Санитарный регламент`,
 						}),
 					});
 					if (fRes.ok) logged++;
@@ -440,7 +440,7 @@ export function TemperatureHumidityRegisterTab() {
 									letterSpacing: "0.05em",
 								}}
 							>
-								СанПиН 3.3686-21 • Zero-Setup
+								Санитарный регламент • Автозаполнение
 							</span>
 							<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink)" }}>
 								Быстрый старт для соло-врача и малых клиник

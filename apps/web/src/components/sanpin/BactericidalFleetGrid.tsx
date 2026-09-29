@@ -126,7 +126,7 @@ export function BactericidalFleetGrid({
 									opacity: submitting ? 0.7 : 1,
 								}}
 								className="sanpin-btn sanpin-btn-secondary touch-manipulation"
-								title="Включить этот аппарат на 30 мин перед сменой (предоперационная подготовка по СанПиН)"
+								title="Включить этот аппарат на 30 мин перед сменой (предоперационная подготовка кабинета)"
 								data-testid={`bactericidal-card-quick-30min-${eq.id}`}
 							>
 								<Zap size={15} /> 30 мин перед сменой

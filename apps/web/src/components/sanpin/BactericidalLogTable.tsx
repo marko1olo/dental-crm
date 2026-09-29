@@ -66,10 +66,10 @@ export function BactericidalLogTable({
 						gap: "0.35rem",
 						borderRadius: "8px",
 					}}
-					title="1-клик выгрузка официального Журнала регистрации и контроля работы бактерицидной установки со штампами по Р 3.5.1904-04 и СанПиН 3.3686-21"
+					title="1-клик выгрузка официального журнала регистрации и контроля работы бактерицидной установки со штампами"
 					data-testid="bactericidal-print-official-btn"
 				>
-					<Printer size={15} /> <span>Печать журнала (Р 3.5.1904-04)</span>
+					<Printer size={15} /> <span>Печать журнала</span>
 				</button>
 			</div>
 			<table className="sanpin-table">

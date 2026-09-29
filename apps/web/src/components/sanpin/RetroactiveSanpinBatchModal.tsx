@@ -102,7 +102,7 @@ export function RetroactiveSanpinBatchModal({
 									gap: "0.5rem",
 								}}
 							>
-								Пакетное закрытие журналов СанПиН
+								Пакетное закрытие журналов стерилизации
 								<span
 									style={{
 										fontSize: "0.75rem",
@@ -113,7 +113,7 @@ export function RetroactiveSanpinBatchModal({
 										color: "var(--brand-primary, #2563eb)",
 									}}
 								>
-									3.3686-21
+									Автозаполнение
 								</span>
 							</h3>
 							<p style={{ margin: 0, fontSize: "0.8rem", color: "var(--muted, #64748b)" }}>

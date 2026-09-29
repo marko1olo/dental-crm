@@ -51,8 +51,8 @@ export function RetroactiveBatchTable({
 						<th style={{ minWidth: "110px" }}>Дата / День</th>
 						<th style={{ minWidth: "140px" }}>Кабинеты</th>
 						<th style={{ minWidth: "110px" }}>Лотков / Приемов</th>
-						<th style={{ minWidth: "120px" }}>ПСО (366/у)</th>
-						<th style={{ minWidth: "150px" }}>Автоклав (257/у)</th>
+						<th style={{ minWidth: "120px" }}>ПСО (Азопирам)</th>
+						<th style={{ minWidth: "150px" }}>Автоклавирование</th>
 						<th style={{ minWidth: "120px" }}>Рециркуляторы</th>
 						<th style={{ minWidth: "130px" }}>Уборка</th>
 						<th style={{ minWidth: "100px" }}>Статус</th>
@@ -64,7 +64,7 @@ export function RetroactiveBatchTable({
 					{filteredDays.length === 0 ? (
 						<tr>
 							<td colSpan={11} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
-								Записи не найдены. Нажмите «Заполнить все журналы СанПиН за период» для расчета.
+								Записи не найдены. Нажмите «Заполнить все журналы стерилизации за период» для расчета.
 							</td>
 						</tr>
 					) : (

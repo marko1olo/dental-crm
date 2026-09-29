@@ -75,6 +75,7 @@ import {
 	type KraftPackageSizeId,
 } from "./kraftPackagePresets";
 import { isDesktopApp } from "../../../native/desktopBridge";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { dispatchThermalLabelPrint } from "../../../native/hardwareDispatcher";
 import { hardwareScanner } from "../../../services/hardware/HardwareScanner.js";
 import {
@@ -203,7 +204,10 @@ export function KraftPackageBarcodeModal({
 
 	// Package Registry State
 	const [packages, setPackages] = useState<KraftPackageRecord[]>(() => {
-		// Seed default sample batch for immediate review
+		if (!isDemoShowcaseMode()) {
+			return [];
+		}
+		// Seed default sample batch for immediate review in demo showcase mode
 		return generateKraftBatchRecords({
 			autoclaveId: initialAutoclaveId || "AUTO-01",
 			cycleNumber: initialCycleNumber || 1,
@@ -1386,7 +1390,17 @@ export function KraftPackageBarcodeModal({
 										</tr>
 									</thead>
 									<tbody>
-										{filteredPackages.length === 0 ? (
+										{packages.length === 0 ? (
+											<tr>
+												<td colSpan={9} style={{ textAlign: "center", padding: "3rem 1.5rem", color: "var(--muted)" }}>
+													<Package size={36} style={{ margin: "0 auto 0.5rem auto", opacity: 0.4 }} />
+													<div style={{ fontWeight: 600, fontSize: "0.95rem", color: "var(--ink)" }}>Реестр крафт-пакетов пуст</div>
+													<div style={{ fontSize: "0.825rem", marginTop: "0.25rem" }}>
+														Сформируйте новую партию во вкладке «1. Конструктор пакета» для маркировки и печати этикеток.
+													</div>
+												</td>
+											</tr>
+										) : filteredPackages.length === 0 ? (
 											<tr>
 												<td colSpan={9} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
 													Нет записей в реестре по заданным фильтрам.

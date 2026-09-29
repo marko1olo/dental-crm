@@ -276,7 +276,7 @@ export function PsoRegisterTab() {
 		<div className="sanpin-tab-content">
 			<div className="sanpin-print-title">
 				<h2>КОНТРОЛЬ СТЕРИЛИЗАЦИИ (ПСО И ПРОБЫ)</h2>
-				<p title="СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»">Журнал учета качества предстерилизационной очистки (Форма № 366/у)</p>
+				<p title="Санитарно-эпидемиологические требования по профилактике инфекционных болезней">Журнал контроля качества предстерилизационной очистки (азопирам)</p>
 			</div>
 
 			{/* Table of logs with Integrated Compact Header */}
@@ -775,7 +775,7 @@ export function PsoRegisterTab() {
 										alignItems: "flex-start",
 										gap: "0.6rem",
 									}}
-									title="Соответствует СанПиН 3.3686-21"
+									title="Соответствует санитарным нормам"
 								>
 									{liveEval.isBatchApproved ? (
 										<CheckCircle2 size={20} color="#059669" style={{ flexShrink: 0, marginTop: "2px" }} />

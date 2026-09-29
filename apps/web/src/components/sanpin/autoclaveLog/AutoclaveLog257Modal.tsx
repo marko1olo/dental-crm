@@ -20,6 +20,7 @@ import {
 	X,
 } from "lucide-react";
 import React, { useState } from "react";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { AutoclaveJournal257Tab } from "./AutoclaveJournal257Tab.js";
 import "./autoclaveLog.css";
 import {
@@ -178,8 +179,13 @@ export function AutoclaveLog257Modal({
 		initialTab === "journal_257" ? "journal_257" : "new_cycle",
 	);
 
-	const [records, setRecords] = useState<Form257Record[]>(() => [...INITIAL_FORM257_RECORDS]);
-	const [bioRecords, setBioRecords] = useState<BiologicalControlTestRecord[]>(() => [...INITIAL_BIO_RECORDS]);
+	const isDemo = isDemoShowcaseMode();
+	const [records, setRecords] = useState<Form257Record[]>(() =>
+		isDemo ? [...INITIAL_FORM257_RECORDS] : [],
+	);
+	const [bioRecords, setBioRecords] = useState<BiologicalControlTestRecord[]>(() =>
+		isDemo ? [...INITIAL_BIO_RECORDS] : [],
+	);
 
 	if (!isOpen) return null;
 
@@ -283,6 +289,7 @@ export function AutoclaveLog257Modal({
 							onDeleteRecord={handleDeleteRecord}
 							onVerifyRecord={handleVerifyRecord}
 							onBatchAddRecords={handleBatchAddRecords}
+							onOpenNewCycle={() => setActiveTab("new_cycle")}
 							clinicInfo={clinicInfo}
 						/>
 					)}
