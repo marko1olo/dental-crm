@@ -44,6 +44,7 @@ import {
 	reconcileAutoSuggestions,
 	convertGhostItemToImplant,
 	detectGhostTeethConflicts,
+	getGhostToothConflict,
 	detectPlanItemCollisions,
 	type EstimatorToothInput,
 	type GhostToothConflict,
@@ -636,9 +637,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 									<div className="phase-items-list">
 										{phaseItems.map((item) => {
 											const globalIdx = items.indexOf(item);
-											const itemGhostConflict = item.toothNumber !== undefined
-												? ghostConflicts.find((c) => c.toothNumber === item.toothNumber)
-												: null;
+											const itemGhostConflict = getGhostToothConflict(item, currentTeeth);
 											const itemCollision = item.toothNumber !== undefined
 												? planCollisions.find((c) => c.toothNumber === item.toothNumber)
 												: null;

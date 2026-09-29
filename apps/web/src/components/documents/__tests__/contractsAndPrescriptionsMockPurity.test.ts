@@ -262,4 +262,24 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 			"TreatmentPlanContractPrint signatures must have breakInside: 'avoid'",
 		);
 	});
+
+	test("StomX PremiumDocumentPrintSheet: break-inside avoid and standard signature slashes", () => {
+		const sheetPath = path.join(
+			webSrcDir,
+			"components/documents/PremiumDocumentPrintSheet.tsx",
+		);
+		const content = fs.readFileSync(sheetPath, "utf-8");
+		assert.ok(
+			content.includes('breakInside: "avoid"'),
+			"PremiumDocumentPrintSheet signatures must have breakInside: 'avoid'",
+		);
+		assert.ok(
+			content.includes('Врач-стоматолог: ____________________ / {doctorName || "____________________"} /'),
+			"PremiumDocumentPrintSheet doctor signature must have standard opening and closing slashes",
+		);
+		assert.ok(
+			content.includes('Пациент: ____________________ / {patient?.fullName || "____________________"} /'),
+			"PremiumDocumentPrintSheet patient signature must have standard opening and closing slashes",
+		);
+	});
 });

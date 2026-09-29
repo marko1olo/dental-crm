@@ -396,7 +396,10 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 			)}
 
 			{/* ── Signatures, Official Stamp & QR Security Block ── */}
-			<div className="doc-sign-zone">
+			<div
+				className="doc-sign-zone break-inside-avoid"
+				style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+			>
 				{branding.showQrVerification && (
 					<div className="doc-qr-stamp">
 						<div className="w-12 h-12 bg-white p-1 border border-neutral-300 rounded flex items-center justify-center shrink-0">
@@ -428,7 +431,7 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 				{/* Doctor Signature */}
 				<div className="doc-signature-block">
 					<div className="text-xs font-bold text-[var(--doc-primary-dark)]">
-						Врач-стоматолог: ____________________ / {doctorName || "____________"}
+						Врач-стоматолог: ____________________ / {doctorName || "____________________"} /
 					</div>
 					<div className="doc-sign-hint">(подпись и личная печать врача)</div>
 				</div>
@@ -437,7 +440,7 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 				{branding.showPatientSignatureLine && (
 					<div className="doc-signature-block">
 						<div className="text-xs font-bold text-[var(--doc-primary-dark)]">
-							Пациент: ____________________ / {patient?.fullName || "____________"}
+							Пациент: ____________________ / {patient?.fullName || "____________________"} /
 						</div>
 						<div className="doc-sign-hint">(с диагнозом и планом лечения ознакомлен)</div>
 					</div>

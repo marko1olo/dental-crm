@@ -1,0 +1,42 @@
+{
+  "role": "Subagent: Warehouse Auto-BOM Deduction, FEFO & Overdraft Inquisitor",
+  "status": "VERIFIED",
+  "target_scope": [
+    "apps/web/src/components/inventory/autoBomDeductionEngine.ts",
+    "apps/web/src/components/inventory/fefoTrafficLight.ts",
+    "apps/web/src/components/inventory/warehouseInventoryEngine.ts",
+    "apps/web/src/components/inventory/NurseCarpuleDisposalModal.tsx",
+    "apps/web/src/components/inventory/useInventoryQuickWriteoff.ts",
+    "apps/web/src/components/inventory/__tests__/autoBomAndFefo.test.ts",
+    "apps/web/src/components/inventory/__tests__/autoBomDeductionAndSoftOverdraft.test.ts"
+  ],
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md & AGENTS.md constitutionally",
+    "Analyzed Auto-BOM deduction architecture for 804n clinical procedures (A16.07.002, A11.07.012)",
+    "Hardened fefoTrafficLight.ts with formatRuDate (ДД.ММ.ГГГГ), isBatchExpired, validateBatchForClinicalUse, sortBatchesByFefo, and resolveFefoDeductionBatches",
+    "Enforced mandatory statutory alert: «Срок годности партии истек ДД.ММ.ГГГГ! Партия заблокирована для утилизации»",
+    "Hardened autoBomDeductionEngine.ts with strict chairId / cabinetId scoping (preventing inter-chair inventory borrowing)",
+    "Implemented senior nurse / warehouse head overdraft alert: «Требуется оприходование: материал списан в овердрафт по визиту №...»",
+    "Guaranteed Doctor Autonomy (Mandates 8e, 8n, 8s): zero stock NEVER blocks visit completion, saving Form 043/u, or checkout",
+    "Hardened NurseCarpuleDisposalModal.tsx blocking clinical use of expired lots and adding Class B disposal for broken carpules (бой при установке) and partial doses with 3% Alaminol chemical disinfection",
+    "Enforced 1-person approval for SanPiN Class B waste acts (no 3-person commission) and strictly 0 cartoon emojis (Mandate 8d)",
+    "Hardened warehouseInventoryEngine.ts with cabinet/chair audit lines, overdraft metrics, and expired batch quarantine",
+    "Created apps/web/src/components/inventory/__tests__/autoBomAndFefo.test.ts (15 tests)",
+    "Executed autoBomAndFefo.test.ts: 15/15 passed",
+    "Executed autoBomDeductionAndSoftOverdraft.test.ts: 15/15 passed (0 regressions)",
+    "Performed per-file git add on all modified files and memory checkpoints"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Auto-BOM deduction strictly binds to chairId and cabinetId where dental procedure occurred",
+    "FEFO lot accounting prevents clinical administration of expired materials, routing them directly to disposal quarantine",
+    "Soft overdraft preserves Doctor Autonomy: procedures are recorded, patient records (043/u) are completed, while technical overdraft triggers replenishment workflows for warehouse staff",
+    "SanPiN 2.1.3684-21 / 3.3686-21 Class B hazardous waste ledger records broken carpules and partial doses with chemical disinfection and single-person signoff"
+  ],
+  "verification_evidence": {
+    "autoBomAndFefo_tests": "15 passed, 0 failed (Exit Code 0)",
+    "autoBomDeductionAndSoftOverdraft_tests": "15 passed, 0 failed (Exit Code 0)",
+    "total_tests_passing": 30,
+    "tsc_inventory_errors": 0
+  }
+}

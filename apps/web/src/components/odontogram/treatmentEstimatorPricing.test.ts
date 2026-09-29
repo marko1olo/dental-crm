@@ -1286,3 +1286,41 @@ test("formatToothFdiLabel никогда не выдает 'Tooth undefined'", (
 	assert.doesNotMatch(formatToothFdiLabel(undefined), /undefined/i);
 });
 
+test("при сосуществовании имплантата и пломбы на удаленном зубе конфликт присваивается только пломбе", () => {
+	const currentTeeth: EstimatorToothInput[] = [
+		{ toothNumber: 46, state: "Missing" },
+	];
+	const implantItem: PlanItem = {
+		id: "imp-46",
+		toothNumber: 46,
+		name: "Установка имплантата",
+		suggestion: "implant",
+		priceId: "svc-implant",
+		price: 35000,
+		quantity: 1,
+		discount: 0,
+		phase: 2,
+	};
+	const fillingItem: PlanItem = {
+		id: "fill-46",
+		toothNumber: 46,
+		name: "Пломбирование зуба",
+		suggestion: "caries",
+		priceId: "svc-filling",
+		price: 4500,
+		quantity: 1,
+		discount: 0,
+		phase: 1,
+	};
+
+	assert.equal(getGhostToothConflict(implantItem, currentTeeth), null);
+	const fillingConflict = getGhostToothConflict(fillingItem, currentTeeth);
+	assert.ok(fillingConflict, "Пломба на удаленный зуб обязана конфликтовать");
+	assert.equal(fillingConflict.toothNumber, 46);
+
+	const allConflicts = detectGhostTeethConflicts([implantItem, fillingItem], currentTeeth);
+	assert.equal(allConflicts.length, 1);
+	assert.equal(allConflicts[0]?.itemName, "Пломбирование зуба");
+});
+
+
