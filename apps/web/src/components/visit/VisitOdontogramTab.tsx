@@ -102,13 +102,37 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 				: null,
 		) ?? realVisitFieldId(activePatient?.id);
 
+	const patientAge = useMemo(() => {
+		return activePatient?.birthDate ? calculateAge(activePatient.birthDate) : null;
+	}, [activePatient?.birthDate]);
+
+	const dentitionPhaseBadge = useMemo(() => {
+		if (patientAge === null) return null;
+		if (patientAge < 6) {
+			return {
+				label: "Молочные зубы (временный прикус)",
+				hint: `Возраст пациента: ${patientAge} лет • Нотация FDI 51–85`,
+			};
+		}
+		if (patientAge >= 6 && patientAge < 12) {
+			return {
+				label: "Сменный прикус (6–12 лет)",
+				hint: `Возраст пациента: ${patientAge} лет • Сосуществование молочных и постоянных зубов`,
+			};
+		}
+		return {
+			label: "Постоянные зубы",
+			hint: `Возраст пациента: ${patientAge} лет • Постоянный прикус (FDI 11–48)`,
+		};
+	}, [patientAge]);
+
 	const isPediatric = useMemo(() => {
 		return (
-			(activePatient?.birthDate ? (calculateAge(activePatient.birthDate) ?? 99) < 12 : false) ||
+			(patientAge !== null ? patientAge < 12 : false) ||
 			Boolean(workspaceFlags.hasPediatricMode) ||
 			Boolean(dashboard?.clinicSettings?.profile?.hasPediatricMode)
 		);
-	}, [activePatient?.birthDate, workspaceFlags.hasPediatricMode, dashboard?.clinicSettings?.profile?.hasPediatricMode]);
+	}, [patientAge, workspaceFlags.hasPediatricMode, dashboard?.clinicSettings?.profile?.hasPediatricMode]);
 
 	if (!activePatient?.id) {
 		return (
@@ -118,7 +142,7 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 					Пациент не выбран
 				</h4>
 				<p className="text-sm m-0">
-					Выберите пациента, чтобы открыть одонтограмму.
+					Выберите пациента, чтобы открыть зубную формулу приёма.
 				</p>
 			</div>
 		);
@@ -129,6 +153,23 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 			data-testid="visit-odontogram-tab"
 			className="visit-odontogram-tab flex flex-col gap-2 w-full max-w-full my-0 p-0"
 		>
+			{/* Dentition Status Banner if child or mixed */}
+			{dentitionPhaseBadge && (
+				<div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-teal-50/80 dark:bg-teal-950/40 border border-teal-200/60 dark:border-teal-800/40 text-xs">
+					<div className="flex items-center gap-2">
+						<span className="font-bold text-teal-900 dark:text-teal-200">
+							Зубная формула:
+						</span>
+						<span className="font-semibold text-teal-700 dark:text-teal-300">
+							{dentitionPhaseBadge.label}
+						</span>
+					</div>
+					<span className="text-slate-500 dark:text-slate-400 text-[11px]">
+						{dentitionPhaseBadge.hint}
+					</span>
+				</div>
+			)}
+
 			{/* Top Full-Width Section: Odontogram & Treatment Planning */}
 			<div className="w-full">
 				<OdontogramModule
@@ -186,7 +227,7 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 								: "Дневник приёма появится, когда приём откроют"}
 						</h4>
 						<p className="text-sm m-0 mt-1">
-							Зубную карту выше можно заполнять уже сейчас: она хранится у
+							Зубную формулу выше можно заполнять уже сейчас: она хранится у
 							пациента.
 							{appointmentId
 								? " Дневник и ЕГИСЗ привязаны к открытому визиту — начните приём в разделе «Записи», чтобы появилась запись в медицинской карте."
