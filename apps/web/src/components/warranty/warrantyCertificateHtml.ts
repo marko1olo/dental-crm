@@ -41,7 +41,7 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
         <td class="col-tooth"><strong>${item.toothNumber}</strong></td>
         <td class="col-work">
           <div class="work-title">${item.clinicalWorkTitle}</div>
-          <div class="work-cat">${preset.shortTitle} • Код 804н: <code>${code804n}</code></div>
+          <div class="work-cat">${preset.shortTitle} • Код услуги: <code>${code804n}</code></div>
         </td>
         <td class="col-material">
           <div class="mat-name">${item.materialName}</div>
@@ -456,7 +456,7 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
     </div>
 
     <div class="checkups-section">
-      <h4>График обязательных диспансерных осмотров и профгигиены:</h4>
+      <h4>График обязательных контрольных осмотров и профгигиены:</h4>
       <div class="checkup-grid">
         ${checkupRows}
       </div>

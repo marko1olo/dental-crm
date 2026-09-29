@@ -974,7 +974,7 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 								</div>
 
 								<div className="p-3 rounded-2xl bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/20 text-[var(--teal-dark,var(--teal))] text-xs">
-									<strong>Правовое основание:</strong> Смета составлена в строгом соответствии с Приказом Минздрава России от 13.10.2017 № 804н, ст. 709 и ст. 711 Гражданского кодекса РФ, Постановлением Правительства РФ № 736 от 11.05.2023 г. и клиническими рекомендациями СтАР.
+									<strong>Правовое основание:</strong> Смета составлена в соответствии с Гражданским кодексом РФ, правилами оказания платных медицинских услуг и клиническими рекомендациями СтАР.
 								</div>
 							</div>
 						</div>

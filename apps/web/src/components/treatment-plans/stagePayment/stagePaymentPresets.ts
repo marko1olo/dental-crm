@@ -153,7 +153,7 @@ export const STAGE_PAYMENT_PRESETS: Record<StagePaymentKind, StagePaymentPreset>
 	stage_5_periodontics_maintenance: {
 		kind: "stage_5_periodontics_maintenance",
 		stageNumber: 5,
-		title: "Этап 5: Пародонтологическое лечение и диспансерная поддержка",
+		title: "Этап 5: Пародонтологическое лечение и поддерживающая терапия",
 		shortTitle: "Пародонтология",
 		clinicalGoalRu: "Устранение пародонтальных карманов, купирование рецессий десны, стабилизация костной ткани вокруг естественных зубов и имплантатов.",
 		legalBasisRu: "Закон РФ № 2300-1 ст. 37 (Посеансовая оплата по факту оказания каждой манипуляции).",

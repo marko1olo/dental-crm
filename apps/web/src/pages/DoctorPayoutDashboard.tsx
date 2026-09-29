@@ -903,7 +903,7 @@ export function DoctorPayoutDashboard() {
 																			type="button"
 																			className="secondary-button"
 																			onClick={() => setPayrollModalDoctor(row)}
-																			title="Зарплатная ведомость Т-51"
+																			title="Расчет зарплаты врачей"
 																		>
 																			Зарплатная ведомость
 																		</button>
@@ -1025,7 +1025,7 @@ export function DoctorPayoutDashboard() {
 																							<tr>
 																								<th scope="col">Дата и время</th>
 																								<th scope="col">Пациент и карта</th>
-																								<th scope="col">Оказанные услуги (804н / Зуб)</th>
+																								<th scope="col">Оказанные услуги (Зуб)</th>
 																								<th scope="col">Списанные материалы</th>
 																								<th scope="col">Сумма оплаты</th>
 																							</tr>

@@ -214,7 +214,7 @@ export function translate804nToPatientDescription(code804n?: string, rawMedicalT
 		};
 	}
 
-	// 5. Профгигиена и диспансерное наблюдение
+	// 5. Профгигиена и контрольное наблюдение
 	if (
 		cleanCode.startsWith("A16.07.051") || // Профгигиена
 		cleanCode.startsWith("A16.07.020") || // Удаление камня
@@ -301,7 +301,7 @@ export const CANONICAL_ROADMAP_META: Record<
 	},
 	stage_5_hygiene_checkup: {
 		stageNumber: 5,
-		titleRu: "Этап 5: Профгигиена и диспансерное наблюдение",
+		titleRu: "Этап 5: Профгигиена и контрольное наблюдение",
 		subtitleRu: "Защита десен, полировка и контрольный осмотр",
 		patientGoalRu: "Очистить зубы от налета и камня методом Air-Flow, укрепить эмаль минералами и зафиксировать гарантию на лечение.",
 		timelineRu: "1 визит • 45–60 минут (повторять каждые 6 месяцев)",

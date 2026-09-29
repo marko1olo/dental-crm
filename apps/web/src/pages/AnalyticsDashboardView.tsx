@@ -35,6 +35,7 @@ import { CuratorDashboard } from "../components/analytics/CuratorDashboard";
 import { DirectorExecutiveDashboard } from "../components/analytics/DirectorExecutiveDashboard";
 import { LostPatientsPanel } from "../components/analytics/LostPatientsPanel";
 import { EmptyState } from "../components/EmptyState.js";
+import { isDemoShowcaseMode, getDemoDashboardAnalytics } from "../lib/demoMode";
 import { RecallListPanel } from "../components/patients/RecallListPanel";
 import { FreedSlotsPanel } from "../components/schedule/FreedSlotsPanel";
 const MarketingRoiModal = lazy(() =>
@@ -189,6 +190,14 @@ export function AnalyticsDashboardView() {
 				setError(null);
 			}
 			try {
+				if (isDemoShowcaseMode()) {
+					setData(getDemoDashboardAnalytics(dateRange));
+					setError(null);
+					setUpdatedAt(new Date());
+					if (mode === "initial") setLoading(false);
+					return;
+				}
+
 				// Literal helper name must sit within ~30 lines of fetch so
 				// scripts/check-guarded-route-headers.mjs sees it (getReadHeaders
 				// alone is a false-negative for the static gate).
@@ -700,7 +709,33 @@ export function AnalyticsDashboardView() {
 						<EmptyState
 							icon={<Calendar size={24} aria-hidden="true" />}
 							title="За выбранный период данных нет"
-							description="Это не нулевые показатели, а отсутствие записей: за выбранный период не было ни оплат, ни приёмов. Выберите другой период вверху страницы."
+							description="Это не нулевые показатели, а отсутствие записей: за выбранный период не было ни оплат, ни приёмов. Оформите приём в расписании или выберите другой период."
+							action={
+								<div className="flex items-center gap-2 mt-2">
+									<button
+										type="button"
+										onClick={() => {
+											if (typeof window !== "undefined") {
+												window.location.hash = "#schedule";
+											}
+										}}
+										className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] text-white text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+									>
+										Записать пациента
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											if (typeof window !== "undefined") {
+												window.location.hash = "#shift";
+											}
+										}}
+										className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--teal)] transition-colors cursor-pointer"
+									>
+										Перейти в кассу
+									</button>
+								</div>
+							}
 							className="my-6 py-8"
 						/>
 					) : (
@@ -722,7 +757,7 @@ export function AnalyticsDashboardView() {
 								/>
 								<KpiCard
 									icon={<DollarSign size={14} />}
-									label="Выручка 54-ФЗ"
+									label="Выручка кассы"
 									value={formatRub(data?.kpis?.totalRevenue ?? 0)}
 									color="var(--ok-fg, #10b981)"
 									subtitle={
@@ -1194,7 +1229,7 @@ function DoctorProfitabilityTable({
 						<th scope="col" className="whitespace-nowrap">Выручка</th>
 						<th scope="col" className="whitespace-nowrap min-w-[110px]">Прибыль</th>
 						<th scope="col" className="whitespace-nowrap">Успешность</th>
-						<th scope="col" className="whitespace-nowrap">Услуг (804н)</th>
+						<th scope="col" className="whitespace-nowrap">Услуг</th>
 						<th scope="col" className="whitespace-nowrap">Нарядов ЗТЛ</th>
 					</tr>
 				</thead>
@@ -1246,11 +1281,11 @@ function DoctorProfitabilityTable({
 			</table>
 			{hasUnknownMetric ? (
 				<p className="mt-2.5 text-xs leading-relaxed text-[var(--muted)]">
-					Прочерк — величина не рассчитывается, а не ноль. Прибыль и комиссия рассчитываются по фактически полученной выручке за вычетом прямых списаний ЗТЛ и сдельной ставки врача (Зарплатная ведомость Т-51). Выручка — только фактически полученные платежи.
+					Прочерк — величина не рассчитывается, а не ноль. Прибыль и комиссия рассчитываются по фактически полученной выручке за вычетом прямых списаний ЗТЛ и сдельной ставки врача (Расчет зарплаты врачей). Выручка — только фактически полученные платежи.
 				</p>
 			) : (
 				<p className="mt-2.5 text-xs leading-relaxed text-[var(--muted)]">
-					Прибыль и комиссия рассчитываются по фактически полученной выручке за вычетом прямых списаний нарядов ЗТЛ и сдельной ставки врача (Зарплатная ведомость Т-51). Выручка — только фактически полученные платежи на кассе.
+					Прибыль и комиссия рассчитываются по фактически полученной выручке за вычетом прямых списаний нарядов ЗТЛ и сдельной ставки врача (Расчет зарплаты врачей). Выручка — только фактически полученные платежи на кассе.
 				</p>
 			)}
 		</div>

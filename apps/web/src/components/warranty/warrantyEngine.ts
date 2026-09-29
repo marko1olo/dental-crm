@@ -277,7 +277,7 @@ export function calculateWarrantyTerms(input: {
 			severity: "danger",
 		});
 		clinicalRationale.push("Неудовлетворительная гигиена существенно снижает срок службы композитов и повышает риск мукозита.");
-		specialProvisions.push("Обязательное диспансерное наблюдение и профгигиена каждые 3 месяца.");
+		specialProvisions.push("Обязательный контрольный осмотр и профгигиена каждые 3 месяца.");
 	} else {
 		// Плохая гигиена (> 2.5) -> (-50% или условная гарантия)
 		const m = 0.5;
@@ -407,7 +407,7 @@ export function calculateWarrantyTerms(input: {
 			severity: "danger",
 		});
 		clinicalRationale.push("Тяжелый пародонтит переводит гарантию на ортопедию и пломбы в разряд условной.");
-		specialProvisions.push("Обязательное диспансерное пародонтологическое лечение раз в 3 месяца.");
+		specialProvisions.push("Обязательное поддерживающее пародонтологическое лечение раз в 3 месяца.");
 	}
 
 	// 7. Остеопороз (для имплантатов)
@@ -470,7 +470,7 @@ export function calculateWarrantyTerms(input: {
 	const serviceLifeExpirationDate = addMonthsToDate(issueDateIso, adjustedServiceLifeMonths);
 	const nextCheckupDueDate = addMonthsToDate(issueDateIso, checkupIntervalMonths);
 
-	// Формирование графика диспансерных осмотров на весь гарантийный период
+	// Формирование графика контрольных осмотров на весь гарантийный период
 	const checkupSchedule: CheckupScheduleItem[] = [];
 	const totalCheckupsCount = Math.max(1, Math.floor(adjustedWarrantyMonths / checkupIntervalMonths));
 

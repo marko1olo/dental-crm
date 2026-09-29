@@ -1287,7 +1287,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 					{activeTab === "schedule" && (
 						<div style={{ maxWidth: "800px", margin: "0 auto" }}>
 							<h3 style={{ fontSize: "16px", marginBottom: "12px", color: "var(--ink)" }}>
-								Индивидуальный график диспансерных осмотров и профгигиены
+								Индивидуальный график контрольных осмотров и профгигиены
 							</h3>
 							<p style={{ fontSize: "13px", color: "var(--ink-2)", marginBottom: "16px" }}>
 								Периодичность контрольных визитов: каждые {calculation.checkupIntervalMonths} мес. для сохранения

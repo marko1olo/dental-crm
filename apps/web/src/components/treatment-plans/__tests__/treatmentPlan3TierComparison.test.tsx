@@ -71,10 +71,11 @@ describe('TreatmentPlan3TierComparison & Sticky Estimates Suite', () => {
     assert.ok(html.includes('Печать договора'), 'Should contain contract print button');
   });
 
-  it('renders TreatmentPlanComparatorModal with sticky presentation footer and whole ruble metrics', () => {
+  it('renders TreatmentPlanComparatorModal with sticky presentation footer and whole ruble metrics in demo mode', () => {
     const html = renderToString(
       <TreatmentPlanComparatorModal
         isOpen={true}
+        isDemoMode={true}
         patientName="Иванов И. И."
         doctorName="Д-р Смирнов А. В."
         clinicName="Клиника DENTE"
@@ -86,6 +87,22 @@ describe('TreatmentPlan3TierComparison & Sticky Estimates Suite', () => {
     assert.ok(html.includes('Согласовать план с пациентом'), 'Should contain primary agreement action');
     assert.ok(html.includes('Рассрочка 0%'), 'Should contain installment action');
     assert.ok(html.includes('Печать брошюры'), 'Should contain print brochure action');
+  });
+
+  it('renders authentic empty state in TreatmentPlanComparatorModal when customVariants omitted in production (!isDemoMode)', () => {
+    const html = renderToString(
+      <TreatmentPlanComparatorModal
+        isOpen={true}
+        isDemoMode={false}
+        patientName="Иванов И. И."
+        doctorName="Д-р Смирнов А. В."
+        clinicName="Клиника DENTE"
+      />
+    );
+
+    assert.ok(html.includes('plan-comparator-empty-state'), 'Should render empty state container');
+    assert.ok(html.includes('Варианты планов лечения пока не сформированы'), 'Should state variants are not formed');
+    assert.ok(html.includes('btn-comparator-empty-close'), 'Should render action button to return');
   });
 
   it('renders Apple HIG native Segmented Control on mobile screens (<= 640px) with touch-first tabs and formatted prices', () => {

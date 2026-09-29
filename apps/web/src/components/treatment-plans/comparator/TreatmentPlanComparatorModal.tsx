@@ -31,6 +31,7 @@ import {
 import {
 	generatePaymentSchedules,
 } from "./planComparatorEngine";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import "./planComparator.css";
 
 export interface TreatmentPlanComparatorModalProps {
@@ -41,6 +42,7 @@ export interface TreatmentPlanComparatorModalProps {
 	readonly clinicName?: string | undefined;
 	readonly planAgeDays?: number | undefined;
 	readonly planCreatedAtIso?: string | undefined;
+	readonly isDemoMode?: boolean | undefined;
 	readonly customVariants?: Readonly<Record<PlanTierCode, ComprehensivePlanVariant>> | undefined;
 	readonly onPlanSelected?: ((tierCode: PlanTierCode, variant: ComprehensivePlanVariant) => void) | undefined;
 	readonly onApproveAndSign?: ((tierCode: PlanTierCode, variant: ComprehensivePlanVariant) => void) | undefined;
@@ -56,13 +58,15 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 	clinicName = "Стоматологическая клиника",
 	planAgeDays,
 	planCreatedAtIso,
+	isDemoMode,
 	customVariants,
 	onPlanSelected,
 	onApproveAndSign,
 	onOpenInstallment,
 	onPrintContract,
 }) => {
-	const variants = customVariants || DEFAULT_TREATMENT_PLAN_PRESETS;
+	const isDemo = isDemoMode !== undefined ? isDemoMode : isDemoShowcaseMode();
+	const variants = customVariants || (isDemo ? DEFAULT_TREATMENT_PLAN_PRESETS : null);
 
 	const [selectedTier, setSelectedTier] = useState<PlanTierCode>("standard_recommended");
 	const [activePaymentTab, setActivePaymentTab] = useState<"staged" | "discount" | "installments" | "ndfl">("staged");
@@ -75,18 +79,21 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 				? Math.floor((Date.now() - new Date(planCreatedAtIso).getTime()) / (1000 * 60 * 60 * 24))
 				: 0;
 
-	const currentVariant = variants[selectedTier];
+	const currentVariant = variants ? variants[selectedTier] : null;
 	const currentPayments = useMemo(
-		() => generatePaymentSchedules(currentVariant.totalCostRub, currentVariant.isCode02HighCostSurgery),
+		() => (currentVariant ? generatePaymentSchedules(currentVariant.totalCostRub, currentVariant.isCode02HighCostSurgery) : null),
 		[currentVariant],
 	);
 
 	const handleSelectPlan = (tier: PlanTierCode) => {
 		setSelectedTier(tier);
-		onPlanSelected?.(tier, variants[tier]);
+		if (variants) {
+			onPlanSelected?.(tier, variants[tier]);
+		}
 	};
 
 	const handleConfirmChoice = () => {
+		if (!currentVariant) return;
 		if (onApproveAndSign) {
 			onApproveAndSign(selectedTier, currentVariant);
 		} else if (onPlanSelected) {
@@ -97,6 +104,7 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 	};
 
 	const handleInstallmentAction = () => {
+		if (!currentVariant) return;
 		if (onOpenInstallment) {
 			onOpenInstallment(selectedTier, currentVariant);
 		} else {
@@ -105,6 +113,7 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 	};
 
 	const handlePrintBrochure = () => {
+		if (!currentVariant) return;
 		if (onPrintContract) {
 			onPrintContract(selectedTier, currentVariant);
 		} else {
@@ -203,13 +212,47 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 					</div>
 				) : null}
 
-				{/* Scrollable Body */}
-				<div className="plan-comparator-body">
-					{/* iOS-style Segmented Control for Mobile/Tablet (<= 960px) to eliminate 2500px vertical scroll */}
+				{!variants || !currentVariant || !currentPayments ? (
 					<div
-						className="plan-comparator-segmented-control"
-						data-testid="comparator-segmented-control"
+						className="plan-comparator-empty-state"
+						data-testid="plan-comparator-empty-state"
+						style={{
+							padding: "4rem 2rem",
+							textAlign: "center",
+							display: "flex",
+							flexDirection: "column",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "1rem",
+							minHeight: "360px",
+						}}
 					>
+						<Sparkles size={48} style={{ opacity: 0.3, color: "var(--teal, #0d9488)" }} />
+						<div style={{ fontWeight: 700, fontSize: "1.25rem", color: "var(--plan-text-main, #0f172a)" }}>
+							Варианты планов лечения пока не сформированы
+						</div>
+						<p style={{ maxWidth: "480px", fontSize: "0.875rem", color: "var(--plan-text-muted, #64748b)", lineHeight: 1.5 }}>
+							Для сравнения вариантов сформируйте альтернативные планы в конструкторе планов лечения или включите демонстрационный режим витрины.
+						</p>
+						<button
+							type="button"
+							onClick={onClose}
+							className="plan-action-btn-secondary"
+							style={{ marginTop: "0.5rem" }}
+							data-testid="btn-comparator-empty-close"
+						>
+							<span>Вернуться в карту пациента</span>
+						</button>
+					</div>
+				) : (
+					<>
+						{/* Scrollable Body */}
+						<div className="plan-comparator-body">
+							{/* iOS-style Segmented Control for Mobile/Tablet (<= 960px) to eliminate 2500px vertical scroll */}
+							<div
+								className="plan-comparator-segmented-control"
+								data-testid="comparator-segmented-control"
+							>
 						{(["optimum_vip", "standard_recommended", "economy_basic"] as PlanTierCode[]).map((tierKey) => {
 							const v = variants[tierKey];
 							const isSelected = selectedTier === tierKey;
@@ -536,6 +579,8 @@ export const TreatmentPlanComparatorModal: React.FC<TreatmentPlanComparatorModal
 						</button>
 					</div>
 				</footer>
+					</>
+				)}
 			</div>
 		</div>
 	);

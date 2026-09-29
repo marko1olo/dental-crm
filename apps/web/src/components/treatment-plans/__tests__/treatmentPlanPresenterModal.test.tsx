@@ -44,7 +44,7 @@ describe("TreatmentPlanPresenterModal (Wave 19: Chairside Presentation & RF Decr
 		);
 
 		assert.ok(html.includes("Презентация планов лечения"), "Must contain main title");
-		assert.ok(html.includes("ПП РФ № 736 &amp; 804н") || html.includes("ПП РФ № 736 & 804н"), "Must include regulatory badge");
+		assert.ok(html.includes("Прейскурант клиники"), "Must include pricelist badge");
 		assert.ok(html.includes("Смирнова Екатерина Васильевна"), "Must render patient name");
 		assert.ok(html.includes("Д-р Смирнов Алексей Петрович"), "Must render doctor name");
 		assert.ok(html.includes("Рекомендация врача"), "Must render doctor recommendation ribbon");

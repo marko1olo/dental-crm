@@ -100,7 +100,7 @@ export const COPILOT_PRESET_ACTIONS: readonly CopilotPresetAction[] = [
 		id: "recalculate_anesthesia_isolation",
 		title: "Пересчитать анестезию и коффердам",
 		promptText: "Проверить и добавить анестезию и изоляцию коффердам для всех процедур",
-		badge: "Безопасность 804н",
+		badge: "Безопасность и стандарт",
 		description: "Автоматически добавляет карпульную анестезию и коффердам на каждый инвазивный визит",
 	},
 ];

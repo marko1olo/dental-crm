@@ -277,7 +277,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		if (customTiers && customTiers.length === 3) {
 			return customTiers;
 		}
-		const effectiveTeeth = teeth !== undefined ? teeth : DEFAULT_SAMPLE_TEETH;
+		const effectiveTeeth = teeth !== undefined ? teeth : (isDemoShowcaseMode() ? DEFAULT_SAMPLE_TEETH : []);
 		return generate3TierPlanComparison(effectiveTeeth);
 	}, [customTiers, teeth]);
 
@@ -705,7 +705,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 							<div className="treatment-presenter-header-meta min-w-0 flex-1">
 								<h2 id="treatment-presenter-modal-title" className="treatment-presenter-main-title flex items-center gap-2 flex-wrap">
 									<span className="truncate">Презентация планов лечения</span>
-									<span className="treatment-presenter-law-badge whitespace-nowrap" title="ПП РФ № 736 & 804н">
+									<span className="treatment-presenter-law-badge whitespace-nowrap" title="Прейскурант и стандарты лечения">
 										Прейскурант клиники
 									</span>
 									{planAgeDays > 30 && (
