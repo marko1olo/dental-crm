@@ -39,6 +39,8 @@ import { denteAdminSecretRequestHeaders, money } from "../AppHelpers";
 import { showToast } from "../components/GlobalToast";
 import type { DentalLabOrderData } from "../components/lab/DentalLabOrderModal";
 import { useAppStore } from "../store/appStore";
+import { isDemoShowcaseMode } from "../lib/demoMode";
+import { getDemoDentalLabOrderData } from "../components/lab/dentalLabOrderEngine";
 import { formatLabOrderTeethOrJaw, isJawWideConstruction, SHADE_SWATCH_MAP } from "../components/lab/labMath";
 
 const DentalLabOrderModal = lazy(() =>
@@ -153,9 +155,19 @@ export function LabOrdersPage() {
 			}
 
 			const data = await res.json();
-			setOrders(Array.isArray(data) ? data : []);
+			const list = Array.isArray(data) ? data : [];
+			if (list.length === 0 && isDemoShowcaseMode()) {
+				setOrders(getDemoDentalLabOrderData());
+			} else {
+				setOrders(list);
+			}
 		} catch (err: any) {
-			setError(err.message || "Не удалось загрузить наряды лаборатории");
+			if (isDemoShowcaseMode()) {
+				setOrders(getDemoDentalLabOrderData());
+				setError(null);
+			} else {
+				setError(err.message || "Не удалось загрузить наряды лаборатории");
+			}
 		} finally {
 			setIsLoading(false);
 		}
@@ -676,7 +688,7 @@ export function LabOrdersPage() {
 						style={{ minHeight: "44px" }}
 					>
 						<Plus className="w-4 h-4" />
-						<span>Оформить заказ-наряд в лабораторию</span>
+						<span>+ Создать наряд-заказ в лабораторию</span>
 					</button>
 				</div>
 			) : viewMode === "table" ? (

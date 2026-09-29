@@ -6,19 +6,16 @@ import {
 	Layers,
 	ShieldCheck,
 	FileText,
-	AlertCircle,
 	ArrowRight,
 	ExternalLink,
 	Check,
 	Send,
-	Zap,
-	Clock,
 	Camera,
 	RotateCcw,
+	X,
 } from "lucide-react";
 import {
 	ORTHOPEDIC_CANONICAL_PROTOCOLS,
-	VITA_SHADE_GROUPS,
 	applyOrthopedicProtocolToVisit,
 	createDoctorClinicalOverride,
 	type OrthopedicProtocolPreset,
@@ -28,7 +25,6 @@ import {
 import { showToast } from "../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
-	SHADE_SWATCH_MAP,
 	CANONICAL_MANUFACTURING_5_STAGES,
 	type CanonicalManufacturing5StageItem,
 } from "../lab/labMath.js";
@@ -37,136 +33,20 @@ import {
 	type ReadyInClinicLabOrder,
 } from "../lab/DentalLabReadyInClinicModal";
 
-export interface StandardZtlPreset {
-	readonly id: string;
-	readonly name: string;
-	readonly material: string;
-	readonly constructionType: string;
-	readonly badge: string;
-	readonly description: string;
-	readonly warrantyMonths: number;
-	readonly warrantyLabelRu: string;
-}
-
-export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
-	{
-		id: "zirconia",
-		name: "Диоксид циркония",
-		material: "ZrO2 Multi-Layer",
-		constructionType: "single_crown",
-		badge: "ZrO2",
-		description: "Монолитный диоксид циркония многослойной градиентной прозрачности",
-		warrantyMonths: 60,
-		warrantyLabelRu: "5 лет",
-	},
-	{
-		id: "emax",
-		name: "IPS e.max",
-		material: "IPS e.max Press",
-		constructionType: "single_crown",
-		badge: "e.max Press",
-		description: "Прессованная дисиликатная стеклокерамика высокой эстетики",
-		warrantyMonths: 36,
-		warrantyLabelRu: "3 года",
-	},
-	{
-		id: "metal_ceramic",
-		name: "Металлокерамика",
-		material: "Металлокерамика Noritake",
-		constructionType: "single_crown",
-		badge: "МК Noritake",
-		description: "Классическая металлокерамика на CoCr каркасе",
-		warrantyMonths: 24,
-		warrantyLabelRu: "2 года (ГОСТ Р 51087-97)",
-	},
-	{
-		id: "pmma_temp",
-		name: "Временная коронка PMMA",
-		material: "PMMA CAD/CAM",
-		constructionType: "temporary_crown",
-		badge: "PMMA фрез.",
-		description: "Фрезерованная провизорная коронка на период интеграции и моделирования десны",
-		warrantyMonths: 6,
-		warrantyLabelRu: "6 месяцев (провизорная)",
-	},
-	{
-		id: "clasp_denture",
-		name: "Бюгельный протез",
-		material: "Бюгель на кламмерах / замках (CoCr)",
-		constructionType: "clasp_denture",
-		badge: "Бюгель CoCr",
-		description: "Дуговой съемный протез с опорно-удерживающими кламмерами или замками",
-		warrantyMonths: 24,
-		warrantyLabelRu: "2 года (ГОСТ Р 51087-97)",
-	},
-] as const;
-
-export interface PreparationMarginPreset {
-	readonly id: string;
-	readonly labelRu: string;
-	readonly shortBadge: string;
-	readonly description: string;
-}
-
-export const PREPARATION_MARGIN_PRESETS: readonly PreparationMarginPreset[] = [
-	{
-		id: "chamfer",
-		labelRu: "Желобоватый уступ (Chamfer)",
-		shortBadge: "Chamfer 0.8мм",
-		description: "Круговой желоб со скругленным внутренним углом — оптимально для ZrO2 и e.max",
-	},
-	{
-		id: "shoulder_90",
-		labelRu: "Круговой уступ 90° (Shoulder)",
-		shortBadge: "Shoulder 1.0мм",
-		description: "Прямой уступ 90 градусов с прямым плечом для цельнокерамических коронок",
-	},
-	{
-		id: "knife_edge",
-		labelRu: "Ножевидный край (Knife Edge)",
-		shortBadge: "Без уступа / Тангенс",
-		description: "Тангенциальное препарирование со сходом на нет без выраженного плеча",
-	},
-	{
-		id: "shoulder_bevel",
-		labelRu: "Уступ со скосом (Shoulder Bevel)",
-		shortBadge: "Уступ со скосом 135°",
-		description: "Прямой уступ с придесневым скосом под металлическую гирлянду МК",
-	},
-] as const;
-
-export const VITA_3D_MASTER_SHADE_GROUPS = [
-	{
-		group: "0M (Bleach)",
-		labelRu: "0M Bleach",
-		shades: ["0M1", "0M2", "0M3"] as const,
-	},
-	{
-		group: "1M",
-		labelRu: "Группа 1M",
-		shades: ["1M1", "1M2"] as const,
-	},
-	{
-		group: "2M / 2L / 2R",
-		labelRu: "Группа 2",
-		shades: ["2L1.5", "2M1", "2M2", "2M3", "2R1.5"] as const,
-	},
-	{
-		group: "3M / 3L / 3R",
-		labelRu: "Группа 3",
-		shades: ["3L1.5", "3M1", "3M2", "3M3", "3R1.5"] as const,
-	},
-	{
-		group: "4M / 4L",
-		labelRu: "Группа 4",
-		shades: ["4L1.5", "4M1", "4M2", "4M3"] as const,
-	},
-	{
-		group: "5M",
-		labelRu: "Группа 5",
-		shades: ["5M1", "5M2"] as const,
-	},
-] as const;
+export {
+	type StandardZtlPreset,
+	STANDARD_ZTL_ORDER_PRESETS,
+	type PreparationMarginPreset,
+	PREPARATION_MARGIN_PRESETS,
+	VITA_3D_MASTER_SHADE_GROUPS,
+} from "./orthopedicsPresets.js";
+import {
+	type StandardZtlPreset,
+	STANDARD_ZTL_ORDER_PRESETS,
+	PREPARATION_MARGIN_PRESETS,
+} from "./orthopedicsPresets.js";
+import { OrthopedicsVitaShadePicker } from "./OrthopedicsVitaShadePicker.js";
+import { OrthopedicsZtlSelectors } from "./OrthopedicsZtlSelectors.js";
 
 export interface OrthopedicsChairsidePanelProps {
 	readonly patientId?: string | undefined;
@@ -336,22 +216,16 @@ export function OrthopedicsChairsidePanel({
 			.map((p) => p.trim())
 			.filter(Boolean);
 
-		const preset =
-			STANDARD_ZTL_ORDER_PRESETS.find((p) => p.id === activeZtlPresetId) ??
-			STANDARD_ZTL_ORDER_PRESETS[0];
+		const preset = STANDARD_ZTL_ORDER_PRESETS.find((p) => p.id === activeZtlPresetId) ?? STANDARD_ZTL_ORDER_PRESETS[0];
 		if (!preset) return;
 		const orderNumber = `ЗТЛ-${Date.now().toString().slice(-6)}`;
-
 		setIsLabOrderSending(true);
-
 		const effectiveStage = CANONICAL_MANUFACTURING_5_STAGES.find((s) => s.id === selectedStageId);
 		const marginPreset = PREPARATION_MARGIN_PRESETS.find((m) => m.id === preparationMargin);
-
 		const isWarranty = Boolean(isWarrantyRework);
-		const liabilityLabelRu =
-			warrantyLiabilityType === "lab_defect"
-				? "Брак ЗТЛ (переделка за счет лаборатории 0 ₽)"
-				: "Гарантийные обязательства клиники";
+		const liabilityLabelRu = warrantyLiabilityType === "lab_defect"
+			? "Брак ЗТЛ (переделка за счет лаборатории 0 ₽)"
+			: "Гарантийные обязательства клиники";
 
 		const labOrderPayload = {
 			orderNumber,
@@ -559,16 +433,11 @@ export function OrthopedicsChairsidePanel({
 
 	const getProtocolIcon = (category: OrthopedicProtocolPreset["category"]) => {
 		switch (category) {
-			case "prep_crown":
-				return <Crown size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />;
-			case "try_in":
-				return <CheckCircle2 size={18} className="text-blue-600 dark:text-blue-400 shrink-0" />;
-			case "permanent_cementation":
-				return <Sparkles size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />;
-			case "removable_prosthetics":
-				return <Layers size={18} className="text-purple-600 dark:text-purple-400 shrink-0" />;
-			case "consultation_norm":
-				return <ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />;
+			case "prep_crown": return <Crown size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />;
+			case "try_in": return <CheckCircle2 size={18} className="text-blue-600 dark:text-blue-400 shrink-0" />;
+			case "permanent_cementation": return <Sparkles size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />;
+			case "removable_prosthetics": return <Layers size={18} className="text-purple-600 dark:text-purple-400 shrink-0" />;
+			case "consultation_norm": return <ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />;
 		}
 	};
 
@@ -633,10 +502,10 @@ export function OrthopedicsChairsidePanel({
 								<button
 									type="button"
 									onClick={() => setActiveXrayUrl(null)}
-									className="text-xs text-slate-400 hover:text-rose-500 cursor-pointer font-bold px-1"
+									className="text-xs text-slate-400 hover:text-rose-500 cursor-pointer font-bold px-1 inline-flex items-center"
 									title="Открепить снимок"
 								>
-									✕
+									<X className="w-3 h-3" />
 								</button>
 							</div>
 						) : (
@@ -701,293 +570,24 @@ export function OrthopedicsChairsidePanel({
 				</div>
 			</div>
 
-			{/* 1-КЛИК ПРЕСЕТЫ СТАНДАРТНЫХ НАРАДОВ ЗТЛ (Мандат 8i, 8k: без процедурных симуляторов, практичный выбор) */}
-			<div className="mb-3 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
-				<div className="flex items-center justify-between gap-2 mb-2">
-					<div className="flex items-center gap-1.5">
-						<Zap size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-							Стандарты ЗТЛ и гарантия (1 клик):
-						</span>
-					</div>
-					<span className="text-[11px] text-slate-500 dark:text-slate-400">
-						Автоматический расчет гарантийных сроков и спецификации конструкций
-					</span>
-				</div>
-				<div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-					{STANDARD_ZTL_ORDER_PRESETS.map((preset) => {
-						const isSelected = activeZtlPresetId === preset.id;
-						return (
-							<button
-								key={preset.id}
-								type="button"
-								onClick={() => handleSelectZtlPreset(preset)}
-								className={`min-h-[48px] px-3 py-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer border flex flex-col justify-between ${
-									isSelected
-										? "bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-950 dark:text-teal-100 ring-1 ring-teal-500 shadow-xs"
-										: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
-								}`}
-								data-testid={`ztl-preset-${preset.id}`}
-								title={`${preset.description} · Гарантия: ${preset.warrantyLabelRu}`}
-							>
-								<div className="flex items-center justify-between gap-1">
-									<span className="truncate">{preset.name}</span>
-									<span className="text-[10px] font-mono px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
-										{preset.badge}
-									</span>
-								</div>
-								<span className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-									{preset.material}
-								</span>
-								<div className="flex items-center gap-1 mt-1 text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
-									<ShieldCheck size={11} className="shrink-0" />
-									<span className="truncate">{preset.warrantyLabelRu}</span>
-								</div>
-							</button>
-						);
-					})}
-				</div>
-			</div>
+			<OrthopedicsZtlSelectors
+				activeZtlPresetId={activeZtlPresetId}
+				onSelectZtlPreset={handleSelectZtlPreset}
+				preparationMargin={preparationMargin}
+				onSelectPreparationMargin={(marginId, labelRu) => {
+					setPreparationMargin(marginId);
+					showToast(`Уступ ЗТЛ: ${labelRu}`, "info", 1500);
+				}}
+				selectedStageId={selectedStageId}
+				onSelectStage={handleSelectStage}
+			/>
 
-			{/* 1-КЛИК ПАРАМЕТРЫ ПРЕПАРИРОВАНИЯ КРАЯ (Chamfer, Shoulder, Knife Edge, Shoulder Bevel) */}
-			<div
-				className="mb-3 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40"
-				data-testid="prep-margin-section"
-			>
-				<div className="flex items-center justify-between gap-2 mb-2">
-					<div className="flex items-center gap-1.5">
-						<Layers size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-							Граница препарирования (1 клик):
-						</span>
-					</div>
-					<span className="text-[11px] text-slate-500 dark:text-slate-400">
-						Тип уступа для прецизионного краевого прилегания ЗТЛ
-					</span>
-				</div>
-				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-					{PREPARATION_MARGIN_PRESETS.map((margin) => {
-						const isSelected = preparationMargin === margin.id;
-						return (
-							<button
-								key={margin.id}
-								type="button"
-								onClick={() => {
-									setPreparationMargin(margin.id);
-									showToast(`Уступ ЗТЛ: ${margin.labelRu}`, "info", 1500);
-								}}
-								className={`min-h-[48px] px-3 py-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer border flex flex-col justify-between ${
-									isSelected
-										? "bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-950 dark:text-teal-100 ring-1 ring-teal-500 shadow-xs"
-										: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
-								}`}
-								data-testid={`prep-margin-${margin.id}`}
-								title={margin.description}
-							>
-								<div className="flex items-center justify-between gap-1">
-									<span className="truncate">{margin.labelRu}</span>
-								</div>
-								<span className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5 font-mono">
-									{margin.shortBadge}
-								</span>
-							</button>
-						);
-					})}
-				</div>
-			</div>
-
-			{/* ТРЕКЕР ЭТАПОВ ИЗГОТОВЛЕНИЯ ЗТЛ (Мандат 8e, 8n: 5 канонических этапов в 1 клик) */}
-			<div className="mb-3 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
-				<div className="flex items-center justify-between gap-2 mb-2">
-					<div className="flex items-center gap-1.5">
-						<Clock size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-							Этапы изготовления ЗТЛ (1 клик):
-						</span>
-					</div>
-					<span className="text-[11px] text-slate-500 dark:text-slate-400">
-						Слепок/Скан → Каркас/Примерка → Нанесение керамики → Готовая работа → Фиксация
-					</span>
-				</div>
-				<div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-					{CANONICAL_MANUFACTURING_5_STAGES.map((stg) => {
-						const isSelected = selectedStageId === stg.id;
-						const currentStageIndex = CANONICAL_MANUFACTURING_5_STAGES.findIndex((s) => s.id === selectedStageId);
-						const isPassed = currentStageIndex >= stg.step - 1;
-
-						return (
-							<button
-								key={stg.id}
-								type="button"
-								onClick={() => handleSelectStage(stg)}
-								className={`min-h-[48px] px-2.5 py-1.5 rounded-lg text-xs font-bold text-center transition-all cursor-pointer border flex flex-col justify-between items-center ${
-									isSelected
-										? "bg-teal-600 text-white border-teal-700 shadow-sm ring-2 ring-teal-500/40"
-										: isPassed
-										? "bg-teal-50 dark:bg-teal-950/40 text-teal-900 dark:text-teal-200 border-teal-300 dark:border-teal-700"
-										: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
-								}`}
-								data-testid={`chairside-stage-${stg.id}`}
-								title={stg.descRu}
-							>
-								<span className="text-[10px] uppercase font-bold tracking-wider opacity-85">
-									Этап {stg.step}
-								</span>
-								<span className="truncate w-full text-center text-xs font-bold mt-0.5">
-									{stg.shortLabelRu}
-								</span>
-								<span className="text-[10px] opacity-80 mt-0.5">
-									{isSelected ? "Текущий" : isPassed ? "Пройден" : "Ожидание"}
-								</span>
-							</button>
-						);
-					})}
-				</div>
-			</div>
-
-			{/* 1-КЛИК СЕЛЕКТОР ШКАЛЫ VITA CLASSICAL & 3D-MASTER (Мандат 8e, 8n: эргономика у кресла, тач-таргеты >= 48px) */}
-			<div className="mb-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-2.5">
-				<div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-					<div className="flex items-center gap-2">
-						<Sparkles size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
-						<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-							Шкала VITA:
-						</span>
-						<div className="flex items-center rounded-lg border border-slate-300 dark:border-slate-700 overflow-hidden text-xs">
-							<button
-								type="button"
-								onClick={() => setShadeSystem("classical")}
-								className={`min-h-[48px] px-3 font-bold cursor-pointer transition-colors ${
-									shadeSystem === "classical"
-										? "bg-teal-600 text-white"
-										: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
-								}`}
-								data-testid="vita-classical-tab"
-							>
-								VITA Classical
-							</button>
-							<button
-								type="button"
-								onClick={() => setShadeSystem("3d_master")}
-								className={`min-h-[48px] px-3 font-bold cursor-pointer transition-colors border-l border-slate-300 dark:border-slate-700 ${
-									shadeSystem === "3d_master"
-										? "bg-teal-600 text-white"
-										: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
-								}`}
-								data-testid="vita-3d-master-tab"
-							>
-								VITA 3D-Master
-							</button>
-						</div>
-					</div>
-					<div className="flex items-center gap-1.5">
-						<span className="text-xs text-slate-600 dark:text-slate-300 font-medium">Выбранный оттенок:</span>
-						<span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-teal-600 text-white shadow-xs inline-flex items-center gap-1.5">
-							{(() => {
-								const swatch = SHADE_SWATCH_MAP[selectedShade];
-								return swatch ? (
-									<span
-										className="w-2.5 h-2.5 rounded-full border border-white/60 shrink-0"
-										style={{ backgroundColor: swatch.bg }}
-										aria-hidden="true"
-									/>
-								) : null;
-							})()}
-							<span>{selectedShade}</span>
-						</span>
-					</div>
-				</div>
-
-				{shadeSystem === "classical" ? (
-					/* 1-клик сетка групп VITA Classical */
-					<div className="space-y-1.5">
-						{VITA_SHADE_GROUPS.map((grp) => (
-							<div key={grp.group} className="flex flex-wrap items-center gap-1.5">
-								<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 w-16 shrink-0">
-									{grp.group === "Bleach" ? "Bleach" : `Гр. ${grp.group}`}:
-								</span>
-								<div className="flex flex-wrap items-center gap-1.5 flex-1">
-									{grp.shades.map((shade) => {
-										const isSelected = selectedShade === shade;
-										const isBleach = shade.startsWith("BL");
-										const swatch = SHADE_SWATCH_MAP[shade];
-
-										return (
-											<button
-												key={shade}
-												type="button"
-												onClick={() => setSelectedShade(shade)}
-												aria-label={`Оттенок ${shade}`}
-												title={swatch ? `${shade}: ${swatch.desc}` : `Выбрать оттенок ${shade}`}
-												className={`min-h-[48px] min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-													isSelected
-														? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-														: isBleach
-															? "bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-100 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50"
-															: "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
-												}`}
-												data-testid={`vita-shade-${shade}`}
-											>
-												<span
-													className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/20 dark:border-white/30 shadow-2xs"
-													style={{
-														backgroundColor: swatch?.bg || "#f5f0eb",
-														borderColor: swatch?.border || "#d1c7bd",
-													}}
-													aria-hidden="true"
-												/>
-												<span>{shade}</span>
-											</button>
-										);
-									})}
-								</div>
-							</div>
-						))}
-					</div>
-				) : (
-					/* 1-клик сетка групп VITA 3D-Master */
-					<div className="space-y-1.5">
-						{VITA_3D_MASTER_SHADE_GROUPS.map((grp) => (
-							<div key={grp.group} className="flex flex-wrap items-center gap-1.5">
-								<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 w-24 shrink-0">
-									{grp.labelRu}:
-								</span>
-								<div className="flex flex-wrap items-center gap-1.5 flex-1">
-									{grp.shades.map((shade) => {
-										const isSelected = selectedShade === shade;
-										const swatch = SHADE_SWATCH_MAP[shade];
-										return (
-											<button
-												key={shade}
-												type="button"
-												onClick={() => setSelectedShade(shade)}
-												aria-label={`Оттенок 3D-Master ${shade}`}
-												title={swatch ? `${shade}: ${swatch.desc}` : `Выбрать оттенок VITA 3D-Master ${shade}`}
-												className={`min-h-[48px] min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-													isSelected
-														? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-														: "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
-												}`}
-												data-testid={`vita-3d-shade-${shade}`}
-											>
-												<span
-													className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/20 dark:border-white/30 shadow-2xs"
-													style={{
-														backgroundColor: swatch?.bg || "#f5f0eb",
-														borderColor: swatch?.border || "#d1c7bd",
-													}}
-													aria-hidden="true"
-												/>
-												<span>{shade}</span>
-											</button>
-										);
-									})}
-								</div>
-							</div>
-						))}
-					</div>
-				)}
-			</div>
+			<OrthopedicsVitaShadePicker
+				shadeSystem={shadeSystem}
+				onShadeSystemChange={setShadeSystem}
+				selectedShade={selectedShade}
+				onSelectShade={setSelectedShade}
+			/>
 
 			{/* Сетка 4 канонических протоколов (1 клик -> 043/у + Смета + Этап 3) */}
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-3">

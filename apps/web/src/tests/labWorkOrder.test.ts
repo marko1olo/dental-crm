@@ -306,12 +306,12 @@ describe('Statutory Dental Laboratory Work Order & Tracking Studio Suite', () =>
 			assert.ok(html.includes('Врач-ортопед'));
 			assert.ok(html.includes('Зубной техник'));
 			assert.ok(html.includes('<svg'));
-			assert.ok(html.includes('ШТАМП: ЧЕРНОВИК (В РАБОТЕ) (МАНДАТ 8E)'));
+			assert.ok(html.includes('ШТАМП: ЧЕРНОВИК (В РАБОТЕ)'));
 
 			// Verify signed stage renders signed stamp
 			order.currentStage = 'delivered_completed';
 			const signedHtml = generatePrintableLabWorkOrderHtml(order);
-			assert.ok(signedHtml.includes('ШТАМП: ПОДПИСАНО ВРАЧОМ (МАНДАТ 8E)'));
+			assert.ok(signedHtml.includes('ШТАМП: ПОДПИСАНО ВРАЧОМ'));
 		});
 	});
 
@@ -355,7 +355,7 @@ describe('Statutory Dental Laboratory Work Order & Tracking Studio Suite', () =>
 			assert.ok(html.includes('Иванов Иван Иванович'));
 			assert.ok(html.includes('Д-р Васильев В. В.'));
 			assert.ok(html.includes('Внешняя зуботехническая лаборатория'));
-			assert.ok(html.includes('ШТАМП: ПОДПИСАНО ВРАЧОМ (МАНДАТ 8E)'));
+			assert.ok(html.includes('ШТАМП: ПОДПИСАНО ВРАЧОМ'));
 		});
 
 		it('creates 1-click solo doctor draft order with draft stamp', () => {
@@ -376,7 +376,7 @@ describe('Statutory Dental Laboratory Work Order & Tracking Studio Suite', () =>
 			// Print blank generates draft stamp
 			const html = generatePrintableLabWorkOrderHtml(order);
 			assert.ok(html.includes('Петрова Ольга Сергеевна'));
-			assert.ok(html.includes('ШТАМП: ЧЕРНОВИК (В РАБОТЕ) (МАНДАТ 8E)'));
+			assert.ok(html.includes('ШТАМП: ЧЕРНОВИК (В РАБОТЕ)'));
 		});
 
 		it('creates 1-click solo doctor order for removable prosthesis with custom lab name', () => {

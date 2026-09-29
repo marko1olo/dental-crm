@@ -16,6 +16,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
 	FlaskConical,
 	Plus,
@@ -40,6 +41,7 @@ import {
 	generateDentalLabOrderA4PrintBlank,
 	exportDentalLabOrdersToCsv,
 } from "./dentalLabWorkflowEngine";
+import { getDemoDentalLabWorkflowOrders } from "./dentalLabDemoData";
 import {
 	LAB_TECHNOLOGICAL_STAGES,
 	LAB_TECHNOLOGICAL_STAGE_ORDER,
@@ -91,11 +93,12 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	treatmentPlanAgeDays,
 	isPlanExpired,
 }) => {
-	// Состояние реестра нарядов
+	// Состояние реестра нарядов (Мандат 8y: Честный пустой продакшн vs Демо)
 	const [orders, setOrders] = useState<DentalLabWorkflowOrder[]>(() => {
-		return initialOrders && initialOrders.length > 0
-			? [...initialOrders]
-			: [];
+		if (initialOrders && initialOrders.length > 0) {
+			return [...initialOrders];
+		}
+		return isDemoShowcaseMode() ? getDemoDentalLabWorkflowOrders() : [];
 	});
 
 	// Синхронизация при внешнем изменении initialOrders
@@ -116,7 +119,12 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 				const res = await fetch(`/api/clinical/lab-orders${query}`, {
 					headers: denteAdminSecretRequestHeaders(),
 				});
-				if (!res.ok) return;
+				if (!res.ok) {
+					if (!cancelled) {
+						setOrders(isDemoShowcaseMode() ? getDemoDentalLabWorkflowOrders() : []);
+					}
+					return;
+				}
 				const data = await res.json();
 				if (cancelled || !data) return;
 
@@ -133,9 +141,14 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 						mapRawApiOrderToWorkflowOrder(raw, idx, currentPatientId, currentPatientName, currentDoctorName),
 					);
 					setOrders(mapped);
+				} else {
+					setOrders(isDemoShowcaseMode() ? getDemoDentalLabWorkflowOrders() : []);
 				}
 			} catch (err) {
 				console.warn("[DentalLabOrdersHubModal] Failed to load live lab orders:", err);
+				if (!cancelled) {
+					setOrders(isDemoShowcaseMode() ? getDemoDentalLabWorkflowOrders() : []);
+				}
 			}
 		}
 
@@ -718,10 +731,11 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 							type="button"
 							className="ztl-btn-primary"
 							onClick={() => setIsCreateModalOpen(true)}
-							title="Создать наряд ЗТЛ"
+							title="Создать наряд-заказ в лабораторию"
+							data-testid="hub-empty-create-lab-order-btn"
 						>
 							<Plus size={14} />
-							<span>Создать наряд ЗТЛ</span>
+							<span>+ Создать наряд-заказ в лабораторию</span>
 						</button>
 					</main>
 				) : (

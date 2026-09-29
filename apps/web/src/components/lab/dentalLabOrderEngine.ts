@@ -47,12 +47,14 @@ import {
 	CANONICAL_5_CLINICAL_LAB_STATUSES,
 	type Canonical5LabStatus,
 	type Canonical5LabStatusItem,
+	type DentalLabOrderData,
 } from "./labMath";
 
 export {
 	CANONICAL_5_CLINICAL_LAB_STATUSES,
 	type Canonical5LabStatus,
 	type Canonical5LabStatusItem,
+	type DentalLabOrderData,
 };
 
 // ─── 1. ВИДЫ КОНСТРУКЦИЙ ЗТЛ ────────────────────────────────────────────────
@@ -743,26 +745,20 @@ export function canTransitionLabStatus(from: DentalLabOrderStatus, to: DentalLab
 export function createDentalLabOrderRecord(partial: Partial<DentalLabOrderRecord>): DentalLabOrderRecord {
 	const construction = partial.constructionType || "crown_zirconia";
 	const def = DENTAL_LAB_CONSTRUCTIONS[construction];
-
 	const sentDate = partial.sentDate || toIsoDate(new Date());
 	const deadline = partial.deadlineDate || (() => {
 		const d = new Date();
 		d.setDate(d.getDate() + (def?.standardTurnaroundDays ?? 5));
 		return toIsoDate(d);
 	})();
-
 	const teeth = partial.teethFdi && partial.teethFdi.length > 0 ? partial.teethFdi : [16];
-	const units = teeth.length;
-
 	const financials = calculateZtlWageFinancials({
-		unitsCount: units,
+		unitsCount: teeth.length,
 		patientPriceKopecks: partial.patientPriceKopecks ?? (def?.defaultPatientPriceKopecks ?? 2400000),
 		ztlCostKopecks: partial.ztlCostKopecks ?? (def?.defaultZtlCostKopecks ?? 750000),
 		doctorSharePercent: partial.doctorSharePercent ?? 20,
 	});
-
 	const now = new Date().toISOString();
-
 	return {
 		id: partial.id || `ztl-ord-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
 		orderNumber: partial.orderNumber || `ЗТЛ-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900) + 100)}`,
@@ -794,3 +790,4 @@ export function createDentalLabOrderRecord(partial: Partial<DentalLabOrderRecord
 		updatedAt: partial.updatedAt || now,
 	};
 }
+export { getDemoDentalLabOrderRecords, getDemoDentalLabOrderData } from "./dentalLabDemoData";

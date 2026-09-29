@@ -113,7 +113,14 @@ export type LabOrderStageKey =
 	| "fitting_in_mouth"
 	| "final_glaze"
 	| "delivered_to_clinic"
-	| "completed";
+	| "completed"
+	| "impression_scan"
+	| "cad_modeling"
+	| "milling_casting"
+	| "framework_fitting"
+	| "ceramic_layering"
+	| "ready_in_clinic"
+	| "patient_fixation";
 
 // ─── CANONICAL 4-STATUS DENTAL LAB WORKFLOW ───────────────────────────────────
 
