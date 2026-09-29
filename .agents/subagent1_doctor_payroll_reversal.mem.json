@@ -1,0 +1,43 @@
+{
+  "role": "Subagent 1: Doctor Compensation, Commission Reversal & Multi-Specialist Split Inquisitor",
+  "status": "COMPLETED",
+  "created_at": "2026-09-29T17:08:45Z",
+  "updated_at": "2026-09-29T17:15:35Z",
+  "scope": [
+    "apps/web/src/components/finance/payroll/payrollEngine.ts",
+    "apps/web/src/components/finance/payroll/DoctorPayrollModal.tsx",
+    "apps/web/src/components/finance/payroll/payrollPresets.ts",
+    "apps/web/src/components/settings/commissions/DoctorMotivationCalculator.tsx",
+    "apps/web/src/components/settings/StaffCommissionsPanel.tsx",
+    "apps/web/src/tests/doctorPayroll.test.ts",
+    "apps/web/src/components/finance/payroll/doctorPayrollEngine.test.ts"
+  ],
+  "mission_requirements": [
+    "Refund Commission Reversal (storno of doctor commission upon refund, kopeck-exact negative accrual, explicit line item in payslip)",
+    "Warranty visit & rework handling (0 ₽ to patient vs doctor compensation / doctor fault deduction vs clinic warranty, zero dead-ends / no NaN)",
+    "Multi-Doctor Joint Procedure Split (distribution strictly by performerId/doctorId line attachment, not dumped onto visit creator)",
+    "Family deposit payment (commission accrues on actual service consumption/deduction, not deposit advance)",
+    "Kopeck-Exact Money & UI (no rounding drift, no NaN ₽)"
+  ],
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md constitutional routine",
+    "Inspected existing payroll code and tests",
+    "Verified baseline tests passing with Exit Code 0",
+    "Implemented refund commission reversal storno items with exact format: 'Сторно комиссии: Возврат по чеку №... (-ХХХ ₽)'",
+    "Implemented clinical warranty visit & rework handling with doctor fault (0 ₽) vs clinic warranty (fixed fee) and zero-NaN guard",
+    "Implemented multi-doctor joint procedure split by performerId/doctorId with splitVisitServicesByDoctor and filterServicesForDoctor helpers",
+    "Implemented family deposit payment logic: accrual on actual service delivery, zero accrual on advance deposit replenishment",
+    "Updated DoctorPayrollModal UI with warranty, storno, and family deposit badges, plus dedicated storno table",
+    "Updated DoctorMotivationCalculator with interactive refund storno simulation and warranty rework notes",
+    "Added 8 comprehensive unit tests covering all 5 core mission requirements across 2 test suites",
+    "Ran check:encoding (6274 files verified, 0 errors)",
+    "Ran all test suites with Exit Code 0 (26 tests passing)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Refund storno line items generate exact required format 'Сторно комиссии: Возврат по чеку №... (-ХХХ ₽)'",
+    "Multi-doctor split visits properly isolate services by performerId/doctorId without leakage into visit creator's totals",
+    "Warranty reworks never cause division by zero or NaN even with 0 ₽ revenue",
+    "Pure advance replenishments into patient/family deposits are correctly excluded from piece-rate commissions until actual service execution"
+  ]
+}

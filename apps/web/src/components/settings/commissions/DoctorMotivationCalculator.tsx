@@ -54,6 +54,9 @@ export const DoctorMotivationCalculator: React.FC<
 	// Base Shift Salary (Оклад / фикс за смену)
 	const [baseShiftSalary, setBaseShiftSalary] = useState("0");
 
+	// Refund storno simulation (Мандат 8e, 8n)
+	const [refundRev, setRefundRev] = useState("0");
+
 	const payoutResult = useMemo(() => {
 		return calculateDoctorPieceRatePayout({
 			therapyRevenueKopecks: parseRublesToKopecks(therapyRev),
@@ -86,10 +89,23 @@ export const DoctorMotivationCalculator: React.FC<
 		baseShiftSalary,
 	]);
 
+	const refundKopecks = parseRublesToKopecks(refundRev);
+	const avgRate = Math.round(
+		((Number(therapyRate) || 0) +
+			(Number(orthoRate) || 0) +
+			(Number(surgeryRate) || 0) +
+			(Number(hygieneRate) || 0)) / 4
+	);
+	const stornoCommissionKopecks = Math.round((refundKopecks * avgRate) / 100);
+	const finalNetPayoutKopecks = Math.max(
+		0,
+		payoutResult.netPayoutKopecks - stornoCommissionKopecks
+	);
+
 	const clinicRetainedKopecks = Math.max(
 		0,
 		payoutResult.totalRevenueKopecks -
-			payoutResult.netPayoutKopecks -
+			finalNetPayoutKopecks -
 			payoutResult.totalDeductionsKopecks,
 	);
 
@@ -275,8 +291,8 @@ export const DoctorMotivationCalculator: React.FC<
 						</div>
 					</div>
 
-					{/* Deductions & Base Shift Salary */}
-					<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+					{/* Deductions, Base Shift Salary & Refund Storno */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 						<div className="p-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] flex flex-col gap-1.5">
 							<div className="flex items-center justify-between">
 								<span className="text-xs font-bold text-rose-700 dark:text-rose-400">
@@ -364,6 +380,32 @@ export const DoctorMotivationCalculator: React.FC<
 								)}
 							</span>
 						</div>
+
+						<div className="p-3 rounded-lg border border-rose-300 dark:border-rose-900 bg-rose-50/50 dark:bg-rose-950/20 flex flex-col gap-1.5">
+							<span className="text-xs font-bold text-rose-700 dark:text-rose-400">
+								Сторно возвратов (₽)
+							</span>
+							<input
+								type="text"
+								inputMode="decimal"
+								value={refundRev}
+								onChange={(e) => setRefundRev(e.target.value)}
+								placeholder="Возврат пациенту (₽)"
+								className="h-8 px-2 text-xs rounded border border-rose-300 dark:border-rose-800 bg-[var(--paper)] text-[var(--ink)] font-mono"
+							/>
+							<span className="text-[11px] font-bold text-rose-700 dark:text-rose-300">
+								{stornoCommissionKopecks > 0
+									? `Сторно комиссии: -${formatKopecksToRublesDisplay(stornoCommissionKopecks)}`
+									: "Сторно: 0 ₽"}
+							</span>
+						</div>
+					</div>
+
+					{/* Clinical Warranty Guarantee Notice */}
+					<div className="p-2.5 rounded-lg border border-teal-200 dark:border-teal-900/60 bg-teal-50/40 dark:bg-teal-950/20 flex items-center justify-between gap-2 text-xs">
+						<span className="text-[var(--ink)]">
+							<strong>Гарантийная переделка (0 ₽ пациенту):</strong> При гарантийной работе начисление врачу 0 ₽ при его вине, расход материалов списывается на клинику. Расчет надежно защищен от деления на ноль (Zero Dead-Ends).
+						</span>
 					</div>
 
 					{/* Summary Breakdown Strip */}
@@ -389,7 +431,7 @@ export const DoctorMotivationCalculator: React.FC<
 							<strong className="text-sm font-bold text-rose-600 dark:text-rose-400">
 								-
 								{formatKopecksToRublesDisplay(
-									payoutResult.totalDeductionsKopecks,
+									payoutResult.totalDeductionsKopecks + stornoCommissionKopecks,
 								)}
 							</strong>
 						</div>
@@ -398,7 +440,7 @@ export const DoctorMotivationCalculator: React.FC<
 								К выплате врачу:
 							</span>
 							<strong className="text-base font-extrabold text-[var(--teal-dark)]">
-								{formatKopecksToRublesDisplay(payoutResult.netPayoutKopecks)}
+								{formatKopecksToRublesDisplay(finalNetPayoutKopecks)}
 							</strong>
 						</div>
 					</div>
