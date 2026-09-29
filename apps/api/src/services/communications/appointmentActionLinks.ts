@@ -36,7 +36,7 @@ import { db } from "../../db/client.js";
 import { appointmentActionCodes } from "../../db/communicationsSchema.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 
-type AppointmentAction = "confirm" | "cancel";
+type AppointmentAction = "confirm" | "cancel" | "reschedule";
 
 /**
  * Алфавит без похожих знаков: ни 0/O, ни 1/l/I. Ссылку из SMS иногда
@@ -102,10 +102,11 @@ export function actionLinkFor(baseUrl: string, code: string): string {
 export type AppointmentActionLinks = {
 	readonly confirmLink: string;
 	readonly cancelLink: string;
+	readonly rescheduleLink?: string | undefined;
 };
 
 /**
- * Выдаёт (или переиспользует) коды подтверждения и отмены для приёма.
+ * Выдаёт (или переиспользует) коды подтверждения, отмены и переноса для приёма.
  *
  * Один активный код на пару «приём + действие»: если напоминание отправляется
  * дважды — за сутки и за два часа, — в обоих сообщениях должна быть одна и та же
@@ -140,11 +141,18 @@ export async function issueAppointmentActionLinks(
 		"cancel",
 		expiresAt,
 	);
+	const rescheduleCode = await issueCode(
+		input.organizationId,
+		input.appointmentId,
+		"reschedule",
+		expiresAt,
+	);
 	if (!confirmCode || !cancelCode) return null;
 
 	return {
 		confirmLink: actionLinkFor(baseUrl, confirmCode),
 		cancelLink: actionLinkFor(baseUrl, cancelCode),
+		rescheduleLink: rescheduleCode ? actionLinkFor(baseUrl, rescheduleCode) : undefined,
 	};
 }
 
@@ -247,7 +255,12 @@ export async function resolveActionCode(
 		code: row.code,
 		organizationId: row.organizationId,
 		appointmentId: row.appointmentId,
-		action: row.action === "cancel" ? "cancel" : "confirm",
+		action:
+			row.action === "cancel"
+				? "cancel"
+				: row.action === "reschedule"
+					? "reschedule"
+					: "confirm",
 		expired: row.expiresAt.getTime() < now.getTime(),
 		usedAt: row.usedAt,
 	};

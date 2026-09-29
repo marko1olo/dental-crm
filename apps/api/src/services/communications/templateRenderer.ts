@@ -101,6 +101,24 @@ export const communicationTemplateVariables: readonly TemplateVariableDefinition
 			phi: false,
 		},
 		{
+			key: "rescheduleLink",
+			label: "Ссылка запроса переноса приёма",
+			example: "https://clinic.example/r/ab12",
+			phi: false,
+		},
+		{
+			key: "cabinet",
+			label: "Кабинет / номер кресла",
+			example: "Кабинет 1",
+			phi: false,
+		},
+		{
+			key: "chair",
+			label: "Кресло / кабинет",
+			example: "Кресло 1",
+			phi: false,
+		},
+		{
 			key: "reviewLink",
 			label: "Ссылка на отзыв",
 			example: "https://clinic.example/review",

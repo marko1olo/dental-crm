@@ -25,18 +25,25 @@ import * as dgram from "node:dgram";
 import * as http from "node:http";
 import * as os from "node:os";
 import {
+	DEFAULT_LEASE_FAILOVER_TIMEOUT_MS,
+	DEFAULT_LEASE_HEARTBEAT_INTERVAL_MS,
 	DEFAULT_MESH_HTTP_PORTS,
 	DEFAULT_MESH_UDP_PORT,
 	type LanMeshHandshakePayload,
 	type LanMeshPeerSummary,
 	type LanMeshRole,
 	LanMeshTopologyManager,
+	type LocalMutationRingBuffer,
+	type MasterLeaseHeartbeat,
 	type MeshMutationAction,
 	type MeshSyncStatusBadge,
 	type QueuedMeshMutation,
 	type SchemaCompatibilityResult,
+	VectorClockEngine,
 	createMeshDiscoveryBeacon,
+	createMeshLeaseHeartbeatPacket,
 	parseMeshDiscoveryBeacon,
+	parseMeshLeaseHeartbeatPacket,
 	verifyMeshSchemaCompatibility,
 } from "@dental/shared";
 import { getLocalLanAddresses, getPrimaryLanIp } from "./lanDiscoveryService.js";
@@ -52,6 +59,12 @@ export interface LanMeshServiceConfig {
 	readonly beaconIntervalMs?: number;
 	readonly pruneIntervalMs?: number;
 	readonly probeOnStart?: boolean;
+	readonly leaseSecret?: string;
+	readonly enableLeaseFailover?: boolean;
+	readonly leaseHeartbeatIntervalMs?: number;
+	readonly leaseFailoverCheckIntervalMs?: number;
+	readonly ringBufferCapacity?: number;
+	readonly vectorClockEngine?: VectorClockEngine;
 	readonly logger?: {
 		info: (...args: unknown[]) => void;
 		error: (...args: unknown[]) => void;
@@ -70,11 +83,19 @@ export class LanMeshService {
 	readonly udpPort: number;
 
 	private readonly topologyManager: LanMeshTopologyManager;
+	private readonly vectorClockEngine: VectorClockEngine;
 	private readonly logger?: LanMeshServiceConfig["logger"];
+	private readonly enableLeaseFailover: boolean;
+	private readonly leaseSecret?: string | undefined;
+	private readonly leaseHeartbeatIntervalMs: number;
+	private readonly leaseFailoverCheckIntervalMs: number;
+
 	private udpSocket: dgram.Socket | null = null;
 	private beaconTimer: NodeJS.Timeout | null = null;
 	private pruneTimer: NodeJS.Timeout | null = null;
 	private flushTimer: NodeJS.Timeout | null = null;
+	private leaseHeartbeatTimer: NodeJS.Timeout | null = null;
+	private leaseHealthCheckTimer: NodeJS.Timeout | null = null;
 	private isRunning = false;
 
 	constructor(config: LanMeshServiceConfig = {}) {
@@ -87,6 +108,12 @@ export class LanMeshService {
 		this.udpPort = config.udpPort || Number.parseInt(process.env.DENTE_MESH_UDP_PORT || String(DEFAULT_MESH_UDP_PORT), 10);
 		this.logger = config.logger;
 
+		this.enableLeaseFailover = config.enableLeaseFailover ?? (process.env.DENTE_MESH_ENABLE_LEASE_FAILOVER === "true");
+		this.leaseSecret = config.leaseSecret;
+		this.leaseHeartbeatIntervalMs = config.leaseHeartbeatIntervalMs || DEFAULT_LEASE_HEARTBEAT_INTERVAL_MS;
+		this.leaseFailoverCheckIntervalMs = config.leaseFailoverCheckIntervalMs || 2500;
+		this.vectorClockEngine = config.vectorClockEngine || new VectorClockEngine();
+
 		const primaryIp = getPrimaryLanIp();
 
 		this.topologyManager = new LanMeshTopologyManager({
@@ -97,9 +124,13 @@ export class LanMeshService {
 			port: this.apiPort,
 			appVersion: this.appVersion,
 			schemaVersion: this.schemaVersion,
+			enableLeaseFailover: this.enableLeaseFailover,
+			leaseSecret: this.leaseSecret,
+			leaseDurationMs: this.leaseHeartbeatIntervalMs,
 			onPeerDiscovered: (peer) => this.handlePeerDiscovered(peer),
 			onPeerLost: (lostNodeId) => this.handlePeerLost(lostNodeId),
 			onMasterChanged: (newMaster) => this.handleMasterChanged(newMaster),
+			onLeaseFailoverTriggered: (event) => this.handleLeaseFailover(event),
 		});
 	}
 
@@ -134,6 +165,21 @@ export class LanMeshService {
 			this.broadcastBeacon();
 		}, 3000);
 
+		// If Master role: broadcast lease heartbeat immediately and schedule every leaseHeartbeatIntervalMs
+		if (this.role === "master") {
+			this.broadcastLeaseHeartbeat();
+			this.leaseHeartbeatTimer = setInterval(() => {
+				this.broadcastLeaseHeartbeat();
+			}, this.leaseHeartbeatIntervalMs);
+		}
+
+		// If lease failover enabled: schedule lease health checks (every 2.5s)
+		if (this.enableLeaseFailover) {
+			this.leaseHealthCheckTimer = setInterval(() => {
+				this.checkMasterLeaseHealth();
+			}, this.leaseFailoverCheckIntervalMs);
+		}
+
 		// Schedule peer pruning (every 5 seconds)
 		this.pruneTimer = setInterval(() => {
 			this.topologyManager.pruneStalePeers();
@@ -162,6 +208,14 @@ export class LanMeshService {
 		if (this.beaconTimer) {
 			clearInterval(this.beaconTimer);
 			this.beaconTimer = null;
+		}
+		if (this.leaseHeartbeatTimer) {
+			clearInterval(this.leaseHeartbeatTimer);
+			this.leaseHeartbeatTimer = null;
+		}
+		if (this.leaseHealthCheckTimer) {
+			clearInterval(this.leaseHealthCheckTimer);
+			this.leaseHealthCheckTimer = null;
 		}
 		if (this.pruneTimer) {
 			clearInterval(this.pruneTimer);
@@ -195,6 +249,16 @@ export class LanMeshService {
 			});
 
 			socket.on("message", (msgBuffer, rinfo) => {
+				// 1. Check for cryptographically signed Master Lease Heartbeat
+				const lease = parseMeshLeaseHeartbeatPacket(msgBuffer);
+				if (lease) {
+					if (lease.masterNodeId !== this.nodeId) {
+						this.topologyManager.processMasterLeaseHeartbeat(lease, this.leaseSecret);
+					}
+					return;
+				}
+
+				// 2. Fall back to standard discovery beacon
 				const beacon = parseMeshDiscoveryBeacon(msgBuffer);
 				if (!beacon) return;
 				if (beacon.nodeId === this.nodeId) return; // Ignore own beacons
@@ -223,6 +287,81 @@ export class LanMeshService {
 				`[LanMeshService] Could not bind UDP discovery socket on port ${this.udpPort}: ${err instanceof Error ? err.message : String(err)}`,
 			);
 		}
+	}
+
+	/**
+	 * Emits a cryptographically signed Master Lease Heartbeat over UDP multicast & local subnet broadcast.
+	 */
+	broadcastLeaseHeartbeat(): void {
+		if (!this.udpSocket) return;
+		if (this.role !== "master" && !this.topologyManager.isTemporaryMasterActive()) return;
+
+		const lease = this.topologyManager.createLeaseHeartbeat();
+		const packetBuffer = createMeshLeaseHeartbeatPacket(lease);
+
+		// 1. Multicast group
+		try {
+			this.udpSocket.send(packetBuffer, 0, packetBuffer.length, this.udpPort, "239.255.255.250");
+		} catch {
+			// Best-effort
+		}
+
+		// 2. Local subnet broadcast
+		try {
+			this.udpSocket.send(packetBuffer, 0, packetBuffer.length, this.udpPort, "255.255.255.255");
+		} catch {
+			// Best-effort
+		}
+	}
+
+	/**
+	 * Evaluates Master lease freshness and triggers instant consensus election if Master missed 2 consecutive heartbeats (10s threshold).
+	 */
+	checkMasterLeaseHealth(now = Date.now()): {
+		masterAlive: boolean;
+		failoverTriggered: boolean;
+		electedMasterId: string | null;
+		isLocalElected: boolean;
+	} {
+		const health = this.topologyManager.checkMasterLeaseHealth(now);
+		if (health.failoverTriggered && health.isLocalElected) {
+			this.logger?.warn?.(
+				`[LanMeshService] Failover triggered: Node '${this.nodeId}' elected as Temporary Master. Broadcasting signed lease heartbeats.`,
+			);
+			this.broadcastLeaseHeartbeat();
+			if (!this.leaseHeartbeatTimer) {
+				this.leaseHeartbeatTimer = setInterval(() => {
+					this.broadcastLeaseHeartbeat();
+				}, this.leaseHeartbeatIntervalMs);
+			}
+		} else if (!this.topologyManager.isTemporaryMasterActive() && this.role !== "master" && this.leaseHeartbeatTimer) {
+			clearInterval(this.leaseHeartbeatTimer);
+			this.leaseHeartbeatTimer = null;
+		}
+		return health;
+	}
+
+	private handleLeaseFailover(details: {
+		deadMasterId: string | null;
+		electedMasterId: string;
+		isLocalElected: boolean;
+		term: number;
+	}): void {
+		this.logger?.warn?.(
+			`[LanMeshService] Lease failover triggered: Primary Master '${details.deadMasterId}' dead. Elected temporary master '${details.electedMasterId}' (Term: ${details.term}, Local: ${details.isLocalElected})`,
+		);
+	}
+
+	getVectorClockEngine(): VectorClockEngine {
+		return this.vectorClockEngine;
+	}
+
+	getRingBuffer(): LocalMutationRingBuffer {
+		return this.topologyManager.getRingBuffer();
+	}
+
+	isTemporaryMasterActive(): boolean {
+		return this.topologyManager.isTemporaryMasterActive();
 	}
 
 	/**
@@ -424,7 +563,7 @@ export class LanMeshService {
 	}): Promise<{
 		applied: boolean;
 		queuedOffline: boolean;
-		mode: "direct_master" | "streamed_to_master" | "offline_queued" | "sync_deferred";
+		mode: "direct_master" | "streamed_to_master" | "offline_queued" | "sync_deferred" | "temporary_master_active";
 		mutationId: string;
 		reason?: string;
 	}> {
@@ -443,17 +582,22 @@ export class LanMeshService {
 			originNodeId: this.nodeId,
 		};
 
-		// 1. Local Node is Master: apply directly
-		if (this.role === "master") {
+		// 1. Local Node is Master or Temporary Master: apply directly
+		if (this.role === "master" || this.topologyManager.isTemporaryMasterActive()) {
+			this.vectorClockEngine.incrementVector(params.entityKind, params.entityId, this.nodeId);
+			this.topologyManager.getRingBuffer().push(mutation);
 			return {
 				applied: true,
 				queuedOffline: false,
-				mode: "direct_master",
+				mode: this.topologyManager.isTemporaryMasterActive() ? "temporary_master_active" : "direct_master",
 				mutationId,
 			};
 		}
 
-		// 2. Check Master reachability & schema compatibility
+		// 2. Track local version vector on satellite workstation
+		this.vectorClockEngine.incrementVector(params.entityKind, params.entityId, this.nodeId);
+
+		// 3. Check Master reachability & schema compatibility
 		const masterNode = this.topologyManager.getMasterNode();
 		const badge = this.topologyManager.getStatusBadge();
 
@@ -470,7 +614,7 @@ export class LanMeshService {
 		}
 
 		if (!masterNode || masterNode.nodeId === this.nodeId) {
-			// Master offline: queue locally
+			// Master offline: queue locally (ring buffer buffers without disruption)
 			this.topologyManager.getMutationQueue().enqueue(mutation);
 			return {
 				applied: false,
@@ -481,7 +625,7 @@ export class LanMeshService {
 			};
 		}
 
-		// 3. Stream mutation to Master
+		// 4. Stream mutation to Master
 		const streamSuccess = await this.sendMutationToMaster(masterNode, mutation);
 		if (streamSuccess) {
 			return {

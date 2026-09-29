@@ -12,7 +12,10 @@ import { randomInt } from "node:crypto";
 import { and, eq, ilike, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
+import {
+	requireResolvedOrganizationId,
+	requireResolvedStaffOrAdminOrganizationId,
+} from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { inventoryItems, inventoryTransactions } from "../db/schema.js";
 
@@ -294,6 +297,51 @@ export const warehouseRoutes: FastifyPluginAsync = async (
 				? `Остаток 0: зафиксирован мягкий овердрафт (дефицит: ${result.deficit} ${result.item.unit ?? "ед."}). Задержка оприходования накладной не блокирует проведение приема!`
 				: undefined,
 		});
+	});
+
+	// GET /api/warehouse/:organizationId/stock
+	// Чтение актуальных остатков склада клиники из реального PostgreSQL 18 (Mandate 8y)
+	server.get<{ Params: { organizationId: string } }>(
+		"/:organizationId/stock",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"warehouse stock read",
+			);
+			if (!resolvedOrgId) return;
+
+			const { organizationId } = request.params;
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
+
+			const items = await db
+				.select()
+				.from(inventoryItems)
+				.where(eq(inventoryItems.organizationId, organizationId))
+				.orderBy(inventoryItems.name);
+
+			return reply.send(items);
+		},
+	);
+
+	// GET /api/warehouse/stock (автоопределение orgId из сессии)
+	server.get("/stock", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"warehouse stock read",
+		);
+		if (!resolvedOrgId) return;
+
+		const items = await db
+			.select()
+			.from(inventoryItems)
+			.where(eq(inventoryItems.organizationId, resolvedOrgId))
+			.orderBy(inventoryItems.name);
+
+		return reply.send(items);
 	});
 };
 

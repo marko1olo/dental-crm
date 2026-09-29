@@ -18,6 +18,7 @@ import {
 	UUID_REGEX,
 	validateSsrfSafeRecordingUrl,
 } from "../services/telephony/telephonySecurity.js";
+import { telephonyOutboxService } from "../services/telephonyOutboxService.js";
 import { wsBroker } from "../services/websocketBroker.js";
 import { telephonyRecordingRoutes } from "./telephonyRecordingRoutes.js";
 import { telephonySipRoutes } from "./telephonySipRoutes.js";
@@ -30,6 +31,7 @@ export {
 	authenticatePbxWebhook,
 	isForbiddenPrivateIp,
 	validateSsrfSafeRecordingUrl,
+	telephonyOutboxService,
 };
 
 export const telephonyCallEventSchema = z.enum([
@@ -646,6 +648,20 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 	server.post<{ Params: { organizationId?: string } }>(
 		"/webhook",
 		handleCallWebhook,
+	);
+
+	// Instant-Ack Outbox Webhook endpoints (<50ms ACK)
+	server.post<{ Params: { organizationId: string } }>(
+		"/:organizationId/webhook/async",
+		async (request, reply) => {
+			return telephonyOutboxService.handleInstantAck(request, reply);
+		},
+	);
+	server.post<{ Params: { organizationId?: string } }>(
+		"/webhook/async",
+		async (request, reply) => {
+			return telephonyOutboxService.handleInstantAck(request, reply);
+		},
 	);
 
 	// --------------------------------------------------------------------------

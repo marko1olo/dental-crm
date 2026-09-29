@@ -190,6 +190,8 @@ export function procedureSpecificConsentPacket(document: GeneratedDocument) {
 			egisz_refusal: "отказ от передачи данных в ЕГИСЗ",
 			medical_intervention_refusal: "отказ от медицинского вмешательства",
 			warranty_policy: "гарантийные обязательства",
+			warranty_passport: "гарантийный паспорт и условия",
+			somatic_health_questionnaire: "анкета о соматическом здоровье и рисках",
 			xray_dose_load_sheet: "лист учета дозовых нагрузок при рентгене",
 		};
 		return `<h2>Процедурное информированное добровольное согласие: ${escapeHtml(procedureTypeLabels[payload.procedureType])}</h2>

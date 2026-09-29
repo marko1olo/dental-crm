@@ -57,6 +57,7 @@ import { registerFinancialPnlRoutes } from "./routes/financialPnl.js";
 import { registerPatientRelationshipsRoutes } from "./routes/patientRelationships.js";
 import { registerFamilyFinanceRoutes } from "./routes/finance_family.js";
 import { registerHealthRoutes } from "./routes/health.js";
+import { registerHardwareRoutes } from "./routes/hardware.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
 import { registerImagingPlanningRoutes } from "./routes/imaging_planning.js";
 import { registerImportRoutes } from "./routes/imports.js";
@@ -651,6 +652,7 @@ export async function createDenteApiApp(
 
 	await registerHealthRoutes(app);
 	await registerLanNetworkRoutes(app);
+	await registerHardwareRoutes(app);
 	await registerMobileOtaRoutes(app);
 
 	await registerAiRoutes(app);

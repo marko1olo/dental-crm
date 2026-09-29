@@ -203,6 +203,7 @@ export async function registerPublicAppointmentActionRoutes(
 					status: appointments.status,
 					startsAt: appointments.startsAt,
 					patientId: appointments.patientId,
+					comment: appointments.comment,
 				})
 				.from(appointments)
 				.where(
@@ -307,6 +308,75 @@ export async function registerPublicAppointmentActionRoutes(
 					200,
 					title,
 					`Спасибо! Приём ${moment} подтверждён. Ждём вас.`,
+					"ok",
+				);
+			}
+
+			if (expectedAction === "reschedule") {
+				if (appointment.status === "cancelled") {
+					return sendPage(
+						reply,
+						200,
+						title,
+						`Приём ${moment} уже отменён. Чтобы записаться снова, позвоните в клинику.`,
+						"ok",
+					);
+				}
+
+				const updatedComment = appointment.comment
+					? `${appointment.comment}\n[Запрос переноса пациентом]`
+					: "[Запрос переноса пациентом]";
+
+				await db
+					.update(appointments)
+					.set({ comment: updatedComment })
+					.where(
+						and(
+							eq(appointments.id, appointment.id),
+							eq(appointments.organizationId, payload.organizationId),
+						),
+					);
+
+				await markActionCodeUsed(resolved.code);
+
+				if (appointment.patientId) {
+					const [patient] = await db
+						.select({ fullName: patients.fullName })
+						.from(patients)
+						.where(eq(patients.id, appointment.patientId))
+						.limit(1);
+
+					await db.insert(communicationTasks).values({
+						organizationId: payload.organizationId,
+						patientId: appointment.patientId,
+						appointmentId: appointment.id,
+						assignedRole: "administrator",
+						channel: "phone",
+						intent: "appointment_confirmation",
+						status: "queued",
+						priority: "high",
+						dueAt: new Date(),
+						title: "Запрос переноса приёма по ссылке",
+						body:
+							`${patient?.fullName ?? "Пациент"} запросил перенос приёма ${moment} через ссылку в сообщении. ` +
+							"Свяжитесь с пациентом для выбора удобного времени.",
+						workflowCode: "appointment_reschedule_followup",
+					});
+				}
+
+				wsBroker.broadcastToOrganization(payload.organizationId, {
+					type: "APPOINTMENT_UPDATED",
+					payload: {
+						appointmentId: appointment.id,
+						source: "patient_reschedule_request",
+					},
+				});
+
+				return sendPage(
+					reply,
+					200,
+					title,
+					`Запрос на перенос приёма ${moment} принят. Администратор свяжется с вами для согласования нового удобного времени.`,
 					"ok",
 				);
 			}

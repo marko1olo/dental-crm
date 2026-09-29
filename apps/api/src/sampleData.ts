@@ -6164,6 +6164,10 @@ export function updateClinicProfile(
 		);
 	if (input.egiszEnabled !== undefined)
 		clinicProfile.egiszEnabled = input.egiszEnabled;
+	if (input.logoUrl !== undefined)
+		clinicProfile.logoUrl = nullableTrimmed(input.logoUrl);
+	if (input.stampUrl !== undefined)
+		clinicProfile.stampUrl = nullableTrimmed(input.stampUrl);
 	clinicProfile.updatedAt = new Date().toISOString();
 	recordAuditEvent({
 		entityType: "clinic_profile",

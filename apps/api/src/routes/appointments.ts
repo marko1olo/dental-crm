@@ -155,6 +155,8 @@ export const createAppointmentHandler = async (
 		if (
 			!rawBody.doctorUserId ||
 			rawBody.doctorUserId === "default-doctor" ||
+			rawBody.doctorUserId === "doctor-solo" ||
+			rawBody.doctorUserId === "doctor-default" ||
 			(typeof rawBody.doctorUserId === "string" && !rawBody.doctorUserId.trim())
 		) {
 			const [firstActiveDoctor] = await db

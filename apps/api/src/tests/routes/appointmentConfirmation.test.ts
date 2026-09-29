@@ -543,8 +543,6 @@ describe("страница подтверждения приёма", () => {
 				env,
 			),
 		);
-		assert.ok(links);
-
 		const response = await app.inject({
 			method: "GET",
 			url: pathOf(links.cancelLink),
@@ -623,6 +621,49 @@ describe("страница подтверждения приёма", () => {
 				.where(eq(communicationTasks.organizationId, ORG_ID)),
 		);
 		assert.equal(tasks.length, 1);
+	});
+
+	test("перенос по ссылке ставит задачу администратору и возвращает 200", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const links = await withFixtureTenant(ORG_ID, async () =>
+			issueAppointmentActionLinks(
+				{
+					organizationId: ORG_ID,
+					appointmentId: APPOINTMENT_ID,
+					startsAt: soon,
+				},
+				new Date(),
+				env,
+			),
+		);
+		assert.ok(links);
+		assert.ok(links.rescheduleLink, "ссылка на перенос должна быть выдана");
+
+		const response = await app.inject({
+			method: "GET",
+			url: pathOf(links.rescheduleLink),
+		});
+		assert.equal(response.statusCode, 200, response.body.slice(0, 200));
+		assert.ok(response.body.includes("Запрос на перенос"));
+
+		const tasks = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select({
+					title: communicationTasks.title,
+					workflowCode: communicationTasks.workflowCode,
+				})
+				.from(communicationTasks)
+				.where(
+					and(
+						eq(communicationTasks.organizationId, ORG_ID),
+						eq(communicationTasks.appointmentId, APPOINTMENT_ID),
+						eq(communicationTasks.workflowCode, "appointment_reschedule_followup"),
+					),
+				),
+		);
+		assert.equal(tasks.length, 1);
+		assert.ok(tasks[0]?.title.includes("перенос"));
 	});
 
 	test("переход по ссылке отмечается временем", async (context) => {

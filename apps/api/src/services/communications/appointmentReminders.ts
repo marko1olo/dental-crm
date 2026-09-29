@@ -27,6 +27,7 @@ import {
 } from "../../db/rls.js";
 import {
 	appointments,
+	chairs,
 	clinics,
 	communicationOutbox,
 	communicationSettings,
@@ -378,6 +379,7 @@ async function scheduleForOrganization(
 				id: appointments.id,
 				patientId: appointments.patientId,
 				doctorUserId: appointments.doctorUserId,
+				chairId: appointments.chairId,
 				startsAt: appointments.startsAt,
 				status: appointments.status,
 			})
@@ -391,14 +393,8 @@ async function scheduleForOrganization(
 				),
 			);
 
-		// ФИО пациентов, ФИО врачей и согласия — по одному запросу на всю выборку
-		// окна, а не по три запроса на приём. Прежний вариант делал 3N+1 обращений
-		// на каждый порог оповещения: при 30 приёмах в день и двух порогах это 182
-		// запроса за проход планировщика вместо 8. Каждый занимал соединение из
-		// пула, общего с интерактивной работой администраторов, поэтому фоновая
-		// рассылка напоминаний конкурировала со стойкой регистрации. Правило
-		// «согласия читаются пакетом» уже было записано в рассылках с той же
-		// причиной — здесь оно наконец соблюдается через общий consentLoader.
+		// ФИО пациентов, ФИО врачей, кабинеты/кресла и согласия — по одному запросу на всю выборку
+		// окна, а не по три запроса на приём.
 		const duePatientIds = [
 			...new Set(
 				dueAppointments
@@ -410,6 +406,13 @@ async function scheduleForOrganization(
 			...new Set(
 				dueAppointments
 					.map((row) => row.doctorUserId)
+					.filter((id): id is string => !!id),
+			),
+		];
+		const dueChairIds = [
+			...new Set(
+				dueAppointments
+					.map((row) => row.chairId)
 					.filter((id): id is string => !!id),
 			),
 		];
@@ -431,8 +434,7 @@ async function scheduleForOrganization(
 		// Отбор врачей сознательно оставлен без условия по организации: прежний
 		// запрос его тоже не имел, а добавить его — значит потерять ФИО врача у
 		// приёма с чужим doctor_user_id, и тогда шаблон с {doctor} не отрендерится
-		// и напоминание просто не уйдёт. Молча перестать напоминать хуже, чем
-		// подставить имя. Отсутствие отбора по организации записано долгом.
+		// и напоминание просто не уйдёт.
 		const doctorRows =
 			dueDoctorIds.length > 0
 				? await db
@@ -441,6 +443,20 @@ async function scheduleForOrganization(
 						.where(inArray(users.id, dueDoctorIds))
 				: [];
 		const doctorById = new Map(doctorRows.map((row) => [row.id, row]));
+
+		const chairRows =
+			dueChairIds.length > 0
+				? await db
+						.select({ id: chairs.id, name: chairs.name })
+						.from(chairs)
+						.where(
+							and(
+								eq(chairs.organizationId, organizationId),
+								inArray(chairs.id, dueChairIds),
+							),
+						)
+				: [];
+		const chairById = new Map(chairRows.map((row) => [row.id, row]));
 
 		const consentsByPatient = await loadConsentsByPatient(
 			organizationId,
@@ -481,7 +497,15 @@ async function scheduleForOrganization(
 			if (clinic?.address) values.clinicAddress = clinic.address;
 			if (doctor?.fullName) values.doctor = shortDoctorName(doctor.fullName);
 
-			// Ссылки «подтвердить» и «отменить». Если публичный адрес клиники не
+			const chair = appointment.chairId
+				? chairById.get(appointment.chairId)
+				: undefined;
+			if (chair?.name) {
+				values.cabinet = chair.name;
+				values.chair = chair.name;
+			}
+
+			// Ссылки «подтвердить», «отменить» и «перенести». Если публичный адрес клиники не
 			// настроен, переменных просто нет: шаблон с {confirmLink} тогда не
 			// отрендерится и напоминание не уйдёт с пустым местом вместо ссылки.
 			const links = await issueAppointmentActionLinks(
@@ -495,6 +519,9 @@ async function scheduleForOrganization(
 			if (links) {
 				values.confirmLink = links.confirmLink;
 				values.cancelLink = links.cancelLink;
+				if (links.rescheduleLink) {
+					values.rescheduleLink = links.rescheduleLink;
+				}
 			}
 
 			const outcome = await enqueueReminderForAppointment({

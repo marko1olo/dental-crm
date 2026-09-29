@@ -34,6 +34,7 @@ import {
 	ensureOrganizationExpenseReasons,
 } from "../db/seeds/seed_cash_and_reasons.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { FiscalResilienceService } from "../services/fiscalResilienceService.js";
 
 export async function registerCashboxRoutes(app: FastifyInstance) {
 	/**
@@ -786,6 +787,32 @@ export async function registerCashboxRoutes(app: FastifyInstance) {
 
 		return reply.send({ data: ops, total: ops.length });
 	});
+
+	/**
+	 * 14. POST /api/cashbox/transactions/:id/retry-fiscalize & POST /api/cash/transactions/:id/retry-fiscalize
+	 * Безопасная повторная фискализация транзакции/чека (54-ФЗ) после восстановления связи/бумаги.
+	 */
+	const handleRetryFiscalize = async (
+		request: FastifyRequest<{ Params: { id: string } }>,
+		reply: FastifyReply,
+	) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"retry-fiscalize cash transaction",
+		);
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
+
+		return FiscalResilienceService.handleRetryFiscalizeRoute(
+			request,
+			reply,
+			orgId,
+		);
+	};
+
+	app.post("/api/cashbox/transactions/:id/retry-fiscalize", handleRetryFiscalize);
+	app.post("/api/cash/transactions/:id/retry-fiscalize", handleRetryFiscalize);
 }
 
 export default registerCashboxRoutes;

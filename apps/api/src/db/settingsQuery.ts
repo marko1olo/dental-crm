@@ -317,6 +317,10 @@ export async function getClinicSettingsFromDb(
 		.from(schema.chairs)
 		.where(eq(schema.chairs.organizationId, organizationId));
 
+	const orgFlags = (org.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
+	const logoUrl = typeof orgFlags.logoUrl === "string" ? orgFlags.logoUrl : null;
+	const stampUrl = typeof orgFlags.stampUrl === "string" ? orgFlags.stampUrl : null;
+
 	const profile: ClinicProfile = {
 		organizationId: org.id,
 		clinicName: clinic?.name || org.name,
@@ -340,6 +344,8 @@ export async function getClinicSettingsFromDb(
 		scheduleDefaults: narrowScheduleDefaults(org.clinicSchedule),
 		networkEnabled: false,
 		egiszEnabled: false,
+		logoUrl,
+		stampUrl,
 		updatedAt: org.updatedAt.toISOString(),
 	};
 
@@ -446,6 +452,20 @@ export async function updateClinicProfileInDb(
 	if (input.scheduleDefaults !== undefined)
 		updateData.clinicSchedule = input.scheduleDefaults;
 
+	if (input.logoUrl !== undefined || input.stampUrl !== undefined) {
+		const [currentOrg] = await db
+			.select({ flags: schema.organizations.workspaceFeatureFlags })
+			.from(schema.organizations)
+			.where(eq(schema.organizations.id, organizationId))
+			.limit(1);
+		const existingFlags =
+			(currentOrg?.flags as Record<string, unknown> | null) ?? {};
+		const updatedFlags = { ...existingFlags };
+		if (input.logoUrl !== undefined) updatedFlags.logoUrl = input.logoUrl;
+		if (input.stampUrl !== undefined) updatedFlags.stampUrl = input.stampUrl;
+		updateData.workspaceFeatureFlags = updatedFlags;
+	}
+
 	await db
 		.update(schema.organizations)
 		.set(updateData)
@@ -458,10 +478,25 @@ export async function updateClinicProfileInDb(
 	if (input.timezone !== undefined) clinicUpdateData.timezone = input.timezone;
 
 	if (Object.keys(clinicUpdateData).length > 0) {
-		await db
-			.update(schema.clinics)
-			.set(clinicUpdateData)
-			.where(eq(schema.clinics.organizationId, organizationId));
+		const existingClinic = await db
+			.select({ id: schema.clinics.id })
+			.from(schema.clinics)
+			.where(eq(schema.clinics.organizationId, organizationId))
+			.limit(1);
+
+		if (existingClinic.length > 0) {
+			await db
+				.update(schema.clinics)
+				.set(clinicUpdateData)
+				.where(eq(schema.clinics.organizationId, organizationId));
+		} else {
+			await db.insert(schema.clinics).values({
+				organizationId,
+				name: input.clinicName ?? "Клиника",
+				phone: input.phone ?? null,
+				timezone: input.timezone ?? "Europe/Samara",
+			});
+		}
 	}
 }
 

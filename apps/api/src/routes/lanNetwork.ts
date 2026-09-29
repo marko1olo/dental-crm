@@ -23,9 +23,11 @@ import {
 	getRankedLanInterfaces,
 } from "../services/lanDiscoveryService.js";
 import { getLanMeshService } from "../services/lanMeshService.js";
+import { getLanMeshAutoJoinService } from "../services/lanMeshAutoJoinService.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
 import {
 	lanMeshHandshakePayloadSchema,
+	lanMeshRoleSchema,
 	queuedMeshMutationSchema,
 } from "@dental/shared";
 
@@ -519,4 +521,89 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			statusBadge: meshService.getStatusBadge(),
 		});
 	});
+
+	/**
+	 * GET /api/network/mesh/auto-join/status
+	 * Returns current 6-digit PIN, remaining expiration time, and QR pairing URI.
+	 */
+	app.get("/api/network/mesh/auto-join/status", async (_request: FastifyRequest, reply: FastifyReply) => {
+		const autoJoin = getLanMeshAutoJoinService();
+		const status = autoJoin.getPairingStatus();
+		return reply.send({
+			ok: true,
+			status,
+		});
+	});
+
+	/**
+	 * POST /api/network/mesh/auto-join/rotate
+	 * Forces rotation of the 6-digit PIN (requires authenticated clinic session).
+	 */
+	app.post("/api/network/mesh/auto-join/rotate", async (request: FastifyRequest, reply: FastifyReply) => {
+		const identity = getRequestIdentity(request);
+		if (!identity.verified || !identity.organizationId) {
+			return reply.code(401).send({
+				ok: false,
+				error: "Unauthorized",
+				message: "Для ротации PIN-кода сопряжения требуется авторизованная сессия клиники.",
+			});
+		}
+
+		const autoJoin = getLanMeshAutoJoinService();
+		const pinInfo = autoJoin.rotatePin(true);
+		return reply.send({
+			ok: true,
+			pinInfo,
+		});
+	});
+
+	/**
+	 * POST /api/network/mesh/auto-join/verify
+	 * Validates entered 6-digit PIN from doctor tablet or secondary computer,
+	 * verifies mutual authentication, and joins the local clinic mesh.
+	 */
+	app.post("/api/network/mesh/auto-join/verify", async (request: FastifyRequest, reply: FastifyReply) => {
+		const autoJoinVerifySchema = z.object({
+			pin: z.string().min(6).max(6),
+			nodeId: z.string().optional(),
+			clientName: z.string().optional(),
+			role: lanMeshRoleSchema.optional(),
+			appVersion: z.string().optional(),
+			schemaVersion: z.union([z.number(), z.string()]).optional(),
+			port: z.number().int().positive().optional(),
+		});
+
+		const parseRes = autoJoinVerifySchema.safeParse(request.body);
+		if (!parseRes.success) {
+			return reply.code(400).send({
+				ok: false,
+				error: "InvalidRequest",
+				message: "Некорректные параметры сопряжения. Ожидается 6-значный цифровой PIN.",
+				details: parseRes.error.format(),
+			});
+		}
+
+		const clientIp = request.ip || "127.0.0.1";
+		const autoJoin = getLanMeshAutoJoinService();
+		const joinResult = autoJoin.verifyAndJoin({
+			...parseRes.data,
+			clientIp,
+		});
+
+		if (!joinResult.success) {
+			const statusCode = joinResult.error === "RATE_LIMITED" ? 429 : 403;
+			return reply.code(statusCode).send({
+				ok: false,
+				error: joinResult.error,
+				message: joinResult.message,
+				retryAfterSeconds: joinResult.retryAfterSeconds,
+			});
+		}
+
+		return reply.send({
+			ok: true,
+			join: joinResult,
+		});
+	});
 }
+
