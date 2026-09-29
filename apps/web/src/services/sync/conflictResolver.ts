@@ -170,7 +170,7 @@ export const CLINICAL_043_SECTIONS: Array<{ field: string; labelRu: string }> = 
 	{ field: "treatment", labelRu: "Проведенное лечение и протокол манипуляций" },
 	{ field: "recommendations", labelRu: "Рекомендации, назначения и уход" },
 	{ field: "toothNumbers", labelRu: "Формула зубов (FDI)" },
-	{ field: "serviceCodes804n", labelRu: "Номенклатура услуг 804н" },
+	{ field: "serviceCodes804n", labelRu: "Оказанные услуги" },
 ];
 
 /**

@@ -747,7 +747,7 @@ export const CornerstonePlanningQuadrant: React.FC<CornerstonePlanningQuadrantPr
 								title="В 1 клик добавить услугу КЛКТ (A06.07.012, 3 800 ₽) в финансовый акт визита и смету плана лечения"
 							>
 								<Receipt className="w-3 h-3" />
-								<span>+ КТ в акт (804н)</span>
+								<span>+ КТ в акт</span>
 							</button>
 						)}
 					</div>

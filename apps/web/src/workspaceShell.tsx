@@ -289,7 +289,7 @@ export const sidebarHints: Record<AppView, string> = {
 	analytics: "Отчёты и выручка",
 	communications: "Звонки и чаты",
 	inventory: "Склад и материалы",
-	scanner: "СанПиН и стерилизация",
+	scanner: "Стерилизация и автоклавы",
 	leads: "Воронка и лиды",
 	settings: "Клиника и интеграции",
 	marketing: "Акции и реклама",
@@ -865,7 +865,7 @@ export function WorkspaceTopbar({
 				) : null}
 
 				{/*
-          РАБОЧИЙ СТОЛ ВРАЧА (Doctor Shift Cockpit) — сменные показатели, сделка % и пакетная подпись 043/у.
+          РАБОЧИЙ СТОЛ ВРАЧА (Doctor Shift Cockpit) — сменные показатели, сделка % и пакетная подпись медицинских карт.
           Кнопка отображается только при активной роли врача.
         */}
 				{selectedWorkspaceRole === "doctor" ? (

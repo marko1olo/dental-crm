@@ -473,7 +473,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
 						<Shield size={20} style={{ color: "var(--teal, #0d9488)", flexShrink: 0 }} />
 						<span style={{ fontSize: "13px", color: "var(--ink, #0f172a)" }}>
-							<strong>СанПиН 3.3686-21:</strong> Журнал контроля работы стерилизаторов (Форма № 257/у) и ПСО для проверок Роспотребнадзора.
+							<strong>Стерилизация:</strong> Журнал контроля работы стерилизаторов и ПСО для проверок Роспотребнадзора.
 						</span>
 					</div>
 					<button
@@ -491,7 +491,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						data-testid="documents-open-autoclave-log-257-btn"
 					>
 						<FileCheck size={16} />
-						<span>Журнал стерилизации (Форма 257/у)</span>
+						<span>Журнал контроля стерилизации</span>
 					</button>
 				</div>
 			)}

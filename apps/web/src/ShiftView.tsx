@@ -886,7 +886,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 														if (patient) setSelectedPatientId(patient.id);
 														window.location.hash = "finance";
 													}}
-													title="Перейти к оплате на кассе (54-ФЗ)"
+													title="Перейти к оплате на кассе"
 												>
 													<CreditCard size={12} aria-hidden="true" /> На кассу
 												</button>

@@ -6,6 +6,7 @@ import {
 	CheckCircle2,
 	ChevronDown,
 	FileText,
+	FileUp,
 	History,
 	Loader2,
 	MapPin,
@@ -222,6 +223,9 @@ export interface VisiographAnalyzerProps {
 	readonly toothCode?: string | undefined;
 	readonly initialScan?: XrayScan | undefined;
 	readonly patientId?: string | undefined;
+	readonly onConnectRvg?: (() => void) | undefined;
+	readonly onUploadDicom?: (() => void) | undefined;
+	readonly onReferToRadiology?: (() => void) | undefined;
 }
 
 function getInitialDefaultScan(toothCode?: string, patientId?: string | null): XrayScan {
@@ -261,6 +265,9 @@ export function VisiographAnalyzer({
 	toothCode,
 	initialScan,
 	patientId,
+	onConnectRvg,
+	onUploadDicom,
+	onReferToRadiology,
 }: VisiographAnalyzerProps = {}) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const dropRef = useRef<HTMLDivElement>(null);
@@ -1545,14 +1552,35 @@ export function VisiographAnalyzer({
 											ИИ запускается строго по кнопке врача (без авто-перезаписи формулы).
 										</p>
 									</div>
-									<div style={{ display: "flex", gap: "8px", alignItems: "center", justifyContent: "center", flexWrap: "wrap", marginTop: "4px" }}>
+									<div style={{ display: "flex", gap: "8px", alignItems: "center", justifyContent: "center", flexWrap: "wrap", marginTop: "6px" }}>
 										<span
-											className="btn-primary"
+											role="button"
+											tabIndex={0}
+											data-testid="btn-visiograph-connect-rvg"
+											onClick={(e) => {
+												e.stopPropagation();
+												if (onConnectRvg) {
+													onConnectRvg();
+												} else {
+													window.dispatchEvent(
+														new CustomEvent("dente-open-rvg-capture", {
+															detail: { toothCode, patientId: effectivePatientId },
+														}),
+													);
+													showToast("Запуск прямого захвата с визиографа RVG...", "info");
+												}
+											}}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" || e.key === " ") {
+													e.stopPropagation();
+													if (onConnectRvg) onConnectRvg();
+												}
+											}}
 											style={{
 												display: "inline-flex",
 												alignItems: "center",
 												gap: "6px",
-												padding: "0 20px",
+												padding: "0 16px",
 												height: "32px",
 												minHeight: "32px",
 												borderRadius: "8px",
@@ -1562,12 +1590,117 @@ export function VisiographAnalyzer({
 												color: "var(--on-teal, white)",
 												border: "1px solid var(--teal)",
 												boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+												cursor: "pointer",
+											}}
+										>
+											<Activity size={14} /> Подключить визиограф RVG
+										</span>
+
+										<span
+											role="button"
+											tabIndex={0}
+											data-testid="btn-visiograph-upload-dicom"
+											onClick={(e) => {
+												e.stopPropagation();
+												if (onUploadDicom) {
+													onUploadDicom();
+												} else {
+													fileInputRef.current?.click();
+												}
+											}}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" || e.key === " ") {
+													e.stopPropagation();
+													if (onUploadDicom) onUploadDicom();
+													else fileInputRef.current?.click();
+												}
+											}}
+											style={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "6px",
+												padding: "0 14px",
+												height: "32px",
+												minHeight: "32px",
+												borderRadius: "8px",
+												fontSize: "0.82rem",
+												fontWeight: 600,
+												background: "var(--paper-strong, #1e293b)",
+												color: "var(--ink, #f8fafc)",
+												border: "1px solid var(--line, #334155)",
+												boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+												cursor: "pointer",
+											}}
+										>
+											<FileUp size={14} /> Загрузить DICOM / КТ-архив
+										</span>
+
+										<span
+											role="button"
+											tabIndex={0}
+											data-testid="btn-visiograph-referral"
+											onClick={(e) => {
+												e.stopPropagation();
+												if (onReferToRadiology) {
+													onReferToRadiology();
+												} else {
+													window.dispatchEvent(
+														new CustomEvent("dente-open-radiology-referral", {
+															detail: { toothCode, patientId: effectivePatientId },
+														}),
+													);
+													showToast("Открытие формы направления на рентген-диагностику", "info");
+												}
+											}}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" || e.key === " ") {
+													e.stopPropagation();
+													if (onReferToRadiology) onReferToRadiology();
+												}
+											}}
+											style={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "6px",
+												padding: "0 14px",
+												height: "32px",
+												minHeight: "32px",
+												borderRadius: "8px",
+												fontSize: "0.82rem",
+												fontWeight: 500,
+												background: "var(--paper)",
+												color: "var(--ink)",
+												border: "1px solid var(--line)",
+												boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+												cursor: "pointer",
+											}}
+										>
+											<FileText size={14} /> Направить на рентген
+										</span>
+
+										<span
+											className="btn-primary"
+											style={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "6px",
+												padding: "0 14px",
+												height: "32px",
+												minHeight: "32px",
+												borderRadius: "8px",
+												fontSize: "0.82rem",
+												fontWeight: 500,
+												background: "transparent",
+												color: "var(--teal)",
+												border: "1px solid var(--teal)",
+												boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
 												opacity: isAnalyzing ? 0.5 : 1,
 												cursor: "pointer",
 											}}
 										>
 											Выбрать файл
 										</span>
+
 										<span
 											role="button"
 											tabIndex={0}
@@ -1593,8 +1726,8 @@ export function VisiographAnalyzer({
 												fontSize: "0.82rem",
 												fontWeight: 500,
 												background: "var(--paper)",
-												color: "var(--ink)",
-												border: "1px solid var(--line)",
+												color: "var(--muted)",
+												border: "1px dashed var(--line)",
 												boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
 												cursor: "pointer",
 												transition: "all 0.15s ease",

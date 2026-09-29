@@ -369,7 +369,7 @@ export async function routeFiscalReceiptPrint(
 			success: true,
 			bufferedOffline: true,
 			queueItemId: queuedItem.id,
-			userFriendlyMessageRu: "Чек поставлен в очередь печати 54-ФЗ. Будет напечатан при подключении к кассовому аппарату.",
+			userFriendlyMessageRu: "Чек поставлен в очередь печати. Будет напечатан при подключении к кассовому аппарату.",
 		};
 	} catch (err: unknown) {
 		logger.warn("[runtimeRouter] Error buffering receipt in queue manager:", err);

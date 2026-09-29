@@ -328,7 +328,7 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 												<span>Сквозная воронка привлечения пациентов (5 этапов)</span>
 											</h3>
 											<p className="text-xs text-[var(--muted,#94a3b8)]">
-												Отслеживание потерь на каждом этапе воронки от первичного клика до оплаты услуг по Номенклатуре 804н
+												Отслеживание потерь на каждом этапе воронки от первичного клика до оплаты услуг по прейскуранту
 											</p>
 										</div>
 										<div className="flex items-center gap-2">
@@ -636,7 +636,7 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 					<div className="text-xs text-[var(--muted,#94a3b8)] flex items-center gap-2">
 						<CheckCircle2 className="w-4 h-4 text-teal-400" />
 						<span>
-							Все расчеты ведутся в целочисленных копейках (Kopecks) без float-погрешностей по 54-ФЗ и МКБ-10.
+							Все расчеты ведутся в целочисленных копейках (Kopecks) без float-погрешностей по кассовому регламенту и клиническим стандартам.
 						</span>
 					</div>
 

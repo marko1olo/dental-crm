@@ -1573,7 +1573,7 @@ export const taxApplicationFormOptions: Array<{
 	value: TaxDeductionApplicationForm;
 	label: string;
 }> = [
-	{ value: "knd_1151156", label: "КНД 1151156, расходы с 2024" },
+	{ value: "knd_1151156", label: "Справка для налогового вычета (с 2024)" },
 	{ value: "legacy_2021_2023", label: "Старая справка, оплаты 2021-2023" },
 ];
 
@@ -1837,7 +1837,7 @@ export const denteTelegramHandoffTargets: Record<
 		view: "documents",
 		hash: "documents",
 		title: "Налоговые документы",
-		detail: "Открыт раздел КНД 1151156, заявлений, справок и фискальных оплат.",
+		detail: "Открыт раздел справок для налогового вычета, заявлений и оплат.",
 		documentKind: "tax_deduction_certificate",
 	},
 	billing: {

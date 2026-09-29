@@ -15,7 +15,7 @@ export type WorkspacePerspective =
 export const perspectiveLabels: Record<WorkspacePerspective, string> = {
 	standard: "Стандартный обзор",
 	chairsider: "Планшет у кресла (Стерильный)",
-	frontdesk: "Ресепшн и Касса 54-ФЗ",
+	frontdesk: "Ресепшн и Касса",
 	pediatric: "Детский приём (Молочный прикус)",
 	presentation: "Второй экран (Для пациента)",
 	orthodontic: "Ортодонтия (Таймлайн)",
@@ -33,7 +33,7 @@ export const perspectiveShortLabels: Record<WorkspacePerspective, string> = {
 export const perspectiveDescriptions: Record<WorkspacePerspective, string> = {
 	standard: "Полный рабочий стол со всеми клиническими и административными модулями.",
 	chairsider: "Крупные тач-кнопки ≥64px, голосовое управление без рук, быстрый доступ к КТ.",
-	frontdesk: "Экспресс-касса 54-ФЗ, справки НДФЛ в 1 клик, утренний обзвон без перегруза.",
+	frontdesk: "Экспресс-касса, справки на налоговый вычет в 1 клик, утренний обзвон без перегруза.",
 	pediatric: "Молочная зубная формула (51–85), привязка родителей, детские протоколы.",
 	presentation: "Чистый экран без себестоимости и заметок, 3 варианта плана, расчет рассрочки и вычета.",
 	orthodontic: "Таймлайн активаций брекетов/элайнеров, фотопротокол до/после, абонентские платежи.",

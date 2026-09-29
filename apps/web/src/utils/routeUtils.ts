@@ -30,7 +30,7 @@ export const viewLabels: Record<AppView, string> = {
 	analytics: "Аналитика",
 	communications: "Связь",
 	inventory: "Склад",
-	scanner: "СанПиН",
+	scanner: "Стерилизация",
 	leads: "Обращения",
 	settings: "Настройки",
 	marketing: "Маркетинг",

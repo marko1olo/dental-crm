@@ -47,6 +47,7 @@ import {
 	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
 } from "./safeLocalStorage";
+import { resilientFetch } from "./resilience/apiClientResilience";
 
 const CLINIC_TOKEN_STORAGE_KEY = DENTE_CLINIC_TOKEN_KEY;
 const STAFF_TOKEN_STORAGE_KEY = DENTE_STAFF_TOKEN_KEY;
@@ -348,7 +349,7 @@ export function installApiAuthFetch(): void {
 			const normalizedKey = normalizeApiUrl(rawUrl);
 
 			const fetchOperation = (async () => {
-				const response = await originalFetch(requestInput, requestInit);
+				const response = await resilientFetch(requestInput, requestInit, { fetchFn: originalFetch });
 				if (response.ok) {
 					try {
 						const cloneForCache = response.clone();
@@ -386,8 +387,8 @@ export function installApiAuthFetch(): void {
 		}
 
 		if (input instanceof Request && !init) {
-			return originalFetch(requestInput);
+			return resilientFetch(requestInput, undefined, { fetchFn: originalFetch });
 		}
-		return originalFetch(input, requestInit);
+		return resilientFetch(input, requestInit, { fetchFn: originalFetch });
 	};
 }

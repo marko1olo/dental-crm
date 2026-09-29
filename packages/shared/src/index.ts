@@ -14,6 +14,7 @@ export * from "./mdlp/index.js";
 export * from "./utils/index.js";
 export * from "./mobile/index.js";
 export * from "./hardware/index.js";
+export * from "./onboarding/index.js";
 export * from "./omniPlatformAdapter.js";
 
 // Canonical statutory Russian validators & exact money utilities (Mandate 8s)
@@ -6804,6 +6805,8 @@ export const updateClinicProfileSchema = z.object({
 	defaultVisitMinutes: z.number().int().positive().max(480).optional(),
 	scheduleDefaults: clinicScheduleDefaultsSchema.optional(),
 	egiszEnabled: z.boolean().optional(),
+	logoUrl: z.string().trim().max(2000).nullable().optional(),
+	stampUrl: z.string().trim().max(2000).nullable().optional(),
 });
 export type UpdateClinicProfileInput = z.infer<
 	typeof updateClinicProfileSchema

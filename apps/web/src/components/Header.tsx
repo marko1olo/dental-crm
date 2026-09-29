@@ -330,13 +330,13 @@ export function ClinicControlPill({
 
 				<span className="dnt-pill-divider hidden sm:block" />
 
-				{/* 2. 54-FZ Cash / KKT Status */}
+				{/* 2. Cash / KKT Status */}
 				<span
 					className="dnt-pill-segment"
-					title={`Касса 54-ФЗ: ККТ АТОЛ / Штрих-М Онлайн — Смена открыта (${formattedShiftTime})`}
+					title={`Касса: ККТ АТОЛ / Штрих-М Онлайн — Смена открыта (${formattedShiftTime})`}
 				>
 					<ShieldCheck size={12} className="text-emerald-500 shrink-0" />
-					<span className="hidden 2xl:inline">54-ФЗ</span>
+					<span className="hidden 2xl:inline">Касса</span>
 					<span className="dnt-pill-dot dnt-pill-dot--online" />
 					<span className="font-mono text-[10px] opacity-90 hidden 2xl:inline">
 						{formattedShiftTime}
@@ -428,7 +428,7 @@ export function ClinicControlPill({
 							</div>
 							<div className="p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))]">
 								<span className="text-[10px] text-[var(--muted,#475569)] block">
-									ККТ 54-ФЗ / ОФД
+									Касса / ОФД
 								</span>
 								<strong className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs flex items-center gap-1">
 									<ShieldCheck size={12} /> ККТ АТОЛ Онлайн (ФФД 1.2)

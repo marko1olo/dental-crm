@@ -257,7 +257,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 				}
 
 				onInsertProtocol043?.(fullProtocolText);
-				showToast("Протокол ортодонтии успешно внесен в дневник 043/у", "success");
+				showToast("Протокол ортодонтии успешно внесен в дневник приёма", "success");
 			} catch (_err) {
 				if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
 					navigator.clipboard.writeText(fullProtocolText).catch(() => {});
@@ -601,7 +601,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 					<div className="ortho-presets-bar" role="group" aria-label="Готовые клинические пресеты ортодонтии">
 						<div className="ortho-presets-label">
 							<Sparkles size={14} className="text-amber-500 shrink-0" />
-							<span>1-клик пресеты 043/у:</span>
+							<span>1-клик пресеты протоколов:</span>
 						</div>
 						<div className="ortho-presets-list">
 							{ORTHODONTIC_CLINICAL_PRESETS.map((preset) => {
@@ -625,11 +625,11 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 								type="button"
 								onClick={() => setShowPresetPreview(!showPresetPreview)}
 								className="ortho-preset-preview-toggle min-h-[44px] sm:min-h-[32px] sm:h-8 sm:py-1 px-3 py-2 inline-flex items-center gap-1.5"
-								title={showPresetPreview ? "Скрыть предпросмотр протокола" : "Показать предпросмотр текста для 043/у"}
+								title={showPresetPreview ? "Скрыть предпросмотр протокола" : "Показать предпросмотр текста протокола"}
 								data-testid="toggle-preset-preview-btn"
 							>
 								<Eye size={13} />
-								<span>{showPresetPreview ? "Скрыть" : "Текст 043/у"}</span>
+								<span>{showPresetPreview ? "Скрыть" : "Текст протокола"}</span>
 							</button>
 							<button
 								type="button"
@@ -649,7 +649,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<div className="ortho-preset-preview-box" data-testid="ortho-preset-preview-box">
 							<div className="ortho-preset-preview-header">
 								<span className="font-semibold text-xs text-[var(--ink)]">
-									Предпросмотр структурированного протокола для Формы 043/у ({activePreset.shortLabel}):
+									Предпросмотр структурированного протокола ({activePreset.shortLabel}):
 								</span>
 								<span className="text-[11px] text-[var(--muted)]">Автозаполнение • Без ручного набора</span>
 							</div>
@@ -712,9 +712,9 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 								className="ortho-checkbox w-5 h-5 cursor-pointer"
 								data-testid="insert-protocol-on-save-checkbox"
 							/>
-							<span>Вносить в дневник 043/у при сохранении</span>
+							<span>Вносить в дневник приёма при сохранении</span>
 						</label>
-						<span className="ortho-footer-ref-hint">Приказ МЗ РФ № 834н</span>
+						<span className="ortho-footer-ref-hint">Клинический протокол</span>
 					</div>
 
 					<div className="flex items-center gap-2.5 flex-wrap">
@@ -722,11 +722,11 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							type="button"
 							onClick={() => handleInsertProtocol043()}
 							className="ortho-btn-insert-043 min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 py-2.5 sm:py-1.5 inline-flex items-center gap-2"
-							title="Вставить структурированный протокол ортодонтии в дневник Формы 043/у"
+							title="Вставить структурированный протокол ортодонтии в дневник приёма"
 							data-testid="insert-ortho-protocol-043-btn"
 						>
 							<FileText size={16} />
-							<span>Вставить протокол ортодонтии в дневник 043/у</span>
+							<span>Вставить протокол ортодонтии в дневник</span>
 						</button>
 						<button
 							type="button"

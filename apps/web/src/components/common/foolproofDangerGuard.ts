@@ -85,7 +85,7 @@ export const DANGEROUS_ACTIONS_REGISTRY: Record<DangerousActionType, DangerousAc
 		cancelButtonLabelRu: "Отмена",
 		consequencesRu: [
 			"Все остатки и партии по данному материалу будут списаны",
-			"Правила автоматического списания по Приказу 804н перестанут работать для этой позиции",
+			"Правила автоматического списания материалов перестанут работать для этой позиции",
 		],
 		requiresExplicitCheckbox: false,
 		dangerSeverity: "moderate",

@@ -113,7 +113,7 @@ export const A2hsPromptModal: React.FC<A2hsPromptModalProps> = ({
 							<FileText className="w-4 h-4 text-cyan-400" />
 						</div>
 						<div>
-							<div className="a2hs-perk-title">План лечения и чеки 54-ФЗ</div>
+							<div className="a2hs-perk-title">План лечения и чеки</div>
 							<div className="a2hs-perk-desc">
 								Дорожная карта с этапами и справка на вычет 13% НДФЛ всегда под рукой
 							</div>

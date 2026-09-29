@@ -436,9 +436,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				<div className="settings-role-hint-pill hidden lg:inline-flex">
 					<span className="settings-role-hint-dot" aria-hidden="true" />
 					<span>
-						{roleMode === "doctor" && "Кабинет врача: персональные стандарты, шаблоны 043/у и автономия"}
+						{roleMode === "doctor" && "Кабинет врача: персональные стандарты, шаблоны медкарты и автономия"}
 						{roleMode === "admin" && "Кабинет администратора: кресла, график смен, права и напоминания"}
-						{roleMode === "owner" && "Кабинет владельца: реквизиты, 54-ФЗ, прайс 804н и масштаб"}
+						{roleMode === "owner" && "Кабинет владельца: реквизиты, касса, прейскурант и масштаб"}
 						{roleMode === "all" && "Полный каталог: все модули и технические параметры клиники"}
 					</span>
 				</div>
@@ -610,7 +610,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 							</ErrorBoundary>
 						)}
 						{settingsTab === "procedure-boms" && (
-							<ErrorBoundary moduleName="Техкарты расхода материалов 804н">
+							<ErrorBoundary moduleName="Техкарты расхода материалов">
 								<MaterialBomsSettingsPanel
 									{...(logic?.auth?.currentUser?.organizationId
 										? { organizationId: logic.auth.currentUser.organizationId }

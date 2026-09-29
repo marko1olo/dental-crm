@@ -42,6 +42,7 @@ import {
 	Users,
 } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { isDemoShowcaseMode, getDemoExecutiveAnalytics } from "../../lib/demoMode";
 import { ExecutiveFunnelMetrics } from "./ExecutiveFunnelMetrics";
 import { ExecutivePnlWidget } from "./ExecutivePnlWidget";
 import "./executiveDashboard.css";
@@ -174,6 +175,12 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 		setError(null);
 
 		try {
+			if (isDemoShowcaseMode()) {
+				setPayload(getDemoExecutiveAnalytics(period));
+				setLoading(false);
+				return;
+			}
+
 			const res = await fetch(`/api/analytics/executive?period=${period}`, {
 				headers: {
 					...denteAdminSecretRequestHeaders(),
@@ -326,16 +333,45 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 							</div>
 						</div>
 					</div>
-					{period !== "month" && (
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
 						<button
 							type="button"
 							className="executive-refresh-btn"
-							onClick={() => handlePeriodSelect("month")}
-							style={{ flexShrink: 0 }}
+							onClick={() => {
+								if (onNavigateToSection) {
+									onNavigateToSection("schedule");
+								} else if (typeof window !== "undefined") {
+									window.location.hash = "#schedule";
+								}
+							}}
+							title="Записать пациента на приём"
 						>
-							Показать за месяц
+							Записать пациента
 						</button>
-					)}
+						<button
+							type="button"
+							className="executive-refresh-btn"
+							onClick={() => {
+								if (onNavigateToSection) {
+									onNavigateToSection("shift");
+								} else if (typeof window !== "undefined") {
+									window.location.hash = "#shift";
+								}
+							}}
+							title="Открыть смену или перейти в кассу"
+						>
+							Перейти в кассу
+						</button>
+						{period !== "month" && (
+							<button
+								type="button"
+								className="executive-refresh-btn"
+								onClick={() => handlePeriodSelect("month")}
+							>
+								Показать за месяц
+							</button>
+						)}
+					</div>
 				</div>
 			)}
 

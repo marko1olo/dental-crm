@@ -545,7 +545,7 @@ export async function importOfflineClinicBackup(
 			);
 			restoredPricelists++;
 		} catch {
-			errors.push("Ошибка восстановления прайс-листа 804н");
+			errors.push("Ошибка восстановления прейскуранта услуг");
 		}
 	}
 

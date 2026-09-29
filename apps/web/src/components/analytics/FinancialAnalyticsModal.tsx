@@ -225,7 +225,7 @@ export function FinancialAnalyticsModal({
 								<h2 className="fin-analytics-title">
 									Финансовая Аналитика и P&L Клиники
 								</h2>
-								<span className="fin-analytics-badge">54-ФЗ & Управленческий учет</span>
+								<span className="fin-analytics-badge">Касса и управленческий учет</span>
 							</div>
 							<p className="fin-analytics-subtitle">
 								Валовая прибыль • Себестоимость • EBITDA • Чистая рентабельность • Распределение по кассам
@@ -480,7 +480,7 @@ export function FinancialAnalyticsModal({
 						<div className="fin-analytics-panel-header">
 							<h3 className="fin-analytics-panel-title">
 								<Wallet size={16} color="var(--ok-fg)" />
-								<span>Кассовые счета и эквайринг (54-ФЗ)</span>
+								<span>Кассовые счета и эквайринг</span>
 							</h3>
 							<button
 								type="button"
@@ -562,7 +562,7 @@ export function FinancialAnalyticsModal({
 													</td>
 													<td style={{ color: "var(--muted)" }}>
 														{box.code.includes("cash")
-															? "Наличные платежи 54-ФЗ"
+															? "Наличные платежи кассы"
 															: box.code.includes("terminal")
 																? "Безналичный эквайринг"
 																: box.code.includes("checking")
@@ -681,7 +681,7 @@ export function FinancialAnalyticsModal({
 				{/* 5. FOOTER */}
 				<footer className="fin-analytics-footer">
 					<div style={{ fontSize: 11, color: "var(--muted)" }}>
-						Управленческий учет ДЕНТЕ CRM • 54-ФЗ • Расчет в целочисленных копейках
+						Управленческий учет ДЕНТЕ CRM • Фискализация чеков • Расчет в целочисленных копейках
 					</div>
 					<button
 						type="button"

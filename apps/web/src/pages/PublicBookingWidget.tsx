@@ -5,6 +5,7 @@ import { PublicOnlineBookingWidget } from "../components/booking/PublicOnlineBoo
 import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
 import { DEMO_PATIENT_CABINET } from "../components/portal/patientCabinet/patientCabinetPresets";
 import type { PatientPersonalCabinetData } from "../components/portal/patientCabinet/patientCabinetEngine";
+import { isDemoShowcaseMode } from "../lib/demoMode";
 import { AuthArtBackground } from "../components/auth/AuthArtBackground";
 import "./PublicBookingWidget.css";
 
@@ -26,7 +27,9 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 	const [activeMode, setActiveMode] = useState<"booking" | "cabinet">(defaultMode);
 	const [isCabinetModalOpen, setIsCabinetModalOpen] = useState(false);
 	const [portalToken, setPortalToken] = useState<string | null>(null);
-	const [patientData, setPatientData] = useState<PatientPersonalCabinetData>(DEMO_PATIENT_CABINET);
+	const [patientData, setPatientData] = useState<PatientPersonalCabinetData | undefined>(() =>
+		isDemoShowcaseMode() ? DEMO_PATIENT_CABINET : undefined,
+	);
 
 	// Авторизация в портале
 	const [loginPhone, setLoginPhone] = useState("");

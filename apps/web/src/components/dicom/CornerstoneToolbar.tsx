@@ -568,7 +568,7 @@ export const CornerstoneToolbar: React.FC<CornerstoneToolbarProps> = ({
 									title="В 1 клик добавить услугу КЛКТ (A06.07.012, 3 800 ₽) в финансовый акт визита и план лечения"
 								>
 									<Receipt className="w-3.5 h-3.5" />
-									<span>+ КТ в акт (804н)</span>
+									<span>+ КТ в акт</span>
 								</button>
 							)}
 

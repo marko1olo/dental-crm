@@ -136,7 +136,7 @@ export const DoctorShiftEarningsWidget: React.FC<DoctorShiftEarningsWidgetProps>
 					printWin.print();
 				}, 250);
 			}
-			showToast("Расчетная ведомость Т-51 отправлена на печать", "info");
+			showToast("Расчет зарплаты за смену отправлен на печать", "info");
 		} catch (err) {
 			showToast("Не удалось открыть окно печати", "error");
 		}
@@ -330,10 +330,10 @@ export const DoctorShiftEarningsWidget: React.FC<DoctorShiftEarningsWidgetProps>
 							onClick={handlePrintSlip}
 							className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[11px] font-bold text-[var(--ink)] flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
 							data-testid="btn-print-shift-t51"
-							title="Распечатать расчетный листок за смену (Форма Т-51)"
+							title="Распечатать расчет зарплаты за смену"
 						>
 							<Printer className="w-3 h-3 text-teal-600" />
-							<span>Печать Т-51</span>
+							<span>Печать зарплаты</span>
 						</button>
 					</div>
 				</div>

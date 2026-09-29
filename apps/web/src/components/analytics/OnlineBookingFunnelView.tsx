@@ -23,7 +23,7 @@ export function OnlineBookingFunnelView({
 	return (
 		<div className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-3">
 			<h4 className="text-sm font-bold text-[var(--ink)] m-0">
-				6 этапов конверсии онлайн-записи (от показа до кассового чека 54-ФЗ)
+				6 этапов конверсии онлайн-записи (от показа до кассового чека)
 			</h4>
 
 			{onlineSummary.totalViews === 0 && (
@@ -77,7 +77,7 @@ export function OnlineBookingFunnelView({
 					{
 						step: "5. Оплата лечения",
 						count: onlineSummary.totalPaid,
-						label: "Пробит чек 54-ФЗ",
+						label: "Оплачено в кассе",
 						dropoff: "100% конверсия",
 						color:
 							"bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",

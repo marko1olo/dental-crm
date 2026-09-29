@@ -21,9 +21,11 @@ import {
 	ClipboardCheck,
 	Plus,
 	ShieldCheck,
+	Sparkles,
 	X,
 	Zap,
 } from "lucide-react";
+import { RapidLaunchWizard } from "./RapidLaunchWizard";
 import { AuthArtBackground } from "../auth/AuthArtBackground";
 import { showToast } from "../GlobalToast";
 
@@ -392,6 +394,19 @@ export function OnboardingWizardModal({
 	previousOnboardingStep,
 	nextOnboardingStep,
 }: OnboardingWizardModalProps) {
+	const [showRapidWizard, setShowRapidWizard] = React.useState(false);
+
+	if (showRapidWizard) {
+		return (
+			<RapidLaunchWizard
+				isModal={true}
+				onClose={() => setShowRapidWizard(false)}
+				onFinished={onDismissOnboarding}
+				onSkipped={onDismissOnboarding}
+			/>
+		);
+	}
+
 	const dismissOnboarding = () => {
 		if (!onboardingReadyToFinish) {
 			showToast(
@@ -511,6 +526,14 @@ export function OnboardingWizardModal({
 					title="Мгновенный запуск клиники с базовыми настройками (соло-врач, 1 кресло)"
 				>
 					<Zap aria-hidden="true" /> 0-клик старт (соло-врач)
+				</button>
+				<button
+					className="secondary-button onboarding-rapid-wizard-btn"
+					type="button"
+					onClick={() => setShowRapidWizard(true)}
+					title="3-шаговый экспресс-мастер быстрого запуска клиники за 60 секунд"
+				>
+					<Sparkles aria-hidden="true" /> ⚡ Экспресс-мастер (3 шага / 60 сек)
 				</button>
 				<button
 					className="secondary-button"

@@ -66,8 +66,12 @@ export interface DicomViewerModalProps {
 	readonly title?: string | undefined;
 	readonly toothFdiCode?: string | undefined;
 	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
 	readonly studyDate?: string | undefined;
 	readonly onInsertToProtocol?: ((text: string) => void) | undefined;
+	readonly onConnectRvg?: (() => void) | undefined;
+	readonly onUploadDicom?: (() => void) | undefined;
+	readonly onReferToRadiology?: (() => void) | undefined;
 }
 
 export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
@@ -77,13 +81,17 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	title = "Дентальный снимок (RVG / DICOM)",
 	toothFdiCode,
 	patientName,
+	patientId,
 	studyDate,
 	onInsertToProtocol,
+	onConnectRvg,
+	onUploadDicom,
+	onReferToRadiology,
 }) => {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const defaultScanSrc =
 		imageSrc ||
-		((isDemoShowcaseMode() || isDemoPatientId(patientName))
+		((isDemoShowcaseMode() || isDemoPatientId(patientName) || isDemoPatientId(patientId))
 			? (toothFdiCode === "16"
 				? "/radiology/sample_rvg_tooth16.jpg"
 				: "/radiology/sample_rvg_tooth36_periapical.jpg")
@@ -1283,17 +1291,27 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 					<div style={{ display: "flex", gap: "10px", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
 						<button
 							type="button"
+							data-testid="btn-dicom-connect-rvg"
 							onClick={(e) => {
 								e.stopPropagation();
-								fileInputRef.current?.click();
+								if (onConnectRvg) {
+									onConnectRvg();
+								} else {
+									window.dispatchEvent(
+										new CustomEvent("dente-open-rvg-capture", {
+											detail: { toothFdiCode, patientName, patientId },
+										}),
+									);
+									showToast("Запуск прямого захвата с визиографа RVG...", "info");
+								}
 							}}
 							style={{
-								padding: "10px 20px",
+								padding: "10px 18px",
 								borderRadius: "8px",
-								border: "none",
+								border: "1px solid #0d9488",
 								backgroundColor: "#0d9488",
 								color: "#ffffff",
-								fontSize: "14px",
+								fontSize: "13px",
 								fontWeight: 600,
 								cursor: "pointer",
 								display: "inline-flex",
@@ -1302,8 +1320,70 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 								boxShadow: "0 4px 12px rgba(13, 148, 136, 0.3)",
 							}}
 						>
-							<FileUp size={16} /> Выбрать файл со снимком
+							<Activity size={16} /> Подключить визиограф RVG
 						</button>
+
+						<button
+							type="button"
+							data-testid="btn-dicom-upload-archive"
+							onClick={(e) => {
+								e.stopPropagation();
+								if (onUploadDicom) {
+									onUploadDicom();
+								} else {
+									fileInputRef.current?.click();
+								}
+							}}
+							style={{
+								padding: "10px 18px",
+								borderRadius: "8px",
+								border: "1px solid #334155",
+								backgroundColor: "#1e293b",
+								color: "#f8fafc",
+								fontSize: "13px",
+								fontWeight: 600,
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "8px",
+							}}
+						>
+							<FileUp size={16} /> Загрузить DICOM / КТ-архив
+						</button>
+
+						<button
+							type="button"
+							data-testid="btn-dicom-referral"
+							onClick={(e) => {
+								e.stopPropagation();
+								if (onReferToRadiology) {
+									onReferToRadiology();
+								} else {
+									window.dispatchEvent(
+										new CustomEvent("dente-open-radiology-referral", {
+											detail: { toothFdiCode, patientName, patientId },
+										}),
+									);
+									showToast("Открытие формы направления на рентген-диагностику", "info");
+								}
+							}}
+							style={{
+								padding: "10px 18px",
+								borderRadius: "8px",
+								border: "1px solid #334155",
+								backgroundColor: "#1e293b",
+								color: "#cbd5e1",
+								fontSize: "13px",
+								fontWeight: 500,
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "8px",
+							}}
+						>
+							<FileText size={16} /> Направить на рентген
+						</button>
+
 						<button
 							type="button"
 							data-testid="btn-dicom-load-demo"
@@ -1318,10 +1398,10 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							style={{
 								padding: "10px 16px",
 								borderRadius: "8px",
-								border: "1px solid #334155",
-								backgroundColor: "#1e293b",
-								color: "#e2e8f0",
-								fontSize: "14px",
+								border: "1px dashed #475569",
+								backgroundColor: "rgba(30, 41, 59, 0.6)",
+								color: "#94a3b8",
+								fontSize: "13px",
 								fontWeight: 500,
 								cursor: "pointer",
 								display: "inline-flex",

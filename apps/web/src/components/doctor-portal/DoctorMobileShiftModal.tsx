@@ -158,7 +158,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 	// Start Batch Signing Session
 	const handleInitiateBatchSigning = () => {
 		if (unsignedAppointmentIds.length === 0) {
-			showToast("Все медицинские карты ф. 043/у уже подписаны!", "success");
+			showToast("Все медицинские карты уже подписаны!", "success");
 			return;
 		}
 
@@ -210,7 +210,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 	// 1-Click Legal PEP Signing via Active Session (Mandate 8e, 63-ФЗ ст. 9, Приказ Минздрава РФ 947н)
 	const handleSessionPepSigning = (targetIds: readonly string[]) => {
 		if (targetIds.length === 0) {
-			showToast("Все медицинские карты ф. 043/у уже подписаны!", "success");
+			showToast("Все медицинские карты уже подписаны!", "success");
 			return;
 		}
 
@@ -329,7 +329,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 						<div className="doctor-batch-pep-header">
 							<div className="flex items-center gap-2 text-[var(--gold)] font-bold text-xs">
 								<FileCheck2 size={16} />
-								<span>{unsignedAppointmentIds.length} медкарты (ф. 043/у) требуют подписи</span>
+								<span>{unsignedAppointmentIds.length} медицинских карт требуют подписи</span>
 							</div>
 							<span className="text-[10px] text-[var(--muted)] font-semibold">
 								63-ФЗ ст. 9 (ПЭП) • Приказ 947н
@@ -552,7 +552,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 											{apt.emrCard043uStatus === "signed" ? (
 												<span className="inline-flex items-center gap-1 text-[var(--emerald)] font-bold text-[10px]">
 													<ShieldCheck size={13} />
-													<span>043/у подписана ПЭП</span>
+													<span>Карта подписана ПЭП</span>
 												</span>
 											) : (
 												<span className="inline-flex items-center gap-1 text-[var(--gold)] font-bold text-[10px]">
@@ -570,7 +570,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 									{isExpanded && (
 										<div className="mt-2 pt-2 border-t border-[var(--line,#334155)] space-y-1.5">
 											<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
-												Оказанные медицинские услуги (804н):
+												Оказанные медицинские услуги:
 											</div>
 											{apt.services.map((srv) => (
 												<div key={srv.id} className="doctor-pwa-service-item">
@@ -680,7 +680,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 						<span>Изоляция смены активна</span>
 					</div>
 					<div className="flex items-center gap-2 font-bold text-[var(--ink)]">
-						<span>043/у: {earnings.signedEmr043Count} подписано</span>
+						<span>Карты: {earnings.signedEmr043Count} подписано</span>
 					</div>
 				</div>
 
@@ -706,7 +706,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 							</div>
 
 							<p className="text-xs text-[var(--muted)] leading-relaxed">
-								Код подтверждения отправлен на номер <strong>{signingSession.maskedPhone}</strong> для заверения {signingSession.appointmentIds.length} карт ф. 043/у.
+								Код подтверждения отправлен на номер <strong>{signingSession.maskedPhone}</strong> для заверения {signingSession.appointmentIds.length} медицинских карт.
 							</p>
 
 							{/* 6-Digit PIN Input */}

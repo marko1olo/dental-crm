@@ -13,7 +13,19 @@
  *    блоком 1-3ч), картотеку образцовых пациентов, 3 варианта плана лечения и снимки.
  */
 
-import type { Appointment, Patient } from "@dental/shared";
+import type {
+	Appointment,
+	Patient,
+	ExecutiveDashboardPayload,
+	ExecutivePeriod,
+	ExecutiveFunnelStage,
+} from "@dental/shared";
+import {
+	calculateDepartmentBreakdown,
+	calculateExecutiveFunnel,
+	calculateExecutiveKpisSummary,
+} from "@dental/shared";
+import type { AnalyticsDashboardData } from "../pages/analyticsDoctorMetrics.js";
 
 let _runtimeDemoOverride: boolean | null = null;
 
@@ -124,6 +136,7 @@ export function isDemoPatientId(patientId?: string | null): boolean {
 		lower.startsWith("sample_") ||
 		lower.startsWith("demo_") ||
 		lower.startsWith("01a00000-0000-0000-0000-") ||
+		lower.startsWith("pat-88") ||
 		lower.includes("test_patient") ||
 		lower === "active_patient"
 	);
@@ -263,4 +276,286 @@ export function getDemoShowcaseAppointments(baseDateIso?: string): Appointment[]
 			comment: "Прикреплен 3D-снимок КЛКТ (KaVo OP300)",
 		},
 	];
+}
+
+/**
+ * Образцовая витринная сквозная аналитика руководителя (генерального директора).
+ * Включает 5 профильных отделений, 8-этапную воронку первичных пациентов,
+ * 77% загрузку кресел и честную unit-экономику (LTV/CAC).
+ */
+export function getDemoExecutiveAnalytics(
+	period: ExecutivePeriod = "month",
+): ExecutiveDashboardPayload {
+	const rawStages = [
+		{ stage: "lead" as ExecutiveFunnelStage, count: 120 },
+		{ stage: "consultation_booking" as ExecutiveFunnelStage, count: 98 },
+		{ stage: "attended" as ExecutiveFunnelStage, count: 88 },
+		{ stage: "ai_examination" as ExecutiveFunnelStage, count: 82, isAiAssisted: true },
+		{ stage: "plan_presentation" as ExecutiveFunnelStage, count: 78, totalVolumeKopecks: 1240000000 },
+		{ stage: "plan_approved" as ExecutiveFunnelStage, count: 56, totalVolumeKopecks: 820000000 },
+		{ stage: "treatment_started" as ExecutiveFunnelStage, count: 48, totalVolumeKopecks: 680000000 },
+		{ stage: "sanitation_completed" as ExecutiveFunnelStage, count: 38 },
+	];
+
+	const totalMarketingSpendKopecks = 32000000;
+	const funnelStages = calculateExecutiveFunnel(rawStages, totalMarketingSpendKopecks);
+
+	const rawDepts = [
+		{
+			departmentKey: "therapy" as const,
+			planRevenueKopecks: 150000000,
+			factRevenueKopecks: 158000000,
+			completedVisitsCount: 142,
+			uniquePatientsCount: 110,
+		},
+		{
+			departmentKey: "orthopedics" as const,
+			planRevenueKopecks: 160000000,
+			factRevenueKopecks: 152000000,
+			completedVisitsCount: 48,
+			uniquePatientsCount: 36,
+		},
+		{
+			departmentKey: "surgery_implantation" as const,
+			planRevenueKopecks: 110000000,
+			factRevenueKopecks: 105000000,
+			completedVisitsCount: 38,
+			uniquePatientsCount: 30,
+		},
+		{
+			departmentKey: "orthodontics" as const,
+			planRevenueKopecks: 55000000,
+			factRevenueKopecks: 51000000,
+			completedVisitsCount: 28,
+			uniquePatientsCount: 24,
+		},
+		{
+			departmentKey: "pediatric" as const,
+			planRevenueKopecks: 25000000,
+			factRevenueKopecks: 19000000,
+			completedVisitsCount: 22,
+			uniquePatientsCount: 18,
+		},
+	];
+
+	const departments = calculateDepartmentBreakdown(rawDepts);
+
+	const kpis = calculateExecutiveKpisSummary({
+		period,
+		totalRevenueKopecks: 485000000,
+		totalRevenuePlanKopecks: 500000000,
+		primaryRevenueKopecks: 145500000,
+		repeatRevenueKopecks: 339500000,
+		primaryPatientsCount: 48,
+		repeatPatientsCount: 170,
+		totalMarketingSpendKopecks,
+		historicalCohortLtvKopecks: 14500000,
+		totalOccupiedMinutes: 27720,
+		totalAvailableMinutes: 36000,
+		totalChairsCount: 3,
+		totalLeadsCount: 120,
+		aiExaminedLeadsCount: 82,
+		totalSanitationCount: 38,
+		totalCompletedVisits: 278,
+		activeDoctorsCount: 5,
+		cancelledVisitsCount: 12,
+		noShowVisitsCount: 4,
+	});
+
+	const now = new Date();
+	return {
+		kpis,
+		funnelStages,
+		departments,
+		period,
+		dateRangeStartIso: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(),
+		dateRangeEndIso: now.toISOString(),
+		updatedAtIso: now.toISOString(),
+		isEmpty: false,
+	};
+}
+
+/**
+ * Образцовая витринная операционная аналитика клиники (графики Recharts, врачи, кресла).
+ */
+export function getDemoDashboardAnalytics(
+	_dateRange?: string,
+): AnalyticsDashboardData {
+	return {
+		kpis: {
+			totalPatients: 218,
+			totalRevenue: 4850000,
+			totalAppointments: 278,
+			avgRevenuePerPatient: 22247,
+			cashRevenue: 1200000,
+			cardRevenue: 2850000,
+			cashlessRevenue: 600000,
+			advanceRevenue: 200000,
+			sbpRevenue: 0,
+			bankTransferRevenue: 0,
+			insuranceRevenue: 0,
+			bonusRevenue: 0,
+			averageCheck: 17446,
+			primaryPatientsCount: 48,
+			repeatPatientsCount: 170,
+			chairOccupancyRatePercent: 77,
+		},
+		cohortLtvJson: [
+			{ cohort: "2025-Q1", "Month 12": 138000 },
+			{ cohort: "2025-Q2", "Month 12": 142000 },
+			{ cohort: "2025-Q3", "Month 12": 149000 },
+			{ cohort: "2025-Q4", "Month 12": 154000 },
+		],
+		planFunnelJson: [
+			{ name: "Консультация", value: 98, fill: "var(--teal, #0d9488)" },
+			{ name: "Диагностика Diagnocat", value: 82, fill: "var(--brand-300, #0d9488)" },
+			{ name: "Презентация плана", value: 78, fill: "var(--accent, #6366f1)" },
+			{ name: "Согласовано", value: 56, fill: "var(--ok-fg, #10b981)" },
+			{ name: "Начато лечение", value: 48, fill: "var(--brand-accent, #0ea5e9)" },
+			{ name: "Санирован", value: 38, fill: "var(--gold, #f59e0b)" },
+		],
+		chairUtilizationJson: [
+			{
+				chairId: DEMO_CHAIR_1_ID,
+				name: "Кресло 1 (Терапия/Хирургия)",
+				value: 82,
+				occupiedMinutes: 9840,
+				availableMinutes: 12000,
+				utilizationPercent: 82,
+				fill: "var(--teal, #0d9488)",
+			},
+			{
+				chairId: DEMO_CHAIR_2_ID,
+				name: "Кресло 2 (Ортопедия/Ортодонтия)",
+				value: 75,
+				occupiedMinutes: 9000,
+				availableMinutes: 12000,
+				utilizationPercent: 75,
+				fill: "var(--accent, #6366f1)",
+			},
+			{
+				chairId: "01a00000-0000-0002-0000-000000000003",
+				name: "Кресло 3 (Детство/Гигиена)",
+				value: 74,
+				occupiedMinutes: 8880,
+				availableMinutes: 12000,
+				utilizationPercent: 74,
+				fill: "var(--ok-fg, #10b981)",
+			},
+		],
+		doctorProfitabilityJson: [
+			{
+				doctorId: DEMO_DOCTOR_1_ID,
+				name: "Смирнов А.В. (Ортопедия / Хирургия)",
+				revenue: 2570000,
+				appointmentsCount: 86,
+				avgTicketRub: 29883,
+				workedHours: 154,
+				hourlyRevenueRub: 16688,
+				margin: 1240000,
+				completionRate: 94,
+				services804nCount: 112,
+				labOrdersCount: 28,
+				labOrdersCostRub: 480000,
+				doctorPayrollRub: 642500,
+				clinicMarginRub: 1447500,
+			},
+			{
+				doctorId: DEMO_DOCTOR_2_ID,
+				name: "Иванова М.С. (Терапия / Эндодонтия)",
+				revenue: 1580000,
+				appointmentsCount: 142,
+				avgTicketRub: 11126,
+				workedHours: 160,
+				hourlyRevenueRub: 9875,
+				margin: 890000,
+				completionRate: 91,
+				services804nCount: 184,
+				labOrdersCount: 4,
+				labOrdersCostRub: 25000,
+				doctorPayrollRub: 395000,
+				clinicMarginRub: 1160000,
+			},
+			{
+				doctorId: "01a00000-0000-0003-0000-000000000003",
+				name: "Петров К.Д. (Ортодонтия)",
+				revenue: 510000,
+				appointmentsCount: 28,
+				avgTicketRub: 18214,
+				workedHours: 64,
+				hourlyRevenueRub: 7968,
+				margin: 280000,
+				completionRate: 89,
+				services804nCount: 42,
+				labOrdersCount: 14,
+				labOrdersCostRub: 110000,
+				doctorPayrollRub: 127500,
+				clinicMarginRub: 272500,
+			},
+			{
+				doctorId: "01a00000-0000-0003-0000-000000000004",
+				name: "Сидорова О.Н. (Детская стоматология)",
+				revenue: 190000,
+				appointmentsCount: 22,
+				avgTicketRub: 8636,
+				workedHours: 48,
+				hourlyRevenueRub: 3958,
+				margin: 95000,
+				completionRate: 86,
+				services804nCount: 35,
+				labOrdersCount: 0,
+				labOrdersCostRub: 0,
+				doctorPayrollRub: 47500,
+				clinicMarginRub: 142500,
+			},
+		],
+		tierAcceptance: {
+			totalConsultations: 98,
+			consultationToPlanConversionPercent: 79.6,
+			totalPlansCount: 78,
+			acceptedPlansCount: 56,
+			overallAcceptancePercent: 71.8,
+			tiers: [
+				{
+					tier: "optimum",
+					label: "Оптимальный (Комплексный)",
+					totalPlans: 42,
+					acceptedPlans: 34,
+					acceptanceRatePercent: 81,
+					totalRub: 4420000,
+				},
+				{
+					tier: "premium",
+					label: "Премиум (All-on-4 / Керамика)",
+					totalPlans: 18,
+					acceptedPlans: 11,
+					acceptanceRatePercent: 61.1,
+					totalRub: 2970000,
+				},
+				{
+					tier: "basic",
+					label: "Базовый (Купирование)",
+					totalPlans: 18,
+					acceptedPlans: 11,
+					acceptanceRatePercent: 61.1,
+					totalRub: 810000,
+				},
+			],
+		},
+		noShowHeatmap: {
+			totalCancelled: 12,
+			totalNoShow: 4,
+			peakDay: "Среда",
+			peakHour: 18,
+			cells: [
+				{ dayOfWeek: 1, dayName: "Пн", hour: 10, cancelledCount: 1, noShowCount: 0, totalLost: 1 },
+				{ dayOfWeek: 2, dayName: "Вт", hour: 14, cancelledCount: 2, noShowCount: 1, totalLost: 3 },
+				{ dayOfWeek: 3, dayName: "Ср", hour: 18, cancelledCount: 4, noShowCount: 2, totalLost: 6 },
+				{ dayOfWeek: 4, dayName: "Чт", hour: 11, cancelledCount: 1, noShowCount: 0, totalLost: 1 },
+				{ dayOfWeek: 5, dayName: "Пт", hour: 16, cancelledCount: 3, noShowCount: 1, totalLost: 4 },
+				{ dayOfWeek: 6, dayName: "Сб", hour: 12, cancelledCount: 1, noShowCount: 0, totalLost: 1 },
+			],
+		},
+		isEmpty: false,
+	};
 }

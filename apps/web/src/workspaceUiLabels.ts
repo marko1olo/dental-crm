@@ -432,7 +432,7 @@ export const workspaceTopbarLabels = {
 	/** Кнопка открытия рабочего стола врача (Doctor Shift Cockpit). */
 	doctorCockpit: {
 		label: "Рабочий стол",
-		title: "Рабочий стол врача (Doctor Shift Cockpit) — сменные показатели, сделка % и пакетная подпись 043/у",
+		title: "Рабочий стол врача (Doctor Shift Cockpit) — сменные показатели, сделка % и пакетная подпись медицинских карт",
 	},
 } as const;
 
