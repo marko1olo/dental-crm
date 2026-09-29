@@ -1,11 +1,19 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 
+export type SuggestedSlot = {
+	timeDisplay: string;
+	label: string;
+	startsAt: string;
+	endsAt: string;
+};
+
 export type ResourceCollisionResult = {
 	hasCollision: boolean;
 	conflictType: "doctor" | "chair" | "assistant" | "patient" | null;
 	conflictingAppointment: Appointment | null;
 	message: string | null;
 	isCitoOverbooking?: boolean;
+	suggestedSlot?: SuggestedSlot | null;
 };
 
 export function isCitoAppointment(
@@ -52,6 +60,190 @@ export type ResourceCollisionOptions = {
 	allowCitoOverbooking?: boolean;
 	isCito?: boolean;
 };
+
+export function findNearestAvailableSlot(
+	draft: {
+		startsAt?: string | null;
+		endsAt?: string | null;
+		doctorUserId?: string | null;
+		chairId?: string | null;
+		assistantUserId?: string | null;
+		patientId?: string | null;
+	},
+	appointments: readonly Appointment[] | null | undefined,
+	options: ResourceCollisionOptions = {},
+): SuggestedSlot | null {
+	if (!draft.startsAt || !draft.endsAt) return null;
+	const draftStart = Date.parse(draft.startsAt);
+	const draftEnd = Date.parse(draft.endsAt);
+	if (
+		!Number.isFinite(draftStart) ||
+		!Number.isFinite(draftEnd) ||
+		draftEnd <= draftStart
+	) {
+		return null;
+	}
+
+	const durationMs = draftEnd - draftStart;
+	const format = options.formatTimeFn ?? ((iso: string) => iso.slice(11, 16));
+
+	const activeAppointments = (appointments ?? []).filter((a) => {
+		if (options.excludeAppointmentId && a.id === options.excludeAppointmentId)
+			return false;
+		return a.status !== "cancelled" && a.status !== "no_show";
+	});
+
+	const isIntervalFree = (startMs: number, endMs: number): boolean => {
+		// 1. Chair maintenance blocks
+		if (draft.chairId && options.chairMaintenanceBlocks?.length) {
+			for (const block of options.chairMaintenanceBlocks) {
+				if (block.chairId !== draft.chairId) continue;
+				const bStart = Date.parse(block.startsAt);
+				const bEnd = Date.parse(block.endsAt);
+				if (!Number.isFinite(bStart) || !Number.isFinite(bEnd)) continue;
+				if (startMs < bEnd && endMs > bStart) return false;
+			}
+		}
+
+		// 2. Active appointments
+		for (const a of activeAppointments) {
+			const aStart = Date.parse(a.startsAt);
+			const aEnd = Date.parse(a.endsAt);
+			if (!Number.isFinite(aStart) || !Number.isFinite(aEnd)) continue;
+			if (startMs < aEnd && endMs > aStart) {
+				if (draft.patientId && a.patientId === draft.patientId) return false;
+				if (draft.doctorUserId && a.doctorUserId === draft.doctorUserId)
+					return false;
+				if (draft.chairId && a.chairId === draft.chairId) return false;
+				if (
+					draft.assistantUserId &&
+					a.assistantUserId === draft.assistantUserId
+				)
+					return false;
+			}
+		}
+		return true;
+	};
+
+	const stepMs = 15 * 60_000;
+
+	// Priority 1: Check endsAt of any overlapping appointments (natural free boundary)
+	const overlappingAppts = activeAppointments.filter((a) => {
+		const aStart = Date.parse(a.startsAt);
+		const aEnd = Date.parse(a.endsAt);
+		const timeOverlaps = draftStart < aEnd && draftEnd > aStart;
+		if (!timeOverlaps) return false;
+		return (
+			(draft.doctorUserId && a.doctorUserId === draft.doctorUserId) ||
+			(draft.chairId && a.chairId === draft.chairId) ||
+			(draft.patientId && a.patientId === draft.patientId) ||
+			(draft.assistantUserId && a.assistantUserId === draft.assistantUserId)
+		);
+	});
+
+	const boundaryCandidates: number[] = [];
+	for (const a of overlappingAppts) {
+		const aEnd = Date.parse(a.endsAt);
+		if (Number.isFinite(aEnd) && aEnd >= draftStart) {
+			boundaryCandidates.push(aEnd);
+		}
+	}
+	boundaryCandidates.sort((a, b) => a - b);
+
+	const draftDateStr = new Date(draftStart).toISOString().slice(0, 10);
+
+	for (const candStart of boundaryCandidates) {
+		const candEnd = candStart + durationMs;
+		const candDateStr = new Date(candStart).toISOString().slice(0, 10);
+		if (candDateStr === draftDateStr && new Date(candStart).getUTCHours() < 21) {
+			if (isIntervalFree(candStart, candEnd)) {
+				const startsAtIso = new Date(candStart).toISOString();
+				const endsAtIso = new Date(candEnd).toISOString();
+				const timeDisplay = format(startsAtIso);
+				return {
+					timeDisplay,
+					label: `Ближайшее окно сегодня в ${timeDisplay}`,
+					startsAt: startsAtIso,
+					endsAt: endsAtIso,
+				};
+			}
+		}
+	}
+
+	// Priority 2: Scan forward in 15-minute steps on the same day
+	const initialCandStart = Math.ceil(draftStart / stepMs) * stepMs;
+	for (let offset = stepMs; offset <= 8 * 3600_000; offset += stepMs) {
+		const candStart = initialCandStart + offset;
+		const candEnd = candStart + durationMs;
+		const candDateStr = new Date(candStart).toISOString().slice(0, 10);
+		if (candDateStr !== draftDateStr) break;
+		if (new Date(candStart).getUTCHours() >= 21) break;
+
+		if (isIntervalFree(candStart, candEnd)) {
+			const startsAtIso = new Date(candStart).toISOString();
+			const endsAtIso = new Date(candEnd).toISOString();
+			const timeDisplay = format(startsAtIso);
+			return {
+				timeDisplay,
+				label: `Ближайшее окно сегодня в ${timeDisplay}`,
+				startsAt: startsAtIso,
+				endsAt: endsAtIso,
+			};
+		}
+	}
+
+	// Priority 3: Scan earlier on the same day (between 08:00 and draftStart)
+	const morningStart = new Date(draftStart);
+	morningStart.setUTCHours(8, 0, 0, 0);
+	const morningStartMs = morningStart.getTime();
+
+	if (draftStart > morningStartMs) {
+		for (
+			let candStart = morningStartMs;
+			candStart + durationMs <= draftStart;
+			candStart += stepMs
+		) {
+			const candEnd = candStart + durationMs;
+			if (isIntervalFree(candStart, candEnd)) {
+				const startsAtIso = new Date(candStart).toISOString();
+				const endsAtIso = new Date(candEnd).toISOString();
+				const timeDisplay = format(startsAtIso);
+				return {
+					timeDisplay,
+					label: `Ближайшее окно сегодня в ${timeDisplay}`,
+					startsAt: startsAtIso,
+					endsAt: endsAtIso,
+				};
+			}
+		}
+	}
+
+	// Priority 4: Tomorrow morning (09:00 UTC)
+	const nextDay = new Date(draftStart);
+	nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+	nextDay.setUTCHours(9, 0, 0, 0);
+	const nextDayStartMs = nextDay.getTime();
+
+	for (let offset = 0; offset <= 8 * 3600_000; offset += stepMs) {
+		const candStart = nextDayStartMs + offset;
+		const candEnd = candStart + durationMs;
+		if (new Date(candStart).getUTCHours() >= 21) break;
+
+		if (isIntervalFree(candStart, candEnd)) {
+			const startsAtIso = new Date(candStart).toISOString();
+			const endsAtIso = new Date(candEnd).toISOString();
+			const timeDisplay = format(startsAtIso);
+			return {
+				timeDisplay,
+				label: `Ближайшее окно завтра в ${timeDisplay}`,
+				startsAt: startsAtIso,
+				endsAt: endsAtIso,
+			};
+		}
+	}
+
+	return null;
+}
 
 export function checkAppointmentResourceCollision(
 	draft: {
@@ -135,6 +327,7 @@ export function checkAppointmentResourceCollision(
 					conflictType: "chair",
 					conflictingAppointment: null,
 					message: `Кресло «${name}» заблокировано на ${reasonRu} (${blockTimeStr}).`,
+					suggestedSlot: findNearestAvailableSlot(draft, appointments, options),
 				};
 			}
 		}
@@ -174,6 +367,7 @@ export function checkAppointmentResourceCollision(
 					conflictingAppointment: appt,
 					isCitoOverbooking: false,
 					message: `У пациента ${name} уже есть запись на это время (${timeIntervalStr}).`,
+					suggestedSlot: findNearestAvailableSlot(draft, appointments, options),
 				};
 			}
 
@@ -187,6 +381,7 @@ export function checkAppointmentResourceCollision(
 						conflictingAppointment: appt,
 						isCitoOverbooking: true,
 						message: `CITO-овербукинг разрешён (острая боль): наложение с приёмом врача ${name} (${timeIntervalStr})`,
+						suggestedSlot: null,
 					};
 				}
 				return {
@@ -195,6 +390,7 @@ export function checkAppointmentResourceCollision(
 					conflictingAppointment: appt,
 					isCitoOverbooking: false,
 					message: `Врач ${name} уже занят(а) в это время (${timeIntervalStr}).`,
+					suggestedSlot: findNearestAvailableSlot(draft, appointments, options),
 				};
 			}
 
@@ -208,6 +404,7 @@ export function checkAppointmentResourceCollision(
 						conflictingAppointment: appt,
 						isCitoOverbooking: true,
 						message: `CITO-овербукинг разрешён (острая боль): наложение на кресле «${name}» (${timeIntervalStr})`,
+						suggestedSlot: null,
 					};
 				}
 				return {
@@ -216,6 +413,7 @@ export function checkAppointmentResourceCollision(
 					conflictingAppointment: appt,
 					isCitoOverbooking: false,
 					message: `Кресло «${name}» уже занято в это время (${timeIntervalStr}).`,
+					suggestedSlot: findNearestAvailableSlot(draft, appointments, options),
 				};
 			}
 
@@ -229,6 +427,7 @@ export function checkAppointmentResourceCollision(
 						conflictingAppointment: appt,
 						isCitoOverbooking: true,
 						message: `CITO-овербукинг разрешён (острая боль): ассистент ${name} совмещён (${timeIntervalStr})`,
+						suggestedSlot: null,
 					};
 				}
 				return {
@@ -237,6 +436,7 @@ export function checkAppointmentResourceCollision(
 					conflictingAppointment: appt,
 					isCitoOverbooking: false,
 					message: `Ассистент ${name} уже занят(а) в это время (${timeIntervalStr}).`,
+					suggestedSlot: findNearestAvailableSlot(draft, appointments, options),
 				};
 			}
 		}
@@ -247,5 +447,6 @@ export function checkAppointmentResourceCollision(
 		conflictType: null,
 		conflictingAppointment: null,
 		message: null,
+		suggestedSlot: null,
 	};
 }

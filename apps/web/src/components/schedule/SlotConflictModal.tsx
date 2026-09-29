@@ -52,10 +52,10 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 						</div>
 						<div>
 							<h4 className="text-sm font-bold text-[var(--ink,#0f172a)] m-0 leading-tight">
-								Слот уже занят (HTTP 409)
+								Выбранное время уже занято
 							</h4>
 							<p className="text-[11px] text-[var(--muted,#64748b)] m-0">
-								Коллизия записи в расписании
+								Выберите предложенное свободное окно или оформите CITO-овербукинг
 							</p>
 						</div>
 					</div>
@@ -175,10 +175,10 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 						</div>
 						<div>
 							<h3 className="text-base font-bold text-[var(--ink,#0f172a)] m-0 leading-tight">
-								Слот уже занят (HTTP 409)
+								Выбранное время уже занято
 							</h3>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
-								Коллизия записи в расписании
+								Выберите предложенное свободное окно или оформите CITO-овербукинг
 							</p>
 						</div>
 					</div>

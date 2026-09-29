@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { Appointment, Dashboard } from "@dental/shared";
-import { checkAppointmentResourceCollision } from "./scheduleCollisionUtils";
+import {
+	checkAppointmentResourceCollision,
+	findNearestAvailableSlot,
+} from "./scheduleCollisionUtils";
 
 const baseAppointment: Appointment = {
 	id: "appt-1",
@@ -287,6 +290,126 @@ describe("checkAppointmentResourceCollision", () => {
 			).hasCollision,
 			false,
 		);
+	});
+
+	it("suggests nearest available free slot immediately after conflicting appointment", () => {
+		const result = checkAppointmentResourceCollision(
+			{
+				startsAt: "2026-08-21T10:30:00.000Z",
+				endsAt: "2026-08-21T11:30:00.000Z",
+				doctorUserId: "doctor-1",
+				chairId: "chair-2",
+			},
+			[baseAppointment],
+			{
+				staff: mockStaff as Dashboard["clinicSettings"]["staff"],
+				chairs: mockChairs as Dashboard["clinicSettings"]["chairs"],
+			},
+		);
+
+		assert.equal(result.hasCollision, true);
+		assert.equal(result.conflictType, "doctor");
+		assert.ok(result.suggestedSlot, "Suggested slot must be present");
+		assert.equal(result.suggestedSlot?.timeDisplay, "11:00");
+		assert.equal(result.suggestedSlot?.label, "Ближайшее окно сегодня в 11:00");
+		assert.equal(result.suggestedSlot?.startsAt, "2026-08-21T11:00:00.000Z");
+		assert.equal(result.suggestedSlot?.endsAt, "2026-08-21T12:00:00.000Z");
+	});
+
+	it("skips consecutive appointments when searching for nearest free slot", () => {
+		const consecutiveAppt: Appointment = {
+			...baseAppointment,
+			id: "appt-2",
+			startsAt: "2026-08-21T11:00:00.000Z",
+			endsAt: "2026-08-21T12:00:00.000Z",
+		};
+
+		const result = checkAppointmentResourceCollision(
+			{
+				startsAt: "2026-08-21T10:30:00.000Z",
+				endsAt: "2026-08-21T11:30:00.000Z",
+				doctorUserId: "doctor-1",
+				chairId: "chair-2",
+			},
+			[baseAppointment, consecutiveAppt],
+			{
+				staff: mockStaff as Dashboard["clinicSettings"]["staff"],
+				chairs: mockChairs as Dashboard["clinicSettings"]["chairs"],
+			},
+		);
+
+		assert.equal(result.hasCollision, true);
+		assert.ok(result.suggestedSlot, "Suggested slot must be present");
+		assert.equal(result.suggestedSlot?.timeDisplay, "12:00");
+		assert.equal(result.suggestedSlot?.label, "Ближайшее окно сегодня в 12:00");
+	});
+
+	it("suggests nearest free slot for chair collision", () => {
+		const result = checkAppointmentResourceCollision(
+			{
+				startsAt: "2026-08-21T10:15:00.000Z",
+				endsAt: "2026-08-21T10:45:00.000Z",
+				doctorUserId: "doctor-2",
+				chairId: "chair-1",
+			},
+			[baseAppointment],
+			{
+				staff: mockStaff as Dashboard["clinicSettings"]["staff"],
+				chairs: mockChairs as Dashboard["clinicSettings"]["chairs"],
+			},
+		);
+
+		assert.equal(result.hasCollision, true);
+		assert.equal(result.conflictType, "chair");
+		assert.ok(result.suggestedSlot, "Suggested slot must be present");
+		assert.equal(result.suggestedSlot?.timeDisplay, "11:00");
+		assert.equal(result.suggestedSlot?.label, "Ближайшее окно сегодня в 11:00");
+	});
+
+	it("respects chair maintenance window when calculating suggested slot", () => {
+		const result = checkAppointmentResourceCollision(
+			{
+				startsAt: "2026-08-21T10:00:00.000Z",
+				endsAt: "2026-08-21T10:30:00.000Z",
+				doctorUserId: "doctor-2",
+				chairId: "chair-1",
+			},
+			[],
+			{
+				chairs: mockChairs as Dashboard["clinicSettings"]["chairs"],
+				chairMaintenanceBlocks: [
+					{
+						id: "block-1",
+						chairId: "chair-1",
+						startsAt: "2026-08-21T09:30:00.000Z",
+						endsAt: "2026-08-21T11:30:00.000Z",
+						reason: "sanitation",
+					},
+				],
+			},
+		);
+
+		assert.equal(result.hasCollision, true);
+		assert.equal(result.conflictType, "chair");
+		assert.ok(result.message?.includes("санитарная обработка"));
+		assert.ok(result.suggestedSlot, "Suggested slot must be present");
+		assert.equal(result.suggestedSlot?.timeDisplay, "11:30");
+		assert.equal(result.suggestedSlot?.label, "Ближайшее окно сегодня в 11:30");
+	});
+
+	it("findNearestAvailableSlot returns direct slot recommendation", () => {
+		const slot = findNearestAvailableSlot(
+			{
+				startsAt: "2026-08-21T10:30:00.000Z",
+				endsAt: "2026-08-21T11:00:00.000Z",
+				doctorUserId: "doctor-1",
+			},
+			[baseAppointment],
+		);
+
+		assert.ok(slot);
+		assert.equal(slot.timeDisplay, "11:00");
+		assert.equal(slot.label, "Ближайшее окно сегодня в 11:00");
 	});
 });
 

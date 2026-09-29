@@ -1465,20 +1465,50 @@ export function AppointmentModal(props: AppointmentModalProps) {
             </div>
           )}
 
-          {/* Collision warning */}
+          {/* Collision warning with 1-click suggested slot */}
           {collision.hasCollision && (
             <div
-              className="p-2.5 sm:p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold flex items-center gap-2"
+              className="p-2.5 sm:p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold flex items-center justify-between gap-2.5 flex-wrap"
               role="alert"
+              data-testid="appointment-collision-alert"
             >
-              <AlertTriangle
-                size={15}
-                className="shrink-0 text-amber-600 dark:text-amber-400"
-              />
-              <span>
-                {collision.message}. Разрешена экстренная запись (острая боль /
-                овербукинг).
-              </span>
+              <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                <AlertTriangle
+                  size={15}
+                  className="shrink-0 text-amber-600 dark:text-amber-400"
+                />
+                <span>
+                  {collision.message}. Разрешена экстренная запись (острая боль /
+                  овербукинг).
+                </span>
+              </div>
+              {collision.suggestedSlot && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newStart = safeToDateTimeLocalValue(
+                      collision.suggestedSlot!.startsAt,
+                      timezone,
+                    );
+                    const newEnd = safeToDateTimeLocalValue(
+                      collision.suggestedSlot!.endsAt,
+                      timezone,
+                    );
+                    setStartsAtLocal(newStart);
+                    setEndsAtLocal(newEnd);
+                    showToast(
+                      `Время перенесено на ${collision.suggestedSlot!.timeDisplay}`,
+                      "success",
+                    );
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0"
+                  title="Выбрать ближайшее свободное окно в 1 клик"
+                  data-testid="appointment-apply-suggested-slot-btn"
+                >
+                  <Clock size={13} className="shrink-0" />
+                  <span>{collision.suggestedSlot.label}</span>
+                </button>
+              )}
             </div>
           )}
 
