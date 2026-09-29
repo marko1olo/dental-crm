@@ -113,7 +113,7 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 			{/* Itemized Services (Order 804n) */}
 			<div className="py-3 space-y-2.5 border-b border-dashed border-[var(--border,#cbd5e1)]">
 				<div className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
-					Предмет расчета (Номенклатура 804н):
+					Предмет расчета (Услуги):
 				</div>
 
 				<div className="space-y-2.5">

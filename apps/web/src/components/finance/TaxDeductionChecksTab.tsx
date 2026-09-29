@@ -18,7 +18,7 @@ export const TaxDeductionChecksTab: React.FC<TaxDeductionChecksTabProps> = ({
 		<div className="space-y-3">
 			<div className="flex items-center justify-between">
 				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
-					Кассовые чеки по 54-ФЗ и разделение по Номенклатуре 804н за {selectedYear} год:
+					Кассовые чеки и распределение услуг за {selectedYear} год:
 				</span>
 				<span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-300">
 					Всего чеков: {yearPayments.length} шт.
@@ -29,7 +29,7 @@ export const TaxDeductionChecksTab: React.FC<TaxDeductionChecksTabProps> = ({
 				<div className="p-8 rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-center space-y-2">
 					<Receipt className="w-8 h-8 text-[var(--muted,#64748b)] mx-auto opacity-50" />
 					<div className="text-xs font-bold text-[var(--ink,#0f172a)]">
-						Нет кассовых чеков по 54-ФЗ за {selectedYear} год
+						Нет кассовых чеков за {selectedYear} год
 					</div>
 					<p className="text-[11px] text-[var(--muted,#64748b)] max-w-sm mx-auto m-0">
 						Кассовые чеки с фискальными признаками документов (ФД и ФПД) появятся здесь автоматически после фискализации оплаты.
@@ -45,7 +45,7 @@ export const TaxDeductionChecksTab: React.FC<TaxDeductionChecksTabProps> = ({
 								<th className="p-3">Чек / ФД</th>
 								<th className="p-3">ФПД</th>
 								<th className="p-3">Наименование услуги</th>
-								<th className="p-3">Код 804н</th>
+								<th className="p-3">Код услуги</th>
 								<th className="p-3">Код вычета</th>
 								<th className="p-3 text-right">Сумма (руб.)</th>
 							</tr>

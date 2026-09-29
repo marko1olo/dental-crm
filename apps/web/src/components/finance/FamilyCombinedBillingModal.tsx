@@ -402,7 +402,7 @@ export function FamilyCombinedBillingModal({
 						<div className="space-y-4">
 							<div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs text-blue-900 dark:text-blue-200 flex items-start justify-between gap-3 flex-wrap">
 								<div>
-									<strong>Приказ ФНС России от 08.11.2023 № ЕД-7-11/824@ (КНД 1151156):</strong>
+									<strong>Справка для налогового вычета (Приказ ФНС России № ЕД-7-11/824@):</strong>
 									<div className="mt-1">
 										Справки оформляются на имя плательщика (<strong>{initialPayer.payerFullName}</strong>{initialPayer.payerInn ? `, ИНН: ${initialPayer.payerInn}` : ""}) с автоматическим указанием кода родства:
 										1 = лично, 2 = супруг, 3 = родитель, 4 = ребенок.
@@ -419,7 +419,7 @@ export function FamilyCombinedBillingModal({
 									data-testid="btn-print-tax-certificates"
 								>
 									<Printer size={14} />
-									<span>Печать всех справок (КНД 1151156 А4)</span>
+									<span>Печать всех справок на вычет (А4)</span>
 								</button>
 							</div>
 

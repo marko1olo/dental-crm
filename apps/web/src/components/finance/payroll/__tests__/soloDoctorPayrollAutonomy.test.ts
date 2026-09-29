@@ -341,7 +341,7 @@ describe("Solo Doctor Payroll Autonomy & Zero-Staff Fallback (Mandates 8e & 8n)"
 		expect(html).toContain("Врач-ортодонт (брекеты / элайнеры)");
 
 		// Export CSV and Print buttons must be present
-		expect(html).toContain("Экспорт Т-51 (CSV)");
+		expect(html).toContain("Экспорт зарплаты (CSV)");
 		expect(html).toContain("Печать расчетного листка");
 	});
 

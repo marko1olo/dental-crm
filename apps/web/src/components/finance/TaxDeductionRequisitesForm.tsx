@@ -179,7 +179,7 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 			{/* Payer Requisites Fields */}
 			<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-3">
 				<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
-					Реквизиты налогоплательщика (для справки КНД 1151156):
+					Реквизиты налогоплательщика (для справки на вычет):
 				</span>
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 					<div className="space-y-1">
@@ -306,11 +306,11 @@ export const TaxDeductionRequisitesForm: React.FC<TaxDeductionRequisitesFormProp
 					</div>
 					<div className="space-y-1.5 max-w-md mx-auto">
 						<h4 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] m-0">
-							Нет подтвержденных оплат за {selectedYear} год для формирования справки КНД 1151156
+							Нет подтвержденных оплат за {selectedYear} год для формирования справки на вычет
 						</h4>
 						<p className="text-xs text-[var(--muted,#64748b)] m-0 leading-relaxed">
 							{payments.length === 0
-								? "В карточке пациента отсутствуют оплаченные счета по 54-ФЗ. Справка для налогового вычета формируется автоматически при наличии фискальных чеков."
+								? "В карточке пациента отсутствуют оплаченные счета. Справка для налогового вычета формируется автоматически при наличии фискальных чеков."
 								: `За ${selectedYear} год оплаченных счетов не найдено. Выберите другой налоговый период выше или закройте окно.`}
 						</p>
 					</div>

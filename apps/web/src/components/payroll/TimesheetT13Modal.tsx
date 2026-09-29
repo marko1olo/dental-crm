@@ -287,7 +287,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 							Сотрудники не зарегистрированы в клинике
 						</h3>
 						<p className="text-xs text-[var(--muted)] max-w-sm">
-							Добавьте персонал в разделе «Настройки клиники / Персонал» для формирования и ведения табеля учета рабочего времени (Форма Т-13).
+							Добавьте персонал в разделе «Настройки клиники / Персонал» для формирования и ведения табеля учета рабочего времени.
 						</p>
 					</div>
 					<div className="flex items-center gap-2 mt-2">
@@ -400,11 +400,11 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 							<h2 className="text-base sm:text-lg font-bold text-[var(--ink)] flex items-center gap-2">
 								Табель учета рабочего времени
 								<span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--teal-soft)] text-[var(--teal)] border border-[var(--teal)]/20">
-									Форма Т-13
+									Табель персонала
 								</span>
 							</h2>
 							<p className="text-xs text-[var(--muted)]">
-								{clinicName} • Утверждена Постановлением Госкомстата России от 05.01.2004 № 1
+								{clinicName} • Табель учета рабочего времени персонала клиники
 							</p>
 						</div>
 					</div>
@@ -508,7 +508,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 							className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-xs font-bold text-[var(--ink)] flex items-center gap-1.5 transition-colors cursor-pointer"
 						>
 							<Download className="w-3.5 h-3.5 text-[var(--teal)]" />
-							Экспорт Т-13 (CSV)
+							Экспорт табеля (CSV)
 						</button>
 						<button
 							type="button"
@@ -757,8 +757,8 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 							className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 sm:px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 transition-colors cursor-pointer"
 						>
 							<Download className="w-4 h-4 text-[var(--teal)] shrink-0" />
-							<span className="hidden sm:inline">Выгрузить форму Т-13 в CSV</span>
-							<span className="sm:hidden">Экспорт Т-13</span>
+							<span className="hidden sm:inline">Выгрузить табель рабочего времени в CSV</span>
+							<span className="sm:hidden">Экспорт табеля</span>
 						</button>
 						<button
 							type="button"
@@ -766,7 +766,7 @@ export const TimesheetT13Modal: React.FC<TimesheetT13ModalProps> = ({
 							className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 sm:px-4 rounded-xl bg-[var(--teal)] hover:opacity-90 text-[var(--on-teal)] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 						>
 							<Printer className="w-4 h-4 shrink-0" />
-							<span>Печать формы Т-13</span>
+							<span>Печать табеля рабочего времени</span>
 						</button>
 					</div>
 				</div>

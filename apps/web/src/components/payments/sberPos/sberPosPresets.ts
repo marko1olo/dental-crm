@@ -4,9 +4,10 @@
 
 import {
 	type SberPosHardwareModel,
-	type SberPosTerminalConfig,
+	type SberPosProtocolType,
 	type SberPosTransactionResponse,
 } from "./sberPosEngine";
+import { type SberPosTerminalConfig } from "@dental/shared";
 
 export interface SberPosHardwareProfileInfo {
 	readonly id: SberPosHardwareModel;
@@ -15,7 +16,7 @@ export interface SberPosHardwareProfileInfo {
 	readonly formFactor: "desktop" | "wireless_handheld" | "smart_pos";
 	readonly connectionTypes: readonly string[];
 	readonly defaultPort: number;
-	readonly defaultProtocol: "pilot_nt" | "arcus_d" | "dual_connector" | "sberpay_direct_api";
+	readonly defaultProtocol: SberPosProtocolType;
 	readonly supportsFacePay: boolean;
 	readonly supportsQrDisplay: boolean;
 	readonly supportsContactless: boolean;
@@ -95,6 +96,45 @@ export const DEFAULT_SBER_TERMINAL_CONFIG: SberPosTerminalConfig = {
 	clinicAddress: "г. Москва, ул. Арбат, д. 24",
 	clinicInn: "770412345678",
 };
+
+export const POS_TERMINAL_STORAGE_KEY = "dente_pos_terminal_config";
+
+/**
+ * Loads saved Sberbank POS terminal configuration from browser storage.
+ * Returns null if no custom terminal configuration has been saved.
+ */
+export function loadSavedSberTerminalConfig(): SberPosTerminalConfig | null {
+	if (typeof window === "undefined" && typeof globalThis.localStorage === "undefined") return null;
+	try {
+		const storage = typeof window !== "undefined" ? window.localStorage : globalThis.localStorage;
+		const raw = storage?.getItem(POS_TERMINAL_STORAGE_KEY);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw) as Partial<SberPosTerminalConfig>;
+		if (parsed && typeof parsed === "object" && parsed.terminalId && parsed.hostIp) {
+			return {
+				...DEFAULT_SBER_TERMINAL_CONFIG,
+				...parsed,
+			};
+		}
+		return null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Persists Sberbank POS terminal configuration to browser storage.
+ */
+export function saveSberTerminalConfig(config: SberPosTerminalConfig): void {
+	if (typeof window === "undefined" && typeof globalThis.localStorage === "undefined") return;
+	try {
+		const storage = typeof window !== "undefined" ? window.localStorage : globalThis.localStorage;
+		storage?.setItem(POS_TERMINAL_STORAGE_KEY, JSON.stringify(config));
+	} catch {
+		// ignore
+	}
+}
+
 
 export const SAMPLE_SUCCESS_RESPONSE: SberPosTransactionResponse = {
 	success: true,

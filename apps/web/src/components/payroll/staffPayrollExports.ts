@@ -318,7 +318,7 @@ export function generateFormT51Html(summary: ConsolidatedStaffPayrollSummary): s
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
-	<title>Расчетная ведомость Т-51 — ${escapeXml(summary.clinicName)}</title>
+	<title>Зарплатная ведомость персонала — ${escapeXml(summary.clinicName)}</title>
 	<style>
 		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; margin: 20px; color: var(--ink, #111827); }
 		h1 { font-size: 14px; margin: 0 0 4px 0; text-align: center; }
@@ -330,7 +330,7 @@ export function generateFormT51Html(summary: ConsolidatedStaffPayrollSummary): s
 	</style>
 </head>
 <body>
-	<h1>Унифицированная форма № Т-51 — Расчетная ведомость</h1>
+	<h1>Зарплатная ведомость персонала клиники</h1>
 	<div class="sub">${escapeXml(summary.clinicName)} • ИНН: ${escapeXml(summary.organizationInn)} • Период: ${escapeXml(summary.periodLabelRu)}</div>
 	<table>
 		<thead>

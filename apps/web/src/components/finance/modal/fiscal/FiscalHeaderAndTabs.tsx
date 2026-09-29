@@ -61,14 +61,14 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 								{activeTab === "refund"
 									? "Возврат прихода / Отказ от услуг"
 									: activeTab === "correction"
-										? "Чек коррекции 54-ФЗ (ФФД 1.2)"
+										? "Чек коррекции"
 										: activeTab === "certificate"
-											? "Справка для налогового вычета (КНД 1151156)"
+											? "Справка для налогового вычета"
 											: activeTab === "act"
-												? "Акт сдачи-приемки выполненных работ (804н)"
+												? "Акт сдачи-приемки выполненных услуг"
 												: activeTab === "oneC"
-													? "1С:Предприятие 8.3 / Экспорт в CommerceML 2.09 и 54-ФЗ"
-													: "Кассовый чек 54-ФЗ · Фискализация 54-ФЗ & Прием платежей"}
+													? "1С:Предприятие 8.3 / Экспорт в CommerceML 2.09"
+													: "Кассовый чек · Оплата и фискализация чеков"}
 							</h3>
 							<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">
 								ФФД 1.2
@@ -175,7 +175,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 						}`}
 					>
-						Оплата 54-ФЗ
+						Оплата
 					</button>
 					<button
 						type="button"
@@ -186,7 +186,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 								: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 						}`}
 					>
-						Акт работ (804н)
+						Акт выполненных услуг
 					</button>
 					<button
 						type="button"

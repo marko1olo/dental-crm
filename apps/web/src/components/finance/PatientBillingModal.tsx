@@ -612,10 +612,10 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							</div>
 							<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 leading-tight flex flex-wrap items-center gap-x-1.5">
 								<span className="whitespace-nowrap shrink-0">Лицензия&nbsp;№&nbsp;{clinicLicenseNumber}</span>
-								<span className="hidden sm:inline text-[var(--muted)]/50">•</span>
-								<span className="hidden sm:inline whitespace-nowrap">Приказ МЗ РФ № 804н</span>
-								<span className="hidden sm:inline text-[var(--muted)]/50">•</span>
-								<span className="hidden sm:inline whitespace-nowrap">Закон РФ № 2300-1</span>
+								<span>•</span>
+								<span className="whitespace-nowrap shrink-0">Прейскурант услуг (Приказ МЗ РФ № 804н)</span>
+								<span>•</span>
+								<span className="whitespace-nowrap shrink-0">Гарантия (Закон РФ № 2300-1)</span>
 							</p>
 						</div>
 					</div>
@@ -623,7 +623,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-9 sm:w-9 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer flex items-center justify-center border border-[var(--line)] shrink-0"
+						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-9 sm:w-9 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-hover)] dark:bg-slate-800/60 dark:hover:bg-slate-700 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer flex items-center justify-center border border-[var(--line)] shrink-0"
 						aria-label="Закрыть окно"
 					>
 						<X className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -701,7 +701,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							type="button"
 							onClick={() => setIsTaxModalOpen(true)}
 							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-teal-50 dark:bg-teal-950/50 border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 whitespace-nowrap shadow-2xs"
-							title="Сформировать справку для налогового вычета 13% НДФЛ (КНД 1151156) в 1 клик"
+							title="Сформировать справку для налогового вычета 13% НДФЛ в 1 клик"
 						>
 							<FileSpreadsheet className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
 							<span className="shrink-0 whitespace-nowrap">Справка 13% НДФЛ</span>
@@ -1407,7 +1407,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											Прямой прием оплаты (без привязки к акту)
 										</span>
 										<span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300">
-											54-ФЗ
+											Чек (54-ФЗ)
 										</span>
 									</div>
 									<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1695,7 +1695,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										<thead>
 											<tr className="bg-[var(--paper-soft)] font-bold">
 												<th className="border border-[var(--line)] p-1 text-center w-8">№</th>
-												<th className="border border-[var(--line)] p-1 text-center w-24">Код 804н</th>
+												<th className="border border-[var(--line)] p-1 text-center w-24">Код услуги</th>
 												<th className="border border-[var(--line)] p-1 text-center w-14">Зуб</th>
 												<th className="border border-[var(--line)] p-1 text-left">Наименование медицинской услуги</th>
 												<th className="border border-[var(--line)] p-1 text-center w-12">Кол.</th>
@@ -1805,7 +1805,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								{/* Clinic Stamp & Chief Doctor Info */}
 								<div className="pt-2 border-t border-[var(--line)] flex justify-between text-[10px] text-[var(--muted)]">
 									<div>
-										<span>Форма документа:</span> Акт сдачи-приемки и гарантийный талон (Приказ МЗ РФ № 804н / СтАР)
+										<span>Форма документа:</span> Акт сдачи-приемки и гарантийный талон (Стандарты СтАР)
 									</div>
 									<div>
 										<span className="text-[var(--muted)]">Главный врач:</span> {actParams.clinic.chiefDoctorName}
@@ -2004,7 +2004,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										className="w-full py-2.5 px-3 min-h-[44px] rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] flex items-center gap-2 text-left text-teal-700 dark:text-teal-400"
 									>
 										<FileSpreadsheet className="w-4 h-4 text-teal-600" />
-										<span>Справка 13% НДФЛ (КНД 1151156)</span>
+										<span>Справка для налогового вычета (13% НДФЛ)</span>
 									</button>
 									<button
 										type="button"

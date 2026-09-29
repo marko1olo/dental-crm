@@ -99,7 +99,7 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 						)}
 						<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 inline-flex items-center gap-1">
 							<CheckCircle2 size={12} />
-							<span>54-ФЗ</span>
+							<span>Чек (54-ФЗ)</span>
 						</span>
 					</h2>
 					<p className="text-xs text-[var(--muted,#64748b)] m-0">

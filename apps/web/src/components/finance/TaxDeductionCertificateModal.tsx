@@ -462,7 +462,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 					body: JSON.stringify({
 						patientId,
 						kind: "tax_deduction_certificate",
-						title: `Справка для налоговой (КНД 1151156) за ${selectedYear} г.`,
+						title: `Справка для налогового вычета за ${selectedYear} г.`,
 						taxYear: selectedYear,
 						taxPayerInn: validInn,
 						totalAmountRub: targetYearSummary.totalRub,
@@ -588,10 +588,10 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 						<div>
 							<div className="flex items-center gap-2">
 								<h2 className="text-base sm:text-lg font-bold m-0 flex items-center gap-1.5">
-									Справка об оплате медицинских услуг (Приказ ФНС № ЕА-7-11/824@)
+									Справка для налогового вычета (13% НДФЛ)
 								</h2>
 								<span className="px-2 py-0.5 rounded-md bg-teal-500/10 text-teal-700 dark:text-teal-300 font-mono text-[11px] font-bold border border-teal-500/20">
-									КНД 1151156
+									ФНС 13%
 								</span>
 								<span
 									data-testid="tax-certificate-stamp-badge"
@@ -606,7 +606,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
-								Формат 5.01 (КНД 1184043) • Разделение сумм по Коду 01 и Коду 02 • QR-верификация • Выгрузка в ТКС
+								Формат 5.01 • Разделение сумм по Коду 01 и Коду 02 • QR-верификация • Выгрузка в ТКС
 							</p>
 						</div>
 					</div>
@@ -644,7 +644,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 						}`}
 					>
 						<ListOrdered size={16} />
-						<span>Чеки 54-ФЗ и 804н ({yearPayments.length})</span>
+						<span>Чеки и оказанные услуги ({yearPayments.length})</span>
 					</button>
 					<button
 						type="button"

@@ -60,6 +60,8 @@ import { KktLanPrinterService } from "../../services/hardware/kktLanPrinter";
 import { showToast } from "../GlobalToast";
 import { useModalA11y } from "../../hooks/useModalA11y";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+
 
 export interface FastCheckoutModalProps {
 	readonly isOpen: boolean;
@@ -97,7 +99,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	patientFamilyBalanceRub = 0,
 	familyPayerName = "",
 	orderId = "",
-	stages = DEFAULT_TREATMENT_STAGES,
+	stages: propStages,
 	cashierFullName: propCashierFullName,
 	attendingDoctorName,
 	onPaymentComplete,
@@ -109,6 +111,24 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		(propCashierFullName || "").trim() ||
 		(attendingDoctorName || "").trim() ||
 		"Кассир";
+
+	const stages = useMemo<readonly TreatmentPlanStageOption[]>(() => {
+		if (propStages && propStages.length > 0) {
+			return propStages;
+		}
+		if (isDemoShowcaseMode()) {
+			return DEFAULT_TREATMENT_STAGES;
+		}
+		return [
+			{
+				id: "single_visit",
+				titleRu: "Оплата текущего приёма",
+				stageKind: "full",
+				amountKop: initialTotalBillKop,
+				itemsCount: 1,
+			},
+		];
+	}, [propStages, initialTotalBillKop]);
 
 	const [selectedStageId, setSelectedStageId] = useState<string>("full_plan");
 	const [stagePaymentMode, setStagePaymentMode] = useState<StagePaymentMode>("full");
@@ -151,12 +171,23 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			}
 			setSbpStatus("awaiting");
 			setSbpCheckMessage(null);
+			if (!propStages || propStages.length === 0) {
+				if (!isDemoShowcaseMode()) {
+					setSelectedStageId("single_visit");
+				} else {
+					setSelectedStageId("full_plan");
+				}
+			} else if (propStages.length === 1) {
+				setSelectedStageId(propStages[0]!.id);
+			} else {
+				setSelectedStageId("full_plan");
+			}
 		}
 		if (!isOpen) {
 			inFlightRef.current = false;
 			setIsPrinting(false);
 		}
-	}, [isOpen, initialPaymentMethod]);
+	}, [isOpen, initialPaymentMethod, propStages]);
 	const [isTier2Open, setIsTier2Open] = useState<boolean>(false);
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
 	const [isSimpleCashierMode, setIsSimpleCashierMode] = useState<boolean>(
@@ -1522,7 +1553,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								Выбор этапа сметы / плана лечения:
 							</span>
 							<span className="text-xs text-[var(--muted,#64748b)]">
-								{stages.length} этапов в плане
+								{stages.length} {stages.length === 1 ? "этап" : stages.length < 5 ? "этапа" : "этапов"} в плане
 							</span>
 						</div>
 						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">

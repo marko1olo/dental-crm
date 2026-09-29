@@ -10,6 +10,7 @@
 
 import React, { useMemo, useState } from "react";
 import {
+	AlertCircle,
 	ArrowLeftRight,
 	Check,
 	CheckCircle2,
@@ -37,8 +38,10 @@ import { generateQrCodeSvg } from "../../portal/patientCabinet/patientCabinetEng
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { FiscalReceiptQueueManager } from "../../../services/hardware/fiscalReceiptQueueManager";
 import { showToast } from "../../GlobalToast";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 
 let refundMutationSeq = 0;
+
 
 export interface RefundServiceModalProps {
 	readonly isOpen: boolean;
@@ -95,15 +98,17 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 	services = [],
 	onRefundSuccess,
 }) => {
-	// Fallback sample services if none provided (e.g. standard 5-service act)
+	// Fallback sample services only in Demo Showcase Mode (Mandate 8y)
+	const isDemo = isDemoShowcaseMode();
 	const rawServices = useMemo(() => {
 		if (services && services.length > 0) return services;
-		return DEFAULT_FALLBACK_SERVICES;
-	}, [services]);
+		if (isDemo) return DEFAULT_FALLBACK_SERVICES;
+		return [];
+	}, [services, isDemo]);
 
 	// State
 	const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
-		() => new Set([rawServices[0]?.id || "srv-1"])
+		() => (rawServices[0]?.id ? new Set([rawServices[0].id]) : new Set())
 	);
 	const [reasonCategory, setReasonCategory] = useState<RefundReasonCategory>("warranty_case");
 	const [customReason, setCustomReason] = useState("");
@@ -122,19 +127,28 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 
 	// Convert raw services into RefundableInvoiceItem
 	const refundableItems: RefundableInvoiceItem[] = useMemo(() => {
-		return rawServices.map((s) => ({
-			id: s.id,
-			name: s.name,
-			code804n: s.code804n || "A16.07.002",
-			toothNumber: s.toothNumber,
-			unitPriceKop: Math.round(s.priceRub * 100),
-			quantity: s.quantity,
-			grossAmountKop: Math.round(s.priceRub * s.quantity * 100),
-			netAmountKop: Math.round(s.priceRub * s.quantity * 100),
-			doctorName: s.doctorName || doctorName,
-			commissionPct: s.commissionPct ?? doctorCommissionPct,
-			materialCostKop: Math.round((s.materialCostRub || 0) * 100),
-		}));
+		return rawServices.map((s) => {
+			const rawUnitPriceKop =
+				typeof (s as unknown as { priceKop?: number }).priceKop === "number"
+					? (s as unknown as { priceKop: number }).priceKop
+					: Math.round((Number.isFinite(s.priceRub) ? s.priceRub : 0) * 100);
+			const unitPriceKop = Number.isFinite(rawUnitPriceKop) ? Math.max(0, Math.round(rawUnitPriceKop)) : 0;
+			const quantity = Number.isFinite(s.quantity) && s.quantity > 0 ? s.quantity : 1;
+			const totalAmountKop = Math.round(unitPriceKop * quantity);
+			return {
+				id: s.id,
+				name: s.name || (s as unknown as { nameRu?: string }).nameRu || "Медицинская услуга",
+				code804n: s.code804n || "A16.07.002",
+				toothNumber: s.toothNumber,
+				unitPriceKop,
+				quantity,
+				grossAmountKop: totalAmountKop,
+				netAmountKop: totalAmountKop,
+				doctorName: s.doctorName || doctorName,
+				commissionPct: s.commissionPct ?? doctorCommissionPct,
+				materialCostKop: Math.round((Number.isFinite(s.materialCostRub) ? s.materialCostRub! : 0) * 100),
+			};
+		});
 	}, [rawServices, doctorName, doctorCommissionPct]);
 
 	// Live Calculation
@@ -183,7 +197,7 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 	};
 
 	const handleExecuteRefund = async () => {
-		if (selectedItemIds.size === 0) {
+		if (selectedItemIds.size === 0 || rawServices.length === 0) {
 			showToast("Выберите хотя бы одну позицию для возврата средств.", "warning");
 			return;
 		}
@@ -450,63 +464,78 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 								<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] mb-2">
 									1. Выберите позицию(и) из счета для возврата:
 								</label>
-								<div className="space-y-2 border border-[var(--border,#e2e8f0)] rounded-xl p-2.5 bg-[var(--paper-soft,#f8fafc)]">
-									{rawServices.map((srv) => {
-										const isSelected = selectedItemIds.has(srv.id);
-										const itemClawback = Math.round(
-											(srv.priceRub - (srv.materialCostRub || 0)) * ((srv.commissionPct ?? doctorCommissionPct) / 100)
-										);
+								{rawServices.length === 0 ? (
+									<div
+										data-testid="refund-empty-services"
+										className="p-8 rounded-xl border border-dashed border-[var(--border,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-center flex flex-col items-center justify-center gap-2"
+									>
+										<AlertCircle className="w-8 h-8 text-[var(--muted,#64748b)]" />
+										<p className="text-sm font-semibold text-[var(--ink,#0f172a)] m-0">
+											Позиции для возврата не найдены. Проверьте номер счёта или обратитесь к администратору
+										</p>
+										<p className="text-xs text-[var(--muted,#64748b)] m-0">
+											В данном счёте отсутствуют позиции для оформления частичного возврата средств.
+										</p>
+									</div>
+								) : (
+									<div className="space-y-2 border border-[var(--border,#e2e8f0)] rounded-xl p-2.5 bg-[var(--paper-soft,#f8fafc)]">
+										{rawServices.map((srv) => {
+											const isSelected = selectedItemIds.has(srv.id);
+											const itemClawback = Math.round(
+												(srv.priceRub - (srv.materialCostRub || 0)) * ((srv.commissionPct ?? doctorCommissionPct) / 100)
+											);
 
-										return (
-											<button
-												key={srv.id}
-												type="button"
-												onClick={() => toggleSelectItem(srv.id)}
-												className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-3 min-h-[48px] ${
-													isSelected
-														? "bg-amber-500/10 border-amber-500/40 text-[var(--ink,#0f172a)] shadow-sm"
-														: "bg-[var(--paper,#ffffff)] border-[var(--border,#e2e8f0)] text-[var(--muted,#64748b)] hover:border-slate-300"
-												}`}
-											>
-												<div
-													className={`w-5 h-5 rounded-md border flex items-center justify-center mt-0.5 shrink-0 ${
+											return (
+												<button
+													key={srv.id}
+													type="button"
+													onClick={() => toggleSelectItem(srv.id)}
+													className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-3 min-h-[48px] ${
 														isSelected
-															? "bg-amber-500 border-amber-500 text-white"
-															: "border-slate-300 dark:border-slate-600 bg-[var(--paper,#ffffff)]"
+															? "bg-amber-500/10 border-amber-500/40 text-[var(--ink,#0f172a)] shadow-sm"
+															: "bg-[var(--paper,#ffffff)] border-[var(--border,#e2e8f0)] text-[var(--muted,#64748b)] hover:border-slate-300"
 													}`}
 												>
-													{isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-												</div>
-
-												<div className="flex-1 min-w-0">
-													<div className="flex items-center justify-between gap-2">
-														<div className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] truncate" title={srv.name}>
-															{srv.toothNumber && (
-																<span className="px-1.5 py-0.5 rounded bg-teal-500/15 text-teal-600 dark:text-teal-400 font-mono text-xs mr-1.5">
-																	Зуб {srv.toothNumber}
-																</span>
-															)}
-															{srv.name}
-														</div>
-														<div className="font-extrabold text-xs sm:text-sm text-[var(--ink,#0f172a)] shrink-0">
-															{srv.priceRub.toLocaleString("ru-RU")} ₽
-														</div>
+													<div
+														className={`w-5 h-5 rounded-md border flex items-center justify-center mt-0.5 shrink-0 ${
+															isSelected
+																? "bg-amber-500 border-amber-500 text-white"
+																: "border-slate-300 dark:border-slate-600 bg-[var(--paper,#ffffff)]"
+														}`}
+													>
+														{isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
 													</div>
 
-													<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--muted,#64748b)] mt-1">
-														<span>Код: {srv.code804n || "A16.07.002"}</span>
-														<span>•</span>
-														<span>Врач: {srv.doctorName || doctorName}</span>
-														<span>•</span>
-														<span className="text-amber-600 dark:text-amber-400 font-bold">
-															Вычет з/п: -{itemClawback.toLocaleString("ru-RU")} ₽ ({srv.commissionPct ?? doctorCommissionPct}%)
-														</span>
+													<div className="flex-1 min-w-0">
+														<div className="flex items-center justify-between gap-2">
+															<div className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] truncate" title={srv.name}>
+																{srv.toothNumber && (
+																	<span className="px-1.5 py-0.5 rounded bg-teal-500/15 text-teal-600 dark:text-teal-400 font-mono text-xs mr-1.5">
+																		Зуб {srv.toothNumber}
+																	</span>
+																)}
+																{srv.name}
+															</div>
+															<div className="font-extrabold text-xs sm:text-sm text-[var(--ink,#0f172a)] shrink-0">
+																{srv.priceRub.toLocaleString("ru-RU")} ₽
+															</div>
+														</div>
+
+														<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--muted,#64748b)] mt-1">
+															<span>Код: {srv.code804n || "A16.07.002"}</span>
+															<span>•</span>
+															<span>Врач: {srv.doctorName || doctorName}</span>
+															<span>•</span>
+															<span className="text-amber-600 dark:text-amber-400 font-bold">
+																Вычет з/п: -{itemClawback.toLocaleString("ru-RU")} ₽ ({srv.commissionPct ?? doctorCommissionPct}%)
+															</span>
+														</div>
 													</div>
-												</div>
-											</button>
-										);
-									})}
-								</div>
+												</button>
+											);
+										})}
+									</div>
+								)}
 							</div>
 
 							{/* Step 2: Reason & Payment Method */}
@@ -724,8 +753,8 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 							<button
 								type="button"
 								onClick={handleExecuteRefund}
-								disabled={isProcessing}
-								className="min-h-[44px] px-5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-all shadow-md flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+								disabled={isProcessing || selectedItemIds.size === 0 || rawServices.length === 0}
+								className="min-h-[44px] px-5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-all shadow-md flex items-center gap-2 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
 							>
 								<RotateCcw className="w-4 h-4" />
 								<span>

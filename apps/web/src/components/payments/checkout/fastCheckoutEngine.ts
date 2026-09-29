@@ -105,8 +105,8 @@ export function calculateStageAdvanceAmount(
 	mode: StagePaymentMode = "full",
 	advanceAlreadyPaidKop = 0,
 ): StageAdvanceCalculation {
-	const sanitizedStageKop = Math.max(0, stageAmountKop);
-	const sanitizedPrevPaidKop = Math.max(0, advanceAlreadyPaidKop);
+	const sanitizedStageKop = Number.isFinite(stageAmountKop) ? Math.max(0, Math.round(stageAmountKop)) : 0;
+	const sanitizedPrevPaidKop = Number.isFinite(advanceAlreadyPaidKop) ? Math.max(0, Math.round(advanceAlreadyPaidKop)) : 0;
 
 	switch (mode) {
 		case "advance_30": {
@@ -208,7 +208,7 @@ export function validateBuyerInn(params: {
 			isRequired: false,
 			errorRu:
 				cleanInn.length !== 12 && cleanInn.length !== 10
-					? "ИНН физического лица обычно содержит 12 цифр (для чека 54-ФЗ поле опционально и не блокирует оплату)"
+					? "ИНН физического лица содержит 12 цифр (для чека поле опционально и не блокирует оплату)"
 					: undefined,
 		};
 	}
@@ -220,8 +220,8 @@ export function validateBuyerInn(params: {
 			isRequired: true,
 			errorRu:
 				clientType === "legal_entity"
-					? "Для юридического лица обязателен ИНН (10 цифр) по 54-ФЗ"
-					: "Для индивидуального предпринимателя обязателен ИНН (12 цифр) по 54-ФЗ",
+					? "Для юридического лица обязателен ИНН (10 цифр)"
+					: "Для индивидуального предпринимателя обязателен ИНН (12 цифр)",
 		};
 	}
 

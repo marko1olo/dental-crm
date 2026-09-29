@@ -167,7 +167,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 							<h2 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)] flex items-center gap-2">
 								Сдельная зарплата и расчетный листок
 								<span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/20">
-									Т-51 / НДФЛ 13%
+									Расчет зарплаты / НДФЛ 13%
 								</span>
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)]">
@@ -387,7 +387,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 							className="h-10 px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 transition-colors cursor-pointer"
 						>
 							<Download className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-							Экспорт Т-51 (CSV)
+							Экспорт зарплаты (CSV)
 						</button>
 						<button
 							type="button"

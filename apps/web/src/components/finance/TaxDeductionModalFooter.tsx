@@ -95,7 +95,7 @@ export const TaxDeductionModalFooter: React.FC<TaxDeductionModalFooterProps> = (
 							data-testid="btn-tax-print-blank"
 							onClick={onPrintBlank}
 							className="min-h-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-[var(--ink,#0f172a)] hover:bg-slate-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
-							title="Печать чистого бланка справки КНД 1151156 со строками «________» для ручного заполнения"
+							title="Печать чистого бланка справки для налогового вычета со строками «________» для ручного заполнения"
 						>
 							<Printer size={15} />
 							<span>Бланк («________»)</span>
@@ -106,7 +106,7 @@ export const TaxDeductionModalFooter: React.FC<TaxDeductionModalFooterProps> = (
 							className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
 						>
 							<Printer size={16} />
-							<span>Печать справки КНД 1151156 (А4)</span>
+							<span>Печать справки на вычет (А4)</span>
 						</button>
 					</>
 				)}

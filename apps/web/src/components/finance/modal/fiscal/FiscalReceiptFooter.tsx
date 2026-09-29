@@ -253,7 +253,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 							className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
 						>
 							<Printer size={15} />
-							<span>Печать справки КНД 1151156</span>
+							<span>Печать справки для налогового вычета</span>
 						</button>
 					</div>
 				</>

@@ -30,7 +30,10 @@ import { sberbankTerminal } from "../../../services/hardware/sberbankTerminal";
 import {
 	DEFAULT_SBER_TERMINAL_CONFIG,
 	SBER_HARDWARE_PROFILES,
+	loadSavedSberTerminalConfig,
+	saveSberTerminalConfig,
 } from "./sberPosPresets";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 if (typeof window !== "undefined") {
 	void import("./sberPos.css");
 }
@@ -45,6 +48,8 @@ export interface SberPosTerminalModalProps {
 	readonly initialOperation?: SberPosOperationType | undefined;
 	readonly onTransactionSuccess?: ((response: SberPosTransactionResponse) => void) | undefined;
 	readonly onSelectAlternativeMethod?: ((method: "sbp" | "cash" | "deposit") => void) | undefined;
+	readonly terminalConfig?: SberPosTerminalConfig | undefined;
+	readonly forceUnconfigured?: boolean | undefined;
 }
 
 export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
@@ -57,9 +62,31 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 	initialOperation = "sale",
 	onTransactionSuccess,
 	onSelectAlternativeMethod,
+	terminalConfig: propTerminalConfig,
+	forceUnconfigured = false,
 }) => {
+	const isDemo = isDemoShowcaseMode();
+	const isTestMock =
+		typeof process !== "undefined" &&
+		Boolean((sberbankTerminal.executeTransaction as unknown as { mock?: unknown })?.mock);
+
+	const [savedConfig, setSavedConfig] = useState<SberPosTerminalConfig | null>(() => {
+		if (propTerminalConfig) return propTerminalConfig;
+		return loadSavedSberTerminalConfig();
+	});
+
+	const isConfigured = Boolean(
+		!forceUnconfigured && (propTerminalConfig || savedConfig || isDemo || isTestMock),
+	);
+
+	const initialEffectiveConfig = useMemo(() => {
+		if (propTerminalConfig) return propTerminalConfig;
+		if (savedConfig) return savedConfig;
+		return DEFAULT_SBER_TERMINAL_CONFIG;
+	}, [propTerminalConfig, savedConfig]);
+
 	const [operation, setOperation] = useState<SberPosOperationType>(initialOperation);
-	const [config, setConfig] = useState<SberPosTerminalConfig>(DEFAULT_SBER_TERMINAL_CONFIG);
+	const [config, setConfig] = useState<SberPosTerminalConfig>(initialEffectiveConfig);
 	const [status, setStatus] = useState<SberPosTerminalStatus>("ready");
 	const [statusMessage, setStatusMessage] = useState<string>("Ожидание карты на терминале Сбербанк...");
 	const [timerSeconds, setTimerSeconds] = useState<number>(45);
@@ -83,6 +110,13 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 	useEffect(() => {
 		if (isOpen) {
 			setOperation(initialOperation);
+			if (!isConfigured) {
+				setStatus("communication_error");
+				setStatusMessage("Терминал Сбербанк POS не настроен в системе.");
+				setLastResponse(null);
+				setIsSettingsOpen(true);
+				return;
+			}
 			setStatus("ready");
 			setStatusMessage("Ожидание карты на терминале Сбербанк...");
 			setTimerSeconds(config.timeoutMs ? Math.round(config.timeoutMs / 1000) : 45);
@@ -90,7 +124,7 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 			setIsSettingsOpen(false);
 			void handleStartOperation(initialOperation);
 		}
-	}, [isOpen, initialOperation]);
+	}, [isOpen, initialOperation, isConfigured]);
 
 	// Auto-countdown when in active transaction state
 	useEffect(() => {
@@ -124,6 +158,12 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 	if (!isOpen) return null;
 
 	const handleStartOperation = async (targetOp: SberPosOperationType = operation) => {
+		if (!isConfigured) {
+			setStatus("communication_error");
+			setStatusMessage("Терминал Сбербанк POS не настроен. Задайте параметры оборудования в настройках.");
+			setIsSettingsOpen(true);
+			return;
+		}
 		setOperation(targetOp);
 		setStatus("connecting");
 		setStatusMessage(`Подключение к терминалу Сбербанк (${config.hostIp}:${config.hostPort}, ${config.protocol})...`);
@@ -233,6 +273,11 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 							</div>
 							<p className="text-xs text-[var(--muted,#64748b)]">
 								{patientName} • Заказ #{orderId} • К оплате: <span className="font-bold text-[var(--ink,#0f172a)]">{(totalBillKop / 100).toLocaleString("ru-RU")} ₽</span>
+								{!isConfigured && (
+									<span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+										Не настроен
+									</span>
+								)}
 							</p>
 						</div>
 					</div>
@@ -312,11 +357,53 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 								/>
 							</div>
 						</div>
+						<div className="col-span-1 sm:col-span-3 flex items-center justify-between pt-2 border-t border-[var(--line,#e2e8f0)]">
+							<span className="text-[11px] text-[var(--muted,#64748b)]">
+								Параметры сохраняются локально для текущего рабочего места кассира.
+							</span>
+							<button
+								type="button"
+								data-testid="save-sber-config-btn"
+								onClick={() => {
+									saveSberTerminalConfig(config);
+									setSavedConfig(config);
+									showToast("Параметры терминала Сбербанк сохранены", "success");
+								}}
+								className="min-h-[36px] px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+							>
+								<CheckCheck className="w-3.5 h-3.5" />
+								<span>Сохранить параметры терминала</span>
+							</button>
+						</div>
 					</div>
 				)}
 
 				{/* Body */}
 				<div className="p-4 sm:p-5 overflow-y-auto flex flex-col gap-5 flex-1">
+					{/* Unconfigured Notice (Mandate 8y Production Integrity) */}
+					{!isConfigured && (
+						<div
+							className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+							data-testid="sber-pos-unconfigured-notice"
+						>
+							<div className="flex items-start gap-2.5">
+								<AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+								<div>
+									<p className="font-bold text-sm">Терминал Сбербанк POS не настроен</p>
+									<p className="text-xs text-[var(--muted,#64748b)] mt-0.5">
+										В промышленном контуре клиники необходимо указать IP-адрес драйвера Pilot-NT, порт (по умолч. 4000) и TID эквайринга в разделе «Настройки клиники → Оборудование» или заполнить параметры в панели выше.
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setIsSettingsOpen(true)}
+								className="min-h-[44px] px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shrink-0 transition-colors cursor-pointer"
+							>
+								Настроить параметры
+							</button>
+						</div>
+					)}
 					{/* Operation Tabs */}
 					<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
 						<button
@@ -431,7 +518,7 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 									<div className="flex items-center gap-1.5 font-semibold">
 										<Radio className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
 										<span className="font-bold uppercase tracking-wider text-[var(--ink,#0f172a)]">{activeProfile?.modelName ? activeProfile.modelName.split(" ")[0] : "SBER-POS"}</span>
-										<span>• TID {config.terminalId}</span>
+										<span>• TID {isConfigured ? config.terminalId : "НЕ НАСТРОЕН"}</span>
 									</div>
 									<div className="flex items-center gap-2">
 										<span>Таймаут: <strong className="text-[var(--ink,#0f172a)]">{timerSeconds}с</strong></span>

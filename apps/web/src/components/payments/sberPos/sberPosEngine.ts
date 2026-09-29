@@ -4,7 +4,7 @@
  * Operations: Sale, Refund, Void, SberPay QR, FacePay Biometry, Settlement (Z-Report)
  */
 
-export type SberPosProtocolType = "pilot_nt" | "arcus_d" | "dual_connector" | "sberpay_direct_api";
+export type SberPosProtocolType = "pilot_nt" | "arcus_d" | "dual_connector" | "smartpos" | "sberpay_direct_api";
 
 export type SberPosOperationType =
 	| "sale"

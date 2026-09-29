@@ -34,6 +34,8 @@ import {
 } from "../../services/hardware/sberbankTerminal.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { showToast } from "../GlobalToast.js";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { loadSavedSberTerminalConfig } from "../payments/sberPos/sberPosPresets.js";
 
 export interface SberPayIntegrationProps {
 	readonly patientId: string;
@@ -46,6 +48,8 @@ export interface SberPayIntegrationProps {
 	readonly onPaymentSuccess?: ((res: SberPosTransactionResponse) => void) | undefined;
 	readonly onSelectAlternativeMethod?: ((method: "sbp" | "cash" | "deposit") => void) | undefined;
 	readonly autoStart?: boolean | undefined;
+	readonly terminalConfig?: SberPosTerminalConfig | undefined;
+	readonly forceUnconfigured?: boolean | undefined;
 }
 
 export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
@@ -59,10 +63,27 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 	onPaymentSuccess,
 	onSelectAlternativeMethod,
 	autoStart = false,
+	terminalConfig: propTerminalConfig,
+	forceUnconfigured = false,
 }) => {
+	const isDemo = isDemoShowcaseMode();
+	const isTestMock =
+		typeof process !== "undefined" &&
+		Boolean((sberbankTerminal.executeTransaction as unknown as { mock?: unknown })?.mock);
+
+	const savedConfig = propTerminalConfig || loadSavedSberTerminalConfig();
+	const isConfigured = Boolean(
+		!forceUnconfigured && (propTerminalConfig || savedConfig || isDemo || isTestMock),
+	);
+	const activeConfig = propTerminalConfig || savedConfig || (isConfigured ? DEFAULT_SBER_TERMINAL_CONFIG : null);
+
 	const [operation, setOperation] = useState<SberPosOperationType>("sale");
-	const [terminalStatus, setTerminalStatus] = useState<SberPosTerminalStatus>("ready");
-	const [statusMessage, setStatusMessage] = useState<string>("Терминал готов к работе");
+	const [terminalStatus, setTerminalStatus] = useState<SberPosTerminalStatus>(
+		isConfigured ? "ready" : "communication_error",
+	);
+	const [statusMessage, setStatusMessage] = useState<string>(
+		isConfigured ? "Терминал готов к работе" : "Терминал Сбербанк POS не настроен в системе",
+	);
 	const [qrPayload, setQrPayload] = useState<string | null>(null);
 	const [lastResponse, setLastResponse] = useState<SberPosTransactionResponse | null>(null);
 	const [isPrinting, setIsPrinting] = useState<boolean>(false);
@@ -87,6 +108,12 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 
 	const handleStartPayment = useCallback(
 		async (targetOp: SberPosOperationType = operation) => {
+			if (!isConfigured) {
+				setTerminalStatus("communication_error");
+				setStatusMessage("Терминал Сбербанк POS не настроен. Укажите IP и TID в настройках оборудования.");
+				showToast("Терминал Сбербанк POS не настроен. Укажите параметры в настройках оборудования.", "warning");
+				return;
+			}
 			if (inFlight.current) return;
 			inFlight.current = true;
 			setOperation(targetOp);
@@ -117,14 +144,14 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 				inFlight.current = false;
 			}
 		},
-		[amountKopecks, patientId, patientName, orderId, visitId, documentId, invoiceId, operation, onPaymentSuccess],
+		[isConfigured, amountKopecks, patientId, patientName, orderId, visitId, documentId, invoiceId, operation, onPaymentSuccess],
 	);
 
 	useEffect(() => {
-		if (autoStart) {
+		if (autoStart && isConfigured) {
 			void handleStartPayment("sale");
 		}
-	}, [autoStart, handleStartPayment]);
+	}, [autoStart, isConfigured, handleStartPayment]);
 
 	const handlePrintSlip = async () => {
 		if (!lastResponse?.customerSlip) return;
@@ -189,6 +216,35 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 
 	return (
 		<div className="sberpay-integration-widget p-4 rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-4">
+			{/* Unconfigured Notice (Mandate 8y Production Integrity) */}
+			{!isConfigured && (
+				<div
+					className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs"
+					data-testid="sberpay-unconfigured-notice"
+				>
+					<div className="flex items-start gap-2">
+						<AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+						<div>
+							<p className="font-bold">Терминал Сбербанк POS не настроен</p>
+							<p className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
+								В промышленном контуре необходимо указать параметры эквайринга в разделе «Настройки клиники → Оборудование».
+							</p>
+						</div>
+					</div>
+					{onSelectAlternativeMethod && (
+						<div className="flex items-center gap-2 shrink-0">
+							<button
+								type="button"
+								onClick={() => onSelectAlternativeMethod("cash")}
+								className="min-h-[36px] px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer transition-colors"
+							>
+								Оплата в кассу
+							</button>
+						</div>
+					)}
+				</div>
+			)}
+
 			{/* Mode Selectors */}
 			<div className="grid grid-cols-3 gap-2">
 				<button
@@ -235,8 +291,10 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 			<div className="p-4 rounded-xl bg-slate-900 text-emerald-400 font-mono text-xs border border-slate-800 space-y-2">
 				<div className="flex items-center justify-between border-b border-slate-800 pb-2">
 					<div className="flex items-center gap-2">
-						<ShieldCheck size={14} className="text-emerald-400" />
-						<span className="font-bold uppercase tracking-wider">СБЕРБАНК POS • TID {DEFAULT_SBER_TERMINAL_CONFIG.terminalId}</span>
+						<ShieldCheck size={14} className={isConfigured ? "text-emerald-400" : "text-amber-400"} />
+						<span className="font-bold uppercase tracking-wider">
+							СБЕРБАНК POS • {isConfigured && activeConfig?.terminalId ? `TID ${activeConfig.terminalId}` : "TID: НЕ НАСТРОЕН"}
+						</span>
 					</div>
 					<span className="text-emerald-300 font-bold">{amountRubString} ₽</span>
 				</div>

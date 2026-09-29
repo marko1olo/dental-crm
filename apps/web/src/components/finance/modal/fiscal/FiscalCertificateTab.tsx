@@ -94,7 +94,7 @@ export const FiscalCertificateTab: React.FC<FiscalCertificateTabProps> = ({
 			<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-4">
 				<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
 					<FileCheck size={16} className="text-[var(--teal,#0d9488)]" />
-					Реквизиты справки КНД 1151156 для налогового органа:
+					Реквизиты справки для налогового вычета:
 				</h4>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -166,7 +166,7 @@ export const FiscalCertificateTab: React.FC<FiscalCertificateTabProps> = ({
 					className="min-h-[48px] px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
 				>
 					<Printer size={16} />
-					<span>Печать справки КНД 1151156</span>
+					<span>Печать справки для налогового вычета</span>
 				</button>
 			</div>
 		</div>

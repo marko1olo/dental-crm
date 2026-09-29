@@ -58,7 +58,7 @@ export const CashShiftKpiCards: React.FC<CashShiftKpiCardsProps> = ({
 						<ShieldCheck className="w-4 h-4 text-teal-600" />
 						Чистая выручка
 					</span>
-					<span className="font-mono text-[10px]">54-ФЗ</span>
+					<span className="font-mono text-[10px]">Касса 54-ФЗ</span>
 				</div>
 				<div
 					className="text-2xl font-black font-mono text-teal-700 dark:text-teal-300"

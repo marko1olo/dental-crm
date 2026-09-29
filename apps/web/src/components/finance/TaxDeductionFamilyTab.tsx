@@ -60,7 +60,7 @@ export const TaxDeductionFamilyTab: React.FC<TaxDeductionFamilyTabProps> = ({
 				<div className="space-y-1">
 					<div className="flex items-center gap-2">
 						<span className="px-2.5 py-0.5 rounded-md bg-teal-600 text-white text-[11px] font-bold tracking-wide">
-							ПАКЕТ КНД 1151156 • {selectedYear} ГОД
+							СПРАВКИ НА ВЫЧЕТ • {selectedYear} ГОД
 						</span>
 						<span className="text-xs font-mono text-[var(--muted,#64748b)]">
 							Справок в пакете: {familyBatchResult.certificatesCount} шт.

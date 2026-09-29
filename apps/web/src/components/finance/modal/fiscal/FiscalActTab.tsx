@@ -108,7 +108,7 @@ export const FiscalActTab: React.FC<FiscalActTabProps> = ({
 						<thead>
 							<tr className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-center">
 								<th className="border border-slate-400 dark:border-slate-600 p-2 w-8">№</th>
-								<th className="border border-slate-400 dark:border-slate-600 p-2 w-28">Код 804н</th>
+								<th className="border border-slate-400 dark:border-slate-600 p-2 w-28">Код услуги</th>
 								<th className="border border-slate-400 dark:border-slate-600 p-2 text-left">Наименование медицинской услуги</th>
 								<th className="border border-slate-400 dark:border-slate-600 p-2 w-14">Зуб</th>
 								<th className="border border-slate-400 dark:border-slate-600 p-2 w-14">Кол-во</th>
