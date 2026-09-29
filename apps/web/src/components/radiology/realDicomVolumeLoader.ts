@@ -23,6 +23,15 @@ export {
   type MultiFrameDicomHeader,
 };
 
+declare module "./cbctMprMath" {
+  interface CbctVoxelVolume {
+    readonly imageOrientationPatient?: readonly [number, number, number, number, number, number] | undefined;
+    readonly isFlippedX?: boolean | undefined;
+    readonly isFlippedY?: boolean | undefined;
+    readonly isFlippedZ?: boolean | undefined;
+  }
+}
+
 export interface ParsedDicomSliceHeader {
   rows: number;
   cols: number;
@@ -39,15 +48,75 @@ export interface ParsedDicomSliceHeader {
   windowWidth: number;
   pixelDataByteOffset: number;
   pixelDataByteLength: number;
-  numberOfFrames?: number;
-  patientName?: string;
-  studyDate?: string;
+  numberOfFrames?: number | undefined;
+  patientName?: string | undefined;
+  studyDate?: string | undefined;
+  imagePositionPatient?: [number, number, number] | undefined;
+  imageOrientationPatient?: [number, number, number, number, number, number] | undefined;
 }
 
 export interface DicomSliceEntry {
   header: ParsedDicomSliceHeader;
   buffer: ArrayBuffer | null;
   fileName: string;
+}
+
+/**
+ * Accurately extracts calibrated Hounsfield Units (HU) from raw DICOM voxel words
+ * according to DICOM PS 3.5 Section 8.2 and PS 3.3 C.11.1.
+ *
+ * Handles:
+ * 1. BitsStored masking (12-bit, 14-bit, 16-bit) to strip high/overlay bits.
+ * 2. Proper two's complement sign-extension for signed representations (PixelRepresentation=1).
+ * 3. Linear RescaleSlope and RescaleIntercept calibration (HU = raw * slope + intercept).
+ * 4. Int16 clamping [-32768, 32767] to prevent numeric overflow.
+ */
+export function extractCalibratedVoxelHU(
+  rawWord: number,
+  bitsStored: number,
+  isSigned: boolean,
+  rescaleSlope: number,
+  rescaleIntercept: number,
+): number {
+  let val = rawWord;
+  const bits = bitsStored > 0 && bitsStored <= 16 ? bitsStored : 16;
+
+  if (bits < 16) {
+    const mask = (1 << bits) - 1;
+    val = val & mask;
+    if (isSigned) {
+      const signBit = 1 << (bits - 1);
+      if ((val & signBit) !== 0) {
+        val = val - (1 << bits); // proper 2's complement sign extension
+      }
+    }
+  } else if (isSigned) {
+    val = (val << 16) >> 16;
+  }
+
+  const slope = Number.isFinite(rescaleSlope) && rescaleSlope > 0 ? rescaleSlope : 1.0;
+  const intercept = Number.isFinite(rescaleIntercept) ? rescaleIntercept : 0.0;
+
+  const hu = Math.round(val * slope + intercept);
+  return Math.max(-32768, Math.min(32767, hu));
+}
+
+/**
+ * Calculates physical projection distance along the acquisition slice normal vector.
+ * DICOM Part 3 PS 3.3 C.7.6.2: dist = P . (u_row x v_col).
+ * Falls back to sliceLocationZ when orientation cosines are absent.
+ */
+export function computeSliceNormalDistance(
+  pos: [number, number, number] | undefined,
+  orient: [number, number, number, number, number, number] | undefined,
+  fallbackZ: number,
+): number {
+  if (!pos || !orient) return fallbackZ;
+  const [Xx, Xy, Xz, Yx, Yy, Yz] = orient;
+  const nx = Xy * Yz - Xz * Yy;
+  const ny = Xz * Yx - Xx * Yz;
+  const nz = Xx * Yy - Xy * Yx;
+  return pos[0] * nx + pos[1] * ny + pos[2] * nz;
 }
 
 export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHeader {
@@ -73,6 +142,8 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
   let numberOfFrames = 1;
   let patientName = "Не указан";
   let studyDate = "";
+  let imagePositionPatient: [number, number, number] | undefined;
+  let imageOrientationPatient: [number, number, number, number, number, number] | undefined;
 
   // Scan up to 256KB or byteLength for standard DICOM tags
   const maxHeaderSearch = Math.min(byteLength - 8, 262144);
@@ -154,9 +225,30 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
         try {
           const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
           const parts = str.split("\\").map((s) => Number.parseFloat(s.trim()));
-          if (parts.length >= 3 && !Number.isNaN(parts[2])) {
-            sliceLocationZ = parts[2] ?? 0.0;
-            hasImagePositionPatient = true;
+          if (parts.length >= 3) {
+            imagePositionPatient = [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0];
+            if (!Number.isNaN(parts[2])) {
+              sliceLocationZ = parts[2] ?? 0.0;
+              hasImagePositionPatient = true;
+            }
+          }
+        } catch {}
+      }
+    } else if (group === 0x0020 && element === 0x0037) {
+      // ImageOrientationPatient [Xx, Xy, Xz, Yx, Yy, Yz]
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
+        try {
+          const str = new TextDecoder("ascii").decode(new Uint8Array(buffer, tagValOff, tagLen)).trim();
+          const parts = str.split("\\").map((s) => Number.parseFloat(s.trim()));
+          if (parts.length >= 6 && parts.every((p) => !Number.isNaN(p))) {
+            imageOrientationPatient = [
+              parts[0] ?? 1,
+              parts[1] ?? 0,
+              parts[2] ?? 0,
+              parts[3] ?? 0,
+              parts[4] ?? 1,
+              parts[5] ?? 0,
+            ];
           }
         } catch {}
       }
@@ -299,6 +391,8 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
     numberOfFrames,
     patientName,
     studyDate,
+    imagePositionPatient,
+    imageOrientationPatient,
   };
 }
 
@@ -334,8 +428,18 @@ export async function buildVolumeFromDicomBuffers(
 
   // Sort slices in ascending order of physical Z (Inferior/Caudal -> Superior/Cranial)
   sliceEntries.sort((a, b) => {
-    if (Math.abs(a.header.sliceLocationZ - b.header.sliceLocationZ) > 0.0001) {
-      return a.header.sliceLocationZ - b.header.sliceLocationZ;
+    const distA = computeSliceNormalDistance(
+      a.header.imagePositionPatient,
+      a.header.imageOrientationPatient,
+      a.header.sliceLocationZ,
+    );
+    const distB = computeSliceNormalDistance(
+      b.header.imagePositionPatient,
+      b.header.imageOrientationPatient,
+      b.header.sliceLocationZ,
+    );
+    if (Math.abs(distA - distB) > 0.0001) {
+      return distA - distB;
     }
     if (a.header.instanceNumber !== b.header.instanceNumber) {
       return a.header.instanceNumber - b.header.instanceNumber;
@@ -352,11 +456,27 @@ export async function buildVolumeFromDicomBuffers(
 
   let computedSpacingZ = refHeader.sliceThickness;
   if (depth > 1) {
-    const zFirst = sliceEntries[0]!.header.sliceLocationZ;
-    const zLast = sliceEntries[depth - 1]!.header.sliceLocationZ;
-    const deltaZ = Math.abs(zLast - zFirst) / (depth - 1);
+    const distFirst = computeSliceNormalDistance(
+      sliceEntries[0]!.header.imagePositionPatient,
+      sliceEntries[0]!.header.imageOrientationPatient,
+      sliceEntries[0]!.header.sliceLocationZ,
+    );
+    const distLast = computeSliceNormalDistance(
+      sliceEntries[depth - 1]!.header.imagePositionPatient,
+      sliceEntries[depth - 1]!.header.imageOrientationPatient,
+      sliceEntries[depth - 1]!.header.sliceLocationZ,
+    );
+    const deltaZ = Math.abs(distLast - distFirst) / (depth - 1);
     if (deltaZ > 0.001 && deltaZ < 10.0) computedSpacingZ = deltaZ;
   }
+
+  const refOrient = refHeader.imageOrientationPatient ?? [1, 0, 0, 0, 1, 0];
+  const [Xx, , , , Yy] = refOrient;
+  // If Xx < -0.5, row axis points towards patient Right (-X) instead of standard Left (+X).
+  // Invert X row traversal to restore anatomical Patient Right on canvas Left.
+  const flipX = Xx < -0.5;
+  // If Yy < -0.5, col axis points towards patient Anterior (-Y) instead of standard Posterior (+Y).
+  const flipY = (Yy ?? 1) < -0.5;
 
   const totalVoxels = width * height * depth;
   const voxelData = new Int16Array(totalVoxels);
@@ -370,6 +490,7 @@ export async function buildVolumeFromDicomBuffers(
     if (!entry.buffer) continue;
     const offset = entry.header.pixelDataByteOffset;
     const isSigned = entry.header.pixelRepresentation === 1;
+    const bitsStored = entry.header.bitsStored;
     const slope = entry.header.rescaleSlope;
     const intercept = entry.header.rescaleIntercept;
     const baseIdx = z * sliceVoxelCount;
@@ -387,12 +508,26 @@ export async function buildVolumeFromDicomBuffers(
       rawSlice = isSigned ? new Int16Array(safeBuf) : new Uint16Array(safeBuf);
     }
 
-    for (let i = 0; i < sliceVoxelCount; i++) {
-      // Clamp to prevent Int16 integer overflow on dense metal/enamel
-      const hu = Math.max(-32768, Math.min(32767, Math.round((rawSlice[i] ?? 0) * slope + intercept)));
-      voxelData[baseIdx + i] = hu;
-      if (hu < minVoxelHU) minVoxelHU = hu;
-      if (hu > maxVoxelHU) maxVoxelHU = hu;
+    if (!flipX && !flipY) {
+      for (let i = 0; i < sliceVoxelCount; i++) {
+        const hu = extractCalibratedVoxelHU(rawSlice[i] ?? 0, bitsStored, isSigned, slope, intercept);
+        voxelData[baseIdx + i] = hu;
+        if (hu < minVoxelHU) minVoxelHU = hu;
+        if (hu > maxVoxelHU) maxVoxelHU = hu;
+      }
+    } else {
+      for (let y = 0; y < height; y++) {
+        const srcY = flipY ? height - 1 - y : y;
+        const rowOffset = y * width;
+        const srcRowOffset = srcY * width;
+        for (let x = 0; x < width; x++) {
+          const srcX = flipX ? width - 1 - x : x;
+          const hu = extractCalibratedVoxelHU(rawSlice[srcRowOffset + srcX] ?? 0, bitsStored, isSigned, slope, intercept);
+          voxelData[baseIdx + rowOffset + x] = hu;
+          if (hu < minVoxelHU) minVoxelHU = hu;
+          if (hu > maxVoxelHU) maxVoxelHU = hu;
+        }
+      }
     }
 
     // Zero-leak GC: immediately free this slice's raw ArrayBuffer from V8 heap
@@ -423,6 +558,9 @@ export async function buildVolumeFromDicomBuffers(
     rescaleIntercept: refHeader.rescaleIntercept,
     defaultWindowWidth: refHeader.windowWidth > 0 ? refHeader.windowWidth : 4400,
     defaultWindowLevel: refHeader.windowCenter !== 0 ? refHeader.windowCenter : 1300,
+    imageOrientationPatient: refHeader.imageOrientationPatient,
+    isFlippedX: flipX,
+    isFlippedY: flipY,
     isDisposed: false,
   };
 }

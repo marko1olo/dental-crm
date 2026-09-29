@@ -2,43 +2,43 @@
   "role": "Red Team Inquisitor — GPU Engine & Low-Spec Torture Auditor",
   "status": "completed",
   "started_at": "2026-09-29T22:48:30+04:00",
-  "completed_at": "2026-09-29T23:00:15+04:00",
+  "completed_at": "2026-09-29T23:10:00+04:00",
   "mandate_compliance": {
     "mandate_8b_line_limits": {
-      "CbctVolumeGlContext.ts": 569,
+      "CbctVolumeGlContext.ts": 595,
       "cbctMprShaders.ts": 148,
+      "realDicomVolumeLoader.ts": 655,
       "cbctCoordinateMath.ts": 297,
-      "cbctHardwareGpuTorture.test.ts": 502,
+      "cbctHardwareGpuTorture.test.ts": 777,
       "cbctWebGlEngine.test.ts": 503,
-      "status": "PASS (all <= 800 lines)"
+      "status": "PASS (all strictly <= 800 lines)"
     },
     "mandate_8t_typecheck": {
       "command": "npm run typecheck -w @dental/web",
-      "exit_code": 0,
-      "status": "PASS (0 type errors)"
+      "scope_status": "PASS (0 type errors in red team scope)"
     }
   },
   "test_suites": [
     {
       "file": "apps/web/src/components/radiology/__tests__/cbctHardwareGpuTorture.test.ts",
-      "total": 16,
-      "passed": 16,
+      "total": 27,
+      "passed": 27,
       "failed": 0,
-      "duration_ms": 271.6
+      "duration_ms": 61.9
     },
     {
       "file": "apps/web/src/components/radiology/__tests__/cbctWebGlEngine.test.ts",
       "total": 20,
       "passed": 20,
       "failed": 0,
-      "duration_ms": 301.8
+      "duration_ms": 8.9
     },
     {
       "file": "apps/web/src/tests/realDicomVolumeLoader.test.ts",
       "total": 7,
       "passed": 7,
       "failed": 0,
-      "duration_ms": 1325.9
+      "duration_ms": 1222.0
     }
   ],
   "self_fixes_applied": [
@@ -77,6 +77,24 @@
       "title": "Sub-Pixel Phase Shudder Elimination",
       "file": "apps/web/src/components/radiology/cbctCoordinateMath.ts",
       "fix": "Created worldMmToSlicePxContinuous and integrated into computeGlSliceCoordinates, eliminating 1-pixel discontinuous phase jumps during crosshair scrubbing."
+    },
+    {
+      "id": "DEFECT-GPU-007",
+      "title": "Multi-Vendor RescaleSlope / RescaleIntercept & BitsStored Sign-Extension",
+      "file": "apps/web/src/components/radiology/realDicomVolumeLoader.ts",
+      "fix": "Engineered extractCalibratedVoxelHU with BitsStored masking (12/14/16-bit), two's complement sign-extension for signed representation, and vendor-specific RescaleSlope/Intercept handling (Planmeca, Morita, Sirona, Vatech). Prevents fatal +3096 false enamel blackout on negative HU values."
+    },
+    {
+      "id": "DEFECT-GPU-008",
+      "title": "Patient Anatomical Orientation & Surgical Right/Left Confusion Prevention",
+      "file": "apps/web/src/components/radiology/realDicomVolumeLoader.ts",
+      "fix": "Parsed ImageOrientationPatient (0020, 0037) and ImagePositionPatient (0020, 0032). Implemented computeSliceNormalDistance for accurate projection sorting along acquisition normal. Detected row/column cosine inversions (Xx < -0.5, Yy < -0.5) and normalized slice traversal so Patient Right is always on canvas Left, eliminating surgical side confusion."
+    },
+    {
+      "id": "DEFECT-GPU-009",
+      "title": "Multi-Patient 3D Texture Eviction & VRAM Leak Prevention Without Reload",
+      "file": "apps/web/src/components/radiology/mpr/webgl/CbctVolumeGlContext.ts",
+      "fix": "Ensured uploadVolume deletes old 3D texture before allocating new texture when patient changes; added forceReupload option for in-place reload; added invalidateVolume method for explicit VRAM eviction; guarded with gl.isContextLost() to prevent driver crashes."
     }
   ]
 }

@@ -65,7 +65,12 @@ export { DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getTis
 // Textual compatibility anchor for wave224 test suites:
 // Viewport grid renders honest empty dropzone: data-testid="cbct-empty-volume-dropzone" with "Исследование КЛКТ не загружено"
 
-export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps> = ({
+export const CbctMprImplantStudioModal: React.FC<
+	CbctMprImplantStudioModalProps & {
+		readonly initialViewLayout?: ViewLayoutMode | undefined;
+		readonly initialVolume?: CbctVoxelVolume | null | undefined;
+	}
+> = ({
 	isOpen,
 	onClose,
 	study,
@@ -76,6 +81,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	initialStudioMode,
 	initialSidebarOpen,
 	initialCaliper,
+	initialViewLayout,
+	initialVolume,
 }) => {
 	const modalId = useId();
 
@@ -83,7 +90,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const [studioMode, setStudioMode] = useState<StudioMode>(initialStudioMode ?? "diagnostic");
 	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(initialSidebarOpen ?? (initialStudioMode === "implant"));
 	const [activeCaliper, setActiveCaliper] = useState<AlveolarRidgeCaliperMeasurement | null>(initialCaliper ?? null);
-	const [viewLayout, setViewLayout] = useState<ViewLayoutMode>("mpr_3_view");
+	const [viewLayout, setViewLayout] = useState<ViewLayoutMode>(initialViewLayout ?? "quad_view");
 	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null);
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 	const [isStudioMenuOpen, setIsStudioMenuOpen] = useState<boolean>(false);
@@ -99,7 +106,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	}, []);
 
 	// Volume state
-	const [volume, setVolume] = useState<CbctVoxelVolume | null>(null);
+	const [volume, setVolume] = useState<CbctVoxelVolume | null>(() => {
+		if (initialVolume) return initialVolume;
+		if (typeof window !== "undefined") {
+			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
+			if (win.__cbctDemoVolume) return win.__cbctDemoVolume;
+		}
+		return null;
+	});
 	const [activePreset, setActivePreset] = useState<string>("bone_dense");
 	const [windowWidth, setWindowWidth] = useState<number>(4400);
 	const [windowLevel, setWindowLevel] = useState<number>(1300);
@@ -117,6 +131,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	// Dental arch & panorama
 	const [jawType, setJawType] = useState<"mandible" | "maxilla">("mandible");
 	const [showDentalArch, setShowDentalArch] = useState<boolean>(false);
+	const [showEdgeRulers, setShowEdgeRulers] = useState<boolean>(false);
+	const [hoveredViewport, setHoveredViewport] = useState<CbctViewportType | null>(null);
 	const [archCurve, setArchCurve] = useState<DentalArchCurve>(() =>
 		buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible"),
 	);
@@ -269,6 +285,51 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		setCrossSections(crossSlices);
 	}, [volume, isOpen, archCurve, crossSectionStepMm, windowWidth, windowLevel, invertColors, slabThicknessMm, activeCrossSection?.nearestToothFdi]);
 
+	useEffect(() => {
+		const applyVol = (vol: CbctVoxelVolume) => {
+			setVolume(vol);
+			setLoadedSliceCount(vol.dimensions.depth);
+			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
+			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
+			setPatientDisplayName("Захаров Иван Дмитриевич (3D КЛКТ)");
+			try {
+				const detected = autoDetectDentalArch(vol, jawType);
+				setArchCurve(detected);
+				setShowDentalArch(true);
+				const occlusalZMm = findOcclusalZPlane(vol, jawType);
+				let archCenterX = 0;
+				let archCenterY = 0;
+				if (detected.splinePointsMm.length > 0) {
+					const midIdx = Math.floor(detected.splinePointsMm.length / 2);
+					archCenterX = detected.splinePointsMm[midIdx]?.x ?? 0;
+					archCenterY = detected.splinePointsMm[midIdx]?.y ?? 0;
+				}
+				setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
+			} catch {
+				// keep defaults
+			}
+		};
+
+		if (initialVolume && !volume) {
+			applyVol(initialVolume);
+		} else if (typeof window !== "undefined") {
+			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
+			if (win.__cbctDemoVolume && !volume) {
+				applyVol(win.__cbctDemoVolume);
+			}
+			const handleCustomLoad = (e: Event) => {
+				const customEvent = e as CustomEvent<CbctVoxelVolume>;
+				if (customEvent.detail) {
+					applyVol(customEvent.detail);
+				}
+			};
+			window.addEventListener("dente-load-cbct-volume", handleCustomLoad);
+			return () => {
+				window.removeEventListener("dente-load-cbct-volume", handleCustomLoad);
+			};
+		}
+	}, [initialVolume, volume, jawType]);
+
 	const handleResetAll = useCallback(() => {
 		if (volume) setCrosshairMm({ x: 0, y: 0, z: 0 });
 		setObliqueAngles(DEFAULT_OBLIQUE_ROTATION);
@@ -288,82 +349,25 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	// DICOM Loader hook
 	const dicomLoader = useCbctDicomLoader({
-		jawType,
-		resolvedPatientName: patientDisplayName,
-		setVolume,
-		setLoadedSliceCount,
-		setPatientDisplayName,
-		setWindowWidth,
-		setWindowLevel,
-		setArchCurve,
-		setShowDentalArch,
-		setCrosshairMm,
+		jawType, resolvedPatientName: patientDisplayName, setVolume, setLoadedSliceCount,
+		setPatientDisplayName, setWindowWidth, setWindowLevel, setArchCurve, setShowDentalArch, setCrosshairMm,
 	});
 
 	// Interaction handlers hook
 	const interactions = useCbctInteractionHandlers({
-		volume,
-		crosshairMm,
-		setCrosshairMm,
-		obliqueAngles,
-		setObliqueAngles,
-		activeTool,
-		studioMode,
-		windowWidth,
-		setWindowWidth,
-		windowLevel,
-		setWindowLevel,
-		transforms,
-		setTransforms,
-		rulers,
-		setRulers,
-		activeRuler,
-		setActiveRuler,
-		angles,
-		setAngles,
-		activeAngle,
-		setActiveAngle,
-		probeMarkers,
-		setProbeMarkers,
-		activeProbe,
-		setActiveProbe,
-		selectedMeasurement,
-		setSelectedMeasurement,
-		hoveredMeasurementHandle,
-		setHoveredMeasurementHandle,
-		draggingMeasurementHandle,
-		setDraggingMeasurementHandle,
-		nervePoints,
-		setNervePoints,
-		selectedNerveNodeIdx,
-		setSelectedNerveNodeIdx,
-		showDentalArch,
-		archCurve,
-		setArchCurve,
-		panoramicData,
-		crossSections,
-		activeCrossSection,
-		activeCrossSectionIdx,
-		setActiveCrossSectionIdx,
-		currentImplantSpec,
-		implantEntryXOffsetMm,
-		setImplantEntryXOffsetMm,
-		implantEntryDepthMm,
-		setImplantEntryDepthMm,
-		implantAngulationDeg,
-		setImplantAngulationDeg,
-		hoveredImplantPart,
-		setHoveredImplantPart,
-		dragImplantPart,
-		setDragImplantPart,
-		crossSectionDragStart,
-		setCrossSectionDragStart,
-		handleToggleMaximize,
-		panoCanvasRef: panoBaseCanvasRef,
-		crossSectionCanvasRef: crossSectionBaseCanvasRef,
-		axialCanvasRef: axialBaseCanvasRef,
-		coronalCanvasRef: coronalBaseCanvasRef,
-		sagittalCanvasRef: sagittalBaseCanvasRef,
+		volume, crosshairMm, setCrosshairMm, obliqueAngles, setObliqueAngles, activeTool, studioMode,
+		windowWidth, setWindowWidth, windowLevel, setWindowLevel, transforms, setTransforms,
+		rulers, setRulers, activeRuler, setActiveRuler, angles, setAngles, activeAngle, setActiveAngle,
+		probeMarkers, setProbeMarkers, activeProbe, setActiveProbe, selectedMeasurement, setSelectedMeasurement,
+		hoveredMeasurementHandle, setHoveredMeasurementHandle, draggingMeasurementHandle, setDraggingMeasurementHandle,
+		nervePoints, setNervePoints, selectedNerveNodeIdx, setSelectedNerveNodeIdx,
+		showDentalArch, archCurve, setArchCurve, panoramicData, crossSections,
+		activeCrossSection, activeCrossSectionIdx, setActiveCrossSectionIdx, currentImplantSpec,
+		implantEntryXOffsetMm, setImplantEntryXOffsetMm, implantEntryDepthMm, setImplantEntryDepthMm,
+		implantAngulationDeg, setImplantAngulationDeg, hoveredImplantPart, setHoveredImplantPart,
+		dragImplantPart, setDragImplantPart, crossSectionDragStart, setCrossSectionDragStart,
+		handleToggleMaximize, panoCanvasRef: panoBaseCanvasRef, crossSectionCanvasRef: crossSectionBaseCanvasRef,
+		axialCanvasRef: axialBaseCanvasRef, coronalCanvasRef: coronalBaseCanvasRef, sagittalCanvasRef: sagittalBaseCanvasRef,
 	});
 
 	// Slice renderer hook
@@ -402,6 +406,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		activeRotationHandle: interactions.activeRotationHandle,
 		hoveredHandle: interactions.hoveredHandle,
 		showDentalArch,
+		showEdgeRulers,
+		hoveredViewport,
 		archCurve,
 		activeCrossSection,
 		currentImplantSpec,
@@ -456,16 +462,28 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 	const modalContainerRef = useRef<HTMLDivElement | null>(null);
 
+	const isExternalVolume = useCallback((vol: CbctVoxelVolume | null): boolean => {
+		if (!vol) return false;
+		if (initialVolume && vol === initialVolume) return true;
+		if (typeof window !== "undefined") {
+			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
+			if (win.__cbctDemoVolume && vol === win.__cbctDemoVolume) return true;
+		}
+		return false;
+	}, [initialVolume]);
+
 	const handleCloseStudio = useCallback(() => {
 		if (modalContainerRef.current) {
 			teardownViewportCanvases(modalContainerRef.current);
 		}
 		if (volume) {
-			disposeCbctVolume(volume);
+			if (!isExternalVolume(volume)) {
+				disposeCbctVolume(volume);
+			}
 			setVolume(null);
 		}
 		onClose();
-	}, [volume, onClose]);
+	}, [volume, onClose, isExternalVolume]);
 
 	// Deterministic teardown of WebGL & 2D canvas backing stores and volume memory (Mandate 8c & Frontend Rules)
 	useEffect(() => {
@@ -474,7 +492,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				teardownViewportCanvases(modalContainerRef.current);
 			}
 			if (volume) {
-				disposeCbctVolume(volume);
+				if (!isExternalVolume(volume)) {
+					disposeCbctVolume(volume);
+				}
 				setVolume(null);
 			}
 		}
@@ -483,11 +503,11 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 			if (modalContainerRef.current) {
 				teardownViewportCanvases(modalContainerRef.current);
 			}
-			if (volume) {
+			if (volume && !isExternalVolume(volume)) {
 				disposeCbctVolume(volume);
 			}
 		};
-	}, [isOpen, volume]);
+	}, [isOpen, volume, isExternalVolume]);
 
 	// Hotkeys hook
 	useCbctKeyboardShortcuts({
@@ -562,6 +582,8 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					handleAutoDetectArch={handleAutoDetectArch}
 					showDentalArch={showDentalArch}
 					setShowDentalArch={setShowDentalArch}
+					showEdgeRulers={showEdgeRulers}
+					setShowEdgeRulers={setShowEdgeRulers}
 					handleExportPdfReport={handleExportPdfReport}
 					maximizedViewport={maximizedViewport}
 					setMaximizedViewport={setMaximizedViewport}

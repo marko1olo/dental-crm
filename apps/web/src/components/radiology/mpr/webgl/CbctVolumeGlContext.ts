@@ -362,20 +362,25 @@ export class CbctVolumeGlContext {
 	 * Uploads 16-bit signed CBCT volume data to GPU as a 3D Texture.
 	 * If the same volume is already loaded in VRAM, skips redundant re-upload.
 	 */
-	public uploadVolume(volume: CbctVoxelVolume): boolean {
+	public uploadVolume(
+		volume: CbctVoxelVolume,
+		options?: { forceReupload?: boolean },
+	): boolean {
 		const gl = this.gl;
 		if (!gl || !this.isAvailable()) return false;
+		if (gl.isContextLost && gl.isContextLost()) return false;
 		if (!volume.data || volume.isDisposed) return false;
 
 		// Already in GPU memory
-		if (this.activeVolumeId === volume.id && this.volumeTexture) {
+		if (!options?.forceReupload && this.activeVolumeId === volume.id && this.volumeTexture) {
 			return true;
 		}
 
-		// Delete previous texture if changing volumes
+		// Delete previous texture if changing volumes or forcing re-upload
 		if (this.volumeTexture) {
 			gl.deleteTexture(this.volumeTexture);
 			this.volumeTexture = null;
+			this.activeVolumeId = null;
 		}
 
 		const texture = gl.createTexture();
@@ -427,18 +432,26 @@ export class CbctVolumeGlContext {
 
 		// Upload 16-bit signed integer volume data directly into VRAM
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2); // 16-bit short alignment
-		gl.texImage3D(
-			gl.TEXTURE_3D,
-			0,
-			gl.R16I,
-			uploadWidth,
-			uploadHeight,
-			uploadDepth,
-			0,
-			gl.RED_INTEGER,
-			gl.SHORT,
-			uploadData,
-		);
+		try {
+			gl.texImage3D(
+				gl.TEXTURE_3D,
+				0,
+				gl.R16I,
+				uploadWidth,
+				uploadHeight,
+				uploadDepth,
+				0,
+				gl.RED_INTEGER,
+				gl.SHORT,
+				uploadData,
+			);
+		} catch (err) {
+			console.error("[CbctVolumeGlContext] gl.texImage3D failed:", err);
+			gl.deleteTexture(texture);
+			this.volumeTexture = null;
+			this.activeVolumeId = null;
+			return false;
+		}
 
 		this.volumeTexture = texture;
 		this.activeVolumeId = volume.id;
@@ -450,6 +463,20 @@ export class CbctVolumeGlContext {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Explicitly marks a volume ID (or active volume) as evicted from GPU cache,
+	 * releasing its 3D texture backing store to prevent VRAM memory bloat upon patient change.
+	 */
+	public invalidateVolume(volumeId?: string): void {
+		if (!volumeId || this.activeVolumeId === volumeId) {
+			if (this.gl && this.volumeTexture) {
+				this.gl.deleteTexture(this.volumeTexture);
+				this.volumeTexture = null;
+			}
+			this.activeVolumeId = null;
+		}
 	}
 
 	/**

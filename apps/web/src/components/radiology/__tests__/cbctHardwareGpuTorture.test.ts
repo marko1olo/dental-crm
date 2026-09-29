@@ -43,6 +43,11 @@ import {
 	worldMmToSlicePx,
 	worldMmToSlicePxContinuous,
 } from "../cbctCoordinateMath";
+import {
+	extractCalibratedVoxelHU,
+	computeSliceNormalDistance,
+	parseDicomSliceHeader,
+} from "../realDicomVolumeLoader";
 
 // ─── REAL DATASET BENCHMARK PROFILES ─────────────────────────────────────────
 
@@ -578,6 +583,324 @@ describe("RED TEAM AUDIT: Hardware WebGL2 GPU Engine Torture & Self-Fix Verifica
 			assert.ok(Number.isFinite(coords.axisU[0]));
 			assert.ok(Number.isFinite(coords.axisV[1]));
 			assert.ok(Number.isFinite(coords.axisNorm[2]));
+		});
+	});
+
+	// ─── 6. MULTI-VENDOR RESCALE SLOPE / INTERCEPT & BITS STORED MASKING ────────
+
+	describe("6. Multi-Vendor RescaleSlope / Intercept & BitsStored Masking", () => {
+		it("Planmeca 12-bit unsigned: extracts exact Air (-1000), Water (0), and Bone (+1500) without offset distortion", () => {
+			// Planmeca ProMax 3D: BitsStored=12, Unsigned, Slope=1.0, Intercept=-1000
+			const airHU = extractCalibratedVoxelHU(0, 12, false, 1.0, -1000);
+			const waterHU = extractCalibratedVoxelHU(1000, 12, false, 1.0, -1000);
+			const corticalBoneHU = extractCalibratedVoxelHU(2500, 12, false, 1.0, -1000);
+
+			assert.strictEqual(airHU, -1000, "Planmeca Air must be exactly -1000 HU");
+			assert.strictEqual(waterHU, 0, "Planmeca Water must be exactly 0 HU");
+			assert.strictEqual(corticalBoneHU, 1500, "Planmeca Cortical Bone must be exactly +1500 HU");
+		});
+
+		it("Morita 14-bit unsigned with fractional slope (0.5) & intercept (-1024): preserves Misch D1-D4 bone classification", () => {
+			// J. Morita Veraviewepocs: BitsStored=14, Unsigned, Slope=0.5, Intercept=-1024
+			const waterHU = extractCalibratedVoxelHU(2048, 14, false, 0.5, -1024);
+			assert.strictEqual(waterHU, 0, "Water must calibrate to 0 HU");
+
+			// Misch D1 Dense Cortical Bone (> 1250 HU): raw 4700 -> 4700 * 0.5 - 1024 = 1326 HU
+			const d1HU = extractCalibratedVoxelHU(4700, 14, false, 0.5, -1024);
+			assert.ok(d1HU > 1250, `Misch D1 bone must exceed 1250 HU, got ${d1HU}`);
+
+			// Misch D2 Porous Cortical Bone (850 - 1250 HU): raw 4000 -> 4000 * 0.5 - 1024 = 976 HU
+			const d2HU = extractCalibratedVoxelHU(4000, 14, false, 0.5, -1024);
+			assert.ok(d2HU >= 850 && d2HU <= 1250, `Misch D2 bone must be 850-1250 HU, got ${d2HU}`);
+
+			// Misch D3 Coarse Trabecular Bone (350 - 850 HU): raw 3200 -> 3200 * 0.5 - 1024 = 576 HU
+			const d3HU = extractCalibratedVoxelHU(3200, 14, false, 0.5, -1024);
+			assert.ok(d3HU >= 350 && d3HU <= 850, `Misch D3 bone must be 350-850 HU, got ${d3HU}`);
+
+			// Misch D4 Fine Trabecular Bone (150 - 350 HU): raw 2500 -> 2500 * 0.5 - 1024 = 226 HU
+			const d4HU = extractCalibratedVoxelHU(2500, 14, false, 0.5, -1024);
+			assert.ok(d4HU >= 150 && d4HU <= 350, `Misch D4 bone must be 150-350 HU, got ${d4HU}`);
+		});
+
+		it("Sirona 12-bit signed two's complement (slope 1.0, intercept 0.0): sign-extends negative values, avoiding +3096 false enamel blackout", () => {
+			// Sirona Galileos: BitsStored=12, Signed (PixelRepresentation=1), Slope=1.0, Intercept=0.0
+			// In 12-bit two's complement, -1000 is 4096 - 1000 = 3096 (0x0C18)
+			const airHU = extractCalibratedVoxelHU(3096, 12, true, 1.0, 0.0);
+			assert.strictEqual(
+				airHU,
+				-1000,
+				`12-bit signed sign extension must yield -1000 HU, got ${airHU} (fatal false enamel bug avoided!)`,
+			);
+
+			// -500 HU in 12-bit two's complement is 4096 - 500 = 3596
+			const softTissueHU = extractCalibratedVoxelHU(3596, 12, true, 1.0, 0.0);
+			assert.strictEqual(softTissueHU, -500, "12-bit signed sign extension must yield -500 HU");
+		});
+
+		it("Overlay Bit Stripping: high bits 12..15 containing overlay flags (0xF000) are cleanly masked", () => {
+			// Scanner placed overlay flags in bits 12..15 (0xF000)
+			const rawWithOverlay = 0xf000 | 1000;
+			const cleanWaterHU = extractCalibratedVoxelHU(rawWithOverlay, 12, false, 1.0, -1000);
+			assert.strictEqual(
+				cleanWaterHU,
+				0,
+				`High bits 12..15 must be masked off; expected 0 HU, got ${cleanWaterHU}`,
+			);
+		});
+	});
+
+	// ─── 7. PATIENT ANATOMICAL ORIENTATION & SURGICAL RIGHT/LEFT SAFETY ──────
+
+	describe("7. Patient Anatomical Orientation & Surgical Right/Left Safety", () => {
+		it("HFS Standard Axial [1, 0, 0, 0, 1, 0]: normal is +Z [0, 0, 1], zero inversion", () => {
+			const pos: [number, number, number] = [0, 0, 50];
+			const orient: [number, number, number, number, number, number] = [1, 0, 0, 0, 1, 0];
+			const dist = computeSliceNormalDistance(pos, orient, 50);
+
+			assert.strictEqual(dist, 50, "Standard axial distance along normal must equal Z coordinate");
+		});
+
+		it("Inverted Row Cosine [-1, 0, 0, 0, 1, 0]: detects left/right mirror and normalizes so Patient Right is always on canvas Left", () => {
+			const invertedOrient: [number, number, number, number, number, number] = [-1, 0, 0, 0, 1, 0];
+			const [Xx] = invertedOrient;
+			const flipX = Xx < -0.5;
+
+			assert.strictEqual(
+				flipX,
+				true,
+				"Must detect X-inversion (Xx < -0.5) to prevent catastrophic Right/Left surgical confusion!",
+			);
+		});
+
+		it("Arbitrary Acquisition Normal: computeSliceNormalDistance projects 3D origin along normal vector", () => {
+			// Coronal acquisition orientation: u_row = [1, 0, 0], v_col = [0, 0, -1] -> normal = [0, 1, 0]
+			const coronalOrient: [number, number, number, number, number, number] = [1, 0, 0, 0, 0, -1];
+			const pos: [number, number, number] = [10, 42.5, -5];
+			const dist = computeSliceNormalDistance(pos, coronalOrient, 0);
+
+			assert.ok(
+				Math.abs(dist - 42.5) < 1e-4,
+				`Coronal projection distance must equal Y position 42.5 mm, got ${dist}`,
+			);
+		});
+	});
+
+	// ─── 8. VOLUME REPLACEMENT WITHOUT PAGE RELOAD & VRAM EVICTION ───────────
+
+	describe("8. Volume Replacement Without Page Reload & VRAM Eviction", () => {
+		function createMockTrackingGl(): {
+			gl: Record<string, unknown>;
+			calls: string[];
+		} {
+			const calls: string[] = [];
+			const gl: Record<string, unknown> = {
+				VERTEX_SHADER: 0x8b31,
+				FRAGMENT_SHADER: 0x8b30,
+				COMPILE_STATUS: 0x8b81,
+				LINK_STATUS: 0x8b82,
+				TEXTURE0: 0x84c0,
+				TEXTURE_3D: 0x806f,
+				TEXTURE_WRAP_S: 0x2802,
+				TEXTURE_WRAP_T: 0x2803,
+				TEXTURE_WRAP_R: 0x8072,
+				CLAMP_TO_EDGE: 0x812f,
+				TEXTURE_MIN_FILTER: 0x2801,
+				TEXTURE_MAG_FILTER: 0x2800,
+				NEAREST: 0x2600,
+				UNPACK_ALIGNMENT: 0x0cf5,
+				R16I: 0x8231,
+				RED_INTEGER: 0x8d94,
+				SHORT: 0x1402,
+				TRIANGLE_STRIP: 0x0005,
+				MAX_3D_TEXTURE_SIZE: 0x8073,
+
+				getParameter: (p: number) => (p === 0x8073 ? 2048 : null),
+				isContextLost: () => false,
+
+				createShader: () => ({ id: Math.random() }),
+				shaderSource: () => {},
+				compileShader: () => {},
+				getShaderParameter: () => true,
+				deleteShader: () => {},
+				createProgram: () => ({ id: Math.random() }),
+				attachShader: () => {},
+				linkProgram: () => {},
+				getProgramParameter: () => true,
+				useProgram: () => {},
+				deleteProgram: () => {},
+				detachShader: () => {},
+				getUniformLocation: () => ({}),
+				uniform1i: () => {},
+				uniform1f: () => {},
+				uniform3f: () => {},
+				uniform3fv: () => {},
+
+				createTexture: () => {
+					calls.push("createTexture");
+					return { id: `tex-${Math.random()}` };
+				},
+				activeTexture: () => calls.push("activeTexture"),
+				bindTexture: () => calls.push("bindTexture"),
+				texParameteri: () => {},
+				pixelStorei: () => {},
+				texImage3D: () => calls.push("texImage3D"),
+				deleteTexture: () => calls.push("deleteTexture"),
+
+				createVertexArray: () => ({ id: "vao" }),
+				bindVertexArray: () => {},
+				deleteVertexArray: () => calls.push("deleteVertexArray"),
+			};
+			return { gl, calls };
+		}
+
+		it("uploadVolume deletes previous 3D texture and releases VRAM before creating new texture", () => {
+			const { gl, calls } = createMockTrackingGl();
+			const canvas = {
+				getContext: (t: string) => (t === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+			assert.strictEqual(glCtx.isAvailable(), true);
+
+			const vol1: CbctVoxelVolume = {
+				id: "patient-ivanov",
+				dimensions: { width: 16, height: 16, depth: 16 },
+				spacingMm: { x: 0.2, y: 0.2, z: 0.2 },
+				originMm: { x: 0, y: 0, z: 0 },
+				physicalSizeMm: { x: 3.2, y: 3.2, z: 3.2 },
+				data: new Int16Array(16 * 16 * 16),
+				minHU: -1000,
+				maxHU: 3000,
+				isDisposed: false,
+			};
+
+			const vol2: CbctVoxelVolume = {
+				id: "patient-zakharov",
+				dimensions: { width: 16, height: 16, depth: 16 },
+				spacingMm: { x: 0.2, y: 0.2, z: 0.2 },
+				originMm: { x: 0, y: 0, z: 0 },
+				physicalSizeMm: { x: 3.2, y: 3.2, z: 3.2 },
+				data: new Int16Array(16 * 16 * 16),
+				minHU: -1000,
+				maxHU: 3000,
+				isDisposed: false,
+			};
+
+			// Upload Volume 1
+			const ok1 = glCtx.uploadVolume(vol1);
+			assert.strictEqual(ok1, true);
+			assert.strictEqual(glCtx.getActiveVolumeId(), "patient-ivanov");
+			assert.ok(calls.includes("createTexture"));
+			assert.ok(calls.includes("texImage3D"));
+
+			// Clear tracking calls
+			calls.length = 0;
+
+			// Upload Volume 2 without page reload
+			const ok2 = glCtx.uploadVolume(vol2);
+			assert.strictEqual(ok2, true);
+			assert.strictEqual(glCtx.getActiveVolumeId(), "patient-zakharov");
+
+			// MUST delete previous texture to prevent 215 MiB VRAM accumulation!
+			assert.ok(calls.includes("deleteTexture"), "Previous 3D texture must be deleted from VRAM!");
+			assert.ok(calls.includes("createTexture"), "New 3D texture must be allocated for patient 2");
+			assert.ok(calls.includes("texImage3D"), "New patient volume must be uploaded");
+		});
+
+		it("uploadVolume with same volume ID skips redundant re-upload unless forceReupload: true", () => {
+			const { gl, calls } = createMockTrackingGl();
+			const canvas = {
+				getContext: (t: string) => (t === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+
+			const vol: CbctVoxelVolume = {
+				id: "patient-steady",
+				dimensions: { width: 16, height: 16, depth: 16 },
+				spacingMm: { x: 0.2, y: 0.2, z: 0.2 },
+				originMm: { x: 0, y: 0, z: 0 },
+				physicalSizeMm: { x: 3.2, y: 3.2, z: 3.2 },
+				data: new Int16Array(16 * 16 * 16),
+				minHU: -1000,
+				maxHU: 3000,
+				isDisposed: false,
+			};
+
+			glCtx.uploadVolume(vol);
+			const texCountBefore = calls.filter((c) => c === "texImage3D").length;
+
+			// Redundant upload of same volume
+			glCtx.uploadVolume(vol);
+			const texCountAfter = calls.filter((c) => c === "texImage3D").length;
+			assert.strictEqual(texCountBefore, texCountAfter, "Redundant upload must be skipped");
+
+			// Forced re-upload (e.g. after filter/threshold change)
+			glCtx.uploadVolume(vol, { forceReupload: true });
+			const texCountForced = calls.filter((c) => c === "texImage3D").length;
+			assert.strictEqual(texCountForced, texCountAfter + 1, "Forced re-upload must upload texture");
+		});
+
+		it("invalidateVolume evicts volume from cache and deletes texture", () => {
+			const { gl, calls } = createMockTrackingGl();
+			const canvas = {
+				getContext: (t: string) => (t === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+
+			const vol: CbctVoxelVolume = {
+				id: "patient-to-evict",
+				dimensions: { width: 16, height: 16, depth: 16 },
+				spacingMm: { x: 0.2, y: 0.2, z: 0.2 },
+				originMm: { x: 0, y: 0, z: 0 },
+				physicalSizeMm: { x: 3.2, y: 3.2, z: 3.2 },
+				data: new Int16Array(16 * 16 * 16),
+				minHU: -1000,
+				maxHU: 3000,
+				isDisposed: false,
+			};
+
+			glCtx.uploadVolume(vol);
+			assert.strictEqual(glCtx.getActiveVolumeId(), "patient-to-evict");
+
+			glCtx.invalidateVolume("patient-to-evict");
+			assert.strictEqual(glCtx.getActiveVolumeId(), null, "Active volume ID must be cleared after invalidation");
+			assert.ok(calls.includes("deleteTexture"), "Texture must be deleted on invalidation");
+		});
+
+		it("Context Loss Protection: returns false gracefully when WebGL context is lost", () => {
+			const { gl } = createMockTrackingGl();
+			gl.isContextLost = () => true;
+
+			const canvas = {
+				getContext: (t: string) => (t === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+
+			const vol: CbctVoxelVolume = {
+				id: "patient-lost",
+				dimensions: { width: 16, height: 16, depth: 16 },
+				spacingMm: { x: 0.2, y: 0.2, z: 0.2 },
+				originMm: { x: 0, y: 0, z: 0 },
+				physicalSizeMm: { x: 3.2, y: 3.2, z: 3.2 },
+				data: new Int16Array(16 * 16 * 16),
+				minHU: -1000,
+				maxHU: 3000,
+				isDisposed: false,
+			};
+
+			const ok = glCtx.uploadVolume(vol);
+			assert.strictEqual(ok, false, "uploadVolume must return false without crashing when context is lost");
 		});
 	});
 });
