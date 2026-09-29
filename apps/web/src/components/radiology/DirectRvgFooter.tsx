@@ -22,7 +22,7 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 		<div className="rvg-capture-footer">
 			<div className="rvg-footer-left-info">
 				<span className="font-mono">
-					Стандарт СанПиН 2.6.1.1192-03 · FDI #{selectedTeeth.join(", ")} · {calculatedDoseMicrosv} мкЗв
+					Безопасная доза · FDI #{selectedTeeth.join(", ")} · {calculatedDoseMicrosv} мкЗв
 				</span>
 			</div>
 

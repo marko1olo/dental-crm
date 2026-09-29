@@ -31,6 +31,7 @@ import {
 } from "./hotFolderTypes";
 import { HotFolderFdiSelector } from "./HotFolderFdiSelector";
 import { HotFolderImageCanvas } from "./HotFolderImageCanvas";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { watchDesktopDicomFolder } from "../../native/desktopBridge";
 if (typeof document !== "undefined") { import("./hotFolderIntake.css"); }
 
@@ -53,7 +54,9 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	// Hot Folder Items State
-	const [hotFolderItems, setHotFolderItems] = useState<HotFolderItem[]>(() => INITIAL_HOT_FOLDER_ITEMS);
+	const [hotFolderItems, setHotFolderItems] = useState<HotFolderItem[]>(() =>
+		isDemoShowcaseMode() ? INITIAL_HOT_FOLDER_ITEMS : [],
+	);
 	const [activeSourceFilter, setActiveSourceFilter] = useState<HotFolderSource>("all");
 	const [selectedItemId, setSelectedItemId] = useState<string>("");
 	const [isScanning, setIsScanning] = useState(false);
@@ -621,8 +624,10 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 							<button
 								type="button"
 								onClick={handleAttachToEmr}
-								className="hfi-primary-attach-btn"
+								disabled={!activeItem}
+								className={`hfi-primary-attach-btn ${!activeItem ? "opacity-50 cursor-not-allowed" : ""}`}
 								data-testid="hfi-primary-attach-btn"
+								title={!activeItem ? "Выберите или загрузите снимок для прикрепления" : undefined}
 							>
 								<Zap className="w-4 h-4 fill-white" />
 								<span>Прикрепить к карте пациента и протоколу ф. 043/у</span>

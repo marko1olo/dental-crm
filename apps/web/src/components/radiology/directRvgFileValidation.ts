@@ -5,6 +5,10 @@
  */
 
 import { showToast } from "../GlobalToast";
+export {
+	createDicomSecondaryCaptureFile,
+	triggerBinaryDownload,
+} from "../visiograph/VisiographDicomExporter";
 import {
 	createDicomSecondaryCaptureFile,
 	triggerBinaryDownload,

@@ -85,7 +85,7 @@ export const HotFolderImageCanvas: React.FC<HotFolderImageCanvasProps> = ({
 
 					<div className={`hfi-hud-chip border ${doseInfo.badgeClass}`}>
 						<ShieldCheck className="w-3.5 h-3.5" />
-						<span>{doseInfo.microsvText} (СанПиН ОК)</span>
+						<span>{doseInfo.microsvText} (В норме)</span>
 					</div>
 				</div>
 			</div>

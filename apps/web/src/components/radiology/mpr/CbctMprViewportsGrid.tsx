@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, FolderOpen, RotateCcw, UploadCloud } from "lucide-react";
+import { Box, FolderOpen, RotateCcw, Sparkles, UploadCloud } from "lucide-react";
 import type {
 	CbctVoxelVolume,
 	CbctViewportType,
@@ -71,6 +71,7 @@ export interface CbctMprViewportsGridProps {
 	readonly activeCrossSection: CrossSectionSliceData | null | undefined;
 	readonly activeCrossSectionIdx: number;
 	readonly crossSections: CrossSectionSliceData[];
+	readonly onLoadDemoVolume?: (() => void) | undefined;
 }
 
 export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
@@ -85,6 +86,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 	folderInputRef,
 	zipInputRef,
 	handleDicomFilesChange,
+	onLoadDemoVolume,
 	activeViewport,
 	setActiveViewport,
 	handleToggleMaximize,
@@ -477,6 +479,17 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 									<UploadCloud className="w-4 h-4" />
 									<span>Загрузить .ZIP</span>
 								</button>
+								{onLoadDemoVolume && (
+									<button
+										type="button"
+										onClick={onLoadDemoVolume}
+										className="px-3 py-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 border border-dashed border-zinc-600 font-medium text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
+										data-testid="cbct-btn-load-demo-volume"
+									>
+										<Sparkles className="w-4 h-4 text-cyan-400" />
+										<span>Показать демо КТ-исследование</span>
+									</button>
+								)}
 							</div>
 						</>
 					)}

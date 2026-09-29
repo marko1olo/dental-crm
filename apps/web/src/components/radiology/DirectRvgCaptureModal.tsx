@@ -17,6 +17,7 @@ import {
 	formatRadiationDose,
 } from "./radiologyMath";
 import { SAMPLE_PATIENT_RVG_URL } from "./types";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
 import { useVisitStore } from "../../store/visitStore";
 import {
 	RvgFiltersToolbar,
@@ -46,7 +47,12 @@ if (typeof document !== "undefined") { import("./rvgCapture.css"); }
 
 // Transparent re-exports
 export * from "./directRvgTypes";
-export { getDirectRvgExportFileName, validateRadiologyUploadFile } from "./directRvgFileValidation";
+export {
+	getDirectRvgExportFileName,
+	validateRadiologyUploadFile,
+	createDicomSecondaryCaptureFile,
+	triggerBinaryDownload,
+} from "./directRvgFileValidation";
 
 export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 	isOpen,
@@ -56,12 +62,20 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 	patientCardNumber = "043/у-2026/891",
 	doctorName = "Лечащий врач",
 	initialToothFdi = "16",
-	initialImageUrl = SAMPLE_PATIENT_RVG_URL,
+	initialImageUrl,
 	onSaveToEmr,
 	onSendToLab,
 	onExportDicom,
 }) => {
 	const modalId = useId();
+
+	const defaultImage = useMemo(() => {
+		if (initialImageUrl !== undefined) return initialImageUrl;
+		if (isDemoShowcaseMode() || isDemoPatientId(patientId) || isDemoPatientId(patientName)) {
+			return SAMPLE_PATIENT_RVG_URL;
+		}
+		return "";
+	}, [initialImageUrl, patientId, patientName]);
 
 	// Sensor & Capture Lifecycle State
 	const [sensorStatus, setSensorStatus] = useState<SensorCaptureStatus>("ready");
@@ -82,7 +96,11 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 	);
 
 	// Viewport & Image Filters
-	const [capturedImage, setCapturedImage] = useState<string>(initialImageUrl);
+	const [capturedImage, setCapturedImage] = useState<string>(defaultImage);
+
+	useEffect(() => {
+		setCapturedImage(defaultImage);
+	}, [defaultImage]);
 	const [filters, setFilters] = useState<RvgFilterValues>(DEFAULT_RVG_FILTERS);
 	const [activePresetId, setActivePresetId] = useState<string>("standard");
 	const [isSplitCompare, setIsSplitCompare] = useState<boolean>(false);
@@ -306,6 +324,10 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 
 	// 1-Click Action 1: Save to EMR (Карта 043/у)
 	const handleSaveToEmr = () => {
+		if (!capturedImage) {
+			showToast("Сначала выполните захват с датчика или загрузите снимок", "warning");
+			return;
+		}
 		setIsSaving(true);
 		const currentSensor = SENSOR_MODELS.find((s) => s.id === selectedSensorModel);
 		const currentIso = new Date().toISOString();
@@ -610,7 +632,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 							</select>
 						</div>
 
-						<div className="rvg-telemetry-chip" title="Эффективная лучевая нагрузка по СанПиН">
+						<div className="rvg-telemetry-chip" title="Эффективная безопасная лучевая нагрузка">
 							<ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
 							<span>{radiationDoseInfo.fullText}</span>
 						</div>
@@ -715,10 +737,124 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 									</span>
 								</div>
 							)}
+							{!capturedImage && (
+								<div
+									className="rvg-empty-sensor-state"
+									data-testid="rvg-empty-sensor-state"
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										alignItems: "center",
+										justifyContent: "center",
+										height: "100%",
+										width: "100%",
+										padding: "32px",
+										textAlign: "center",
+										color: "#94a3b8",
+										zIndex: 2,
+									}}
+								>
+									<div
+										style={{
+											width: "64px",
+											height: "64px",
+											borderRadius: "50%",
+											backgroundColor: "rgba(13, 148, 136, 0.15)",
+											border: "1px solid rgba(13, 148, 136, 0.4)",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											marginBottom: "16px",
+											color: "#2dd4bf",
+										}}
+									>
+										<Camera className="w-8 h-8 animate-pulse text-teal-400" />
+									</div>
+									<h3 style={{ fontSize: "16px", fontWeight: 700, color: "#f8fafc", margin: "0 0 8px 0" }}>
+										Датчик визиографа готов к экспозиции (TWAIN/USB)
+									</h3>
+									<p style={{ fontSize: "13px", maxWidth: "440px", lineHeight: "1.5", margin: "0 0 20px 0" }}>
+										Нажмите «Захват с датчика» (пробел) или перетащите снимок в формате DICOM, TIFF, JPG с диска.
+									</p>
+									<div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+										<button
+											type="button"
+											data-testid="btn-rvg-trigger-empty-capture"
+											onClick={(e) => {
+												e.stopPropagation();
+												handleTriggerCapture();
+											}}
+											style={{
+												padding: "8px 16px",
+												borderRadius: "8px",
+												border: "none",
+												backgroundColor: "#0d9488",
+												color: "#ffffff",
+												fontSize: "13px",
+												fontWeight: 600,
+												cursor: "pointer",
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "6px",
+											}}
+										>
+											<Zap className="w-4 h-4 fill-current" /> Захват с датчика (Space)
+										</button>
+										<button
+											type="button"
+											data-testid="btn-rvg-upload-disk"
+											onClick={(e) => {
+												e.stopPropagation();
+												fileInputRef.current?.click();
+											}}
+											style={{
+												padding: "8px 16px",
+												borderRadius: "8px",
+												border: "1px solid #334155",
+												backgroundColor: "#1e293b",
+												color: "#e2e8f0",
+												fontSize: "13px",
+												fontWeight: 600,
+												cursor: "pointer",
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "6px",
+											}}
+										>
+											<UploadCloud className="w-4 h-4 text-teal-300" /> Загрузить с диска
+										</button>
+										<button
+											type="button"
+											data-testid="btn-rvg-load-demo"
+											onClick={(e) => {
+												e.stopPropagation();
+												setCapturedImage(SAMPLE_PATIENT_RVG_URL);
+												setSensorStatus("captured");
+											}}
+											style={{
+												padding: "8px 14px",
+												borderRadius: "8px",
+												border: "1px dashed #475569",
+												backgroundColor: "rgba(30, 41, 59, 0.6)",
+												color: "#94a3b8",
+												fontSize: "12px",
+												fontWeight: 500,
+												cursor: "pointer",
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "6px",
+											}}
+										>
+											Показать демо-снимок
+										</button>
+									</div>
+								</div>
+							)}
 							<canvas
 								ref={canvasRef}
 								className="rvg-render-canvas"
 								style={{
+									display: capturedImage ? "block" : "none",
 									transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})`,
 									filter: isSplitCompare ? "none" : cssFilterStyle,
 								}}

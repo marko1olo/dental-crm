@@ -663,6 +663,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						activeCrossSection={activeCrossSection}
 						activeCrossSectionIdx={activeCrossSectionIdx}
 						crossSections={crossSections}
+						onLoadDemoVolume={dicomLoader.handleLoadDemoVolume}
 					/>
 
 					<CbctRightSidebar

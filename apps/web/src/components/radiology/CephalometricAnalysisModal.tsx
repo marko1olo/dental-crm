@@ -225,7 +225,7 @@ export function CephalometricAnalysisModal({
 				? `Установлено анатомических ориентиров: ${analysis.placedCount} из ${analysis.totalCount}. `
 				: "Ориентиры не расставлены (предварительный клинический осмотр). ";
 
-		return `ПЕРВИЧНАЯ ОРТОДОНТИЧЕСКАЯ КОНСУЛЬТАЦИЯ (ФОРМА 043-1/у)
+		return `ПЕРВИЧНАЯ ОРТОДОНТИЧЕСКАЯ КОНСУЛЬТАЦИЯ
 Дата приёма: ${dateStr}
 Пациент: ${patientName || "Пациент"}
 
@@ -291,7 +291,7 @@ export function CephalometricAnalysisModal({
 					new CustomEvent("dente-apply-soap-protocol", {
 						detail: {
 							protocolText: currentEffectiveProtocolText,
-							title: "Протокол ТРГ (Форма 043/у)",
+							title: "Протокол ТРГ (Медицинская карта)",
 							soap: {
 								treatmentDescription: currentEffectiveProtocolText,
 							},
@@ -304,7 +304,7 @@ export function CephalometricAnalysisModal({
 			}
 		}
 
-		showToast("Протокол ТРГ успешно вставлен в ортодонтическую карту Формы 043/у!", "success");
+		showToast("Протокол ТРГ успешно вставлен в медицинскую карту!", "success");
 		onClose();
 	};
 
@@ -423,7 +423,7 @@ export function CephalometricAnalysisModal({
 								className="text-xs sm:text-sm text-slate-400 m-0 mt-0.5 truncate"
 								style={{ color: "var(--muted, #94a3b8)", margin: 0 }}
 							>
-								{patientName ? `Пациент: ${patientName}` : "Ортодонтический модуль"} {patientId ? `• ID: ${patientId}` : ""} · Форма 043/у (Приказ МЗ РФ №834н)
+								{patientName ? `Пациент: ${patientName}` : "Ортодонтический модуль"} {patientId ? `• ID: ${patientId}` : ""} · Медицинская карта
 							</p>
 						</div>
 					</div>
@@ -521,10 +521,10 @@ export function CephalometricAnalysisModal({
 							onClick={handleInsertToChart}
 							data-testid="btn-insert-ceph-protocol"
 							className="min-h-[44px] px-3 sm:px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-teal-400/50"
-							title="Перенести расчеты цефалометрии в дневник формы 043/у"
+							title="Перенести расчеты цефалометрии в дневник приёма"
 						>
 							<FileText size={16} />
-							<span>В карту 043/у</span>
+							<span>В карту</span>
 						</button>
 
 						<button
@@ -532,7 +532,7 @@ export function CephalometricAnalysisModal({
 							onClick={handleSaveConsultationWithoutCeph}
 							data-testid="save-consultation-without-ceph-btn"
 							className="min-h-[44px] px-3 sm:px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-amber-500/50"
-							title="Сохранить консультацию ортодонта в карту 043-1/у без полного расчерчивания ТРГ"
+							title="Сохранить консультацию ортодонта в карту без полного расчерчивания ТРГ"
 						>
 							<Save size={16} />
 							<span className="hidden sm:inline">Сохранить консультацию без ТРГ</span>
@@ -621,7 +621,7 @@ export function CephalometricAnalysisModal({
 						data-testid="ceph-mobile-tab-report"
 					>
 						<FileText size={14} />
-						<span>Форма 043/у</span>
+						<span>Медицинская карта</span>
 					</button>
 				</div>
 
@@ -837,11 +837,11 @@ export function CephalometricAnalysisModal({
 										? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs"
 										: "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"
 								}`}
-								title="Форма 043/у-ТРГ (Ортодонтический протокол)"
+								title="Ортодонтический протокол ТРГ для карты"
 							>
 								<FileText size={14} className="shrink-0" />
-								<span className="hidden sm:inline whitespace-nowrap">3. Форма 043/у</span>
-								<span className="sm:hidden whitespace-nowrap">3. 043/у</span>
+								<span className="hidden sm:inline whitespace-nowrap">3. Медицинская карта</span>
+								<span className="sm:hidden whitespace-nowrap">3. Карта</span>
 							</button>
 						</div>
 
@@ -1282,7 +1282,7 @@ export function CephalometricAnalysisModal({
 										}}
 										className="w-full min-h-[48px] py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
 									>
-										<span>Сформировать протокол Формы 043/у</span>
+										<span>Сформировать протокол для карты</span>
 										<ArrowRight size={16} />
 									</button>
 								</div>
@@ -1296,7 +1296,7 @@ export function CephalometricAnalysisModal({
 									<div className="flex items-center gap-2 min-w-0">
 										<FileText size={20} className="text-teal-400 shrink-0" />
 										<span className="text-sm font-bold text-white min-w-0 break-words">
-											Предпросмотр протокола для карты 043/у
+											Предпросмотр протокола для карты
 										</span>
 									</div>
 									<div className="flex items-center gap-2">
@@ -1309,7 +1309,7 @@ export function CephalometricAnalysisModal({
 											}}
 											data-testid="btn-print-ceph-protocol"
 											className="min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2 transition-colors border border-slate-700 cursor-pointer shadow-sm"
-											title="Распечатать протокол ТРГ для карты Формы 043/у"
+											title="Распечатать протокол ТРГ для медицинской карты"
 										>
 											<Printer size={15} />
 											<span>Печать заключения</span>
@@ -1329,7 +1329,7 @@ export function CephalometricAnalysisModal({
 								<textarea
 									readOnly
 									value={currentEffectiveProtocolText}
-									aria-label="Текст протокола ТРГ для формы 043/у"
+									aria-label="Текст протокола ТРГ для медицинской карты"
 									className="flex-1 min-h-[320px] p-4 bg-slate-900 border border-slate-800 rounded-xl font-mono text-xs sm:text-sm text-slate-200 resize-none outline-none focus:border-teal-400 leading-relaxed shadow-inner"
 								/>
 
@@ -1341,7 +1341,7 @@ export function CephalometricAnalysisModal({
 										className="w-full min-h-[48px] py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer border border-teal-400/40"
 									>
 										<Sparkles size={18} />
-										<span>Вставить в ортодонтическую карту Формы 043/у</span>
+										<span>Вставить в ортодонтическую карту</span>
 									</button>
 									<button
 										type="button"

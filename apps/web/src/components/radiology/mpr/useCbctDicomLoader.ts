@@ -186,6 +186,24 @@ export function useCbctDicomLoader(params: UseCbctDicomLoaderParams) {
 		[handleDicomFilesChange],
 	);
 
+	const handleLoadDemoVolume = useCallback(async () => {
+		setDicomLoadingStatus("Загрузка демонстрационного КТ-исследования (KaVo OP300)...");
+		setDicomProgress(10);
+		try {
+			const res = await fetch("/radiology/kavo_op300_cbct_slice.dcm");
+			if (!res.ok) {
+				throw new Error(`Не удалось загрузить демо-файл: ${res.statusText}`);
+			}
+			const blob = await res.blob();
+			const file = new File([blob], "kavo_op300_cbct_slice.dcm", { type: "application/dicom" });
+			await handleDicomFilesChange([file]);
+		} catch (err: unknown) {
+			setDicomLoadingStatus(null);
+			const msg = err instanceof Error ? err.message : "Ошибка загрузки демо КТ";
+			showToast(msg, "error");
+		}
+	}, [handleDicomFilesChange]);
+
 	return {
 		dicomLoadingStatus,
 		dicomProgress,
@@ -198,5 +216,6 @@ export function useCbctDicomLoader(params: UseCbctDicomLoaderParams) {
 		handleSelectDicomFolder,
 		handleSelectDicomZip,
 		handleDropFiles,
+		handleLoadDemoVolume,
 	};
 }
