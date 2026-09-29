@@ -172,11 +172,11 @@ const INITIAL_BIO_RECORDS: readonly BiologicalControlTestRecord[] = [
 export function AutoclaveLog257Modal({
 	isOpen,
 	onClose,
-	initialTab = "new_cycle",
+	initialTab = "journal_257",
 	clinicInfo = DEFAULT_CLINIC_LEGAL_INFO,
 }: AutoclaveLog257ModalProps) {
 	const [activeTab, setActiveTab] = useState<"new_cycle" | "journal_257">(
-		initialTab === "journal_257" ? "journal_257" : "new_cycle",
+		initialTab === "new_cycle" ? "new_cycle" : "journal_257",
 	);
 
 	const isDemo = isDemoShowcaseMode();

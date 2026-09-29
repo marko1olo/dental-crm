@@ -177,6 +177,48 @@ export function evaluateCycleParameters(
 
 	const failureReasons: string[] = [];
 
+	// Проверка на физически невозможные / бессмысленные значения
+	if (sensors.actualExposureMinutes <= 0) {
+		failureReasons.push(
+			`Физически невозможное время экспозиции: ${sensors.actualExposureMinutes} мин (выдержка должна быть больше 0 мин)`,
+		);
+	}
+	if (sensors.actualTemperatureCelsius <= 0) {
+		failureReasons.push(
+			`Физически невозможная температура: ${sensors.actualTemperatureCelsius}°C (температура должна быть больше 0°C)`,
+		);
+	}
+	if (sensors.actualPressureBar < 0) {
+		failureReasons.push(
+			`Физически невозможное отрицательное давление: ${sensors.actualPressureBar} бар`,
+		);
+	}
+
+	// Термодинамические проверки насыщенного пара и сухожара
+	if (regime.methodType === "steam_autoclave") {
+		if (sensors.actualTemperatureCelsius >= 120 && sensors.actualPressureBar <= 0.1) {
+			failureReasons.push(
+				`Физически невозможные параметры насыщенного пара: температура ${sensors.actualTemperatureCelsius}°C при давлении 0 бар (насыщенный водяной пар в автоклаве требует избыточного давления)`,
+			);
+		}
+		if (sensors.actualTemperatureCelsius <= 105 && sensors.actualPressureBar >= 1.5) {
+			failureReasons.push(
+				`Физически невозможные термодинамические параметры: температура ${sensors.actualTemperatureCelsius}°C при давлении ${sensors.actualPressureBar} бар (насыщенный пар не может иметь такое соотношение)`,
+			);
+		}
+	} else if (regime.methodType === "dry_heat_air") {
+		if (sensors.actualPressureBar > 0.1) {
+			failureReasons.push(
+				`Физически несовместимый параметр: в сухожаровом шкафу (воздушный метод) давление не создается (зафиксировано избыточное давление ${sensors.actualPressureBar} бар)`,
+			);
+		}
+		if (sensors.actualTemperatureCelsius <= 105 && sensors.actualPressureBar >= 1.0) {
+			failureReasons.push(
+				`Физически невозможные параметры: сухожар не работает под избыточным давлением ${sensors.actualPressureBar} бар при температуре ${sensors.actualTemperatureCelsius}°C`,
+			);
+		}
+	}
+
 	// Проверка температуры
 	const isTempCompliant =
 		sensors.actualTemperatureCelsius >= regime.tempToleranceCelsius.min &&
@@ -188,7 +230,7 @@ export function evaluateCycleParameters(
 		);
 	}
 
-	// Проверка давления (для парового метода)
+	// Проверка давления (для парового метода и сухожара)
 	let isPressureCompliant = true;
 	let pressureDelta = 0;
 	if (regime.methodType === "steam_autoclave") {
@@ -201,6 +243,9 @@ export function evaluateCycleParameters(
 				`Давление пара вне нормы: ${sensors.actualPressureBar} бар (норма ${regime.pressureToleranceBar.min}–${regime.pressureToleranceBar.max} бар, отклонение ${pressureDelta > 0 ? `+${pressureDelta}` : pressureDelta} бар)`,
 			);
 		}
+	} else if (regime.methodType === "dry_heat_air") {
+		isPressureCompliant = sensors.actualPressureBar <= 0.1;
+		pressureDelta = sensors.actualPressureBar;
 	}
 
 	// Проверка времени экспозиции
@@ -212,7 +257,7 @@ export function evaluateCycleParameters(
 		);
 	}
 
-	const isCompliant = isTempCompliant && isPressureCompliant && isTimeCompliant;
+	const isCompliant = isTempCompliant && isPressureCompliant && isTimeCompliant && failureReasons.length === 0;
 
 	return {
 		isCompliant,
@@ -271,9 +316,9 @@ export function evaluate5ChamberPoints(
 	let summaryRu = "Все 5 контрольных точек: СТЕРИЛЬНО (100% переход индикаторов)";
 	if (!areAllPointsPassed) {
 		if (failedIndices.length > 0) {
-			summaryRu = `БРАК СТЕРИЛИЗАЦИИ: Индикаторы не сработали в точках: ${failedIndices.map((i) => `КТ-${i}`).join(", ")}`;
+			summaryRu = `Аварийный цикл стерилизации: химический термоиндикатор не сработал (цвет не достиг эталона). Партия бракуется. Не сработали точки: ${failedIndices.map((i) => `КТ-${i}`).join(", ")}`;
 		} else {
-			summaryRu = `БРАК СТЕРИЛИЗАЦИИ: Проверено только ${points.length} из 5 обязательных точек`;
+			summaryRu = `Аварийный цикл стерилизации: химический термоиндикатор не сработал (проверено только ${points.length} из 5 обязательных точек). Партия бракуется.`;
 		}
 	}
 
@@ -636,6 +681,56 @@ export function calculateSterilizerStatistics(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 6.1 MISSING STERILIZATION DAYS AUDIT (SANPIN 3.3686-21)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface MissingSterilizationDaysAuditResult {
+	readonly auditedDatesCount: number;
+	readonly missingDatesCount: number;
+	readonly missingDates: readonly string[];
+	readonly isMissingAutoclaveLog: boolean;
+	readonly warningMessageRu?: string | undefined;
+	readonly recommendationRu?: string | undefined;
+}
+
+/**
+ * Аудит непрерывности журнала стерилизации:
+ * Выявляет рабочие дни, в которые велся клинический прием пациентов,
+ * но отсутствует хотя бы один зарегистрированный цикл стерилизации (автоклавирования).
+ */
+export function detectMissingSterilizationDays(
+	records: readonly { date: string }[],
+	visitsOrActiveDates: readonly ({ date: string; hasVisits?: boolean } | string)[],
+): MissingSterilizationDaysAuditResult {
+	const sterilizationDates = new Set(records.map((r) => r.date.slice(0, 10)));
+	const missingSet = new Set<string>();
+
+	for (const item of visitsOrActiveDates) {
+		const dateStr = typeof item === "string" ? item.slice(0, 10) : item.date.slice(0, 10);
+		const hasActivity = typeof item === "string" ? true : (item.hasVisits ?? true);
+		if (hasActivity && !sterilizationDates.has(dateStr)) {
+			missingSet.add(dateStr);
+		}
+	}
+
+	const missingDates = Array.from(missingSet).sort();
+	const isMissingAutoclaveLog = missingDates.length > 0;
+
+	return {
+		auditedDatesCount: visitsOrActiveDates.length,
+		missingDatesCount: missingDates.length,
+		missingDates,
+		isMissingAutoclaveLog,
+		warningMessageRu: isMissingAutoclaveLog
+			? "Внимание: за смену были приемы пациентов, но цикл автоклавирования не зарегистрирован"
+			: undefined,
+		recommendationRu: isMissingAutoclaveLog
+			? `Пропущены записи стерилизации за даты: ${missingDates.join(", ")}. Выполните пакетное формирование записей стерилизации за пропущенные смены в 1 клик для соблюдения требований СанПиН 3.3686-21.`
+			: undefined,
+	};
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 7. RFC 4180 CSV EXPORT ENGINE (WITH UTF-8 BOM)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -804,12 +899,12 @@ export function generateForm257PrintHtml(
 						${verdictLabel}
 						${rec.rejectionReason ? `<br/><span style="font-size:7pt; font-weight:normal; color:#dc2626;">${rec.rejectionReason}</span>` : ""}
 					</td>
-					<td style="font-size:8pt;">
-						${rec.operatorStaffFullName}<br/>
-						<span style="font-size:7pt; color:#64748b;">${rec.operatorStaffPosition}</span>
+					<td style="font-size:8pt; word-break:break-word;">
+						${rec.operatorStaffFullName || clinicInfo.headNurse || "Медсестра ЦСО"}<br/>
+						<span style="font-size:7pt; color:#64748b;">${rec.operatorStaffPosition || "Медсестра ЦСО"}</span>
 					</td>
 					<td style="font-size:7.5pt; text-align:center;">
-						${rec.isHeadNurseVerified ? `Подписано:<br/>${rec.headNurseSignatureFullName ?? clinicInfo.headNurse}` : "—"}
+						${rec.isHeadNurseVerified ? `Подписано:<br/>${rec.headNurseSignatureFullName ?? clinicInfo.headNurse ?? "Главная медсестра"}` : "—"}
 					</td>
 				</tr>
 			`;
@@ -881,6 +976,8 @@ export function generateForm257PrintHtml(
 		}
 		table.form-table {
 			width: 100%;
+			table-layout: fixed;
+			word-break: break-word;
 			border-collapse: collapse;
 			margin-top: 8px;
 			font-size: 8pt;
@@ -1093,7 +1190,7 @@ export function generateRegulatorySanpinInspectionHtml(
 					<td style="text-align:center;">${rec.actualTemperatureCelsius}°C • ${rec.actualPressureBar} бар<br/><strong>${rec.actualExposureMinutes} мин</strong></td>
 					<td style="text-align:center; font-family: monospace;">1:${pt1} 2:${pt2} 3:${pt3} 4:${pt4} 5:${pt5}<br/><span style="font-size:6.5pt;">${rec.chemicalIndicatorNameRu}</span></td>
 					<td style="text-align:center;" class="${verdictClass}"><strong>${verdictLabel}</strong></td>
-					<td style="font-size:7.5pt;">${rec.operatorStaffFullName}</td>
+					<td style="font-size:7.5pt; word-break:break-word;">${rec.operatorStaffFullName || clinicInfo.headNurse || "Медсестра ЦСО"}</td>
 					<td style="font-size:7.5pt; text-align:center;">${rec.isHeadNurseVerified ? "Заверено" : "—"}</td>
 				</tr>
 			`;
@@ -1112,7 +1209,7 @@ export function generateRegulatorySanpinInspectionHtml(
 				<td style="text-align:center; color:#166534;"><strong>${pso.isPhenolphthaleinNegative ? "Отрицат." : "ПОЛОЖИТ."}</strong></td>
 				<td>${pso.detergentBrand || "Биолот 0.5%"}</td>
 				<td style="text-align:center; color:#166534;"><strong>${pso.isBatchApproved ? "ДОПУЩЕНО" : "БРАК"}</strong></td>
-				<td style="font-size:7.5pt;">${pso.operatorFullName}</td>
+				<td style="font-size:7.5pt; word-break:break-word;">${pso.operatorFullName || clinicInfo.headNurse || "Медсестра ЦСО"}</td>
 			</tr>
 		`)
 		.join("\n");
@@ -1159,6 +1256,8 @@ export function generateRegulatorySanpinInspectionHtml(
 		}
 		table.form-table {
 			width: 100%;
+			table-layout: fixed;
+			word-break: break-word;
 			border-collapse: collapse;
 			margin-top: 6px;
 			font-size: 7.5pt;
@@ -1232,15 +1331,15 @@ export function generateRegulatorySanpinInspectionHtml(
 		<thead>
 			<tr>
 				<th style="width:3%;">№</th>
-				<th style="width:9%;">Дата и цикл</th>
+				<th style="width:8%;">Дата и цикл</th>
 				<th style="width:13%;">Аппарат (стерилизатор)</th>
 				<th style="width:22%;">Стерилизуемые изделия</th>
-				<th style="width:10%;">Упаковка / шт</th>
-				<th style="width:12%;">Режим (T°, P, время)</th>
-				<th style="width:13%;">Хим. контроль (5 точек)</th>
+				<th style="width:9%;">Упаковка / шт</th>
+				<th style="width:11%;">Режим (T°, P, время)</th>
+				<th style="width:14%;">Хим. контроль (5 точек)</th>
 				<th style="width:8%;">Результат</th>
-				<th style="width:10%;">Ответственный</th>
-				<th style="width:6%;">Контроль</th>
+				<th style="width:7%;">Ответственный</th>
+				<th style="width:5%;">Контроль</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -1255,14 +1354,14 @@ export function generateRegulatorySanpinInspectionHtml(
 			<tr>
 				<th style="width:3%;">№</th>
 				<th style="width:8%;">Дата</th>
-				<th style="width:26%;">Наименование обрабатываемых изделий</th>
+				<th style="width:24%;">Наименование обрабатываемых изделий</th>
 				<th style="width:7%;">Партия</th>
 				<th style="width:9%;">Выборка (1%)</th>
 				<th style="width:11%;">Азопирам (кровь)</th>
-				<th style="width:12%;">Фенолфталеин (СМС)</th>
-				<th style="width:12%;">Моющее средство</th>
-				<th style="width:9%;">Результат</th>
-				<th style="width:9%;">Ответственный</th>
+				<th style="width:11%;">Фенолфталеин (СМС)</th>
+				<th style="width:11%;">Моющее средство</th>
+				<th style="width:8%;">Результат</th>
+				<th style="width:8%;">Ответственный</th>
 			</tr>
 		</thead>
 		<tbody>

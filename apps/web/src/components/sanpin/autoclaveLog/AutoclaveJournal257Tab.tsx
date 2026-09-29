@@ -27,6 +27,7 @@ import {
 	DEFAULT_CLINIC_LEGAL_INFO,
 	createDefault5ChamberPoints,
 	createForm257Record,
+	detectMissingSterilizationDays,
 	exportForm257ToCsv,
 	filterForm257Records,
 	generateBatchForm257Records,
@@ -35,6 +36,7 @@ import {
 	type ClinicLegalInfo,
 	type Form257FilterCriteria,
 	type Form257Record,
+	type MissingSterilizationDaysAuditResult,
 } from "./autoclaveLogEngine.js";
 import {
 	STATUTORY_STERILIZATION_REGIMES,
@@ -44,6 +46,7 @@ import {
 
 export interface AutoclaveJournal257TabProps {
 	readonly records: readonly Form257Record[];
+	readonly activeClinicalDates?: readonly string[];
 	readonly onDeleteRecord?: (id: string) => void;
 	readonly onVerifyRecord?: (id: string, headNurseName: string) => void;
 	readonly onBatchAddRecords?: (records: Form257Record[]) => void;
@@ -53,6 +56,7 @@ export interface AutoclaveJournal257TabProps {
 
 export function AutoclaveJournal257Tab({
 	records,
+	activeClinicalDates,
 	onDeleteRecord,
 	onVerifyRecord,
 	onBatchAddRecords,
@@ -235,8 +239,71 @@ export function AutoclaveJournal257Tab({
 		}
 	};
 
+	// Аудит непрерывности журнала стерилизации по СанПиН 3.3686-21
+	const missingDaysAudit: MissingSterilizationDaysAuditResult | null = useMemo(() => {
+		if (activeClinicalDates && activeClinicalDates.length > 0) {
+			return detectMissingSterilizationDays(records, activeClinicalDates);
+		}
+		if (startDate && endDate && startDate !== endDate) {
+			const dates: string[] = [];
+			const [sY, sM, sD] = startDate.split("-").map(Number);
+			const [eY, eM, eD] = endDate.split("-").map(Number);
+			if (sY && sM && sD && eY && eM && eD) {
+				const startUtc = Date.UTC(sY, sM - 1, sD);
+				const endUtc = Date.UTC(eY, eM - 1, eD);
+				for (let t = startUtc; t <= endUtc; t += 86400000) {
+					const d = new Date(t);
+					if (d.getUTCDay() !== 0) {
+						dates.push(d.toISOString().slice(0, 10));
+					}
+				}
+			}
+			if (dates.length > 0) {
+				return detectMissingSterilizationDays(records, dates);
+			}
+		}
+		return null;
+	}, [records, activeClinicalDates, startDate, endDate]);
+
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+			{/* Senior Nurse Warning Banner: Missing Sterilization Days */}
+			{missingDaysAudit?.isMissingAutoclaveLog && (
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						background: "rgba(239, 68, 68, 0.08)",
+						border: "1px solid rgba(239, 68, 68, 0.3)",
+						borderRadius: "8px",
+						padding: "0.75rem 1rem",
+						gap: "1rem",
+					}}
+				>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+						<AlertTriangle size={20} color="#ef4444" style={{ flexShrink: 0 }} />
+						<div>
+							<div style={{ fontWeight: 600, color: "#991b1b", fontSize: "0.875rem" }}>
+								Внимание: за смену были приемы пациентов, но цикл автоклавирования не зарегистрирован
+							</div>
+							<div style={{ fontSize: "0.75rem", color: "#b91c1c", marginTop: "2px" }}>
+								{missingDaysAudit.recommendationRu}
+							</div>
+						</div>
+					</div>
+					<button
+						type="button"
+						onClick={handleGenerateBatchForPeriod}
+						className="autoclave-btn-primary"
+						style={{ minHeight: "36px", whiteSpace: "nowrap", flexShrink: 0, padding: "0 0.875rem" }}
+					>
+						<Sparkles size={16} />
+						<span>Заполнить автоклав в 1 клик</span>
+					</button>
+				</div>
+			)}
+
 			{/* Top Action Bar & Filter Controls */}
 			<div
 				style={{

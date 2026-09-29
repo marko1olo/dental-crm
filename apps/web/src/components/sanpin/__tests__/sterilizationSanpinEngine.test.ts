@@ -6,6 +6,7 @@ import {
 	createDefaultChamberPoints,
 	DailyShiftSanpinLogBundle,
 	DEFAULT_CLINIC_REQUISITES,
+	detectMissingSterilizationDays,
 	evaluatePsoTrial,
 	exportForm257ToCsv,
 	exportKraftPackagesToCsv,
@@ -46,6 +47,15 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Auto-Generato
 
 			const batch200 = calculatePsoSampleRequirements(200, false);
 			assert.equal(batch200.minSampleCount, 3);
+		});
+
+		it("calculates statutory sampling for multiple distinct instrument types in batch", () => {
+			const batch3Types = calculatePsoSampleRequirements(100, false, 3);
+			assert.equal(batch3Types.minSampleCount, 9); // 3 types * 3 items = 9
+			assert.ok(batch3Types.formulaExplanationRu.includes("3 наим"));
+
+			const surgical2Types = calculatePsoSampleRequirements(80, true, 2);
+			assert.equal(surgical2Types.minSampleCount, 10); // 2 types * 5 items = 10
 		});
 
 		it("calculates 1% rounded up for large batches (> 300 pcs)", () => {
@@ -116,8 +126,10 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Auto-Generato
 				isPhenolphthaleinNegative: true,
 			});
 			assert.equal(res.isBatchApproved, false);
+			assert.equal(res.isBatchBlocked, true);
 			assert.match(res.rejectionReason ?? "", /Положительная азопирамовая проба/);
 			assert.match(res.rejectionReason ?? "", /скрытая кровь/);
+			assert.match(res.rejectionReason ?? "", /Немедленная блокировка партии на повторную промывку и нейтрализацию/);
 			assert.match(res.clinicalAdviceRu, /повторной дезинфекции, предстерилизационной очистке/);
 		});
 
@@ -129,8 +141,10 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Auto-Generato
 				isPhenolphthaleinNegative: false, // POSITIVE -> ALKALINE RESIDUE
 			});
 			assert.equal(res.isBatchApproved, false);
+			assert.equal(res.isBatchBlocked, true);
 			assert.match(res.rejectionReason ?? "", /Положительная фенолфталеиновая проба/);
 			assert.match(res.rejectionReason ?? "", /щелочных компонентов/);
+			assert.match(res.rejectionReason ?? "", /Немедленная блокировка партии на повторную промывку и нейтрализацию/);
 			assert.match(res.clinicalAdviceRu, /повторному тщательному ополаскиванию/);
 		});
 
@@ -143,6 +157,7 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Auto-Generato
 				isSudanNegative: false, // POSITIVE -> OIL RESIDUE
 			});
 			assert.equal(res.isBatchApproved, false);
+			assert.equal(res.isBatchBlocked, true);
 			assert.match(res.rejectionReason ?? "", /проба с суданом III/);
 			assert.match(res.clinicalAdviceRu, /обезжириванию в ультразвуковой ванне/);
 		});
@@ -259,6 +274,50 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Auto-Generato
 			assert.equal(res.isValid, false);
 			assert.equal(res.areIndicatorsCompliant, false);
 			assert.ok(res.failureReasons.some((r) => r.includes("КТ-2")));
+		});
+
+		it("rejects physically impossible cycle with exposure time <= 0 minutes", () => {
+			const res = validateSterilizationCycle({
+				regimeId: "steam_134_5min",
+				actualTemperatureCelsius: 134.5,
+				actualPressureBar: 2.15,
+				actualExposureMinutes: 0,
+			});
+			assert.equal(res.isValid, false);
+			assert.ok(res.failureReasons.some((r) => r.includes("Физически невозможное время экспозиции")));
+		});
+
+		it("rejects thermodynamic impossibility: saturated steam 134°C with 0 bar pressure", () => {
+			const res = validateSterilizationCycle({
+				regimeId: "steam_134_5min",
+				actualTemperatureCelsius: 134.5,
+				actualPressureBar: 0,
+				actualExposureMinutes: 5.0,
+			});
+			assert.equal(res.isValid, false);
+			assert.ok(res.failureReasons.some((r) => r.includes("насыщенного пара")));
+		});
+
+		it("rejects thermodynamic impossibility: 100°C with 2 bar pressure in steam sterilizer", () => {
+			const res = validateSterilizationCycle({
+				regimeId: "steam_134_5min",
+				actualTemperatureCelsius: 100.0,
+				actualPressureBar: 2.1,
+				actualExposureMinutes: 5.0,
+			});
+			assert.equal(res.isValid, false);
+			assert.ok(res.failureReasons.some((r) => r.includes("термодинамические параметры")));
+		});
+
+		it("rejects dry heat sterilizer with positive gauge pressure (>0.1 bar)", () => {
+			const res = validateSterilizationCycle({
+				regimeId: "dry_heat_180_60min",
+				actualTemperatureCelsius: 180.0,
+				actualPressureBar: 1.5,
+				actualExposureMinutes: 60.0,
+			});
+			assert.equal(res.isValid, false);
+			assert.ok(res.failureReasons.some((r) => r.includes("сухожаровом шкафу (воздушный метод) давление не создается")));
 		});
 	});
 
@@ -715,4 +774,24 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Auto-Generato
 			assert.ok(html.includes("Главный врач"));
 		});
 	});
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// 11. MISSING STERILIZATION DAYS AUDIT (SANPIN CONTINUITY AUDIT)
+	// ─────────────────────────────────────────────────────────────────────────
+	describe("11. Missing Sterilization Days Audit (SanPiN Continuity)", () => {
+		it("detects missing sterilization days when patient visits occurred", () => {
+			const records = [{ date: "2026-09-01" }, { date: "2026-09-02" }];
+			const activeDates = ["2026-09-01", "2026-09-02", "2026-09-03"];
+
+			const result = detectMissingSterilizationDays(records, activeDates);
+			assert.equal(result.isMissingAutoclaveLog, true);
+			assert.equal(result.missingDatesCount, 1);
+			assert.deepEqual(result.missingDates, ["2026-09-03"]);
+			assert.equal(
+				result.warningMessageRu,
+				"Внимание: за смену были приемы пациентов, но цикл автоклавирования не зарегистрирован",
+			);
+		});
+	});
 });
+

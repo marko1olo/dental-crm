@@ -10,6 +10,7 @@ import {
 	exportForm257ToCsv,
 	generateForm257PrintHtml,
 	generateRegulatorySanpinInspectionHtml,
+	detectMissingSterilizationDays,
 	type ChamberPointEvaluation,
 	type Form257Record,
 	type BiologicalControlTestRecord,
@@ -115,6 +116,46 @@ describe("SanPiN 3.3686-21 — Autoclave Journal (Form № 257/у)", () => {
 			assert.equal(res.isTempCompliant, false);
 			assert.ok(res.failureReasons.some((r) => r.includes("Температура")));
 		});
+
+		it("rejects physically impossible cycle with exposure time <= 0 minutes", () => {
+			const res = evaluateCycleParameters("steam_134_5min", {
+				actualTemperatureCelsius: 134.5,
+				actualPressureBar: 2.15,
+				actualExposureMinutes: 0,
+			});
+			assert.equal(res.isCompliant, false);
+			assert.ok(res.failureReasons.some((r) => r.includes("Физически невозможное время экспозиции")));
+		});
+
+		it("rejects thermodynamic impossibility: steam autoclave at 134°C with 0 bar pressure", () => {
+			const res = evaluateCycleParameters("steam_134_5min", {
+				actualTemperatureCelsius: 134.5,
+				actualPressureBar: 0,
+				actualExposureMinutes: 5.0,
+			});
+			assert.equal(res.isCompliant, false);
+			assert.ok(res.failureReasons.some((r) => r.includes("насыщенного пара")));
+		});
+
+		it("rejects thermodynamic impossibility: 100°C with 2 bar pressure in steam sterilizer", () => {
+			const res = evaluateCycleParameters("steam_134_5min", {
+				actualTemperatureCelsius: 100.0,
+				actualPressureBar: 2.1,
+				actualExposureMinutes: 5.0,
+			});
+			assert.equal(res.isCompliant, false);
+			assert.ok(res.failureReasons.some((r) => r.includes("термодинамические параметры")));
+		});
+
+		it("rejects dry heat sterilizer with positive gauge pressure (>0.1 bar)", () => {
+			const res = evaluateCycleParameters("dry_heat_180_60min", {
+				actualTemperatureCelsius: 180.0,
+				actualPressureBar: 1.5,
+				actualExposureMinutes: 60.0,
+			});
+			assert.equal(res.isCompliant, false);
+			assert.ok(res.failureReasons.some((r) => r.includes("сухожаровом шкафу (воздушный метод) давление не создается")));
+		});
 	});
 
 	describe("2. Chemical Indicators & 5-Point Chamber Audit (Интеграл, МедИС, СтериТЕСТ)", () => {
@@ -143,6 +184,8 @@ describe("SanPiN 3.3686-21 — Autoclave Journal (Form № 257/у)", () => {
 			assert.equal(result.failedPointsCount, 1);
 			assert.deepEqual(result.failedPointIndices, [2]);
 			assert.ok(result.summaryRu.includes("КТ-2"));
+			assert.ok(result.summaryRu.includes("Аварийный цикл стерилизации"));
+			assert.ok(result.summaryRu.includes("Партия бракуется"));
 		});
 
 		it("verifies chemical indicator catalog integrity (ИнтеТЕСТ Class 5, СтериТЕСТ Class 4)", () => {
@@ -348,4 +391,112 @@ describe("SanPiN 3.3686-21 — Autoclave Journal (Form № 257/у)", () => {
 			assert.ok(regulatoryHtml.includes("СТЕРИЛЬНО"));
 		});
 	});
+
+	describe("5. Missing Sterilization Days Detection (Senior Nurse Audit)", () => {
+		it("detects missing sterilization days when patient visits occurred but no autoclave cycle was logged", () => {
+			const records = [
+				{ date: "2026-09-21" },
+				{ date: "2026-09-22" },
+				// 2026-09-23 missing!
+				{ date: "2026-09-24" },
+			];
+			const activeDates = ["2026-09-21", "2026-09-22", "2026-09-23", "2026-09-24"];
+
+			const audit = detectMissingSterilizationDays(records, activeDates);
+			assert.equal(audit.isMissingAutoclaveLog, true);
+			assert.equal(audit.missingDatesCount, 1);
+			assert.deepEqual(audit.missingDates, ["2026-09-23"]);
+			assert.equal(
+				audit.warningMessageRu,
+				"Внимание: за смену были приемы пациентов, но цикл автоклавирования не зарегистрирован",
+			);
+			assert.ok(audit.recommendationRu?.includes("2026-09-23"));
+		});
+
+		it("confirms 0 missing days when all active patient visit dates have sterilization records", () => {
+			const records = [
+				{ date: "2026-09-21" },
+				{ date: "2026-09-22" },
+				{ date: "2026-09-23" },
+			];
+			const activeDates = [
+				{ date: "2026-09-21", hasVisits: true },
+				{ date: "2026-09-22", hasVisits: true },
+				{ date: "2026-09-23", hasVisits: true },
+			];
+
+			const audit = detectMissingSterilizationDays(records, activeDates);
+			assert.equal(audit.isMissingAutoclaveLog, false);
+			assert.equal(audit.missingDatesCount, 0);
+			assert.equal(audit.warningMessageRu, undefined);
+		});
+
+		it("ignores dates without patient visits when evaluating missing days", () => {
+			const records = [{ date: "2026-09-21" }];
+			const activeDates = [
+				{ date: "2026-09-21", hasVisits: true },
+				{ date: "2026-09-22", hasVisits: false }, // Clinic closed / day off
+			];
+
+			const audit = detectMissingSterilizationDays(records, activeDates);
+			assert.equal(audit.isMissingAutoclaveLog, false);
+			assert.equal(audit.missingDatesCount, 0);
+		});
+	});
+
+	describe("6. Rospotrebnadzor Inspection Cleanliness & Fixed Layout Guarantee", () => {
+		it("guarantees fixed table layout and word-break in Form 257 print HTML to prevent trimmed columns", () => {
+			const chamberPoints = createDefault5ChamberPoints("intetest_v_134_5", true);
+			const record = createForm257Record({
+				date: "2026-09-25",
+				cycleNumber: 1,
+				sterilizerId: "autoclave-melag-vacuklav-23b",
+				regimeId: "steam_134_5min",
+				sensors: {
+					actualTemperatureCelsius: 134.5,
+					actualPressureBar: 2.15,
+					actualExposureMinutes: 5.0,
+				},
+				itemsDescriptionRu: "Стоматологический инструментарий",
+				packsCount: 10,
+				packagingType: "kraft_pouch_sealed",
+				chamberPoints,
+				operatorStaffFullName: "", // empty operator name test
+			});
+
+			const html = generateForm257PrintHtml([record]);
+			assert.ok(html.includes("table-layout: fixed"));
+			assert.ok(html.includes("word-break: break-word"));
+			// Guarantees non-empty fallback for operator
+			assert.ok(html.includes("Медсестра ЦСО") || html.includes("Главная медсестра"));
+		});
+
+		it("guarantees fixed table layout and operator fallback in regulatory combined HTML", () => {
+			const chamberPoints = createDefault5ChamberPoints("intetest_v_134_5", true);
+			const record = createForm257Record({
+				date: "2026-09-25",
+				cycleNumber: 1,
+				sterilizerId: "autoclave-melag-vacuklav-23b",
+				regimeId: "steam_134_5min",
+				sensors: {
+					actualTemperatureCelsius: 134.5,
+					actualPressureBar: 2.15,
+					actualExposureMinutes: 5.0,
+				},
+				itemsDescriptionRu: "Стоматологический инструментарий",
+				packsCount: 10,
+				packagingType: "kraft_pouch_sealed",
+				chamberPoints,
+				operatorStaffFullName: "",
+			});
+
+			const html = generateRegulatorySanpinInspectionHtml({
+				form257Records: [record],
+			});
+			assert.ok(html.includes("table-layout: fixed"));
+			assert.ok(html.includes("word-break: break-word"));
+			assert.ok(html.includes("Медсестра ЦСО") || html.includes("Главная медсестра"));
+		});
+	});
 });
+

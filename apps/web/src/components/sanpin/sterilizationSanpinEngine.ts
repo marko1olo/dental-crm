@@ -609,21 +609,26 @@ export interface DailyShiftSanpinLogBundle {
 export function calculatePsoSampleRequirements(
 	batchCount: number,
 	isSurgicalOrCritical = false,
+	itemTypesCount = 1,
 ): {
 	readonly minSampleCount: number;
 	readonly statutoryPercent: number;
 	readonly formulaExplanationRu: string;
 } {
 	const count = Math.max(1, Math.floor(Number(batchCount) || 1));
+	const typesCount = Math.max(1, Math.floor(Number(itemTypesCount) || 1));
 	const statutoryPercent = 1;
 	const computedOnePercent = Math.ceil((count * statutoryPercent) / 100);
 	const baselineFloor = isSurgicalOrCritical ? 5 : 3;
-	const minSampleCount = Math.max(baselineFloor, computedOnePercent);
+	// Согласно СанПиН 3.3686-21 и МУ 287-113: не менее 1% партии и не менее 3-5 шт. каждого наименования
+	const minSampleCount = Math.max(baselineFloor * typesCount, computedOnePercent);
 
 	const formulaExplanationRu =
-		count <= (isSurgicalOrCritical ? 500 : 300)
-			? `Минимальный порог СанПиН: ${baselineFloor} шт. (для партии из ${count} шт.)`
-			: `1% от партии: ${computedOnePercent} шт. (округление вверх)`;
+		typesCount > 1
+			? `Минимальный порог СанПиН: ${baselineFloor} шт. × ${typesCount} наим. = ${minSampleCount} шт. (не менее 1% от ${count} шт.)`
+			: count <= (isSurgicalOrCritical ? 500 : 300)
+				? `Минимальный порог СанПиН: ${baselineFloor} шт. (для партии из ${count} шт.)`
+				: `1% от партии: ${computedOnePercent} шт. (округление вверх)`;
 
 	return {
 		minSampleCount,
@@ -639,8 +644,10 @@ export function evaluatePsoTrial(params: {
 	isPhenolphthaleinNegative: boolean;
 	isSudanNegative?: boolean;
 	isSurgicalOrCritical?: boolean;
+	itemTypesCount?: number;
 }): {
 	readonly isBatchApproved: boolean;
+	readonly isBatchBlocked: boolean;
 	readonly minSampleRequired: number;
 	readonly isSamplingSufficient: boolean;
 	readonly rejectionReason: string | null;
@@ -648,12 +655,13 @@ export function evaluatePsoTrial(params: {
 } {
 	const { batchCount, testedSampleCount, isAzopyramNegative, isPhenolphthaleinNegative } = params;
 	const isSudanNegative = params.isSudanNegative ?? true;
-	const { minSampleCount } = calculatePsoSampleRequirements(batchCount, params.isSurgicalOrCritical);
+	const { minSampleCount } = calculatePsoSampleRequirements(batchCount, params.isSurgicalOrCritical, params.itemTypesCount);
 	const isSamplingSufficient = testedSampleCount >= minSampleCount;
 
 	if (!isSamplingSufficient) {
 		return {
 			isBatchApproved: false,
+			isBatchBlocked: true,
 			minSampleRequired: minSampleCount,
 			isSamplingSufficient: false,
 			rejectionReason: `Недостаточный объем выборки ПСО: проверено ${testedSampleCount} шт. из необходимых ${minSampleCount} шт. (СанПиН 3.3686-21: не менее 1% партии, мин. ${minSampleCount} шт.).`,
@@ -664,39 +672,45 @@ export function evaluatePsoTrial(params: {
 	if (!isAzopyramNegative) {
 		return {
 			isBatchApproved: false,
+			isBatchBlocked: true,
 			minSampleRequired: minSampleCount,
 			isSamplingSufficient: true,
 			rejectionReason:
-				"Положительная азопирамовая проба (обнаружен гемоглобин / скрытая кровь — фиолетово-синее окрашивание). Партия не допущена к стерилизации.",
+				"Положительная азопирамовая проба (обнаружен гемоглобин / скрытая кровь — фиолетово-синее окрашивание). Немедленная блокировка партии на повторную промывку и нейтрализацию.",
 			clinicalAdviceRu:
-				"Вся партия инструментов подлежит повторной дезинфекции, предстерилизационной очистке и контролю качества.",
+				"Немедленная блокировка партии! Вся партия инструментов подлежит повторной дезинфекции, предстерилизационной очистке и контролю качества.",
 		};
 	}
 
 	if (!isPhenolphthaleinNegative) {
 		return {
 			isBatchApproved: false,
+			isBatchBlocked: true,
 			minSampleRequired: minSampleCount,
 			isSamplingSufficient: true,
 			rejectionReason:
-				"Положительная фенолфталеиновая проба (обнаружены остатки щелочных компонентов моющих средств — розово-малиновое окрашивание).",
+				"Положительная фенолфталеиновая проба (обнаружены остатки щелочных компонентов моющих средств — розово-малиновое окрашивание). Немедленная блокировка партии на повторную промывку и нейтрализацию.",
 			clinicalAdviceRu:
-				"Вся партия инструментов подлежит повторному тщательному ополаскиванию проточной и дистиллированной водой до нейтральной реакции.",
+				"Немедленная блокировка партии! Вся партия инструментов подлежит повторному тщательному ополаскиванию проточной и дистиллированной водой до нейтральной реакции.",
 		};
 	}
 
 	if (!isSudanNegative) {
 		return {
 			isBatchApproved: false,
+			isBatchBlocked: true,
 			minSampleRequired: minSampleCount,
 			isSamplingSufficient: true,
-			rejectionReason: "Положительная проба с суданом III (обнаружены остатки масляных и жировых загрязнений наконечников).",
-			clinicalAdviceRu: "Наконечники подлежат обезжириванию в ультразвуковой ванне с детергентом и повторному контролю.",
+			rejectionReason:
+				"Положительная проба с суданом III (обнаружены остатки масляных и жировых загрязнений наконечников). Немедленная блокировка партии на повторную промывку и нейтрализацию.",
+			clinicalAdviceRu:
+				"Немедленная блокировка партии! Наконечники подлежат обезжириванию в ультразвуковой ванне с детергентом и повторному контролю.",
 		};
 	}
 
 	return {
 		isBatchApproved: true,
+		isBatchBlocked: false,
 		minSampleRequired: minSampleCount,
 		isSamplingSufficient: true,
 		rejectionReason: null,
@@ -722,6 +736,48 @@ export function validateSterilizationCycle(params: {
 } {
 	const regime = STATUTORY_REGIMES.find((r) => r.id === params.regimeId) ?? STATUTORY_REGIMES[0]!;
 	const failureReasons: string[] = [];
+
+	// Проверка на физически невозможные значения
+	if (params.actualExposureMinutes <= 0) {
+		failureReasons.push(
+			`Физически невозможное время экспозиции: ${params.actualExposureMinutes} мин (выдержка должна быть больше 0 мин)`,
+		);
+	}
+	if (params.actualTemperatureCelsius <= 0) {
+		failureReasons.push(
+			`Физически невозможная температура: ${params.actualTemperatureCelsius}°C (температура должна быть больше 0°C)`,
+		);
+	}
+	if (params.actualPressureBar < 0) {
+		failureReasons.push(
+			`Физически невозможное отрицательное давление: ${params.actualPressureBar} бар`,
+		);
+	}
+
+	// Термодинамические проверки насыщенного пара и сухожара
+	if (regime.methodType === "steam") {
+		if (params.actualTemperatureCelsius >= 120 && params.actualPressureBar <= 0.1) {
+			failureReasons.push(
+				`Физически невозможные параметры насыщенного пара: температура ${params.actualTemperatureCelsius}°C при давлении 0 бар (насыщенный водяной пар в автоклаве требует избыточного давления)`,
+			);
+		}
+		if (params.actualTemperatureCelsius <= 105 && params.actualPressureBar >= 1.5) {
+			failureReasons.push(
+				`Физически невозможные термодинамические параметры: температура ${params.actualTemperatureCelsius}°C при давлении ${params.actualPressureBar} бар (насыщенный пар не может иметь такое соотношение)`,
+			);
+		}
+	} else if (regime.methodType === "dry_heat") {
+		if (params.actualPressureBar > 0.1) {
+			failureReasons.push(
+				`Физически несовместимый параметр: в сухожаровом шкафу (воздушный метод) давление не создается (зафиксировано избыточное давление ${params.actualPressureBar} бар)`,
+			);
+		}
+		if (params.actualTemperatureCelsius <= 105 && params.actualPressureBar >= 1.0) {
+			failureReasons.push(
+				`Физически невозможные параметры: сухожар не работает под избыточным давлением ${params.actualPressureBar} бар при температуре ${params.actualTemperatureCelsius}°C`,
+			);
+		}
+	}
 
 	const isTempCompliant =
 		params.actualTemperatureCelsius >= regime.minTemperatureCelsius &&
@@ -771,7 +827,7 @@ export function validateSterilizationCycle(params: {
 		failureReasons.push("Химический индикатор стерилизации не достиг цвета эталона");
 	}
 
-	const isValid = isTempCompliant && isPressureCompliant && isTimeCompliant && areIndicatorsCompliant;
+	const isValid = isTempCompliant && isPressureCompliant && isTimeCompliant && areIndicatorsCompliant && failureReasons.length === 0;
 
 	return {
 		isValid,
@@ -1975,3 +2031,9 @@ export function generateCombinedInspectionDossierHtml(params: {
 </body>
 </html>`;
 }
+
+export {
+	detectMissingSterilizationDays,
+	type MissingSterilizationDaysAuditResult,
+} from "./autoclaveLog/autoclaveLogEngine.js";
+

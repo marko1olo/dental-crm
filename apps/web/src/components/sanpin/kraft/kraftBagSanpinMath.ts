@@ -385,6 +385,48 @@ export function validateSterilizationCycleParameters(
 	const errors: string[] = [];
 	const warnings: string[] = [];
 
+	// Проверка на физически невозможные значения
+	if (actualTimeMinutes <= 0) {
+		errors.push(
+			`ФИЗИЧЕСКИ НЕВОЗМОЖНОЕ ВРЕМЯ: экспозиция ${actualTimeMinutes} мин (выдержка должна быть больше 0 мин).`,
+		);
+	}
+	if (actualTemp <= 0) {
+		errors.push(
+			`ФИЗИЧЕСКИ НЕВОЗМОЖНАЯ ТЕМПЕРАТУРА: ${actualTemp}°C (температура должна быть больше 0°C).`,
+		);
+	}
+	if (actualPressure < 0) {
+		errors.push(
+			`ФИЗИЧЕСКИ НЕВОЗМОЖНОЕ ДАВЛЕНИЕ: ${actualPressure} бар (отрицательное давление невозможно).`,
+		);
+	}
+
+	// Термодинамические проверки насыщенного пара и сухожара
+	if (regime.methodType === "steam_autoclave") {
+		if (actualTemp >= 120 && actualPressure <= 0.1) {
+			errors.push(
+				`ФИЗИЧЕСКИ НЕВОЗМОЖНЫЕ ПАРАМЕТРЫ: паровой автоклав при температуре ${actualTemp}°C требует избыточного давления насыщенного пара (факт ${actualPressure} бар).`,
+			);
+		}
+		if (actualTemp <= 105 && actualPressure >= 1.5) {
+			errors.push(
+				`ТЕРМОДИНАМИЧЕСКИ НЕВОЗМОЖНЫЕ ПАРАМЕТРЫ: насыщенный пар при температуре ${actualTemp}°C не может создавать избыточное давление ${actualPressure} бар.`,
+			);
+		}
+	} else if (regime.methodType === "dry_heat_air") {
+		if (actualPressure > 0.1) {
+			errors.push(
+				`НЕСОВМЕСТИМЫЙ ПАРАМЕТР: воздушный стерилизатор (сухожар) работает при атмосферном давлении (0 бар избыточного давления, факт ${actualPressure} бар).`,
+			);
+		}
+		if (actualTemp <= 105 && actualPressure >= 1.0) {
+			errors.push(
+				`ФИЗИЧЕСКИ НЕВОЗМОЖНЫЕ ПАРАМЕТРЫ: сухожар не работает под избыточным давлением ${actualPressure} бар при температуре ${actualTemp}°C.`,
+			);
+		}
+	}
+
 	// Проверка температуры
 	const tempDeltaCelsius = actualTemp - regime.targetTemperatureCelsius;
 	if (actualTemp < regime.minTemperatureCelsius) {

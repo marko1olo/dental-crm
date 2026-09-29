@@ -1938,6 +1938,7 @@ function SanpinRegistersInner() {
 			{/* Form 257/u Studio Modal: 5 Chamber Points, BioControl, Analytics */}
 			<AutoclaveLog257Modal
 				isOpen={isJournal257ModalOpen}
+				initialTab="journal_257"
 				onClose={() => setIsJournal257ModalOpen(false)}
 			/>
 
