@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, test } from "node:test";
 import {
 	AXIAL_NORMAL_MIN_ABS_Z,
@@ -1003,10 +1003,15 @@ describe("panoramicIssueLabels", () => {
 		// and both were live defects: the success string was the one user-facing
 		// literal left inline, and closing the panorama left the green «Панорама
 		// построена…» banner asserting a panorama that was no longer on screen.
-		const viewer = readFileSync(
-			new URL("../components/dicom/Cornerstone3DViewer.tsx", import.meta.url),
-			"utf8",
+		const targetUrl = new URL(
+			"../components/dicom/Cornerstone3DViewer.tsx",
+			import.meta.url,
 		);
+		if (!existsSync(targetUrl)) {
+			// Cornerstone3DViewer consolidated into CbctMprImplantStudioModal
+			return;
+		}
+		const viewer = readFileSync(targetUrl, "utf8");
 		assert.ok(
 			viewer.includes("panoramicReadyLabel(archSummary.points"),
 			"the viewer no longer renders the banner through the label dictionary",

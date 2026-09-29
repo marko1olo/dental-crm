@@ -128,16 +128,6 @@ import { lazyWithRetry } from "./lib/lazyWithRetry";
 import { countLabel } from "./AppHelpers";
 
 // Mandate 8s / Tier 3: Ленивая загрузка тяжелых 3D DICOM / КТ движков для защиты 5400 RPM HDD
-const CbctMprWorkspace = lazyWithRetry(() =>
-	import("./components/dicom/CbctMprWorkspace").then((m) => ({
-		default: m.CbctMprWorkspace,
-	})),
-);
-const Cornerstone3DViewer = lazyWithRetry(() =>
-	import("./components/dicom/Cornerstone3DViewer").then((m) => ({
-		default: m.Cornerstone3DViewer,
-	})),
-);
 const PanoramicRendererWindow = lazyWithRetry(() =>
 	import("./components/dicom/PanoramicRendererWindow").then((m) => ({
 		default: m.PanoramicRendererWindow,
@@ -486,7 +476,6 @@ export function ImagingView(props: ImagingViewProps) {
 	const [localImageIds, setLocalImageIds] = useState<string[]>([]);
 	const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
 	const [enhancementOn, setEnhancementOn] = useState(false);
-	const [isCbctWorkspaceOpen, setIsCbctWorkspaceOpen] = useState(false);
 	const [isCbctStudioOpen, setIsCbctStudioOpen] = useState(false);
 	const [isPanoramicWindowOpen, setIsPanoramicWindowOpen] = useState(false);
 	const [isMobileImagingMenuOpen, setIsMobileImagingMenuOpen] = useState(false);
@@ -798,8 +787,8 @@ export function ImagingView(props: ImagingViewProps) {
 	useEffect(() => {
 		const handleOpen = (e: Event) => {
 			const detail = (e as CustomEvent<{ modalId: string }>).detail;
-			if (detail?.modalId === "cbct_mpr_workspace") {
-				setIsCbctWorkspaceOpen(true);
+			if (detail?.modalId === "cbct_mpr_workspace" || detail?.modalId === "cbct_implant_studio") {
+				setIsCbctStudioOpen(true);
 			} else if (detail?.modalId === "panoramic_recon_window") {
 				setIsPanoramicWindowOpen(true);
 			}
@@ -1239,16 +1228,6 @@ export function ImagingView(props: ImagingViewProps) {
 						className="secondary-button !hidden md:!inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
 						type="button"
 						data-testid="imaging-open-3d-mpr"
-						onClick={() => setIsCbctWorkspaceOpen(true)}
-						title="Открыть 3D MPR рабочее пространство"
-					>
-						<Activity aria-hidden="true" className="w-3.5 h-3.5 text-teal-500 shrink-0" />{" "}
-						<span>3D MPR / КТ</span>
-					</button>
-					<button
-						className="secondary-button !hidden md:!inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
-						type="button"
-						data-testid="imaging-open-cbct-studio"
 						onClick={() => setIsCbctStudioOpen(true)}
 						title="Romexis 3D КЛКТ Студия: панорама, срезы, импланты, нерв"
 					>
@@ -1370,17 +1349,6 @@ export function ImagingView(props: ImagingViewProps) {
 								>
 									<Camera size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 									<span>Снимок с камеры</span>
-								</button>
-								<button
-									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
-									type="button"
-									onClick={() => {
-										setIsMobileImagingMenuOpen(false);
-										setIsCbctWorkspaceOpen(true);
-									}}
-								>
-									<Activity size={14} className="text-teal-500 shrink-0" />
-									<span>3D MPR / КТ</span>
 								</button>
 								<button
 									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
@@ -1621,25 +1589,7 @@ export function ImagingView(props: ImagingViewProps) {
 									}));
 								}}
 							>
-								{localImageIds?.length > 0 ? (
-									/*
-                            Пациент передаётся в просмотрщик, потому что разметка
-                            планирования имплантации хранится в его карточке — в паре
-                            с кодом исследования DICOM. Без этого признака обведённая
-                            врачом дуга умирала вместе с экраном: адреса
-                            /api/imaging/planning/save и /load не вызывались из
-                            клиента ни разу, хотя серверная половина дописана.
-                          */
-									<Suspense fallback={<div className="p-4 text-xs text-[var(--muted)]">Загрузка 3D КТ...</div>}>
-										<Cornerstone3DViewer
-											imageIds={localImageIds}
-											patientId={activePatient?.id ?? null}
-											patientName={activePatient?.name ?? activePatient?.fullName ?? undefined}
-											studyDate={selectedImagingStudy?.capturedAt ? new Date(selectedImagingStudy.capturedAt).toLocaleDateString("ru-RU") : undefined}
-											authHeaders={authHeaders}
-										/>
-									</Suspense>
-								) : selectedImagingStudy?.kind === "cbct" ? (
+								{localImageIds?.length > 0 || selectedImagingStudy?.kind === "cbct" ? (
 									<div
 										data-testid="cbct-study-active-card"
 										className="w-full h-full flex flex-col gap-4 p-4 min-h-[500px]"
@@ -1650,7 +1600,7 @@ export function ImagingView(props: ImagingViewProps) {
 												<div className="flex items-center gap-2">
 													<span className="inline-block w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse shrink-0" />
 													<strong className="text-sm font-semibold text-[var(--ink)] truncate">
-														КЛКТ 3D: {selectedImagingStudy.title || "Томограмма 3D"}
+														КЛКТ 3D: {selectedImagingStudy?.title || (localImageIds?.length > 0 ? `Серия срезов (${localImageIds.length})` : "Томограмма 3D")}
 													</strong>
 													<span className="px-2 py-0.5 text-[11px] font-medium rounded bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 shrink-0">
 														PACS WADO-RS
@@ -1662,9 +1612,11 @@ export function ImagingView(props: ImagingViewProps) {
 															<RefreshCw size={12} className="animate-spin" />
 															{dicomwebLoadProgress ?? "Подключение к PACS архиву..."}
 														</span>
+													) : localImageIds?.length > 0 ? (
+														<span>Готово к просмотру: {localImageIds.length} срезов (локальный архив)</span>
 													) : (
 														<span>
-															Автономный доступ: 3D Студия Romexis, мультипланарная реконструкция Cornerstone3D или загрузка из архива
+															Автономный доступ: 3D Студия Romexis, мультипланарная реконструкция или загрузка из архива
 														</span>
 													)}
 												</div>
@@ -1684,17 +1636,6 @@ export function ImagingView(props: ImagingViewProps) {
 
 												<button
 													type="button"
-													data-testid="btn-open-cornerstone-workspace"
-													onClick={() => setIsCbctWorkspaceOpen(true)}
-													className="px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--surface-50)] hover:bg-[var(--surface-100)] text-[var(--ink)] transition-colors flex items-center justify-center gap-1.5 cursor-pointer flex-1 sm:flex-none"
-													title="Открыть Cornerstone3D MPR просмотрщик"
-												>
-													<Activity size={14} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
-													<span>Cornerstone3D</span>
-												</button>
-
-												<button
-													type="button"
 													data-testid="btn-load-dicomweb-pacs"
 													onClick={() => handleLoadFromDicomweb()}
 													disabled={isDicomwebLoading}
@@ -1709,7 +1650,13 @@ export function ImagingView(props: ImagingViewProps) {
 
 										<div className="flex-1 flex flex-col min-h-[360px] rounded-xl border border-[var(--line)] bg-[var(--paper)] p-2">
 											<Suspense fallback={<div className="p-4 text-xs text-[var(--muted)]">Подготовка загрузчика архивов...</div>}>
-												<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full flex-1" />
+												<DicomArchiveUploader
+													onImagesLoaded={(imageIds) => {
+														setLocalImageIds(imageIds);
+														setIsCbctStudioOpen(true);
+													}}
+													className="w-full flex-1"
+												/>
 											</Suspense>
 										</div>
 									</div>
@@ -3270,20 +3217,6 @@ export function ImagingView(props: ImagingViewProps) {
 					</div>
 				</section>
 			) : null}
-
-			{isCbctWorkspaceOpen && (
-				<Suspense fallback={<div className="cbct-mpr-workspace-modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 text-white text-xs">Загрузка 3D КТ...</div>}>
-					<CbctMprWorkspace
-						isOpen={true}
-						onClose={() => setIsCbctWorkspaceOpen(false)}
-						patientId={activePatient?.id ?? null}
-						patientName={activePatient?.name ?? activePatient?.fullName ?? undefined}
-						studyDate={selectedImagingStudy?.capturedAt ? new Date(selectedImagingStudy.capturedAt).toLocaleDateString("ru-RU") : undefined}
-						authHeaders={authHeaders}
-						imageIds={localImageIds}
-					/>
-				</Suspense>
-			)}
 
 			{isCbctStudioOpen && (
 				<Suspense fallback={<div className="cbct-studio-modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 text-cyan-400 text-xs font-mono">Загрузка Romexis 3D Студии...</div>}>

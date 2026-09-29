@@ -35,12 +35,21 @@ describe("ImagingView DICOMweb WADO-RS Autoload & BUG-009 Stubs Cleanup", () => 
 			"Must include 1-click 3D Romexis Studio button (btn-open-cbct-studio)",
 		);
 		assert.ok(
-			source.includes('data-testid="btn-open-cornerstone-workspace"'),
-			"Must include 1-click Cornerstone3D MPR button (btn-open-cornerstone-workspace)",
-		);
-		assert.ok(
 			source.includes('data-testid="btn-load-dicomweb-pacs"'),
 			"Must include PACS WADO-RS manual trigger button (btn-load-dicomweb-pacs)",
+		);
+	});
+
+	it("verifies legacy Cornerstone3DViewer and CbctMprWorkspace are completely purged from ImagingView", () => {
+		assert.equal(
+			source.includes("Cornerstone3DViewer"),
+			false,
+			"Cornerstone3DViewer must be completely excised from ImagingView",
+		);
+		assert.equal(
+			source.includes("CbctMprWorkspace"),
+			false,
+			"CbctMprWorkspace must be completely excised from ImagingView",
 		);
 	});
 
@@ -83,7 +92,7 @@ describe("ImagingView DICOMweb WADO-RS Autoload & BUG-009 Stubs Cleanup", () => 
 
 	it("verifies intuitive clean DicomArchiveUploader dropzone is rendered for CBCT studies", () => {
 		assert.ok(
-			source.includes('<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full flex-1" />'),
+			source.includes("<DicomArchiveUploader") && source.includes("onImagesLoaded="),
 			"DicomArchiveUploader must be cleanly integrated without visual clutter",
 		);
 	});

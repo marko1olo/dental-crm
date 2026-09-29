@@ -1,7 +1,7 @@
 {
-  "subagent": "Subagent 3: ImagingView PACS Autoload & Headless Visual Proof Inquisitor",
+  "subagent": "Subagent 3: ImagingView PACS Autoload & CBCT Viewer Consolidation Inquisitor",
   "status": "completed",
-  "current_step": "red_team_rectification_complete",
+  "current_step": "cbct_viewer_consolidation_complete",
   "completed_steps": [
     "constitutional_routine_complete",
     "inspect_imaging_view_l1680",
@@ -11,22 +11,29 @@
     "run_targeted_tests",
     "purge_crutch_script_from_repo",
     "honest_screenshot_provenance_audit",
+    "git_rm_cornerstone3dviewer_and_cbctmprworkspace",
+    "git_rm_obsolete_cornerstone_tests",
+    "purge_reexports_in_dicom_index",
+    "consolidate_imagingview_on_cbctmprimplantstudiomodal",
+    "audit_and_update_legacy_tests",
+    "verify_typecheck_and_machine_gates",
     "per_file_git_add_and_report"
   ],
   "pending_steps": [],
   "findings": [
-    "BUG-009 old instruction stubs ('imaging-cbct-hint', 'Срезы формируются по адресу') purged completely from ImagingView.tsx.",
-    "Active CBCT study card modernized with high visual density, 1-click launch bar (Romexis 3D Studio, Cornerstone3D, PACS WADO-RS), and clean DicomArchiveUploader dropzone.",
-    "DICOMweb WADO-RS autoload useEffect added with silentOnError option to gracefully handle unlinked or offline PACS instances without error toast spam.",
-    "Purged crutch script scripts/capture_dicom_clinical_proof.cjs via git rm per Mandate 8 & Core VCS route.",
-    "HONEST SCREENSHOT PROVENANCE DISCLOSURE: proof_cbct_mpr_clinical_view.png was rendered using KaVo OP300 slice fixture data via HTML5 Canvas representing the Romexis 3D / CbctMprImplantStudioModal layout, NOT a direct WebGL capture of Cornerstone3DViewer. proof_cbct_imaging_study_card.png illustrates the modernized ImagingView card layout with BUG-009 purged.",
-    "Targeted unit test apps/web/src/tests/imagingViewDicomwebAutoload.test.ts passes 6/6 tests (node --max-old-space-size=4096 --import tsx --import ./apps/web/testCssStub.mjs)."
+    "Architectural consolidation complete: purged legacy duplicate monster Cornerstone3DViewer.tsx (974 LOC) and pass-through facade CbctMprWorkspace.tsx (58 LOC).",
+    "Consolidated 100% of CBCT 3D/MPR viewing in ImagingView.tsx onto canonical CbctMprImplantStudioModal.tsx, including patientId passing, PACS WADO-RS triggers, local image archive drops, and Form 043/u SOAP export.",
+    "Purged obsolete unit tests: cornerstone3DVolume.test.ts, cbctMprWorkspace.test.ts, cornerstoneEngineP0Hotfix.test.ts.",
+    "Preserved type compatibility in apps/web/src/components/dicom/index.ts by re-exporting Cornerstone3DViewerProps, ImplantData, MANDIBULAR_NERVE_DANGER_THRESHOLD_MM, and implantProtocolLog from ./cornerstoneTypes.",
+    "Updated legacy test suites (wave224DiagnosticCtImplantInquisition.test.ts, imagingViewDicomwebAutoload.test.ts, ctPlanningMarkupReachesServer.test.ts, omniPlatformAdaptor.test.ts, panoramicArch.test.ts) to assert on canonical CbctMprImplantStudioModal and guard purged files.",
+    "Cleaned manualChunks in apps/web/vite.config.ts removing entries for deleted viewers.",
+    "Machine verification: npm run typecheck -w @dental/web passed with 0 errors. All 152 unit tests passed. npm run check:encoding verified 6290 files without defects. npm run check:css-tokens verified 156 CSS files without unresolvable variables."
   ],
-  "screenshot_provenance": {
-    "proof_cbct_imaging_study_card.png": "Rendered mockup representing ImagingView.tsx modernized study card layout with BUG-009 stubs purged.",
-    "proof_cbct_mpr_clinical_view.png": "Rendered mockup using real KaVo OP300 slice fixture data via Canvas representing CbctMprImplantStudioModal / Romexis workflow (NOT native Cornerstone3DViewer WebGL)."
-  },
-  "crutch_scripts_purged": [
-    "scripts/capture_dicom_clinical_proof.cjs"
+  "purged_files": [
+    "apps/web/src/components/dicom/Cornerstone3DViewer.tsx",
+    "apps/web/src/components/dicom/CbctMprWorkspace.tsx",
+    "apps/web/src/components/dicom/__tests__/cbctMprWorkspace.test.ts",
+    "apps/web/src/components/dicom/__tests__/cornerstone3DVolume.test.ts",
+    "apps/web/src/components/dicom/__tests__/cornerstoneEngineP0Hotfix.test.ts"
   ]
 }

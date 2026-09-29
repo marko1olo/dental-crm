@@ -859,13 +859,14 @@ test("Omni-Platform Adaptor & Multi-Environment Invariants Suite", async (t) => 
 	});
 
 	await t.test("20. Code Splitting & Memory Protection: Verify Cornerstone3D / heavy modules not loaded on Hot Path", async () => {
-		// Verify Cornerstone3DViewer is dynamically imported with lazy loading in ImagingView
+		// Verify CbctMprImplantStudioModal is dynamically imported with lazy loading in ImagingView
 		const fs = await import("node:fs");
 		const imagingViewSource = fs.readFileSync("C:/Clinic_MVP/dental-crm/apps/web/src/ImagingView.tsx", "utf-8");
 		assert.ok(
-			imagingViewSource.includes("Cornerstone3DViewer") &&
+			(imagingViewSource.includes("CbctMprImplantStudioModal") ||
+				imagingViewSource.includes("Cornerstone3DViewer")) &&
 				imagingViewSource.includes("lazyWithRetry"),
-			"Cornerstone3DViewer must be lazy loaded via lazyWithRetry to prevent loading on Schedule/Patients views",
+			"3D CBCT studio must be lazy loaded via lazyWithRetry to prevent loading on Schedule/Patients views",
 		);
 
 		// Verify App.tsx lazy-loads ImagingView

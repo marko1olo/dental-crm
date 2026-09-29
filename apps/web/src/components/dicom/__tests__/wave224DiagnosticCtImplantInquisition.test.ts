@@ -266,19 +266,20 @@ describe("Wave 224 Inquisition: Real Diagnostic Engines, DICOM P10 & Outpatient 
 			);
 		});
 
-		it("4.2 CbctMprWorkspace is an ultra-thin facade delegating to Cornerstone3DViewer under 50 lines", () => {
-			const source = fs.readFileSync(
-				path.resolve(__dirname, "../CbctMprWorkspace.tsx"),
-				"utf-8",
+		it("4.2 Canonical CBCT Studio is consolidated on CbctMprImplantStudioModal", () => {
+			const studioPath = path.resolve(
+				__dirname,
+				"../../radiology/CbctMprImplantStudioModal.tsx",
 			);
-
+			assert.ok(fs.existsSync(studioPath), "Canonical CbctMprImplantStudioModal must exist");
+			const source = fs.readFileSync(studioPath, "utf-8");
 			assert.ok(
-				source.includes("Cornerstone3DViewer"),
-				"CbctMprWorkspace must delegate to Cornerstone3DViewer",
+				source.includes("CbctMprImplantStudioModal"),
+				"CbctMprImplantStudioModal must be the canonical studio",
 			);
 			assert.ok(
-				source.split("\n").length <= 50,
-				"CbctMprWorkspace must be an ultra-thin facade <= 50 lines",
+				source.includes("useCbctDicomLoader"),
+				"Must use dedicated DICOM volume loader",
 			);
 		});
 

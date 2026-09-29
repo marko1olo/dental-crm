@@ -338,13 +338,6 @@ export default defineConfig({
 						normalizedId.includes("/node_modules/@react-three/")
 					)
 						return "three-vendor";
-					// Cornerstone3DViewer: тяжелый 3D WebGL просмотрщик КТ-снимков
-					if (
-						normalizedId.endsWith(
-							"/apps/web/src/components/dicom/Cornerstone3DViewer.tsx",
-						)
-					)
-						return "cornerstone-3d-viewer";
 					// PanoramicRendererWindow: тяжелая панорамная реконструкция зубной дуги
 					if (
 						normalizedId.endsWith(
@@ -352,13 +345,6 @@ export default defineConfig({
 						)
 					)
 						return "panoramic-renderer";
-					// CbctMprWorkspace: фасад MPR рабочего пространства
-					if (
-						normalizedId.endsWith(
-							"/apps/web/src/components/dicom/CbctMprWorkspace.tsx",
-						)
-					)
-						return "cbct-mpr-workspace";
 					// DicomArchiveUploader: асинхронный загрузчик и парсер архивов срезов DICOM
 					if (
 						normalizedId.endsWith(
