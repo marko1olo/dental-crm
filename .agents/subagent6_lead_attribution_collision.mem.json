@@ -1,0 +1,31 @@
+{
+  "subagent": "Subagent 6: Lead Attribution & Notification Spam Collision Inquisitor",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md",
+    "Read AGENTS.md",
+    "Inspect existing files in scope via view_file",
+    "Analyze Lead conversion and patient attribution persistence (Zero Attribution Loss)",
+    "Implement UTM parsing, channel normalization, and primary inquiry preservation (apps/web/src/components/leads/leadsFunnelEngine.ts, leadsFunnelTypes.ts)",
+    "Implement 152-FZ & FZ-38 consent separation (medical care vs marketing SMS) in LeadConvertModal.tsx",
+    "Implement Notification spam collision guard (service priority, 24h rate limiting, same-day collision) in leadsFunnelEngine.ts",
+    "Implement preflight recall safety check in recallSmsAndMessaging.ts",
+    "Enhance PatientNotificationCenter.tsx with telemetry banner and service badges",
+    "Enhance LeadCard.tsx with visual breach SLA alert and fallback Russian channel badge",
+    "Pass lead and handle split consents in LeadsKanbanView.tsx",
+    "Add 50 unit tests in leadsFunnelEngine.test.ts (Suites 1-12)",
+    "Add 6 integration/SSR tests in marketingAttributionSeparation.test.tsx",
+    "Fix mojibake false-positive in recallSmsAndMessaging.ts (escape GSM characters)",
+    "Run targeted test suite with testCssStub (101 leads tests, 30 recall tests, all passing)",
+    "Verify clean git status and per-file git add"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Attribution Persistence: Added extractLeadAttribution and parseUtmParameters supporting URL queries and freeform notes, ensuring UTM tags (utm_source, utm_medium, utm_campaign, utm_content, utm_term) and primary inquiry are passed to patient administrativeProfile without loss.",
+    "Consent Separation: Implemented distinct consents for medical care data processing (152-FZ mandatory) and marketing promotional SMS (FZ-38 optional). Non-consenting patients are automatically filtered out from marketing campaigns to avoid FAS spam fines.",
+    "Spam Collision & Rate Limiting: Built checkNotificationSpamCollision enforcing service priority (reminders suppress marketing on visit day), 24-hour rate limit between marketing contacts, and same-day single contact limit.",
+    "Recall Guard: Connected validateRecallInviteSafety and checkNotificationSpamCollision to prevent automated recalls when patient has active appointment today or lacks marketing consent.",
+    "Kanban & SLA Ergonomics: Human-friendly Russian channel badges in LeadCard, prominent alert left-border on SLA breach (>60m), and zero technical IDs in Russian channel labels.",
+    "Test Verification: 56/56 passing tests across leadsFunnelEngine.test.ts and marketingAttributionSeparation.test.tsx; 101/101 passing tests across all leads test files; clean text encoding (smoke:web-text-encoding) and CSS tokens (check-css-tokens.mjs)."
+  ]
+}

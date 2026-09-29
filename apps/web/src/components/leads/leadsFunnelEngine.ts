@@ -35,7 +35,14 @@ import {
 	type LeadFunnelStageKey,
 	MARKETING_CHANNELS,
 	type MarketingMetricsSummary,
+	getMarketingChannelLabel,
 	normalizeMarketingChannel,
+	type Lead,
+	type LeadUtmParameters,
+	type LeadAttributionDetails,
+	type PatientAttributionRecord,
+	type NotificationSpamCollisionInput,
+	type NotificationCollisionCheckResult,
 } from "./leadsFunnelTypes";
 
 // ---------------------------------------------------------------------------
@@ -488,5 +495,450 @@ export function calculateFunnelAnalysis(
 		stages,
 		summary,
 		channels,
+	};
+}
+
+// ---------------------------------------------------------------------------
+// 5. АТРИБУЦИЯ ЛИДОВ И ПЕРЕНОС В КАРТУ ПАЦИЕНТА (ZERO ATTRIBUTION LOSS)
+// ---------------------------------------------------------------------------
+
+/**
+ * Парсинг UTM-параметров из строки (URL, query string или текстовый блок)
+ */
+export function parseUtmParameters(text?: string | null): LeadUtmParameters {
+	const defaultResult: LeadUtmParameters = {
+		utm_source: null,
+		utm_medium: null,
+		utm_campaign: null,
+		utm_content: null,
+		utm_term: null,
+	};
+
+	if (!text || typeof text !== "string") {
+		return defaultResult;
+	}
+
+	const result: Record<string, string> = {};
+	const utmKeys = [
+		"utm_source",
+		"utm_medium",
+		"utm_campaign",
+		"utm_content",
+		"utm_term",
+	] as const;
+
+	try {
+		// Если это полноценный URL или строка с query параметрами
+		const queryString = text.includes("?")
+			? text.split("?")[1]
+			: text.includes("&") || text.includes("=")
+				? text
+				: "";
+
+		if (queryString) {
+			const pairs = queryString.split("&");
+			for (const pair of pairs) {
+				const [k, v] = pair.split("=");
+				if (k && v) {
+					const cleanKey = decodeURIComponent(
+						k.trim().replace(/\+/g, " "),
+					).toLowerCase();
+					if (cleanKey.startsWith("utm_")) {
+						result[cleanKey] = decodeURIComponent(
+							v.trim().replace(/\+/g, " "),
+						);
+					}
+				}
+			}
+		}
+	} catch {
+		// Игнорируем ошибки парсинга URL
+	}
+
+	// Поиск отдельных параметров по регулярному выражению в тексте
+	for (const key of utmKeys) {
+		if (!result[key]) {
+			const regex = new RegExp(`(?:^|[?&\\s])${key}=([^&\\s]+)`, "i");
+			const match = text.match(regex);
+			if (match && match[1]) {
+				const rawVal = match[1].replace(/\+/g, " ");
+				try {
+					result[key] = decodeURIComponent(rawVal);
+				} catch {
+					result[key] = rawVal;
+				}
+			}
+		}
+	}
+
+	return {
+		utm_source: result.utm_source || null,
+		utm_medium: result.utm_medium || null,
+		utm_campaign: result.utm_campaign || null,
+		utm_content: result.utm_content || null,
+		utm_term: result.utm_term || null,
+	};
+}
+
+/**
+ * Полное извлечение атрибуции из лида (канал, метки, первичный запрос)
+ */
+export function extractLeadAttribution(
+	lead: Partial<FunnelLead> | Partial<Lead>,
+): LeadAttributionDetails {
+	const sourceRaw = (lead.source || "").trim();
+	const channelKey = normalizeMarketingChannel(sourceRaw);
+	const channelLabel = getMarketingChannelLabel(channelKey);
+
+	// Парсим UTM из источника и примечаний
+	const utmFromSource = parseUtmParameters(sourceRaw);
+	const utmFromNotes = parseUtmParameters(lead.notes || "");
+
+	const utm: LeadUtmParameters = {
+		utm_source: utmFromSource.utm_source || utmFromNotes.utm_source || null,
+		utm_medium: utmFromSource.utm_medium || utmFromNotes.utm_medium || null,
+		utm_campaign: utmFromSource.utm_campaign || utmFromNotes.utm_campaign || null,
+		utm_content: utmFromSource.utm_content || utmFromNotes.utm_content || null,
+		utm_term: utmFromSource.utm_term || utmFromNotes.utm_term || null,
+	};
+
+	const hasUtmTags = Boolean(
+		utm.utm_source ||
+			utm.utm_medium ||
+			utm.utm_campaign ||
+			utm.utm_content ||
+			utm.utm_term,
+	);
+
+	const primaryInquiry = lead.notes ? lead.notes.trim() : null;
+
+	return {
+		channelKey,
+		channelLabel,
+		sourceRaw,
+		utm,
+		primaryInquiry,
+		hasUtmTags,
+	};
+}
+
+/**
+ * Создание структуры атрибуции для переноса в карточку пациента (Zero Attribution Loss)
+ * с разделением согласий по 152-ФЗ и ФЗ-38.
+ */
+export function createPatientAttributionRecord(
+	lead: FunnelLead | Lead,
+	options: {
+		consentMarketing?: boolean;
+		consentMedical?: boolean;
+	} = {},
+): PatientAttributionRecord {
+	const attr = extractLeadAttribution(lead);
+	const patientName = lead.name || (lead as Lead).patientName || "Пациент";
+	const phone = lead.phone ? lead.phone.trim() : null;
+
+	const medicalCareProcessing = options.consentMedical ?? true;
+	const marketingPromotions = options.consentMarketing ?? false;
+
+	const utmSuffix = attr.hasUtmTags
+		? ` [UTM: ${[
+				attr.utm.utm_source && `src=${attr.utm.utm_source}`,
+				attr.utm.utm_campaign && `cmp=${attr.utm.utm_campaign}`,
+				attr.utm.utm_medium && `med=${attr.utm.utm_medium}`,
+			]
+				.filter(Boolean)
+				.join(", ")}]`
+		: "";
+
+	const inquirySuffix = attr.primaryInquiry ? ` | Запрос: ${attr.primaryInquiry}` : "";
+
+	const preferredAppointmentNote = `src:${attr.channelLabel}${utmSuffix}${inquirySuffix}`;
+
+	const dataProcessingBasisNote = `152-ФЗ: Обработка персданных для медпомощи — ${
+		medicalCareProcessing ? "согласие получено" : "отказ"
+	}. Рекламные рассылки и SMS (ФЗ-38) — ${
+		marketingPromotions ? "согласие подтверждено" : "отказ / исключён из рассылок"
+	}. Первичный источник: ${attr.channelLabel}.`;
+
+	return {
+		patientName,
+		phone,
+		advertisingSource: attr.channelLabel,
+		sourceChannelKey: attr.channelKey,
+		primaryInquiry: attr.primaryInquiry,
+		utm: attr.utm,
+		administrativeProfile: {
+			advertisingSource: attr.channelLabel,
+			preferredAppointmentNote,
+			dataProcessingBasisNote,
+			utmSource: attr.utm.utm_source,
+			utmMedium: attr.utm.utm_medium,
+			utmCampaign: attr.utm.utm_campaign,
+		},
+		consents: {
+			medicalCareProcessing,
+			marketingPromotions,
+		},
+	};
+}
+
+/**
+ * Связка платежей пациента с атрибуцией лида для сохранения точности ROMI/ROI
+ * «Лид -> Пациент -> Оплаченное лечение»
+ */
+export function linkPatientRevenueToLeadAttribution(
+	leads: readonly FunnelLead[],
+	payments: readonly {
+		leadId?: string;
+		patientId?: string;
+		phone?: string;
+		paidAmountRub: number;
+	}[],
+): FunnelLead[] {
+	return leads.map((lead) => {
+		// Нормализация телефонов (отсечение префиксов +7 / 8 для точного сопоставления 10-значного номера)
+		const normalizePhone = (raw?: string | null): string => {
+			if (!raw) return "";
+			const digits = raw.replace(/\D/g, "");
+			return digits.length >= 10 ? digits.slice(-10) : digits;
+		};
+
+		const cleanLeadPhone = normalizePhone(lead.phone);
+		const leadMatches = payments.filter((p) => {
+			if (p.leadId && p.leadId === lead.id) return true;
+			if (
+				p.phone &&
+				cleanLeadPhone &&
+				normalizePhone(p.phone) === cleanLeadPhone
+			) {
+				return true;
+			}
+			return false;
+		});
+
+		if (leadMatches.length === 0) {
+			return lead;
+		}
+
+		const totalPaymentsRub = leadMatches.reduce(
+			(sum, p) => sum + (Number.isFinite(p.paidAmountRub) ? p.paidAmountRub : 0),
+			0,
+		);
+
+		const currentRev = extractLeadRevenueRub(lead);
+		const newRevenueRub = Math.max(currentRev, Math.round(totalPaymentsRub));
+
+		const updated: FunnelLead = {
+			...lead,
+			actualRevenueRub: newRevenueRub,
+			paidAmountRub: newRevenueRub,
+			paidAmountKopecks: newRevenueRub * 100,
+			...(newRevenueRub > 0 ? { isPaid: true, stageReached: "paid" } : {}),
+		};
+		return updated;
+	});
+}
+
+// ---------------------------------------------------------------------------
+// 6. РАЗДЕЛЕНИЕ СОГЛАСИЙ 152-ФЗ (МЕДИЦИНА VS МАРКЕТИНГ)
+// ---------------------------------------------------------------------------
+
+/**
+ * Проверка права на отправку маркетинговых / рекламных сообщений (152-ФЗ и ФЗ «О рекламе» ст. 18 ч. 1).
+ * Строгий отсев: если явного согласия нет — пациент КАТЕГОРИЧЕСКИ исключается из маркетинговых кампаний.
+ */
+export function isPatientEligibleForMarketing(consentState: unknown): boolean {
+	if (consentState === true) return true;
+	if (!consentState || typeof consentState !== "object") return false;
+
+	const obj = consentState as Record<string, unknown>;
+
+	if (obj.consentMarketing === true || obj.marketingOptIn === true) {
+		return true;
+	}
+
+	if (
+		obj.consents &&
+		typeof obj.consents === "object" &&
+		(obj.consents as Record<string, unknown>).marketingPromotions === true
+	) {
+		return true;
+	}
+
+	if (
+		obj.communicationConsents &&
+		typeof obj.communicationConsents === "object"
+	) {
+		const cc = obj.communicationConsents as Record<string, unknown>;
+		if (cc.marketing === true || cc.marketing === "granted") {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Фильтрация аудитории для маркетинговых кампаний с исключением пациентов без согласия (152-ФЗ).
+ */
+export function filterMarketingEligibleLeads<
+	T extends {
+		consentMarketing?: boolean | null;
+		marketingOptIn?: boolean | null;
+		consents?: { marketingPromotions?: boolean };
+	},
+>(leads: readonly T[]): T[] {
+	return leads.filter((lead) => isPatientEligibleForMarketing(lead));
+}
+
+// ---------------------------------------------------------------------------
+// 7. ЗАЩИТА ОТ СПАМ-КОЛЛИЗИЙ И ОГРАНИЧЕНИЕ ЧАСТОТЫ УВЕДОМЛЕНИЙ (RATE LIMITING)
+// ---------------------------------------------------------------------------
+
+export const MIN_MARKETING_INTERVAL_HOURS = 24;
+
+/**
+ * Движок предотвращения спам-коллизий (Notification Spam Collision Guard).
+ *
+ * ПРАВИЛА:
+ * 1. Согласие 152-ФЗ / 38-ФЗ: без маркетингового согласия промо-рассылки отклоняются сразу.
+ * 2. Сервисный приоритет визита: если у пациента сегодня приём/сервисное напоминание,
+ *    любые маркетинговые рассылки и диспансерные recalls на этот день ПОДАВЛЯЮТСЯ.
+ * 3. Межсообщенческий интервал: не менее 24 часов между маркетинговыми/recall контактами.
+ * 4. Защита от спама в один день: пациент не должен получать несколько сообщений в сутки.
+ */
+export function checkNotificationSpamCollision(
+	input: NotificationSpamCollisionInput,
+): NotificationCollisionCheckResult {
+	const {
+		notificationType,
+		consentMarketing,
+		hasServiceAppointmentToday,
+		lastMarketingSentAt,
+		messagesSentTodayCount = 0,
+		targetDate = new Date(),
+	} = input;
+
+	// Сервисные уведомления (о визите, отмене, переносе, чеке) имеют наивысший приоритет
+	if (notificationType === "service") {
+		return { allowed: true };
+	}
+
+	// 1. Проверка согласия по 152-ФЗ и ФЗ-38 для рекламных сообщений
+	if (consentMarketing !== true) {
+		return {
+			allowed: false,
+			suppressionType: "no_marketing_consent",
+			reason:
+				"Отправка отклонена: отсутствует согласие на рекламные рассылки (152-ФЗ и ст. 18 ч. 1 ФЗ «О рекламе»).",
+		};
+	}
+
+	// 2. Сервисный приоритет визита: напоминание о записи на прием подавляет рекламу на этот день
+	if (hasServiceAppointmentToday) {
+		return {
+			allowed: false,
+			suppressionType: "service_priority_suppression",
+			reason:
+				"Сервисный приоритет: у пациента сегодня запланирован приём в клинике. Маркетинговые и recall-сообщения на этот день подавлены.",
+		};
+	}
+
+	// 3. Межсообщенческий интервал (не менее 24 часов)
+	if (lastMarketingSentAt) {
+		const lastSentTime = new Date(lastMarketingSentAt).getTime();
+		if (!Number.isNaN(lastSentTime)) {
+			const diffHours = (targetDate.getTime() - lastSentTime) / (1000 * 60 * 60);
+			if (diffHours < MIN_MARKETING_INTERVAL_HOURS) {
+				const hoursRemaining = Math.max(
+					1,
+					Math.ceil(MIN_MARKETING_INTERVAL_HOURS - diffHours),
+				);
+				return {
+					allowed: false,
+					suppressionType: "rate_limit_24h",
+					hoursRemaining,
+					reason: `Защита от спама: с момента предыдущего контакта прошло менее 24 часов (осталось ${hoursRemaining} ч.).`,
+				};
+			}
+		}
+	}
+
+	// 4. Ограничение нескольких сообщений в один день
+	if (messagesSentTodayCount >= 1) {
+		return {
+			allowed: false,
+			suppressionType: "same_day_collision",
+			reason:
+				"Коллизия сообщений: пациенту уже отправлено сообщение сегодня. Повторная отправка запрещена.",
+		};
+	}
+
+	return { allowed: true };
+}
+
+// ---------------------------------------------------------------------------
+// 8. ЧЕЛОВЕЧЕСКИЙ РУССКИЙ ЯЗЫК ДЛЯ СТАТУСОВ И РЕГЛАМЕНТА SLA (БЕЗ ШИФРОВ)
+// ---------------------------------------------------------------------------
+
+/**
+ * Преобразование технического ключа канала в понятное название на русском языке
+ */
+export function formatChannelStatusRu(
+	channelKey: string | null | undefined,
+): string {
+	if (!channelKey) return "Прямой звонок / Регистратура";
+	const normalized = normalizeMarketingChannel(channelKey);
+	return getMarketingChannelLabel(normalized);
+}
+
+/**
+ * Сводка просроченных регламентов ответа (Speed-to-Lead SLA)
+ */
+export function formatLeadSlaBreachSummary(
+	leads: readonly FunnelLead[],
+	now: Date = new Date(),
+): {
+	breachedCount: number;
+	warningCount: number;
+	freshCount: number;
+	summaryText: string;
+} {
+	let breachedCount = 0;
+	let warningCount = 0;
+	let freshCount = 0;
+
+	const nowTime = now.getTime();
+
+	for (const lead of leads) {
+		const rawDate = lead.stageEnteredAt || lead.createdAt;
+		const leadTime = rawDate ? new Date(rawDate).getTime() : NaN;
+		if (Number.isNaN(leadTime)) {
+			freshCount += 1;
+			continue;
+		}
+
+		const minutesElapsed = Math.max(0, Math.floor((nowTime - leadTime) / 60000));
+		if (minutesElapsed < 15) {
+			freshCount += 1;
+		} else if (minutesElapsed < 60) {
+			warningCount += 1;
+		} else {
+			breachedCount += 1;
+		}
+	}
+
+	const summaryText =
+		breachedCount > 0
+			? `Внимание: просрочен регламент ответа у ${breachedCount} обращений! Требуется реакция администратора.`
+			: warningCount > 0
+				? `Внимание: ${warningCount} обращений ожидают ответа от 15 до 60 минут.`
+				: "Все обращения обработаны вовремя (SLA в норме).";
+
+	return {
+		breachedCount,
+		warningCount,
+		freshCount,
+		summaryText,
 	};
 }

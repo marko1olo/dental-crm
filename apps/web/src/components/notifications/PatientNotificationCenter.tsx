@@ -10,6 +10,7 @@ import {
 	MessageSquare,
 	Phone,
 	PhoneMissed,
+	ShieldCheck,
 	Trash2,
 	UserCheck,
 	X,
@@ -338,6 +339,22 @@ export function PatientNotificationCenter({
 				))}
 			</div>
 
+			{/* Защита от спам-коллизий (152-ФЗ / ст. 18 ФЗ-38): сервисный приоритет и лимит 24ч */}
+			<div
+				className="flex items-center justify-between px-3.5 py-1.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] text-[11px] text-[var(--muted,#64748b)]"
+				data-testid="notification-spam-guard-banner"
+			>
+				<div className="flex items-center gap-1.5 min-w-0">
+					<ShieldCheck size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<span className="truncate">
+						<strong>Защита от спама (152-ФЗ):</strong> сервисные напоминания подавляют рекламу в радиусе 24ч
+					</span>
+				</div>
+				<span className="text-[10px] font-semibold text-[var(--ok-fg,#10b981)] bg-[var(--ok-bg,rgba(16,185,129,0.1))] px-1.5 py-0.5 rounded shrink-0">
+					Активна (24ч)
+				</span>
+			</div>
+
 			{/* Плоский список уведомлений (БЕЗ МАТРЁШЕК, глубина <= 1) */}
 			<div className="flex-1 overflow-y-auto divide-y divide-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))]">
 				{filteredNotifications.length === 0 ? (
@@ -390,6 +407,11 @@ export function PatientNotificationCenter({
 										{item.priority === "critical" && (
 											<span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500 text-white">
 												Срочно
+											</span>
+										)}
+										{item.category === "appointment" && (
+											<span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)]">
+												Сервисное
 											</span>
 										)}
 										{!item.isRead && (

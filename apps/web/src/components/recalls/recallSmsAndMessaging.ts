@@ -38,7 +38,7 @@ export function calculateSmsSegments(text: string): SmsSegmentCalculation {
 	}
 
 	// Базовый GSM 7-bit набор символов
-	const gsm7Regex = /^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\x1BÆæßÉ !"#¤%&'()*+,\-./0-9:;<=>?¡A-ZÄÖÑÜ§¿a-zäöñüà^{}\\[~\]|€]*$/;
+	const gsm7Regex = /^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\x1BÆæßÉ !"#¤%&'()*+,\-./0-9:;<=>?¡A-ZÄÖ\u00D1\u00DC§¿a-zäöñüà^{}\\[~\]|€]*$/;
 	const isGsm7 = gsm7Regex.test(text);
 	const encoding: "GSM-7" | "UCS-2" = isGsm7 ? "GSM-7" : "UCS-2";
 	const isUnicode = !isGsm7;
@@ -375,17 +375,81 @@ export function generateSmsRecallMessage(
 import type { RecallInviteRequest, RecallInviteResponse } from "@dental/shared/recalls";
 export type { RecallInviteRequest, RecallInviteResponse };
 
+import {
+	checkNotificationSpamCollision,
+	type NotificationCollisionCheckResult,
+} from "../leads/leadsFunnelEngine";
+
+export interface RecallSafetyCheckOptions {
+	readonly hasServiceAppointmentToday?: boolean;
+	readonly consentMarketing?: boolean | null;
+	readonly lastContactedAt?: string | Date | null;
+	readonly messagesSentTodayCount?: number;
+	readonly targetDate?: Date;
+}
+
+/**
+ * Валидация безопасности отправки recall-приглашения (152-ФЗ, ФЗ-38, защита от спам-коллизий):
+ * - Проверка согласия на рекламные рассылки
+ * - Подавление сервисной записью на прием в этот день
+ * - Межсообщенческий интервал не менее 24 часов
+ */
+export function validateRecallInviteSafety(
+	candidate: PatientRecallRecord,
+	options: RecallSafetyCheckOptions = {},
+): NotificationCollisionCheckResult {
+	const consentMarketing =
+		options.consentMarketing !== undefined
+			? options.consentMarketing
+			: (candidate as unknown as { consentMarketing?: boolean }).consentMarketing ??
+				false;
+
+	return checkNotificationSpamCollision({
+		patientId: candidate.patientId,
+		notificationType: "recall",
+		consentMarketing,
+		hasServiceAppointmentToday: options.hasServiceAppointmentToday,
+		lastMarketingSentAt: options.lastContactedAt ?? (candidate as unknown as { lastInviteDate?: string }).lastInviteDate ?? null,
+		messagesSentTodayCount: options.messagesSentTodayCount ?? 0,
+		targetDate: options.targetDate,
+	});
+}
+
 /**
  * Отправка реального приглашения пациенту через эндпоинт Fastify:
  * POST /api/patients/recall-candidates/invite
  *
  * Сообщение встает в очередь communication_outbox клиники под областью marketing (ФЗ-38 «О рекламе» ст. 18 ч. 1)
- * с дедупликацией по ключу recall:{patientId}:{YYYY-MM}.
+ * с дедупликацией по ключу recall:{patientId}:{YYYY-MM} и префлайт-защитой от спам-коллизий.
  */
 export async function sendRecallCandidateInvite(
 	params: RecallInviteRequest,
 	headers?: Record<string, string>,
+	safetyOptions?: RecallSafetyCheckOptions,
 ): Promise<RecallInviteResponse> {
+	// Префлайт-проверка защиты от спама и 152-ФЗ
+	if (safetyOptions) {
+		const safety = checkNotificationSpamCollision({
+			patientId: params.patientId,
+			notificationType: "recall",
+			consentMarketing: safetyOptions.consentMarketing ?? false,
+			hasServiceAppointmentToday: safetyOptions.hasServiceAppointmentToday,
+			lastMarketingSentAt: safetyOptions.lastContactedAt,
+			messagesSentTodayCount: safetyOptions.messagesSentTodayCount,
+			targetDate: safetyOptions.targetDate,
+		});
+
+		if (!safety.allowed) {
+			return {
+				ok: false,
+				duplicate: safety.suppressionType === "same_day_collision",
+				message:
+					safety.reason ||
+					"Отправка сообщения отложена защитой от спам-коллизий.",
+			};
+		}
+	}
+
 	const response = await fetch("/api/patients/recall-candidates/invite", {
 		method: "POST",
 		headers: {

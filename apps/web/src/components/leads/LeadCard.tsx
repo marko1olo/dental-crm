@@ -104,15 +104,24 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 				padding: "12px 14px",
 				borderRadius: "10px",
 				cursor: "grab",
-				border: `1px solid ${borderColor}`,
-				boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+				border: sla.isBreached
+					? "1px solid var(--rust-soft, rgba(239, 68, 68, 0.4))"
+					: `1px solid ${borderColor}`,
+				borderLeft: sla.isBreached
+					? "4px solid var(--rust, #ef4444)"
+					: `1px solid ${borderColor}`,
+				boxShadow: sla.isBreached
+					? "0 2px 12px rgba(239, 68, 68, 0.12)"
+					: "0 2px 8px rgba(0,0,0,0.05)",
 				opacity: isDragged ? 0.5 : 1,
 				transform: isDragged ? "scale(0.98)" : "scale(1)",
-				transition: "box-shadow 0.2s",
+				transition: "box-shadow 0.2s, border 0.2s",
 			}}
 			whileHover={{
 				y: -2,
-				boxShadow: "0 8px 16px rgba(0,0,0,0.08)",
+				boxShadow: sla.isBreached
+					? "0 8px 18px rgba(239, 68, 68, 0.18)"
+					: "0 8px 16px rgba(0,0,0,0.08)",
 			}}
 		>
 			{/* Заголовок карточки: имя, быстрый просмотр и кнопка редактирования */}
@@ -413,33 +422,30 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 					gap: 6,
 				}}
 			>
-				{lead.source ? (
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: 4,
-							fontSize: 11,
-							color: channelBadge.color,
-							background: channelBadge.bg,
-							border: `1px solid ${channelBadge.border}`,
-							padding: "2px 6px",
-							borderRadius: 4,
-							maxWidth: 140,
-							overflow: "hidden",
-							textOverflow: "ellipsis",
-							whiteSpace: "nowrap",
-						}}
-						title={`Источник: ${channelLabel}`}
-					>
-						<Globe size={10} className="shrink-0" />
-						<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-							{channelLabel}
-						</span>
-					</div>
-				) : (
-					<div />
-				)}
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: 4,
+						fontSize: 11,
+						color: channelBadge.color,
+						background: channelBadge.bg,
+						border: `1px solid ${channelBadge.border}`,
+						padding: "2px 6px",
+						borderRadius: 4,
+						maxWidth: 150,
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+						whiteSpace: "nowrap",
+					}}
+					title={`Источник: ${channelLabel || "Прямое обращение"}`}
+					data-testid={`lead-channel-badge-${lead.id}`}
+				>
+					<Globe size={10} className="shrink-0" />
+					<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+						{channelLabel || "Прямой звонок"}
+					</span>
+				</div>
 				{lead.expectedRevenue ? (
 					<div
 						style={{

@@ -351,7 +351,10 @@ export function LeadsKanbanView() {
 		}
 	};
 
-	const handleConvertSubmit = async (e: React.FormEvent) => {
+	const handleConvertSubmit = async (
+		e: React.FormEvent,
+		options?: { consentMedical: boolean; consentMarketing: boolean },
+	) => {
 		e.preventDefault();
 		if (!convertingLeadId || isBooking) return;
 
@@ -381,8 +384,14 @@ export function LeadsKanbanView() {
 				doctorId: doctorIdToBook,
 			});
 
+			const activeLead = leads.find((l) => l.id === convertingLeadId);
+			const sourceLabel = activeLead?.source ? ` (источник: ${activeLead.source})` : "";
+			const consentLabel = options?.consentMarketing
+				? " [рассылки: разрешены]"
+				: " [152-ФЗ: без рекламы]";
+
 			showToast(
-				"Обращение записано на прием, карточка пациента создана",
+				`Обращение записано на прием, создана карта пациента${sourceLabel}${consentLabel}`,
 				"success",
 			);
 			setIsConvertOpen(false);
@@ -718,6 +727,7 @@ export function LeadsKanbanView() {
 				appointmentTime={appointmentTime}
 				setAppointmentTime={setAppointmentTime}
 				isBooking={isBooking}
+				lead={leads.find((l) => l.id === convertingLeadId) || null}
 				cardBg={cardBg}
 				colBg={colBg}
 				borderColor={borderColor}

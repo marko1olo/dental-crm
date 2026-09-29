@@ -13,6 +13,16 @@ import {
 	getMarketingChannelLabel,
 	hasLeadPassedStage,
 	normalizeMarketingChannel,
+	parseUtmParameters,
+	extractLeadAttribution,
+	createPatientAttributionRecord,
+	linkPatientRevenueToLeadAttribution,
+	isPatientEligibleForMarketing,
+	filterMarketingEligibleLeads,
+	checkNotificationSpamCollision,
+	formatChannelStatusRu,
+	formatLeadSlaBreachSummary,
+	MIN_MARKETING_INTERVAL_HOURS,
 	safeDivide,
 	safePercent,
 } from "../leadsFunnelEngine";
@@ -513,4 +523,485 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 			assert.equal(evaluateChannelEfficiency(50000, 1, -40).rating, "critical");
 		});
 	});
+
+	// -----------------------------------------------------------------------
+	// 8. Zero Attribution Loss: Парсинг UTM и извлечение атрибуции
+	// -----------------------------------------------------------------------
+	describe("8. Zero Attribution Loss & UTM Preservation", () => {
+		it("8.1. Parses standard URL query string with UTM tags", () => {
+			const url =
+				"https://dente-clinic.ru/implants?utm_source=yandex&utm_medium=cpc&utm_campaign=all-on-4&utm_content=banner1&utm_term=имплантация+зубов";
+			const utm = parseUtmParameters(url);
+
+			assert.equal(utm.utm_source, "yandex");
+			assert.equal(utm.utm_medium, "cpc");
+			assert.equal(utm.utm_campaign, "all-on-4");
+			assert.equal(utm.utm_content, "banner1");
+			assert.equal(utm.utm_term, "имплантация зубов");
+		});
+
+		it("8.2. Parses free-form text or notes containing UTMs", () => {
+			const notes =
+				"Пациент пришёл с сайта. utm_source=2gis utm_campaign=promo_autumn";
+			const utm = parseUtmParameters(notes);
+
+			assert.equal(utm.utm_source, "2gis");
+			assert.equal(utm.utm_campaign, "promo_autumn");
+			assert.equal(utm.utm_medium, null);
+		});
+
+		it("8.3. Handles empty, null, and non-UTM strings gracefully", () => {
+			assert.deepEqual(parseUtmParameters(""), {
+				utm_source: null,
+				utm_medium: null,
+				utm_campaign: null,
+				utm_content: null,
+				utm_term: null,
+			});
+			assert.deepEqual(parseUtmParameters(null), {
+				utm_source: null,
+				utm_medium: null,
+				utm_campaign: null,
+				utm_content: null,
+				utm_term: null,
+			});
+			assert.deepEqual(parseUtmParameters("Обычный комментарий администратора"), {
+				utm_source: null,
+				utm_medium: null,
+				utm_campaign: null,
+				utm_content: null,
+				utm_term: null,
+			});
+		});
+
+		it("8.4. extractLeadAttribution produces canonical Russian labels and preserves notes as primary inquiry", () => {
+			const lead: FunnelLead = {
+				id: "lead-100",
+				name: "Мария Смирнова",
+				status: "new",
+				phone: "+7 (999) 111-22-33",
+				source:
+					"Яндекс.Директ ?utm_source=yandex&utm_campaign=dental_implants",
+				notes: "Консультация хирурга-имплантолога, болит 46 зуб",
+			};
+
+			const attr = extractLeadAttribution(lead);
+
+			assert.equal(attr.channelKey, "yandex_direct");
+			assert.equal(attr.channelLabel, "Яндекс.Директ");
+			assert.equal(attr.hasUtmTags, true);
+			assert.equal(attr.utm.utm_source, "yandex");
+			assert.equal(attr.utm.utm_campaign, "dental_implants");
+			assert.equal(
+				attr.primaryInquiry,
+				"Консультация хирурга-имплантолога, болит 46 зуб",
+			);
+		});
+
+		it("8.5. createPatientAttributionRecord constructs complete administrative profile with 152-FZ consents", () => {
+			const lead: FunnelLead = {
+				id: "lead-101",
+				name: "Константин Васильев",
+				status: "new",
+				phone: "+7 916 555-44-33",
+				source: "2ГИС Карты",
+				notes: "Профгигиена Air-Flow",
+			};
+
+			const record = createPatientAttributionRecord(lead, {
+				consentMedical: true,
+				consentMarketing: false,
+			});
+
+			assert.equal(record.patientName, "Константин Васильев");
+			assert.equal(record.advertisingSource, "2ГИС Карты");
+			assert.equal(record.primaryInquiry, "Профгигиена Air-Flow");
+			assert.equal(record.consents.medicalCareProcessing, true);
+			assert.equal(record.consents.marketingPromotions, false);
+
+			// Preferred appointment note formatted with src
+			assert.ok(
+				record.administrativeProfile.preferredAppointmentNote.startsWith(
+					"src:2ГИС Карты",
+				),
+			);
+			assert.ok(
+				record.administrativeProfile.preferredAppointmentNote.includes(
+					"Запрос: Профгигиена Air-Flow",
+				),
+			);
+
+			// 152-FZ note explicitly documents consent separation
+			assert.ok(
+				record.administrativeProfile.dataProcessingBasisNote.includes(
+					"152-ФЗ: Обработка персданных для медпомощи — согласие получено",
+				),
+			);
+			assert.ok(
+				record.administrativeProfile.dataProcessingBasisNote.includes(
+					"Рекламные рассылки и SMS (ФЗ-38) — отказ / исключён из рассылок",
+				),
+			);
+		});
+	});
+
+	// -----------------------------------------------------------------------
+	// 9. ROMI/ROI Attribution Preservation: Связка платежей пациента с лидом
+	// -----------------------------------------------------------------------
+	describe("9. ROMI/ROI Attribution Preservation (Lead -> Patient -> Paid Treatment)", () => {
+		const sampleLeads: FunnelLead[] = [
+			{
+				id: "lead-201",
+				name: "Ольга Иванова",
+				phone: "+7 903 123-45-67",
+				source: "Яндекс.Директ",
+				status: "consult_booked",
+				isPaid: false,
+				actualRevenueRub: 0,
+			},
+			{
+				id: "lead-202",
+				name: "Петр Сидоров",
+				phone: "+7 905 765-43-21",
+				source: "ПроДокторов",
+				status: "showed_up",
+				isPaid: false,
+				actualRevenueRub: 0,
+			},
+		];
+
+		it("9.1. Accurately links patient payments to leads by leadId", () => {
+			const payments = [
+				{ leadId: "lead-201", paidAmountRub: 45000 },
+				{ leadId: "lead-201", paidAmountRub: 15000 },
+			];
+
+			const updated = linkPatientRevenueToLeadAttribution(
+				sampleLeads,
+				payments,
+			);
+			const lead1 = updated.find((l) => l.id === "lead-201")!;
+
+			assert.equal(lead1.actualRevenueRub, 60000);
+			assert.equal(lead1.paidAmountRub, 60000);
+			assert.equal(lead1.paidAmountKopecks, 6000000);
+			assert.equal(lead1.isPaid, true);
+			assert.equal(lead1.stageReached, "paid");
+		});
+
+		it("9.2. Links payments by normalized phone number fallback", () => {
+			const payments = [
+				{ phone: "8 (905) 765-43-21", paidAmountRub: 85000 },
+			];
+
+			const updated = linkPatientRevenueToLeadAttribution(
+				sampleLeads,
+				payments,
+			);
+			const lead2 = updated.find((l) => l.id === "lead-202")!;
+
+			assert.equal(lead2.actualRevenueRub, 85000);
+			assert.equal(lead2.isPaid, true);
+			assert.equal(lead2.stageReached, "paid");
+		});
+
+		it("9.3. Preserves existing higher revenue if recorded previously", () => {
+			const existingPaidLead: FunnelLead = {
+				id: "lead-203",
+				name: "Дмитрий В.",
+				source: "Сайт клиники",
+				status: "showed_up",
+				actualRevenueRub: 120000,
+				isPaid: true,
+			};
+
+			const payments = [{ leadId: "lead-203", paidAmountRub: 50000 }];
+
+			const updated = linkPatientRevenueToLeadAttribution(
+				[existingPaidLead],
+				payments,
+			);
+			assert.equal(updated[0]!.actualRevenueRub, 120000);
+		});
+
+		it("9.4. Leaves unrelated leads unchanged", () => {
+			const payments = [{ leadId: "other-lead", paidAmountRub: 100000 }];
+			const updated = linkPatientRevenueToLeadAttribution(
+				sampleLeads,
+				payments,
+			);
+
+			assert.equal(updated[0]!.actualRevenueRub, 0);
+			assert.equal(updated[0]!.isPaid, false);
+		});
+	});
+
+	// -----------------------------------------------------------------------
+	// 10. Разделение согласий 152-ФЗ и ФЗ-38 ст. 18 (Медицина vs Маркетинг)
+	// -----------------------------------------------------------------------
+	describe("10. 152-FZ & FZ-38 Consent Separation", () => {
+		it("10.1. Recognizes consent from diverse patient/lead object schemas", () => {
+			assert.equal(isPatientEligibleForMarketing(true), true);
+			assert.equal(
+				isPatientEligibleForMarketing({ consentMarketing: true }),
+				true,
+			);
+			assert.equal(
+				isPatientEligibleForMarketing({ marketingOptIn: true }),
+				true,
+			);
+			assert.equal(
+				isPatientEligibleForMarketing({
+					consents: { marketingPromotions: true },
+				}),
+				true,
+			);
+			assert.equal(
+				isPatientEligibleForMarketing({
+					communicationConsents: { marketing: true },
+				}),
+				true,
+			);
+			assert.equal(
+				isPatientEligibleForMarketing({
+					communicationConsents: { marketing: "granted" },
+				}),
+				true,
+			);
+		});
+
+		it("10.2. Strictly rejects when marketing consent is omitted, false, or null", () => {
+			assert.equal(isPatientEligibleForMarketing(false), false);
+			assert.equal(isPatientEligibleForMarketing(null), false);
+			assert.equal(isPatientEligibleForMarketing(undefined), false);
+			assert.equal(isPatientEligibleForMarketing({}), false);
+			assert.equal(
+				isPatientEligibleForMarketing({ consentMarketing: false }),
+				false,
+			);
+			assert.equal(
+				isPatientEligibleForMarketing({ consentMedical: true }),
+				false,
+			);
+			assert.equal(
+				isPatientEligibleForMarketing({
+					consents: {
+						medicalCareProcessing: true,
+						marketingPromotions: false,
+					},
+				}),
+				false,
+			);
+		});
+
+		it("10.3. filterMarketingEligibleLeads excludes non-consenting leads to prevent FAS fines", () => {
+			const mixedAudience = [
+				{ id: "1", name: "Согласился", consentMarketing: true },
+				{ id: "2", name: "Только медицина", consentMarketing: false },
+				{ id: "3", name: "Не указал", consentMarketing: null },
+				{
+					id: "4",
+					name: "Второй согласный",
+					consents: { marketingPromotions: true },
+				},
+			];
+
+			const filtered = filterMarketingEligibleLeads(mixedAudience);
+			assert.equal(filtered.length, 2);
+			assert.equal(filtered[0]!.id, "1");
+			assert.equal(filtered[1]!.id, "4");
+		});
+	});
+
+	// -----------------------------------------------------------------------
+	// 11. Защита от спам-коллизий (Notification Spam Collision Guard)
+	// -----------------------------------------------------------------------
+	describe("11. Notification Spam Collision & Rate Limiting Guard", () => {
+		const fixedNow = new Date("2026-10-15T14:00:00Z");
+
+		it("11.1. Service notifications (visit reminders, receipts) are unconditionally allowed", () => {
+			const res = checkNotificationSpamCollision({
+				patientId: "pat-1",
+				notificationType: "service",
+				consentMarketing: false, // Even if marketing is false!
+				hasServiceAppointmentToday: true,
+				messagesSentTodayCount: 5,
+				targetDate: fixedNow,
+			});
+
+			assert.equal(res.allowed, true);
+		});
+
+		it("11.2. Marketing and recall are rejected if marketing consent is absent (152-FZ & FZ-38)", () => {
+			const res = checkNotificationSpamCollision({
+				patientId: "pat-2",
+				notificationType: "marketing",
+				consentMarketing: false,
+				targetDate: fixedNow,
+			});
+
+			assert.equal(res.allowed, false);
+			assert.equal(res.suppressionType, "no_marketing_consent");
+			assert.ok(
+				res.reason?.includes("отсутствует согласие на рекламные рассылки"),
+			);
+		});
+
+		it("11.3. Suppresses marketing and recall when patient has service appointment today (service priority)", () => {
+			const res = checkNotificationSpamCollision({
+				patientId: "pat-3",
+				notificationType: "recall",
+				consentMarketing: true,
+				hasServiceAppointmentToday: true,
+				targetDate: fixedNow,
+			});
+
+			assert.equal(res.allowed, false);
+			assert.equal(
+				res.suppressionType,
+				"service_priority_suppression",
+			);
+			assert.ok(
+				res.reason?.includes("у пациента сегодня запланирован приём"),
+			);
+		});
+
+		it("11.4. Enforces 24-hour rate limit between marketing contacts", () => {
+			// Sent 10 hours ago
+			const tenHoursAgo = new Date(fixedNow.getTime() - 10 * 3600 * 1000);
+
+			const resBlocked = checkNotificationSpamCollision({
+				patientId: "pat-4",
+				notificationType: "marketing",
+				consentMarketing: true,
+				hasServiceAppointmentToday: false,
+				lastMarketingSentAt: tenHoursAgo,
+				targetDate: fixedNow,
+			});
+
+			assert.equal(resBlocked.allowed, false);
+			assert.equal(resBlocked.suppressionType, "rate_limit_24h");
+			assert.equal(resBlocked.hoursRemaining, 14);
+			assert.ok(resBlocked.reason?.includes("осталось 14 ч."));
+
+			// Sent 25 hours ago -> should pass rate limit check
+			const twentyFiveHoursAgo = new Date(
+				fixedNow.getTime() - 25 * 3600 * 1000,
+			);
+			const resAllowed = checkNotificationSpamCollision({
+				patientId: "pat-4",
+				notificationType: "marketing",
+				consentMarketing: true,
+				hasServiceAppointmentToday: false,
+				lastMarketingSentAt: twentyFiveHoursAgo,
+				targetDate: fixedNow,
+			});
+
+			assert.equal(resAllowed.allowed, true);
+		});
+
+		it("11.5. Suppresses message on same-day collision (messagesSentTodayCount >= 1)", () => {
+			const res = checkNotificationSpamCollision({
+				patientId: "pat-5",
+				notificationType: "marketing",
+				consentMarketing: true,
+				hasServiceAppointmentToday: false,
+				messagesSentTodayCount: 1,
+				targetDate: fixedNow,
+			});
+
+			assert.equal(res.allowed, false);
+			assert.equal(res.suppressionType, "same_day_collision");
+			assert.ok(
+				res.reason?.includes("пациенту уже отправлено сообщение сегодня"),
+			);
+		});
+
+		it("11.6. Confirms MIN_MARKETING_INTERVAL_HOURS constant is exactly 24", () => {
+			assert.equal(MIN_MARKETING_INTERVAL_HOURS, 24);
+		});
+	});
+
+	// -----------------------------------------------------------------------
+	// 12. Человеческий русский язык и Speed-to-Lead SLA
+	// -----------------------------------------------------------------------
+	describe("12. Human-Friendly Russian Channel Statuses & Speed-to-Lead SLA", () => {
+		it("12.1. formatChannelStatusRu returns clean Russian names without technical IDs", () => {
+			assert.equal(formatChannelStatusRu("yandex_direct"), "Яндекс.Директ");
+			assert.equal(formatChannelStatusRu("gis_2"), "2ГИС Карты");
+			assert.equal(formatChannelStatusRu("prodoctorov"), "ПроДокторов");
+			assert.equal(
+				formatChannelStatusRu("recommendations"),
+				"Рекомендации / Сарафан",
+			);
+			assert.equal(
+				formatChannelStatusRu("site_seo"),
+				"Сайт / SEO",
+			);
+			assert.equal(
+				formatChannelStatusRu("social_media"),
+				"Соцсети / VK / TG",
+			);
+			assert.equal(
+				formatChannelStatusRu(null),
+				"Прямой звонок / Регистратура",
+			);
+			assert.equal(formatChannelStatusRu(""), "Прямой звонок / Регистратура");
+		});
+
+		it("12.2. formatLeadSlaBreachSummary classifies fresh, warning, and breached leads", () => {
+			const now = new Date("2026-10-15T12:00:00Z");
+
+			const leads: FunnelLead[] = [
+				{
+					id: "fresh-1",
+					name: "Свежий лид (5 мин)",
+					status: "new",
+					createdAt: new Date(now.getTime() - 5 * 60000).toISOString(),
+				},
+				{
+					id: "warning-1",
+					name: "Лид в зоне внимания (30 мин)",
+					status: "new",
+					createdAt: new Date(now.getTime() - 30 * 60000).toISOString(),
+				},
+				{
+					id: "breach-1",
+					name: "Просроченный лид (90 мин)",
+					status: "new",
+					createdAt: new Date(now.getTime() - 90 * 60000).toISOString(),
+				},
+			];
+
+			const summary = formatLeadSlaBreachSummary(leads, now);
+
+			assert.equal(summary.freshCount, 1);
+			assert.equal(summary.warningCount, 1);
+			assert.equal(summary.breachedCount, 1);
+			assert.ok(
+				summary.summaryText.includes(
+					"просрочен регламент ответа у 1 обращений",
+				),
+			);
+		});
+
+		it("12.3. formatLeadSlaBreachSummary reports normal status when no breaches exist", () => {
+			const now = new Date("2026-10-15T12:00:00Z");
+			const freshLeads: FunnelLead[] = [
+				{
+					id: "fresh-2",
+					name: "Быстрый ответ",
+					status: "new",
+					createdAt: new Date(now.getTime() - 3 * 60000).toISOString(),
+				},
+			];
+
+			const summary = formatLeadSlaBreachSummary(freshLeads, now);
+			assert.equal(summary.breachedCount, 0);
+			assert.equal(summary.warningCount, 0);
+			assert.equal(summary.freshCount, 1);
+			assert.ok(summary.summaryText.includes("SLA в норме"));
+		});
+	});
 });
+
