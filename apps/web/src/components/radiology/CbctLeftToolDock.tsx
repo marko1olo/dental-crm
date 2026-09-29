@@ -73,6 +73,8 @@ export interface CbctLeftToolDockProps {
 
 	/** 1-Click Reset all axes rotation, zoom, and pan */
 	readonly onResetAll?: (() => void) | undefined;
+	/** 1-Click Reset view (zoom, pan, rotation) */
+	readonly onResetView?: (() => void) | undefined;
 
 	/** Invert Grayscale LUT (Negative/Positive toggle) */
 	readonly invertColors?: boolean | undefined;
@@ -116,6 +118,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 	activePresetId = "bone_dense",
 	onSelectPreset,
 	onResetAll,
+	onResetView,
 	invertColors = false,
 	onToggleInvertColors,
 	showDentalArch = true,
@@ -234,7 +237,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => onSelectTool("crosshair")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "crosshair"
-								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Перекрестие (3D навигация) [C]"
@@ -262,7 +265,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => onSelectTool("pan")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "pan"
-								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Панорамирование (H / СКМ)"
@@ -290,7 +293,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => onSelectTool("zoom")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "zoom"
-								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Зум (Z / Ctrl+Колесо)"
@@ -318,7 +321,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => onSelectTool("window_level")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "window_level"
-								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Контраст W/L (W / ПКМ)"
@@ -346,7 +349,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => onSelectTool("rotate")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "rotate"
-								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Вращение осей (Oblique MPR) [R]"
@@ -382,7 +385,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => onSelectTool("ruler")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "ruler"
-								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Линейка (Калипер расстояния в мм) [M]"
@@ -410,7 +413,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => onSelectTool("angle")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "angle"
-								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Угломер (Замер угла в градусах) [A]"
@@ -438,7 +441,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => onSelectTool("probe")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "probe"
-								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Плотность HU (Денситометрия Misch) [H]"
@@ -466,7 +469,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => onSelectTool("nerve")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							activeTool === "nerve"
-								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Канал IAN (Трассировка нерва) [N]"
@@ -577,7 +580,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => toggleMenu("slab")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
 							openMenu === "slab" || isSlabActive
-								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Толщина среза & Режимы MIP [L]"
@@ -629,7 +632,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => toggleMenu("hu")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex flex-col items-center justify-center relative transition-all duration-150 ${
 							openMenu === "hu"
-								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Пресеты контраста HU [F]"
@@ -741,11 +744,12 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 				<div className="relative group flex items-center justify-center">
 					<button
 						type="button"
-						onClick={onResetAll}
+						onClick={onResetView ?? onResetAll}
 						className="w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-amber-300 hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-amber-500/40 transition-all duration-150"
-						title="Сброс осей, зума и панорамы [Home]"
-						aria-label="Сбросить оси и зум"
+						title="Сброс вида (оси, зум и панорама) [Home]"
+						aria-label="Сброс вида"
 						data-testid="cbct-tool-reset-all"
+						data-testid-view="cbct-tool-reset-view"
 					>
 						<RotateCcw className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
@@ -768,7 +772,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						onClick={() => toggleMenu("dicom")}
 						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
 							openMenu === "dicom"
-								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
+								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-cyan-300 hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
 						title="Загрузить КТ / DICOM [O]"

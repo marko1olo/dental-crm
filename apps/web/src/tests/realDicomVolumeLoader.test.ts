@@ -11,6 +11,10 @@ import {
   buildCornerstoneWadoImageId,
 } from "../components/radiology/realDicomVolumeLoader";
 import { extractMprSlice } from "../components/radiology/cbctMprMath";
+import {
+  autoDetectDentalArch,
+  findOcclusalZPlane,
+} from "../components/radiology/dentalCurveEngine";
 
 describe("Real DICOM Series Volume Loader & Ingestion Engine", () => {
   it("correctly parses synthetic or raw DICOM binary header tags", () => {
@@ -200,5 +204,75 @@ describe("Real DICOM Series Volume Loader & Ingestion Engine", () => {
     } finally {
       globalThis.fetch = originalFetch;
     }
+  });
+
+  it("builds and auto-centers 3D CBCT volume from 50-slice demo dataset (Zakharov I.D.)", async () => {
+    const demoDir = path.resolve(process.cwd(), "apps/web/public/radiology/demo_cbct");
+    assert.ok(fs.existsSync(demoDir), "Demo CBCT directory must exist");
+
+    const manifestPath = path.join(demoDir, "manifest.json");
+    assert.ok(fs.existsSync(manifestPath), "Manifest file must exist");
+
+    const manifestRaw = fs.readFileSync(manifestPath, "utf-8");
+    const manifest = JSON.parse(manifestRaw) as {
+      patientName: string;
+      sliceCount: number;
+      slices: string[];
+    };
+
+    assert.ok(manifest.slices.length >= 50, `Manifest must list at least 50 slices (got ${manifest.slices.length})`);
+    assert.equal(manifest.sliceCount, manifest.slices.length);
+    assert.ok(manifest.patientName.includes("Захаров"));
+
+    // Verify all slice files exist
+    for (const sliceName of manifest.slices) {
+      assert.ok(fs.existsSync(path.join(demoDir, sliceName)), `Slice ${sliceName} must exist`);
+    }
+
+    // Build volume from all slices
+    const items = manifest.slices.map((sliceName) => {
+      const buf = fs.readFileSync(path.join(demoDir, sliceName));
+      return {
+        buffer: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+        fileName: sliceName,
+      };
+    });
+
+    const volume = await buildVolumeFromDicomBuffers(items);
+
+    // Verify volume dimensions & voxel depth >= 40
+    assert.ok(volume.dimensions.depth >= 40, `Depth must be >= 40 (got ${volume.dimensions.depth})`);
+    assert.equal(volume.dimensions.depth, manifest.slices.length);
+    assert.equal(volume.dimensions.width, 600);
+    assert.equal(volume.dimensions.height, 600);
+
+    // Verify voxel spacing (0.25 mm)
+    assert.equal(volume.spacingMm.x, 0.25);
+    assert.equal(volume.spacingMm.y, 0.25);
+    assert.ok(Math.abs(volume.spacingMm.z - 0.25) < 0.01, `Spacing Z must be ~0.25 mm (got ${volume.spacingMm.z})`);
+
+    // Verify HU range (bone & enamel densities)
+    assert.equal(volume.minHU, -1000);
+    assert.ok(volume.maxHU >= 2000, `Max HU should capture enamel/cortical bone (got ${volume.maxHU})`);
+
+    // Verify dental arch auto-detection and occlusal plane
+    const arch = autoDetectDentalArch(volume, "mandible");
+    assert.equal(arch.anchors.length, 16, "Dental arch should have 16 FDI tooth anchors");
+    assert.ok(arch.totalArcLengthMm > 120, `Arch length should be anatomical (got ${arch.totalArcLengthMm})`);
+
+    const occlusalZ = findOcclusalZPlane(volume, "mandible");
+    assert.ok(Number.isFinite(occlusalZ), "Occlusal Z plane must be a finite number");
+
+    // Verify crosshair centering on anterior arch midpoint
+    const midIdx = Math.floor(arch.splinePointsMm.length / 2);
+    const midPoint = arch.splinePointsMm[midIdx];
+    assert.ok(midPoint, "Midpoint of arch spline must exist");
+    assert.ok(Math.abs(midPoint.x) < 25, `Midpoint X should be near anatomical midline (got ${midPoint.x})`);
+
+    // Verify 2D MPR axial reslicing works on the 50-slice volume
+    const axialSlice = extractMprSlice(volume, "axial", 25);
+    assert.equal(axialSlice.metadata.widthPx, 600);
+    assert.equal(axialSlice.metadata.heightPx, 600);
+    assert.equal(axialSlice.data.length, 600 * 600 * 4);
   });
 });

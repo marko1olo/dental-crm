@@ -186,23 +186,116 @@ export function useCbctDicomLoader(params: UseCbctDicomLoaderParams) {
 		[handleDicomFilesChange],
 	);
 
+interface DemoCbctManifest {
+	readonly seriesDescription?: string;
+	readonly patientName?: string;
+	readonly sliceCount?: number;
+	readonly voxelSpacing?: readonly [number, number, number];
+	readonly slices: readonly string[];
+}
+
 	const handleLoadDemoVolume = useCallback(async () => {
-		setDicomLoadingStatus("Загрузка демонстрационного КТ-исследования (KaVo OP300)...");
-		setDicomProgress(10);
+		setDicomLoadingStatus("Чтение манифеста многосрезовой 3D КЛКТ...");
+		setDicomProgress(5);
 		try {
-			const res = await fetch("/radiology/kavo_op300_cbct_slice.dcm");
-			if (!res.ok) {
-				throw new Error(`Не удалось загрузить демо-файл: ${res.statusText}`);
+			// 1. Fetch manifest.json
+			let manifest: DemoCbctManifest | null = null;
+
+			try {
+				const res = await fetch("/radiology/demo_cbct/manifest.json");
+				if (res.ok) {
+					const data = (await res.json()) as unknown;
+					if (
+						data &&
+						typeof data === "object" &&
+						"slices" in data &&
+						Array.isArray((data as { slices: unknown }).slices)
+					) {
+						manifest = data as DemoCbctManifest;
+					}
+				}
+			} catch {
+				// manifest fetch failed, will fallback to single slice
 			}
-			const blob = await res.blob();
+
+			// If manifest is available with slices
+			if (manifest && manifest.slices.length > 0) {
+				const totalSlices = manifest.slices.length;
+				setDicomLoadingStatus(`Загрузка ${totalSlices} срезов 3D КЛКТ (0/${totalSlices})...`);
+				setDicomProgress(10);
+
+				let loadedCount = 0;
+				const slicePromises = manifest.slices.map(async (sliceName) => {
+					const url = sliceName.startsWith("/") || sliceName.startsWith("http")
+						? sliceName
+						: `/radiology/demo_cbct/${sliceName}`;
+					const res = await fetch(url);
+					if (!res.ok) {
+						throw new Error(`Не удалось загрузить срез ${sliceName}: ${res.statusText}`);
+					}
+					const blob = await res.blob();
+					loadedCount++;
+					const pct = 10 + Math.round((loadedCount / totalSlices) * 35);
+					setDicomProgress(pct);
+					setDicomLoadingStatus(`Загрузка срезов КТ (${loadedCount}/${totalSlices})...`);
+					return new File([blob], sliceName, { type: "application/dicom" });
+				});
+
+				const dcmFiles = await Promise.all(slicePromises);
+
+				setDicomLoadingStatus("Сборка 3D массива вокселей и анализ анатомии...");
+				setDicomProgress(48);
+
+				const vol = await buildVolumeFromDicomFiles(dcmFiles, (pct, msg) => {
+					setDicomProgress(48 + Math.round(pct * 0.5));
+					setDicomLoadingStatus(msg);
+				});
+
+				const demoPatientName = manifest.patientName || "Захаров Иван Дмитриевич (Демо КТ)";
+				setVolume(vol);
+				setLoadedSliceCount(vol.dimensions.depth);
+				setPatientDisplayName(demoPatientName);
+				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
+				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
+
+				// Auto-detect dental arch and center crosshair on teeth & occlusal plane
+				const arch = alignArchAndCrosshair(vol);
+				setDicomLoadingStatus(null);
+				setDicomProgress(100);
+
+				const { x: sx, y: sy, z: sz } = vol.spacingMm;
+				showToast(
+					`Загружена 3D КЛКТ (${demoPatientName}): ${vol.dimensions.depth} срезов (${vol.dimensions.width}x${vol.dimensions.height}), воксель ${sx.toFixed(2)}x${sy.toFixed(2)}x${sz.toFixed(2)} мм, дуга ОПТГ ${arch.totalArcLengthMm.toFixed(1)} мм`,
+					"success",
+				);
+				return;
+			}
+
+			// Fallback if demo_cbct folder is missing: load single slice fixture
+			setDicomLoadingStatus("Загрузка тестового среза КТ (резервный режим)...");
+			setDicomProgress(20);
+			const fallbackRes = await fetch("/radiology/kavo_op300_cbct_slice.dcm");
+			if (!fallbackRes.ok) {
+				throw new Error(`Не удалось загрузить демо-файл: ${fallbackRes.statusText}`);
+			}
+			const blob = await fallbackRes.blob();
 			const file = new File([blob], "kavo_op300_cbct_slice.dcm", { type: "application/dicom" });
 			await handleDicomFilesChange([file]);
 		} catch (err: unknown) {
 			setDicomLoadingStatus(null);
+			setDicomProgress(0);
 			const msg = err instanceof Error ? err.message : "Ошибка загрузки демо КТ";
 			showToast(msg, "error");
 		}
-	}, [handleDicomFilesChange]);
+	}, [
+		alignArchAndCrosshair,
+		handleDicomFilesChange,
+		setLoadedSliceCount,
+		setPatientDisplayName,
+		setVolume,
+		setWindowLevel,
+		setWindowWidth,
+	]);
 
 	return {
 		dicomLoadingStatus,

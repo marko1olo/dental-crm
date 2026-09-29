@@ -42,7 +42,8 @@ export type CbctActiveMouseTool =
 	| "rotate"
 	| "ruler"
 	| "angle"
-	| "probe";
+	| "probe"
+	| "nerve";
 
 export interface ViewportOrientationLabels {
 	readonly top: string;
@@ -535,6 +536,8 @@ export function getCbctToolCursor(
 		case "ruler":
 			return "crosshair";
 		case "angle":
+			return "crosshair";
+		case "nerve":
 			return "crosshair";
 		default:
 			return "crosshair";

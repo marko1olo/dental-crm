@@ -196,6 +196,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 	const [hoveredHandle, setHoveredHandle] = useState<{ plane: MprPlane; handle: RotationHandlePosition } | null>(null);
 	const [isShiftRotating, setIsShiftRotating] = useState<{ plane: MprPlane; centerPx: { x: number; y: number }; startPointerPx: { x: number; y: number }; initialAngleDeg: number } | null>(null);
 	const [isPanning, setIsPanning] = useState<{ plane: CbctViewportType; startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
+	const [isDraggingZoom, setIsDraggingZoom] = useState<{ plane: CbctViewportType; startY: number; startZoom: number } | null>(null);
 	const [isDraggingWL, setIsDraggingWL] = useState<{ startX: number; startY: number; startWW: number; startWL: number } | null>(null);
 	const [isDraggingPano, setIsDraggingPano] = useState<boolean>(false);
 	const [isDraggingArchAnchor, setIsDraggingArchAnchor] = useState<number | null>(null);
@@ -211,6 +212,19 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 	const pendingPanoSyncRef = useRef<{ crossSectionIdx: number; worldMm: Point3D } | null>(null);
 	const rafPanoIdRef = useRef<number | null>(null);
 
+	// Clean up transient preview states when active tool switches
+	useEffect(() => {
+		if (activeTool !== "probe" && activeProbe) {
+			setActiveProbe(null);
+		}
+		if (activeTool !== "angle" && activeAngle) {
+			setActiveAngle(null);
+		}
+		if (activeTool !== "ruler" && activeRuler) {
+			setActiveRuler(null);
+		}
+	}, [activeTool, activeProbe, activeAngle, activeRuler, setActiveProbe, setActiveAngle, setActiveRuler]);
+
 	const handleSelectTooth = useCallback((toothFdi: number | string) => {
 		const res = findCrossSectionAndPositionByFdi(toothFdi, crossSections, archCurve, crosshairMm.z);
 		if (res.found) {
@@ -224,6 +238,18 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		if (e.button === 2 || activeTool === "window_level") {
 			e.preventDefault();
 			setIsDraggingWL({ startX: e.clientX, startY: e.clientY, startWW: windowWidth, startWL: windowLevel });
+			return;
+		}
+		if (activeTool === "pan" || e.button === 1) {
+			e.preventDefault();
+			const currentTransform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
+			setIsPanning({ plane: "panoramic", startX: e.clientX, startY: e.clientY, startPanX: currentTransform.panX, startPanY: currentTransform.panY });
+			return;
+		}
+		if (activeTool === "zoom") {
+			e.preventDefault();
+			const currentTransform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
+			setIsDraggingZoom({ plane: "panoramic", startY: e.clientY, startZoom: currentTransform.zoom });
 			return;
 		}
 		if (crossSections.length === 0 || !panoCanvasRef.current) return;
@@ -243,6 +269,32 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 	}, [crossSections, archCurve, crosshairMm, transforms.panoramic, panoramicData?.toothMarkersOnPano, handleSelectTooth, activeTool, windowWidth, windowLevel, panoCanvasRef, setActiveCrossSectionIdx, setCrosshairMm]);
 
 	const handlePanoMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+		if (isDraggingWL) {
+			const dx = e.clientX - isDraggingWL.startX;
+			const dy = e.clientY - isDraggingWL.startY;
+			setWindowWidth(Math.max(100, Math.min(10000, Math.round(isDraggingWL.startWW + dx * 8))));
+			setWindowLevel(Math.max(-1000, Math.min(4000, Math.round(isDraggingWL.startWL - dy * 4))));
+			return;
+		}
+		if (isPanning && isPanning.plane === "panoramic") {
+			const dx = e.clientX - isPanning.startX;
+			const dy = e.clientY - isPanning.startY;
+			setTransforms((prev) => ({
+				...prev,
+				panoramic: { ...(prev.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM), panX: isPanning.startPanX + dx, panY: isPanning.startPanY + dy },
+			}));
+			return;
+		}
+		if (isDraggingZoom && isDraggingZoom.plane === "panoramic") {
+			const dy = isDraggingZoom.startY - e.clientY;
+			const zoomFactor = Math.exp(dy * 0.01);
+			const nextZoom = Math.max(0.5, Math.min(5.0, Number((isDraggingZoom.startZoom * zoomFactor).toFixed(2))));
+			setTransforms((prev) => ({
+				...prev,
+				panoramic: { ...(prev.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM), zoom: nextZoom },
+			}));
+			return;
+		}
 		if (!isDraggingPano || crossSections.length === 0 || !panoCanvasRef.current) return;
 		const canvas = panoCanvasRef.current;
 		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
@@ -257,7 +309,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 				rafPanoIdRef.current = null;
 			});
 		}
-	}, [isDraggingPano, crossSections, archCurve, crosshairMm, transforms.panoramic, panoCanvasRef, setActiveCrossSectionIdx, setCrosshairMm]);
+	}, [isDraggingWL, isPanning, isDraggingZoom, isDraggingPano, crossSections, archCurve, crosshairMm, transforms.panoramic, panoCanvasRef, setWindowWidth, setWindowLevel, setTransforms, setActiveCrossSectionIdx, setCrosshairMm]);
 
 	const handlePanoMouseUp = useCallback(() => {
 		if (rafPanoIdRef.current !== null) {
@@ -270,6 +322,9 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			pendingPanoSyncRef.current = null;
 		}
 		setIsDraggingPano(false);
+		setIsPanning(null);
+		setIsDraggingZoom(null);
+		setIsDraggingWL(null);
 	}, [setActiveCrossSectionIdx, setCrosshairMm]);
 
 	const handleCrossSectionMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
