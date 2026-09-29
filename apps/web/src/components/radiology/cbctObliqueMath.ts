@@ -439,7 +439,7 @@ export function drawObliqueCrosshairWithRotationHandles(
 	ctx.save();
 	ctx.globalAlpha = restAlpha;
 
-	const gap = options.centerGapPx ?? 11.0;
+	const gap = options.centerGapPx ?? 31.0;
 	const diag = Math.hypot(widthPx, heightPx);
 
 	// 1. Axis 1 (Primary horizontal axis when rotation = 0) with dark halo underlay and center gap
@@ -470,15 +470,16 @@ export function drawObliqueCrosshairWithRotationHandles(
 	ctx.stroke();
 	ctx.restore();
 
-	// 3. Central Reticle Micro-Plus (Span 7px, delicate targeting reticle with concentric empty gap radius 11px)
-	// Zero circle obstruction: micro-plus targeting at center + 11px clear gap + outer guide lines
-	const microArm = 3.5;
+	// 3. Central Reticle: Minecraft-Style Target Crosshair (Span 15-16px, line 1.9px, outer halo 3.6px)
+	// Centered within an expansive 30-32px concentric aperture (diameter ~62px) of completely clear anatomy
+	const microArm = 7.5; // span = 15.0px (7.5px in each direction)
 	ctx.save();
-	// Pass 1: Dark outer halo for central micro-plus
-	ctx.shadowColor = invertColors ? "rgba(255, 255, 255, 0.9)" : "rgba(0, 0, 0, 0.95)";
-	ctx.shadowBlur = 2;
-	ctx.strokeStyle = invertColors ? "rgba(255, 255, 255, 0.8)" : "rgba(0, 0, 0, 0.9)";
-	ctx.lineWidth = 2.0;
+	ctx.lineCap = "square";
+	// Pass 1: Dark outer halo contour (3.6px wide) for instant high-contrast visual lock
+	ctx.shadowColor = invertColors ? "rgba(255, 255, 255, 0.95)" : "rgba(0, 0, 0, 0.95)";
+	ctx.shadowBlur = 3;
+	ctx.strokeStyle = invertColors ? "rgba(255, 255, 255, 0.95)" : "rgba(9, 9, 11, 0.95)";
+	ctx.lineWidth = 3.6;
 	ctx.beginPath();
 	// Arm 1 halo
 	ctx.moveTo(centerPx.x - microArm * cosA, centerPx.y - microArm * sinA);
@@ -488,9 +489,9 @@ export function drawObliqueCrosshairWithRotationHandles(
 	ctx.lineTo(centerPx.x + microArm * sinA, centerPx.y - microArm * cosA);
 	ctx.stroke();
 
-	// Pass 2: Sharp colored inner micro-plus arms
+	// Pass 2: Sharp colored inner Minecraft crosshair arms (1.9px wide)
 	ctx.shadowBlur = 0;
-	ctx.lineWidth = 1.0;
+	ctx.lineWidth = 1.9;
 	// Arm 1 (Axis 1 color)
 	ctx.strokeStyle = axisColor1;
 	ctx.beginPath();
