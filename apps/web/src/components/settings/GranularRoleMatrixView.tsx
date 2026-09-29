@@ -13,18 +13,19 @@ import {
 	Shield,
 	ShieldAlert,
 	ShieldCheck,
+	Stethoscope,
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 
 const ROLE_DISPLAY_NAMES: Record<GranularStaffRole, string> = {
-	owner: "Владелец",
+	owner: "Главный врач / Владелец",
 	head_doctor: "Главный врач",
-	doctor: "Врач",
-	assistant: "Ассистент",
+	doctor: "Врач-стоматолог",
+	assistant: "Ассистент врача",
 	senior_nurse: "Старшая медсестра",
 	senior_admin: "Старший администратор",
-	registrar: "Регистратор",
+	registrar: "Администратор",
 	accountant: "Бухгалтер",
 };
 
@@ -57,12 +58,12 @@ export interface SuperPermissionInfo {
 export const SUPER_PERMISSIONS_MAP: Record<string, SuperPermissionInfo> = {
 	"finance.reports_pnl": {
 		badge: "Супер-право: P&L клиники",
-		hint: "Коммерческая тайна: раскрывает прибыль, маржинальность и чистую выручку всей клиники.",
+		hint: "Коммерческая тайна: раскрывает прибыль, маржинальность и чистую выручку всей клиники (доступно только Владельцу / Главному врачу).",
 		isCritical: true,
 	},
 	"payroll.view_all_staff": {
 		badge: "Супер-право: Чужие зарплаты",
-		hint: "Конфиденциально: доступ к зарплатным табелям, окладам и сдельной выработке всех коллег.",
+		hint: "Конфиденциально: доступ к зарплатным табелям, окладам и сдельной выработке всех коллег (финансовая изоляция рядового врача).",
 		isCritical: true,
 	},
 	"payroll.manage_rates": {
@@ -71,23 +72,23 @@ export const SUPER_PERMISSIONS_MAP: Record<string, SuperPermissionInfo> = {
 		isCritical: true,
 	},
 	"patients.pii_full": {
-		badge: "Доступ к персональным данным",
-		hint: "Персональные данные: просмотр неэкранированных паспортов, номеров телефонов и адресов.",
-		isCritical: false,
+		badge: "Защита базы (152-ФЗ)",
+		hint: "Защита пациентской базы (152-ФЗ): полный просмотр и экспорт телефонов. Рядовой врач видит свои медкарты, но лишён массовой выгрузки базы клиники.",
+		isCritical: true,
 	},
 	"clinical.records.write": {
-		badge: "Подпись медицинской карты",
-		hint: "Юридическая ответственность: постановка диагноза и подписание клинического протокола.",
+		badge: "Врачебная автономия",
+		hint: "Мандат 8e: право врача свободно вести дневник, ставить диагноз и назначать услуги без мастер-пароля администратора.",
 		isCritical: true,
 	},
 	"settings.staff_authority": {
 		badge: "Супер-право: Эскалация ролей",
-		hint: "Административный доступ: назначение ролей и выдача индивидуальных привилегий доступа.",
+		hint: "Административный доступ: назначение ролей, разграничение прав и выдача индивидуальных привилегий доступа.",
 		isCritical: true,
 	},
 	"finance.refunds": {
 		badge: "Возвраты из кассы",
-		hint: "Кассовая дисциплина: выдача наличных и безналичных возвратов по кассовым чекам.",
+		hint: "Кассовая дисциплина: выдача наличных и безналичных возвратов по кассовым чекам (54-ФЗ).",
 		isCritical: false,
 	},
 	"finance.tariffs_manage": {
@@ -153,9 +154,49 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 
 	return (
 		<article
-			className={`flex flex-col gap-3 min-w-0 w-full pb-20 sm:pb-8 ${className}`}
+			className={`flex flex-col gap-3.5 min-w-0 w-full pb-20 sm:pb-8 ${className}`}
 			data-testid="granular-role-matrix-panel"
 		>
+			{/* HEADER: МАТРИЦА ПРАВ ДОСТУПА & ЗАЩИТА 152-ФЗ (МАНДАТЫ 8e, 8n, 8z) */}
+			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-2 border-b border-[var(--line)] min-w-0">
+				<div className="flex flex-col gap-0.5 min-w-0">
+					<div className="flex items-center gap-2 flex-wrap">
+						<h2 className="text-base font-bold text-[var(--ink)] m-0 flex items-center gap-2">
+							<Shield className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>Матрица прав доступа</span>
+						</h2>
+						<span className="text-[11px] px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 font-bold border border-teal-200 dark:border-teal-800">
+							152-ФЗ & Врачебная автономия
+						</span>
+					</div>
+					<p className="text-xs text-[var(--muted)] m-0 leading-normal">
+						Разграничение прав соло-врача, клинициста и руководства. Защита базы от увода (маскирование телефонов), финансовая изоляция и свобода врача у кресла (Мандат 8e).
+					</p>
+				</div>
+			</div>
+
+			{/* SCALE SOVEREIGNTY: СОЛО-ВРАЧ vs КЛИНИКА (МАНДАТЫ 8e, 8n) */}
+			<div
+				className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5"
+				data-testid="practice-scale-sovereignty-banner"
+			>
+				<div className="flex items-start gap-2.5 min-w-0 flex-1">
+					<div className="p-1.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] shrink-0 mt-0.5 shadow-2xs">
+						<Stethoscope size={16} className="text-teal-600 dark:text-teal-400" />
+					</div>
+					<div className="flex flex-col gap-0.5 min-w-0">
+						<span className="font-bold text-[var(--ink)] text-xs">
+							Суверенитет масштаба практики (Мандат 8n):
+						</span>
+						<p className="text-[11px] text-[var(--muted)] m-0 leading-snug">
+							<strong>Соло-врач (кабинет / аренда):</strong> полный суверенитет над своими пациентами, дневником и кассой (100% автономия без бюрократии).
+							<span className="mx-1.5 hidden sm:inline text-[var(--line)]">•</span>
+							<strong className="block sm:inline mt-0.5 sm:mt-0">Клиника (многопрофильная):</strong> активируется финансовая изоляция (P&L клиники и чужие зарплаты скрыты) и защита базы 152-ФЗ (маскирование телефонов, запрет массовой выгрузки базы клиники).
+						</p>
+					</div>
+				</div>
+			</div>
+
 			{/* TIER 1 CONTROLS: 2-Level Role Category Switcher + Role Tabs + Module Selector */}
 			<div className="flex flex-col gap-2 pb-2 border-b border-[var(--line)] min-w-0">
 				{/* Level 1: Category Selector + Module Filter + Super-Rights Filter */}
@@ -283,7 +324,7 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 				<div className="flex flex-col gap-1 min-w-0 flex-1">
 					<div className="flex items-center gap-1.5 flex-wrap">
 						<span className="font-bold text-[var(--ink)] text-xs sm:text-sm">
-							{activeRoleMeta.title}
+							{ROLE_DISPLAY_NAMES[selectedMatrixRole] || activeRoleMeta.title}
 						</span>
 						<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--line)] text-[var(--ink)] font-mono font-medium">
 							role: {activeRoleMeta.role}
@@ -324,69 +365,164 @@ export const GranularRoleMatrixView: React.FC<GranularRoleMatrixViewProps> = ({
 
 			{/* CRITICAL BARRIERS NOTIFICATION BANNER */}
 			{selectedMatrixRole === "doctor" && (
-				<div className="p-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs flex flex-col gap-1.5 text-teal-900 dark:text-teal-200" data-testid="doctor-security-barriers">
-					<div className="font-bold flex items-center gap-1.5 text-teal-800 dark:text-teal-300">
-						<ShieldCheck size={15} />
-						<span>Критические барьеры безопасности для роли «Врач»:</span>
+				<div className="p-3.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs flex flex-col gap-2 text-teal-900 dark:text-teal-200" data-testid="doctor-security-barriers">
+					<div className="font-bold flex items-center justify-between gap-1.5 text-teal-800 dark:text-teal-300 flex-wrap">
+						<div className="flex items-center gap-1.5">
+							<ShieldCheck size={16} className="text-teal-600 dark:text-teal-400" />
+							<span className="text-xs sm:text-sm">Ключевые принципы безопасности и автономии для роли «Врач-стоматолог»:</span>
+						</div>
+						<span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/60 font-semibold border border-teal-300 dark:border-teal-700">
+							Мандаты 8e, 8n & 152-ФЗ
+						</span>
 					</div>
-					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-700 dark:text-slate-300">
-						<div className="flex items-start gap-1.5">
-							<Lock size={13} className="text-purple-600 shrink-0 mt-0.5" />
-							<span><strong>Финансовая изоляция:</strong> P&L клиники, маржа и зарплаты коллег заблокированы. Доступна только личная сделка.</span>
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[11px] text-slate-700 dark:text-slate-300">
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Shield size={14} className="text-blue-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Защита базы 152-ФЗ:</strong>
+								<span>Врач видит карты своих пациентов, но лишён массового экспорта телефонной базы клиники (защита от увода клиентской базы). В общих реестрах телефоны маскируются.</span>
+							</div>
 						</div>
-						<div className="flex items-start gap-1.5">
-							<Lock size={13} className="text-amber-600 shrink-0 mt-0.5" />
-							<span><strong>Защита прейскуранта:</strong> Прайс-лист открыт только для чтения; менять базовые цены услуг в актах запрещено.</span>
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Lock size={14} className="text-purple-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Финансовая изоляция:</strong>
+								<span>Врач видит личные начисления и услуги (сделка), но P&L клиники, маржинальность и зарплатные ведомости коллег надёжно скрыты.</span>
+							</div>
 						</div>
-						<div className="flex items-start gap-1.5">
-							<Check size={13} className="text-emerald-600 shrink-0 mt-0.5" />
-							<span><strong>Врачебная автономия:</strong> Полное право ведения медицинской карты, подписи медицинских протоколов и отправки СЭМД в ЕГИСЗ.</span>
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Check size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Автономия у кресла (8e):</strong>
+								<span>Свободное ведение дневника ЭМК, назначение услуг и применение клинических скидок без ввода мастер-пароля администратора.</span>
+							</div>
+						</div>
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Lock size={14} className="text-amber-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Защита прейскуранта:</strong>
+								<span>Базовые расценки услуг открыты только для чтения — изменение утверждённого прейскуранта доступно руководству.</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{selectedMatrixRole === "owner" && (
+				<div className="p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs flex flex-col gap-2 text-purple-900 dark:text-purple-200" data-testid="owner-security-barriers">
+					<div className="font-bold flex items-center justify-between gap-1.5 text-purple-800 dark:text-purple-300 flex-wrap">
+						<div className="flex items-center gap-1.5">
+							<ShieldCheck size={16} className="text-purple-600 dark:text-purple-400" />
+							<span className="text-xs sm:text-sm">Полномочия и суверенитет роли «Главный врач / Владелец»:</span>
+						</div>
+						<span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/60 font-semibold border border-purple-300 dark:border-purple-700">
+							Root / Полный суверенитет
+						</span>
+					</div>
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[11px] text-slate-700 dark:text-slate-300">
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Coins size={14} className="text-purple-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">P&L и финансы:</strong>
+								<span>Полная аналитика клиники: чистая прибыль, выручка, маржинальность по креслам и средний чек.</span>
+							</div>
+						</div>
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Lock size={14} className="text-indigo-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Управление ФОТ:</strong>
+								<span>Настройка процентных ставок врачей, окладов, правил удержания за ЗТЛ и сводные зарплатные ведомости.</span>
+							</div>
+						</div>
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Shield size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Суверенитет базы (152-ФЗ):</strong>
+								<span>Право санкционированного экспорта пациентской базы и аудит всех обращений к персональным данным.</span>
+							</div>
+						</div>
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Check size={14} className="text-teal-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Врачебная автономия:</strong>
+								<span>Право клинического контроля и утверждения протоколов лечения без помех лечебному процессу.</span>
+							</div>
 						</div>
 					</div>
 				</div>
 			)}
 
 			{selectedMatrixRole === "assistant" && (
-				<div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs flex flex-col gap-1.5 text-amber-900 dark:text-amber-200" data-testid="assistant-security-barriers">
-					<div className="font-bold flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
-						<ShieldAlert size={15} />
-						<span>Критические барьеры безопасности для роли «Ассистент»:</span>
+				<div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs flex flex-col gap-2 text-amber-900 dark:text-amber-200" data-testid="assistant-security-barriers">
+					<div className="font-bold flex items-center justify-between gap-1.5 text-amber-800 dark:text-amber-300 flex-wrap">
+						<div className="flex items-center gap-1.5">
+							<ShieldAlert size={16} className="text-amber-600 dark:text-amber-400" />
+							<span className="text-xs sm:text-sm">Барьеры безопасности для роли «Ассистент врача»:</span>
+						</div>
+						<span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 font-semibold border border-amber-300 dark:border-amber-700">
+							152-ФЗ & Сестринский сектор
+						</span>
 					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-700 dark:text-slate-300">
-						<div className="flex items-start gap-1.5">
-							<Lock size={13} className="text-rose-600 shrink-0 mt-0.5" />
-							<span><strong>Запрет подписи медкарты:</strong> Подписание протоколов за врача строго запрещено (требуется врачебный диплом).</span>
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Shield size={14} className="text-amber-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Маскирование 152-ФЗ:</strong>
+								<span>Номера телефонов, паспорта и адреса пациентов скрыты маской в реестрах для исключения утечек ПДн.</span>
+							</div>
 						</div>
-						<div className="flex items-start gap-1.5">
-							<Shield size={13} className="text-amber-600 shrink-0 mt-0.5" />
-							<span><strong>Защита персональных данных:</strong> Паспорта, телефоны и адреса пациентов скрыты для защиты от утечек.</span>
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Lock size={14} className="text-rose-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Запрет подписи ЭМК:</strong>
+								<span>Подписание дневников визита за врача заблокировано (требуется диплом врача-стоматолога).</span>
+							</div>
 						</div>
-						<div className="flex items-start gap-1.5">
-							<Lock size={13} className="text-slate-600 shrink-0 mt-0.5" />
-							<span><strong>Финансовый блок:</strong> Кассовые операции, прием платежей и возвраты денежных средств закрыты.</span>
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Check size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Расходники и СанПиН:</strong>
+								<span>Списание материалов на визите, фиксация карпул анестетиков и ведение журналов автоклавирования.</span>
+							</div>
 						</div>
 					</div>
 				</div>
 			)}
 
 			{(selectedMatrixRole === "senior_admin" || selectedMatrixRole === "registrar") && (
-				<div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs flex flex-col gap-1.5 text-sky-900 dark:text-sky-200" data-testid="admin-security-barriers">
-					<div className="font-bold flex items-center gap-1.5 text-sky-800 dark:text-sky-300">
-						<ShieldCheck size={15} />
-						<span>Критические барьеры безопасности для административного персонала:</span>
+				<div className="p-3.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs flex flex-col gap-2 text-sky-900 dark:text-sky-200" data-testid="admin-security-barriers">
+					<div className="font-bold flex items-center justify-between gap-1.5 text-sky-800 dark:text-sky-300 flex-wrap">
+						<div className="flex items-center gap-1.5">
+							<ShieldCheck size={16} className="text-sky-600 dark:text-sky-400" />
+							<span className="text-xs sm:text-sm">
+								Барьеры безопасности для роли «{selectedMatrixRole === "senior_admin" ? "Старший администратор" : "Администратор"}»:
+							</span>
+						</div>
+						<span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-900/60 font-semibold border border-sky-300 dark:border-sky-700">
+							Ресепшен & 54-ФЗ
+						</span>
 					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-700 dark:text-slate-300">
-						<div className="flex items-start gap-1.5">
-							<Lock size={13} className="text-purple-600 shrink-0 mt-0.5" />
-							<span><strong>Изоляция зарплат и P&L:</strong> Администратор не видит зарплатные ведомости врачей и чистую прибыль клиники.</span>
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Coins size={14} className="text-teal-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Касса и 54-ФЗ:</strong>
+								<span>Приём оплаты (нал, карта, СБП, депозит), пробитие чеков, запись на приём и подтверждение визитов.</span>
+							</div>
 						</div>
-						<div className="flex items-start gap-1.5">
-							<Lock size={13} className="text-rose-600 shrink-0 mt-0.5" />
-							<span><strong>Запрет подписи ЭМК:</strong> Регистратор не имеет права подписывать клинические дневники и протоколы услуг.</span>
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Lock size={14} className="text-purple-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Изоляция зарплат и P&L:</strong>
+								<span>Зарплатные ведомости врачей, оклады и чистая прибыль клиники надёжно закрыты от ресепшена.</span>
+							</div>
 						</div>
-						<div className="flex items-start gap-1.5">
-							<Coins size={13} className="text-teal-600 shrink-0 mt-0.5" />
-							<span><strong>Касса и расчёты:</strong> Приём оплат наличными/картой, печать чеков и запись пациентов на приём.</span>
+						<div className="flex items-start gap-1.5 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<Lock size={14} className="text-rose-600 shrink-0 mt-0.5" />
+							<div>
+								<strong className="block text-slate-900 dark:text-white">Запрет правки ЭМК:</strong>
+								<span>Администратор не имеет доступа к изменению клинических протоколов и медицинских диагнозов.</span>
+							</div>
 						</div>
 					</div>
 				</div>

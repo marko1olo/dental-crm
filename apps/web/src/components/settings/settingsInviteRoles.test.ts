@@ -99,6 +99,21 @@ describe("подпись должности сотрудника", () => {
 		assert.equal(staffRoleTitle("head_doctor"), "Главный врач");
 	});
 
+	test("все роли системы имеют понятные человеческие подписи без канцелярита (Мандат 8z)", () => {
+		assert.equal(staffRoleTitle("doctor"), "Врач");
+		assert.equal(staffRoleTitle("owner"), "Владелец");
+		assert.equal(staffRoleTitle("assistant"), "Ассистент");
+		assert.equal(staffRoleTitle("manager"), "Управляющий");
+		assert.equal(staffRoleTitle("curator"), "Куратор");
+		assert.equal(staffRoleTitle("senior_nurse"), "Старшая медсестра");
+		assert.equal(staffRoleTitle("senior_admin"), "Старший администратор");
+		assert.ok(
+			staffRoleTitle("registrar").includes("Администратор") ||
+				staffRoleTitle("registrar").includes("Регистратор"),
+		);
+		assert.ok(staffRoleTitle("accountant").includes("Бухгалтер"));
+	});
+
 	test("роль вне схемы не оставляет место должности пустым", () => {
 		// Такие роли в базе есть: их создала форма приглашения, пока слала «admin».
 		const title = staffRoleTitle("admin");

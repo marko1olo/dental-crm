@@ -6,11 +6,17 @@
  */
 
 import {
+	canAccessFullPatientPii,
 	canEditManagementNotes,
+	canManageStaffAuthority,
+	canViewAllDoctorPayrolls,
 	canViewManagementNotes,
+	canViewOwnPayroll,
 	checkStaffDuplicates,
 	evaluatePasswordEntropy,
 	formatStaffSnils,
+	maskRussianPhone,
+	maskRussianSnils,
 	staffAuthorityFlagKeys,
 	type StaffMemberSearchCandidate,
 	type StaffProfileExtended,
@@ -95,23 +101,41 @@ function assembleStaffProfile(
 	// biome-ignore lint/suspicious/noExplicitAny: DB commission row
 	commissionRow: any,
 	callerRole: string,
+	callerUserId?: string | null,
 ): StaffProfileExtended {
 	const uiPrefs = (user.uiPreferences as Record<string, unknown>) || {};
 	const hr = (uiPrefs.hrProfile as ExtendedHrProfileStorage) || {};
 
+	const isSelf = Boolean(callerUserId && callerUserId === user.id);
 	const allowManagementNotes = canViewManagementNotes(callerRole);
+	const allowPayrolls = canViewAllDoctorPayrolls(callerRole) || (isSelf && canViewOwnPayroll(callerRole));
+	const allowFullPii = canAccessFullPatientPii(callerRole) || isSelf;
 
-	const commissionPct = commissionRow?.commissionPct
+	const rawCommissionPct = commissionRow?.commissionPct
 		? Number(commissionRow.commissionPct)
 		: commissionRow?.commissionPercent
 			? Number(commissionRow.commissionPercent)
 			: 25;
-	const materialCostDeductionPct = commissionRow?.materialCostDeductionPct
+	const rawMaterialCostDeductionPct = commissionRow?.materialCostDeductionPct
 		? Number(commissionRow.materialCostDeductionPct)
 		: 0;
-	const labCostDeductionPct = commissionRow?.labCostDeductionPct
+	const rawLabCostDeductionPct = commissionRow?.labCostDeductionPct
 		? Number(commissionRow.labCostDeductionPct)
 		: 0;
+
+	// Финансовая изоляция (Мандаты 8e, 8n): ставки и оклады скрыты для рядового персонала
+	const commissionPct = allowPayrolls ? rawCommissionPct : 0;
+	const materialCostDeductionPct = allowPayrolls ? rawMaterialCostDeductionPct : 0;
+	const labCostDeductionPct = allowPayrolls ? rawLabCostDeductionPct : 0;
+	const baseSalaryRub = allowPayrolls ? (hr.baseSalaryRub || 0) : 0;
+
+	// 152-ФЗ: маскирование личных телефонов и СНИЛС коллег в списках для защиты от утечек
+	const rawPhone = user.phone ? repairMojibakeDeep(user.phone) : null;
+	const displayPhone = allowFullPii ? rawPhone : (rawPhone ? maskRussianPhone(rawPhone) : null);
+	const rawSnils = user.snils ? formatStaffSnils(user.snils) : null;
+	const displaySnils = allowFullPii ? rawSnils : (rawSnils ? maskRussianSnils(rawSnils) : null);
+	const rawInn = hr.inn ? (validateStaffInn(hr.inn).formatted || hr.inn) : null;
+	const displayInn = allowFullPii ? rawInn : (rawInn ? "••••••••••" + String(rawInn).slice(-2) : null);
 
 	return {
 		id: user.id,
@@ -119,15 +143,15 @@ function assembleStaffProfile(
 		fullName: repairMojibakeDeep(user.fullName),
 		role: (user.role as StaffRole) || "doctor",
 		specialties: Array.isArray(user.specialties) ? user.specialties : ["universal"],
-		phone: user.phone ? repairMojibakeDeep(user.phone) : null,
+		phone: displayPhone,
 		email: user.email ? repairMojibakeDeep(user.email) : null,
 		active: user.isActive ?? true,
 		color: "#3b82f6",
 		avatarUrl: null,
 
 		// Колонка 1: Реквизиты
-		snils: user.snils ? formatStaffSnils(user.snils) : null,
-		inn: hr.inn ? (validateStaffInn(hr.inn).formatted || hr.inn) : null,
+		snils: displaySnils,
+		inn: displayInn,
 		medicalBookNumber: hr.medicalBookNumber ? repairMojibakeDeep(hr.medicalBookNumber) : null,
 		medicalBookCheckupDate: hr.medicalBookCheckupDate || null,
 		minzdravAccreditationDate: hr.minzdravAccreditationDate || null,
@@ -146,7 +170,7 @@ function assembleStaffProfile(
 		assignedCabinetRooms: Array.isArray(hr.assignedCabinetRooms) ? hr.assignedCabinetRooms : [],
 		assignedChairIds: Array.isArray(hr.assignedChairIds) ? hr.assignedChairIds : [],
 		priceCategory: hr.priceCategory || "standard",
-		baseSalaryRub: hr.baseSalaryRub || 0,
+		baseSalaryRub,
 		commissionPct,
 		materialCostDeductionPct,
 		labCostDeductionPct,
@@ -202,7 +226,12 @@ export async function registerStaffRoutes(app: FastifyInstance) {
 		}
 
 		const results = staffRows.map((user) =>
-			assembleStaffProfile(user, commissionMap.get(user.id), auth.callerRole),
+			assembleStaffProfile(
+				user,
+				commissionMap.get(user.id),
+				auth.callerRole,
+				auth.callerUserId,
+			),
 		);
 
 		return results;
@@ -246,7 +275,12 @@ export async function registerStaffRoutes(app: FastifyInstance) {
 			)
 			.limit(1);
 
-		return assembleStaffProfile(user, commissionRow, auth.callerRole);
+		return assembleStaffProfile(
+			user,
+			commissionRow,
+			auth.callerRole,
+			auth.callerUserId,
+		);
 	});
 
 	/**
@@ -463,11 +497,68 @@ export async function registerStaffRoutes(app: FastifyInstance) {
 			};
 		}
 
-		// 6. Проверка прав на заметки руководства
+		// 6. Проверка прав доступа и предотвращение эскалации привилегий
 		const existingUiPrefs =
 			(existingUser.uiPreferences as Record<string, unknown>) || {};
 		const existingHr =
 			(existingUiPrefs.hrProfile as ExtendedHrProfileStorage) || {};
+
+		const isSelf = Boolean(auth.callerUserId && auth.callerUserId === params.staffId);
+		const hasStaffAuthority = canManageStaffAuthority(auth.callerRole) || auth.callerRole === "owner";
+
+		// Редактирование карточек других сотрудников доступно только руководству
+		if (auth.callerUserId && !isSelf && !hasStaffAuthority) {
+			reply.code(403);
+			return {
+				error: "Forbidden",
+				message: "Редактирование карточек других сотрудников доступно только Руководству клиники.",
+			};
+		}
+
+		// Защита от несанкционированной смены роли (Мандат 8e, 8n)
+		if (data.role !== undefined && data.role !== existingUser.role) {
+			if (!hasStaffAuthority) {
+				reply.code(403);
+				return {
+					error: "Forbidden",
+					message: "Назначение и изменение должностей доступно только Главному врачу и Владельцу клиники.",
+				};
+			}
+		}
+
+		// Защита административных полномочий и прав подписи
+		if (
+			(data.canSignMedicalRecords !== undefined &&
+				Boolean(data.canSignMedicalRecords) !== Boolean(existingUser.canSignMedicalRecords)) ||
+			(data.canManageMoney !== undefined &&
+				Boolean(data.canManageMoney) !== Boolean(existingUser.canManageMoney)) ||
+			(data.canManageImports !== undefined &&
+				Boolean(data.canManageImports) !== Boolean(existingUser.canManageImports))
+		) {
+			if (!hasStaffAuthority) {
+				reply.code(403);
+				return {
+					error: "Forbidden",
+					message: "Изменение административных полномочий и прав подписи доступно только Руководству клиники.",
+				};
+			}
+		}
+
+		// Защита ставок и окладов (Управление ФОТ): доступно только владельцу или бухгалтеру
+		if (
+			(data.baseSalaryRub !== undefined && data.baseSalaryRub !== (existingHr.baseSalaryRub || 0)) ||
+			data.commissionPct !== undefined ||
+			data.materialCostDeductionPct !== undefined ||
+			data.labCostDeductionPct !== undefined
+		) {
+			if (!hasStaffAuthority && auth.callerRole !== "accountant") {
+				reply.code(403);
+				return {
+					error: "Forbidden",
+					message: "Управление окладами и процентными ставками сотрудников доступно только Владельцу и Бухгалтеру.",
+				};
+			}
+		}
 
 		let nextManagementNotes = existingHr.managementNotes || null;
 		if (data.managementNotes !== undefined) {
@@ -646,7 +737,12 @@ export async function registerStaffRoutes(app: FastifyInstance) {
 			)
 			.limit(1);
 
-		return assembleStaffProfile(updatedUser, comm, auth.callerRole);
+		return assembleStaffProfile(
+			updatedUser,
+			comm,
+			auth.callerRole,
+			auth.callerUserId,
+		);
 	});
 
 	/**
