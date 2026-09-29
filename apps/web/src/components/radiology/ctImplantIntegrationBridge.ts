@@ -16,8 +16,10 @@ import type {
 	CrossSectionImplantPose,
 	MandibularCanalCrossSection,
 	NerveSafetyAuditResult,
+	AlveolarRidgeEnvelope,
 } from "./implantSafetyEngine";
-import { generateForm043CbctDiary } from "./implantSafetyEngine";
+import { generateForm043CbctDiary, auditAlveolarBoneContainment } from "./implantSafetyEngine";
+import type { AlveolarRidgeCaliperMeasurement } from "./cbctCaliperNerveMath";
 import type { HUZoneSampling, MischClassificationResult } from "./boneDensityMischMath";
 import type { RadiologyStudy } from "./types";
 import { buildCbctReportData, openCbctReportPrintWindow } from "./cbctExportEngine";
@@ -33,8 +35,8 @@ export interface CtImplantBridgeParams {
 	readonly toothFdi: number;
 	readonly implantSpec: VirtualImplantSpec;
 	readonly angulationDeg: number;
-	readonly ridgeHeightMm: number;
-	readonly ridgeWidthMm: number;
+	readonly ridgeHeightMm?: number | null | undefined;
+	readonly ridgeWidthMm?: number | null | undefined;
 	readonly mischClass: string;
 	readonly meanHU: number | null;
 	readonly nerveClearanceMm: number | null;
@@ -99,9 +101,12 @@ export function buildImplantTreatmentPlanItem(params: CtImplantBridgeParams): Tr
 			? `Зазор до канала/синуса: ${params.nerveClearanceMm.toFixed(1)} мм`
 			: "Безопасная зона";
 
+	const ridgeHStr = typeof params.ridgeHeightMm === "number" ? `H=${params.ridgeHeightMm.toFixed(1)} мм` : "H: не измерялась (—)";
+	const ridgeWStr = typeof params.ridgeWidthMm === "number" ? `W=${params.ridgeWidthMm.toFixed(1)} мм` : "W: не измерялась (—)";
+
 	const clinicalRationale =
-		`КЛКТ-замеры (FDI #${params.toothFdi}): гребень H=${params.ridgeHeightMm.toFixed(1)} мм, ` +
-		`W=${params.ridgeWidthMm.toFixed(1)} мм. Плотность кости: ${params.mischClass} ` +
+		`КЛКТ-замеры (FDI #${params.toothFdi}): гребень ${ridgeHStr}, ` +
+		`${ridgeWStr}. Плотность кости: ${params.mischClass} ` +
 		`(${params.meanHU !== null ? `${params.meanHU} HU` : "D3"}). ${nerveStatus}. ` +
 		`Торк фиксации: ${params.recommendedTorqueNcm}.`;
 
@@ -132,10 +137,20 @@ export function buildImplantDiarySoapEntry(params: CtImplantBridgeParams): Impla
 	const lengthStr = params.implantSpec.lengthMm.toFixed(1);
 	const tiltStr = params.angulationDeg !== 0 ? `${params.angulationDeg > 0 ? "+" : ""}${params.angulationDeg}°` : "0.0°";
 
+	const hasH = typeof params.ridgeHeightMm === "number";
+	const hasW = typeof params.ridgeWidthMm === "number";
+	const ridgeLocalis =
+		hasH && hasW
+			? `высота альвеолярного гребня ${params.ridgeHeightMm!.toFixed(1)} мм, ширина ${params.ridgeWidthMm!.toFixed(1)} мм`
+			: hasH
+				? `высота альвеолярного гребня ${params.ridgeHeightMm!.toFixed(1)} мм, ширина не измерялась (—)`
+				: hasW
+					? `высота альвеолярного гребня не измерялась (—), ширина ${params.ridgeWidthMm!.toFixed(1)} мм`
+					: "замеры альвеолярного гребня штангенциркулем не проводились (—)";
+
 	const statusLocalis =
 		`КЛКТ-диагностика области отсутствующего зуба #${params.toothFdi}: ` +
-		`высота альвеолярного гребня ${params.ridgeHeightMm.toFixed(1)} мм, ` +
-		`ширина ${params.ridgeWidthMm.toFixed(1)} мм. Тип архитектоники костной ткани по Misch: ` +
+		`${ridgeLocalis}. Тип архитектоники костной ткани по Misch: ` +
 		`${params.mischClass} (${params.meanHU !== null ? `${params.meanHU} HU` : "норма"}). ` +
 		(params.nerveClearanceMm !== null
 			? `Расстояние от апекса до нижнечелюстного канала / дна верхнечелюстного синуса: ${params.nerveClearanceMm.toFixed(1)} мм (норма безопасности соблюдена).`
@@ -332,13 +347,24 @@ export function updateOdontogramToothToPlannedImplant(toothFdi: number): void {
  */
 export function exportImplantToScheduleDraft(params: CtImplantBridgeParams): QuickScheduleDraftPayload {
 	const brandTitle = getImplantBrandTitle(params.implantSpec.brand);
+	const hasH = typeof params.ridgeHeightMm === "number";
+	const hasW = typeof params.ridgeWidthMm === "number";
+	const ridgeDraftStr =
+		hasH && hasW
+			? `гребень H=${params.ridgeHeightMm!.toFixed(1)} мм, W=${params.ridgeWidthMm!.toFixed(1)} мм`
+			: hasH
+				? `гребень H=${params.ridgeHeightMm!.toFixed(1)} мм, W: — (не измерялась)`
+				: hasW
+					? `гребень H: — (не измерялась), W=${params.ridgeWidthMm!.toFixed(1)} мм`
+					: "гребень: — (не измерялся)";
+
 	const draft: QuickScheduleDraftPayload = {
 		toothNumber: params.toothFdi,
 		title: `Имплантация #${params.toothFdi} (${brandTitle})`,
 		procedureName: `Внутрикостная дентальная имплантация ${brandTitle}`,
 		durationMinutes: 60,
 		stageKind: "stage_2_surgery",
-		notes: `КЛКТ запланировано: гребень H=${params.ridgeHeightMm.toFixed(1)} мм, W=${params.ridgeWidthMm.toFixed(1)} мм, плотность ${params.mischClass}.`,
+		notes: `КЛКТ запланировано: ${ridgeDraftStr}, плотность ${params.mischClass}.`,
 	};
 
 	if (typeof window !== "undefined") {
@@ -372,24 +398,54 @@ export interface ExportPdfReportParams {
 	readonly study?: RadiologyStudy | null | undefined;
 	readonly mischClassification: MischClassificationResult;
 	readonly nerveAuditResult: NerveSafetyAuditResult;
+	readonly activeCaliper?: AlveolarRidgeCaliperMeasurement | null | undefined;
+	readonly ridgeHeightMm?: number | null | undefined;
+	readonly ridgeWidthMm?: number | null | undefined;
+	readonly envelope?: AlveolarRidgeEnvelope | null | undefined;
 }
 
 /**
  * 8. Экспорт протокола КЛКТ-планирования в печатный вид / PDF (A4)
  */
 export function exportPdfImplantReport(params: ExportPdfReportParams): void {
+	let derivedEnvelope: AlveolarRidgeEnvelope | undefined = params.envelope ?? undefined;
+	let effectiveRidgeHeightMm: number | null =
+		typeof params.ridgeHeightMm === "number" ? params.ridgeHeightMm : null;
+	let effectiveRidgeWidthMm: number | null =
+		typeof params.ridgeWidthMm === "number" ? params.ridgeWidthMm : null;
+
+	if (params.activeCaliper) {
+		const cal = params.activeCaliper;
+		effectiveRidgeHeightMm = cal.heightMm;
+		effectiveRidgeWidthMm = cal.crestWidthMm;
+		derivedEnvelope = {
+			crestPoint: cal.crestPoint,
+			basePoint: cal.basePoint,
+			buccalCrestPoint: cal.crestWidthLeft ?? { x: cal.crestPoint.x - cal.crestWidthMm / 2, y: cal.crestPoint.y },
+			lingualCrestPoint: cal.crestWidthRight ?? { x: cal.crestPoint.x + cal.crestWidthMm / 2, y: cal.crestPoint.y },
+			ridgeWidthMm: cal.crestWidthMm,
+			ridgeHeightMm: cal.heightMm,
+		};
+	} else if (!derivedEnvelope && effectiveRidgeHeightMm !== null && effectiveRidgeWidthMm !== null) {
+		derivedEnvelope = {
+			crestPoint: { x: 0, y: 0 },
+			basePoint: { x: 0, y: effectiveRidgeHeightMm },
+			buccalCrestPoint: { x: -effectiveRidgeWidthMm / 2, y: 0 },
+			lingualCrestPoint: { x: effectiveRidgeWidthMm / 2, y: 0 },
+			ridgeWidthMm: effectiveRidgeWidthMm,
+			ridgeHeightMm: effectiveRidgeHeightMm,
+		};
+	}
+
+	const containment = derivedEnvelope
+		? auditAlveolarBoneContainment(params.currentImplantPose, derivedEnvelope)
+		: undefined;
+
 	const diaryText = generateForm043CbctDiary({
 		toothFdi: params.targetTooth,
 		implantPose: params.currentImplantPose,
 		canal: params.currentCanal,
-		envelope: {
-			crestPoint: { x: 0, y: 0 },
-			basePoint: { x: 0, y: 22.0 },
-			buccalCrestPoint: { x: -4.0, y: 0 },
-			lingualCrestPoint: { x: 4.0, y: 0 },
-			ridgeWidthMm: 8.0,
-			ridgeHeightMm: 22.0,
-		},
+		envelope: derivedEnvelope,
 		huSampling: params.huSamplingResult,
 		patientName: params.patientDisplayName,
 		clinicName: "Стоматологический центр DENTE",
@@ -404,14 +460,9 @@ export function exportPdfImplantReport(params: ExportPdfReportParams): void {
 		implantPose: params.currentImplantPose,
 		mischResult: params.mischClassification,
 		huSampling: params.huSamplingResult,
-		containment: {
-			residualBuccalBoneMm: 2.0,
-			residualLingualBoneMm: 2.0,
-			isBuccalBoneAdequate: true,
-			isLingualBoneAdequate: true,
-			isApexContained: true,
-			requiresGbrAugmentation: false,
-		},
+		ridgeHeightMm: effectiveRidgeHeightMm,
+		ridgeWidthMm: effectiveRidgeWidthMm,
+		containment,
 		nerveSafety: params.nerveAuditResult,
 		diary043Text: diaryText,
 		tonerSaving: true,

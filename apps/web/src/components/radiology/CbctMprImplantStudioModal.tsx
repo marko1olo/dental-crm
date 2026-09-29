@@ -31,6 +31,7 @@ import {
 import {
 	calculateSplineLength3DMm,
 	interpolateNerveSpline3D,
+	type AlveolarRidgeCaliperMeasurement,
 } from "./cbctCaliperNerveMath";
 import {
 	type HUZoneSampling,
@@ -74,12 +75,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	onApplyToPlan,
 	initialStudioMode,
 	initialSidebarOpen,
+	initialCaliper,
 }) => {
 	const modalId = useId();
 
 	// Studio mode & layout
 	const [studioMode, setStudioMode] = useState<StudioMode>(initialStudioMode ?? "diagnostic");
 	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(initialSidebarOpen ?? (initialStudioMode === "implant"));
+	const [activeCaliper, setActiveCaliper] = useState<AlveolarRidgeCaliperMeasurement | null>(initialCaliper ?? null);
 	const [viewLayout, setViewLayout] = useState<ViewLayoutMode>("mpr_3_view");
 	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null);
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -434,6 +437,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		patientDisplayName,
 		study,
 		activeCrossSection,
+		activeCaliper,
 		currentImplantSpec,
 		currentImplantPose,
 		currentCanal,
@@ -717,6 +721,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						implantEntryXOffsetMm={implantEntryXOffsetMm}
 						setImplantEntryXOffsetMm={setImplantEntryXOffsetMm}
 						setImplantEntryDepthMm={setImplantEntryDepthMm}
+						activeCaliper={activeCaliper}
 						handleExportToEmr={handleExportToEmr}
 						handleExportPdfReport={() => { void handleExportPdfReport(); }}
 						handleExportToPlan={handleExportToPlan}

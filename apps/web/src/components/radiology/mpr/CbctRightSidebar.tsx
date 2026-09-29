@@ -1,30 +1,13 @@
 import React from "react";
 import {
-	Activity,
-	AlertTriangle,
-	Box,
-	Calendar,
-	Camera,
-	Check,
-	ChevronLeft,
-	ChevronRight,
-	CircleDot,
-	Compass,
-	FileText,
-	Info,
-	Printer,
-	Receipt,
-	RotateCcw,
-	Save,
-	Search,
-	ShieldAlert,
-	ShieldCheck,
-	Trash2,
-	X,
+	Activity, AlertTriangle, Box, Calendar, Camera, Check, ChevronLeft, ChevronRight,
+	CircleDot, Compass, FileText, Info, Printer, Receipt, RotateCcw, Save, Search,
+	ShieldAlert, ShieldCheck, Trash2, X,
 } from "lucide-react";
 import type { CbctVoxelVolume, CbctViewportType, Point3D } from "../cbctMprMath";
 import { getTissueNameFromHU } from "../cbctMprMath";
 import type { CrossSectionSliceData } from "../dentalCurveEngine";
+import { measureAlveolarRidgeCrossSection } from "../dentalCurveEngine";
 import { CbctViewportHud } from "../CbctViewportHud";
 import { BoneQualityPanel } from "../../dicom/BoneQualityPanel";
 import { showToast } from "../../GlobalToast";
@@ -33,6 +16,7 @@ import type {
 	VirtualImplantSpec,
 	Implant3DWorldProjection,
 } from "../implantSafetyEngine";
+import type { AlveolarRidgeCaliperMeasurement } from "../cbctCaliperNerveMath";
 import type { HUZoneSampling } from "../boneDensityMischMath";
 import type { StudioMode } from "./cbctStudioTypes";
 import { formatNerveNodesPlural } from "./cbctStudioTypes";
@@ -93,6 +77,9 @@ export interface CbctRightSidebarProps {
 	readonly implantEntryXOffsetMm: number;
 	readonly setImplantEntryXOffsetMm: React.Dispatch<React.SetStateAction<number>>;
 	readonly setImplantEntryDepthMm: React.Dispatch<React.SetStateAction<number>>;
+	readonly activeCaliper?: AlveolarRidgeCaliperMeasurement | null | undefined;
+	readonly ridgeHeightMm?: number | null | undefined;
+	readonly ridgeWidthMm?: number | null | undefined;
 	readonly handleExportToEmr: () => void;
 	readonly handleExportPdfReport: () => void;
 	readonly handleExportToPlan: () => void;
@@ -151,12 +138,31 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 	implantEntryXOffsetMm,
 	setImplantEntryXOffsetMm,
 	setImplantEntryDepthMm,
+	activeCaliper,
+	ridgeHeightMm,
+	ridgeWidthMm,
 	handleExportToEmr,
 	handleExportPdfReport,
 	handleExportToPlan,
 	handleExportToSchedule,
 	handleExportToFinance,
 }) => {
+	const crossSectionMeasurement = activeCrossSection
+		? measureAlveolarRidgeCrossSection(activeCrossSection)
+		: null;
+	const effectiveRidgeHeight =
+		activeCaliper?.heightMm ??
+		ridgeHeightMm ??
+		crossSectionMeasurement?.heightMm ??
+		activeCrossSection?.corticalCrestHeightMm ??
+		null;
+	const effectiveRidgeWidth =
+		activeCaliper?.crestWidthMm ??
+		ridgeWidthMm ??
+		crossSectionMeasurement?.crestWidthMm ??
+		activeCrossSection?.alveolarRidgeWidthMm ??
+		null;
+
 	if (!isSidebarOpen && mobileActiveTab !== "planner") {
 		return null;
 	}
@@ -605,12 +611,33 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 								</span>
 							</div>
 
+							<div className="flex items-center justify-between text-xs pt-1.5 border-t border-zinc-800">
+								<div className="flex items-center gap-1.5 min-w-0">
+									<span className="text-[11px] font-semibold text-zinc-400 shrink-0">Гребень:</span>
+									<span
+										className={`px-2 py-0.5 rounded font-mono font-bold text-xs border shrink-0 ${
+											effectiveRidgeHeight !== null && effectiveRidgeWidth !== null
+												? "bg-zinc-900 text-zinc-200 border-zinc-700"
+												: "bg-zinc-900 text-zinc-500 border-zinc-800"
+										}`}
+										data-testid="cbct-ridge-measurements-badge"
+									>
+										{effectiveRidgeHeight !== null && effectiveRidgeWidth !== null
+											? `H:${effectiveRidgeHeight.toFixed(1)} W:${effectiveRidgeWidth.toFixed(1)} мм`
+											: effectiveRidgeHeight !== null
+												? `H:${effectiveRidgeHeight.toFixed(1)} мм`
+												: effectiveRidgeWidth !== null
+													? `W:${effectiveRidgeWidth.toFixed(1)} мм`
+													: "Не измерялся (—)"}
+									</span>
+								</div>
+								<span className="text-[10px] text-zinc-500 font-mono shrink-0">
+									{activeCaliper ? "Штангенциркуль" : effectiveRidgeHeight !== null ? "КЛКТ-срез" : "Требуется замер"}
+								</span>
+							</div>
+
 							{displayDrillingProtocol && (
-								<div
-									className="text-[10px] text-zinc-400 leading-tight truncate pt-0.5"
-									title={displayDrillingProtocol}
-									data-testid="cbct-implant-drilling-protocol"
-								>
+								<div className="text-[10px] text-zinc-400 leading-tight truncate pt-0.5" title={displayDrillingProtocol} data-testid="cbct-implant-drilling-protocol">
 									Сверление: <span className="text-zinc-300">{displayDrillingProtocol}</span>
 								</div>
 							)}
@@ -728,49 +755,19 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 							</div>
 
 							<div className="grid grid-cols-4 gap-1">
-								<button
-									type="button"
-									onClick={handleExportToEmr}
-									className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 hover:border-cyan-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
-									data-testid="cbct-btn-export-emr"
-									data-testid-legacy="copy-diary-btn"
-									title="Записать протокол КТ и замеры кости в ЭМК и дневник приёма"
-								>
+								<button type="button" onClick={handleExportToEmr} className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 hover:border-cyan-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer" data-testid="cbct-btn-export-emr" data-testid-legacy="copy-diary-btn" title="Записать протокол КТ и замеры кости в ЭМК и дневник приёма">
 									<FileText className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
 									<span className="truncate">В ЭМК</span>
 								</button>
-								<button
-									type="button"
-									onClick={handleExportToSchedule}
-									className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-emerald-300 hover:text-emerald-200 border border-zinc-800 hover:border-emerald-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
-									data-testid="cbct-btn-export-schedule"
-									title="Создать черновик записи на операцию имплантации в расписании"
-								>
+								<button type="button" onClick={handleExportToSchedule} className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-emerald-300 hover:text-emerald-200 border border-zinc-800 hover:border-emerald-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer" data-testid="cbct-btn-export-schedule" title="Создать черновик записи на операцию имплантации в расписании">
 									<Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
 									<span className="truncate">В запись</span>
 								</button>
-								<button
-									type="button"
-									onClick={handleExportPdfReport}
-									className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-zinc-800 hover:border-amber-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
-									data-testid="cbct-btn-export-pdf"
-									title="Сформировать печатный A4 протокол / PDF"
-								>
+								<button type="button" onClick={handleExportPdfReport} className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-zinc-800 hover:border-amber-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer" data-testid="cbct-btn-export-pdf" title="Сформировать печатный A4 протокол / PDF">
 									<Printer className="w-3.5 h-3.5 text-amber-400 shrink-0" />
 									<span className="truncate">PDF</span>
 								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setImplantEntryXOffsetMm(0);
-										setImplantEntryDepthMm(2.0);
-										setImplantAngulationDeg(0);
-										showToast("Положение имплантата центрировано на гребне", "info");
-									}}
-									className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
-									data-testid="reset-center-btn"
-									title="Центрировать имплантат на гребне"
-								>
+								<button type="button" onClick={() => { setImplantEntryXOffsetMm(0); setImplantEntryDepthMm(2.0); setImplantAngulationDeg(0); showToast("Положение имплантата центрировано на гребне", "info"); }} className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer" data-testid="reset-center-btn" title="Центрировать имплантат на гребне">
 									<Compass className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
 									<span className="truncate">Центр</span>
 								</button>

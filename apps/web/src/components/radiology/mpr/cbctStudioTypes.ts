@@ -37,6 +37,7 @@ export function formatNerveNodesPlural(count: number): string {
 export const ROTATE_CURSOR = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8'/%3E%3Cpolyline points='21 3 21 8 16 8'/%3E%3C/svg%3E") 12 12, crosshair`;
 
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
+import type { AlveolarRidgeCaliperMeasurement } from "../cbctCaliperNerveMath";
 
 export interface CbctMprImplantStudioModalProps {
 	readonly isOpen: boolean;
@@ -48,6 +49,7 @@ export interface CbctMprImplantStudioModalProps {
 	readonly onApplyToPlan?: ((item: TreatmentPlanItem) => void) | undefined;
 	readonly initialStudioMode?: StudioMode | undefined;
 	readonly initialSidebarOpen?: boolean | undefined;
+	readonly initialCaliper?: AlveolarRidgeCaliperMeasurement | null | undefined;
 }
 
 export function getDefaultViewportTransforms(): Record<CbctViewportType, ViewportTransform> {

@@ -313,4 +313,35 @@ describe("Wave 28 Domain 2 — CT Implant Engine Integration Bridge", () => {
 			}
 		});
 	});
+
+	describe("7. Zero-Falsification Invariant (Mandate 8e & BUG-010)", () => {
+		const UNMEASURED_PARAMS: CtImplantBridgeParams = {
+			...MOCK_IMPLANT_PARAMS,
+			ridgeHeightMm: null,
+			ridgeWidthMm: null,
+		};
+
+		it("buildImplantTreatmentPlanItem displays 'не измерялась (—)' and zero hardcoded 22.0/8.0 when unmeasured", () => {
+			const item = buildImplantTreatmentPlanItem(UNMEASURED_PARAMS);
+			const rationale = item.clinicalRationale || "";
+			assert.equal(rationale.includes("22.0"), false);
+			assert.equal(rationale.includes("8.0"), false);
+			assert.match(rationale, /H: не измерялась \(—\)/);
+			assert.match(rationale, /W: не измерялась \(—\)/);
+		});
+
+		it("buildImplantDiarySoapEntry displays 'замеры альвеолярного гребня штангенциркулем не проводились (—)' when unmeasured", () => {
+			const soap = buildImplantDiarySoapEntry(UNMEASURED_PARAMS);
+			assert.equal(soap.statusLocalis.includes("22.0"), false);
+			assert.equal(soap.statusLocalis.includes("8.0"), false);
+			assert.match(soap.statusLocalis, /замеры альвеолярного гребня штангенциркулем не проводились \(—\)/);
+		});
+
+		it("exportImplantToScheduleDraft displays 'гребень: — (не измерялся)' when unmeasured", () => {
+			const draft = exportImplantToScheduleDraft(UNMEASURED_PARAMS);
+			assert.equal(draft.notes.includes("22.0"), false);
+			assert.equal(draft.notes.includes("8.0"), false);
+			assert.match(draft.notes, /гребень: — \(не измерялся\)/);
+		});
+	});
 });

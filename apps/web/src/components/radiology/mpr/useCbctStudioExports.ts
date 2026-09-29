@@ -5,12 +5,14 @@
 
 import { useCallback } from "react";
 import type { CrossSectionSliceData } from "../dentalCurveEngine";
+import { measureAlveolarRidgeCrossSection } from "../dentalCurveEngine";
 import type {
 	VirtualImplantSpec,
 	CrossSectionImplantPose,
 	MandibularCanalCrossSection,
 	NerveSafetyAuditResult,
 } from "../implantSafetyEngine";
+import type { AlveolarRidgeCaliperMeasurement } from "../cbctCaliperNerveMath";
 import type { HUZoneSampling, MischClassificationResult } from "../boneDensityMischMath";
 import type { RadiologyStudy } from "../types";
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
@@ -27,6 +29,9 @@ export interface UseCbctStudioExportsProps {
 	readonly patientDisplayName: string;
 	readonly study?: RadiologyStudy | null | undefined;
 	readonly activeCrossSection: CrossSectionSliceData | null;
+	readonly activeCaliper?: AlveolarRidgeCaliperMeasurement | null | undefined;
+	readonly ridgeHeightMm?: number | null | undefined;
+	readonly ridgeWidthMm?: number | null | undefined;
 	readonly currentImplantSpec: VirtualImplantSpec;
 	readonly currentImplantPose: CrossSectionImplantPose;
 	readonly currentCanal: MandibularCanalCrossSection;
@@ -48,6 +53,9 @@ export function useCbctStudioExports({
 	patientDisplayName,
 	study,
 	activeCrossSection,
+	activeCaliper,
+	ridgeHeightMm,
+	ridgeWidthMm,
 	currentImplantSpec,
 	currentImplantPose,
 	currentCanal,
@@ -63,6 +71,24 @@ export function useCbctStudioExports({
 	onApplyToPlan,
 	onApplyToDiary043,
 }: UseCbctStudioExportsProps) {
+	const crossSectionMeasurement = activeCrossSection
+		? measureAlveolarRidgeCrossSection(activeCrossSection)
+		: null;
+
+	const effectiveRidgeHeightMm =
+		activeCaliper?.heightMm ??
+		ridgeHeightMm ??
+		crossSectionMeasurement?.heightMm ??
+		activeCrossSection?.corticalCrestHeightMm ??
+		null;
+
+	const effectiveRidgeWidthMm =
+		activeCaliper?.crestWidthMm ??
+		ridgeWidthMm ??
+		crossSectionMeasurement?.crestWidthMm ??
+		activeCrossSection?.alveolarRidgeWidthMm ??
+		null;
+
 	const handleExportToPlan = useCallback(() => {
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
 		const item = exportImplantToTreatmentPlan({
@@ -73,8 +99,8 @@ export function useCbctStudioExports({
 			toothFdi: targetTooth,
 			implantSpec: currentImplantSpec,
 			angulationDeg: implantAngulationDeg,
-			ridgeHeightMm: 22.0,
-			ridgeWidthMm: 8.0,
+			ridgeHeightMm: effectiveRidgeHeightMm,
+			ridgeWidthMm: effectiveRidgeWidthMm,
 			mischClass: displayBoneClass,
 			meanHU: displayMeanHU,
 			nerveClearanceMm: displayNerveClearanceMm,
@@ -88,7 +114,8 @@ export function useCbctStudioExports({
 		}
 	}, [
 		patientId, patientDisplayName, study, activeCrossSection, currentImplantSpec,
-		implantAngulationDeg, displayBoneClass, displayMeanHU, displayNerveClearanceMm,
+		implantAngulationDeg, effectiveRidgeHeightMm, effectiveRidgeWidthMm,
+		displayBoneClass, displayMeanHU, displayNerveClearanceMm,
 		displayTorque, displayDrillingProtocol, nerveAuditResult, onApplyToPlan,
 	]);
 
@@ -100,8 +127,8 @@ export function useCbctStudioExports({
 			toothFdi: targetTooth,
 			implantSpec: currentImplantSpec,
 			angulationDeg: implantAngulationDeg,
-			ridgeHeightMm: 22.0,
-			ridgeWidthMm: 8.0,
+			ridgeHeightMm: effectiveRidgeHeightMm,
+			ridgeWidthMm: effectiveRidgeWidthMm,
 			mischClass: displayBoneClass,
 			meanHU: displayMeanHU,
 			nerveClearanceMm: displayNerveClearanceMm,
@@ -110,7 +137,8 @@ export function useCbctStudioExports({
 		});
 	}, [
 		patientId, patientDisplayName, activeCrossSection, currentImplantSpec,
-		implantAngulationDeg, displayBoneClass, displayMeanHU, displayNerveClearanceMm,
+		implantAngulationDeg, effectiveRidgeHeightMm, effectiveRidgeWidthMm,
+		displayBoneClass, displayMeanHU, displayNerveClearanceMm,
 		displayTorque, displayDrillingProtocol,
 	]);
 
@@ -125,8 +153,8 @@ export function useCbctStudioExports({
 				toothFdi: targetTooth,
 				implantSpec: currentImplantSpec,
 				angulationDeg: implantAngulationDeg,
-				ridgeHeightMm: 22.0,
-				ridgeWidthMm: 8.0,
+				ridgeHeightMm: effectiveRidgeHeightMm,
+				ridgeWidthMm: effectiveRidgeWidthMm,
 				mischClass: displayBoneClass,
 				meanHU: displayMeanHU,
 				nerveClearanceMm: displayNerveClearanceMm,
@@ -139,7 +167,8 @@ export function useCbctStudioExports({
 		);
 	}, [
 		patientId, patientDisplayName, study, activeCrossSection, currentImplantSpec,
-		implantAngulationDeg, displayBoneClass, displayMeanHU, displayNerveClearanceMm,
+		implantAngulationDeg, effectiveRidgeHeightMm, effectiveRidgeWidthMm,
+		displayBoneClass, displayMeanHU, displayNerveClearanceMm,
 		displayTorque, displayDrillingProtocol, nerveAuditResult, onApplyToDiary043,
 	]);
 
@@ -163,8 +192,15 @@ export function useCbctStudioExports({
 			study,
 			mischClassification,
 			nerveAuditResult,
+			activeCaliper,
+			ridgeHeightMm: effectiveRidgeHeightMm,
+			ridgeWidthMm: effectiveRidgeWidthMm,
 		});
-	}, [activeCrossSection, currentImplantPose, currentCanal, huSamplingResult, patientDisplayName, study, mischClassification, nerveAuditResult]);
+	}, [
+		activeCrossSection, currentImplantPose, currentCanal, huSamplingResult,
+		patientDisplayName, study, mischClassification, nerveAuditResult,
+		activeCaliper, effectiveRidgeHeightMm, effectiveRidgeWidthMm,
+	]);
 
 	return {
 		handleExportToPlan,

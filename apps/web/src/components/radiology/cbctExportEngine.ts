@@ -106,10 +106,10 @@ export interface CbctReportBoneData {
 	readonly trabecularCoreHU: number;
 	readonly apicalBaseHU: number;
 	readonly overallMeanHU: number;
-	readonly ridgeWidthMm: number;
-	readonly ridgeHeightMm: number;
-	readonly residualBuccalBoneMm: number;
-	readonly residualLingualBoneMm: number;
+	readonly ridgeWidthMm?: number | null | undefined;
+	readonly ridgeHeightMm?: number | null | undefined;
+	readonly residualBuccalBoneMm?: number | null | undefined;
+	readonly residualLingualBoneMm?: number | null | undefined;
 	readonly requiresGbrAugmentation: boolean;
 	readonly isApexContained: boolean;
 }
@@ -378,7 +378,9 @@ export function buildCbctReportData(params: {
 	readonly implantPose: CrossSectionImplantPose;
 	readonly mischResult: MischClassificationResult;
 	readonly huSampling: HUZoneSampling;
-	readonly containment: AlveolarContainmentResult;
+	readonly containment?: AlveolarContainmentResult | undefined;
+	readonly ridgeHeightMm?: number | null | undefined;
+	readonly ridgeWidthMm?: number | null | undefined;
 	readonly nerveSafety?: NerveSafetyAuditResult | undefined;
 	readonly additionalImplants?: readonly CbctReportImplantRow[] | undefined;
 	readonly snapshots?: {
@@ -401,6 +403,8 @@ export function buildCbctReportData(params: {
 		mischResult,
 		huSampling,
 		containment,
+		ridgeHeightMm,
+		ridgeWidthMm,
 		nerveSafety,
 		additionalImplants,
 		snapshots = {},
@@ -468,12 +472,17 @@ export function buildCbctReportData(params: {
 			trabecularCoreHU: huSampling.trabecularCoreHU,
 			apicalBaseHU: huSampling.apicalBaseHU,
 			overallMeanHU: huSampling.overallMeanHU,
-			ridgeWidthMm: containment.residualBuccalBoneMm + containment.residualLingualBoneMm + spec.diameterMm,
-			ridgeHeightMm: 22.0,
-			residualBuccalBoneMm: containment.residualBuccalBoneMm,
-			residualLingualBoneMm: containment.residualLingualBoneMm,
-			requiresGbrAugmentation: containment.requiresGbrAugmentation,
-			isApexContained: containment.isApexContained,
+			ridgeWidthMm:
+				typeof ridgeWidthMm === "number"
+					? ridgeWidthMm
+					: containment
+						? containment.residualBuccalBoneMm + containment.residualLingualBoneMm + spec.diameterMm
+						: null,
+			ridgeHeightMm: typeof ridgeHeightMm === "number" ? ridgeHeightMm : null,
+			residualBuccalBoneMm: containment ? containment.residualBuccalBoneMm : null,
+			residualLingualBoneMm: containment ? containment.residualLingualBoneMm : null,
+			requiresGbrAugmentation: containment ? containment.requiresGbrAugmentation : false,
+			isApexContained: containment ? containment.isApexContained : true,
 		},
 		stability: {
 			expectedTorqueNcm: mischResult.estimatedInsertionTorqueNcm.expectedNcm,
@@ -1159,9 +1168,10 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
         <tr><td>Губчатое ядро (Trabecular 60%)</td><td>${bone.trabecularCoreHU} HU</td></tr>
         <tr><td>Апикальная опора (Apical 20%)</td><td>${bone.apicalBaseHU} HU</td></tr>
         <tr><td>Средневзвешенная плотность</td><td><b>${bone.overallMeanHU} HU</b></td></tr>
-        <tr><td>Ширина альвеолярного гребня</td><td>${bone.ridgeWidthMm.toFixed(1)} мм</td></tr>
-        <tr><td>Остаточная щечная пластинка</td><td>${bone.residualBuccalBoneMm.toFixed(1)} мм ${bone.residualBuccalBoneMm < 1.5 ? "(< 1.5 мм — Дефицит)" : "(Норма)"}</td></tr>
-        <tr><td>Остаточная язычная пластинка</td><td>${bone.residualLingualBoneMm.toFixed(1)} мм</td></tr>
+        <tr><td>Ширина альвеолярного гребня</td><td>${typeof bone.ridgeWidthMm === "number" ? `${bone.ridgeWidthMm.toFixed(1)} мм` : "Не измерялась (—)"}</td></tr>
+        <tr><td>Высота альвеолярного гребня</td><td>${typeof bone.ridgeHeightMm === "number" ? `${bone.ridgeHeightMm.toFixed(1)} мм` : "Не измерялась (—)"}</td></tr>
+        <tr><td>Остаточная щечная пластинка</td><td>${typeof bone.residualBuccalBoneMm === "number" ? `${bone.residualBuccalBoneMm.toFixed(1)} мм ${bone.residualBuccalBoneMm < 1.5 ? "(< 1.5 мм — Дефицит)" : "(Норма)"}` : "—"}</td></tr>
+        <tr><td>Остаточная язычная пластинка</td><td>${typeof bone.residualLingualBoneMm === "number" ? `${bone.residualLingualBoneMm.toFixed(1)} мм` : "—"}</td></tr>
         <tr><td>Потребность в НКР/GBR</td><td>${bone.requiresGbrAugmentation ? "<b>Требуется аугментация</b>" : "Не требуется"}</td></tr>
       </table>
     </div>

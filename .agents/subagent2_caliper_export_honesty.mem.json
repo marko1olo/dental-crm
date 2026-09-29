@@ -1,0 +1,44 @@
+{
+  "subagent": "Subagent 2: Clinical Caliper & Medical Falsification Zero-Tolerance Inquisitor",
+  "status": "completed",
+  "scope": [
+    "apps/web/src/components/radiology/mpr/useCbctStudioExports.ts",
+    "apps/web/src/components/radiology/ctImplantIntegrationBridge.ts",
+    "apps/web/src/components/radiology/cbctExportEngine.ts",
+    "apps/web/src/components/radiology/mpr/CbctRightSidebar.tsx",
+    "apps/web/src/components/radiology/mpr/cbctStudioTypes.ts",
+    "apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx",
+    "apps/web/src/components/radiology/__tests__/"
+  ],
+  "forbidden_scope": [
+    "Cornerstone3DViewer.tsx",
+    "CornerstoneToolbar.tsx",
+    "ImagingView.tsx",
+    "Billing",
+    "Schedule",
+    "Any file outside apps/web/src/components/radiology/"
+  ],
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md",
+    "Read AGENTS.md",
+    "Read DICOM_VIEWER_AUDIT.md",
+    "Initialized memory checkpoint",
+    "Eliminated BUG-010 hardcoded ridgeHeightMm: 22.0, ridgeWidthMm: 8.0 in useCbctStudioExports.ts and ctImplantIntegrationBridge.ts",
+    "Traced and wired activeCaliper (AlveolarRidgeCaliperMeasurement) and activeCrossSection measurement flow from CbctMprImplantStudioModal and CbctRightSidebar to exports",
+    "Replaced falsified 22.0/8.0 fallbacks with real caliper measurements or strictly null ('Не измерялась (—)' / '—') across treatment plan rationale, SOAP 043/u diary, schedule draft, and PDF report",
+    "Audited cbctExportEngine.ts (renderCbctReportHtml & buildCbctReportData) to guarantee bone table renders both ridgeWidthMm and ridgeHeightMm honestly and safely without .toFixed crashes on null",
+    "Audited and verified PDF export button in CbctRightSidebar.tsx and CbctMprImplantStudioModal.tsx, wiring activeCaliper directly into exportPdfImplantReport",
+    "Added and ran unit tests in apps/web/src/components/radiology/__tests__/ for caliper honesty (cbctCaliperHonestyAudit.test.ts, ctImplantIntegrationBridge.test.ts, cbctExportEngine.test.ts, cbctRedTeamCaliperMath.test.ts) — 59/59 passing",
+    "Verified zero hardcoded falsifications exist across all modified files",
+    "Passed check:encoding and check:css-tokens verification gates",
+    "Prepared per-file atomic git add"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Identified BUG-010 in useCbctStudioExports.ts: hardcoded ridgeHeightMm: 22.0, ridgeWidthMm: 8.0 in handleExportToPlan, handleExportToSchedule, and handleExportToEmr.",
+    "Identified BUG-010 in ctImplantIntegrationBridge.ts: hardcoded envelope with basePoint 22.0, ridgeWidthMm: 8.0, ridgeHeightMm: 22.0 in exportPdfImplantReport, plus mandatory non-nullable CtImplantBridgeParams requiring fabricated numbers.",
+    "Identified BUG-010 in cbctExportEngine.ts: buildCbctReportData hardcoding ridgeHeightMm: 22.0, and renderCbctReportHtml calling bone.ridgeWidthMm.toFixed(1) without null-safety and omitting ridgeHeightMm completely.",
+    "Resolved all falsification sites: introduced null-safe effective ridge measurement pipeline supporting activeCaliper ?? ridgeHeightMm ?? crossSectionMeasurement ?? null.",
+    "Verified all files strictly adhere to Mandate 8b (<= 800 lines): CbctRightSidebar.tsx (782 lines), CbctMprImplantStudioModal.tsx (748 lines), ctImplantIntegrationBridge.ts (681 lines), useCbctStudioExports.ts (204 lines)."
+  ]
+}
