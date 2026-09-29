@@ -47,10 +47,11 @@ export interface MprOverlayParams {
 	obliqueAngles: ObliqueRotationAngles;
 	activeRotationHandle: { plane: MprPlane; handle: RotationHandlePosition } | null;
 	hoveredHandle: { plane: MprPlane; handle: RotationHandlePosition } | null;
-	// Plane-specific options
-	showDentalArch?: boolean;
-	archCurve?: DentalArchCurve;
-	activeCrossSection?: CrossSectionSliceData | null;
+	showDentalArch?: boolean | undefined;
+	showEdgeRulers?: boolean | undefined;
+	isHovered?: boolean | undefined;
+	archCurve?: DentalArchCurve | undefined;
+	activeCrossSection?: CrossSectionSliceData | null | undefined;
 	selectedArchAnchorIdx?: number | null;
 	hoveredArchAnchorIdx?: number | null;
 	isDraggingArchAnchor?: number | null;

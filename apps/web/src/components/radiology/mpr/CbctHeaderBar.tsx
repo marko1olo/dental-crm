@@ -41,6 +41,8 @@ export interface CbctHeaderBarProps {
 	readonly handleAutoDetectArch: () => void;
 	readonly showDentalArch: boolean;
 	readonly setShowDentalArch: React.Dispatch<React.SetStateAction<boolean>>;
+	readonly showEdgeRulers?: boolean | undefined;
+	readonly setShowEdgeRulers?: React.Dispatch<React.SetStateAction<boolean>> | undefined;
 	readonly handleExportPdfReport: () => void;
 	readonly maximizedViewport: CbctViewportType | null;
 	readonly setMaximizedViewport: (viewport: CbctViewportType | null) => void;
@@ -74,6 +76,8 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 	handleAutoDetectArch,
 	showDentalArch,
 	setShowDentalArch,
+	showEdgeRulers = false,
+	setShowEdgeRulers,
 	handleExportPdfReport,
 	maximizedViewport,
 	setMaximizedViewport,
@@ -297,6 +301,27 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 								<Spline className="w-3.5 h-3.5 text-purple-400 shrink-0" />
 								<span>{showDentalArch ? "Скрыть дугу ОПТГ" : "Показать дугу ОПТГ"}</span>
 							</button>
+
+							{/* 1-Click Toggle Edge Millimeter Rulers */}
+							{setShowEdgeRulers && (
+								<button
+									type="button"
+									onClick={() => {
+										setShowEdgeRulers((prev) => !prev);
+										setIsStudioMenuOpen(false);
+									}}
+									className={`w-full px-2.5 py-1.5 rounded text-xs font-semibold text-left flex items-center gap-2 transition-colors cursor-pointer ${
+										showEdgeRulers
+											? "text-cyan-300 bg-cyan-950/40 hover:bg-cyan-950/60"
+											: "text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800"
+									}`}
+									data-testid="cbct-toggle-edge-rulers"
+									title="Показать / скрыть краевые миллиметровые линейки по периметру окон"
+								>
+									<Ruler className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+									<span>{showEdgeRulers ? "Скрыть краевые линейки" : "Показать краевые линейки"}</span>
+								</button>
+							)}
 
 							{/* 1-Click Printable PDF Report Export */}
 							<button

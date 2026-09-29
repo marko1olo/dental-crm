@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Box, FolderOpen, RotateCcw, Sparkles, UploadCloud } from "lucide-react";
 import type {
 	CbctVoxelVolume,
@@ -19,6 +19,9 @@ export interface CbctMprViewportsGridProps {
 	readonly isSidebarOpen: boolean;
 	readonly mobileActiveTab: string;
 	readonly onSelectMobileTab?: ((tab: "axial" | "coronal" | "sagittal" | "panoramic" | "planner") => void) | undefined;
+	readonly hoveredViewport?: CbctViewportType | null | undefined;
+	readonly onHoverViewport?: ((v: CbctViewportType | null) => void) | undefined;
+	readonly showEdgeRulers?: boolean | undefined;
 	readonly volume: CbctVoxelVolume | null;
 	readonly dicomLoadingStatus: string | null;
 	readonly dicomProgress: number;
@@ -78,6 +81,9 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 	isSidebarOpen,
 	mobileActiveTab,
 	onSelectMobileTab,
+	hoveredViewport,
+	onHoverViewport,
+	showEdgeRulers = false,
 	volume,
 	dicomLoadingStatus,
 	dicomProgress,
@@ -132,10 +138,48 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 	activeCrossSectionIdx,
 	crossSections,
 }) => {
+	// 4-Way Interactive 2x2 Grid Resizer State
+	const [splitX, setSplitX] = useState<number>(0.5);
+	const [splitY, setSplitY] = useState<number>(0.5);
+	const [isDraggingSplitter, setIsDraggingSplitter] = useState<"x" | "y" | "center" | null>(null);
+	const quadGridRef = useRef<HTMLDivElement | null>(null);
+
+	useEffect(() => {
+		if (!isDraggingSplitter) return;
+
+		const handlePointerMove = (e: PointerEvent) => {
+			if (!quadGridRef.current) return;
+			const rect = quadGridRef.current.getBoundingClientRect();
+			if (rect.width <= 0 || rect.height <= 0) return;
+
+			if (isDraggingSplitter === "x" || isDraggingSplitter === "center") {
+				const relX = (e.clientX - rect.left) / rect.width;
+				setSplitX(Math.max(0.20, Math.min(0.80, relX)));
+			}
+			if (isDraggingSplitter === "y" || isDraggingSplitter === "center") {
+				const relY = (e.clientY - rect.top) / rect.height;
+				setSplitY(Math.max(0.20, Math.min(0.80, relY)));
+			}
+		};
+
+		const handlePointerUp = () => {
+			setIsDraggingSplitter(null);
+		};
+
+		window.addEventListener("pointermove", handlePointerMove);
+		window.addEventListener("pointerup", handlePointerUp);
+		return () => {
+			window.removeEventListener("pointermove", handlePointerMove);
+			window.removeEventListener("pointerup", handlePointerUp);
+		};
+	}, [isDraggingSplitter]);
+
 	const renderAxialViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("axial")}
 			onPointerDownCapture={() => setActiveViewport("axial")}
+			onMouseEnter={() => onHoverViewport?.("axial")}
+			onMouseLeave={() => onHoverViewport?.(null)}
 			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
 				activeViewport === "axial"
 					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
@@ -188,10 +232,12 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		<div
 			onDoubleClick={() => handleToggleMaximize("coronal")}
 			onPointerDownCapture={() => setActiveViewport("coronal")}
+			onMouseEnter={() => onHoverViewport?.("coronal")}
+			onMouseLeave={() => onHoverViewport?.(null)}
 			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
 				activeViewport === "coronal"
-					? "ring-1 ring-orange-500/50 border border-orange-500/80 shadow-orange-950/30"
-					: "border border-orange-500/30 hover:border-orange-500/60"
+					? "ring-1 ring-emerald-500/50 border border-emerald-500/80 shadow-emerald-950/30"
+					: "border border-emerald-500/30 hover:border-emerald-500/60"
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-coronal"
 		>
@@ -240,10 +286,12 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		<div
 			onDoubleClick={() => handleToggleMaximize("sagittal")}
 			onPointerDownCapture={() => setActiveViewport("sagittal")}
+			onMouseEnter={() => onHoverViewport?.("sagittal")}
+			onMouseLeave={() => onHoverViewport?.(null)}
 			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
 				activeViewport === "sagittal"
-					? "ring-1 ring-emerald-500/50 border border-emerald-500/80 shadow-emerald-950/30"
-					: "border border-emerald-500/30 hover:border-emerald-500/60"
+					? "ring-1 ring-rose-500/50 border border-rose-500/80 shadow-rose-950/30"
+					: "border border-rose-500/30 hover:border-rose-500/60"
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-sagittal"
 		>
@@ -292,6 +340,8 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		<div
 			onDoubleClick={() => handleToggleMaximize("panoramic")}
 			onPointerDownCapture={() => setActiveViewport("panoramic")}
+			onMouseEnter={() => onHoverViewport?.("panoramic")}
+			onMouseLeave={() => onHoverViewport?.(null)}
 			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
 				activeViewport === "panoramic"
 					? "ring-1 ring-purple-500/50 border border-purple-500/80 shadow-purple-950/30"
@@ -345,10 +395,12 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		<div
 			onDoubleClick={() => handleToggleMaximize("cross_section")}
 			onPointerDownCapture={() => setActiveViewport("cross_section")}
+			onMouseEnter={() => onHoverViewport?.("cross_section")}
+			onMouseLeave={() => onHoverViewport?.(null)}
 			className={`relative bg-black rounded-md overflow-hidden transition-all flex-1 flex flex-col min-h-0 w-full h-full ${
 				activeViewport === "cross_section"
-					? "ring-1 ring-yellow-500/50 border border-yellow-500/80 shadow-yellow-950/30"
-					: "border border-yellow-500/30 hover:border-yellow-500/60"
+					? "ring-1 ring-amber-500/50 border border-amber-500/80 shadow-amber-950/30"
+					: "border border-amber-500/30 hover:border-amber-500/60"
 			}`}
 			data-testid="cbct-viewport-container-cross-section"
 		>
@@ -520,11 +572,82 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					</div>
 				</div>
 			) : (
-				<div className="flex-1 grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-2 gap-1 min-h-0 min-w-0 w-full h-full" data-testid="cbct-mpr-quad-grid">
-					{renderAxialViewport(mobileActiveTab === "axial" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
-					{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
-					{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
-					{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+				<div
+					ref={quadGridRef}
+					className="flex-1 relative min-h-0 min-w-0 w-full h-full select-none"
+					data-testid="cbct-mpr-quad-grid"
+				>
+					{/* Desktop 2x2 Grid with dynamic split columns & rows */}
+					<div
+						className="hidden lg:grid w-full h-full gap-1"
+						style={{
+							gridTemplateColumns: `${(splitX * 100).toFixed(2)}% calc(${((1 - splitX) * 100).toFixed(2)}% - 4px)`,
+							gridTemplateRows: `${(splitY * 100).toFixed(2)}% calc(${((1 - splitY) * 100).toFixed(2)}% - 4px)`,
+						}}
+					>
+						{renderAxialViewport("flex flex-col w-full h-full")}
+						{renderCoronalViewport("flex flex-col w-full h-full")}
+						{renderSagittalViewport("flex flex-col w-full h-full")}
+						{renderPanoramicViewport("flex flex-col w-full h-full")}
+					</div>
+
+					{/* Mobile fallback (tabs) */}
+					<div className="flex lg:hidden w-full h-full">
+						{renderAxialViewport(mobileActiveTab === "axial" ? "flex-1 flex flex-col w-full h-full" : "hidden")}
+						{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col w-full h-full" : "hidden")}
+						{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col w-full h-full" : "hidden")}
+						{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col w-full h-full" : "hidden")}
+					</div>
+
+					{/* Interactive Splitter Controls (Desktop only) */}
+					{/* 1. Vertical Splitter Bar */}
+					<div
+						onPointerDown={(e) => {
+							e.preventDefault();
+							setIsDraggingSplitter("x");
+						}}
+						style={{ left: `calc(${(splitX * 100).toFixed(2)}% - 3px)` }}
+						className="hidden lg:block absolute top-0 bottom-0 w-1.5 cursor-col-resize z-30 group"
+						title="Перетащите для изменения ширины окон (двойной клик — сброс 50%)"
+						onDoubleClick={() => setSplitX(0.5)}
+					>
+						<div className="w-0.5 h-full mx-auto bg-zinc-800 group-hover:bg-cyan-500/80 transition-colors" />
+					</div>
+
+					{/* 2. Horizontal Splitter Bar */}
+					<div
+						onPointerDown={(e) => {
+							e.preventDefault();
+							setIsDraggingSplitter("y");
+						}}
+						style={{ top: `calc(${(splitY * 100).toFixed(2)}% - 3px)` }}
+						className="hidden lg:block absolute left-0 right-0 h-1.5 cursor-row-resize z-30 group"
+						title="Перетащите для изменения высоты окон (двойной клик — сброс 50%)"
+						onDoubleClick={() => setSplitY(0.5)}
+					>
+						<div className="h-0.5 w-full my-auto bg-zinc-800 group-hover:bg-cyan-500/80 transition-colors" />
+					</div>
+
+					{/* 3. Central 4-Way Crosshair Splitter Knob */}
+					<div
+						onPointerDown={(e) => {
+							e.preventDefault();
+							setIsDraggingSplitter("center");
+						}}
+						onDoubleClick={() => {
+							setSplitX(0.5);
+							setSplitY(0.5);
+						}}
+						style={{
+							left: `calc(${(splitX * 100).toFixed(2)}% - 7px)`,
+							top: `calc(${(splitY * 100).toFixed(2)}% - 7px)`,
+						}}
+						className="hidden lg:flex absolute w-3.5 h-3.5 rounded-full bg-zinc-900 border border-zinc-700 hover:border-cyan-400 hover:bg-cyan-950 items-center justify-center cursor-move z-40 shadow-md group transition-transform hover:scale-125"
+						title="4-сторонний сплиттер: перетащите для изменения размеров окон (двойной клик — сброс 50/50)"
+						data-testid="cbct-mpr-grid-splitter-knob"
+					>
+						<div className="w-1 h-1 rounded-full bg-zinc-400 group-hover:bg-cyan-400" />
+					</div>
 				</div>
 			)}
 			{dicomLoadingStatus && volume && (

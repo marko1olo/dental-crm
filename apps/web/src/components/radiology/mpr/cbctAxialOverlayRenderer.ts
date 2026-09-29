@@ -51,6 +51,8 @@ export function drawAxialMprOverlay(
 		activeRotationHandle,
 		hoveredHandle,
 		showDentalArch,
+		showEdgeRulers,
+		isHovered,
 		archCurve,
 		activeCrossSection,
 		selectedArchAnchorIdx,
@@ -305,7 +307,9 @@ export function drawAxialMprOverlay(
 		heightPx: metadata.heightPx,
 		pixelSpacingMmX: metadata.pixelSpacingX,
 		pixelSpacingMmY: metadata.pixelSpacingY,
-		showScaleBar: true,
+		showXAxis: Boolean(showEdgeRulers),
+		showYAxis: Boolean(showEdgeRulers),
+		showScaleBar: false,
 		invertColors,
 		transform,
 	});
@@ -455,6 +459,7 @@ export function drawAxialMprOverlay(
 		showHandles: true,
 		showAngleBadge: true,
 		invertColors,
+		isHovered,
 	});
 
 	if (showDentalArch && archCurve) {

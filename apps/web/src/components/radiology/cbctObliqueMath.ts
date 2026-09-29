@@ -124,6 +124,8 @@ export interface ObliqueCrosshairDrawOptions {
 	readonly showHandles?: boolean;
 	readonly showAngleBadge?: boolean;
 	readonly invertColors?: boolean;
+	readonly isHovered?: boolean | undefined;
+	readonly centerGapPx?: number;
 }
 
 // ─── 2. INTERACTIVE WINDOW / LEVEL & ZOOM / PAN MATH ─────────────────────────
@@ -393,101 +395,126 @@ export function drawObliqueCrosshairWithRotationHandles(
 		// WCAG AAA high-contrast palette for negative LUT (contrast >= 4.5:1 on pure white air & cortical bone, DEF-B03)
 		switch (plane) {
 			case "axial":
-				axisColor1 = "#c2410c"; // Deep Amber/Orange (contrast 5.75:1 on #ffffff)
-				axisColor2 = "#16a34a"; // Deep Emerald/Green (contrast 4.82:1 on #ffffff)
-				planeAccentColor = "#0284c7"; // Deep Cyan/Sky (contrast 4.67:1 on #ffffff)
+				axisColor1 = "#059669"; // Deep Emerald/Green (Coronal / Y)
+				axisColor2 = "#e11d48"; // Deep Rose/Red (Sagittal / X)
+				planeAccentColor = "#0284c7"; // Deep Cyan/Sky (Axial / Z)
 				break;
 			case "coronal":
-				axisColor1 = "#0284c7"; // Deep Cyan/Sky
-				axisColor2 = "#16a34a"; // Deep Emerald/Green
-				planeAccentColor = "#c2410c"; // Deep Amber/Orange
+				axisColor1 = "#0284c7"; // Deep Cyan/Sky (Axial / Z)
+				axisColor2 = "#e11d48"; // Deep Rose/Red (Sagittal / X)
+				planeAccentColor = "#059669"; // Deep Emerald/Green (Coronal / Y)
 				break;
 			case "sagittal":
-				axisColor1 = "#0284c7"; // Deep Cyan/Sky
-				axisColor2 = "#c2410c"; // Deep Amber/Orange
-				planeAccentColor = "#16a34a"; // Deep Emerald/Green
+				axisColor1 = "#0284c7"; // Deep Cyan/Sky (Axial / Z)
+				axisColor2 = "#059669"; // Deep Emerald/Green (Coronal / Y)
+				planeAccentColor = "#e11d48"; // Deep Rose/Red (Sagittal / X)
 				break;
 		}
 	} else {
+		// International Medical Standard RGB = XYZ: Red = Sagittal (X), Green = Coronal (Y), Blue = Axial (Z)
 		switch (plane) {
 			case "axial":
-				axisColor1 = ROMEXIS_COLORS.coronal; // Amber
-				axisColor2 = ROMEXIS_COLORS.sagittal; // Emerald
-				planeAccentColor = ROMEXIS_COLORS.axial; // Cyan
+				axisColor1 = ROMEXIS_COLORS.coronal; // Green/Emerald (#10b981) - horizontal axis (Coronal plane)
+				axisColor2 = ROMEXIS_COLORS.sagittal; // Red/Rose (#f43f5e) - vertical axis (Sagittal plane)
+				planeAccentColor = ROMEXIS_COLORS.axial; // Cyan/Blue (#06b6d4)
 				break;
 			case "coronal":
-				axisColor1 = ROMEXIS_COLORS.axial; // Cyan
-				axisColor2 = ROMEXIS_COLORS.sagittal; // Emerald
-				planeAccentColor = ROMEXIS_COLORS.coronal; // Amber
+				axisColor1 = ROMEXIS_COLORS.axial; // Cyan/Blue (#06b6d4) - horizontal axis (Axial plane)
+				axisColor2 = ROMEXIS_COLORS.sagittal; // Red/Rose (#f43f5e) - vertical axis (Sagittal plane)
+				planeAccentColor = ROMEXIS_COLORS.coronal; // Green/Emerald (#10b981)
 				break;
 			case "sagittal":
-				axisColor1 = ROMEXIS_COLORS.axial; // Cyan
-				axisColor2 = ROMEXIS_COLORS.coronal; // Amber
-				planeAccentColor = ROMEXIS_COLORS.sagittal; // Emerald
+				axisColor1 = ROMEXIS_COLORS.axial; // Cyan/Blue (#06b6d4) - horizontal axis (Axial plane)
+				axisColor2 = ROMEXIS_COLORS.coronal; // Green/Emerald (#10b981) - vertical axis (Coronal plane)
+				planeAccentColor = ROMEXIS_COLORS.sagittal; // Red/Rose (#f43f5e)
 				break;
 		}
 	}
 
-	ctx.save();
+	const isHovered = options.isHovered ?? false;
+	const isInteracting = activeHandle !== null || hoveredHandle !== null || isHovered;
+	// Translucency in rest state (30% opacity) to keep anatomy and micro-cracks visible; full 95% opacity on hover/drag
+	const restAlpha = isInteracting ? 0.95 : 0.30;
 
+	ctx.save();
+	ctx.globalAlpha = restAlpha;
+
+	const gap = options.centerGapPx ?? 11.0;
 	const diag = Math.hypot(widthPx, heightPx);
 
-	// 1. Axis 1 (Primary horizontal axis when rotation = 0) with dark halo underlay (DEF-B03)
+	// 1. Axis 1 (Primary horizontal axis when rotation = 0) with dark halo underlay and center gap
 	ctx.save();
 	ctx.shadowColor = invertColors ? "rgba(0, 0, 0, 0.95)" : "rgba(0, 0, 0, 0.85)";
 	ctx.shadowBlur = invertColors ? 4 : 3;
 	ctx.strokeStyle = axisColor1;
 	ctx.lineWidth = invertColors ? 1.4 : 1.2;
 	ctx.beginPath();
+	// Segment 1A (negative side)
 	ctx.moveTo(centerPx.x - diag * cosA, centerPx.y - diag * sinA);
+	ctx.lineTo(centerPx.x - gap * cosA, centerPx.y - gap * sinA);
+	// Segment 1B (positive side)
+	ctx.moveTo(centerPx.x + gap * cosA, centerPx.y + gap * sinA);
 	ctx.lineTo(centerPx.x + diag * cosA, centerPx.y + diag * sinA);
 	ctx.stroke();
 
-	// 2. Axis 2 (Secondary vertical axis when rotation = 0) with dark halo underlay (DEF-B03)
+	// 2. Axis 2 (Secondary vertical axis when rotation = 0) with dark halo underlay and center gap
 	ctx.strokeStyle = axisColor2;
 	ctx.lineWidth = invertColors ? 1.4 : 1.2;
 	ctx.beginPath();
+	// Segment 2A (positive side)
 	ctx.moveTo(centerPx.x + diag * sinA, centerPx.y - diag * cosA);
+	ctx.lineTo(centerPx.x + gap * sinA, centerPx.y - gap * cosA);
+	// Segment 2B (negative side)
+	ctx.moveTo(centerPx.x - gap * sinA, centerPx.y + gap * cosA);
 	ctx.lineTo(centerPx.x - diag * sinA, centerPx.y + diag * cosA);
 	ctx.stroke();
 	ctx.restore();
 
-	// 3. Central Reticle Target Ring (Double circle for precision navigation and 1-click reset hit target)
-	ctx.strokeStyle = "rgba(9, 9, 11, 0.95)";
-	ctx.lineWidth = 3.0;
+	// 3. Central Reticle Micro-Plus (Span 7px, delicate targeting reticle with concentric empty gap radius 11px)
+	// Zero circle obstruction: micro-plus targeting at center + 11px clear gap + outer guide lines
+	const microArm = 3.5;
+	ctx.save();
+	// Pass 1: Dark outer halo for central micro-plus
+	ctx.shadowColor = invertColors ? "rgba(255, 255, 255, 0.9)" : "rgba(0, 0, 0, 0.95)";
+	ctx.shadowBlur = 2;
+	ctx.strokeStyle = invertColors ? "rgba(255, 255, 255, 0.8)" : "rgba(0, 0, 0, 0.9)";
+	ctx.lineWidth = 2.0;
 	ctx.beginPath();
-	ctx.arc(centerPx.x, centerPx.y, 4.5, 0, Math.PI * 2);
+	// Arm 1 halo
+	ctx.moveTo(centerPx.x - microArm * cosA, centerPx.y - microArm * sinA);
+	ctx.lineTo(centerPx.x + microArm * cosA, centerPx.y + microArm * sinA);
+	// Arm 2 halo
+	ctx.moveTo(centerPx.x - microArm * sinA, centerPx.y + microArm * cosA);
+	ctx.lineTo(centerPx.x + microArm * sinA, centerPx.y - microArm * cosA);
 	ctx.stroke();
 
-	ctx.strokeStyle = "#ffffff";
-	ctx.lineWidth = 1.5;
+	// Pass 2: Sharp colored inner micro-plus arms
+	ctx.shadowBlur = 0;
+	ctx.lineWidth = 1.0;
+	// Arm 1 (Axis 1 color)
+	ctx.strokeStyle = axisColor1;
 	ctx.beginPath();
-	ctx.arc(centerPx.x, centerPx.y, 4.5, 0, Math.PI * 2);
+	ctx.moveTo(centerPx.x - microArm * cosA, centerPx.y - microArm * sinA);
+	ctx.lineTo(centerPx.x + microArm * cosA, centerPx.y + microArm * sinA);
 	ctx.stroke();
 
-	ctx.fillStyle = planeAccentColor;
+	// Arm 2 (Axis 2 color)
+	ctx.strokeStyle = axisColor2;
 	ctx.beginPath();
-	ctx.arc(centerPx.x, centerPx.y, 1.5, 0, Math.PI * 2);
-	ctx.fill();
+	ctx.moveTo(centerPx.x - microArm * sinA, centerPx.y + microArm * cosA);
+	ctx.lineTo(centerPx.x + microArm * sinA, centerPx.y - microArm * cosA);
+	ctx.stroke();
+	ctx.restore();
 
 	// 4. Rotation Handles & Circular Arc Indicator
 	if (showHandles) {
 		const handles = getRotationHandles(plane, widthPx, heightPx, centerPx, handleDistancePx, safeRotationDeg);
 
-		// Circular guide track (Dashed background ring)
-		ctx.strokeStyle = invertColors ? "rgba(24, 24, 27, 0.45)" : "rgba(113, 113, 122, 0.25)";
-		ctx.lineWidth = 1.0;
-		ctx.setLineDash([2, 3]);
-		ctx.beginPath();
-		ctx.arc(centerPx.x, centerPx.y, handleDistancePx, 0, Math.PI * 2);
-		ctx.stroke();
-		ctx.setLineDash([]);
-
-		// Rotational Arc Sector (Visualizes angle swept from 0 deg to current rotation)
+		// Rotational Arc Sector (Visualizes angle swept from 0 deg to current rotation when tilted)
 		if (Math.abs(safeRotationDeg) > 0.1) {
 			ctx.save();
 			ctx.strokeStyle = planeAccentColor;
-			ctx.lineWidth = 2.0;
+			ctx.lineWidth = 1.4;
 			ctx.shadowColor = "rgba(0, 0, 0, 0.95)";
 			ctx.shadowBlur = 4;
 			ctx.beginPath();
@@ -500,27 +527,46 @@ export function drawObliqueCrosshairWithRotationHandles(
 			ctx.restore();
 		}
 
-		// 4 Handle Knobs at the axis ends
+		// 4 Elegant Medical Reticle Rotation Handles (Delicate tick marks with micro-pips)
 		for (const h of handles) {
 			const isActive = activeHandle === h.position;
 			const isHovered = hoveredHandle === h.position;
 			const color = h.position.startsWith("u") ? axisColor1 : axisColor2;
-			const knobRadius = isActive ? 7.0 : isHovered ? 6.0 : 4.5;
+
+			// Axis direction and perpendicular normal unit vectors
+			const dx = (h.canvasX - centerPx.x) / (handleDistancePx || 1);
+			const dy = (h.canvasY - centerPx.y) / (handleDistancePx || 1);
+			const perpX = -dy;
+			const perpY = dx;
+			const tickHalf = isActive ? 7.0 : isHovered ? 6.0 : 4.5;
+			const pipRadius = isActive ? 3.0 : isHovered ? 2.4 : 1.8;
 
 			ctx.save();
-			// Dual-contrast halo for WCAG AAA visibility on both pure white (cortical bone, implants +3071 HU)
-			// and pure black (air -1000 HU, background) areas of the CT slice.
-			// Pass 1: Dark outer halo contour to separate knob from bright structures.
-			ctx.beginPath();
-			ctx.arc(h.canvasX, h.canvasY, knobRadius, 0, Math.PI * 2);
+			// Pass 1: Dark outer halo for cross-tick on bright cortical bone or implants
 			ctx.strokeStyle = "rgba(9, 9, 11, 0.95)";
-			ctx.lineWidth = 3.2;
+			ctx.lineWidth = isActive ? 3.6 : isHovered ? 3.0 : 2.4;
+			ctx.beginPath();
+			ctx.moveTo(h.canvasX - perpX * tickHalf, h.canvasY - perpY * tickHalf);
+			ctx.lineTo(h.canvasX + perpX * tickHalf, h.canvasY + perpY * tickHalf);
 			ctx.stroke();
 
-			// Pass 2: High-contrast inner border
+			// Pass 2: High-contrast inner colored cross-tick
+			ctx.strokeStyle = isActive ? "#ffffff" : color;
+			ctx.lineWidth = isActive ? 1.8 : isHovered ? 1.5 : 1.2;
 			ctx.beginPath();
-			ctx.arc(h.canvasX, h.canvasY, knobRadius, 0, Math.PI * 2);
+			ctx.moveTo(h.canvasX - perpX * tickHalf, h.canvasY - perpY * tickHalf);
+			ctx.lineTo(h.canvasX + perpX * tickHalf, h.canvasY + perpY * tickHalf);
+			ctx.stroke();
 
+			// Pass 3A: Outer dark contour halo for pip marker (Anti-washout over bright cortical bone or implants)
+			ctx.beginPath();
+			ctx.arc(h.canvasX, h.canvasY, pipRadius + 0.8, 0, Math.PI * 2);
+			ctx.fillStyle = "rgba(9, 9, 11, 0.95)";
+			ctx.fill();
+
+			// Pass 3B: Inner calibrated pip marker
+			ctx.beginPath();
+			ctx.arc(h.canvasX, h.canvasY, pipRadius, 0, Math.PI * 2);
 			if (isActive) {
 				ctx.fillStyle = "#ffffff";
 				ctx.shadowColor = color;
@@ -532,12 +578,11 @@ export function drawObliqueCrosshairWithRotationHandles(
 			} else {
 				ctx.fillStyle = color;
 				ctx.shadowColor = invertColors ? "rgba(0, 0, 0, 0.95)" : "rgba(0, 0, 0, 0.85)";
-				ctx.shadowBlur = 4;
+				ctx.shadowBlur = 3;
 			}
-
 			ctx.fill();
 			ctx.strokeStyle = invertColors ? "rgba(9, 9, 11, 0.95)" : "#ffffff";
-			ctx.lineWidth = 1.4;
+			ctx.lineWidth = 0.8;
 			ctx.stroke();
 			ctx.restore();
 		}

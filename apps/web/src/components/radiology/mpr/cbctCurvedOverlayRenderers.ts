@@ -298,7 +298,7 @@ export function drawPanoramicOverlay(
 		heightPx: activePano.heightPx,
 		pixelSpacingMmX: archCurve.totalArcLengthMm / activePano.widthPx,
 		pixelSpacingMmY: 38.0 / activePano.heightPx,
-		showScaleBar: true,
+		showScaleBar: false,
 		invertColors,
 		transform,
 	});
@@ -569,7 +569,7 @@ export function drawCrossSectionOverlay(
 		pixelSpacingMmX: pxSpacing,
 		pixelSpacingMmY: pxSpacing,
 		showGrid: true,
-		showScaleBar: true,
+		showScaleBar: false,
 		invertColors,
 		transform,
 	});

@@ -647,6 +647,9 @@ export const CbctMprImplantStudioModal: React.FC<
 						handleDicomFilesChange={dicomLoader.handleDicomFilesChange}
 						activeViewport={activeViewport}
 						setActiveViewport={setActiveViewport}
+						hoveredViewport={hoveredViewport}
+						onHoverViewport={setHoveredViewport}
+						showEdgeRulers={showEdgeRulers}
 						handleToggleMaximize={handleToggleMaximize}
 						axialBaseCanvasRef={axialBaseCanvasRef}
 						axialOverlayCanvasRef={axialOverlayCanvasRef}

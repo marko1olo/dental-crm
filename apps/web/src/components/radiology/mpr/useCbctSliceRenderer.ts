@@ -91,6 +91,7 @@ export interface UseCbctSliceRendererParams {
 	activeRotationHandle: { plane: MprPlane; handle: RotationHandlePosition; centerPx: { x: number; y: number } } | null;
 	hoveredHandle: { plane: MprPlane; handle: RotationHandlePosition } | null;
 	showDentalArch: boolean;
+	showEdgeRulers?: boolean;
 	archCurve: DentalArchCurve;
 	activeCrossSection: CrossSectionSliceData | null;
 	currentImplantSpec: VirtualImplantSpec;
@@ -103,6 +104,7 @@ export interface UseCbctSliceRendererParams {
 	currentCanal: MandibularCanalCrossSection;
 	hoveredImplantPart: string | null;
 	dragImplantPart: string | null;
+	hoveredViewport?: CbctViewportType | null;
 	// Canvas refs
 	axialBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
 	axialOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -608,6 +610,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 			activeRotationHandle: activeRotationHandle ? { plane: activeRotationHandle.plane, handle: activeRotationHandle.handle } : null,
 			hoveredHandle,
 			showDentalArch,
+			showEdgeRulers: params.showEdgeRulers,
 			archCurve,
 			activeCrossSection,
 			selectedArchAnchorIdx,
@@ -629,6 +632,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 				ctx.clearRect(0, 0, w, h);
 				drawAxialMprOverlay(ctx, {
 					...baseOverlayParams,
+					isHovered: params.hoveredViewport === "axial",
 					transform: transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM,
 				});
 			}
@@ -650,6 +654,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 				ctx.clearRect(0, 0, w, h);
 				drawCoronalMprOverlay(ctx, {
 					...baseOverlayParams,
+					isHovered: params.hoveredViewport === "coronal",
 					transform: transforms.coronal ?? DEFAULT_VIEWPORT_TRANSFORM,
 				});
 			}
@@ -671,6 +676,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 				ctx.clearRect(0, 0, w, h);
 				drawSagittalMprOverlay(ctx, {
 					...baseOverlayParams,
+					isHovered: params.hoveredViewport === "sagittal",
 					transform: transforms.sagittal ?? DEFAULT_VIEWPORT_TRANSFORM,
 				});
 			}
@@ -765,6 +771,8 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 		activeRotationHandle,
 		hoveredHandle,
 		showDentalArch,
+		params.showEdgeRulers,
+		params.hoveredViewport,
 		archCurve,
 		activeCrossSection,
 		selectedArchAnchorIdx,

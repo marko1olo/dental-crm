@@ -14,12 +14,12 @@ export { CRISP_OVERLAY_PAD_BG, drawMeasurementDeleteButton, drawMandibularNerveB
 
 
 export const ROMEXIS_COLORS = {
-	axial: "#06b6d4", // Cyan (Horizontal / Z-plane)
+	axial: "#06b6d4", // Cyan / Blue (Horizontal / Z-plane / B in RGB)
 	axialRgba: (alpha = 1) => `rgba(6, 182, 212, ${alpha})`,
-	coronal: "#f97316", // Orange (Frontal / Y-plane)
-	coronalRgba: (alpha = 1) => `rgba(249, 115, 22, ${alpha})`,
-	sagittal: "#22c55e", // Emerald Green (Profile / X-plane)
-	sagittalRgba: (alpha = 1) => `rgba(34, 197, 94, ${alpha})`,
+	coronal: "#10b981", // Emerald Green (Frontal / Y-plane / G in RGB)
+	coronalRgba: (alpha = 1) => `rgba(16, 185, 129, ${alpha})`,
+	sagittal: "#f43f5e", // Rose Red (Profile / X-plane / R in RGB)
+	sagittalRgba: (alpha = 1) => `rgba(244, 63, 94, ${alpha})`,
 	panoramic: "#a855f7", // Purple (Dental Arch Spline)
 	panoramicRgba: (alpha = 1) => `rgba(168, 85, 247, ${alpha})`,
 	crossSection: "#eab308", // Yellow (Transverse Cross-Section)
@@ -175,7 +175,7 @@ export function drawCalibratedMillimeterRulers(
 		showXAxis = true,
 		showYAxis = true,
 		showGrid = false,
-		showScaleBar = true,
+		showScaleBar = false,
 		invertColors = false,
 		transform,
 	} = options;

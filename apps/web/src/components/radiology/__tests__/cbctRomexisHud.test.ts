@@ -20,17 +20,17 @@ import {
 describe("Planmeca Romexis 6.x & Vatech Ez3D-i 4-Viewport Calibration & HUD Suite", () => {
 	describe("1. Standard Romexis Color System & Translucency Helpers", () => {
 		it("provides standard Romexis 6.x color hex codes", () => {
-			assert.equal(ROMEXIS_COLORS.axial, "#06b6d4"); // Cyan
-			assert.equal(ROMEXIS_COLORS.coronal, "#f97316"); // Orange
-			assert.equal(ROMEXIS_COLORS.sagittal, "#22c55e"); // Green
+			assert.equal(ROMEXIS_COLORS.axial, "#06b6d4"); // Cyan / Blue (Z)
+			assert.equal(ROMEXIS_COLORS.coronal, "#10b981"); // Green / Emerald (Y)
+			assert.equal(ROMEXIS_COLORS.sagittal, "#f43f5e"); // Red / Rose (X)
 			assert.equal(ROMEXIS_COLORS.panoramic, "#a855f7"); // Purple
 			assert.equal(ROMEXIS_COLORS.crossSection, "#eab308"); // Yellow
 		});
 
 		it("generates correct RGBA strings with alpha channels", () => {
 			assert.equal(ROMEXIS_COLORS.axialRgba(0.5), "rgba(6, 182, 212, 0.5)");
-			assert.equal(ROMEXIS_COLORS.coronalRgba(0.8), "rgba(249, 115, 22, 0.8)");
-			assert.equal(ROMEXIS_COLORS.sagittalRgba(0.65), "rgba(34, 197, 94, 0.65)");
+			assert.equal(ROMEXIS_COLORS.coronalRgba(0.8), "rgba(16, 185, 129, 0.8)");
+			assert.equal(ROMEXIS_COLORS.sagittalRgba(0.65), "rgba(244, 63, 94, 0.65)");
 			assert.equal(ROMEXIS_COLORS.panoramicRgba(0.2), "rgba(168, 85, 247, 0.2)");
 			assert.equal(ROMEXIS_COLORS.crossSectionRgba(0.9), "rgba(234, 179, 8, 0.9)");
 		});

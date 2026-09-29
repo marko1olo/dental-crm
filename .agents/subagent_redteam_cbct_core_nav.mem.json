@@ -10,9 +10,16 @@
     "Audit and fix coronal/sagittal canvas height calculation in apps/web/src/components/radiology/mpr/useCbctSliceRenderer.ts for anisotropic volumes",
     "Audit and fix mouse wheel slice delta inversion, oblique 3D normal vector slice stepping, outside-canvas mouseup drag cleanup, and passive page-scroll prevention in apps/web/src/components/radiology/mpr/useCbctInteractionHandlers.ts",
     "Audit and fix type narrowing in apps/web/src/components/radiology/__tests__/cbctHardwareGpuTorture.test.ts",
-    "Executed 7 radiology unit test suites: 160 tests PASS (0 fail, 0 skipped)",
+    "Implement International Standard RGB = XYZ Color System (Axial: Cyan/Blue, Coronal: Green/Emerald, Sagittal: Red/Rose)",
+    "Refactor Reticle Handles: delicate medical cross-ticks with dual-contrast outer dark halo + inner border, center micro-plus (span 7px) with 11px concentric gap and zero center circle obstruction",
+    "Implement 30% rest opacity for crosshair reticles, lighting up smoothly to 95% on hover/drag",
+    "Completely eradicate 10mm corner scale bar across all overlays (showScaleBar: false default)",
+    "Implement Edge Millimeter Rulers toggle in CbctHeaderBar popover and wire showEdgeRulers down to all MPR overlay renderers",
+    "Implement full CSS tooltips with Russian title, purpose, and keybindings across all 16+ buttons in CbctLeftToolDock",
+    "Implement 4-way interactive 2x2 grid resizer (splitX / splitY) with col-resize, row-resize, central crosshair knob, and double-click 50/50 reset in CbctMprViewportsGrid",
+    "Pass all 6 unit test suites: 166 tests PASS (0 fail, 0 skipped)",
     "Run typecheck: npm run typecheck -w @dental/web -> Exit code 0",
-    "Run check:encoding -> 6295 files checked, 0 errors",
+    "Run check:encoding -> 6302 files checked, 0 errors",
     "Per-file git add strictly scoped to assigned files and verbatim reporting back to parent orchestrator"
   ],
   "pending_steps": [],
@@ -22,6 +29,12 @@
     "DEFECT: Wheel slice scrolling ignored oblique plane tilt and moved along raw orthogonal Z. Fixed via basis.normal * stepMm projection.",
     "DEFECT: Mouse drag sticking on cursor when mouse released outside canvas element. Fixed with window.addEventListener('mouseup') listener.",
     "DEFECT: Browser page scrolled while wheel-scrubbing CBCT slices. Fixed by attaching non-passive wheel event listeners with preventDefault().",
-    "DEFECT: Coronal/Sagittal viewport overlay canvas height unscaled for anisotropic volumes. Fixed using Math.round((depth * spZ) / spX_or_Y)."
+    "DEFECT: Coronal/Sagittal viewport overlay canvas height unscaled for anisotropic volumes. Fixed using Math.round((depth * spZ) / spX_or_Y).",
+    "DEFECT: Non-standard RGB colors (orange for coronal, green for sagittal). Fixed to match international DICOM standard: Green = Coronal (Y), Red = Sagittal (X), Cyan/Blue = Axial (Z).",
+    "DEFECT: Fat circular rotation knobs and center ring occluded voxel anatomy directly under reticle. Fixed with delicate transverse cross-ticks, micro-plus (span 7px), 11px concentric gap, and zero circle obstruction.",
+    "DEFECT: Reticles washed out anatomy in rest state. Fixed with 30% rest opacity, brightening to 95% on hover/interaction.",
+    "DEFECT: Corner 10mm scale bars caused visual clutter. Turned off by default (showScaleBar: false).",
+    "DEFECT: 4-quadrant MPR grid was fixed 50/50 without user resizing. Fixed with 4-way interactive splitter with X/Y/center drag and double-click reset.",
+    "DEFECT: Dock buttons lacked hover hints. Added rich tooltips with keybindings to all buttons."
   ]
 }

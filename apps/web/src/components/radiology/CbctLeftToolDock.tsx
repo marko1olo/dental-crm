@@ -237,7 +237,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
-						title="Перекрестие (Синхронная 3D навигация) [C]"
+						title="Перекрестие (3D навигация) [C]"
 						aria-label="Перекрестие"
 						data-testid="cbct-tool-crosshair"
 					>
@@ -247,10 +247,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						role="tooltip"
 						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
-						<span className="font-semibold">Перекрестие</span>
-						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Навигация по срезам</span>
+						<span className="font-semibold text-cyan-300">Перекрестие</span>
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">3D навигация по срезам</span>
 						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							C
+							C / ЛКМ
 						</kbd>
 					</div>
 				</div>
@@ -265,8 +265,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
-						title="Панорама (Перемещение среза) [P]"
-						aria-label="Панорама"
+						title="Панорамирование (H / СКМ)"
+						aria-label="Панорамирование"
 						data-testid="cbct-tool-pan"
 					>
 						<Hand className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
@@ -275,10 +275,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						role="tooltip"
 						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
-						<span className="font-semibold">Панорама</span>
+						<span className="font-semibold text-cyan-300">Панорамирование</span>
 						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Сдвиг проекции</span>
 						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							P
+							H / СКМ
 						</kbd>
 					</div>
 				</div>
@@ -293,8 +293,8 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
-						title="Лупа / Зум (Масштабирование) [Z]"
-						aria-label="Лупа / Зум"
+						title="Зум (Z / Ctrl+Колесо)"
+						aria-label="Зум"
 						data-testid="cbct-tool-zoom"
 					>
 						<ZoomIn className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
@@ -303,10 +303,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						role="tooltip"
 						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
-						<span className="font-semibold">Зум</span>
-						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Приближение / Отдаление</span>
+						<span className="font-semibold text-cyan-300">Зум</span>
+						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Масштабирование</span>
 						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							Z
+							Z / Ctrl+Колесо
 						</kbd>
 					</div>
 				</div>
@@ -321,7 +321,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
-						title="Окно W/L (Яркость и Контраст) [W]"
+						title="Контраст W/L (W / ПКМ)"
 						aria-label="Окно W/L"
 						data-testid="cbct-tool-window_level"
 					>
@@ -331,10 +331,10 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						role="tooltip"
 						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
 					>
-						<span className="font-semibold">Окно W/L</span>
+						<span className="font-semibold text-cyan-300">Контраст W/L</span>
 						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Яркость / Контраст HU</span>
 						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							W
+							W / ПКМ
 						</kbd>
 					</div>
 				</div>
@@ -571,7 +571,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 			{/* ─── GROUP 3 & 4: SLAB THICKNESS / MIP & HU PRESETS ─────────── */}
 			<div className="flex flex-row md:flex-col items-center gap-1.5 shrink-0">
 				{/* 9. Slab Thickness & MIP Flyout */}
-				<div className="relative flex items-center justify-center">
+				<div className="relative group flex items-center justify-center">
 					<button
 						type="button"
 						onClick={() => toggleMenu("slab")}
@@ -580,7 +580,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
-						title="Толщина среза & Режимы MIP"
+						title="Толщина среза & Режимы MIP [L]"
 						aria-label="Толщина среза и MIP"
 						aria-expanded={openMenu === "slab"}
 						data-testid="cbct-tool-slab"
@@ -597,6 +597,19 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						</span>
 					</button>
 
+					{openMenu === "none" && (
+						<div
+							role="tooltip"
+							className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
+						>
+							<span className="font-semibold text-cyan-300">Толщина среза</span>
+							<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Сляб MIP / MinIP / Avg</span>
+							<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
+								L
+							</kbd>
+						</div>
+					)}
+
 					{/* Flyout Popover for Slab Thickness & Projection Mode */}
 					{openMenu === "slab" && (
 						<CbctSlabFlyout
@@ -610,7 +623,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 				</div>
 
 				{/* 10. HU Window/Level Presets Flyout */}
-				<div className="relative flex items-center justify-center">
+				<div className="relative group flex items-center justify-center">
 					<button
 						type="button"
 						onClick={() => toggleMenu("hu")}
@@ -619,7 +632,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
-						title="Пресеты контраста HU (Зубы, Эндо, Кортикал, Мягкие ткани, Пазухи)"
+						title="Пресеты контраста HU [F]"
 						aria-label="HU Пресеты контраста"
 						aria-expanded={openMenu === "hu"}
 						data-testid="cbct-tool-hu-presets"
@@ -629,6 +642,19 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							HU
 						</span>
 					</button>
+
+					{openMenu === "none" && (
+						<div
+							role="tooltip"
+							className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
+						>
+							<span className="font-semibold text-cyan-300">Пресеты HU</span>
+							<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Кость / Эндо / Ткани</span>
+							<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
+								F
+							</kbd>
+						</div>
+					)}
 
 					{/* Flyout Popover for HU Window/Level Presets */}
 					{openMenu === "hu" && (
@@ -717,7 +743,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						type="button"
 						onClick={onResetAll}
 						className="w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-amber-300 hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-amber-500/40 transition-all duration-150"
-						title="Сброс осей, зума и панорамы"
+						title="Сброс осей, зума и панорамы [Home]"
 						aria-label="Сбросить оси и зум"
 						data-testid="cbct-tool-reset-all"
 					>
@@ -729,11 +755,14 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					>
 						<span className="font-semibold text-amber-300">Сброс осей и зума</span>
 						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Возврат в исходное 0°</span>
+						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
+							Home
+						</kbd>
 					</div>
 				</div>
 
 				{/* 13. Load Real CBCT / DICOM */}
-				<div className="relative flex items-center justify-center">
+				<div className="relative group flex items-center justify-center">
 					<button
 						type="button"
 						onClick={() => toggleMenu("dicom")}
@@ -742,13 +771,26 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 								? "bg-[var(--teal-soft,rgba(6,182,212,0.15))] text-[var(--teal,#22d3ee)] border border-[var(--teal,#06b6d4)]/60 shadow-xs shadow-cyan-950/40"
 								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-cyan-300 hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
 						}`}
-						title="Загрузить КТ / DICOM"
+						title="Загрузить КТ / DICOM [O]"
 						aria-label="Загрузить КТ / DICOM"
 						aria-expanded={openMenu === "dicom"}
 						data-testid="cbct-tool-dicom"
 					>
 						<FolderOpen className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
+
+					{openMenu === "none" && (
+						<div
+							role="tooltip"
+							className="pointer-events-none absolute left-full ml-2 bottom-2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
+						>
+							<span className="font-semibold text-cyan-300">Загрузить DICOM</span>
+							<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Открыть папку или ZIP</span>
+							<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
+								O
+							</kbd>
+						</div>
+					)}
 
 					{/* DICOM Ingestion Flyout Menu */}
 					{openMenu === "dicom" && (

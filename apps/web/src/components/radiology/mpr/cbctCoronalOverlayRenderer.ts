@@ -48,6 +48,8 @@ export function drawCoronalMprOverlay(
 		obliqueAngles,
 		activeRotationHandle,
 		hoveredHandle,
+		showEdgeRulers,
+		isHovered,
 	} = params;
 
 	const metadata = {
@@ -233,7 +235,9 @@ export function drawCoronalMprOverlay(
 		heightPx: metadata.heightPx,
 		pixelSpacingMmX: metadata.pixelSpacingX,
 		pixelSpacingMmY: metadata.pixelSpacingY,
-		showScaleBar: true,
+		showXAxis: Boolean(showEdgeRulers),
+		showYAxis: Boolean(showEdgeRulers),
+		showScaleBar: false,
 		invertColors,
 		transform,
 	});
@@ -372,5 +376,6 @@ export function drawCoronalMprOverlay(
 		showHandles: true,
 		showAngleBadge: true,
 		invertColors,
+		isHovered,
 	});
 }
