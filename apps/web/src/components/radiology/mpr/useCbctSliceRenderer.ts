@@ -1,3 +1,15 @@
+/**
+ * DENTE CRM — CBCT MPR Slice Renderer Hook with Multi-Threaded Web Worker (FEAT-010)
+ * Standards: DICOM Part 3 PS 3.3, Planmeca Romexis 6.x, Vatech Ez3D-i
+ *
+ * Capabilities:
+ * 1. Offloads sub-voxel trilinear slice reslicing to dedicated Web Worker thread.
+ * 2. Instantaneous (60 FPS) viewport pan & zoom without slice re-computation.
+ * 3. Request cancellation & animation frame batching during rapid scrubbing/scroll.
+ * 4. Transparent fallback to synchronous rendering in Node/SSR/CSP environments.
+ * 5. Full overlay vector layers for calipers, nerves, implants, and dental arch.
+ */
+
 import React, { useEffect, useRef } from "react";
 import type {
 	CbctVoxelVolume,
@@ -11,11 +23,9 @@ import type {
 	CbctProbeMarker,
 	MprPlane,
 	CbctViewportType,
+	MprSliceExtractionResult,
 } from "../cbctMprMath";
-import {
-	DEFAULT_VIEWPORT_TRANSFORM,
-	extractObliqueMprSlice,
-} from "../cbctMprMath";
+import { DEFAULT_VIEWPORT_TRANSFORM } from "../cbctMprMath";
 import type {
 	DentalArchCurve,
 	PanoramicReconstructionResult,
@@ -40,6 +50,7 @@ import {
 	drawPanoramicOverlay,
 	drawCrossSectionOverlay,
 } from "./cbctCurvedOverlayRenderers";
+import { CbctWorkerBridge } from "./cbctWorkerBridge";
 
 export interface UseCbctSliceRendererParams {
 	isOpen: boolean;
@@ -100,6 +111,73 @@ export interface UseCbctSliceRendererParams {
 	crossSectionBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
 	crossSectionOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
 }
+
+// ─── UTILITY RENDER HELPERS ──────────────────────────────────────────────────
+
+const safeRequestAnimFrame = (cb: () => void): number => {
+	if (typeof requestAnimationFrame === "function") {
+		return requestAnimationFrame(cb);
+	}
+	return setTimeout(cb, 0) as unknown as number;
+};
+
+const safeCancelAnimFrame = (id: number): void => {
+	if (typeof cancelAnimationFrame === "function") {
+		cancelAnimationFrame(id);
+	} else {
+		clearTimeout(id as unknown as NodeJS.Timeout);
+	}
+};
+
+function drawOffscreenToCanvas(
+	canvas: HTMLCanvasElement | null,
+	offscreen: HTMLCanvasElement | null,
+	transform: ViewportTransform,
+	widthPx: number,
+	heightPx: number,
+): void {
+	if (!canvas || !offscreen || offscreen.width === 0 || offscreen.height === 0) return;
+	if (canvas.width !== widthPx || canvas.height !== heightPx) {
+		canvas.width = widthPx;
+		canvas.height = heightPx;
+	}
+	const ctx = canvas.getContext("2d");
+	if (!ctx) return;
+	ctx.save();
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	const t = transform ?? DEFAULT_VIEWPORT_TRANSFORM;
+	ctx.translate(t.panX, t.panY);
+	ctx.scale(t.zoom, t.zoom);
+	ctx.drawImage(offscreen, 0, 0);
+	ctx.restore();
+}
+
+function updateOffscreenSlice(
+	offRef: React.MutableRefObject<HTMLCanvasElement | null>,
+	imgDataRef: React.MutableRefObject<ImageData | null>,
+	slice: MprSliceExtractionResult,
+): void {
+	if (typeof document === "undefined") return;
+	const { widthPx, heightPx } = slice.metadata;
+	if (!offRef.current) {
+		offRef.current = document.createElement("canvas");
+	}
+	const off = offRef.current;
+	if (off.width !== widthPx || off.height !== heightPx) {
+		off.width = widthPx;
+		off.height = heightPx;
+	}
+	const offCtx = off.getContext("2d");
+	if (!offCtx) return;
+
+	if (!imgDataRef.current || imgDataRef.current.width !== widthPx || imgDataRef.current.height !== heightPx) {
+		imgDataRef.current = offCtx.createImageData(widthPx, heightPx);
+	}
+	imgDataRef.current.data.set(slice.data);
+	offCtx.putImageData(imgDataRef.current, 0, 0);
+}
+
+// ─── HOOK IMPLEMENTATION ─────────────────────────────────────────────────────
 
 export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 	const {
@@ -173,9 +251,24 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 	const crossSectionOffscreenRef = useRef<HTMLCanvasElement | null>(null);
 	const crossSectionImgDataRef = useRef<ImageData | null>(null);
 
-	// Deterministic release of offscreen canvas backing stores and ImageData caches on modal close or unmount
+	// Web Worker Bridge & RAF Request Tracking
+	const bridgeRef = useRef<CbctWorkerBridge | null>(null);
+	const latestRenderReqIdRef = useRef<number>(0);
+	const pendingRafRef = useRef<number | null>(null);
+	const transformsRef = useRef(transforms);
+	transformsRef.current = transforms;
+
+	// Deterministic release of offscreen canvas backing stores and bridge on modal close or unmount
 	useEffect(() => {
 		const releaseOffscreens = () => {
+			if (pendingRafRef.current !== null) {
+				safeCancelAnimFrame(pendingRafRef.current);
+				pendingRafRef.current = null;
+			}
+			if (bridgeRef.current) {
+				bridgeRef.current.dispose();
+				bridgeRef.current = null;
+			}
 			const offscreens = [
 				axialOffscreenRef,
 				coronalOffscreenRef,
@@ -206,224 +299,87 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 		};
 	}, [isOpen]);
 
-	// LAYER 1: BASE SLICES EXTRACTION & DRAWING
+	// LAYER 1a: ASYNCHRONOUS WEB WORKER MPR BASE SLICE EXTRACTION & BATCHING
 	useEffect(() => {
 		if (!volume || !isOpen) return;
 
-		// 1. Axial Base Slice
-		if (axialBaseCanvasRef.current) {
-			const canvas = axialBaseCanvasRef.current;
-			const ctx = canvas.getContext("2d");
-			if (ctx) {
-				const widthPx = volume.dimensions.width;
-				const heightPx = volume.dimensions.height;
-				if (!axialOffscreenRef.current) {
-					axialOffscreenRef.current = document.createElement("canvas");
-				}
-				const off = axialOffscreenRef.current;
-				if (off.width !== widthPx || off.height !== heightPx) {
-					off.width = widthPx;
-					off.height = heightPx;
-				}
-				const offCtx = off.getContext("2d");
-				if (offCtx) {
-					if (!axialImgDataRef.current || axialImgDataRef.current.width !== widthPx || axialImgDataRef.current.height !== heightPx) {
-						axialImgDataRef.current = offCtx.createImageData(widthPx, heightPx);
+		if (!bridgeRef.current) {
+			bridgeRef.current = new CbctWorkerBridge();
+		}
+		const bridge = bridgeRef.current;
+		bridge.initVolume(volume);
+
+		const reqId = ++latestRenderReqIdRef.current;
+
+		if (pendingRafRef.current !== null) {
+			safeCancelAnimFrame(pendingRafRef.current);
+			pendingRafRef.current = null;
+		}
+
+		pendingRafRef.current = safeRequestAnimFrame(() => {
+			pendingRafRef.current = null;
+			if (!isOpen || !volume) return;
+
+			bridge
+				.renderAllPlanes({
+					volume,
+					crosshairMm,
+					obliqueAngles,
+					options: {
+						windowWidth,
+						windowLevel,
+						invert: invertColors,
+						slabMode,
+						slabThicknessMm,
+						interpolation: "trilinear",
+					},
+					requestId: reqId,
+				})
+				.then((slices) => {
+					// Discard outdated render response
+					if (reqId !== latestRenderReqIdRef.current || !isOpen) {
+						return;
 					}
-				}
-				const { metadata } = extractObliqueMprSlice(volume, "axial", crosshairMm, obliqueAngles, {
-					windowWidth,
-					windowLevel,
-					invert: invertColors,
-					slabMode,
-					slabThicknessMm,
-					interpolation: "trilinear",
-					outputBuffer: axialImgDataRef.current?.data,
+
+					updateOffscreenSlice(axialOffscreenRef, axialImgDataRef, slices.axial);
+					updateOffscreenSlice(coronalOffscreenRef, coronalImgDataRef, slices.coronal);
+					updateOffscreenSlice(sagittalOffscreenRef, sagittalImgDataRef, slices.sagittal);
+
+					const currentTransforms = transformsRef.current;
+
+					drawOffscreenToCanvas(
+						axialBaseCanvasRef.current,
+						axialOffscreenRef.current,
+						currentTransforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM,
+						slices.axial.metadata.widthPx,
+						slices.axial.metadata.heightPx,
+					);
+					drawOffscreenToCanvas(
+						coronalBaseCanvasRef.current,
+						coronalOffscreenRef.current,
+						currentTransforms.coronal ?? DEFAULT_VIEWPORT_TRANSFORM,
+						slices.coronal.metadata.widthPx,
+						slices.coronal.metadata.heightPx,
+					);
+					drawOffscreenToCanvas(
+						sagittalBaseCanvasRef.current,
+						sagittalOffscreenRef.current,
+						currentTransforms.sagittal ?? DEFAULT_VIEWPORT_TRANSFORM,
+						slices.sagittal.metadata.widthPx,
+						slices.sagittal.metadata.heightPx,
+					);
+				})
+				.catch((err) => {
+					console.warn("[useCbctSliceRenderer] Background slice render error:", err);
 				});
-				if (offCtx && axialImgDataRef.current) {
-					offCtx.putImageData(axialImgDataRef.current, 0, 0);
-				}
-				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
-					canvas.width = metadata.widthPx;
-					canvas.height = metadata.heightPx;
-				}
-				ctx.save();
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
-				const transform = transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM;
-				ctx.translate(transform.panX, transform.panY);
-				ctx.scale(transform.zoom, transform.zoom);
-				ctx.drawImage(off, 0, 0);
-				ctx.restore();
-			}
-		}
+		});
 
-		// 2. Coronal Base Slice
-		if (coronalBaseCanvasRef.current) {
-			const canvas = coronalBaseCanvasRef.current;
-			const ctx = canvas.getContext("2d");
-			if (ctx) {
-				const widthPx = volume.dimensions.width;
-				const heightPx = Math.max(1, Math.round((volume.dimensions.depth * volume.spacingMm.z) / (volume.spacingMm.x || 1.0)));
-				if (!coronalOffscreenRef.current) {
-					coronalOffscreenRef.current = document.createElement("canvas");
-				}
-				const off = coronalOffscreenRef.current;
-				if (off.width !== widthPx || off.height !== heightPx) {
-					off.width = widthPx;
-					off.height = heightPx;
-				}
-				const offCtx = off.getContext("2d");
-				if (offCtx) {
-					if (!coronalImgDataRef.current || coronalImgDataRef.current.width !== widthPx || coronalImgDataRef.current.height !== heightPx) {
-						coronalImgDataRef.current = offCtx.createImageData(widthPx, heightPx);
-					}
-				}
-				const { metadata } = extractObliqueMprSlice(volume, "coronal", crosshairMm, obliqueAngles, {
-					windowWidth,
-					windowLevel,
-					invert: invertColors,
-					slabMode,
-					slabThicknessMm,
-					interpolation: "trilinear",
-					outputBuffer: coronalImgDataRef.current?.data,
-				});
-				if (offCtx && coronalImgDataRef.current) {
-					offCtx.putImageData(coronalImgDataRef.current, 0, 0);
-				}
-				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
-					canvas.width = metadata.widthPx;
-					canvas.height = metadata.heightPx;
-				}
-				ctx.save();
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
-				const transform = transforms.coronal ?? DEFAULT_VIEWPORT_TRANSFORM;
-				ctx.translate(transform.panX, transform.panY);
-				ctx.scale(transform.zoom, transform.zoom);
-				ctx.drawImage(off, 0, 0);
-				ctx.restore();
+		return () => {
+			if (pendingRafRef.current !== null) {
+				safeCancelAnimFrame(pendingRafRef.current);
+				pendingRafRef.current = null;
 			}
-		}
-
-		// 3. Sagittal Base Slice
-		if (sagittalBaseCanvasRef.current) {
-			const canvas = sagittalBaseCanvasRef.current;
-			const ctx = canvas.getContext("2d");
-			if (ctx) {
-				const widthPx = volume.dimensions.height;
-				const heightPx = Math.max(1, Math.round((volume.dimensions.depth * volume.spacingMm.z) / (volume.spacingMm.y || 1.0)));
-				if (!sagittalOffscreenRef.current) {
-					sagittalOffscreenRef.current = document.createElement("canvas");
-				}
-				const off = sagittalOffscreenRef.current;
-				if (off.width !== widthPx || off.height !== heightPx) {
-					off.width = widthPx;
-					off.height = heightPx;
-				}
-				const offCtx = off.getContext("2d");
-				if (offCtx) {
-					if (!sagittalImgDataRef.current || sagittalImgDataRef.current.width !== widthPx || sagittalImgDataRef.current.height !== heightPx) {
-						sagittalImgDataRef.current = offCtx.createImageData(widthPx, heightPx);
-					}
-				}
-				const { metadata } = extractObliqueMprSlice(volume, "sagittal", crosshairMm, obliqueAngles, {
-					windowWidth,
-					windowLevel,
-					invert: invertColors,
-					slabMode,
-					slabThicknessMm,
-					interpolation: "trilinear",
-					outputBuffer: sagittalImgDataRef.current?.data,
-				});
-				if (offCtx && sagittalImgDataRef.current) {
-					offCtx.putImageData(sagittalImgDataRef.current, 0, 0);
-				}
-				if (canvas.width !== metadata.widthPx || canvas.height !== metadata.heightPx) {
-					canvas.width = metadata.widthPx;
-					canvas.height = metadata.heightPx;
-				}
-				ctx.save();
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
-				const transform = transforms.sagittal ?? DEFAULT_VIEWPORT_TRANSFORM;
-				ctx.translate(transform.panX, transform.panY);
-				ctx.scale(transform.zoom, transform.zoom);
-				ctx.drawImage(off, 0, 0);
-				ctx.restore();
-			}
-		}
-
-		// 4. Panoramic Base Slice
-		if (panoBaseCanvasRef.current && panoramicData) {
-			const canvas = panoBaseCanvasRef.current;
-			const ctx = canvas.getContext("2d");
-			if (ctx) {
-				const pw = panoramicData.widthPx;
-				const ph = panoramicData.heightPx;
-				if (!panoOffscreenRef.current) {
-					panoOffscreenRef.current = document.createElement("canvas");
-				}
-				const off = panoOffscreenRef.current;
-				if (off.width !== pw || off.height !== ph) {
-					off.width = pw;
-					off.height = ph;
-				}
-				const offCtx = off.getContext("2d");
-				if (offCtx) {
-					if (!panoImgDataRef.current || panoImgDataRef.current.width !== pw || panoImgDataRef.current.height !== ph) {
-						panoImgDataRef.current = offCtx.createImageData(pw, ph);
-					}
-					panoImgDataRef.current.data.set(panoramicData.pixelData);
-					offCtx.putImageData(panoImgDataRef.current, 0, 0);
-				}
-				if (canvas.width !== pw || canvas.height !== ph) {
-					canvas.width = pw;
-					canvas.height = ph;
-				}
-				ctx.save();
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
-				const transform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
-				ctx.translate(transform.panX, transform.panY);
-				ctx.scale(transform.zoom, transform.zoom);
-				ctx.drawImage(off, 0, 0);
-				ctx.restore();
-			}
-		}
-
-		// 5. Cross-Section Base Slice
-		if (crossSectionBaseCanvasRef.current && activeCrossSection) {
-			const canvas = crossSectionBaseCanvasRef.current;
-			const ctx = canvas.getContext("2d");
-			if (ctx) {
-				const cw = activeCrossSection.widthPx;
-				const ch = activeCrossSection.heightPx;
-				if (!crossSectionOffscreenRef.current) {
-					crossSectionOffscreenRef.current = document.createElement("canvas");
-				}
-				const off = crossSectionOffscreenRef.current;
-				if (off.width !== cw || off.height !== ch) {
-					off.width = cw;
-					off.height = ch;
-				}
-				const offCtx = off.getContext("2d");
-				if (offCtx) {
-					if (!crossSectionImgDataRef.current || crossSectionImgDataRef.current.width !== cw || crossSectionImgDataRef.current.height !== ch) {
-						crossSectionImgDataRef.current = offCtx.createImageData(cw, ch);
-					}
-					crossSectionImgDataRef.current.data.set(activeCrossSection.pixelData);
-					offCtx.putImageData(crossSectionImgDataRef.current, 0, 0);
-				}
-				if (canvas.width !== cw || canvas.height !== ch) {
-					canvas.width = cw;
-					canvas.height = ch;
-				}
-				ctx.save();
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
-				const transform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
-				ctx.translate(transform.panX, transform.panY);
-				ctx.scale(transform.zoom, transform.zoom);
-				ctx.drawImage(off, 0, 0);
-				ctx.restore();
-			}
-		}
+		};
 	}, [
 		volume,
 		isOpen,
@@ -434,16 +390,124 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 		invertColors,
 		slabMode,
 		slabThicknessMm,
-		transforms,
 		maximizedViewport,
 		viewLayout,
 		layoutBurstCount,
-		panoramicData,
-		activeCrossSection,
 		axialBaseCanvasRef,
 		coronalBaseCanvasRef,
 		sagittalBaseCanvasRef,
+	]);
+
+	// LAYER 1b: FAST ZERO-GC VIEWPORT PAN & ZOOM REDRAW (60 FPS)
+	useEffect(() => {
+		if (!isOpen) return;
+
+		if (axialOffscreenRef.current && axialOffscreenRef.current.width > 0) {
+			drawOffscreenToCanvas(
+				axialBaseCanvasRef.current,
+				axialOffscreenRef.current,
+				transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM,
+				axialOffscreenRef.current.width,
+				axialOffscreenRef.current.height,
+			);
+		}
+		if (coronalOffscreenRef.current && coronalOffscreenRef.current.width > 0) {
+			drawOffscreenToCanvas(
+				coronalBaseCanvasRef.current,
+				coronalOffscreenRef.current,
+				transforms.coronal ?? DEFAULT_VIEWPORT_TRANSFORM,
+				coronalOffscreenRef.current.width,
+				coronalOffscreenRef.current.height,
+			);
+		}
+		if (sagittalOffscreenRef.current && sagittalOffscreenRef.current.width > 0) {
+			drawOffscreenToCanvas(
+				sagittalBaseCanvasRef.current,
+				sagittalOffscreenRef.current,
+				transforms.sagittal ?? DEFAULT_VIEWPORT_TRANSFORM,
+				sagittalOffscreenRef.current.width,
+				sagittalOffscreenRef.current.height,
+			);
+		}
+	}, [
+		isOpen,
+		transforms.axial,
+		transforms.coronal,
+		transforms.sagittal,
+		axialBaseCanvasRef,
+		coronalBaseCanvasRef,
+		sagittalBaseCanvasRef,
+	]);
+
+	// LAYER 1c: PANORAMIC BASE SLICE REDRAW
+	useEffect(() => {
+		if (!isOpen || !panoBaseCanvasRef.current || !panoramicData) return;
+		const canvas = panoBaseCanvasRef.current;
+		const pw = panoramicData.widthPx;
+		const ph = panoramicData.heightPx;
+		if (!panoOffscreenRef.current) {
+			panoOffscreenRef.current = document.createElement("canvas");
+		}
+		const off = panoOffscreenRef.current;
+		if (off.width !== pw || off.height !== ph) {
+			off.width = pw;
+			off.height = ph;
+		}
+		const offCtx = off.getContext("2d");
+		if (offCtx) {
+			if (!panoImgDataRef.current || panoImgDataRef.current.width !== pw || panoImgDataRef.current.height !== ph) {
+				panoImgDataRef.current = offCtx.createImageData(pw, ph);
+			}
+			panoImgDataRef.current.data.set(panoramicData.pixelData);
+			offCtx.putImageData(panoImgDataRef.current, 0, 0);
+		}
+		drawOffscreenToCanvas(
+			canvas,
+			off,
+			transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM,
+			pw,
+			ph,
+		);
+	}, [
+		isOpen,
+		panoramicData,
+		transforms.panoramic,
 		panoBaseCanvasRef,
+	]);
+
+	// LAYER 1d: CROSS-SECTION BASE SLICE REDRAW
+	useEffect(() => {
+		if (!isOpen || !crossSectionBaseCanvasRef.current || !activeCrossSection) return;
+		const canvas = crossSectionBaseCanvasRef.current;
+		const cw = activeCrossSection.widthPx;
+		const ch = activeCrossSection.heightPx;
+		if (!crossSectionOffscreenRef.current) {
+			crossSectionOffscreenRef.current = document.createElement("canvas");
+		}
+		const off = crossSectionOffscreenRef.current;
+		if (off.width !== cw || off.height !== ch) {
+			off.width = cw;
+			off.height = ch;
+		}
+		const offCtx = off.getContext("2d");
+		if (offCtx) {
+			if (!crossSectionImgDataRef.current || crossSectionImgDataRef.current.width !== cw || crossSectionImgDataRef.current.height !== ch) {
+				crossSectionImgDataRef.current = offCtx.createImageData(cw, ch);
+			}
+			crossSectionImgDataRef.current.data.set(activeCrossSection.pixelData);
+			offCtx.putImageData(crossSectionImgDataRef.current, 0, 0);
+		}
+		drawOffscreenToCanvas(
+			canvas,
+			off,
+			transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM,
+			cw,
+			ch,
+		);
+	}, [
+		isOpen,
+		activeCrossSection,
+		transforms.cross_section,
 		crossSectionBaseCanvasRef,
 	]);
 
