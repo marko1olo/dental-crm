@@ -562,7 +562,9 @@ async function main() {
 		const axialContainer = document.querySelector("[data-testid='cbct-viewport-container-axial']");
 		const coronalContainer = document.querySelector("[data-testid='cbct-viewport-container-coronal']");
 		const sagittalContainer = document.querySelector("[data-testid='cbct-viewport-container-sagittal']");
-		const panoContainer = document.querySelector("[data-testid='cbct-viewport-container-panoramic']");
+		const panoContainer =
+			document.querySelector("[data-testid='cbct-viewport-container-volume3d']") ||
+			document.querySelector("[data-testid='cbct-viewport-container-panoramic']");
 
 		function inspectCanvas(container) {
 			if (!container) return { status: "missing_container" };
