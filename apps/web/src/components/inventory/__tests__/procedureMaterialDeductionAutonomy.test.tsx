@@ -164,6 +164,18 @@ describe("WarehouseManagerModal & Soft Overdraft (Mandates 8e, 8k, 8n)", () => {
 		);
 		assert.strictEqual(html, "");
 	});
+
+	it("5. WarehouseManagerModal renders honest empty state in production when stock is empty", () => {
+		const html = renderToStaticMarkup(
+			createElement(WarehouseManagerModal, {
+				isOpen: true,
+				onClose: () => {},
+				initialItems: [],
+			})
+		);
+		assert.ok(html.includes("На складе нет зарегистрированных материалов"));
+		assert.ok(html.includes("Оформите приходную накладную или обратитесь к старшей медсестре"));
+	});
 });
 
 describe("Sterilization & Autoclave Journal Autonomy (SanPiN 3.3686-21 & Mandate 8e)", () => {

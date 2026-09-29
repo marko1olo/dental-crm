@@ -29,7 +29,8 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast.js";
 import { sliceDomList } from "../../utils/domVirtualizationHelper";
-import type { InventoryItem } from "./useInventoryLogic.js";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { type InventoryItem, inventoryItemFromServer } from "./inventoryDataMappers.js";
 
 export interface WarehouseWriteoffItem {
 	readonly id: string;
@@ -49,6 +50,7 @@ export interface WarehouseManagerModalProps {
 	readonly onClose: () => void;
 	readonly onConfirmWriteoff?: ((items: readonly WarehouseWriteoffItem[]) => void | Promise<void>) | undefined;
 	readonly initialItems?: readonly InventoryItem[] | undefined;
+	readonly organizationId?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly nurseName?: string | undefined;
 	readonly cabinetName?: string | undefined;
@@ -95,80 +97,13 @@ export const CANONICAL_WAREHOUSE_PRESETS = [
 ] as const;
 
 const DEFAULT_WAREHOUSE_ITEMS: readonly InventoryItem[] = [
-	{
-		id: "wh-art-01",
-		name: "Артикаин 1:100 000 карпула 1.7 мл",
-		stockQuantity: 140,
-		criticalThreshold: 30,
-		unitCostRub: "95.00",
-		updatedAt: "2026-09-01",
-		unit: "карп.",
-		sku: "AN-ART-17",
-		lotNumber: "410224",
-		expirationDate: "2028-12-31",
-	},
-	{
-		id: "wh-scand-01",
-		name: "Мепивакаин (Скандонест 3%) карпула 1.7 мл",
-		stockQuantity: 0, // Имитация нулевого остатка для мягкого овердрафта
-		criticalThreshold: 15,
-		unitCostRub: "115.00",
-		updatedAt: "2026-09-01",
-		unit: "карп.",
-		sku: "AN-MEP-17",
-		lotNumber: "120823",
-		expirationDate: "2027-08-31",
-	},
-	{
-		id: "wh-needles-01",
-		name: "Игла карпульная стоматологическая 30G 0.3x21мм",
-		stockQuantity: 350,
-		criticalThreshold: 50,
-		unitCostRub: "12.50",
-		updatedAt: "2026-09-01",
-		unit: "шт.",
-		sku: "ND-30G-21",
-	},
-	{
-		id: "wh-gloves-01",
-		name: "Перчатки нитриловые неопудренные (размер M)",
-		stockQuantity: 12, // Ниже порога
-		criticalThreshold: 25,
-		unitCostRub: "35.00",
-		updatedAt: "2026-09-01",
-		unit: "пар",
-		sku: "PPE-GLV-M",
-	},
-	{
-		id: "wh-kraft-01",
-		name: "Крафт-пакет самоклеящийся 100х200 (СанПиН 3.3686-21)",
-		stockQuantity: 420,
-		criticalThreshold: 60,
-		unitCostRub: "14.00",
-		updatedAt: "2026-09-01",
-		unit: "шт.",
-		sku: "STER-KP-100",
-	},
-	{
-		id: "wh-comp-01",
-		name: "Композит светоотверждаемый Estelite Sigma Quick А2",
-		stockQuantity: 4,
-		criticalThreshold: 2,
-		unitCostRub: "3200.00",
-		updatedAt: "2026-09-01",
-		unit: "шприц",
-		sku: "COMP-EST-A2",
-	},
-	{
-		id: "wh-adhes-01",
-		name: "Адгезивная система Single Bond Universal 5 мл",
-		stockQuantity: 0, // Овердрафт
-		criticalThreshold: 1,
-		unitCostRub: "4800.00",
-		updatedAt: "2026-09-01",
-		unit: "фл.",
-		sku: "ADH-SBU-5",
-	},
+	{ id: "wh-art-01", name: "Артикаин 1:100 000 карпула 1.7 мл", stockQuantity: 140, criticalThreshold: 30, unitCostRub: "95.00", updatedAt: "2026-09-01", unit: "карп.", sku: "AN-ART-17", lotNumber: "410224", expirationDate: "2028-12-31" },
+	{ id: "wh-scand-01", name: "Мепивакаин (Скандонест 3%) карпула 1.7 мл", stockQuantity: 0, criticalThreshold: 15, unitCostRub: "115.00", updatedAt: "2026-09-01", unit: "карп.", sku: "AN-MEP-17", lotNumber: "120823", expirationDate: "2027-08-31" },
+	{ id: "wh-needles-01", name: "Игла карпульная стоматологическая 30G 0.3x21мм", stockQuantity: 350, criticalThreshold: 50, unitCostRub: "12.50", updatedAt: "2026-09-01", unit: "шт.", sku: "ND-30G-21" },
+	{ id: "wh-gloves-01", name: "Перчатки нитриловые неопудренные (размер M)", stockQuantity: 12, criticalThreshold: 25, unitCostRub: "35.00", updatedAt: "2026-09-01", unit: "пар", sku: "PPE-GLV-M" },
+	{ id: "wh-kraft-01", name: "Крафт-пакет самоклеящийся 100х200 (СанПиН 3.3686-21)", stockQuantity: 420, criticalThreshold: 60, unitCostRub: "14.00", updatedAt: "2026-09-01", unit: "шт.", sku: "STER-KP-100" },
+	{ id: "wh-comp-01", name: "Композит светоотверждаемый Estelite Sigma Quick А2", stockQuantity: 4, criticalThreshold: 2, unitCostRub: "3200.00", updatedAt: "2026-09-01", unit: "шприц", sku: "COMP-EST-A2" },
+	{ id: "wh-adhes-01", name: "Адгезивная система Single Bond Universal 5 мл", stockQuantity: 0, criticalThreshold: 1, unitCostRub: "4800.00", updatedAt: "2026-09-01", unit: "фл.", sku: "ADH-SBU-5" },
 ];
 
 export function WarehouseManagerModal({
@@ -176,11 +111,46 @@ export function WarehouseManagerModal({
 	onClose,
 	onConfirmWriteoff,
 	initialItems,
+	organizationId,
 	doctorName = "Д-р Кузнецов А.В.",
 	nurseName = "Иванова Е.В. (старшая медсестра)",
 	cabinetName = "Кабинет №1 (Терапия/Хирургия)",
 }: WarehouseManagerModalProps) {
-	const rawItems = initialItems && initialItems.length > 0 ? initialItems : DEFAULT_WAREHOUSE_ITEMS;
+	const demoMode = isDemoShowcaseMode();
+	const [fetchedItems, setFetchedItems] = useState<readonly InventoryItem[]>([]);
+	const [isLoadingStock, setIsLoadingStock] = useState(false);
+
+	const fetchLiveStock = useCallback(() => {
+		if (demoMode || (initialItems && initialItems.length > 0)) return;
+		setIsLoadingStock(true);
+		const targetUrl = organizationId ? `/api/warehouse/${organizationId}/stock` : "/api/warehouse/stock";
+		fetch(targetUrl)
+			.then(async (res) => {
+				if (!res.ok) {
+					if (organizationId) {
+						const fb = await fetch(`/api/inventory/${organizationId}`);
+						if (fb.ok) return fb.json();
+					}
+					return [];
+				}
+				return res.json();
+			})
+			.then((data) => {
+				if (Array.isArray(data)) setFetchedItems(data.map(inventoryItemFromServer));
+			})
+			.catch(() => setFetchedItems([]))
+			.finally(() => setIsLoadingStock(false));
+	}, [demoMode, initialItems, organizationId]);
+
+	useEffect(() => {
+		if (isOpen) fetchLiveStock();
+	}, [isOpen, fetchLiveStock]);
+
+	const rawItems = useMemo(() => {
+		if (initialItems && initialItems.length > 0) return initialItems;
+		if (demoMode) return DEFAULT_WAREHOUSE_ITEMS;
+		return fetchedItems;
+	}, [initialItems, demoMode, fetchedItems]);
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [categoryFilter, setCategoryFilter] = useState("all");
@@ -511,11 +481,41 @@ export function WarehouseManagerModal({
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-[var(--border,#f1f5f9)]">
-									{itemsSlice.visibleItems.map((item) => {
-										const writeQty = writeoffQuantities[item.id] || 0;
-										const isZeroStock = item.stockQuantity <= 0;
-										const isLowStock = !isZeroStock && item.stockQuantity <= item.criticalThreshold;
-										const isOverdrafted = isZeroStock || writeQty > item.stockQuantity;
+									{rawItems.length === 0 ? (
+										<tr>
+											<td colSpan={6} className="py-10 text-center text-[var(--muted,#64748b)]">
+												<div className="flex flex-col items-center justify-center gap-2">
+													<Package size={28} className="text-slate-400 opacity-60" />
+													<p className="text-xs font-semibold text-[var(--ink,#0f172a)]">
+														{isLoadingStock ? "Загрузка остатков склада..." : "На складе нет зарегистрированных материалов."}
+													</p>
+													<p className="text-[11px] text-slate-500">
+														Оформите приходную накладную или обратитесь к старшей медсестре
+													</p>
+													{!isLoadingStock && (
+														<button
+															type="button"
+															onClick={fetchLiveStock}
+															className="mt-2 h-7 px-3 text-xs rounded border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+														>
+															Обновить остатки
+														</button>
+													)}
+												</div>
+											</td>
+										</tr>
+									) : filteredItems.length === 0 ? (
+										<tr>
+											<td colSpan={6} className="py-8 text-center text-xs text-[var(--muted,#64748b)]">
+												По запросу «{searchQuery}» ничего не найдено
+											</td>
+										</tr>
+									) : (
+										itemsSlice.visibleItems.map((item) => {
+											const writeQty = writeoffQuantities[item.id] || 0;
+											const isZeroStock = item.stockQuantity <= 0;
+											const isLowStock = !isZeroStock && item.stockQuantity <= item.criticalThreshold;
+											const isOverdrafted = isZeroStock || writeQty > item.stockQuantity;
 
 										return (
 											<tr
@@ -600,7 +600,7 @@ export function WarehouseManagerModal({
 												</td>
 											</tr>
 										);
-									})}
+									}))}
 									{itemsSlice.hasMore && (
 										<tr>
 											<td colSpan={6} className="py-3 text-center bg-[var(--paper-strong,#f8fafc)]">
@@ -627,7 +627,7 @@ export function WarehouseManagerModal({
 										АКТ СПИСАНИЯ РАСХОДНЫХ МАТЕРИАЛОВ
 									</h3>
 									<p className="text-[11px] text-[var(--muted,#64748b)]">
-										Утверждено ответственным лицом (СанПиН 3.3686-21 • Приказ Минздрава 804н)
+										Утверждено ответственным лицом
 									</p>
 								</div>
 								<button
@@ -716,7 +716,7 @@ export function WarehouseManagerModal({
 									Подпись ответственного лица: ____________________ / {nurseName}
 								</div>
 								<div className="text-right">
-									Основание: Фактический расход (Приказ Минздрава 804н, СанПиН 3.3686-21)
+									Основание: Фактический расход материалов
 								</div>
 							</div>
 						</div>

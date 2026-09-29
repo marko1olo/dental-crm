@@ -260,7 +260,7 @@ export const CLINICAL_MATERIALS_CATALOG: readonly ClinicalMaterialDefinition[] =
 	{
 		id: "mat_saline_500ml",
 		sku: "SURG-SALINE-500",
-		nameRu: "Раствор натрия хлорида 0.9% стерильный 500 мл (физраствор для физдиодиспансера)",
+		nameRu: "Раствор натрия хлорида 0.9% стерильный 500 мл (физраствор для физиодиспенсера)",
 		category: "surgery",
 		unit: "фл",
 		okeiCode: "796",

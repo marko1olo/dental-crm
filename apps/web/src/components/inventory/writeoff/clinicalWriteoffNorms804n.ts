@@ -207,7 +207,7 @@ export const ORDER_804N_SERVICE_NORMS: readonly Order804nServiceNorm[] = [
 				standardQuantity: 1,
 				isMandatory: true,
 				defaultDiscrepancyAllowedPercent: 0,
-				clinicalRationaleRu: "Охлаждающий физиологический раствор для физдиодиспансера",
+				clinicalRationaleRu: "Охлаждающий физиологический раствор для физиодиспенсера",
 			},
 		],
 	},

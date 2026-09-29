@@ -504,7 +504,7 @@ export function MaterialBomsSettingsPanel({
 							disabled={isSeeding}
 						>
 							<Sparkles size={16} />
-							Загрузить типовые нормы 804н
+							Загрузить типовые нормы расхода
 						</button>
 					)}
 				</div>

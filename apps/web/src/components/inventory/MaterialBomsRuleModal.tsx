@@ -80,7 +80,7 @@ export function MaterialBomsRuleModal({
 					<div className="material-boms-modal-header">
 						<div>
 							<h3 className="material-boms-modal-title">
-								{modalState.ruleId ? "Изменить норму списания" : "Привязать материал к услуге 804н"}
+								{modalState.ruleId ? "Изменить норму списания" : "Привязать материал к услуге"}
 							</h3>
 						</div>
 						<button
@@ -118,7 +118,7 @@ export function MaterialBomsRuleModal({
 							</div>
 
 							<div className="material-boms-form-group">
-								<label className="material-boms-form-label">Услуга приказа 804н *</label>
+								<label className="material-boms-form-label">Услуга прейскуранта *</label>
 								<select
 									className="material-boms-form-select"
 									value={modalState.serviceId}

@@ -36,7 +36,7 @@ import {
 	getDiscrepancyReason,
 	getOrder804nServiceNorm,
 } from "../writeoff/clinicalWriteoffPresets.js";
-import { ClinicalWriteoffModal } from "../writeoff/ClinicalWriteoffModal.js";
+import { ClinicalWriteoffModal, DEFAULT_CLINICAL_SERVICES } from "../writeoff/ClinicalWriteoffModal.js";
 
 describe("Order 804n Clinical Service Norms & BOM Specifications", () => {
 	it("Спецификация A16.07.002.001 (пломбирование зуба) включает полный комплект: анестетик, коффердам, матрицу, боры и композит", () => {
@@ -345,13 +345,28 @@ describe("SSR Rendering of ClinicalWriteoffModal", () => {
 				isOpen: true,
 				onClose: () => {},
 				patientName: "Сидоров Петр",
+				initialServices: DEFAULT_CLINICAL_SERVICES,
 			}),
 		);
 
 		assert.ok(html.includes("data-testid=\"clinical-writeoff-modal\""));
-		assert.ok(html.includes("Клиническое автосписание материалов"));
+		assert.ok(html.includes("Клиническое списание материалов"));
 		assert.ok(html.includes("Сидоров Петр"));
-		assert.ok(html.includes("Норма (804н)"));
+		assert.ok(html.includes("Норма расхода"));
+	});
+
+	it("Рендерит честный EmptyState при отсутствии выполненных услуг в приеме", () => {
+		const html = renderToStaticMarkup(
+			createElement(ClinicalWriteoffModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientName: "Сидоров Петр",
+				initialServices: [],
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"cw-empty-services\""));
+		assert.ok(html.includes("В текущем приёме нет выполненных клинических услуг"));
 	});
 });
 

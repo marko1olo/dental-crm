@@ -101,7 +101,7 @@ export function generateAct0504230Html(
 				<th colspan="3">Количество</th>
 				<th rowspan="2">Цена, руб.</th>
 				<th rowspan="2">Сумма, руб.</th>
-				<th rowspan="2">Направление расхода (Услуга 804н / Пациент)</th>
+				<th rowspan="2">Направление расхода (Услуга / Пациент)</th>
 				<th rowspan="2">Причина расхождения / обоснование</th>
 			</tr>
 			<tr>
@@ -367,7 +367,7 @@ export function exportClinicalWriteoffToCsv(
 		"Пациент",
 		"Врач",
 		"Кабинет",
-		"Код услуги 804н",
+		"Код услуги",
 		"Материал",
 		"Артикул (SKU)",
 		"Серия (LOT)",

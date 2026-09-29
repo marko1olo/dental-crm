@@ -39,7 +39,7 @@ export const ClinicalWriteoffServiceTable: React.FC<
 						<th>Материал / SKU</th>
 						<th>Партия (LOT)</th>
 						<th>Срок годности</th>
-						<th className="text-center">Норма (804н)</th>
+						<th className="text-center">Норма расхода</th>
 						<th className="text-center">Факт расход</th>
 						<th className="text-center">Отклонение</th>
 						<th>Причина расхождения</th>
@@ -213,7 +213,7 @@ export const ClinicalWriteoffServiceTable: React.FC<
 												type="button"
 												className="cw-chip-btn text-teal-dark font-bold"
 												onClick={() => onResetToNorm(line.id)}
-												title="Сбросить к норме 804н"
+												title="Сбросить к норме расхода"
 											>
 												Норма
 											</button>

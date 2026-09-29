@@ -154,7 +154,7 @@ export async function performAutoVisitBomDeduction(
 		toastMessage = `Мягкий овердрафт: списано ${result.totalDeductedItems} расходников (зафиксирован дефицит ${result.softOverdrafts.length} поз., накладная в пути). Приём сохранён.`;
 	} else {
 		toastType = "success";
-		toastMessage = `Автосписание расходников: ${result.totalDeductedItems} поз. по техкартам 804н списано со склада (${result.totalCostPriceRub}).`;
+		toastMessage = `Автосписание расходников: ${result.totalDeductedItems} поз. по клиническим техкартам списано со склада (${result.totalCostPriceRub}).`;
 	}
 
 	if (options.onToast) {

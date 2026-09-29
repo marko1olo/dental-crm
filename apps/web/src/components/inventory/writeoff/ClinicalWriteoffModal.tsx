@@ -47,6 +47,8 @@ import {
 } from "./clinicalWriteoffPresets.js";
 import { ClinicalWriteoffQuickStrip } from "./ClinicalWriteoffQuickStrip.js";
 import { ClinicalWriteoffServiceTable } from "./ClinicalWriteoffServiceTable.js";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
+import { useAppStore } from "../../../store/appStore.js";
 
 export interface ClinicalWriteoffModalProps {
 	readonly isOpen: boolean;
@@ -66,7 +68,7 @@ export interface ClinicalWriteoffModalProps {
 	readonly isDeducting?: boolean | undefined;
 }
 
-const DEFAULT_CLINICAL_SERVICES: readonly CompletedClinicalService[] = [
+export const DEFAULT_CLINICAL_SERVICES: readonly CompletedClinicalService[] = [
 	{
 		serviceCode: "A16.07.002.001",
 		toothNumber: 26,
@@ -85,7 +87,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 	isOpen,
 	onClose,
 	onConfirmWriteoff,
-	initialServices = DEFAULT_CLINICAL_SERVICES,
+	initialServices,
 	patientName = "Смирнов Алексей Викторович",
 	patientId = "PAT-2026-0881",
 	patientBirthDate = "1988-04-12",
@@ -98,6 +100,30 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 	defaultFormType = "0504230",
 	isDeducting = false,
 }) => {
+	const isDemo = isDemoShowcaseMode();
+
+	const services = useMemo((): readonly CompletedClinicalService[] => {
+		if (initialServices && initialServices.length > 0) {
+			return initialServices;
+		}
+		if (isDemo) {
+			return DEFAULT_CLINICAL_SERVICES;
+		}
+		try {
+			const activeVisitServices = (useAppStore.getState() as any)?.dashboard?.activeVisit?.completedServices;
+			if (Array.isArray(activeVisitServices) && activeVisitServices.length > 0) {
+				return activeVisitServices.map((s: any) => ({
+					serviceCode: s.serviceCode || s.code || "A16.07.002.001",
+					toothNumber: s.toothNumber ? Number(s.toothNumber) : undefined,
+					serviceTitle: s.serviceTitle || s.title || s.name || "Клиническая процедура",
+					quantityMultiplier: s.quantityMultiplier ?? s.quantity ?? 1,
+				}));
+			}
+		} catch {
+			// Non-blocking fallback
+		}
+		return [];
+	}, [initialServices, isDemo]);
 	// 1. Состояние шапки акта
 	const [actNumber, setActNumber] = useState<string>(
 		() => `АКТ-СПИС-${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(Date.now()).slice(-4)}`,
@@ -116,19 +142,19 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 	useEffect(() => {
 		if (isOpen) {
 			const aggregated = aggregateWriteoffFromServices(
-				initialServices,
+				services,
 				stockBatches,
 				selectedCabinetId,
 				actDate,
 			);
 			setLines(aggregated);
 		}
-	}, [isOpen, initialServices, stockBatches, selectedCabinetId, actDate]);
+	}, [isOpen, services, stockBatches, selectedCabinetId, actDate]);
 
 	// Сводные суммы и валидация
 	const totals = useMemo<ClinicalWriteoffTotals>(() => {
-		return calculateClinicalWriteoffTotals(lines, initialServices.length);
-	}, [lines, initialServices.length]);
+		return calculateClinicalWriteoffTotals(lines, services.length);
+	}, [lines, services.length]);
 
 	const validation = useMemo(() => {
 		return validateWriteoffDocument({
@@ -274,7 +300,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 			assistantFullName,
 			cabinetId: selectedCabinetId,
 			cabinetNameRu: selectedCabinetId === "cab_02_surgery" ? "Кабинет №2 (Хирургия)" : "Кабинет №1 (Терапия)",
-			completedServices: initialServices,
+			completedServices: services,
 			lines,
 			totals,
 			statutoryFormType,
@@ -294,7 +320,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 		doctorSpecialty,
 		assistantFullName,
 		selectedCabinetId,
-		initialServices,
+		services,
 		lines,
 		totals,
 		statutoryFormType,
@@ -355,7 +381,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 
 	// Группировка строк по услугам приема
 	const servicesMap = new Map<string, { service: CompletedClinicalService; lines: ClinicalWriteoffLine[] }>();
-	for (const service of initialServices) {
+	for (const service of services) {
 		const key = `${service.serviceCode}_${service.toothNumber || "general"}`;
 		servicesMap.set(key, {
 			service,
@@ -382,7 +408,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 						<div className="min-w-0">
 							<div
 								className="font-bold text-lg leading-tight truncate"
-								title="Клиническое списание материалов по стандартам Минздрава РФ (804н)"
+								title="Клиническое автосписание материалов (Приказ № 804н)"
 							>
 								Клиническое списание материалов
 							</div>
@@ -469,7 +495,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 							<div>
 								<strong>Внимание! Обнаружены партии с истекшим сроком годности:</strong>
 								<div className="mt-0.5">
-									Списание просроченных медикаментов пациенту запрещено нормами СанПиН. Выберите свежую партию со склада.
+									Списание просроченных медикаментов пациенту запрещено санитарными нормами. Выберите свежую партию со склада.
 								</div>
 							</div>
 						</div>
@@ -518,51 +544,66 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 						<div className="font-bold text-sm flex items-center justify-between">
 							<div className="flex items-center gap-2">
 								<Layers size={18} className="text-teal-600" />
-								<span>Технологические нормы списания по услугам наряда ({initialServices.length})</span>
+								<span>Технологические нормы списания по услугам наряда ({services.length})</span>
 							</div>
 							<div className="text-xs text-muted">
 								Позиций ТМЦ: <span className="font-bold text-ink">{lines.length}</span>
 							</div>
 						</div>
 
-						{Array.from(servicesMap.entries()).map(([key, { service, lines: serviceLines }]) => {
-							return (
-								<div key={key} className="cw-service-card">
-									{/* Заголовок услуги */}
-									<div className="cw-service-card-header">
-										<div className="flex items-center gap-2.5 flex-wrap">
-											<span className="cw-service-badge">{service.serviceCode}</span>
-											{service.toothNumber && (
-												<span className="cw-tooth-badge">Зуб №{service.toothNumber}</span>
-											)}
-											<span className="font-bold text-sm text-ink">
-												{service.serviceTitle || `Услуга ${service.serviceCode}`}
-											</span>
+						{services.length === 0 ? (
+							<div
+								className="p-8 text-center text-muted bg-paper-soft rounded-xl border border-line flex flex-col items-center justify-center gap-2"
+								data-testid="cw-empty-services"
+							>
+								<Layers size={32} className="text-slate-400 opacity-60" />
+								<p className="font-semibold text-sm text-ink">
+									В текущем приёме нет выполненных клинических услуг
+								</p>
+								<p className="text-xs text-muted max-w-md">
+									Автосписание материалов по Приказу № 804н активируется при добавлении процедур в наряд или при применении клинического протокола
+								</p>
+							</div>
+						) : (
+							Array.from(servicesMap.entries()).map(([key, { service, lines: serviceLines }]) => {
+								return (
+									<div key={key} className="cw-service-card">
+										{/* Заголовок услуги */}
+										<div className="cw-service-card-header">
+											<div className="flex items-center gap-2.5 flex-wrap">
+												<span className="cw-service-badge">{service.serviceCode}</span>
+												{service.toothNumber && (
+													<span className="cw-tooth-badge">Зуб №{service.toothNumber}</span>
+												)}
+												<span className="font-bold text-sm text-ink">
+													{service.serviceTitle || `Услуга ${service.serviceCode}`}
+												</span>
+											</div>
+											<div className="text-xs text-muted">
+												Позиций к списанию: <strong>{serviceLines.length}</strong>
+											</div>
 										</div>
-										<div className="text-xs text-muted">
-											Позиций к списанию: <strong>{serviceLines.length}</strong>
-										</div>
-									</div>
 
-									{/* Таблица материалов услуги */}
-									<ClinicalWriteoffServiceTable
-										serviceLines={serviceLines}
-										onQuantityChange={handleQuantityChange}
-										onReasonChange={handleReasonChange}
-										onSerialNumberChange={handleSerialNumberChange}
-										onResetToNorm={handleResetToNorm}
-										onRemoveLine={handleRemoveLine}
-									/>
-								</div>
-							);
-						})}
+										{/* Таблица материалов услуги */}
+										<ClinicalWriteoffServiceTable
+											serviceLines={serviceLines}
+											onQuantityChange={handleQuantityChange}
+											onReasonChange={handleReasonChange}
+											onSerialNumberChange={handleSerialNumberChange}
+											onResetToNorm={handleResetToNorm}
+											onRemoveLine={handleRemoveLine}
+										/>
+									</div>
+								);
+							})
+						)}
 					</div>
 
 					{/* Сводная плашка себестоимости и объемов */}
 					<div className="cw-summary-bar">
 						<div className="flex flex-col">
 							<span className="text-xs font-semibold text-muted uppercase">Услуг в наряде</span>
-							<span className="text-lg font-black text-ink">{initialServices.length} проц.</span>
+							<span className="text-lg font-black text-ink">{services.length} проц.</span>
 						</div>
 
 						<div className="flex flex-col">
