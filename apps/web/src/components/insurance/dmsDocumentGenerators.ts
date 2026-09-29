@@ -223,12 +223,12 @@ export function generateDmsPreAuthRequest(
 		${xraysList}
 	</ul>
 
-	<div class="section-head">3. Перечень запрашиваемых медицинских услуг (Приказ Минздрава РФ № 804н)</div>
+	<div class="section-head">3. Перечень запрашиваемых медицинских услуг</div>
 	<table>
 		<thead>
 			<tr>
 				<th style="width: 40px; text-align: center;">№</th>
-				<th style="width: 110px;">Код 804н</th>
+				<th style="width: 110px;">Код услуги</th>
 				<th>Наименование медицинской услуги</th>
 				<th style="width: 60px; text-align: center;">Кол-во</th>
 				<th style="width: 110px; text-align: right;">Тариф (руб)</th>
@@ -318,7 +318,7 @@ export function exportRegistryToCsv(registry: DmsStatutoryRegistry): string {
 		"ФИО Застрахованного",
 		"Номер полиса ДМС",
 		"Номер гарантийного письма",
-		"Код услуги (804н)",
+		"Код услуги",
 		"Наименование медицинской услуги",
 		"Номер зуба (FDI)",
 		"Диагноз (МКБ-10)",

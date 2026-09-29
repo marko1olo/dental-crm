@@ -346,7 +346,7 @@ function TaxPayerDetails({
 							placeholder=" "
 						/>
 						<label htmlFor="payment-payer-inn">
-							ИНН плательщика (если есть, физлицам по 54-ФЗ не требуется)
+							ИНН плательщика (если есть, физлицам не требуется)
 						</label>
 					</div>
 					<div className="smart-field no-float">

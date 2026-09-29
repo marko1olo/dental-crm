@@ -118,9 +118,11 @@ export const MarketingPromosList: React.FC<MarketingPromosListProps> = ({
 						<p className="marketing-empty-text">
 							{searchQuery
 								? "Акции по данному запросу не найдены"
-								: activeTab === "active"
-									? "Нет активных акций"
-									: "Архив акций пуст"}
+								: promos.length === 0
+									? "Акции клиники пока не созданы. Нажмите «Новая акция» для запуска рекламной кампании"
+									: activeTab === "active"
+										? "Нет активных акций"
+										: "Архив акций пуст"}
 						</p>
 					</div>
 				) : (

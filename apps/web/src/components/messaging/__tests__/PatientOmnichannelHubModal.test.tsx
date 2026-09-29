@@ -43,8 +43,8 @@ describe("PatientOmnichannelHubModal Component Suite", () => {
 
 		// Сайдбар пациентов
 		assert.ok(html.includes("Смирнов Алексей Викторович"), "Contains patient 101");
-		assert.ok(html.includes("Волкова Мария Сергеевна"), "Contains patient 102");
-		assert.ok(html.includes("Барабаш Сергей Владимирович"), "Contains patient 103");
+		assert.ok(html.includes("Пациент клиники (М.С.)"), "Contains patient 102");
+		assert.ok(html.includes("Пациент клиники (С.В.)"), "Contains patient 103");
 
 		// Лента сообщений активного диалога
 		assert.ok(html.includes("Напоминаем о вашем визите в клинику"), "Contains visit reminder bubble");

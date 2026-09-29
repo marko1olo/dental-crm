@@ -300,7 +300,7 @@ export function DmsBillSplitCalculatorSection({
 				<table className="dms-table">
 					<thead>
 						<tr>
-							<th>Код 804н</th>
+							<th>Код услуги</th>
 							<th>Наименование услуги</th>
 							<th>Зуб FDI</th>
 							<th>Стоимость</th>

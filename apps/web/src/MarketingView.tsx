@@ -6,7 +6,8 @@
  */
 
 import React, { useState } from "react";
-import { Tag, Users, BarChart3, Megaphone, TrendingUp } from "lucide-react";
+import { Tag, Users, BarChart3, Megaphone, TrendingUp, Plus } from "lucide-react";
+import { isDemoShowcaseMode } from "./lib/demoMode";
 import { DEFAULT_MARKETING_PROMOS } from "./components/marketing/marketingPresets";
 import type { MarketingPromo } from "./components/marketing/marketingTypes";
 import { MarketingPromosList } from "./components/marketing/MarketingPromosList";
@@ -31,17 +32,19 @@ export function MarketingView({
 	clinicPhone: _clinicPhone,
 	initialTab = "promos",
 }: MarketingViewProps) {
+	const isDemo = isDemoShowcaseMode();
 	const [activeTab, setActiveTab] = useState<MarketingTab>(initialTab);
-	const [promos, setPromos] = useState<readonly MarketingPromo[]>(DEFAULT_MARKETING_PROMOS);
-	const [selectedPromoId, setSelectedPromoId] = useState<string>(
-		DEFAULT_MARKETING_PROMOS[0]?.id ?? "",
+	const [promos, setPromos] = useState<readonly MarketingPromo[]>(() =>
+		isDemo ? DEFAULT_MARKETING_PROMOS : [],
+	);
+	const [selectedPromoId, setSelectedPromoId] = useState<string>(() =>
+		isDemo ? (DEFAULT_MARKETING_PROMOS[0]?.id ?? "") : "",
 	);
 	const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
 	const selectedPromo =
 		promos.find((p) => p.id === selectedPromoId) ||
-		promos[0] ||
-		DEFAULT_MARKETING_PROMOS[0];
+		promos[0];
 
 	const handleTogglePromoStatus = (promoId: string) => {
 		setPromos((prev) =>
@@ -64,7 +67,7 @@ export function MarketingView({
 		<section
 			className="settings-zone marketing-zone panel p-5 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
 			id="marketing"
-			aria-label="Маркетинг/Диспансеризация"
+			aria-label="Маркетинг/Возврат пациентов"
 			data-testid="marketing-view"
 		>
 			{/* Top Header Row with Title, Status Pill and Mode Tabs */}
@@ -108,7 +111,7 @@ export function MarketingView({
 						data-testid="tab-nav-recalls"
 					>
 						<Users size={14} aria-hidden="true" />
-						<span>Диспансерный учет / Возврат пациентов</span>
+						<span>Плановый профосмотр / Возврат пациентов</span>
 					</button>
 
 					<button
@@ -150,14 +153,33 @@ export function MarketingView({
 							onTogglePromoStatus={handleTogglePromoStatus}
 						/>
 					) : (
-						<div className="marketing-empty-workspace">
-							<p>Выберите акцию из списка слева</p>
+						<div
+							className="marketing-empty-workspace flex flex-col items-center justify-center p-8 text-center"
+							data-testid="marketing-empty-workspace"
+						>
+							<Tag size={40} className="text-muted mb-3 opacity-60" aria-hidden="true" />
+							<p className="text-[var(--ink)] font-medium mb-1" data-testid="marketing-empty-state-text">
+								{promos.length === 0
+									? "Акции клиники пока не созданы. Нажмите «Новая акция» для запуска рекламной кампании"
+									: "Выберите акцию из списка слева"}
+							</p>
+							{promos.length === 0 && (
+								<button
+									type="button"
+									className="button-primary mt-3 flex items-center gap-1.5"
+									onClick={() => setIsNewModalOpen(true)}
+									data-testid="btn-empty-new-promo"
+								>
+									<Plus size={15} />
+									<span>Новая акция</span>
+								</button>
+							)}
 						</div>
 					)}
 				</div>
 			)}
 
-			{/* TAB 2: ДИСПАНСЕРНЫЙ УЧЕТ И ВОЗВРАТ ПАЦИЕНТОВ */}
+			{/* TAB 2: ПЛАНОВЫЙ ПРОФОСМОТР И ВОЗВРАТ ПАЦИЕНТОВ */}
 			{activeTab === "recalls" && (
 				<div className="marketing-recalls-container" data-testid="marketing-recalls-container">
 					<RecallListPanel />

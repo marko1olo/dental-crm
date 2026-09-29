@@ -522,7 +522,7 @@ export function generateDmsRegistryCsv(
 		"Номер полиса ДМС",
 		"Гарантийное письмо",
 		"Страховая компания",
-		"Код услуги (804н)",
+		"Код услуги",
 		"Наименование медицинской услуги",
 		"Зуб (FDI)",
 		"Диагноз (МКБ-10)",
@@ -691,7 +691,7 @@ export function generateDmsA4PrintableHtml(
         <th style="width: 25px; text-align: center;">№</th>
         <th style="width: 65px;">Дата</th>
         <th style="width: 140px;">Застрахованный / Полис</th>
-        <th style="width: 80px;">Код 804н</th>
+        <th style="width: 80px;">Код услуги</th>
         <th>Наименование медицинской услуги</th>
         <th style="width: 50px; text-align: center;">МКБ</th>
         <th style="width: 35px; text-align: center;">Кол</th>

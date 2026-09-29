@@ -94,7 +94,7 @@ th { background: #f8fafc; font-weight: 700; }
 <body>
 <div class="header">
   <h1>АКТ СДАЧИ-ПРИЕМКИ ВЫПОЛНЕННЫХ РАБОТ № ${actNumber}</h1>
-  <div class="clinic">${clinicLegalName} • Приказ Минздрава РФ № 804н • Закон РФ № 2300-1</div>
+  <div class="clinic">${clinicLegalName}</div>
 </div>
 <div class="patient">
   <div><strong>Заказчик (Пациент):</strong> ${inv.patientName}</div>
@@ -103,7 +103,7 @@ th { background: #f8fafc; font-weight: 700; }
 </div>
 <table>
   <thead>
-    <tr><th>№</th><th>Код (804н)</th><th>Наименование стоматологической услуги</th><th>Кол-во</th><th>Сумма</th></tr>
+    <tr><th>№</th><th>Код услуги</th><th>Наименование стоматологической услуги</th><th>Кол-во</th><th>Сумма</th></tr>
   </thead>
   <tbody>
     ${inv.items

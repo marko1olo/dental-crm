@@ -662,7 +662,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 								onApplyWarranty={() => handleApplyWarranty100(inv)}
 								onPrepareFnsTaxDeduction={() => {
 									showToast(
-										`Справка для налоговой (ФНС 1151156) по счету ${inv.number} подготовлена`,
+										`Справка для налогового вычета по счету ${inv.number} подготовлена`,
 										"info",
 									);
 									setActiveMenuInvoiceId(null);

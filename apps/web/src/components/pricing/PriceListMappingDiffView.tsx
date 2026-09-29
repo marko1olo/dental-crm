@@ -350,8 +350,8 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 		const percent = Math.round(confidence * 100);
 		if (kind === 'exact_code') {
 			return (
-				<span className="pricelist-diff-confidence-badge exact" title="Точный код классификатора Минздрава 804н">
-					{`${percent}% Код 804н`}
+				<span className="pricelist-diff-confidence-badge exact" title="Точный код классификатора Минздрава">
+					{`${percent}% Код услуги`}
 				</span>
 			);
 		}
@@ -370,7 +370,7 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 			);
 		}
 		return (
-			<span className="pricelist-diff-confidence-badge low" title="Низкая уверенность: требуется ручной выбор соответствия стандарту 804н">
+			<span className="pricelist-diff-confidence-badge low" title="Низкая уверенность: требуется ручной выбор соответствия стандарту">
 				{`${percent}% Требует выбора`}
 			</span>
 		);
@@ -398,9 +398,9 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 			<header className="pricelist-diff-toolbar" data-testid="pricelist-diff-toolbar">
 				{/* Left Group: Summary Stats & Filter Segmented Control */}
 				<div className="pricelist-diff-toolbar-left">
-					<div className="pricelist-diff-stat-chip accent" title="Всего распознано / Коды 804н / Средняя уверенность">
+					<div className="pricelist-diff-stat-chip accent" title="Всего распознано / С кодами услуг / Средняя уверенность">
 						<Sparkles size={12} />
-						<span>{`Всего: ${stats.total} | 804н: ${stats.exactCount} | ${stats.avgConfidence}%`}</span>
+						<span>{`Всего: ${stats.total} | Коды: ${stats.exactCount} | ${stats.avgConfidence}%`}</span>
 					</div>
 
 					{stats.attentionCount > 0 && (
@@ -582,11 +582,11 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 				</section>
 
 				{/* Right Pane: Statutory Nomenclature Mapping & Actions with Synchronized Scroll */}
-				<section className="pricelist-diff-pane right-pane" aria-label="Сопоставление с номенклатурой 804н">
+				<section className="pricelist-diff-pane right-pane" aria-label="Сопоставление с номенклатурой услуг">
 					<header className="pricelist-diff-pane-header">
 						<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
 							<ShieldCheck size={13} style={{ color: 'var(--ok-fg)' }} />
-							<span>2. Распознанное наименование, код 804н, цена и действие</span>
+							<span>2. Распознанное наименование, код услуги, цена и действие</span>
 						</div>
 						<span>
 							{`Выбрано к загрузке: ${items.filter((i) => i.isApproved).length} из ${items.length}`}
@@ -625,8 +625,8 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 											{item.cleanedTitle}
 										</div>
 
-										<div className="pricelist-diff-statutory-title" title={`Минздрав 804н: ${item.statutoryTitle804n}`}>
-											{`Минздрав 804н: ${item.statutoryTitle804n}`}
+										<div className="pricelist-diff-statutory-title" title={`Номенклатура: ${item.statutoryTitle804n}`}>
+											{`Номенклатура: ${item.statutoryTitle804n}`}
 										</div>
 
 										{/* Inline Service Linker Drawer (if active) */}
@@ -795,7 +795,7 @@ export const PriceListMappingDiffView: React.FC<PriceListMappingDiffViewProps> =
 			{/* Footer: Apply or Cancel — Mandate 8e: Zero Disabled Buttons */}
 			<footer className="pricelist-diff-footer">
 				<div className="pricelist-diff-footer-summary">
-					{`Будет добавлено / обновлено ${items.filter((i) => i.isApproved).length} услуг по стандарту Минздрава России № 804н`}
+					{`Будет добавлено / обновлено ${items.filter((i) => i.isApproved).length} услуг по стандарту Минздрава России`}
 				</div>
 
 				<div className="pricelist-diff-footer-actions">

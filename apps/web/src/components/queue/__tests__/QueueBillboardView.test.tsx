@@ -10,7 +10,9 @@ import {
 
 describe("QueueBillboardView Component & Waiting Room TV Display HUD", () => {
 	it("renders TV Queue Billboard HUD with atmospheric artwork and default queue items", () => {
-		const html = renderToStaticMarkup(createElement(QueueBillboardView));
+		const html = renderToStaticMarkup(
+			createElement(QueueBillboardView, { items: DEFAULT_BILLBOARD_QUEUE_ITEMS }),
+		);
 
 		// Main container
 		assert.ok(
@@ -220,5 +222,11 @@ describe("QueueBillboardView Component & Waiting Room TV Display HUD", () => {
 			cssContent.includes("@media (max-width: 900px)"),
 			"Includes responsive breakpoint for tablet displays",
 		);
+	});
+
+	it("renders honest empty billboard state in production when queue is empty", () => {
+		const html = renderToStaticMarkup(createElement(QueueBillboardView, { items: [] }));
+		assert.ok(html.includes("Очередь приёма пуста. Ожидайте вызова врача на приём"));
+		assert.ok(html.includes("Кабинеты готовятся к приёму"));
 	});
 });

@@ -417,14 +417,14 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 							className={`expanded-focus-tab expanded-focus-tab--fresh ${urgencyFilter === "fresh" ? "is-active" : ""}`}
 							onClick={() => setUrgencyFilter("fresh")}
 						>
-							🟢 Свежие ({metrics.freshCount})
+							Свежие ({metrics.freshCount})
 						</button>
 						<button
 							type="button"
 							className={`expanded-focus-tab expanded-focus-tab--warning ${urgencyFilter === "warning" ? "is-active" : ""}`}
 							onClick={() => setUrgencyFilter("warning")}
 						>
-							🟡 Внимание ({metrics.warningCount})
+							Внимание ({metrics.warningCount})
 						</button>
 						{metrics.breachedCount > 0 && (
 							<button
@@ -432,7 +432,7 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 								className={`expanded-focus-tab expanded-focus-tab--breached ${urgencyFilter === "breached" ? "is-active" : ""}`}
 								onClick={() => setUrgencyFilter("breached")}
 							>
-								🔴 Просрочен SLA ({metrics.breachedCount})
+								Просрочен SLA ({metrics.breachedCount})
 							</button>
 						)}
 					</div>

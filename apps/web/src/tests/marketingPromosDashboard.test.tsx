@@ -140,4 +140,42 @@ describe("Marketing 2-Column Balanced Dashboard (Mandates 8c, 8e, 8n)", () => {
 		assert.ok(romiHtml.includes("data-testid=\"marketing-romi-container\""));
 		assert.ok(romiHtml.includes("data-testid=\"marketing-romi-table-section\""));
 	});
+
+	it("5. Strictly isolates mock promos behind isDemoShowcaseMode (Mandate 8y Dual-Mode)", async () => {
+		const { setRuntimeDemoMode } = await import("../lib/demoMode.js");
+
+		// Production Mode (!isDemoShowcaseMode()): Honest EmptyState with zero fake revenue
+		setRuntimeDemoMode(false);
+		const prodChild = createElement(MarketingView, {
+			clinicName: "Стоматология ДЕНТЕ Премиум",
+			initialTab: "promos",
+		});
+		const prodHtml = renderToStaticMarkup(
+			createElement(AppLogicProvider, { value: mockAppLogicValue, children: prodChild }),
+		);
+
+		assert.ok(
+			prodHtml.includes("Акции клиники пока не созданы. Нажмите «Новая акция» для запуска рекламной кампании"),
+			"Must render honest EmptyState in production mode",
+		);
+		assert.ok(prodHtml.includes("data-testid=\"btn-empty-new-promo\""), "Must offer CTA button to launch first promo");
+		assert.ok(!prodHtml.includes("497000"), "Must NOT leak synthetic 497 000 ₽ revenue in production");
+		assert.ok(!prodHtml.includes("HYGIENE3500"), "Must NOT render fake HYGIENE3500 promo in production");
+
+		// Demo Showcase Mode (isDemoShowcaseMode() === true): Showcase default promos
+		setRuntimeDemoMode(true);
+		const demoChild = createElement(MarketingView, {
+			clinicName: "Стоматология ДЕНТЕ Премиум",
+			initialTab: "promos",
+		});
+		const demoHtml = renderToStaticMarkup(
+			createElement(AppLogicProvider, { value: mockAppLogicValue, children: demoChild }),
+		);
+
+		assert.ok(demoHtml.includes("HYGIENE3500"), "Must render showcase promo in demo mode");
+		assert.ok(demoHtml.includes("497"), "Must render showcase metrics in demo mode");
+
+		// Reset runtime mode
+		setRuntimeDemoMode(null);
+	});
 });

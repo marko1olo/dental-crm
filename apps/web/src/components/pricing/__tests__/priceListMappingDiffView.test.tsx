@@ -125,7 +125,7 @@ describe('PriceListMappingDiffView (804n Statutory Diff-View & Ingestion)', () =
 		expect(html).toContain('pricelist-diff-container');
 		expect(html).toContain('pricelist-diff-panes');
 		expect(html).toContain('1. Исходная строка старого документа');
-		expect(html).toContain('2. Распознанное наименование, код 804н, цена и действие');
+		expect(html).toContain('2. Распознанное наименование, код услуги, цена и действие');
 
 		// Left Raw Document lines
 		expect(html).toContain('Filtek Z250 4500 руб');
@@ -151,7 +151,7 @@ describe('PriceListMappingDiffView (804n Statutory Diff-View & Ingestion)', () =
 		// 1-Row Toolbar
 		expect(html).toContain('pricelist-diff-toolbar');
 		expect(html).toContain('Всего: 5');
-		expect(html).toContain('804н: 2');
+		expect(html).toContain('Коды: 2');
 
 		// Filter segmented controls
 		expect(html).toContain('Все (5)');
@@ -179,7 +179,7 @@ describe('PriceListMappingDiffView (804n Statutory Diff-View & Ingestion)', () =
 		);
 
 		// Exact 804n code badge
-		expect(html).toContain('98% Код 804н');
+		expect(html).toContain('98% Код услуги');
 		expect(html).toContain('pricelist-diff-confidence-badge exact');
 
 		// High confidence chip (green)

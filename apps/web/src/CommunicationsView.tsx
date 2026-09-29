@@ -194,7 +194,7 @@ export function CommunicationsView(
 						onClick={() => setIsRecallsHubOpen(true)}
 						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20 transition-all inline-flex items-center gap-1.5 cursor-pointer"
 						data-testid="communications-recalls-hub-btn"
-						title="Профосмотры и реколлы: диспансерный учет и удержание"
+						title="Профосмотры и реколлы: плановый контроль и удержание"
 					>
 						<Calendar size={14} className="text-teal-600" />
 						<span>Профосмотры и реколлы</span>

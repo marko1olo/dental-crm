@@ -223,7 +223,7 @@ describe("MarketingView Autonomy & Recall Patient List (Mandates 8e, 8n)", () =>
 		);
 
 		assert.ok(html.includes("data-testid=\"marketing-view\""));
-		assert.ok(html.includes("Диспансерный учет / Возврат пациентов"));
+		assert.ok(html.includes("Плановый профосмотр / Возврат пациентов"));
 		assert.ok(html.includes("активен"));
 	});
 });

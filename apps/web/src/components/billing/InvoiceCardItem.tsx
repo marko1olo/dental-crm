@@ -190,7 +190,7 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
 								role="menuitem"
 							>
 								<FileText size={14} className="text-teal-600" />
-								<span>Печать акта 804н</span>
+								<span>Печать акта выполненных услуг</span>
 							</button>
 
 							{isPending && (
@@ -215,7 +215,7 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
 								role="menuitem"
 							>
 								<FileCheck size={14} className="text-blue-600" />
-								<span>Справка ФНС (1151156)</span>
+								<span>Справка на налоговый вычет</span>
 							</button>
 						</div>
 					)}

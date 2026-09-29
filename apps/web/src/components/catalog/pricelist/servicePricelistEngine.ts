@@ -622,7 +622,7 @@ export function exportPricelistToCsv(
 ): string {
 	const delimiter = options?.delimiter ?? ';';
 	const headers = [
-		'Код 804н',
+		'Код услуги',
 		'Коммерческое наименование',
 		'Официальное наименование',
 		'Категория',
@@ -954,7 +954,7 @@ export function generatePrintablePricelistHtml(
 					<thead>
 						<tr>
 							<th class="col-num">№</th>
-							<th class="col-code">Код 804н</th>
+							<th class="col-code">Код услуги</th>
 							<th class="col-name">Наименование медицинской услуги</th>
 							<th class="col-spec">Специальность</th>
 							<th class="col-price">Цена (руб.)</th>

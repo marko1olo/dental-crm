@@ -65,7 +65,7 @@ export function exportRegistryToCsv(
 			escapeCsv("ФИО Пациента"),
 			escapeCsv("Номер полиса ДМС"),
 			escapeCsv("№ Гар. письма"),
-			escapeCsv("Код услуги 804н"),
+			escapeCsv("Код услуги"),
 			escapeCsv("Наименование услуги"),
 			escapeCsv("Диагноз (МКБ-10)"),
 			escapeCsv("Зуб"),
@@ -198,7 +198,7 @@ export function generateBilateralAcceptanceActHtml(params: BilateralAcceptanceAc
 				<th>Дата</th>
 				<th>Застрахованный (Пациент)</th>
 				<th>Полис ДМС</th>
-				<th>Код 804н</th>
+				<th>Код услуги</th>
 				<th>Наименование услуги</th>
 				<th>Кол-во</th>
 				<th>Тариф (руб)</th>

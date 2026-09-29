@@ -27,6 +27,7 @@ import {
 	Volume2,
 } from "lucide-react";
 import { AuthArtBackground } from "../auth/AuthArtBackground";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import "./QueueBillboardView.css";
 
 export interface QueueBillboardItem {
@@ -117,13 +118,15 @@ export const DEFAULT_BILLBOARD_QUEUE_ITEMS: readonly QueueBillboardItem[] = [
 export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 	clinicName = "Стоматологическая клиника ДЕНТЕ",
 	clinicSubtitle = "Электронная очередь холла ожидания",
-	items = DEFAULT_BILLBOARD_QUEUE_ITEMS,
+	items: initialItems,
 	className = "",
 	overlayAlpha = 0.5,
 	announcementText = "Пожалуйста, сохраняйте тишину. При появлении вашего номера талона на табло пройдите в указанный кабинет.",
 }) => {
+	const isDemo = isDemoShowcaseMode();
 	const [currentTime, setCurrentTime] = useState<string>("00:00:00");
 	const [currentDate, setCurrentDate] = useState<string>("");
+	const [liveItems, setLiveItems] = useState<readonly QueueBillboardItem[]>([]);
 
 	// Digital Clock Timer with guaranteed unmount teardown
 	useEffect(() => {
@@ -151,15 +154,97 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 		return () => clearInterval(intervalId);
 	}, []);
 
+	// Live queue polling from PostgreSQL 18 in production
+	useEffect(() => {
+		if (isDemo || (initialItems && initialItems.length > 0)) return;
+
+		let isMounted = true;
+		const fetchQueue = async () => {
+			try {
+				const res = await fetch("/api/dashboard");
+				if (!res.ok) return;
+				const data = await res.json();
+				if (!isMounted) return;
+
+				const appointments: Array<{
+					id?: string;
+					patientName?: string;
+					patientInitials?: string;
+					doctorName?: string;
+					doctorSpecialty?: string;
+					cabinet?: string;
+					status?: string;
+				}> = Array.isArray(data?.appointments)
+					? data.appointments
+					: Array.isArray(data?.queue)
+					? data.queue
+					: [];
+
+				const mapped: QueueBillboardItem[] = appointments
+					.filter((apt) => ["in_treatment", "in_chair", "invited", "planned", "waiting"].includes(apt.status || ""))
+					.map((apt, idx) => {
+						const isInvited = apt.status === "invited";
+						const isInChair = apt.status === "in_treatment" || apt.status === "in_chair";
+						const queueStatus: QueueBillboardItem["status"] = isInvited
+							? "invited"
+							: isInChair
+							? "in_chair"
+							: "waiting";
+
+						const initials =
+							apt.patientInitials ||
+							(apt.patientName
+								? apt.patientName
+										.split(" ")
+										.filter(Boolean)
+										.map((p, i) => (i === 0 ? p : `${p[0]}.`))
+										.join(" ")
+								: `Пациент ${idx + 1}`);
+
+						const letter = String.fromCharCode(65 + (idx % 6));
+						const ticketNumber = `${letter}-${String(idx + 1).padStart(2, "0")}`;
+
+						return {
+							id: apt.id || `queue-${idx}`,
+							ticketNumber,
+							patientInitials: initials,
+							doctorName: apt.doctorName || "Дежурный врач",
+							doctorSpecialty: apt.doctorSpecialty,
+							cabinetName: apt.cabinet || "Кабинет 1",
+							status: queueStatus,
+							timeInfo: isInChair ? "Идет прием" : isInvited ? "Приглашается" : "~10 мин",
+						};
+					});
+
+				setLiveItems(mapped);
+			} catch {
+				// Non-blocking for lobby billboard
+			}
+		};
+
+		fetchQueue();
+		const interval = setInterval(fetchQueue, 15000);
+		return () => {
+			isMounted = false;
+			clearInterval(interval);
+		};
+	}, [isDemo, initialItems]);
+
+	const effectiveItems = useMemo(() => {
+		if (initialItems && initialItems.length > 0) return initialItems;
+		if (isDemo) return DEFAULT_BILLBOARD_QUEUE_ITEMS;
+		return liveItems;
+	}, [initialItems, isDemo, liveItems]);
+
 	// Partition items into Invited/In-chair and Waiting
 	const invitedOrInChairItems = useMemo(
-		() => items.filter((item) => item.status === "invited" || item.status === "in_chair"),
-		[items],
+		() => effectiveItems.filter((item) => item.status === "invited" || item.status === "in_chair"),
+		[effectiveItems],
 	);
 
 	const waitingItems = useMemo(
-		() => items.filter((item) => item.status === "waiting"),
-		[items],
+		() => effectiveItems.filter((item) => item.status === "waiting"),
+		[effectiveItems],
 	);
 
 	return (
@@ -210,7 +295,13 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 					</div>
 
 					<div className="queue-billboard-items-list" data-testid="billboard-invited-list">
-						{invitedOrInChairItems.map((item) => (
+						{invitedOrInChairItems.length === 0 ? (
+							<div className="p-8 text-center text-slate-400 dark:text-slate-500 text-sm flex flex-col items-center justify-center gap-2">
+								<Clock size={24} className="opacity-50" />
+								<span>Кабинеты готовятся к приёму</span>
+							</div>
+						) : (
+							invitedOrInChairItems.map((item) => (
 							<article
 								key={item.id}
 								className="queue-ticket-card invited"
@@ -244,7 +335,8 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 									)}
 								</div>
 							</article>
-						))}
+						))
+					)}
 					</div>
 				</section>
 
@@ -259,7 +351,13 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 					</div>
 
 					<div className="queue-billboard-items-list" data-testid="billboard-waiting-list">
-						{waitingItems.map((item) => (
+						{waitingItems.length === 0 ? (
+							<div className="p-8 text-center text-slate-400 dark:text-slate-500 text-sm flex flex-col items-center justify-center gap-2">
+								<Users size={24} className="opacity-50" />
+								<span>Очередь приёма пуста. Ожидайте вызова врача на приём</span>
+							</div>
+						) : (
+							waitingItems.map((item) => (
 							<article
 								key={item.id}
 								className="queue-ticket-card waiting"
@@ -292,7 +390,8 @@ export const QueueBillboardView: React.FC<QueueBillboardViewProps> = ({
 									)}
 								</div>
 							</article>
-						))}
+						))
+					)}
 					</div>
 				</section>
 			</div>
