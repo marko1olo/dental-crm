@@ -52,7 +52,7 @@ export const VIEW_CANONICAL_NAMES: Record<
 	analytics: { labelRu: "Аналитика", canonicalKey: "Analytics" },
 	communications: { labelRu: "Связь", canonicalKey: "Communications" },
 	inventory: { labelRu: "Склад", canonicalKey: "Inventory" },
-	scanner: { labelRu: "СанПиН", canonicalKey: "SanPiN" },
+	scanner: { labelRu: "Стерилизация", canonicalKey: "SanPiN" },
 	leads: { labelRu: "Обращения", canonicalKey: "Leads" },
 	settings: { labelRu: "Настройки", canonicalKey: "Settings" },
 	marketing: { labelRu: "Маркетинг", canonicalKey: "Marketing" },

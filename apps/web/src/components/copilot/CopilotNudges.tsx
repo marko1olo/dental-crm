@@ -155,12 +155,12 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
                     {isApplied ? (
                       <>
                         <Check size={14} />
-                        <span>Внесено в 043/у!</span>
+                        <span>Внесено в карту!</span>
                       </>
                     ) : (
                       <>
                         <FileText size={14} />
-                        <span>1 клик в 043/у</span>
+                        <span>1 клик в карту</span>
                       </>
                     )}
                   </button>

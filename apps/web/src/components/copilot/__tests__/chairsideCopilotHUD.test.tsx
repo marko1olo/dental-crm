@@ -72,8 +72,8 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(html).toContain("Проверка аллергического статуса и лекарственной безопасности DDI");
     expect(html).toContain("Сверка диагноза МКБ-10");
     expect(html).toContain("K02.1 Кариес дентина");
-    expect(html).toContain("Расчет стоимости услуг по Номенклатуре 804н");
-    expect(html).toContain("Формирование протокола SOAP Формы 043/у");
+    expect(html).toContain("Расчет стоимости услуг по прейскуранту");
+    expect(html).toContain("Формирование клинического протокола приёма");
   });
 
   it("4. renders Odontogram action proposal card with tooth, state, and apply button", () => {
@@ -100,7 +100,7 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     );
 
     expect(html).toContain("chairside-card-services");
-    expect(html).toContain("Смета услуг по 804н");
+    expect(html).toContain("Смета услуг");
     expect(html).toContain("A16.07.002.010");
     expect(html).toContain("A16.07.002.011");
     expect(html).toContain("A25.07.001");

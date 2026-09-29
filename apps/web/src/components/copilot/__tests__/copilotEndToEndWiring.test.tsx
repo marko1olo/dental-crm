@@ -74,8 +74,8 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
     expect(html).toContain("Размышления ИИ");
     expect(html).toContain("Проверка аллергического статуса");
     expect(html).toContain("Сверка диагноза МКБ-10");
-    expect(html).toContain("Расчет стоимости услуг по Номенклатуре 804н");
-    expect(html).toContain("Формирование протокола SOAP Формы 043/у");
+    expect(html).toContain("Расчет стоимости услуг по прейскуранту");
+    expect(html).toContain("Формирование клинического протокола приёма");
 
     // Action cards
     expect(html).toContain("chairside-card-odontogram");

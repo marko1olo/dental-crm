@@ -418,7 +418,7 @@ export const PatientProfileCard: React.FC<PatientProfileCardProps> = ({
 						type="button"
 						onClick={() => handleOpen(patient.id)}
 						className="copilot-pp-primary-btn"
-						title="Открыть электронную медицинскую карту 043/у"
+						title="Открыть электронную медицинскую карту"
 					>
 						<User size={15} />
 						<span>Открыть карту</span>
@@ -955,7 +955,7 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 						{data.teeth && data.teeth.length > 0 && (
 							<span>Зубы: {data.teeth.join(", ")} • </span>
 						)}
-						<span>Расчёт по ст. 149 НК РФ / 804н</span>
+						<span>Расчёт по прейскуранту (без НДС)</span>
 					</div>
 				</div>
 			</div>
@@ -1145,7 +1145,7 @@ export const DEFAULT_DENTE_REACT_STEPS: ReactStepItem[] = [
 		title:
 			"Формирование 3-уровневого плана лечения (Эконом / Оптимум / Премиум)...",
 		status: "done",
-		detail: "3 тарифа рассчитаны по ст. 149 НК РФ / 804н",
+		detail: "3 тарифа рассчитаны по прейскуранту (без НДС)",
 		icon: "plan",
 	},
 ];
@@ -1405,7 +1405,7 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 			className={`copilot-gen-card copilot-043-confirm-card ${savedStatus ? "saved" : ""}`}
 			data-testid="copilot-protocol-043-card"
 			role="region"
-			aria-label="Карточка дневника 043/у"
+			aria-label="Карточка дневника приёма"
 		>
 			{/* Header */}
 			<div className="copilot-043-header">
@@ -1415,7 +1415,7 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 					</div>
 					<div>
 						<h4 className="copilot-043-title">
-							ДЕНТА сформировала дневник 043/у
+							ДЕНТА сформировала дневник приёма
 						</h4>
 						<div className="copilot-043-meta">
 							<span>{`${formData.patientName} • Зуб ${formData.tooth} (FDI) • ${formData.diagnosis}`}</span>
@@ -1429,7 +1429,7 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 							type="button"
 							className="copilot-043-edit-btn"
 							onClick={() => setIsEditing(true)}
-							title="Редактировать запись 043/у"
+							title="Редактировать запись дневника"
 						>
 							<Edit3 size={13} />
 							<span>Изменить</span>
@@ -1442,7 +1442,7 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 							? "В ЭМК визита"
 							: isEditing
 								? "Правка"
-								: "Черновик 043/у"}
+								: "Черновик дневника"}
 					</span>
 				</div>
 			</div>
@@ -1540,12 +1540,12 @@ export const CopilotProtocol043ConfirmCard: React.FC<
 						type="button"
 						className={`copilot-043-save-btn ${savedStatus ? "saved" : ""}`}
 						onClick={handleSave}
-						title="Сохранить дневник 043/у в электронную медкарту визита"
+						title="Сохранить дневник приёма в электронную медкарту визита"
 					>
 						{savedStatus ? (
 							<>
 								<CheckCircle2 size={16} />
-								<span>Дневник 043/у сохранён в ЭМК визита</span>
+								<span>Дневник приёма сохранён в ЭМК визита</span>
 							</>
 						) : (
 							<>

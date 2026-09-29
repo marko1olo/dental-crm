@@ -734,7 +734,7 @@ describe('Copilot 1-Click Outpatient Diary 043/u Card', () => {
       <CopilotProtocol043ConfirmCard data={diaryData} />
     );
 
-    assert.ok(html.includes('ДЕНТА сформировала дневник 043/у'), 'title missing');
+    assert.ok(html.includes('ДЕНТА сформировала дневник приёма'), 'title missing');
     assert.ok(html.includes('Барабаш Сергей Владимирович'), 'patientName missing');
     assert.ok(html.includes('Зуб 36'), 'tooth missing');
     assert.ok(html.includes('K02.1'), 'diagnosis missing');
@@ -761,7 +761,7 @@ describe('Copilot 1-Click Outpatient Diary 043/u Card', () => {
       <CopilotProtocol043ConfirmCard data={diaryData} resolved="confirm" />
     );
 
-    assert.ok(html.includes('Дневник 043/у сохранён в ЭМК визита'));
+    assert.ok(html.includes('Дневник приёма сохранён в ЭМК визита'));
     assert.ok(html.includes('В ЭМК визита'));
   });
 });
@@ -822,7 +822,7 @@ describe('CopilotActionConfirm Specialized 1-Click Medical Buttons', () => {
       />
     );
 
-    assert.ok(html.includes('ДЕНТА сформировала дневник 043/у'));
+    assert.ok(html.includes('ДЕНТА сформировала дневник приёма'));
     assert.ok(html.includes('Сохранить в ЭМК визита (1 клик)'));
     assert.ok(html.includes('Жалобы пациента'));
     assert.ok(html.includes('Лечение и процедуры'));
@@ -894,7 +894,7 @@ describe('Copilot Proactive Clinical Tooth Protocol Nudges', () => {
     assert.ok(html.includes('Зуб #46'));
     assert.ok(html.includes('МКБ-10: K04.0'));
     assert.ok(html.includes('Артикаин 1:100 000'));
-    assert.ok(html.includes('1 клик в 043/у'));
+    assert.ok(html.includes('1 клик в карту'));
     assert.ok(html.includes('Обсудить'));
   });
 });

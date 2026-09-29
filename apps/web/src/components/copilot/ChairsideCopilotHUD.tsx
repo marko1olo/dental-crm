@@ -217,7 +217,7 @@ const CLINICAL_PRESETS = [
       {
         id: "t3",
         stepNumber: 3,
-        title: "Расчет стоимости услуг по Номенклатуре 804н...",
+        title: "Расчет стоимости услуг по прейскуранту...",
         status: "done" as const,
         detail: "3 позиции: A16.07.002.010, A16.07.002.011, A25.07.001. Итого: 8 200 ₽.",
         durationMs: 95,
@@ -225,7 +225,7 @@ const CLINICAL_PRESETS = [
       {
         id: "t4",
         stepNumber: 4,
-        title: "Формирование протокола SOAP Формы 043/у...",
+        title: "Формирование клинического протокола приёма...",
         status: "done" as const,
         detail: "Протокол сформирован, готов к сохранению в ЭМК.",
         durationMs: 70,
@@ -316,7 +316,7 @@ const CLINICAL_PRESETS = [
       {
         id: "tp3",
         stepNumber: 3,
-        title: "Калькуляция этапа эндодонтии по 804н...",
+        title: "Калькуляция этапа эндодонтии...",
         status: "done" as const,
         detail: "Обработка 3 каналов + временная обтурация. Итого: 9 000 ₽.",
         durationMs: 80,
@@ -324,7 +324,7 @@ const CLINICAL_PRESETS = [
       {
         id: "tp4",
         stepNumber: 4,
-        title: "Генерация протокола первичной эндодонтии 043/у...",
+        title: "Генерация протокола эндодонтического лечения...",
         status: "done" as const,
         detail: "Протокол сформирован.",
         durationMs: 65,
@@ -375,7 +375,7 @@ const CLINICAL_PRESETS = [
       id: "alert-3",
       severity: "info" as const,
       title: "Гигиенический статус",
-      description: "Противопоказаний нет. Рекомендовано диспансерное наблюдение 1 раз в 6 месяцев.",
+      description: "Противопоказаний нет. Рекомендована профгигиена и контрольный осмотр 1 раз в 6 месяцев.",
     },
     thoughts: [
       {
@@ -397,7 +397,7 @@ const CLINICAL_PRESETS = [
       {
         id: "th3",
         stepNumber: 3,
-        title: "Расчет комплекса гигиены по 804н...",
+        title: "Расчет комплекса профессиональной гигиены...",
         status: "done" as const,
         detail: "Комплекс A16.07.051 + реминерализация A11.07.024. Итого: 6 500 ₽.",
         durationMs: 80,
@@ -405,7 +405,7 @@ const CLINICAL_PRESETS = [
       {
         id: "th4",
         stepNumber: 4,
-        title: "Формирование протокола профилактического приема 043/у...",
+        title: "Формирование протокола профилактического приёма...",
         status: "done" as const,
         detail: "Протокол гигиены подготовлен.",
         durationMs: 65,
@@ -1453,7 +1453,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
               <div className="chairside-hud-card-head">
                 <div className="chairside-hud-card-title">
                   <Receipt size={14} className="text-[var(--teal)] shrink-0" />
-                  <span>Смета услуг по 804н</span>
+                  <span>Смета услуг</span>
                 </div>
                 <span className={`chairside-hud-card-badge ${servicesProposal.every((s) => s.applied) ? "chairside-hud-card-badge--applied" : ""}`}>
                   {servicesProposal.every((s) => s.applied) ? "Добавлено" : `${servicesTotalPrice.toLocaleString("ru-RU")} ₽`}

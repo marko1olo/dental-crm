@@ -1376,7 +1376,7 @@ export function renderChairsidePackageHtml(
 			"<td style=\"text-align: center;\">" + (idx + 1) + "</td>" +
 			"<td>" +
 				"<div style=\"font-weight: 600;\">" + escapeHtml(item.title) + "</div>" +
-				"<div style=\"font-size: 8pt; color: #64748b;\">Код 804н: " + escapeHtml(item.serviceCode) + (item.stageTitle ? " • " + escapeHtml(item.stageTitle) : "") + "</div>" +
+				"<div style=\"font-size: 8pt; color: #64748b;\">Код услуги: " + escapeHtml(item.serviceCode) + (item.stageTitle ? " • " + escapeHtml(item.stageTitle) : "") + "</div>" +
 			"</td>" +
 			"<td style=\"text-align: center;\">" + toothBadge + "</td>" +
 			"<td style=\"text-align: center;\">" + item.quantity + "</td>" +
@@ -1515,7 +1515,7 @@ export function renderChairsidePackageHtml(
 		docsHtml + "\n" +
 		"<div class=\"doc-page-container\" style=\"page-break-inside: avoid;\">\n" +
 			"<div class=\"doc-header-box\">\n" +
-				"<div class=\"doc-badge-pill\">ПП РФ № 736 • 804н</div>\n" +
+				"<div class=\"doc-badge-pill\">Стандарты лечения</div>\n" +
 				"<h2 class=\"doc-title\">Смета медицинских услуг плана лечения</h2>\n" +
 			"</div>\n" +
 			"<table class=\"estimate-table\">\n" +
