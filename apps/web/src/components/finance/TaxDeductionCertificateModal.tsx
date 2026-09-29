@@ -285,7 +285,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 			inn: patientInn,
 			snils: patientSnilsState?.trim() || undefined,
 		},
-		payments,
+		payments: yearPayments,
 	});
 
 	const xmlRepresentation = useMemo(() => {
@@ -316,7 +316,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 		patientName,
 		patientBirthDate,
 		patientInn,
-		payments,
+		yearPayments,
 	]);
 
 	const qrSvgString = useMemo(() => {
@@ -329,7 +329,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 		selectedYear,
 		clinicInn,
 		payerInn,
-		payments,
+		yearPayments,
 	]);
 
 	const familyBatchResult = useMemo(() => {

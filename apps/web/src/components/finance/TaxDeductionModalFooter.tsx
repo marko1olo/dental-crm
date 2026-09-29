@@ -104,9 +104,11 @@ export const TaxDeductionModalFooter: React.FC<TaxDeductionModalFooterProps> = (
 							type="button"
 							onClick={onPrint}
 							className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+							title="Печать справки КНД 1151156 (А4)"
+							aria-label="Печать справки КНД 1151156 (А4)"
 						>
 							<Printer size={16} />
-							<span>Печать справки на вычет (А4)</span>
+							<span>Печать справки КНД 1151156 (А4)</span>
 						</button>
 					</>
 				)}

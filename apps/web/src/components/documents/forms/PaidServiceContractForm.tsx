@@ -42,6 +42,12 @@ const PAID_CONTRACT_CARE_REASON_CHIPS = [
 
 export interface PaidServiceContractFormProps {
 	documentPatientFullName?: string | null | undefined;
+	documentPatientPassport?: string | null | undefined;
+	documentPatientBirthDate?: string | null | undefined;
+	documentPatientPhone?: string | null | undefined;
+	documentPatientAddress?: string | null | undefined;
+	documentPatientSnils?: string | null | undefined;
+	documentPatientCardNumber?: string | null | undefined;
 	activeVisitComplaint?: string | null | undefined;
 	activeVisitTreatmentPlan?: string | null | undefined;
 	activeVisitDoctorSummary?: string | null | undefined;
@@ -57,6 +63,12 @@ export interface PaidServiceContractFormProps {
 export const PaidServiceContractForm = React.memo(
 	function PaidServiceContractForm({
 		documentPatientFullName,
+		documentPatientPassport,
+		documentPatientBirthDate,
+		documentPatientPhone,
+		documentPatientAddress,
+		documentPatientSnils,
+		documentPatientCardNumber,
 		activeVisitComplaint,
 		activeVisitTreatmentPlan,
 		activeVisitDoctorSummary,
@@ -330,6 +342,12 @@ export const PaidServiceContractForm = React.memo(
 				contractNumber: paidContractNumber.trim() || undefined,
 				contractDate: paidContractDate.trim() || undefined,
 				patientFullName: documentPatientFullName || undefined,
+				patientPassport: documentPatientPassport || undefined,
+				patientBirthDate: documentPatientBirthDate || undefined,
+				patientPhone: documentPatientPhone || undefined,
+				patientAddress: documentPatientAddress || undefined,
+				patientSnils: documentPatientSnils || undefined,
+				cardNumber: documentPatientCardNumber || undefined,
 				doctorFullName:
 					paidContractDoctorFullName.trim() ||
 					activeDoctorFullName ||
@@ -351,7 +369,7 @@ export const PaidServiceContractForm = React.memo(
 			if (paidContractCustomerFullName.trim()) {
 				contractData.customer.fullName = paidContractCustomerFullName.trim();
 				contractData.customer.isDifferentFromPatient =
-					paidContractCustomerFullName.trim() !== (documentPatientFullName || "");
+					paidContractCustomerFullName.trim().toLowerCase() !== (documentPatientFullName || "").trim().toLowerCase();
 			}
 			if (paidContractRepresentativeFullName.trim()) {
 				contractData.representative.fullName = paidContractRepresentativeFullName.trim();
@@ -401,6 +419,12 @@ export const PaidServiceContractForm = React.memo(
 				contractNumber: paidContractNumber.trim() || undefined,
 				contractDate: paidContractDate.trim() || undefined,
 				patientFullName: documentPatientFullName || undefined,
+				patientPassport: documentPatientPassport || undefined,
+				patientBirthDate: documentPatientBirthDate || undefined,
+				patientPhone: documentPatientPhone || undefined,
+				patientAddress: documentPatientAddress || undefined,
+				patientSnils: documentPatientSnils || undefined,
+				cardNumber: documentPatientCardNumber || undefined,
 				doctorFullName:
 					paidContractDoctorFullName.trim() ||
 					activeDoctorFullName ||

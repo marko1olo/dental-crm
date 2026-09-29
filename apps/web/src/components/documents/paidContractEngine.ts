@@ -1402,17 +1402,17 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
     </div>
 
     <div class="req-col">
-      <strong>ПАЦИЕНТ / ЗАКАЗЧИК:</strong><br>
-      <strong>${cust.fullName || "________________________________________________"}</strong><br>
+      <strong>${contract.customer.isDifferentFromPatient ? "ПАЦИЕНТ (ПОТРЕБИТЕЛЬ):" : "ПАЦИЕНТ / ЗАКАЗЧИК:"}</strong><br>
+      <strong>${(contract.customer.isDifferentFromPatient ? pt.fullName : cust.fullName) || "________________________________________________"}</strong><br>
       Дата рождения: ${pt.birthDate ? `${pt.birthDate} г.` : "«___» _______ ______ г."}<br>
-      Паспорт: серия ${cust.passportSeries || "_____"} № ${cust.passportNumber || "__________"}<br>
-      Выдан: ${cust.passportIssuedBy || "____________________________________"}, ${cust.passportIssuedDate || "«___» _______ 20___ г."}, код ${cust.passportDepartmentCode || "_______"}<br>
+      Паспорт: серия ${(contract.customer.isDifferentFromPatient ? pt.passportSeries : cust.passportSeries) || "_____"} № ${(contract.customer.isDifferentFromPatient ? pt.passportNumber : cust.passportNumber) || "__________"}<br>
+      Выдан: ${(contract.customer.isDifferentFromPatient ? pt.passportIssuedBy : cust.passportIssuedBy) || "____________________________________"}, ${(contract.customer.isDifferentFromPatient ? pt.passportIssuedDate : cust.passportIssuedDate) || "«___» _______ 20___ г."}, код ${(contract.customer.isDifferentFromPatient ? pt.passportDepartmentCode : cust.passportDepartmentCode) || "_______"}<br>
       СНИЛС: ${pt.snils || "____________________"}<br>
-      Адрес регистрации: ${cust.registrationAddress || "________________________________________________________"}<br>
-      Телефон: ${cust.phone || "____________________"}<br><br>
-      Подпись Заказчика (Пациента):<br>
+      Адрес регистрации: ${(contract.customer.isDifferentFromPatient ? pt.registrationAddress : cust.registrationAddress) || "________________________________________________________"}<br>
+      Телефон: ${(contract.customer.isDifferentFromPatient ? pt.phone : cust.phone) || "____________________"}<br><br>
+      Подпись Пациента:<br>
       ${signatureStamp}
-      <div style="font-size:6.5pt; color:#64748b;">(подпись) / ${cust.fullName || "________________________"} /</div>
+      <div style="font-size:6.5pt; color:#64748b;">(подпись) / ${(contract.customer.isDifferentFromPatient ? pt.fullName : cust.fullName) || "________________________"} /</div>
 
       ${contract.customer.isDifferentFromPatient ? `
       <div style="margin-top: 6px; padding-top: 4px; border-top: 0.5pt dashed #cbd5e1;">

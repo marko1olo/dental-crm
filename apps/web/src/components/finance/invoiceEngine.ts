@@ -21,9 +21,11 @@ export function pluralizeRu(count: number, formOne: string, formTwo: string, for
 /**
  * Преобразует сумму в рублях в строку прописью (стандарт бухгалтерских актов РФ).
  */
-export function numberToWordsRu(amountRub: number, amountKopecks: number = 0): string {
+export function numberToWordsRu(amountRub: number, amountKopecks?: number): string {
 	const whole = Math.trunc(Math.abs(amountRub));
-	const kop = Math.abs(amountKopecks) % 100;
+	const kop = amountKopecks !== undefined
+		? Math.abs(amountKopecks) % 100
+		: Math.round(Math.abs(amountRub) * 100) % 100;
 
 	if (whole === 0) {
 		const kopStr = String(kop).padStart(2, "0");
@@ -144,6 +146,9 @@ export interface InvoiceServiceItem {
 	readonly warrantyDiscountPercent?: number | undefined;
 	readonly warrantyPriceRub?: number | undefined;
 	readonly warrantySourceAppointmentId?: string | number | null | undefined;
+	readonly isRefund?: boolean | undefined;
+	readonly isReturned?: boolean | undefined;
+	readonly status?: "active" | "refunded" | "cancelled" | "returned" | string | undefined;
 }
 
 export interface WarrantyObligationTerm {
@@ -301,7 +306,13 @@ export function compileCompletedWorksAct(params: CompletedWorksActParams): Compi
 
 	const warrantyGroupMap = new Map<string, { categoryName: string; teeth: Set<string>; warrantyMonths: number; warrantyPeriodText: string; serviceLifeText: string; conditionsText: string }>();
 
-	for (const item of params.items) {
+	const validItems = (params.items || []).filter((item) => {
+		if (item.isRefund === true || item.isReturned === true) return false;
+		if (item.status === "refunded" || item.status === "cancelled" || item.status === "returned") return false;
+		return true;
+	});
+
+	for (const item of validItems) {
 		const unitPriceKop = rubToKopecks(item.priceRub);
 		const lineGrossKop = unitPriceKop * item.quantity;
 		const isWarranty = !!item.isWarranty;
@@ -354,7 +365,7 @@ export function compileCompletedWorksAct(params: CompletedWorksActParams): Compi
 	return {
 		actNumber: params.actNumber,
 		contractNumber: params.contractNumber,
-		items: params.items,
+		items: validItems,
 		totalGrossKopecks,
 		totalGrossRub: kopecksToRub(totalGrossKopecks),
 		totalDiscountKopecks,
@@ -362,7 +373,7 @@ export function compileCompletedWorksAct(params: CompletedWorksActParams): Compi
 		totalNetKopecks,
 		totalNetRub,
 		totalNetRubFormatted: kopecksToNumericString(totalNetKopecks),
-		totalInWords: numberToWordsRu(totalNetRub),
+		totalInWords: numberToWordsRu(totalNetRub, totalNetKopecks % 100),
 		warrantyTerms,
 		hasWarrantyRework: warrantyItemsCount > 0,
 		warrantyItemsCount,

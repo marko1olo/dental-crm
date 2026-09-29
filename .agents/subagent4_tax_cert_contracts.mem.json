@@ -1,0 +1,48 @@
+{
+  "subagent": "Subagent 4: Tax Certificate, Paid Contract & Completed Works Act Inquisitor",
+  "status": "COMPLETED",
+  "started_at": "2026-09-29T17:08:45+04:00",
+  "completed_at": "2026-09-29T20:56:00+04:00",
+  "scope": [
+    "apps/web/src/components/finance/taxDeductionEngine.ts",
+    "apps/web/src/components/finance/TaxDeductionCertificateModal.tsx",
+    "apps/web/src/components/finance/TaxDeductionModalFooter.tsx",
+    "apps/web/src/components/finance/invoiceEngine.ts",
+    "apps/web/src/components/documents/paidContractEngine.ts",
+    "apps/web/src/components/documents/paidContractRequiredFields.ts",
+    "apps/web/src/components/documents/forms/CompletedWorksActForm.tsx",
+    "apps/web/src/components/documents/forms/PaidServiceContractForm.tsx",
+    "apps/web/src/components/finance/__tests__/taxDeductionCertificateAutonomy.test.tsx",
+    "apps/web/src/tests/paidContractRequiredFields.test.ts"
+  ],
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md (Constitutional routine)",
+    "Audited all files in scope byte-by-byte",
+    "Fixed TaxDeductionModalFooter.tsx button text & title to match official form 'Печать справки КНД 1151156 (А4)'",
+    "Implemented Net Paid arithmetic in taxDeductionEngine.ts: subtracts partial refunds per code (Code 01 standard vs Code 02 expensive)",
+    "Implemented strict calendar year isolation (01.01–31.12) in taxDeductionEngine.ts and TaxDeductionCertificateModal.tsx",
+    "Wrapped XML (Order 824@, NO_MEDOPL 5.01) and HTML generation in taxDeductionEngine.ts with normalized payments to prevent multi-year leaks and unnetted sums",
+    "Fixed Completed Works Act in invoiceEngine.ts: filtered out refunded/cancelled items and derived kopecks in numberToWordsRu to prevent kopeck loss in words",
+    "Fixed Completed Works Act Form in CompletedWorksActForm.tsx: protected placeholders against NaN/non-finite numbers",
+    "Fixed Paid Medical Services Contract in paidContractEngine.ts: isolated Patient (Consumer) vs Customer (Payer) requisites in printed forms to prevent overwriting patient passport with payer passport",
+    "Extended PaidServiceContractForm.tsx with fresh patient requisites props and propagation to createDefaultPaidContract",
+    "Added comprehensive unit test suite in taxDeductionCertificateAutonomy.test.tsx covering calendar year isolation, 100k - 20k = 80k net paid, XML and HTML integrity",
+    "Executed full test suite (16/16 tests passing, exit code 0)",
+    "Performed self-audit of git diff",
+    "Executed per-file git add for all modified files in scope"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Multi-year leak was present in TaxDeductionCertificateModal.tsx where getCertificateParams passed unfiltered payments instead of yearPayments.",
+    "Refunds were previously dropped by Math.max(0, ...) in tax calculation; now taxDeductionEngine calculates Net Paid per Code 1 and Code 2.",
+    "Completed Works Act numberToWordsRu truncated kopecks if amountKopecks was omitted; now kopecks are derived from amountRub and passed explicitly from totalNetKopecks.",
+    "Paid Medical Services Contract in paidContractEngine.ts erroneously displayed customer passport under Patient header when customer was a 3rd-party payer; now distinct Patient vs Customer blocks are rendered."
+  ],
+  "test_results": {
+    "taxDeductionCertificateAutonomy.test.tsx": "PASS (4/4)",
+    "paidContractRequiredFields.test.ts": "PASS (9/9)",
+    "invoiceEngine.test.ts": "PASS (3/3)",
+    "total_passed": 16,
+    "total_failed": 0
+  }
+}
