@@ -51,6 +51,8 @@ import {
 	loadStoredTeethData,
 	saveStoredTeethData,
 } from "./odontogramStorage";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
+import { DEMO_SHOWCASE_TEETH } from "../treatment-plans/treatmentPlanStagesEngine";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import { OdontogramViewContainer } from "./OdontogramViewContainer";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
@@ -207,6 +209,20 @@ const TEETH_SUBJECT: PanelSubject = {
 		"Схема ниже показывает зубы БЕЗ отметок — это не значит, что зубы здоровы: диагнозы, пломбы и коронки не прочитаны. Не считайте формулу полной и не печатайте её пациенту, пока она не загрузится.",
 };
 
+function getInitialShowcaseTeeth(pediatricMode?: boolean): ToothData[] {
+	const base = pediatricMode
+		? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH].map((toothNumber) => ({
+				toothNumber,
+				state: "Healthy" as ToothState,
+			}))
+		: createDefaultAdultTeethData();
+	if (pediatricMode) return base;
+	return base.map((t) => {
+		const demo = DEMO_SHOWCASE_TEETH.find((d) => d.toothNumber === t.toothNumber);
+		return demo ? { ...t, ...demo } : t;
+	});
+}
+
 export const OdontogramModule = React.memo(({
 	patientId,
 	pediatricMode,
@@ -216,14 +232,23 @@ export const OdontogramModule = React.memo(({
 }) => {
 	const { odontogramUseSurfaces, activePatient, activeDoctor, auth } =
 		useAppLogicContext();
+	const currentPatientIdRef = useRef<string>(patientId);
 	const [teethData, setTeethData] = useState<ToothData[]>(() => {
 		if (patientId) {
 			const cached = loadStoredTeethData(patientId);
 			if (cached && cached.length > 0) {
 				return cached;
 			}
+			if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
+				return getInitialShowcaseTeeth(pediatricMode);
+			}
 		}
-		return createDefaultAdultTeethData();
+		return pediatricMode
+			? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH].map((num) => ({
+					toothNumber: num,
+					state: "Healthy" as ToothState,
+				}))
+			: createDefaultAdultTeethData();
 	});
 	/* Пока формула не загружена, схема инициализируется 32 здоровыми зубами,
 	   чтобы врач мог сразу взаимодействовать с картой. При сбое или отсутствии
@@ -844,14 +869,33 @@ export const OdontogramModule = React.memo(({
 	}, [menuConfig, handleApplyToothState]);
 
 	useEffect(() => {
-		/* Сначала гидрируем из локального хранилища, если есть сохранённые данные */
+		const isSamePatient = currentPatientIdRef.current === patientId;
+		currentPatientIdRef.current = patientId;
+
+		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
+		const defaultBaseline: ToothData[] = isDemo
+			? getInitialShowcaseTeeth(pediatricMode)
+			: pediatricMode
+				? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH].map((num) => ({
+						toothNumber: num,
+						state: "Healthy" as ToothState,
+					}))
+				: createDefaultAdultTeethData();
+
+		/* Сначала гидрируем из локального хранилища, если есть сохранённые данные именно этого пациента */
 		const cachedTeeth = loadStoredTeethData(patientId);
 		if (cachedTeeth && cachedTeeth.length > 0) {
 			setTeethData(cachedTeeth);
-		} else if (teethDataRef.current.length > 0 && teethDataRef.current.some((t) => t.state !== "Healthy")) {
-			// Сохраняем активное локальное состояние, если в нем есть отметки
+		} else if (
+			isSamePatient &&
+			teethDataRef.current.length > 0 &&
+			teethDataRef.current.some((t) => t.state !== "Healthy")
+		) {
+			// Сохраняем активное локальное состояние ТОЛЬКО если это тот же самый пациент (нажата кнопка «Повторить»)
 		} else {
-			setTeethData(createDefaultAdultTeethData());
+			// При смене пациента или пустом кэше: в проде — строго интактный baseline (все здоровы), в демо — витринные зубы
+			setTeethData(defaultBaseline);
+			teethDataRef.current = defaultBaseline;
 		}
 		setTeethLoad({ phase: "loading" });
 
@@ -881,12 +925,16 @@ export const OdontogramModule = React.memo(({
 						setTeethData(localCached);
 						setTeethLoad({ phase: "ready" });
 						showToast("Зубная формула загружена из локального хранилища (офлайн)", "info", 5000);
-					} else if (teethDataRef.current.length > 0 && teethDataRef.current.some((t) => t.state !== "Healthy")) {
+					} else if (
+						isSamePatient &&
+						teethDataRef.current.length > 0 &&
+						teethDataRef.current.some((t) => t.state !== "Healthy")
+					) {
 						saveStoredTeethData(patientId, teethDataRef.current);
 						setTeethLoad({ phase: "ready" });
 						showToast("Зубная формула сохранена из локального сеанса (офлайн)", "info", 5000);
 					} else {
-						setTeethData(createDefaultAdultTeethData());
+						setTeethData(defaultBaseline);
 						setTeethLoad({ phase: "failed", status });
 					}
 					return;
@@ -905,12 +953,12 @@ export const OdontogramModule = React.memo(({
 				if (body?.success === true && Array.isArray(body.states)) {
 					const incoming = body.states as ToothData[];
 					const localCached = loadStoredTeethData(patientId);
-					const baseTeeth =
+					const baseTeeth: ToothData[] =
 						localCached && localCached.length > 0
 							? localCached
-							: teethDataRef.current.length > 0
+							: isSamePatient && teethDataRef.current.length > 0
 								? teethDataRef.current
-								: createDefaultAdultTeethData();
+								: defaultBaseline;
 					let finalTeeth: ToothData[];
 					if (incoming.length === 0) {
 						finalTeeth = baseTeeth;
@@ -970,12 +1018,16 @@ export const OdontogramModule = React.memo(({
 					setTeethData(localCached);
 					setTeethLoad({ phase: "ready" });
 					showToast("Зубная формула загружена из локального хранилища (офлайн)", "info", 5000);
-				} else if (teethDataRef.current.length > 0 && teethDataRef.current.some((t) => t.state !== "Healthy")) {
+				} else if (
+					isSamePatient &&
+					teethDataRef.current.length > 0 &&
+					teethDataRef.current.some((t) => t.state !== "Healthy")
+				) {
 					saveStoredTeethData(patientId, teethDataRef.current);
 					setTeethLoad({ phase: "ready" });
 					showToast("Зубная формула сохранена из локального сеанса (офлайн)", "info", 5000);
 				} else {
-					setTeethData(createDefaultAdultTeethData());
+					setTeethData(defaultBaseline);
 					setTeethLoad({ phase: "failed", status });
 				}
 			} catch (err) {
@@ -986,7 +1038,11 @@ export const OdontogramModule = React.memo(({
 					setTeethData(localCached);
 					setTeethLoad({ phase: "ready" });
 					showToast("Зубная формула загружена из локального хранилища (офлайн)", "info", 5000);
-				} else if (teethDataRef.current.length > 0 && teethDataRef.current.some((t) => t.state !== "Healthy")) {
+				} else if (
+					isSamePatient &&
+					teethDataRef.current.length > 0 &&
+					teethDataRef.current.some((t) => t.state !== "Healthy")
+				) {
 					saveStoredTeethData(patientId, teethDataRef.current);
 					setTeethLoad({ phase: "ready" });
 					showToast("Зубная формула сохранена из локального сеанса (офлайн)", "info", 5000);
@@ -999,7 +1055,7 @@ export const OdontogramModule = React.memo(({
 						"error",
 					);
 					// До сервера не дошли: кода ответа нет, придумывать его нельзя.
-					setTeethData(createDefaultAdultTeethData());
+					setTeethData(defaultBaseline);
 					setTeethLoad({ phase: "failed", status });
 				}
 			}

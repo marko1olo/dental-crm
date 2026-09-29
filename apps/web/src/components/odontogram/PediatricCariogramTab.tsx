@@ -144,7 +144,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 						Индивидуальный план детской профилактики
 					</h4>
 					<span className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
-						Диспансерный осмотр: 1 раз в {cariogramResult.preventiveProgram.hygieneRecallIntervalMonths} мес.
+						Контрольный осмотр: 1 раз в {cariogramResult.preventiveProgram.hygieneRecallIntervalMonths} мес.
 					</span>
 				</div>
 

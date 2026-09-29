@@ -23,7 +23,9 @@ import {
 } from "react";
 import { useVisitStore } from "../../../store/visitStore";
 import { showToast } from "../../GlobalToast";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import {
+	applyPeriodontitisModeratePreset,
 	applyPsrSextantCode,
 	type PerioExpressPresetId,
 	type PsrCode,
@@ -38,6 +40,7 @@ import { usePerioKeyboardProbing } from "./usePerioKeyboardProbing";
 
 export interface UsePerioChartLogicOptions {
 	readonly initialTeeth?: readonly PerioToothRecord[] | undefined;
+	readonly patientId?: string | undefined;
 	readonly onChange?:
 		| ((teeth: PerioToothRecord[], summary: PerioChartSummary) => void)
 		| undefined;
@@ -50,6 +53,7 @@ export interface UsePerioChartLogicOptions {
 
 export function usePerioChartLogic({
 	initialTeeth,
+	patientId,
 	onChange,
 	onInsertToProtocol,
 	readOnly = false,
@@ -71,8 +75,35 @@ export function usePerioChartLogic({
 			const defaults = createDefaultPerioTeeth(2);
 			return defaults.map((def) => map.get(def.toothNumber) ?? def);
 		}
+		// Showcase Mode: isolated demo illustration of periodontitis (Mandate 8y)
+		if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
+			return applyPeriodontitisModeratePreset(createDefaultPerioTeeth(2));
+		}
+		// Production Mode: strictly physiological norm (100% honest baseline, Mandate 8y)
 		return createDefaultPerioTeeth(2);
 	});
+
+	// Reset dentition when patient changes to prevent cross-patient contamination (Mandate 8y)
+	const currentPatientIdRef = useRef<string | undefined>(patientId);
+	useEffect(() => {
+		if (currentPatientIdRef.current !== patientId) {
+			currentPatientIdRef.current = patientId;
+			if (initialTeeth && Array.isArray(initialTeeth) && initialTeeth.length > 0) {
+				const map = new Map<number, PerioToothRecord>();
+				for (const t of initialTeeth) {
+					map.set(t.toothNumber, t);
+				}
+				const defaults = createDefaultPerioTeeth(2);
+				setTeeth(defaults.map((def) => map.get(def.toothNumber) ?? def));
+			} else if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
+				setTeeth(applyPeriodontitisModeratePreset(createDefaultPerioTeeth(2)));
+			} else {
+				setTeeth(createDefaultPerioTeeth(2));
+			}
+			setSelectedToothNumber(16);
+			setFocusedSite(null);
+		}
+	}, [patientId, initialTeeth]);
 
 	// Selected tooth for warm context inspector
 	const [selectedToothNumber, setSelectedToothNumber] = useState<number>(16);

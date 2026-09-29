@@ -432,7 +432,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			`${CLINICAL_PERIO_NORM_SUMMARY_RU}. Данные внесены в 043/у!`,
+			`${CLINICAL_PERIO_NORM_SUMMARY_RU}. Данные внесены в медицинскую карту!`,
 			"success",
 			4000,
 		);
@@ -529,7 +529,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			"Катаральный гингивит зафиксирован: отек сосочков, BOP+, наддесневые отложения. Данные внесены в 043/у!",
+			"Катаральный гингивит зафиксирован: отек сосочков, BOP+, наддесневые отложения. Данные внесены в медицинскую карту!",
 			"warning",
 			4000,
 		);
@@ -626,7 +626,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			"Пародонтит легкой степени зафиксирован: карманы 3-4 мм, над/поддесневой камень, BOP+. Данные внесены в 043/у!",
+			"Пародонтит легкой степени зафиксирован: карманы 3-4 мм, над/поддесневой камень, BOP+. Данные внесены в медицинскую карту!",
 			"warning",
 			4000,
 		);
@@ -723,7 +723,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			"Пародонтит средней степени зафиксирован: карманы 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст. Данные внесены в 043/у!",
+			"Пародонтит средней степени зафиксирован: карманы 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст. Данные внесены в медицинскую карту!",
 			"warning",
 			4000,
 		);
@@ -820,7 +820,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			"Пародонтит тяжёлой степени зафиксирован: карманы ≥6 мм, гноетечение, подвижность II-III ст. Данные внесены в 043/у!",
+			"Пародонтит тяжёлой степени зафиксирован: карманы ≥6 мм, гноетечение, подвижность II-III ст. Данные внесены в медицинскую карту!",
 			"warning",
 			4500,
 		);
@@ -886,7 +886,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			`${CLINICAL_PRO_HYGIENE_SUMMARY_RU}. Дневник 043/у и смета обновлены!`,
+			`${CLINICAL_PRO_HYGIENE_SUMMARY_RU}. Дневник приёма и смета обновлены!`,
 			"success",
 			4500,
 		);
@@ -939,7 +939,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			`${CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU}. Внесено в 043/у и чек визита!`,
+			`${CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU}. Внесено в карту и чек визита!`,
 			"success",
 			4500,
 		);
@@ -992,7 +992,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			`${CLINICAL_TOOTH_MOUSSE_SUMMARY_RU}. Внесено в 043/у и чек визита!`,
+			`${CLINICAL_TOOTH_MOUSSE_SUMMARY_RU}. Внесено в карту и чек визита!`,
 			"success",
 			4500,
 		);
@@ -1045,7 +1045,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			`${CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU}. Внесено в 043/у и чек визита!`,
+			`${CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU}. Внесено в карту и чек визита!`,
 			"success",
 			4500,
 		);
@@ -1115,7 +1115,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		setInsertStatus(true);
 		setTimeout(() => setInsertStatus(false), 2500);
 		showToast(
-			"Индексы гигиены успешно внесены в дневник 043/у",
+			"Индексы гигиены успешно внесены в дневник приёма",
 			"success",
 			4000,
 		);
@@ -1131,7 +1131,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 	const handlePrintProtocol = useCallback(() => {
 		const printContent = [
 			"═══════════════════════════════════════════════════════════════",
-			"ПРОТОКОЛ КЛИНИЧЕСКИХ ИНДЕКСОВ ГИГИЕНЫ И ПАРОДОНТА (Форма 043/у)",
+			"ПРОТОКОЛ КЛИНИЧЕСКИХ ИНДЕКСОВ ГИГИЕНЫ И ПАРОДОНТА",
 			"═══════════════════════════════════════════════════════════════",
 			"",
 			`Дата осмотра: ${new Date().toLocaleDateString("ru-RU")}`,
@@ -1161,7 +1161,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 					<html>
 					<head>
 						<meta charset="utf-8">
-						<title>Протокол индексов гигиены — 043/у</title>
+						<title>Протокол индексов гигиены</title>
 						<style>
 							body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; color: #111; max-width: 700px; margin: 0 auto; }
 							h2 { font-size: 15px; margin-bottom: 12px; border-bottom: 2px solid #333; padding-bottom: 6px; text-transform: uppercase; }
@@ -1171,10 +1171,10 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						</style>
 					</head>
 					<body>
-						<h2>Протокол клинических индексов гигиены и пародонта (Форма 043/у)</h2>
+						<h2>Протокол клинических индексов гигиены и пародонта</h2>
 						<pre>${printContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>
 						<div class="footer">
-							<span>DENTE Dental CRM • Медицинская карта 043/у</span>
+							<span>DENTE Dental CRM • Медицинская карта пациента</span>
 							<span>Распечатано: ${new Date().toLocaleString("ru-RU")}</span>
 						</div>
 						<script>
@@ -1238,7 +1238,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							type="button"
 							onClick={handleInsertTo043}
 							className="h-8 sm:h-9 px-3.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer touch-manipulation truncate"
-							title="Вставить сводку индексов гигиены в дневник 043/у"
+							title="Вставить сводку индексов гигиены в дневник приёма"
 							data-testid="hygiene-insert-to-043-btn"
 						>
 							{insertStatus ? (
@@ -1247,7 +1247,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 								<FileText size={14} className="shrink-0" />
 							)}
 							<span className="truncate">
-								{insertStatus ? "Внесено в 043/у!" : "В карту 043/у"}
+								{insertStatus ? "Внесено в карту!" : "В медицинскую карту"}
 							</span>
 						</button>
 
@@ -1390,7 +1390,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							<div className="flex items-center gap-2 min-w-0">
 								<Sparkles size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
 								<span className="text-xs font-black text-cyan-900 dark:text-cyan-300 truncate">
-									Chairside-протоколы лечения и профилактики (начисление в чек 804н + дневник 043/у):
+									Chairside-протоколы лечения и профилактики (начисление в счёт + дневник приёма):
 								</span>
 							</div>
 							<span className="text-[10px] text-teal-800 dark:text-teal-300/70 shrink-0">

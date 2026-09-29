@@ -662,7 +662,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 				() => {
 					setIsCopied(true);
 					showToast(
-						"Формула 043/у скопирована для протокола визита",
+						"Зубная формула скопирована для дневника приёма",
 						"success",
 					);
 					setTimeout(() => setIsCopied(false), 2000);
@@ -1047,7 +1047,7 @@ ClassicGostToothCell.displayName = "ClassicGostToothCell";
 						<div>
 							<div className="flex items-center gap-2">
 								<h2 className="text-base font-bold tracking-tight text-[var(--odontogram-ink)]">
-									Зубная формула (ГОСТ / Форма 043/у)
+									Зубная формула
 								</h2>
 								{pediatricMode && (
 									<span className="text-xs px-2 py-0.5 rounded-full bg-pink-100 dark:bg-pink-950/70 text-pink-700 dark:text-pink-300 font-bold border border-pink-300 dark:border-pink-800">
@@ -1056,8 +1056,7 @@ ClassicGostToothCell.displayName = "ClassicGostToothCell";
 								)}
 							</div>
 							<p className="text-xs text-[var(--odontogram-ink-muted)]">
-								Официальная медицинская карта стоматологического
-								больного (Приказ МЗ РФ №834н)
+								Медицинская карта стоматологического пациента
 							</p>
 						</div>
 					</div>
@@ -1067,7 +1066,7 @@ ClassicGostToothCell.displayName = "ClassicGostToothCell";
 						<button
 							type="button"
 							onClick={handleCopyProtocolText}
-							title="Скопировать формулу 043/у в текстовый протокол визита / дневник"
+							title="Скопировать формулу в дневник приёма"
 							className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--odontogram-surface)] hover:bg-[var(--odontogram-surface-hover)] border border-[var(--odontogram-border-subtle)] text-[var(--odontogram-ink)] shadow-xs transition-colors cursor-pointer"
 						>
 							{isCopied ? (
@@ -1075,7 +1074,7 @@ ClassicGostToothCell.displayName = "ClassicGostToothCell";
 							) : (
 								<Copy size={14} className="text-[var(--odontogram-ink-muted)]" />
 							)}
-							<span>{isCopied ? "Скопировано!" : "В протокол 043/у"}</span>
+							<span>{isCopied ? "Скопировано!" : "В дневник приёма"}</span>
 						</button>
 
 						<div className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] text-xs">

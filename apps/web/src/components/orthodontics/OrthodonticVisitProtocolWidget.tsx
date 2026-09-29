@@ -1729,7 +1729,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
 							data-testid="add-ortho-services-to-invoice-btn"
 							title="Начислить услуги в чек/смету визита (1 клик)"
-							aria-label="Начислить услуги 804н в чек/смету"
+							aria-label="Начислить услуги в чек/смету"
 						>
 							<Receipt size={16} />
 							<span>Начислить услуги в чек</span>
@@ -1747,7 +1747,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 							data-testid="apply-to-form-043-btn"
 							title="Вставить протокол в карту и начислить услуги"
-							aria-label="В карту 043/у"
+							aria-label="В медицинскую карту"
 						>
 							<CheckCircle2 size={16} />
 							<span>В карту</span>
@@ -3103,7 +3103,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 								className="min-h-[48px] px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
 								data-testid="bottom-add-services-to-invoice-btn"
 								title="Начислить услуги в чек/смету"
-								aria-label="Начислить услуги 804н в чек/смету"
+								aria-label="Начислить услуги в чек/смету"
 							>
 								<Receipt size={16} />
 								<span>Начислить услуги ({calculatedServices804n.length})</span>
@@ -3115,7 +3115,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 								className="flex-1 min-h-[48px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
 								data-testid="bottom-apply-protocol-btn"
 								title="Вставить в карту (1 клик)"
-								aria-label="В карту 043/у"
+								aria-label="В медицинскую карту"
 							>
 								<Check size={18} />
 								<span>Вставить в карту (1 клик)</span>

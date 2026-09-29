@@ -51,14 +51,14 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 			"Renders active patient name",
 		);
 		assert.ok(
-			html.includes("Форма 043/у"),
-			"Mentions Form 043/y compliance",
+			html.includes("Медицинская карта"),
+			"Mentions medical card compliance",
 		);
 
 		// Navigation Tabs
 		assert.ok(html.includes("1. Ориентиры"), "Contains tab 1: Ориентиры");
 		assert.ok(html.includes("2. Расчет углов"), "Contains tab 2: Расчет углов");
-		assert.ok(html.includes("3. Форма 043/у"), "Contains tab 3: Форма 043/у");
+		assert.ok(html.includes("3. Медицинская карта"), "Contains tab 3: Медицинская карта");
 
 		// Filter buttons
 		assert.ok(html.includes("Стандарт"), "Contains standard filter button");
@@ -314,11 +314,11 @@ describe("CephalometricAnalysisModal Component (ТРГ боковая)", () => {
 		);
 		assert.ok(
 			html.includes('data-testid="ceph-mobile-tab-report"'),
-			"Contains mobile tab for Form 043/y [Форма 043/у]",
+			"Contains mobile tab for medical card report",
 		);
 		assert.ok(
-			html.includes("Форма 043/у"),
-			"Displays 'Форма 043/у' tab label",
+			html.includes("Медицинская карта"),
+			"Displays 'Медицинская карта' tab label",
 		);
 
 		// Non-truncated filter toolbar with flex-nowrap and overflow-x-auto

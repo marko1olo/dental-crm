@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test, { describe, beforeEach } from "node:test";
 import {
+	calculateAapEfpStagingAndGrading,
+	calculatePerioIndices,
+	createDefaultPerioTeeth,
 	odontogramViewModeSchema,
 	type OdontogramViewMode,
 	uiPreferencesSchema,
@@ -16,6 +19,14 @@ import {
 } from "../../../utils/preferencesUtils";
 import { useAppStore } from "../../../store/appStore";
 import type { ToothData } from "../ToothChart";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
+import { DEMO_SHOWCASE_TEETH } from "../../treatment-plans/treatmentPlanStagesEngine";
+import { createDefaultAdultTeethData } from "../chart/toothChartTypes";
+import {
+	clearStoredTeethData,
+	loadStoredTeethData,
+	saveStoredTeethData,
+} from "../odontogramStorage";
 
 describe("OdontogramViewContainer — Modes Configuration & Metadata", () => {
 	test("Поддерживает ровно 3 режима: anatomical_svg, compact_clinical, classic_gost", () => {
@@ -46,7 +57,7 @@ describe("OdontogramViewContainer — Modes Configuration & Metadata", () => {
 		assert.equal(compact?.badge, "FDI");
 
 		const gost = ODONTOGRAM_VIEW_MODES.find((m) => m.mode === "classic_gost");
-		assert.equal(gost?.label, "ГОСТ 043/у");
+		assert.equal(gost?.label, "Классический ГОСТ");
 		assert.equal(gost?.badge, "МЗ РФ");
 	});
 });
@@ -267,4 +278,61 @@ describe("OdontogramViewContainer — Data Contracts & Props Propagation", () =>
 		assert.equal(updatedState, "Missing", "Статус должен быть Missing");
 	});
 });
+
+describe("Mandate 8y: Dual-Mode Isolation & Patient Anti-Contamination Invariants", () => {
+	test("В боевом режиме (Production) новая зубная формула инициализируется строго 32 интактными зубами", () => {
+		const defaultTeeth = createDefaultAdultTeethData();
+		assert.equal(defaultTeeth.length, 32, "Должно быть ровно 32 зуба");
+		const nonHealthy = defaultTeeth.filter((t) => t.state !== "Healthy");
+		assert.equal(nonHealthy.length, 0, "В боевом режиме у нового пациента 0 патологий (все зубы Healthy)");
+	});
+
+	test("В демо-режиме витринные зубы DEMO_SHOWCASE_TEETH изолированы от боевых пациентов", () => {
+		assert.ok(DEMO_SHOWCASE_TEETH.length > 0, "Демо-витрина содержит образцовые клинические патологии");
+		assert.equal(isDemoPatientId("01a00000-0000-0000-0000-000000000001"), true, "Эталонный демо-пациент распознается");
+		assert.equal(isDemoPatientId("sample_patient_ivanov"), true, "Sample-пациент распознается");
+		assert.equal(isDemoPatientId("pat-real-doctor-patient-12345"), false, "Боевой пациент клиники НЕ является демо");
+	});
+
+	test("Изоляция локального хранилища зубных формул между пациентами (Anti-Leak Invariant)", () => {
+		const patientA = "test_pat_A_c51a";
+		const patientB = "test_pat_B_d82b";
+
+		clearStoredTeethData(patientA);
+		clearStoredTeethData(patientB);
+
+		const teethPatientA: ToothData[] = [
+			{ toothNumber: 16, state: "Caries" },
+			{ toothNumber: 36, state: "Missing" },
+		];
+		saveStoredTeethData(patientA, teethPatientA, true);
+
+		// Проверяем, что кэш пациента А не утекает к пациенту Б
+		const cachedA = loadStoredTeethData(patientA);
+		const cachedB = loadStoredTeethData(patientB);
+
+		assert.ok(cachedA && cachedA.length === 2, "Данные пациента А сохранены в его слоте");
+		assert.equal(cachedA[0]?.state, "Caries");
+		assert.equal(cachedB, null, "У нового пациента Б кэш строго пуст (0 утечек)");
+
+		clearStoredTeethData(patientA);
+		clearStoredTeethData(patientB);
+	});
+
+	test("Физиологическая норма пародонтограммы: 192 точки зондирования, глубина 2 мм, BOP 0%", () => {
+		const perioTeeth = createDefaultPerioTeeth(2);
+		assert.equal(perioTeeth.length, 32, "Ровно 32 зуба в пародонтограмме");
+		const summary = calculatePerioIndices(perioTeeth);
+		assert.equal(summary.fmbsPercent, 0, "BOP равен 0% (нет кровоточивости)");
+		assert.equal(summary.fmpsPercent, 0, "Plaque равен 0% (нет зубного налета)");
+		assert.equal(summary.deepPocketsCount, 0, "0 глубоких патологических карманов");
+		assert.equal(summary.riskCategory, "low", "PRA риск низкий (физиологическая норма)");
+
+		const diag = calculateAapEfpStagingAndGrading(perioTeeth, summary);
+		assert.equal(diag.severity, "intact", "Клиническая тяжесть: интактный пародонт");
+		assert.equal(diag.aapStage, "health", "AAP классификация: здоровье пародонта");
+		assert.equal(diag.icd10Code, "Z01.2", "МКБ-10 код: Z01.2 (осмотр/норма)");
+	});
+});
+
 

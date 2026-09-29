@@ -126,6 +126,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 		handleCopyProtocol,
 	} = usePerioChartLogic({
 		initialTeeth,
+		patientId: _patientId,
 		onChange,
 		onInsertToProtocol,
 		readOnly,

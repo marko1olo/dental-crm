@@ -95,11 +95,11 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 	},
 	{
 		mode: "classic_gost",
-		label: "ГОСТ 043/у",
-		shortLabel: "ГОСТ 043/у",
-		mobileLabel: "043/у",
+		label: "Классический ГОСТ",
+		shortLabel: "Классический",
+		mobileLabel: "ГОСТ",
 		icon: <FileText size={14} className="text-[var(--teal)] shrink-0" />,
-		tooltip: "Табличная форма карты стоматологического больного (Минздрав РФ)",
+		tooltip: "Табличная форма карты стоматологического пациента (Минздрав РФ)",
 		badge: "МЗ РФ",
 	},
 ] as const;
@@ -908,7 +908,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 								onClick={onSyncAllToDiary}
 								className="h-7 px-2 rounded-md text-xs font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0 shadow-xs whitespace-nowrap"
 								title="Перенести клинический статус зубной формулы в дневник приёма в 1 клик"
-								aria-label="043/у"
+								aria-label="В дневник приёма"
 								data-testid="btn-hotpath-sync-all-to-diary"
 							>
 								<FileText size={12} className="shrink-0" />
@@ -1337,7 +1337,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = R
 												}}
 												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/30"
 												title="Сформировать черновой план лечения по МКБ-10 и каталогу услуг на основе всех патологий"
-												aria-label="План лечения из патологий (804н)"
+												aria-label="План лечения из патологий"
 												data-testid="more-menu-plan-from-pathologies"
 											>
 												<FileText size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />

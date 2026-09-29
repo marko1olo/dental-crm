@@ -207,7 +207,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			// ignore event dispatch error
 		}
 		showToast(
-			"Протокол Cariogram и шкала Франкла успешно перенесены в карту 043/у!",
+			"Протокол Cariogram и шкала Франкла успешно перенесены в медицинскую карту!",
 			"success",
 		);
 	};
@@ -231,7 +231,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"1-клик: Применена норма временного прикуса (3 года: 51–85 интактны, кариеса нет, 0% резорбция). Протокол перенесен в 043/у!",
+			"1-клик: Применена норма временного прикуса (3 года: 51–85 интактны, кариеса нет, 0% резорбция). Протокол перенесен в дневник!",
 			"success",
 		);
 	};
@@ -255,7 +255,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"1-клик: Применена норма прорезывания первых моляров (6 лет: 16, 26, 36, 46 + 20 молочных). Протокол перенесен в 043/у!",
+			"1-клик: Применена норма прорезывания первых моляров (6 лет: 16, 26, 36, 46 + 20 молочных). Протокол перенесен в дневник!",
 			"success",
 		);
 	};
@@ -279,7 +279,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"1-клик: Применена норма сменного прикуса (9 лет: резцы 11..42, 1-е моляры 16..46, молочные 53..85). Протокол перенесен в 043/у!",
+			"1-клик: Применена норма сменного прикуса (9 лет: резцы 11..42, 1-е моляры 16..46, молочные 53..85). Протокол перенесен в дневник!",
 			"success",
 		);
 	};
@@ -303,7 +303,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"1-клик: Применена норма постоянного прикуса (12 лет: 28 зубов 17..27, 47..37). Протокол перенесен в 043/у!",
+			"1-клик: Применена норма постоянного прикуса (12 лет: 28 зубов 17..27, 47..37). Протокол перенесен в дневник!",
 			"success",
 		);
 	};
@@ -316,7 +316,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			treatmentDescription: preset.treatmentDescriptionRu,
 		});
 		showToast(
-			`1-клик: Протокол ${preset.labelRu} (${preset.serviceCode804n}) перенесен в карту 043/у!`,
+			`1-клик: Протокол ${preset.labelRu} перенесен в медицинскую карту!`,
 			"success",
 		);
 	};
@@ -560,11 +560,11 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							<div className="flex items-center gap-2">
 								<Zap className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 								<span className="text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-300">
-									1-Клик Клинические Протоколы &amp; Физиологическая Норма (Приказ 804н)
+									1-Клик Клинические Протоколы &amp; Физиологическая Норма
 								</span>
 							</div>
 							<span className="text-[11px] font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
-								0 лишних кликов • Без бюрократии • Готовый дневник 043/у
+								0 лишних кликов • Без бюрократии • Готовый дневник приёма
 							</span>
 						</div>
 
@@ -651,7 +651,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								type="button"
 								onClick={() => handleApplyProcedurePreset("saforide")}
 								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-amber-500/40 hover:border-amber-500 hover:bg-amber-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
-								title="Приказ 804н: A16.07.057 Серебрение эмали Saforide 38% (51, 52, 61, 62)"
+								title="Клинический протокол: A16.07.057 Серебрение эмали Saforide 38% (51, 52, 61, 62)"
 								data-testid="pediatric-preset-saforide-btn"
 							>
 								<div className="min-w-0">
@@ -670,7 +670,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								type="button"
 								onClick={() => handleApplyProcedurePreset("fissurit")}
 								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-sky-500/40 hover:border-sky-500 hover:bg-sky-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
-								title="Приказ 804н: A16.07.050 Запечатывание фиссур Fissurit FX (16, 26, 36, 46)"
+								title="Клинический протокол: A16.07.050 Запечатывание фиссур Fissurit FX (16, 26, 36, 46)"
 								data-testid="pediatric-preset-fissurit-btn"
 							>
 								<div className="min-w-0">
@@ -689,7 +689,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								type="button"
 								onClick={() => handleApplyProcedurePreset("pulpotec")}
 								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-rose-500/40 hover:border-rose-500 hover:bg-rose-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
-								title="Приказ 804н: A16.07.009 Пульпотомия (ампутация пульпы) препаратом Pulpotec"
+								title="Клинический протокол: A16.07.009 Пульпотомия (ампутация пульпы) препаратом Pulpotec"
 								data-testid="pediatric-preset-pulpotec-btn"
 							>
 								<div className="min-w-0">
@@ -708,12 +708,12 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								type="button"
 								onClick={handleInsertCariogramTo043}
 								className="min-h-[44px] sm:min-h-[32px] px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-sm text-left"
-								title="Мгновенно перенести текущий протокол, Cariogram и поведение по Франклу в дневник Формы 043/у"
+								title="Мгновенно перенести текущий протокол, Cariogram и поведение по Франклу в дневник приёма"
 								data-testid="pediatric-preset-insert-043-btn"
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold truncate">
-										В карту 043/у (1 клик)
+										В карту (1 клик)
 									</div>
 									<div className="text-[10px] text-teal-100 truncate">
 										Перенос протокола и статуса
@@ -1078,7 +1078,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									className="min-h-[48px] px-6 py-3 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer active:scale-95"
 								>
 									<Check className="w-5 h-5" />
-									<span>Вставить протокол Cariogram в карту 043/у (1 клик)</span>
+									<span>Вставить протокол Cariogram в карту (1 клик)</span>
 								</button>
 							</div>
 						</div>

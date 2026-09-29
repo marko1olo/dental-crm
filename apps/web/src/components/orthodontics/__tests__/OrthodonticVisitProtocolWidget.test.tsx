@@ -50,13 +50,13 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		// 1-Click Fast Action Buttons & >= 48px touch targets
 		assert.ok(html.includes("data-testid=\"apply-to-form-043-btn\""));
 		assert.ok(html.includes("data-testid=\"bottom-apply-protocol-btn\""));
-		assert.ok(html.includes("В карту 043/у"));
+		assert.ok(html.includes("В медицинскую карту"));
 
 		// 1-Click 804n Invoice Billing Buttons & Badges
 		assert.ok(html.includes("data-testid=\"add-ortho-services-to-invoice-btn\""));
 		assert.ok(html.includes("data-testid=\"bottom-add-services-to-invoice-btn\""));
 		assert.ok(html.includes("data-testid=\"ortho-services-count-badge\""));
-		assert.ok(html.includes("Начислить услуги 804н в чек/смету"));
+		assert.ok(html.includes("Начислить услуги в чек/смету"));
 
 		// Arch Presets & FDI Tooth Buttons (>= 40px touch targets)
 		assert.ok(html.includes("Вся ВЧ"));
