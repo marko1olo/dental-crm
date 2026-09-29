@@ -344,7 +344,7 @@ export function Cornerstone3DViewer({
 			const uid = typeof seriesMeta?.studyInstanceUID === "string" ? seriesMeta.studyInstanceUID.trim() : "";
 			if (!cancelled) setStudyInstanceUid(uid.length > 0 ? uid : null);
 
-			const viewportsToSet = [VIEWPORT_IDS.axial, VIEWPORT_IDS.sagittal, VIEWPORT_IDS.coronal];
+			const viewportsToSet: string[] = [VIEWPORT_IDS.axial, VIEWPORT_IDS.sagittal, VIEWPORT_IDS.coronal];
 			if (volume3dRef.current) {
 				viewportsToSet.push(VIEWPORT_IDS.volume3d);
 			}

@@ -4,11 +4,11 @@ import { VIEWPORT_IDS, VOLUME_3D_PRESETS } from "./cornerstoneEngineHelper";
 
 export interface CornerstoneVolume3DViewportProps {
 	volume3dRef: RefObject<HTMLDivElement | null>;
-	activePresetId?: string;
-	onSelectPreset?: (presetId: string) => void;
-	onResetCamera?: () => void;
-	onRotateOrientation?: (axis: "coronal" | "sagittal" | "axial") => void;
-	isLoading?: boolean;
+	activePresetId?: string | undefined;
+	onSelectPreset?: ((presetId: string) => void) | undefined;
+	onResetCamera?: (() => void) | undefined;
+	onRotateOrientation?: ((axis: "coronal" | "sagittal" | "axial") => void) | undefined;
+	isLoading?: boolean | undefined;
 }
 
 /**
