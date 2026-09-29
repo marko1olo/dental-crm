@@ -32,7 +32,10 @@ export const TreatmentPlanActSignatures: React.FC<TreatmentPlanActSignaturesProp
 	return (
 		<>
 			{/* ── 8. Section 4: Patient Acceptance & Legal Terms ── */}
-			<div className="pt-3 border-t border-slate-300 text-xs text-slate-900 space-y-3 print:space-y-2 mb-6 print:mb-4">
+			<div
+				className="pt-3 border-t border-slate-300 text-xs text-slate-900 space-y-3 print:space-y-2 mb-6 print:mb-4 break-inside-avoid"
+				style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+			>
 				<div className="font-bold uppercase tracking-wider text-[11px]" style={{ color: palette.primaryDark }}>
 					3. Условия сдачи-приемки и гарантийные обязательства
 				</div>
@@ -53,8 +56,11 @@ export const TreatmentPlanActSignatures: React.FC<TreatmentPlanActSignaturesProp
 			</div>
 
 			{/* ── 9. Doctor Signature and Clinic Seal Zones (Crisp Two-Column Grid) ── */}
-			<div className="doc-sign-zone pt-4 border-t border-slate-300 page-break-inside-avoid">
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-start">
+			<div
+				className="doc-sign-zone pt-4 border-t border-slate-300 break-inside-avoid"
+				style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+			>
+				<div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-8 items-start">
 					{/* Left: Clinic / Doctor Signature & Stamp */}
 					<div className="space-y-4">
 						<div>
@@ -62,13 +68,13 @@ export const TreatmentPlanActSignatures: React.FC<TreatmentPlanActSignaturesProp
 								От Исполнителя (Клиника):
 							</div>
 							<div className="text-[11px] text-slate-600 mt-0.5">
-								{legalName} • Врач: {actData.doctorFullName}
+								{legalName} • Врач: {actData.doctorFullName || "______________________"}
 							</div>
 						</div>
 
 						<div className="pt-2">
 							<div className="text-xs font-semibold text-slate-800">
-								Врач-стоматолог: ______________________ / {actData.doctorFullName} /
+								Врач-стоматолог: ______________________ / {actData.doctorFullName || "______________________"} /
 							</div>
 							<div className="text-[10px] text-slate-500 italic mt-0.5">
 								(личная подпись и расшифровка лечащего врача)
@@ -99,13 +105,13 @@ export const TreatmentPlanActSignatures: React.FC<TreatmentPlanActSignaturesProp
 								От Заказчика (Пациент):
 							</div>
 							<div className="text-[11px] text-slate-600 mt-0.5">
-								ФИО: {actData.patientName} • Паспорт: {patientPassport ? "проверен" : "предъявлен"}
+								ФИО: {actData.patientName || "______________________"} • Паспорт: {patientPassport ? "проверен" : "предъявлен"}
 							</div>
 						</div>
 
 						<div className="pt-2">
 							<div className="text-xs font-semibold text-slate-800">
-								Пациент: ______________________ / {actData.patientName} /
+								Пациент: ______________________ / {actData.patientName || "______________________"} /
 							</div>
 							<div className="text-[10px] text-slate-500 italic mt-0.5">
 								(услуги принял в полном объеме, претензий не имею)

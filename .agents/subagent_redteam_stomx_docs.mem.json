@@ -1,0 +1,30 @@
+{
+  "status": "COMPLETED",
+  "started_at": "2026-09-29T17:10:00+04:00",
+  "completed_at": "2026-09-29T20:56:00+04:00",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md (Mandatory constitutional routine)",
+    "Audit StomX templates and print standards in РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС",
+    "Audit scoped document print components and templates",
+    "Baseline test execution: contractsAndPrescriptionsMockPurity.test.ts passing",
+    "Refactor documentPrintFormatters.ts to export SSOT kopecksToWordsRu and formatRublesExactRu",
+    "Elevate TreatmentPlanCompletedActPrint.tsx: standardized to StomX 7-column Order 804n table",
+    "Harden TreatmentPlanActSignatures.tsx: breakInside avoid, print:grid-cols-2, safe person fallbacks",
+    "Refactor treatmentPlanActFormatters.ts: delegate numberToWordsRu to @dental/shared SSOT",
+    "Elevate TreatmentPlanContractPrint.tsx: add official sum in words banner, breakInside avoid, print:grid-cols-3, proper patient signature decode line",
+    "Harden clinicalPackagePrintEngine.ts: add break-inside avoid and page-break-inside avoid to signatures-grid",
+    "Harden primaryIntakePackagePrintEngine.ts: add break-inside avoid to signatures-row, eliminate double underline artifacts for director and patient",
+    "Harden warrantyCertificateHtml.ts: eliminate undefined leaks for clinic/doctor/patient, add break-inside avoid to signatures-block and remediation signatures",
+    "Enhance CompletedWorksActForm.tsx: add live sum in words preview under completedActTotalRub",
+    "Expand test suite contractsAndPrescriptionsMockPurity.test.ts with 7 comprehensive StomX assertions (17 total tests, all passing)",
+    "Per-file git add of modified scoped files"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Fixed missing sum in words on treatment plan contract print (mandated by PP RF 736 and GK RF 779-783)",
+    "Fixed missing breakInside avoid and print:grid-cols-* on signature zones preventing awkward orphan page cuts and 1-column collapse",
+    "Fixed undefined and NaN leakages on warranty certificates and remediation acts when clinic/doctor/patient fields were missing",
+    "Fixed double underline artifacts on primary intake package signatures",
+    "Standardized Completed Works Act table to 7-column StomX format with Order 804n badges, area/tooth column, prices, discounts, and exact kopecks"
+  ]
+}

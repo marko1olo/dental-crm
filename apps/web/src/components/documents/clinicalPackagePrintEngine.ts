@@ -246,6 +246,8 @@ export function generateClinicalPackageHtml(
       padding-top: 6pt;
       border-top: 1px solid #d1d5db;
       font-size: 8pt;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     .sign-line {
       margin-top: 14pt;

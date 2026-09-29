@@ -9,6 +9,13 @@ import {
 	generatePaidContractHtml,
 } from "../paidContractEngine";
 import { generatePrimaryIntakePackageHtml } from "../primaryIntakePackagePrintEngine";
+import { generateClinicalPackageHtml } from "../clinicalPackagePrintEngine";
+import { formatRublesExactRu, kopecksToWordsRu } from "../documentPrintFormatters";
+import {
+	generateWarrantyCertificateHtml,
+	generateWarrantyRemediationActHtml,
+} from "../../warranty/warrantyCertificateHtml";
+import { numberToWordsRu } from "../../treatment-plans/treatmentPlanActFormatters";
 import {
 	DEFAULT_TELEGRAM_PREVIEW_PATIENT,
 	buildDefaultTelegramPreview,
@@ -128,5 +135,131 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		});
 		assert.ok(!html.includes("Иванов И.И."), "Production primary intake package must not render synthetic Ivanov I.I.");
 		assert.ok(html.includes("________________________"), "Production primary intake package must render signature underline for missing director");
+	});
+
+	test("StomX documentPrintFormatters: exact sum in words and safe rubles formatting", () => {
+		assert.equal(
+			formatRublesExactRu(15450.5).replace(/\u00a0/g, " "),
+			"15 450,50 ₽",
+			"formatRublesExactRu must format numbers to exact rubles and kopecks",
+		);
+		assert.equal(
+			formatRublesExactRu(null),
+			"0,00 ₽",
+			"formatRublesExactRu must safely handle null without NaN",
+		);
+		assert.equal(
+			formatRublesExactRu(undefined),
+			"0,00 ₽",
+			"formatRublesExactRu must safely handle undefined without NaN",
+		);
+		assert.equal(
+			kopecksToWordsRu(1545050),
+			"Пятнадцать тысяч четыреста пятьдесят рублей 50 копеек",
+			"kopecksToWordsRu must decline rubles and kopecks properly",
+		);
+	});
+
+	test("StomX clinicalPackagePrintEngine: signatures-grid has break-inside avoid protection", () => {
+		const html = generateClinicalPackageHtml({
+			patient: { fullName: "Петров Петр Петрович" },
+			clinic: { fullName: "ДЕНТЕ Клиника" },
+		});
+		assert.ok(html.includes("break-inside: avoid;"), "signatures-grid must include break-inside: avoid;");
+		assert.ok(html.includes("page-break-inside: avoid;"), "signatures-grid must include page-break-inside: avoid;");
+	});
+
+	test("StomX primaryIntakePackagePrintEngine: no double underline when patient name is empty", () => {
+		const html = generatePrimaryIntakePackageHtml({
+			clinic: { fullName: "ДЕНТЕ Клиника" },
+			patient: { fullName: "" },
+		});
+		assert.ok(!html.includes("________________ / ________________"), "Must never leak double underline artifact");
+		assert.ok(html.includes("break-inside: avoid;"), "signatures-row must include break-inside: avoid;");
+	});
+
+	test("StomX warrantyCertificateHtml: zero undefined leaks and signature break-inside protection", () => {
+		const htmlCert = generateWarrantyCertificateHtml({
+			certificateId: "WAR-2026-001",
+			issueDate: "2026-09-29",
+			clinic: { name: "ДЕНТЕ" } as any,
+			doctor: { fullName: "" } as any,
+			patient: { fullName: "" } as any,
+			items: [],
+			calculation: {
+				adjustedWarrantyMonths: 12,
+				adjustedServiceLifeMonths: 24,
+				totalRiskMultiplier: 1.0,
+				checkupSchedule: [],
+			} as any,
+			qrCodeSvg: "<svg></svg>",
+			integrityHash: "abc123hash",
+		} as any);
+		assert.ok(!htmlCert.includes("undefined •"), "Warranty certificate must never leak raw undefined in clinic header");
+		assert.ok(!htmlCert.includes("Тел: undefined"), "Warranty certificate must never leak undefined phone");
+		assert.ok(htmlCert.includes("break-inside: avoid;"), "signatures-block must include break-inside: avoid;");
+
+		const htmlAct = generateWarrantyRemediationActHtml({
+			orderNumber: "ACT-001",
+			performedAtIso: "2026-09-29T10:00:00Z",
+			defectType: "chipping",
+			defectTitle: "Скол композита",
+			clinicalFinding: "Дефект пломбы",
+			remediationAction: "Шлифовка и реставрация",
+			toothNumber: 16,
+			certificateId: "WAR-2026-001",
+			materialsDeducted: [],
+		} as any);
+		assert.ok(!htmlAct.includes("undefined •"), "Remediation act must not leak undefined");
+		assert.ok(htmlAct.includes("break-inside: avoid;"), "signatures in remediation act must include break-inside: avoid;");
+	});
+
+	test("StomX treatmentPlanActFormatters: numberToWordsRu delegates accurately to SSOT", () => {
+		assert.equal(
+			numberToWordsRu(19600, 0),
+			"Девятнадцать тысяч шестьсот рублей 00 копеек",
+			"numberToWordsRu must produce standard accounting text",
+		);
+		assert.equal(
+			numberToWordsRu(0, 50),
+			"Ноль рублей 50 копеек",
+			"numberToWordsRu must handle fractional kopecks correctly",
+		);
+	});
+
+	test("StomX TreatmentPlanActSignatures: break-inside avoid and print:grid-cols-2 protection", () => {
+		const actSignaturesPath = path.join(
+			webSrcDir,
+			"components/treatment-plans/TreatmentPlanActSignatures.tsx",
+		);
+		const content = fs.readFileSync(actSignaturesPath, "utf-8");
+		assert.ok(
+			content.includes('breakInside: "avoid"') || content.includes("break-inside-avoid"),
+			"TreatmentPlanActSignatures must have breakInside avoid",
+		);
+		assert.ok(
+			content.includes("print:grid-cols-2"),
+			"TreatmentPlanActSignatures must enforce print:grid-cols-2 to keep doctor and patient on one row",
+		);
+	});
+
+	test("StomX TreatmentPlanContractPrint: sum in words banner and print:grid-cols-3 protection", () => {
+		const contractPrintPath = path.join(
+			webSrcDir,
+			"components/treatment-plans/TreatmentPlanContractPrint.tsx",
+		);
+		const content = fs.readFileSync(contractPrintPath, "utf-8");
+		assert.ok(
+			content.includes("Сумма сметы прописью:"),
+			"TreatmentPlanContractPrint must display official sum in words banner",
+		);
+		assert.ok(
+			content.includes("print:grid-cols-3"),
+			"TreatmentPlanContractPrint must enforce print:grid-cols-3 to prevent collapsing in print engine",
+		);
+		assert.ok(
+			content.includes('breakInside: "avoid"'),
+			"TreatmentPlanContractPrint signatures must have breakInside: 'avoid'",
+		);
 	});
 });

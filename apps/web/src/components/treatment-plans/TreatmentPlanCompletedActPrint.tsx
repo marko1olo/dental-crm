@@ -493,15 +493,14 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 									<thead>
 										<tr className="bg-slate-100 text-slate-800 font-bold text-[11px]">
 											<th className="border border-slate-300 p-2 text-center w-10">№</th>
-											<th className="border border-slate-300 p-2 text-center w-28">Код услуги</th>
-											<th className="border border-slate-300 p-2 text-center w-16">Зуб (FDI)</th>
+											<th className="border border-slate-300 p-2 text-center w-24">Зуб / Область</th>
 											<th className="border border-slate-300 p-2 text-left">
-												Наименование и клиническое содержание медицинской услуги
+												Наименование услуги по номенклатуре 804н
 											</th>
 											<th className="border border-slate-300 p-2 text-center w-14">Кол-во</th>
-											<th className="border border-slate-300 p-2 text-right w-24">Тариф, ₽</th>
+											<th className="border border-slate-300 p-2 text-right w-24">Цена, ₽</th>
 											<th className="border border-slate-300 p-2 text-right w-20">Скидка, ₽</th>
-											<th className="border border-slate-300 p-2 text-right w-28">Сумма, ₽</th>
+											<th className="border border-slate-300 p-2 text-right w-28">Итого, ₽</th>
 										</tr>
 									</thead>
 									<tbody>
@@ -512,9 +511,6 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 											>
 												<td className="border border-slate-300 p-2 text-center text-slate-500 font-mono text-[11px]">
 													{idx + 1}
-												</td>
-												<td className="border border-slate-300 p-2 text-center font-mono text-xs font-bold text-slate-800">
-													{it.code804n}
 												</td>
 												<td className="border border-slate-300 p-2 text-center">
 													{it.toothNumber ? (
@@ -533,7 +529,14 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 													)}
 												</td>
 												<td className="border border-slate-300 p-2 font-medium text-slate-900 leading-snug">
-													<div>{it.name}</div>
+													<div className="flex items-baseline gap-1.5 flex-wrap">
+														{it.code804n && (
+															<span className="font-mono font-bold text-slate-700 shrink-0 text-[11px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+																{it.code804n}
+															</span>
+														)}
+														<span className="font-semibold text-slate-900">{it.name}</span>
+													</div>
 													{it.clinicalRationale && (
 														<div className="text-[11px] text-slate-500 italic mt-0.5">
 															Клиническое показание: {it.clinicalRationale}
@@ -560,15 +563,17 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 												<td className="border border-slate-300 p-2 text-center text-slate-400 font-mono text-[11px]">
 													{visibleProcedures.length + 1}
 												</td>
-												<td className="border border-slate-300 p-2 text-center font-mono text-xs font-semibold text-slate-500">
-													A26.07.001
-												</td>
 												<td className="border border-slate-300 p-2 text-center text-slate-400 font-mono">
 													—
 												</td>
 												<td className="border border-slate-300 p-2 font-medium text-slate-800 leading-snug">
-													<div className="font-semibold text-slate-900 not-italic">
-														Индивидуальный гигиенический и асептический комплект
+													<div className="flex items-baseline gap-1.5 flex-wrap">
+														<span className="font-mono font-bold text-slate-500 shrink-0 text-[11px] bg-slate-100 px-1 py-0.5 rounded border border-slate-200 not-italic">
+															A26.07.001
+														</span>
+														<span className="font-semibold text-slate-900 not-italic">
+															Индивидуальный гигиенический и асептический комплект
+														</span>
 													</div>
 													<div className="text-[11px] text-slate-500 not-italic mt-0.5">
 														(валики, салфетки, перчатки, слюноотсосы, маски — {microConsumables.length} наим., включено в базовую стоимость оказанных услуг)
@@ -591,7 +596,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 
 										{/* Subtotals & Breakdown */}
 										<tr className="bg-slate-50 text-slate-700 text-xs font-semibold">
-											<td colSpan={7} className="border border-slate-300 p-2 text-right">
+											<td colSpan={6} className="border border-slate-300 p-2 text-right">
 												Стоимость оказанных услуг без учета скидки:
 											</td>
 											<td className="border border-slate-300 p-2 text-right font-mono">
@@ -600,7 +605,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 										</tr>
 										{discountTotalRub > 0 && (
 											<tr className="bg-slate-50 text-slate-700 text-xs font-semibold">
-												<td colSpan={7} className="border border-slate-300 p-2 text-right text-emerald-700">
+												<td colSpan={6} className="border border-slate-300 p-2 text-right text-emerald-700">
 													Сумма предоставленной скидки:
 												</td>
 												<td className="border border-slate-300 p-2 text-right font-mono text-emerald-700">
@@ -612,7 +617,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 											className="font-extrabold text-xs"
 											style={{ backgroundColor: palette.softBg, color: palette.primaryDark }}
 										>
-											<td colSpan={7} className="border border-slate-300 p-2.5 text-right text-xs uppercase tracking-wide">
+											<td colSpan={6} className="border border-slate-300 p-2.5 text-right text-xs uppercase tracking-wide">
 												ИТОГО СТОИМОСТЬ ОКАЗАННЫХ МЕДИЦИНСКИХ УСЛУГ (НДС НЕ ОБЛАГАЕТСЯ):
 											</td>
 											<td

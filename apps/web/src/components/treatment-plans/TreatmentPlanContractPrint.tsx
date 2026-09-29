@@ -29,7 +29,7 @@ import {
 	type TreatmentPlanStage,
 	type TreatmentPlanTier,
 } from "./types";
-import { type Kopecks, parseKopecks, splitKopecks } from "@dental/shared";
+import { type Kopecks, parseKopecks, splitKopecks, kopecksToWordsRu } from "@dental/shared";
 import { TreatmentPlanQrCode } from "./qr/TreatmentPlanQrCode";
 import { generatePlanVerificationQrPayload } from "./qr/treatmentPlanQrEngine";
 import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
@@ -448,6 +448,14 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 							</div>
 						</div>
 
+						{/* Amount in words banner (Official Russian Healthcare & Accounting Standard) */}
+						<div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[10.5px] text-slate-800">
+							<strong>Сумма сметы прописью:</strong> <em>{kopecksToWordsRu(finalTotalKopecks)}</em>.{" "}
+							<span className="text-[9.5px] text-slate-500">
+								НДС не облагается в соответствии с пп. 2 п. 2 ст. 149 НК РФ (медицинские услуги).
+							</span>
+						</div>
+
 						{/* Stages Breakdown Cards */}
 						<div className="pt-1">
 							<div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1">
@@ -560,7 +568,10 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 					</div>
 
 					{/* Section 4: Warranties & Clinical Obligations */}
-					<div className="space-y-1.5 text-[10px] text-slate-600 treatment-print-warranties">
+					<div
+						className="space-y-1.5 text-[10px] text-slate-600 treatment-print-warranties break-inside-avoid"
+						style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+					>
 						<h3 className="font-bold text-slate-900 uppercase tracking-wide text-[11px] m-0">
 							4. Гарантийные обязательства, условия сохранения гарантии и согласие пациента
 						</h3>
@@ -579,12 +590,15 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 					</div>
 
 					{/* Signatures & Verification QR Block */}
-					<div className="pt-4 border-t border-slate-300 grid grid-cols-1 sm:grid-cols-3 gap-4 text-[11px] items-center">
+					<div
+						className="pt-4 border-t border-slate-300 grid grid-cols-1 sm:grid-cols-3 print:grid-cols-3 gap-4 text-[11px] items-center break-inside-avoid"
+						style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+					>
 						<div className="space-y-2">
 							<strong className="text-slate-900 block">От Исполнителя (Клиника):</strong>
 							<p className="text-slate-700 m-0 leading-relaxed">
-								Врач-стоматолог: {doctorFullName}<br />
-								М.П. ___________________ / {doctorFullName.split(" ")[0]} /
+								Врач-стоматолог: {doctorFullName || "______________________"}<br />
+								М.П. ___________________ / {doctorFullName ? doctorFullName.split(" ")[0] : "___________"} /
 							</p>
 						</div>
 
@@ -616,9 +630,14 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 									</span>
 								</div>
 							) : (
-								<p className="text-slate-700 pt-6 border-b border-slate-400 inline-block w-full text-center text-slate-400 m-0">
-									Подпись пациента
-								</p>
+								<div className="space-y-1 pt-2">
+									<div className="text-slate-800">
+										Подпись: ______________________ / {patientName || "______________________"} /
+									</div>
+									<div className="text-[9px] text-slate-500 italic">
+										(с диагнозом, планом лечения и стоимостью согласен)
+									</div>
+								</div>
 							)}
 						</div>
 					</div>

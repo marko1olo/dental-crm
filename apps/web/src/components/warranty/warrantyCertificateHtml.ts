@@ -27,6 +27,14 @@ import {
 export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): string {
 	const { patient, doctor, clinic, items, calculation, certificateId, issueDate, qrCodeSvg, integrityHash } = data;
 
+	const clinicName = clinic?.name || "Стоматологическая клиника";
+	const clinicLegalName = clinic?.legalName || clinicName;
+	const clinicLicenseNumber = clinic?.licenseNumber || "ЛО41-01137-77/00584930";
+	const clinicAddress = clinic?.address || "";
+	const clinicPhone = clinic?.phone || "";
+	const doctorFullName = doctor?.fullName || "________________________";
+	const patientFullName = patient?.fullName || "________________________";
+
 	const itemsRows = items
 		.map((item, idx) => {
 			const preset = getWarrantyPreset(item.category);
@@ -352,6 +360,8 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
       margin-top: 20px;
       position: relative;
       z-index: 1;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     .sign-col .sign-title {
       font-size: 8pt;
@@ -398,9 +408,9 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
       <div class="clinic-logo-block">
         <div class="clinic-emblem">D</div>
         <div class="clinic-info">
-          <h1>${clinic.name}</h1>
-          <div class="legal">${clinic.legalName} • Лицензия: ${clinic.licenseNumber}</div>
-          <div class="legal">${clinic.address} • Тел: ${clinic.phone}</div>
+          <h1>${clinicName}</h1>
+          <div class="legal">${clinicLegalName} • Лицензия: ${clinicLicenseNumber}</div>
+          ${clinicAddress || clinicPhone ? `<div class="legal">${clinicAddress}${clinicAddress && clinicPhone ? " • " : ""}${clinicPhone ? `Тел: ${clinicPhone}` : ""}</div>` : ""}
         </div>
       </div>
       <div class="cert-title-badge">
@@ -518,12 +528,12 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
       <div class="sign-col">
         <div class="sign-title">Лечащий врач-стоматолог:</div>
         <div class="sign-line"></div>
-        <div class="sign-name">${doctor.fullName}</div>
+        <div class="sign-name">${doctorFullName}</div>
       </div>
       <div class="sign-col">
         <div class="sign-title">Пациент (с условиями ознакомлен):</div>
         <div class="sign-line"></div>
-        <div class="sign-name">${patient.fullName}</div>
+        <div class="sign-name">${patientFullName}</div>
       </div>
       <div class="qr-col">
         ${qrCodeSvg}
@@ -543,6 +553,10 @@ export function generateWarrantyCertificateHtml(data: WarrantyCertificateData): 
  * Генерация печатного Акта гарантийного устранения дефекта (0 ₽ / А4)
  */
 export function generateWarrantyRemediationActHtml(order: WarrantyRemediationOrder): string {
+	const clinicName = order.clinicName || "Стоматологическая клиника";
+	const doctorName = order.doctorName || "________________________";
+	const patientFullName = order.patientFullName || "________________________";
+
 	const materialsList = order.materialsDeducted
 		.map(
 			(mat, i) => `
@@ -668,6 +682,8 @@ export function generateWarrantyRemediationActHtml(order: WarrantyRemediationOrd
       margin-top: 24px;
       padding-top: 16px;
       border-top: 1px solid #cbd5e1;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     .sign-line { border-bottom: 1px dashed #475569; margin: 24px 0 4px 0; }
   </style>
@@ -677,7 +693,7 @@ export function generateWarrantyRemediationActHtml(order: WarrantyRemediationOrd
     <div class="act-header">
       <div>
         <div class="act-title">Акт гарантийного устранения дефекта</div>
-        <div class="act-meta">${order.clinicName} • Закон РФ № 2300-1 «О защите прав потребителей» (ст. 29)</div>
+        <div class="act-meta">${clinicName} • Закон РФ № 2300-1 «О защите прав потребителей» (ст. 29)</div>
       </div>
       <div>
         <div class="act-badge">${order.orderNumber}</div>
@@ -689,11 +705,11 @@ export function generateWarrantyRemediationActHtml(order: WarrantyRemediationOrd
       <div>
         <div class="field">
           <div class="lbl">Пациент:</div>
-          <div class="val">${order.patientFullName} (карта № ${order.patientCardNumber})</div>
+          <div class="val">${patientFullName} (карта № ${order.patientCardNumber || "—"})</div>
         </div>
         <div class="field">
           <div class="lbl">Лечащий врач:</div>
-          <div class="val">${order.doctorName}</div>
+          <div class="val">${doctorName}</div>
         </div>
       </div>
       <div>
@@ -747,12 +763,12 @@ export function generateWarrantyRemediationActHtml(order: WarrantyRemediationOrd
       <div>
         <div style="font-size: 8.5pt; font-weight: 700; color: #64748b;">Лечащий врач-стоматолог:</div>
         <div class="sign-line"></div>
-        <div style="font-size: 9pt; font-weight: 700;">${order.doctorName}</div>
+        <div style="font-size: 9pt; font-weight: 700;">${doctorName}</div>
       </div>
       <div>
         <div style="font-size: 8.5pt; font-weight: 700; color: #64748b;">Пациент (претензий к качеству не имею):</div>
         <div class="sign-line"></div>
-        <div style="font-size: 9pt; font-weight: 700;">${order.patientFullName}</div>
+        <div style="font-size: 9pt; font-weight: 700;">${patientFullName}</div>
       </div>
     </div>
 

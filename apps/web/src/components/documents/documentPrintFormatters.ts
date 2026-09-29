@@ -1,12 +1,31 @@
 /**
  * documentPrintFormatters.ts
  *
- * Канонические утилиты экранирования HTML и форматирования дат для печатных форм документов.
+ * Канонические утилиты экранирования HTML, форматирования дат и сумм прописью для печатных форм документов (Стом-Икс стандарты).
  * Мандаты: 8b (<=800 строк), 8s (SSOT / Закон единого авторитета).
  */
 
-import { escapeHtml } from "@dental/shared";
-export { escapeHtml };
+import {
+	escapeHtml,
+	kopecksToWordsRu,
+	legalMoneyInWordsRu,
+	legalMoneyInWordsFromKopecksRu,
+	moneyToWordsRu,
+	rublesToWordsRu,
+	formatKopecksRu,
+	parseKopecks,
+} from "@dental/shared";
+
+export {
+	escapeHtml,
+	kopecksToWordsRu,
+	legalMoneyInWordsRu,
+	legalMoneyInWordsFromKopecksRu,
+	moneyToWordsRu,
+	rublesToWordsRu,
+	formatKopecksRu,
+	parseKopecks,
+};
 
 export function formatDateRu(dateStr: string | null | undefined): string {
 	if (!dateStr) return "«___» _________ _____ г.";
@@ -24,3 +43,15 @@ export function formatDateRu(dateStr: string | null | undefined): string {
 		return escapeHtml(dateStr);
 	}
 }
+
+/**
+ * Безопасное форматирование рублей в строку формата "12 345,00 ₽"
+ * Исключает утечки `NaN ₽`, `undefined ₽` или дробных искажений.
+ */
+export function formatRublesExactRu(rubles: number | string | null | undefined): string {
+	if (rubles === null || rubles === undefined || rubles === "") return "0,00 ₽";
+	const num = typeof rubles === "string" ? Number(rubles.replace(/\s/g, "").replace(",", ".")) : rubles;
+	if (!Number.isFinite(num)) return "0,00 ₽";
+	return formatKopecksRu(parseKopecks(num));
+}
+

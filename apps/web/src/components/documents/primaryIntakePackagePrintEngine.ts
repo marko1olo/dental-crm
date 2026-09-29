@@ -105,14 +105,17 @@ export function generatePrimaryIntakePackageHtml(
 	const clinicLicense =
 		escapeHtml(clinic?.licenseNumber) || "ЛО41-01137-77/00584930";
 	const clinicPhone = escapeHtml(clinic?.phone) || "";
+	const dirName = escapeHtml(clinic?.directorFullName);
 	const clinicDirector =
-		escapeHtml(clinic?.directorFullName) ||
-		(isDemoShowcaseMode() ? "Иванов И.И." : "________________________");
+		dirName || (isDemoShowcaseMode() ? "Иванов И.И." : "");
+	const clinicDirectorDecoding = clinicDirector ? ` / ${clinicDirector} /` : "";
 	const clinicDirectorTitle =
 		escapeHtml(clinic?.directorTitle) || "Главный врач";
 
 	// Реквизиты пациента (с гарантированными подчеркиваниями вместо блокировок)
-	const ptName = escapeHtml(patient?.fullName) || "________________________________________";
+	const ptFullName = escapeHtml(patient?.fullName);
+	const ptName = ptFullName || "________________________________________";
+	const ptSignatureDecoding = ptFullName ? ` / ${ptFullName} /` : "";
 	const ptBirthDate = patient?.birthDate ? formatDateRu(patient.birthDate) : "«___» _________ _____ г.";
 	const ptPhone = escapeHtml(patient?.phone) || "+7 (____) ____-____";
 	const ptAddress = escapeHtml(patient?.registrationAddress || patient?.address) || "________________________________________";
@@ -271,6 +274,7 @@ export function generatePrimaryIntakePackageHtml(
       padding-top: 4pt;
       border-top: 1px solid #9ca3af;
       font-size: 8pt;
+      break-inside: avoid;
       page-break-inside: avoid;
     }
     .sign-box {
@@ -344,7 +348,7 @@ export function generatePrimaryIntakePackageHtml(
         <strong>ИСПОЛНИТЕЛЬ:</strong><br>
         ${clinicName}<br>
         Лицензия: № ${clinicLicense}<br>
-        ${clinicDirectorTitle}: ________________ / ${clinicDirector} /<br>
+        ${clinicDirectorTitle}: ________________________${clinicDirectorDecoding}<br>
         <div class="sign-line"></div>
         <div class="sign-hint">(М.П. / подпись уполномоченного лица)</div>
       </div>
@@ -352,7 +356,7 @@ export function generatePrimaryIntakePackageHtml(
         <strong>ПАЦИЕНТ (ЗАКАЗЧИК):</strong><br>
         ${ptName}<br>
         Паспорт: ${ptPassport}<br>
-        Подпись: ________________ / ${ptName} /<br>
+        Подпись: ________________________${ptSignatureDecoding}<br>
         <div class="sign-line"></div>
         <div class="sign-hint">(личная подпись пациента / расшифровка)</div>
       </div>
@@ -453,7 +457,7 @@ export function generatePrimaryIntakePackageHtml(
       <div class="sign-box" style="grid-column: span 2;">
         Субъект персональных данных (Пациент / Законный представитель):<br>
         <strong>${ptName}</strong> · Паспорт: ${ptPassport}<br>
-        Личная подпись: ________________________ / ${ptName} /<br>
+        Личная подпись: ________________________${ptSignatureDecoding}<br>
         <div class="sign-line"></div>
         <div class="sign-hint">(подпись гражданина / дата: ${todayFormatted})</div>
       </div>

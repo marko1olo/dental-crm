@@ -1,6 +1,7 @@
 import React from "react";
 import { Edit3 } from "lucide-react";
 import type { GeneratedDocument } from "@dental/shared";
+import { kopecksToWordsRu, parseKopecks } from "@dental/shared";
 import { useDocumentStore } from "../../../store/documentStore";
 
 export interface CompletedWorksActFormProps {
@@ -214,11 +215,18 @@ export const CompletedWorksActForm: React.FC<CompletedWorksActFormProps> = React
 										setCompletedActTotalRub(event.target.value)
 									}
 									placeholder={
-										treatmentAcceptancePlannedTotalRub()
+										typeof treatmentAcceptancePlannedTotalRub === "function" &&
+										Number.isFinite(treatmentAcceptancePlannedTotalRub()) &&
+										treatmentAcceptancePlannedTotalRub() > 0
 											? money(treatmentAcceptancePlannedTotalRub())
 											: "сумма цифрами, копейки после запятой"
 									}
 								/>
+								{completedActTotalRub ? (
+									<span style={{ fontSize: "11px", color: "var(--muted, #64748b)", fontStyle: "italic", marginTop: "2px", display: "block" }}>
+										Прописью: {kopecksToWordsRu(parseKopecks(completedActTotalRub))}
+									</span>
+								) : null}
 							</label>
 							<label>
 								Оплачено
@@ -229,7 +237,9 @@ export const CompletedWorksActForm: React.FC<CompletedWorksActFormProps> = React
 										setCompletedActPaidRub(event.target.value)
 									}
 									placeholder={
-										completedActPaidRubValue()
+										typeof completedActPaidRubValue === "function" &&
+										Number.isFinite(completedActPaidRubValue()) &&
+										completedActPaidRubValue() > 0
 											? money(completedActPaidRubValue())
 											: "сумма цифрами, копейки после запятой"
 									}
