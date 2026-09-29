@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Box, FolderOpen, RotateCcw, Sparkles, UploadCloud } from "lucide-react";
+import { Box, FolderOpen, RotateCcw, Sparkles, Spline, UploadCloud } from "lucide-react";
 import type {
 	CbctVoxelVolume,
 	CbctViewportType,
@@ -13,7 +13,8 @@ import type {
 import { resetPlaneObliqueAngle } from "../cbctMprMath";
 import type { CrossSectionSliceData } from "../dentalCurveEngine";
 import { CbctViewportHud } from "../CbctViewportHud";
-import type { ViewLayoutMode } from "./cbctStudioTypes";
+import type { StudioMode, ViewLayoutMode } from "./cbctStudioTypes";
+import { CbctVolume3DViewport } from "./CbctVolume3DViewport";
 
 export interface CbctMprViewportsGridProps {
 	readonly isSidebarOpen: boolean;
@@ -27,6 +28,8 @@ export interface CbctMprViewportsGridProps {
 	readonly dicomProgress: number;
 	readonly maximizedViewport: CbctViewportType | null;
 	readonly viewLayout: ViewLayoutMode;
+	readonly studioMode?: StudioMode | undefined;
+	readonly onSelectStudioMode?: ((mode: StudioMode) => void) | undefined;
 	readonly folderInputRef: React.RefObject<HTMLInputElement | null>;
 	readonly zipInputRef: React.RefObject<HTMLInputElement | null>;
 	readonly handleDicomFilesChange: (files: FileList | File[]) => void;
@@ -89,6 +92,8 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 	dicomProgress,
 	maximizedViewport,
 	viewLayout,
+	studioMode,
+	onSelectStudioMode,
 	folderInputRef,
 	zipInputRef,
 	handleDicomFilesChange,
@@ -138,6 +143,17 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 	activeCrossSectionIdx,
 	crossSections,
 }) => {
+	// 4th Quadrant display mode: defaults to "volume3d" so the surgeon immediately sees the 3D Skull in MPR
+	const [fourthQuadrantMode, setFourthQuadrantMode] = useState<"volume3d" | "panoramic">("volume3d");
+
+	useEffect(() => {
+		if (studioMode === "panoramic") {
+			setFourthQuadrantMode("panoramic");
+		} else if (studioMode === "volume3d") {
+			setFourthQuadrantMode("volume3d");
+		}
+	}, [studioMode]);
+
 	// 4-Way Interactive 2x2 Grid Resizer State
 	const [splitX, setSplitX] = useState<number>(0.5);
 	const [splitY, setSplitY] = useState<number>(0.5);
@@ -336,6 +352,51 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		</div>
 	);
 
+	const renderFourthQuadrantSwitcher = () => (
+		<div
+			className="inline-flex items-center bg-zinc-950/90 backdrop-blur-md rounded-md p-0.5 border border-zinc-700/60 shadow-md gap-0.5 z-20 pointer-events-auto"
+			role="tablist"
+			aria-label="Режимы 4-го квадранта"
+		>
+			<button
+				type="button"
+				onClick={(e) => {
+					e.stopPropagation();
+					setFourthQuadrantMode("volume3d");
+					onSelectStudioMode?.("volume3d");
+				}}
+				className={`px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+					fourthQuadrantMode === "volume3d"
+						? "bg-cyan-600 text-white shadow-xs"
+						: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+				}`}
+				data-testid="cbct-btn-mode-volume3d"
+				title="3D Объем / Череп: интерактивная трехмерная реконструкция костной ткани"
+			>
+				<Box className="w-3 h-3 text-cyan-300" />
+				<span>3D Объем / Череп</span>
+			</button>
+			<button
+				type="button"
+				onClick={(e) => {
+					e.stopPropagation();
+					setFourthQuadrantMode("panoramic");
+					onSelectStudioMode?.("panoramic");
+				}}
+				className={`px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+					fourthQuadrantMode === "panoramic"
+						? "bg-purple-600 text-white shadow-xs"
+						: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+				}`}
+				data-testid="cbct-btn-mode-panoramic"
+				title="Ортопантомограмма (ОПТГ): развернутая зубная панорама и кросс-секции"
+			>
+				<Spline className="w-3 h-3 text-purple-300" />
+				<span>Панорама ОПТГ</span>
+			</button>
+		</div>
+	);
+
 	const renderPanoramicViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("panoramic")}
@@ -350,6 +411,10 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 			data-testid="cbct-viewport-container-panoramic"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
+				{/* Top-left Mode Switcher */}
+				<div className="absolute top-2 left-2 z-20 pointer-events-auto">
+					{renderFourthQuadrantSwitcher()}
+				</div>
 				<canvas
 					ref={panoBaseCanvasRef}
 					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
@@ -390,6 +455,25 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 			</div>
 		</div>
 	);
+
+	const renderFourthQuadrantViewport = (extraClassName = "flex-1 flex flex-col") => {
+		if (fourthQuadrantMode === "volume3d") {
+			return (
+				<CbctVolume3DViewport
+					volume={volume}
+					extraClassName={extraClassName}
+					isActive={activeViewport === "panoramic"}
+					onPointerDownCapture={() => setActiveViewport("panoramic")}
+					onMouseEnter={() => onHoverViewport?.("panoramic")}
+					onMouseLeave={() => onHoverViewport?.(null)}
+					onDoubleClick={() => handleToggleMaximize("panoramic")}
+					switcherSlot={renderFourthQuadrantSwitcher()}
+				/>
+			);
+		}
+
+		return renderPanoramicViewport(extraClassName);
+	};
 
 	const renderCrossSectionMaximizedViewport = () => (
 		<div
@@ -551,7 +635,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					{maximizedViewport === "axial" && renderAxialViewport("flex-1 flex flex-col w-full h-full")}
 					{maximizedViewport === "coronal" && renderCoronalViewport("flex-1 flex flex-col w-full h-full")}
 					{maximizedViewport === "sagittal" && renderSagittalViewport("flex-1 flex flex-col w-full h-full")}
-					{maximizedViewport === "panoramic" && renderPanoramicViewport("flex-1 flex flex-col w-full h-full")}
+					{maximizedViewport === "panoramic" && renderFourthQuadrantViewport("flex-1 flex flex-col w-full h-full")}
 					{maximizedViewport === "cross_section" && renderCrossSectionMaximizedViewport()}
 				</div>
 			) : viewLayout === "mpr_3_view" ? (
@@ -568,7 +652,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					<div className="col-span-12 lg:col-span-4 min-h-0 min-w-0 w-full h-full flex flex-col lg:grid lg:grid-rows-3 gap-1">
 						{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
 						{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
-						{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
+						{renderFourthQuadrantViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
 					</div>
 				</div>
 			) : (
@@ -588,7 +672,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 						{renderAxialViewport(mobileActiveTab === "axial" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
 						{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
 						{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
-						{renderPanoramicViewport(mobileActiveTab === "panoramic" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
+						{renderFourthQuadrantViewport(mobileActiveTab === "panoramic" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
 					</div>
 
 					{/* Interactive Splitter Controls (Desktop only) */}

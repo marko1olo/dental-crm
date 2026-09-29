@@ -642,6 +642,8 @@ export const CbctMprImplantStudioModal: React.FC<
 						dicomProgress={dicomLoader.dicomProgress}
 						maximizedViewport={maximizedViewport}
 						viewLayout={viewLayout}
+						studioMode={studioMode}
+						onSelectStudioMode={handleSelectStudioMode}
 						folderInputRef={dicomLoader.folderInputRef}
 						zipInputRef={dicomLoader.zipInputRef}
 						handleDicomFilesChange={dicomLoader.handleDicomFilesChange}

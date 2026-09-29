@@ -108,6 +108,40 @@ export interface CbctLeftToolDockProps {
 
 type FlyoutMenuType = "none" | "slab" | "hu" | "dicom";
 
+interface DockTooltipProps {
+	readonly title: string;
+	readonly subtitle?: string | undefined;
+	readonly shortcut?: string | undefined;
+	readonly titleColor?: string | undefined;
+	readonly bottomClass?: string | undefined;
+}
+
+const DockTooltip: React.FC<DockTooltipProps> = ({
+	title,
+	subtitle,
+	shortcut,
+	titleColor = "",
+	bottomClass = "top-1/2 -translate-y-1/2",
+}) => (
+	<div
+		role="tooltip"
+		className={`pointer-events-none absolute left-full ml-2 ${bottomClass} opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2`}
+	>
+		<span className={`font-semibold ${titleColor}`}>{title}</span>
+		{subtitle && <span className="text-[var(--muted,#a1a1aa)] text-[11px]">{subtitle}</span>}
+		{shortcut && (
+			<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
+				{shortcut}
+			</kbd>
+		)}
+	</div>
+);
+
+const getToolBtnClass = (isActive: boolean, activeStyle = "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40") =>
+	`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
+		isActive ? activeStyle : "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
+	}`;
+
 export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 	activeTool,
 	onSelectTool,
@@ -235,27 +269,14 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("crosshair")}
-						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
-							activeTool === "crosshair"
-								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
-						}`}
+						className={getToolBtnClass(activeTool === "crosshair")}
 						title="Перекрестие (3D навигация) [C]"
 						aria-label="Перекрестие"
 						data-testid="cbct-tool-crosshair"
 					>
 						<Crosshair className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
-					<div
-						role="tooltip"
-						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-					>
-						<span className="font-semibold text-cyan-300">Перекрестие</span>
-						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">3D навигация по срезам</span>
-						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							C / ЛКМ
-						</kbd>
-					</div>
+					<DockTooltip title="Перекрестие" subtitle="3D навигация по срезам" shortcut="C / ЛКМ" titleColor="text-cyan-300" />
 				</div>
 
 				{/* 2. Pan */}
@@ -263,27 +284,14 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("pan")}
-						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
-							activeTool === "pan"
-								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
-						}`}
+						className={getToolBtnClass(activeTool === "pan")}
 						title="Панорамирование (H / СКМ)"
 						aria-label="Панорамирование"
 						data-testid="cbct-tool-pan"
 					>
 						<Hand className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
-					<div
-						role="tooltip"
-						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-					>
-						<span className="font-semibold text-cyan-300">Панорамирование</span>
-						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Сдвиг проекции</span>
-						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							H / СКМ
-						</kbd>
-					</div>
+					<DockTooltip title="Панорамирование" subtitle="Сдвиг проекции" shortcut="H / СКМ" titleColor="text-cyan-300" />
 				</div>
 
 				{/* 3. Zoom */}
@@ -291,27 +299,14 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("zoom")}
-						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
-							activeTool === "zoom"
-								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
-						}`}
+						className={getToolBtnClass(activeTool === "zoom")}
 						title="Зум (Z / Ctrl+Колесо)"
 						aria-label="Зум"
 						data-testid="cbct-tool-zoom"
 					>
 						<ZoomIn className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
-					<div
-						role="tooltip"
-						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-					>
-						<span className="font-semibold text-cyan-300">Зум</span>
-						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Масштабирование</span>
-						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							Z / Ctrl+Колесо
-						</kbd>
-					</div>
+					<DockTooltip title="Зум" subtitle="Масштабирование" shortcut="Z / Ctrl+Колесо" titleColor="text-cyan-300" />
 				</div>
 
 				{/* 4. Window Level (W/L) */}
@@ -319,27 +314,14 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("window_level")}
-						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
-							activeTool === "window_level"
-								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
-						}`}
+						className={getToolBtnClass(activeTool === "window_level")}
 						title="Контраст W/L (W / ПКМ)"
 						aria-label="Окно W/L"
 						data-testid="cbct-tool-window_level"
 					>
 						<Contrast className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
-					<div
-						role="tooltip"
-						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-					>
-						<span className="font-semibold text-cyan-300">Контраст W/L</span>
-						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Яркость / Контраст HU</span>
-						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							W / ПКМ
-						</kbd>
-					</div>
+					<DockTooltip title="Контраст W/L" subtitle="Яркость / Контраст HU" shortcut="W / ПКМ" titleColor="text-cyan-300" />
 				</div>
 
 				{/* 5. Rotate Oblique Axes */}
@@ -347,11 +329,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("rotate")}
-						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
-							activeTool === "rotate"
-								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
-						}`}
+						className={getToolBtnClass(activeTool === "rotate")}
 						title="Вращение осей (Oblique MPR) [R]"
 						aria-label="Вращение осей"
 						data-testid="cbct-tool-rotate"
@@ -360,16 +338,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					>
 						<RotateCw className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
-					<div
-						role="tooltip"
-						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-					>
-						<span className="font-semibold">Вращение осей</span>
-						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Косой наклон срезов</span>
-						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							R
-						</kbd>
-					</div>
+					<DockTooltip title="Вращение осей" subtitle="Косой наклон срезов" shortcut="R" />
 				</div>
 			</div>
 
@@ -383,27 +352,14 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("ruler")}
-						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
-							activeTool === "ruler"
-								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
-						}`}
+						className={getToolBtnClass(activeTool === "ruler")}
 						title="Линейка (Калипер расстояния в мм) [M]"
 						aria-label="Линейка"
 						data-testid="cbct-tool-ruler"
 					>
 						<Ruler className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
-					<div
-						role="tooltip"
-						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-					>
-						<span className="font-semibold">Линейка</span>
-						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Калипер расстояния (мм)</span>
-						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							M
-						</kbd>
-					</div>
+					<DockTooltip title="Линейка" subtitle="Калипер расстояния (мм)" shortcut="M" />
 				</div>
 
 				{/* 6b. Angle / Protractor */}
@@ -411,27 +367,14 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("angle")}
-						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
-							activeTool === "angle"
-								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
-						}`}
+						className={getToolBtnClass(activeTool === "angle")}
 						title="Угломер (Замер угла в градусах) [A]"
 						aria-label="Угломер"
 						data-testid="cbct-tool-angle"
 					>
 						<Compass className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
-					<div
-						role="tooltip"
-						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-					>
-						<span className="font-semibold">Угломер</span>
-						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Измерение угла (°)</span>
-						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							A
-						</kbd>
-					</div>
+					<DockTooltip title="Угломер" subtitle="Измерение угла (°)" shortcut="A" />
 				</div>
 
 				{/* 7. HU Tissue Density Probe */}
@@ -439,27 +382,14 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("probe")}
-						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
-							activeTool === "probe"
-								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
-						}`}
+						className={getToolBtnClass(activeTool === "probe")}
 						title="Плотность HU (Денситометрия Misch) [H]"
 						aria-label="Плотность HU"
 						data-testid="cbct-tool-probe"
 					>
 						<Activity className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
-					<div
-						role="tooltip"
-						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-					>
-						<span className="font-semibold">Плотность HU</span>
-						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Замер плотности кости</span>
-						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							H
-						</kbd>
-					</div>
+					<DockTooltip title="Плотность HU" subtitle="Замер плотности кости" shortcut="H" />
 				</div>
 
 				{/* 8. Mandibular Canal / Nerve Tracer */}
@@ -467,53 +397,30 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 					<button
 						type="button"
 						onClick={() => onSelectTool("nerve")}
-						className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
-							activeTool === "nerve"
-								? "bg-sky-500/20 text-sky-400 border border-sky-500/60 shadow-xs shadow-cyan-950/40"
-								: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-cyan-500/40"
-						}`}
+						className={getToolBtnClass(activeTool === "nerve")}
 						title="Канал IAN (Трассировка нерва) [N]"
 						aria-label="Канал IAN"
 						data-testid="cbct-tool-nerve"
 					>
 						<Zap className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
-					<div
-						role="tooltip"
-						className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-					>
-						<span className="font-semibold">Канал IAN</span>
-						<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Трассировка нерва (2мм)</span>
-						<kbd className="text-[10px] bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)] font-mono">
-							N
-						</kbd>
-					</div>
+					<DockTooltip title="Канал IAN" subtitle="Трассировка нерва (2мм)" shortcut="N" />
 				</div>
 
-				{/* 8b. Dental Arch Toggle (Optional shortcut) */}
+				{/* 8b. Dental Arch Toggle */}
 				{onToggleDentalArch && (
 					<div className="relative group flex items-center justify-center">
 						<button
 							type="button"
 							onClick={onToggleDentalArch}
-							className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
-								showDentalArch
-									? "bg-purple-500/20 text-purple-300 border border-purple-500/60 shadow-xs shadow-purple-950/40"
-									: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-[var(--ink,#f4f4f5)] hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-purple-500/40"
-							}`}
+							className={getToolBtnClass(showDentalArch, "bg-purple-500/20 text-purple-300 border border-purple-500/60 shadow-xs shadow-purple-950/40")}
 							title="Дуга ОПТГ (Отображение зубной дуги)"
 							aria-label="Дуга ОПТГ"
 							data-testid="cbct-left-dock-toggle-arch"
 						>
 							<Spline className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-purple-400 shrink-0" />
 						</button>
-						<div
-							role="tooltip"
-							className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-						>
-							<span className="font-semibold">Дуга ОПТГ</span>
-							<span className="text-[var(--muted,#a1a1aa)] text-[11px]">{showDentalArch ? "Включена" : "Выключена"}</span>
-						</div>
+						<DockTooltip title="Дуга ОПТГ" subtitle={showDentalArch ? "Включена" : "Выключена"} />
 					</div>
 				)}
 
@@ -530,13 +437,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						>
 							<Sliders className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-purple-400 shrink-0" />
 						</button>
-						<div
-							role="tooltip"
-							className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-						>
-							<span className="font-semibold text-purple-300">Авто-дуга</span>
-							<span className="text-[var(--muted,#a1a1aa)] text-[11px]">Сгенерировать автоматически</span>
-						</div>
+						<DockTooltip title="Авто-дуга" subtitle="Сгенерировать автоматически" titleColor="text-purple-300" />
 					</div>
 				)}
 
@@ -546,24 +447,14 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<button
 							type="button"
 							onClick={() => onSelectStudioMode(studioMode === "implant" ? "diagnostic" : "implant")}
-							className={`w-8 h-8 min-w-[32px] min-h-[32px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md [@media(pointer:coarse)]:rounded-lg flex items-center justify-center transition-all duration-150 ${
-								studioMode === "implant"
-									? "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40"
-									: "bg-zinc-900 text-[var(--muted,#a1a1aa)] hover:text-amber-300 hover:bg-zinc-800 border border-[var(--line,#27272a)] hover:border-amber-500/40"
-							}`}
+							className={getToolBtnClass(studioMode === "implant", "bg-amber-500/20 text-amber-300 border border-amber-500/60 shadow-xs shadow-amber-950/40")}
 							title="Имплантация (Планирование имплантата) [I]"
 							aria-label="Имплантация"
 							data-testid="cbct-left-dock-toggle-implant"
 						>
 							<CircleDot className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-amber-400 shrink-0" />
 						</button>
-						<div
-							role="tooltip"
-							className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-150 z-50 bg-zinc-900 text-[var(--ink,#f4f4f5)] text-xs px-2.5 py-1.5 rounded-md border border-[var(--line,#27272a)] shadow-xl whitespace-nowrap flex items-center gap-2"
-						>
-							<span className="font-semibold text-amber-300">Имплантация</span>
-							<span className="text-[var(--muted,#a1a1aa)] text-[11px]">{studioMode === "implant" ? "Режим активен" : "Планирование"}</span>
-						</div>
+						<DockTooltip title="Имплантация" subtitle={studioMode === "implant" ? "Режим активен" : "Планирование"} titleColor="text-amber-300" />
 					</div>
 				)}
 			</div>

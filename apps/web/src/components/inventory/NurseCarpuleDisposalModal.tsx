@@ -39,6 +39,7 @@ import {
 	getFefoTrafficLight,
 	getWarehouseFefoTrafficLight,
 	daysLabel,
+	formatRuDate,
 } from "./fefoTrafficLight.js";
 import { generateCarpuleDisposalActHtml } from "./carpuleDisposalActHtml.js";
 import { NurseCarpule1ClickPackages } from "./NurseCarpule1ClickPackages.js";
@@ -54,6 +55,7 @@ export {
 	getFefoTrafficLight,
 	getWarehouseFefoTrafficLight,
 	daysLabel,
+	formatRuDate,
 };
 
 export interface NurseCarpuleDisposalModalProps {
@@ -69,12 +71,21 @@ export interface NurseCarpuleDisposalModalProps {
 		actNumber: string;
 		actDate: string;
 		isOverdraft: boolean;
+		disposalReason?: string | undefined;
+		isBroken?: boolean | undefined;
+		isPartial?: boolean | undefined;
+		wasteClass?: "class_B" | undefined;
+		disinfectionMethod?: string | undefined;
+		cabinetId?: string | undefined;
+		chairId?: string | undefined;
 	}) => void | Promise<void>) | undefined;
 	readonly initialNurseName?: string | undefined;
 	readonly initialDoctorName?: string | undefined;
 	readonly currentStockAvailable?: number | undefined;
 	readonly stockMap?: Record<string, number> | undefined;
 	readonly initialDate?: string | undefined;
+	readonly cabinetId?: string | undefined;
+	readonly chairId?: string | undefined;
 }
 
 export function NurseCarpuleDisposalModal({
@@ -86,6 +97,8 @@ export function NurseCarpuleDisposalModal({
 	currentStockAvailable = 0,
 	stockMap,
 	initialDate,
+	cabinetId,
+	chairId,
 }: NurseCarpuleDisposalModalProps) {
 	const now = new Date();
 	const dateIso = initialDate || now.toISOString().slice(0, 10);
@@ -207,6 +220,14 @@ export function NurseCarpuleDisposalModal({
 	if (!isOpen) return null;
 
 	const handleFastDispose = async () => {
+		// Strict FEFO Quarantine Protection (Requirement 2 / Mandates 8e, 8n)
+		if (fefoInfo.status === "red" && disposalReason === "used_in_procedure") {
+			const alertMsg = `Срок годности партии истек ${formatRuDate(selectedDrug.defaultExp)}! Партия заблокирована для утилизации`;
+			showToast(alertMsg, "error");
+			setDisposalReason("expired");
+			return;
+		}
+
 		setIsSubmitting(true);
 		try {
 			if (onDisposalConfirmed) {
@@ -220,13 +241,24 @@ export function NurseCarpuleDisposalModal({
 					actNumber,
 					actDate: dateIso,
 					isOverdraft,
+					disposalReason,
+					isBroken: disposalReason === "broken_capsule",
+					isPartial: disposalReason === "partial_dose",
+					wasteClass: "class_B",
+					disinfectionMethod: "Аламинол 3% (60 мин)",
+					cabinetId,
+					chairId,
 				});
 			}
 
 			setIsDisposed(true);
 			const msg = isOverdraft
 				? `Списание ${carpulesCount} пустых карпул выполнено в 1 клик (Мягкий овердрафт: дефицит ${carpulesCount - effectiveStockAvailable} шт. зафиксирован, накладная ещё не оприходована).`
-				: `Списание ${carpulesCount} пустых карпул оформлено в 1 клик врачом / администратором (СанПиН 3.3686-21, Акт ${actNumber}).`;
+				: disposalReason === "expired"
+					? `Утилизация просроченной партии (${carpulesCount} шт.) оформлена в 1 клик (СанПиН 3.3686-21, Акт ${actNumber}).`
+					: disposalReason === "broken_capsule"
+						? `Списание боя карпул (${carpulesCount} шт.) с дезинфекцией оформлено в 1 клик (СанПиН, Акт ${actNumber}).`
+						: `Списание ${carpulesCount} пустых карпул оформлено в 1 клик врачом / администратором (СанПиН 3.3686-21, Акт ${actNumber}).`;
 			showToast(msg, isOverdraft ? "warning" : "success");
 			setTimeout(() => {
 				onClose();
@@ -296,6 +328,11 @@ export function NurseCarpuleDisposalModal({
 				accumulatedNeedlesCount: carpulesCount,
 				accumulatedSharpsCount: 1,
 				contaminatedItemsCount: 4,
+				brokenCarpulesCount: disposalReason === "broken_capsule" ? carpulesCount : 0,
+				partiallyUsedCarpulesCount: disposalReason === "partial_dose" ? carpulesCount : 0,
+				cabinetId,
+				chairId,
+				disinfectionProtocol: "Химическая дезинфекция 3% Аламинол (60 мин) / СанПиН 2.1.3684-21",
 			});
 			if (res.success) {
 				setIsDisposed(true);
@@ -526,13 +563,27 @@ export function NurseCarpuleDisposalModal({
 							</span>
 							<select
 								value={disposalReason}
-								onChange={(e) => setDisposalReason(e.target.value)}
+								onChange={(e) => {
+									const nextReason = e.target.value;
+									if (fefoInfo.status === "red" && nextReason === "used_in_procedure") {
+										const alertMsg = `Срок годности партии истек ${formatRuDate(selectedDrug.defaultExp)}! Партия заблокирована для утилизации`;
+										showToast(alertMsg, "error");
+										setDisposalReason("expired");
+										return;
+									}
+									setDisposalReason(nextReason);
+								}}
 								className="w-full min-h-[44px] px-2.5 rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)]"
+								data-testid="nurse-disposal-reason-select"
 							>
-								<option value="used_in_procedure">Использовано при лечении</option>
-								<option value="partial_dose">Остаток карпулы после анестезии</option>
-								<option value="broken_capsule">Бой карпулы при зарядке</option>
-								<option value="expired">Истечение срока годности (FEFO утилизация)</option>
+								<option value="used_in_procedure" disabled={fefoInfo.status === "red"}>
+									{fefoInfo.status === "red"
+										? "Использовано при лечении (ЗАБЛОКИРОВАНО — партия просрочена)"
+										: "Использовано при лечении"}
+								</option>
+								<option value="partial_dose">Остаток карпулы после анестезии (неполная доза)</option>
+								<option value="broken_capsule">Бой карпулы при зарядке (разбитое стекло)</option>
+								<option value="expired">Истечение срока годности (FEFO утилизация по СанПиН)</option>
 							</select>
 						</div>
 
@@ -541,7 +592,13 @@ export function NurseCarpuleDisposalModal({
 								Класс отходов / Дезинфекция
 							</span>
 							<div className="min-h-[44px] px-2.5 rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center text-xs font-semibold text-[var(--ink,#0f172a)] truncate">
-								Класс Б • Аламинол 3% (60 мин)
+								{disposalReason === "broken_capsule"
+									? "Класс Б • Бой стекла • Аламинол 3% (60 мин)"
+									: disposalReason === "partial_dose"
+										? "Класс Б • Неполная карпула • Аламинол 3% (60 мин)"
+										: disposalReason === "expired"
+											? "Класс Б • Утиль по FEFO • Аламинол 3% (60 мин)"
+											: "Класс Б • Пустые карпулы • Аламинол 3% (60 мин)"}
 							</div>
 						</div>
 					</div>

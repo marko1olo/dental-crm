@@ -163,12 +163,16 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 			const startMs = new Date(startIso).getTime();
 			const endMs = new Date(endIso).getTime();
 
-			// Check doctor collision
+			// Check doctor collision (including multi-hour appointments 1.5-3h)
 			const hasDoctorConflict = doctorId
 				? dayAppts.some((a) => {
 						if (a.doctorUserId !== doctorId) return false;
 						const aStart = new Date(a.startsAt).getTime();
-						const aEnd = new Date(a.endsAt).getTime();
+						const aDuration = Number((a as any).durationMinutes) || 30;
+						const aEnd =
+							a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime())
+								? new Date(a.endsAt).getTime()
+								: aStart + aDuration * 60000;
 						return startMs < aEnd && endMs > aStart;
 					})
 				: false;
@@ -177,12 +181,16 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 				continue;
 			}
 
-			// Find available chair
+			// Find available chair (excluding multi-hour blocks)
 			const availableChair = activeChairs.find((chair) => {
 				const hasChairConflict = dayAppts.some((a) => {
 					if (a.chairId !== chair.id) return false;
 					const aStart = new Date(a.startsAt).getTime();
-					const aEnd = new Date(a.endsAt).getTime();
+					const aDuration = Number((a as any).durationMinutes) || 30;
+					const aEnd =
+						a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime())
+							? new Date(a.endsAt).getTime()
+							: aStart + aDuration * 60000;
 					return startMs < aEnd && endMs > aStart;
 				});
 				return !hasChairConflict;
@@ -192,7 +200,11 @@ export function findDoctorFreeSlots(params: FindDoctorFreeSlotsParams): DayFreeS
 			const chairConflict = dayAppts.some((a) => {
 				if (a.chairId !== availableChair.id) return false;
 				const aStart = new Date(a.startsAt).getTime();
-				const aEnd = new Date(a.endsAt).getTime();
+				const aDuration = Number((a as any).durationMinutes) || 30;
+				const aEnd =
+					a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime())
+						? new Date(a.endsAt).getTime()
+						: aStart + aDuration * 60000;
 				return startMs < aEnd && endMs > aStart;
 			});
 
@@ -316,7 +328,11 @@ export function calculateDailyChairDoctorTally(params: {
 
 		for (const a of chairAppts) {
 			const sMs = new Date(a.startsAt).getTime();
-			const eMs = new Date(a.endsAt).getTime();
+			const aDur = Number((a as any).durationMinutes) || 30;
+			const eMs =
+				a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime())
+					? new Date(a.endsAt).getTime()
+					: sMs + aDur * 60000;
 			const durMin = Math.max(0, Math.round((eMs - sMs) / 60000));
 			chairDurationMin += durMin;
 
@@ -365,7 +381,11 @@ export function calculateDailyChairDoctorTally(params: {
 		const dId = a.doctorUserId || "unassigned";
 		const current = doctorStatsMap.get(dId) || { count: 0, durMin: 0, revenue: 0, chairs: new Set() };
 		const sMs = new Date(a.startsAt).getTime();
-		const eMs = new Date(a.endsAt).getTime();
+		const aDur = Number((a as any).durationMinutes) || 30;
+		const eMs =
+			a.endsAt && !Number.isNaN(new Date(a.endsAt).getTime())
+				? new Date(a.endsAt).getTime()
+				: sMs + aDur * 60000;
 		const durMin = Math.max(0, Math.round((eMs - sMs) / 60000));
 		current.count++;
 		current.durMin += durMin;

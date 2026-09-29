@@ -58,13 +58,18 @@ export function useScheduleGridData({
       const [sH, sM] = startStr.split(":").map(Number);
       const startMin = (sH ?? 0) * 60 + (sM ?? 0);
 
-      const endStr = a.endsAt
-        ? toDateTimeLocalValue
+      const rawDuration = Number((a as any).durationMinutes) || 0;
+      let endMin: number;
+      if (a.endsAt) {
+        const endStr = toDateTimeLocalValue
           ? toDateTimeLocalValue(a.endsAt, timezone).slice(11, 16)
-          : a.endsAt.slice(11, 16)
-        : startStr;
-      const [eH, eM] = endStr.split(":").map(Number);
-      const endMin = (eH ?? 0) * 60 + (eM ?? 0);
+          : a.endsAt.slice(11, 16);
+        const [eH, eM] = endStr.split(":").map(Number);
+        const parsedEnd = (eH ?? 0) * 60 + (eM ?? 0);
+        endMin = parsedEnd > startMin ? parsedEnd : startMin + (rawDuration || 30);
+      } else {
+        endMin = startMin + (rawDuration || 30);
+      }
 
       return {
         appointment: a,

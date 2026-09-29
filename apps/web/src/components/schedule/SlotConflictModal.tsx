@@ -1,30 +1,50 @@
 import React from "react";
-import { AlertTriangle, Clock, Calendar, X, Zap } from "lucide-react";
+import { AlertTriangle, Clock, Calendar, X, Zap, ArrowRight, ShieldAlert } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useModalA11y } from "../../hooks/useModalA11y";
+
+export interface AlternativeChairOption {
+	id: string;
+	name: string;
+	roomNumber?: string;
+}
 
 export interface SlotConflictModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly conflictMessage?: string | null | undefined;
+	readonly conflictType?: "chair" | "doctor" | "patient" | "double_booking" | null | undefined;
 	readonly suggestedSlots: readonly string[];
 	readonly onSelectSlot: (slotTime: string) => void;
 	readonly onOverbook?: (() => void) | undefined;
 	readonly patientName?: string | null | undefined;
 	readonly doctorName?: string | null | undefined;
 	readonly inline?: boolean | undefined;
+	readonly onShiftMinutes?: ((minutes: number) => void) | undefined;
+	readonly shiftMinutesList?: readonly number[] | undefined;
+	readonly alternativeChairs?: readonly AlternativeChairOption[] | undefined;
+	readonly onMoveToChair?: ((chairId: string) => void) | undefined;
+	readonly currentChairName?: string | null | undefined;
 }
+
+const DEFAULT_SHIFT_MINUTES = [15, 30, 45, 60] as const;
 
 export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 	isOpen,
 	onClose,
 	conflictMessage,
+	conflictType,
 	suggestedSlots,
 	onSelectSlot,
 	onOverbook,
 	patientName,
 	doctorName,
 	inline = false,
+	onShiftMinutes,
+	shiftMinutesList = DEFAULT_SHIFT_MINUTES,
+	alternativeChairs,
+	onMoveToChair,
+	currentChairName,
 }) => {
 	const { modalRef } = useModalA11y<HTMLDivElement>({
 		isOpen: isOpen && !inline,
@@ -35,6 +55,146 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 	});
 
 	if (!isOpen) return null;
+
+	const isDoctorConflict =
+		conflictType === "doctor" ||
+		conflictType === "double_booking" ||
+		/врач|доктор|одновремен|двойная запись/i.test(conflictMessage || "");
+
+	const isChairConflict =
+		conflictType === "chair" ||
+		/кресло|кабинет/i.test(conflictMessage || "");
+
+	// Reusable conflict resolution sections
+	const renderResolutionControls = () => (
+		<div className="space-y-3.5">
+			{/* Conflict Summary Card */}
+			<div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 text-xs font-medium space-y-1">
+				<p className="m-0 font-bold flex items-center gap-1.5">
+					<AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+					<span>{conflictMessage || "Выбранное время уже занято другой записью."}</span>
+				</p>
+				<p className="m-0 text-[11px] opacity-90">
+					{patientName ? `Пациент: ${patientName}. ` : ""}
+					{doctorName ? `Врач: ${doctorName}. ` : ""}
+					{currentChairName ? `Кресло: ${currentChairName}. ` : ""}
+					Сервер зафиксировал одновременную запись на этот ресурс.
+				</p>
+			</div>
+
+			{/* Doctor Double-Booking Strict Clinical Warning */}
+			{isDoctorConflict && (
+				<div
+					className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-start gap-2 animate-fade-in"
+					data-testid="doctor-double-booking-warning"
+					role="alert"
+				>
+					<ShieldAlert className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+					<div>
+						<p className="m-0 font-bold">
+							Врачебная коллизия (двойная занятость):
+						</p>
+						<p className="m-0 text-[11px] font-normal opacity-90">
+							Врач уже ведёт приём в другом кабинете. Одновременное ведение двух инвазивных приёмов строго запрещено медицинским регламентом клиники.
+						</p>
+					</div>
+				</div>
+			)}
+
+			{/* Option 1: Quick Time Shift (+15, +30, +45, +60 min) */}
+			{onShiftMinutes && (
+				<div className="space-y-1.5" data-testid="slot-conflict-shift-section">
+					<label className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
+						<Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+						<span>Сдвинуть время приёма:</span>
+					</label>
+					<div className="flex flex-wrap gap-1.5 pt-0.5">
+						{shiftMinutesList.map((mins) => (
+							<button
+								key={mins}
+								type="button"
+								data-testid={`shift-minutes-${mins}`}
+								onClick={() => {
+									onShiftMinutes(mins);
+									onClose();
+								}}
+								className="min-h-[38px] px-3 py-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-600 hover:text-white text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+								title={`Сдвинуть запись на +${mins} минут`}
+								aria-label={`Сдвинуть время на ${mins} минут`}
+							>
+								<span>+{mins} мин</span>
+							</button>
+						))}
+					</div>
+				</div>
+			)}
+
+			{/* Option 2: Move to Alternative Free Chair */}
+			{alternativeChairs && alternativeChairs.length > 0 && onMoveToChair && (
+				<div className="space-y-1.5" data-testid="slot-conflict-alternative-chairs-section">
+					<label className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
+						<ArrowRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+						<span>Свободные кресла на это время:</span>
+					</label>
+					<div className="flex flex-wrap gap-1.5 pt-0.5">
+						{alternativeChairs.map((chair) => (
+							<button
+								key={chair.id}
+								type="button"
+								data-testid="move-to-chair-btn"
+								data-chair-id={chair.id}
+								onClick={() => {
+									onMoveToChair(chair.id);
+									onClose();
+								}}
+								className="min-h-[38px] px-3 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-600 hover:text-white text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+								title={`Перенести приём на ${chair.name}`}
+								aria-label={`Перенести приём на кресло ${chair.name}`}
+							>
+								<span>{`Перенести на ${chair.name}`}</span>
+							</button>
+						))}
+					</div>
+				</div>
+			)}
+
+			{/* Option 3: Choose Suggested Doctor Free Slot */}
+			<div className="space-y-1.5" data-testid="slot-conflict-suggested-slots-section">
+				<label className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
+					<Calendar className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary,#0d9488))]" />
+					<span>Выбрать другое свободное окно:</span>
+				</label>
+
+				{suggestedSlots && suggestedSlots.length > 0 ? (
+					<div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-0.5">
+						{suggestedSlots.map((slot, idx) => (
+							<button
+								key={slot}
+								type="button"
+								data-slot-btn="true"
+								data-testid="suggested-slot-btn"
+								data-autofocus={idx === 0 ? "true" : undefined}
+								onClick={() => {
+									onSelectSlot(slot);
+									onClose();
+								}}
+								className="min-h-[40px] px-3 py-2 rounded-xl border border-[var(--teal,var(--brand-primary,#0d9488))]/40 bg-[var(--teal-soft,var(--paper-soft,#f0fdfa))] hover:bg-[var(--teal,var(--brand-primary,#0d9488))] hover:text-white text-[var(--teal-dark,var(--teal,#0d9488))] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group"
+								title={`Записать на ${slot}`}
+								aria-label={`Выбрать альтернативное время ${slot}`}
+							>
+								<Calendar className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
+								<span>{slot}</span>
+							</button>
+						))}
+					</div>
+				) : (
+					<p className="text-xs text-[var(--muted,#64748b)] italic">
+						Ближайшие окна не найдены. Выберите время вручную в сетке расписания.
+					</p>
+				)}
+			</div>
+		</div>
+	);
 
 	if (inline) {
 		return (
@@ -52,10 +212,14 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 						</div>
 						<div>
 							<h4 className="text-sm font-bold text-[var(--ink,#0f172a)] m-0 leading-tight">
-								Выбранное время уже занято
+								{isDoctorConflict
+									? "Врач занят в это время"
+									: isChairConflict
+										? "Кресло занято в это время"
+										: "Выбранное время уже занято"}
 							</h4>
 							<p className="text-[11px] text-[var(--muted,#64748b)] m-0">
-								Выберите предложенное свободное окно или оформите CITO-овербукинг
+								Сдвиньте время, перенесите на свободное кресло или оформите CITO
 							</p>
 						</div>
 					</div>
@@ -70,52 +234,8 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 				</div>
 
 				{/* Body */}
-				<div className="p-3 sm:p-4 space-y-3">
-					<div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 text-xs font-medium space-y-1">
-						<p className="m-0 font-bold flex items-center gap-1.5">
-							<AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-							<span>{conflictMessage || "Выбранное время уже занято другой записью."}</span>
-						</p>
-						<p className="m-0 text-[11px] opacity-90">
-							{patientName ? `Пациент: ${patientName}. ` : ""}
-							{doctorName ? `Врач: ${doctorName}. ` : ""}
-							Сервер зафиксировал одновременную запись на это время.
-						</p>
-					</div>
-
-					<div className="space-y-1.5">
-						<label className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-							<Clock className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary,#0d9488))]" />
-							<span>Предложенные свободные окна:</span>
-						</label>
-
-						{suggestedSlots && suggestedSlots.length > 0 ? (
-							<div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-0.5">
-								{suggestedSlots.map((slot, idx) => (
-									<button
-										key={slot}
-										type="button"
-										data-slot-btn="true"
-										data-autofocus={idx === 0 ? "true" : undefined}
-										onClick={() => {
-											onSelectSlot(slot);
-											onClose();
-										}}
-										className="min-h-[44px] px-3 py-2 rounded-xl border border-[var(--teal,var(--brand-primary,#0d9488))]/40 bg-[var(--teal-soft,var(--paper-soft,#f0fdfa))] hover:bg-[var(--teal,var(--brand-primary,#0d9488))] hover:text-white text-[var(--teal-dark,var(--teal,#0d9488))] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group"
-										title={`Записать на ${slot}`}
-										aria-label={`Выбрать альтернативное время ${slot}`}
-									>
-										<Calendar className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
-										<span>{slot}</span>
-									</button>
-								))}
-							</div>
-						) : (
-							<p className="text-xs text-[var(--muted,#64748b)] italic">
-								Ближайшие окна не найдены.
-							</p>
-						)}
-					</div>
+				<div className="p-3 sm:p-4">
+					{renderResolutionControls()}
 				</div>
 
 				{/* Footer */}
@@ -123,7 +243,7 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold transition-colors cursor-pointer"
+						className="min-h-[40px] px-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold transition-colors cursor-pointer"
 					>
 						Закрыть
 					</button>
@@ -136,7 +256,7 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 								onOverbook();
 								onClose();
 							}}
-							className="min-h-[44px] px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="min-h-[40px] px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 							title="Записать в это же время в режиме овербукинга для острой боли"
 						>
 							<Zap className="w-4 h-4" />
@@ -175,10 +295,14 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 						</div>
 						<div>
 							<h3 className="text-base font-bold text-[var(--ink,#0f172a)] m-0 leading-tight">
-								Выбранное время уже занято
+								{isDoctorConflict
+									? "Врач занят в это время"
+									: isChairConflict
+										? "Кресло занято в это время"
+										: "Выбранное время уже занято"}
 							</h3>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
-								Выберите предложенное свободное окно или оформите CITO-овербукинг
+								Сдвиньте время, перенесите на свободное кресло или оформите CITO-овербукинг
 							</p>
 						</div>
 					</div>
@@ -193,52 +317,8 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 				</div>
 
 				{/* Body */}
-				<div className="p-5 sm:p-6 space-y-4">
-					<div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-medium space-y-1">
-						<p className="m-0 font-bold flex items-center gap-1.5">
-							<AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-							<span>{conflictMessage || "Выбранное время уже занято другой записью."}</span>
-						</p>
-						<p className="m-0 text-xs opacity-90">
-							{patientName ? `Пациент: ${patientName}. ` : ""}
-							{doctorName ? `Врач: ${doctorName}. ` : ""}
-							Сервер зафиксировал одновременную запись на это время.
-						</p>
-					</div>
-
-					<div className="space-y-2">
-						<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-							<Clock className="w-4 h-4 text-[var(--teal,var(--brand-primary,#0d9488))]" />
-							<span>Предложенные свободные окна у врача:</span>
-						</label>
-
-						{suggestedSlots && suggestedSlots.length > 0 ? (
-							<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
-								{suggestedSlots.map((slot, idx) => (
-									<button
-										key={slot}
-										type="button"
-										data-slot-btn="true"
-										data-autofocus={idx === 0 ? "true" : undefined}
-										onClick={() => {
-											onSelectSlot(slot);
-											onClose();
-										}}
-										className="min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--teal,var(--brand-primary,#0d9488))]/40 bg-[var(--teal-soft,var(--paper-soft,#f0fdfa))] hover:bg-[var(--teal,var(--brand-primary,#0d9488))] hover:text-white text-[var(--teal-dark,var(--teal,#0d9488))] font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group"
-										title={`Записать на ${slot}`}
-										aria-label={`Выбрать альтернативное время ${slot}`}
-									>
-										<Calendar className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
-										<span>{slot}</span>
-									</button>
-								))}
-							</div>
-						) : (
-							<p className="text-xs text-[var(--muted,#64748b)] italic">
-								Ближайшие окна не найдены. Выберите время вручную в сетке расписания.
-							</p>
-						)}
-					</div>
+				<div className="p-5 sm:p-6">
+					{renderResolutionControls()}
 				</div>
 
 				{/* Footer */}
@@ -252,7 +332,7 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 							Отмена
 						</button>
 						<span className="text-[11px] text-[var(--muted,#64748b)] hidden sm:inline">
-							Нажмите на слот для быстрого выбора
+							Выберите действие для быстрого разрешения
 						</span>
 					</div>
 

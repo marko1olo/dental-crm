@@ -1,0 +1,41 @@
+{
+  "role": "Subagent: Warehouse Auto-BOM Deduction, FEFO & Overdraft Inquisitor",
+  "status": "VERIFIED",
+  "target_scope": [
+    "apps/web/src/components/inventory/autoBomDeductionEngine.ts",
+    "apps/web/src/components/inventory/fefoTrafficLight.ts",
+    "apps/web/src/components/inventory/warehouseInventoryEngine.ts",
+    "apps/web/src/components/inventory/NurseCarpuleDisposalModal.tsx",
+    "apps/web/src/components/inventory/useInventoryQuickWriteoff.ts",
+    "apps/web/src/components/inventory/__tests__/autoBomAndFefo.test.ts"
+  ],
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md & AGENTS.md constitutionally",
+    "Discovered existing files in inventory scope",
+    "Read full contents of autoBomDeductionEngine.ts (439 lines)",
+    "Read full contents of fefoTrafficLight.ts (221 lines)",
+    "Read full contents of warehouseInventoryEngine.ts (585 lines)",
+    "Read full contents of NurseCarpuleDisposalModal.tsx (663 lines)",
+    "Read full contents of useInventoryQuickWriteoff.ts (346 lines)",
+    "Read full contents of autoBomDeductionAndSoftOverdraft.test.ts (442 lines)",
+    "Executed existing test runner with node testCssStub.mjs (15/15 passed)",
+    "Identified critical defects against Requirements 1, 2, 3, 4",
+    "Hardened fefoTrafficLight.ts with formatRuDate, isBatchExpired, validateBatchForClinicalUse, sortBatchesByFefo, resolveFefoDeductionBatches, and exact statutory alert 'Срок годности партии истек ХХ.ХХ.ХХХХ! Партия заблокирована для утилизации'",
+    "Hardened autoBomDeductionEngine.ts with chairId/cabinetId scoping, FEFO batch filtering, senior nurse overdraft notification, broken/partial carpule support",
+    "Hardened warehouseInventoryEngine.ts with cabinet/chair audit line tracking, overdraft statistics, and quarantineExpiredBatchesFromAudit",
+    "Hardened NurseCarpuleDisposalModal.tsx blocking expired batch from clinical use and handling broken/partial carpules with SanPiN Class B disinfection (3% Аламинол)",
+    "Hardened useInventoryQuickWriteoff.ts with chairId/cabinetId and exact overdraft alert",
+    "Created apps/web/src/components/inventory/__tests__/autoBomAndFefo.test.ts with 15 rigorous test cases",
+    "Ran autoBomAndFefo.test.ts: 15/15 passed (Exit Code 0)",
+    "Ran autoBomDeductionAndSoftOverdraft.test.ts: 15/15 passed (Exit Code 0, zero regressions)",
+    "Prepared for per-file git add"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "DEFECT RESOLVED: autoBomDeductionEngine.ts now strictly scopes stock to chairId/cabinetId so adjacent chairs do not steal inventory",
+    "DEFECT RESOLVED: fefoTrafficLight.ts now programmatically validates lots and outputs exact alert: «Срок годности партии истек ХХ.ХХ.ХХХХ! Партия заблокирована для утилизации»",
+    "DEFECT RESOLVED: NurseCarpuleDisposalModal.tsx now disables clinical write-off for red-flagged batches and routes broken/partial carpules to Class B waste with 3% Alaminol chemical disinfection",
+    "DEFECT RESOLVED: exact overdraft notification dispatched: «Требуется оприходование: материал списан в овердрафт по визиту №...»",
+    "DEFECT RESOLVED: SanPiN Class B Carpule Disposal Act now records broken carpules (бой при установке) and partial doses without 3-person commission and with strictly 0 cartoon emojis (Mandate 8d)"
+  ]
+}

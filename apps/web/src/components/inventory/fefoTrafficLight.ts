@@ -218,3 +218,197 @@ export function getWarehouseFefoTrafficLight(
 ): FefoTrafficLightInfo {
 	return getFefoTrafficLight(expirationDateIso, referenceDate, { warehouseMode: true });
 }
+
+// ---------------------------------------------------------------------------
+// FEFO CLINICAL VALIDATION & EXPIRED LOT QUARANTINE (Mandate 8e, 8n)
+// ---------------------------------------------------------------------------
+
+/** Форматирование даты в канонический формат РФ: ДД.ММ.ГГГГ */
+export function formatRuDate(dateInput: Date | string | null | undefined): string {
+	if (!dateInput) return "";
+	if (typeof dateInput === "string") {
+		const trimmed = dateInput.trim();
+		if (/^\d{2}\.\d{2}\.\d{4}$/.test(trimmed)) return trimmed;
+		if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+			const [y, m, d] = trimmed.slice(0, 10).split("-");
+			return `${d}.${m}.${y}`;
+		}
+		if (/^\d{4}-\d{2}$/.test(trimmed)) {
+			const [y, m] = trimmed.split("-");
+			const lastDay = new Date(Date.UTC(Number(y), Number(m), 0)).getUTCDate();
+			return `${String(lastDay).padStart(2, "0")}.${m}.${y}`;
+		}
+	}
+	const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+	if (Number.isNaN(d.getTime())) return String(dateInput);
+	const day = String(d.getDate()).padStart(2, "0");
+	const month = String(d.getMonth() + 1).padStart(2, "0");
+	const year = d.getFullYear();
+	return `${day}.${month}.${year}`;
+}
+
+/** Проверка: истек ли срок годности партии (дни остатка <= 0) */
+export function isBatchExpired(
+	expirationDateIso: string | null | undefined,
+	referenceDate: string | Date = new Date(),
+): boolean {
+	const traffic = getFefoTrafficLight(expirationDateIso, referenceDate);
+	return traffic.daysLeft <= 0;
+}
+
+export interface ClinicalBatchValidationResult {
+	readonly isAllowed: boolean;
+	readonly isExpired: boolean;
+	readonly alertMessage: string | null;
+	readonly formattedExpiry: string;
+	readonly status: FefoTrafficStatus;
+	readonly daysLeft: number;
+}
+
+/**
+ * Валидация партии для клинического использования в полости рта пациента (FEFO контроль).
+ * КАТЕГОРИЧЕСКИ запрещено списывать просроченные партии пациентам!
+ * При просрочке возвращает обязательный нормативный алерт:
+ * «Срок годности партии истек ХХ.ХХ.ХХХХ! Партия заблокирована для утилизации»
+ */
+export function validateBatchForClinicalUse(
+	batch: {
+		readonly expiryDate?: string | null | undefined;
+		readonly expirationDate?: string | null | undefined;
+		readonly batchNumber?: string | null | undefined;
+		readonly lotNumber?: string | null | undefined;
+		readonly name?: string | null | undefined;
+	},
+	referenceDate: string | Date = new Date(),
+): ClinicalBatchValidationResult {
+	const rawExp = batch.expiryDate || batch.expirationDate;
+	const traffic = getFefoTrafficLight(rawExp, referenceDate);
+	const expired = traffic.daysLeft <= 0;
+	const formattedExpiry = rawExp ? formatRuDate(rawExp) : "не указан";
+
+	if (expired) {
+		return {
+			isAllowed: false,
+			isExpired: true,
+			alertMessage: `Срок годности партии истек ${formattedExpiry}! Партия заблокирована для утилизации`,
+			formattedExpiry,
+			status: "red",
+			daysLeft: traffic.daysLeft,
+		};
+	}
+
+	return {
+		isAllowed: true,
+		isExpired: false,
+		alertMessage: null,
+		formattedExpiry,
+		status: traffic.status,
+		daysLeft: traffic.daysLeft,
+	};
+}
+
+/**
+ * Сортировка партий строго по принципу FEFO (First-Expired, First-Out):
+ * Партии с ближайшим сроком годности расходуются в первую очередь.
+ * Бессрочные/неизвестные партии ставятся в конец списка.
+ */
+export function sortBatchesByFefo<
+	T extends {
+		readonly expiryDate?: string | null | undefined;
+		readonly expirationDate?: string | null | undefined;
+	},
+>(batches: readonly T[], referenceDate: string | Date = new Date()): T[] {
+	return [...batches].sort((a, b) => {
+		const expA = a.expiryDate || a.expirationDate;
+		const expB = b.expiryDate || b.expirationDate;
+		const tA = getFefoTrafficLight(expA, referenceDate);
+		const tB = getFefoTrafficLight(expB, referenceDate);
+
+		// Непросроченные сортируются по возрастанию оставшихся дней (ближайшие первыми)
+		if (tA.daysLeft > 0 && tB.daysLeft > 0) {
+			return tA.daysLeft - tB.daysLeft;
+		}
+		// Действующие партии всегда перед просроченными
+		if (tA.daysLeft > 0 && tB.daysLeft <= 0) return -1;
+		if (tA.daysLeft <= 0 && tB.daysLeft > 0) return 1;
+
+		return tA.daysLeft - tB.daysLeft;
+	});
+}
+
+export interface FefoBatchAllocation<T> {
+	readonly batch: T;
+	readonly allocatedQuantity: number;
+}
+
+export interface FefoDeductionResolutionResult<T> {
+	readonly allocatedBatches: ReadonlyArray<FefoBatchAllocation<T>>;
+	readonly allocatedTotalQuantity: number;
+	readonly remainingDeficit: number;
+	readonly blockedExpiredBatches: ReadonlyArray<{
+		readonly batch: T;
+		readonly alertMessage: string;
+	}>;
+	readonly hasOverdraft: boolean;
+}
+
+/**
+ * Подбор партий для списания по правилу FEFO с жесткой блокировкой просроченных партий.
+ * Если партия просрочена — она блокируется для утилизации и не списывается пациенту.
+ * Если годных остатков не хватает — фиксируется овердрафт для автономии врача.
+ */
+export function resolveFefoDeductionBatches<
+	T extends {
+		readonly id?: string | undefined;
+		readonly expiryDate?: string | null | undefined;
+		readonly expirationDate?: string | null | undefined;
+		readonly batchNumber?: string | null | undefined;
+		readonly lotNumber?: string | null | undefined;
+		readonly stockQuantity?: number | undefined;
+	},
+>(
+	batches: readonly T[],
+	requiredQuantity: number,
+	referenceDate: string | Date = new Date(),
+): FefoDeductionResolutionResult<T> {
+	const sorted = sortBatchesByFefo(batches, referenceDate);
+	const allocatedBatches: Array<FefoBatchAllocation<T>> = [];
+	const blockedExpiredBatches: Array<{ batch: T; alertMessage: string }> = [];
+
+	let remainingNeeded = Math.max(0, requiredQuantity);
+	let allocatedTotal = 0;
+
+	for (const b of sorted) {
+		const validation = validateBatchForClinicalUse(b, referenceDate);
+		if (!validation.isAllowed) {
+			blockedExpiredBatches.push({
+				batch: b,
+				alertMessage: validation.alertMessage!,
+			});
+			continue;
+		}
+
+		if (remainingNeeded <= 0) break;
+
+		const availableQty = Math.max(0, Number(b.stockQuantity) || 0);
+		if (availableQty <= 0) continue;
+
+		const deductQty = Math.min(availableQty, remainingNeeded);
+		allocatedBatches.push({
+			batch: b,
+			allocatedQuantity: deductQty,
+		});
+		allocatedTotal += deductQty;
+		remainingNeeded -= deductQty;
+	}
+
+	const hasOverdraft = remainingNeeded > 0;
+
+	return {
+		allocatedBatches,
+		allocatedTotalQuantity: allocatedTotal,
+		remainingDeficit: remainingNeeded,
+		blockedExpiredBatches,
+		hasOverdraft,
+	};
+}

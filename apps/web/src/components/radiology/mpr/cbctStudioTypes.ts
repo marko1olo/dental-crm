@@ -2,7 +2,7 @@ import type { Point3D, ViewportTransform, CbctViewportType } from "../cbctMprMat
 import { DEFAULT_VIEWPORT_TRANSFORM } from "../cbctMprMath";
 import type { RadiologyStudy } from "../types";
 
-export type StudioMode = "diagnostic" | "implant" | "endo" | "tmj";
+export type StudioMode = "diagnostic" | "panoramic" | "volume3d" | "implant" | "tmj" | "endo";
 export type ViewLayoutMode = "mpr_3_view" | "quad_view" | "layout_1_plus_3";
 
 export const DEFAULT_IAN_NERVE_POINTS: readonly Point3D[] = [

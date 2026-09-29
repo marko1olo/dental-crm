@@ -44,6 +44,10 @@ import { printBlankMedicalContract } from "../patients/blankContractPrint";
 import { isTechnicalBreakAppointment } from "./AppointmentModal";
 import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
 import { broadcastVisitStatusChange } from "../../services/storage";
+import {
+	getAppointmentDurationMinutes,
+	calculateAppointmentSpan,
+} from "./appointmentCardHelpers";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -207,6 +211,16 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 			: (typeof patientName === "function"
 				? patientName(dashboard?.patients ?? [], appointment?.patientId ?? null)
 				: "") || "Пациент";
+
+	const durationMinutes = useMemo(() => {
+		return getAppointmentDurationMinutes(
+			appointment?.startsAt,
+			appointment?.endsAt,
+			(appointment as any)?.durationMinutes || 30,
+		);
+	}, [appointment?.startsAt, appointment?.endsAt, (appointment as any)?.durationMinutes]);
+	const isMultiHour = durationMinutes >= 60;
+	const slotSpan = calculateAppointmentSpan(durationMinutes);
 
 	const collision = useMemo(() => {
 		if (!appointmentEditing || !appointmentDraft) {
@@ -942,6 +956,9 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 				<article
 					data-testid="appointment-card"
 					data-appointment-id={appointment.id}
+					data-duration-minutes={durationMinutes}
+					data-multi-hour-block={isMultiHour ? "true" : "false"}
+					data-slot-span={slotSpan}
 					tabIndex={0}
 					onKeyDown={handleCardKeyDown}
 					onDoubleClick={(e) => {

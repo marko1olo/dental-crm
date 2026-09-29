@@ -1,31 +1,26 @@
 {
-  "task": "FEAT-001: 3D Volume Rendering & 4th Quadrant Architect (Romexis 4-Viewport Grid)",
-  "status": "completed",
+  "subagent": "Subagent 1: 3D Volume Rendering & 4th Quadrant Architect",
+  "task": "FEAT-001: 3D Volume Rendering of skull/bones in the 4th quadrant of CBCT MPR Studio with mode switcher [3D Объем / Череп] and [Панорама ОПТГ]",
+  "status": "COMPLETED",
   "completed_steps": [
-    "Read THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, DICOM_VIEWER_AUDIT.md",
-    "Initialized subagent1_3d_volume_rendering.mem.json",
-    "Audited scoped files: Cornerstone3DViewer.tsx, CornerstoneMprViewports.tsx, CornerstonePlanningQuadrant.tsx, cornerstoneEngineHelper.ts",
-    "Verified Cornerstone3D ViewportType.VOLUME_3D, TrackballRotateTool, and transfer function presets API",
-    "Augmented VIEWPORT_IDS with volume3d: 'VOLUME_3D' in cornerstoneEngineHelper.ts",
-    "Implemented DENTAL_SKULL_BONE_PRESET (HU 150..2000 bone/skull calibrated transfer function) and VOLUME_3D_PRESETS catalog (Bone, Skull/Jaw, Dense Bone, Vessels/Bone, Airway)",
-    "Implemented setupVolume3DToolGroup with TrackballRotateTool (LMB), ZoomTool (MMB), PanTool (RMB)",
-    "Implemented applyVolume3DPreset, resetVolume3DCamera, and setVolume3DOrientation helpers",
-    "Created CornerstoneVolume3DViewport component with HUD telemetry, preset selector, orthogonal orientation chips, reset button, and guidance tip in CornerstoneMprViewports.tsx",
-    "Added showInternalHeader prop to CornerstonePlanningQuadrant.tsx",
-    "RED TEAM CORRECTION: Evicted 4th quadrant tab switcher (activeQuadrantTab, tablist, quadrant-tab buttons) and evicted CornerstonePlanningQuadrant from the radiology grid.",
-    "ENFORCED ROMEXIS 4-VIEWPORT GRID: 4th quadrant unconditionally and directly renders CornerstoneVolume3DViewport with ViewportType.VOLUME_3D always open and active.",
-    "Updated unit tests in apps/web/src/components/dicom/__tests__/cornerstone3DVolume.test.ts to strictly assert presence of 4th volume viewport and absence of tabs/planning form in grid.",
-    "Executed targeted unit tests: 41/41 passing (20 new + 21 existing P0 hotfix tests) in 4.30s",
-    "Executed typecheck: npm run typecheck -w @dental/web passed with 0 errors (Exit code 0)",
-    "Executed encoding gate: npm run check:encoding passed (6289 files checked, 0 errors)",
-    "Conducted git diff self-audit: zero unintended edits, strictly within scoped files"
+    "Created CbctVolume3DViewport.tsx with clinical 3D raymarching, bone/skull presets (skull, dense_bone, soft_tissue, mip), trackball orbit rotation, zoom, pan, camera reset, and HUD telemetry",
+    "Implemented 4th quadrant mode switcher in CbctMprViewportsGrid.tsx with [3D Объем / Череп] and [Панорама ОПТГ] buttons",
+    "Defaulted 4th quadrant to 3D volume/skull with 1-click toggle to panorama",
+    "Synchronized fourthQuadrantMode with studioMode in CbctMprViewportsGrid.tsx and wired studioMode in CbctMprImplantStudioModal.tsx",
+    "Fixed volume.data nullability for strict TypeScript check",
+    "Created comprehensive unit test suite cbctVolume3DQuadrant.test.ts (14/14 tests pass, total 51/51 DICOM/CBCT suite tests pass)",
+    "Verified npm run typecheck -w @dental/web passes with Exit Code 0",
+    "Verified npm run check:encoding passes with Exit Code 0"
   ],
   "pending_steps": [],
   "findings": [
-    "In professional radiological workstations (Planmeca Romexis, OnDemand3D, Ez3D-i, KaVo), all 4 viewports (Axial, Coronal, Sagittal, and 3D Volume) must be visible simultaneously on screen at all times without hiding any viewport behind tabs.",
-    "Cornerstone3D ViewportType.VOLUME_3D uses VTK volume actors under the hood. Its setProperties({ preset }) API natively accepts both built-in preset strings (e.g. 'CT-Bone') and custom ViewportPreset objects.",
-    "To avoid mouse binding conflicts with MPR CrosshairsTool on Primary LMB, the 3D volume viewport uses its own dedicated ToolGroup (volume3dToolGroupIdRef).",
-    "Directly rendering CornerstoneVolume3DViewport in the 4th quadrant eliminates all tab state, unneeded resize effects on tab switch, and DOM wrapper bloat.",
-    "Window resizing and container dimension changes are actively observed via ResizeObserver and window 'resize' listener, triggering renderingEngine.resize() and viewport.render() to prevent aspect ratio distortion or canvas stretch."
+    "Voxel raycasting with normal-based Lambertian diffuse shading gives clear, high-contrast bone rendering for skull and jaw visualization directly in browser 2D/3D context without external heavy binary dependencies",
+    "4th quadrant switcher seamlessly toggles between 3D Volume reconstruction and Orthopantomogram (Pano) while maintaining live slice crosshairs and MPR synchronization across Axial, Coronal, and Sagittal quadrants"
+  ],
+  "modified_files": [
+    "apps/web/src/components/radiology/mpr/CbctVolume3DViewport.tsx",
+    "apps/web/src/components/radiology/mpr/CbctMprViewportsGrid.tsx",
+    "apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx",
+    "apps/web/src/components/radiology/__tests__/cbctVolume3DQuadrant.test.ts"
   ]
 }

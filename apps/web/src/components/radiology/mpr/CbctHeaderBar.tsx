@@ -124,7 +124,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 				</div>
 			</div>
 
-			{/* Center: 4 Clean Workspace Modes (Romexis Segmented Switcher) */}
+			{/* Center: Classic Radiology PACS Workspaces (MPR, Панорама, 3D Объем, Имплантация, ВНЧС) */}
 			<div className="flex items-center bg-zinc-900 p-0.5 rounded-lg border border-zinc-800 shrink-0 gap-0.5">
 				<button
 					type="button"
@@ -135,17 +135,45 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
 					}`}
 					data-testid="cbct-mode-diagnostic-btn"
-					title="Режим общей 3D диагностики (панель свернута)"
+					title="MPR: мультипланарная реконструкция в 3 ортогональных плоскостях"
 				>
-					<Search className="w-3.5 h-3.5 text-cyan-400" />
-					<span className="hidden md:inline">Диагностика</span>
+					<Grid2X2 className="w-3.5 h-3.5 text-cyan-400" />
+					<span className="hidden md:inline">MPR</span>
+				</button>
+				<button
+					type="button"
+					onClick={() => handleSelectStudioMode("panoramic")}
+					className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
+						studioMode === "panoramic"
+							? "bg-zinc-800 text-purple-400 border border-purple-500/60 shadow-xs"
+							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+					}`}
+					data-testid="cbct-mode-panoramic-btn"
+					title="Ортопантомограмма (ОПТГ): развернутая зубная дуга и поперечные срезы"
+				>
+					<Spline className="w-3.5 h-3.5 text-purple-400" />
+					<span className="hidden md:inline">Панорама</span>
+				</button>
+				<button
+					type="button"
+					onClick={() => handleSelectStudioMode("volume3d")}
+					className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
+						studioMode === "volume3d"
+							? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs"
+							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+					}`}
+					data-testid="cbct-mode-volume3d-btn"
+					title="3D Объем: трехмерный рендеринг черепа и костных структур"
+				>
+					<Box className="w-3.5 h-3.5 text-cyan-400" />
+					<span className="hidden md:inline">3D Объем</span>
 				</button>
 				<button
 					type="button"
 					onClick={() => handleSelectStudioMode("implant")}
 					className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
 						studioMode === "implant"
-							? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs"
+							? "bg-zinc-800 text-amber-400 border border-amber-500/60 shadow-xs"
 							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
 					}`}
 					data-testid="cbct-mode-implant-btn"
@@ -156,30 +184,16 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 				</button>
 				<button
 					type="button"
-					onClick={() => handleSelectStudioMode("endo")}
-					className={`px-1.5 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
-						studioMode === "endo"
-							? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs"
-							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-					}`}
-					data-testid="cbct-mode-endo-btn"
-					title="Эндодонтия: корневые каналы и апексы"
-				>
-					<Activity className="w-3.5 h-3.5 text-cyan-400" />
-					<span className="hidden md:inline">Эндо</span>
-				</button>
-				<button
-					type="button"
 					onClick={() => handleSelectStudioMode("tmj")}
 					className={`px-1.5 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
 						studioMode === "tmj"
-							? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs"
+							? "bg-zinc-800 text-emerald-400 border border-emerald-500/60 shadow-xs"
 							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
 					}`}
 					data-testid="cbct-mode-tmj-btn"
-					title="ВНЧС: суставные головки и ямки"
+					title="ВНЧС: височно-нижнечелюстной сустав"
 				>
-					<Ruler className="w-3.5 h-3.5 text-cyan-400" />
+					<Activity className="w-3.5 h-3.5 text-emerald-400" />
 					<span className="hidden md:inline">ВНЧС</span>
 				</button>
 			</div>

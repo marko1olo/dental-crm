@@ -2542,6 +2542,30 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						suggestedSlots={slotConflict?.suggestedSlots ?? []}
 						patientName={selectedPatient?.fullName}
 						doctorName={doctors.find((d) => d.id === doctorUserId)?.fullName}
+						currentChairName={chairs.find((c) => c.id === chairId)?.name}
+						alternativeChairs={chairs.filter((c) => c.id !== chairId).map((c) => ({ id: c.id, name: c.name }))}
+						onMoveToChair={(newChairId) => {
+							setChairId(newChairId);
+							const chName = chairs.find((c) => c.id === newChairId)?.name || newChairId;
+							showToast(`Кресло изменено на «${chName}». Нажмите «Записать на прием».`, "success");
+							setSlotConflict(null);
+						}}
+						onShiftMinutes={(minutes) => {
+							if (startsAtLocal) {
+								const [datePart, timePart] = startsAtLocal.split("T");
+								if (datePart && timePart) {
+									const [hStr, mStr] = timePart.split(":");
+									const totalMins = (Number(hStr) || 0) * 60 + (Number(mStr) || 0) + minutes;
+									const newH = Math.floor(totalMins / 60) % 24;
+									const newM = totalMins % 60;
+									const newTimeStr = `${String(newH).padStart(2, "0")}:${String(newM).padStart(2, "0")}`;
+									const newStart = `${datePart}T${newTimeStr}`;
+									setStartsAtLocal(newStart);
+									showToast(`Время сдвинуто на +${minutes} мин (${newTimeStr}). Нажмите «Записать на прием».`, "success");
+								}
+							}
+							setSlotConflict(null);
+						}}
 						onOverbook={() => void handleSubmitBooking(undefined, { overbookOverride: true })}
 						onSelectSlot={(slotTime) => {
 							if (startsAtLocal) {

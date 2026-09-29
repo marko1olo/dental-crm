@@ -266,7 +266,9 @@ async function main() {
 	});
 
 	console.log("Navigating to http://127.0.0.1:5173/#imaging...");
-	await page.goto("http://127.0.0.1:5173/#imaging", { waitUntil: "networkidle", timeout: 20000 });
+	await page.goto("http://127.0.0.1:5173/#imaging", { waitUntil: "domcontentloaded", timeout: 30000 });
+	await page.waitForLoadState("load").catch(() => {});
+	await page.waitForTimeout(2000);
 
 	const webglDiag = await page.evaluate(() => {
 		const c = document.createElement("canvas");

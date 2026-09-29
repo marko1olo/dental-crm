@@ -31,6 +31,8 @@ export function useInventoryQuickWriteoff({
 	 */
 	const handleQuickWriteoffStandardKit = async (options?: {
 		visitId?: string;
+		cabinetId?: string;
+		chairId?: string;
 		notes?: string;
 	}) => {
 		if (isWritingOffStandardKitRef.current) return;
@@ -45,17 +47,21 @@ export function useInventoryQuickWriteoff({
 					headers: getHeaders({
 						"Content-Type": "application/json",
 					}),
-					body: JSON.stringify(options ?? {}),
+					body: JSON.stringify({
+						...(options ?? {}),
+						allowSoftOverdraft: true,
+						allowOverdraft: true,
+					}),
 				},
 			);
 
 			if (res.ok) {
 				const data = await res.json();
-				if (Array.isArray(data.warnings) && data.warnings.length > 0) {
-					showToast(
-						"Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной",
-						"warning",
-					);
+				if ((Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft) {
+					const notice = options?.visitId
+						? `Требуется оприходование: материал списан в овердрафт по визиту №${options.visitId}`
+						: "Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной";
+					showToast(notice, "warning");
 				} else {
 					showToast(
 						"Базовый набор приёма списан: перчатки (2 пары), маска (2 шт.), слюноотсос, нагрудник, валики (6 шт.)",
@@ -84,6 +90,12 @@ export function useInventoryQuickWriteoff({
 		carpulesCount?: number;
 		drugName?: string;
 		visitId?: string;
+		cabinetId?: string;
+		chairId?: string;
+		disposalReason?: "used_in_procedure" | "partial_dose" | "broken_capsule" | "expired";
+		isBroken?: boolean;
+		isPartial?: boolean;
+		disinfectionMethod?: string;
 		notes?: string;
 	}) => {
 		if (isWritingOffCarpulesRef.current) return;
@@ -98,22 +110,30 @@ export function useInventoryQuickWriteoff({
 					headers: getHeaders({
 						"Content-Type": "application/json",
 					}),
-					body: JSON.stringify(options ?? {}),
+					body: JSON.stringify({
+						...(options ?? {}),
+						allowSoftOverdraft: true,
+						allowOverdraft: true,
+					}),
 				},
 			);
 
 			if (res.ok) {
 				const data = await res.json();
 				if ((Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft) {
-					showToast(
-						"Остаток 0: зафиксирован мягкий овердрафт (списание карпул выполнено, накладная в пути)",
-						"warning",
-					);
+					const notice = options?.visitId
+						? `Требуется оприходование: материал списан в овердрафт по визиту №${options.visitId}`
+						: "Остаток 0: зафиксирован мягкий овердрафт (списание карпул выполнено, накладная в пути)";
+					showToast(notice, "warning");
 				} else {
-					showToast(
-						`Пустые карпулы анестетика списаны в 1 клик (${options?.carpulesCount ?? 1} шт., СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)`,
-						"success",
-					);
+					const count = options?.carpulesCount ?? 1;
+					const reasonText =
+						options?.disposalReason === "broken_capsule"
+							? `Бой карпул анестетика (${count} шт., стекло Класс Б)`
+							: options?.disposalReason === "partial_dose"
+								? `Неполные карпулы анестетика (${count} шт., Класс Б)`
+								: `Пустые карпулы анестетика списаны в 1 клик (${count} шт., СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)`;
+					showToast(reasonText, "success");
 				}
 				fetchItems();
 			} else {
@@ -136,12 +156,16 @@ export function useInventoryQuickWriteoff({
 	const handleQuickWriteoffAnestheticCarpule = async (options?: {
 		carpulesCount?: number;
 		visitId?: string;
+		cabinetId?: string;
+		chairId?: string;
 		notes?: string;
 	}) => {
 		return handleQuickWriteoffCarpules({
 			carpulesCount: options?.carpulesCount ?? 1,
 			drugName: "Септанест/Убистезин",
 			...(options?.visitId ? { visitId: options.visitId } : {}),
+			...(options?.cabinetId ? { cabinetId: options.cabinetId } : {}),
+			...(options?.chairId ? { chairId: options.chairId } : {}),
 			notes: options?.notes ?? "1-клик списание карпулы анестетика (Септанест/Убистезин) без комиссии",
 		});
 	};
@@ -153,6 +177,8 @@ export function useInventoryQuickWriteoff({
 	 */
 	const handleQuickWriteoffSterilizationKit = async (options?: {
 		visitId?: string;
+		cabinetId?: string;
+		chairId?: string;
 		notes?: string;
 	}) => {
 		if (isWritingOffSterilizationKitRef.current) return;
@@ -170,6 +196,8 @@ export function useInventoryQuickWriteoff({
 					body: JSON.stringify({
 						packageId: "sterilization_kit",
 						...(options?.visitId ? { visitId: options.visitId } : {}),
+						...(options?.cabinetId ? { cabinetId: options.cabinetId } : {}),
+						...(options?.chairId ? { chairId: options.chairId } : {}),
 						notes: options?.notes ?? "1-клик списание: Набор стерилизации: 1 лоток + перчатки",
 						allowSoftOverdraft: true,
 						allowOverdraft: true,
@@ -180,10 +208,10 @@ export function useInventoryQuickWriteoff({
 			if (res.ok) {
 				const data = await res.json();
 				if (data.isOverdraft || (Array.isArray(data.warnings) && data.warnings.length > 0)) {
-					showToast(
-						"Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной",
-						"warning",
-					);
+					const notice = options?.visitId
+						? `Требуется оприходование: материал списан в овердрафт по визиту №${options.visitId}`
+						: "Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной";
+					showToast(notice, "warning");
 				} else {
 					showToast(
 						"Набор стерилизации (1 лоток + перчатки) успешно списан в 1 клик",
@@ -212,6 +240,8 @@ export function useInventoryQuickWriteoff({
 		bundleType: "therapy" | "orthopedics" | "surgery" = "therapy",
 		options?: {
 			visitId?: string;
+			cabinetId?: string;
+			chairId?: string;
 			notes?: string;
 		},
 	) => {
@@ -237,18 +267,22 @@ export function useInventoryQuickWriteoff({
 					body: JSON.stringify({
 						bundleType,
 						visitId: options?.visitId,
+						cabinetId: options?.cabinetId,
+						chairId: options?.chairId,
 						notes: options?.notes,
+						allowSoftOverdraft: true,
+						allowOverdraft: true,
 					}),
 				},
 			);
 
 			if (res.ok) {
 				const data = await res.json();
-				if (Array.isArray(data.warnings) && data.warnings.length > 0) {
-					showToast(
-						"Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной",
-						"warning",
-					);
+				if ((Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft) {
+					const notice = options?.visitId
+						? `Требуется оприходование: материал списан в овердрафт по визиту №${options.visitId}`
+						: "Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной";
+					showToast(notice, "warning");
 				} else {
 					showToast(
 						`Стандартный расход смены «${bundleNameRu}» успешно списан (${data.deductedItems?.length || 9} позиций: перчатки, маски, салфетки, слюноотсосы, стаканчики, валики)`,
@@ -278,6 +312,8 @@ export function useInventoryQuickWriteoff({
 		visitType: "therapy" | "surgery" = "therapy",
 		options?: {
 			visitId?: string;
+			cabinetId?: string;
+			chairId?: string;
 			notes?: string;
 		},
 	) => {
@@ -298,18 +334,22 @@ export function useInventoryQuickWriteoff({
 					body: JSON.stringify({
 						visitType,
 						visitId: options?.visitId,
+						cabinetId: options?.cabinetId,
+						chairId: options?.chairId,
 						notes: options?.notes,
+						allowSoftOverdraft: true,
+						allowOverdraft: true,
 					}),
 				},
 			);
 
 			if (res.ok) {
 				const data = await res.json();
-				if (Array.isArray(data.warnings) && data.warnings.length > 0) {
-					showToast(
-						"Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной",
-						"warning",
-					);
+				if ((Array.isArray(data.warnings) && data.warnings.length > 0) || data.isOverdraft) {
+					const notice = options?.visitId
+						? `Требуется оприходование: материал списан в овердрафт по визиту №${options.visitId}`
+						: "Внимание: остаток отрицательный (овердрафт), требуется оприходование накладной";
+					showToast(notice, "warning");
 				} else {
 					showToast(
 						`Набор «Визит: ${visitNameRu}» успешно списан в 1 клик (${data.deductedItems?.length || (visitType === "surgery" ? 5 : 6)} позиций без комиссии)`,

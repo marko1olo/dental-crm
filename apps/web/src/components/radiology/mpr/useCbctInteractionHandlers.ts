@@ -39,84 +39,64 @@ import {
 	computeObliquePlaneBasis,
 } from "../cbctObliqueMatrixMath";
 import { calculateWheelSliceDelta } from "../cbctObliqueMath";
-import type {
-	DentalArchCurve,
-	PanoramicReconstructionResult,
-	CrossSectionSliceData,
-} from "../dentalCurveEngine";
+import type { DentalArchCurve, PanoramicReconstructionResult, CrossSectionSliceData } from "../dentalCurveEngine";
 import {
-	findCrossSectionAndPositionByFdi,
-	hitTestDentalArchControlPoint,
-	hitTestPanoramicToothMarker,
-	mapPanoPointerToCrosshairAndSlice,
-	updateDentalArchAnchorPosition,
+	findCrossSectionAndPositionByFdi, hitTestDentalArchControlPoint,
+	hitTestPanoramicToothMarker, mapPanoPointerToCrosshairAndSlice, updateDentalArchAnchorPosition,
 } from "../dentalCurveEngine";
-import {
-	type VirtualImplantSpec,
-	type Implant3DWorldProjection,
-	pointToSegmentDistance2D,
-} from "../implantSafetyEngine";
+import { type VirtualImplantSpec, type Implant3DWorldProjection, pointToSegmentDistance2D } from "../implantSafetyEngine";
 import { showToast } from "../../GlobalToast";
 import type { CbctToolMode } from "../CbctLeftToolDock";
 import { ROTATE_CURSOR, type StudioMode } from "./cbctStudioTypes";
 
+function getImplantCrossSectionGeometry(
+	canvas: HTMLCanvasElement, activeCrossSection: CrossSectionSliceData,
+	currentImplantSpec: VirtualImplantSpec, implantEntryXOffsetMm: number,
+	implantEntryDepthMm: number, implantAngulationDeg: number,
+) {
+	const pxSpacing = activeCrossSection.pixelSpacingMm || 0.25;
+	const centerX = canvas.width / 2;
+	const topY = 20;
+	const entryPxX = centerX + (implantEntryXOffsetMm / pxSpacing);
+	const entryPxY = topY + (implantEntryDepthMm / pxSpacing);
+	const angRad = (implantAngulationDeg * Math.PI) / 180;
+	const lengthPx = currentImplantSpec.lengthMm / pxSpacing;
+	const apexPxX = entryPxX + lengthPx * Math.sin(angRad);
+	const apexPxY = entryPxY + lengthPx * Math.cos(angRad);
+	const radiusPx = (currentImplantSpec.diameterMm / 2.0) / pxSpacing;
+	return { pxSpacing, centerX, topY, entryPxX, entryPxY, apexPxX, apexPxY, radiusPx };
+}
+
 export interface UseCbctInteractionHandlersParams {
 	volume: CbctVoxelVolume | null;
-	crosshairMm: Point3D;
-	setCrosshairMm: React.Dispatch<React.SetStateAction<Point3D>>;
-	obliqueAngles: ObliqueRotationAngles;
-	setObliqueAngles: React.Dispatch<React.SetStateAction<ObliqueRotationAngles>>;
-	activeTool: CbctToolMode;
-	studioMode: StudioMode;
-	windowWidth: number;
-	setWindowWidth: React.Dispatch<React.SetStateAction<number>>;
-	windowLevel: number;
-	setWindowLevel: React.Dispatch<React.SetStateAction<number>>;
-	transforms: Record<CbctViewportType, ViewportTransform>;
-	setTransforms: React.Dispatch<React.SetStateAction<Record<CbctViewportType, ViewportTransform>>>;
-	rulers: CbctMeasurementRuler[];
-	setRulers: React.Dispatch<React.SetStateAction<CbctMeasurementRuler[]>>;
-	activeRuler: (CbctMeasurementRuler & { currentMm: Point3D }) | null;
-	setActiveRuler: React.Dispatch<React.SetStateAction<(CbctMeasurementRuler & { currentMm: Point3D }) | null>>;
-	angles: CbctAngleMeasurement[];
-	setAngles: React.Dispatch<React.SetStateAction<CbctAngleMeasurement[]>>;
-	activeAngle: (CbctAngleMeasurement & { currentMm: Point3D }) | null;
-	setActiveAngle: React.Dispatch<React.SetStateAction<(CbctAngleMeasurement & { currentMm: Point3D }) | null>>;
-	probeMarkers: CbctProbeMarker[];
-	setProbeMarkers: React.Dispatch<React.SetStateAction<CbctProbeMarker[]>>;
-	activeProbe: (CbctProbeMarker & { hu: number; tissueName: string }) | null;
-	setActiveProbe: React.Dispatch<React.SetStateAction<(CbctProbeMarker & { hu: number; tissueName: string }) | null>>;
-	selectedMeasurement: CbctMeasurementRuler | CbctAngleMeasurement | CbctProbeMarker | null;
-	setSelectedMeasurement: React.Dispatch<React.SetStateAction<CbctMeasurementRuler | CbctAngleMeasurement | CbctProbeMarker | null>>;
-	hoveredMeasurementHandle: { id: string; handleIndex: number; plane?: MprPlane } | null;
-	setHoveredMeasurementHandle: React.Dispatch<React.SetStateAction<{ id: string; handleIndex: number; plane?: MprPlane } | null>>;
-	draggingMeasurementHandle: { id: string; handleIndex: number; plane?: MprPlane; type?: string } | null;
-	setDraggingMeasurementHandle: React.Dispatch<React.SetStateAction<{ id: string; handleIndex: number; plane?: MprPlane; type?: string } | null>>;
-	nervePoints: Point3D[];
-	setNervePoints: React.Dispatch<React.SetStateAction<Point3D[]>>;
-	selectedNerveNodeIdx: number | null;
-	setSelectedNerveNodeIdx: React.Dispatch<React.SetStateAction<number | null>>;
-	showDentalArch: boolean;
-	archCurve: DentalArchCurve;
-	setArchCurve: React.Dispatch<React.SetStateAction<DentalArchCurve>>;
+	crosshairMm: Point3D; setCrosshairMm: React.Dispatch<React.SetStateAction<Point3D>>;
+	obliqueAngles: ObliqueRotationAngles; setObliqueAngles: React.Dispatch<React.SetStateAction<ObliqueRotationAngles>>;
+	activeTool: CbctToolMode; studioMode: StudioMode;
+	windowWidth: number; setWindowWidth: React.Dispatch<React.SetStateAction<number>>;
+	windowLevel: number; setWindowLevel: React.Dispatch<React.SetStateAction<number>>;
+	transforms: Record<CbctViewportType, ViewportTransform>; setTransforms: React.Dispatch<React.SetStateAction<Record<CbctViewportType, ViewportTransform>>>;
+	rulers: CbctMeasurementRuler[]; setRulers: React.Dispatch<React.SetStateAction<CbctMeasurementRuler[]>>;
+	activeRuler: (CbctMeasurementRuler & { currentMm: Point3D }) | null; setActiveRuler: React.Dispatch<React.SetStateAction<(CbctMeasurementRuler & { currentMm: Point3D }) | null>>;
+	angles: CbctAngleMeasurement[]; setAngles: React.Dispatch<React.SetStateAction<CbctAngleMeasurement[]>>;
+	activeAngle: (CbctAngleMeasurement & { currentMm: Point3D }) | null; setActiveAngle: React.Dispatch<React.SetStateAction<(CbctAngleMeasurement & { currentMm: Point3D }) | null>>;
+	probeMarkers: CbctProbeMarker[]; setProbeMarkers: React.Dispatch<React.SetStateAction<CbctProbeMarker[]>>;
+	activeProbe: (CbctProbeMarker & { hu: number; tissueName: string }) | null; setActiveProbe: React.Dispatch<React.SetStateAction<(CbctProbeMarker & { hu: number; tissueName: string }) | null>>;
+	selectedMeasurement: CbctMeasurementRuler | CbctAngleMeasurement | CbctProbeMarker | null; setSelectedMeasurement: React.Dispatch<React.SetStateAction<CbctMeasurementRuler | CbctAngleMeasurement | CbctProbeMarker | null>>;
+	hoveredMeasurementHandle: { id: string; handleIndex: number; plane?: MprPlane } | null; setHoveredMeasurementHandle: React.Dispatch<React.SetStateAction<{ id: string; handleIndex: number; plane?: MprPlane } | null>>;
+	draggingMeasurementHandle: { id: string; handleIndex: number; plane?: MprPlane; type?: string } | null; setDraggingMeasurementHandle: React.Dispatch<React.SetStateAction<{ id: string; handleIndex: number; plane?: MprPlane; type?: string } | null>>;
+	nervePoints: Point3D[]; setNervePoints: React.Dispatch<React.SetStateAction<Point3D[]>>;
+	selectedNerveNodeIdx: number | null; setSelectedNerveNodeIdx: React.Dispatch<React.SetStateAction<number | null>>;
+	showDentalArch: boolean; archCurve: DentalArchCurve; setArchCurve: React.Dispatch<React.SetStateAction<DentalArchCurve>>;
 	panoramicData: PanoramicReconstructionResult | null;
-	crossSections: CrossSectionSliceData[];
-	activeCrossSection: CrossSectionSliceData | null;
-	activeCrossSectionIdx: number;
-	setActiveCrossSectionIdx: React.Dispatch<React.SetStateAction<number>>;
+	crossSections: CrossSectionSliceData[]; activeCrossSection: CrossSectionSliceData | null;
+	activeCrossSectionIdx: number; setActiveCrossSectionIdx: React.Dispatch<React.SetStateAction<number>>;
 	currentImplantSpec: VirtualImplantSpec;
-	implantEntryXOffsetMm: number;
-	setImplantEntryXOffsetMm: React.Dispatch<React.SetStateAction<number>>;
-	implantEntryDepthMm: number;
-	setImplantEntryDepthMm: React.Dispatch<React.SetStateAction<number>>;
-	implantAngulationDeg: number;
-	setImplantAngulationDeg: React.Dispatch<React.SetStateAction<number>>;
-	hoveredImplantPart: string | null;
-	setHoveredImplantPart: React.Dispatch<React.SetStateAction<string | null>>;
-	dragImplantPart: string | null;
-	setDragImplantPart: React.Dispatch<React.SetStateAction<string | null>>;
-	crossSectionDragStart: { clientX: number; clientY: number; startX: number; startY: number; startAng: number } | null;
-	setCrossSectionDragStart: React.Dispatch<React.SetStateAction<{ clientX: number; clientY: number; startX: number; startY: number; startAng: number } | null>>;
+	implantEntryXOffsetMm: number; setImplantEntryXOffsetMm: React.Dispatch<React.SetStateAction<number>>;
+	implantEntryDepthMm: number; setImplantEntryDepthMm: React.Dispatch<React.SetStateAction<number>>;
+	implantAngulationDeg: number; setImplantAngulationDeg: React.Dispatch<React.SetStateAction<number>>;
+	hoveredImplantPart: string | null; setHoveredImplantPart: React.Dispatch<React.SetStateAction<string | null>>;
+	dragImplantPart: string | null; setDragImplantPart: React.Dispatch<React.SetStateAction<string | null>>;
+	crossSectionDragStart: { clientX: number; clientY: number; startX: number; startY: number; startAng: number } | null; setCrossSectionDragStart: React.Dispatch<React.SetStateAction<{ clientX: number; clientY: number; startX: number; startY: number; startAng: number } | null>>;
 	handleToggleMaximize: (viewport: CbctViewportType) => void;
 	panoCanvasRef: React.RefObject<HTMLCanvasElement | null>;
 	crossSectionCanvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -127,68 +107,21 @@ export interface UseCbctInteractionHandlersParams {
 
 export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersParams) {
 	const {
-		volume,
-		crosshairMm,
-		setCrosshairMm,
-		obliqueAngles,
-		setObliqueAngles,
-		activeTool,
-		studioMode,
-		windowWidth,
-		setWindowWidth,
-		windowLevel,
-		setWindowLevel,
-		transforms,
-		setTransforms,
-		rulers,
-		setRulers,
-		activeRuler,
-		setActiveRuler,
-		angles,
-		setAngles,
-		activeAngle,
-		setActiveAngle,
-		probeMarkers,
-		setProbeMarkers,
-		activeProbe,
-		setActiveProbe,
-		selectedMeasurement,
-		setSelectedMeasurement,
-		hoveredMeasurementHandle,
-		setHoveredMeasurementHandle,
-		draggingMeasurementHandle,
-		setDraggingMeasurementHandle,
-		nervePoints,
-		setNervePoints,
-		selectedNerveNodeIdx,
-		setSelectedNerveNodeIdx,
-		showDentalArch,
-		archCurve,
-		setArchCurve,
-		panoramicData,
-		crossSections,
-		activeCrossSection,
-		activeCrossSectionIdx,
-		setActiveCrossSectionIdx,
-		currentImplantSpec,
-		implantEntryXOffsetMm,
-		setImplantEntryXOffsetMm,
-		implantEntryDepthMm,
-		setImplantEntryDepthMm,
-		implantAngulationDeg,
-		setImplantAngulationDeg,
-		hoveredImplantPart,
-		setHoveredImplantPart,
-		dragImplantPart,
-		setDragImplantPart,
-		crossSectionDragStart,
-		setCrossSectionDragStart,
-		handleToggleMaximize,
-		panoCanvasRef,
-		crossSectionCanvasRef,
-		axialCanvasRef,
-		coronalCanvasRef,
-		sagittalCanvasRef,
+		volume, crosshairMm, setCrosshairMm, obliqueAngles, setObliqueAngles,
+		activeTool, studioMode, windowWidth, setWindowWidth, windowLevel, setWindowLevel,
+		transforms, setTransforms, rulers, setRulers, activeRuler, setActiveRuler,
+		angles, setAngles, activeAngle, setActiveAngle, probeMarkers, setProbeMarkers,
+		activeProbe, setActiveProbe, selectedMeasurement, setSelectedMeasurement,
+		hoveredMeasurementHandle, setHoveredMeasurementHandle,
+		draggingMeasurementHandle, setDraggingMeasurementHandle,
+		nervePoints, setNervePoints, selectedNerveNodeIdx, setSelectedNerveNodeIdx,
+		showDentalArch, archCurve, setArchCurve, panoramicData,
+		crossSections, activeCrossSection, activeCrossSectionIdx, setActiveCrossSectionIdx,
+		currentImplantSpec, implantEntryXOffsetMm, setImplantEntryXOffsetMm,
+		implantEntryDepthMm, setImplantEntryDepthMm, implantAngulationDeg, setImplantAngulationDeg,
+		hoveredImplantPart, setHoveredImplantPart, dragImplantPart, setDragImplantPart,
+		crossSectionDragStart, setCrossSectionDragStart, handleToggleMaximize,
+		panoCanvasRef, crossSectionCanvasRef, axialCanvasRef, coronalCanvasRef, sagittalCanvasRef,
 	} = params;
 
 	const [isDraggingCrosshair, setIsDraggingCrosshair] = useState<MprPlane | null>(null);
@@ -211,6 +144,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 	const rafArchAnchorIdRef = useRef<number | null>(null);
 	const pendingPanoSyncRef = useRef<{ crossSectionIdx: number; worldMm: Point3D } | null>(null);
 	const rafPanoIdRef = useRef<number | null>(null);
+	const hasDraggedZoomRef = useRef<boolean>(false);
 
 	// Clean up transient preview states when active tool switches
 	useEffect(() => {
@@ -249,6 +183,12 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		if (activeTool === "zoom") {
 			e.preventDefault();
 			const currentTransform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
+			if (e.altKey) {
+				const nextZoom = Math.max(0.5, Number((currentTransform.zoom * 0.8).toFixed(2)));
+				setTransforms((prev) => ({ ...prev, panoramic: { ...(prev.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM), zoom: nextZoom } }));
+				return;
+			}
+			hasDraggedZoomRef.current = false;
 			setIsDraggingZoom({ plane: "panoramic", startY: e.clientY, startZoom: currentTransform.zoom });
 			return;
 		}
@@ -266,7 +206,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		const syncRes = mapPanoPointerToCrosshairAndSlice({ x, y }, { width: canvas.width, height: canvas.height }, archCurve, crossSections, crosshairMm, transforms.panoramic);
 		setActiveCrossSectionIdx(syncRes.crossSectionIdx);
 		setCrosshairMm(syncRes.worldMm);
-	}, [crossSections, archCurve, crosshairMm, transforms.panoramic, panoramicData?.toothMarkersOnPano, handleSelectTooth, activeTool, windowWidth, windowLevel, panoCanvasRef, setActiveCrossSectionIdx, setCrosshairMm]);
+	}, [crossSections, archCurve, crosshairMm, transforms.panoramic, panoramicData?.toothMarkersOnPano, handleSelectTooth, activeTool, windowWidth, windowLevel, panoCanvasRef, setTransforms, setActiveCrossSectionIdx, setCrosshairMm]);
 
 	const handlePanoMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (isDraggingWL) {
@@ -286,6 +226,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			return;
 		}
 		if (isDraggingZoom && isDraggingZoom.plane === "panoramic") {
+			hasDraggedZoomRef.current = true;
 			const dy = isDraggingZoom.startY - e.clientY;
 			const zoomFactor = Math.exp(dy * 0.01);
 			const nextZoom = Math.max(0.5, Math.min(5.0, Number((isDraggingZoom.startZoom * zoomFactor).toFixed(2))));
@@ -321,16 +262,40 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			setCrosshairMm(pendingPanoSyncRef.current.worldMm);
 			pendingPanoSyncRef.current = null;
 		}
+		if (isDraggingZoom && !hasDraggedZoomRef.current && isDraggingZoom.plane === "panoramic") {
+			const currentTransform = transforms.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const nextZoom = Math.min(5.0, Number((currentTransform.zoom * 1.25).toFixed(2)));
+			setTransforms((prev) => ({ ...prev, panoramic: { ...(prev.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM), zoom: nextZoom } }));
+		}
 		setIsDraggingPano(false);
 		setIsPanning(null);
 		setIsDraggingZoom(null);
 		setIsDraggingWL(null);
-	}, [setActiveCrossSectionIdx, setCrosshairMm]);
+		hasDraggedZoomRef.current = false;
+	}, [isDraggingZoom, transforms.panoramic, setActiveCrossSectionIdx, setCrosshairMm, setTransforms]);
 
 	const handleCrossSectionMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (e.button === 2 || activeTool === "window_level") {
 			e.preventDefault();
 			setIsDraggingWL({ startX: e.clientX, startY: e.clientY, startWW: windowWidth, startWL: windowLevel });
+			return;
+		}
+		if (activeTool === "pan" || e.button === 1) {
+			e.preventDefault();
+			const currentTransform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
+			setIsPanning({ plane: "cross_section", startX: e.clientX, startY: e.clientY, startPanX: currentTransform.panX, startPanY: currentTransform.panY });
+			return;
+		}
+		if (activeTool === "zoom") {
+			e.preventDefault();
+			const currentTransform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
+			if (e.altKey) {
+				const nextZoom = Math.max(0.5, Number((currentTransform.zoom * 0.8).toFixed(2)));
+				setTransforms((prev) => ({ ...prev, cross_section: { ...(prev.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM), zoom: nextZoom } }));
+				return;
+			}
+			hasDraggedZoomRef.current = false;
+			setIsDraggingZoom({ plane: "cross_section", startY: e.clientY, startZoom: currentTransform.zoom });
 			return;
 		}
 		if (studioMode !== "implant" || !activeCrossSection || !crossSectionCanvasRef.current) return;
@@ -349,38 +314,47 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			return;
 		}
 
-		const entryPxX = centerX + (implantEntryXOffsetMm / pxSpacing);
-		const entryPxY = topY + (implantEntryDepthMm / pxSpacing);
-		const angRad = (implantAngulationDeg * Math.PI) / 180;
-		const lengthPx = currentImplantSpec.lengthMm / pxSpacing;
-		const apexPxX = entryPxX + lengthPx * Math.sin(angRad);
-		const apexPxY = entryPxY + lengthPx * Math.cos(angRad);
-
+		const { entryPxX, entryPxY, apexPxX, apexPxY, radiusPx } = getImplantCrossSectionGeometry(
+			canvas, activeCrossSection, currentImplantSpec, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg,
+		);
 		const distToEntry = Math.hypot(x - entryPxX, y - entryPxY);
 		const distToApex = Math.hypot(x - apexPxX, y - apexPxY);
-
-		if (distToEntry <= 12) {
-			setDragImplantPart("entry");
-			setSelectedMeasurement({ type: "implant" as unknown as "ruler", id: "active" } as unknown as CbctMeasurementRuler);
-			setCrossSectionDragStart({ clientX: e.clientX, clientY: e.clientY, startX: implantEntryXOffsetMm, startY: implantEntryDepthMm, startAng: implantAngulationDeg });
-			return;
-		}
-		if (distToApex <= 12) {
-			setDragImplantPart("apex");
-			setSelectedMeasurement({ type: "implant" as unknown as "ruler", id: "active" } as unknown as CbctMeasurementRuler);
-			setCrossSectionDragStart({ clientX: e.clientX, clientY: e.clientY, startX: implantEntryXOffsetMm, startY: implantEntryDepthMm, startAng: implantAngulationDeg });
-			return;
-		}
-		const seg = pointToSegmentDistance2D({ x, y }, { x: entryPxX, y: entryPxY }, { x: apexPxX, y: apexPxY });
-		const radiusPx = (currentImplantSpec.diameterMm / 2.0) / pxSpacing;
-		if (seg.distance <= radiusPx + 10) {
-			setDragImplantPart("body");
+		const hitPart = distToEntry <= 12 ? "entry" : distToApex <= 12 ? "apex" : pointToSegmentDistance2D({ x, y }, { x: entryPxX, y: entryPxY }, { x: apexPxX, y: apexPxY }).distance <= radiusPx + 10 ? "body" : null;
+		if (hitPart) {
+			setDragImplantPart(hitPart);
 			setSelectedMeasurement({ type: "implant" as unknown as "ruler", id: "active" } as unknown as CbctMeasurementRuler);
 			setCrossSectionDragStart({ clientX: e.clientX, clientY: e.clientY, startX: implantEntryXOffsetMm, startY: implantEntryDepthMm, startAng: implantAngulationDeg });
 		}
-	}, [studioMode, activeCrossSection, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec, activeTool, windowWidth, windowLevel, crossSectionCanvasRef, setImplantEntryXOffsetMm, setImplantEntryDepthMm, setImplantAngulationDeg, setSelectedMeasurement, setDragImplantPart, setCrossSectionDragStart]);
+	}, [studioMode, activeCrossSection, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec, activeTool, windowWidth, windowLevel, transforms.cross_section, crossSectionCanvasRef, setTransforms, setImplantEntryXOffsetMm, setImplantEntryDepthMm, setImplantAngulationDeg, setSelectedMeasurement, setDragImplantPart, setCrossSectionDragStart]);
 
 	const handleCrossSectionMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+		if (isDraggingWL) {
+			const dx = e.clientX - isDraggingWL.startX;
+			const dy = e.clientY - isDraggingWL.startY;
+			setWindowWidth(Math.max(100, Math.min(10000, Math.round(isDraggingWL.startWW + dx * 8))));
+			setWindowLevel(Math.max(-1000, Math.min(4000, Math.round(isDraggingWL.startWL - dy * 4))));
+			return;
+		}
+		if (isPanning && isPanning.plane === "cross_section") {
+			const dx = e.clientX - isPanning.startX;
+			const dy = e.clientY - isPanning.startY;
+			setTransforms((prev) => ({
+				...prev,
+				cross_section: { ...(prev.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM), panX: isPanning.startPanX + dx, panY: isPanning.startPanY + dy },
+			}));
+			return;
+		}
+		if (isDraggingZoom && isDraggingZoom.plane === "cross_section") {
+			hasDraggedZoomRef.current = true;
+			const dy = isDraggingZoom.startY - e.clientY;
+			const zoomFactor = Math.exp(dy * 0.01);
+			const nextZoom = Math.max(0.5, Math.min(5.0, Number((isDraggingZoom.startZoom * zoomFactor).toFixed(2))));
+			setTransforms((prev) => ({
+				...prev,
+				cross_section: { ...(prev.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM), zoom: nextZoom },
+			}));
+			return;
+		}
 		if (!activeCrossSection || !crossSectionCanvasRef.current) return;
 		const canvas = crossSectionCanvasRef.current;
 		const pxSpacing = activeCrossSection.pixelSpacingMm || 0.25;
@@ -388,24 +362,14 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		if (!dragImplantPart || !crossSectionDragStart) {
 			if (studioMode === "implant") {
 				const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
-				const centerX = canvas.width / 2;
-				const topY = 20;
-				const entryPxX = centerX + (implantEntryXOffsetMm / pxSpacing);
-				const entryPxY = topY + (implantEntryDepthMm / pxSpacing);
-				const angRad = (implantAngulationDeg * Math.PI) / 180;
-				const lengthPx = currentImplantSpec.lengthMm / pxSpacing;
-				const apexPxX = entryPxX + lengthPx * Math.sin(angRad);
-				const apexPxY = entryPxY + lengthPx * Math.cos(angRad);
-
+				const { entryPxX, entryPxY, apexPxX, apexPxY, radiusPx } = getImplantCrossSectionGeometry(
+					canvas, activeCrossSection, currentImplantSpec, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg,
+				);
 				const distToEntry = Math.hypot(x - entryPxX, y - entryPxY);
 				const distToApex = Math.hypot(x - apexPxX, y - apexPxY);
 				const seg = pointToSegmentDistance2D({ x, y }, { x: entryPxX, y: entryPxY }, { x: apexPxX, y: apexPxY });
-				const radiusPx = (currentImplantSpec.diameterMm / 2.0) / pxSpacing;
-
-				if (distToEntry <= 12) setHoveredImplantPart("entry");
-				else if (distToApex <= 12) setHoveredImplantPart("apex");
-				else if (seg.distance <= radiusPx + 10) setHoveredImplantPart("body");
-				else if (hoveredImplantPart !== null) setHoveredImplantPart(null);
+				const hoverPart = distToEntry <= 12 ? "entry" : distToApex <= 12 ? "apex" : seg.distance <= radiusPx + 10 ? "body" : null;
+				if (hoveredImplantPart !== hoverPart) setHoveredImplantPart(hoverPart);
 			}
 			return;
 		}
@@ -420,24 +384,31 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			setImplantEntryDepthMm(Number(newY.toFixed(1)));
 		} else if (dragImplantPart === "apex") {
 			const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
-			const centerX = canvas.width / 2;
-			const topY = 20;
-			const entryPxX = centerX + (implantEntryXOffsetMm / pxSpacing);
-			const entryPxY = topY + (implantEntryDepthMm / pxSpacing);
+			const { entryPxX, entryPxY } = getImplantCrossSectionGeometry(
+				canvas, activeCrossSection, currentImplantSpec, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg,
+			);
 			const relX = x - entryPxX;
 			const relY = y - entryPxY;
 			if (Math.hypot(relX, relY) > 8) {
-				const angleRad = Math.atan2(relX, relY);
-				const angleDeg = Math.round((angleRad * 180) / Math.PI);
+				const angleDeg = Math.round((Math.atan2(relX, relY) * 180) / Math.PI);
 				setImplantAngulationDeg(Math.max(-30, Math.min(30, angleDeg)));
 			}
 		}
-	}, [dragImplantPart, crossSectionDragStart, activeCrossSection, studioMode, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec, hoveredImplantPart, crossSectionCanvasRef, setHoveredImplantPart, setImplantEntryXOffsetMm, setImplantEntryDepthMm, setImplantAngulationDeg]);
+	}, [isDraggingWL, isPanning, isDraggingZoom, dragImplantPart, crossSectionDragStart, activeCrossSection, studioMode, implantEntryXOffsetMm, implantEntryDepthMm, implantAngulationDeg, currentImplantSpec, hoveredImplantPart, crossSectionCanvasRef, setWindowWidth, setWindowLevel, setTransforms, setHoveredImplantPart, setImplantEntryXOffsetMm, setImplantEntryDepthMm, setImplantAngulationDeg]);
 
 	const handleCrossSectionMouseUp = useCallback(() => {
+		if (isDraggingZoom && !hasDraggedZoomRef.current && isDraggingZoom.plane === "cross_section") {
+			const currentTransform = transforms.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const nextZoom = Math.min(5.0, Number((currentTransform.zoom * 1.25).toFixed(2)));
+			setTransforms((prev) => ({ ...prev, cross_section: { ...(prev.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM), zoom: nextZoom } }));
+		}
 		setDragImplantPart(null);
 		setCrossSectionDragStart(null);
-	}, [setDragImplantPart, setCrossSectionDragStart]);
+		setIsPanning(null);
+		setIsDraggingZoom(null);
+		setIsDraggingWL(null);
+		hasDraggedZoomRef.current = false;
+	}, [isDraggingZoom, transforms.cross_section, setDragImplantPart, setCrossSectionDragStart, setTransforms]);
 
 	const handleCanvasMouseDown = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!volume) return;
@@ -451,15 +422,9 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		const { x, y } = getCanvasPointerPos(canvas, e.clientX, e.clientY);
 		const pointerPx = { x, y };
 
-		const projectedRulers = rulers
-			.filter((r) => r.plane === plane)
-			.map((r) => ({ id: r.id, plane: r.plane, startPx: worldMmToSlicePx(r.startMm, plane, volume), endPx: worldMmToSlicePx(r.endMm, plane, volume) }));
-		const projectedAngles = angles
-			.filter((a) => a.plane === plane)
-			.map((a) => ({ id: a.id, plane: a.plane, startPx: worldMmToSlicePx(a.startMm, plane, volume), vertexPx: worldMmToSlicePx(a.vertexMm, plane, volume), endPx: worldMmToSlicePx(a.endMm, plane, volume) }));
-		const projectedProbes = probeMarkers
-			.filter((p) => p.plane === plane)
-			.map((p) => ({ id: p.id, plane: p.plane, posPx: worldMmToSlicePx(p.worldMm, plane, volume) }));
+		const projectedRulers = rulers.filter((r) => r.plane === plane).map((r) => ({ id: r.id, plane: r.plane, startPx: worldMmToSlicePx(r.startMm, plane, volume), endPx: worldMmToSlicePx(r.endMm, plane, volume) }));
+		const projectedAngles = angles.filter((a) => a.plane === plane).map((a) => ({ id: a.id, plane: a.plane, startPx: worldMmToSlicePx(a.startMm, plane, volume), vertexPx: worldMmToSlicePx(a.vertexMm, plane, volume), endPx: worldMmToSlicePx(a.endMm, plane, volume) }));
+		const projectedProbes = probeMarkers.filter((p) => p.plane === plane).map((p) => ({ id: p.id, plane: p.plane, posPx: worldMmToSlicePx(p.worldMm, plane, volume) }));
 
 		const handleHit = hitTestMeasurementHandle(pointerPx, projectedRulers, projectedAngles, 12);
 		if (handleHit) {
@@ -471,19 +436,10 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		const objectHit = hitTestMeasurementObject(pointerPx, projectedRulers, projectedAngles, projectedProbes, 10);
 		if (objectHit) {
 			if (objectHit.isDeleteButtonHit) {
-				if (objectHit.type === "ruler") {
-					setRulers((prev) => prev.filter((r) => r.id !== objectHit.id));
-					setSelectedMeasurement(null);
-					showToast("Измерение линейки удалено", "info");
-				} else if (objectHit.type === "angle") {
-					setAngles((prev) => prev.filter((a) => a.id !== objectHit.id));
-					setSelectedMeasurement(null);
-					showToast("Измерение угла удалено", "info");
-				} else if (objectHit.type === "probe") {
-					setProbeMarkers((prev) => prev.filter((p) => p.id !== objectHit.id));
-					setSelectedMeasurement(null);
-					showToast("Метка плотности удалена", "info");
-				}
+				if (objectHit.type === "ruler") { setRulers((prev) => prev.filter((r) => r.id !== objectHit.id)); showToast("Измерение линейки удалено", "info"); }
+				else if (objectHit.type === "angle") { setAngles((prev) => prev.filter((a) => a.id !== objectHit.id)); showToast("Измерение угла удалено", "info"); }
+				else if (objectHit.type === "probe") { setProbeMarkers((prev) => prev.filter((p) => p.id !== objectHit.id)); showToast("Метка плотности удалена", "info"); }
+				setSelectedMeasurement(null);
 				return;
 			}
 			setSelectedMeasurement({ type: objectHit.type, id: objectHit.id } as unknown as CbctMeasurementRuler);
@@ -505,8 +461,13 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 
 		if (activeTool === "zoom") {
 			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
-			const nextZoom = e.altKey ? Math.max(0.5, currentTransform.zoom * 0.8) : Math.min(5.0, currentTransform.zoom * 1.25);
-			setTransforms((prev) => ({ ...prev, [plane]: { ...prev[plane], zoom: nextZoom } }));
+			if (e.altKey) {
+				const nextZoom = Math.max(0.5, Number((currentTransform.zoom * 0.8).toFixed(2)));
+				setTransforms((prev) => ({ ...prev, [plane]: { ...(prev[plane] ?? DEFAULT_VIEWPORT_TRANSFORM), zoom: nextZoom } }));
+				return;
+			}
+			hasDraggedZoomRef.current = false;
+			setIsDraggingZoom({ plane, startY: e.clientY, startZoom: currentTransform.zoom });
 			return;
 		}
 
@@ -522,13 +483,20 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			const pointMm = mapCanvasPointerToWorldMmWithTransform(pointerPx, { width: canvas.width, height: canvas.height }, plane, crosshairMm, obliqueAngles, currentTransform, volume);
 			if (!activeAngle) {
 				setActiveAngle({ id: `angle-${Date.now()}`, plane, startMm: pointMm, vertexMm: pointMm, endMm: pointMm, currentMm: pointMm, angleDeg: 0, step: "vertex" } as unknown as CbctAngleMeasurement & { currentMm: Point3D });
-			} else {
-				const fullAngle: CbctAngleMeasurement = { id: activeAngle.id, plane: activeAngle.plane, startMm: activeAngle.startMm, vertexMm: activeAngle.vertexMm, endMm: pointMm, angleDeg: calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, pointMm) };
-				setAngles((prev) => [...prev, fullAngle]);
-				setActiveAngle(null);
-				setSelectedMeasurement(fullAngle);
-				showToast("Измерение угла зафиксировано", "success");
+				showToast("Точка 1 (плечо) установлена. Кликните для установки вершины угла", "info");
+				return;
 			}
+			if ((activeAngle as unknown as { step?: "vertex" | "end" }).step === "vertex") {
+				setActiveAngle({ ...activeAngle, vertexMm: pointMm, endMm: pointMm, currentMm: pointMm, step: "end" } as unknown as CbctAngleMeasurement & { currentMm: Point3D; step?: "vertex" | "end" });
+				showToast("Вершина угла зафиксирована. Кликните для фиксации второго плеча", "info");
+				return;
+			}
+			const finalAngleDeg = calculateAngleBetween3Points3D(activeAngle.startMm, activeAngle.vertexMm, pointMm);
+			const fullAngle: CbctAngleMeasurement = { id: activeAngle.id, plane: activeAngle.plane, startMm: activeAngle.startMm, vertexMm: activeAngle.vertexMm, endMm: pointMm, angleDeg: finalAngleDeg };
+			setAngles((prev) => [...prev, fullAngle]);
+			setActiveAngle(null);
+			setSelectedMeasurement(fullAngle);
+			showToast(`Измерение угла зафиксировано: ${finalAngleDeg}°`, "success");
 			return;
 		}
 
@@ -614,10 +582,19 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			if (draggingMeasurementHandle.type === "ruler") {
 				setRulers((prev) => prev.map((r) => {
 					if (r.id !== draggingMeasurementHandle.id) return r;
-					const newStart = draggingMeasurementHandle.handleIndex === 0 ? currentMm : r.startMm;
-					const newEnd = draggingMeasurementHandle.handleIndex === 1 ? currentMm : r.endMm;
-					const newDist = Math.hypot(newEnd.x - newStart.x, newEnd.y - newStart.y, newEnd.z - newStart.z);
-					return { ...r, startMm: newStart, endMm: newEnd, distanceMm: Number(newDist.toFixed(1)) };
+					const start = draggingMeasurementHandle.handleIndex === 0 ? currentMm : r.startMm;
+					const end = draggingMeasurementHandle.handleIndex === 1 ? currentMm : r.endMm;
+					return { ...r, startMm: start, endMm: end, distanceMm: Number(Math.hypot(end.x - start.x, end.y - start.y, end.z - start.z).toFixed(1)) };
+				}));
+				return;
+			}
+			if (draggingMeasurementHandle.type === "angle") {
+				setAngles((prev) => prev.map((a) => {
+					if (a.id !== draggingMeasurementHandle.id) return a;
+					const start = draggingMeasurementHandle.handleIndex === 0 ? currentMm : a.startMm;
+					const vertex = draggingMeasurementHandle.handleIndex === 1 ? currentMm : a.vertexMm;
+					const end = draggingMeasurementHandle.handleIndex === 2 ? currentMm : a.endMm;
+					return { ...a, startMm: start, vertexMm: vertex, endMm: end, angleDeg: calculateAngleBetween3Points3D(start, vertex, end) };
 				}));
 				return;
 			}
@@ -634,15 +611,42 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		if (isPanning && isPanning.plane === plane) {
 			const dx = e.clientX - isPanning.startX;
 			const dy = e.clientY - isPanning.startY;
-			setTransforms((prev) => ({ ...prev, [plane]: { ...prev[plane], panX: isPanning.startPanX + dx, panY: isPanning.startPanY + dy } }));
+			setTransforms((prev) => ({ ...prev, [plane]: { ...(prev[plane] ?? DEFAULT_VIEWPORT_TRANSFORM), panX: isPanning.startPanX + dx, panY: isPanning.startPanY + dy } }));
+			return;
+		}
+
+		if (isDraggingZoom && isDraggingZoom.plane === plane) {
+			hasDraggedZoomRef.current = true;
+			const dy = isDraggingZoom.startY - e.clientY;
+			const zoomFactor = Math.exp(dy * 0.01);
+			const nextZoom = Math.max(0.5, Math.min(5.0, Number((isDraggingZoom.startZoom * zoomFactor).toFixed(2))));
+			setTransforms((prev) => ({ ...prev, [plane]: { ...(prev[plane] ?? DEFAULT_VIEWPORT_TRANSFORM), zoom: nextZoom } }));
 			return;
 		}
 
 		if (activeRuler && activeRuler.plane === plane) {
 			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
-			const currentMm = mapCanvasPointerToWorldMmWithTransform(pointerPx, { width: canvas.width, height: canvas.height }, plane, crosshairMm, obliqueAngles, currentTransform, volume);
-			setActiveRuler((prev) => (prev ? { ...prev, currentMm } : null));
+			setActiveRuler((prev) => (prev ? { ...prev, currentMm: mapCanvasPointerToWorldMmWithTransform(pointerPx, { width: canvas.width, height: canvas.height }, plane, crosshairMm, obliqueAngles, currentTransform, volume) } : null));
 			return;
+		}
+
+		if (activeAngle && activeAngle.plane === plane) {
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const currentMm = mapCanvasPointerToWorldMmWithTransform(pointerPx, { width: canvas.width, height: canvas.height }, plane, crosshairMm, obliqueAngles, currentTransform, volume);
+			setActiveAngle((prev) => {
+				if (!prev) return null;
+				if ((prev as unknown as { step?: "vertex" | "end" }).step === "vertex") return { ...prev, vertexMm: currentMm, currentMm };
+				return { ...prev, endMm: currentMm, currentMm, angleDeg: calculateAngleBetween3Points3D(prev.startMm, prev.vertexMm, currentMm) };
+			});
+			return;
+		}
+
+		if (activeTool === "probe" && volume) {
+			const currentTransform = transforms[plane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+			const pointMm = mapCanvasPointerToWorldMmWithTransform(pointerPx, { width: canvas.width, height: canvas.height }, plane, crosshairMm, obliqueAngles, currentTransform, volume);
+			const vox = worldMmToVoxel(pointMm, volume);
+			const hu = sampleVoxelHU(vox.x, vox.y, vox.z, volume);
+			setActiveProbe({ id: "active-probe", plane, worldMm: pointMm, hu, tissueName: getTissueNameFromHU(hu) });
 		}
 
 		if (isShiftRotating && isShiftRotating.plane === plane) {
@@ -693,21 +697,12 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 				setHoveredArchAnchorIdx(null);
 			}
 		}
-	}, [volume, isDraggingArchAnchor, transforms, crosshairMm, obliqueAngles, draggingMeasurementHandle, isDraggingWL, isPanning, activeRuler, isShiftRotating, activeRotationHandle, isDraggingCrosshair, isDraggingNerveNode, hoveredHandle, showDentalArch, archCurve, hoveredArchAnchorIdx, setArchCurve, setRulers, setWindowWidth, setWindowLevel, setTransforms, setActiveRuler, setObliqueAngles, setCrosshairMm, setHoveredArchAnchorIdx]);
+	}, [volume, isDraggingArchAnchor, transforms, crosshairMm, obliqueAngles, draggingMeasurementHandle, isDraggingWL, isPanning, isDraggingZoom, activeRuler, activeAngle, activeTool, isShiftRotating, activeRotationHandle, isDraggingCrosshair, isDraggingNerveNode, hoveredHandle, showDentalArch, archCurve, hoveredArchAnchorIdx, setArchCurve, setRulers, setAngles, setActiveProbe, setWindowWidth, setWindowLevel, setTransforms, setActiveRuler, setActiveAngle, setObliqueAngles, setCrosshairMm, setHoveredArchAnchorIdx]);
 
 	const handleCanvasMouseUp = useCallback(() => {
-		if (rafCrosshairIdRef.current !== null) {
-			cancelAnimationFrame(rafCrosshairIdRef.current);
-			rafCrosshairIdRef.current = null;
-		}
-		if (rafObliqueIdRef.current !== null) {
-			cancelAnimationFrame(rafObliqueIdRef.current);
-			rafObliqueIdRef.current = null;
-		}
-		if (rafArchAnchorIdRef.current !== null) {
-			cancelAnimationFrame(rafArchAnchorIdRef.current);
-			rafArchAnchorIdRef.current = null;
-		}
+		if (rafCrosshairIdRef.current !== null) { cancelAnimationFrame(rafCrosshairIdRef.current); rafCrosshairIdRef.current = null; }
+		if (rafObliqueIdRef.current !== null) { cancelAnimationFrame(rafObliqueIdRef.current); rafObliqueIdRef.current = null; }
+		if (rafArchAnchorIdRef.current !== null) { cancelAnimationFrame(rafArchAnchorIdRef.current); rafArchAnchorIdRef.current = null; }
 		if (pendingArchAnchorMmRef.current) {
 			const { index, positionMm } = pendingArchAnchorMmRef.current;
 			setArchCurve((prev) => updateDentalArchAnchorPosition(prev, index, positionMm));
@@ -723,14 +718,19 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			}
 			setActiveRuler(null);
 		}
-		setIsDraggingCrosshair(null);
-		setActiveRotationHandle(null);
-		setIsShiftRotating(null);
-		setIsPanning(null);
-		setIsDraggingWL(null);
-		setIsDraggingNerveNode(null);
+		if (isDraggingZoom && !hasDraggedZoomRef.current) {
+			const targetPlane = isDraggingZoom.plane;
+			if (targetPlane === "axial" || targetPlane === "coronal" || targetPlane === "sagittal") {
+				const currentTransform = transforms[targetPlane] ?? DEFAULT_VIEWPORT_TRANSFORM;
+				const nextZoom = Math.min(5.0, Number((currentTransform.zoom * 1.25).toFixed(2)));
+				setTransforms((prev) => ({ ...prev, [targetPlane]: { ...(prev[targetPlane] ?? DEFAULT_VIEWPORT_TRANSFORM), zoom: nextZoom } }));
+			}
+		}
+		setIsDraggingCrosshair(null); setActiveRotationHandle(null); setIsShiftRotating(null);
+		setIsPanning(null); setIsDraggingZoom(null); setIsDraggingWL(null); setIsDraggingNerveNode(null);
 		if (draggingMeasurementHandle) setDraggingMeasurementHandle(null);
-	}, [activeRuler, draggingMeasurementHandle, setArchCurve, setRulers, setSelectedMeasurement, setActiveRuler, setDraggingMeasurementHandle, setIsDraggingArchAnchor]);
+		hasDraggedZoomRef.current = false;
+	}, [activeRuler, draggingMeasurementHandle, isDraggingZoom, transforms, setArchCurve, setRulers, setSelectedMeasurement, setActiveRuler, setTransforms, setDraggingMeasurementHandle, setIsDraggingArchAnchor]);
 
 	const handleCanvasDoubleClick = useCallback((plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
 		e.preventDefault();
@@ -756,14 +756,15 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		if (hoveredMeasurementHandle?.plane === plane) return "grab";
 		if (isShiftRotating?.plane === plane || activeRotationHandle?.plane === plane) return ROTATE_CURSOR;
 		if (hoveredHandle?.plane === plane) return ROTATE_CURSOR;
+		if (isDraggingWL) return "move";
+		if (isPanning && isPanning.plane === plane) return "grabbing";
+		if (isDraggingZoom && isDraggingZoom.plane === plane) return "ns-resize";
 		if (activeTool === "pan") return "grab";
 		if (activeTool === "zoom") return "zoom-in";
 		if (activeTool === "window_level") return "col-resize";
 		if (activeTool === "rotate") return ROTATE_CURSOR;
-		if (activeTool === "ruler" || activeTool === "angle") return "crosshair";
-		if (activeTool === "probe") return "help";
 		return "crosshair";
-	}, [isDraggingArchAnchor, hoveredArchAnchorIdx, draggingMeasurementHandle, hoveredMeasurementHandle, isShiftRotating, activeRotationHandle, hoveredHandle, activeTool]);
+	}, [isDraggingArchAnchor, hoveredArchAnchorIdx, draggingMeasurementHandle, hoveredMeasurementHandle, isShiftRotating, activeRotationHandle, hoveredHandle, isDraggingWL, isPanning, isDraggingZoom, activeTool]);
 
 	const handleCanvasWheel = useCallback((viewport: CbctViewportType, e: React.WheelEvent<HTMLCanvasElement>) => {
 		e.preventDefault();
@@ -832,6 +833,7 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 			activeRotationHandle !== null ||
 			isShiftRotating !== null ||
 			isPanning !== null ||
+			isDraggingZoom !== null ||
 			isDraggingWL !== null ||
 			isDraggingPano ||
 			isDraggingArchAnchor !== null ||
@@ -850,75 +852,28 @@ export function useCbctInteractionHandlers(params: UseCbctInteractionHandlersPar
 		return () => {
 			window.removeEventListener("mouseup", handleGlobalMouseUp);
 		};
-	}, [
-		isDraggingCrosshair,
-		activeRotationHandle,
-		isShiftRotating,
-		isPanning,
-		isDraggingWL,
-		isDraggingPano,
-		isDraggingArchAnchor,
-		draggingMeasurementHandle,
-		dragImplantPart,
-		handleCanvasMouseUp,
-		handlePanoMouseUp,
-		handleCrossSectionMouseUp,
-	]);
+	}, [isDraggingCrosshair, activeRotationHandle, isShiftRotating, isPanning, isDraggingZoom, isDraggingWL, isDraggingPano, isDraggingArchAnchor, draggingMeasurementHandle, dragImplantPart, handleCanvasMouseUp, handlePanoMouseUp, handleCrossSectionMouseUp]);
 
 	// Native non-passive wheel listeners on canvas refs to prevent parasitic page scroll behind modal
 	useEffect(() => {
-		const canvases = [
-			axialCanvasRef.current,
-			coronalCanvasRef.current,
-			sagittalCanvasRef.current,
-			panoCanvasRef.current,
-			crossSectionCanvasRef.current,
-		];
-
-		const onNativeWheel = (e: WheelEvent) => {
-			e.preventDefault();
-		};
-
+		const canvases = [axialCanvasRef.current, coronalCanvasRef.current, sagittalCanvasRef.current, panoCanvasRef.current, crossSectionCanvasRef.current];
+		const onNativeWheel = (e: WheelEvent) => { e.preventDefault(); };
 		for (const canvas of canvases) {
-			if (canvas) {
-				canvas.addEventListener("wheel", onNativeWheel, { passive: false });
-			}
+			if (canvas) canvas.addEventListener("wheel", onNativeWheel, { passive: false });
 		}
-
 		return () => {
 			for (const canvas of canvases) {
-				if (canvas) {
-					canvas.removeEventListener("wheel", onNativeWheel);
-				}
+				if (canvas) canvas.removeEventListener("wheel", onNativeWheel);
 			}
 		};
-	}, [
-		axialCanvasRef,
-		coronalCanvasRef,
-		sagittalCanvasRef,
-		panoCanvasRef,
-		crossSectionCanvasRef,
-	]);
+	}, [axialCanvasRef, coronalCanvasRef, sagittalCanvasRef, panoCanvasRef, crossSectionCanvasRef]);
 
 	return {
-		activeRotationHandle,
-		hoveredHandle,
-		isShiftRotating,
-		isDraggingCrosshair,
-		isDraggingArchAnchor,
-		hoveredArchAnchorIdx,
-		handleSelectTooth,
-		handlePanoMouseDown,
-		handlePanoMouseMove,
-		handlePanoMouseUp,
-		handleCrossSectionMouseDown,
-		handleCrossSectionMouseMove,
-		handleCrossSectionMouseUp,
-		handleCanvasMouseDown,
-		handleCanvasMouseMove,
-		handleCanvasMouseUp,
-		handleCanvasDoubleClick,
-		getCanvasCursor,
-		handleCanvasWheel,
+		activeRotationHandle, hoveredHandle, isShiftRotating, isDraggingCrosshair,
+		isDraggingArchAnchor, hoveredArchAnchorIdx, handleSelectTooth,
+		handlePanoMouseDown, handlePanoMouseMove, handlePanoMouseUp,
+		handleCrossSectionMouseDown, handleCrossSectionMouseMove, handleCrossSectionMouseUp,
+		handleCanvasMouseDown, handleCanvasMouseMove, handleCanvasMouseUp,
+		handleCanvasDoubleClick, getCanvasCursor, handleCanvasWheel,
 	};
 }

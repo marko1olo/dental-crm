@@ -341,3 +341,95 @@ export function getGridAppointmentCardContainerClasses(
 		? `${docTheme.cardBgClass} ${docTheme.borderClass} ${docTheme.textClass}`
 		: "bg-[var(--paper)] border-[var(--line-strong)] text-[var(--ink)]";
 }
+
+/**
+ * Calculates appointment duration in minutes between startsAt and endsAt.
+ * Handles missing endsAt, invalid dates, and returns fallback (default 30 min).
+ */
+export function getAppointmentDurationMinutes(
+	startsAt?: string | null,
+	endsAt?: string | null,
+	fallbackMinutes = 30,
+): number {
+	const defaultMinutes = Math.max(1, fallbackMinutes || 30);
+	if (!startsAt) return defaultMinutes;
+	if (!endsAt) return defaultMinutes;
+	const startMs = Date.parse(startsAt);
+	const endMs = Date.parse(endsAt);
+	if (Number.isNaN(startMs) || Number.isNaN(endMs)) return defaultMinutes;
+	const diffMinutes = Math.round((endMs - startMs) / 60000);
+	return diffMinutes > 0 ? diffMinutes : defaultMinutes;
+}
+
+/**
+ * Calculates number of slots spanned by an appointment based on duration and grid step.
+ * e.g. 90 min with 30 min step = 3 slots; 120 min = 4 slots; 180 min = 6 slots.
+ */
+export function calculateAppointmentSpan(
+	durationMinutes: number,
+	slotStepMinutes = 30,
+): number {
+	const step = Math.max(1, slotStepMinutes || 30);
+	const duration = Math.max(1, durationMinutes || step);
+	return Math.max(1, Math.round(duration / step));
+}
+
+/**
+ * Calculates monolithic appointment card height in pixels corresponding to duration:
+ * height = durationMinutes * (baseSlotHeightPx / slotStepMinutes).
+ * Guarantees a continuous uninterrupted card height across multi-hour blocks (1-3h).
+ */
+export function calculateAppointmentCardHeight(
+	durationMinutes: number,
+	slotStepMinutes = 30,
+	baseSlotHeightPx = 64,
+): number {
+	const span = calculateAppointmentSpan(durationMinutes, slotStepMinutes);
+	return span * baseSlotHeightPx;
+}
+
+/**
+ * Fast 5-Second Solo Doctor Quick Booking Validator (Mandates 8e, 8k, Scale Sovereignty).
+ * Required fields are strictly minimal: patientName, patientPhone, startsAt.
+ * Assistant and INN are strictly optional and MUST NOT block booking.
+ */
+export function validateQuickBookingFields(input: {
+	patientName?: string | null;
+	patientPhone?: string | null;
+	startsAt?: string | null;
+	assistantId?: string | null;
+	inn?: string | null;
+	[key: string]: any;
+}): {
+	isValid: boolean;
+	missingFields: string[];
+	errors: string[];
+} {
+	const missingFields: string[] = [];
+	const errors: string[] = [];
+
+	const name = (input.patientName ?? "").trim();
+	if (!name) {
+		missingFields.push("patientName");
+		errors.push("Укажите имя или ФИО пациента");
+	}
+
+	const rawPhone = (input.patientPhone ?? "").trim();
+	const phoneDigits = rawPhone.replace(/[^\d+]/g, "");
+	if (!rawPhone || phoneDigits.length < 5) {
+		missingFields.push("patientPhone");
+		errors.push("Укажите номер телефона пациента (минимум 5 цифр)");
+	}
+
+	const startsAt = (input.startsAt ?? "").trim();
+	if (!startsAt) {
+		missingFields.push("startsAt");
+		errors.push("Укажите дату и время начала приёма");
+	}
+
+	return {
+		isValid: missingFields.length === 0,
+		missingFields,
+		errors,
+	};
+}

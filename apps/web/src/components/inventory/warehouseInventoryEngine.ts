@@ -42,6 +42,8 @@ export interface WarehouseAuditItemLine {
 	readonly batchNumber: string;
 	readonly manufactureDate?: string | undefined;
 	readonly expiryDate: string;
+	readonly cabinetId?: string | undefined;
+	readonly chairId?: string | undefined;
 	readonly storageLocationRu?: string | undefined;
 	readonly temperatureRegimeRu?: string | undefined;
 	readonly bookQuantity: number;
@@ -87,6 +89,8 @@ export interface InventoryAuditTotals {
 	readonly shortageItemsCount: number;
 	readonly expiredItemsCount: number;
 	readonly warningItemsCount: number;
+	readonly overdraftItemsCount: number;
+	readonly totalOverdraftQuantity: number;
 	readonly totalBookQuantity: number;
 	readonly totalActualQuantity: number;
 	readonly totalSurplusQuantity: number;
@@ -323,6 +327,8 @@ export function computeAuditLineItem(
 		readonly batchNumber: string;
 		readonly manufactureDate?: string | undefined;
 		readonly expiryDate: string;
+		readonly cabinetId?: string | undefined;
+		readonly chairId?: string | undefined;
 		readonly storageLocationRu?: string | undefined;
 		readonly temperatureRegimeRu?: string | undefined;
 		readonly bookQuantity: number;
@@ -333,8 +339,8 @@ export function computeAuditLineItem(
 	},
 	referenceDateStr?: string,
 ): WarehouseAuditItemLine {
-	const bookQty = Math.max(0, raw.bookQuantity);
-	const actQty = Math.max(0, raw.actualQuantity);
+	const bookQty = Number(raw.bookQuantity) || 0;
+	const actQty = Math.max(0, Number(raw.actualQuantity) || 0);
 	const unitCost = Math.max(0, Math.round(raw.unitCostKopecks));
 	const qtyDiff = actQty - bookQty;
 
@@ -362,6 +368,8 @@ export function computeAuditLineItem(
 		batchNumber: raw.batchNumber,
 		manufactureDate: raw.manufactureDate,
 		expiryDate: raw.expiryDate,
+		cabinetId: raw.cabinetId,
+		chairId: raw.chairId,
 		storageLocationRu: raw.storageLocationRu || "Складской бокс A-1",
 		temperatureRegimeRu: raw.temperatureRegimeRu || "+15°C..+25°C",
 		bookQuantity: bookQty,
@@ -391,6 +399,8 @@ export function calculateInventoryAuditTotals(
 	let shortageItemsCount = 0;
 	let expiredItemsCount = 0;
 	let warningItemsCount = 0;
+	let overdraftItemsCount = 0;
+	let totalOverdraftQuantity = 0;
 
 	let totalBookQuantity = 0;
 	let totalActualQuantity = 0;
@@ -408,6 +418,11 @@ export function calculateInventoryAuditTotals(
 		totalActualQuantity += item.actualQuantity;
 		totalBookCostKopecks += item.bookTotalKopecks;
 		totalActualCostKopecks += item.actualTotalKopecks;
+
+		if (item.bookQuantity < 0) {
+			overdraftItemsCount += 1;
+			totalOverdraftQuantity += Math.abs(item.bookQuantity);
+		}
 
 		if (item.fefoStatus === "expired") {
 			expiredItemsCount += 1;
@@ -439,6 +454,8 @@ export function calculateInventoryAuditTotals(
 		shortageItemsCount,
 		expiredItemsCount,
 		warningItemsCount,
+		overdraftItemsCount,
+		totalOverdraftQuantity,
 		totalBookQuantity,
 		totalActualQuantity,
 		totalSurplusQuantity,
@@ -455,6 +472,54 @@ export function calculateInventoryAuditTotals(
 		totalShortageCostRubles: kopecksToRubles(totalShortageCostKopecks),
 		netDiscrepancyCostRubles: kopecksToRubles(netDiscrepancyCostKopecks),
 		totalExpiredCostRubles: kopecksToRubles(totalExpiredCostKopecks),
+	};
+}
+
+/** Фильтрация строк инвентаризации по кабинету или креслу */
+export function filterAuditLinesByCabinetOrChair(
+	items: readonly WarehouseAuditItemLine[],
+	filter: { cabinetId?: string | undefined; chairId?: string | undefined },
+): WarehouseAuditItemLine[] {
+	return items.filter((it) => {
+		if (filter.cabinetId && it.cabinetId && it.cabinetId !== filter.cabinetId) {
+			return false;
+		}
+		if (filter.chairId && it.chairId && it.chairId !== filter.chairId) {
+			return false;
+		}
+		return true;
+	});
+}
+
+/** Изоляция и карантин просроченных партий из общего потока инвентаризации (FEFO СанПиН) */
+export function quarantineExpiredBatchesFromAudit(
+	items: readonly WarehouseAuditItemLine[],
+): {
+	validLines: WarehouseAuditItemLine[];
+	expiredQuarantineLines: WarehouseAuditItemLine[];
+	totalExpiredQuantity: number;
+	totalExpiredCostKopecks: number;
+} {
+	const validLines: WarehouseAuditItemLine[] = [];
+	const expiredQuarantineLines: WarehouseAuditItemLine[] = [];
+	let totalExpiredQuantity = 0;
+	let totalExpiredCostKopecks = 0;
+
+	for (const it of items) {
+		if (it.fefoStatus === "expired" || it.daysUntilExpiration <= 0 || it.isWriteoffRequired) {
+			expiredQuarantineLines.push(it);
+			totalExpiredQuantity += it.actualQuantity;
+			totalExpiredCostKopecks += it.actualTotalKopecks;
+		} else {
+			validLines.push(it);
+		}
+	}
+
+	return {
+		validLines,
+		expiredQuarantineLines,
+		totalExpiredQuantity,
+		totalExpiredCostKopecks,
 	};
 }
 
