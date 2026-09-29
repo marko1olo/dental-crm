@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import {
 	calculateCabinetSummary, calculateDentalHealthIndex, calculatePatientTaxDeduction,
+	createEmptyPatientCabinetData,
 	downloadDetailedReceipt, downloadPatientTaxCertificate1151156, formatRubles,
 	generatePatientDentalPassport, generatePatientTaxCertificate1151156,
 	generateReceptionCheckinQrPayload, generateSbpQrPayload, generateSmsOtp,
@@ -37,6 +38,7 @@ import {
 import { MobileSelfCheckinModal } from "../selfCheckin";
 import { PatientPlanView } from "../PatientPlanView.js";
 import { DEMO_PATIENT_CABINET } from "./patientCabinetPresets";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import {
 	OverviewTab, TreatmentPlanTab, InvoicesTab, DocumentsTab, AppointmentsTab, FamilyTab,
 } from "./tabs";
@@ -93,12 +95,18 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	onConsentSigned,
 	onAppointmentBooked,
 }) => {
-	const [data, setData] = useState<PatientPersonalCabinetData>(() => initialData || DEMO_PATIENT_CABINET);
+	const [data, setData] = useState<PatientPersonalCabinetData>(() => {
+		if (initialData) return initialData;
+		if (isDemoShowcaseMode()) return DEMO_PATIENT_CABINET;
+		return createEmptyPatientCabinetData();
+	});
+	const [isFetchingMe, setIsFetchingMe] = useState(Boolean(token));
 	const [activeTab, setActiveTab] = useState<PatientCabinetTab>(() => normalizePatientTab(initialTab));
 
 	useEffect(() => {
 		if (!token) return;
 		let isMounted = true;
+		setIsFetchingMe(true);
 		const fetchMe = async () => {
 			try {
 				const res = await fetch("/api/portal/me", {
@@ -115,6 +123,10 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 				}
 			} catch (err) {
 				console.error("[PatientCabinetModal] Failed to fetch /api/portal/me:", err);
+			} finally {
+				if (isMounted) {
+					setIsFetchingMe(false);
+				}
 			}
 		};
 		void fetchMe();
@@ -268,7 +280,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					}));
 
 					onInvoicePaid?.(updatedInvoice);
-					setSbpStatusMessage("Оплата успешно зачислена! Кассовый чек 54-ФЗ отправлен.");
+					setSbpStatusMessage("Оплата успешно зачислена! Кассовый чек отправлен.");
 					setTimeout(() => {
 						setActiveSbpInvoice(null);
 						setActiveSbpPayload(null);
@@ -491,15 +503,16 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 				<header className="pc-header">
 					<div className="pc-header-user">
 						<div className="pc-avatar" aria-hidden="true">
-							{data.fullName.slice(0, 1)}
+							{(data.fullName || "П").slice(0, 1)}
 						</div>
 						<div>
 							<h2 className="pc-header-title">
-								<span>{data.fullName}</span>
-								<span className="pc-badge-tier">{data.loyaltyTierRu}</span>
+								<span>{data.fullName || "Личный кабинет"}</span>
+								<span className="pc-badge-tier">{data.loyaltyTierRu || "Пациент"}</span>
 							</h2>
 							<p className="pc-header-subtitle">
-								Карта № {data.cardNumber} &bull; {data.curatingDoctor}
+								{data.cardNumber ? `Карта № ${data.cardNumber}` : "Электронная карта"}
+								{data.curatingDoctor ? ` • ${data.curatingDoctor}` : ""}
 							</p>
 						</div>
 					</div>
@@ -583,7 +596,27 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 				{/* Main Tab Content Body */}
 				<main className="pc-body">
-					{activeTab === "overview" && (
+					{isFetchingMe && !data.patientId ? (
+						<div
+							className="pc-loading-state"
+							data-testid="pc-cabinet-loading"
+							style={{
+								padding: "48px 24px",
+								textAlign: "center",
+								display: "flex",
+								flexDirection: "column",
+								alignItems: "center",
+								gap: "12px",
+							}}
+						>
+							<RefreshCw size={32} style={{ animation: "spin 1s linear infinite", color: "var(--pc-primary)" }} />
+							<p style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--pc-text-muted)" }}>
+								Загрузка персонального кабинета...
+							</p>
+						</div>
+					) : (
+						<>
+							{activeTab === "overview" && (
 						<OverviewTab
 							data={data}
 							summary={summary}
@@ -690,6 +723,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								fullCabinetData={data as any}
 							/>
 						</div>
+					)}
+						</>
 					)}
 				</main>
 

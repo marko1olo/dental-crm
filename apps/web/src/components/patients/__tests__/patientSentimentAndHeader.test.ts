@@ -57,7 +57,7 @@ describe("PatientSentimentBadge & PatientHeaderCard — Scoring, HIG & Roadmaps"
 		const sentiment = computePatientSentiment(patientStrict);
 		assert.equal(sentiment.type, "strict_ids_required");
 		assert.equal(sentiment.badgeEmoji, "");
-		assert.ok(sentiment.clinicalDirective.includes("1051н"));
+		assert.ok(sentiment.clinicalDirective.includes("согласия на лечение"));
 		assert.ok(sentiment.riskFactors.some((r) => r.includes("ИДС") || r.includes("аллерг") || r.includes("Аллерг")));
 	});
 

@@ -33,6 +33,7 @@ import type {
 	PatientPersonalCabinetData,
 } from "../patientCabinetEngine";
 import { formatRubles } from "../patientCabinetEngine";
+import { isDemoShowcaseMode, isDemoPatientId } from "../../../../lib/demoMode.js";
 
 export interface FamilyTabProps {
 	readonly data: PatientPersonalCabinetData;
@@ -87,12 +88,17 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 	onOpenBooking,
 	onShowToast,
 }) => {
+	const isDemo = isDemoShowcaseMode() || isDemoPatientId(data.patientId);
+
 	const initialMembers = useMemo(() => {
 		if (data.familyMembers && data.familyMembers.length > 0) {
 			return data.familyMembers;
 		}
-		return DEFAULT_FAMILY_MEMBERS;
-	}, [data.familyMembers]);
+		if (isDemo) {
+			return DEFAULT_FAMILY_MEMBERS;
+		}
+		return [];
+	}, [data.familyMembers, isDemo]);
 
 	const [members, setMembers] = useState<readonly PatientCabinetFamilyMember[]>(initialMembers);
 	const [isAddingMember, setIsAddingMember] = useState(false);
@@ -105,8 +111,8 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 	const [newAllowSpend, setNewAllowSpend] = useState(true);
 	const [newAllowBooking, setNewAllowBooking] = useState(true);
 
-	const familyBalance = data.familyBalanceRub ?? 84000;
-	const familyBonusPool = data.familyBonusPool ?? 18500;
+	const familyBalance = data.familyBalanceRub ?? (isDemo ? 84000 : 0);
+	const familyBonusPool = data.familyBonusPool ?? (isDemo ? 18500 : 0);
 
 	// Calculate age from birthDate
 	const calculateAge = (birthDate?: string): number | null => {
@@ -437,9 +443,58 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 				</form>
 			)}
 
-			{/* Member Cards Grid */}
-			<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "14px" }}>
-				{members.map((member) => {
+			{/* Member Cards Grid or Honest Empty State */}
+			{members.length === 0 ? (
+				<div
+					className="pc-family-empty-state"
+					data-testid="pc-family-empty-state"
+					style={{
+						background: "var(--pc-surface, #ffffff)",
+						border: "1px dashed var(--pc-border, #cbd5e1)",
+						borderRadius: "12px",
+						padding: "36px 20px",
+						textAlign: "center",
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						gap: "12px",
+					}}
+				>
+					<Users size={36} style={{ color: "var(--pc-text-muted, #94a3b8)", opacity: 0.7 }} />
+					<div style={{ maxWidth: "420px" }}>
+						<strong style={{ fontSize: "0.9375rem", color: "var(--pc-text-main, #0f172a)", display: "block", marginBottom: "4px" }}>
+							Семейный профиль пока не заполнен
+						</strong>
+						<span style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted, #64748b)" }}>
+							Добавьте членов семьи для совместной записи к врачу и единого баланса
+						</span>
+					</div>
+					{!isAddingMember && (
+						<button
+							type="button"
+							onClick={() => setIsAddingMember(true)}
+							className="pc-btn-primary"
+							data-testid="btn-add-family-member-empty"
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								padding: "8px 16px",
+								fontSize: "0.8125rem",
+								fontWeight: 600,
+								borderRadius: "8px",
+								cursor: "pointer",
+								marginTop: "4px",
+							}}
+						>
+							<UserPlus size={16} />
+							<span>+ Добавить члена семьи</span>
+						</button>
+					)}
+				</div>
+			) : (
+				<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "14px" }}>
+					{members.map((member) => {
 					const age = calculateAge(member.birthDate);
 					return (
 						<article
@@ -603,6 +658,7 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 					);
 				})}
 			</div>
+			)}
 		</div>
 	);
 };

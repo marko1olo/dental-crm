@@ -485,11 +485,11 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 												}
 												window.location.hash = "patients";
 											}}
-											title="Открыть амбулаторную медицинскую карту Форма 043/у"
+											title="Открыть медицинскую карту пациента"
 											data-testid="patient-workspace-open-043u-btn"
 										>
 											<FileText className="w-4 h-4 text-[var(--teal)] shrink-0" />
-											<span>Карта пациента (043/у)</span>
+											<span>Медицинская карта</span>
 										</button>
 
 										<button
@@ -502,15 +502,15 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 													window.print();
 												}
 												showToast(
-													"Печать и экспорт карты 043/у запущены",
+													"Печать и экспорт медицинской карты запущены",
 													"info",
 												);
 											}}
-											title="Распечатать амбулаторную медицинскую карту Форма 043/у"
+											title="Распечатать медицинскую карту пациента"
 											data-testid="patient-workspace-print-043u-btn"
 										>
 											<Printer className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-											<span>Печать карты (043/у)</span>
+											<span>Печать медицинской карты</span>
 										</button>
 
 										<button
@@ -524,11 +524,11 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 												}
 												window.location.hash = "finance";
 											}}
-											title="Открыть счета, акты 804н и кассу 54-ФЗ"
+											title="Открыть счета, акты выполненных услуг и кассу"
 											data-testid="patient-workspace-open-finance-btn"
 										>
 											<Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-											<span>Счета и касса (54-ФЗ)</span>
+											<span>Счета и касса</span>
 										</button>
 
 										<button
@@ -595,11 +595,11 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 												setIsDocsMenuOpen(false);
 												setIsLoyaltyModalOpen(true);
 											}}
-											title="Программа лояльности и бонусы (54-ФЗ)"
+											title="Программа лояльности и бонусы"
 											data-testid="open-loyalty-program-modal-btn"
 										>
 											<Gift className="w-4 h-4 text-amber-500 shrink-0" />
-											<span>Лояльность (54-ФЗ)</span>
+											<span>Программа лояльности</span>
 										</button>
 
 										<button

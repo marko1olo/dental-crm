@@ -141,7 +141,7 @@ export function generateDetailedReceiptHtml(
         <td style="padding: 6px 8px; border-bottom: 1px dashed #cbd5e1; text-align: center;">${idx + 1}</td>
         <td style="padding: 6px 8px; border-bottom: 1px dashed #cbd5e1;">
           <div style="font-weight: 700; color: #0f172a;">${item.titleRu}</div>
-          <div style="font-size: 11px; color: #64748b;">Код 804н: ${item.code}${item.toothFdi ? ` • Зуб №${item.toothFdi}` : ""}</div>
+          <div style="font-size: 11px; color: #64748b;">Код услуги: ${item.code}${item.toothFdi ? ` • Зуб №${item.toothFdi}` : ""}</div>
         </td>
         <td style="padding: 6px 8px; border-bottom: 1px dashed #cbd5e1; text-align: center;">${item.quantity}</td>
         <td style="padding: 6px 8px; border-bottom: 1px dashed #cbd5e1; text-align: right;">${formatRubles(item.priceRub)}</td>
@@ -204,7 +204,7 @@ export function generateDetailedReceiptHtml(
       <thead>
         <tr>
           <th style="width: 24px; text-align: center;">№</th>
-          <th>Услуга (Номенклатура МЗ РФ 804н)</th>
+          <th>Наименование медицинской услуги</th>
           <th style="width: 40px; text-align: center;">Кол</th>
           <th style="width: 80px; text-align: right;">Цена</th>
           <th style="width: 90px; text-align: right;">Сумма</th>
@@ -438,7 +438,7 @@ export function generateCompletedWorksActHtml(
       <thead>
         <tr>
           <th style="width: 28px; text-align: center;">№</th>
-          <th style="width: 90px;">Код 804н</th>
+          <th style="width: 90px;">Код услуги</th>
           <th>Наименование медицинской услуги</th>
           <th style="width: 45px; text-align: center;">Кол</th>
           <th style="width: 85px; text-align: right;">Цена</th>

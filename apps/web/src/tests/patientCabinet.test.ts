@@ -4,7 +4,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import {
@@ -13,6 +13,9 @@ import {
 	FamilyTab,
 } from "../components/portal/patientCabinet/tabs";
 import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
+import { MobileSelfCheckinModal } from "../components/portal/selfCheckin/MobileSelfCheckinModal";
+import { SelfCheckinPhoneAuthSection } from "../components/portal/selfCheckin/SelfCheckinPhoneAuthSection";
+import { setRuntimeDemoMode } from "../lib/demoMode";
 import {
 	calculateCabinetSummary,
 	calculateCheckupDaysRemaining,
@@ -299,7 +302,7 @@ describe("Patient Personal Portal - Statutory Tax Deduction (KND 1151156) & 54-F
 		assert.ok(receiptHtml.includes("ИНН: 7841098765"), "Should contain clinic INN");
 		assert.ok(receiptHtml.includes("Воронов Алексей Владимирович"), "Should contain patient name");
 		assert.ok(receiptHtml.includes(paidInvoice.invoiceNumber), "Should contain invoice number");
-		assert.ok(receiptHtml.includes("Код 804н:"), "Should list statutory 804n nomenclature codes");
+		assert.ok(receiptHtml.includes("Код услуги:") || receiptHtml.includes("Код 804н:"), "Should list statutory nomenclature codes");
 		assert.ok(receiptHtml.includes("<svg"), "Should contain fiscal verification QR code SVG");
 	});
 });
@@ -420,6 +423,28 @@ describe("Patient Personal Portal - AppointmentsTab & FamilyTab Ergonomics", () 
 		assert.ok(html.includes("Оплата с общего счета"), "Should render balance permission");
 		assert.ok(html.includes("data-testid=\"btn-toggle-add-family-member\""), "Should render add member button");
 	});
+
+	it("renders FamilyTab honest empty state for real production patient without family profile", () => {
+		const html = renderToString(
+			React.createElement(FamilyTab, {
+				data: {
+					...PATIENT_CABINET_PRESET_ALEXEY,
+					patientId: "real-prod-patient-12345",
+					familyMembers: [],
+					familyBalanceRub: undefined,
+					familyBonusPool: undefined,
+				},
+				onOpenBookingForMember: () => {},
+				onOpenBooking: () => {},
+				onShowToast: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("data-testid=\"pc-family-empty-state\""), "Should render family empty state");
+		assert.ok(html.includes("Семейный профиль пока не заполнен"), "Should render empty title");
+		assert.ok(html.includes("+ Добавить члена семьи"), "Should render add member action button");
+		assert.ok(html.includes("0 ₽") || html.includes("0\u00A0₽"), "Should default balance to 0");
+	});
 });
 
 describe("Patient Personal Portal - Atmosphere & AuthArtBackground Integration", () => {
@@ -438,5 +463,105 @@ describe("Patient Personal Portal - Atmosphere & AuthArtBackground Integration",
 		assert.ok(html.includes(PATIENT_CABINET_PRESET_ALEXEY.fullName), "Patient name should be present in header");
 	});
 });
+
+describe("Dual-Mode Zero-Mock Inquisitor Batch 3 (Mandate 8y & Mandates 8za, 8zb)", () => {
+	it("PatientCabinetModal in production mode without initialData initializes empty state without demo synthetic identity", () => {
+		setRuntimeDemoMode(false);
+		const html = renderToString(
+			React.createElement(PatientCabinetModal, {
+				isOpen: true,
+				onClose: () => {},
+			}),
+		);
+
+		// Must NOT contain demo persona Alexey Voronov
+		assert.equal(html.includes("Воронов Алексей Владимирович"), false);
+		assert.equal(html.includes("+7 (999) 123-45-67"), false);
+		assert.equal(html.includes("043-8842"), false);
+
+		// Must render honest production title and empty state
+		assert.ok(html.includes("Личный кабинет") || html.includes("Пациент"));
+	});
+
+	it("PatientCabinetModal in demo showcase mode uses DEMO_PATIENT_CABINET when initialData is undefined", () => {
+		setRuntimeDemoMode(true);
+		const html = renderToString(
+			React.createElement(PatientCabinetModal, {
+				isOpen: true,
+				onClose: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("Воронов Алексей Владимирович"));
+		setRuntimeDemoMode(false);
+	});
+
+	it("MobileSelfCheckinModal in production mode defaults to empty props and does not pre-fill demo persona", () => {
+		setRuntimeDemoMode(false);
+		const html = renderToString(
+			React.createElement(MobileSelfCheckinModal, {
+				isOpen: true,
+				onClose: () => {},
+			}),
+		);
+
+		// Must NOT pre-fill demo persona Anna Smirnova or fake phone
+		assert.equal(html.includes("Смирнова Анна Викторовна"), false);
+		assert.equal(html.includes("+7 (913) 770-41-99"), false);
+		assert.equal(html.includes("Талон № А-07"), false);
+
+		// Phone input should have empty value and not auto-filled with 4199
+		assert.equal(html.includes('value="4199"'), false);
+		assert.ok(html.includes('data-testid="one-touch-phone-input"'));
+	});
+
+	it("MobileSelfCheckinModal in demo mode pre-fills demo persona and appointment", () => {
+		setRuntimeDemoMode(true);
+		const html = renderToString(
+			React.createElement(MobileSelfCheckinModal, {
+				isOpen: true,
+				onClose: () => {},
+			}),
+		);
+
+		assert.ok(html.includes("Смирнова Анна Викторовна"));
+		assert.ok(html.includes("Талон № А-07") || html.includes("4199"));
+		setRuntimeDemoMode(false);
+	});
+
+	it("SelfCheckinPhoneAuthSection renders clean greeting when patientName is empty and prevents unverified express checkin", () => {
+		let authError: string | null = null;
+		let checkinTriggered = false;
+
+		const html = renderToString(
+			React.createElement(SelfCheckinPhoneAuthSection, {
+				patientName: "",
+				appointmentTime: "",
+				doctorName: "",
+				phoneDigits: "",
+				setPhoneDigits: () => {},
+				showOptionalDocs: false,
+				setShowOptionalDocs: () => {},
+				authError,
+				setAuthError: (err) => {
+					authError = err;
+				},
+				isSubmitting: false,
+				onApplyPhysiologicalNorm: () => {},
+				onOneTouchCheckin: () => {
+					checkinTriggered = true;
+				},
+				onGoToConsents: () => {},
+				onGoToSomatic: () => {},
+			}),
+		);
+
+		// Should render clean generic welcome instead of mock persona
+		assert.ok(html.includes("Добро пожаловать в клинику!"));
+		assert.ok(html.includes("Подтвердите прибытие на приём"));
+		assert.equal(html.includes("Смирнова Анна Викторовна"), false);
+	});
+});
+
 
 

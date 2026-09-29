@@ -6,7 +6,7 @@
  * - Счета и онлайн-оплата: генерация платежных QR-кодов СБП (НСПК), онлайн-эквайринг (Сбер / Т-Банк), фискальные чеки 54-ФЗ.
  * - Расписание и таймлайн визитов: предстоящие и архивные приемы, статус напоминаний, кабинет и врач.
  * - Планы лечения: расчет этапов, прогресс выполнения в %, остаток к оплате.
- * - Электронные гарантийные паспорта: обратный отсчет до обязательного диспансерного чекапа, статус гарантии.
+ * - Электронные гарантийные паспорта: обратный отсчет до обязательного гарантийного чекапа, статус гарантии.
  * - Информированные согласия (ИДС 323-ФЗ): подписание простой электронной подписью (63-ФЗ ПЭП) через SMS/OTP с криптографическим SHA-256 аудитом.
  * - Программа лояльности и бонусы.
  */
@@ -625,6 +625,34 @@ export function signConsentWithPep(
 	};
 }
 
+/**
+ * Создает пустую структуру персонального кабинета для боевого продакшена (Мандат 8y).
+ * Без синтетических заглушек и чужих персональных данных.
+ */
+export function createEmptyPatientCabinetData(
+	patientId = "",
+	fullName = "Пациент",
+	phone = "",
+): PatientPersonalCabinetData {
+	return {
+		patientId,
+		fullName,
+		phone,
+		cardNumber: "",
+		curatingDoctor: "Врач-куратор не назначен",
+		loyaltyBonusBalance: 0,
+		loyaltyTierRu: "Базовый",
+		cashbackEarnedRub: 0,
+		invoices: [],
+		appointments: [],
+		treatmentPlans: [],
+		warranties: [],
+		consents: [],
+		familyMembers: [],
+		teeth: [],
+	};
+}
+
 // ============================================================================
 // SUMMARY & AGGREGATIONS
 // ============================================================================
@@ -647,7 +675,7 @@ export function calculateCabinetSummary(data: PatientPersonalCabinetData): Patie
 	const pendingConsents = data.consents.filter((c) => c.status === "pending_signature");
 	const activeWarranties = data.warranties.filter((w) => w.status === "active" || w.status === "at_risk");
 
-	// Ближайший диспансерный чекап
+	// Ближайший гарантийный / контрольный чекап
 	let nearestCheckupDate: string | undefined;
 	let nearestCheckupDays: number | undefined;
 

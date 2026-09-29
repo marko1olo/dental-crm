@@ -78,7 +78,7 @@ export function generatePaymentInvoiceHtml(
         <td style="padding: 7px 8px; border: 1px solid #cbd5e1;">
           <div style="font-weight: 700; color: #0f172a;">${item.titleRu}</div>
           <div style="font-size: 11px; color: #64748b;">
-            Код 804н: ${item.code}${item.toothFdi ? ` &bull; Область / Зуб №${item.toothFdi}` : ""}
+            Код услуги: ${item.code}${item.toothFdi ? ` &bull; Область / Зуб №${item.toothFdi}` : ""}
           </div>
         </td>
         <td style="padding: 7px 8px; border: 1px solid #cbd5e1; text-align: center;">${item.quantity}</td>

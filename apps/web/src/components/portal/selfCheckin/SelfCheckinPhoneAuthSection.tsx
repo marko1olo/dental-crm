@@ -54,11 +54,21 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 				</span>
 				<div>
 					<div className="selfcheckin-welcome-name">
-						Здравствуйте, {patientName}!
+						{patientName ? `Здравствуйте, ${patientName}!` : "Добро пожаловать в клинику!"}
 					</div>
 					<div className="selfcheckin-welcome-sub">
-						Ваш прием: <strong>{appointmentTime}</strong> у{" "}
-						<strong>{doctorName}</strong>.
+						{appointmentTime && doctorName ? (
+							<>
+								Ваш прием: <strong>{appointmentTime}</strong> у{" "}
+								<strong>{doctorName}</strong>.
+							</>
+						) : appointmentTime ? (
+							<>Ваш прием: <strong>{appointmentTime}</strong>.</>
+						) : doctorName ? (
+							<>Прием у врача: <strong>{doctorName}</strong>.</>
+						) : (
+							"Подтвердите прибытие на приём через терминал самообслуживания."
+						)}
 					</div>
 				</div>
 			</div>
@@ -68,6 +78,12 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 					type="button"
 					className="selfcheckin-btn-kiosk-express w-full py-3.5 px-4 text-base font-bold flex items-center justify-center gap-3 cursor-pointer"
 					onClick={() => {
+						if (!patientName && phoneDigits.length < 4) {
+							setAuthError(
+								"Пожалуйста, введите 4 последние цифры номера мобильного телефона для подтверждения записи.",
+							);
+							return;
+						}
 						onApplyPhysiologicalNorm();
 						onOneTouchCheckin();
 					}}

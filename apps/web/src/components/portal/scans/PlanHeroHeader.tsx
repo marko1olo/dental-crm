@@ -436,7 +436,7 @@ export const PlanHeroHeader: React.FC<PlanHeroHeaderProps> = ({
 						</div>
 						<div>
 							<div style={{ fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
-								Возврат 13% от оплаченного лечения (ФНС КНД 1151156):
+								Возврат 13% от оплаченного лечения (налоговый вычет):
 							</div>
 							<strong style={{ fontSize: "14px", color: "var(--pc-success, #10b981)" }}>
 								~{formatRubles(estimatedTaxRefundRub)} к возврату на карту
@@ -465,7 +465,7 @@ export const PlanHeroHeader: React.FC<PlanHeroHeaderProps> = ({
 						}}
 					>
 						<Download size={16} />
-						<span>Скачать справку КНД 1151156 (1 клик)</span>
+						<span>Скачать справку для налоговой (1 клик)</span>
 					</button>
 				</div>
 			)}

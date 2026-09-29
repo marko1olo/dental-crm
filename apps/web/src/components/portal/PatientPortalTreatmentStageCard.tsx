@@ -93,7 +93,7 @@ export function formatDualServiceName(code: string, rawTitle: string): DualServi
 			statutoryCode804n: code || "A16.07.004.001",
 			explanationRu: "Высокоточное 3D-очищение и герметичное пломбирование каналов зуба под дентальным микроскопом с контролем визиографа.",
 			sensationRu: "Полный покой: изоляция коффердамом позволяет свободно сглатывать и дышать.",
-			defaultWarrantyRu: "Диспансерное наблюдение 1 год",
+			defaultWarrantyRu: "Гарантийный контроль (1 год)",
 		};
 	}
 

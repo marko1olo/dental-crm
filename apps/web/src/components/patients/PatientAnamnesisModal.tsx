@@ -145,7 +145,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 				onSyncToEmkDiary(diarySnippet);
 			}
 			navigator.clipboard?.writeText?.(diarySnippet).catch(() => {});
-			showToast("Клинический анамнез скопирован и синхронизирован с протоколом 043/у", "success");
+			showToast("Клинический анамнез скопирован и перенесён в дневник приёма", "success");
 		}, [profile, onSyncToEmkDiary]);
 
 		const handlePrintQuestionnaire = useCallback(() => {
@@ -224,7 +224,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 							className="px-3.5 py-1.5 min-h-[44px] sm:min-h-[32px] text-xs rounded-xl font-bold bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 shadow-xs cursor-pointer shrink-0 transition-all inline-flex items-center gap-1.5 active:scale-98"
 							data-testid="btn-somatic-healthy-norm"
 							aria-label="Соматически здоров / норма (1 клик)"
-							title="1 клик: соматически здоров, анамнез не отягощен, физиологическая норма"
+							title="1 клик: Соматически здоров. Аллергоанамнез не отягощен"
 						>
 							<ShieldCheck className="w-4 h-4 text-white shrink-0" />
 							<span>Соматически здоров / норма (без особенностей)</span>
@@ -673,7 +673,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--glass-border)] flex flex-col gap-2">
 							<div className="flex items-center justify-between">
 								<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
-									Предпросмотр записи для дневника (форма 043/у):
+									Предпросмотр записи для дневника приёма:
 								</span>
 								<button
 									type="button"
@@ -699,7 +699,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 								className="safety-btn safety-btn--outline"
 							>
 								<Copy className="w-4 h-4 text-[var(--teal,var(--brand-primary))]" />
-								1-Click в протокол 043/у
+								1-Click в дневник приёма
 							</button>
 						</div>
 

@@ -17,6 +17,7 @@ import {
 import { SelfCheckinPhoneAuthSection } from "./SelfCheckinPhoneAuthSection";
 import { SelfCheckinSomaticSection } from "./SelfCheckinSomaticSection";
 import { SelfCheckinTicketSection } from "./SelfCheckinTicketSection";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 
 export * from "./SelfCheckinConsentsSection";
 export * from "./SelfCheckinPhoneAuthSection";
@@ -50,16 +51,48 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	isOpen,
 	onClose,
 	patientId = "",
-	initialPhone = "+7 (913) 770-41-99",
-	patientName = "Смирнова Анна Викторовна",
+	initialPhone,
+	patientName,
 	clinicName = "Стоматологическая клиника ДЕНТЕ",
-	doctorName = "Д-р Воронова Е. С. (Терапевт-микроскопист)",
-	appointmentTime = "Сегодня в 14:30 (Кабинет 3)",
+	doctorName,
+	appointmentTime,
 	cabinetName,
-	queueTicket = "Талон № А-07",
+	queueTicket,
 	initialStep = "phone_auth",
 	onCheckinSuccess,
 }) => {
+	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
+
+	const effectivePhone =
+		initialPhone !== undefined
+			? initialPhone
+			: isDemo
+				? "+7 (913) 770-41-99"
+				: "";
+	const effectivePatientName =
+		patientName !== undefined
+			? patientName
+			: isDemo
+				? "Смирнова Анна Викторовна"
+				: "";
+	const effectiveDoctorName =
+		doctorName !== undefined
+			? doctorName
+			: isDemo
+				? "Д-р Воронова Е. С. (Терапевт-микроскопист)"
+				: "";
+	const effectiveAppointmentTime =
+		appointmentTime !== undefined
+			? appointmentTime
+			: isDemo
+				? "Сегодня в 14:30 (Кабинет 3)"
+				: "";
+	const effectiveQueueTicket =
+		queueTicket !== undefined
+			? queueTicket
+			: isDemo
+				? "Талон № А-07"
+				: "";
 	const [step, setStep] = useState<CheckinStep>(initialStep);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [authError, setAuthError] = useState<string | null>(null);
@@ -88,29 +121,30 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	});
 
 	const displayQueueTicket = useMemo(() => {
-		return queueTicket || "Талон № А-07";
-	}, [queueTicket]);
+		return effectiveQueueTicket || (isDemo ? "Талон № А-07" : "Талон терминала");
+	}, [effectiveQueueTicket, isDemo]);
 
 	const doctorWaitMessage = useMemo(() => {
-		const docShort = doctorName?.includes("(")
-			? (doctorName.split("(")[0]?.trim() || doctorName)
-			: (doctorName || "");
-		const effectiveDoctor = docShort || "Д-р Смирнова";
-		const cabMatch = appointmentTime.match(/Кабинет\s*(\d+)/i);
-		const cabNum = cabinetName || (cabMatch ? cabMatch[1] : "3");
-		const floorInfo = appointmentTime.includes("этаж") ? "" : " (2 этаж)";
-		return `${effectiveDoctor} ожидает вас в кабинете №${cabNum}${floorInfo}`;
-	}, [doctorName, appointmentTime, cabinetName]);
+		const docShort = effectiveDoctorName?.includes("(")
+			? (effectiveDoctorName.split("(")[0]?.trim() || effectiveDoctorName)
+			: (effectiveDoctorName || "");
+		const effectiveDoctor = docShort || (isDemo ? "Д-р Смирнова" : "Лечащий врач");
+		const cabMatch = effectiveAppointmentTime.match(/Кабинет\s*(\d+)/i);
+		const cabNum = cabinetName || (cabMatch ? cabMatch[1] : "");
+		const floorInfo = effectiveAppointmentTime.includes("этаж") ? "" : (cabNum ? " (2 этаж)" : "");
+		const cabInfo = cabNum ? ` в кабинете №${cabNum}${floorInfo}` : "";
+		return `${effectiveDoctor} ожидает вас${cabInfo}`;
+	}, [effectiveDoctorName, effectiveAppointmentTime, cabinetName, isDemo]);
 
 	const checkinCode = useMemo(() => {
-		const raw = `${patientName || "PATIENT"}-${appointmentTime || "TIME"}`;
+		const raw = `${effectivePatientName || "PATIENT"}-${effectiveAppointmentTime || "TIME"}`;
 		let hash = 0;
 		for (let i = 0; i < raw.length; i++) {
 			hash = (hash * 31 + raw.charCodeAt(i)) & 0x7fffffff;
 		}
 		const suffix = ((hash % 9000) + 1000).toString();
 		return `CK-${new Date().getFullYear()}-${suffix}`;
-	}, [patientName, appointmentTime]);
+	}, [effectivePatientName, effectiveAppointmentTime]);
 
 	const checkinQrSvg = useMemo(() => {
 		const verifyUrl = `https://dente.clinic/checkin/verify?ticket=${encodeURIComponent(checkinCode)}`;
@@ -123,9 +157,9 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 
 	// 1-Touch Checkin State: последние 4 цифры номера телефона
 	const defaultLast4 = useMemo(() => {
-		const digits = (initialPhone || "").replace(/\D/g, "");
-		return digits.slice(-4) || "4199";
-	}, [initialPhone]);
+		const digits = (effectivePhone || "").replace(/\D/g, "");
+		return digits.slice(-4) || (isDemo ? "4199" : "");
+	}, [effectivePhone, isDemo]);
 	const [phoneDigits, setPhoneDigits] = useState(defaultLast4);
 	const [showOptionalDocs, setShowOptionalDocs] = useState(false);
 
@@ -379,9 +413,9 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 					{/* STEP 1: Phone 1-Touch Auth & Instant Checkin */}
 					{step === "phone_auth" && (
 						<SelfCheckinPhoneAuthSection
-							patientName={patientName}
-							appointmentTime={appointmentTime}
-							doctorName={doctorName}
+							patientName={effectivePatientName}
+							appointmentTime={effectiveAppointmentTime}
+							doctorName={effectiveDoctorName}
 							phoneDigits={phoneDigits}
 							setPhoneDigits={setPhoneDigits}
 							showOptionalDocs={showOptionalDocs}
@@ -440,8 +474,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 					{step === "completed" && (
 						<SelfCheckinTicketSection
 							displayQueueTicket={displayQueueTicket}
-							patientName={patientName}
-							appointmentTime={appointmentTime}
+							patientName={effectivePatientName}
+							appointmentTime={effectiveAppointmentTime}
 							doctorWaitMessage={doctorWaitMessage}
 							checkinQrSvg={checkinQrSvg}
 							checkinCode={checkinCode}

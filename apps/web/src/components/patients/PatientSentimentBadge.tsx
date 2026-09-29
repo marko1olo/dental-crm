@@ -73,7 +73,7 @@ export function computePatientSentiment(
 			badgeEmoji: "",
 			colorTheme: "slate",
 			description: "Стандартный профиль обслуживания пациента.",
-			clinicalDirective: "Стандартный клинический протокол приёма и оформления карты 043/у.",
+			clinicalDirective: "Стандартный клинический протокол приёма и оформления медицинской карты.",
 			calculatedLtvRub: overrides?.ltvRub ?? 0,
 			complianceScorePercent: overrides?.complianceScore ?? 100,
 			riskFactors: [],
@@ -180,7 +180,7 @@ export function computePatientSentiment(
 	);
 	if (hasSevereAllergies) {
 		somaticRiskFactors.push(
-			"Отягощенный аллергоанамнез: подбор гипоаллергенной анестезии, обязательное ИДС по Приказу 1051н",
+			"Отягощенный аллергоанамнез: подбор гипоаллергенной анестезии, обязательное согласие на лечение",
 		);
 	}
 
@@ -347,7 +347,7 @@ export function computePatientSentiment(
 				description:
 					"В анамнезе выявлены критические соматические стоп-факторы, требующие специального клинического протокола и оформления ИДС.",
 				clinicalDirective:
-					"Оформление расширенного ИДС по приказу 1051н, протоколирование в амбулаторной карте 043/у и соблюдение мер безопасности.",
+					"Оформление расширенного согласия на лечение, протоколирование в амбулаторной карте и соблюдение мер безопасности.",
 				calculatedLtvRub: ltv,
 				complianceScorePercent: overrides?.complianceScore ?? 80,
 				riskFactors: somaticRiskFactors,
@@ -387,12 +387,12 @@ export function computePatientSentiment(
 			return {
 				type: "standard",
 				label: "Соматически здоров / Норма",
-				shortLabel: "Норма (043/у)",
+				shortLabel: "Норма (Соматика)",
 				badgeEmoji: "",
 				colorTheme: "slate",
 				description:
-					"Соматически сохранный профиль, стандартный протокол ведения амбулаторной карты 043/у.",
-				clinicalDirective: "Стандартный протокол приёма и оформления медицинской карты 043/у.",
+					"Соматически сохранный профиль, стандартный протокол ведения медицинской карты.",
+				clinicalDirective: "Стандартный протокол приёма и оформления медицинской карты.",
 				calculatedLtvRub: ltv,
 				complianceScorePercent: compliance,
 				riskFactors: [],
@@ -595,7 +595,7 @@ export const PatientSentimentBadge: React.FC<PatientSentimentBadgeProps> = ({
 											<span>{info.label}</span>
 										</div>
 										<div className="text-xs text-[var(--muted,var(--ink-muted))]">
-											Клинический статус безопасности (043/у)
+											Клинический статус безопасности
 										</div>
 									</div>
 								</div>
@@ -624,7 +624,7 @@ export const PatientSentimentBadge: React.FC<PatientSentimentBadgeProps> = ({
 								<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line-subtle,rgba(255,255,255,0.05))]">
 									<div className="text-xs font-semibold text-[var(--muted,var(--ink-muted))] uppercase flex items-center gap-1">
 										<CheckCircle2 size={13} className={info.type === "strict_ids_required" ? "text-rose-500" : "text-cyan-500"} />
-										<span>Соматика (043/у)</span>
+										<span>Соматический статус</span>
 									</div>
 									<div className="text-xs font-black mt-0.5 text-[var(--ink)] truncate">
 										{info.type === "strict_ids_required"
