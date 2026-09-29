@@ -1,0 +1,24 @@
+{
+  "role": "Subagent 3: Real CBCT Ingestion, ImagingView & DICOMweb WADO Inquisitor",
+  "status": "completed",
+  "step": "done",
+  "completed_steps": [
+    "constitutional_routine_completed",
+    "inspect_target_files",
+    "fix_bug_006_cornerstone3dviewer_props",
+    "fix_bug_007_009_dicomweb_wado_url_and_1click_launch",
+    "verify_realDicomVolumeLoader_with_real_cbct_fixtures",
+    "write_and_run_unit_tests",
+    "typecheck_and_encoding_gates",
+    "per_file_git_add_and_report"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "BUG-006: In ImagingView.tsx, Cornerstone3DViewer invocation was missing patientName, studyDate, and authHeaders. Resolved by passing activePatient name, study.date, and clinic/staff auth tokens.",
+    "BUG-007 & BUG-009: In ImagingView.tsx, replaced passive text / localhost:3000 hardcode with standard WADO-RS endpoints using VITE_API_URL. Implemented handleLoadFromDicomweb with QIDO-RS metadata and wadouri: image IDs, plus 1-click action bar (3D Implant Studio, Cornerstone3D MPR, Load from PACS) and DicomArchiveUploader dropzone.",
+    "CbctMprWorkspace.tsx: Added optional imageIds prop to CbctMprWorkspaceProps with explicit | undefined for exactOptionalPropertyTypes compliance, passing it through to Cornerstone3DViewer.",
+    "realDicomVolumeLoader.ts: Increased maxHeaderSearch to 256KB for DICOMs with large preamble/metadata. Added safe getViteApiUrl() helper, exported buildDicomwebWadoUrl and buildCornerstoneWadoImageId, and hardened buildVolumeFromDicomweb.",
+    "Real CBCT Verification: Verified against KaVo OP300 slice (468x468, PixelSpacing 0.32 mm, Intercept -1000 HU, Window W3113/L1556) and Zakharov Ivan Dmitrievich clinical CBCT dataset (600x600, PixelSpacing 0.25 mm, Intercept -1000 HU, Window W4095/L2047, 3D volume reconstruction and axial MPR reslicing).",
+    "All 6 tests in realDicomVolumeLoader.test.ts pass in 366ms. All 11 tests in dicomArchiveUploader.test.ts pass. Encoding gate (6280 files) and typecheck -w @dental/web passed cleanly with 0 errors in scoped files."
+  ]
+}

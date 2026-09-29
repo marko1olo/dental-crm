@@ -74,8 +74,8 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
   let patientName = "Не указан";
   let studyDate = "";
 
-  // Scan up to 64KB or byteLength for standard DICOM tags
-  const maxHeaderSearch = Math.min(byteLength - 8, 65536);
+  // Scan up to 256KB or byteLength for standard DICOM tags
+  const maxHeaderSearch = Math.min(byteLength - 8, 262144);
   let hasImagePositionPatient = false;
 
   for (let i = 128; i < maxHeaderSearch; i += 2) {
@@ -473,19 +473,70 @@ export async function buildVolumeFromDicomZip(
   return buildVolumeFromDicomBuffers(items, onProgress);
 }
 
+function getViteApiUrl(): string {
+  try {
+    const meta = import.meta as unknown as { env?: Record<string, string> };
+    if (meta && meta.env && typeof meta.env.VITE_API_URL === "string") {
+      return meta.env.VITE_API_URL;
+    }
+  } catch {}
+  return "";
+}
+
+export function buildDicomwebWadoUrl(
+  studyUid: string,
+  seriesUid: string,
+  instanceUid: string,
+  baseUrl?: string,
+): string {
+  const apiBase = (baseUrl ?? getViteApiUrl()).replace(/\/+$/, "");
+  return `${apiBase}/api/dicomweb/studies/${encodeURIComponent(studyUid)}/series/${encodeURIComponent(seriesUid)}/instances/${encodeURIComponent(instanceUid)}`;
+}
+
+export function buildCornerstoneWadoImageId(
+  studyUid: string,
+  seriesUid: string,
+  instanceUid: string,
+  baseUrl?: string,
+): string {
+  return `wadouri:${buildDicomwebWadoUrl(studyUid, seriesUid, instanceUid, baseUrl)}`;
+}
+
 export async function buildVolumeFromDicomweb(
   studyUid: string,
   seriesUid: string,
   options?: {
     onProgress?: (percent: number, message: string) => void;
     headers?: Record<string, string>;
+    baseUrl?: string;
   },
 ): Promise<CbctVoxelVolume> {
   const onProgress = options?.onProgress;
   onProgress?.(5, "Запрос метаданных серии из PACS WADO-RS...");
 
-  const headers = options?.headers ?? {};
-  const metaRes = await fetch(`/api/dicomweb/studies/${studyUid}/series/${seriesUid}/metadata`, {
+  const apiBase = (options?.baseUrl ?? getViteApiUrl()).replace(/\/+$/, "");
+
+  let headers = options?.headers;
+  if (!headers) {
+    try {
+      const { readDenteClinicToken, readDenteStaffToken } = await import("../../lib/safeLocalStorage");
+      const clinicToken = readDenteClinicToken();
+      const staffToken = readDenteStaffToken();
+      headers = {};
+      if (clinicToken) headers["x-dente-clinic-token"] = clinicToken;
+      if (staffToken) {
+        headers["x-dente-staff-token"] = staffToken;
+        headers.Authorization = `Bearer ${staffToken}`;
+      } else if (clinicToken) {
+        headers.Authorization = `Bearer ${clinicToken}`;
+      }
+    } catch {
+      headers = {};
+    }
+  }
+
+  const metaUrl = `${apiBase}/api/dicomweb/studies/${encodeURIComponent(studyUid)}/series/${encodeURIComponent(seriesUid)}/metadata`;
+  const metaRes = await fetch(metaUrl, {
     headers: { Accept: "application/dicom+json", ...headers },
   });
   if (!metaRes.ok) {
@@ -504,10 +555,10 @@ export async function buildVolumeFromDicomweb(
     const sopUid = item?.["00080018"]?.Value?.[0] as string | undefined;
     if (!sopUid) continue;
 
-    const frameRes = await fetch(
-      `/api/dicomweb/studies/${studyUid}/series/${seriesUid}/instances/${sopUid}`,
-      { headers: { Accept: "application/dicom", ...headers } },
-    );
+    const frameUrl = `${apiBase}/api/dicomweb/studies/${encodeURIComponent(studyUid)}/series/${encodeURIComponent(seriesUid)}/instances/${encodeURIComponent(sopUid)}`;
+    const frameRes = await fetch(frameUrl, {
+      headers: { Accept: "application/dicom", ...headers },
+    });
     if (!frameRes.ok) {
       throw new Error(`PACS WADO-RS instance download failed (${sopUid}): HTTP ${frameRes.status}`);
     }

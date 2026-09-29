@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import type { ViewerRulerMeasurement } from "./components/imaging/ShadowAnalystImageSlider";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { readDenteClinicToken } from "./lib/safeLocalStorage";
+import { readDenteClinicToken, readDenteStaffToken } from "./lib/safeLocalStorage";
 import { decodeHeicImage } from "./services/imaging/heicDecoder";
 import { logger } from "./utils/logger";
 
@@ -122,7 +122,7 @@ function imagingDescriptionTemplate(
 	return body.join("\n");
 }
 
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { lazyWithRetry } from "./lib/lazyWithRetry";
 // Русское склонение счётного слова: «1 находка», «2 находки», «5 находок».
 import { countLabel } from "./AppHelpers";
@@ -491,6 +491,99 @@ export function ImagingView(props: ImagingViewProps) {
 	const [isPanoramicWindowOpen, setIsPanoramicWindowOpen] = useState(false);
 	const [isMobileImagingMenuOpen, setIsMobileImagingMenuOpen] = useState(false);
 	const mobileImagingMenuRef = useRef<HTMLDivElement | null>(null);
+
+	const authHeaders = useMemo(() => {
+		const clinicToken = readDenteClinicToken();
+		const staffToken = readDenteStaffToken();
+		const token = auth?.token || staffToken || clinicToken;
+		const headers: Record<string, string> = {};
+		if (clinicToken) headers["x-dente-clinic-token"] = clinicToken;
+		if (staffToken) headers["x-dente-staff-token"] = staffToken;
+		if (token) headers.Authorization = `Bearer ${token}`;
+		return headers;
+	}, [auth?.token]);
+
+	const [isDicomwebLoading, setIsDicomwebLoading] = useState(false);
+	const [dicomwebLoadProgress, setDicomwebLoadProgress] = useState<string | null>(null);
+
+	const handleLoadFromDicomweb = useCallback(async () => {
+		if (!selectedImagingStudy) return;
+		setIsDicomwebLoading(true);
+		setDicomwebLoadProgress("Подключение к DICOMweb WADO-RS...");
+		try {
+			const apiBase = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
+			const studyAny = selectedImagingStudy as Record<string, unknown>;
+			let studyUid = (studyAny.dicomStudyUid ?? studyAny.studyInstanceUid ?? studyAny.studyUid) as string | undefined;
+			let seriesUid = (studyAny.dicomSeriesUid ?? studyAny.seriesInstanceUid ?? studyAny.seriesUid) as string | undefined;
+
+			if (!studyUid) {
+				const qidoUrl = `${apiBase}/api/dicomweb/studies${activePatient?.id ? `?PatientID=${encodeURIComponent(activePatient.id)}` : ""}`;
+				const qidoRes = await fetch(qidoUrl, {
+					headers: { Accept: "application/dicom+json", ...authHeaders },
+				});
+				if (qidoRes.ok) {
+					const studies = (await qidoRes.json()) as Array<Record<string, { Value?: unknown[] }>>;
+					if (Array.isArray(studies) && studies.length > 0) {
+						studyUid = studies[0]?.["0020000D"]?.Value?.[0] as string | undefined;
+					}
+				}
+			}
+
+			if (!studyUid) {
+				throw new Error("Не найден UID исследования КТ в DICOMweb PACS.");
+			}
+
+			if (!seriesUid) {
+				const seriesRes = await fetch(`${apiBase}/api/dicomweb/studies/${encodeURIComponent(studyUid)}/series`, {
+					headers: { Accept: "application/dicom+json", ...authHeaders },
+				});
+				if (seriesRes.ok) {
+					const seriesList = (await seriesRes.json()) as Array<Record<string, { Value?: unknown[] }>>;
+					if (Array.isArray(seriesList) && seriesList.length > 0) {
+						seriesUid = seriesList[0]?.["0020000E"]?.Value?.[0] as string | undefined;
+					}
+				}
+			}
+
+			if (!seriesUid) {
+				throw new Error("Не найдена серия снимков в исследовании PACS.");
+			}
+
+			setDicomwebLoadProgress("Загрузка метаданных серии WADO-RS...");
+			const metaRes = await fetch(`${apiBase}/api/dicomweb/studies/${encodeURIComponent(studyUid)}/series/${encodeURIComponent(seriesUid)}/metadata`, {
+				headers: { Accept: "application/dicom+json", ...authHeaders },
+			});
+			if (!metaRes.ok) {
+				throw new Error(`Ошибка загрузки метаданных серии: HTTP ${metaRes.status}`);
+			}
+			const metaJson = (await metaRes.json()) as Array<Record<string, { Value?: unknown[] }>>;
+			if (!Array.isArray(metaJson) || metaJson.length === 0) {
+				throw new Error("В серии DICOMweb не найдено кадров.");
+			}
+
+			const wadoImageIds: string[] = [];
+			for (const item of metaJson) {
+				const sopUid = item?.["00080018"]?.Value?.[0] as string | undefined;
+				if (sopUid) {
+					const wadoUrl = `${apiBase}/api/dicomweb/studies/${encodeURIComponent(studyUid)}/series/${encodeURIComponent(seriesUid)}/instances/${encodeURIComponent(sopUid)}`;
+					wadoImageIds.push(`wadouri:${wadoUrl}`);
+				}
+			}
+
+			if (wadoImageIds.length === 0) {
+				throw new Error("Не удалось сформировать адреса WADO-RS для кадров серии.");
+			}
+
+			setLocalImageIds(wadoImageIds);
+			showToast(`Загружено ${wadoImageIds.length} срезов из DICOMweb PACS`, "success");
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : "Сбой загрузки из DICOMweb";
+			showToast(msg, "error");
+		} finally {
+			setIsDicomwebLoading(false);
+			setDicomwebLoadProgress(null);
+		}
+	}, [selectedImagingStudy, activePatient?.id, authHeaders]);
 
 	const handleCameraPhotoCapture = async (
 		event: React.ChangeEvent<HTMLInputElement>,
@@ -1525,37 +1618,69 @@ export function ImagingView(props: ImagingViewProps) {
 										<Cornerstone3DViewer
 											imageIds={localImageIds}
 											patientId={activePatient?.id ?? null}
+											patientName={activePatient?.name ?? activePatient?.fullName ?? undefined}
+											studyDate={selectedImagingStudy?.capturedAt ? new Date(selectedImagingStudy.capturedAt).toLocaleDateString("ru-RU") : undefined}
+											authHeaders={authHeaders}
 										/>
 									</Suspense>
 								) : selectedImagingStudy?.kind === "cbct" ? (
-									/*
-                            КЛКТ: раньше под загрузчиком стоял просмотрщик-обманка.
-
-                            Ему подсовывали адрес wadouri:http://localhost:3000/
-                            api/dicomweb/... — порт 3000, которого у нас нет
-                            (сервер отвечает на 4100), и маршрута /api/dicomweb
-                            в API тоже нет. Сверху лежали opacity-50 и
-                            pointer-events-none: серое неотзывчивое полотно,
-                            похожее на загружающийся снимок. Врач ждал, пока
-                            «прогрузится» то, что не могло прогрузиться никогда.
-
-                            Пока сервер не отдаёт срезы, честно говорим, что
-                            нужно сделать: открыть архив с диска. Загрузчик
-                            рядом, и он работает — после выбора папки срезы
-                            попадают в localImageIds и рисуются настоящим
-                            просмотрщиком ветвью выше.
-                          */
 									<div className="w-full h-full flex flex-col gap-4 p-4">
+										{/* 1-click CBCT Quick Launch Action Bar per BUG-007 / BUG-009 */}
+										<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+											<div className="flex flex-col gap-1 text-left">
+												<div className="flex items-center gap-2">
+													<span className="inline-block w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse" />
+													<strong className="text-sm font-semibold text-[var(--ink)]">
+														Исследование КЛКТ: {selectedImagingStudy.title || "Томограмма 3D"}
+													</strong>
+												</div>
+												<p className="text-xs text-[var(--muted)]">
+													Запустите 3D-разбор в 1 клик, откройте просмотрщик или загрузите срезы из PACS WADO-RS
+												</p>
+											</div>
+
+											<div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+												<button
+													type="button"
+													onClick={() => setIsCbctStudioOpen(true)}
+													className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer flex-1 sm:flex-none"
+													title="Открыть Romexis 3D Студию с панорамой, осями и расчётом безопасности нерва"
+												>
+													<Sparkles size={14} className="shrink-0" />
+													<span>3D Студия имплантации</span>
+												</button>
+
+												<button
+													type="button"
+													onClick={() => setIsCbctWorkspaceOpen(true)}
+													className="px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--surface-50)] hover:bg-[var(--surface-100)] text-[var(--ink)] transition-colors flex items-center justify-center gap-1.5 cursor-pointer flex-1 sm:flex-none"
+													title="Открыть Cornerstone3D MPR просмотрщик"
+												>
+													<Activity size={14} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
+													<span>Cornerstone3D</span>
+												</button>
+
+												<button
+													type="button"
+													onClick={handleLoadFromDicomweb}
+													disabled={isDicomwebLoading}
+													className="px-3 py-2 text-xs font-semibold rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 flex-1 sm:flex-none"
+													title="Запросить метаданные и срезы через WADO-RS"
+												>
+													<RefreshCw size={14} className={`shrink-0 ${isDicomwebLoading ? "animate-spin" : ""}`} />
+													<span>{isDicomwebLoading ? (dicomwebLoadProgress ?? "Загрузка...") : "Загрузить из PACS"}</span>
+												</button>
+											</div>
+										</div>
+
 										<Suspense fallback={null}>
 											<DicomArchiveUploader onImagesLoaded={setLocalImageIds} />
 										</Suspense>
-										<div className="imaging-cbct-hint">
-											<strong>Срезы КЛКТ открываются с диска</strong>
+
+										<div className="imaging-cbct-hint p-3 rounded-lg border border-dashed border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--muted)] flex items-start gap-2.5">
+											<div className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-1.5 shrink-0" />
 											<p>
-												Программа пока не хранит томограммы у себя: на сервере
-												лежит только карточка исследования. Выберите папку с
-												файлами DICOM выше — срезы откроются в просмотрщике с
-												измерениями и осями.
+												<strong>Подключение DICOMweb WADO-RS активно.</strong> Срезы КЛКТ формируются по адресу <code>{`${import.meta.env.VITE_API_URL ?? ""}/api/dicomweb/...`}</code>. Исследования могут открываться напрямую через WADO-RS из архива клиники, в Romexis 3D Студии с авто-определением зубной дуги, либо загружаться из локальной папки / ZIP-архива.
 											</p>
 										</div>
 									</div>
@@ -3123,7 +3248,10 @@ export function ImagingView(props: ImagingViewProps) {
 						isOpen={true}
 						onClose={() => setIsCbctWorkspaceOpen(false)}
 						patientId={activePatient?.id ?? null}
-						{...(activePatient?.fullName ? { patientName: activePatient.fullName } : {})}
+						patientName={activePatient?.name ?? activePatient?.fullName ?? undefined}
+						studyDate={selectedImagingStudy?.capturedAt ? new Date(selectedImagingStudy.capturedAt).toLocaleDateString("ru-RU") : undefined}
+						authHeaders={authHeaders}
+						imageIds={localImageIds}
 					/>
 				</Suspense>
 			)}
@@ -3133,8 +3261,9 @@ export function ImagingView(props: ImagingViewProps) {
 					<CbctMprImplantStudioModal
 						isOpen={true}
 						onClose={() => setIsCbctStudioOpen(false)}
-						patientName={activePatient?.fullName ?? "3D КЛКТ исследование"}
+						patientName={activePatient?.name ?? activePatient?.fullName ?? "3D КЛКТ исследование"}
 						patientId={activePatient?.id}
+						study={selectedImagingStudy as any}
 						onApplyToDiary043={(diaryText) => {
 							if (!diaryText) return;
 							try {
