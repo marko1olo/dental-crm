@@ -470,38 +470,19 @@ export function drawObliqueCrosshairWithRotationHandles(
 	ctx.stroke();
 	ctx.restore();
 
-	// 3. Central Reticle: Minecraft-Style Target Crosshair (Span 15-16px, line 1.9px, outer halo 3.6px)
-	// Centered within an expansive 30-32px concentric aperture (diameter ~62px) of completely clear anatomy
-	const microArm = 7.5; // span = 15.0px (7.5px in each direction)
+	// 3. Central Reticle: Minimal Neutral Gray Plus (1-1.2px wide, neutral gray, zero glow, unobtrusive over anatomy)
+	// Centered within an expansive 30-32px concentric aperture of clear anatomy
+	const microArm = 4.5; // span = 9.0px (4.5px in each direction)
 	ctx.save();
-	ctx.lineCap = "square";
-	// Pass 1: Dark outer halo contour (3.6px wide) for instant high-contrast visual lock
-	ctx.shadowColor = invertColors ? "rgba(255, 255, 255, 0.95)" : "rgba(0, 0, 0, 0.95)";
-	ctx.shadowBlur = 3;
-	ctx.strokeStyle = invertColors ? "rgba(255, 255, 255, 0.95)" : "rgba(9, 9, 11, 0.95)";
-	ctx.lineWidth = 3.6;
-	ctx.beginPath();
-	// Arm 1 halo
-	ctx.moveTo(centerPx.x - microArm * cosA, centerPx.y - microArm * sinA);
-	ctx.lineTo(centerPx.x + microArm * cosA, centerPx.y + microArm * sinA);
-	// Arm 2 halo
-	ctx.moveTo(centerPx.x - microArm * sinA, centerPx.y + microArm * cosA);
-	ctx.lineTo(centerPx.x + microArm * sinA, centerPx.y - microArm * cosA);
-	ctx.stroke();
-
-	// Pass 2: Sharp colored inner Minecraft crosshair arms (1.9px wide)
+	ctx.lineCap = "butt";
 	ctx.shadowBlur = 0;
-	ctx.lineWidth = 1.9;
-	// Arm 1 (Axis 1 color)
-	ctx.strokeStyle = axisColor1;
+	ctx.lineWidth = 1.2;
+	ctx.strokeStyle = invertColors ? "rgba(82, 82, 91, 0.85)" : "rgba(161, 161, 170, 0.75)";
 	ctx.beginPath();
+	// Arm 1
 	ctx.moveTo(centerPx.x - microArm * cosA, centerPx.y - microArm * sinA);
 	ctx.lineTo(centerPx.x + microArm * cosA, centerPx.y + microArm * sinA);
-	ctx.stroke();
-
-	// Arm 2 (Axis 2 color)
-	ctx.strokeStyle = axisColor2;
-	ctx.beginPath();
+	// Arm 2
 	ctx.moveTo(centerPx.x - microArm * sinA, centerPx.y + microArm * cosA);
 	ctx.lineTo(centerPx.x + microArm * sinA, centerPx.y - microArm * cosA);
 	ctx.stroke();
