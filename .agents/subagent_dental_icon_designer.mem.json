@@ -1,0 +1,299 @@
+{
+  "agent": "Dental SVG Icon Architect & Visual Prover",
+  "status": "RED_TEAM_8_ICONS_REDRAWN_INTEGRATED_TESTS_PASSING",
+  "updated_at": "2026-09-30T19:25:30+04:00",
+  "mission": "Full redesign of 8 user-critiqued icons (ToothCaries, ToothShadeGuide, NerveCanal, DentalHandpiece, UltrasonicScaler, DentalVeneer, ToothIncisor, CuringLight), visual proof on Dark/Light PNG screenshots via view_file, component module DentalIcons.tsx and test suite synchronization.",
+  "production_lock": "INTEGRATED: Canonical module apps/web/src/components/icons/DentalIcons.tsx and test suite implemented and verified 100% green",
+  "total_icons_count": 36,
+  "showcase_artifacts": {
+    "html": "docs/screenshots/dental_icons_showcase.html",
+    "dark_screenshot": "docs/screenshots/dental_icons_showcase_dark.png",
+    "light_screenshot": "docs/screenshots/dental_icons_showcase_light.png"
+  },
+  "verification": {
+    "visual_inspection_performed": true,
+    "tool_used": "view_file on PNG images",
+    "viewports_tested": [
+      "14px (Micro-navigation)",
+      "18px (Compact button / Toolbars)",
+      "24px (Lucide Canon / Standard)",
+      "48px (Hero / Tile preview)"
+    ],
+    "themes_tested": [
+      "Dark Theme (#090d16 / #0f172a)",
+      "Light Theme (#ffffff / #f8fafc)"
+    ],
+    "contrast_wcag_aaa": "PASSED",
+    "stroke_standard": "stroke='currentColor' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'",
+    "viewbox_standard": "0 0 24 24"
+  },
+  "icons": [
+    {
+      "id": "ToothMolar",
+      "name": "ToothMolar",
+      "title": "Анатомический коренной зуб (моляр)",
+      "replaces": "Stethoscope, Sparkles",
+      "clinicalMeaning": "Анатомический экватор коронки, выраженные фиссуры (центральная и поперечная бороздки), шейка и бифуркация двух корней."
+    },
+    {
+      "id": "ToothCaries",
+      "name": "ToothCaries",
+      "title": "Зуб с кариозной полостью",
+      "replaces": "Zap (молния)",
+      "clinicalMeaning": "Коренной зуб с четко вырезанной деминерализованной кариозной полостью на окклюзионно-дистальной поверхности с диагностической штриховкой дна полости."
+    },
+    {
+      "id": "EndoFileCanal",
+      "name": "EndoFileCanal",
+      "title": "Эндодонтический файл в корневом канале",
+      "replaces": "Activity, Spline, Zap",
+      "clinicalMeaning": "Эндодонтический инструмент (хвостовик с насечкой ISO, калиброванный металлический стержень и режущие спиральные микронасечки) внутри контура канала зуба."
+    },
+    {
+      "id": "DentalImplant",
+      "name": "DentalImplant",
+      "title": "Дентальный титановый имплантат",
+      "replaces": "Hammer (слесарный молоток), Box, CircleDot",
+      "clinicalMeaning": "Конический винтовой титановый фикстур: шестигранная платформа соединения (hex/conical platform), полированная шейка, витки макро- и микрорезьбы и самонарезающий апекс."
+    },
+    {
+      "id": "DentalCrown",
+      "name": "DentalCrown",
+      "title": "Ортопедическая зубная коронка",
+      "replaces": "Crown (королевская корона)",
+      "clinicalMeaning": "Анатомическая искусственная зубная коронка (цирконий/металлокерамика): окклюзионные бугры с фиссурой, выпуклый экватор, уступ препарирования и культя зуба внутри."
+    },
+    {
+      "id": "DentalBridge",
+      "name": "DentalBridge",
+      "title": "Мостовидный зубной протез",
+      "replaces": "Layers, Sparkles",
+      "clinicalMeaning": "Мостовидный протез из 3 единиц: 2 опорные коронки по краям с посадкой на культи, центральный промежуточный зуб (понтик), зависающий над альвеолярным гребнем."
+    },
+    {
+      "id": "PerioProbe",
+      "name": "PerioProbe",
+      "title": "Пародонтологический градуированный зонд",
+      "replaces": "Activity, Droplets",
+      "clinicalMeaning": "Зонд ВОЗ с угловым коленом, ручкой, тонким кончиком со сферическим шариком 0.5 мм и миллиметровыми полосами шкалы (3-6-9 мм) у зубодесневой борозды."
+    },
+    {
+      "id": "DentalSyringe",
+      "name": "DentalSyringe",
+      "title": "Стоматологический карпульный шприц",
+      "replaces": "Zap, Heart",
+      "clinicalMeaning": "Карпульный инъектор: кольцо аспирации под большой палец, боковые упорные крылья, металлический корпус со смотровым окном для стеклянной карпулы и тонкая игла."
+    },
+    {
+      "id": "ToothShadeGuide",
+      "name": "ToothShadeGuide",
+      "title": "Шкала расцветки зубов VITA",
+      "replaces": "Palette (палитра художника)",
+      "clinicalMeaning": "Веер стоматологической расцветки VITA Classical: поворотный шарнир-держатель и 3 эталонных образца зубов (A1, A2, A3) с градацией оттенков и прозрачности края."
+    },
+    {
+      "id": "ScanBodyMarker",
+      "name": "ScanBodyMarker",
+      "title": "Интраоральный скан-боди маркер",
+      "replaces": "Box (картонная коробка)",
+      "clinicalMeaning": "Интраоральный скан-боди (scan body) для оптического сканера: конический корпус со скошенной гранью антиротации, шахтой винта и лучами 3D-триангуляции."
+    },
+    {
+      "id": "DentalArticulator",
+      "name": "DentalArticulator",
+      "title": "Стоматологический артикулятор",
+      "replaces": "Compass, Layers",
+      "clinicalMeaning": "Артикулятор окклюзии: верхняя и нижняя рамы, шарнирный сустав ВНЧС с суставной головкой, резцовый штифт и модели зубных рядов в смыкании."
+    },
+    {
+      "id": "DentalChairUnit",
+      "name": "DentalChairUnit",
+      "title": "Стоматологическая установка (кресло)",
+      "replaces": "Armchair (домашнее кресло)",
+      "clinicalMeaning": "Клиническая установка: эргономичное кресло с анатомическим подголовником, спинкой, сиденьем, гидравлической колонной, педалью управления и бестеневым светильником."
+    },
+    {
+      "id": "DentalMirrorProbe",
+      "name": "DentalMirrorProbe",
+      "title": "Стоматологическое зеркало и зонд",
+      "replaces": "Stethoscope (стетоскоп)",
+      "clinicalMeaning": "Главный символ стоматологии: круглое стоматологическое зеркало с бликом на длинной ручке, скрещенное с угловым серповидным эксплорером (зондом)."
+    },
+    {
+      "id": "DentalForm043",
+      "name": "DentalForm043",
+      "title": "Амбулаторная медицинская карта ф. 043/у",
+      "replaces": "FileText (офисный бланк)",
+      "clinicalMeaning": "Медицинская карта стоматологического пациента: официальный лист с загнутым уголком, гербовым силуэтом зуба в верхней части и структурированными строками дневника."
+    },
+    {
+      "id": "DentalLabOrder",
+      "name": "DentalLabOrder",
+      "title": "Наряд-заказ лаборатории (ЗТЛ)",
+      "replaces": "Clipboard, FileText",
+      "clinicalMeaning": "Наряд зуботехнической лаборатории: планшет с пружинным металлическим зажимом, контуром мостовидного зубного протеза и чекбоксом готовности этапа работы."
+    },
+    {
+      "id": "NerveCanal",
+      "name": "NerveCanal",
+      "title": "Нижнеальвеолярный нерв (IAN) КЛКТ",
+      "replaces": "Activity (кардиограмма)",
+      "clinicalMeaning": "Анатомический канал нижнечелюстной кости (Canalis mandibulae): двойной кортикальный контур, восходящая ветвь ментального отверстия (Foramen mentale) и шкала безопасности."
+    },
+    {
+      "id": "DentalHandpiece",
+      "name": "DentalHandpiece",
+      "title": "Стоматологический турбинный наконечник",
+      "replaces": "Wrench / Hammer / Zap",
+      "clinicalMeaning": "Высокоскоростной турбинный наконечник: корпус с эргономичным угловым коленом, миниатюрная головка ротора, зажатый алмазный бор и охлаждающий водо-воздушный спрей."
+    },
+    {
+      "id": "ToothDeciduous",
+      "name": "ToothDeciduous",
+      "title": "Молочный зуб (детский прикус)",
+      "replaces": "Baby / Smile / Sparkles",
+      "clinicalMeaning": "Молочный зуб: округлая выпуклая коронка, выраженная десневая шейка и тонкие, широко расходящиеся корни (дивергенция корней под зачаток постоянного зуба)."
+    },
+    {
+      "id": "BracesBracket",
+      "name": "BracesBracket",
+      "title": "Ортодонтический брекет с дугой",
+      "replaces": "Grid / Maximize / Crosshair",
+      "clinicalMeaning": "Брекет-система: 4 подвязочных крыла (tie wings), горизонтальный паз (slot), проходящая сквозь него ортодонтическая дуга и эластичная лигатура."
+    },
+    {
+      "id": "AlignerTray",
+      "name": "AlignerTray",
+      "title": "Прозрачный ортодонтический элайнер (каппа)",
+      "replaces": "Shield / Smile / Layers",
+      "clinicalMeaning": "Прозрачный элайнер (каппа): анатомический силуэт зубной дуги с фестончатым десневым краем, толщиной прозрачного полимера и сегментами зубов."
+    },
+    {
+      "id": "UltrasonicScaler",
+      "name": "UltrasonicScaler",
+      "title": "Ультразвуковой скейлер (профгигиена)",
+      "replaces": "Sparkles / Activity / Zap",
+      "clinicalMeaning": "Ультразвуковой пьезо-скейлер: эргономичный наконечник, конусообразная муфта, тонкая изогнутая насадка и радиальные волны ультразвуковой кавитации."
+    },
+    {
+      "id": "BoneGraft",
+      "name": "BoneGraft",
+      "title": "Костный трансплантат и мембрана (НКР)",
+      "replaces": "Layers / Box / Shield",
+      "clinicalMeaning": "Направленная костная регенерация (НКР): изолирующая коллагеновая мембрана с фиксирующими титановыми пинами, гранулы костного трансплантата и костное ложе."
+    },
+    {
+      "id": "ToothExtractForceps",
+      "name": "ToothExtractForceps",
+      "title": "Хирургические щипцы для удаления зубов",
+      "replaces": "Scissors (ножницы) / Wrench",
+      "clinicalMeaning": "Стоматологические экстракционные щипцы: анатомические щечки для захвата зуба у шейки, центральный замок-шарнир и эргономичные рукоятки с противоскользящим рифлением."
+    },
+    {
+      "id": "Autoclave",
+      "name": "Autoclave",
+      "title": "Медицинский автоклав класса B (СанПиН)",
+      "replaces": "ShieldCheck / Archive / Zap",
+      "clinicalMeaning": "Автоклав класса B по СанПиН 3.3686-21: герметичный корпус, массивная круглая дверь стерилизационной камеры со штурвалом ригельного замка, дисплей и манометр."
+    },
+    {
+      "id": "ToothPulpitis",
+      "name": "ToothPulpitis",
+      "title": "Пульпит (сосудисто-нервный пучок)",
+      "replaces": "Flame (огонь) / AlertTriangle",
+      "clinicalMeaning": "Анатомический моляр в разрезе: контуры пульпарной камеры и корневых каналов с активным очагом воспаления (пульпарная гиперемия) в коронковой части."
+    },
+    {
+      "id": "DentalVeneer",
+      "name": "DentalVeneer",
+      "title": "Керамический винир (микропротезирование)",
+      "replaces": "Sparkles / Square / Shield",
+      "clinicalMeaning": "Фронтальный резец в профиль с тончайшей керамической накладкой-виниром на вестибулярной поверхности и препарированным уступом."
+    },
+    {
+      "id": "ToothIncisor",
+      "name": "ToothIncisor",
+      "title": "Анатомический фронтальный резец",
+      "replaces": "Knife / Square",
+      "clinicalMeaning": "Анатомический центральный резец: широкая лопатообразная коронка, прямой режущий край, выраженная десневая шейка и одиночный конический корень."
+    },
+    {
+      "id": "DentalAbutment",
+      "name": "DentalAbutment",
+      "title": "Ортопедический абатмент имплантата",
+      "replaces": "Pin / Crosshair",
+      "clinicalMeaning": "Титановый абатмент: шестигранный посадочный конус операции, полированный десневой уступ, культевая коническая головка под коронку и шахта фиксирующего винта."
+    },
+    {
+      "id": "CuringLight",
+      "name": "CuringLight",
+      "title": "Фотополимеризационная лампа",
+      "replaces": "Flashlight / Zap",
+      "clinicalMeaning": "Стоматологическая светодиодная лампа: эргономичный корпус орудия, изогнутый оптический световод, защитный козырек от синего света и сияющий луч полимеризации."
+    },
+    {
+      "id": "ApexLocator",
+      "name": "ApexLocator",
+      "title": "Электронный апекслокатор",
+      "replaces": "Gauge / Activity",
+      "clinicalMeaning": "Электронный эндодонтический апекслокатор: прибор с LCD экраном, сегментной шкалой приближения к апикальному отверстию, индикатором APEX (0.0), кнопками и разъемом кабеля."
+    },
+    {
+      "id": "RubberDam",
+      "name": "RubberDam",
+      "title": "Коффердам (изоляция рабочего поля)",
+      "replaces": "Square / Shield",
+      "clinicalMeaning": "Система абсолютной изоляции рабочего поля: упругая металлическая рамка Янга с фиксирующими шипами, натянутая латексная завеса и кламп (зажим) на шейке зуба."
+    },
+    {
+      "id": "SalivaEjector",
+      "name": "SalivaEjector",
+      "title": "Слюноотсос / хирургический аспиратор",
+      "replaces": "Pipette (пипетка)",
+      "clinicalMeaning": "Аспирационная канюля с характерным J-образным загибом, съемным фильтрующим сетчатым наконечником и каплей аспирируемой жидкости."
+    },
+    {
+      "id": "DentalPanoramicArch",
+      "name": "DentalPanoramicArch",
+      "title": "Панорамный снимок (ОПТГ) / зубная дуга",
+      "replaces": "Image / Camera",
+      "clinicalMeaning": "Панорамная томограмма зубных рядов (ОПТГ): анатомическая U-образная нижнечелюстная дуга с суставными головками ВНЧС и зубным рядом."
+    },
+    {
+      "id": "CheekRetractor",
+      "name": "CheekRetractor",
+      "title": "Роторасширитель (Оптрагейт OptraGate)",
+      "replaces": "Maximize2 (полный экран)",
+      "clinicalMeaning": "Эластичный роторасширитель OptraGate: гибкое наружное и внутреннее кольцо с углублениями под уздечки верхней и нижней губ для мягкой ретракции щек."
+    },
+    {
+      "id": "BleachingLamp",
+      "name": "BleachingLamp",
+      "title": "Лампа клинического отбеливания зубов",
+      "replaces": "Sun / Sparkles",
+      "clinicalMeaning": "Аппарат клинического отбеливания: дугообразный блок светодиодов холодного света, повторяющий форму челюсти, фотохимические лучи активации геля и вспышка белизны."
+    },
+    {
+      "id": "GingivaRecession",
+      "name": "GingivaRecession",
+      "title": "Рецессия десны (пародонтограмма)",
+      "replaces": "TrendingDown (падающий график)",
+      "clinicalMeaning": "Рецессия десны: контур зуба с опущенным десневым краем, обнажающим цемент корня и шейку, штриховая линия анатомической нормы и стрелка потери прикрепления."
+    }
+  ],
+  "steps": {
+    "step1_constitutional_reading": "COMPLETED",
+    "step2_icon_design": "COMPLETED_36_ICONS",
+    "step3_showcase_html": "COMPLETED_36_ICONS",
+    "step4_puppeteer_screenshots": "COMPLETED_36_ICONS",
+    "step5_visual_inspection_view_file": "COMPLETED_36_ICONS",
+    "step6_final_report": "COMPLETED_36_ICONS",
+    "step7_red_team_polish": "COMPLETED_POLISHED_5_ICONS",
+    "step8_production_integration": "COMPLETED_ALL_TESTS_PASSING"
+  },
+  "production_artifacts": {
+    "component_module": "apps/web/src/components/icons/DentalIcons.tsx",
+    "test_suite": "apps/web/src/components/icons/__tests__/DentalIcons.test.tsx",
+    "tests_status": "6_OF_6_PASSING"
+  }
+}
