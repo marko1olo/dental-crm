@@ -23,6 +23,9 @@ import {
 	computeVolume3DRotationMatrix,
 	CbctVolume3DViewport,
 	intersectRayAABB,
+	DEFAULT_VOLUME_3D_CLIPPING_BOX,
+	isPointInsideClippingBox,
+	CBCT_VOLUME_3D_FRAGMENT_SHADER,
 } from "../mpr/CbctVolume3DViewport";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -319,6 +322,133 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 			assert.ok(source.includes("intersectRayAABB("), "Must call intersectRayAABB in ray loop");
 			assert.ok(source.includes("requestAnimationFrame("), "Must use requestAnimationFrame for smooth 60 FPS throttling");
 			assert.ok(source.includes("isInteracting"), "Must support adaptive resolution via isInteracting state");
+		});
+	});
+
+	// ─── 7. 3D VOLUME GPU CLIPPING BOX & SPINE/OCCIPUT CUT INVARIANTS ─────────
+	describe("7. 3D Volume GPU Clipping Box & Spine/Occiput Cut Invariants", () => {
+		it("DEFAULT_VOLUME_3D_CLIPPING_BOX defines full unclipped [0,0,0] to [1,1,1] UVW volume", () => {
+			assert.deepStrictEqual(DEFAULT_VOLUME_3D_CLIPPING_BOX.clipMin, [0.0, 0.0, 0.0]);
+			assert.deepStrictEqual(DEFAULT_VOLUME_3D_CLIPPING_BOX.clipMax, [1.0, 1.0, 1.0]);
+		});
+
+		it("isPointInsideClippingBox correctly clips out cervical vertebrae (Z-min cut)", () => {
+			const spineCutMin: [number, number, number] = [0.0, 0.0, 0.28];
+			const fullMax: [number, number, number] = [1.0, 1.0, 1.0];
+
+			// Neck / cervical spine voxel at bottom (Z = 0.10) -> must be CLIPPED OUT (false)
+			const isNeckInside = isPointInsideClippingBox([0.5, 0.5, 0.10], spineCutMin, fullMax);
+			assert.strictEqual(isNeckInside, false, "Cervical spine voxel must be clipped out");
+
+			// Mandible / alveolar ridge voxel (Z = 0.45) -> must be KEPT (true)
+			const isJawInside = isPointInsideClippingBox([0.5, 0.5, 0.45], spineCutMin, fullMax);
+			assert.strictEqual(isJawInside, true, "Jaw voxel must be retained inside unclipped volume");
+		});
+
+		it("isPointInsideClippingBox correctly clips out occiput bone (Y-max cut)", () => {
+			const fullMin: [number, number, number] = [0.0, 0.0, 0.0];
+			const occiputCutMax: [number, number, number] = [1.0, 0.72, 1.0];
+
+			// Back of head / occipital bone voxel (Y = 0.88) -> must be CLIPPED OUT (false)
+			const isOcciputInside = isPointInsideClippingBox([0.5, 0.88, 0.5], fullMin, occiputCutMax);
+			assert.strictEqual(isOcciputInside, false, "Occipital bone voxel must be clipped out");
+
+			// Anterior maxilla / anterior dentition voxel (Y = 0.30) -> must be KEPT (true)
+			const isFaceInside = isPointInsideClippingBox([0.5, 0.30, 0.5], fullMin, occiputCutMax);
+			assert.strictEqual(isFaceInside, true, "Anterior facial structures must be retained");
+		});
+
+		it("isPointInsideClippingBox correctly clips coronal plane (X-max cut)", () => {
+			const fullMin: [number, number, number] = [0.0, 0.0, 0.0];
+			const coronalCutMax: [number, number, number] = [0.70, 1.0, 1.0];
+
+			// Right hemi-mandible voxel (X = 0.85) -> must be CLIPPED OUT (false)
+			const isHemiInside = isPointInsideClippingBox([0.85, 0.5, 0.5], fullMin, coronalCutMax);
+			assert.strictEqual(isHemiInside, false, "Contralateral quadrant must be clipped out");
+
+			// Target jaw quadrant (X = 0.35) -> must be KEPT (true)
+			const isTargetInside = isPointInsideClippingBox([0.35, 0.5, 0.5], fullMin, coronalCutMax);
+			assert.strictEqual(isTargetInside, true, "Target quadrant must be retained");
+		});
+
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER contains u_clipMin and u_clipMax uniform declarations", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("uniform vec3 u_clipMin;"),
+				"Must declare uniform vec3 u_clipMin in shader",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("uniform vec3 u_clipMax;"),
+				"Must declare uniform vec3 u_clipMax in shader",
+			);
+		});
+
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER skips voxels outside clipping box in raymarching loop", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("normPos.x < u_clipMin.x || normPos.x > u_clipMax.x") ||
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("u_clipMin.x"),
+				"Shader raymarching loop must check u_clipMin and u_clipMax",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("continue;"),
+				"Shader must advance ray and skip clipped voxels via continue",
+			);
+		});
+
+		it("CbctVolume3DViewport renders interactive clipping controls and sliders in UI", () => {
+			const source = fs.readFileSync(
+				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
+				"utf-8",
+			);
+			assert.ok(source.includes("Срез позвонков (Z-min)"), "Must render spine cut slider label");
+			assert.ok(source.includes("Срез затылка (Y-max)"), "Must render occiput cut slider label");
+			assert.ok(source.includes("Корональный срез (X)"), "Must render coronal cut slider label");
+			assert.ok(source.includes("data-testid=\"cbct-clip-slider-z-min\""), "Must have Z-min slider testid");
+			assert.ok(source.includes("data-testid=\"cbct-clip-slider-y-max\""), "Must have Y-max slider testid");
+			assert.ok(source.includes("data-testid=\"cbct-clip-slider-x\""), "Must have X slider testid");
+			assert.ok(source.includes("data-testid=\"cbct-btn-toggle-clipping\""), "Must have toggle clipping button testid");
+			assert.ok(source.includes("data-testid=\"cbct-btn-reset-clipping\""), "Must have reset clipping button testid");
+			assert.ok(source.includes("data-testid=\"cbct-btn-clip-spine\""), "Must have quick clip spine button testid");
+			assert.ok(source.includes("data-testid=\"cbct-btn-clip-occiput\""), "Must have quick clip occiput button testid");
+		});
+	});
+
+	// ─── 8. ADAPTIVE INTERACTIVE 60 FPS LOD & 4-STEP BONE BISECTION ───────────
+	describe("8. Adaptive Interactive 60 FPS LOD & 4-Step Bone Bisection", () => {
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER defines u_refineSteps uniform for interactive LOD", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("uniform int u_refineSteps;"),
+				"Must declare uniform int u_refineSteps in fragment shader",
+			);
+		});
+
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER executes 4-step bisection refinement when u_refineSteps > 0", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("for (int b = 0; b < 4; b++)"),
+				"Must execute 4-step bisection loop on bone hit",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("u_refineSteps > 0"),
+				"Must guard bisection refinement by u_refineSteps for 60 FPS interactive LOD",
+			);
+		});
+
+		it("CbctVolume3DViewport adapts step size and resolution between interaction and idle beauty pass", () => {
+			const source = fs.readFileSync(
+				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
+				"utf-8",
+			);
+			assert.ok(
+				source.includes("subSample = isInteracting ? (rawWidth > 600 ? 4 : 3) : (rawWidth > 800 ? 2 : 1)"),
+				"Must downsample resolution during drag interaction for 60 FPS on weak GPUs",
+			);
+			assert.ok(
+				source.includes("uniforms.maxSteps, isInteracting ? 45 : 160"),
+				"Must scale maxSteps from 45 during interaction to 160 on mouseUp beauty pass",
+			);
+			assert.ok(
+				source.includes("uniforms.refineSteps, isInteracting ? 0 : 4"),
+				"Must execute 0 bisection steps during interaction and 4 steps on mouseUp",
+			);
 		});
 	});
 });

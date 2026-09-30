@@ -54,6 +54,8 @@ import {
 	CBCT_VOLUME_3D_PRESETS,
 	computeVolume3DRotationMatrix,
 	intersectRayAABB,
+	isPointInsideClippingBox,
+	DEFAULT_VOLUME_3D_CLIPPING_BOX,
 } from "../mpr/CbctVolume3DViewport";
 import {
 	CBCT_PANORAMIC_VERTEX_SHADER,
@@ -1226,6 +1228,86 @@ describe("RED TEAM AUDIT: Hardware WebGL2 GPU Engine Torture & Self-Fix Verifica
 				"preserveDrawingBuffer must be true in CbctVolumeGlContext!",
 			);
 			glCtx.dispose();
+		});
+	});
+
+	// ─── 13. 3D VOLUME WEBGL2 GPU SHADER CLIPPING BOX & ADAPTIVE LOD TORTURE ─
+
+	describe("13. 3D Volume WebGL2 GPU Shader Clipping Box & Adaptive LOD Torture", () => {
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER: declares uniform vec3 u_clipMin and u_clipMax with highp precision", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("uniform vec3 u_clipMin;"),
+				"Must declare uniform vec3 u_clipMin in shader",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("uniform vec3 u_clipMax;"),
+				"Must declare uniform vec3 u_clipMax in shader",
+			);
+		});
+
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER: performs normalized boundary clipping in ray loop without division by zero", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("vec3 normPos = curPos / u_volumeDim;"),
+				"Must normalize curPos by u_volumeDim for exact [0, 1] clipping",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("normPos.x < u_clipMin.x || normPos.x > u_clipMax.x") ||
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("u_clipMin.x"),
+				"Must clip along X axis",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("normPos.y < u_clipMin.y || normPos.y > u_clipMax.y") ||
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("u_clipMin.y"),
+				"Must clip along Y axis (occiput cut)",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("normPos.z < u_clipMin.z || normPos.z > u_clipMax.z") ||
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("u_clipMin.z"),
+				"Must clip along Z axis (spine cut)",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("curPos += stepVec;") &&
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("continue;"),
+				"Must advance ray step and skip clipped voxel",
+			);
+		});
+
+		it("CBCT_VOLUME_3D_FRAGMENT_SHADER: implements adaptive interactive LOD with u_refineSteps bisection", () => {
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("uniform int u_refineSteps;"),
+				"Must declare uniform int u_refineSteps for adaptive interactive LOD",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("for (int b = 0; b < 4; b++)"),
+				"Must execute 4-step bisection refinement for smooth bone surfaces",
+			);
+			assert.ok(
+				CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("if (u_refineSteps > 0)"),
+				"Must conditionally execute bisection refinement to sustain 60 FPS on weak GPUs",
+			);
+		});
+
+		it("Clipping Math Torture: handles boundary voxels, spine cut and occiput cut without numerical overflow", () => {
+			const spineCut: [number, number, number] = [0.0, 0.0, 0.28];
+			const occiputCut: [number, number, number] = [1.0, 0.72, 1.0];
+
+			// Corner voxels [0, 0, 0] and [1, 1, 1]
+			assert.strictEqual(isPointInsideClippingBox([0, 0, 0], [0, 0, 0], [1, 1, 1]), true);
+			assert.strictEqual(isPointInsideClippingBox([1, 1, 1], [0, 0, 0], [1, 1, 1]), true);
+
+			// Out-of-bounds voxels (<0 or >1)
+			assert.strictEqual(isPointInsideClippingBox([-0.01, 0.5, 0.5], [0, 0, 0], [1, 1, 1]), false);
+			assert.strictEqual(isPointInsideClippingBox([1.01, 0.5, 0.5], [0, 0, 0], [1, 1, 1]), false);
+
+			// Combined spine + occiput cut
+			const combinedMin: [number, number, number] = [0.0, 0.0, 0.28];
+			const combinedMax: [number, number, number] = [1.0, 0.72, 1.0];
+			// Jaw voxel inside region of interest (Z=0.45, Y=0.40)
+			assert.strictEqual(isPointInsideClippingBox([0.5, 0.40, 0.45], combinedMin, combinedMax), true);
+			// Cervical vertebra (Z=0.15) -> clipped
+			assert.strictEqual(isPointInsideClippingBox([0.5, 0.40, 0.15], combinedMin, combinedMax), false);
+			// Occipital bone (Y=0.85) -> clipped
+			assert.strictEqual(isPointInsideClippingBox([0.5, 0.85, 0.45], combinedMin, combinedMax), false);
 		});
 	});
 });

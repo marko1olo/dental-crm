@@ -11,9 +11,39 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Box, Compass, Maximize2, Minimize2, RotateCcw, Sparkles } from "lucide-react";
+import { Box, Compass, Maximize2, Minimize2, RotateCcw, Scissors, Sparkles } from "lucide-react";
 import type { CbctVoxelVolume, Point3D } from "../cbctMprMath";
 import { downsampleVolumeData } from "../cbctPanoramicReconstructionMath";
+
+export interface Volume3DClippingBox {
+	/** Normalized UVW minimum bounds in range [0, 1] [X_min, Y_min, Z_min] */
+	clipMin: [number, number, number];
+	/** Normalized UVW maximum bounds in range [0, 1] [X_max, Y_max, Z_max] */
+	clipMax: [number, number, number];
+}
+
+export const DEFAULT_VOLUME_3D_CLIPPING_BOX: Volume3DClippingBox = {
+	clipMin: [0.0, 0.0, 0.0],
+	clipMax: [1.0, 1.0, 1.0],
+};
+
+/**
+ * Checks if a normalized point [u, v, w] in [0, 1] is within the clipping box.
+ */
+export function isPointInsideClippingBox(
+	uvw: [number, number, number],
+	clipMin: [number, number, number],
+	clipMax: [number, number, number],
+): boolean {
+	return (
+		uvw[0] >= clipMin[0] &&
+		uvw[0] <= clipMax[0] &&
+		uvw[1] >= clipMin[1] &&
+		uvw[1] <= clipMax[1] &&
+		uvw[2] >= clipMin[2] &&
+		uvw[2] <= clipMax[2]
+	);
+}
 
 export type Volume3DPresetId = "skull" | "dense_bone" | "soft_tissue" | "mip";
 
@@ -77,6 +107,8 @@ export interface CbctVolume3DViewportProps {
 	readonly switcherSlot?: React.ReactNode;
 	readonly isMaximized?: boolean;
 	readonly onToggleMaximize?: () => void;
+	readonly initialClipping?: Partial<Volume3DClippingBox>;
+	readonly onClippingChange?: (clipping: Volume3DClippingBox) => void;
 }
 
 function cleanZero(val: number): number {
@@ -231,6 +263,9 @@ uniform int u_presetMode;      // 0 = surface (skull, dense_bone, soft_tissue), 
 uniform vec3 u_boneColor;      // base bone color (e.g. 240, 225, 200 / 255.0)
 uniform vec3 u_lightDir;       // normalized light direction
 uniform int u_maxSteps;        // 60-140 steps
+uniform vec3 u_clipMin;        // normalized [0, 1] clipping box minimum
+uniform vec3 u_clipMax;        // normalized [0, 1] clipping box maximum
+uniform int u_refineSteps;     // 0 during interaction, 4 on mouseUp
 
 // Analytical Ray-AABB intersection in centered voxel space
 // Box bounds: [-halfDim, halfDim]
@@ -296,6 +331,15 @@ void main() {
     vec3 norm = vec3(0.0);
     
     for (int i = 0; i < actualSteps; i++) {
+        // Interactive 3D Volume Clipping Box (normalized UVW [0, 1])
+        vec3 normPos = curPos / u_volumeDim;
+        if (normPos.x < u_clipMin.x || normPos.x > u_clipMax.x ||
+            normPos.y < u_clipMin.y || normPos.y > u_clipMax.y ||
+            normPos.z < u_clipMin.z || normPos.z > u_clipMax.z) {
+            curPos += stepVec;
+            continue;
+        }
+
         ivec3 vox = ivec3(floor(curPos));
         if (vox.x >= 0 && vox.x < int(u_volumeDim.x) &&
             vox.y >= 0 && vox.y < int(u_volumeDim.y) &&
@@ -313,16 +357,20 @@ void main() {
             } else {
                 if (hu >= u_huMin) {
                     hit = true;
-                    // Sub-voxel bisection refinement (4 steps) to eliminate stair-stepping & grain
-                    vec3 p0 = curPos - stepVec;
-                    vec3 p1 = curPos;
-                    for (int b = 0; b < 4; b++) {
-                        vec3 pm = (p0 + p1) * 0.5;
-                        ivec3 v = clamp(ivec3(floor(pm)), ivec3(0), ivec3(u_volumeDim) - 1);
-                        float h = float(texelFetch(u_volume, v, 0).r);
-                        if (h >= u_huMin) p1 = pm; else p0 = pm;
+                    vec3 hitPos = curPos;
+                    // Sub-voxel bisection refinement (4 steps) on mouseUp (u_refineSteps > 0)
+                    if (u_refineSteps > 0) {
+                        vec3 p0 = curPos - stepVec;
+                        vec3 p1 = curPos;
+                        for (int b = 0; b < 4; b++) {
+                            if (b >= u_refineSteps) break;
+                            vec3 pm = (p0 + p1) * 0.5;
+                            ivec3 v = clamp(ivec3(floor(pm)), ivec3(0), ivec3(u_volumeDim) - 1);
+                            float h = float(texelFetch(u_volume, v, 0).r);
+                            if (h >= u_huMin) p1 = pm; else p0 = pm;
+                        }
+                        hitPos = (p0 + p1) * 0.5;
                     }
-                    vec3 hitPos = (p0 + p1) * 0.5;
                     hitDepth = float(i + 1) / float(actualSteps);
                     
                     // Central differences with 2-voxel baseline for smooth anatomical gradients
@@ -393,6 +441,9 @@ interface WebGlVolume3DState {
 		boneColor: WebGLUniformLocation | null;
 		lightDir: WebGLUniformLocation | null;
 		maxSteps: WebGLUniformLocation | null;
+		clipMin: WebGLUniformLocation | null;
+		clipMax: WebGLUniformLocation | null;
+		refineSteps: WebGLUniformLocation | null;
 	};
 }
 
@@ -470,6 +521,9 @@ function initWebGl2VolumeRaymarching(gl: WebGL2RenderingContext): WebGlVolume3DS
 			boneColor: gl.getUniformLocation(program, "u_boneColor"),
 			lightDir: gl.getUniformLocation(program, "u_lightDir"),
 			maxSteps: gl.getUniformLocation(program, "u_maxSteps"),
+			clipMin: gl.getUniformLocation(program, "u_clipMin"),
+			clipMax: gl.getUniformLocation(program, "u_clipMax"),
+			refineSteps: gl.getUniformLocation(program, "u_refineSteps"),
 		},
 	};
 }
@@ -485,6 +539,7 @@ function renderWebGl2VolumeRaymarching(
 	width: number,
 	height: number,
 	isInteracting: boolean,
+	clipping: Volume3DClippingBox = DEFAULT_VOLUME_3D_CLIPPING_BOX,
 ) {
 	const { gl, program, vao, uniforms } = state;
 	const dim = volume.dimensions;
@@ -592,7 +647,20 @@ function renderWebGl2VolumeRaymarching(
 		lightDir[2]! / lightLen,
 	);
 
-	gl.uniform1i(uniforms.maxSteps, isInteracting ? 55 : 160);
+	gl.uniform3f(
+		uniforms.clipMin,
+		clipping.clipMin[0],
+		clipping.clipMin[1],
+		clipping.clipMin[2],
+	);
+	gl.uniform3f(
+		uniforms.clipMax,
+		clipping.clipMax[0],
+		clipping.clipMax[1],
+		clipping.clipMax[2],
+	);
+	gl.uniform1i(uniforms.refineSteps, isInteracting ? 0 : 4);
+	gl.uniform1i(uniforms.maxSteps, isInteracting ? 45 : 160);
 
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
@@ -608,6 +676,8 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	switcherSlot,
 	isMaximized = false,
 	onToggleMaximize,
+	initialClipping,
+	onClippingChange,
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const glStateRef = useRef<WebGlVolume3DState | null>(null);
@@ -617,6 +687,73 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	const [zoom, setZoom] = useState<number>(1.0);
 	const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [isInteracting, setIsInteracting] = useState<boolean>(false);
+	const [clipping, setClipping] = useState<Volume3DClippingBox>({
+		clipMin: initialClipping?.clipMin
+			? [initialClipping.clipMin[0], initialClipping.clipMin[1], initialClipping.clipMin[2]]
+			: [0.0, 0.0, 0.0],
+		clipMax: initialClipping?.clipMax
+			? [initialClipping.clipMax[0], initialClipping.clipMax[1], initialClipping.clipMax[2]]
+			: [1.0, 1.0, 1.0],
+	});
+	const [isClippingOpen, setIsClippingOpen] = useState<boolean>(false);
+
+	const hasActiveClipping =
+		clipping.clipMin[0] > 0.001 ||
+		clipping.clipMin[1] > 0.001 ||
+		clipping.clipMin[2] > 0.001 ||
+		clipping.clipMax[0] < 0.999 ||
+		clipping.clipMax[1] < 0.999 ||
+		clipping.clipMax[2] < 0.999;
+
+	const handleClipChange = useCallback(
+		(axis: "xMin" | "xMax" | "yMin" | "yMax" | "zMin" | "zMax", val: number) => {
+			setClipping((prev) => {
+				const nextMin: [number, number, number] = [...prev.clipMin];
+				const nextMax: [number, number, number] = [...prev.clipMax];
+				if (axis === "xMin") nextMin[0] = Math.max(0, Math.min(nextMax[0] - 0.05, val));
+				if (axis === "xMax") nextMax[0] = Math.min(1, Math.max(nextMin[0] + 0.05, val));
+				if (axis === "yMin") nextMin[1] = Math.max(0, Math.min(nextMax[1] - 0.05, val));
+				if (axis === "yMax") nextMax[1] = Math.min(1, Math.max(nextMin[1] + 0.05, val));
+				if (axis === "zMin") nextMin[2] = Math.max(0, Math.min(nextMax[2] - 0.05, val));
+				if (axis === "zMax") nextMax[2] = Math.min(1, Math.max(nextMin[2] + 0.05, val));
+				const next = { clipMin: nextMin, clipMax: nextMax };
+				onClippingChange?.(next);
+				return next;
+			});
+		},
+		[onClippingChange],
+	);
+
+	const handleResetClipping = useCallback(() => {
+		const next: Volume3DClippingBox = {
+			clipMin: [0.0, 0.0, 0.0],
+			clipMax: [1.0, 1.0, 1.0],
+		};
+		setClipping(next);
+		onClippingChange?.(next);
+	}, [onClippingChange]);
+
+	const handleQuickClipSpine = useCallback(() => {
+		setClipping((prev) => {
+			const next: Volume3DClippingBox = {
+				clipMin: [prev.clipMin[0], prev.clipMin[1], 0.28], // Cuts cervical spine
+				clipMax: [...prev.clipMax],
+			};
+			onClippingChange?.(next);
+			return next;
+		});
+	}, [onClippingChange]);
+
+	const handleQuickClipOcciput = useCallback(() => {
+		setClipping((prev) => {
+			const next: Volume3DClippingBox = {
+				clipMin: [...prev.clipMin],
+				clipMax: [prev.clipMax[0], 0.72, prev.clipMax[2]], // Cuts occipital bone
+			};
+			onClippingChange?.(next);
+			return next;
+		});
+	}, [onClippingChange]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -855,14 +992,14 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 
 		const rect = canvas.getBoundingClientRect();
 		// Fill-rate protection for 4K / Retina screens and weak integrated GPUs (Intel UHD / Iris Xe / Vega)
-		// During interaction (orbit, pan, zoom), clamp internal resolution to max 960x720 (or 1x DPR) for solid 60 FPS.
-		// When idle, allow up to 1440x1080 for crisp anatomical detail.
-		const maxCanvasDim = isInteracting ? 960 : 1440;
+		// Adaptive interactive LOD: during drag rotation, reduce internal resolution by subSample factor (3..4)
+		// for rock-solid 60 FPS on weak GPUs (Intel UHD / Iris Xe / Vega).
+		// Upon mouseUp, immediately restore beauty pass (subSample = 1 or 2).
 		const rawWidth = Math.max(64, Math.floor(rect.width || 320));
 		const rawHeight = Math.max(64, Math.floor(rect.height || 280));
-		const scaleFactor = Math.min(1.0, maxCanvasDim / Math.max(rawWidth, rawHeight));
-		const width = Math.max(64, Math.floor(rawWidth * scaleFactor));
-		const height = Math.max(64, Math.floor(rawHeight * scaleFactor));
+		const subSample = isInteracting ? (rawWidth > 600 ? 4 : 3) : (rawWidth > 800 ? 2 : 1);
+		const width = Math.max(64, Math.floor(rawWidth / subSample));
+		const height = Math.max(64, Math.floor(rawHeight / subSample));
 
 		if (canvas.width !== width || canvas.height !== height) {
 			canvas.width = width;
@@ -910,6 +1047,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					width,
 					height,
 					isInteracting,
+					clipping,
 				);
 				return;
 			}
@@ -968,7 +1106,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 
 		// Adaptive interactive sampling: during mouse/touch drag, render fast 60 FPS sub-sampled pass.
 		// When idle/released, render razor-sharp beauty pass.
-		const subSample = isInteracting ? (width > 500 ? 4 : 3) : (width > 400 ? 2 : 1);
+		const canvas2dSubSample = isInteracting ? (width > 500 ? 4 : 3) : (width > 400 ? 2 : 1);
 		const maxSteps = isInteracting ? 55 : 160;
 		const nominalStepSize = isInteracting ? Math.max(2.5, maxDim / 55) : Math.max(1.2, maxDim / 160);
 
@@ -993,13 +1131,13 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 		const m20 = rotMat[2]![0]!;
 		const m21 = rotMat[2]![1]!;
 
-		for (let py = 0; py < height; py += subSample) {
+		for (let py = 0; py < height; py += canvas2dSubSample) {
 			const viewY = -(py - centerY) * invScale;
 			const r01_vY = m01 * viewY;
 			const r11_vY = m11 * viewY;
 			const r21_vY = m21 * viewY;
 
-			for (let px = 0; px < width; px += subSample) {
+			for (let px = 0; px < width; px += canvas2dSubSample) {
 				const viewX = (px - centerX) * invScale;
 
 				// Ray plane starting point in centered coordinates
@@ -1053,6 +1191,21 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 				let nz = 0;
 
 				for (let step = 0; step < numSteps; step++) {
+					// 3D Volume Clipping Box check (normalized UVW [0, 1])
+					const normX = curX / dimW;
+					const normY = curY / dimH;
+					const normZ = curZ / dimD;
+					if (
+						normX < clipping.clipMin[0] || normX > clipping.clipMax[0] ||
+						normY < clipping.clipMin[1] || normY > clipping.clipMax[1] ||
+						normZ < clipping.clipMin[2] || normZ > clipping.clipMax[2]
+					) {
+						curX += dX;
+						curY += dY;
+						curZ += dZ;
+						continue;
+					}
+
 					const vx = curX | 0;
 					const vy = curY | 0;
 					const vz = curZ | 0;
@@ -1070,24 +1223,57 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 								}
 							}
 						} else if (hu >= huMin) {
-							// Hit skull bone surface: early ray termination
+							// Hit skull bone surface: early ray termination with bisection refinement
 							hit = true;
 							hitDepth = (step + 1) / numSteps;
 
-							// Central difference gradient for surface normal (step = 2 voxels)
-							const vxP = Math.min(dimW - 1, vx + 2);
-							const vxM = Math.max(0, vx - 2);
-							const vyP = Math.min(dimH - 1, vy + 2);
-							const vyM = Math.max(0, vy - 2);
-							const vzP = Math.min(dimD - 1, vz + 2);
-							const vzM = Math.max(0, vz - 2);
+							let hitX = curX;
+							let hitY = curY;
+							let hitZ = curZ;
 
-							const zOff = vz * sliceSize;
-							const yOff = vy * dimW;
+							if (!isInteracting) {
+								let p0X = curX - dX;
+								let p0Y = curY - dY;
+								let p0Z = curZ - dZ;
+								let p1X = curX;
+								let p1Y = curY;
+								let p1Z = curZ;
+
+								for (let b = 0; b < 4; b++) {
+									const pmX = (p0X + p1X) * 0.5;
+									const pmY = (p0Y + p1Y) * 0.5;
+									const pmZ = (p0Z + p1Z) * 0.5;
+									const bvx = Math.max(0, Math.min(dimW - 1, pmX | 0));
+									const bvy = Math.max(0, Math.min(dimH - 1, pmY | 0));
+									const bvz = Math.max(0, Math.min(dimD - 1, pmZ | 0));
+									const bhu = data[bvz * sliceSize + bvy * dimW + bvx] ?? -1000;
+									if (bhu >= huMin) {
+										p1X = pmX; p1Y = pmY; p1Z = pmZ;
+									} else {
+										p0X = pmX; p0Y = pmY; p0Z = pmZ;
+									}
+								}
+								hitX = (p0X + p1X) * 0.5;
+								hitY = (p0Y + p1Y) * 0.5;
+								hitZ = (p0Z + p1Z) * 0.5;
+							}
+
+							const vxP = Math.min(dimW - 1, (hitX | 0) + 2);
+							const vxM = Math.max(0, (hitX | 0) - 2);
+							const vyP = Math.min(dimH - 1, (hitY | 0) + 2);
+							const vyM = Math.max(0, (hitY | 0) - 2);
+							const vzP = Math.min(dimD - 1, (hitZ | 0) + 2);
+							const vzM = Math.max(0, (hitZ | 0) - 2);
+
+							const hvy = (hitY | 0);
+							const hvz = (hitZ | 0);
+							const hvx = (hitX | 0);
+							const zOff = hvz * sliceSize;
+							const yOff = hvy * dimW;
 
 							const gx = (data[zOff + yOff + vxP] ?? hu) - (data[zOff + yOff + vxM] ?? hu);
-							const gy = (data[zOff + vyP * dimW + vx] ?? hu) - (data[zOff + vyM * dimW + vx] ?? hu);
-							const gz = (data[vzP * sliceSize + yOff + vx] ?? hu) - (data[vzM * sliceSize + yOff + vx] ?? hu);
+							const gy = (data[zOff + vyP * dimW + hvx] ?? hu) - (data[zOff + vyM * dimW + hvx] ?? hu);
+							const gz = (data[vzP * sliceSize + yOff + hvx] ?? hu) - (data[vzM * sliceSize + yOff + hvx] ?? hu);
 
 							const gLen = Math.hypot(gx, gy, gz) || 1;
 							// Outward surface normal points toward lower density (-grad)
@@ -1160,12 +1346,12 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 
 				if (a > 0) {
 					const colorU32 = (a << 24) | (b << 16) | (g << 8) | r;
-					if (subSample === 1) {
+					if (canvas2dSubSample === 1) {
 						u32[py * width + px] = colorU32;
 					} else {
-						for (let sy = 0; sy < subSample && py + sy < height; sy++) {
+						for (let sy = 0; sy < canvas2dSubSample && py + sy < height; sy++) {
 							const rowOffset = (py + sy) * width;
-							for (let sx = 0; sx < subSample && px + sx < width; sx++) {
+							for (let sx = 0; sx < canvas2dSubSample && px + sx < width; sx++) {
 								u32[rowOffset + px + sx] = colorU32;
 							}
 						}
@@ -1175,7 +1361,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 		}
 
 		ctx.putImageData(imgData, 0, 0);
-	}, [volume, activePreset, yaw, pitch, zoom, pan, canvasDims, isInteracting]);
+	}, [volume, activePreset, yaw, pitch, zoom, pan, canvasDims, isInteracting, clipping]);
 
 	const activePresetSpec = CBCT_VOLUME_3D_PRESETS.find((p) => p.id === activePreset) ?? CBCT_VOLUME_3D_PRESETS[0]!;
 
@@ -1255,6 +1441,28 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 
 					<div className="w-[1px] h-3.5 bg-zinc-800 mx-0.5" />
 
+					{/* Clipping Box Toggle Button */}
+					<button
+						type="button"
+						onClick={() => setIsClippingOpen((prev) => !prev)}
+						title="Отсечение 3D объема черепа (шейные позвонки, затылок, корональный срез)"
+						className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+							isClippingOpen || hasActiveClipping
+								? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold"
+								: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+						}`}
+						data-testid="cbct-btn-toggle-clipping"
+						aria-label="Срезы черепа"
+					>
+						<Scissors className="w-3 h-3" />
+						<span>Срезы</span>
+						{hasActiveClipping && (
+							<span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+						)}
+					</button>
+
+					<div className="w-[1px] h-3.5 bg-zinc-800 mx-0.5" />
+
 					{/* Reset 3D Camera Button */}
 					<button
 						type="button"
@@ -1285,6 +1493,123 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					)}
 				</div>
 			</div>
+
+			{/* INTERACTIVE CLIPPING BOX CONTROLS PANEL */}
+			{isClippingOpen && (
+				<div
+					className="absolute top-10 right-2 z-30 bg-zinc-950/95 backdrop-blur-md p-2.5 rounded-md border border-zinc-800/90 shadow-2xl text-[11px] w-64 flex flex-col gap-2.5 select-none pointer-events-auto"
+					data-testid="cbct-clipping-box-panel"
+				>
+					<div className="flex items-center justify-between pb-1 border-b border-zinc-800/80">
+						<span className="font-semibold text-zinc-200 flex items-center gap-1 text-[11px]">
+							<Scissors className="w-3 h-3 text-cyan-400" />
+							Отсечение 3D черепа
+						</span>
+						<button
+							type="button"
+							onClick={handleResetClipping}
+							title="Сбросить все срезы черепа"
+							className="text-[10px] text-zinc-400 hover:text-cyan-300 underline cursor-pointer"
+							data-testid="cbct-btn-reset-clipping"
+						>
+							Сброс срезов
+						</button>
+					</div>
+
+					{/* Quick Preset Buttons */}
+					<div className="flex items-center gap-1.5">
+						<button
+							type="button"
+							onClick={handleQuickClipSpine}
+							title="Срез позвонков: срез шейного отдела позвоночника (Z-min = 28%)"
+							className={`flex-1 px-1.5 py-1 rounded text-[10px] font-medium transition-colors cursor-pointer border text-center ${
+								clipping.clipMin[2] >= 0.2
+									? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 font-bold"
+									: "bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-white"
+							}`}
+							data-testid="cbct-btn-clip-spine"
+						>
+							Срез позвонков
+						</button>
+						<button
+							type="button"
+							onClick={handleQuickClipOcciput}
+							title="Срез затылка: отсечение затылочной кости (Y-max = 72%)"
+							className={`flex-1 px-1.5 py-1 rounded text-[10px] font-medium transition-colors cursor-pointer border text-center ${
+								clipping.clipMax[1] <= 0.8
+									? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 font-bold"
+									: "bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-white"
+							}`}
+							data-testid="cbct-btn-clip-occiput"
+						>
+							Срез затылка
+						</button>
+					</div>
+
+					{/* Slider 1: Срез позвонков (Z-min) */}
+					<div className="flex flex-col gap-1">
+						<div className="flex justify-between items-center text-[10px]">
+							<span className="text-zinc-300 font-medium">Срез позвонков (Z-min)</span>
+							<span className="font-mono text-cyan-300">{Math.round(clipping.clipMin[2] * 100)}%</span>
+						</div>
+						<input
+							type="range"
+							min={0}
+							max={70}
+							step={1}
+							value={Math.round(clipping.clipMin[2] * 100)}
+							onPointerDown={() => setIsInteracting(true)}
+							onPointerUp={() => setIsInteracting(false)}
+							onChange={(e) => handleClipChange("zMin", Number(e.target.value) / 100)}
+							className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+							data-testid="cbct-clip-slider-z-min"
+							aria-label="Срез позвонков (Z-min)"
+						/>
+					</div>
+
+					{/* Slider 2: Срез затылка (Y-max) */}
+					<div className="flex flex-col gap-1">
+						<div className="flex justify-between items-center text-[10px]">
+							<span className="text-zinc-300 font-medium">Срез затылка (Y-max)</span>
+							<span className="font-mono text-cyan-300">{Math.round(clipping.clipMax[1] * 100)}%</span>
+						</div>
+						<input
+							type="range"
+							min={30}
+							max={100}
+							step={1}
+							value={Math.round(clipping.clipMax[1] * 100)}
+							onPointerDown={() => setIsInteracting(true)}
+							onPointerUp={() => setIsInteracting(false)}
+							onChange={(e) => handleClipChange("yMax", Number(e.target.value) / 100)}
+							className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+							data-testid="cbct-clip-slider-y-max"
+							aria-label="Срез затылка (Y-max)"
+						/>
+					</div>
+
+					{/* Slider 3: Корональный срез (X) */}
+					<div className="flex flex-col gap-1">
+						<div className="flex justify-between items-center text-[10px]">
+							<span className="text-zinc-300 font-medium">Корональный срез (X)</span>
+							<span className="font-mono text-cyan-300">{Math.round(clipping.clipMax[0] * 100)}%</span>
+						</div>
+						<input
+							type="range"
+							min={20}
+							max={100}
+							step={1}
+							value={Math.round(clipping.clipMax[0] * 100)}
+							onPointerDown={() => setIsInteracting(true)}
+							onPointerUp={() => setIsInteracting(false)}
+							onChange={(e) => handleClipChange("xMax", Number(e.target.value) / 100)}
+							className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+							data-testid="cbct-clip-slider-x"
+							aria-label="Корональный срез (X)"
+						/>
+					</div>
+				</div>
+			)}
 
 			{/* INTERACTIVE 3D SKULL CANVAS */}
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
@@ -1326,6 +1651,16 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					<span className="hidden lg:inline text-zinc-400">
 						Вращение: ЛКМ • Зум: Колесико • Панорама: ПКМ
 					</span>
+					{hasActiveClipping && (
+						<span
+							className="text-amber-400 font-semibold font-mono flex items-center gap-1"
+							title="Активно 3D отсечение объема черепа"
+							data-testid="cbct-hud-clipping-indicator"
+						>
+							<Scissors className="w-2.5 h-2.5" />
+							<span>Срез</span>
+						</span>
+					)}
 					<span className="text-cyan-300 font-bold font-mono">
 						HU {activePresetSpec.huMin}..{activePresetSpec.huMax}
 					</span>
