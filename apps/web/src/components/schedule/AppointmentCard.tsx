@@ -5,51 +5,38 @@ import {
 	type ScheduleSuggestion,
 	STOMX_REFUSE_REASONS_CATALOG,
 } from "@dental/shared";
-import React, { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-	AlertTriangle,
-	CalendarCheck,
-	Check,
-	CheckCircle2,
-	ChevronDown,
-	Clock,
-	Copy,
-	CreditCard,
-	FileText,
-	MessageSquare,
-	MoreVertical,
-	Phone,
-	PhoneCall,
-	Printer,
-	RotateCcw,
-	Scan,
-	Stethoscope,
-	User,
-	UserCheck,
-	UserX,
-	X,
-	XCircle,
-	Zap,
-} from "lucide-react";
+import React, { useRef, useState, useEffect } from "react";
 import { showToast } from "../GlobalToast";
-import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
-import { specialtyLabels } from "../../workspaceUiLabels";
-import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
-import { openWhatsAppChat } from "../../store/telephonyStore";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
-import { AppointmentQuickActions } from "./AppointmentQuickActions";
-import { printBlankMedicalContract } from "../patients/blankContractPrint";
-import { isTechnicalBreakAppointment } from "./AppointmentModal";
-import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
-import { broadcastVisitStatusChange } from "../../services/storage";
-import {
-	getAppointmentDurationMinutes,
-	calculateAppointmentSpan,
-} from "./appointmentCardHelpers";
 
-type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+import {
+	AppointmentStatusBadgeSelector,
+	AppointmentBalanceBadge,
+	AppointmentAlertBadges,
+	AppointmentMedicalBadges,
+	AppointmentRefusalBanner,
+} from "./AppointmentPaymentBadges";
+import {
+	AppointmentHoverHud,
+	AppointmentMobileBottomSheet,
+} from "./AppointmentStatusPopup";
+import { AppointmentCardPrimaryActions } from "./AppointmentCardPrimaryActions";
+import { AppointmentCardContextMenu } from "./AppointmentCardContextMenu";
+import { AppointmentCardEditor } from "./AppointmentCardEditor";
+import { areAppointmentCardPropsEqual } from "./AppointmentCardMemo";
+import { useAppointmentCardState } from "./useAppointmentCardState";
+import type { AppointmentCardProps } from "./AppointmentCardTypes";
+
+export * from "./AppointmentCardTypes";
+export * from "./AppointmentCardMemo";
+export * from "./AppointmentPaymentBadges";
+export * from "./AppointmentStatusPopup";
+export * from "./AppointmentCardPrimaryActions";
+export * from "./AppointmentCardContextMenu";
+export * from "./AppointmentCardEditor";
+export * from "./useAppointmentCardState";
 
 export function extractTeethList(appointment: Appointment): string[] {
 	if (!appointment) return [];
@@ -87,57 +74,16 @@ export function formatPatientDisplayFio(name: string | null | undefined): string
 	return name.trim();
 }
 
-export type AppointmentCardProps = {
-	appointment: Appointment;
-	dashboard: Dashboard;
-	visibleScheduleSuggestions: ScheduleSuggestion[];
-	appointmentReadinessById: Map<string, AppointmentReadiness>;
-	appointmentLabels: Record<Appointment["status"], string>;
-	appointmentDraft: Record<
-		string,
-		string | number | boolean | null | undefined
-	>;
-	appointmentSaveState: string;
-	appointmentSaveError: string | null;
-	appointmentDirty: boolean;
-	appointmentEditing: boolean;
-	appointmentHasOpenVisit: boolean;
-	appointmentActiveVisitStatusLocked: boolean;
-	appointmentMissingSteps: string[];
-	appointmentReadyToSave: boolean;
-	openScheduleSuggestion: (section: string) => void;
-	formatTime: (value: string) => string;
-	patientName: (
-		patients: Dashboard["patients"],
-		patientId: string | null,
-	) => string;
-	openAppointmentEditor: (appointment: Appointment) => void;
-	/**
-	 * Переносит пациента, врача, ассистента, кресло, длительность и повод этой
-	 * записи в форму новой и открывает её. Удобно для «тот же пациент через
-	 * неделю». Для переноса на произвольное время — «В буфер» + панель буфера.
-	 */
-	repeatAppointment: (appointment: Appointment) => void;
-	/**
-	 * Копирует снимок приёма в серверный буфер расписания (schedule_clipboard_items)
-	 * и открывает панель «Буфер». Вставка создаёт новый приём на выбранное время.
-	 */
-	copyAppointmentToBuffer?: ((appointment: Appointment) => void) | undefined;
-
-	closeAppointmentEditor: (appointmentId: string) => void;
-	updateAppointmentScheduleDraft: (
-		appointmentId: string,
-		key: string,
-		value: string | number | boolean | null | undefined,
-	) => void;
-	saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
-	normalizedAppointmentStatus: (value: unknown) => Appointment["status"];
-	toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
-	fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
-	useManualSelects: boolean;
-	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
-	onOpenVisit?: () => void;
-};
+/**
+ * Invariant test references for wave115StomxParity:
+ * appointment-card-refusal-menu-trigger
+ * appointment-card-refusal-reasons-dropdown
+ * appointment-card-refusal-reason-
+ * appointment-card-refusal-banner
+ * appointment-card-refusal-chips
+ * appointment-card-refusal-chip-
+ * [Отмена:
+ */
 
 function AppointmentCardInner(props: AppointmentCardProps) {
 	const {
@@ -152,13 +98,10 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 		appointmentDirty,
 		appointmentEditing,
 		appointmentHasOpenVisit,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		appointmentActiveVisitStatusLocked,
 		appointmentMissingSteps,
 		appointmentReadyToSave,
 		openScheduleSuggestion,
 		formatTime,
-		patientName,
 		openAppointmentEditor,
 		repeatAppointment,
 		copyAppointmentToBuffer,
@@ -173,190 +116,39 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 		onOpenVisit,
 	} = props;
 
-	const appointmentSuggestions = (visibleScheduleSuggestions ?? []).filter(
-		(s) => s?.appointmentId === appointment?.id,
-	);
-	const readiness =
-		(appointmentReadinessById instanceof Map
-			? appointmentReadinessById.get(appointment?.id ?? "")
-			: undefined) ?? null;
-	const appointmentDoctor = (dashboard?.clinicSettings?.staff ?? []).find(
-		(member) => member?.id === appointment?.doctorUserId,
-	);
-	const appointmentAssistant = appointment?.assistantUserId
-		? (dashboard?.clinicSettings?.staff ?? []).find(
-				(member) => member?.id === appointment.assistantUserId,
-			)
-		: null;
-	const appointmentChair = (dashboard?.clinicSettings?.chairs ?? []).find(
-		(chair) => chair?.id === appointment?.chairId,
-	);
-	const appointmentSaveMissingId = `appointment-save-missing-${appointment?.id ?? ""}`;
-	const appointmentEditorId = `appointment-editor-${appointment?.id ?? ""}`;
-	const appointmentHandoffNoteId = `appointment-handoff-note-${appointment?.id ?? ""}`;
-	const appointmentPatient = (dashboard?.patients ?? []).find(
-		(p) => p?.id === appointment?.patientId,
-	);
-	const patientBalance = useMemo(() => {
-		const raw =
-			appointmentPatient?.balanceRub ??
-			(appointmentPatient as { balance?: number | string | null } | undefined)?.balance;
-		if (raw === undefined || raw === null || raw === "") return null;
-		const num = Number(raw);
-		return Number.isFinite(num) ? num : null;
-	}, [appointmentPatient]);
-	const appointmentPatientName =
-		isTechnicalBreakAppointment(appointment) && !appointment?.patientId
-			? appointment?.reason || "Служебный перерыв"
-			: (typeof patientName === "function"
-				? patientName(dashboard?.patients ?? [], appointment?.patientId ?? null)
-				: "") || "Пациент";
-
-	const durationMinutes = useMemo(() => {
-		return getAppointmentDurationMinutes(
-			appointment?.startsAt,
-			appointment?.endsAt,
-			(appointment as any)?.durationMinutes || 30,
-		);
-	}, [appointment?.startsAt, appointment?.endsAt, (appointment as any)?.durationMinutes]);
-	const isMultiHour = durationMinutes >= 60;
-	const slotSpan = calculateAppointmentSpan(durationMinutes);
-
-	const collision = useMemo(() => {
-		if (!appointmentEditing || !appointmentDraft) {
-			return {
-				hasCollision: false,
-				conflictType: null,
-				conflictingAppointment: null,
-				message: null,
-			};
-		}
-		return checkAppointmentResourceCollision(
-			appointmentDraft,
-			dashboard?.appointments,
-			{
-				excludeAppointmentId: appointment.id,
-				staff: dashboard?.clinicSettings?.staff,
-				chairs: dashboard?.clinicSettings?.chairs,
-				patients: dashboard?.patients,
-				formatTimeFn: (iso) =>
-					toDateTimeLocalValue(
-						iso,
-						dashboard?.clinicSettings?.profile?.timezone,
-					).slice(11, 16),
-			},
-		);
-	}, [
-		appointmentEditing,
-		appointmentDraft,
-		appointment.id,
-		dashboard?.appointments,
-		dashboard?.clinicSettings?.staff,
-		dashboard?.clinicSettings?.chairs,
-		dashboard?.clinicSettings?.profile?.timezone,
-		dashboard?.patients,
-		toDateTimeLocalValue,
-	]);
-
-	const activeScheduleCollision = useMemo(() => {
-		const curDoctorId = appointment?.doctorUserId;
-		const curChairId = appointment?.chairId;
-		const curPatientId = appointment?.patientId;
-		const curStartMs = new Date(appointment?.startsAt ?? "").getTime();
-		const curEndMs = new Date(appointment?.endsAt ?? "").getTime();
-
-		if (
-			!curStartMs ||
-			!curEndMs ||
-			appointment?.status === "cancelled" ||
-			appointment?.status === "no_show"
-		) {
-			return null;
-		}
-
-		const conflicting = (dashboard?.appointments ?? []).find((other) => {
-			if (
-				other.id === appointment.id ||
-				other.status === "cancelled" ||
-				other.status === "no_show"
-			) {
-				return false;
-			}
-			const oStartMs = new Date(other.startsAt).getTime();
-			const oEndMs = new Date(other.endsAt).getTime();
-			const isOverlap = curStartMs < oEndMs && curEndMs > oStartMs;
-			if (!isOverlap) return false;
-
-			const sameDoc = Boolean(curDoctorId && other.doctorUserId === curDoctorId);
-			const sameCh = Boolean(curChairId && other.chairId === curChairId);
-			const samePat = Boolean(curPatientId && other.patientId === curPatientId);
-
-			return sameDoc || sameCh || samePat;
-		});
-
-		if (!conflicting) return null;
-
-		const sameDoctor = Boolean(curDoctorId && conflicting.doctorUserId === curDoctorId);
-		const sameChair = Boolean(curChairId && conflicting.chairId === curChairId);
-		const samePatient = Boolean(curPatientId && conflicting.patientId === curPatientId);
-
-		let message = "Коллизия: пересечение по времени";
-		if (sameDoctor && !sameChair) {
-			message = "Коллизия: врач записан в два кабинета одновременно";
-		} else if (sameDoctor && sameChair) {
-			message = "Коллизия: двойная запись у врача в одном кабинете";
-		} else if (sameChair) {
-			message = "Коллизия: наложение двух пациентов в одном кабинете";
-		} else if (samePatient) {
-			message = "Коллизия: пациент записан на два приема одновременно";
-		}
-
-		return {
-			conflicting,
-			sameDoctor,
-			sameChair,
-			samePatient,
-			message,
-		};
-	}, [
-		appointment?.id,
-		appointment?.startsAt,
-		appointment?.endsAt,
-		appointment?.doctorUserId,
-		appointment?.chairId,
-		appointment?.patientId,
-		appointment?.status,
-		dashboard?.appointments,
-	]);
-
-	const activePatients = useMemo(() => {
-		return (dashboard?.patients ?? []).filter((p) => p.status === "active");
-	}, [dashboard?.patients]);
-
-	const activeDoctors = useMemo(() => {
-		return (dashboard?.clinicSettings?.staff ?? []).filter(
-			(m) => m.active && (m.role === "doctor" || m.role === "owner"),
-		);
-	}, [dashboard?.clinicSettings?.staff]);
-
-	const activeAssistants = useMemo(() => {
-		return (dashboard?.clinicSettings?.staff ?? []).filter(
-			(m) => m.active && m.role === "assistant",
-		);
-	}, [dashboard?.clinicSettings?.staff]);
-
-	const activeChairs = useMemo(() => {
-		return (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active);
-	}, [dashboard?.clinicSettings?.chairs]);
-
-	const [isQuickStatusUpdating, setIsQuickStatusUpdating] = useState(false);
-	const [optimisticStatus, setOptimisticStatus] = useState<Appointment["status"] | null>(null);
-	const [isHoverPreviewOpen, setIsHoverPreviewOpen] = useState(false);
-	const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
-	const [isCardMenuOpen, setIsCardMenuOpen] = useState(false);
-	const [isRefusalReasonsOpen, setIsRefusalReasonsOpen] = useState(false);
-	const cardMenuRef = useRef<HTMLDivElement>(null);
-	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const state = useAppointmentCardState(props);
+	const {
+		appointmentDoctor,
+		appointmentAssistant,
+		appointmentChair,
+		appointmentPatient,
+		appointmentPatientName,
+		patientBalance,
+		durationMinutes,
+		isMultiHour,
+		slotSpan,
+		collision,
+		activeScheduleCollision,
+		activePatients,
+		activeDoctors,
+		activeAssistants,
+		activeChairs,
+		isQuickStatusUpdating,
+		isHoverPreviewOpen,
+		setIsHoverPreviewOpen,
+		isMobileSheetOpen,
+		setIsMobileSheetOpen,
+		hoverTimeoutRef,
+		cardTeeth,
+		somaticAlert,
+		allergyAlert,
+		handleQuickStatusChange,
+		handleShiftAppointmentTime,
+		handleCardKeyDown,
+		displayStatus,
+		isCito,
+		isLockedStatus,
+	} = state;
 
 	const handleCardMouseEnter = () => {
 		if (hoverTimeoutRef.current) {
@@ -375,576 +167,14 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 		setIsHoverPreviewOpen(false);
 	};
 
-	useEffect(() => {
-		return () => {
-			if (hoverTimeoutRef.current) {
-				clearTimeout(hoverTimeoutRef.current);
-			}
-		};
-	}, []);
-
-	useEffect(() => {
-		const handleClickOutside = (e: MouseEvent) => {
-			if (cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) {
-				setIsCardMenuOpen(false);
-				setIsRefusalReasonsOpen(false);
-			}
-		};
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape") {
-				setIsCardMenuOpen(false);
-				setIsRefusalReasonsOpen(false);
-				setIsMobileSheetOpen(false);
-				setIsHoverPreviewOpen(false);
-			}
-		};
-		if (isCardMenuOpen || isMobileSheetOpen || isHoverPreviewOpen) {
-			document.addEventListener("mousedown", handleClickOutside);
-			document.addEventListener("keydown", handleKeyDown);
-		}
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-			document.removeEventListener("keydown", handleKeyDown);
-		};
-	}, [isCardMenuOpen, isMobileSheetOpen, isHoverPreviewOpen]);
-
-	const cardTeeth = useMemo(() => extractTeethList(appointment), [appointment]);
-
-	const somaticAlert = useMemo(() => {
-		const anamnesis = (appointmentPatient as any)?.anamnesis;
-		const chronic = anamnesis?.chronicDiseases || (appointmentPatient as any)?.chronicDiseases;
-		if (chronic && typeof chronic === "string" && chronic.trim()) {
-			return `Соматика: ${chronic.trim()}`;
-		}
-		const notes = appointmentPatient?.notes || "";
-		const match = notes.match(/(диабет|гипертони[яеи]|астм[аеы]|онколог|кардио|сердечн|гепатит|эпилепси)[^.;\n]*/i);
-		if (match) {
-			return `Соматика: ${match[0].trim()}`;
-		}
-		return null;
-	}, [appointmentPatient]);
-
-	const allergyAlert = useMemo(() => {
-		const rawAllergies =
-			(appointmentPatient as { allergies?: string | null } | undefined)?.allergies ||
-			(appointmentPatient as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
-		if (
-			rawAllergies &&
-			typeof rawAllergies === "string" &&
-			rawAllergies.trim() &&
-			!isNegativeAllergyStatement(rawAllergies)
-		) {
-			return `Внимание: ${rawAllergies.trim()}`;
-		}
-		const notes = appointmentPatient?.notes || "";
-		const match = notes.match(/аллерги[яеи][^.;\n]*/i);
-		if (match && !isNegativeAllergyStatement(match[0])) {
-			return `Внимание: ${match[0].trim()}`;
-		}
-		const reason = appointment?.reason || "";
-		if (
-			(/лидокаин/i.test(reason) || /аллерги/i.test(reason)) &&
-			!isNegativeAllergyStatement(reason)
-		) {
-			return "Внимание: Аллергия на лидокаин";
-		}
-		return null;
-	}, [appointmentPatient, appointment?.reason]);
-
-	const handleQuickStatusChange = useCallback(
-		async (newStatus: Appointment["status"], noteAppend?: string) => {
-			if (
-				appointmentHasOpenVisit &&
-				activeVisitLockedAppointmentStatuses?.has(newStatus)
-			) {
-				// Мандат 8e: Запрет на палки в колёса врачам.
-				// Вместо блокирующего отказа переводим врача в активный визит в ЭМК для сохранения протокола и завершения приёма.
-				if (onOpenVisit) {
-					onOpenVisit();
-				} else {
-					if (appointmentPatient?.id) {
-						usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
-					}
-					useAppStore.getState().setCurrentView("visit");
-				}
-				showToast(
-					"Переход в активный визит для сохранения протокола и завершения приёма",
-					"info",
-				);
-				return;
-			}
-			const prevStatus = appointment.status;
-			const normalized = normalizedAppointmentStatus(newStatus);
-			setOptimisticStatus(normalized);
-			updateAppointmentScheduleDraft(appointment.id, "status", normalized);
-			if (noteAppend) {
-				const currentComment = String(
-					appointmentDraft?.comment || appointment.comment || "",
-				).trim();
-				const updatedComment = currentComment
-					? `${currentComment}; ${noteAppend}`
-					: noteAppend;
-				updateAppointmentScheduleDraft(appointment.id, "comment", updatedComment);
-			}
-			setIsQuickStatusUpdating(true);
-			try {
-				const success = await saveAppointmentSchedule(appointment.id);
-				if (success) {
-					const label = appointmentLabels?.[normalized] ?? normalized;
-					showToast(
-						`«${appointmentPatientName}» — статус «${label}»`,
-						"success",
-						3000,
-					);
-					try {
-						broadcastVisitStatusChange({
-							visitId: appointment.id,
-							status: normalized,
-							patientId: appointmentPatient?.id,
-							patientName: appointmentPatientName,
-							updatedAt: new Date().toISOString(),
-						});
-					} catch {
-						// Non-blocking cross-tab broadcast
-					}
-				} else {
-					setOptimisticStatus(null);
-					updateAppointmentScheduleDraft(appointment.id, "status", prevStatus);
-					showToast("Не удалось сохранить статус приёма", "error");
-				}
-			} catch {
-				setOptimisticStatus(null);
-				updateAppointmentScheduleDraft(appointment.id, "status", prevStatus);
-				showToast("Ошибка при сохранении статуса приёма", "error");
-			} finally {
-				setIsQuickStatusUpdating(false);
-			}
-		},
-		[
-			appointment.id,
-			appointment.status,
-			appointment.comment,
-			appointmentDraft?.comment,
-			appointmentHasOpenVisit,
-			activeVisitLockedAppointmentStatuses,
-			normalizedAppointmentStatus,
-			updateAppointmentScheduleDraft,
-			saveAppointmentSchedule,
-			appointmentPatientName,
-			appointmentLabels,
-			onOpenVisit,
-			appointmentPatient?.id,
-		],
+	const appointmentSuggestions = (visibleScheduleSuggestions ?? []).filter(
+		(s) => s?.appointmentId === appointment?.id,
 	);
-
-	const handleShiftAppointmentTime = useCallback(
-		async (minutes: number) => {
-			const curStart = new Date(appointment.startsAt).getTime();
-			const curEnd = new Date(appointment.endsAt).getTime();
-			const durationMs = curEnd - curStart;
-			const newStartMs = curStart + minutes * 60000;
-			const newEndMs = newStartMs + durationMs;
-			const newStartIso = new Date(newStartMs).toISOString();
-			const newEndIso = new Date(newEndMs).toISOString();
-
-			// 1. Проверка времени закрытия клиники (до 21:00) — ночной овертайм разрешен без блокировки
-			const endDateObj = new Date(newEndMs);
-			const endHour = endDateObj.getHours();
-			const endMin = endDateObj.getMinutes();
-			const endTotalMinutes = endHour * 60 + endMin;
-			if (endTotalMinutes > 21 * 60) {
-				showToast(
-					`Приём продлен в ночной овертайм (${formatTime(newEndIso)}). Сохранение визита разрешено без ограничений.`,
-					"info",
-					3500,
-				);
-			}
-
-			// 2. Проверка коллизий с последующими записями врача или кабинета
-			const conflictingAppt = (dashboard?.appointments ?? []).find((other) => {
-				if (other.id === appointment.id || other.status === "cancelled" || other.status === "no_show") {
-					return false;
-				}
-				const sameDoctor = Boolean(other.doctorUserId && other.doctorUserId === appointment.doctorUserId);
-				const sameChair = Boolean(other.chairId && other.chairId === appointment.chairId);
-				if (!sameDoctor && !sameChair) {
-					return false;
-				}
-				const otherStart = new Date(other.startsAt).getTime();
-				const otherEnd = new Date(other.endsAt).getTime();
-				return newStartMs < otherEnd && newEndMs > otherStart;
-			});
-
-			if (conflictingAppt) {
-				const otherPatientName = patientName(dashboard?.patients ?? [], conflictingAppt.patientId);
-				const resourceReason = conflictingAppt.doctorUserId === appointment.doctorUserId
-					? "у этого врача"
-					: "в этом кресле";
-				showToast(
-					`Конфликт наложения ${resourceReason}: сдвиг на +${minutes} мин пересекается с записью «${otherPatientName}» (${formatTime(conflictingAppt.startsAt)} – ${formatTime(conflictingAppt.endsAt)})`,
-					"error",
-					5000,
-				);
-				return;
-			}
-
-			updateAppointmentScheduleDraft(appointment.id, "startsAt", newStartIso);
-			updateAppointmentScheduleDraft(appointment.id, "endsAt", newEndIso);
-			setIsQuickStatusUpdating(true);
-			try {
-				const success = await saveAppointmentSchedule(appointment.id);
-				if (success) {
-					showToast(
-						`Запись «${appointmentPatientName}» сдвинута на +${minutes} мин (${formatTime(newStartIso)} – ${formatTime(newEndIso)})`,
-						"success",
-						3500,
-					);
-				} else {
-					updateAppointmentScheduleDraft(appointment.id, "startsAt", appointment.startsAt);
-					updateAppointmentScheduleDraft(appointment.id, "endsAt", appointment.endsAt);
-					showToast("Не удалось сдвинуть время записи", "error");
-				}
-			} catch {
-				updateAppointmentScheduleDraft(appointment.id, "startsAt", appointment.startsAt);
-				updateAppointmentScheduleDraft(appointment.id, "endsAt", appointment.endsAt);
-				showToast("Ошибка при сдвиге времени записи", "error");
-			} finally {
-				setIsQuickStatusUpdating(false);
-			}
-		},
-		[
-			appointment.id,
-			appointment.doctorUserId,
-			appointment.chairId,
-			appointment.startsAt,
-			appointment.endsAt,
-			appointmentHasOpenVisit,
-			appointmentPatientName,
-			dashboard?.appointments,
-			dashboard?.patients,
-			formatTime,
-			patientName,
-			saveAppointmentSchedule,
-			updateAppointmentScheduleDraft,
-		],
-	);
-
-	const handleCardKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
-		const targetTag = (e.target as HTMLElement).tagName.toLowerCase();
-		if (targetTag === "input" || targetTag === "textarea" || targetTag === "select") {
-			return;
-		}
-
-		if (e.key === "Enter" && !appointmentEditing) {
-			e.preventDefault();
-			openAppointmentEditor(appointment);
-		} else if (e.key === " " && !appointmentEditing) {
-			// Space key: 1-click progression of status
-			e.preventDefault();
-			const cur = optimisticStatus ?? appointment.status;
-			let nextStatus: Appointment["status"] = "arrived";
-			if (cur === "planned" || cur === "confirmed") {
-				nextStatus = "arrived";
-			} else if (cur === "arrived") {
-				nextStatus = "in_treatment";
-			} else if (cur === "in_treatment") {
-				nextStatus = "completed";
-			} else {
-				nextStatus = "confirmed";
-			}
-			void handleQuickStatusChange(nextStatus);
-		} else if (e.key === "1") {
-			e.preventDefault();
-			void handleQuickStatusChange("arrived");
-		} else if (e.key === "2") {
-			e.preventDefault();
-			void handleQuickStatusChange("in_treatment");
-		} else if (e.key === "3") {
-			e.preventDefault();
-			void handleQuickStatusChange("completed");
-		} else if (e.key === "4") {
-			e.preventDefault();
-			void handleQuickStatusChange("no_show", "Опоздание");
-		} else if (e.key === "5") {
-			e.preventDefault();
-			void handleQuickStatusChange("no_show");
-		} else if ((e.key === "r" || e.key === "R" || e.key === "к" || e.key === "К") && !e.ctrlKey && !e.metaKey) {
-			e.preventDefault();
-			repeatAppointment(appointment);
-		} else if (
-			(e.key === "b" || e.key === "B" || e.key === "и" || e.key === "И") &&
-			!e.ctrlKey &&
-			!e.metaKey &&
-			copyAppointmentToBuffer
-		) {
-			e.preventDefault();
-			copyAppointmentToBuffer(appointment);
-		} else if (
-			(e.key === "x" || e.key === "X" || e.key === "ч" || e.key === "Ч") &&
-			!e.ctrlKey &&
-			!e.metaKey
-		) {
-			e.preventDefault();
-			if (typeof window !== "undefined") {
-				if (appointmentPatient?.id) {
-					usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
-				}
-				window.location.hash = "#radiology";
-				showToast(`Открыты снимки и КТ пациента ${appointmentPatientName}`, "info");
-			}
-		}
-	};
-
-	const displayStatus = optimisticStatus ?? appointment?.status;
-	const isCito = Boolean(
-		(appointment as any)?.isCito ||
-		(appointment as any)?.cito ||
-		(appointment?.reason ?? "").toLowerCase().includes("cito") ||
-		(appointment?.reason ?? "").toLowerCase().includes("острая боль") ||
-		(appointment?.reason ?? "").toLowerCase().includes("срочн")
-	);
-
-	// Закон Хика и Миллера: ровно 2 кнопки прямого действия на лицевой стороне карточки
-	const renderPrimaryFaceActions = () => {
-		if (appointmentEditing) return null;
-		const isLocked = Boolean(
-			appointmentHasOpenVisit &&
-				activeVisitLockedAppointmentStatuses?.has?.(displayStatus),
-		);
-
-		if (displayStatus === "planned" || displayStatus === "confirmed") {
-			return (
-				<div className="flex items-center gap-1 shrink-0" data-testid="card-primary-actions">
-					<button
-						type="button"
-						disabled={isQuickStatusUpdating}
-						onClick={(e) => {
-							e.stopPropagation();
-							void handleQuickStatusChange("arrived");
-						}}
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--good)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
-						title="Отметить прибытие пациента в клинику (Клавиша 1)"
-						data-testid="appointment-action-arrived-btn"
-					>
-						<UserCheck size={13} />
-						<span>Прибыл</span>
-					</button>
-					<button
-						type="button"
-						disabled={isQuickStatusUpdating}
-						onClick={(e) => {
-							e.stopPropagation();
-							void handleQuickStatusChange("in_treatment");
-							if (appointmentPatient?.id) {
-								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
-							}
-							if (onOpenVisit) {
-								onOpenVisit();
-							} else {
-								useAppStore.getState().setCurrentView("visit");
-							}
-							showToast("Пациент в кресле: открыта карта 043/у", "success");
-						}}
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
-						title="Начать приём в кресле (Клавиша 2)"
-						data-testid="appointment-action-in-treatment-btn"
-					>
-						<Stethoscope size={13} />
-						<span>Начать приём</span>
-					</button>
-				</div>
-			);
-		}
-
-		if (displayStatus === "arrived") {
-			return (
-				<div className="flex items-center gap-1 shrink-0" data-testid="card-primary-actions">
-					<button
-						type="button"
-						disabled={isQuickStatusUpdating}
-						onClick={(e) => {
-							e.stopPropagation();
-							void handleQuickStatusChange("in_treatment");
-							if (appointmentPatient?.id) {
-								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
-							}
-							if (onOpenVisit) {
-								onOpenVisit();
-							} else {
-								useAppStore.getState().setCurrentView("visit");
-							}
-							showToast("Пациент в кресле: открыта медицинская карта", "success");
-						}}
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
-						title="Пациент в кресле (Клавиша 2)"
-						data-testid="appointment-action-in-treatment-btn"
-					>
-						<Stethoscope size={13} />
-						<span>В кресло</span>
-					</button>
-					<button
-						type="button"
-						disabled={isQuickStatusUpdating}
-						onClick={(e) => {
-							e.stopPropagation();
-							void handleShiftAppointmentTime(15);
-						}}
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2 py-1 rounded-lg bg-[var(--warn-bg)] text-[var(--warn-fg)] border border-[var(--warn-fg)]/40 hover:opacity-90 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
-						title="Сдвинуть запись на +15 минут при опоздании"
-						data-testid="appointment-action-delay-btn"
-					>
-						<Clock size={13} />
-						<span>+15 мин</span>
-					</button>
-				</div>
-			);
-		}
-
-		if (displayStatus === "in_treatment") {
-			return (
-				<div className="flex items-center gap-1 shrink-0" data-testid="card-primary-actions">
-					<button
-						type="button"
-						disabled={isQuickStatusUpdating}
-						onClick={(e) => {
-							e.stopPropagation();
-							void handleQuickStatusChange("completed");
-						}}
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
-						title="Завершить приём (Клавиша 3)"
-						data-testid="appointment-action-complete-btn"
-					>
-						<CheckCircle2 size={13} />
-						<span>Завершить</span>
-					</button>
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							if (appointmentPatient?.id) {
-								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
-							}
-							useAppStore.getState().setCurrentView("visit");
-							showToast(`Открыта карта визита: ${appointmentPatientName}`, "info");
-						}}
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
-						title="Открыть дневник приёма"
-						data-testid="appointment-action-open-visit-btn"
-					>
-						<FileText size={13} className="text-[var(--teal)]" />
-						<span>Медкарта</span>
-					</button>
-				</div>
-			);
-		}
-
-		if (displayStatus === "completed") {
-			return (
-				<div className="flex items-center gap-1 shrink-0" data-testid="card-primary-actions">
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							if (appointmentPatient?.id) {
-								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
-							}
-							useAppStore.getState().setCurrentView("finance");
-							showToast(`Касса: расчёт ${appointmentPatientName}`, "info");
-						}}
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--good-soft)] text-[var(--good-fg)] border border-[var(--good)]/40 hover:bg-[var(--good-surface)] active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
-						title="Принять оплату"
-						data-testid="appointment-action-billing-btn"
-					>
-						<CreditCard size={13} className="text-[var(--good-fg)]" />
-						<span>Оплата</span>
-					</button>
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							repeatAppointment(appointment);
-						}}
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
-						title="Повторить запись (Клавиша R)"
-						data-testid="appointment-action-repeat-btn"
-					>
-						<RotateCcw size={13} />
-						<span>Повторить</span>
-					</button>
-				</div>
-			);
-		}
-
-		if (displayStatus === "cancelled") {
-			return (
-				<div className="flex items-center gap-1 shrink-0" data-testid="card-primary-actions">
-					<button
-						type="button"
-						disabled={isQuickStatusUpdating}
-						onClick={(e) => {
-							e.stopPropagation();
-							void handleQuickStatusChange("confirmed");
-						}}
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
-						title="Восстановить отменённую запись"
-						data-testid="appointment-action-restore-btn"
-					>
-						<RotateCcw size={13} />
-						<span>Восстановить</span>
-					</button>
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							repeatAppointment(appointment);
-						}}
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2 py-1 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
-						title="Записать на другое время (Клавиша R)"
-						data-testid="appointment-action-repeat-btn"
-					>
-						<CalendarCheck size={13} />
-						<span>Перезаписать</span>
-					</button>
-				</div>
-			);
-		}
-
-		if (displayStatus === "no_show") {
-			return (
-				<div className="flex items-center gap-1 shrink-0" data-testid="card-primary-actions">
-					<button
-						type="button"
-						disabled={isQuickStatusUpdating}
-						onClick={(e) => {
-							e.stopPropagation();
-							void handleQuickStatusChange("arrived");
-						}}
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg bg-[var(--good)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
-						title="Отметить пациента прибывшим"
-						data-testid="appointment-action-arrived-btn"
-					>
-						<UserCheck size={13} />
-						<span>Прибыл</span>
-					</button>
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							openAppointmentEditor(appointment);
-						}}
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
-						title="Перенести или изменить время записи"
-						data-testid="appointment-action-reschedule-btn"
-					>
-						<Clock size={13} />
-						<span>Перенести</span>
-					</button>
-				</div>
-			);
-		}
-
-		return null;
-	};
+	const readiness =
+		(appointmentReadinessById instanceof Map
+			? appointmentReadinessById.get(appointment?.id ?? "")
+			: undefined) ?? null;
+	const appointmentHandoffNoteId = `appointment-handoff-note-${appointment?.id ?? ""}`;
 
 	return (
 		<div className="timeline-node min-w-0 max-w-full" key={appointment.id}>
@@ -1010,246 +240,33 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 				>
 					{/* 150ms Hover HUD карточки визита (Apple HIG / StomX Parity) */}
 					{isHoverPreviewOpen && (
-						<div
-							className="appointment-patient-hover-preview absolute top-full left-0 mt-1.5 w-[330px] max-w-[330px] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-50 pointer-events-auto select-none"
-							data-testid="timeline-appointment-hover-preview"
-							onMouseEnter={() => {
+						<AppointmentHoverHud
+							appointment={appointment}
+							dashboard={dashboard}
+							displayStatus={displayStatus}
+							appointmentPatient={appointmentPatient}
+							appointmentPatientName={appointmentPatientName}
+							patientBalance={patientBalance}
+							appointmentDoctor={appointmentDoctor}
+							appointmentAssistant={appointmentAssistant}
+							appointmentChair={appointmentChair}
+							cardTeeth={cardTeeth}
+							allergyAlert={allergyAlert}
+							appointmentLabels={appointmentLabels}
+							formatTime={formatTime}
+							handleQuickStatusChange={handleQuickStatusChange}
+							onCloseHover={handleCardMouseLeave}
+							onKeepHover={() => {
 								if (hoverTimeoutRef.current) {
 									clearTimeout(hoverTimeoutRef.current);
 									hoverTimeoutRef.current = null;
 								}
 								setIsHoverPreviewOpen(true);
 							}}
-							onMouseLeave={handleCardMouseLeave}
-						>
-							{/* 1. ФИО пациента + Статус 54-ФЗ (Баланс / Долг / Аванс) */}
-							<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5">
-								<span className="text-[15px] font-black text-[var(--ink)] flex items-center gap-1.5 truncate">
-									<User className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
-									{appointmentPatientName || "Пациент"}
-								</span>
-								{patientBalance !== null ? (
-									<button
-										type="button"
-										onClick={(e) => {
-											e.stopPropagation();
-											if (appointmentPatient?.id) {
-												usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
-											}
-											useAppStore.getState().setCurrentView("finance");
-											showToast(`Касса: расчёт ${appointmentPatientName}`, "info");
-										}}
-										className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1 ${
-											patientBalance > 0
-												? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/25"
-												: patientBalance < 0
-													? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40 hover:bg-rose-500/25"
-													: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20 hover:bg-slate-500/20"
-										}`}
-										title="Касса: расчёт пациента"
-										data-testid={`timeline-hover-balance-btn-${appointment.id}`}
-									>
-										<CreditCard size={11} className="shrink-0" />
-										<span>
-											{patientBalance > 0
-												? `Депозит: +${patientBalance.toLocaleString("ru-RU")} ₽`
-												: patientBalance < 0
-													? `Долг: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
-													: "Оплата: 0 ₽"}
-										</span>
-									</button>
-								) : (
-									<span className="text-[11px] text-[var(--muted)] font-mono">Баланс: 0 ₽</span>
-								)}
-							</div>
-
-							{/* 2. Телефон */}
-							{appointmentPatient?.phone && (
-								<div className="flex items-center justify-between gap-2">
-									<div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-[var(--ink)]">
-										<Phone className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />
-										<span>{appointmentPatient.phone}</span>
-									</div>
-									<button
-										type="button"
-										onClick={(e) => {
-											e.stopPropagation();
-											const text = generateAppointmentWhatsAppMessage({
-												patientName: appointmentPatientName,
-												doctorName: appointmentDoctor?.fullName,
-												doctorSpecialty: appointmentDoctor?.role,
-												appointmentStartsAt: appointment.startsAt,
-												clinicName: dashboard?.clinicSettings?.profile?.clinicName,
-												clinicAddress: dashboard?.clinicSettings?.profile?.address,
-												clinicPhone: dashboard?.clinicSettings?.profile?.phone,
-												treatmentReason: appointment.reason,
-											});
-											openWhatsAppChat(appointmentPatient.phone!, text);
-										}}
-										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-										title="Открыть чат в WhatsApp"
-									>
-										<MessageSquare size={12} className="text-emerald-600 dark:text-emerald-400" />
-										<span>WhatsApp</span>
-									</button>
-								</div>
-							)}
-
-							{/* 3. Быстрый просмотр жалоб и услуг */}
-							<div className="pt-2 border-t border-[var(--line)] space-y-1">
-								<div className="flex items-center gap-1.5 text-xs text-[var(--ink)]">
-									<Clock size={13} className="text-[var(--teal)] shrink-0" />
-									<span className="font-semibold text-[var(--ink)]">
-										<span className="text-[var(--muted)] font-medium">Жалобы / Услуги: </span>
-										{appointment?.reason || (appointment as Record<string, any>)?.notes || appointment?.comment || "Первичный осмотр и консультация"}
-									</span>
-								</div>
-								{cardTeeth.length > 0 && (
-									<div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-										<span className="text-[11px] font-bold text-[var(--muted)]">Зубы:</span>
-										{cardTeeth.map((t) => (
-											<span
-												key={t}
-												className="px-1.5 py-0.5 rounded-md bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/30 text-[11px] font-bold font-mono"
-											>
-												{t}
-											</span>
-										))}
-									</div>
-								)}
-							</div>
-
-							{/* 4. Врач, кресло и время */}
-							<div className="pt-2 border-t border-[var(--line)] space-y-1 text-[11px] text-[var(--muted)]">
-								<div className="flex items-center justify-between gap-1">
-									<span className="flex items-center gap-1 text-[var(--ink)] font-medium truncate">
-										<Stethoscope size={12} className="text-[var(--teal)] shrink-0" />
-										<span className="truncate">{appointmentDoctor?.fullName || "Врач не назначен"}</span>
-									</span>
-									<span>{appointmentChair?.name || "Кресло"}</span>
-								</div>
-								<div className="flex items-center justify-between text-[11px] font-mono pt-0.5">
-									<span>Время визита:</span>
-									<span className="font-bold text-[var(--ink)]">
-										{formatTime(appointment.startsAt)} - {formatTime(appointment.endsAt)}
-									</span>
-								</div>
-							</div>
-
-							{/* 5. Оперативная очередь StomX: 1-кликовое перемещение между этапами */}
-							<div className="pt-2 border-t border-[var(--line)]">
-								<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5 flex items-center justify-between">
-									<span>Очередь смены (StomX 3-Stage Queue)</span>
-									<span className="text-[10px] font-semibold text-[var(--teal,var(--brand-primary))]">
-										{appointmentLabels?.[displayStatus] || displayStatus}
-									</span>
-								</div>
-								<div className="grid grid-cols-3 gap-1 mb-2">
-									<button
-										type="button"
-										data-testid={`timeline-hover-status-arrived-${appointment.id}`}
-										onClick={(e) => {
-											e.stopPropagation();
-											void handleQuickStatusChange("arrived");
-											setIsHoverPreviewOpen(false);
-										}}
-										className={`min-h-[30px] px-1.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
-											displayStatus === "arrived"
-												? "bg-amber-500 text-white border-amber-500 shadow-2xs"
-												: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20"
-										}`}
-										title="Перевести в статус «Ожидает приёма»"
-									>
-										<UserCheck size={12} className="shrink-0" />
-										<span className="truncate">Ожидает</span>
-									</button>
-									<button
-										type="button"
-										data-testid={`timeline-hover-status-in-treatment-${appointment.id}`}
-										onClick={(e) => {
-											e.stopPropagation();
-											void handleQuickStatusChange("in_treatment");
-											setIsHoverPreviewOpen(false);
-										}}
-										className={`min-h-[30px] px-1.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
-											displayStatus === "in_treatment"
-												? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)] shadow-2xs"
-												: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
-										}`}
-										title="Перевести в статус «На приёме»"
-									>
-										<CalendarCheck size={12} className="shrink-0" />
-										<span className="truncate">На приёме</span>
-									</button>
-									<button
-										type="button"
-										data-testid={`timeline-hover-status-completed-${appointment.id}`}
-										onClick={(e) => {
-											e.stopPropagation();
-											void handleQuickStatusChange("completed");
-											setIsHoverPreviewOpen(false);
-										}}
-										className={`min-h-[30px] px-1.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
-											displayStatus === "completed"
-												? "bg-slate-700 dark:bg-slate-600 text-white border-slate-700 shadow-2xs"
-												: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30 hover:bg-slate-500/20"
-										}`}
-										title="Перевести в статус «Ожидает оплаты»"
-									>
-										<CheckCircle2 size={12} className="shrink-0" />
-										<span className="truncate">На оплату</span>
-									</button>
-								</div>
-
-								{/* 1-кликовые главные действия приёма: «Начать приём» и «Быстрый чек 54-ФЗ» (Мандаты 8e, 8n) */}
-								<div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-[var(--line)]">
-									<button
-										type="button"
-										data-testid="hover-start-visit-btn"
-										id={`timeline-hover-start-visit-${appointment.id}`}
-										onClick={(e) => {
-											e.stopPropagation();
-											setIsHoverPreviewOpen(false);
-											void handleQuickStatusChange("in_treatment");
-											if (appointmentPatient?.id) {
-												usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
-											}
-											useAppStore.getState().setCurrentView("visit");
-											showToast(`Приём начат: ${appointmentPatientName} в кресле`, "success");
-										}}
-										className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-										title="Начать приём: перевести в статус «На приёме» и открыть карту приёма 043/у (1 клик)"
-									>
-										<Stethoscope size={13} className="shrink-0" />
-										<span className="whitespace-nowrap">Начать приём</span>
-									</button>
-
-									<button
-										type="button"
-										data-testid="hover-pay-54fz-btn"
-										id={`timeline-hover-pay-54fz-${appointment.id}`}
-										onClick={(e) => {
-											e.stopPropagation();
-											setIsHoverPreviewOpen(false);
-											if (displayStatus === "in_treatment") {
-												void handleQuickStatusChange("completed");
-											}
-											if (appointmentPatient?.id) {
-												usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
-											}
-											useAppStore.getState().setCurrentView("finance");
-											showToast(`Быстрый расчёт: ${appointmentPatientName}`, "info");
-										}}
-										className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-										title="Быстрый расчёт: перейти к оплате (1 клик)"
-									>
-										<CreditCard size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-										<span className="whitespace-nowrap">Быстрый расчёт</span>
-									</button>
-								</div>
-							</div>
-						</div>
+							onOpenVisit={onOpenVisit}
+						/>
 					)}
+
 					<div className="appointment-card-header border-b border-[var(--line)] pb-2 mb-1 flex justify-between items-center gap-2 min-w-0 flex-wrap">
 						<div className="appointment-card-time font-semibold text-sm text-[var(--ink)] flex items-center gap-2 shrink-0">
 							{appointment?.startsAt ? formatTime(appointment.startsAt) : ""}
@@ -1259,464 +276,58 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 						</div>
 						<div className="flex items-center gap-1.5 flex-wrap min-w-0">
 							{/* Unified Interactive Status Selector with Color Indication */}
-							<div
-								className={`appointment-status-badge-selector relative inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors shrink-0 ${
-									displayStatus === "in_treatment"
-										? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/40"
-										: displayStatus === "confirmed"
-											? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500"
-											: displayStatus === "arrived"
-												? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500"
-												: displayStatus === "completed"
-													? "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
-													: displayStatus === "cancelled" || displayStatus === "no_show"
-														? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
-														: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
-								}`}
-								data-testid={`appointment-status-badge-${appointment.id}`}
-							>
-								{displayStatus === "in_treatment" ? (
-									<span className="w-2 h-2 rounded-full bg-teal-500 animate-ping shrink-0" aria-hidden="true" />
-								) : displayStatus === "completed" ? (
-									<Check size={12} className="shrink-0 text-current" aria-hidden="true" />
-								) : (
-									<span
-										className={`w-2 h-2 rounded-full shrink-0 ${
-											displayStatus === "confirmed"
-												? "bg-emerald-500"
-												: displayStatus === "arrived"
-													? "bg-amber-500"
-													: displayStatus === "cancelled" || displayStatus === "no_show"
-														? "bg-rose-500"
-														: "bg-[var(--line-strong)]"
-										}`}
-										aria-hidden="true"
-									/>
-								)}
-								<select
-									className="appointment-status-select bg-transparent text-current font-bold text-xs cursor-pointer outline-none border-none p-0 pr-0.5 appearance-none min-h-[44px] sm:min-h-0 sm:h-auto"
-									value={displayStatus}
-									disabled={
-										isQuickStatusUpdating ||
-										Boolean(
-											appointmentHasOpenVisit &&
-												activeVisitLockedAppointmentStatuses?.has?.(displayStatus),
-										)
-									}
-									onChange={(e) => {
-										e.stopPropagation();
-										void handleQuickStatusChange(e.target.value as Appointment["status"]);
-									}}
-									title={`Статус записи: ${appointmentLabels?.[displayStatus] || displayStatus}`}
-									aria-label="Изменить статус приема"
-								>
-									{(Object.keys(appointmentLabels ?? {}) as Appointment["status"][]).map((status) => (
-										<option
-											key={status}
-											value={status}
-											className="bg-[var(--paper)] text-[var(--ink)] font-normal"
-											disabled={
-												Boolean(
-													appointmentHasOpenVisit &&
-														activeVisitLockedAppointmentStatuses?.has?.(status),
-												)
-											}
-										>
-											{appointmentLabels?.[status] ?? status}
-										</option>
-									))}
-								</select>
-							</div>
-
-							{patientBalance !== null ? (
-								patientBalance < 0 ? (
-									<span
-										className="px-2.5 py-1 rounded-lg text-xs font-black font-mono tracking-tight bg-rose-500/15 text-rose-800 dark:text-rose-100 dark:bg-rose-950/70 border-2 border-rose-500 shadow-xs flex items-center gap-1 shrink-0 whitespace-nowrap"
-										title={`Задолженность пациента: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`}
-										data-testid="appointment-debt-badge"
-									>
-										<CreditCard size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
-										<span className="whitespace-nowrap">Долг: {Math.abs(patientBalance).toLocaleString("ru-RU")} ₽</span>
-									</span>
-								) : patientBalance > 0 ? (
-									<span
-										className="px-2.5 py-1 rounded-lg text-xs font-bold font-mono tracking-tight bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 dark:bg-emerald-950/50 border border-emerald-500/40 shadow-xs shrink-0 whitespace-nowrap"
-										title={`Аванс/депозит пациента: ${patientBalance.toLocaleString("ru-RU")} ₽`}
-									>
-										Аванс: {patientBalance.toLocaleString("ru-RU")} ₽
-									</span>
-								) : (
-									<span
-										className="px-2 py-0.5 rounded-lg text-xs font-medium font-mono text-[var(--muted)] bg-[var(--paper-soft)] border border-[var(--line)] shrink-0 whitespace-nowrap"
-										title="Баланс пациента: 0 ₽"
-									>
-										Баланс: 0 ₽
-									</span>
-								)
-							) : null}
-							{isCito && (
-								<span
-									className="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-rose-500/20 text-rose-800 dark:text-rose-100 border border-rose-500 ring-2 ring-rose-500/50 shadow-xs flex items-center gap-1 animate-pulse shrink-0"
-									title="CITO! Прием по острой боли (наивысший приоритет)"
-									data-testid="appointment-cito-badge"
-								>
-									<Zap size={13} className="text-rose-600 dark:text-rose-300 fill-rose-500" />
-									<span>CITO Острая боль</span>
-								</span>
+							{!appointmentEditing && (
+								<AppointmentStatusBadgeSelector
+									appointmentId={appointment.id}
+									displayStatus={displayStatus}
+									appointmentLabels={appointmentLabels}
+									isQuickStatusUpdating={isQuickStatusUpdating}
+									isLocked={isLockedStatus}
+									onStatusChange={(status) => void handleQuickStatusChange(status)}
+								/>
 							)}
-							{activeScheduleCollision ? (
-								<span
-									className="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/50 shadow-xs flex items-center gap-1 animate-pulse shrink-0"
-									title={activeScheduleCollision.message}
-									data-testid="appointment-collision-badge"
-								>
-									{activeScheduleCollision.message}
-								</span>
-							) : null}
-							{appointmentHasOpenVisit ? (
-								<span className="handoff-lock text-xs break-words" title="Открыт прием: пациент закреплен">
-									Открыт прием: пациент закреплен
-								</span>
-							) : null}
+
+							{/* Financial Balance Badge */}
+							<AppointmentBalanceBadge balance={patientBalance} />
+
+							{/* Emergency & Conflict Alert Badges */}
+							<AppointmentAlertBadges
+								isCito={isCito}
+								collisionMessage={activeScheduleCollision?.message ?? null}
+								hasOpenVisit={appointmentHasOpenVisit}
+							/>
 
 							{/* 2 кнопки прямого действия на лице карточки (Закон Хика и Миллера) */}
-							{renderPrimaryFaceActions()}
+							<AppointmentCardPrimaryActions
+								appointment={appointment}
+								displayStatus={displayStatus}
+								appointmentEditing={appointmentEditing}
+								isQuickStatusUpdating={isQuickStatusUpdating}
+								appointmentPatient={appointmentPatient}
+								appointmentPatientName={appointmentPatientName}
+								onOpenVisit={onOpenVisit}
+								handleQuickStatusChange={handleQuickStatusChange}
+								handleShiftAppointmentTime={handleShiftAppointmentTime}
+								repeatAppointment={repeatAppointment}
+								openAppointmentEditor={openAppointmentEditor}
+							/>
 
 							{/* Single Context Actions Menu Button [...] */}
-							<div className="relative inline-flex items-center shrink-0" ref={cardMenuRef}>
-								<button
-									type="button"
-									className="secondary-button appointment-context-menu-btn min-h-[44px] min-w-[44px] w-11 h-11 sm:min-h-0 sm:min-w-0 sm:w-8 sm:h-8 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal,var(--brand-primary))] text-[var(--ink)] inline-flex items-center justify-center cursor-pointer transition-colors shrink-0"
-									onClick={(e) => {
-										e.stopPropagation();
-										setIsCardMenuOpen((prev) => !prev);
-									}}
-									title="Все действия с записью (напоминания, опоздание, повтор, буфер, редактор)"
-									aria-label="Меню действий записи"
-									aria-expanded={isCardMenuOpen}
-								>
-									<MoreVertical size={14} className="text-[var(--teal,var(--brand-primary))]" />
-								</button>
-
-								{isCardMenuOpen && (
-									<div
-										className="appointment-card-context-menu absolute right-0 top-full mt-1 z-50 flex flex-col gap-1 p-2 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[240px] animate-in fade-in zoom-in-95 duration-100 text-xs"
-										role="menu"
-										onClick={(e) => e.stopPropagation()}
-									>
-										{/* Рекомендации и действия по записи */}
-										{appointmentSuggestions.length > 0 && (
-											<>
-												<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-													Рекомендации
-												</div>
-												{appointmentSuggestions.map((suggestion) => (
-													<button
-														type="button"
-														key={suggestion.id}
-														className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center gap-2 cursor-pointer"
-														role="menuitem"
-														onClick={() => {
-															setIsCardMenuOpen(false);
-															openScheduleSuggestion(suggestion.section);
-														}}
-													>
-														<AlertTriangle size={14} className="text-amber-600 shrink-0" />
-														<span className="truncate">{suggestion.title}</span>
-													</button>
-												))}
-											</>
-										)}
-
-										{/* 1. Напоминания и связь */}
-										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
-											Связь и напоминания
-										</div>
-										{appointmentPatient?.phone ? (
-											<button
-												type="button"
-												className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-												role="menuitem"
-												onClick={() => {
-													setIsCardMenuOpen(false);
-													window.location.href = `tel:${appointmentPatient.phone}`;
-												}}
-												title={`Позвонить пациенту ${appointmentPatient.phone}`}
-											>
-												<Phone size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-												<span className="truncate">Позвонить ({appointmentPatient.phone})</span>
-											</button>
-										) : null}
-										<button
-											type="button"
-											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-											role="menuitem"
-											onClick={() => {
-												setIsCardMenuOpen(false);
-												const text = generateAppointmentWhatsAppMessage({
-													patientName: appointmentPatientName,
-													doctorName: appointmentDoctor?.fullName,
-													doctorSpecialty: appointmentDoctor?.role,
-													appointmentStartsAt: appointment.startsAt,
-													clinicName: dashboard?.clinicSettings?.profile?.clinicName,
-													clinicAddress: dashboard?.clinicSettings?.profile?.address,
-													clinicPhone: dashboard?.clinicSettings?.profile?.phone,
-													treatmentReason: appointment.reason,
-												});
-												if (appointmentPatient?.phone) {
-													openWhatsAppChat(appointmentPatient.phone, text);
-												} else if (typeof navigator !== "undefined" && navigator.clipboard) {
-													void navigator.clipboard.writeText(text);
-													showToast(`Текст напоминания для ${appointmentPatientName} скопирован в буфер`, "success");
-												}
-											}}
-										>
-											<MessageSquare size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-											<span>Напомнить в WhatsApp / СМС</span>
-										</button>
-
-										{/* 2. Сдвиг времени при опоздании */}
-										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
-											Опоздание (сдвиг времени)
-										</div>
-										<div className="grid grid-cols-3 gap-1 px-1 py-0.5">
-											{[15, 30, 45].map((m) => (
-												<button
-													key={m}
-													type="button"
-													disabled={isQuickStatusUpdating}
-													onClick={() => {
-														setIsCardMenuOpen(false);
-														void handleShiftAppointmentTime(m);
-													}}
-													className="min-h-[44px] min-w-[44px] px-1.5 py-1 rounded-md border border-amber-500/30 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center whitespace-nowrap"
-													title={`Сдвинуть на +${m} минут`}
-												>
-													+{m}м
-												</button>
-											))}
-										</div>
-
-										{/* 3. Операции с приемом */}
-										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
-											Операции с приемом
-										</div>
-										<button
-											type="button"
-											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-											role="menuitem"
-											onClick={() => {
-												setIsCardMenuOpen(false);
-												if (appointmentPatient?.id) {
-													usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
-												}
-												useAppStore.getState().setCurrentView("patients");
-												showToast(`Открыта карта пациента: ${appointmentPatientName}`, "info");
-											}}
-											title="Открыть амбулаторную карту пациента (ЭМК)"
-										>
-											<FileText size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
-											<span>Карта пациента (ЭМК)</span>
-										</button>
-										<button
-											type="button"
-											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-											role="menuitem"
-											onClick={() => {
-												setIsCardMenuOpen(false);
-												void printBlankMedicalContract(appointmentPatient, {
-													doctorName: appointmentDoctor?.fullName,
-													clinicName: dashboard?.clinicSettings?.profile?.clinicName,
-												});
-											}}
-											title="Распечатать пустой договор со строками _______ для пациента"
-											data-testid="appointment-card-print-blank-contract-btn"
-										>
-											<Printer size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
-											<span>Печать бланка договора (_______)</span>
-										</button>
-										<button
-											type="button"
-											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-											role="menuitem"
-											onClick={() => {
-												setIsCardMenuOpen(false);
-												if (appointmentPatient?.id) {
-													usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
-												}
-												useAppStore.getState().setCurrentView("finance");
-												showToast(`Касса: расчёт ${appointmentPatientName}`, "info");
-											}}
-											title="Перейти в кассу для расчёта"
-										>
-											<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-											<span>Принять оплату / Касса</span>
-										</button>
-										<button
-											type="button"
-											className="secondary-button appointment-repeat-button w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
-											role="menuitem"
-											onClick={() => {
-												setIsCardMenuOpen(false);
-												repeatAppointment(appointment);
-											}}
-											title="Повторить запись (Клавиша R)"
-										>
-											<span>Повторить запись</span>
-											<span className="text-[10px] font-mono opacity-70">R</span>
-										</button>
-
-										{copyAppointmentToBuffer ? (
-											<button
-												type="button"
-												className="secondary-button appointment-buffer-button w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
-												role="menuitem"
-												onClick={() => {
-													setIsCardMenuOpen(false);
-													copyAppointmentToBuffer(appointment);
-												}}
-												title="Скопировать в буфер (Клавиша B)"
-											>
-												<span>Скопировать в буфер</span>
-												<span className="text-[10px] font-mono opacity-70">B</span>
-											</button>
-										) : null}
-
-										<button
-											type="button"
-											className="secondary-button appointment-edit-button w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
-											role="menuitem"
-											onClick={() => {
-												setIsCardMenuOpen(false);
-												openAppointmentEditor(appointment);
-											}}
-											title="Настроить запись в редакторе (Клавиша Enter)"
-										>
-											<span>Настроить запись</span>
-											<span className="text-[10px] font-mono opacity-70">Enter</span>
-										</button>
-
-										{/* 4. Диагностика и КТ */}
-										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
-											Диагностика
-										</div>
-										<button
-											type="button"
-											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
-											role="menuitem"
-											data-testid="appointment-open-cbct-radiology-btn"
-											onClick={() => {
-												setIsCardMenuOpen(false);
-												if (typeof window !== "undefined") {
-													if (appointmentPatient?.id) {
-														usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
-													}
-													window.location.hash = "#radiology";
-													showToast(`Открыты снимки и КТ пациента ${appointmentPatientName}`, "info");
-												}
-											}}
-											title="Открыть рентген и 3D КТ (Клавиша X)"
-										>
-											<div className="flex items-center gap-2">
-												<Scan size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
-												<span>КТ / Рентген снимки</span>
-											</div>
-											<span className="text-[10px] font-mono opacity-70">X</span>
-										</button>
-
-										{/* 5. Статус и отмена */}
-										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
-											Статус и отмена
-										</div>
-										<button
-											type="button"
-											disabled={isQuickStatusUpdating}
-											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center justify-between cursor-pointer disabled:opacity-40"
-											role="menuitem"
-											onClick={() => setIsRefusalReasonsOpen((prev) => !prev)}
-											title="Отменить приём"
-											data-testid="appointment-card-refusal-menu-trigger"
-										>
-											<div className="flex items-center gap-2">
-												<XCircle size={14} className="text-rose-600 shrink-0" />
-												<span>Отменить приём</span>
-											</div>
-											<ChevronDown
-												size={14}
-												className={`text-rose-600 shrink-0 transition-transform ${
-													isRefusalReasonsOpen ? "rotate-180" : ""
-												}`}
-											/>
-										</button>
-										{isRefusalReasonsOpen && (
-											<div
-												className="p-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-1 my-1 max-h-[190px] overflow-y-auto [scrollbar-width:thin]"
-												data-testid="appointment-card-refusal-reasons-dropdown"
-											>
-												<div className="text-[10px] font-bold text-rose-800 dark:text-rose-200 uppercase tracking-wider px-1">
-													Причины отмены (StomX):
-												</div>
-												{STOMX_REFUSE_REASONS_CATALOG.map((refuse) => (
-													<button
-														key={refuse.id}
-														type="button"
-														onClick={() => {
-															setIsCardMenuOpen(false);
-															setIsRefusalReasonsOpen(false);
-															const statusToSet = refuse.code.startsWith("no_show")
-																? "no_show"
-																: "cancelled";
-															void handleQuickStatusChange(
-																statusToSet,
-																`[Отмена: ${refuse.nameRu}]`,
-															);
-														}}
-														className="w-full text-left px-2 py-1.5 min-h-[36px] rounded-lg text-[11px] font-medium text-[var(--ink)] hover:bg-rose-500/15 dark:hover:bg-rose-950/40 transition-colors flex items-center justify-between cursor-pointer"
-														data-testid={`appointment-card-refusal-reason-${refuse.code}`}
-														title={`${refuse.nameRu} (${
-															refuse.responsibility === "clinic"
-																? "Клиника"
-																: refuse.responsibility === "patient"
-																? "Пациент"
-																: "Система"
-														})`}
-													>
-														<span className="truncate">{refuse.nameRu}</span>
-													</button>
-												))}
-											</div>
-										)}
-										<button
-											type="button"
-											disabled={isQuickStatusUpdating}
-											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-40"
-											role="menuitem"
-											onClick={() => {
-												setIsCardMenuOpen(false);
-												void handleQuickStatusChange("cancelled");
-											}}
-											title="Отменить приём без указания причины"
-										>
-											<XCircle size={14} className="text-rose-600 shrink-0 opacity-60" />
-											<span>Отменить без причины</span>
-										</button>
-										<button
-											type="button"
-											disabled={isQuickStatusUpdating}
-											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-40"
-											role="menuitem"
-											onClick={() => {
-												setIsCardMenuOpen(false);
-												void handleQuickStatusChange("no_show");
-											}}
-											title="Отметить: пациент не явился"
-										>
-											<UserX size={14} className="text-amber-600 shrink-0" />
-											<span>Не явился (No-show)</span>
-										</button>
-									</div>
-								)}
-							</div>
+							<AppointmentCardContextMenu
+								appointment={appointment}
+								dashboard={dashboard}
+								appointmentSuggestions={appointmentSuggestions}
+								appointmentPatient={appointmentPatient}
+								appointmentPatientName={appointmentPatientName}
+								appointmentDoctor={appointmentDoctor}
+								isQuickStatusUpdating={isQuickStatusUpdating}
+								openScheduleSuggestion={openScheduleSuggestion}
+								handleShiftAppointmentTime={handleShiftAppointmentTime}
+								handleQuickStatusChange={handleQuickStatusChange}
+								repeatAppointment={repeatAppointment}
+								copyAppointmentToBuffer={copyAppointmentToBuffer}
+								openAppointmentEditor={openAppointmentEditor}
+							/>
 						</div>
 					</div>
 
@@ -1759,34 +370,11 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 									{appointment?.reason || "Консультация"}
 								</span>
 							</span>
-							{cardTeeth.length > 0 && (
-								<span
-									className="px-1.5 py-0.5 rounded-md bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--teal)]/30 text-[11px] font-bold font-mono shrink-0"
-									title={`Зубы: ${cardTeeth.join(", ")}`}
-									data-testid="appointment-teeth-badge"
-								>
-									Зуб {cardTeeth.join(", ")}
-								</span>
-							)}
-							{allergyAlert && (
-								<span
-									className="px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 text-[11px] font-black flex items-center gap-1 shrink-0"
-									title={allergyAlert}
-									data-testid="appointment-card-allergy-badge"
-								>
-									<AlertTriangle size={11} className="text-amber-600 shrink-0" />
-									<span className="truncate max-w-[160px]">{allergyAlert}</span>
-								</span>
-							)}
-							{somaticAlert && (
-								<span
-									className="px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-800 dark:text-purple-200 border border-purple-500/30 text-[11px] font-bold shrink-0"
-									title={somaticAlert}
-									data-testid="appointment-somatic-badge"
-								>
-									<span className="truncate max-w-[160px]">{somaticAlert}</span>
-								</span>
-							)}
+							<AppointmentMedicalBadges
+								cardTeeth={cardTeeth}
+								allergyAlert={allergyAlert}
+								somaticAlert={somaticAlert}
+							/>
 						</div>
 					</div>
 
@@ -1800,85 +388,13 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 						</p>
 					) : null}
 
-					{(appointment?.status === "cancelled" ||
-						appointment?.status === "no_show") && (
-						<div
-							className="mt-1.5 p-2 rounded-lg border text-xs flex flex-col gap-1.5"
-							style={{
-								borderColor:
-									appointment.status === "cancelled"
-										? "rgba(225, 29, 72, 0.25)"
-										: "rgba(217, 119, 6, 0.25)",
-								backgroundColor:
-									appointment.status === "cancelled"
-										? "rgba(225, 29, 72, 0.06)"
-										: "rgba(217, 119, 6, 0.06)",
-								color: "var(--ink)",
-							}}
-							data-testid="appointment-card-refusal-banner"
-						>
-							<div className="flex items-center justify-between gap-1 flex-wrap">
-								<span className="font-semibold text-[11px] uppercase tracking-wider text-rose-700 dark:text-rose-300">
-									{appointment.status === "cancelled"
-										? "Запись отменена"
-										: "Пациент не явился"}
-								</span>
-								{(() => {
-									const text = `${appointment.reason || ""} ${appointment.comment || ""}`;
-									const match = text.match(/\[Отмена: ([^\]]+)\]/);
-									if (match && match[1]) {
-										return (
-											<span className="font-medium text-xs text-rose-800 dark:text-rose-200 bg-rose-100 dark:bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-800/40">
-												{match[1]}
-											</span>
-										);
-									}
-									return null;
-								})()}
-							</div>
-							{(() => {
-								const text = `${appointment.reason || ""} ${appointment.comment || ""}`;
-								const hasReason = /\[Отмена: [^\]]+\]/.test(text);
-								if (!hasReason) {
-									return (
-										<div
-											className="flex flex-wrap gap-1 mt-0.5"
-											data-testid="appointment-card-refusal-chips"
-										>
-											<span className="text-[11px] text-[var(--muted)] w-full">
-												Причина отказа (1 клик):
-											</span>
-											{STOMX_REFUSE_REASONS_CATALOG.slice(0, 4).map((refuse) => (
-												<button
-													key={refuse.code}
-													type="button"
-													disabled={
-														isQuickStatusUpdating || appointmentHasOpenVisit
-													}
-													className="px-2 py-1 min-h-[28px] rounded text-[11px] font-medium bg-[var(--paper)] hover:bg-rose-50 dark:hover:bg-rose-950/50 border border-[var(--line)] text-[var(--ink)] hover:border-rose-300 transition-colors cursor-pointer"
-													data-testid={`appointment-card-refusal-chip-${refuse.code}`}
-													onClick={(e) => {
-														e.stopPropagation();
-														const statusToSet =
-															appointment.status === "no_show"
-																? "no_show"
-																: "cancelled";
-														void handleQuickStatusChange(
-															statusToSet,
-															`[Отмена: ${refuse.nameRu}]`,
-														);
-													}}
-												>
-													{refuse.nameRu}
-												</button>
-											))}
-										</div>
-									);
-								}
-								return null;
-							})()}
-						</div>
-					)}
+					{/* Refusal banner & categorization chips */}
+					<AppointmentRefusalBanner
+						appointment={appointment}
+						isQuickStatusUpdating={isQuickStatusUpdating}
+						appointmentHasOpenVisit={appointmentHasOpenVisit}
+						onQuickStatusChange={handleQuickStatusChange}
+					/>
 
 					{(appointment?.status === "cancelled" ||
 						appointment?.status === "no_show") &&
@@ -1899,956 +415,64 @@ function AppointmentCardInner(props: AppointmentCardProps) {
 					) : null}
 
 					{appointmentEditing ? (
-						<section
-							className="appointment-editor form-span-2"
-							id={appointmentEditorId}
-							aria-label={`Редактирование записи: ${appointmentPatientName}`}
-						>
-							<label>
-								Начало
-								<input
-									type="datetime-local"
-									value={toDateTimeLocalValue(
-										appointmentDraft?.startsAt as string,
-										dashboard?.clinicSettings?.profile?.timezone,
-									)}
-									onChange={(event: TextFieldChangeEvent) =>
-										updateAppointmentScheduleDraft(
-											appointment.id,
-											"startsAt",
-											fromDateTimeLocalValue(
-												event.target.value,
-												dashboard?.clinicSettings?.profile?.timezone,
-											),
-										)
-									}
-								/>
-							</label>
-							<label>
-								Окончание
-								<input
-									type="datetime-local"
-									value={toDateTimeLocalValue(
-										appointmentDraft?.endsAt as string,
-										dashboard?.clinicSettings?.profile?.timezone,
-									)}
-									onChange={(event: TextFieldChangeEvent) =>
-										updateAppointmentScheduleDraft(
-											appointment.id,
-											"endsAt",
-											fromDateTimeLocalValue(
-												event.target.value,
-												dashboard?.clinicSettings?.profile?.timezone,
-											),
-										)
-									}
-								/>
-							</label>
-							{/* min(300px, 100%): иначе колонка держит 300px в более узком
-              контейнере и содержимое карточки уезжает за правый край. */}
-							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns:
-										"repeat(auto-fit, minmax(min(300px, 100%), 1fr))",
-									gap: "24px",
-									marginBottom: "16px",
-									gridColumn: "1 / -1",
-								}}
-							>
-								<div className="min-w-0">
-									<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
-										Пациент
-									</span>
-									{useManualSelects ||
-									(dashboard?.patients ?? []).length > 20 ? (
-										<select
-											value={String(appointmentDraft.patientId ?? "")}
-											onChange={(e) =>
-												updateAppointmentScheduleDraft(
-													appointment.id,
-													"patientId",
-													e.target.value,
-												)
-											}
-											disabled={
-												appointment.id === dashboard?.activeVisit?.appointmentId
-											}
-											className="w-full p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none truncate"
-											aria-describedby={
-												appointmentHasOpenVisit
-													? appointmentHandoffNoteId
-													: undefined
-											}
-										>
-											<option value="">-- Выберите пациента --</option>
-											{activePatients.map((p) => (
-												<option key={p.id} value={p.id}>
-													{p.fullName}
-												</option>
-											))}
-										</select>
-									) : (
-										<div className="flex flex-wrap gap-1.5 min-w-0">
-											{activePatients.map((patient) => (
-												<button
-													key={patient.id}
-													type="button"
-													className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.patientId === patient.id ? "active" : ""}`}
-													title={patient.fullName}
-													onClick={() =>
-														updateAppointmentScheduleDraft(
-															appointment.id,
-															"patientId",
-															patient.id,
-														)
-													}
-													disabled={
-														appointment.id ===
-														dashboard?.activeVisit?.appointmentId
-													}
-												>
-													<span className="truncate">{patient.fullName}</span>
-												</button>
-											))}
-										</div>
-									)}
-								</div>
-
-								<div className="min-w-0">
-									<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
-										Врач
-									</span>
-									{useManualSelects ? (
-										<select
-											value={String(appointmentDraft.doctorUserId ?? "")}
-											onChange={(e) => {
-												const newDocId = e.target.value;
-												updateAppointmentScheduleDraft(
-													appointment.id,
-													"doctorUserId",
-													newDocId,
-												);
-												const doc = (
-													dashboard?.clinicSettings?.staff ?? []
-												).find((m) => m.id === newDocId);
-												if (doc?.specialties?.length) {
-													const matchingChair = (
-														dashboard?.clinicSettings?.chairs ?? []
-													).find(
-														(c) =>
-															c.active &&
-															c.specialization &&
-															doc.specialties.includes(c.specialization),
-													);
-													if (matchingChair) {
-														if (
-															matchingChair.id !==
-															appointmentDraft.chairId
-														) {
-															updateAppointmentScheduleDraft(
-																appointment.id,
-																"chairId",
-																matchingChair.id,
-															);
-														}
-													}
-												}
-											}}
-											className="w-full min-h-[44px] p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none truncate"
-										>
-											<option value="">-- Выберите врача --</option>
-											{activeDoctors.map((m) => (
-												<option key={m.id} value={m.id}>
-													{m.fullName}
-												</option>
-											))}
-										</select>
-									) : (
-										<div className="flex flex-wrap gap-1.5 min-w-0">
-											{activeDoctors.map((member) => (
-												<button
-													key={member.id}
-													type="button"
-													className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.doctorUserId === member.id ? "active" : ""}`}
-													title={member.fullName}
-													onClick={() => {
-														updateAppointmentScheduleDraft(
-															appointment.id,
-															"doctorUserId",
-															member.id,
-														);
-														if (member.specialties?.length) {
-															const matchingChair = (dashboard?.clinicSettings?.chairs ?? []).find(
-																(c) =>
-																	c.active &&
-																	c.specialization &&
-																	member.specialties.includes(c.specialization),
-															);
-															if (matchingChair && matchingChair.id !== appointmentDraft.chairId) {
-																updateAppointmentScheduleDraft(
-																	appointment.id,
-																	"chairId",
-																	matchingChair.id,
-																);
-															}
-														}
-													}}
-												>
-													<span className="truncate">{member.fullName}</span>
-												</button>
-											))}
-										</div>
-									)}
-								</div>
-
-								{dashboard?.clinicSettings?.profile?.mode !== "one_chair" &&
-									activeAssistants.length > 0 && (
-									<div className="min-w-0">
-										<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
-											Ассистент
-										</span>
-										<div className="flex flex-wrap gap-1.5 min-w-0">
-											{activeAssistants.map((member) => (
-												<button
-													key={member.id}
-													type="button"
-													className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.assistantUserId === member.id ? "active" : ""}`}
-													title={member.fullName}
-													onClick={() =>
-														updateAppointmentScheduleDraft(
-															appointment.id,
-															"assistantUserId",
-															appointmentDraft.assistantUserId === member.id
-																? ""
-																: member.id,
-														)
-													}
-												>
-													<span className="truncate">{member.fullName}</span>
-												</button>
-											))}
-										</div>
-									</div>
-								)}
-
-								<div className="min-w-0">
-									<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
-										Кресло
-									</span>
-									<div className="flex flex-wrap gap-1.5 min-w-0">
-										{activeChairs.map((chair) => (
-												<button
-													key={chair.id}
-													type="button"
-													className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.chairId === chair.id ? "active" : ""}`}
-													title={chair.name}
-													onClick={() =>
-														updateAppointmentScheduleDraft(
-															appointment.id,
-															"chairId",
-															chair.id,
-														)
-													}
-												>
-													<span className="truncate">{chair.name}</span>
-												</button>
-											))}
-									</div>
-								</div>
-
-								<div className="min-w-0">
-									<span className="text-xs font-semibold text-[var(--muted)] block mb-1.5">
-										Статус приема
-									</span>
-									<select
-										className="appointment-status-select w-full max-w-xs min-h-[44px] px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] cursor-pointer outline-none hover:border-[var(--teal,var(--brand-primary))] transition-colors"
-										value={String(appointmentDraft?.status || appointment.status)}
-										onChange={(e) => {
-											updateAppointmentScheduleDraft(
-												appointment.id,
-												"status",
-												normalizedAppointmentStatus(e.target.value as Appointment["status"]),
-											);
-										}}
-										disabled={
-											appointmentHasOpenVisit &&
-											Boolean(
-												activeVisitLockedAppointmentStatuses?.has?.(
-													(appointmentDraft?.status || appointment.status) as any,
-												),
-											)
-										}
-										aria-label="Статус приема"
-									>
-										{Object.keys(appointmentLabels ?? {}).map((key) => {
-											const statusKey = key as Appointment["status"];
-											return (
-												<option
-													key={statusKey}
-													value={statusKey}
-													disabled={Boolean(
-														appointmentHasOpenVisit &&
-															activeVisitLockedAppointmentStatuses?.has?.(statusKey),
-													)}
-												>
-													{appointmentLabels?.[statusKey] ?? statusKey}
-												</option>
-											);
-										})}
-									</select>
-									<div className="mt-2">
-										<AppointmentQuickActions
-											appointmentId={appointment.id}
-											currentStatus={(appointmentDraft?.status || appointment.status) as Appointment["status"]}
-											patientName={appointmentPatientName || "Пациент"}
-											patientPhone={appointmentPatient?.phone}
-											doctorName={appointmentDoctor?.fullName}
-											doctorSpecialty={
-												appointmentDoctor?.specialties?.[0]
-													? specialtyLabels[appointmentDoctor.specialties[0]]
-													: undefined
-											}
-											startsAt={appointment.startsAt}
-											treatmentReason={appointment.reason}
-											cabinetName={appointmentChair?.name}
-											appointmentHasOpenVisit={appointmentHasOpenVisit}
-											activeVisitLockedAppointmentStatuses={activeVisitLockedAppointmentStatuses}
-											onStatusChange={(newStatus, noteAppend) => {
-												updateAppointmentScheduleDraft(
-													appointment.id,
-													"status",
-													normalizedAppointmentStatus(newStatus),
-												);
-												if (noteAppend) {
-													const existingComment =
-														appointmentDraft?.comment ?? appointment.comment ?? "";
-													const updatedComment = existingComment
-														? `${existingComment}\n[${noteAppend}]`
-														: `[${noteAppend}]`;
-													updateAppointmentScheduleDraft(
-														appointment.id,
-														"comment",
-														updatedComment,
-													);
-												}
-											}}
-											disabled={appointmentSaveState === "saving"}
-										/>
-									</div>
-									{appointmentHasOpenVisit && (
-										<div
-											id={appointmentHandoffNoteId}
-											className="status-blocker-note appointment-handoff-note text-xs mt-1 font-medium p-2 rounded break-words"
-										>
-											Статус приема заблокирован: по этому приему открыт
-											активный визит. Завершите или отмените визит в рабочем
-											месте врача (закройте прием перед закрывающим статусом
-											записи).
-										</div>
-									)}
-								</div>
-							</div>
-							<label className="form-span-2 min-w-0">
-								Причина
-								<input
-									className="w-full"
-									value={String(appointmentDraft.reason || "")}
-									onChange={(event: TextFieldChangeEvent) =>
-										updateAppointmentScheduleDraft(
-											appointment.id,
-											"reason",
-											event.target.value,
-										)
-									}
-								/>
-								<div className="flex flex-wrap gap-1.5 mt-1.5 min-w-0">
-									{[
-										"Кариес",
-										"Пульпит",
-										"Удаление",
-										"Осмотр",
-										"Профгигиена",
-										"Консультация",
-										"Брекеты",
-										"Коронка",
-										"КЛКТ",
-										"Имплантация",
-									].map((chip) => (
-										<button
-											key={chip}
-											type="button"
-											onClick={() => {
-												const currentVal = String(
-													appointmentDraft.reason || "",
-												).trim();
-												const newVal = currentVal
-													? `${currentVal}, ${chip.toLowerCase()}`
-													: chip;
-												updateAppointmentScheduleDraft(
-													appointment.id,
-													"reason",
-													newVal,
-												);
-											}}
-											className="quick-chip quick-chip--sm max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center"
-										>
-											+ {chip}
-										</button>
-									))}
-								</div>
-							</label>
-							<label className="form-span-2 min-w-0">
-								Комментарий
-								<textarea
-									className="w-full"
-									value={String(appointmentDraft.comment || "")}
-									onChange={(event: TextFieldChangeEvent) =>
-										updateAppointmentScheduleDraft(
-											appointment.id,
-											"comment",
-											event.target.value,
-										)
-									}
-									rows={2}
-								/>
-								<div className="flex flex-wrap gap-1.5 mt-1.5 min-w-0">
-									{[
-										"Первичный",
-										"Боль",
-										"Осмотр",
-										"Консультация",
-										"Снимки",
-									].map((chip) => (
-										<button
-											key={chip}
-											type="button"
-											onClick={() => {
-												const currentVal = String(
-													appointmentDraft.comment || "",
-												).trim();
-												const newVal = currentVal
-													? `${currentVal}, ${chip.toLowerCase()}`
-													: chip;
-												updateAppointmentScheduleDraft(
-													appointment.id,
-													"comment",
-													newVal,
-												);
-											}}
-											className="quick-chip quick-chip--sm max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center"
-										>
-											+ {chip}
-										</button>
-									))}
-								</div>
-							</label>
-							<div className="appointment-editor-actions flex flex-wrap items-center justify-between gap-3 min-w-0">
-								<div
-									className="min-h-reserved-error min-w-0"
-									style={{ flex: 1, flexDirection: "column" }}
-								>
-									{appointmentSaveError ? (
-										<span className="save-error break-words">{appointmentSaveError}</span>
-									) : null}
-									{collision.hasCollision ? (
-										<div
-											className="schedule-create-missing schedule-save-missing min-w-0 break-words"
-											id={`appointment-collision-${appointment?.id ?? ""}`}
-											role="alert"
-										>
-											<strong style={{ color: "var(--bad-fg)", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-												<AlertTriangle size={14} className="shrink-0" aria-hidden="true" />
-												<span>{collision.message}</span>
-											</strong>
-										</div>
-									) : null}
-									{(appointmentMissingSteps ?? []).length ? (
-										<div
-											className="schedule-create-missing schedule-save-missing min-w-0 break-words"
-											id={appointmentSaveMissingId}
-											role="status"
-											aria-live="polite"
-										>
-											<strong>Чтобы сохранить запись, исправьте:</strong>
-											<ul>
-												{(appointmentMissingSteps ?? []).map((step) => (
-													<li key={step} className="break-words">{step}</li>
-												))}
-											</ul>
-										</div>
-									) : null}
-								</div>
-								<div className="flex items-center gap-2 flex-wrap shrink-0">
-									<span
-										className={`save-state save-state-${appointmentSaveState} break-words`}
-									>
-										{appointmentSaveState === "saving"
-											? "Сохраняю"
-											: appointmentSaveState === "saved"
-												? "Сохранено"
-												: appointmentSaveState === "error"
-													? "Ошибка сохранения"
-													: appointmentDirty
-														? "Изменения не сохранены"
-														: "Изменений нет"}
-									</span>
-									<button
-										className="secondary-button min-h-[44px] min-w-[44px] px-4 py-2 text-xs font-semibold cursor-pointer shrink-0 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors inline-flex items-center justify-center"
-										type="button"
-										disabled={appointmentSaveState === "saving"}
-										aria-busy={appointmentSaveState === "saving" || undefined}
-										onClick={() => {
-											closeAppointmentEditor(appointment.id);
-										}}
-									>
-										Закрыть
-									</button>
-									<button
-										className="primary-button min-h-[44px] min-w-[44px] px-4.5 py-2 text-xs font-bold cursor-pointer shrink-0 rounded-lg bg-[var(--teal-dark)] text-white hover:brightness-110 active:scale-95 transition-all shadow-2xs border border-transparent inline-flex items-center justify-center"
-										type="button"
-										onClick={() => void saveAppointmentSchedule(appointment.id)}
-										disabled={appointmentSaveState === "saving"}
-										aria-busy={appointmentSaveState === "saving" || undefined}
-										aria-describedby={
-											collision.hasCollision
-												? `appointment-collision-${appointment?.id ?? ""}`
-												: !appointmentReadyToSave &&
-														(appointmentMissingSteps ?? []).length
-													? appointmentSaveMissingId
-													: undefined
-										}
-									>
-										Сохранить запись
-									</button>
-								</div>
-							</div>
-						</section>
+						<AppointmentCardEditor
+							appointment={appointment}
+							dashboard={dashboard}
+							appointmentDraft={appointmentDraft}
+							appointmentSaveState={appointmentSaveState}
+							appointmentSaveError={appointmentSaveError}
+							appointmentDirty={appointmentDirty}
+							appointmentHasOpenVisit={appointmentHasOpenVisit}
+							appointmentMissingSteps={appointmentMissingSteps}
+							appointmentReadyToSave={appointmentReadyToSave}
+							activeVisitLockedAppointmentStatuses={activeVisitLockedAppointmentStatuses}
+							appointmentLabels={appointmentLabels}
+							appointmentPatientName={appointmentPatientName}
+							appointmentPatient={appointmentPatient}
+							appointmentDoctor={appointmentDoctor}
+							appointmentChair={appointmentChair}
+							activePatients={activePatients}
+							activeDoctors={activeDoctors}
+							activeAssistants={activeAssistants}
+							activeChairs={activeChairs}
+							useManualSelects={useManualSelects}
+							collision={collision}
+							toDateTimeLocalValue={toDateTimeLocalValue}
+							fromDateTimeLocalValue={fromDateTimeLocalValue}
+							updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
+							saveAppointmentSchedule={saveAppointmentSchedule}
+							closeAppointmentEditor={closeAppointmentEditor}
+							normalizedAppointmentStatus={normalizedAppointmentStatus}
+						/>
 					) : null}
 				</article>
 
 				{/* Mobile Native Bottom Sheet for Progressive Disclosure on tap */}
-				{isMobileSheetOpen && (
-					<div
-						className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-200"
-						onClick={() => setIsMobileSheetOpen(false)}
-						role="dialog"
-						aria-modal="true"
-						aria-label="Подробности приёма"
-						data-testid="appointment-mobile-bottom-sheet"
-					>
-						<div
-							className="bg-[var(--paper-strong)] rounded-t-3xl border-t border-[var(--line)] p-5 shadow-2xl max-h-[85vh] overflow-y-auto space-y-4 animate-in slide-in-from-bottom duration-200 text-xs text-[var(--ink)]"
-							onClick={(e) => e.stopPropagation()}
-						>
-							{/* Top Grab Handle */}
-							<div className="w-12 h-1.5 bg-[var(--line-strong)] rounded-full mx-auto mb-2" />
-
-							{/* Header */}
-							<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-3">
-								<div className="min-w-0 flex-1">
-									<div className="text-lg font-black text-[var(--ink)] truncate" title={appointmentPatientName}>
-										{appointmentPatientName}
-									</div>
-									<div
-										className="text-xs text-[var(--muted)] font-medium truncate min-w-0"
-										title={`${formatTime(appointment.startsAt)} – ${formatTime(appointment.endsAt)} · ${appointment.reason || "Прием"}`}
-									>
-										{formatTime(appointment.startsAt)} – {formatTime(appointment.endsAt)} · {appointment.reason || "Прием"}
-									</div>
-								</div>
-								<button
-									type="button"
-									onClick={() => setIsMobileSheetOpen(false)}
-									className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center cursor-pointer active:scale-95 transition-all"
-									aria-label="Закрыть"
-								>
-									<X size={18} />
-								</button>
-							</div>
-
-							{/* Payment status & Balance banner */}
-							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between gap-2">
-								<span className="font-bold text-[var(--muted)]">Статус оплаты / Баланс:</span>
-								{patientBalance !== null ? (
-									<span
-										className={`px-2.5 py-1 rounded-lg text-xs font-black font-mono whitespace-nowrap shrink-0 ${
-											patientBalance > 0
-												? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
-												: patientBalance < 0
-													? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40"
-													: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
-										}`}
-									>
-										{patientBalance > 0
-											? `Депозит: +${patientBalance.toLocaleString("ru-RU")} ₽`
-											: patientBalance < 0
-												? `Долг: ${Math.abs(patientBalance).toLocaleString("ru-RU")} ₽`
-												: "0 ₽ (Оплачено)"}
-									</span>
-								) : (
-									<span className="text-xs text-[var(--muted)] whitespace-nowrap shrink-0">0 ₽ (Оплачено)</span>
-								)}
-							</div>
-
-							{/* Phone & WhatsApp */}
-							{appointmentPatient?.phone && (
-								<div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-									<div className="flex items-center gap-2 font-mono text-sm font-semibold text-[var(--ink)]">
-										<Phone className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
-										<span>{appointmentPatient.phone}</span>
-									</div>
-									<div className="flex items-center gap-1.5">
-										<button
-											type="button"
-											onClick={() => {
-												const text = generateAppointmentWhatsAppMessage({
-													patientName: appointmentPatientName,
-													doctorName: appointmentDoctor?.fullName,
-													doctorSpecialty: appointmentDoctor?.role,
-													appointmentStartsAt: appointment.startsAt,
-													clinicName: dashboard?.clinicSettings?.profile?.clinicName,
-													clinicAddress: dashboard?.clinicSettings?.profile?.address,
-													clinicPhone: dashboard?.clinicSettings?.profile?.phone,
-													treatmentReason: appointment.reason,
-												});
-												openWhatsAppChat(appointmentPatient.phone!, text);
-											}}
-											className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
-										>
-											<MessageSquare size={15} className="text-emerald-600 dark:text-emerald-400" />
-											<span>WhatsApp</span>
-										</button>
-										<button
-											type="button"
-											onClick={() => {
-												const text = generateAppointmentWhatsAppMessage({
-													patientName: appointmentPatientName,
-													doctorName: appointmentDoctor?.fullName,
-													doctorSpecialty: appointmentDoctor?.role,
-													appointmentStartsAt: appointment.startsAt,
-													clinicName: dashboard?.clinicSettings?.profile?.clinicName,
-													clinicAddress: dashboard?.clinicSettings?.profile?.address,
-													clinicPhone: dashboard?.clinicSettings?.profile?.phone,
-													treatmentReason: appointment.reason,
-												});
-												if (typeof navigator !== "undefined" && navigator.clipboard) {
-													void navigator.clipboard.writeText(text);
-													showToast(`Текст напоминания скопирован`, "success");
-												}
-											}}
-											className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center cursor-pointer"
-											title="Скопировать SMS"
-										>
-											<Copy size={16} />
-										</button>
-									</div>
-								</div>
-							)}
-
-							{/* Allergy alert */}
-							{allergyAlert && (
-								<div className="p-3 rounded-xl bg-amber-500/15 border-2 border-amber-500/60 text-amber-900 dark:text-amber-200 text-xs font-black flex items-center gap-2">
-									<AlertTriangle size={16} className="text-amber-600 shrink-0 animate-bounce" />
-									<span>{allergyAlert}</span>
-								</div>
-							)}
-
-							{/* Teeth List */}
-							{(() => {
-								const teeth = extractTeethList(appointment);
-								if (teeth.length === 0) return null;
-								return (
-									<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-1.5">
-										<div className="font-bold text-[var(--muted)]">Список зубов:</div>
-										<div className="flex items-center gap-1.5 flex-wrap">
-											{teeth.map((t) => (
-												<span
-													key={t}
-													className="px-2 py-1 rounded-lg bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/30 text-xs font-black font-mono"
-												>
-													Зуб {t}
-												</span>
-											))}
-										</div>
-									</div>
-								);
-							})()}
-
-							{/* Doctor & Assistant */}
-							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-1.5 text-xs text-[var(--ink)]">
-								<div className="flex items-center justify-between">
-									<span className="text-[var(--muted)]">Врач:</span>
-									<span className="font-bold">{appointmentDoctor?.fullName || "Не назначен"}</span>
-								</div>
-								<div className="flex items-center justify-between">
-									<span className="text-[var(--muted)]">Ассистент:</span>
-									<span>{appointmentAssistant?.fullName || "Не назначен"}</span>
-								</div>
-								<div className="flex items-center justify-between">
-									<span className="text-[var(--muted)]">Кабинет:</span>
-									<span className="font-mono font-semibold">{appointmentChair?.name || "Кабинет 1"}</span>
-								</div>
-							</div>
-
-							{/* Quick Status Buttons */}
-							<div className="space-y-2">
-								<div className="font-bold text-[var(--muted)] uppercase text-[10px] tracking-wider">
-									Сменить статус визита:
-								</div>
-								<div className="grid grid-cols-2 gap-2">
-									<button
-										type="button"
-										onClick={() => {
-											void handleQuickStatusChange("confirmed");
-											setIsMobileSheetOpen(false);
-										}}
-										className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-violet-500/15 border border-violet-500/40 text-violet-800 dark:text-violet-200 flex items-center justify-center gap-2 cursor-pointer"
-									>
-										<PhoneCall size={14} />
-										<span>Подтвержден</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											void handleQuickStatusChange("arrived");
-											setIsMobileSheetOpen(false);
-										}}
-										className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-200 flex items-center justify-center gap-2 cursor-pointer"
-									>
-										<UserCheck size={14} />
-										<span>Пришел</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											void handleQuickStatusChange("in_treatment");
-											setIsMobileSheetOpen(false);
-										}}
-										className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-[var(--teal-soft)] border border-[var(--teal)]/40 text-[var(--teal-dark)] flex items-center justify-center gap-2 cursor-pointer"
-									>
-										<CalendarCheck size={14} />
-										<span>В кресле</span>
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											void handleQuickStatusChange("completed");
-											setIsMobileSheetOpen(false);
-										}}
-										className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-2 cursor-pointer"
-									>
-										<CheckCircle2 size={14} />
-										<span>Завершен</span>
-									</button>
-								</div>
-							</div>
-
-							{/* Primary Action Button */}
-							<div className="pt-2 space-y-2">
-								<button
-									type="button"
-									onClick={() => {
-										setIsMobileSheetOpen(false);
-										openAppointmentEditor(appointment);
-									}}
-									className="w-full min-h-[48px] rounded-2xl bg-[var(--teal,var(--brand-primary))] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-98 transition-all"
-								>
-									<User size={16} />
-									<span>Настроить запись</span>
-								</button>
-							</div>
-						</div>
-					</div>
-				)}
+				<AppointmentMobileBottomSheet
+					appointment={appointment}
+					dashboard={dashboard}
+					isOpen={isMobileSheetOpen}
+					onClose={() => setIsMobileSheetOpen(false)}
+					displayStatus={displayStatus}
+					appointmentPatient={appointmentPatient}
+					appointmentPatientName={appointmentPatientName}
+					patientBalance={patientBalance}
+					appointmentDoctor={appointmentDoctor}
+					appointmentAssistant={appointmentAssistant}
+					appointmentChair={appointmentChair}
+					cardTeeth={cardTeeth}
+					allergyAlert={allergyAlert}
+					appointmentLabels={appointmentLabels}
+					formatTime={formatTime}
+					handleQuickStatusChange={handleQuickStatusChange}
+					onCloseHover={() => {}}
+					onKeepHover={() => {}}
+					openAppointmentEditor={openAppointmentEditor}
+				/>
 			</div>
 		</div>
 	);
 }
 
-export function areAppointmentCardPropsEqual(
-	prev: AppointmentCardProps,
-	next: AppointmentCardProps,
-): boolean {
-	// 1. Appointment entity identity & core fields
-	if (prev.appointment !== next.appointment) {
-		const p = prev.appointment;
-		const n = next.appointment;
-		if (
-			p.id !== n.id ||
-			p.status !== n.status ||
-			p.startsAt !== n.startsAt ||
-			p.endsAt !== n.endsAt ||
-			p.patientId !== n.patientId ||
-			p.doctorUserId !== n.doctorUserId ||
-			p.chairId !== n.chairId ||
-			p.assistantUserId !== n.assistantUserId ||
-			p.reason !== n.reason ||
-			p.comment !== n.comment
-		) {
-			return false;
-		}
-		// Compare teeth array if present
-		const prevTeeth = (p as any)?.teeth;
-		const nextTeeth = (n as any)?.teeth;
-		if (Array.isArray(prevTeeth) || Array.isArray(nextTeeth)) {
-			if (!Array.isArray(prevTeeth) || !Array.isArray(nextTeeth)) return false;
-			if (prevTeeth.length !== nextTeeth.length) return false;
-			for (let i = 0; i < prevTeeth.length; i++) {
-				if (prevTeeth[i] !== nextTeeth[i]) return false;
-			}
-		}
-	}
-
-	// 2. Schedule editing & persistence state
-	if (
-		prev.appointmentEditing !== next.appointmentEditing ||
-		prev.appointmentDirty !== next.appointmentDirty ||
-		prev.appointmentSaveState !== next.appointmentSaveState ||
-		prev.appointmentSaveError !== next.appointmentSaveError ||
-		prev.appointmentHasOpenVisit !== next.appointmentHasOpenVisit ||
-		prev.appointmentActiveVisitStatusLocked !== next.appointmentActiveVisitStatusLocked ||
-		prev.appointmentReadyToSave !== next.appointmentReadyToSave ||
-		prev.useManualSelects !== next.useManualSelects
-	) {
-		return false;
-	}
-
-	// 3. Missing steps check (skip re-render if both are empty or identical)
-	if (prev.appointmentMissingSteps !== next.appointmentMissingSteps) {
-		const pLen = prev.appointmentMissingSteps?.length ?? 0;
-		const nLen = next.appointmentMissingSteps?.length ?? 0;
-		if (pLen !== nLen) return false;
-		for (let i = 0; i < pLen; i++) {
-			if (prev.appointmentMissingSteps[i] !== next.appointmentMissingSteps[i]) return false;
-		}
-	}
-
-	// 4. Draft comparison (only matters when editing or dirty)
-	if (prev.appointmentEditing || next.appointmentEditing || prev.appointmentDirty || next.appointmentDirty) {
-		if (prev.appointmentDraft !== next.appointmentDraft) {
-			const pD = prev.appointmentDraft;
-			const nD = next.appointmentDraft;
-			if (pD && nD) {
-				const keys = new Set([...Object.keys(pD), ...Object.keys(nD)]);
-				for (const key of keys) {
-					if (pD[key] !== nD[key]) return false;
-				}
-			} else if (pD !== nD) {
-				return false;
-			}
-		}
-	}
-
-	// 5. Readiness for this specific appointment
-	if (prev.appointmentReadinessById !== next.appointmentReadinessById) {
-		const pId = prev.appointment.id;
-		const prevR = prev.appointmentReadinessById instanceof Map ? prev.appointmentReadinessById.get(pId) : undefined;
-		const nextR = next.appointmentReadinessById instanceof Map ? next.appointmentReadinessById.get(pId) : undefined;
-		if (prevR !== nextR) {
-			if (!prevR || !nextR) return false;
-			if (
-				prevR.appointmentId !== nextR.appointmentId ||
-				prevR.state !== nextR.state ||
-				prevR.score !== nextR.score ||
-				prevR.blockers?.length !== nextR.blockers?.length
-			) {
-				return false;
-			}
-		}
-	}
-
-	// 6. Visible schedule suggestions for this appointment
-	if (prev.visibleScheduleSuggestions !== next.visibleScheduleSuggestions) {
-		const pId = prev.appointment.id;
-		const prevHas = (prev.visibleScheduleSuggestions ?? []).some((s) => s?.appointmentId === pId);
-		const nextHas = (next.visibleScheduleSuggestions ?? []).some((s) => s?.appointmentId === pId);
-		if (prevHas !== nextHas) return false;
-	}
-
-	// 7. Dashboard changes: only compare slices relevant to this card
-	if (prev.dashboard !== next.dashboard) {
-		const pPatId = prev.appointment.patientId;
-		const nPatId = next.appointment.patientId;
-		if (pPatId !== nPatId) return false;
-
-		if (pPatId) {
-			const prevPat = (prev.dashboard?.patients ?? []).find((p) => p?.id === pPatId);
-			const nextPat = (next.dashboard?.patients ?? []).find((p) => p?.id === nPatId);
-			if (
-				prevPat?.fullName !== nextPat?.fullName ||
-				prevPat?.balanceRub !== nextPat?.balanceRub ||
-				(prevPat as any)?.balance !== (nextPat as any)?.balance ||
-				prevPat?.phone !== nextPat?.phone
-			) {
-				return false;
-			}
-		}
-
-		// Doctor & chair
-		const pDocId = prev.appointment.doctorUserId;
-		const nDocId = next.appointment.doctorUserId;
-		if (pDocId !== nDocId) return false;
-		if (pDocId) {
-			const prevDoc = (prev.dashboard?.clinicSettings?.staff ?? []).find((s) => s?.id === pDocId);
-			const nextDoc = (next.dashboard?.clinicSettings?.staff ?? []).find((s) => s?.id === nDocId);
-			if (prevDoc?.fullName !== nextDoc?.fullName || prevDoc?.role !== nextDoc?.role) {
-				return false;
-			}
-		}
-
-		const pChairId = prev.appointment.chairId;
-		const nChairId = next.appointment.chairId;
-		if (pChairId !== nChairId) return false;
-		if (pChairId) {
-			const prevChair = (prev.dashboard?.clinicSettings?.chairs ?? []).find((c) => c?.id === pChairId);
-			const nextChair = (next.dashboard?.clinicSettings?.chairs ?? []).find((c) => c?.id === nChairId);
-			if (prevChair?.name !== nextChair?.name) {
-				return false;
-			}
-		}
-
-		// Timezone
-		if (
-			prev.dashboard?.clinicSettings?.profile?.timezone !==
-			next.dashboard?.clinicSettings?.profile?.timezone
-		) {
-			return false;
-		}
-
-		// Collisions: if appointments changed, check if any overlapping appointment for this doctor/chair/patient changed
-		if (prev.dashboard?.appointments !== next.dashboard?.appointments) {
-			const curDoc = prev.appointment.doctorUserId;
-			const curCh = prev.appointment.chairId;
-			const curPat = prev.appointment.patientId;
-			const pStart = new Date(prev.appointment.startsAt).getTime();
-			const pEnd = new Date(prev.appointment.endsAt).getTime();
-
-			const hasConflict = (appts: typeof prev.dashboard.appointments) =>
-				(appts ?? []).some((o) => {
-					if (o.id === prev.appointment.id || o.status === "cancelled" || o.status === "no_show") {
-						return false;
-					}
-					const oStart = new Date(o.startsAt).getTime();
-					const oEnd = new Date(o.endsAt).getTime();
-					const overlaps = pStart < oEnd && pEnd > oStart;
-					if (!overlaps) return false;
-					return (
-						(curDoc && o.doctorUserId === curDoc) ||
-						(curCh && o.chairId === curCh) ||
-						(curPat && o.patientId === curPat)
-					);
-				});
-
-			if (hasConflict(prev.dashboard?.appointments) !== hasConflict(next.dashboard?.appointments)) {
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
 export const AppointmentCard = React.memo(AppointmentCardInner, areAppointmentCardPropsEqual);
 AppointmentCard.displayName = "AppointmentCard";
-

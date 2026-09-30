@@ -1,0 +1,615 @@
+import type { DentalSpecialty } from "@dental/shared";
+import {
+  AlertTriangle,
+  CalendarCheck,
+  Check,
+  CheckCircle2,
+  Clock,
+  Flame,
+  Sparkles,
+  UserCheck,
+  UserX,
+} from "lucide-react";
+import React from "react";
+import { showToast } from "../GlobalToast";
+import {
+  APPOINTMENT_TYPE_PRESETS,
+  DURATION_PRESETS,
+  type QuickBookingAppointmentType,
+} from "./patientReliabilityScore";
+import {
+  DEFAULT_SOLO_CHAIR,
+  formatDoctorShortName,
+  type ChairDoctorShiftAssignment,
+} from "./ScheduleGrid";
+import { specialtyLabels } from "../../workspaceUiLabels";
+import { resolveChairDutyDoctor } from "./chairRosterMath";
+import { SlotConflictModal } from "./SlotConflictModal";
+import { COMMON_REASONS } from "./QuickBookingDrawerTypes";
+
+export interface QuickBookingServiceSectionProps {
+  appointmentType: QuickBookingAppointmentType;
+  handleSelectAppointmentType: (type: QuickBookingAppointmentType) => void;
+  startsAtLocal: string;
+  setStartsAtLocal: (val: string) => void;
+  durationMinutes: number;
+  handleSelectDuration: (mins: number) => void;
+  doctorUserId: string;
+  setDoctorUserId: (id: string) => void;
+  assistantUserId: string | null;
+  setAssistantUserId: (id: string | null) => void;
+  chairId: string;
+  setChairId: (id: string) => void;
+  status: any;
+  setStatus: (s: any) => void;
+  reason: string;
+  setReason: (r: string) => void;
+  comment: string;
+  setComment: (c: string) => void;
+  submitError: string | null;
+  slotConflict: any;
+  setSlotConflict: (c: any) => void;
+  handleSubmitBooking: (e?: React.FormEvent, opts?: { overbookOverride?: boolean }) => Promise<void>;
+  doctors: Array<{ id: string; fullName: string; role?: string; specialties?: DentalSpecialty[] }>;
+  assistants: Array<{ id: string; fullName: string }>;
+  chairs: Array<{ id: string; name: string }>;
+  currentChair: { id: string; name: string } | null;
+  dutyDoc: { id: string; fullName: string } | null;
+  dutyDoctorHours: string | null;
+  isSoloClinic: boolean;
+  selectedPatientName?: string | undefined;
+  chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
+}
+
+export function QuickBookingServiceSection({
+  appointmentType,
+  handleSelectAppointmentType,
+  startsAtLocal,
+  setStartsAtLocal,
+  durationMinutes,
+  handleSelectDuration,
+  doctorUserId,
+  setDoctorUserId,
+  assistantUserId,
+  setAssistantUserId,
+  chairId,
+  setChairId,
+  status,
+  setStatus,
+  reason,
+  setReason,
+  comment,
+  setComment,
+  submitError,
+  slotConflict,
+  setSlotConflict,
+  handleSubmitBooking,
+  doctors,
+  assistants,
+  chairs,
+  currentChair,
+  dutyDoc,
+  dutyDoctorHours,
+  isSoloClinic,
+  selectedPatientName,
+  chairDoctorAssignments,
+}: QuickBookingServiceSectionProps) {
+  return (
+    <>
+      {/* Quick Appointment Type Selector */}
+      <div className="space-y-1.5" data-testid="quick-booking-type-selector">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+            <Sparkles size={14} className="text-[var(--teal)]" />
+            <span>Тип приема *</span>
+          </span>
+          {appointmentType === "emergency" && (
+            <span
+              className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse"
+              data-testid="cito-slot-priority-badge"
+            >
+              Приоритетный слот
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {APPOINTMENT_TYPE_PRESETS.map((preset) => {
+            const isSelected = appointmentType === preset.type;
+            const isEm = preset.isEmergency;
+            return (
+              <button
+                key={preset.type}
+                type="button"
+                onClick={() => handleSelectAppointmentType(preset.type)}
+                className={`min-h-[48px] p-2.5 rounded-xl border text-left flex flex-col justify-center transition-all cursor-pointer ${
+                  isSelected
+                    ? isEm
+                      ? "bg-rose-500/20 text-rose-950 dark:text-rose-100 border-rose-500 ring-2 ring-rose-500/50 shadow-md"
+                      : "bg-[var(--teal-dark)] text-[var(--on-teal)] border-[var(--teal)] shadow-md"
+                    : isEm
+                      ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/15"
+                      : "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper)]"
+                }`}
+                data-testid={`quick-booking-type-${preset.type}`}
+                title={preset.description}
+              >
+                <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm">
+                  {isEm ? (
+                    <Flame
+                      size={15}
+                      className={
+                        isSelected ? "text-rose-500 animate-bounce" : "text-rose-600"
+                      }
+                    />
+                  ) : isSelected ? (
+                    <Check size={14} />
+                  ) : null}
+                  <span>{preset.label}</span>
+                </div>
+                <span
+                  className={`text-[10px] truncate block mt-0.5 ${
+                    isSelected
+                      ? isEm
+                        ? "text-rose-800 dark:text-rose-200"
+                        : "text-white/80"
+                      : "text-[var(--muted)]"
+                  }`}
+                >
+                  {preset.description}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. Date, Time & Duration Section */}
+      <div className="space-y-3 pt-1">
+        <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+          <Clock size={14} className="text-[var(--teal)]" />
+          <span>Время и длительность *</span>
+        </label>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <span className="text-xs font-semibold text-[var(--muted)] block mb-1">
+              Начало
+            </span>
+            <input
+              type="datetime-local"
+              value={startsAtLocal}
+              onChange={(e) => {
+                const nextVal = e.target.value;
+                setStartsAtLocal(nextVal);
+                if (chairId && nextVal) {
+                  const newDuty = resolveChairDutyDoctor(
+                    chairId,
+                    nextVal,
+                    chairDoctorAssignments,
+                    nextVal.slice(0, 10),
+                  );
+                  if (newDuty.doctorId) {
+                    setDoctorUserId(newDuty.doctorId);
+                  }
+                }
+              }}
+              className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <span className="text-xs font-semibold text-[var(--muted)] block mb-1">
+              Длительность: {durationMinutes} мин
+            </span>
+            <div
+              data-testid="quick-booking-duration-presets"
+              className="mt-1"
+            >
+              <span className="text-xs font-bold text-[var(--muted)] block mb-1.5">
+                Быстрый выбор длительности (1 клик):
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {DURATION_PRESETS.map((preset) => {
+                  const isSelected = durationMinutes === preset.minutes;
+                  let displayHint = (preset as any).serviceHint || (preset as any).hint;
+                  let displayLabel = preset.label;
+                  if (preset.minutes === 15) {
+                    displayHint = "Осмотр";
+                  } else if (preset.minutes === 30) {
+                    displayHint = "Терапия (Гигиена/Швы)";
+                  } else if (preset.minutes === 45) {
+                    displayHint = "Эндо/Реставрация (Терапия)";
+                  } else if (preset.minutes === 60) {
+                    displayHint = "Хирургия/Ортопедия (Лечение)";
+                  } else if (preset.minutes === 90) {
+                    displayLabel = "90 мин (90+ мин)";
+                    displayHint = "Хирургия / Комплексный приём";
+                  } else if (preset.minutes === 120) {
+                    displayHint = "Ортопедия (Тотальная работа)";
+                  }
+                  return (
+                    <button
+                      key={preset.minutes}
+                      type="button"
+                      onClick={() => handleSelectDuration(preset.minutes)}
+                      className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                        isSelected
+                          ? "bg-[var(--teal-dark)] text-[var(--on-teal)] border-[var(--teal)] shadow-sm"
+                          : "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper)]"
+                      }`}
+                      data-testid={`duration-preset-${preset.minutes}`}
+                    >
+                      <span>{displayLabel}</span>
+                      <span
+                        className={`text-[11px] font-normal ${
+                          isSelected ? "text-white/90" : "text-[var(--muted)]"
+                        }`}
+                      >
+                        ({displayHint})
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Resource Allocation: Doctor, Assistant & Chair */}
+      <div className="space-y-3 pt-1">
+        <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+          <CalendarCheck size={14} className="text-[var(--teal)]" />
+          <span>Кабинет и персонал *</span>
+        </label>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Chair Selector */}
+          <div>
+            <span className="text-xs font-semibold text-[var(--muted)] block mb-1">
+              Кресло / Кабинет
+            </span>
+            <select
+              value={chairId}
+              onChange={(e) => {
+                const nextChairId = e.target.value;
+                setChairId(nextChairId);
+                if (nextChairId) {
+                  const targetChair =
+                    chairs.find((c) => c.id === nextChairId) ||
+                    (nextChairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
+                  const duty = resolveChairDutyDoctor(
+                    nextChairId,
+                    startsAtLocal,
+                    chairDoctorAssignments,
+                    startsAtLocal ? startsAtLocal.slice(0, 10) : undefined,
+                    null,
+                    (targetChair as any)?.defaultDoctorId || (isSoloClinic && doctors[0] ? doctors[0].id : null),
+                  );
+                  if (duty.doctorId) {
+                    setDoctorUserId(duty.doctorId);
+                    const newDoc = doctors.find((d) => d.id === duty.doctorId);
+                    if (newDoc) {
+                      showToast(
+                        `Дежурный врач: ${formatDoctorShortName(newDoc.fullName)} (${targetChair?.name || "Кресло"}, ${duty.shiftHours})`,
+                        "info",
+                        3000,
+                      );
+                    }
+                  }
+                }
+              }}
+              className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+              data-testid="select-booking-chair"
+            >
+              {chairs.length === 0 ? (
+                <option value={DEFAULT_SOLO_CHAIR.id}>
+                  {DEFAULT_SOLO_CHAIR.name} (Основное)
+                </option>
+              ) : (
+                chairs.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
+          {/* Doctor Selector */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs font-semibold text-[var(--muted)]">
+                Врач
+              </span>
+              {dutyDoc && dutyDoc.id !== doctorUserId && (
+                <button
+                  type="button"
+                  onClick={() => setDoctorUserId(dutyDoc.id)}
+                  className="text-[10px] text-[var(--teal)] font-bold hover:underline cursor-pointer"
+                  title="Выбрать дежурного врача по расписанию кресла"
+                >
+                  Дежурный: {formatDoctorShortName(dutyDoc.fullName)}
+                </button>
+              )}
+            </div>
+            <select
+              value={doctorUserId}
+              onChange={(e) => setDoctorUserId(e.target.value)}
+              className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+              data-testid="select-booking-doctor"
+            >
+              <option value="">-- Выберите врача --</option>
+              {doctors.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.fullName}{" "}
+                  {d.specialties?.[0]
+                    ? `(${specialtyLabels[d.specialties[0]] || d.specialties[0]})`
+                    : ""}
+                </option>
+              ))}
+            </select>
+            {dutyDoc && (
+              <div
+                className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/20"
+                data-testid="duty-doctor-badge"
+              >
+                <UserCheck size={13} className="shrink-0 text-[var(--teal)]" />
+                <span>
+                  Дежурный врач: {formatDoctorShortName(dutyDoc.fullName)} ({dutyDoctorHours || "смена"})
+                </span>
+              </div>
+            )}
+            {dutyDoc &&
+              doctorUserId &&
+              dutyDoc.id &&
+              doctorUserId !== dutyDoc.id && (
+                <div
+                  className="mt-1.5 p-2.5 rounded-xl text-xs bg-amber-500/10 text-amber-900 dark:text-amber-100 border border-amber-500/30 flex items-start gap-2"
+                  data-testid="duty-doctor-override-note"
+                >
+                  <AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <span className="font-semibold block">
+                      На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением.
+                    </span>
+                    <span className="text-[11px] text-[var(--muted)]">
+                      (Мандат 8e: запись не блокируется, врач может принять пациента в свободном кабинете)
+                    </span>
+                  </div>
+                </div>
+              )}
+          </div>
+
+          {/* Assistant Selector (Optional in Multi-Staff, Hidden in Solo) */}
+          {!isSoloClinic && (
+            <div className="sm:col-span-2">
+              <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1">
+                Ассистент <span className="font-normal text-[var(--muted)] lowercase">(опционально, соло-приём без ассистента)</span>
+              </label>
+              <select
+                value={assistantUserId || ""}
+                onChange={(e) => setAssistantUserId(e.target.value || null)}
+                className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
+                data-testid="select-booking-assistant"
+              >
+                <option value="">-- Без ассистента (соло-приём) --</option>
+                {assistants.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.fullName}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[11px] text-[var(--muted)] block mt-0.5">
+                Выбор ассистента строго опционален и не блокирует запись (Мандаты 8e, 8n)
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quick Status Selection */}
+      <div className="space-y-1.5 pt-1" data-testid="quick-booking-status-selector">
+        <label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+          <CalendarCheck size={14} className="text-[var(--teal)]" />
+          <span>Статус записи (1 клик)</span>
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+          <button
+            type="button"
+            onClick={() => setStatus("planned")}
+            className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+              status === "planned"
+                ? "bg-[var(--teal)] text-white font-bold border-[var(--teal)] shadow-sm"
+                : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+            }`}
+            data-testid="quick-status-btn-planned"
+          >
+            <Clock size={14} className="shrink-0" />
+            <span className="whitespace-nowrap leading-none">Ожидает</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatus("confirmed")}
+            className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+              status === "confirmed"
+                ? "bg-violet-600 text-white font-bold border-violet-600 shadow-sm"
+                : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+            }`}
+            data-testid="quick-status-btn-confirmed"
+          >
+            <UserCheck size={14} className="shrink-0" />
+            <span className="whitespace-nowrap leading-none">Подтвержден</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatus("arrived")}
+            className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+              status === "arrived"
+                ? "bg-emerald-600 text-white font-bold border-emerald-600 shadow-sm"
+                : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+            }`}
+            data-testid="quick-status-btn-arrived"
+          >
+            <UserCheck size={14} className="shrink-0" />
+            <span className="whitespace-nowrap leading-none">Пациент пришел</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatus("in_treatment")}
+            className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+              status === "in_treatment"
+                ? "bg-cyan-600 text-white font-bold border-cyan-600 shadow-sm"
+                : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+            }`}
+            data-testid="quick-status-btn-in_treatment"
+          >
+            <CalendarCheck size={14} className="shrink-0" />
+            <span className="whitespace-nowrap leading-none">В кресле</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatus("completed")}
+            className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+              status === "completed"
+                ? "bg-slate-700 text-white font-bold border-slate-700 shadow-sm"
+                : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+            }`}
+            data-testid="quick-status-btn-completed"
+          >
+            <CheckCircle2 size={14} className="shrink-0" />
+            <span className="whitespace-nowrap leading-none">Прием завершен</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatus("no_show")}
+            className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+              status === "no_show"
+                ? "bg-rose-600 text-white font-bold border-rose-600"
+                : "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))]"
+            }`}
+            data-testid="quick-status-btn-no_show"
+          >
+            <UserX size={14} className="shrink-0" />
+            <span className="whitespace-nowrap leading-none">Неявка</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 4. Reason & Comment */}
+      <div className="space-y-3">
+        <div>
+          <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+            Повод обращения / Услуга
+          </label>
+          <input
+            type="text"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Например: Осмотр, Кариес, Консультация"
+            className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+          />
+          <div className="flex flex-wrap gap-2 mt-2">
+            {COMMON_REASONS.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => {
+                  const cur = reason.trim();
+                  setReason(cur ? `${cur}, ${r.toLowerCase()}` : r);
+                }}
+                className="min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] transition-colors cursor-pointer"
+              >
+                + {r}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+            Комментарий для врача / регистратуры
+          </label>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Дополнительные пожелания или примечания…"
+            rows={2}
+            className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+          />
+        </div>
+      </div>
+
+      {/* Submit Error banner if any */}
+      {submitError && (
+        <div
+          className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-1.5"
+          role="alert"
+        >
+          <AlertTriangle size={14} className="shrink-0" />
+          <span>{submitError}</span>
+        </div>
+      )}
+
+      {/* Inline Slot Conflict Banner / Alternative Slots (Sin 6, Anti-Matryoshka) */}
+      <SlotConflictModal
+        isOpen={Boolean(slotConflict)}
+        inline={true}
+        onClose={() => setSlotConflict(null)}
+        conflictMessage={slotConflict?.message}
+        suggestedSlots={slotConflict?.suggestedSlots ?? []}
+        patientName={selectedPatientName}
+        doctorName={doctors.find((d) => d.id === doctorUserId)?.fullName}
+        currentChairName={chairs.find((c) => c.id === chairId)?.name}
+        alternativeChairs={chairs
+          .filter((c) => c.id !== chairId)
+          .map((c) => ({ id: c.id, name: c.name }))}
+        onMoveToChair={(newChairId) => {
+          setChairId(newChairId);
+          const chName =
+            chairs.find((c) => c.id === newChairId)?.name || newChairId;
+          showToast(
+            `Кресло изменено на «${chName}». Нажмите «Записать на прием».`,
+            "success",
+          );
+          setSlotConflict(null);
+        }}
+        onShiftMinutes={(minutes) => {
+          if (startsAtLocal) {
+            const [datePart, timePart] = startsAtLocal.split("T");
+            if (datePart && timePart) {
+              const [hStr, mStr] = timePart.split(":");
+              const totalMins =
+                (Number(hStr) || 0) * 60 + (Number(mStr) || 0) + minutes;
+              const newH = Math.floor(totalMins / 60) % 24;
+              const newM = totalMins % 60;
+              const newTimeStr = `${String(newH).padStart(2, "0")}:${String(newM).padStart(2, "0")}`;
+              const newStart = `${datePart}T${newTimeStr}`;
+              setStartsAtLocal(newStart);
+              showToast(
+                `Время сдвинуто на +${minutes} мин (${newTimeStr}). Нажмите «Записать на прием».`,
+                "success",
+              );
+            }
+          }
+          setSlotConflict(null);
+        }}
+        onOverbook={() =>
+          void handleSubmitBooking(undefined, { overbookOverride: true })
+        }
+        onSelectSlot={(slotTime) => {
+          if (startsAtLocal) {
+            const datePrefix = startsAtLocal.slice(0, 11);
+            const newStart = `${datePrefix}${slotTime}`;
+            setStartsAtLocal(newStart);
+            showToast(
+              `Время изменено на ${slotTime}. Нажмите «Записать на прием» для подтверждения.`,
+              "success",
+            );
+          }
+          setSlotConflict(null);
+        }}
+      />
+    </>
+  );
+}
