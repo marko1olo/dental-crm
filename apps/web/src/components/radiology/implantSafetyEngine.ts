@@ -29,6 +29,7 @@ import type { Point3D, CbctVoxelVolume } from './cbctMprMath.js';
 import {
   type CrossSectionImplantPose,
   type VirtualImplantSpec,
+  type ImplantBrandKey,
   calculateApexCoordinates,
 } from './implantNerveSafetyAudit.js';
 
@@ -405,3 +406,221 @@ export function checkImplantSliceIntersection(
 		closestPoint3D: { x: Number(closestX.toFixed(2)), y: Number(closestY.toFixed(2)), z: Number(closestZ.toFixed(2)) },
 	};
 }
+
+// ─── COMPANION SURGICAL & PROSTHETIC FIXTURES (1-CLICK ESTIMATE SUITE) ──────
+
+export interface HealingAbutmentSpec {
+	readonly id: string;
+	readonly brand: ImplantBrandKey;
+	readonly nameRu: string;
+	readonly code804n: string;
+	readonly diameterMm: number;
+	readonly heightMm: number;
+	readonly priceKopecks: number;
+	readonly priceRub: number;
+}
+
+export interface AbutmentSpec {
+	readonly id: string;
+	readonly brand: ImplantBrandKey;
+	readonly nameRu: string;
+	readonly code804n: string;
+	readonly materialRu: string;
+	readonly priceKopecks: number;
+	readonly priceRub: number;
+}
+
+export const STANDARD_HEALING_ABUTMENTS: Record<ImplantBrandKey, HealingAbutmentSpec> = {
+	straumann: {
+		id: "ha-straumann-blx",
+		brand: "straumann",
+		nameRu: "Формирователь десны Straumann BLX / BLT",
+		code804n: "A16.07.054.005",
+		diameterMm: 4.5,
+		heightMm: 4.0,
+		priceKopecks: 650000,
+		priceRub: 6500,
+	},
+	nobel_biocare: {
+		id: "ha-nobel-active",
+		brand: "nobel_biocare",
+		nameRu: "Формирователь десны NobelActive Regular",
+		code804n: "A16.07.054.005",
+		diameterMm: 4.3,
+		heightMm: 4.0,
+		priceKopecks: 650000,
+		priceRub: 6500,
+	},
+	osstem: {
+		id: "ha-osstem-ts3",
+		brand: "osstem",
+		nameRu: "Формирователь десны Osstem TS III (Regular)",
+		code804n: "A16.07.054.005",
+		diameterMm: 4.5,
+		heightMm: 4.0,
+		priceKopecks: 350000,
+		priceRub: 3500,
+	},
+	dentium: {
+		id: "ha-dentium-superline",
+		brand: "dentium",
+		nameRu: "Формирователь десны Dentium SuperLine",
+		code804n: "A16.07.054.005",
+		diameterMm: 4.5,
+		heightMm: 4.0,
+		priceKopecks: 350000,
+		priceRub: 3500,
+	},
+	mis: {
+		id: "ha-mis-seven",
+		brand: "mis",
+		nameRu: "Формирователь десны MIS V3 / SEVEN",
+		code804n: "A16.07.054.005",
+		diameterMm: 4.5,
+		heightMm: 4.0,
+		priceKopecks: 350000,
+		priceRub: 3500,
+	},
+};
+
+export const STANDARD_PROSTHETIC_ABUTMENTS: Record<ImplantBrandKey, AbutmentSpec> = {
+	straumann: {
+		id: "ab-straumann-tibase",
+		brand: "straumann",
+		nameRu: "Индивидуальный титановый абатмент CAD/CAM Straumann Roxolid",
+		code804n: "A16.07.054.006",
+		materialRu: "Ti-Base Grade 5 (Ti-Zr)",
+		priceKopecks: 1250000,
+		priceRub: 12500,
+	},
+	nobel_biocare: {
+		id: "ab-nobel-procera",
+		brand: "nobel_biocare",
+		nameRu: "Индивидуальный титановый абатмент NobelProcera Ti-Base",
+		code804n: "A16.07.054.006",
+		materialRu: "Titanium Grade 5 ELI",
+		priceKopecks: 1200000,
+		priceRub: 12000,
+	},
+	osstem: {
+		id: "ab-osstem-custom",
+		brand: "osstem",
+		nameRu: "Индивидуальный титановый абатмент Osstem Custom Ti-Base",
+		code804n: "A16.07.054.006",
+		materialRu: "Medical Titanium Grade 4/5",
+		priceKopecks: 750000,
+		priceRub: 7500,
+	},
+	dentium: {
+		id: "ab-dentium-custom",
+		brand: "dentium",
+		nameRu: "Индивидуальный титановый абатмент Dentium Dual / Ti-Base",
+		code804n: "A16.07.054.006",
+		materialRu: "Medical Titanium Ti-6Al-4V",
+		priceKopecks: 750000,
+		priceRub: 7500,
+	},
+	mis: {
+		id: "ab-mis-connect",
+		brand: "mis",
+		nameRu: "Индивидуальный титановый абатмент MIS Connect / Ti-Base",
+		code804n: "A16.07.054.006",
+		materialRu: "Medical Titanium Grade 5",
+		priceKopecks: 700000,
+		priceRub: 7000,
+	},
+};
+
+export interface ImplantProstheticSuiteItem {
+	readonly code804n: string;
+	readonly name: string;
+	readonly category: string;
+	readonly priceRub: number;
+	readonly priceKopecks: number;
+	readonly stageKind: string;
+	readonly phase: number;
+	readonly materials: string;
+	readonly clinicalRationale: string;
+}
+
+export interface ImplantProstheticSuiteResult {
+	readonly toothFdi: number;
+	readonly implantSpec: VirtualImplantSpec;
+	readonly healingAbutment: HealingAbutmentSpec;
+	readonly abutment: AbutmentSpec;
+	readonly implantPriceKopecks: number;
+	readonly healingAbutmentPriceKopecks: number;
+	readonly abutmentPriceKopecks: number;
+	readonly totalPriceKopecks: number;
+	readonly totalPriceRub: number;
+	readonly suiteItems: readonly ImplantProstheticSuiteItem[];
+}
+
+export function buildImplantProstheticSuite(
+	implantSpec: VirtualImplantSpec,
+	toothFdi = 46,
+	clinicalRationale = "",
+): ImplantProstheticSuiteResult {
+	const brand = implantSpec.brand;
+	const healingAbutment: HealingAbutmentSpec = (STANDARD_HEALING_ABUTMENTS[brand] ?? STANDARD_HEALING_ABUTMENTS.osstem)!;
+	const abutment: AbutmentSpec = (STANDARD_PROSTHETIC_ABUTMENTS[brand] ?? STANDARD_PROSTHETIC_ABUTMENTS.osstem)!;
+
+	const implantPriceKopecks = implantSpec.priceKopecks;
+	const healingAbutmentPriceKopecks = healingAbutment.priceKopecks;
+	const abutmentPriceKopecks = abutment.priceKopecks;
+	const totalPriceKopecks = implantPriceKopecks + healingAbutmentPriceKopecks + abutmentPriceKopecks;
+	const totalPriceRub = Math.round(totalPriceKopecks / 100);
+
+	const diameterStr = implantSpec.diameterMm.toFixed(1);
+	const lengthStr = implantSpec.lengthMm.toFixed(1);
+
+	const suiteItems: ImplantProstheticSuiteItem[] = [
+		{
+			code804n: "A16.07.054",
+			name: `Внутрикостная дентальная имплантация: ${implantSpec.brandName} ${implantSpec.lineName} (Ø${diameterStr} × ${lengthStr} мм)`,
+			category: "Хирургия",
+			priceRub: Math.round(implantPriceKopecks / 100),
+			priceKopecks: implantPriceKopecks,
+			stageKind: "stage_2_surgery",
+			phase: 2,
+			materials: `Имплантат ${implantSpec.brandName} ${implantSpec.lineName} Ø${diameterStr} × ${lengthStr} мм (арт. ${implantSpec.articleNumber || "—"})`,
+			clinicalRationale: clinicalRationale || `Установка имплантата в позиции зуба #${toothFdi} по результатам 3D КЛКТ-планирования.`,
+		},
+		{
+			code804n: healingAbutment.code804n,
+			name: `Установка формирователя десны: ${healingAbutment.nameRu}`,
+			category: "Хирургия",
+			priceRub: healingAbutment.priceRub,
+			priceKopecks: healingAbutmentPriceKopecks,
+			stageKind: "stage_2_surgery",
+			phase: 2,
+			materials: `Титановый формирователь десны Ø${healingAbutment.diameterMm} × H${healingAbutment.heightMm} мм`,
+			clinicalRationale: `Формирование эстетического десневого профиля прорезывания в области зуба #${toothFdi}.`,
+		},
+		{
+			code804n: abutment.code804n,
+			name: `Установка индивидуального абатмента: ${abutment.nameRu}`,
+			category: "Ортопедия",
+			priceRub: abutment.priceRub,
+			priceKopecks: abutmentPriceKopecks,
+			stageKind: "stage_3_ortho",
+			phase: 3,
+			materials: `${abutment.materialRu} (${implantSpec.brandName})`,
+			clinicalRationale: `Ортопедический этап: опора под коронку с винтовой фиксацией на имплантате #${toothFdi}.`,
+		},
+	];
+
+	return {
+		toothFdi,
+		implantSpec,
+		healingAbutment,
+		abutment,
+		implantPriceKopecks,
+		healingAbutmentPriceKopecks,
+		abutmentPriceKopecks,
+		totalPriceKopecks,
+		totalPriceRub,
+		suiteItems,
+	};
+}
+

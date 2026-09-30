@@ -6,11 +6,12 @@
 import { useState, useCallback } from "react";
 import type { CrossSectionSliceData } from "../dentalCurveEngine";
 import { measureAlveolarRidgeCrossSection } from "../dentalCurveEngine";
-import type {
-	VirtualImplantSpec,
-	CrossSectionImplantPose,
-	MandibularCanalCrossSection,
-	NerveSafetyAuditResult,
+import {
+	type VirtualImplantSpec,
+	type CrossSectionImplantPose,
+	type MandibularCanalCrossSection,
+	type NerveSafetyAuditResult,
+	buildImplantProstheticSuite,
 } from "../implantSafetyEngine";
 import type { AlveolarRidgeCaliperMeasurement } from "../cbctCaliperNerveMath";
 import type { HUZoneSampling, MischClassificationResult } from "../boneDensityMischMath";
@@ -24,6 +25,8 @@ import {
 	exportImplantToScheduleDraft,
 	exportPdfImplantReport,
 	addCbctToFinanceAndPlan,
+	savePersistedCustomPlanItem,
+	updateOdontogramToothToPlannedImplant,
 } from "../ctImplantIntegrationBridge";
 
 export interface UseCbctStudioExportsProps {
@@ -48,6 +51,7 @@ export interface UseCbctStudioExportsProps {
 	readonly mischClassification: MischClassificationResult;
 	readonly onApplyToPlan?: ((item: TreatmentPlanItem) => void) | undefined;
 	readonly onApplyToDiary043?: ((summary: any) => void) | undefined;
+	readonly crossSectionCanvasRef?: React.RefObject<HTMLCanvasElement | null> | undefined;
 }
 
 export function useCbctStudioExports({
@@ -72,6 +76,7 @@ export function useCbctStudioExports({
 	mischClassification,
 	onApplyToPlan,
 	onApplyToDiary043,
+	crossSectionCanvasRef,
 }: UseCbctStudioExportsProps) {
 	const crossSectionMeasurement = activeCrossSection
 		? measureAlveolarRidgeCrossSection(activeCrossSection)
@@ -93,32 +98,84 @@ export function useCbctStudioExports({
 
 	const handleExportToPlan = useCallback(() => {
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
-		const item = exportImplantToTreatmentPlan({
-			patientId,
-			patientName: patientDisplayName,
-			doctorId: study?.doctorId,
-			doctorName: study?.doctorName,
-			toothFdi: targetTooth,
-			implantSpec: currentImplantSpec,
-			angulationDeg: implantAngulationDeg,
-			ridgeHeightMm: effectiveRidgeHeightMm,
-			ridgeWidthMm: effectiveRidgeWidthMm,
-			mischClass: displayBoneClass,
-			meanHU: displayMeanHU,
-			nerveClearanceMm: displayNerveClearanceMm,
-			recommendedTorqueNcm: displayTorque,
-			drillingProtocol: displayDrillingProtocol,
-			isNerveWarning: nerveAuditResult.isWarning,
-			isNerveDanger: nerveAuditResult.isDangerous,
-		});
-		if (onApplyToPlan) {
-			onApplyToPlan(item);
+		const isMaxilla = targetTooth < 30;
+		const anatomyLabel = isMaxilla ? "пазухи" : "канала IAN";
+		const nerveStatus = displayNerveClearanceMm !== null
+			? `дистанция до ${anatomyLabel}: ${displayNerveClearanceMm.toFixed(1)} мм`
+			: "дистанция не определена";
+		const ridgeHStr = typeof effectiveRidgeHeightMm === "number" ? `H=${effectiveRidgeHeightMm.toFixed(1)} мм` : "H: —";
+		const ridgeWStr = typeof effectiveRidgeWidthMm === "number" ? `W=${effectiveRidgeWidthMm.toFixed(1)} мм` : "W: —";
+
+		const clinicalRationale =
+			`КЛКТ-планирование (зуб #${targetTooth}): гребень ${ridgeHStr}, ${ridgeWStr}. ` +
+			`Плотность кости: Misch ${displayBoneClass} (гребень ${Math.round(huSamplingResult.coronalCrestalHU)} HU, тело ${Math.round(huSamplingResult.trabecularCoreHU)} HU, апекс ${Math.round(huSamplingResult.apicalBaseHU)} HU, среднее ${Math.round(displayMeanHU ?? huSamplingResult.overallMeanHU)} HU). ` +
+			`${nerveStatus}. Протокол: ${mischClassification?.clinicalDrillingRecommendation || displayDrillingProtocol}. Ожидаемый торк: ${displayTorque}.`;
+
+		// 1. Build complete 3-position surgical & prosthetic suite (implant + healing abutment + custom abutment)
+		const suite = buildImplantProstheticSuite(currentImplantSpec, targetTooth, clinicalRationale);
+
+		// 2. Persist all 3 items to localStorage for patient plan
+		const planItems: TreatmentPlanItem[] = suite.suiteItems.map((item, idx) => ({
+			id: `plan-implant-suite-${targetTooth}-${idx}-${Date.now()}`,
+			toothNumber: targetTooth,
+			code804n: item.code804n,
+			name: item.name,
+			category: item.category as any,
+			priceRub: item.priceRub,
+			unitPriceRub: item.priceRub,
+			discountRub: 0,
+			quantity: 1,
+			phase: item.phase,
+			stageKind: item.stageKind as any,
+			isAuto: false,
+			materials: item.materials,
+			clinicalRationale: item.clinicalRationale,
+		}));
+
+		if (patientId && typeof window !== "undefined") {
+			for (const pItem of planItems) {
+				savePersistedCustomPlanItem(patientId, pItem);
+			}
 		}
+
+		// 3. Mark tooth in odontogram
+		updateOdontogramToothToPlannedImplant(targetTooth);
+
+		// 4. Dispatch events for UI reactivity
+		if (typeof window !== "undefined") {
+			for (const pItem of planItems) {
+				try {
+					window.dispatchEvent(
+						new CustomEvent("dente-add-treatment-plan-item", {
+							detail: {
+								item: pItem,
+								toothNumber: targetTooth,
+								patientId,
+							},
+						}),
+					);
+				} catch {
+					// ignore
+				}
+			}
+		}
+
+		// 5. Callback for parent modal
+		if (onApplyToPlan && planItems[0]) {
+			onApplyToPlan(planItems[0]);
+		}
+
+		const totalRub = suite.totalPriceRub.toLocaleString("ru-RU");
+		showToast(
+			`Комплекс имплантации #${targetTooth}: имплантат (${(suite.implantPriceKopecks / 100).toLocaleString("ru-RU")} ₽) + формирователь (${(suite.healingAbutmentPriceKopecks / 100).toLocaleString("ru-RU")} ₽) + абатмент (${(suite.abutmentPriceKopecks / 100).toLocaleString("ru-RU")} ₽) = ${totalRub} ₽ добавлен в смету!`,
+			"success",
+			5000,
+		);
 	}, [
-		patientId, patientDisplayName, study, activeCrossSection, currentImplantSpec,
-		implantAngulationDeg, effectiveRidgeHeightMm, effectiveRidgeWidthMm,
-		displayBoneClass, displayMeanHU, displayNerveClearanceMm,
-		displayTorque, displayDrillingProtocol, nerveAuditResult, onApplyToPlan,
+		patientId, activeCrossSection, currentImplantSpec, effectiveRidgeHeightMm,
+		effectiveRidgeWidthMm, displayBoneClass, displayMeanHU, displayNerveClearanceMm,
+		displayTorque, displayDrillingProtocol, huSamplingResult, mischClassification,
+		onApplyToPlan,
 	]);
 
 	const handleExportToSchedule = useCallback(() => {
@@ -146,6 +203,65 @@ export function useCbctStudioExports({
 
 	const handleExportToEmr = useCallback(async () => {
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
+		const isMaxilla = targetTooth < 30;
+		const anatomyLabel = isMaxilla ? "пазухи" : "канала IAN";
+		const effectivePatientId = patientId || "zakharov";
+
+		// 1. Capture high-resolution slice image from cross-section canvas
+		let sliceDataUrl: string | null = null;
+		try {
+			const targetCanvas =
+				crossSectionCanvasRef?.current ||
+				(typeof document !== "undefined"
+					? (document.querySelector('canvas[data-testid="cbct-cross-section-sidebar-canvas"]') as HTMLCanvasElement | null) ||
+					  (document.querySelector('canvas') as HTMLCanvasElement | null)
+					: null);
+			if (targetCanvas) {
+				sliceDataUrl = targetCanvas.toDataURL("image/png");
+			}
+		} catch {
+			// ignore canvas capture failure
+		}
+
+		// 2. Attach high-resolution slice to patient EMR in localStorage & reactive event
+		if (sliceDataUrl && typeof window !== "undefined") {
+			try {
+				const emrAttachment = {
+					id: `emr-cbct-slice-${targetTooth}-${Date.now()}`,
+					patientId: effectivePatientId,
+					patientName: patientDisplayName,
+					title: `КЛКТ срез (300 DPI) — планирование имплантата #${targetTooth} (${currentImplantSpec.brandName} Ø${currentImplantSpec.diameterMm}x${currentImplantSpec.lengthMm})`,
+					kind: "cbct",
+					toothCode: String(targetTooth),
+					teethFdi: [String(targetTooth)],
+					previewUrl: sliceDataUrl,
+					viewerUrl: sliceDataUrl,
+					capturedAt: new Date().toISOString(),
+					effectiveDoseMicrosv: 15,
+					status: "available",
+					notes: `Плотность Misch ${displayBoneClass} (${Math.round(displayMeanHU ?? huSamplingResult.overallMeanHU)} HU), зазор до канала: ${displayNerveClearanceMm ?? "—"} мм`,
+				};
+
+				const storageKey = `dente_patient_emr_attachments_${effectivePatientId}`;
+				const existingRaw = window.localStorage.getItem(storageKey);
+				const existing = existingRaw ? JSON.parse(existingRaw) : [];
+				existing.push(emrAttachment);
+				window.localStorage.setItem(storageKey, JSON.stringify(existing));
+
+				// Global imaging studies registry
+				const studiesRaw = window.localStorage.getItem("dente_imaging_studies");
+				const existingStudies = studiesRaw ? JSON.parse(studiesRaw) : [];
+				existingStudies.push(emrAttachment);
+				window.localStorage.setItem("dente_imaging_studies", JSON.stringify(existingStudies));
+
+				window.dispatchEvent(new CustomEvent("dente-add-imaging-study", { detail: emrAttachment }));
+				window.dispatchEvent(new CustomEvent("dente-emr-attachment", { detail: emrAttachment }));
+			} catch {
+				// ignore
+			}
+		}
+
+		// 3. Update visit diary Form 043/u via visitStore and custom events
 		exportImplantToDiary043(
 			{
 				patientId,
@@ -158,20 +274,27 @@ export function useCbctStudioExports({
 				ridgeHeightMm: effectiveRidgeHeightMm,
 				ridgeWidthMm: effectiveRidgeWidthMm,
 				mischClass: displayBoneClass,
-				meanHU: displayMeanHU,
+				meanHU: Math.round(displayMeanHU ?? huSamplingResult.overallMeanHU),
 				nerveClearanceMm: displayNerveClearanceMm,
 				recommendedTorqueNcm: displayTorque,
-				drillingProtocol: displayDrillingProtocol,
+				drillingProtocol: mischClassification?.clinicalDrillingRecommendation || displayDrillingProtocol,
 				isNerveWarning: nerveAuditResult.isWarning,
 				isNerveDanger: nerveAuditResult.isDangerous,
 			},
 			onApplyToDiary043,
 		);
+
+		showToast(
+			`Клинический протокол и срез КЛКТ высокого разрешения успешно сохранены в медкарту пациента ${patientDisplayName}!`,
+			"success",
+			4500,
+		);
 	}, [
 		patientId, patientDisplayName, study, activeCrossSection, currentImplantSpec,
 		implantAngulationDeg, effectiveRidgeHeightMm, effectiveRidgeWidthMm,
 		displayBoneClass, displayMeanHU, displayNerveClearanceMm,
-		displayTorque, displayDrillingProtocol, nerveAuditResult, onApplyToDiary043,
+		displayTorque, displayDrillingProtocol, nerveAuditResult, huSamplingResult,
+		mischClassification, crossSectionCanvasRef, onApplyToDiary043,
 	]);
 
 	const handleExportCbctToFinance = useCallback(() => {

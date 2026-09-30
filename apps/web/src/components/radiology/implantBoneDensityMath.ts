@@ -48,6 +48,7 @@ import {
   type VirtualImplantSpec,
   calculateApexCoordinates,
 } from './implantNerveSafetyAudit.js';
+import type { Implant3DWorldProjection } from './implantSafetyEngine.js';
 
 // ─── MISCH BONE DENSITY CLINICAL GUIDANCE & TORQUE PROTOCOL ─────────────────
 

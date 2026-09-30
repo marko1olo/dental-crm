@@ -57,7 +57,14 @@ export function getSafeDevicePixelRatio(dpr?: number): number {
 	return Math.min(1.5, Math.max(1.0, val));
 }
 
-export type Volume3DPresetId = "skull" | "dense_bone" | "soft_tissue" | "mip";
+export type Volume3DPresetId =
+	| "skull"
+	| "dense_bone"
+	| "soft_tissue"
+	| "mip"
+	| "cortical_bone"
+	| "cancellous_bone"
+	| "enamel_metal";
 
 export interface Volume3DPresetSpec {
 	id: Volume3DPresetId;
@@ -90,12 +97,12 @@ export const CBCT_VOLUME_3D_PRESETS: readonly Volume3DPresetSpec[] = [
 	},
 	{
 		id: "soft_tissue",
-		label: "Ткани + Кость",
+		label: "Мягкие ткани (-100..+300 HU)",
 		shortLabel: "Ткани",
-		description: "Мягкотканный контур лица и подлежащий костный остов (100+ HU)",
-		huMin: 100,
-		huMax: 1500,
-		colorRgb: [220, 180, 160], // Flesh and bone
+		description: "Слизистая оболочка, десна и контуры мягких тканей лица (-100..+300 HU)",
+		huMin: -100,
+		huMax: 300,
+		colorRgb: [225, 185, 170], // Flesh and mucosa tint
 	},
 	{
 		id: "mip",
@@ -107,6 +114,60 @@ export const CBCT_VOLUME_3D_PRESETS: readonly Volume3DPresetSpec[] = [
 		colorRgb: [220, 240, 255], // Clear radiologic cyan-white
 	},
 ] as const;
+
+export const CBCT_CLINICAL_VOLUME_PRESETS: readonly Volume3DPresetSpec[] = [
+	{
+		id: "cortical_bone",
+		label: "Кортикальная кость (+600..+2000 HU)",
+		shortLabel: "Кортикал",
+		description: "Компактная пластинка альвеолярного отростка и базиса челюсти (+600..+2000 HU)",
+		huMin: 600,
+		huMax: 2000,
+		colorRgb: [255, 250, 240],
+	},
+	{
+		id: "cancellous_bone",
+		label: "Губчатая кость (+200..+800 HU)",
+		shortLabel: "Губчатая",
+		description: "Трабекулярная сеть губчатого вещества челюсти (+200..+800 HU)",
+		huMin: 200,
+		huMax: 800,
+		colorRgb: [238, 224, 204],
+	},
+	{
+		id: "enamel_metal",
+		label: "Эмаль зубов и металл (+1500..+3000 HU)",
+		shortLabel: "Эмаль/Металл",
+		description: "Высокоминерализованная зубная эмаль, дентин и металлические коронки (+1500..+3000 HU)",
+		huMin: 1500,
+		huMax: 3000,
+		colorRgb: [255, 255, 255],
+	},
+	{
+		id: "soft_tissue",
+		label: "Мягкие ткани (-100..+300 HU)",
+		shortLabel: "Ткани",
+		description: "Слизистая оболочка, десна и контуры мягких тканей лица (-100..+300 HU)",
+		huMin: -100,
+		huMax: 300,
+		colorRgb: [225, 185, 170],
+	},
+] as const;
+
+export const ALL_CBCT_VOLUME_3D_PRESETS: readonly Volume3DPresetSpec[] = [
+	...CBCT_VOLUME_3D_PRESETS,
+	...CBCT_CLINICAL_VOLUME_PRESETS.filter(
+		(cp) => !CBCT_VOLUME_3D_PRESETS.some((bp) => bp.id === cp.id),
+	),
+];
+
+export function getVolume3DPreset(id: Volume3DPresetId): Volume3DPresetSpec {
+	return (
+		ALL_CBCT_VOLUME_3D_PRESETS.find((p) => p.id === id) ??
+		CBCT_VOLUME_3D_PRESETS.find((p) => p.id === id) ??
+		CBCT_VOLUME_3D_PRESETS[0]!
+	);
+}
 
 export function cleanZero(val: number): number {
 	return Math.abs(val) < 1e-9 ? 0 : val;
@@ -253,7 +314,7 @@ export function renderCanvas2DVolumeRaymarching(
 		return;
 	}
 
-	const preset = CBCT_VOLUME_3D_PRESETS.find((p) => p.id === activePreset) ?? CBCT_VOLUME_3D_PRESETS[0]!;
+	const preset = getVolume3DPreset(activePreset);
 	const rotMat = computeVolume3DRotationMatrix(yaw, pitch);
 
 	// Render authentic 3D raycasting of voxel volume
@@ -291,8 +352,8 @@ export function renderCanvas2DVolumeRaymarching(
 	// Adaptive interactive sampling: during mouse/touch drag, render fast 60 FPS sub-sampled pass.
 	// When idle/released, render razor-sharp beauty pass.
 	const canvas2dSubSample = isInteracting ? (width > 500 ? 4 : 3) : (width > 400 ? 2 : 1);
-	const maxSteps = isInteracting ? 55 : 160;
-	const nominalStepSize = isInteracting ? Math.max(2.5, maxDim / 55) : Math.max(1.2, maxDim / 160);
+	const maxSteps = isInteracting ? 64 : 256;
+	const nominalStepSize = isInteracting ? Math.max(2.5, maxDim / 64) : Math.max(0.8, maxDim / 256);
 
 	const lightDir = [0.4, 0.6, 0.7]; // Directional light from front-top-right
 	const lightLen = Math.hypot(lightDir[0]!, lightDir[1]!, lightDir[2]!);

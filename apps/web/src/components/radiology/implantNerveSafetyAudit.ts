@@ -14,6 +14,8 @@
 import { MANDIBULAR_NERVE_SAFETY_MARGIN_MM } from './cbctCaliperNerveMath.js';
 export { MANDIBULAR_NERVE_SAFETY_MARGIN_MM };
 import type { Point3D } from './cbctMprMath.js';
+import type { Vec3 } from '@dental/shared';
+import type { Implant3DWorldProjection } from './implantSafetyEngine.js';
 import {
   analyzeMischBoneQuality,
   formatMischProtocolToDiaryText,

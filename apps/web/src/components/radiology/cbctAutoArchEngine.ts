@@ -62,8 +62,8 @@ export interface PolarRidgeRayResult {
  */
 export function computeOcclusalDensityProfile(
 	volume: CbctVoxelVolume,
-	sampleStepX = 2,
-	sampleStepY = 2,
+	sampleStepX = 4,
+	sampleStepY = 4,
 ): OcclusalDensitySliceProfile[] {
 	if (!volume || !volume.data || volume.isDisposed || volume.dimensions.depth <= 0) {
 		return [];
@@ -208,12 +208,78 @@ export function findOcclusalZPlane(
 		return peaks;
 	};
 
+	// Determine physical Z span of significant enamel signal (smoothedEnamel >= 1000)
+	let minEnamelZ = Infinity;
+	let maxEnamelZ = -Infinity;
+	for (const p of profile) {
+		if (p.smoothedEnamel >= 1000) {
+			if (p.zMm < minEnamelZ) minEnamelZ = p.zMm;
+			if (p.zMm > maxEnamelZ) maxEnamelZ = p.zMm;
+		}
+	}
+	const enamelSpanMm = maxEnamelZ >= minEnamelZ ? maxEnamelZ - minEnamelZ : 0;
+
 	// 1. Primary: Enamel peaks (Dentate patients)
 	const enamelPeaks = findPeaks((p) => p.smoothedEnamel, 0.2);
-	if (enamelPeaks.length > 0) {
+	if (enamelPeaks.length >= 2) {
 		enamelPeaks.sort((a, b) => a.zMm - b.zMm);
-		if (enamelPeaks.length === 1) return enamelPeaks[0]!.zMm;
-		return jawType === "mandible" ? enamelPeaks[0]!.zMm : enamelPeaks[enamelPeaks.length - 1]!.zMm;
+		const dist = enamelPeaks[enamelPeaks.length - 1]!.zMm - enamelPeaks[0]!.zMm;
+		if (dist >= 12.0) {
+			// Widely separated dental arches (e.g. open mouth or synthetic dual-arch volume)
+			return jawType === "mandible" ? enamelPeaks[0]!.zMm : enamelPeaks[enamelPeaks.length - 1]!.zMm;
+		}
+	} else if (enamelPeaks.length === 1 && enamelSpanMm < 8.0) {
+		// Single isolated dental arch (e.g. single-jaw scan or synthetic volume)
+		return enamelPeaks[0]!.zMm;
+	}
+
+	// Clinical Multi-Slice Auto-Scoring around primary occlusal enamel contact (Bite Plane)
+	if (enamelPeaks.length > 0) {
+		let maxVal = 0;
+		let biteZ = 0.0;
+		for (const p of profile) {
+			if (p.smoothedEnamel > maxVal) {
+				maxVal = p.smoothedEnamel;
+				biteZ = p.zMm;
+			}
+		}
+
+		if (maxVal >= 1000) {
+			const candidateOffsets = jawType === "mandible" ? [3.5, 5.0, 7.0, 8.5, 10.0] : [-3.0, -4.5, -6.0, -7.5, -9.0];
+			let bestZ = biteZ + (jawType === "mandible" ? 7.0 : -4.5);
+			let bestScore = -1;
+
+			for (const offset of candidateOffsets) {
+				const candZ = Number((biteZ + offset).toFixed(2));
+				const slab = extractAxialMIPSlab(volume, candZ, 4.0);
+				const data = slab.data;
+				const totalV = slab.width * slab.height;
+				let enamelVoxels = 0, sumX = 0, sumY = 0, sumX2 = 0;
+
+				for (let i = 0; i < totalV; i++) {
+					const hu = data[i] ?? -1000;
+					if (hu >= 1600) {
+						enamelVoxels++;
+						const vx = i % slab.width;
+						const vy = Math.floor(i / slab.width);
+						const xMm = slab.originMm.x + vx * (slab.spacingMm.x || 0.25);
+						const yMm = slab.originMm.y + vy * (slab.spacingMm.y || 0.25);
+						sumX += xMm; sumY += yMm; sumX2 += xMm * xMm;
+					}
+				}
+
+				if (enamelVoxels >= 30) {
+					const meanX = sumX / enamelVoxels;
+					const varX = Math.max(1, sumX2 / enamelVoxels - meanX * meanX);
+					const score = enamelVoxels / (1 + Math.abs(varX - 450) / 100);
+					if (score > bestScore) {
+						bestScore = score;
+						bestZ = candZ;
+					}
+				}
+			}
+			return bestZ;
+		}
 	}
 
 	// 2. Secondary: Cortical bone peaks (Edentulous with preserved ridge)
@@ -221,7 +287,7 @@ export function findOcclusalZPlane(
 	if (bonePeaks.length > 0) {
 		bonePeaks.sort((a, b) => a.zMm - b.zMm);
 		if (bonePeaks.length === 1) return bonePeaks[0]!.zMm;
-		return jawType === "mandible" ? bonePeaks[0]!.zMm : bonePeaks[bonePeaks.length - 1]!.zMm;
+		return jawType === "mandible" ? bonePeaks[bonePeaks.length - 1]!.zMm : bonePeaks[0]!.zMm;
 	}
 
 	// 3. Tertiary: Cancellous / Trabecular ridge peaks (Severe bone atrophy / Osteoporosis)
@@ -229,7 +295,7 @@ export function findOcclusalZPlane(
 	if (cancellousPeaks.length > 0) {
 		cancellousPeaks.sort((a, b) => a.zMm - b.zMm);
 		if (cancellousPeaks.length === 1) return cancellousPeaks[0]!.zMm;
-		return jawType === "mandible" ? cancellousPeaks[0]!.zMm : cancellousPeaks[cancellousPeaks.length - 1]!.zMm;
+		return jawType === "mandible" ? cancellousPeaks[cancellousPeaks.length - 1]!.zMm : cancellousPeaks[0]!.zMm;
 	}
 
 	// Fallback to volume Z midpoint
@@ -246,7 +312,7 @@ export function findOcclusalZPlane(
 export function extractAxialMIPSlab(
 	volume: CbctVoxelVolume,
 	centerZMm: number,
-	thicknessMm = 14.0,
+	thicknessMm = 6.0,
 ): AxialMIPSlab {
 	const width = volume.dimensions?.width ?? 64;
 	const height = volume.dimensions?.height ?? 64;
@@ -435,24 +501,14 @@ export function detectDentalArchCentroids(
 	// theta = -14 deg -> Right posterior quadrant (48/18)
 	// theta = +90 deg -> Direct anterior / central incisors (41, 31 / 11, 21)
 	// theta = +194 deg -> Left posterior quadrant (38/28)
-	const toothAngleSpecs = [
-		{ fdi: jawType === "mandible" ? "48" : "18", angleRad: (-14 * Math.PI) / 180, isRight: true },
-		{ fdi: jawType === "mandible" ? "47" : "17", angleRad: (0 * Math.PI) / 180, isRight: true },
-		{ fdi: jawType === "mandible" ? "46" : "16", angleRad: (16 * Math.PI) / 180, isRight: true },
-		{ fdi: jawType === "mandible" ? "45" : "15", angleRad: (30 * Math.PI) / 180, isRight: true },
-		{ fdi: jawType === "mandible" ? "44" : "14", angleRad: (45 * Math.PI) / 180, isRight: true },
-		{ fdi: jawType === "mandible" ? "43" : "13", angleRad: (60 * Math.PI) / 180, isRight: true },
-		{ fdi: jawType === "mandible" ? "42" : "12", angleRad: (74 * Math.PI) / 180, isRight: true },
-		{ fdi: jawType === "mandible" ? "41" : "11", angleRad: (87 * Math.PI) / 180, isRight: true },
-		{ fdi: jawType === "mandible" ? "31" : "21", angleRad: (93 * Math.PI) / 180, isRight: false },
-		{ fdi: jawType === "mandible" ? "32" : "22", angleRad: (106 * Math.PI) / 180, isRight: false },
-		{ fdi: jawType === "mandible" ? "33" : "23", angleRad: (120 * Math.PI) / 180, isRight: false },
-		{ fdi: jawType === "mandible" ? "34" : "24", angleRad: (135 * Math.PI) / 180, isRight: false },
-		{ fdi: jawType === "mandible" ? "35" : "25", angleRad: (150 * Math.PI) / 180, isRight: false },
-		{ fdi: jawType === "mandible" ? "36" : "26", angleRad: (164 * Math.PI) / 180, isRight: false },
-		{ fdi: jawType === "mandible" ? "37" : "27", angleRad: (180 * Math.PI) / 180, isRight: false },
-		{ fdi: jawType === "mandible" ? "38" : "28", angleRad: (194 * Math.PI) / 180, isRight: false },
-	];
+	const degs = [-14, 0, 16, 30, 45, 60, 74, 87, 93, 106, 120, 135, 150, 164, 180, 194];
+	const mandFdi = ["48", "47", "46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36", "37", "38"];
+	const maxFdi = ["18", "17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "28"];
+	const toothAngleSpecs = degs.map((deg, i) => ({
+		fdi: (jawType === "mandible" ? mandFdi : maxFdi)[i]!,
+		angleRad: (deg * Math.PI) / 180,
+		isRight: i < 8,
+	}));
 
 	// Polar ray tracing density sampler with multi-tier peak centroid detection
 	const rayTraceRidge = (theta: number, defaultRadiusMm: number): number => {
@@ -504,6 +560,28 @@ export function detectDentalArchCentroids(
 		} else {
 			// No significant ridge signal -> fallback to default
 			return defaultRadiusMm;
+		}
+
+		// Fissure / Crown axis midpoint formula (Misch / Planmeca Romexis):
+		// P_center = (P_palatal + P_vestibular) / 2
+		// Locates the central groove / pulp chamber rather than flying out to the vestibular enamel edge.
+		let rPalatal = -1;
+		let rVestibular = -1;
+
+		for (let i = 0; i < samples.length; i++) {
+			const s = samples[i]!;
+			if (s.r >= peakR - 10.0 && s.r <= peakR + 10.0) {
+				if (s.hu >= rayThreshold && rPalatal < 0) {
+					rPalatal = s.r;
+				}
+				if (rPalatal > 0 && s.hu < rayBase && rVestibular < 0 && s.r > rPalatal + 2.0) {
+					rVestibular = s.r;
+				}
+			}
+		}
+
+		if (rPalatal > 0 && rVestibular > rPalatal) {
+			return (rPalatal + rVestibular) / 2.0;
 		}
 
 		// Centroid around peak location (window: peakR +/- 6 mm)
@@ -619,6 +697,62 @@ export function detectDentalArchCentroids(
 	return resultAnchors;
 }
 
+/**
+ * Traces the center of cortical bone for retromolar / ascending ramus extensions.
+ * Follows the physical divergence of the mandibular angle analytically from DICOM HU values.
+ * Zero hardcoding: samples cortical bone (>= 500 HU) along transverse rays and calculates
+ * the center of mass / boundary midpoint between inner and outer cortical plates.
+ */
+export function traceAdaptiveBoneRidgeTails(
+	mip: AxialMIPSlab,
+	anchors: readonly DentalArchAnchor[],
+	extendMm: number,
+): { rightExt: Point2D[]; leftExt: Point2D[] } {
+	if (extendMm <= 0 || !anchors || anchors.length < 2) return { rightExt: [], leftExt: [] };
+
+	const findBoneCenter = (yMm: number, isRight: boolean, prevX: number): Point2D => {
+		let sumW = 0, sumWX = 0, minX = 0, maxX = 0, found = false;
+		const searchStart = isRight ? Math.min(-10.0, prevX + 4.0) : Math.max(10.0, prevX - 4.0);
+		const searchEnd = isRight ? prevX - 30.0 : prevX + 30.0;
+		const step = isRight ? -0.5 : 0.5;
+		const steps = Math.abs(Math.round((searchEnd - searchStart) / step));
+
+		for (let i = 0; i <= steps; i++) {
+			const x = searchStart + i * step;
+			const hu = sampleMipHUContinuous(mip, x, yMm);
+			if (hu >= 500) {
+				const w = hu - 400;
+				sumW += w;
+				sumWX += w * x;
+				if (!found) { minX = x; found = true; }
+				maxX = x;
+			}
+		}
+		if (found && sumW > 0) return { x: Number(((minX + maxX) / 2.0).toFixed(2)), y: yMm };
+		return { x: Number((isRight ? prevX - 3.5 : prevX + 3.5).toFixed(2)), y: yMm };
+	};
+
+	const rightAnch = anchors[0]!.positionMm;
+	const leftAnch = anchors[anchors.length - 1]!.positionMm;
+	const nSteps = 3;
+	const stepMm = extendMm / nSteps;
+	const rightPts: Point2D[] = [];
+	const leftPts: Point2D[] = [];
+	let prevRightX = rightAnch.x;
+	let prevLeftX = leftAnch.x;
+
+	for (let i = 1; i <= nSteps; i++) {
+		const ptR = findBoneCenter(rightAnch.y + i * stepMm, true, prevRightX);
+		rightPts.push(ptR);
+		prevRightX = ptR.x;
+		const ptL = findBoneCenter(leftAnch.y + i * stepMm, false, prevLeftX);
+		leftPts.push(ptL);
+		prevLeftX = ptL.x;
+	}
+
+	return { rightExt: rightPts.reverse(), leftExt: leftPts };
+}
+
 // ─── 4. END-TO-END AUTOMATIC DENTAL ARCH PIPELINE ───────────────────────────
 
 /**
@@ -630,17 +764,30 @@ export function detectDentalArchCentroids(
 export function autoDetectDentalArch(
 	volume: CbctVoxelVolume,
 	jawType: "mandible" | "maxilla" = "mandible",
+	focalTroughThicknessMm = 12.0,
+	extendRetromolarMm = 0,
 ): DentalArchCurve {
-	// 1. Find optimal Z occlusal plane
+	// 1. Find optimal Z occlusal plane via multi-slice scoring
 	const centerZMm = findOcclusalZPlane(volume, jawType);
 
-	// 2. Extract 2D Axial MIP slab (14 mm thickness)
-	const mipSlab = extractAxialMIPSlab(volume, centerZMm, 14.0);
+	// 2. Extract 2D Axial MIP slab (6.0 mm clinical thickness)
+	const mipSlab = extractAxialMIPSlab(volume, centerZMm, 6.0);
 
 	// 3. Detect dental arch centroids and fit 16 FDI anchors
 	const anchors = detectDentalArchCentroids(mipSlab, jawType);
 
-	// 4. Construct smooth Catmull-Rom spline dental arch curve
-	return buildDentalArchCurve(anchors, jawType, 12.0);
+	// 4. Optionally trace adaptive bone ridge tails into mandibular angle / ramus
+	const extraControlPoints =
+		extendRetromolarMm > 0 ? traceAdaptiveBoneRidgeTails(mipSlab, anchors, extendRetromolarMm) : undefined;
+
+	// 5. Construct smooth Catmull-Rom spline dental arch curve
+	return buildDentalArchCurve(
+		anchors,
+		jawType,
+		focalTroughThicknessMm,
+		centerZMm,
+		extendRetromolarMm,
+		extraControlPoints,
+	);
 }
 

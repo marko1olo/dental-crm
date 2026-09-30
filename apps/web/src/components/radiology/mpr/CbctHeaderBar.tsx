@@ -1,9 +1,6 @@
 import React from "react";
 import {
-	Activity,
-	Box,
 	Camera,
-	CircleDot,
 	Columns2,
 	Columns3,
 	FileText,
@@ -13,14 +10,24 @@ import {
 	MoreHorizontal,
 	RotateCcw,
 	Ruler,
-	Search,
 	Sliders,
-	Spline,
 	Receipt,
 	X,
 } from "lucide-react";
+import {
+	DentalPanoramicArch,
+	DicomCube3D,
+	DentalImplant,
+	DentalArticulator,
+	BoneDensityMisch,
+	EndoFileCanal,
+} from "../../icons/DentalIcons";
 import { CBCT_HOUNSFIELD_PRESETS, type CbctVoxelVolume, type CbctViewportType } from "../cbctMprMath";
-import type { StudioMode, ViewLayoutMode } from "./cbctStudioTypes";
+import {
+	CBCT_WORKSPACE_TABS,
+	type StudioMode,
+	type ViewLayoutMode,
+} from "./cbctStudioTypes";
 
 export interface CbctHeaderBarProps {
 	readonly modalId: string;
@@ -55,6 +62,9 @@ export interface CbctHeaderBarProps {
 	readonly onSelectPreset?: ((presetId: string) => void) | undefined;
 	readonly crossSectionStepMm?: number | undefined;
 	readonly onChangeCrossSectionStepMm?: ((stepMm: number) => void) | undefined;
+	readonly isUnsharpActive?: boolean | undefined;
+	readonly onToggleUnsharp?: (() => void) | undefined;
+	readonly sharpenAmount?: number | undefined;
 }
 
 export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
@@ -90,15 +100,19 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 	onSelectPreset,
 	crossSectionStepMm,
 	onChangeCrossSectionStepMm,
+	isUnsharpActive = false,
+	onToggleUnsharp,
+	sharpenAmount,
 }) => {
 	return (
 		<header
+			data-testid="cbct-header-bar"
 			className="h-9 min-h-[36px] px-2 sm:px-3 py-0.5 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between shrink-0 gap-1.5 sm:gap-2 text-zinc-100 min-w-0 w-full max-w-full relative"
 		>
-			{/* Left: 3D Cube Icon + Title + Quiet Study Status */}
+			{/* Left: 3D Dicom Cube Icon + Title + Quiet Study Status */}
 			<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink-0">
 				<div className="w-7 h-7 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
-					<Box className="w-3.5 h-3.5" />
+					<DicomCube3D className="w-4 h-4 text-cyan-400" />
 				</div>
 				<div className="flex flex-col min-w-0 justify-center">
 					<div className="flex items-center gap-1">
@@ -114,7 +128,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 						</h2>
 					</div>
 					<p
-						className="text-[10px] text-zinc-400 truncate leading-none min-w-0 max-w-[110px] sm:max-w-[200px] lg:max-w-[320px]"
+						className="text-[10px] text-zinc-400 truncate leading-none min-w-0 max-w-[110px] sm:max-w-[180px] lg:max-w-[280px]"
 						data-testid="cbct-patient-metadata-badge"
 						id="cbct-patient-metadata-badge"
 						title={`${patientDisplayName || resolvedPatientName} • ${loadedSliceCount > 0 ? `${loadedSliceCount} срезов` : "Исследование не загружено"} • ${volume ? `${volume.spacingMm.x.toFixed(1)} мм` : "—"}`}
@@ -124,79 +138,83 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 				</div>
 			</div>
 
-			{/* Center: Classic Radiology PACS Workspaces (MPR, Панорама, 3D Объем, Имплантация, ВНЧС) */}
-			<div className="flex items-center bg-zinc-900 p-0.5 rounded-lg border border-zinc-800 shrink-0 gap-0.5">
-				<button
-					type="button"
-					onClick={() => handleSelectStudioMode("diagnostic")}
-					className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
-						studioMode === "diagnostic"
-							? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs"
-							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-					}`}
-					data-testid="cbct-mode-diagnostic-btn"
-					title="MPR: мультипланарная реконструкция в 3 ортогональных плоскостях"
+			{/* Center: Clinical Radiology PACS Workspaces (Панорама и Срезы, MPR 3D, Имплантация, ВНЧС) + Physical Unsharp Masking */}
+			<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+				<nav
+					aria-label="Рабочие области КЛКТ"
+					className="flex items-center bg-zinc-900/90 p-0.5 rounded-lg border border-zinc-800 shrink-0 gap-0.5"
 				>
-					<Grid2X2 className="w-3.5 h-3.5 text-cyan-400" />
-					<span className="hidden md:inline">MPR</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => handleSelectStudioMode("panoramic")}
-					className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
-						studioMode === "panoramic"
-							? "bg-zinc-800 text-purple-400 border border-purple-500/60 shadow-xs"
-							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-					}`}
-					data-testid="cbct-mode-panoramic-btn"
-					title="Ортопантомограмма (ОПТГ): развернутая зубная дуга и поперечные срезы"
-				>
-					<Spline className="w-3.5 h-3.5 text-purple-400" />
-					<span className="hidden md:inline">Панорама</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => handleSelectStudioMode("volume3d")}
-					className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
-						studioMode === "volume3d"
-							? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs"
-							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-					}`}
-					data-testid="cbct-mode-volume3d-btn"
-					title="3D Объем: трехмерный рендеринг черепа и костных структур"
-				>
-					<Box className="w-3.5 h-3.5 text-cyan-400" />
-					<span className="hidden md:inline">3D Объем</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => handleSelectStudioMode("implant")}
-					className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
-						studioMode === "implant"
-							? "bg-zinc-800 text-amber-400 border border-amber-500/60 shadow-xs"
-							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-					}`}
-					data-testid="cbct-mode-implant-btn"
-					title="Планирование имплантации и контроль нерва"
-				>
-					<CircleDot className="w-3.5 h-3.5 text-amber-400" />
-					<span className="hidden md:inline">Имплантация</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => handleSelectStudioMode("tmj")}
-					className={`px-1.5 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1 transition-colors ${
-						studioMode === "tmj"
-							? "bg-zinc-800 text-emerald-400 border border-emerald-500/60 shadow-xs"
-							: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-					}`}
-					data-testid="cbct-mode-tmj-btn"
-					title="ВНЧС: височно-нижнечелюстной сустав"
-				>
-					<Activity className="w-3.5 h-3.5 text-emerald-400" />
-					<span className="hidden md:inline">ВНЧС</span>
-				</button>
+					{CBCT_WORKSPACE_TABS.map((tab) => {
+						const isSelected =
+							tab.id === "diagnostic"
+								? studioMode === "diagnostic" || studioMode === "volume3d"
+								: studioMode === tab.studioMode;
+
+						const IconComponent =
+							tab.id === "panoramic"
+								? DentalPanoramicArch
+								: tab.id === "diagnostic"
+									? DicomCube3D
+									: tab.id === "endo"
+										? EndoFileCanal
+										: tab.id === "implant"
+											? DentalImplant
+											: DentalArticulator;
+
+						return (
+							<button
+								key={tab.id}
+								type="button"
+								onClick={() => handleSelectStudioMode(tab.studioMode)}
+								className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-colors cursor-pointer border ${
+									isSelected
+										? `${tab.activeBorderClass} font-bold`
+										: "bg-transparent border-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+								}`}
+								data-testid={tab.testId}
+								data-mode-testid={tab.modeTestId}
+								title={tab.description}
+								aria-selected={isSelected}
+							>
+								<IconComponent className={`w-3.5 h-3.5 shrink-0 ${isSelected ? tab.activeColorClass : "text-zinc-400"}`} />
+								<span className="hidden md:inline">{tab.label}</span>
+								<span className="md:hidden">{tab.shortLabel}</span>
+							</button>
+						);
+					})}
+				</nav>
+
+				{/* Physical Button: Trabecular Unsharp Masking Filter */}
+				{onToggleUnsharp && (
+					<button
+						type="button"
+						onClick={onToggleUnsharp}
+						className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-all cursor-pointer border ${
+							isUnsharpActive
+								? "bg-amber-950/40 text-amber-300 border-amber-500/70 shadow-[0_0_8px_rgba(245,158,11,0.35)]"
+								: "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:bg-zinc-850"
+						}`}
+						data-testid="cbct-unsharp-toggle-btn"
+						id="cbct-header-unsharp-mask-btn"
+						title="Контурная резкость трабекул (Unsharp Masking, горячая клавиша 'U')"
+						aria-pressed={isUnsharpActive}
+					>
+						<BoneDensityMisch className={`w-3.5 h-3.5 shrink-0 ${isUnsharpActive ? "text-amber-400" : "text-zinc-400"}`} />
+						<span className="hidden sm:inline">Резкость</span>
+						<span
+							className={`text-[9px] font-mono px-1 py-0.2 rounded font-bold uppercase tracking-wider ${
+								isUnsharpActive
+									? "bg-amber-500/25 text-amber-300 border border-amber-500/40"
+									: "bg-zinc-800 text-zinc-500 border border-zinc-700"
+							}`}
+							data-testid="cbct-unsharp-hud-badge"
+						>
+							{isUnsharpActive ? "SHARP ON" : "RAW VOXEL"}
+						</span>
+					</button>
+				)}
 			</div>
+
 
 			{/* Right: Primary Clinical Actions (В ЭМК, Панель), More Options Menu (...), Window Controls */}
 			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 sticky right-0 z-20 bg-zinc-950 pl-1.5 pr-2 sm:pr-2.5 shadow-[-6px_0_12px_rgba(9,9,11,0.9)]">
@@ -312,7 +330,7 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 								data-testid="cbct-toggle-dental-arch"
 								title="Показать / скрыть анатомическую дугу ОПТГ"
 							>
-								<Spline className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+								<DentalPanoramicArch className="w-3.5 h-3.5 text-purple-400 shrink-0" />
 								<span>{showDentalArch ? "Скрыть дугу ОПТГ" : "Показать дугу ОПТГ"}</span>
 							</button>
 

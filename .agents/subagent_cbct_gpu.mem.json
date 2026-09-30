@@ -1,0 +1,21 @@
+{
+  "role": "GPU WebGL2 Raymarching & Shading Inquisitor",
+  "status": "in_progress",
+  "current_phase": "reconnaissance",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md in full"
+  ],
+  "pending_steps": [
+    "Inspect existing cbctVolume3DShaders.ts, CbctVolume3DViewport.tsx, and apps/web/src/components/radiology/mpr/webgl/",
+    "Check demo_cbct slices and loader pipeline",
+    "Implement/optimize WebGL2 Raymarching 3D shader with pure density raw voxels, trilinear raymarching, adaptive progressive LOD (64 steps interactive / 256 + 4 bisection static)",
+    "Verify/implement Transfer Function presets (cortical, cancellous, enamel/metal, soft tissue)",
+    "Optimize density gradient central differences normal calculation and Blinn-Phong shading",
+    "Verify file line limits <= 800 lines",
+    "Verify WebGL2 rendering live in browser with 313 Zakharov slices, zero getError() and no VRAM leaks",
+    "Capture proof_gpu_raymarching.png and inspect via view_file",
+    "Send verbatim report to orchestrator"
+  ],
+  "findings": {},
+  "timestamp": "2026-10-01T00:20:00Z"
+}

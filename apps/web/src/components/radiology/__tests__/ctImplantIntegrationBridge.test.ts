@@ -45,6 +45,7 @@ import {
 	getImplantBrandTitle,
 	type CtImplantBridgeParams,
 } from "../ctImplantIntegrationBridge";
+import { buildImplantProstheticSuite } from "../implantSafetyEngine";
 
 const MOCK_IMPLANT_PARAMS: CtImplantBridgeParams = {
 	patientId: "pat-test-101",
@@ -399,6 +400,36 @@ describe("Wave 28 Domain 2 — CT Implant Engine Integration Bridge", () => {
 
 			const soap = buildImplantDiarySoapEntry(safeParams);
 			assert.match(soap.statusLocalis, /Расстояние от апекса до нижнечелюстного канала \/ дна верхнечелюстного синуса: 3\.2 мм/);
+		});
+	});
+
+	describe("8. 3-Position Implant Prosthetic Suite (A16.07.054 + A16.07.054.005 + A16.07.054.006)", () => {
+		it("generates exactly 3 positions: fixture, healing abutment, and custom abutment", () => {
+			const suite = buildImplantProstheticSuite(MOCK_IMPLANT_PARAMS.implantSpec, 46);
+			assert.equal(suite.suiteItems.length, 3);
+			assert.equal(suite.suiteItems[0]?.code804n, "A16.07.054");
+			assert.equal(suite.suiteItems[1]?.code804n, "A16.07.054.005");
+			assert.equal(suite.suiteItems[2]?.code804n, "A16.07.054.006");
+		});
+
+		it("ensures strict integer kopeck pricing and ruble parity", () => {
+			const suite = buildImplantProstheticSuite(MOCK_IMPLANT_PARAMS.implantSpec, 46);
+			assert.equal(Number.isInteger(suite.totalPriceKopecks), true);
+			assert.equal(Number.isInteger(suite.implantPriceKopecks), true);
+			assert.equal(Number.isInteger(suite.healingAbutmentPriceKopecks), true);
+			assert.equal(Number.isInteger(suite.abutmentPriceKopecks), true);
+			assert.equal(suite.totalPriceKopecks, suite.implantPriceKopecks + suite.healingAbutmentPriceKopecks + suite.abutmentPriceKopecks);
+			assert.equal(suite.totalPriceRub, Math.round(suite.totalPriceKopecks / 100));
+		});
+
+		it("correctly matches brand-specific companion abutments (Straumann, Osstem, Dentium, Nobel, MIS)", () => {
+			const straumannSpec = { ...MOCK_IMPLANT_PARAMS.implantSpec, brand: "straumann" as const, brandName: "Straumann", priceKopecks: 3850000 };
+			const straumannSuite = buildImplantProstheticSuite(straumannSpec, 16);
+			assert.match(straumannSuite.healingAbutment.nameRu, /Straumann/);
+			assert.match(straumannSuite.abutment.nameRu, /Straumann/);
+			assert.equal(straumannSuite.healingAbutment.priceKopecks, 650000);
+			assert.equal(straumannSuite.abutment.priceKopecks, 1250000);
+			assert.equal(straumannSuite.totalPriceKopecks, 3850000 + 650000 + 1250000);
 		});
 	});
 });

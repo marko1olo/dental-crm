@@ -49,6 +49,8 @@ export interface MischClassificationResult {
 	readonly isImmediateLoadingEligible: boolean;
 	readonly healingPeriodWeeks: number;
 	readonly clinicalAdvice: readonly string[];
+	readonly clinicalDrillingRecommendation: string;
+	readonly finalDrillDiameterMm: number;
 }
 
 export interface ImplantSiteDrillingStep {
@@ -125,6 +127,8 @@ export function analyzeMischBoneQuality(
 			estimatedIsqScore: { minIsq: 65, maxIsq: 75, expectedIsq: 70 },
 			isImmediateLoadingEligible: false,
 			healingPeriodWeeks: 12,
+			clinicalDrillingRecommendation: "Плотность не измерена (требуется КЛКТ для выбора протокола сверления)",
+			finalDrillDiameterMm: Math.max(2.0, Number((implantDiameterMm - 0.2).toFixed(1))),
 			clinicalAdvice: [
 				"Загрузите КЛКТ для измерения плотности кости (HU) по зонам ложа имплантата.",
 			],
@@ -150,6 +154,8 @@ export function analyzeMischBoneQuality(
 				estimatedIsqScore: { minIsq: 75, maxIsq: 85, expectedIsq: 80 },
 				isImmediateLoadingEligible: true,
 				healingPeriodWeeks: 12,
+				clinicalDrillingRecommendation: `D1 (> 1250 HU): кортикальный метчик (Bone Tap) Ø${implantDiameterMm.toFixed(1)} мм, пониженные обороты (400–600 RPM), торк 50 Н·см`,
+				finalDrillDiameterMm: implantDiameterMm,
 				clinicalAdvice: [
 					"Обязательно использование кортикального метчика (Bone Tap) на всю длину имплантата во избежание микропереломов и заклинивания.",
 					"Обильное охлаждение стерильным физраствором (4°C) на низких оборотах (400 RPM): критический риск термического остеонекроза!",
@@ -157,7 +163,8 @@ export function analyzeMischBoneQuality(
 				],
 			};
 
-		case "D2":
+		case "D2": {
+			const finalDrill = Math.max(2.0, Number((implantDiameterMm - 0.2).toFixed(1)));
 			return {
 				mischClass: "D2",
 				classNameRu: "D2 (850–1250 HU) — Пористая кортикальная + плотная губчатая",
@@ -173,14 +180,18 @@ export function analyzeMischBoneQuality(
 				estimatedIsqScore: { minIsq: 70, maxIsq: 80, expectedIsq: 75 },
 				isImmediateLoadingEligible: true,
 				healingPeriodWeeks: 10,
+				clinicalDrillingRecommendation: `D2 (850–1250 HU): стандартное препарирование, финальная фреза Ø ${finalDrill.toFixed(1)} мм, торк 40 Н·см`,
+				finalDrillDiameterMm: finalDrill,
 				clinicalAdvice: [
 					"Золотой стандарт для дентальной имплантации: идеальный баланс механической фиксации и микрососудистого русла.",
 					"Превосходный кандидат для немедленной функциональной нагрузки (Immediate Loading) при торке >= 35 Н·см.",
 					"Стандартный хирургический протокол производителя без модификаций диаметра сверления.",
 				],
 			};
+		}
 
-		case "D3":
+		case "D3": {
+			const finalDrill = Math.max(2.0, Number((implantDiameterMm - 0.2).toFixed(1)));
 			return {
 				mischClass: "D3",
 				classNameRu: "D3 (350–850 HU) — Тонкая кортикальная + мелкопористая губчатая",
@@ -196,14 +207,19 @@ export function analyzeMischBoneQuality(
 				estimatedIsqScore: { minIsq: 62, maxIsq: 72, expectedIsq: 67 },
 				isImmediateLoadingEligible: false,
 				healingPeriodWeeks: 12,
+				clinicalDrillingRecommendation: `D3 (350–850 HU): стандартное препарирование, финальная фреза Ø ${finalDrill.toFixed(1)} мм, торк 35 Н·см`,
+				finalDrillDiameterMm: finalDrill,
 				clinicalAdvice: [
 					"Рекомендуется щадящее сверление без кортикального метчика.",
 					"Высокая васкуляризация обеспечивает быструю биологическую остеоинтеграцию (8-12 недель).",
 					"При торке < 30 Н·см предпочтителен двухэтапный протокол с установкой формирователя через 3 мес.",
 				],
 			};
+		}
 
-		case "D4":
+		case "D4": {
+			const underStepMm = implantDiameterMm >= 4.0 ? 0.8 : 0.5;
+			const finalDrill = Math.max(2.0, Number((implantDiameterMm - underStepMm).toFixed(1)));
 			return {
 				mischClass: "D4",
 				classNameRu: "D4 (150–350 HU) — Мягкая губчатая кость",
@@ -212,22 +228,26 @@ export function analyzeMischBoneQuality(
 				vascularityLevel: "very_high",
 				recommendedDrillingRpm: "600–800 RPM (с конденсацией кости)",
 				underdrillingRecommended: true,
-				underdrillingMm: implantDiameterMm >= 4.0 ? 0.8 : 0.5,
+				underdrillingMm: underStepMm,
 				corticalTapRequired: false,
 				countersinkRequired: false,
 				estimatedInsertionTorqueNcm: { minNcm: 15, maxNcm: 25, expectedNcm: 20 },
 				estimatedIsqScore: { minIsq: 50, maxIsq: 62, expectedIsq: 56 },
 				isImmediateLoadingEligible: false,
 				healingPeriodWeeks: 16,
+				clinicalDrillingRecommendation: `D4 (< 350 HU): бикортикальная фиксация, недопрепарирование ложа на 1 шаг (финальная фреза Ø ${finalDrill.toFixed(1)} мм), торк 20–25 Н·см`,
+				finalDrillDiameterMm: finalDrill,
 				clinicalAdvice: [
 					"Недопрепарирование (Under-Drilling): завершайте сверление на 1-2 шага меньше номинального диаметра имплантата.",
 					"Рекомендуется применение костных остеотомов (Bone Condensation) для радиального уплотнения трабекулярного рисунка.",
 					"Немедленная нагрузка строго противопоказана (двухэтапный протокол с заглушкой, заживление 4–6 месяцев).",
 				],
 			};
+		}
 
 		case "D5":
-		default:
+		default: {
+			const finalDrill = Math.max(2.0, Number((implantDiameterMm - 1.2).toFixed(1)));
 			return {
 				mischClass: "D5",
 				classNameRu: "D5 (< 150 HU) — Экстремально мягкая кость / выраженный дефицит",
@@ -243,15 +263,42 @@ export function analyzeMischBoneQuality(
 				estimatedIsqScore: { minIsq: 40, maxIsq: 52, expectedIsq: 46 },
 				isImmediateLoadingEligible: false,
 				healingPeriodWeeks: 24,
+				clinicalDrillingRecommendation: `D5 (< 150 HU): выраженный дефицит, бикортикальная фиксация, недопрепарирование ложа на 1.2 мм, остеотомы (конденсация)`,
+				finalDrillDiameterMm: finalDrill,
 				clinicalAdvice: [
 					"Необходима предварительная костная пластика (GBR/НКР) или применение имплантатов с прогрессивным шагом резьбы (BLX / NobelActive).",
 					"Обязательно бикортикальное зацепление апекса для достижения минимальной стабильности.",
 				],
 			};
+		}
 	}
 }
 
 export const classifyMischBoneQuality = analyzeMischBoneQuality;
+
+/**
+ * Returns a concise clinical recommendation string for drilling protocol based on Misch class.
+ */
+export function formatMischDrillingRecommendation(
+	mischClass: MischBoneClass,
+	implantDiameterMm = 4.0,
+): string {
+	const underStepMm = implantDiameterMm >= 4.0 ? 0.8 : 0.5;
+	switch (mischClass) {
+		case "D1":
+			return `D1 (> 1250 HU): кортикальный метчик (Bone Tap) Ø${implantDiameterMm.toFixed(1)} мм, пониженные обороты (400–600 RPM), торк 50 Н·см`;
+		case "D2":
+			return `D2 (850–1250 HU): стандартное препарирование, финальная фреза Ø ${(implantDiameterMm - 0.2).toFixed(1)} мм, торк 40 Н·см`;
+		case "D3":
+			return `D3 (350–850 HU): стандартное препарирование, финальная фреза Ø ${(implantDiameterMm - 0.2).toFixed(1)} мм, торк 35 Н·см`;
+		case "D4":
+			return `D4 (< 350 HU): бикортикальная фиксация, недопрепарирование ложа на 1 шаг (финальная фреза Ø ${(implantDiameterMm - underStepMm).toFixed(1)} мм), торк 20–25 Н·см`;
+		case "D5":
+			return `D5 (< 150 HU): выраженный дефицит, бикортикальная фиксация, недопрепарирование ложа на 1.2 мм, остеотомы (конденсация)`;
+		default:
+			return "Плотность не измерена (требуется КЛКТ для расчета протокола сверления)";
+	}
+}
 
 /**
  * Builds tailored step-by-step drilling protocol tailored to bone density.
@@ -355,6 +402,7 @@ export function formatMischProtocolToDiaryText(
 		"- Апикальная зона (Apical 20%): " + sampling.apicalBaseHU + " HU",
 		"- Средняя плотность ложа: " + sampling.overallMeanHU + " HU",
 		"- Режим сверления: " + analysis.recommendedDrillingRpm,
+		"- Клинический протокол препарирования: " + (analysis.clinicalDrillingRecommendation || analysis.recommendedDrillingRpm),
 		"- Прогноз торка фиксации: " + analysis.estimatedInsertionTorqueNcm.expectedNcm + " Н·см (ISQ ~" + analysis.estimatedIsqScore.expectedIsq + ")",
 		"- Сроки остеоинтеграции: " + analysis.healingPeriodWeeks + " недель",
 		analysis.underdrillingRecommended

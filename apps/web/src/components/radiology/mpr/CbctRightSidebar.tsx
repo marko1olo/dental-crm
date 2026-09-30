@@ -1,7 +1,7 @@
 import React from "react";
 import {
-	Activity, AlertTriangle, Box, Calendar, Camera, Check, ChevronLeft, ChevronRight,
-	CircleDot, Compass, Download, Eye, EyeOff, FileText, Info, Printer, Receipt, RotateCcw, Save, Search,
+	Activity, AlertTriangle, Box, Calendar, Check, ChevronLeft, ChevronRight,
+	CircleDot, Compass, Download, Eye, EyeOff, FileText, Info, Printer, RotateCcw, Save, Search,
 	Share2, ShieldAlert, ShieldCheck, Trash2, X,
 } from "lucide-react";
 import type { CbctVoxelVolume, CbctViewportType, Point3D } from "../cbctMprMath";
@@ -17,72 +17,58 @@ import type {
 	Implant3DWorldProjection,
 } from "../implantSafetyEngine";
 import type { AlveolarRidgeCaliperMeasurement } from "../cbctCaliperNerveMath";
-import type { HUZoneSampling } from "../boneDensityMischMath";
+import type { HUZoneSampling, MischBoneClass } from "../boneDensityMischMath";
+import { formatMischDrillingRecommendation } from "../boneDensityMischMath";
 import type { StudioMode } from "./cbctStudioTypes";
 import { formatNerveNodesPlural } from "./cbctStudioTypes";
 
+const UPPER_JAW_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28] as const;
+const LOWER_JAW_TEETH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38] as const;
+
+const IMPLANT_BRAND_OPTIONS: readonly { key: ImplantBrandKey; label: string }[] = [
+	{ key: "straumann", label: "Straumann" },
+	{ key: "nobel_biocare", label: "Nobel" },
+	{ key: "osstem", label: "Osstem" },
+	{ key: "dentium", label: "Dentium" },
+	{ key: "mis", label: "MIS" },
+];
+
 export interface CbctRightSidebarProps {
-	readonly isSidebarOpen: boolean;
-	readonly setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
-	readonly mobileActiveTab: string;
-	readonly activeCrossSection: CrossSectionSliceData | null | undefined;
-	readonly activeCrossSectionIdx: number;
-	readonly setActiveCrossSectionIdx: React.Dispatch<React.SetStateAction<number>>;
-	readonly crossSections: CrossSectionSliceData[];
-	readonly studioMode: StudioMode;
-	readonly setStudioMode: React.Dispatch<React.SetStateAction<StudioMode>>;
-	readonly implantAngulationDeg: number;
-	readonly setImplantAngulationDeg: React.Dispatch<React.SetStateAction<number>>;
-	readonly volume: CbctVoxelVolume | null;
-	readonly handleToggleMaximize: (viewport: CbctViewportType) => void;
+	readonly isSidebarOpen: boolean; readonly setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	readonly mobileActiveTab: string; readonly activeCrossSection: CrossSectionSliceData | null | undefined;
+	readonly activeCrossSectionIdx: number; readonly setActiveCrossSectionIdx: React.Dispatch<React.SetStateAction<number>>;
+	readonly crossSections: CrossSectionSliceData[]; readonly studioMode: StudioMode; readonly setStudioMode: React.Dispatch<React.SetStateAction<StudioMode>>;
+	readonly implantAngulationDeg: number; readonly setImplantAngulationDeg: React.Dispatch<React.SetStateAction<number>>;
+	readonly volume: CbctVoxelVolume | null; readonly handleToggleMaximize: (viewport: CbctViewportType) => void;
 	readonly crossSectionBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
 	readonly crossSectionOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
 	readonly handleCrossSectionMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void;
 	readonly handleCrossSectionMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => void;
 	readonly handleCrossSectionMouseUp: (e: React.MouseEvent<HTMLCanvasElement>) => void;
-	readonly dragImplantPart: string | null;
-	readonly hoveredImplantPart: string | null;
-	readonly handleFullResetViewport: (viewport: CbctViewportType) => void;
-	readonly maximizedViewport: CbctViewportType | null;
-	readonly windowWidth: number;
-	readonly windowLevel: number;
+	readonly dragImplantPart: string | null; readonly hoveredImplantPart: string | null;
+	readonly handleFullResetViewport: (viewport: CbctViewportType) => void; readonly maximizedViewport: CbctViewportType | null;
+	readonly windowWidth: number; readonly windowLevel: number;
 	readonly renderViewportOverlays: (viewport: CbctViewportType) => React.ReactNode;
-	readonly sampledVoxelHU: number;
-	readonly handleSelectTooth: (fdi: number) => void;
+	readonly sampledVoxelHU: number; readonly handleSelectTooth: (fdi: number) => void;
 	readonly implant3DWorld: Implant3DWorldProjection | null;
-	readonly nerveAuditResult: { isDangerous: boolean; isWarning: boolean; netClearanceToCanalWallMm: number; clinicalMessageRu: string; };
-	readonly huSamplingResult: HUZoneSampling;
-	readonly currentImplantSpec: VirtualImplantSpec;
-	readonly nervePoints: readonly Point3D[];
-	readonly setNervePoints: React.Dispatch<React.SetStateAction<Point3D[]>>;
-	readonly nerveTotalLengthMm: number;
-	readonly selectedNerveNodeIdx: number | null;
+	readonly nerveAuditResult: { isDangerous: boolean; isWarning: boolean; netClearanceToCanalWallMm: number; clinicalMessageRu: string };
+	readonly huSamplingResult: HUZoneSampling; readonly currentImplantSpec: VirtualImplantSpec;
+	readonly nervePoints: readonly Point3D[]; readonly setNervePoints: React.Dispatch<React.SetStateAction<Point3D[]>>;
+	readonly nerveTotalLengthMm: number; readonly selectedNerveNodeIdx: number | null;
 	readonly setSelectedNerveNodeIdx: React.Dispatch<React.SetStateAction<number | null>>;
-	readonly displayBoneClass: string;
-	readonly displayMeanHU: number | null;
-	readonly displayTorque: string;
-	readonly displayNerveClearanceMm: number | null;
-	readonly displayDrillingProtocol: string;
-	readonly selectedBrand: ImplantBrandKey;
-	readonly setSelectedBrand: React.Dispatch<React.SetStateAction<ImplantBrandKey>>;
-	readonly selectedDiameterMm: number;
-	readonly setSelectedDiameterMm: React.Dispatch<React.SetStateAction<number>>;
-	readonly selectedLengthMm: number;
-	readonly setSelectedLengthMm: React.Dispatch<React.SetStateAction<number>>;
-	readonly implantEntryXOffsetMm: number;
-	readonly setImplantEntryXOffsetMm: React.Dispatch<React.SetStateAction<number>>;
+	readonly displayBoneClass: string; readonly displayMeanHU: number | null; readonly displayTorque: string;
+	readonly displayNerveClearanceMm: number | null; readonly displayDrillingProtocol: string;
+	readonly selectedBrand: ImplantBrandKey; readonly setSelectedBrand: React.Dispatch<React.SetStateAction<ImplantBrandKey>>;
+	readonly selectedDiameterMm: number; readonly setSelectedDiameterMm: React.Dispatch<React.SetStateAction<number>>;
+	readonly selectedLengthMm: number; readonly setSelectedLengthMm: React.Dispatch<React.SetStateAction<number>>;
+	readonly implantEntryXOffsetMm: number; readonly setImplantEntryXOffsetMm: React.Dispatch<React.SetStateAction<number>>;
 	readonly setImplantEntryDepthMm: React.Dispatch<React.SetStateAction<number>>;
 	readonly activeCaliper?: AlveolarRidgeCaliperMeasurement | null | undefined;
-	readonly ridgeHeightMm?: number | null | undefined;
-	readonly ridgeWidthMm?: number | null | undefined;
-	readonly isAnonymized?: boolean | undefined;
-	readonly onToggleAnonymize?: (() => void) | undefined;
-	readonly handleExport300DpiSnapshot?: (() => void) | undefined;
-	readonly handleShareReport?: (() => void) | undefined;
-	readonly handleExportToEmr: () => void;
-	readonly handleExportPdfReport: () => void;
-	readonly handleExportToPlan: () => void;
-	readonly handleExportToSchedule: () => void;
+	readonly ridgeHeightMm?: number | null | undefined; readonly ridgeWidthMm?: number | null | undefined;
+	readonly isAnonymized?: boolean | undefined; readonly onToggleAnonymize?: (() => void) | undefined;
+	readonly handleExport300DpiSnapshot?: (() => void) | undefined; readonly handleShareReport?: (() => void) | undefined;
+	readonly handleExportToEmr: () => void; readonly handleExportPdfReport: () => void;
+	readonly handleExportToPlan: () => void; readonly handleExportToSchedule: () => void;
 	readonly handleExportToFinance?: () => void;
 }
 
@@ -118,6 +104,33 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 		crossSectionMeasurement?.crestWidthMm ??
 		activeCrossSection?.alveolarRidgeWidthMm ??
 		null;
+
+	const clinicalDrillRec = formatMischDrillingRecommendation(
+		(displayBoneClass || "D3") as MischBoneClass,
+		selectedDiameterMm || 4.0
+	);
+
+	const renderToothRow = (teeth: readonly number[]) => (
+		<div className="flex items-center justify-between gap-0.5 overflow-x-auto pb-0.5">
+			{teeth.map((fdi) => {
+				const isTarget = activeCrossSection?.nearestToothFdi ? Number.parseInt(activeCrossSection.nearestToothFdi, 10) === fdi : false;
+				return (
+					<button
+						key={fdi}
+						type="button"
+						onClick={() => handleSelectTooth(fdi)}
+						className={`px-1 py-1 rounded min-w-[20px] font-mono font-bold text-center transition-colors ${
+							isTarget
+								? "bg-cyan-500 text-black shadow-xs shadow-cyan-500/50"
+								: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
+						}`}
+					>
+						{fdi}
+					</button>
+				);
+			})}
+		</div>
+	);
 
 	if (!isSidebarOpen && mobileActiveTab !== "planner") {
 		return null;
@@ -283,18 +296,12 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 							</span>
 						</div>
 						<div className="flex flex-col gap-1.5 text-[11px] text-zinc-400">
-							<div className="flex items-center gap-2.5 p-2 rounded bg-zinc-900 border border-zinc-800">
-								<Check className="w-4 h-4 text-emerald-400 shrink-0" />
-								<span className="text-zinc-100">Кортикальные пластинки & гребень сохранны</span>
-							</div>
-							<div className="flex items-center gap-2.5 p-2 rounded bg-zinc-900 border border-zinc-800">
-								<Check className="w-4 h-4 text-emerald-400 shrink-0" />
-								<span className="text-zinc-100">Периодонтальная щель & апексы корней</span>
-							</div>
-							<div className="flex items-center gap-2.5 p-2 rounded bg-zinc-900 border border-zinc-800">
-								<Check className="w-4 h-4 text-emerald-400 shrink-0" />
-								<span className="text-zinc-100">Пневматизация синуса / канал IAN</span>
-							</div>
+							{["Кортикальные пластинки & гребень сохранны", "Периодонтальная щель & апексы корней", "Пневматизация синуса / канал IAN"].map((text) => (
+								<div key={text} className="flex items-center gap-2.5 p-2 rounded bg-zinc-900 border border-zinc-800">
+									<Check className="w-4 h-4 text-emerald-400 shrink-0" />
+									<span className="text-zinc-100">{text}</span>
+								</div>
+							))}
 						</div>
 					</div>
 
@@ -321,46 +328,8 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 							<span className="text-cyan-400 font-mono">{activeCrossSection?.nearestToothFdi ? `#${activeCrossSection.nearestToothFdi}` : "—"}</span>
 						</div>
 						<div className="flex flex-col gap-1 text-[10px]">
-							{/* Upper jaw teeth */}
-							<div className="flex items-center justify-between gap-0.5 overflow-x-auto pb-0.5">
-								{[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map((fdi) => {
-									const isTarget = activeCrossSection?.nearestToothFdi ? Number.parseInt(activeCrossSection.nearestToothFdi, 10) === fdi : false;
-									return (
-										<button
-											key={fdi}
-											type="button"
-											onClick={() => handleSelectTooth(fdi)}
-											className={`px-1 py-1 rounded min-w-[20px] font-mono font-bold text-center transition-colors ${
-												isTarget
-													? "bg-cyan-500 text-black shadow-xs shadow-cyan-500/50"
-													: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
-											}`}
-										>
-											{fdi}
-										</button>
-									);
-								})}
-							</div>
-							{/* Lower jaw teeth */}
-							<div className="flex items-center justify-between gap-0.5 overflow-x-auto pb-0.5">
-								{[48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38].map((fdi) => {
-									const isTarget = activeCrossSection?.nearestToothFdi ? Number.parseInt(activeCrossSection.nearestToothFdi, 10) === fdi : false;
-									return (
-										<button
-											key={fdi}
-											type="button"
-											onClick={() => handleSelectTooth(fdi)}
-											className={`px-1 py-1 rounded min-w-[20px] font-mono font-bold text-center transition-colors ${
-												isTarget
-													? "bg-cyan-500 text-black shadow-xs shadow-cyan-500/50"
-													: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-800"
-											}`}
-										>
-											{fdi}
-										</button>
-									);
-								})}
-							</div>
+							{renderToothRow(UPPER_JAW_TEETH)}
+							{renderToothRow(LOWER_JAW_TEETH)}
 						</div>
 					</div>
 
@@ -421,15 +390,10 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 						implantDiameterMm={currentImplantSpec.diameterMm}
 						implantLengthMm={currentImplantSpec.lengthMm}
 						implantSystem={
-							currentImplantSpec.brandName?.toLowerCase().includes("straumann")
-								? "straumann"
-								: currentImplantSpec.brandName?.toLowerCase().includes("nobel")
-									? "nobel"
-									: currentImplantSpec.brandName?.toLowerCase().includes("bredent")
-										? "bredent"
-										: currentImplantSpec.brandName?.toLowerCase().includes("mdi")
-											? "mdi"
-											: "osstem"
+							currentImplantSpec.brandName?.toLowerCase().includes("straumann") ? "straumann"
+								: currentImplantSpec.brandName?.toLowerCase().includes("nobel") ? "nobel"
+								: currentImplantSpec.brandName?.toLowerCase().includes("bredent") ? "bredent"
+								: currentImplantSpec.brandName?.toLowerCase().includes("mdi") ? "mdi" : "osstem"
 						}
 						toothFdi={implant3DWorld?.targetToothFdi ?? 46}
 					/>
@@ -463,10 +427,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 							<button
 								type="button"
 								onClick={() => {
-									if (nervePoints.length === 0) {
-										showToast("Трасса канала IAN пока не содержит узлов", "info");
-										return;
-									}
+									if (nervePoints.length === 0) return showToast("Трасса канала IAN пока не содержит узлов", "info");
 									if (selectedNerveNodeIdx !== null && selectedNerveNodeIdx >= 0 && selectedNerveNodeIdx < nervePoints.length) {
 										setNervePoints((prev) => prev.filter((_, idx) => idx !== selectedNerveNodeIdx));
 										setSelectedNerveNodeIdx(null);
@@ -488,10 +449,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 							<button
 								type="button"
 								onClick={() => {
-									if (nervePoints.length === 0) {
-										showToast("Трасса канала IAN уже пуста", "info");
-										return;
-									}
+									if (nervePoints.length === 0) return showToast("Трасса канала IAN уже пуста", "info");
 									setNervePoints([]);
 									setSelectedNerveNodeIdx(null);
 									showToast("Трасса канала IAN сброшена", "info");
@@ -532,12 +490,58 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 										className="px-2 py-0.5 rounded font-mono font-bold text-xs bg-zinc-900 border border-cyan-500/50 text-cyan-400 shrink-0"
 										data-testid="cbct-implant-misch-class-badge"
 									>
-										{displayBoneClass} {displayMeanHU !== null ? `(${displayMeanHU} HU)` : ""}
+										{displayBoneClass} {displayMeanHU !== null ? `(${Math.round(displayMeanHU)} HU)` : ""}
 									</span>
 								</div>
 								<div className="text-[11px] text-zinc-300 font-mono shrink-0">
 									Торк: <strong className="text-zinc-100">{displayTorque}</strong>
 								</div>
+							</div>
+
+							{/* 3-ZONE HU DENSITY PROFILE (CREST 20% | CORE 60% | APEX 20%) */}
+							<div
+								className="grid grid-cols-3 gap-1 pt-1.5 border-t border-zinc-800/80 text-[10px]"
+								data-testid="cbct-implant-3zone-density"
+							>
+								<div className="flex flex-col bg-zinc-900/90 rounded px-1.5 py-1 border border-zinc-800" title="Кортикальный гребень (Coronal crest, 20% длины)">
+									<span className="text-zinc-500 text-[9px] uppercase font-semibold">Гребень 20%</span>
+									<span className="font-mono font-bold text-cyan-300" data-testid="misch-zone-crest-hu">
+										{huSamplingResult.status === "measured" || huSamplingResult.coronalCrestalHU !== 0
+											? `${huSamplingResult.coronalCrestalHU} HU`
+											: "—"}
+									</span>
+								</div>
+								<div className="flex flex-col bg-zinc-900/90 rounded px-1.5 py-1 border border-zinc-800" title="Губчатое тело (Trabecular core, 60% длины)">
+									<span className="text-zinc-500 text-[9px] uppercase font-semibold">Тело 60%</span>
+									<span className="font-mono font-bold text-cyan-300" data-testid="misch-zone-core-hu">
+										{huSamplingResult.status === "measured" || huSamplingResult.trabecularCoreHU !== 0
+											? `${huSamplingResult.trabecularCoreHU} HU`
+											: "—"}
+									</span>
+								</div>
+								<div className="flex flex-col bg-zinc-900/90 rounded px-1.5 py-1 border border-zinc-800" title="Апикальная зона (Apical engagement, 20% длины)">
+									<span className="text-zinc-500 text-[9px] uppercase font-semibold">Апекс 20%</span>
+									<span className="font-mono font-bold text-cyan-300" data-testid="misch-zone-apex-hu">
+										{huSamplingResult.status === "measured" || huSamplingResult.apicalBaseHU !== 0
+											? `${huSamplingResult.apicalBaseHU} HU`
+											: "—"}
+									</span>
+								</div>
+							</div>
+
+							{/* CLINICAL DRILLING PROTOCOL RECOMMENDATION */}
+							<div
+								className="p-1.5 rounded bg-zinc-900/70 border border-zinc-800 text-[10px] leading-tight flex flex-col gap-0.5"
+								data-testid="cbct-implant-drilling-protocol"
+								title={clinicalDrillRec || displayDrillingProtocol}
+							>
+								<div className="text-zinc-400 font-semibold flex items-center justify-between">
+									<span>Протокол остеотомии (Misch):</span>
+									<span className="text-amber-400 font-mono text-[9px]">{displayBoneClass}</span>
+								</div>
+								<span className="text-zinc-200 line-clamp-2">
+									{clinicalDrillRec || displayDrillingProtocol}
+								</span>
 							</div>
 
 							<div className="flex items-center justify-between text-xs pt-1.5 border-t border-zinc-800">
@@ -591,28 +595,22 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 									{activeCaliper ? "Штангенциркуль" : effectiveRidgeHeight !== null ? "КЛКТ-срез" : "Требуется замер"}
 								</span>
 							</div>
-
-							{displayDrillingProtocol && (
-								<div className="text-[10px] text-zinc-400 leading-tight truncate pt-0.5" title={displayDrillingProtocol} data-testid="cbct-implant-drilling-protocol">
-									Сверление: <span className="text-zinc-300">{displayDrillingProtocol}</span>
-								</div>
-							)}
 						</div>
 
 						{/* Brand selector */}
 						<div className="grid grid-cols-5 gap-1.5">
-							{(["straumann", "nobel_biocare", "osstem", "dentium", "mis"] as ImplantBrandKey[]).map((b) => (
+							{IMPLANT_BRAND_OPTIONS.map(({ key, label }) => (
 								<button
-									key={b}
+									key={key}
 									type="button"
-									onClick={() => setSelectedBrand(b)}
+									onClick={() => setSelectedBrand(key)}
 									className={`py-2 px-1 rounded-md text-xs font-bold capitalize min-h-[44px] transition-colors border flex items-center justify-center ${
-										selectedBrand === b
+										selectedBrand === key
 											? "bg-zinc-900 text-cyan-400 border-cyan-500/60 shadow-xs"
 											: "bg-zinc-900 text-zinc-400 hover:text-zinc-100 border-zinc-800 hover:bg-zinc-800"
 									}`}
 								>
-									{b === "straumann" ? "Straumann" : b === "nobel_biocare" ? "Nobel" : b === "osstem" ? "Osstem" : b === "dentium" ? "Dentium" : "MIS"}
+									{label}
 								</button>
 							))}
 						</div>
@@ -728,19 +726,13 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 								<button
 									type="button"
 									onClick={() => {
-										if (handleExport300DpiSnapshot) {
-											handleExport300DpiSnapshot();
-										} else if (crossSectionBaseCanvasRef?.current) {
-											const c = crossSectionBaseCanvasRef.current;
-											const fdi = activeCrossSection?.nearestToothFdi || "46";
-											const link = document.createElement("a");
-											link.href = c.toDataURL("image/png");
-											link.download = `CBCT_Snapshot_300DPI_FDI${fdi}.png`;
-											link.click();
-											showToast("Снимок 300 DPI загружен", "success");
-										} else {
-											showToast("Срез для экспорта не найден", "info");
-										}
+										if (handleExport300DpiSnapshot) return handleExport300DpiSnapshot();
+										if (!crossSectionBaseCanvasRef?.current) return showToast("Срез для экспорта не найден", "info");
+										const link = document.createElement("a");
+										link.href = crossSectionBaseCanvasRef.current.toDataURL("image/png");
+										link.download = `CBCT_Snapshot_300DPI_FDI${activeCrossSection?.nearestToothFdi || "46"}.png`;
+										link.click();
+										showToast("Снимок 300 DPI загружен", "success");
 									}}
 									className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-cyan-300 hover:text-cyan-200 border border-zinc-800 hover:border-cyan-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
 									data-testid="cbct-btn-export-300dpi"
@@ -755,9 +747,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 								<button
 									type="button"
 									onClick={() => {
-										setImplantEntryXOffsetMm(0);
-										setImplantEntryDepthMm(2.0);
-										setImplantAngulationDeg(0);
+										setImplantEntryXOffsetMm(0); setImplantEntryDepthMm(2.0); setImplantAngulationDeg(0);
 										showToast("Положение имплантата центрировано на гребне", "info");
 									}}
 									className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[36px] cursor-pointer"
@@ -770,11 +760,8 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 								<button
 									type="button"
 									onClick={() => {
-										if (handleShareReport) {
-											handleShareReport();
-										} else {
-											showToast("Ссылка на КЛКТ-исследование скопирована в буфер", "success");
-										}
+										if (handleShareReport) handleShareReport();
+										else showToast("Ссылка на КЛКТ-исследование скопирована в буфер", "success");
 									}}
 									className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[36px] cursor-pointer"
 									data-testid="cbct-btn-share-report"

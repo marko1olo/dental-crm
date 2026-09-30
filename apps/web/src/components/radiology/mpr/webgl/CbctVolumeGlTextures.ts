@@ -382,6 +382,8 @@ export function uploadVolumeTo3DTexture(
 	volume: CbctVoxelVolume,
 	max3dSize = 2048,
 ): VolumeTextureUploadResult | null {
+	if (!volume.data) return null;
+	const rawData = volume.data;
 	const texture = gl.createTexture();
 	if (!texture) return null;
 
@@ -402,14 +404,14 @@ export function uploadVolumeTo3DTexture(
 		step *= 2;
 	}
 
-	let uploadData = volume.data;
+	let uploadData: Int16Array = rawData;
 	let uploadWidth = volume.dimensions.width;
 	let uploadHeight = volume.dimensions.height;
 	let uploadDepth = volume.dimensions.depth;
 
 	if (step > 1) {
 		console.warn(`[CbctVolumeGlTextures] Volume downsampled ${step}x for GPU limits (${max3dSize}).`);
-		const downsampled = downsampleVolumeData(volume.data, volume.dimensions, step);
+		const downsampled = downsampleVolumeData(rawData, volume.dimensions, step);
 		uploadData = downsampled.data;
 		uploadWidth = downsampled.width;
 		uploadHeight = downsampled.height;
@@ -444,7 +446,7 @@ export function uploadVolumeTo3DTexture(
 			if (step > 8) {
 				break;
 			}
-			const downsampled = downsampleVolumeData(volume.data, volume.dimensions, step);
+			const downsampled = downsampleVolumeData(rawData, volume.dimensions, step);
 			uploadData = downsampled.data;
 			uploadWidth = downsampled.width;
 			uploadHeight = downsampled.height;

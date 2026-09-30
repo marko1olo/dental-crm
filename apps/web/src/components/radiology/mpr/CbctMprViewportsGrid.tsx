@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Box, FolderOpen, RotateCcw, Sparkles, Spline, UploadCloud } from "lucide-react";
+import { Box, RotateCcw, Spline } from "lucide-react";
 import type {
 	CbctVoxelVolume,
 	CbctViewportType,
@@ -12,11 +12,21 @@ import type {
 	CbctMeasurementRuler,
 } from "../cbctMprMath";
 import { resetPlaneObliqueAngle } from "../cbctMprMath";
-import type { CrossSectionSliceData } from "../dentalCurveEngine";
+import type { CrossSectionSliceData, DentalArchCurve } from "../dentalCurveEngine";
 import { CbctViewportHud } from "../CbctViewportHud";
 import type { StudioMode, ViewLayoutMode } from "./cbctStudioTypes";
+import type { ImplantBrandKey } from "../implantSafetyEngine";
 import { CbctVolume3DViewport } from "./CbctVolume3DViewport";
 import { CbctViewportRulerToolbar, CbctQuickWlBar } from "./CbctViewportsRuler";
+import { CbctEmptyVolumeDropzone } from "./CbctEmptyVolumeDropzone";
+import { CbctPanoramicFdiRibbon } from "./CbctPanoramicFdiRibbon";
+import {
+	MprQuadWorkspace,
+	PanoramicWorkspace,
+	EndoWorkspace,
+	ImplantWorkspace,
+	type ViewportRenderers,
+} from "./workspaces";
 
 export interface CbctMprViewportsGridProps {
 	readonly isSidebarOpen: boolean;
@@ -85,6 +95,28 @@ export interface CbctMprViewportsGridProps {
 	readonly rulers?: readonly CbctMeasurementRuler[] | undefined;
 	readonly onClearRulers?: ((plane?: CbctViewportType) => void) | undefined;
 	readonly onSelectQuickWlPreset?: ((preset: { windowWidth: number; windowLevel: number }) => void) | undefined;
+	readonly handleSelectTooth?: ((toothFdi: number | string) => void) | undefined;
+	readonly archCurve?: DentalArchCurve | undefined;
+	readonly jawType?: "mandible" | "maxilla" | undefined;
+	readonly onSwitchJaw?: ((jaw: "mandible" | "maxilla") => void) | undefined;
+	readonly activeToothFdi?: string | number | undefined;
+	readonly isUnsharpActive?: boolean | undefined;
+	readonly onToggleUnsharp?: (() => void) | undefined;
+	readonly onChangeCrossSectionIdx?: ((idx: number) => void) | undefined;
+	readonly selectedBrand?: ImplantBrandKey | undefined;
+	readonly onSelectBrand?: ((b: ImplantBrandKey) => void) | undefined;
+	readonly selectedDiameterMm?: number | undefined;
+	readonly onSelectDiameterMm?: ((d: number) => void) | undefined;
+	readonly selectedLengthMm?: number | undefined;
+	readonly onSelectLengthMm?: ((l: number) => void) | undefined;
+	readonly displayBoneClass?: string | undefined;
+	readonly displayMeanHU?: number | null | undefined;
+	readonly displayTorque?: string | undefined;
+	readonly displayNerveClearanceMm?: number | null | undefined;
+	readonly displayDrillingProtocol?: string | undefined;
+	readonly nerveSafetyStatus?: "safe" | "warning" | "danger" | "unmeasured" | undefined;
+	readonly handleExportToEmr?: (() => void) | undefined;
+	readonly handleExportToPlan?: (() => void) | undefined;
 }
 
 export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
@@ -101,11 +133,18 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 	hoveredHandle, transforms, windowWidth, windowLevel, renderViewportOverlays,
 	handlePanoMouseDown, handlePanoMouseMove, handlePanoMouseUp,
 	handleCrossSectionMouseDown, handleCrossSectionMouseMove, handleCrossSectionMouseUp,
-	dragImplantPart, hoveredImplantPart, activeCrossSection, activeCrossSectionIdx, crossSections,
-	activeTool, onSelectTool, rulers, onClearRulers, onSelectQuickWlPreset,
+	dragImplantPart, hoveredImplantPart, activeCrossSection, activeCrossSectionIdx,
+	crossSections, activeTool, onSelectTool, rulers, onClearRulers, onSelectQuickWlPreset,
+	handleSelectTooth, archCurve, jawType, onSwitchJaw, activeToothFdi, isUnsharpActive,
+	onToggleUnsharp, onChangeCrossSectionIdx, selectedBrand, onSelectBrand,
+	selectedDiameterMm, onSelectDiameterMm, selectedLengthMm, onSelectLengthMm,
+	displayBoneClass, displayMeanHU, displayTorque, displayNerveClearanceMm,
+	displayDrillingProtocol, nerveSafetyStatus, handleExportToEmr, handleExportToPlan,
 }) => {
-	// 4th Quadrant display mode: defaults to "volume3d" so the surgeon immediately sees the 3D Skull in MPR
 	const [fourthQuadrantMode, setFourthQuadrantMode] = useState<"volume3d" | "panoramic">("volume3d");
+
+	// Optional FDI tooth formula ribbon (Off by default per user mandate to prevent clutter)
+	const [showFdiRibbon, setShowFdiRibbon] = useState<boolean>(false);
 
 	useEffect(() => {
 		if (studioMode === "panoramic") {
@@ -115,41 +154,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		}
 	}, [studioMode]);
 
-	// 4-Way Interactive 2x2 Grid Resizer State
-	const [splitX, setSplitX] = useState<number>(0.5);
-	const [splitY, setSplitY] = useState<number>(0.5);
-	const [isDraggingSplitter, setIsDraggingSplitter] = useState<"x" | "y" | "center" | null>(null);
-	const quadGridRef = useRef<HTMLDivElement | null>(null);
 
-	useEffect(() => {
-		if (!isDraggingSplitter) return;
-
-		const handlePointerMove = (e: PointerEvent) => {
-			if (!quadGridRef.current) return;
-			const rect = quadGridRef.current.getBoundingClientRect();
-			if (rect.width <= 0 || rect.height <= 0) return;
-
-			if (isDraggingSplitter === "x" || isDraggingSplitter === "center") {
-				const relX = (e.clientX - rect.left) / rect.width;
-				setSplitX(Math.max(0.20, Math.min(0.80, relX)));
-			}
-			if (isDraggingSplitter === "y" || isDraggingSplitter === "center") {
-				const relY = (e.clientY - rect.top) / rect.height;
-				setSplitY(Math.max(0.20, Math.min(0.80, relY)));
-			}
-		};
-
-		const handlePointerUp = () => {
-			setIsDraggingSplitter(null);
-		};
-
-		window.addEventListener("pointermove", handlePointerMove);
-		window.addEventListener("pointerup", handlePointerUp);
-		return () => {
-			window.removeEventListener("pointermove", handlePointerMove);
-			window.removeEventListener("pointerup", handlePointerUp);
-		};
-	}, [isDraggingSplitter]);
 
 	// ─── 60 FPS REQUEST ANIMATION FRAME EVENT THROTTLER ─────────────────────────
 	const pendingMouseMoveRef = useRef<{ plane: MprPlane; nativeEvent: React.MouseEvent<HTMLCanvasElement> } | null>(null);
@@ -465,6 +470,27 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 				<Spline className="w-3 h-3 text-purple-300" />
 				<span>ОПТГ</span>
 			</button>
+
+			{/* Optional Compact FDI Tooth Ribbon Toggle Button */}
+			{fourthQuadrantMode === "panoramic" && handleSelectTooth && (
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						setShowFdiRibbon((prev) => !prev);
+					}}
+					className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+						showFdiRibbon
+							? "bg-purple-600/90 text-white shadow-xs ring-1 ring-purple-400"
+							: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+					}`}
+					data-testid="cbct-toggle-fdi-ribbon-btn"
+					title={showFdiRibbon ? "Скрыть зубную формулу FDI" : "Показать зубную формулу FDI"}
+				>
+					<Spline className="w-3 h-3 text-purple-300" />
+					<span>FDI</span>
+				</button>
+			)}
 		</div>
 	);
 
@@ -474,16 +500,26 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 			onPointerDownCapture={() => setActiveViewport("panoramic")}
 			onMouseEnter={() => onHoverViewport?.("panoramic")}
 			onMouseLeave={() => onHoverViewport?.(null)}
-			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full ${
+			className={`relative bg-black rounded-md overflow-hidden transition-all min-h-0 w-full h-full flex flex-col ${
 				activeViewport === "panoramic"
 					? "ring-1 ring-purple-500/50 border border-purple-500/80 shadow-purple-950/30"
 					: "border border-purple-500/30 hover:border-purple-500/60"
 			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-panoramic"
 		>
+			{/* Optional Compact FDI Tooth Navigation Ribbon (Toggleable in Settings, off by default per mandate) */}
+			{showFdiRibbon && handleSelectTooth && (
+				<CbctPanoramicFdiRibbon
+					activeToothFdi={activeCrossSection?.nearestToothFdi}
+					onSelectTooth={handleSelectTooth}
+					onClose={() => setShowFdiRibbon(false)}
+					archCurve={archCurve}
+				/>
+			)}
+
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
-				{/* Top-left Mode Switcher */}
-				<div className="absolute top-2 left-2 z-20 pointer-events-auto">
+				{/* Top-left Mode Switcher (placed below clinical HUD badge to prevent overlap) */}
+				<div className="absolute top-9 left-2 z-30 pointer-events-auto">
 					{renderFourthQuadrantSwitcher()}
 				</div>
 				<canvas
@@ -548,17 +584,17 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		return renderPanoramicViewport(extraClassName);
 	};
 
-	const renderCrossSectionMaximizedViewport = () => (
+	const renderCrossSectionViewport = (extraClassName = "flex-1 flex flex-col", isMaximized = false) => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("cross_section")}
 			onPointerDownCapture={() => setActiveViewport("cross_section")}
 			onMouseEnter={() => onHoverViewport?.("cross_section")}
 			onMouseLeave={() => onHoverViewport?.(null)}
-			className={`relative bg-black rounded-md overflow-hidden transition-all flex-1 flex flex-col min-h-0 w-full h-full ${
+			className={`relative bg-black rounded-md overflow-hidden transition-all flex flex-col min-h-0 w-full h-full ${
 				activeViewport === "cross_section"
 					? "ring-1 ring-amber-500/50 border border-amber-500/80 shadow-amber-950/30"
 					: "border border-amber-500/30 hover:border-amber-500/60"
-			}`}
+			} ${extraClassName}`}
 			data-testid="cbct-viewport-container-cross-section"
 		>
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
@@ -591,7 +627,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					totalSlices={crossSections.length}
 					pixelSpacingMm={activeCrossSection?.pixelSpacingMm ?? 0.25}
 					onResetView={() => handleFullResetViewport("cross_section")}
-					isMaximized={true}
+					isMaximized={isMaximized}
 					onToggleMaximize={() => handleToggleMaximize("cross_section")}
 					zoomFactor={transforms.cross_section?.zoom}
 					windowWidth={windowWidth}
@@ -602,6 +638,18 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 			</div>
 		</div>
 	);
+
+	const renderers: ViewportRenderers = {
+		renderAxial: (extraClassName) => renderAxialViewport(extraClassName),
+		renderCoronal: (extraClassName) => renderCoronalViewport(extraClassName),
+		renderSagittal: (extraClassName) => renderSagittalViewport(extraClassName),
+		renderPanoramic: (extraClassName) => renderPanoramicViewport(extraClassName),
+		renderCrossSection: (extraClassName, isMaximized) => renderCrossSectionViewport(extraClassName, isMaximized),
+		renderVolume3D: (extraClassName) => renderFourthQuadrantViewport(extraClassName),
+		// Quad view, layout_1_plus_3, and maximized fallback calls for contract compliance:
+		renderQuadFourth: (extraClassName) => renderFourthQuadrantViewport(extraClassName),
+		renderMaximizedFourth: (extraClassName) => renderFourthQuadrantViewport(extraClassName),
+	};
 
 	return (
 		<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all relative`}>
@@ -631,173 +679,84 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 			</div>
 
 			{!volume ? (
-				<div
-					className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-zinc-950 border border-dashed border-zinc-800 rounded-lg m-1 select-none"
-					data-testid="cbct-empty-volume-dropzone"
-					onDragOver={(e) => e.preventDefault()}
-					onDrop={(e) => {
-						e.preventDefault();
-						if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-							handleDicomFilesChange(e.dataTransfer.files);
-						}
-					}}
-				>
-					{dicomLoadingStatus ? (
-						<div className="flex flex-col items-center justify-center gap-3">
-							<div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shadow-inner">
-								<RotateCcw className="w-6 h-6 animate-spin text-cyan-400" />
-							</div>
-							<h3 className="text-sm font-bold text-zinc-100 mb-1">
-								{dicomLoadingStatus}
-							</h3>
-							<div className="w-64 h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
-								<div
-									className="h-full bg-cyan-500 transition-all duration-200"
-									style={{ width: `${Math.max(5, Math.min(100, dicomProgress))}%` }}
-								/>
-							</div>
-							<span className="text-xs font-mono text-zinc-400">{dicomProgress}%</span>
-						</div>
-					) : (
-						<>
-							<div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 mb-3 shadow-inner">
-								<Box className="w-6 h-6" />
-							</div>
-							<h3 className="text-sm font-bold text-[var(--ink,#f4f4f5)] mb-1">
-								Исследование КЛКТ не загружено
-							</h3>
-							<p className="text-xs text-[var(--muted,#a1a1aa)] max-w-md mb-4">
-								Перетащите папку со срезами DICOM (.dcm) или архив .zip сюда, либо выберите файлы для построения мультипланарной реконструкции (MPR) и имплантологического планирования.
-							</p>
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									onClick={() => folderInputRef.current?.click()}
-									className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
-									data-testid="cbct-btn-select-folder-empty"
-								>
-									<FolderOpen className="w-4 h-4" />
-									<span>Выбрать папку DICOM</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => zipInputRef.current?.click()}
-									className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
-									data-testid="cbct-btn-select-zip-empty"
-								>
-									<UploadCloud className="w-4 h-4" />
-									<span>Загрузить .ZIP</span>
-								</button>
-								{onLoadDemoVolume && (
-									<button
-										type="button"
-										onClick={onLoadDemoVolume}
-										className="px-3 py-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 border border-dashed border-zinc-600 font-medium text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer min-h-[36px]"
-										data-testid="cbct-btn-load-demo-volume"
-									>
-										<Sparkles className="w-4 h-4 text-cyan-400" />
-										<span>Показать демо КТ-исследование</span>
-									</button>
-								)}
-							</div>
-						</>
-					)}
-				</div>
-			) : maximizedViewport !== null ? (
-				<div className="flex-1 flex flex-col min-h-0 w-full h-full">
-					{maximizedViewport === "axial" && renderAxialViewport("flex-1 flex flex-col w-full h-full")}
-					{maximizedViewport === "coronal" && renderCoronalViewport("flex-1 flex flex-col w-full h-full")}
-					{maximizedViewport === "sagittal" && renderSagittalViewport("flex-1 flex flex-col w-full h-full")}
-					{maximizedViewport === "panoramic" && renderFourthQuadrantViewport("flex-1 flex flex-col w-full h-full")}
-					{maximizedViewport === "cross_section" && renderCrossSectionMaximizedViewport()}
-				</div>
-			) : viewLayout === "mpr_3_view" ? (
-				<div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-1 min-h-0 min-w-0 w-full h-full" data-testid="cbct-mpr-3-view-grid">
-					{renderAxialViewport(mobileActiveTab === "axial" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
-					{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
-					{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
-				</div>
-			) : viewLayout === "layout_1_plus_3" ? (
-				<div className="flex-1 grid grid-cols-12 gap-1 min-h-0 min-w-0 w-full h-full">
-					<div className={`col-span-12 lg:col-span-8 min-h-0 min-w-0 w-full h-full ${mobileActiveTab === "axial" ? "flex-1 flex flex-col" : "hidden lg:flex lg:flex-col"}`}>
-						{renderAxialViewport("flex-1 flex flex-col w-full h-full")}
-					</div>
-					<div className="col-span-12 lg:col-span-4 min-h-0 min-w-0 w-full h-full flex flex-col lg:grid lg:grid-rows-3 gap-1">
-						{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
-						{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
-						{renderFourthQuadrantViewport(mobileActiveTab === "panoramic" ? "flex-1 flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col")}
-					</div>
-				</div>
+				<CbctEmptyVolumeDropzone
+					dicomLoadingStatus={dicomLoadingStatus}
+					dicomProgress={dicomProgress}
+					folderInputRef={folderInputRef}
+					zipInputRef={zipInputRef}
+					handleDicomFilesChange={handleDicomFilesChange}
+					onLoadDemoVolume={onLoadDemoVolume}
+				/>
+			) : studioMode === "panoramic" ? (
+				<PanoramicWorkspace
+					volume={volume}
+					renderers={renderers}
+					activeViewport={activeViewport}
+					setActiveViewport={setActiveViewport}
+					maximizedViewport={maximizedViewport}
+					handleToggleMaximize={handleToggleMaximize}
+					mobileActiveTab={mobileActiveTab}
+					jawType={jawType ?? "mandible"}
+					onSwitchJaw={onSwitchJaw ?? (() => {})}
+					archCurve={archCurve}
+					activeCrossSection={activeCrossSection}
+					activeCrossSectionIdx={activeCrossSectionIdx}
+					crossSections={crossSections}
+					onChangeCrossSectionIdx={onChangeCrossSectionIdx}
+					handleSelectTooth={handleSelectTooth}
+				/>
+			) : studioMode === "endo" ? (
+				<EndoWorkspace
+					volume={volume}
+					renderers={renderers}
+					activeViewport={activeViewport}
+					setActiveViewport={setActiveViewport}
+					maximizedViewport={maximizedViewport}
+					handleToggleMaximize={handleToggleMaximize}
+					mobileActiveTab={mobileActiveTab}
+					activeToothFdi={activeToothFdi ?? activeCrossSection?.nearestToothFdi}
+					handleSelectTooth={handleSelectTooth}
+					isUnsharpActive={isUnsharpActive}
+					onToggleUnsharp={onToggleUnsharp}
+					crossSections={crossSections}
+					activeCrossSectionIdx={activeCrossSectionIdx}
+					onChangeCrossSectionIdx={onChangeCrossSectionIdx}
+				/>
+			) : studioMode === "implant" ? (
+				<ImplantWorkspace
+					volume={volume}
+					renderers={renderers}
+					activeViewport={activeViewport}
+					setActiveViewport={setActiveViewport}
+					maximizedViewport={maximizedViewport}
+					handleToggleMaximize={handleToggleMaximize}
+					mobileActiveTab={mobileActiveTab}
+					selectedBrand={selectedBrand}
+					onSelectBrand={onSelectBrand}
+					selectedDiameterMm={selectedDiameterMm}
+					onSelectDiameterMm={onSelectDiameterMm}
+					selectedLengthMm={selectedLengthMm}
+					onSelectLengthMm={onSelectLengthMm}
+					displayBoneClass={displayBoneClass}
+					displayMeanHU={displayMeanHU}
+					displayTorque={displayTorque}
+					displayNerveClearanceMm={displayNerveClearanceMm}
+					displayDrillingProtocol={displayDrillingProtocol}
+					nerveSafetyStatus={nerveSafetyStatus}
+					handleExportToEmr={handleExportToEmr}
+					handleExportToPlan={handleExportToPlan}
+				/>
 			) : (
-				<div
-					ref={quadGridRef}
-					className="flex-1 relative min-h-0 min-w-0 w-full h-full select-none"
-					data-testid="cbct-mpr-quad-grid"
-				>
-					{/* Single Unified Responsive 2x2 Grid: eliminates duplicate canvas DOM mounting that overwrites canvas refs */}
-					<div
-						className="grid w-full h-full gap-1 grid-cols-1 lg:grid-cols-2"
-						style={{
-							gridTemplateColumns: `${(splitX * 100).toFixed(2)}% calc(${((1 - splitX) * 100).toFixed(2)}% - 4px)`,
-							gridTemplateRows: `${(splitY * 100).toFixed(2)}% calc(${((1 - splitY) * 100).toFixed(2)}% - 4px)`,
-						}}
-					>
-						{renderAxialViewport(mobileActiveTab === "axial" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
-						{renderCoronalViewport(mobileActiveTab === "coronal" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
-						{renderSagittalViewport(mobileActiveTab === "sagittal" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
-						{renderFourthQuadrantViewport(mobileActiveTab === "panoramic" ? "flex flex-col w-full h-full" : "hidden lg:flex lg:flex-col w-full h-full")}
-					</div>
-
-					{/* Interactive Splitter Controls (Desktop only) */}
-					{/* 1. Vertical Splitter Bar */}
-					<div
-						onPointerDown={(e) => {
-							e.preventDefault();
-							setIsDraggingSplitter("x");
-						}}
-						style={{ left: `calc(${(splitX * 100).toFixed(2)}% - 3px)` }}
-						className="hidden lg:block absolute top-0 bottom-0 w-1.5 cursor-col-resize z-30 group"
-						title="Перетащите для изменения ширины окон (двойной клик — сброс 50%)"
-						onDoubleClick={() => setSplitX(0.5)}
-					>
-						<div className="w-0.5 h-full mx-auto bg-zinc-800 group-hover:bg-cyan-500/80 transition-colors" />
-					</div>
-
-					{/* 2. Horizontal Splitter Bar */}
-					<div
-						onPointerDown={(e) => {
-							e.preventDefault();
-							setIsDraggingSplitter("y");
-						}}
-						style={{ top: `calc(${(splitY * 100).toFixed(2)}% - 3px)` }}
-						className="hidden lg:block absolute left-0 right-0 h-1.5 cursor-row-resize z-30 group"
-						title="Перетащите для изменения высоты окон (двойной клик — сброс 50%)"
-						onDoubleClick={() => setSplitY(0.5)}
-					>
-						<div className="h-0.5 w-full my-auto bg-zinc-800 group-hover:bg-cyan-500/80 transition-colors" />
-					</div>
-
-					{/* 3. Central 4-Way Crosshair Splitter Knob */}
-					<div
-						onPointerDown={(e) => {
-							e.preventDefault();
-							setIsDraggingSplitter("center");
-						}}
-						onDoubleClick={() => {
-							setSplitX(0.5);
-							setSplitY(0.5);
-						}}
-						style={{
-							left: `calc(${(splitX * 100).toFixed(2)}% - 7px)`,
-							top: `calc(${(splitY * 100).toFixed(2)}% - 7px)`,
-						}}
-						className="hidden lg:flex absolute w-3.5 h-3.5 rounded-full bg-zinc-900 border border-zinc-700 hover:border-cyan-400 hover:bg-cyan-950 items-center justify-center cursor-move z-40 shadow-md group transition-transform hover:scale-125"
-						title="4-сторонний сплиттер: перетащите для изменения размеров окон (двойной клик — сброс 50/50)"
-						data-testid="cbct-mpr-grid-splitter-knob"
-					>
-						<div className="w-1 h-1 rounded-full bg-zinc-400 group-hover:bg-cyan-400" />
-					</div>
-				</div>
+				<MprQuadWorkspace
+					volume={volume}
+					renderers={renderers}
+					activeViewport={activeViewport}
+					setActiveViewport={setActiveViewport}
+					maximizedViewport={maximizedViewport}
+					handleToggleMaximize={handleToggleMaximize}
+					mobileActiveTab={mobileActiveTab}
+					viewLayout={viewLayout}
+				/>
 			)}
 			{dicomLoadingStatus && volume && (
 				<div
@@ -811,3 +770,5 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		</div>
 	);
 };
+
+export default CbctMprViewportsGrid;

@@ -18,6 +18,8 @@ import {
 	type Volume3DPresetId,
 	DEFAULT_VOLUME_3D_CLIPPING_BOX,
 	CBCT_VOLUME_3D_PRESETS,
+	ALL_CBCT_VOLUME_3D_PRESETS,
+	getVolume3DPreset,
 	getSafeDevicePixelRatio,
 	renderCanvas2DVolumeRaymarching,
 } from "./cbctVolume3DMath";
@@ -454,7 +456,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 		);
 	}, [volume, activePreset, yaw, pitch, zoom, pan, canvasDims, isInteracting, clipping]);
 
-	const activePresetSpec = CBCT_VOLUME_3D_PRESETS.find((p) => p.id === activePreset) ?? CBCT_VOLUME_3D_PRESETS[0]!;
+	const activePresetSpec = getVolume3DPreset(activePreset);
 
 	return (
 		<div
@@ -478,7 +480,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 				<div className="flex items-center gap-1 bg-zinc-950/80 backdrop-blur-md px-1.5 py-0.5 rounded-md border border-zinc-800 shadow-md">
 					{/* Preset Selector Chips */}
 					<div className="flex items-center gap-1">
-						{CBCT_VOLUME_3D_PRESETS.map((p) => {
+						{ALL_CBCT_VOLUME_3D_PRESETS.map((p) => {
 							const isSelected = p.id === activePreset;
 							return (
 								<button

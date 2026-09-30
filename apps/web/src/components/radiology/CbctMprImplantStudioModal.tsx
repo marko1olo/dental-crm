@@ -1,55 +1,38 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type {
-	CbctVoxelVolume, Point3D, SlabProjectionMode, ObliqueRotationAngles,
-	ViewportTransform, CbctMeasurementRuler, CbctAngleMeasurement, CbctProbeMarker, CbctViewportType,
-} from "./cbctMprMath";
 import {
+	type CbctVoxelVolume, type Point3D, type SlabProjectionMode, type ObliqueRotationAngles,
+	type ViewportTransform, type CbctMeasurementRuler, type CbctAngleMeasurement, type CbctProbeMarker, type CbctViewportType,
 	CBCT_HOUNSFIELD_PRESETS, DEFAULT_OBLIQUE_ROTATION, DEFAULT_VIEWPORT_TRANSFORM,
 	ROMEXIS_COLORS, disposeCbctVolume, getTissueNameFromHU, sampleVoxelHU, worldMmToVoxel,
 } from "./cbctMprMath";
 import { useCbctKeyboardShortcuts, applyStepZoom } from "./useCbctKeyboardShortcuts";
 import { CbctHotkeysStatusBar } from "./CbctHotkeysStatusBar";
 import {
-	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
-	DEFAULT_MAXILLARY_ARCH_ANCHORS,
-	type CrossSectionSliceData,
-	type DentalArchCurve,
-	type PanoramicReconstructionResult,
-	autoDetectDentalArch,
-	buildDentalArchCurve,
-	findOcclusalZPlane,
-	generateCrossSectionSlices,
-	reconstructPanoramicView,
+	DEFAULT_MANDIBULAR_ARCH_ANCHORS, DEFAULT_MAXILLARY_ARCH_ANCHORS,
+	type CrossSectionSliceData, type DentalArchCurve, type PanoramicReconstructionResult,
+	autoDetectDentalArch, buildDentalArchCurve, findOcclusalZPlane, generateCrossSectionSlices, reconstructPanoramicView,
 } from "./dentalCurveEngine";
 import { getSharedCbctWorkerBridge } from "./mpr/cbctWorkerBridge";
+import { getSharedCbctGlContext } from "./mpr/webgl/CbctVolumeGlContext";
 import {
 	type ImplantBrandKey, type VirtualImplantSpec, type CrossSectionImplantPose,
 	type MandibularCanalCrossSection, type Implant3DWorldProjection, type LiveImplantTelemetry, type Vec3,
-	STANDARD_IMPLANT_CATALOG, auditNerveSafetyMargin, calculateApexCoordinates,
-	calculateImplant3DWorldPose, computeLiveImplantTelemetry, playNerveSafetyAudioAlarm, sampleCrossSectionHUProfile,
+	STANDARD_IMPLANT_CATALOG, auditNerveSafetyMargin, calculateApexCoordinates, calculateImplant3DWorldPose,
+	computeLiveImplantTelemetry, playNerveSafetyAudioAlarm, sampleCrossSectionHUProfile,
 } from "./implantSafetyEngine";
 import {
-	calculateSplineLength3DMm,
-	interpolateNerveSpline3D,
-	type AlveolarRidgeCaliperMeasurement,
+	calculateSplineLength3DMm, interpolateNerveSpline3D, type AlveolarRidgeCaliperMeasurement,
 } from "./cbctCaliperNerveMath";
 import {
-	type HUZoneSampling,
-	type MischClassificationResult,
-	classifyMischBoneQuality,
+	type HUZoneSampling, type MischClassificationResult, classifyMischBoneQuality,
 } from "./boneDensityMischMath";
 import { CbctLeftToolDock, type CbctToolMode } from "./CbctLeftToolDock";
 import { showToast } from "../GlobalToast";
 import { useCbctStudioExports } from "./mpr/useCbctStudioExports";
 import {
-	type StudioMode,
-	type ViewLayoutMode,
-	type CbctMprImplantStudioModalProps,
-	DEFAULT_IAN_NERVE_POINTS,
-	formatNerveNodesPlural,
-	ROTATE_CURSOR,
-	getDefaultViewportTransforms,
+	type StudioMode, type ViewLayoutMode, type CbctMprImplantStudioModalProps,
+	DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getDefaultViewportTransforms,
 } from "./mpr/cbctStudioTypes";
 import { CbctHeaderBar } from "./mpr/CbctHeaderBar";
 import { CbctRightSidebar } from "./mpr/CbctRightSidebar";
@@ -98,6 +81,20 @@ export const CbctMprImplantStudioModal: React.FC<
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 	const [isStudioMenuOpen, setIsStudioMenuOpen] = useState<boolean>(false);
 	const studioMenuRef = useRef<HTMLDivElement | null>(null);
+	const [isUnsharpActive, setIsUnsharpActive] = useState<boolean>(false);
+
+	const handleToggleUnsharp = useCallback(() => {
+		setIsUnsharpActive((prev) => {
+			const next = !prev;
+			try {
+				getSharedCbctGlContext().setSharpenAmount(next ? 0.6 : 0.0);
+			} catch {
+				/* safe in non-webgl */
+			}
+			showToast(next ? "Резкость трабекул: ВКЛ (SHARP ON)" : "Резкость: Исходный воксел (RAW VOXEL)", "info");
+			return next;
+		});
+	}, []);
 
 	const handleToggleMaximize = useCallback((type: CbctViewportType) => {
 		setMaximizedViewport((prev) => (prev === type ? null : type));
@@ -270,6 +267,32 @@ export const CbctMprImplantStudioModal: React.FC<
 		}
 	}, [volume, jawType]);
 
+	// Physical jaw switcher callback (Switches Z-slice, recalculates arch, OPG, and cross-sections)
+	const handleSwitchJaw = useCallback((newJaw: "mandible" | "maxilla") => {
+		setJawType(newJaw);
+		if (!volume) {
+			showToast(newJaw === "maxilla" ? "Верхняя челюсть (Maxilla)" : "Нижняя челюсть (Mandible)", "info");
+			return;
+		}
+		try {
+			const detected = autoDetectDentalArch(volume, newJaw);
+			setArchCurve(detected);
+			setShowDentalArch(true);
+			const occlusalZMm = detected.planeZMm ?? findOcclusalZPlane(volume, newJaw);
+			let archCenterX = 0;
+			let archCenterY = 0;
+			if (detected.splinePointsMm.length > 0) {
+				const midIdx = Math.floor(detected.splinePointsMm.length / 2);
+				archCenterX = detected.splinePointsMm[midIdx]?.x ?? 0;
+				archCenterY = detected.splinePointsMm[midIdx]?.y ?? 0;
+			}
+			setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
+			showToast(newJaw === "maxilla" ? "В/Ч (Maxilla): Z-срез и дуга обновлены" : "Н/Ч (Mandible): Z-срез и дуга обновлены", "success");
+		} catch {
+			showToast(`Переключено на ${newJaw === "maxilla" ? "В/Ч (Maxilla)" : "Н/Ч (Mandible)"}`, "info");
+		}
+	}, [volume]);
+
 	// Panoramic and cross-sections update (Asynchronous Web Worker offloading for 60 FPS fluidity)
 	useEffect(() => {
 		if (!volume || !isOpen) return;
@@ -338,7 +361,7 @@ export const CbctMprImplantStudioModal: React.FC<
 				const detected = autoDetectDentalArch(vol, jawType);
 				setArchCurve(detected);
 				setShowDentalArch(true);
-				const occlusalZMm = findOcclusalZPlane(vol, jawType);
+				const occlusalZMm = detected.planeZMm ?? findOcclusalZPlane(vol, jawType);
 				let archCenterX = 0;
 				let archCenterY = 0;
 				if (detected.splinePointsMm.length > 0) {
@@ -356,7 +379,7 @@ export const CbctMprImplantStudioModal: React.FC<
 			applyVol(initialVolume);
 		} else if (typeof window !== "undefined") {
 			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
-			if (isDemo && win.__cbctDemoVolume && !volume) {
+			if (win.__cbctDemoVolume && !volume) {
 				applyVol(win.__cbctDemoVolume);
 			}
 			const handleCustomLoad = (e: Event) => {
@@ -452,32 +475,24 @@ export const CbctMprImplantStudioModal: React.FC<
 		crossSectionBaseCanvasRef, crossSectionOverlayCanvasRef,
 	});
 
+	const handleSelectPreset = useCallback((p: string) => {
+		setActivePreset(p);
+		const preset = CBCT_HOUNSFIELD_PRESETS.find((pr) => pr.id === p);
+		if (preset) {
+			setWindowWidth(preset.windowWidth);
+			setWindowLevel(preset.windowLevel);
+		}
+	}, []);
+
 	const {
-		handleExportToPlan,
-		handleExportToSchedule,
-		handleExportToEmr,
-		handleExportCbctToFinance,
-		handleExportPdfReport,
+		handleExportToPlan, handleExportToSchedule, handleExportToEmr,
+		handleExportCbctToFinance, handleExportPdfReport,
 	} = useCbctStudioExports({
-		patientId,
-		patientDisplayName,
-		study,
-		activeCrossSection,
-		activeCaliper,
-		currentImplantSpec,
-		currentImplantPose,
-		currentCanal,
-		implantAngulationDeg,
-		displayBoneClass,
-		displayMeanHU,
-		displayNerveClearanceMm,
-		displayTorque,
-		displayDrillingProtocol,
-		nerveAuditResult,
-		huSamplingResult,
-		mischClassification,
-		onApplyToPlan,
-		onApplyToDiary043,
+		patientId, patientDisplayName, study, activeCrossSection, activeCaliper,
+		currentImplantSpec, currentImplantPose, currentCanal, implantAngulationDeg,
+		displayBoneClass, displayMeanHU, displayNerveClearanceMm, displayTorque,
+		displayDrillingProtocol, nerveAuditResult, huSamplingResult, mischClassification,
+		onApplyToPlan, onApplyToDiary043,
 	});
 
 	const modalContainerRef = useRef<HTMLDivElement | null>(null);
@@ -508,24 +523,15 @@ export const CbctMprImplantStudioModal: React.FC<
 	// Deterministic teardown of WebGL & 2D canvas backing stores and volume memory (Mandate 8c & Frontend Rules)
 	useEffect(() => {
 		if (!isOpen) {
-			if (modalContainerRef.current) {
-				teardownViewportCanvases(modalContainerRef.current);
-			}
+			if (modalContainerRef.current) teardownViewportCanvases(modalContainerRef.current);
 			if (volume) {
-				if (!isExternalVolume(volume)) {
-					disposeCbctVolume(volume);
-				}
+				if (!isExternalVolume(volume)) disposeCbctVolume(volume);
 				setVolume(null);
 			}
 		}
-
 		return () => {
-			if (modalContainerRef.current) {
-				teardownViewportCanvases(modalContainerRef.current);
-			}
-			if (volume && !isExternalVolume(volume)) {
-				disposeCbctVolume(volume);
-			}
+			if (modalContainerRef.current) teardownViewportCanvases(modalContainerRef.current);
+			if (volume && !isExternalVolume(volume)) disposeCbctVolume(volume);
 		};
 	}, [isOpen, volume, isExternalVolume]);
 
@@ -561,7 +567,7 @@ export const CbctMprImplantStudioModal: React.FC<
 		onClose: handleCloseStudio,
 	});
 
-	// 1-Click Keyboard Shortcut 'M' / Measure for Caliper Ruler (Directive 1)
+	// 1-Click Keyboard Shortcuts ('M' for Ruler, 'U' for Unsharp Masking)
 	useEffect(() => {
 		if (!isOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -571,11 +577,14 @@ export const CbctMprImplantStudioModal: React.FC<
 			if (e.key === "m" || e.key === "M" || e.key === "ь" || e.key === "Ь") {
 				e.preventDefault();
 				setActiveTool((prev) => (prev === "ruler" ? "crosshair" : "ruler"));
+			} else if (e.key === "u" || e.key === "U" || e.key === "г" || e.key === "Г") {
+				e.preventDefault();
+				handleToggleUnsharp();
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen]);
+	}, [isOpen, handleToggleUnsharp]);
 
 	if (!isOpen) return null;
 
@@ -629,16 +638,12 @@ export const CbctMprImplantStudioModal: React.FC<
 					handleToggleFullscreenModal={() => setIsFullscreen((prev) => !prev)}
 					onClose={handleCloseStudio}
 					activePresetId={activePreset}
-					onSelectPreset={(p) => {
-						setActivePreset(p);
-						const preset = CBCT_HOUNSFIELD_PRESETS.find((pr) => pr.id === p);
-						if (preset) {
-							setWindowWidth(preset.windowWidth);
-							setWindowLevel(preset.windowLevel);
-						}
-					}}
+					onSelectPreset={handleSelectPreset}
 					crossSectionStepMm={crossSectionStepMm}
 					onChangeCrossSectionStepMm={setCrossSectionStepMm}
+					isUnsharpActive={isUnsharpActive}
+					onToggleUnsharp={handleToggleUnsharp}
+					sharpenAmount={isUnsharpActive ? 0.6 : 0.0}
 				/>
 
 				<main className="flex-1 flex min-h-0 w-full overflow-hidden relative">
@@ -646,14 +651,7 @@ export const CbctMprImplantStudioModal: React.FC<
 						activeTool={activeTool}
 						onSelectTool={setActiveTool}
 						activePresetId={activePreset}
-						onSelectPreset={(p) => {
-							setActivePreset(p);
-							const preset = CBCT_HOUNSFIELD_PRESETS.find((pr) => pr.id === p);
-							if (preset) {
-								setWindowWidth(preset.windowWidth);
-								setWindowLevel(preset.windowLevel);
-							}
-						}}
+						onSelectPreset={handleSelectPreset}
 						slabMode={slabMode}
 						onSelectSlabMode={setSlabMode}
 						slabThicknessMm={slabThicknessMm}
@@ -725,17 +723,34 @@ export const CbctMprImplantStudioModal: React.FC<
 						handleCrossSectionMouseDown={interactions.handleCrossSectionMouseDown}
 						handleCrossSectionMouseMove={interactions.handleCrossSectionMouseMove}
 						handleCrossSectionMouseUp={interactions.handleCrossSectionMouseUp}
-						dragImplantPart={dragImplantPart}
-						hoveredImplantPart={hoveredImplantPart}
-						activeCrossSection={activeCrossSection}
-						activeCrossSectionIdx={activeCrossSectionIdx}
-						crossSections={crossSections}
-						onLoadDemoVolume={dicomLoader.handleLoadDemoVolume}
-						activeTool={activeTool}
-						onSelectTool={setActiveTool}
-						rulers={rulers}
-						onClearRulers={handleClearRulers}
+						dragImplantPart={dragImplantPart} hoveredImplantPart={hoveredImplantPart}
+						activeCrossSection={activeCrossSection} activeCrossSectionIdx={activeCrossSectionIdx}
+						crossSections={crossSections} onLoadDemoVolume={dicomLoader.handleLoadDemoVolume}
+						activeTool={activeTool} onSelectTool={setActiveTool}
+						rulers={rulers} onClearRulers={handleClearRulers}
 						onSelectQuickWlPreset={handleSelectQuickWlPreset}
+						handleSelectTooth={interactions.handleSelectTooth}
+						archCurve={archCurve}
+						jawType={jawType}
+						onSwitchJaw={handleSwitchJaw}
+						activeToothFdi={activeCrossSection?.nearestToothFdi}
+						isUnsharpActive={isUnsharpActive}
+						onToggleUnsharp={handleToggleUnsharp}
+						onChangeCrossSectionIdx={setActiveCrossSectionIdx}
+						selectedBrand={selectedBrand}
+						onSelectBrand={setSelectedBrand}
+						selectedDiameterMm={selectedDiameterMm}
+						onSelectDiameterMm={setSelectedDiameterMm}
+						selectedLengthMm={selectedLengthMm}
+						onSelectLengthMm={setSelectedLengthMm}
+						displayBoneClass={displayBoneClass}
+						displayMeanHU={displayMeanHU}
+						displayTorque={displayTorque}
+						displayNerveClearanceMm={displayNerveClearanceMm}
+						displayDrillingProtocol={displayDrillingProtocol}
+						nerveSafetyStatus={nerveAuditResult.safetyStatus === "danger" ? "danger" : nerveAuditResult.safetyStatus === "warning" ? "warning" : "safe"}
+						handleExportToEmr={handleExportToEmr}
+						handleExportToPlan={handleExportToPlan}
 					/>
 
 					<CbctRightSidebar
@@ -748,29 +763,17 @@ export const CbctMprImplantStudioModal: React.FC<
 						implantAngulationDeg={implantAngulationDeg} setImplantAngulationDeg={setImplantAngulationDeg}
 						volume={volume} handleToggleMaximize={handleToggleMaximize}
 						crossSectionBaseCanvasRef={crossSectionBaseCanvasRef} crossSectionOverlayCanvasRef={crossSectionOverlayCanvasRef}
-						handleCrossSectionMouseDown={interactions.handleCrossSectionMouseDown}
-						handleCrossSectionMouseMove={interactions.handleCrossSectionMouseMove}
-						handleCrossSectionMouseUp={interactions.handleCrossSectionMouseUp}
-						dragImplantPart={dragImplantPart} hoveredImplantPart={hoveredImplantPart}
-						handleFullResetViewport={handleFullResetViewport} maximizedViewport={maximizedViewport}
-						windowWidth={windowWidth} windowLevel={windowLevel}
-						renderViewportOverlays={() => null} sampledVoxelHU={sampledVoxelHU}
-						handleSelectTooth={interactions.handleSelectTooth} implant3DWorld={implant3DWorld}
-						nerveAuditResult={nerveAuditResult} huSamplingResult={huSamplingResult}
-						currentImplantSpec={currentImplantSpec} nervePoints={nervePoints} setNervePoints={setNervePoints}
-						nerveTotalLengthMm={nerveTotalLengthMm} selectedNerveNodeIdx={selectedNerveNodeIdx}
-						setSelectedNerveNodeIdx={setSelectedNerveNodeIdx} displayBoneClass={displayBoneClass}
-						displayMeanHU={displayMeanHU} displayTorque={displayTorque}
-						displayNerveClearanceMm={displayNerveClearanceMm} displayDrillingProtocol={displayDrillingProtocol}
-						selectedBrand={selectedBrand} setSelectedBrand={setSelectedBrand}
-						selectedDiameterMm={selectedDiameterMm} setSelectedDiameterMm={setSelectedDiameterMm}
-						selectedLengthMm={selectedLengthMm} setSelectedLengthMm={setSelectedLengthMm}
-						implantEntryXOffsetMm={implantEntryXOffsetMm} setImplantEntryXOffsetMm={setImplantEntryXOffsetMm}
-						setImplantEntryDepthMm={setImplantEntryDepthMm} activeCaliper={activeCaliper}
-						handleExportToEmr={handleExportToEmr}
-						handleExportPdfReport={() => { void handleExportPdfReport(); }}
-						handleExportToPlan={handleExportToPlan} handleExportToSchedule={handleExportToSchedule}
-						handleExportToFinance={handleExportCbctToFinance}
+						handleCrossSectionMouseDown={interactions.handleCrossSectionMouseDown} handleCrossSectionMouseMove={interactions.handleCrossSectionMouseMove} handleCrossSectionMouseUp={interactions.handleCrossSectionMouseUp}
+						dragImplantPart={dragImplantPart} hoveredImplantPart={hoveredImplantPart} handleFullResetViewport={handleFullResetViewport} maximizedViewport={maximizedViewport}
+						windowWidth={windowWidth} windowLevel={windowLevel} renderViewportOverlays={() => null} sampledVoxelHU={sampledVoxelHU}
+						handleSelectTooth={interactions.handleSelectTooth} implant3DWorld={implant3DWorld} nerveAuditResult={nerveAuditResult} huSamplingResult={huSamplingResult}
+						currentImplantSpec={currentImplantSpec} nervePoints={nervePoints} setNervePoints={setNervePoints} nerveTotalLengthMm={nerveTotalLengthMm}
+						selectedNerveNodeIdx={selectedNerveNodeIdx} setSelectedNerveNodeIdx={setSelectedNerveNodeIdx} displayBoneClass={displayBoneClass}
+						displayMeanHU={displayMeanHU} displayTorque={displayTorque} displayNerveClearanceMm={displayNerveClearanceMm} displayDrillingProtocol={displayDrillingProtocol}
+						selectedBrand={selectedBrand} setSelectedBrand={setSelectedBrand} selectedDiameterMm={selectedDiameterMm} setSelectedDiameterMm={setSelectedDiameterMm}
+						selectedLengthMm={selectedLengthMm} setSelectedLengthMm={setSelectedLengthMm} implantEntryXOffsetMm={implantEntryXOffsetMm} setImplantEntryXOffsetMm={setImplantEntryXOffsetMm}
+						setImplantEntryDepthMm={setImplantEntryDepthMm} activeCaliper={activeCaliper} handleExportToEmr={handleExportToEmr}
+						handleExportPdfReport={() => { void handleExportPdfReport(); }} handleExportToPlan={handleExportToPlan} handleExportToSchedule={handleExportToSchedule} handleExportToFinance={handleExportCbctToFinance}
 					/>
 				</main>
 

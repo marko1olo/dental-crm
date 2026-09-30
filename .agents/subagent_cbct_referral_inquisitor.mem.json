@@ -1,0 +1,28 @@
+{
+  "role": "CBCT Clinical Referral, Scanning FOV Protocols & Diagnostic Orders Inquisitor",
+  "status": "COMPLETED",
+  "current_step": "REPORT_AND_HANDOVER",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md completely",
+    "Read AGENTS.md completely",
+    "Reconnaissance of radiology components, referral modal, and shared renderers",
+    "Implemented 5 standard CBCT Scanning Zones (FOV) in radiologyProtocols.ts: full_jaws_16x10, maxilla_sinus_10x10, mandible_10x10, endo_micro_5x5, and tmj_both_joints",
+    "Implemented 4 standard Diagnostic Goals (+ TMJ) in radiologyProtocols.ts: implantation, endodontics, orthodontics, periodontics, and tmj with recommended FOVs, ICD-10 codes, and clinical tasks",
+    "Implemented partner diagnostic centers catalog: Picasso, 3D Lab, Zolotoe Sechenie, and internal X-ray cabinet",
+    "Implemented pure vector SVG Code128 barcode and QR code generators with 0-NaN guarantee and zero external dependencies",
+    "Hardened RadiologyReferralModal.tsx with 0-1 click Express Presets (5 seconds chairside path), 5 FOV selectors, clinical goals, partner centers, FDI tooth matrix, vector barcode & QR live preview, printable HTML form with clinic credentials, and 1-click 'Внести в 043/у' SOAP diary integration",
+    "Restored canonical, zero-bloat RadiologyModule.tsx (Tier 3 Studio Hub) integrating CBCT referral, 3D MPR studio, DICOM viewer, RVG capture, and dose sheet with strictly 1-level modal depth",
+    "Added comprehensive adversarial unit tests in radiologyViewerProtocols.test.ts covering all 5 FOVs, all clinical goals, partner centers, SVG generators, RadiologyReferralModal ergonomics, and RadiologyModule architecture",
+    "Executed test suite: 16 of 16 tests passed with Exit Code 0 in 1.37s",
+    "Verified sibling radiology test suites: 31 of 31 tests passed with Exit Code 0",
+    "Passed encoding gate npm run check:encoding: 6,329 files checked, 0 errors",
+    "Staged changes per-file with zero leakage into foreign scope"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Old RadiologyReferralModal lacked dedicated CBCT FOV selectors (16x10, 10x10, 5x5, TMJ) and relied on generic study labels",
+    "Old printable form lacked vector barcodes and QR codes for external diagnostic centers like Picasso and 3D Lab",
+    "Fixed grammar case mismatch in test for 'привычной окклюзии'",
+    "RadiologyModule.tsx provides a clean, single-depth launcher hub for all imaging modalities without bloated duplicate state"
+  ]
+}

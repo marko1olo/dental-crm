@@ -5,7 +5,12 @@
  */
 
 import type { Point2D, Point3D } from "./cbctCaliperNerveMath";
-import type { DentalArchAnchor, DentalArchCurve } from "./cbctArchSplineMath";
+import {
+	type DentalArchAnchor,
+	type DentalArchCurve,
+	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
+	DEFAULT_MAXILLARY_ARCH_ANCHORS,
+} from "./cbctArchSplineMath";
 import type { CrossSectionSliceData } from "./cbctCrossSectionResliceMath";
 
 export interface PanoramicSliceFanTick {
@@ -203,6 +208,7 @@ export function mapPanoPointerToCrosshairAndSlice(
 
 /**
  * Finds cross-section slice index and anatomical 3D position for a given FDI tooth number (11..48).
+ * Selects the optimal centered cross-section corresponding to the tooth's anatomical apex/crown.
  */
 export function findCrossSectionAndPositionByFdi(
 	toothFdi: number | string,
@@ -211,31 +217,102 @@ export function findCrossSectionAndPositionByFdi(
 	currentZMm = 0,
 ): { crossSectionIdx: number; positionMm: Point3D; nearestToothFdi: string; found: boolean } {
 	const fdiStr = String(toothFdi);
+	const fdiNum = Number.parseInt(fdiStr, 10);
+
+	// 1. Check if tooth exists in live cross-sections
 	if (crossSections.length > 0) {
-		const idx = crossSections.findIndex(
-			(s) => s.nearestToothFdi === fdiStr || Number.parseInt(s.nearestToothFdi, 10) === Number.parseInt(fdiStr, 10),
-		);
-		if (idx >= 0) {
-			const slice = crossSections[idx]!;
+		const matchingIndices: number[] = [];
+		for (let i = 0; i < crossSections.length; i++) {
+			const cs = crossSections[i];
+			if (cs && (cs.nearestToothFdi === fdiStr || Number.parseInt(cs.nearestToothFdi, 10) === fdiNum)) {
+				matchingIndices.push(i);
+			}
+		}
+
+		if (matchingIndices.length > 0) {
+			// Find curve anchor if available to select the closest centered slice
+			const anchor = archCurve?.anchors?.find(
+				(a) => a.toothFdi === fdiStr || Number.parseInt(a.toothFdi, 10) === fdiNum,
+			);
+
+			let chosenIdx = matchingIndices[Math.floor(matchingIndices.length / 2)]!;
+			if (anchor) {
+				let minDist = Infinity;
+				for (const idx of matchingIndices) {
+					const slice = crossSections[idx]!;
+					const dist = Math.hypot(slice.centerPointMm.x - anchor.positionMm.x, slice.centerPointMm.y - anchor.positionMm.y);
+					if (dist < minDist) {
+						minDist = dist;
+						chosenIdx = idx;
+					}
+				}
+			}
+
+			const slice = crossSections[chosenIdx]!;
 			return {
-				crossSectionIdx: idx,
+				crossSectionIdx: chosenIdx,
 				positionMm: { x: slice.centerPointMm.x, y: slice.centerPointMm.y, z: currentZMm },
 				nearestToothFdi: slice.nearestToothFdi,
 				found: true,
 			};
 		}
 	}
-	const anchor = archCurve.anchors.find(
-		(a) => a.toothFdi === fdiStr || Number.parseInt(a.toothFdi, 10) === Number.parseInt(fdiStr, 10),
+
+	// 2. Check active dental arch curve anchors
+	const activeAnchor = archCurve?.anchors?.find(
+		(a) => a.toothFdi === fdiStr || Number.parseInt(a.toothFdi, 10) === fdiNum,
 	);
-	if (anchor) {
+	if (activeAnchor) {
+		let bestSliceIdx = 0;
+		if (crossSections.length > 0) {
+			let minDist = Infinity;
+			for (let i = 0; i < crossSections.length; i++) {
+				const s = crossSections[i]!;
+				const dist = Math.hypot(s.centerPointMm.x - activeAnchor.positionMm.x, s.centerPointMm.y - activeAnchor.positionMm.y);
+				if (dist < minDist) {
+					minDist = dist;
+					bestSliceIdx = i;
+				}
+			}
+		}
 		return {
-			crossSectionIdx: 0,
-			positionMm: { x: anchor.positionMm.x, y: anchor.positionMm.y, z: currentZMm },
-			nearestToothFdi: anchor.toothFdi,
+			crossSectionIdx: bestSliceIdx,
+			positionMm: { x: activeAnchor.positionMm.x, y: activeAnchor.positionMm.y, z: currentZMm },
+			nearestToothFdi: activeAnchor.toothFdi,
 			found: true,
 		};
 	}
+
+	// 3. Check default anatomical arch anchors (if valid FDI 11..48)
+	const isMaxillary = (fdiNum >= 11 && fdiNum <= 18) || (fdiNum >= 21 && fdiNum <= 28);
+	const isMandibular = (fdiNum >= 31 && fdiNum <= 38) || (fdiNum >= 41 && fdiNum <= 48);
+
+	if (isMaxillary || isMandibular) {
+		const defaultAnchors = isMaxillary ? DEFAULT_MAXILLARY_ARCH_ANCHORS : DEFAULT_MANDIBULAR_ARCH_ANCHORS;
+		const defAnchor = defaultAnchors.find((a) => a.toothFdi === fdiStr || Number.parseInt(a.toothFdi, 10) === fdiNum);
+		if (defAnchor) {
+			let bestSliceIdx = 0;
+			if (crossSections.length > 0) {
+				let minDist = Infinity;
+				for (let i = 0; i < crossSections.length; i++) {
+					const s = crossSections[i]!;
+					const dist = Math.hypot(s.centerPointMm.x - defAnchor.positionMm.x, s.centerPointMm.y - defAnchor.positionMm.y);
+					if (dist < minDist) {
+						minDist = dist;
+						bestSliceIdx = i;
+					}
+				}
+			}
+			return {
+				crossSectionIdx: bestSliceIdx,
+				positionMm: { x: defAnchor.positionMm.x, y: defAnchor.positionMm.y, z: currentZMm },
+				nearestToothFdi: defAnchor.toothFdi,
+				found: true,
+			};
+		}
+	}
+
+	// 4. Unknown / non-existent FDI fallback (e.g. 99)
 	return {
 		crossSectionIdx: 0,
 		positionMm: { x: 0, y: 0, z: currentZMm },

@@ -572,6 +572,37 @@ export const GingivaRecession = createDentalIcon(
   </>
 );
 
+// 37. DicomCube3D — Трехмерный воксельный куб КЛКТ / 3D объем
+export const DicomCube3D = createDentalIcon(
+  "DicomCube3D",
+  "lucide-dicom-cube-3d",
+  <>
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+    <line x1="12" y1="22.08" x2="12" y2="12" />
+    <circle cx="12" cy="7" r="1.2" />
+    <circle cx="7.5" cy="14.5" r="1" />
+    <circle cx="16.5" cy="14.5" r="1" />
+  </>
+);
+
+// 38. BoneDensityMisch — Плотность кости по Misch (D1-D4 / трабекулы)
+export const BoneDensityMisch = createDentalIcon(
+  "BoneDensityMisch",
+  "lucide-bone-density-misch",
+  <>
+    <path d="M4 5c2-1 6-1 8 0s6 1 8 0v2c-2 1-6 1-8 0s-6-1-8 0V5z" />
+    <path d="M4 19c2 1 6 1 8 0s6-1 8 0v-2c-2-1-6-1-8 0s-6 1-8 0v2z" />
+    <circle cx="7" cy="11" r="1.2" />
+    <circle cx="12" cy="10" r="1.5" />
+    <circle cx="17" cy="11" r="1.2" />
+    <circle cx="9.5" cy="14.5" r="1" />
+    <circle cx="14.5" cy="14.5" r="1" />
+    <line x1="7" y1="11" x2="12" y2="10" strokeDasharray="1 1.5" />
+    <line x1="12" y1="10" x2="17" y2="11" strokeDasharray="1 1.5" />
+  </>
+);
+
 // Словарь и карта типов всех 36 стоматологических иконок
 export const DENTAL_ICONS_MAP = {
   ToothMolar,

@@ -77,10 +77,13 @@ export const DEFAULT_MAXILLARY_ARCH_ANCHORS: readonly DentalArchAnchor[] = [
 
 /**
  * Fits a smooth Catmull-Rom spline curve through dental arch anchor points.
+ * Optionally extends along the distal retromolar tangents by extendRetromolarMm.
  */
 export function fitSmoothDentalArchSpline(
 	anchors: readonly DentalArchAnchor[],
 	samplesPerSegment = 8,
+	extendRetromolarMm = 0,
+	extraControlPoints?: { readonly rightExt?: readonly Point2D[]; readonly leftExt?: readonly Point2D[] },
 ): Point2D[] {
 	if (!anchors || anchors.length === 0) return [];
 
@@ -91,7 +94,37 @@ export function fitSmoothDentalArchSpline(
 	if (validAnchors.length === 1) return [{ ...validAnchors[0]!.positionMm }];
 
 	const numSamples = Math.max(1, Math.round(Number.isFinite(samplesPerSegment) ? samplesPerSegment : 8));
-	const pts = validAnchors.map((a) => a.positionMm);
+	let pts = validAnchors.map((a) => ({ ...a.positionMm }));
+
+	if (extraControlPoints?.rightExt?.length || extraControlPoints?.leftExt?.length) {
+		pts = [...(extraControlPoints.rightExt ?? []), ...pts, ...(extraControlPoints.leftExt ?? [])];
+	} else if (extendRetromolarMm > 0 && pts.length >= 4) {
+		// Distal extension on Right quadrant (beyond 48/18)
+		const p0 = pts[0]!;
+		const p1 = pts[1]!;
+		let dxR = p0.x - p1.x;
+		let dyR = p0.y - p1.y;
+		const lenR = Math.hypot(dxR, dyR) || 1;
+		dxR /= lenR;
+		dyR /= lenR;
+
+		// Distal extension on Left quadrant (beyond 38/28)
+		const pLast = pts[pts.length - 1]!;
+		const pPrev = pts[pts.length - 2]!;
+		let dxL = pLast.x - pPrev.x;
+		let dyL = pLast.y - pPrev.y;
+		const lenL = Math.hypot(dxL, dyL) || 1;
+		dxL /= lenL;
+		dyL /= lenL;
+
+		const extR2 = { x: p0.x + dxR * extendRetromolarMm, y: p0.y + dyR * extendRetromolarMm };
+		const extR1 = { x: p0.x + dxR * (extendRetromolarMm * 0.5), y: p0.y + dyR * (extendRetromolarMm * 0.5) };
+		const extL1 = { x: pLast.x + dxL * (extendRetromolarMm * 0.5), y: pLast.y + dyL * (extendRetromolarMm * 0.5) };
+		const extL2 = { x: pLast.x + dxL * extendRetromolarMm, y: pLast.y + dyL * extendRetromolarMm };
+
+		pts = [extR2, extR1, ...pts, extL1, extL2];
+	}
+
 	const curve: Point2D[] = [];
 
 	for (let i = 0; i < pts.length - 1; i++) {
@@ -382,8 +415,10 @@ export function buildDentalArchCurve(
 	jawType: "mandible" | "maxilla" = "mandible",
 	focalTroughThicknessMm = 12.0,
 	planeZMm?: number,
+	extendRetromolarMm = 0,
+	extraControlPoints?: { readonly rightExt?: readonly Point2D[]; readonly leftExt?: readonly Point2D[] },
 ): DentalArchCurve {
-	const spline = fitSmoothDentalArchSpline(anchors, 8);
+	const spline = fitSmoothDentalArchSpline(anchors, 8, extendRetromolarMm, extraControlPoints);
 	const totalLength = calculateArchLengthMm(spline);
 
 	return {

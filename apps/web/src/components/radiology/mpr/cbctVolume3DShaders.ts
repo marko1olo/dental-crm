@@ -21,6 +21,7 @@ import {
 	type Volume3DPresetId,
 	DEFAULT_VOLUME_3D_CLIPPING_BOX,
 	CBCT_VOLUME_3D_PRESETS,
+	getVolume3DPreset,
 	computeVolume3DRotationMatrix,
 } from "./cbctVolume3DMath";
 
@@ -84,6 +85,39 @@ vec2 intersectAABB(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax) {
     return vec2(tNear, tFar);
 }
 
+// 8-point 3D Trilinear Sub-Voxel Continuous Density Sampling
+float sampleHUTrilinear(vec3 pos) {
+    if (pos.x < 0.0 || pos.x > u_volumeDim.x - 1.0 ||
+        pos.y < 0.0 || pos.y > u_volumeDim.y - 1.0 ||
+        pos.z < 0.0 || pos.z > u_volumeDim.z - 1.0) {
+        return -1000.0;
+    }
+    vec3 i = floor(pos);
+    vec3 f = pos - i;
+    ivec3 i0 = ivec3(i);
+    ivec3 maxCoord = ivec3(u_volumeDim) - 1;
+    ivec3 i1 = min(maxCoord, i0 + 1);
+
+    float c000 = float(texelFetch(u_volume, ivec3(i0.x, i0.y, i0.z), 0).r);
+    float c100 = float(texelFetch(u_volume, ivec3(i1.x, i0.y, i0.z), 0).r);
+    float c010 = float(texelFetch(u_volume, ivec3(i0.x, i1.y, i0.z), 0).r);
+    float c110 = float(texelFetch(u_volume, ivec3(i1.x, i1.y, i0.z), 0).r);
+    float c001 = float(texelFetch(u_volume, ivec3(i0.x, i0.y, i1.z), 0).r);
+    float c101 = float(texelFetch(u_volume, ivec3(i1.x, i0.y, i1.z), 0).r);
+    float c011 = float(texelFetch(u_volume, ivec3(i0.x, i1.y, i1.z), 0).r);
+    float c111 = float(texelFetch(u_volume, ivec3(i1.x, i1.y, i1.z), 0).r);
+
+    float c00 = mix(c000, c100, f.x);
+    float c10 = mix(c010, c110, f.x);
+    float c01 = mix(c001, c101, f.x);
+    float c11 = mix(c011, c111, f.x);
+
+    float c0 = mix(c00, c10, f.y);
+    float c1 = mix(c01, c11, f.y);
+
+    return mix(c0, c1, f.z);
+}
+
 void main() {
     float maxDim = max(1.0, max(u_volumeDim.x, max(u_volumeDim.y, u_volumeDim.z)));
     float safeZoom = max(0.01, u_zoom);
@@ -116,8 +150,8 @@ void main() {
     
     tNear = max(0.0, tNear);
     float rayDist = tFar - tNear;
-    int safeMaxSteps = clamp(u_maxSteps, 1, 200);
-    float stepSize = max(0.8, rayDist / float(safeMaxSteps));
+    int safeMaxSteps = clamp(u_maxSteps, 1, 256); // clamp(u_maxSteps, 1, 200) baseline expanded to 256 steps
+    float stepSize = max(0.6, rayDist / float(safeMaxSteps));
     int actualSteps = int(clamp(ceil(rayDist / stepSize), 1.0, float(safeMaxSteps)));
     float dt = rayDist / float(actualSteps);
     
@@ -144,7 +178,10 @@ void main() {
             vox.y >= 0 && vox.y < int(u_volumeDim.y) &&
             vox.z >= 0 && vox.z < int(u_volumeDim.z)) {
             
-            float hu = float(texelFetch(u_volume, vox, 0).r);
+            // Continuous density sampling (trilinear in beauty pass, fast texel in interaction)
+            float hu = (u_refineSteps > 0)
+                ? sampleHUTrilinear(curPos)
+                : float(texelFetch(u_volume, vox, 0).r);
             
             if (u_presetMode == 1) { // MIP
                 if (hu > maxHU) {
@@ -164,21 +201,29 @@ void main() {
                         for (int b = 0; b < 4; b++) {
                             if (b >= u_refineSteps) break;
                             vec3 pm = (p0 + p1) * 0.5;
-                            ivec3 v = clamp(ivec3(floor(pm)), ivec3(0), ivec3(u_volumeDim) - 1);
-                            float h = float(texelFetch(u_volume, v, 0).r);
+                            float h = sampleHUTrilinear(pm);
                             if (h >= u_huMin) p1 = pm; else p0 = pm;
                         }
                         hitPos = (p0 + p1) * 0.5;
                     }
                     hitDepth = float(i + 1) / float(actualSteps);
                     
-                    // Central differences with 2-voxel baseline for smooth anatomical gradients
-                    ivec3 vHit = clamp(ivec3(floor(hitPos)), ivec3(2), ivec3(u_volumeDim) - 3);
-                    float gx = float(texelFetch(u_volume, vHit + ivec3(2, 0, 0), 0).r) - float(texelFetch(u_volume, vHit - ivec3(2, 0, 0), 0).r);
-                    float gy = float(texelFetch(u_volume, vHit + ivec3(0, 2, 0), 0).r) - float(texelFetch(u_volume, vHit - ivec3(0, 2, 0), 0).r);
-                    float gz = float(texelFetch(u_volume, vHit + ivec3(0, 0, 2), 0).r) - float(texelFetch(u_volume, vHit - ivec3(0, 0, 2), 0).r);
-                    
-                    vec3 grad = vec3(gx, gy, gz);
+                    // Central differences normal computation:
+                    // gx = sample(x+1) - sample(x-1) with continuous trilinear filtering
+                    vec3 grad;
+                    if (u_refineSteps > 0) {
+                        float eps = 1.0;
+                        float gx = sampleHUTrilinear(hitPos + vec3(eps, 0.0, 0.0)) - sampleHUTrilinear(hitPos - vec3(eps, 0.0, 0.0));
+                        float gy = sampleHUTrilinear(hitPos + vec3(0.0, eps, 0.0)) - sampleHUTrilinear(hitPos - vec3(0.0, eps, 0.0));
+                        float gz = sampleHUTrilinear(hitPos + vec3(0.0, 0.0, eps)) - sampleHUTrilinear(hitPos - vec3(0.0, 0.0, eps));
+                        grad = vec3(gx, gy, gz);
+                    } else {
+                        ivec3 vHit = clamp(ivec3(floor(hitPos)), ivec3(1), ivec3(u_volumeDim) - 2);
+                        float gx = float(texelFetch(u_volume, vHit + ivec3(1, 0, 0), 0).r) - float(texelFetch(u_volume, vHit - ivec3(1, 0, 0), 0).r);
+                        float gy = float(texelFetch(u_volume, vHit + ivec3(0, 1, 0), 0).r) - float(texelFetch(u_volume, vHit - ivec3(0, 1, 0), 0).r);
+                        float gz = float(texelFetch(u_volume, vHit + ivec3(0, 0, 1), 0).r) - float(texelFetch(u_volume, vHit - ivec3(0, 0, 1), 0).r);
+                        grad = vec3(gx, gy, gz);
+                    }
                     float gLen = length(grad);
                     // Outward surface normal points toward lower density (from bone into air)
                     norm = gLen > 0.001 ? -normalize(grad) : -rayDir;
@@ -202,18 +247,20 @@ void main() {
             fragColor = vec4(0.035, 0.035, 0.043, 1.0);
         }
     } else if (hit) {
-        // Clinical Anatomical Phong Shading: Ambient + Lambert Diffuse + Enamel Specular + Rim
+        // Clinical Anatomical Blinn-Phong Shading: Ambient + Lambert Diffuse + Specular + Rim
         vec3 viewDir = -rayDir;
         // Directional key light from upper-front-right relative to camera
         vec3 lightDir = normalize(viewDir * 0.82 + u_rotMatrix[0] * 0.35 + u_rotMatrix[1] * 0.45);
         float NdotL = max(0.0, dot(norm, lightDir));
-        float ambient = 0.32;
-        float diff = NdotL * 0.68;
+        float ambient = 0.30;
+        float diff = NdotL * 0.70;
         vec3 halfVec = normalize(lightDir + viewDir);
-        float spec = pow(max(0.0, dot(norm, halfVec)), 32.0) * 0.35;
-        float rim = pow(1.0 - max(0.0, dot(norm, viewDir)), 3.0) * 0.18;
+        float NdotH = max(0.0, dot(norm, halfVec));
+        float spec = pow(NdotH, 32.0) * 0.35;
+        float NdotV = max(0.0, dot(norm, viewDir));
+        float rim = pow(1.0 - NdotV, 3.0) * 0.18;
         float depthFade = 1.0 - hitDepth * 0.15;
-        vec3 lit = clamp(u_boneColor * (ambient + diff * depthFade + rim) + vec3(1.0, 0.98, 0.92) * spec, 0.0, 1.0);
+        vec3 lit = clamp(u_boneColor * (ambient + diff * depthFade + rim) + vec3(1.0, 0.98, 0.94) * spec, 0.0, 1.0);
         fragColor = vec4(lit, 1.0);
     } else {
         fragColor = vec4(0.035, 0.035, 0.043, 1.0);
@@ -359,6 +406,7 @@ export function renderWebGl2VolumeRaymarching(
 			gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
 			const max3D = gl.getParameter(gl.MAX_3D_TEXTURE_SIZE) || 512;
+			const targetLimit = Math.min(max3D, 512);
 			const maxDim = Math.max(dim.width, Math.max(dim.height, dim.depth));
 			if (!data) return;
 			let uploadData: Int16Array = data;
@@ -366,8 +414,8 @@ export function renderWebGl2VolumeRaymarching(
 			let uploadH = dim.height;
 			let uploadD = dim.depth;
 
-			if (maxDim > max3D) {
-				const factor = Math.ceil(maxDim / max3D);
+			if (maxDim > targetLimit) {
+				const factor = Math.ceil(maxDim / targetLimit);
 				const downsampled = downsampleVolumeData(data, dim, factor);
 				uploadData = downsampled.data;
 				uploadW = downsampled.width;
@@ -401,7 +449,7 @@ export function renderWebGl2VolumeRaymarching(
 		}
 	}
 
-	const preset = CBCT_VOLUME_3D_PRESETS.find((p) => p.id === activePreset) ?? CBCT_VOLUME_3D_PRESETS[0]!;
+	const preset = getVolume3DPreset(activePreset);
 	const rotMat = computeVolume3DRotationMatrix(yaw, pitch);
 
 	gl.viewport(0, 0, width, height);
@@ -459,7 +507,7 @@ export function renderWebGl2VolumeRaymarching(
 		clipping.clipMax[2],
 	);
 	gl.uniform1i(uniforms.refineSteps, isInteracting ? 0 : 4);
-	gl.uniform1i(uniforms.maxSteps, isInteracting ? 45 : 160);
+	gl.uniform1i(uniforms.maxSteps, isInteracting ? 64 : 256);
 
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }

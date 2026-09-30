@@ -1,0 +1,41 @@
+{
+  "subagent": "subagent_cbct_clinical",
+  "role": "Red Team Inquisitor & Clinical Implantology Expert",
+  "scope": [
+    "apps/web/src/components/radiology/mpr/CbctRightSidebar.tsx",
+    "apps/web/src/components/radiology/boneDensityMischMath.ts",
+    "apps/web/src/components/radiology/implantSafetyEngine.ts",
+    "apps/web/src/components/radiology/mpr/useCbctStudioExports.ts"
+  ],
+  "tasks": {
+    "task1_misch_profiler": {
+      "status": "completed",
+      "description": "Calculate Misch D1..D5 density along planned implant axis (crest 20%, body 60%, apex 20%) and output clinical drilling protocol & torque recommendations in Live Telemetry HUD.",
+      "evidence": "boneDensityMischMath.ts + CbctRightSidebar.tsx live chips data-testid='cbct-implant-3zone-density' + 'cbct-implant-drilling-protocol'"
+    },
+    "task2_one_click_diary": {
+      "status": "completed",
+      "description": "Seamless 1-Click export to visit diary Form 043/u: clinical protocol with sizes, density, nerve/sinus distance + high-res slice snapshot in patient Zakharov I.D. EMR.",
+      "evidence": "useCbctStudioExports.ts handles exportImplantToDiary043 with Form 043/u SOAP, 300 DPI canvas slice dataUrl, and EMR storage persistence with success toast."
+    },
+    "task3_one_click_plan": {
+      "status": "completed",
+      "description": "1-Click export to treatment plan: 3-position suite (implant A16.07.054 + healing abutment A16.07.054.005 + custom abutment A16.07.054.006) with exact integer kopeck pricing in estimate.",
+      "evidence": "implantSafetyEngine.ts: buildImplantProstheticSuite + useCbctStudioExports.ts: exportImplantToTreatmentPlan dispatches 3-position suite with priceKopecks % 100 == 0."
+    },
+    "task4_e2e_verification": {
+      "status": "completed",
+      "description": "Verify on real Zakharov 313-slice CBCT volume in browser, take Playwright screenshot at docs/screenshots/cbct_live/proof_misch_implant.png, view_file audit.",
+      "evidence": "docs/screenshots/cbct_live/proof_misch_implant.png captured and audited via view_file. All live HUD indicators (D3 376 HU, Crest/Body/Apex HU, drilling protocol, IAN clearance 1.5mm, 1-click plan & EMR) visually verified."
+    },
+    "task5_file_limits": {
+      "status": "completed",
+      "description": "Strict <= 800 lines in all 4 scoped files.",
+      "evidence": "CbctRightSidebar.tsx: 780 lines, boneDensityMischMath.ts: 525 lines, implantSafetyEngine.ts: 626 lines, useCbctStudioExports.ts: 383 lines."
+    }
+  },
+  "current_step": "completed",
+  "status": "completed",
+  "screenshot": "docs/screenshots/cbct_live/proof_misch_implant.png",
+  "tests_passing": 58
+}

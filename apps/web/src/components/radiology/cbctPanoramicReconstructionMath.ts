@@ -21,6 +21,7 @@ import {
 	calculateArchTangentsAndNormals,
 } from "./cbctArchSplineMath";
 import { findOcclusalZPlane } from "./cbctAutoArchEngine";
+import { getGlobalWebGl2PanoramicEngine } from "./cbctPanoramicWebGlEngine";
 
 export interface PanoramicReconstructionResult {
 	readonly widthPx: number;

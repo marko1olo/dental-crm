@@ -1,0 +1,43 @@
+{
+  "subagent": "fdi-tooth-snapping-and-navigation-inquisitor",
+  "status": "completed",
+  "started_at": "2026-10-01T00:20:00Z",
+  "completed_at": "2026-10-01T00:41:00Z",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md constitutional routines",
+    "Inspect CbctViewportsRuler.tsx, cbctPanoramicNavigationMath.ts, and useCbctInteractionHandlers.ts",
+    "Implement findCrossSectionAndPositionByFdi and bidirectional FDI sync in cbctPanoramicNavigationMath.ts with center-slice selection and default anchor fallbacks",
+    "Decompose CbctViewportsRuler.tsx (was 890 lines) down to 559 lines by extracting CbctQuickWlPresets.tsx (302 lines)",
+    "Decompose useCbctInteractionHandlers.ts (was 887 lines) down to 578 lines by extracting cbctInteractionHelpers.ts (118 lines) and useCbctCurvedViewportHandlers.ts (309 lines)",
+    "Decompose CbctMprViewportsGrid.tsx (was 814 lines) down to 754 lines by extracting CbctEmptyVolumeDropzone.tsx (99 lines)",
+    "Implement CbctPanoramicFdiRibbon.tsx (178 lines) with 32 FDI buttons, [Н/Ч | В/Ч] tabs, active tooth chip, and close button",
+    "Enforce clutter minimization mandate: FDI ribbon is OFF by default, toggleable via [FDI] button in panoramic quadrant toolbar",
+    "Pass handleSelectTooth and archCurve into CbctMprViewportsGrid from CbctMprImplantStudioModal (730 lines)",
+    "Execute unit tests: 23/23 tests pass in 169ms (node:test)",
+    "Execute Playwright real-browser proof against 312 slices of Zakharov CBCT study in Chromium with WebGL2 hardware acceleration",
+    "Verify mandate: ribbon is off by default, click [FDI] toggle, select Mandible tab, click Tooth 46",
+    "Verify crosshair re-centering, slice index update, toast notification 'Навигация к зубу FDI #46 (Срез #16)', active button highlight, and purple active chip #46",
+    "Capture high-resolution screenshot to docs/screenshots/cbct_live/proof_fdi_navigation.png (395.4 KB) and inspect via view_file",
+    "Audit all created/edited files against line ceiling: all files strictly <= 800 lines"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Centering slice calculation: Simple findIndex selected the peripheral entry slice of the tooth region. Filtering all matching indices and selecting the one closest to the arch anchor coordinate (or the median index) centers the crosshair directly over the pulp chamber and root apex.",
+    "Clutter mandate invariant: Clinicians require an unobstructed panoramic view. Placing the ribbon in a dedicated 28px strip docked above the panoramic viewport, turned off by default, and accessible via the compact [FDI] toolbar button maintains clinical purity.",
+    "Z-Index collision avoidance: The clinical HUD badge sits at top-1.5 left-1.5 with z-20. Positioning the mode switcher at top-9 left-2 with z-30 eliminates pointer event interception and gives clean visual separation.",
+    "Volume loading efficiency: 312 slices (600x600, 112,320,000 voxels) are assembled and loaded in ~1.6s in browser memory, with seamless WebGL2 3D texture integration."
+  ],
+  "file_line_counts": {
+    "CbctViewportsRuler.tsx": 559,
+    "CbctQuickWlPresets.tsx": 302,
+    "cbctInteractionHelpers.ts": 118,
+    "useCbctCurvedViewportHandlers.ts": 309,
+    "useCbctInteractionHandlers.ts": 578,
+    "cbctPanoramicNavigationMath.ts": 287,
+    "CbctPanoramicFdiRibbon.tsx": 178,
+    "CbctEmptyVolumeDropzone.tsx": 99,
+    "CbctMprViewportsGrid.tsx": 754,
+    "CbctMprImplantStudioModal.tsx": 730
+  },
+  "screenshot_proof": "docs/screenshots/cbct_live/proof_fdi_navigation.png"
+}

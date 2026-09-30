@@ -14,16 +14,6 @@ import { extractArchCrossSectionSeries, type CrossSectionSeriesOptions, type Cro
 import type { DentalArchCurve } from "../cbctArchSplineMath";
 import type { CbctWorkerInboundMessage, CbctWorkerOutboundMessage, DecodeDicomSliceTask, GenerateProgressiveLodPayload } from "./cbctSliceWorker";
 
-export type {
-	DecodeDicomSliceTask,
-	GenerateProgressiveLodPayload,
-	DecodedSliceResult,
-	WorkerRenderSliceOptions,
-	WorkerRenderSliceParams,
-	WorkerRenderAllPlanesParams,
-	WorkerCrossSectionSeriesParams,
-	CbctWorkerBridgeOptions,
-};
 import type {
 	DecodedSliceResult,
 	WorkerRenderSliceOptions,
@@ -37,6 +27,17 @@ import type {
 	PendingDecodeRequest,
 	PendingLodRequest,
 } from "./cbctWorkerBridgeTypes";
+
+export type {
+	DecodeDicomSliceTask,
+	GenerateProgressiveLodPayload,
+	DecodedSliceResult,
+	WorkerRenderSliceOptions,
+	WorkerRenderSliceParams,
+	WorkerRenderAllPlanesParams,
+	WorkerCrossSectionSeriesParams,
+	CbctWorkerBridgeOptions,
+};
 
 export class CbctWorkerBridge {
 	private worker: Worker | null = null;

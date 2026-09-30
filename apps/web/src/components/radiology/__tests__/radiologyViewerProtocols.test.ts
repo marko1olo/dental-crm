@@ -437,7 +437,7 @@ test("CBCT Partners: Диагностические центры (Пикассо
 test("formatCbctReferralSummary: Формирует структурированное клиническое резюме для 043/у", () => {
 	const fullJaws = CBCT_SCAN_FOV_PROTOCOLS[0] as CbctScanFovProtocol;
 	const implantGoal = CBCT_DIAGNOSTIC_GOALS[0] as CbctDiagnosticGoal;
-	const partner = CBCT_REFERRAL_PARTNERS[0];
+	const partner = CBCT_REFERRAL_PARTNERS[0]!;
 
 	const summary = formatCbctReferralSummary({
 		referralNumber: "НАПР-КЛКТ-2026-TEST",
