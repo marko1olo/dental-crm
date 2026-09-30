@@ -51,7 +51,13 @@ describe("CLIN-01: Exact Kopeck Money & Zero Bill Floor Elimination (Mandate 8b)
 			__dirname,
 			"../../../../src/components/odontogram/OdontogramModule.tsx",
 		);
-		const content = fs.readFileSync(modulePath, "utf-8");
+		const modalsPath = path.resolve(
+			__dirname,
+			"../../../../src/components/odontogram/OdontogramModalsLayer.tsx",
+		);
+		const content =
+			fs.readFileSync(modulePath, "utf-8") +
+			(fs.existsSync(modalsPath) ? fs.readFileSync(modalsPath, "utf-8") : "");
 
 		assert.strictEqual(
 			content.includes("Math.max(100, Math.round(liveGrossTotalRub * 100))"),

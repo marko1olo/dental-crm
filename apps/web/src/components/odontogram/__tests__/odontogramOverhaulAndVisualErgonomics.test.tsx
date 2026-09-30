@@ -159,7 +159,14 @@ describe("CLIN-05: 3-Tier Architecture & Elimination of Giant Checkout Ribbon (M
 			__dirname,
 			"../../../../src/components/odontogram/OdontogramViewContainer.tsx",
 		);
-		const content = fs.readFileSync(modulePath, "utf-8") + fs.readFileSync(containerPath, "utf-8");
+		const toolbarPath = path.resolve(
+			__dirname,
+			"../../../../src/components/odontogram/OdontogramToolbar.tsx",
+		);
+		const content =
+			fs.readFileSync(modulePath, "utf-8") +
+			fs.readFileSync(containerPath, "utf-8") +
+			(fs.existsSync(toolbarPath) ? fs.readFileSync(toolbarPath, "utf-8") : "");
 
 		assert.ok(
 			content.includes("data-testid=\"odontogram-compact-bill-badge\""),
@@ -178,7 +185,13 @@ describe("CLIN-03: Radial Menu Height Calibration & 7 Compact Surface Row", () =
 			__dirname,
 			"../../../../src/components/odontogram/OdontogramModule.tsx",
 		);
-		const content = fs.readFileSync(modulePath, "utf-8");
+		const menuPath = path.resolve(
+			__dirname,
+			"../../../../src/components/odontogram/ToothActionMenuPortal.tsx",
+		);
+		const content =
+			fs.readFileSync(modulePath, "utf-8") +
+			(fs.existsSync(menuPath) ? fs.readFileSync(menuPath, "utf-8") : "");
 
 		const requiredSurfaces = ["O", "M", "D", "V", "L", "К", "А"];
 		for (const surf of requiredSurfaces) {
@@ -230,7 +243,15 @@ describe("CLIN-07: Fast Hover HUD (150ms) and Quick Action Presets (Mandates 8d,
 			__dirname,
 			"../../../../src/components/odontogram/AnatomicalSvgOdontogram.tsx",
 		);
-		const content = fs.readFileSync(svgOdontogramPath, "utf-8");
+		const toothWrapperPath = path.resolve(
+			__dirname,
+			"../../../../src/components/odontogram/ToothWrapper.tsx",
+		);
+		const content =
+			fs.readFileSync(svgOdontogramPath, "utf-8") +
+			(fs.existsSync(toothWrapperPath)
+				? fs.readFileSync(toothWrapperPath, "utf-8")
+				: "");
 
 		// 150ms Hover HUD transition
 		assert.ok(
