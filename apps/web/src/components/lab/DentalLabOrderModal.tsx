@@ -6,7 +6,6 @@ import {
 	Copy,
 	FlaskConical,
 	Loader2,
-	Palette,
 	Printer,
 	QrCode,
 	Send,
@@ -16,6 +15,11 @@ import {
 	Zap,
 	Clock,
 } from "lucide-react";
+import {
+	ToothShadeGuide,
+	DentalBridge,
+	DentalLabOrder,
+} from "../icons/DentalIcons";
 import "./labOrders.css";
 import {
 	type DentalLabOrderModalProps,
@@ -125,10 +129,10 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 				{/* ─── NAVIGATION TABS (Strictly 1 Clean Toolbar Row 32–36px / Hick's Law) ─── */}
 				<div className="flex items-center gap-1.5 px-3 sm:px-6 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/60 text-xs shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">
 					{[
-						{ id: "main", label: "1. Зубы и Конструкция", icon: FlaskConical, fullTitle: "1. Зубная формула и Конструкция" },
-						{ id: "shades", label: "2. Расцветка VITA", icon: Palette, fullTitle: "2. Расцветка VITA и Культя" },
+						{ id: "main", label: "1. Зубы и Конструкция", icon: DentalBridge, fullTitle: "1. Зубная формула и Конструкция" },
+						{ id: "shades", label: "2. Расцветка VITA", icon: ToothShadeGuide, fullTitle: "2. Расцветка VITA и Культя" },
 						{ id: "stages", label: "3. Этапы и Сроки", icon: Clock, fullTitle: "3. Этапы ЗТЛ и Примерки" },
-						{ id: "print", label: "4. Бланк ГОСТ", icon: QrCode, fullTitle: "4. Бланк наряда (ГОСТ) и QR" },
+						{ id: "print", label: "4. Бланк ГОСТ", icon: DentalLabOrder, fullTitle: "4. Бланк наряда (ГОСТ) и QR" },
 					].map((tab) => {
 						const Icon = tab.icon;
 						const isActive = form.activeTab === tab.id;

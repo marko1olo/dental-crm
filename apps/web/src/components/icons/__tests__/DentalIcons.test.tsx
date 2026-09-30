@@ -214,15 +214,23 @@ test("DentalIcons: Red Team visual polish invariants for top-5 audited icons", (
     "NerveCanal must have anatomical mandible bone contour"
   );
 
-  // 8. DentalHandpiece: ergonomic handle + rotor head + diamond bur
+  // 8. DentalHandpiece: contra-angle neck + miniature rotor head + push-button cap + FG diamond bur
   const handpieceHtml = renderToStaticMarkup(React.createElement(DentalHandpiece));
   assert.ok(
-    handpieceHtml.includes('x="17" y="5.5" width="4.5" height="6.5"'),
+    handpieceHtml.includes('x="16" y="5.5" width="5.5" height="6.5"'),
     "DentalHandpiece must have miniature cylindrical rotor head"
   );
   assert.ok(
-    handpieceHtml.includes('x1="19.25" y1="12" x2="19.25" y2="19.5"'),
-    "DentalHandpiece must have diamond bur protruding downwards"
+    handpieceHtml.includes('d="M17.25 5.5c0-1.2.7-2 1.5-2s1.5.8 1.5 2"'),
+    "DentalHandpiece must have push-button chuck dome cap"
+  );
+  assert.ok(
+    handpieceHtml.includes('x1="18.75" y1="12" x2="18.75" y2="14.5"'),
+    "DentalHandpiece must have FG bur shank"
+  );
+  assert.ok(
+    handpieceHtml.includes('x="18" y="14.5" width="1.5" height="6"'),
+    "DentalHandpiece must have cylindrical FG diamond bur head"
   );
 
   // 9. UltrasonicScaler: straight handpiece + sickle scaler tip + vibration waves
@@ -236,11 +244,19 @@ test("DentalIcons: Red Team visual polish invariants for top-5 audited icons", (
     "UltrasonicScaler must have ultrasonic vibration waves at working tip"
   );
 
-  // 10. DentalVeneer: incisor prep core + closely fitting veneer shell
+  // 10. DentalVeneer: sagittal incisor with chamfer shelf + adhering ceramic veneer shell
   const veneerHtml = renderToStaticMarkup(React.createElement(DentalVeneer));
   assert.ok(
-    veneerHtml.includes('d="M14.5 9.5c.5 3.5.5 8-.5 12-1 .5-2 .5-2.5 0"'),
-    "DentalVeneer must have closely fitting ceramic veneer shell"
+    veneerHtml.includes('d="M9 21.5 C7 19 5.5 16 5 13.5'),
+    "DentalVeneer must have anatomical sagittal incisor tooth core"
+  );
+  assert.ok(
+    veneerHtml.includes('d="M14 14.5 c1.8-3.5 1.8-8.5-.5-12 H9.5"'),
+    "DentalVeneer must have adhering ceramic veneer shell over facial surface"
+  );
+  assert.ok(
+    veneerHtml.includes('stroke-dasharray="1 1.5"'),
+    "DentalVeneer must contain internal pulp canal"
   );
 
   // 11. ToothIncisor: smooth single-path central incisor with single conical root
@@ -250,15 +266,23 @@ test("DentalIcons: Red Team visual polish invariants for top-5 audited icons", (
     "ToothIncisor must have smooth anatomical central incisor contour"
   );
 
-  // 12. CuringLight: wand handle + curved optical fiber + protective glare shield
+  // 12. CuringLight: pen wand handle + button + shield disk + curved guide + focused rays
   const curingHtml = renderToStaticMarkup(React.createElement(CuringLight));
   assert.ok(
-    curingHtml.includes('cx="11" cy="11" rx="4" ry="2"'),
-    "CuringLight must have protective glare shield on guide"
+    curingHtml.includes('x1="7.5" y1="10.5" x2="12.5" y2="15.5"'),
+    "CuringLight must have protective glare shield disk on guide"
   );
   assert.ok(
-    curingHtml.includes('x="3.5" y="15.5" width="4" height="8"'),
-    "CuringLight must have ergonomic wand handle"
+    curingHtml.includes('d="M3 18c-.8.8-.8 1.8 0 2.5s1.8.8 2.5 0"'),
+    "CuringLight must have ergonomic pen wand handle"
+  );
+  assert.ok(
+    curingHtml.includes('cx="6.5" cy="16.5" r=".8"'),
+    "CuringLight must have power button on wand handle"
+  );
+  assert.ok(
+    curingHtml.includes('x1="19.5" y1="12" x2="22.5" y2="14"'),
+    "CuringLight must have focused curing rays"
   );
 });
 

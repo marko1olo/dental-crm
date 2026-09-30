@@ -5,7 +5,6 @@ import {
 	Calendar,
 	CalendarCheck,
 	Camera,
-	FileText,
 	Layers,
 	Link,
 	MessageSquare,
@@ -13,6 +12,7 @@ import {
 	Printer,
 	RotateCcw,
 } from "lucide-react";
+import { DentalLabOrder } from "../icons/DentalIcons";
 import { money } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 import type { DentalLabOrderData } from "./DentalLabOrderModal";
@@ -311,7 +311,7 @@ export function LabOrderCard({
 									}}
 									className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer"
 								>
-									<FileText className="w-3.5 h-3.5 text-indigo-500" />
+									<DentalLabOrder className="w-3.5 h-3.5 text-indigo-500" />
 									<span>Подробные параметры</span>
 								</button>
 								{order.secureToken && (

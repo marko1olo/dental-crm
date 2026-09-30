@@ -1,5 +1,6 @@
 import React from "react";
-import { Check, Palette, Sparkles, Layers, Sliders } from "lucide-react";
+import { Check, Sparkles, Layers, Sliders } from "lucide-react";
+import { ToothShadeGuide } from "../icons/DentalIcons";
 import {
 	VITA_CLASSICAL_SHADES,
 	VITA_3D_MASTER_SHADES,
@@ -365,7 +366,7 @@ export function DentalLabShadeSelector({
 			>
 				<div className="flex items-center justify-between flex-wrap gap-2">
 					<div className="flex items-center gap-2">
-						<Palette className="w-5 h-5 text-[var(--teal)] shrink-0" />
+						<ToothShadeGuide className="w-5 h-5 text-[var(--teal)] shrink-0" />
 						<div>
 							<h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 m-0">
 								3-Зонная стратификация цвета (Cervical / Body / Incisal)

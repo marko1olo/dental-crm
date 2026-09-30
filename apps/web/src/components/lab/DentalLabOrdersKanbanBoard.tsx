@@ -9,7 +9,6 @@ import {
 	CheckCircle2,
 	Eye,
 	Building2,
-	FileText,
 	Truck,
 	RotateCcw,
 	Send,
@@ -19,6 +18,7 @@ import {
 	Camera,
 	MessageSquare,
 } from "lucide-react";
+import { DentalLabOrder } from "../icons/DentalIcons";
 import {
 	ORTHOPEDIC_WORK_TYPES,
 	type LabWorkflowStatus,
@@ -79,7 +79,7 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 						<div className="ztl-column-header">
 							<div className="ztl-column-title-wrap">
 								<span className="ztl-column-icon">
-									{stageId === "draft" && <FileText size={16} />}
+									{stageId === "draft" && <DentalLabOrder size={16} />}
 									{stageId === "sent_to_lab" && <Truck size={16} />}
 									{stageId === "fitting_scheduled" && <Calendar size={16} />}
 									{stageId === "installed_completed" && <CheckCircle2 size={16} />}

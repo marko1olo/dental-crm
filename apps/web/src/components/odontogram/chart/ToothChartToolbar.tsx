@@ -1,6 +1,12 @@
 import type React from "react";
 import { memo } from "react";
-import { Zap, Sparkles } from "lucide-react";
+import {
+	ToothMolar,
+	ToothCaries,
+	ToothExtractForceps,
+	ToothIncisor,
+	UltrasonicScaler,
+} from "../../icons/DentalIcons";
 import {
 	type OdontogramQuadrantId,
 	getAdjacentQuadrant,
@@ -139,7 +145,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						data-testid="mark-intact-dentition-btn"
 						data-action="tooth-chart-mark-intact-btn"
 					>
-						<Zap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<ToothMolar size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>Санирован</span>
 					</button>
 
@@ -151,7 +157,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						data-testid="tooth-chart-mark-pro-hygiene-btn"
 						data-action="tooth-chart-mark-pro-hygiene-btn"
 					>
-						<Sparkles size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<UltrasonicScaler size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Профгигиена</span>
 					</button>
 
@@ -163,7 +169,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						data-testid="tooth-chart-apply-fast-caries-btn"
 						data-action="tooth-chart-apply-fast-caries-btn"
 					>
-						<Zap size={13} className="text-blue-600 dark:text-blue-400 shrink-0" />
+						<ToothCaries size={13} className="text-blue-600 dark:text-blue-400 shrink-0" />
 						<span>Пломба K02.1</span>
 					</button>
 
@@ -176,7 +182,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 							data-testid="mark-wisdom-missing-btn"
 							data-action="tooth-chart-mark-wisdom-missing-btn"
 						>
-							<Zap size={13} className="text-zinc-500 shrink-0" />
+							<ToothExtractForceps size={13} className="text-zinc-500 shrink-0" />
 							<span>Без 8-ок</span>
 						</button>
 					)}
@@ -189,7 +195,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 							title="1-клик Вторичная адентия моляров: зубы 16, 26, 36, 46 моментально помечаются удаленными"
 							data-testid="mark-molars-missing-btn"
 						>
-							<Zap size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<ToothExtractForceps size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
 							<span>Без моляров</span>
 						</button>
 					)}
@@ -201,7 +207,7 @@ export const ToothChartToolbar: React.FC<ToothChartToolbarProps> = memo(({
 						title="1-клик Интактный фронт: зубы 13–23, 33–43 моментально помечаются здоровыми"
 						data-testid="mark-front-intact-btn"
 					>
-						<Zap size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<ToothIncisor size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span>Интактный фронт</span>
 					</button>
 				</div>

@@ -11,7 +11,8 @@
 
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Activity, Check, Compass, Layers, Shield, X } from "lucide-react";
+import { Check, Compass, Layers, Shield, X } from "lucide-react";
+import { DentalImplant, NerveCanal } from "../icons/DentalIcons";
 import type { CbctVoxelVolume, Point3D } from "./cbctMprMath";
 import {
 	DEFAULT_SAFETY_CORRIDOR_MM,
@@ -57,6 +58,7 @@ export interface CbctImplantModalProps {
 export const CbctImplantModal: React.FC<CbctImplantModalProps> = ({
 	isOpen,
 	onClose,
+	patientId = "default-patient",
 	patientName = "Пациент",
 	toothFdi = 46,
 	nerveCanalCenter = null,
@@ -173,6 +175,7 @@ export const CbctImplantModal: React.FC<CbctImplantModalProps> = ({
 				toothFdi,
 				implantSpec: currentImplant,
 				angulationDeg,
+				meanHU: null,
 				nerveClearanceMm: clearance,
 				isNerveWarning: nerveInspection.isWarning,
 				isNerveDanger: nerveInspection.isDanger,
@@ -213,6 +216,7 @@ export const CbctImplantModal: React.FC<CbctImplantModalProps> = ({
 				toothFdi,
 				implantSpec: currentImplant,
 				angulationDeg,
+				meanHU: null,
 				nerveClearanceMm: clearance,
 				isNerveWarning: nerveInspection.isWarning,
 				isNerveDanger: nerveInspection.isDanger,
@@ -252,7 +256,7 @@ export const CbctImplantModal: React.FC<CbctImplantModalProps> = ({
 				<div className="flex items-center justify-between px-4 py-3 bg-zinc-900/90 border-b border-zinc-800">
 					<div className="flex items-center gap-2">
 						<div className="p-1.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-							<Compass className="w-4 h-4" />
+							<DentalImplant className="w-4 h-4" />
 						</div>
 						<div>
 							<h2 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
@@ -545,7 +549,7 @@ export const CbctImplantModal: React.FC<CbctImplantModalProps> = ({
 							data-testid="cbct-nerve-telemetry-banner"
 						>
 							<div className="flex items-center gap-2">
-								<Activity className="w-4 h-4 text-cyan-400" />
+								<NerveCanal className="w-4 h-4 text-cyan-400" />
 								<div className="flex flex-col">
 									<span className="font-semibold">Нижнечелюстной канал (N. alveolaris inferior):</span>
 									<span className="font-mono font-bold text-sm">

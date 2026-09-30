@@ -1,19 +1,25 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-	Activity,
 	AlertTriangle,
 	Coins,
-	Crown,
-	Flame,
-	Hammer,
 	MoreHorizontal,
 	Sparkles,
 	Trash2,
 	Wrench,
 	X,
-	Zap,
 } from "lucide-react";
+import {
+	ToothMolar,
+	ToothCaries,
+	ToothPulpitis,
+	EndoFileCanal,
+	DentalCrown,
+	DentalImplant,
+	ToothExtractForceps,
+	DentalHandpiece,
+	ToothDeciduous,
+} from "../icons/DentalIcons";
 import { getToothStateFromHotkey } from "./ClassicGostOdontogram";
 import { type ToothState, TOOTH_STATE_LABELS } from "./ToothChart";
 import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
@@ -155,7 +161,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Кариес молочного зуба (C)",
 					shortLabel: "Кариес (C)",
 					state: "Caries",
-					icon: <Zap size={16} className="text-amber-200" />,
+					icon: <ToothCaries size={16} className="text-amber-200" />,
 					color: "from-amber-600 to-amber-800",
 					bgGradient: "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
 					hotkey: "К",
@@ -165,7 +171,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Пульпотомия / Пульпит (P)",
 					shortLabel: "Пульпит (P)",
 					state: "Pulpitis",
-					icon: <Flame size={16} className="text-rose-200" />,
+					icon: <ToothPulpitis size={16} className="text-rose-200" />,
 					color: "from-red-500 to-rose-700",
 					bgGradient: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
 					hotkey: "Ф",
@@ -175,7 +181,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Периодонтит (Pt)",
 					shortLabel: "Периодонтит (Pt)",
 					state: "Periodontitis",
-					icon: <Flame size={16} className="text-orange-200" />,
+					icon: <EndoFileCanal size={16} className="text-orange-200" />,
 					color: "from-orange-500 to-rose-600",
 					bgGradient: "linear-gradient(135deg, #ea580c 0%, #c2410c 100%)",
 					hotkey: "Е",
@@ -195,7 +201,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Коронка NuSmile / 3M (Cr)",
 					shortLabel: "Коронка (Cr)",
 					state: "Crown",
-					icon: <Crown size={16} className="text-emerald-200" />,
+					icon: <DentalCrown size={16} className="text-emerald-200" />,
 					color: "from-emerald-600 to-emerald-800",
 					bgGradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
 					hotkey: "Ц",
@@ -205,7 +211,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Имплант / Герметизация (Imp)",
 					shortLabel: "Имплант (Imp)",
 					state: "Implant",
-					icon: <Hammer size={16} className="text-slate-200" />,
+					icon: <DentalImplant size={16} className="text-slate-200" />,
 					color: "from-slate-600 to-slate-800",
 					bgGradient: "linear-gradient(135deg, #64748b 0%, #334155 100%)",
 					hotkey: "И",
@@ -225,7 +231,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Здоров (0)",
 					shortLabel: "Здоров (0)",
 					state: "Healthy",
-					icon: <Sparkles size={16} className="text-emerald-200" />,
+					icon: <ToothDeciduous size={16} className="text-emerald-200" />,
 					color: "from-emerald-500 to-teal-700",
 					bgGradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
 					hotkey: "З",
@@ -237,7 +243,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Кариес (C)",
 					shortLabel: "Кариес (C)",
 					state: "Caries",
-					icon: <Zap size={16} className="text-amber-200" />,
+					icon: <ToothCaries size={16} className="text-amber-200" />,
 					color: "from-amber-600 to-amber-800",
 					bgGradient: "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
 					hotkey: "К",
@@ -247,7 +253,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Пульпит (P)",
 					shortLabel: "Пульпит (P)",
 					state: "Pulpitis",
-					icon: <Flame size={16} className="text-rose-200" />,
+					icon: <ToothPulpitis size={16} className="text-rose-200" />,
 					color: "from-red-500 to-rose-700",
 					bgGradient: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
 					hotkey: "Ф",
@@ -257,7 +263,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Периодонтит (Pt)",
 					shortLabel: "Периодонтит (Pt)",
 					state: "Periodontitis",
-					icon: <Flame size={16} className="text-orange-200" />,
+					icon: <EndoFileCanal size={16} className="text-orange-200" />,
 					color: "from-orange-500 to-rose-600",
 					bgGradient: "linear-gradient(135deg, #ea580c 0%, #c2410c 100%)",
 					hotkey: "Е",
@@ -277,7 +283,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Коронка (Cr)",
 					shortLabel: "Коронка (Cr)",
 					state: "Crown",
-					icon: <Crown size={16} className="text-emerald-200" />,
+					icon: <DentalCrown size={16} className="text-emerald-200" />,
 					color: "from-emerald-600 to-emerald-800",
 					bgGradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
 					hotkey: "Ц",
@@ -287,7 +293,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Имплант (Imp)",
 					shortLabel: "Имплант (Imp)",
 					state: "Implant",
-					icon: <Hammer size={16} className="text-slate-200" />,
+					icon: <DentalImplant size={16} className="text-slate-200" />,
 					color: "from-slate-600 to-slate-800",
 					bgGradient: "linear-gradient(135deg, #64748b 0%, #334155 100%)",
 					hotkey: "И",
@@ -317,7 +323,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Разрушенный корень (R)",
 					shortLabel: "Корень (R)",
 					state: "Root",
-					icon: <Hammer size={16} className="text-rose-300" />,
+					icon: <ToothExtractForceps size={16} className="text-rose-300" />,
 					color: "from-rose-800 to-rose-950",
 					bgGradient: "linear-gradient(135deg, #9f1239 0%, #4c0519 100%)",
 					hotkey: "R",
@@ -327,7 +333,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					label: "Здоров (0)",
 					shortLabel: "Здоров (0)",
 					state: "Healthy",
-					icon: <Sparkles size={16} className="text-emerald-200" />,
+					icon: <ToothMolar size={16} className="text-emerald-200" />,
 					color: "from-emerald-500 to-teal-700",
 					bgGradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
 					hotkey: "З",
@@ -808,7 +814,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									}}
 									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
 								>
-									<Zap size={18} />
+									<DentalHandpiece size={18} />
 									<span className="whitespace-nowrap">Терапия</span>
 								</button>
 							)}
@@ -834,7 +840,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									}}
 									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center gap-2 transition-colors cursor-pointer"
 								>
-									<Activity size={18} />
+									<EndoFileCanal size={18} />
 									<span className="whitespace-nowrap">Журнал каналов</span>
 								</button>
 							)}
@@ -856,7 +862,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											}}
 											className="w-full min-h-[44px] px-3 py-2 rounded-lg hover:bg-rose-500/15 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer text-left"
 										>
-											<Activity size={16} className="shrink-0" />
+											<EndoFileCanal size={16} className="shrink-0" />
 											<span>Журнал каналов (Эндо)</span>
 										</button>
 									</div>
@@ -1298,7 +1304,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									}}
 									className="min-h-[36px] text-xs font-black text-teal-700 dark:text-teal-300 hover:bg-teal-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
 								>
-									<Zap size={14} />
+									<DentalHandpiece size={14} />
 									<span>Терапия</span>
 								</button>
 							)}
@@ -1336,7 +1342,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 									}}
 									className="min-h-[36px] text-xs font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
 								>
-									<Activity size={14} />
+									<EndoFileCanal size={14} />
 									<span>Журнал каналов</span>
 								</button>
 							)}
@@ -1357,7 +1363,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											}}
 											className="w-full min-h-[32px] px-2.5 py-1 rounded-lg hover:bg-rose-500/15 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer text-left border-0 bg-transparent"
 										>
-											<Activity size={14} className="shrink-0" />
+											<EndoFileCanal size={14} className="shrink-0" />
 											<span>Журнал каналов</span>
 										</button>
 									</div>

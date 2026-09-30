@@ -33,9 +33,13 @@ import {
 	Spline,
 	SunMoon,
 	X,
-	Zap,
 	ZoomIn,
 } from "lucide-react";
+import {
+	NerveCanal,
+	EndoFileCanal,
+	DentalPanoramicArch,
+} from "../icons/DentalIcons";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SlabProjectionMode } from "./cbctMprMath";
 import { CbctSlabFlyout } from "./CbctSlabFlyout";
@@ -640,7 +644,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						aria-label="Канал IAN"
 						data-testid="cbct-tool-nerve"
 					>
-						<Zap className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
+						<NerveCanal className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<DockTooltip title="Канал IAN" subtitle="Трассировка нерва (2мм)" shortcut="N" />
 				</div>
@@ -658,7 +662,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						aria-label="Эндо-калипер канала"
 						data-testid="cbct-tool-endo-canal"
 					>
-						<Spline className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-teal-400 shrink-0" />
+						<EndoFileCanal className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-teal-400 shrink-0" />
 					</button>
 					<DockTooltip
 						title="Канал (Эндо-калипер)"
@@ -679,7 +683,7 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 							aria-label="Дуга ОПТГ"
 							data-testid="cbct-left-dock-toggle-arch"
 						>
-							<Spline className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-purple-400 shrink-0" />
+							<DentalPanoramicArch className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-purple-400 shrink-0" />
 						</button>
 						<DockTooltip title="Дуга ОПТГ" subtitle={showDentalArch ? "Включена" : "Выключена"} />
 					</div>

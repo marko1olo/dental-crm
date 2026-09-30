@@ -7,106 +7,36 @@
  * fallback to synchronous extraction in Node/SSR/CSP-restricted environments.
  */
 
-import type {
-	CbctVoxelVolume,
-	MprPlane,
-	MprSliceExtractionResult,
-	Point3D,
-	SlabProjectionMode,
-} from "../cbctMprMath";
+import type { CbctVoxelVolume, MprPlane, MprSliceExtractionResult, Point3D, SlabProjectionMode } from "../cbctMprMath";
 import type { ObliqueRotationAngles } from "../cbctObliqueMatrixMath";
-import {
-	extractObliqueMprSlice,
-	type ObliqueSliceRenderOptions,
-} from "../cbctObliqueSliceMath";
-import {
-	extractArchCrossSectionSeries,
-	type CrossSectionSeriesOptions,
-	type CrossSectionSliceData,
-} from "../cbctCrossSectionResliceMath";
+import { extractObliqueMprSlice, type ObliqueSliceRenderOptions } from "../cbctObliqueSliceMath";
+import { extractArchCrossSectionSeries, type CrossSectionSeriesOptions, type CrossSectionSliceData } from "../cbctCrossSectionResliceMath";
 import type { DentalArchCurve } from "../cbctArchSplineMath";
-import type {
-	CbctWorkerInboundMessage,
-	CbctWorkerOutboundMessage,
+import type { CbctWorkerInboundMessage, CbctWorkerOutboundMessage, DecodeDicomSliceTask, GenerateProgressiveLodPayload } from "./cbctSliceWorker";
+
+export type {
 	DecodeDicomSliceTask,
 	GenerateProgressiveLodPayload,
-} from "./cbctSliceWorker";
-
-export type { DecodeDicomSliceTask, GenerateProgressiveLodPayload };
-
-export interface DecodedSliceResult {
-	sliceIndex: number;
-	data: Int16Array;
-	minHU: number;
-	maxHU: number;
-}
-
-export interface WorkerRenderSliceOptions {
-	windowWidth: number;
-	windowLevel: number;
-	invert?: boolean | undefined;
-	slabMode?: SlabProjectionMode | undefined;
-	slabThicknessMm?: number | undefined;
-	interpolation?: "nearest" | "trilinear" | undefined;
-}
-
-export interface WorkerRenderSliceParams {
-	volume: CbctVoxelVolume;
-	plane: MprPlane;
-	crosshairMm: Point3D;
-	obliqueAngles: ObliqueRotationAngles;
-	options: WorkerRenderSliceOptions;
-	requestId?: number | undefined;
-}
-
-export interface WorkerRenderAllPlanesParams {
-	volume: CbctVoxelVolume;
-	crosshairMm: Point3D;
-	obliqueAngles: ObliqueRotationAngles;
-	options: WorkerRenderSliceOptions;
-	requestId?: number | undefined;
-}
-
-export interface WorkerCrossSectionSeriesParams {
-	volume: CbctVoxelVolume;
-	archCurve: DentalArchCurve;
-	options?: CrossSectionSeriesOptions | undefined;
-	requestId?: number | undefined;
-}
-
-export interface CbctWorkerBridgeOptions {
-	forceFallback?: boolean | undefined;
-	workerFactory?: (() => Worker) | undefined;
-}
-
-interface PendingSingleSlice {
-	resolve: (value: MprSliceExtractionResult) => void;
-	reject: (reason: Error) => void;
-	volumeId: string;
-	plane: MprPlane;
-}
-
-interface PendingMultiPlane {
-	resolve: (value: Record<MprPlane, MprSliceExtractionResult>) => void;
-	reject: (reason: Error) => void;
-	volumeId: string;
-}
-
-interface PendingSeriesRequest {
-	resolve: (value: CrossSectionSliceData[]) => void;
-	reject: (reason: Error) => void;
-	volumeId: string;
-}
-
-interface PendingDecodeRequest {
-	resolve: (value: DecodedSliceResult[]) => void;
-	reject: (reason: Error) => void;
-}
-
-interface PendingLodRequest {
-	resolve: (value: CbctVoxelVolume) => void;
-	reject: (reason: Error) => void;
-}
+	DecodedSliceResult,
+	WorkerRenderSliceOptions,
+	WorkerRenderSliceParams,
+	WorkerRenderAllPlanesParams,
+	WorkerCrossSectionSeriesParams,
+	CbctWorkerBridgeOptions,
+};
+import type {
+	DecodedSliceResult,
+	WorkerRenderSliceOptions,
+	WorkerRenderSliceParams,
+	WorkerRenderAllPlanesParams,
+	WorkerCrossSectionSeriesParams,
+	CbctWorkerBridgeOptions,
+	PendingSingleSlice,
+	PendingMultiPlane,
+	PendingSeriesRequest,
+	PendingDecodeRequest,
+	PendingLodRequest,
+} from "./cbctWorkerBridgeTypes";
 
 export class CbctWorkerBridge {
 	private worker: Worker | null = null;

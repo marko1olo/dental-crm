@@ -1,5 +1,6 @@
 import React from "react";
-import { Zap, Sparkles, CheckCircle2, Crown, Layers, Palette } from "lucide-react";
+import { Zap, Sparkles, CheckCircle2, Layers } from "lucide-react";
+import { DentalCrown, DentalBridge, ToothShadeGuide } from "../icons/DentalIcons";
 import { SHADE_SWATCH_MAP, addWorkingDays } from "./labMath";
 
 export interface DentalLabExpressConfiguratorProps {
@@ -227,7 +228,7 @@ export function DentalLabExpressConfigurator({
 						}`}
 						data-testid="fast-type-single-crown"
 					>
-						<Crown size={15} />
+						<DentalCrown size={15} />
 						<span>Одиночная коронка (Зуб)</span>
 					</button>
 					<button
@@ -240,7 +241,7 @@ export function DentalLabExpressConfigurator({
 						}`}
 						data-testid="fast-type-bridge"
 					>
-						<Layers size={15} />
+						<DentalBridge size={15} />
 						<span>Мостовидный протез (Мост)</span>
 					</button>
 				</div>

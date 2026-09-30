@@ -280,12 +280,14 @@ export const DentalHandpiece = createDentalIcon(
   "DentalHandpiece",
   "lucide-dental-handpiece",
   <>
-    <path d="M3 15h8c1.5 0 3-.5 4-1.8L17.5 10" />
-    <path d="M3 17.5h7c1.5 0 3 .5 4 1.5" />
-    <rect x="17" y="5.5" width="4.5" height="6.5" rx="1.2" />
-    <path d="M18 5.5V4h2.5v1.5" />
-    <line x1="19.25" y1="12" x2="19.25" y2="19.5" strokeWidth={2} />
-    <path d="M18.25 19.5h2" />
+    <path d="M3 20l5.5-5.5c1.2-1.2 2.5-1.5 4-1.5l3.5-1" />
+    <path d="M4.5 21.5l5.5-5.5c1-1 2.2-1.2 3.5-1.2l2.5-.8" />
+    <path d="M3 20c-.7.7-.7 1.8 0 2.5s1.8.7 2.5 0" />
+    <circle cx="7" cy="18" r=".6" fill="currentColor" />
+    <rect x="16" y="5.5" width="5.5" height="6.5" rx="1.2" />
+    <path d="M17.25 5.5c0-1.2.7-2 1.5-2s1.5.8 1.5 2" />
+    <line x1="18.75" y1="12" x2="18.75" y2="14.5" />
+    <rect x="18" y="14.5" width="1.5" height="6" rx=".75" />
   </>
 );
 
@@ -412,13 +414,9 @@ export const DentalVeneer = createDentalIcon(
   "DentalVeneer",
   "lucide-dental-veneer",
   <>
-    <path d="M11 2.5c-.8 2.5-1.5 5-2 7.5-.5 2.5-1.5 3.5-1.5 6 0 2 1 3.5 2.5 5" />
-    <path d="M11 2.5c.8 2.5 1.5 5 2 7.5" />
-    <line x1="13" y1="10" x2="11.5" y2="10" />
-    <path d="M11.5 10c.3 3.5.3 7-.5 11" />
-    <line x1="10" y1="21" x2="11.5" y2="21" />
-    <path d="M14.5 9.5c.5 3.5.5 8-.5 12-1 .5-2 .5-2.5 0" strokeWidth={2.2} />
-    <path d="M18 5l.5 1 1 .5-1 .5-.5 1-.5-1-1-.5 1-.5z" />
+    <path d="M9 21.5 C7 19 5.5 16 5 13.5 c-.5-2.5-.5-5 .5-8 .5-1.5 1.5-2.5 2-3 h2 l2 1.5 v9 c.8 0 2 .5 2.5 1.5 C13.5 17 11.5 19.5 9 21.5 Z" />
+    <path d="M14 14.5 c1.8-3.5 1.8-8.5-.5-12 H9.5" />
+    <path d="M8 19 C7.2 16 7 13 7 10" strokeDasharray="1 1.5" />
   </>
 );
 
@@ -450,14 +448,15 @@ export const CuringLight = createDentalIcon(
   "CuringLight",
   "lucide-curing-light",
   <>
-    <rect x="3.5" y="15.5" width="4" height="8" rx="1.5" transform="rotate(-45 5.5 19.5)" />
-    <circle cx="5.5" cy="19.5" r=".7" fill="currentColor" />
-    <path d="M8 14l6-6c.8-.8 1.8-.8 2.5 0l1.5 1.5" />
-    <ellipse cx="11" cy="11" rx="4" ry="2" transform="rotate(-45 11 11)" />
-    <line x1="18.5" y1="10" x2="22.5" y2="9" />
-    <line x1="18" y1="11.5" x2="21.5" y2="13.5" />
-    <line x1="17" y1="12" x2="18.5" y2="15.5" />
-    <path d="M19.5 9l2 2" strokeDasharray="1 1" />
+    <path d="M3 18c-.8.8-.8 1.8 0 2.5s1.8.8 2.5 0" />
+    <line x1="3" y1="18" x2="8.5" y2="12.5" />
+    <line x1="5.5" y1="20.5" x2="11" y2="15" />
+    <circle cx="6.5" cy="16.5" r=".8" fill="currentColor" />
+    <line x1="7.5" y1="10.5" x2="12.5" y2="15.5" strokeWidth={2.5} strokeLinecap="round" />
+    <path d="M9.75 13.75 L13.5 10 c1.8-1.8 3.5-.8 4 1.5" />
+    <line x1="19.5" y1="12" x2="22.5" y2="14" />
+    <line x1="19.5" y1="10" x2="22.5" y2="11" />
+    <line x1="18" y1="13.5" x2="19.5" y2="16.5" />
   </>
 );
 

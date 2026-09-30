@@ -2,17 +2,21 @@ import React from "react";
 import {
 	CheckCircle2,
 	Layers,
-	Palette,
-	Crown,
-	Sparkles,
-	ShieldCheck,
 	Compass,
-	FileText,
 	Zap,
 	RefreshCw,
 	ArrowUp,
 	ArrowDown,
 } from "lucide-react";
+import {
+	ToothShadeGuide,
+	DentalCrown,
+	DentalBridge,
+	DentalVeneer,
+	DentalImplant,
+	AlignerTray,
+	DentalLabOrder,
+} from "../icons/DentalIcons";
 import {
 	CONSTRUCTION_TYPES,
 	LAB_MATERIALS,
@@ -392,17 +396,19 @@ export function DentalLabRestorationTab({
 					{CONSTRUCTION_TYPES.map((c) => {
 						const isSelected = constructionType === c.id;
 						const IconComp =
-							c.category === "Несъемное"
-								? Crown
+							c.id === "bridge"
+								? DentalBridge
+								: c.category === "Несъемное"
+								? DentalCrown
 								: c.category === "Эстетика"
-								? Sparkles
+								? DentalVeneer
 								: c.category === "Имплантология"
-								? ShieldCheck
+								? DentalImplant
+								: c.category === "Каппы"
+								? AlignerTray
 								: c.category === "Съемное"
 								? Layers
-								: c.category === "Каппы"
-								? Compass
-								: FileText;
+								: DentalLabOrder;
 
 						return (
 							<button
@@ -484,7 +490,7 @@ export function DentalLabRestorationTab({
 			<div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl p-4 sm:p-5 space-y-3">
 				<div className="flex items-center justify-between flex-wrap gap-2">
 					<div className="flex items-center gap-2">
-						<Palette className="w-4 h-4 text-[var(--teal)]" />
+						<ToothShadeGuide className="w-4 h-4 text-[var(--teal)]" />
 						<label className="text-sm font-bold text-slate-900 dark:text-slate-100">
 							Расцветка керамики VITA:
 						</label>

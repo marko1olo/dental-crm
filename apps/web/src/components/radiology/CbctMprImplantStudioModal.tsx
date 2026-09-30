@@ -742,58 +742,34 @@ export const CbctMprImplantStudioModal: React.FC<
 						isSidebarOpen={isSidebarOpen}
 						setIsSidebarOpen={setIsSidebarOpen}
 						mobileActiveTab={mobileActiveTab}
-						activeCrossSection={activeCrossSection}
-						activeCrossSectionIdx={activeCrossSectionIdx}
-						setActiveCrossSectionIdx={setActiveCrossSectionIdx}
-						crossSections={crossSections}
-						studioMode={studioMode}
-						setStudioMode={setStudioMode}
-						implantAngulationDeg={implantAngulationDeg}
-						setImplantAngulationDeg={setImplantAngulationDeg}
-						volume={volume}
-						handleToggleMaximize={handleToggleMaximize}
-						crossSectionBaseCanvasRef={crossSectionBaseCanvasRef}
-						crossSectionOverlayCanvasRef={crossSectionOverlayCanvasRef}
+						activeCrossSection={activeCrossSection} activeCrossSectionIdx={activeCrossSectionIdx}
+						setActiveCrossSectionIdx={setActiveCrossSectionIdx} crossSections={crossSections}
+						studioMode={studioMode} setStudioMode={setStudioMode}
+						implantAngulationDeg={implantAngulationDeg} setImplantAngulationDeg={setImplantAngulationDeg}
+						volume={volume} handleToggleMaximize={handleToggleMaximize}
+						crossSectionBaseCanvasRef={crossSectionBaseCanvasRef} crossSectionOverlayCanvasRef={crossSectionOverlayCanvasRef}
 						handleCrossSectionMouseDown={interactions.handleCrossSectionMouseDown}
 						handleCrossSectionMouseMove={interactions.handleCrossSectionMouseMove}
 						handleCrossSectionMouseUp={interactions.handleCrossSectionMouseUp}
-						dragImplantPart={dragImplantPart}
-						hoveredImplantPart={hoveredImplantPart}
-						handleFullResetViewport={handleFullResetViewport}
-						maximizedViewport={maximizedViewport}
-						windowWidth={windowWidth}
-						windowLevel={windowLevel}
-						renderViewportOverlays={() => null}
-						sampledVoxelHU={sampledVoxelHU}
-						handleSelectTooth={interactions.handleSelectTooth}
-						implant3DWorld={implant3DWorld}
-						nerveAuditResult={nerveAuditResult}
-						huSamplingResult={huSamplingResult}
-						currentImplantSpec={currentImplantSpec}
-						nervePoints={nervePoints}
-						setNervePoints={setNervePoints}
-						nerveTotalLengthMm={nerveTotalLengthMm}
-						selectedNerveNodeIdx={selectedNerveNodeIdx}
-						setSelectedNerveNodeIdx={setSelectedNerveNodeIdx}
-						displayBoneClass={displayBoneClass}
-						displayMeanHU={displayMeanHU}
-						displayTorque={displayTorque}
-						displayNerveClearanceMm={displayNerveClearanceMm}
-						displayDrillingProtocol={displayDrillingProtocol}
-						selectedBrand={selectedBrand}
-						setSelectedBrand={setSelectedBrand}
-						selectedDiameterMm={selectedDiameterMm}
-						setSelectedDiameterMm={setSelectedDiameterMm}
-						selectedLengthMm={selectedLengthMm}
-						setSelectedLengthMm={setSelectedLengthMm}
-						implantEntryXOffsetMm={implantEntryXOffsetMm}
-						setImplantEntryXOffsetMm={setImplantEntryXOffsetMm}
-						setImplantEntryDepthMm={setImplantEntryDepthMm}
-						activeCaliper={activeCaliper}
+						dragImplantPart={dragImplantPart} hoveredImplantPart={hoveredImplantPart}
+						handleFullResetViewport={handleFullResetViewport} maximizedViewport={maximizedViewport}
+						windowWidth={windowWidth} windowLevel={windowLevel}
+						renderViewportOverlays={() => null} sampledVoxelHU={sampledVoxelHU}
+						handleSelectTooth={interactions.handleSelectTooth} implant3DWorld={implant3DWorld}
+						nerveAuditResult={nerveAuditResult} huSamplingResult={huSamplingResult}
+						currentImplantSpec={currentImplantSpec} nervePoints={nervePoints} setNervePoints={setNervePoints}
+						nerveTotalLengthMm={nerveTotalLengthMm} selectedNerveNodeIdx={selectedNerveNodeIdx}
+						setSelectedNerveNodeIdx={setSelectedNerveNodeIdx} displayBoneClass={displayBoneClass}
+						displayMeanHU={displayMeanHU} displayTorque={displayTorque}
+						displayNerveClearanceMm={displayNerveClearanceMm} displayDrillingProtocol={displayDrillingProtocol}
+						selectedBrand={selectedBrand} setSelectedBrand={setSelectedBrand}
+						selectedDiameterMm={selectedDiameterMm} setSelectedDiameterMm={setSelectedDiameterMm}
+						selectedLengthMm={selectedLengthMm} setSelectedLengthMm={setSelectedLengthMm}
+						implantEntryXOffsetMm={implantEntryXOffsetMm} setImplantEntryXOffsetMm={setImplantEntryXOffsetMm}
+						setImplantEntryDepthMm={setImplantEntryDepthMm} activeCaliper={activeCaliper}
 						handleExportToEmr={handleExportToEmr}
 						handleExportPdfReport={() => { void handleExportPdfReport(); }}
-						handleExportToPlan={handleExportToPlan}
-						handleExportToSchedule={handleExportToSchedule}
+						handleExportToPlan={handleExportToPlan} handleExportToSchedule={handleExportToSchedule}
 						handleExportToFinance={handleExportCbctToFinance}
 					/>
 				</main>
