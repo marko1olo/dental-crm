@@ -1,0 +1,41 @@
+{
+  "subagent": "cbct_monolith_beta_decomposer",
+  "scope": [
+    "apps/web/src/components/radiology/cbctCaliperNerveMath.ts",
+    "apps/web/src/components/radiology/implantSafetyEngine.ts"
+  ],
+  "status": "completed",
+  "completed_steps": [
+    "Read decomposer SKILL.md",
+    "Initialized subagent memory",
+    "Ran baseline tests for cbct caliper and nerve math: 108/108 passed",
+    "Decomposed cbctCaliperNerveMath.ts (2065 lines) into cbctNerveCanalMath.ts (771 lines), cbctCaliperMeasureMath.ts (771 lines), and facade cbctCaliperNerveMath.ts (552 lines)",
+    "Verified Mandate 8b: cbctCaliperNerveMath.ts <= 650 lines (552 lines), satellites <= 800 lines (771 lines each)",
+    "Ran unit tests for cbct caliper/nerve math: 108/108 passed",
+    "Ran baseline tests for implantSafetyEngine: 30/30 passed",
+    "Decomposed implantSafetyEngine.ts (1829 lines) into implantBoneDensityMath.ts (685 lines), implantNerveSafetyAudit.ts (777 lines), and facade implantSafetyEngine.ts (407 lines)",
+    "Verified Mandate 8b: implantSafetyEngine.ts <= 700 lines (407 lines), satellites <= 800 lines (685 and 777 lines)",
+    "Ran unit tests for implant safety engine: 30/30 passed",
+    "Ran all radiology tests: 782/782 passed with 0 failures",
+    "Ran npm run check:encoding: 6376 files clean, 0 errors"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "cbctCaliperNerveMath.ts successfully decomposed from 2065 lines to 552 lines with 100% transparent backwards compatibility",
+    "Pure mandibular canal tracing (2D & 3D splines, Catmull-Rom, distance gating, IAN safety corridor) extracted to cbctNerveCanalMath.ts (771 lines)",
+    "Electronic calipers, 2D/3D angles, rulers, probe markers, and CAD hit-testing extracted to cbctCaliperMeasureMath.ts (771 lines)",
+    "implantSafetyEngine.ts successfully decomposed from 1829 lines to 407 lines with 100% transparent backwards compatibility",
+    "Misch bone density profiling (HU, Misch D1..D5, cross-section sampling, live telemetry adapter) extracted to implantBoneDensityMath.ts (685 lines)",
+    "Mandibular nerve safety audits, 2D/3D clearance calculus, cortical plate containment, sinus evaluation, and Form 043/u diary generation extracted to implantNerveSafetyAudit.ts (777 lines)",
+    "Implant catalog presets and 3D multi-viewport projection math retained in implantSafetyEngine.ts facade (407 lines)"
+  ],
+  "file_line_counts": {
+    "cbctCaliperNerveMath.ts": 552,
+    "cbctNerveCanalMath.ts": 771,
+    "cbctCaliperMeasureMath.ts": 771,
+    "implantSafetyEngine.ts": 407,
+    "implantNerveSafetyAudit.ts": 777,
+    "implantBoneDensityMath.ts": 685
+  },
+  "test_results": "782 passed, 0 failed in radiology test suite; 6376 files clean in check:encoding"
+}

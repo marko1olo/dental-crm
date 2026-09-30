@@ -1,0 +1,30 @@
+{
+  "task": "Surgical monolith decomposition and test gate repairs (Mandate 8b: <= 800 lines)",
+  "subagent": "Monolith Decomposition & Alpha Gate Fixer",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Target 1: Decomposed CbctVolumeGlContext.ts (1025 lines -> 549 lines, strictly <= 700 lines limit).",
+    "Target 1: Extracted CbctVolumeGlTextures.ts (420 lines, strictly <= 800 lines limit) with 100% transparent re-exports.",
+    "Target 1: Repaired syntax/module issues in cbctCaliperNerveMath.ts and cbctNerveCanalMath.ts.",
+    "Target 1: Verified cbctRedTeamRomexisArchReslice.test.ts (29/29 tests PASS) and GPU torture suites (118/118 tests PASS).",
+    "Target 2: Fixed failing gate in cephalometricPresetsAutonomy.test.tsx: restored visible text 'В карту 043/у' on button data-testid='btn-insert-ceph-protocol'.",
+    "Target 2: Restored 'Вставить в ортодонтическую карту Формы 043/у' on report tab insertion button.",
+    "Target 2: Decomposed CephalometricAnalysisModal.tsx (1900 lines -> 586 lines, strictly <= 750 lines limit).",
+    "Target 2: Extracted cephalometricMath.ts (142 lines, strictly <= 800 lines limit) and CephalometricReportTab.tsx (632 lines, strictly <= 800 lines limit).",
+    "Target 2: Verified cephalometricPresetsAutonomy.test.tsx (7/7 tests PASS), CephalometricAnalysisModal.test.tsx (7/7 tests PASS), and radiologyViewerProtocols.test.ts (16/16 tests PASS).",
+    "Verification: npm run check:encoding (0 errors across 6378 files).",
+    "Verification: npm run check:css-tokens (0 unresolved tokens)."
+  ],
+  "line_counts": {
+    "CbctVolumeGlContext.ts": 549,
+    "CbctVolumeGlTextures.ts": 420,
+    "CephalometricAnalysisModal.tsx": 586,
+    "CephalometricReportTab.tsx": 632,
+    "cephalometricMath.ts": 142
+  },
+  "tests_summary": {
+    "total_passed": 177,
+    "total_failed": 0,
+    "suites_passed": 48
+  }
+}
