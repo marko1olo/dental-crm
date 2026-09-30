@@ -1,0 +1,24 @@
+{
+  "agent": "subagent_cbct_autoplan_inquisitor",
+  "status": "IN_PROGRESS",
+  "mission": "CBCT Auto-Plan Generation, Findings-to-Estimate Bridge & 3-Tier Scenarios Inquisitor",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md in accordance with Mandatory Constitutional Routine",
+    "Inspected scope files: ctImplantIntegrationBridge.ts, treatmentPlanBundlesEngine.ts, treatmentPlanBundlesPresets.ts, TreatmentPlanWizard.tsx, TreatmentPlanModule.tsx, __tests__",
+    "Verified baseline tests pass (171 tests passed)",
+    "Audited CBCT finding structures, implant safety engine, and radiology integration"
+  ],
+  "pending_steps": [
+    "Implement CBCT clinical findings to auto-plan bridge in apps/web/src/components/treatment-plans/ctImplantIntegrationBridge.ts",
+    "Add CBCT turnkey bundles and presets in treatmentPlanBundlesPresets.ts and treatmentPlanBundlesEngine.ts",
+    "Wire up '★ Автоплан по КЛКТ' in TreatmentPlanModule.tsx and TreatmentPlanWizard.tsx",
+    "Add comprehensive test suite cbctAutoPlanIntegrationBridge.test.ts",
+    "Run node test suite to verify 100% passing (Exit Code 0)",
+    "Perform code audit, git diff review, and produce final report"
+  ],
+  "findings": [
+    "treatmentPlanBundlesEngine.test.ts strictly verifies CLINICAL_BUNDLES.length === 10; CBCT bundles must be exported as specialized presets/extensions without mutating original 10-bundle array",
+    "TreatmentPlanWizard.tsx in treatment-plans is a facade for odontogram/TreatmentPlanWizard.tsx; both should be equipped with CBCT auto-plan capability",
+    "TreatmentPlanModule.tsx already supports 3-tier view and 4-phase view, perfect for CBCT findings integration"
+  ]
+}

@@ -16,7 +16,9 @@ import {
 } from "@dental/shared";
 import type { InvoiceServiceItem } from "../finance/invoiceEngine";
 import {
+	CBCT_CLINICAL_BUNDLES,
 	CLINICAL_BUNDLES,
+	type CbctBundleId,
 	type ClinicalBundleCategory,
 	type ClinicalBundleDefinition,
 	type ClinicalBundleId,
@@ -34,12 +36,31 @@ import type {
 export * from "./treatmentPlanBundlesPresets";
 
 /**
- * Получить пакет по его идентификатору
+ * Получить пакет по его идентификатору (из основного каталога или специализированных пакетов КЛКТ)
  */
 export function getClinicalBundleById(
-	bundleId: ClinicalBundleId,
+	bundleId: ClinicalBundleId | CbctBundleId | string,
 ): ClinicalBundleDefinition | undefined {
-	return CLINICAL_BUNDLES.find((b) => b.id === bundleId);
+	return (
+		CLINICAL_BUNDLES.find((b) => b.id === bundleId) ??
+		CBCT_CLINICAL_BUNDLES.find((b) => b.id === bundleId)
+	);
+}
+
+/**
+ * Получить специализированный клинический пакет КЛКТ по идентификатору
+ */
+export function getCbctBundleById(
+	bundleId: CbctBundleId | string,
+): ClinicalBundleDefinition | undefined {
+	return CBCT_CLINICAL_BUNDLES.find((b) => b.id === bundleId);
+}
+
+/**
+ * Получить все специализированные клинические пакеты КЛКТ (синус-лифтинг, остеопластика, коронки на имплантатах)
+ */
+export function getAllCbctBundles(): readonly ClinicalBundleDefinition[] {
+	return CBCT_CLINICAL_BUNDLES;
 }
 
 /**
