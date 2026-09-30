@@ -194,7 +194,8 @@ export type CbctToolMode =
 	| "ruler"
 	| "angle"
 	| "probe"
-	| "nerve";
+	| "nerve"
+	| "endo_canal";
 
 export interface CbctLeftToolDockProps {
 	/** Active cursor / mouse tool */
@@ -642,6 +643,29 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						<Zap className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 shrink-0" />
 					</button>
 					<DockTooltip title="Канал IAN" subtitle="Трассировка нерва (2мм)" shortcut="N" />
+				</div>
+
+				{/* 8e. Endo Root Canal Caliper (Schneider Curvature & Length) */}
+				<div className="relative group flex items-center justify-center">
+					<button
+						type="button"
+						onClick={() => onSelectTool(activeTool === "endo_canal" ? "crosshair" : "endo_canal")}
+						className={getToolBtnClass(
+							activeTool === "endo_canal",
+							"bg-teal-500/20 text-teal-300 border border-teal-500/60 shadow-xs shadow-teal-950/40",
+						)}
+						title="Канал / Эндо-калипер (длина и кривизна по Шнайдеру) [E]"
+						aria-label="Эндо-калипер канала"
+						data-testid="cbct-tool-endo-canal"
+					>
+						<Spline className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-teal-400 shrink-0" />
+					</button>
+					<DockTooltip
+						title="Канал (Эндо-калипер)"
+						subtitle="Измерить длину и кривизну канала (по Шнайдеру)"
+						shortcut="E"
+						titleColor="text-teal-300"
+					/>
 				</div>
 
 				{/* 8b. Dental Arch Toggle */}

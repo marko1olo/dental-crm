@@ -15,8 +15,13 @@
  */
 
 import React, { useCallback, useMemo, useState, useEffect } from "react";
-import { Check, Eraser, Palette, Ruler, Sparkles, Trash2 } from "lucide-react";
+import { Check, Copy, Eraser, Palette, Ruler, Sparkles, Spline, Trash2 } from "lucide-react";
 import type { CbctMeasurementRuler, CbctViewportType, Point3D } from "../cbctMprMath";
+import {
+	type EndoCanalMeasurement,
+	formatEndoCanalHudText,
+	formatEndoCanalProtocolEntry,
+} from "../cbctCaliperNerveMath";
 import {
 	CBCT_COLORMAP_MODES,
 	type CbctColorMapMode,
@@ -192,6 +197,11 @@ export interface CbctViewportRulerToolbarProps {
 	readonly sharpenAmount?: number | undefined;
 	readonly onChangeSharpenAmount?: ((amount: number) => void) | undefined;
 	readonly showSharpenControl?: boolean | undefined;
+	readonly showEndoCanalControl?: boolean | undefined;
+	readonly onToggleEndoCanal?: (() => void) | undefined;
+	readonly isEndoCanalActive?: boolean | undefined;
+	readonly endoCanalCount?: number | undefined;
+	readonly onClearEndoCanals?: ((viewport?: CbctViewportType) => void) | undefined;
 }
 
 /**
@@ -209,8 +219,14 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 	sharpenAmount,
 	onChangeSharpenAmount,
 	showSharpenControl = false,
+	showEndoCanalControl = false,
+	onToggleEndoCanal,
+	isEndoCanalActive = false,
+	endoCanalCount = 0,
+	onClearEndoCanals,
 }) => {
 	const isRulerActive = activeTool === "ruler";
+	const isEndoActive = activeTool === "endo_canal" || isEndoCanalActive;
 	const viewportRulers = useMemo(
 		() => filterRulersByViewport(rulers, viewportType),
 		[rulers, viewportType],
@@ -292,6 +308,67 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 				</kbd>
 			</button>
 
+			{/* 1b. Endo Root Canal Caliper Button (Strictly 28px height, Mandate 8k, 1-click toggle) */}
+			{showEndoCanalControl && (
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						if (onToggleEndoCanal) {
+							onToggleEndoCanal();
+						} else if (onSelectTool) {
+							(onSelectTool as (t: string) => void)(isEndoActive ? "crosshair" : "endo_canal");
+						}
+					}}
+					className={`h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2 py-0.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer backdrop-blur-sm shadow-xs ${
+						isEndoActive
+							? "bg-teal-500/25 text-teal-200 border border-teal-400/80 shadow-teal-950/40 ring-1 ring-teal-400/50"
+							: "bg-zinc-900/90 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 border border-zinc-700/80 hover:border-teal-400/60"
+					}`}
+					title="Эндо-калипер: замер длины и кривизны корневого канала (по Шнайдеру) [E]"
+					aria-pressed={isEndoActive}
+					aria-label="Эндо-калипер канала"
+					data-testid={`cbct-viewport-endo-canal-btn-${viewportType}`}
+				>
+					<Spline className={`w-3.5 h-3.5 shrink-0 ${isEndoActive ? "text-teal-300" : "text-zinc-400"}`} />
+					<span className="text-[11px] font-bold">Канал</span>
+					<kbd className="hidden sm:inline-block text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-teal-300/90 border border-zinc-700 font-mono">
+						E
+					</kbd>
+				</button>
+			)}
+
+			{/* Endo Canal Measurements Count Badge */}
+			{endoCanalCount !== undefined && endoCanalCount > 0 && (
+				<div
+					className="h-7 min-h-[28px] max-h-[28px] px-2 py-0.5 rounded-md bg-zinc-900/90 border border-teal-700/80 backdrop-blur-sm text-xs font-mono flex items-center gap-1.5 shadow-xs"
+					data-testid={`cbct-endo-count-${viewportType}`}
+					title={`${endoCanalCount} замер(ов) канала на проекции ${viewportType}`}
+				>
+					<span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+					<span className="text-teal-300 text-[10px] font-bold">
+						{endoCanalCount} кан.
+					</span>
+				</div>
+			)}
+
+			{/* Quick Clear Endo Canals Button */}
+			{endoCanalCount !== undefined && endoCanalCount > 0 && onClearEndoCanals && (
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						onClearEndoCanals(viewportType);
+					}}
+					className="h-7 min-h-[28px] max-h-[28px] w-7 min-w-[28px] max-w-[28px] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-[44px] [@media(pointer:coarse)]:min-h-[44px] rounded-md bg-zinc-900/90 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-200 border border-zinc-700/80 hover:border-rose-500/60 backdrop-blur-sm flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+					title="Очистить замеры каналов на этом срезе"
+					aria-label="Очистить замеры каналов"
+					data-testid={`cbct-clear-endo-btn-${viewportType}`}
+				>
+					<Trash2 className="w-3.5 h-3.5 text-zinc-400 hover:text-rose-400" />
+				</button>
+			)}
+
 			{/* Quick Trabecular Sharpening Toggle (Strictly 28px height, Mandate 8k) */}
 			{showSharpenControl && (
 				<button
@@ -343,6 +420,134 @@ export const CbctViewportRulerToolbar: React.FC<CbctViewportRulerToolbarProps> =
 					data-testid={`cbct-clear-rulers-btn-${viewportType}`}
 				>
 					<Trash2 className="w-3.5 h-3.5 text-zinc-400 hover:text-rose-400" />
+				</button>
+			)}
+		</div>
+	);
+};
+
+/**
+ * Props for Endo Canal Result HUD Chip
+ */
+export interface CbctEndoCanalHudProps {
+	readonly canal: EndoCanalMeasurement;
+	readonly onCopyToProtocol?: ((text: string) => void) | undefined;
+	readonly onClear?: (() => void) | undefined;
+	readonly className?: string | undefined;
+}
+
+/**
+ * Спокойный неблокирующий HUD эндодонтического калипера (Директива 3 / Мандат 8e / Мандат 8k):
+ * - Плашка с результатом: «Канал: 21.2 мм, изгиб 18°»
+ * - Кнопка «В дневник» (1 кликом копирует замер в протокол эндодонтии)
+ * - Строго иконки Lucide, ноль эмодзи (Мандат 8d)
+ */
+export const CbctEndoCanalHud: React.FC<CbctEndoCanalHudProps> = ({
+	canal,
+	onCopyToProtocol,
+	onClear,
+	className = "",
+}) => {
+	const [copied, setCopied] = useState(false);
+
+	const hudText = useMemo(
+		() => formatEndoCanalHudText(canal.lengthMm, canal.schneiderAngleDeg),
+		[canal.lengthMm, canal.schneiderAngleDeg],
+	);
+
+	const protocolText = useMemo(
+		() => formatEndoCanalProtocolEntry(canal),
+		[canal],
+	);
+
+	const handleCopyToProtocol = useCallback(
+		(e: React.MouseEvent) => {
+			e.stopPropagation();
+			try {
+				if (typeof navigator !== "undefined" && navigator.clipboard) {
+					navigator.clipboard.writeText(protocolText).catch(() => {});
+				}
+			} catch {
+				/* safe in non-browser/test env */
+			}
+			onCopyToProtocol?.(protocolText);
+			setCopied(true);
+			const timer = setTimeout(() => setCopied(false), 2200);
+			return () => clearTimeout(timer);
+		},
+		[protocolText, onCopyToProtocol],
+	);
+
+	const gradeBadgeClass =
+		canal.curvatureGrade === "severe"
+			? "bg-rose-500/20 text-rose-300 border-rose-500/50"
+			: canal.curvatureGrade === "moderate"
+				? "bg-amber-500/20 text-amber-300 border-amber-500/50"
+				: "bg-teal-500/20 text-teal-300 border-teal-500/50";
+
+	return (
+		<div
+			role="status"
+			aria-label="Результат замера канала"
+			data-testid="cbct-endo-canal-hud"
+			className={`inline-flex items-center gap-2 pointer-events-auto select-none bg-zinc-950/92 border border-teal-500/60 shadow-xl backdrop-blur-md px-2.5 py-1 rounded-md text-xs text-zinc-100 ${className}`}
+		>
+			{/* 1. Icon & Core Result Text: «Канал: 21.2 мм, изгиб 18°» */}
+			<div className="flex items-center gap-1.5 font-mono">
+				<Spline className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+				<span className="font-bold text-zinc-100 whitespace-nowrap text-[12px]" data-testid="cbct-endo-hud-text">
+					{hudText}
+				</span>
+			</div>
+
+			{/* 2. Curvature Grade Chip */}
+			<span
+				className={`text-[10px] font-sans px-1.5 py-0.2 rounded border font-medium whitespace-nowrap ${gradeBadgeClass}`}
+				data-testid="cbct-endo-grade-badge"
+			>
+				{canal.curvatureGradeRu}
+			</span>
+
+			{/* 3. 1-Click Action «В дневник» */}
+			<button
+				type="button"
+				onClick={handleCopyToProtocol}
+				className={`h-6 min-h-[24px] max-h-[24px] px-2 rounded text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+					copied
+						? "bg-emerald-600 text-white font-bold border border-emerald-400 shadow-xs"
+						: "bg-teal-600/80 hover:bg-teal-600 text-white border border-teal-400/80 hover:border-teal-300 shadow-xs"
+				}`}
+				title="Скопировать замер в протокол эндодонтии (Форма 043/у)"
+				aria-label="В дневник"
+				data-testid="cbct-endo-copy-protocol-btn"
+			>
+				{copied ? (
+					<>
+						<Check className="w-3 h-3 text-white shrink-0" />
+						<span>Скопировано</span>
+					</>
+				) : (
+					<>
+						<Copy className="w-3 h-3 text-teal-100 shrink-0" />
+						<span>В дневник</span>
+					</>
+				)}
+			</button>
+
+			{/* 4. Optional 1-Click Clear / Close */}
+			{onClear && (
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						onClear();
+					}}
+					className="h-6 w-6 min-w-[24px] max-w-[24px] rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 flex items-center justify-center transition-colors cursor-pointer"
+					title="Очистить замер канала"
+					aria-label="Очистить замер"
+					data-testid="cbct-endo-clear-btn"
+				>
+					<Trash2 className="w-3 h-3 text-zinc-400 hover:text-rose-400" />
 				</button>
 			)}
 		</div>
@@ -583,6 +788,13 @@ export interface CbctViewportsRulerOverlayProps {
 	readonly onChangeSharpenAmount?: ((amount: number) => void) | undefined;
 	readonly showQuickColormapBar?: boolean | undefined;
 	readonly showSharpenControl?: boolean | undefined;
+	readonly showEndoCanalControl?: boolean | undefined;
+	readonly onToggleEndoCanal?: (() => void) | undefined;
+	readonly isEndoCanalActive?: boolean | undefined;
+	readonly activeEndoCanal?: EndoCanalMeasurement | null | undefined;
+	readonly endoCanals?: readonly EndoCanalMeasurement[] | undefined;
+	readonly onClearEndoCanals?: ((viewport?: CbctViewportType) => void) | undefined;
+	readonly onCopyToProtocol?: ((text: string) => void) | undefined;
 }
 
 /**
@@ -603,13 +815,23 @@ export const CbctViewportsRulerOverlay: React.FC<CbctViewportsRulerOverlayProps>
 	onChangeSharpenAmount,
 	showQuickColormapBar,
 	showSharpenControl,
+	showEndoCanalControl,
+	onToggleEndoCanal,
+	isEndoCanalActive,
+	activeEndoCanal,
+	endoCanals = [],
+	onClearEndoCanals,
+	onCopyToProtocol,
 }) => {
 	const shouldShowColormapBar =
 		showQuickColormapBar ?? Boolean(onSelectColorMap || onChangeSharpenAmount);
 
+	const displayCanal =
+		activeEndoCanal ?? (endoCanals.length > 0 ? endoCanals[endoCanals.length - 1] : null);
+
 	return (
 		<>
-			{/* Top-Right Ruler Tool & Count Bar (Fixed left of minimize/reset buttons) */}
+			{/* Top-Right Ruler & Endo Canal Tool & Count Bar (Fixed left of minimize/reset buttons) */}
 			<div className="absolute top-1.5 right-28 pointer-events-auto flex items-center gap-1 z-30">
 				<CbctViewportRulerToolbar
 					viewportType={viewportType}
@@ -622,8 +844,24 @@ export const CbctViewportsRulerOverlay: React.FC<CbctViewportsRulerOverlayProps>
 					sharpenAmount={sharpenAmount}
 					onChangeSharpenAmount={onChangeSharpenAmount}
 					showSharpenControl={showSharpenControl}
+					showEndoCanalControl={showEndoCanalControl}
+					onToggleEndoCanal={onToggleEndoCanal}
+					isEndoCanalActive={isEndoCanalActive}
+					endoCanalCount={endoCanals.length}
+					onClearEndoCanals={onClearEndoCanals}
 				/>
 			</div>
+
+			{/* Top-Left Calm Non-Blocking Endo Canal Result HUD Chip (Directive 3 / Mandate 8e) */}
+			{displayCanal && (
+				<div className="absolute top-1.5 left-28 pointer-events-auto z-30">
+					<CbctEndoCanalHud
+						canal={displayCanal}
+						onCopyToProtocol={onCopyToProtocol}
+						onClear={() => onClearEndoCanals?.(viewportType)}
+					/>
+				</div>
+			)}
 
 			{/* Bottom-Left Quick W/L & Colormap Presets Bar */}
 			<div className="absolute bottom-1.5 left-28 pointer-events-auto flex items-center gap-2 z-20 flex-wrap">
