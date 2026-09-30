@@ -11,6 +11,8 @@ import {
 	WaitlistQuickFillModal,
 	calculateMatchScore,
 	generateWhatsAppOfferMessage,
+	openTelegramChat,
+	openWhatsAppChat,
 } from "../WaitlistQuickFillModal";
 
 // biome-ignore lint/suspicious/noExplicitAny: mock AppLogic value for isolated unit testing
@@ -316,5 +318,42 @@ describe("WaitlistQuickFillModal Component Rendering", () => {
 		assert.ok(TREATMENT_CATEGORIES.some((c) => c.includes("Хирургия")));
 		assert.ok(TREATMENT_CATEGORIES.some((c) => c.includes("Ортопедия")));
 		assert.ok(TREATMENT_CATEGORIES.some((c) => c.includes("Ортодонтия")));
+	});
+
+	it("opens WhatsApp and Telegram share links with polite non-bureaucratic text", () => {
+		const openedUrls: string[] = [];
+		const origOpen = globalThis.window?.open;
+		if (!globalThis.window) {
+			// @ts-ignore
+			globalThis.window = {};
+		}
+		globalThis.window.open = ((url: string) => {
+			openedUrls.push(url);
+			return null;
+		}) as any;
+
+		const msg = generateWhatsAppOfferMessage({
+			patientName: "Алексей Петрович",
+			doctorName: "Д-р Смирнов",
+			slotStartsAt: "2026-08-20T10:00:00.000Z",
+			clinicName: "Клиника DENTE",
+		});
+
+		assert.ok(msg.includes("Алексей Петрович"));
+		assert.ok(msg.includes("Клиника DENTE"));
+		assert.ok(msg.includes("Д-р Смирнов"));
+		assert.ok(!msg.includes("УК РФ"), "Should not contain criminal code citations");
+
+		openWhatsAppChat("+7 (999) 000-11-22", msg);
+		assert.equal(openedUrls.length, 1);
+		assert.ok(openedUrls[0]?.startsWith("https://wa.me/79990001122?text="));
+
+		openTelegramChat("+7 (999) 000-11-22", msg);
+		assert.equal(openedUrls.length, 2);
+		assert.ok(openedUrls[1]?.startsWith("https://t.me/share/url?"));
+
+		if (origOpen) {
+			globalThis.window.open = origOpen;
+		}
 	});
 });

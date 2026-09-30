@@ -251,14 +251,20 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			(dashboard?.clinicSettings?.profile?.mode as string) === "solo_practice" ||
 			(docs.length <= 1 && chs.length <= 1) ||
 			docs.length === 1;
+		if (auth?.user?.id && docs.some((m) => m.id === auth.user.id)) {
+			return auth.user.id;
+		}
 		if (isSolo && docs[0]) {
 			return docs[0].id;
 		}
 		if (docs.length === 1 && docs[0]) {
 			return docs[0].id;
 		}
+		if (docs[0]) {
+			return docs[0].id;
+		}
 		return "";
-	}, [initialSlot, chairDoctorAssignments, dashboard]);
+	}, [initialSlot, chairDoctorAssignments, dashboard, auth]);
 
 	const initialChairId = useMemo(() => {
 		if (initialSlot?.chairId) return initialSlot.chairId;
@@ -501,6 +507,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			initialSlot?.doctorUserId ||
 			slotDocByName ||
 			chairDutyDocId ||
+			(auth?.user?.id && doctors.some((d) => d.id === auth.user.id) ? auth.user.id : "") ||
 			(isSoloDoctor && doctors[0] ? doctors[0].id : "") ||
 			(doctors.length === 1 ? doctors[0]?.id : "") ||
 			doctors[0]?.id ||
@@ -867,6 +874,24 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		if (!activePatientId) {
 			const trimmedSearch = searchQuery.trim();
 			const isPhoneOnly = /^[0-9+()-\s]+$/.test(trimmedSearch);
+
+			// Fast lookup: if patient already exists in local clinic database with exact name or phone, reuse without duplicating
+			if (trimmedSearch) {
+				const exactExisting = (dashboard?.patients ?? []).find(
+					(p) =>
+						p.status === "active" &&
+						(p.fullName.trim().toLowerCase() === trimmedSearch.toLowerCase() ||
+							(p.phone &&
+								normalizePhoneToNational(p.phone) ===
+									normalizePhoneToNational(trimmedSearch))),
+				);
+				if (exactExisting) {
+					activePatientId = exactExisting.id;
+					setPatientId(exactExisting.id);
+					setSelectedPatient(exactExisting);
+				}
+			}
+
 			const candidateName =
 				newPatientFullName.trim() ||
 				(isPhoneOnly ? `Пациент (${trimmedSearch})` : trimmedSearch) ||
@@ -1031,7 +1056,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 				reason: reason.trim() || (isEmergencyMode ? "CITO! Острая боль" : null),
 				comment:
 					comment.trim() ||
-					(isEmergencyMode ? "Экстренный прием по острой боли (ст. 124 УК РФ)" : null),
+					(isEmergencyMode ? "Экстренный прием по острой боли (CITO)" : null),
 				allowOverbooking: isOverbook,
 				allowEmergencyOverride: isOverbook,
 				urgency: isOverbook ? "urgent" : "routine",
@@ -1465,7 +1490,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 										onClick={() => {
 											setAppointmentType("emergency");
 											setReason("CITO! Острая боль");
-											setComment("Экстренный прием по острой боли (CITO / ст. 124 УК РФ)");
+											setComment("Экстренный прием по острой боли (CITO)");
 											setDurationMinutes(30);
 											setShowInlineNewPatient(true);
 											setNewPatientFullName("Пациент с острой болью (CITO)");
@@ -2158,11 +2183,27 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						{/* Fast Duration Chips */}
 						<div data-testid="quick-booking-duration-presets">
 							<span className="text-xs font-bold text-[var(--muted)] block mb-1.5">
-								Быстрый выбор длительности:
+								Быстрый выбор длительности (1 клик):
 							</span>
 							<div className="flex flex-wrap gap-2">
 								{DURATION_PRESETS.map((preset) => {
 									const isSelected = durationMinutes === preset.minutes;
+									let displayHint = preset.serviceHint;
+									let displayLabel = preset.label;
+									if (preset.minutes === 15) {
+										displayHint = "Осмотр";
+									} else if (preset.minutes === 30) {
+										displayHint = "Терапия (Гигиена/Швы)";
+									} else if (preset.minutes === 45) {
+										displayHint = "Эндо/Реставрация (Терапия)";
+									} else if (preset.minutes === 60) {
+										displayHint = "Хирургия/Ортопедия (Лечение)";
+									} else if (preset.minutes === 90) {
+										displayLabel = "90 мин (90+ мин)";
+										displayHint = "Хирургия / Комплексный приём";
+									} else if (preset.minutes === 120) {
+										displayHint = "Ортопедия (Тотальная работа)";
+									}
 									return (
 										<button
 											key={preset.minutes}
@@ -2175,13 +2216,13 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											}`}
 											data-testid={`duration-preset-${preset.minutes}`}
 										>
-											<span>{preset.label}</span>
+											<span>{displayLabel}</span>
 											<span
 												className={`text-[11px] font-normal ${
 													isSelected ? "text-white/90" : "text-[var(--muted)]"
 												}`}
 											>
-												({preset.serviceHint})
+												({displayHint})
 											</span>
 										</button>
 									);

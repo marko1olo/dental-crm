@@ -11,6 +11,7 @@ import {
 	Phone,
 	Plus,
 	Search,
+	Send,
 	Sparkles,
 	Star,
 	Trash2,
@@ -435,6 +436,15 @@ export function openWhatsAppChat(phone: string, text: string) {
 	window.open(`https://wa.me/${cleanPhone}?text=${encodedText}`, "_blank");
 }
 
+/**
+ * Opens Telegram chat/share link offering the opened slot.
+ */
+export function openTelegramChat(phone: string, text: string) {
+	const cleanPhone = phone.replace(/[^\d+]/g, "").replace(/^\+/, "");
+	const encodedText = encodeURIComponent(text);
+	window.open(`https://t.me/share/url?text=${encodedText}`, "_blank");
+}
+
 function waitlistWriteHeaders(): Record<string, string> {
 	return denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
 }
@@ -686,6 +696,27 @@ export function WaitlistQuickFillModal({
 			setContactedPatients((prev) => new Set(prev).add(patient.id));
 			showToast("Текст сообщения скопирован в буфер", "success");
 		});
+	};
+
+	// 1-Click Telegram action
+	const handleSendTelegram = (patient: WaitlistPatientEntry) => {
+		if (!patient.patientPhone) {
+			showToast("У пациента не указан номер телефона", "error");
+			return;
+		}
+		const msg = generateWhatsAppOfferMessage({
+			patientName: patient.patientName || "Пациент",
+			doctorName: targetSlot?.doctorName || patient.preferredDoctorName,
+			slotStartsAt: targetSlot?.startsAt || new Date().toISOString(),
+			clinicName,
+		});
+
+		openTelegramChat(patient.patientPhone, msg);
+		setContactedPatients((prev) => new Set(prev).add(patient.id));
+		showToast(
+			`Предложение слота сформировано для Telegram: ${patient.patientName || "пациент"}`,
+			"success",
+		);
 	};
 
 	// 1-Click Direct Booking onto Slot (Мандат 8e: реальная посадка в базу в 1 клик)
@@ -1282,6 +1313,21 @@ export function WaitlistQuickFillModal({
 																	<span>Скопировать SMS</span>
 																</button>
 
+																<button
+																	type="button"
+																	onClick={() => {
+																		handleSendTelegram(patient);
+																		setActiveMenuPatientId(null);
+																	}}
+																	className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[var(--paper-soft)] text-sky-600 dark:text-sky-400 transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
+																	title="Отправить в Telegram"
+																	aria-label="Отправить в Telegram"
+																	data-testid={`btn-telegram-${patient.id}`}
+																>
+																	<Send className="w-3.5 h-3.5 shrink-0" />
+																	<span>Telegram</span>
+																</button>
+
 																{patient.patientPhone && (
 																	<a
 																		href={`tel:${patient.patientPhone.replace(/[^\d+]/g, "")}`}
@@ -1552,6 +1598,21 @@ export function WaitlistQuickFillModal({
 																>
 																	<Copy className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
 																	<span>Скопировать SMS</span>
+																</button>
+
+																<button
+																	type="button"
+																	onClick={() => {
+																		handleSendTelegram(item);
+																		setActiveMenuPatientId(null);
+																	}}
+																	className="w-full px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[var(--paper-soft)] text-sky-600 dark:text-sky-400 transition-all text-left cursor-pointer pointer-coarse:min-h-[44px]"
+																	title="Отправить в Telegram"
+																	aria-label="Отправить в Telegram"
+																	data-testid={`btn-telegram-list-${item.id}`}
+																>
+																	<Send className="w-3.5 h-3.5 shrink-0" />
+																	<span>Telegram</span>
 																</button>
 
 																{item.patientPhone && (
