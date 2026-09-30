@@ -1,5 +1,6 @@
 import React from "react";
-import { Activity, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
+import { DentalImplant } from "../icons/DentalIcons";
 import type { MischDensity } from "./implantQuickPresets";
 
 export interface ImplantIsqTabProps {
@@ -24,7 +25,7 @@ export const ImplantIsqTab: React.FC<ImplantIsqTabProps> = ({
 			<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-4">
 				<div className="flex items-center gap-3 min-w-0">
 					<div className="p-3 bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] rounded-xl shrink-0">
-						<Activity size={24} />
+						<DentalImplant size={24} />
 					</div>
 					<div className="min-w-0">
 						<div className="text-sm font-black text-[var(--ink)] truncate">

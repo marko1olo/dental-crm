@@ -1,7 +1,8 @@
 import React from "react";
 import type { Patient, StaffMember, GeneratedDocument, DocumentKind } from "@dental/shared";
 import type { ClinicProfileDraft } from "../../../AppHelpers";
-import { CheckCircle2, Clock, FileText, Printer, Shield, Zap } from "lucide-react";
+import { CheckCircle2, Clock, FileText, Printer, Zap } from "lucide-react";
+import { Autoclave } from "../../icons/DentalIcons";
 import { formatShortDate } from "../../../AppHelpers";
 import { printBlankMedicalContract } from "../../patients/blankContractPrint";
 import { DocumentQuickRoleScenarios } from "../DocumentQuickRoleScenarios";
@@ -92,7 +93,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 							onClick={() => setIsAutoclaveLogOpen(true)}
 							title="Открыть журнал контроля стерилизации и автоклавирования"
 						>
-							<Shield size={14} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
+							<Autoclave size={14} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
 							Журнал стерилизации
 						</button>
 					</div>

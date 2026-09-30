@@ -8,7 +8,8 @@
  */
 
 import React, { useCallback, useMemo, useState } from "react";
-import { Check, Heart, ShieldCheck, UserCheck, AlertCircle, Sparkles } from "lucide-react";
+import { Check, Heart, ShieldCheck, UserCheck, AlertCircle } from "lucide-react";
+import { ToothDeciduous } from "../icons/DentalIcons";
 
 export interface PediatricSomaticStatus {
 	readonly isNormal: boolean;
@@ -189,7 +190,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 						title="1-клик: Физиологическая норма развития, аллергоанамнез не отягощен, соматически здоров"
 						data-testid="btn-one-click-somatic-norm"
 					>
-						<Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<ToothDeciduous className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>1-клик: Соматическая норма ребенка</span>
 					</button>
 				</div>

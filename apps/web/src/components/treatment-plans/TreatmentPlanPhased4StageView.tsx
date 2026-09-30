@@ -3,7 +3,6 @@ import {
   ShieldCheck,
   Stethoscope,
   Scissors,
-  Crown,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -14,6 +13,7 @@ import {
   ArrowRight,
   Calendar,
 } from 'lucide-react';
+import { DentalCrown } from '../icons/DentalIcons.js';
 import {
   STAGE_CATEGORY_META,
   recalculateTreatmentPlanTotals,
@@ -66,7 +66,7 @@ const CATEGORY_ICONS: Record<TreatmentPlanStageCategory, React.ReactNode> = {
   hygiene_sanitation: <ShieldCheck className="w-4 h-4" />,
   endo_therapy: <Stethoscope className="w-4 h-4" />,
   surgery_implant: <Scissors className="w-4 h-4" />,
-  ortho_prosthetics: <Crown className="w-4 h-4" />,
+  ortho_prosthetics: <DentalCrown className="w-4 h-4" />,
 };
 
 export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageViewProps> = ({

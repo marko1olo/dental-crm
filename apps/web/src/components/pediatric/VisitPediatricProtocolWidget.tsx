@@ -10,7 +10,6 @@
 import {
 	Activity,
 	AlertCircle,
-	Baby,
 	Check,
 	Award,
 	ChevronDown,
@@ -28,6 +27,7 @@ import {
 	Sparkles,
 	Zap,
 } from "lucide-react";
+import { ToothDeciduous, DentalCrown } from "../icons/DentalIcons";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useVisitStore } from "../../store/visitStore";
 import { showToast } from "../GlobalToast";
@@ -350,7 +350,7 @@ export const PEDIATRIC_PROTOCOL_PRESETS: readonly PediatricProtocolDefinition[] 
 			],
 			defaultMaterial: "Стандартная стальная коронка SSC (3M ESPE)",
 			defaultToothFindingState: "Crown",
-			icon: ShieldCheck,
+			icon: DentalCrown,
 			colorTheme:
 				"border-amber-500 bg-amber-50/90 text-amber-950 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-100",
 		},
@@ -1142,7 +1142,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			<div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line,#e2e8f0)] pb-2.5 min-h-[36px]">
 				<div className="flex items-center gap-2 min-w-0">
 					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
-						<Baby className="h-4 w-4" />
+						<ToothDeciduous className="h-4 w-4" />
 					</div>
 					<div className="flex items-center gap-1.5 min-w-0">
 						<span className="text-[11px] font-black uppercase tracking-wider text-[var(--muted,#64748b)] hidden sm:inline shrink-0">

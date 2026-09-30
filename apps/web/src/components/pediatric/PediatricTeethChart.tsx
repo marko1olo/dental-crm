@@ -7,7 +7,8 @@
  */
 
 import React, { useMemo } from "react";
-import { Check, ShieldCheck, Sparkles, RefreshCw, Scissors } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { ToothDeciduous } from "../icons/DentalIcons";
 import {
 	type ResorptionStagePercent,
 	RESORPTION_STAGE_DEFINITIONS,
@@ -292,7 +293,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 							title="1-клик: смена резцов и появление первых моляров 16, 26, 36, 46"
 							data-testid="pediatric-mixed-preset-btn"
 						>
-							<Sparkles className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+							<ToothDeciduous className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
 							<span className="hidden md:inline">Смена резцов</span>
 						</button>
 					)}

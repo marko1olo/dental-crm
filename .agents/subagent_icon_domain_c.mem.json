@@ -1,0 +1,53 @@
+{
+  "subagent": "domain_c_clinical_icon_integrator",
+  "status": "completed",
+  "scope": [
+    "apps/web/src/components/surgery/",
+    "apps/web/src/components/implants/",
+    "apps/web/src/components/endo/",
+    "apps/web/src/components/photography/",
+    "apps/web/src/components/diagnostics/"
+  ],
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md in accordance with constitutional routine",
+    "Surveyed all files across 5 directories for generic icon usages from lucide-react",
+    "Verified available specialized dental vector icons in DentalIcons.tsx",
+    "Mapped out replacements per clinical domain invariants",
+    "Surgery: verified pure catalog/protocol domain, UI is in visit surgery",
+    "Implants: replaced generic icons in 5 files with DentalImplant, BoneGraft, DentalForm043",
+    "Endo: replaced generic icons in 3 files with EndoFileCanal, ToothPulpitis, ApexLocator, DentalForm043",
+    "Photography: replaced generic icons in 4 files with CheekRetractor, ToothShadeGuide, purged unused imports",
+    "Diagnostics: replaced generic icons in 7 files with ApexLocator, EndoFileCanal, ToothMolar, DentalSyringe, ToothDeciduous, ToothCaries, BracesBracket, AlignerTray, DentalPanoramicArch, DentalForm043",
+    "Ran unit tests across all domains: 110 tests passing (Exit Code 0)",
+    "Ran encoding check: 6,370 files verified (Exit Code 0)",
+    "Ran TypeScript verification: 0 compiler errors in any modified files",
+    "Verified line count: all 19 files strictly <= 800 lines"
+  ],
+  "modified_files": [
+    "apps/web/src/components/implants/ImplantPassportModal.tsx",
+    "apps/web/src/components/implants/ImplantProtocolTab.tsx",
+    "apps/web/src/components/implants/ImplantPassportCard.tsx",
+    "apps/web/src/components/implants/ImplantIsqTab.tsx",
+    "apps/web/src/components/implants/ImplantDiaryTab.tsx",
+    "apps/web/src/components/endo/EndoCanalLogModal.tsx",
+    "apps/web/src/components/endo/EndoQuickToolbar.tsx",
+    "apps/web/src/components/endo/EndoClinicalParams.tsx",
+    "apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx",
+    "apps/web/src/components/photography/VitaShadeSelector.tsx",
+    "apps/web/src/components/photography/BeforeAfterComparisonView.tsx",
+    "apps/web/src/components/photography/PhotoCalibrationDrawer.tsx",
+    "apps/web/src/components/diagnostics/ToothEndoCanalsSection.tsx",
+    "apps/web/src/components/diagnostics/ToothSurfacesAndEndoMatrix.tsx",
+    "apps/web/src/components/diagnostics/ToothContextDrawer.tsx",
+    "apps/web/src/components/diagnostics/ToothPediatricContext.tsx",
+    "apps/web/src/components/diagnostics/Icd10ClinicalSelector.tsx",
+    "apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx",
+    "apps/web/src/components/diagnostics/ToothRvgThumbnail.tsx"
+  ],
+  "verification": {
+    "unit_tests": "110/110 passed (implants: 18, endo: 15, photography: 46, diagnostics: 31)",
+    "check_encoding": "6370 files checked, 0 errors",
+    "typescript_errors_in_scope": 0,
+    "max_file_lines": 771
+  }
+}

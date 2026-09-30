@@ -13,11 +13,11 @@ import {
 	RotateCcw,
 	Send,
 	Sliders,
-	Sparkles,
 	ShieldCheck,
 	X,
 	Zap,
 } from "lucide-react";
+import { AlignerTray, BracesBracket, DentalArticulator } from "../icons/DentalIcons";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
@@ -1698,7 +1698,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 				<div className="flex items-center justify-between px-4 py-3 bg-[var(--surface,#f8fafc)] dark:bg-slate-800/80 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 shrink-0">
 					<div className="flex items-center gap-2.5">
 						<div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
-							<Sparkles size={18} />
+							<BracesBracket size={18} />
 						</div>
 						<div>
 							<h2 id="ortho-protocol-title" className="text-base font-black text-[var(--ink,#0f172a)] dark:text-white m-0">
@@ -1965,7 +1965,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 												: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
 										}`}
 									>
-										<Sparkles size={14} />
+										<BracesBracket size={14} />
 									</div>
 									<div className="min-w-0 flex-1">
 										<div className="text-xs font-bold leading-tight">
@@ -2025,7 +2025,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									className="min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-white dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-slate-800 dark:text-slate-100"
 								>
 									<div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
-										<Zap size={14} />
+										<AlignerTray size={14} />
 									</div>
 									<div className="min-w-0 flex-1">
 										<div className="text-xs font-bold leading-tight text-teal-700 dark:text-teal-300">
@@ -2082,7 +2082,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									className="min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-white dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-slate-800 dark:text-slate-100"
 								>
 									<div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
-										<ShieldCheck size={14} />
+										<DentalArticulator size={14} />
 									</div>
 									<div className="min-w-0 flex-1">
 										<div className="text-xs font-bold leading-tight text-teal-700 dark:text-teal-300">
@@ -2110,7 +2110,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 						>
 							<div className="flex items-center justify-between flex-wrap gap-1">
 								<span className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
-									<Sparkles size={14} className="text-indigo-600 dark:text-indigo-400" />
+									<AlignerTray size={14} className="text-indigo-600 dark:text-indigo-400" />
 									Аттачменты элайнеров
 								</span>
 								<span className="text-[11px] font-bold text-indigo-700/80 dark:text-indigo-400/80">
@@ -2531,7 +2531,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 						<div className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/50 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800">
 							<div className="flex items-center justify-between mb-2">
 								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
-									<Layers size={14} />
+									<BracesBracket size={14} />
 									Зубная формула (активация)
 								</span>
 								<div className="flex items-center gap-1">

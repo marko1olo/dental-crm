@@ -8,7 +8,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
 	Check,
 	CreditCard,
-	FlaskConical,
 	MoreVertical,
 	Package,
 	Percent,
@@ -17,6 +16,7 @@ import {
 	Trash2,
 	Zap,
 } from "lucide-react";
+import { DentalLabOrder } from "../icons/DentalIcons.js";
 import type { TreatmentPlanStage, TreatmentPlanStageStatus } from "./types";
 
 export interface StageStatusConfigItem {
@@ -313,7 +313,7 @@ export const TreatmentPlanStageFooter: React.FC<TreatmentPlanStageFooterProps> =
 										data-testid={`stage-${stage.stageNumber}-lab-order-btn`}
 										role="menuitem"
 									>
-										<FlaskConical size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+										<DentalLabOrder size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 										<span>Наряд-заказ в ЗТЛ</span>
 									</button>
 								)}

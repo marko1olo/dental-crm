@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Camera, FileText } from "lucide-react";
+import { Camera } from "lucide-react";
+import { BracesBracket } from "../icons/DentalIcons";
 import { usePatientStore } from "../../store/patientStore";
 import { OrthopedicsChairsidePanel } from "../orthopedics/OrthopedicsChairsidePanel";
 import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
@@ -35,7 +36,7 @@ export function OrthodonticPerspectiveView() {
 						onClick={() => setIsProtocolOpen(true)}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--line)] transition-colors cursor-pointer min-h-[36px]"
 					>
-						<FileText className="w-3.5 h-3.5" />
+						<BracesBracket className="w-3.5 h-3.5" />
 						Протокол визита
 					</button>
 				</div>

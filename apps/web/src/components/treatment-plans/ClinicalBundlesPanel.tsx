@@ -12,7 +12,6 @@ import {
 	Check,
 	ChevronDown,
 	ChevronUp,
-	Crown,
 	Droplet,
 	Eye,
 	PackagePlus,
@@ -22,6 +21,7 @@ import {
 	Sparkles,
 	Zap,
 } from "lucide-react";
+import { DentalCrown } from "../icons/DentalIcons.js";
 import {
 	CLINICAL_BUNDLES,
 	type ClinicalBundleDefinition,
@@ -141,9 +141,9 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 			case "implant_turnkey":
 				return <ShieldCheck size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />;
 			case "crown_metalloceramic_turnkey":
-				return <Crown size={16} className="text-[var(--teal,#0d9488)] shrink-0" />;
+				return <DentalCrown size={16} className="text-[var(--teal,#0d9488)] shrink-0" />;
 			case "crown_zirconia_turnkey":
-				return <Crown size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />;
+				return <DentalCrown size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />;
 			default:
 				return <PackagePlus size={16} className="text-[var(--teal,#0d9488)] shrink-0" />;
 		}

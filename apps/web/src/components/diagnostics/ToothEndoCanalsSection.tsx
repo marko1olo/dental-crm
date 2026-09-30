@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from "react";
 import {
 	Check,
-	FileText,
 	Plus,
 	RotateCcw,
 	ShieldAlert,
-	Sparkles,
 	Trash2,
-	Wrench,
-	Zap,
 } from "lucide-react";
+import { ApexLocator, EndoFileCanal, DentalForm043 } from "../icons/DentalIcons";
 import type { ToothData } from "../odontogram/ToothChart";
 import {
 	type EndoCanalData,
@@ -309,7 +306,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 		<div className="dente-endo-section">
 			<div className="dente-endo-header" onClick={onToggleShowEndoTable}>
 				<div className="dente-endo-title">
-					<Wrench size={16} color="var(--bad-fg)" />
+					<ApexLocator size={16} style={{ color: "var(--bad-fg)" }} />
 					<span>Эндодонтия & Апекслокация каналов ({canals.length})</span>
 				</div>
 				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -323,7 +320,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 							}}
 							title="Быстрый протокол ProTaper 25.06 (1 клик)"
 						>
-							<Zap size={12} />
+							<EndoFileCanal size={12} />
 							<span>Экспресс ProTaper</span>
 						</button>
 					)}
@@ -346,7 +343,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 					<div className="dente-endo-presets-bar" data-testid="endo-presets-bar">
 						<div className="dente-endo-presets-label-row">
 							<span className="dente-endo-presets-title">
-								<Sparkles size={14} />
+								<EndoFileCanal size={14} />
 								<span>Экспресс-протоколы эндодонтии (1 клик):</span>
 							</span>
 						</div>
@@ -358,7 +355,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 								title="Заполнить все каналы: ProTaper Gold 25.06, NaOCl 3% + EDTA, обтурация AH Plus + гуттаперча"
 								data-testid="endo-preset-protaper"
 							>
-								<Zap size={14} className="shrink-0" />
+								<EndoFileCanal size={14} className="shrink-0" />
 								<span className="truncate min-w-0">Экспресс ProTaper: 25.06 + NaOCl + AH Plus</span>
 							</button>
 							<button
@@ -402,7 +399,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 							title="Автоматический расчет рабочей длины каналов по формуле FDI (мм)"
 							data-testid="btn-endo-anatomical-lengths"
 						>
-							<Sparkles size={14} className="shrink-0" />
+							<ApexLocator size={14} className="shrink-0" />
 							<span>Авто-длина по FDI</span>
 						</button>
 
@@ -542,7 +539,7 @@ export const ToothEndoCanalsSection: React.FC<ToothEndoCanalsSectionProps> = ({
 							onClick={handleInsertEndoProtocol}
 							className="dente-primary-action-btn"
 						>
-							<FileText size={15} />
+							<DentalForm043 size={15} />
 							<span>Вставить протокол эндодонтии в карту 043/у</span>
 						</button>
 					</div>

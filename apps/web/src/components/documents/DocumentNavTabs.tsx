@@ -3,10 +3,10 @@ import type { DocumentKind } from "@dental/shared";
 import {
 	FileText,
 	UserCheck,
-	Stethoscope,
 	Receipt,
 	FileCheck,
 } from "lucide-react";
+import { DentalForm043 } from "../icons/DentalIcons";
 
 export type DocumentCategoryTab =
 	| "all"
@@ -101,7 +101,7 @@ export function DocumentNavTabs({
 			label: "Лечение и медицинская карта",
 			tabletLabel: "Карта и лечение",
 			mobileLabel: "Карта",
-			icon: <Stethoscope size={15} aria-hidden="true" className="shrink-0" />,
+			icon: <DentalForm043 size={15} aria-hidden="true" className="shrink-0" />,
 		},
 		{
 			id: "finance_tax",

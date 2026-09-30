@@ -1,18 +1,20 @@
 import type { PeriodontalDiagnosisDetail } from "@dental/shared";
 import {
-	Activity,
 	Check,
 	ChevronDown,
 	ChevronUp,
 	Clipboard,
 	Droplets,
-	FileText,
 	HelpCircle,
 	RotateCcw,
 	ShieldCheck,
-	Sparkles,
 } from "lucide-react";
 import React from "react";
+import {
+	DentalForm043,
+	PerioProbe,
+	UltrasonicScaler,
+} from "../../icons/DentalIcons";
 import type { PerioExpressPresetId } from "../perioMath";
 
 export interface PerioToolbarProps {
@@ -54,7 +56,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 		<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[var(--line)]">
 			<div className="flex items-center gap-3 min-w-0">
 				<div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 shrink-0">
-					<Activity size={22} />
+					<PerioProbe size={22} />
 				</div>
 				<div className="min-w-0">
 					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap min-w-0">
@@ -105,7 +107,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						title="Профгигиена в 1 клик (УЗ + Air-Flow глицин + полировка + фторирование + услуга A16.07.051)"
 						data-testid="perio-toolbar-prophy-1click-btn"
 					>
-						<Sparkles size={16} className="shrink-0" />
+						<UltrasonicScaler size={16} className="shrink-0" />
 						<span>Профгигиена</span>
 					</button>
 
@@ -184,7 +186,7 @@ export const PerioToolbar: React.FC<PerioToolbarProps> = React.memo(({
 						title="Сформировать и вставить протокол пародонтограммы в дневник 043/у"
 						data-testid="perio-insert-protocol-btn"
 					>
-						{insertStatus ? <Check size={14} /> : <FileText size={14} />}
+						{insertStatus ? <Check size={14} /> : <DentalForm043 size={14} />}
 						<span>
 							{insertStatus ? "Внесено в 043/у!" : "Внести в дневник 043/у"}
 						</span>

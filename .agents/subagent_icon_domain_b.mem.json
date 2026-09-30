@@ -1,0 +1,51 @@
+{
+  "subagent": "domain_b_clinical_icon_integrator",
+  "scope": [
+    "apps/web/src/components/orthodontics",
+    "apps/web/src/components/pediatric",
+    "apps/web/src/components/orthopedics",
+    "apps/web/src/components/treatment-plans"
+  ],
+  "status": "completed",
+  "completed_steps": [
+    "Read constitution: THE_HAMMER_MASTER_PROMPT.md & AGENTS.md in full",
+    "Analyzed DentalIcons.tsx components and exports (36 specialized SVG components)",
+    "Domain 1 (Orthodontics): Integrated BracesBracket, AlignerTray, DentalArticulator into OrthodonticMaterialsQuickSelector.tsx, OrthodonticPerspectiveView.tsx, OrthodonticVisitProtocolWidget.tsx",
+    "Domain 2 (Pediatric): Integrated ToothDeciduous, DentalCrown into PediatricTeethChart.tsx, PediatricSomaticAndLegalRep.tsx, PediatricBraveryDiplomaModal.tsx, VisitPediatricProtocolWidget.tsx",
+    "Domain 3 (Orthopedics): Integrated DentalCrown, DentalVeneer, DentalBridge, ToothShadeGuide into OrthopedicsChairsidePanel.tsx, OrthopedicsVitaShadePicker.tsx, OrthopedicsZtlSelectors.tsx",
+    "Domain 4 (Treatment Plans): Integrated DentalCrown, DentalLabOrder into TreatmentPlanPhased4StageView.tsx, TreatmentPlanRoadmap.tsx, ClinicalBundlesPanel.tsx, ClinicalServiceBundlesModal.tsx, TreatmentPlanStageItemRow.tsx, TreatmentPlanStageFooter.tsx, TreatmentPlanModule.tsx",
+    "Purged all unused lucide-react imports across all 17 modified files",
+    "Verified Mandate 8b: strictly all files <= 800 lines (OrthopedicsChairsidePanel=791, TreatmentPlanRoadmap=784, etc.)",
+    "Ran npm run check:encoding: 6370 files clean, 0 errors",
+    "Ran unit test suite across all 4 domains: 330/330 tests passed (0 failures)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Replaced generic Crown with DentalCrown across orthopedic chairside panels, turnkey bundles, 4-stage treatment plans, and roadmap",
+    "Replaced Sparkles/Zap/Layers with AlignerTray, BracesBracket, DentalArticulator in orthodontic visit protocol",
+    "Replaced Sparkles/Baby with ToothDeciduous in pediatric chart, bravery diploma, and somatic norm presets",
+    "Replaced FlaskConical with DentalLabOrder in treatment plan rows, footers, and main module",
+    "Replaced Sparkles with ToothShadeGuide in OrthopedicsVitaShadePicker",
+    "Replaced Layers with DentalBridge in removable prosthetics protocol and DentalCrown in preparation margin selector"
+  ],
+  "modified_files": [
+    "apps/web/src/components/orthodontics/OrthodonticMaterialsQuickSelector.tsx",
+    "apps/web/src/components/orthodontics/OrthodonticPerspectiveView.tsx",
+    "apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx",
+    "apps/web/src/components/pediatric/PediatricBraveryDiplomaModal.tsx",
+    "apps/web/src/components/pediatric/PediatricSomaticAndLegalRep.tsx",
+    "apps/web/src/components/pediatric/PediatricTeethChart.tsx",
+    "apps/web/src/components/pediatric/VisitPediatricProtocolWidget.tsx",
+    "apps/web/src/components/orthopedics/OrthopedicsChairsidePanel.tsx",
+    "apps/web/src/components/orthopedics/OrthopedicsVitaShadePicker.tsx",
+    "apps/web/src/components/orthopedics/OrthopedicsZtlSelectors.tsx",
+    "apps/web/src/components/treatment-plans/ClinicalBundlesPanel.tsx",
+    "apps/web/src/components/treatment-plans/ClinicalServiceBundlesModal.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanPhased4StageView.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanRoadmap.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanStageFooter.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanStageItemRow.tsx"
+  ],
+  "test_results": "330 passed, 0 failed, 6370 files verified in check:encoding"
+}

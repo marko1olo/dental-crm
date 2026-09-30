@@ -16,13 +16,12 @@ import {
 	Plus,
 	Printer,
 	Search,
-	ShieldCheck,
-	Sparkles,
 	Trash2,
 	UserCheck,
 	XCircle,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
+import { Autoclave, DentalForm043 } from "../../icons/DentalIcons";
 import {
 	DEFAULT_CLINIC_LEGAL_INFO,
 	createDefault5ChamberPoints,
@@ -304,7 +303,7 @@ export function AutoclaveJournal257Tab({
 						className="autoclave-btn-primary"
 						style={{ minHeight: "36px", whiteSpace: "nowrap", flexShrink: 0, padding: "0 0.875rem" }}
 					>
-						<Sparkles size={16} />
+						<Autoclave size={16} />
 						<span>Заполнить автоклав в 1 клик</span>
 					</button>
 				</div>
@@ -419,7 +418,7 @@ export function AutoclaveJournal257Tab({
 							title="Автоматическое формирование и печать нормативного журнала стерилизаторов (Форма 257/у) за текущий месяц"
 							data-testid="journal-tab-generate-monthly-form257-btn"
 						>
-							<Sparkles size={16} color="var(--teal, #0d9488)" />
+							<DentalForm043 size={16} color="var(--teal, #0d9488)" />
 							<span>Форма 257/у (Месяц)</span>
 						</button>
 
@@ -522,7 +521,7 @@ export function AutoclaveJournal257Tab({
 							title="Пакетно сформировать циклы стерилизации (134°C 2.1 бар 5 мин / 20 мин, 5 точек КТ) за выбранный период"
 							data-testid="journal-tab-generate-batch-btn"
 						>
-							<Sparkles size={15} color="var(--teal, #0d9488)" />
+							<Autoclave size={15} color="var(--teal, #0d9488)" />
 							<span>Сформировать за период</span>
 						</button>
 					</div>
@@ -549,7 +548,7 @@ export function AutoclaveJournal257Tab({
 							justifyContent: "center",
 						}}
 					>
-						<ShieldCheck size={48} style={{ opacity: 0.4, marginBottom: "0.75rem", color: "var(--teal, #0d9488)" }} />
+						<Autoclave size={48} style={{ opacity: 0.4, marginBottom: "0.75rem", color: "var(--teal, #0d9488)" }} />
 						<div style={{ fontWeight: 600, fontSize: "1.125rem", color: "var(--ink, #0f172a)" }}>
 							Журнал стерилизации пуст
 						</div>
@@ -571,7 +570,7 @@ export function AutoclaveJournal257Tab({
 					</div>
 				) : filteredRecords.length === 0 ? (
 					<div style={{ padding: "3rem 1.5rem", textAlign: "center", color: "var(--muted, #64748b)" }}>
-						<ShieldCheck size={40} style={{ margin: "0 auto 0.75rem auto", opacity: 0.4 }} />
+						<Autoclave size={40} style={{ margin: "0 auto 0.75rem auto", opacity: 0.4 }} />
 						<div style={{ fontWeight: 600, fontSize: "1rem" }}>Записи не найдены</div>
 						<div style={{ fontSize: "0.8125rem", marginTop: "0.25rem" }}>
 							Попробуйте изменить параметры фильтрации или зарегистрируйте новый цикл.

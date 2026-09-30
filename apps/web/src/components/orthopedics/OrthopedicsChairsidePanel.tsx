@@ -1,9 +1,6 @@
 import React, { useState, useCallback, useId, useEffect, useRef } from "react";
 import {
-	Crown,
-	Sparkles,
 	CheckCircle2,
-	Layers,
 	ShieldCheck,
 	FileText,
 	ArrowRight,
@@ -14,6 +11,7 @@ import {
 	RotateCcw,
 	X,
 } from "lucide-react";
+import { DentalCrown, DentalVeneer, DentalBridge } from "../icons/DentalIcons.js";
 import {
 	ORTHOPEDIC_CANONICAL_PROTOCOLS,
 	applyOrthopedicProtocolToVisit,
@@ -433,10 +431,10 @@ export function OrthopedicsChairsidePanel({
 
 	const getProtocolIcon = (category: OrthopedicProtocolPreset["category"]) => {
 		switch (category) {
-			case "prep_crown": return <Crown size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />;
+			case "prep_crown": return <DentalCrown size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />;
 			case "try_in": return <CheckCircle2 size={18} className="text-blue-600 dark:text-blue-400 shrink-0" />;
-			case "permanent_cementation": return <Sparkles size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />;
-			case "removable_prosthetics": return <Layers size={18} className="text-purple-600 dark:text-purple-400 shrink-0" />;
+			case "permanent_cementation": return <DentalVeneer size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />;
+			case "removable_prosthetics": return <DentalBridge size={18} className="text-purple-600 dark:text-purple-400 shrink-0" />;
 			case "consultation_norm": return <ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />;
 		}
 	};
@@ -449,7 +447,7 @@ export function OrthopedicsChairsidePanel({
 			{/* Верхняя строка: Заголовок, область зубов, параметры материала */}
 			<div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
 				<div className="flex items-center gap-2">
-					<Crown size={20} className="text-teal-600 dark:text-teal-400" />
+					<DentalCrown size={20} className="text-teal-600 dark:text-teal-400" />
 					<div className="leading-tight">
 						<h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight">
 							Ортопедия у кресла (043/у · Этап 3 · ЗТЛ)

@@ -5,6 +5,7 @@ import type {
 	DocumentSourceStatus,
 } from "@dental/shared";
 import { FileText, FolderArchive } from "lucide-react";
+import { DentalForm043 } from "../../icons/DentalIcons";
 
 export interface DocumentTemplatesCatalogProps {
 	sanitizedDocumentFactoryGroups: Array<{
@@ -77,7 +78,12 @@ export const DocumentTemplatesCatalog: React.FC<
 											}
 										}}
 									>
-										<FileText aria-hidden="true" />
+										{kind === "dental_medical_card_043u" ||
+										kind === "orthodontic_medical_card_043_1u" ? (
+											<DentalForm043 aria-hidden="true" size={16} />
+										) : (
+											<FileText aria-hidden="true" />
+										)}
 										<span className="document-factory-kind-button-text">
 											<span>{documentLabels?.[kind] ?? kind}</span>
 											<small

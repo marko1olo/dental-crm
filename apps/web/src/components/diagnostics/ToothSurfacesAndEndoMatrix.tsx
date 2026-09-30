@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from "react";
-import {
-	Check,
-	Layers,
-} from "lucide-react";
+import { Check } from "lucide-react";
+import { ToothMolar } from "../icons/DentalIcons";
 import type { ToothData, ToothState } from "../odontogram/ToothChart";
 import type { RestorativeMaterialKey } from "../odontogram/anatomicalToothGeometries";
 import { showToast } from "../GlobalToast";
@@ -106,7 +104,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 		<div className="dente-warm-tool-card" data-testid="tooth-surfaces-endo-matrix">
 			<div className="dente-warm-tool-header">
 				<div className="dente-warm-tool-title-group">
-					<Layers size={18} color="var(--brand-primary, var(--teal))" />
+					<ToothMolar size={18} style={{ color: "var(--brand-primary, var(--teal))" }} />
 					<h3 className="dente-warm-tool-title">
 						Анатомический статус и матрица поверхностей (MOD)
 					</h3>

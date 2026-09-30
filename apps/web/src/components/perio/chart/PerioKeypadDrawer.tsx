@@ -3,8 +3,9 @@ import {
 	type PerioSiteKey,
 	type PerioToothRecord,
 } from "@dental/shared";
-import { Droplets, Zap } from "lucide-react";
+import { Droplets } from "lucide-react";
 import React from "react";
+import { PerioProbe } from "../../icons/DentalIcons";
 import { probingDepthTone } from "../perioHeatmap";
 
 export interface PerioKeypadDrawerProps {
@@ -50,7 +51,7 @@ export const PerioKeypadDrawer: React.FC<PerioKeypadDrawerProps> = React.memo(({
 			{/* Active Probe Site Info Badge */}
 			<div className="flex items-center gap-2 flex-wrap">
 				<div className="px-2.5 py-1 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-300 font-mono text-xs font-bold flex items-center gap-1.5">
-					<Zap size={14} className="text-teal-400 shrink-0" />
+					<PerioProbe size={14} className="text-teal-400 shrink-0" />
 					<span>
 						{focusedSite ? (
 							<>

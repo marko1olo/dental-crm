@@ -4,7 +4,8 @@
  */
 
 import React from "react";
-import { Archive, Check, FlaskConical, Lock, RefreshCw, Trash2, Zap } from "lucide-react";
+import { Archive, Check, Lock, RefreshCw, Trash2, Zap } from "lucide-react";
+import { DentalLabOrder } from "../icons/DentalIcons.js";
 import type { TreatmentPlanItem } from "./types";
 import { MissingPriceAlert } from "./MissingPriceAlert";
 import { formatPlanPriceRub, isPlanPriceImmutable } from "./planPricing";
@@ -114,7 +115,7 @@ export const TreatmentPlanStageItemRow: React.FC<TreatmentPlanStageItemRowProps>
 								title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
 								data-testid={`item-lab-order-btn-${item.id}`}
 							>
-								<FlaskConical size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+								<DentalLabOrder size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 								<span>Наряд в ЗТЛ</span>
 							</button>
 							{onOneClickLabOrder && (

@@ -25,6 +25,7 @@ import {
 	RotateCcw,
 	CheckCircle2,
 } from "lucide-react";
+import { Autoclave } from "../icons/DentalIcons";
 import {
 	POPULAR_STERILIZER_BRAND_PRESETS,
 	type PopularSterilizerBrandPreset,
@@ -388,7 +389,7 @@ export function AutoclaveEquipmentModal({
 			<div className="sanpin-modal" style={{ maxWidth: "780px" }}>
 				<div className="sanpin-modal-header" style={{ padding: "1.25rem 1.5rem" }}>
 					<h3 style={{ fontSize: "1.15rem", display: "flex", alignItems: "center", gap: "0.5rem", margin: 0 }}>
-						<ShieldCheck size={22} color="var(--brand-primary, #2563eb)" />
+						<Autoclave size={22} color="var(--brand-primary, #2563eb)" />
 						<span title="Соответствует СанПиН 3.3686-21">Парк стерилизаторов клиники</span>
 					</h3>
 					<button
@@ -430,7 +431,7 @@ export function AutoclaveEquipmentModal({
 
 							{devices.length === 0 ? (
 								<div style={{ padding: "2rem 1rem", textAlign: "center", background: "var(--paper-soft, #f8fafc)", borderRadius: "12px", border: "1px dashed var(--line, #cbd5e1)" }}>
-									<ShieldCheck size={42} color="var(--brand-primary, #2563eb)" style={{ margin: "0 auto 0.5rem" }} />
+									<Autoclave size={42} color="var(--brand-primary, #2563eb)" style={{ margin: "0 auto 0.5rem" }} />
 									<p style={{ margin: "0 0 0.25rem", fontWeight: 700, fontSize: "1rem", color: "var(--ink)" }}>В клинике не зарегистрировано автоклавов</p>
 									<p style={{ margin: "0 0 1rem", fontSize: "0.825rem", color: "var(--muted)", maxWidth: "460px", marginLeft: "auto", marginRight: "auto" }}>
 										Зарегистрируйте автоклав или сухожаровой шкаф клиники для автоматического ведения журнала контроля работы стерилизаторов (Форма № 257/у) и печати этикеток крафт-пакетов.

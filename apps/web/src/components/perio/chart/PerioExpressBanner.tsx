@@ -1,17 +1,19 @@
 import { PSR_SEXTANTS, type PsrSextantResult } from "@dental/shared";
 import {
-	Activity,
 	AlertTriangle,
 	Check,
 	ChevronDown,
 	ChevronUp,
-	FileText,
 	Layers,
 	ShieldAlert,
 	ShieldCheck,
-	Sparkles,
 } from "lucide-react";
 import React from "react";
+import {
+	DentalForm043,
+	PerioProbe,
+	UltrasonicScaler,
+} from "../../icons/DentalIcons";
 import {
 	PSR_CODE_DEFINITIONS,
 	type PerioExpressPresetId,
@@ -55,7 +57,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 		<div className="flex flex-col gap-3.5 p-4 rounded-xl bg-teal-500/10 border border-teal-500/30 text-[var(--ink)] shadow-xs">
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-teal-500/20">
 				<div className="flex items-center gap-2 min-w-0">
-					<Activity size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<PerioProbe size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
 					<h4 className="text-sm font-black text-teal-900 dark:text-teal-300 truncate">
 						Экспресс-скрининг пародонта PSR / CPITN (ВОЗ / СтАР) и 1-клик пресеты
 					</h4>
@@ -87,7 +89,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 							title="Внести текущее заключение пародонтограммы в дневник 043/у"
 							data-testid="perio-express-insert-043-btn"
 						>
-							{insertStatus ? <Check size={14} /> : <FileText size={14} />}
+							{insertStatus ? <Check size={14} /> : <DentalForm043 size={14} />}
 							<span>
 								{insertStatus ? "Внесено в 043/у!" : "Внести в дневник 043/у"}
 							</span>
@@ -158,7 +160,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 				>
 					<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
 						<span className="flex items-center gap-1.5 text-cyan-800 dark:text-cyan-300 min-w-0 truncate">
-							<Sparkles size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+							<UltrasonicScaler size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
 							<span className="truncate">Профгигиена</span>
 						</span>
 						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 border border-cyan-500/30 shrink-0">
@@ -185,7 +187,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 				>
 					<div className="flex items-center justify-between gap-1.5 font-black text-xs min-w-0">
 						<span className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 min-w-0 truncate">
-							<Activity size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<PerioProbe size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
 							<span className="truncate">Гингивит (PSR 1-2)</span>
 						</span>
 						<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 shrink-0">
@@ -415,7 +417,7 @@ export const PerioExpressBanner: React.FC<PerioExpressBannerProps> = React.memo(
 					}
 					data-testid="perio-preset-pro-hygiene-card"
 				>
-					<Sparkles size={12} className="text-cyan-600 dark:text-cyan-400" />
+					<UltrasonicScaler size={12} className="text-cyan-600 dark:text-cyan-400" />
 					<span>Профгигиена (полный протокол)</span>
 				</button>
 				<button

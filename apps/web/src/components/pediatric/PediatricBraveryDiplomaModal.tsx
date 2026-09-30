@@ -16,10 +16,10 @@ import {
 	Heart,
 	Printer,
 	ShieldCheck,
-	Sparkles,
 	Star,
 	X,
 } from "lucide-react";
+import { ToothDeciduous } from "../icons/DentalIcons";
 import { showToast } from "../GlobalToast";
 
 export interface PediatricBraveryDiplomaModalProps {
@@ -378,11 +378,11 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						</p>
 
 						<div className="flex items-center justify-center gap-1 text-amber-500 my-2">
-							<Sparkles className="w-4 h-4" />
+							<ToothDeciduous className="w-4 h-4" />
 							<span className="text-xs font-bold text-amber-700 dark:text-amber-400">
 								Зубки под надежной защитой!
 							</span>
-							<Sparkles className="w-4 h-4" />
+							<ToothDeciduous className="w-4 h-4" />
 						</div>
 
 						{/* Подписи внизу превью */}

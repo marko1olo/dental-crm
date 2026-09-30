@@ -15,23 +15,21 @@ import {
 	ChevronDown,
 	ChevronUp,
 	CornerDownRight,
-	Crown,
 	Droplet,
 	Eye,
 	Filter,
-	Layers,
 	PackageCheck,
 	PackagePlus,
 	Receipt,
 	RotateCcw,
 	Search,
-	Scissors,
 	ShieldAlert,
 	Sparkles,
 	Stethoscope,
 	X,
 	Zap,
 } from "lucide-react";
+import { DentalCrown } from "../icons/DentalIcons.js";
 import { showToast } from "../GlobalToast";
 import type { InvoiceServiceItem } from "../finance/invoiceEngine";
 import {
@@ -244,7 +242,7 @@ export const ClinicalServiceBundlesModal: React.FC<ClinicalServiceBundlesModalPr
 			case "hygiene":
 				return <Droplet size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />;
 			case "orthopedics":
-				return <Crown size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />;
+				return <DentalCrown size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />;
 			default:
 				return <PackagePlus size={16} className="text-[var(--teal,#0d9488)] shrink-0" />;
 		}

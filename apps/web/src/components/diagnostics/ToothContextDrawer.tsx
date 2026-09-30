@@ -3,15 +3,13 @@ import {
 	BellPlus,
 	ChevronDown,
 	ChevronUp,
-	Heart,
-	Layers,
 	Scan,
 	ShieldAlert,
 	ShieldCheck,
-	Syringe,
 	Wallet,
 	X,
 } from "lucide-react";
+import { ToothMolar, DentalSyringe, ToothDeciduous } from "../icons/DentalIcons";
 import type { ToothData, ToothState } from "../odontogram/ToothChart";
 import { getToothAnatomicalNameRu, getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { ToothSurfacesAndEndoMatrix } from "./ToothSurfacesAndEndoMatrix";
@@ -363,7 +361,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						onClick={() => setActiveSection("surfaces_endo")}
 						className={`dente-quick-tab-btn ${activeSection === "surfaces_endo" ? "active" : ""}`}
 					>
-						<Layers size={14} />
+						<ToothMolar size={14} />
 						<span>1. MOD & Каналы</span>
 					</button>
 
@@ -372,7 +370,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						onClick={() => setActiveSection("anesthesia")}
 						className={`dente-quick-tab-btn ${activeSection === "anesthesia" ? "active" : ""}`}
 					>
-						<Syringe size={14} />
+						<DentalSyringe size={14} />
 						<span>2. Анестезия</span>
 					</button>
 
@@ -400,7 +398,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							onClick={() => setActiveSection("pediatric")}
 							className={`dente-quick-tab-btn pediatric ${activeSection === "pediatric" ? "active" : ""}`}
 						>
-							<Heart size={14} />
+							<ToothDeciduous size={14} />
 							<span>5. Детский (Франкл)</span>
 						</button>
 					)}
@@ -416,7 +414,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							className={`dente-accordion-trigger ${activeSection === "surfaces_endo" ? "expanded" : ""}`}
 						>
 							<div className="trigger-left">
-								<Layers size={16} color="var(--brand-primary, var(--teal))" />
+								<ToothMolar size={16} style={{ color: "var(--brand-primary, var(--teal))" }} />
 								<span className="trigger-title">1. Анатомия поверхностей (MOD) & Эндодонтия</span>
 							</div>
 							<div className="trigger-right">
@@ -447,7 +445,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							className={`dente-accordion-trigger ${activeSection === "anesthesia" ? "expanded" : ""}`}
 						>
 							<div className="trigger-left">
-								<Syringe size={16} color="var(--brand-primary, var(--teal))" />
+								<DentalSyringe size={16} style={{ color: "var(--brand-primary, var(--teal))" }} />
 								<span className="trigger-title">2. Экспресс-анестезия (1 клик)</span>
 							</div>
 							<div className="trigger-right">
@@ -534,7 +532,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 										>
 											<div className="flex items-center gap-2.5 min-w-0">
 												<div className={`p-1.5 rounded-lg shrink-0 border ${preset.badgeClass}`}>
-													<Syringe className="w-4 h-4" />
+													<DentalSyringe className="w-4 h-4" />
 												</div>
 												<div className="min-w-0">
 													<div className="text-xs font-bold text-[var(--ink)] group-hover:text-[var(--teal)] transition-colors truncate min-w-0">
@@ -633,7 +631,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 								className={`dente-accordion-trigger ${activeSection === "pediatric" ? "expanded" : ""}`}
 							>
 								<div className="trigger-left">
-									<Heart size={16} color="#ec4899" />
+									<ToothDeciduous size={16} style={{ color: "#ec4899" }} />
 									<span className="trigger-title">5. Детский прием (Шкала Франкла & Резорбция)</span>
 								</div>
 								<div className="trigger-right">

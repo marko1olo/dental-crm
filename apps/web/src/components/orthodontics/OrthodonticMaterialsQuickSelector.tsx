@@ -10,8 +10,9 @@ import {
 	type ClinicalMarketMaterialItem,
 	searchClinicalMaterials,
 } from "@dental/shared";
-import { Award, Check, Layers, Search } from "lucide-react";
+import { Award, Check, Search } from "lucide-react";
 import React, { useMemo, useState } from "react";
+import { BracesBracket } from "../icons/DentalIcons";
 
 export type OrthoCategoryFilter = "all" | "brackets" | "wires" | "aligners" | "miniscrews";
 
@@ -71,7 +72,7 @@ export function OrthodonticMaterialsQuickSelector({
 			{/* Header */}
 			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
 				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-					<Layers size={16} style={{ color: "var(--primary, #0d9488)" }} />
+					<BracesBracket size={16} style={{ color: "var(--primary, #0d9488)" }} />
 					<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink, #1e293b)" }}>
 						Ортодонтические материалы (90% рынка РФ)
 					</span>

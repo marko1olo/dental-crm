@@ -5,9 +5,8 @@ import {
 	Plus,
 	RotateCcw,
 	ShieldCheck,
-	Sparkles,
-	Zap,
 } from "lucide-react";
+import { EndoFileCanal, ToothPulpitis, ApexLocator } from "../icons/DentalIcons";
 
 export interface EndoQuickToolbarProps {
 	readonly activeTooth: number;
@@ -76,7 +75,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 				</div>
 
 				<div className="hidden xl:flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 shrink-0 mr-0.5">
-					<Sparkles size={14} className="shrink-0" />
+					<EndoFileCanal size={14} className="shrink-0" />
 					<span>1-клик:</span>
 				</div>
 
@@ -112,7 +111,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0 active:scale-98"
 					title="1-клик: Эндодонтия пульпита в 1 визит (ProTaper F2 + AH Plus)"
 				>
-					<Zap size={13} className="shrink-0" />
+					<ToothPulpitis size={13} className="shrink-0" />
 					<span className="truncate">Пульпит в 1 визит</span>
 				</button>
 
@@ -142,7 +141,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 								}}
 								className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 font-medium flex items-center gap-2 cursor-pointer"
 							>
-								<Zap size={14} className="text-rose-500 shrink-0" />
+								<EndoFileCanal size={14} className="text-rose-500 shrink-0" />
 								<span className="truncate">
 									Первичное эндо (ProTaper + Metapex)
 								</span>
@@ -216,7 +215,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 								}}
 								className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 font-medium flex items-center gap-2 cursor-pointer"
 							>
-								<Sparkles
+								<EndoFileCanal
 									size={14}
 									className="text-indigo-500 shrink-0"
 								/>
@@ -248,7 +247,7 @@ export const EndoQuickToolbar: React.FC<EndoQuickToolbarProps> = ({
 					className="h-6 sm:h-7 px-2 rounded-lg text-xs font-bold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-1 transition-all cursor-pointer shrink-0 active:scale-98"
 					title="Автозаполнение анатомической рабочей длины по FDI в 1 клик"
 				>
-					<Zap
+					<ApexLocator
 						size={13}
 						className="text-indigo-600 dark:text-indigo-400 shrink-0"
 					/>

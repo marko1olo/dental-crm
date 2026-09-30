@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
-	Camera,
 	CheckCircle,
 	X,
 	Grid,
@@ -8,6 +7,7 @@ import {
 	MoveHorizontal,
 	UploadCloud,
 } from 'lucide-react';
+import { CheekRetractor } from '../icons/DentalIcons';
 import './clinicalPhotography.css';
 import {
 	PhotoProtocolPreset,
@@ -263,7 +263,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 				<div className="photo-protocol-header">
 					<div className="photo-protocol-title-group">
 						<div className="photo-protocol-badge-icon">
-							<Camera size={22} />
+							<CheekRetractor size={22} />
 						</div>
 						<div>
 							<h2 id="photo-protocol-title" style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>

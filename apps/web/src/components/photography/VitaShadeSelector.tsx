@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Sparkles, ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
+import { ToothShadeGuide } from '../icons/DentalIcons';
 import {
 	VitaSystemType,
 	VITA_CLASSICAL_SHADES,
@@ -75,7 +76,7 @@ export const VitaShadeSelector: React.FC<VitaShadeSelectorProps> = ({
 				gap: '12px',
 			}}>
 				<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-					<Sparkles size={18} style={{ color: 'var(--brand-500, #2563eb)' }} />
+					<ToothShadeGuide size={18} style={{ color: 'var(--brand-500, #2563eb)' }} />
 					<span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--ink, #0f172a)' }}>
 						Определение цвета по шкале VITA (Колориметрия)
 					</span>

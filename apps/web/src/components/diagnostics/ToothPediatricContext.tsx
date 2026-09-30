@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
 	Check,
-	FileText,
-	Heart,
 	Printer,
 } from "lucide-react";
+import { ToothDeciduous, DentalForm043 } from "../icons/DentalIcons";
 import {
 	type FranklRating,
 	type FranklRatingDefinition,
@@ -485,7 +484,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 		<div className="dente-warm-tool-card" data-testid="tooth-pediatric-context">
 			<div className="dente-warm-tool-header">
 				<div className="dente-warm-tool-title-group">
-					<Heart size={18} color="#ec4899" />
+					<ToothDeciduous size={18} style={{ color: "#ec4899" }} />
 					<h3 className="dente-warm-tool-title">
 						Детский прием: Шкала Франкла & Резорбция (FDI #{toothNumber})
 					</h3>
@@ -525,7 +524,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 						style={{ minHeight: "32px", height: "32px", padding: "4px 10px", fontSize: "12px", gap: "6px" }}
 						title={`Внести запись о резорбции корней зуба #${toothNumber} в карту 043/у`}
 					>
-						<FileText size={14} />
+						<DentalForm043 size={14} />
 						<span>Внести в 043/у</span>
 					</button>
 				</div>
@@ -556,7 +555,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 					className="dente-secondary-btn"
 					style={{ minHeight: "32px", height: "32px", padding: "0 10px", fontSize: "12px" }}
 				>
-					<FileText size={15} />
+					<DentalForm043 size={15} />
 					<span>Вставить статус Франкла в 043/у</span>
 				</button>
 

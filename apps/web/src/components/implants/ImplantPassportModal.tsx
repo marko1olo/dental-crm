@@ -1,19 +1,12 @@
 import React, { useState, useId } from "react";
 import {
-	Activity,
 	CheckCircle2,
 	X,
-	ShieldCheck,
 	Sliders,
-	FileText,
-	Copy,
 	AlertTriangle,
 	Printer,
-	Zap,
-	Layers,
-	TrendingUp,
-	Scan,
 } from "lucide-react";
+import { DentalImplant } from "../icons/DentalIcons";
 import { showToast } from "../GlobalToast";
 import {
 	FAST_IMPLANT_SYSTEM_PRESETS,
@@ -259,7 +252,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 				<header className="implant-passport-header-bar">
 					<div className="flex items-center gap-3 min-w-0">
 						<div className="w-10 h-10 rounded-xl bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0 border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
-							<ShieldCheck size={22} />
+							<DentalImplant size={22} />
 						</div>
 						<div className="min-w-0">
 							<h2 id={titleId} className="text-base font-black text-[var(--ink)] flex items-center gap-2 flex-wrap min-w-0">

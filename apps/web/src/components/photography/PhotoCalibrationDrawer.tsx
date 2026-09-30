@@ -8,8 +8,8 @@ import {
 	FlipVertical,
 	Check,
 	Camera,
-	Palette,
 } from 'lucide-react';
+import { ToothShadeGuide } from '../icons/DentalIcons';
 import { PhotoProtocolSlotDefinition, PhotoSlotRecord } from './photoGridPresets';
 import {
 	createVitaPhysicalTabReference,
@@ -286,7 +286,7 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 						<div className="shade-matching-box" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 								<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-									<Palette size={16} />
+									<ToothShadeGuide size={16} />
 									<span style={{ fontSize: '13px', fontWeight: 700 }}>
 										Эталон расцветки VITA для ЗТЛ
 									</span>

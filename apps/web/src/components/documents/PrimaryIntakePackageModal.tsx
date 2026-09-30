@@ -17,6 +17,7 @@ import {
 	MoreHorizontal,
 } from "lucide-react";
 import { formatShortDate } from "../../AppHelpers";
+import { DentalMirrorProbe } from "../icons/DentalIcons";
 import { printPrimaryIntakePackage } from "./primaryIntakePackagePrintEngine";
 import { useDocumentStore } from "../../store/documentStore";
 import { showToast } from "../GlobalToast";
@@ -247,7 +248,7 @@ export function PrimaryIntakePackageModal({
 			<div className="document-package-modal-content">
 				<div className="document-package-modal-header">
 					<h3 className="document-package-modal-title" id="intake-package-modal-title">
-						<FileText size={18} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
+						<DentalMirrorProbe size={18} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
 						<span>Экспресс-пакет первичного пациента</span>
 					</h3>
 					<button

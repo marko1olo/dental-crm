@@ -37,14 +37,13 @@ import {
 	CheckCircle2,
 	Clipboard,
 	Droplets,
-	FileText,
 	Printer,
 	RotateCcw,
 	ShieldAlert,
 	ShieldCheck,
-	Sparkles,
 	Zap,
 } from "lucide-react";
+import { DentalForm043, UltrasonicScaler } from "../icons/DentalIcons";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
@@ -1244,7 +1243,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							{insertStatus ? (
 								<Check size={14} className="shrink-0" />
 							) : (
-								<FileText size={14} className="shrink-0" />
+								<DentalForm043 size={14} className="shrink-0" />
 							)}
 							<span className="truncate">
 								{insertStatus ? "Внесено в карту!" : "В медицинскую карту"}
@@ -1388,7 +1387,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 					<div className="flex flex-col gap-2 pt-2 border-t border-teal-500/20">
 						<div className="flex items-center justify-between flex-wrap gap-1">
 							<div className="flex items-center gap-2 min-w-0">
-								<Sparkles size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+								<UltrasonicScaler size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
 								<span className="text-xs font-black text-cyan-900 dark:text-cyan-300 truncate">
 									Chairside-протоколы лечения и профилактики (начисление в счёт + дневник приёма):
 								</span>
@@ -1409,7 +1408,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							>
 								<div className="flex items-center justify-between gap-1 font-black text-xs min-w-0">
 									<div className="flex items-center gap-1.5 truncate min-w-0">
-										<Sparkles size={15} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+										<UltrasonicScaler size={15} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
 										<span className="truncate">Профгигиена</span>
 									</div>
 									<span className="text-[11px] font-mono text-cyan-900 dark:text-cyan-300 font-black shrink-0">

@@ -4,18 +4,10 @@ import {
 	MoveVertical,
 	Camera,
 	Sliders,
-	RotateCw,
-	RotateCcw,
-	ZoomIn,
-	ZoomOut,
-	Sparkles,
 	Download,
-	Layers,
-	FileText,
-	Check,
-	Maximize2,
 	Link as LinkIcon,
 } from 'lucide-react';
+import { ToothShadeGuide } from '../icons/DentalIcons';
 import { PhotoProtocolPreset, PhotoSlotRecord, getSlotDefinitionById } from './photoGridPresets';
 import {
 	calculateSplitClipPath,
@@ -470,7 +462,7 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						title="Шкала VITA (A1-D4 / 3D-Master)"
 						style={{ minHeight: '44px', minWidth: '44px' }}
 					>
-						<Sparkles size={16} />
+						<ToothShadeGuide size={16} />
 						VITA ({beforeShade}→{afterShade})
 					</button>
 

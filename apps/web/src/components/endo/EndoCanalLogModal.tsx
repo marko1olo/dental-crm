@@ -1,7 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import {
-	Activity,
 	Check,
 	Clipboard,
 	Copy,
@@ -10,6 +9,7 @@ import {
 	RotateCcw,
 	X,
 } from "lucide-react";
+import { EndoFileCanal } from "../icons/DentalIcons";
 import type { EndoCanalData, EndoToothClinicalData } from "@dental/shared";
 import type { EndoStageStamp } from "./endoCanalConstants";
 import { EndoQuickToolbar } from "./EndoQuickToolbar";
@@ -145,7 +145,7 @@ export function EndoCanalLogModal({
 				<header className="flex items-center justify-between gap-4 p-5 sm:p-6 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/90">
 					<div className="flex items-center gap-3.5">
 						<div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40 flex items-center justify-center shrink-0">
-							<Activity size={26} />
+							<EndoFileCanal size={26} />
 						</div>
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">

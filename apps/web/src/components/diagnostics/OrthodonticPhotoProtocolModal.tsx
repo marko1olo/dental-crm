@@ -1,15 +1,13 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
-	Camera,
 	CheckCircle,
 	X,
 	Grid,
-	FileText,
 	Eye,
 	Printer,
-	Sparkles,
 	Copy,
 } from "lucide-react";
+import { BracesBracket, AlignerTray, DentalForm043 } from "../icons/DentalIcons";
 import {
 	ORTHODONTIC_8_ANGLES,
 	ORTHODONTIC_STAGE_METADATA,
@@ -448,7 +446,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 				<header className="ortho-modal-header">
 					<div className="ortho-header-left">
 						<div className="ortho-header-icon">
-							<Camera size={20} />
+							<BracesBracket size={20} />
 						</div>
 						<div>
 							<h2 className="ortho-header-title">Ортодонтический фотопротокол (8 ракурсов)</h2>
@@ -600,7 +598,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 					{/* 1-Click Clinical Presets Bar (Form 043/u) */}
 					<div className="ortho-presets-bar" role="group" aria-label="Готовые клинические пресеты ортодонтии">
 						<div className="ortho-presets-label">
-							<Sparkles size={14} className="text-amber-500 shrink-0" />
+							<AlignerTray size={14} className="text-amber-500 shrink-0" />
 							<span>1-клик пресеты протоколов:</span>
 						</div>
 						<div className="ortho-presets-list">
@@ -725,7 +723,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							title="Вставить структурированный протокол ортодонтии в дневник приёма"
 							data-testid="insert-ortho-protocol-043-btn"
 						>
-							<FileText size={16} />
+							<DentalForm043 size={16} />
 							<span>Вставить протокол ортодонтии в дневник</span>
 						</button>
 						<button

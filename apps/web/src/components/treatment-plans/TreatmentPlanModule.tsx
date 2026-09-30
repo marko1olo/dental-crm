@@ -13,7 +13,6 @@ import {
 	FileCheck,
 	FileText,
 	Filter,
-	FlaskConical,
 	FolderPlus,
 	Layers,
 	MoreVertical,
@@ -33,6 +32,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
+import { DentalLabOrder } from "../icons/DentalIcons.js";
 import { type Kopecks, parseKopecks } from "@dental/shared";
 import type { TreatmentPlanItem, TreatmentPlanStageKind, TreatmentPlanTier } from "./types";
 import { romanizeStageNumber } from "./types";
@@ -1903,7 +1903,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									role="menuitem"
 									data-testid="lab-work-order-btn"
 								>
-									<FlaskConical size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+									<DentalLabOrder size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 									<span>Наряд-заказ в ЗТЛ</span>
 								</button>
 								<button

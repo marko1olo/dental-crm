@@ -6,7 +6,8 @@
  */
 
 import React from "react";
-import { Zap, Layers, Clock, ShieldCheck } from "lucide-react";
+import { Zap, Clock, ShieldCheck } from "lucide-react";
+import { DentalCrown } from "../icons/DentalIcons.js";
 import {
 	type StandardZtlPreset,
 	STANDARD_ZTL_ORDER_PRESETS,
@@ -91,7 +92,7 @@ export function OrthopedicsZtlSelectors({
 			>
 				<div className="flex items-center justify-between gap-2 mb-2">
 					<div className="flex items-center gap-1.5">
-						<Layers size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<DentalCrown size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 						<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
 							Граница препарирования (1 клик):
 						</span>

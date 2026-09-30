@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { Sparkles } from "lucide-react";
+import { ToothShadeGuide } from "../icons/DentalIcons.js";
 import { VITA_SHADE_GROUPS } from "./orthopedicProtocols.js";
 import { VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicsPresets.js";
 import { SHADE_SWATCH_MAP } from "../lab/labMath.js";
@@ -28,7 +28,7 @@ export function OrthopedicsVitaShadePicker({
 		<div className="mb-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-2.5">
 			<div className="flex flex-wrap items-center justify-between gap-2 mb-2">
 				<div className="flex items-center gap-2">
-					<Sparkles size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
+					<ToothShadeGuide size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
 					<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
 						Шкала VITA:
 					</span>

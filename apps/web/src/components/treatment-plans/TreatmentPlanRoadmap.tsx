@@ -17,7 +17,6 @@ import {
 	ChevronUp,
 	Clock,
 	Coins,
-	Crown,
 	FileBadge,
 	HeartPulse,
 	HelpCircle,
@@ -27,6 +26,7 @@ import {
 	ShieldCheck,
 	Stethoscope,
 } from "lucide-react";
+import { DentalCrown } from "../icons/DentalIcons.js";
 import {
 	calculatePlanTaxDeductionBreakdown,
 	kopecksToRub,
@@ -297,7 +297,7 @@ export const CANONICAL_ROADMAP_META: Record<
 		timelineRu: "2–3 визита • 7–14 дней на цифровое CAD/CAM фрезерование в зуботехнической лаборатории",
 		preparationRu: "Проводится после полной терапевтической санации и приживления имплантатов; на визит сканирования специальная диета не нужна.",
 		warrantyRu: "Гарантия 5 лет на монолитный диоксид циркония и керамику E.max при регулярном окклюзионном контроле.",
-		icon: <Crown className="w-4 h-4 text-purple-400" />,
+		icon: <DentalCrown className="w-4 h-4 text-purple-400" />,
 	},
 	stage_5_hygiene_checkup: {
 		stageNumber: 5,

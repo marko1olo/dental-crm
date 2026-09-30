@@ -1,13 +1,13 @@
 import React, { useState, useRef } from "react";
 import {
 	Contrast,
-	Maximize2,
 	Paperclip,
 	RefreshCw,
 	Scan,
 	Sun,
 	ZoomIn,
 } from "lucide-react";
+import { DentalPanoramicArch, DentalForm043 } from "../icons/DentalIcons";
 import { showToast } from "../GlobalToast";
 import { useSafeObjectUrl } from "../../hooks/useMemoryLeakGuard";
 
@@ -245,8 +245,9 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 							type="button"
 							onClick={handleCopyXrayReport}
 							className="dente-secondary-btn"
-							style={{ fontSize: 11, minHeight: 36 }}
+							style={{ fontSize: 11, minHeight: 36, gap: 4 }}
 						>
+							<DentalForm043 size={13} />
 							<span>Вставить в 043/у</span>
 						</button>
 
@@ -254,9 +255,9 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 							type="button"
 							onClick={() => onOpenFullRadiology?.(toothNumber)}
 							className="dente-secondary-btn"
-							style={{ fontSize: 11, minHeight: 36 }}
+							style={{ fontSize: 11, minHeight: 36, gap: 4 }}
 						>
-							<Maximize2 size={13} />
+							<DentalPanoramicArch size={13} />
 							<span>Студия снимков...</span>
 						</button>
 					</div>

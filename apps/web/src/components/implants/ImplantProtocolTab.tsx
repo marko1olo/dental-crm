@@ -1,12 +1,10 @@
 import React from "react";
 import {
-	Activity,
 	CheckCircle2,
-	Layers,
 	Scan,
 	TrendingUp,
-	Zap,
 } from "lucide-react";
+import { DentalImplant, BoneGraft } from "../icons/DentalIcons";
 import {
 	FAST_IMPLANT_SYSTEM_PRESETS,
 	STANDARD_DIAMETERS,
@@ -214,7 +212,7 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = ({
 						data-testid="preset-standard-implantation"
 					>
 						<span className="flex items-center gap-2 min-w-0">
-							<Zap size={16} className={!isGbrPerformed ? "text-[var(--warn,#f59e0b)] shrink-0" : "text-[var(--teal,#0d9488)] shrink-0"} />
+							<DentalImplant size={16} className={!isGbrPerformed ? "text-[var(--warn,#f59e0b)] shrink-0" : "text-[var(--teal,#0d9488)] shrink-0"} />
 							<span className="truncate">Стандартная имплантация (без НКР / Без костной пластики)</span>
 						</span>
 						{!isGbrPerformed && <CheckCircle2 size={16} className="text-[var(--on-teal,#ffffff)] shrink-0" />}
@@ -231,7 +229,7 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = ({
 						data-testid="preset-gbr-implantation"
 					>
 						<span className="flex items-center gap-2 min-w-0">
-							<Layers size={16} className={isGbrPerformed ? "text-[var(--on-teal,#ffffff)] shrink-0" : "text-[var(--brand-primary,#0ea5e9)] shrink-0"} />
+							<BoneGraft size={16} className={isGbrPerformed ? "text-[var(--on-teal,#ffffff)] shrink-0" : "text-[var(--brand-primary,#0ea5e9)] shrink-0"} />
 							<span className="truncate">Имплантация с НКР (костная пластика)</span>
 						</span>
 						{isGbrPerformed && <CheckCircle2 size={16} className="text-[var(--on-teal,#ffffff)] shrink-0" />}
@@ -293,7 +291,7 @@ export const ImplantProtocolTab: React.FC<ImplantProtocolTabProps> = ({
 					}`}
 					data-testid="btn-stability-torque-only"
 				>
-					<Activity size={16} />
+					<DentalImplant size={16} />
 					<span>Контроль стабильности по торку (35 Н·см ключом)</span>
 					{!isIsqEnabled && <CheckCircle2 size={16} className="text-[var(--on-teal,#ffffff)] shrink-0" />}
 				</button>

@@ -4,8 +4,9 @@ import {
 	type PerioSiteKey,
 	type PerioToothRecord,
 } from "@dental/shared";
-import { Activity, Layers } from "lucide-react";
+import { Layers } from "lucide-react";
 import React from "react";
+import { PerioProbe } from "../../icons/DentalIcons";
 import { PerioToothCard } from "./PerioToothCard";
 
 export type PerioArchFilterType =
@@ -96,7 +97,7 @@ export const PerioArchGrid: React.FC<PerioArchGridProps> = React.memo(({
 					className="min-h-[44px] px-4 py-2 rounded-xl bg-teal-600/20 hover:bg-teal-600/30 text-teal-300 border border-teal-500/40 text-xs font-black transition-all cursor-pointer shrink-0 active:scale-95 flex items-center justify-center gap-1.5"
 					data-testid="expand-perio-chart-tier3-btn"
 				>
-					<Activity size={16} />
+					<PerioProbe size={16} />
 					<span>Развернуть 6 точек зондирования (Tier 3)</span>
 				</button>
 			</div>

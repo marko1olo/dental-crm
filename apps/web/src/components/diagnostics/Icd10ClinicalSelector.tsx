@@ -15,12 +15,11 @@ import {
 	X,
 	Check,
 	AlertCircle,
-	Sparkles,
-	Activity,
 	Copy,
 	CheckCheck,
 	ChevronRight,
 } from "lucide-react";
+import { ToothMolar, ToothCaries } from "../icons/DentalIcons";
 import {
 	TOP_12_AMBULATORY_PRESETS,
 	DENTAL_ICD10_MAP,
@@ -240,7 +239,7 @@ export const Icd10ClinicalSelector: React.FC<Icd10ClinicalSelectorProps> = ({
 
 				{parsedQuery.extractedToothNumber !== null && (
 					<div className="icd10-detected-tooth-badge" title="Автоматически распознан номер зуба">
-						<Sparkles size={14} />
+						<ToothMolar size={14} />
 						Зуб {parsedQuery.extractedToothNumber}
 					</div>
 				)}
@@ -301,7 +300,7 @@ export const Icd10ClinicalSelector: React.FC<Icd10ClinicalSelectorProps> = ({
 			{!searchQuery && activeRubricTab === "ALL" && (
 				<div className="icd10-quick-presets-section" data-testid="icd10-top12-section">
 					<div className="icd10-section-label">
-						<Activity size={16} aria-hidden="true" />
+						<ToothCaries size={16} aria-hidden="true" />
 						<span>ТОП-12 амбулаторных диагнозов (1 клик):</span>
 					</div>
 					<div className="icd10-chips-grid" role="group" aria-label="Быстрый выбор ТОП-12 стоматологических диагнозов">

@@ -1,5 +1,6 @@
 import React from "react";
-import { ShieldCheck, Copy, Printer, AlertTriangle, QrCode, Award, CheckCircle } from "lucide-react";
+import { Copy, Printer, AlertTriangle, QrCode, Award } from "lucide-react";
+import { DentalImplant } from "../icons/DentalIcons";
 import { showToast } from "../GlobalToast";
 import type { FastImplantPassportData } from "./implantQuickPresets";
 import "./implants.css";
@@ -96,7 +97,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 			<div className="flex items-center justify-between border-b border-[var(--line)] pb-3 flex-wrap gap-2">
 				<div className="flex items-center gap-2.5 min-w-0">
 					<div className="w-9 h-9 rounded-xl bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0 border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
-						<ShieldCheck size={22} />
+						<DentalImplant size={22} />
 					</div>
 					<div className="min-w-0">
 						<h4 className="text-sm font-black text-[var(--ink)] tracking-tight truncate">
