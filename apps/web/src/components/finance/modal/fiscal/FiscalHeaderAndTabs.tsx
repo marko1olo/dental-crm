@@ -68,7 +68,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 												? "Акт сдачи-приемки выполненных услуг"
 												: activeTab === "oneC"
 													? "1С:Предприятие 8.3 / Экспорт в CommerceML 2.09"
-													: "Кассовый чек · Оплата и фискализация чеков"}
+													: "Кассовый чек 54-ФЗ · Фискализация 54-ФЗ & Прием платежей"}
 							</h3>
 							<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-bold shrink-0">
 								ФФД 1.2

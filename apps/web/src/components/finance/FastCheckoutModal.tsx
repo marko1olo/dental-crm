@@ -1724,7 +1724,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									data-testid="inn-physical-not-required-badge"
 								>
 									<ShieldCheck size={14} className="inline mr-1 shrink-0 text-emerald-500" />
-									Для пациентов-физлиц ИНН не требуется (без ограничений)
+									По 54-ФЗ для физлиц не требуется (54-ФЗ: ИНН с физлиц НЕ требуется)
 								</span>
 							)}
 						</div>
@@ -2577,7 +2577,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									<Check className="w-4 h-4 shrink-0" />
 									<span className="truncate">
 										{targetBillKop === 0
-											? "Оформить акт гарантийного обслуживания (0 ₽)"
+											? "Закрыть визит: 100% Гарантия / Скидка (0 ₽)"
 											: `Выбить чек (${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
 									</span>
 								</>
