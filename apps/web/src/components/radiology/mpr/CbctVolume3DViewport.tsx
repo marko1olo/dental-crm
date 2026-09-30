@@ -45,6 +45,20 @@ export function isPointInsideClippingBox(
 	);
 }
 
+/**
+ * Clamps device pixel ratio to <= 1.5 to protect fill-rate on 4K / Retina screens
+ * and prevent out-of-memory crashes on integrated Intel/AMD GPUs.
+ */
+export function getSafeDevicePixelRatio(dpr?: number): number {
+	const val =
+		typeof dpr === "number" && !Number.isNaN(dpr)
+			? dpr
+			: typeof window !== "undefined"
+				? window.devicePixelRatio || 1
+				: 1;
+	return Math.min(1.5, Math.max(1.0, val));
+}
+
 export type Volume3DPresetId = "skull" | "dense_bone" | "soft_tissue" | "mip";
 
 export interface Volume3DPresetSpec {
@@ -211,8 +225,8 @@ export function computeVolume3DRotationMatrix(yawDeg: number, pitchDeg: number):
 	const col0: [number, number, number] = [cosY, sinY, 0];
 	// Column 1: Camera Up (screen Y axis -> patient vertical +Z is UP)
 	const col1: [number, number, number] = [
-		cleanZero(sinY * sinP),
-		cleanZero(-cosY * sinP),
+		cleanZero(-sinY * sinP),
+		cleanZero(cosY * sinP),
 		cosP,
 	];
 	// Column 2: Ray Direction (marching into face -> patient anterior-to-posterior)
@@ -995,8 +1009,9 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 		// Adaptive interactive LOD: during drag rotation, reduce internal resolution by subSample factor (3..4)
 		// for rock-solid 60 FPS on weak GPUs (Intel UHD / Iris Xe / Vega).
 		// Upon mouseUp, immediately restore beauty pass (subSample = 1 or 2).
-		const rawWidth = Math.max(64, Math.floor(rect.width || 320));
-		const rawHeight = Math.max(64, Math.floor(rect.height || 280));
+		const safeDpr = getSafeDevicePixelRatio();
+		const rawWidth = Math.max(64, Math.floor((rect.width || 320) * safeDpr));
+		const rawHeight = Math.max(64, Math.floor((rect.height || 280) * safeDpr));
 		const subSample = isInteracting ? (rawWidth > 600 ? 4 : 3) : (rawWidth > 800 ? 2 : 1);
 		const width = Math.max(64, Math.floor(rawWidth / subSample));
 		const height = Math.max(64, Math.floor(rawHeight / subSample));
