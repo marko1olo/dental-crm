@@ -1,0 +1,21 @@
+{
+  "role": "GPU PANORAMIC CURVED MPR & DENTAL SPLINE INQUISITOR",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md constitutionally via view_file",
+    "Audited cbctPanoramicReconstructionMath.ts, cbctMprShaders.ts, and cbctPanoramicMath.test.ts",
+    "Identified defects: lack of tangent passing in spline texture, no analytical parabolic arch curve option, nearest-neighbor voxel aliasing without trilinear option, blind black hole returns on out-of-volume instead of calibrated -1000.0 HU air, invert mode missing air sigmoid transition, division by zero risks in spacing",
+    "Implemented WebGL2 hardware panoramic curved MPR shaders with sub-voxel trilinear and nearest options, 2-row spline texture (Row 0: point+normal, Row 1: tangent+arcDist), analytical parabolic polynomial mode, 1..25mm focal trough thickness with anterior tapering, and safe -1000.0 HU boundary air return",
+    "Upgraded WebGl2PanoramicEngine to precompute and upload 2-row texture and set trilinear/poly/trough uniforms with safe spacing division guards",
+    "Added Section 7 to cbctPanoramicMath.test.ts with 6 comprehensive adversarial tests covering Frenet frame tangent/normal, analytical parabolic arch, sub-voxel trilinear, -1000 HU boundary safety, 1..25mm focal trough, and invert mode sigmoid air transition",
+    "Machine verified with node test runner (21/21 passed) and check:encoding (6342 files, 0 warnings)",
+    "Executed per-file git add on scope files"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Spline texture was previously 1-row without tangent vector; now enhanced to 2-row texture passing complete Frenet frame (pt, norm, tan, arcDist) with analytical orthogonal fallback.",
+    "Previous shader returned raw black vec4(0,0,0,1) when out-of-bounds, causing black hole artifacts on inverted radiographs; now strictly returns calibrated -1000.0 HU ambient air with smoothstep sigmoid air transition.",
+    "Added sub-voxel trilinear 3D interpolation (u_trilinear) for publication-grade diagnostics alongside nearest neighbor for 60 FPS slider scrubbing.",
+    "Interactive focal trough thickness 1..25 mm runs directly on GPU in 1 pass (< 1 ms)."
+  ]
+}

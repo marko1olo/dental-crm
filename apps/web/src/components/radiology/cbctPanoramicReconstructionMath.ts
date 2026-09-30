@@ -47,6 +47,10 @@ export interface PanoramicReconstructionOptions {
 	readonly sampleStepMm?: number;
 	readonly invert?: boolean;
 	readonly coarsePreview?: boolean;
+	readonly trilinear?: boolean;
+	readonly useAnalyticalPoly?: boolean;
+	readonly archPolyCoeffs?: readonly [number, number, number, number];
+	readonly anteriorTroughRatio?: number;
 }
 
 /**
@@ -170,126 +174,12 @@ export function calculateToothMarkersOnPano(
 	});
 }
 
-export const CBCT_PANORAMIC_VERTEX_SHADER = `#version 300 es
-precision highp float;
-
-const vec2 QUAD_POSITIONS[4] = vec2[](
-    vec2(-1.0, -1.0),
-    vec2( 1.0, -1.0),
-    vec2(-1.0,  1.0),
-    vec2( 1.0,  1.0)
-);
-
-out vec2 v_uv;
-
-void main() {
-    vec2 pos = QUAD_POSITIONS[gl_VertexID];
-    gl_Position = vec4(pos, 0.0, 1.0);
-    v_uv = vec2((pos.x + 1.0) * 0.5, (pos.y + 1.0) * 0.5);
-}
-`;
-
-export const CBCT_PANORAMIC_FRAGMENT_SHADER = `#version 300 es
-precision highp float;
-precision highp isampler3D;
-
-in vec2 v_uv;
-out vec4 fragColor;
-
-uniform isampler3D u_volume;
-uniform sampler2D u_archSplineTexture; // RGBA32F: R=ptX, G=ptY, B=normX, A=normY in mm
-
-uniform vec3 u_volumeDim;      // width, height, depth in voxels
-uniform vec3 u_originMm;       // volume origin in mm
-uniform vec3 u_invSpacingMm;   // 1.0 / spacing in mm
-
-uniform float u_zTopMm;
-uniform float u_zBottomMm;
-uniform float u_focalRadiusMm; // e.g. 7.0 mm (thickness / 2)
-uniform float u_outWidth;      // widthPx
-uniform int u_numSlabSamples;  // (2 * slabSamples + 1)
-uniform int u_projectionMode;  // 0 = mip, 1 = ray_sum, 2 = minip, 3 = average
-uniform int u_flipY;           // 0 = readPixels order (v_uv.y=0 is zTopMm), 1 = screen order
-
-uniform float u_windowWidth;
-uniform float u_windowLevel;
-uniform int u_invert;
-
-void main() {
-    // 1. Fetch dental arch curve point and normal at current horizontal column
-    int maxCol = max(0, int(u_outWidth) - 1);
-    ivec2 splineCoord = ivec2(clamp(int(gl_FragCoord.x), 0, maxCol), 0);
-    vec4 splineData = texelFetch(u_archSplineTexture, splineCoord, 0);
-    vec2 ptMm = splineData.rg;
-    vec2 norm = splineData.ba;
-    
-    // 2. Compute Z height in mm for this vertical row
-    float vY = (u_flipY == 1) ? (1.0 - v_uv.y) : v_uv.y;
-    float zMm = mix(u_zTopMm, u_zBottomMm, vY);
-    float vz = (zMm - u_originMm.z) * u_invSpacingMm.z;
-    int ivz = int(round(vz));
-    
-    // If vertical slice is outside volume depth, render dark background
-    if (ivz < 0 || ivz >= int(u_volumeDim.z)) {
-        fragColor = vec4(0.0, 0.0, 0.0, 1.0);
-        return;
-    }
-    
-    float minVal = 32767.0;
-    float maxVal = -32768.0;
-    float sumVal = 0.0;
-    int validCount = 0;
-    
-    int safeSlabSamples = clamp(u_numSlabSamples, 1, 128);
-    // 3. Step along focal trough normal (MIP slab raymarching)
-    for (int i = 0; i < safeSlabSamples; i++) {
-        float factor = (safeSlabSamples <= 1) ? 0.0 : (float(i) / float(safeSlabSamples - 1) * 2.0 - 1.0);
-        float t = factor * u_focalRadiusMm;
-        vec2 sampleMm = ptMm + norm * t;
-        
-        float vx = (sampleMm.x - u_originMm.x) * u_invSpacingMm.x;
-        float vy = (sampleMm.y - u_originMm.y) * u_invSpacingMm.y;
-        
-        ivec3 vox = ivec3(int(round(vx)), int(round(vy)), ivz);
-        if (vox.x >= 0 && vox.x < int(u_volumeDim.x) &&
-            vox.y >= 0 && vox.y < int(u_volumeDim.y)) {
-            
-            float hu = float(texelFetch(u_volume, vox, 0).r);
-            if (hu > maxVal) maxVal = hu;
-            if (hu < minVal) minVal = hu;
-            sumVal += hu;
-            validCount++;
-        }
-    }
-    
-    if (validCount == 0) {
-        fragColor = vec4(0.0, 0.0, 0.0, 1.0);
-        return;
-    }
-    
-    float finalHU = maxVal;
-    if (u_projectionMode == 1) { // ray_sum (clinical weighted blend)
-        float avgHU = sumVal / float(validCount);
-        finalHU = 0.7 * maxVal + 0.3 * max(0.0, avgHU);
-    } else if (u_projectionMode == 2) { // minip
-        finalHU = minVal;
-    } else if (u_projectionMode == 3) { // average
-        finalHU = sumVal / float(validCount);
-    } else { // 0 = mip
-        finalHU = maxVal;
-    }
-    
-    // 4. Contrast Window/Level transfer function
-    float safeWW = max(1.0, u_windowWidth);
-    float low = u_windowLevel - safeWW * 0.5;
-    float normVal = clamp((finalHU - low) / safeWW, 0.0, 1.0);
-    if (u_invert == 1) {
-        normVal = 1.0 - normVal;
-    }
-    
-    fragColor = vec4(normVal, normVal, normVal, 1.0);
-}
-`;
+export {
+	CBCT_PANORAMIC_CURVED_VERTEX_SHADER,
+	CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER,
+	CBCT_PANORAMIC_VERTEX_SHADER,
+	CBCT_PANORAMIC_FRAGMENT_SHADER,
+} from "./mpr/webgl/cbctMprShaders";
 
 function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader | null {
 	const shader = gl.createShader(type);
@@ -356,6 +246,10 @@ export class WebGl2PanoramicEngine {
 		invert: WebGLUniformLocation | null;
 		volume: WebGLUniformLocation | null;
 		archSplineTexture: WebGLUniformLocation | null;
+		trilinear: WebGLUniformLocation | null;
+		archPolyCoeffs: WebGLUniformLocation | null;
+		useAnalyticalPoly: WebGLUniformLocation | null;
+		anteriorTroughRatio: WebGLUniformLocation | null;
 	} | null = null;
 
 	constructor(gl: WebGL2RenderingContext) {
@@ -394,6 +288,10 @@ export class WebGl2PanoramicEngine {
 			invert: gl.getUniformLocation(prog, "u_invert"),
 			volume: gl.getUniformLocation(prog, "u_volume"),
 			archSplineTexture: gl.getUniformLocation(prog, "u_archSplineTexture"),
+			trilinear: gl.getUniformLocation(prog, "u_trilinear"),
+			archPolyCoeffs: gl.getUniformLocation(prog, "u_archPolyCoeffs"),
+			useAnalyticalPoly: gl.getUniformLocation(prog, "u_useAnalyticalPoly"),
+			anteriorTroughRatio: gl.getUniformLocation(prog, "u_anteriorTroughRatio"),
 		};
 		return true;
 	}
@@ -435,10 +333,11 @@ export class WebGl2PanoramicEngine {
 		const slabSamples = Math.max(2, Math.round(focalRadiusMm / sampleStepMm));
 		const numSlab = 2 * slabSamples + 1;
 
-		// Precompute spline 2D positions and normal vectors for texture
+		// Precompute spline 2D positions, normal vectors, and tangent vectors for 2-row texture (outW x 2)
 		const denomW = Math.max(1, outW - 1);
-		if (!this.splineBuffer || this.splineBuffer.length < outW * 4) {
-			this.splineBuffer = new Float32Array(outW * 4);
+		const requiredSplineLen = outW * 8;
+		if (!this.splineBuffer || this.splineBuffer.length < requiredSplineLen) {
+			this.splineBuffer = new Float32Array(requiredSplineLen);
 		}
 		const splineBuf = this.splineBuffer;
 
@@ -461,11 +360,23 @@ export class WebGl2PanoramicEngine {
 			const rawNormY = n0.normal.y + (n1.normal.y - n0.normal.y) * frac;
 			const normLen = Math.hypot(rawNormX, rawNormY) || 1.0;
 
-			const idx = col * 4;
-			splineBuf[idx + 0] = ptX;
-			splineBuf[idx + 1] = ptY;
-			splineBuf[idx + 2] = rawNormX / normLen;
-			splineBuf[idx + 3] = rawNormY / normLen;
+			const rawTanX = n0.tangent.x + (n1.tangent.x - n0.tangent.x) * frac;
+			const rawTanY = n0.tangent.y + (n1.tangent.y - n0.tangent.y) * frac;
+			const tanLen = Math.hypot(rawTanX, rawTanY) || 1.0;
+
+			// Row 0: Point + Normal (RGBA32F)
+			const idx0 = col * 4;
+			splineBuf[idx0 + 0] = ptX;
+			splineBuf[idx0 + 1] = ptY;
+			splineBuf[idx0 + 2] = rawNormX / normLen;
+			splineBuf[idx0 + 3] = rawNormY / normLen;
+
+			// Row 1: Tangent + Curvature + ArcDistance (RGBA32F)
+			const idx1 = (outW + col) * 4;
+			splineBuf[idx1 + 0] = rawTanX / tanLen;
+			splineBuf[idx1 + 1] = rawTanY / tanLen;
+			splineBuf[idx1 + 2] = 0.0;
+			splineBuf[idx1 + 3] = targetDistMm;
 		}
 
 		// Upload or reuse 3D volume texture with gl.MAX_3D_TEXTURE_SIZE protection
@@ -518,7 +429,7 @@ export class WebGl2PanoramicEngine {
 			this.uploadDim = { width: uploadW, height: uploadH, depth: uploadD, factor };
 		}
 
-		// Upload or update 2D spline texture (outW x 1)
+		// Upload or update 2D spline texture (outW x 2)
 		if (!this.splineTexture || this.splineWidth !== outW) {
 			if (this.splineTexture) gl.deleteTexture(this.splineTexture);
 			const sTex = gl.createTexture();
@@ -533,11 +444,11 @@ export class WebGl2PanoramicEngine {
 				0,
 				gl.RGBA32F,
 				outW,
-				1,
+				2,
 				0,
 				gl.RGBA,
 				gl.FLOAT,
-				splineBuf.subarray(0, outW * 4),
+				splineBuf.subarray(0, requiredSplineLen),
 			);
 			this.splineTexture = sTex;
 			this.splineWidth = outW;
@@ -549,10 +460,10 @@ export class WebGl2PanoramicEngine {
 				0,
 				0,
 				outW,
-				1,
+				2,
 				gl.RGBA,
 				gl.FLOAT,
-				splineBuf.subarray(0, outW * 4),
+				splineBuf.subarray(0, requiredSplineLen),
 			);
 		}
 
@@ -589,9 +500,9 @@ export class WebGl2PanoramicEngine {
 			volume.originMm?.y ?? 0.0,
 			volume.originMm?.z ?? 0.0,
 		);
-		const effSpX = (volume.spacingMm?.x || 0.2) * curUpload.factor;
-		const effSpY = (volume.spacingMm?.y || 0.2) * curUpload.factor;
-		const effSpZ = (volume.spacingMm?.z || 0.2) * curUpload.factor;
+		const effSpX = Math.max(0.001, (volume.spacingMm?.x || 0.2) * curUpload.factor);
+		const effSpY = Math.max(0.001, (volume.spacingMm?.y || 0.2) * curUpload.factor);
+		const effSpZ = Math.max(0.001, (volume.spacingMm?.z || 0.2) * curUpload.factor);
 		gl.uniform3f(
 			this.uniforms!.invSpacingMm,
 			1.0 / effSpX,
@@ -620,6 +531,15 @@ export class WebGl2PanoramicEngine {
 		gl.uniform1f(this.uniforms!.windowWidth, effectiveWW);
 		gl.uniform1f(this.uniforms!.windowLevel, effectiveWL);
 		gl.uniform1i(this.uniforms!.invert, invert ? 1 : 0);
+
+		gl.uniform1i(
+			this.uniforms!.trilinear,
+			options.trilinear !== undefined ? (options.trilinear ? 1 : 0) : coarsePreview ? 0 : 1,
+		);
+		gl.uniform1i(this.uniforms!.useAnalyticalPoly, options.useAnalyticalPoly ? 1 : 0);
+		const poly = options.archPolyCoeffs ?? [0.035, 0.0, -56.5, 0.0];
+		gl.uniform4f(this.uniforms!.archPolyCoeffs, poly[0], poly[1], poly[2], poly[3]);
+		gl.uniform1f(this.uniforms!.anteriorTroughRatio, options.anteriorTroughRatio ?? 1.0);
 
 		// Draw quad
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

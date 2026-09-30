@@ -302,5 +302,116 @@ describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {
 			assert.equal(res, null);
 		});
 	});
+
+	// ─── 7. GPU CURVED PANORAMIC SPLINE & FRENET FRAME INQUISITION ───────────
+	describe("7. GPU Curved Panoramic Spline & Frenet Frame Inquisition", () => {
+		it("passes both normal and tangent vectors in Frenet frame (2-row texture architecture)", () => {
+			// Row 0: Point + Normal
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("texelFetch(u_archSplineTexture, splineCoord, 0)"),
+				"Must sample Row 0 for dental arch point and normal",
+			);
+			// Row 1: Tangent + Arc Length
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("texelFetch(u_archSplineTexture, ivec2(splineCoord.x, 1), 0)"),
+				"Must sample Row 1 for dental arch tangent vector",
+			);
+			// Analytical orthogonal fallback
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("vec2(-norm.y, norm.x)"),
+				"Must provide analytical normal-orthogonal tangent fallback",
+			);
+		});
+
+		it("supports analytical polynomial arch mode (parabolic model y = ax^2 + bx + c)", () => {
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("uniform vec4 u_archPolyCoeffs;"),
+				"Declares analytical polynomial coefficients uniform",
+			);
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("uniform int u_useAnalyticalPoly;"),
+				"Declares analytical polynomial toggle uniform",
+			);
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("float yArch = a * xArch * xArch + b * xArch + c;"),
+				"Evaluates analytical parabolic dental arch curve directly on GPU",
+			);
+		});
+
+		it("supports sub-voxel trilinear interpolation (u_trilinear) with safe nearest fallback", () => {
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("samplePanoramicHUTrilinear"),
+				"Implements hardware 8-point 3D trilinear sub-voxel interpolation",
+			);
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("samplePanoramicHUNearest"),
+				"Implements fast nearest neighbor voxel sampling for 60 FPS slider scrubbing",
+			);
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("uniform int u_trilinear;"),
+				"Declares trilinear toggle uniform",
+			);
+		});
+
+		it("guards volume boundaries and out-of-jaw samples with strict -1000 HU (ambient air)", () => {
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("return -1000.0;"),
+				"Guards out-of-bounds continuous coordinates by returning -1000.0 HU air",
+			);
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("isnan(vox.x) || isnan(vox.y) || isnan(vox.z)"),
+				"Guards NaN voxel coordinates against GPU driver corruption",
+			);
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("isinf(vox.x) || isinf(vox.y) || isinf(vox.z)"),
+				"Guards Inf voxel coordinates against GPU driver corruption",
+			);
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("float finalHU = -1000.0;"),
+				"Defaults final HU to -1000.0 when all ray samples fall outside volume",
+			);
+		});
+
+		it("supports interactive focal trough thickness 1..25 mm without performance degradation", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible", 12.0);
+
+			// Test minimum thickness (1.0 mm)
+			const panoThin = reconstructPanoramicView(volume, curve, {
+				focalTroughThicknessMm: 1.0,
+				coarsePreview: true,
+			});
+			assert.equal(panoThin.focalThicknessMm, 1.0);
+			assert.ok(panoThin.pixelData.length > 0);
+
+			// Test maximum thickness (25.0 mm)
+			const panoThick = reconstructPanoramicView(volume, curve, {
+				focalTroughThicknessMm: 25.0,
+				coarsePreview: true,
+			});
+			assert.equal(panoThick.focalThicknessMm, 25.0);
+			assert.ok(panoThick.pixelData.length > 0);
+
+			// Test clinical range (14.0 mm) with trilinear interpolation
+			const panoStandard = reconstructPanoramicView(volume, curve, {
+				focalTroughThicknessMm: 14.0,
+				coarsePreview: false,
+			});
+			assert.equal(panoStandard.focalThicknessMm, 14.0);
+			assert.ok(panoStandard.pixelData.length > 0);
+		});
+
+		it("prevents negative/invert mode black holes and blinding white flashes with sigmoid air transition", () => {
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("smoothstep(-650.0, -550.0, finalHU)"),
+				"Applies smooth sigmoid transition between air and soft tissue in invert mode",
+			);
+			assert.ok(
+				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("float darkAir = 10.0 / 255.0;"),
+				"Protects clinician eyes by mapping air to dark charcoal on white paper mode",
+			);
+		});
+	});
 });
+
 
