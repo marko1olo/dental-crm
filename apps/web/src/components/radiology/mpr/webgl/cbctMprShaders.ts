@@ -52,6 +52,8 @@ uniform bool u_invert;
 uniform int u_slabMode;         // 0 = single, 1 = mip, 2 = minip, 3 = average
 uniform int u_slabSteps;        // Number of slab integration steps
 uniform bool u_trilinear;       // true = sub-voxel trilinear, false = nearest neighbor
+uniform int u_colorMap;        // 0 = grayscale, 1 = bone density (Misch D1-D4), 2 = endo, 3 = inverted
+uniform float u_sharpenAmount; // 0.0 .. 1.0 hardware unsharp masking / trabecular edge enhancement
 
 /**
  * Samples a continuous HU value using 8-point 3D Trilinear Sub-Voxel Interpolation.
@@ -154,6 +156,24 @@ void main() {
         finalHU = count > 0 ? (sumHU / float(count)) : -1000.0;
     }
 
+    // Hardware Unsharp Masking / Trabecular Edge Enhancer (Planmeca Romexis / Vatech Ez3D-i parity)
+    if (u_sharpenAmount > 0.001) {
+        float sAmt = clamp(u_sharpenAmount, 0.0, 1.0);
+        vec3 stepU = u_axisU / max(1.0, u_volumeDim.x);
+        vec3 stepV = u_axisV / max(1.0, u_volumeDim.y);
+
+        float huLeft  = sampleHU(baseUvw - stepU);
+        float huRight = sampleHU(baseUvw + stepU);
+        float huUp    = sampleHU(baseUvw - stepV);
+        float huDown  = sampleHU(baseUvw + stepV);
+
+        // Anti-air artifact guard: discard air boundaries (<-700 HU) to prevent ringing halo
+        if (huLeft > -700.0 && huRight > -700.0 && huUp > -700.0 && huDown > -700.0 && finalHU > -700.0) {
+            float laplacian = 4.0 * finalHU - (huLeft + huRight + huUp + huDown);
+            finalHU = clamp(finalHU + sAmt * laplacian, -1000.0, 3071.0);
+        }
+    }
+
     // Calibrated DICOM PS 3.3 VOI Window / Level mapping
     float safeWW = max(1.0, u_windowWidth);
     float low = u_windowLevel - safeWW * 0.5;
@@ -168,7 +188,51 @@ void main() {
         gray = mix(darkAir, invertedGray, airFactor);
     }
 
-    fragColor = vec4(gray, gray, gray, 1.0);
+    vec3 outRgb;
+
+    if (u_colorMap == 1) {
+        // Mode 1: Misch Bone Density Heatmap (Misch D1-D4 classification for implant bed quality)
+        if (finalHU < -700.0) {
+            outRgb = vec3(10.0 / 255.0);
+        } else if (finalHU < 150.0) {
+            // Soft tissue / gingiva (< 150 HU) -> Neutral dark graphite
+            float t = clamp((finalHU + 700.0) / 850.0, 0.0, 1.0);
+            outRgb = mix(vec3(0.06, 0.07, 0.08), vec3(0.20, 0.22, 0.25), t);
+        } else if (finalHU < 350.0) {
+            // Misch D4: Low density / soft trabecular bone (150..350 HU) -> Warm Orange-Brown
+            float t = (finalHU - 150.0) / 200.0;
+            outRgb = mix(vec3(0.78, 0.38, 0.12), vec3(0.92, 0.56, 0.18), t);
+        } else if (finalHU < 850.0) {
+            // Misch D2/D3: Normal trabecular bone (350..850 HU) -> Emerald Green / Aquamarine
+            float t = (finalHU - 350.0) / 500.0;
+            outRgb = mix(vec3(0.12, 0.72, 0.42), vec3(0.20, 0.86, 0.58), t);
+        } else if (finalHU < 1250.0) {
+            // Misch D1/D2: Dense trabecular bone (850..1250 HU) -> Golden Yellow
+            float t = (finalHU - 850.0) / 400.0;
+            outRgb = mix(vec3(0.96, 0.78, 0.08), vec3(1.00, 0.92, 0.22), t);
+        } else {
+            // Misch D1: Dense Cortical Bone (> 1250 HU) -> Pure White / Pearlescent
+            float t = clamp((finalHU - 1250.0) / 750.0, 0.0, 1.0);
+            outRgb = mix(vec3(1.00, 0.96, 0.88), vec3(0.98, 0.98, 1.00), t);
+        }
+    } else if (u_colorMap == 2) {
+        // Mode 2: Endo High Contrast (Microcrack / MB2 accentuation)
+        float endoGray = smoothstep(0.12, 0.88, gray);
+        endoGray = clamp(pow(endoGray, 1.35) * 1.08, 0.0, 1.0);
+        outRgb = vec3(endoGray * 0.95, endoGray, endoGray * 1.05);
+    } else if (u_colorMap == 3) {
+        // Mode 3: Inverted White Paper mode with anti-blinding air transition
+        float airFactor = smoothstep(-650.0, -550.0, finalHU);
+        float darkAir = 10.0 / 255.0;
+        float invertedGray = 1.0 - gray;
+        float g = mix(darkAir, invertedGray, airFactor);
+        outRgb = vec3(g);
+    } else {
+        // Mode 0: Standard DICOM Grayscale (or inverted if u_invert is true)
+        outRgb = vec3(gray);
+    }
+
+    fragColor = vec4(outRgb, 1.0);
 }
 `;
 
@@ -227,6 +291,8 @@ uniform float u_windowWidth;
 uniform float u_windowLevel;
 uniform int u_invert;
 uniform int u_trilinear;       // 1 = sub-voxel trilinear interpolation, 0 = nearest neighbor
+uniform int u_colorMap;        // 0 = grayscale, 1 = bone density (Misch D1-D4), 2 = endo, 3 = inverted
+uniform float u_sharpenAmount; // 0.0 .. 1.0 hardware unsharp masking
 
 uniform vec4 u_archPolyCoeffs; // y = a*x^2 + b*x + c (parabolic arch model)
 uniform int u_useAnalyticalPoly; // 0 = spline texture, 1 = analytical polynomial
@@ -408,20 +474,88 @@ void main() {
         }
     }
     
+    // Hardware Unsharp Masking / Trabecular Edge Enhancer
+    if (u_sharpenAmount > 0.001) {
+        float sAmt = clamp(u_sharpenAmount, 0.0, 1.0);
+        vec2 tanStepMm = tanVec * (1.0 / max(1.0, u_outWidth)) * focalRadius;
+        float zStepMm = (u_zBottomMm - u_zTopMm) / max(1.0, u_volumeDim.z);
+
+        vec3 voxLeft  = vec3(((ptMm.x - tanStepMm.x) - u_originMm.x) * u_invSpacingMm.x, ((ptMm.y - tanStepMm.y) - u_originMm.y) * u_invSpacingMm.y, vz);
+        vec3 voxRight = vec3(((ptMm.x + tanStepMm.x) - u_originMm.x) * u_invSpacingMm.x, ((ptMm.y + tanStepMm.y) - u_originMm.y) * u_invSpacingMm.y, vz);
+        vec3 voxUp    = vec3((ptMm.x - u_originMm.x) * u_invSpacingMm.x, (ptMm.y - u_originMm.y) * u_invSpacingMm.y, ((zMm - zStepMm) - u_originMm.z) * u_invSpacingMm.z);
+        vec3 voxDown  = vec3((ptMm.x - u_originMm.x) * u_invSpacingMm.x, (ptMm.y - u_originMm.y) * u_invSpacingMm.y, ((zMm + zStepMm) - u_originMm.z) * u_invSpacingMm.z);
+
+        float huLeft  = samplePanoramicHU(voxLeft);
+        float huRight = samplePanoramicHU(voxRight);
+        float huUp    = samplePanoramicHU(voxUp);
+        float huDown  = samplePanoramicHU(voxDown);
+
+        if (huLeft > -700.0 && huRight > -700.0 && huUp > -700.0 && huDown > -700.0 && finalHU > -700.0) {
+            float laplacian = 4.0 * finalHU - (huLeft + huRight + huUp + huDown);
+            finalHU = clamp(finalHU + sAmt * laplacian, -1000.0, 3071.0);
+        }
+    }
+
     // 4. Contrast Window/Level transfer function with anti-blinding air protection
     float safeWW = max(1.0, u_windowWidth);
     float low = u_windowLevel - safeWW * 0.5;
     float normVal = clamp((finalHU - low) / safeWW, 0.0, 1.0);
-    if (u_invert == 1) {
+
+    vec3 outRgb;
+
+    if (u_colorMap == 1) {
+        // Mode 1: Misch Bone Density Heatmap (Misch D1-D4 classification for implant bed quality)
+        if (finalHU < -700.0) {
+            outRgb = vec3(10.0 / 255.0);
+        } else if (finalHU < 150.0) {
+            float t = clamp((finalHU + 700.0) / 850.0, 0.0, 1.0);
+            outRgb = mix(vec3(0.06, 0.07, 0.08), vec3(0.20, 0.22, 0.25), t);
+        } else if (finalHU < 350.0) {
+            // Misch D4: Low density / soft trabecular bone (150..350 HU) -> Warm Orange-Brown
+            float t = (finalHU - 150.0) / 200.0;
+            outRgb = mix(vec3(0.78, 0.38, 0.12), vec3(0.92, 0.56, 0.18), t);
+        } else if (finalHU < 850.0) {
+            // Misch D2/D3: Normal trabecular bone (350..850 HU) -> Emerald Green / Aquamarine
+            float t = (finalHU - 350.0) / 500.0;
+            outRgb = mix(vec3(0.12, 0.72, 0.42), vec3(0.20, 0.86, 0.58), t);
+        } else if (finalHU < 1250.0) {
+            // Misch D1/D2: Dense trabecular bone (850..1250 HU) -> Golden Yellow
+            float t = (finalHU - 850.0) / 400.0;
+            outRgb = mix(vec3(0.96, 0.78, 0.08), vec3(1.00, 0.92, 0.22), t);
+        } else {
+            // Misch D1: Dense Cortical Bone (> 1250 HU) -> Pure White / Pearlescent
+            float t = clamp((finalHU - 1250.0) / 750.0, 0.0, 1.0);
+            outRgb = mix(vec3(1.00, 0.96, 0.88), vec3(0.98, 0.98, 1.00), t);
+        }
+    } else if (u_colorMap == 2) {
+        // Mode 2: Endo High Contrast (Microcrack / MB2 accentuation)
+        float endoVal = smoothstep(0.12, 0.88, normVal);
+        endoVal = clamp(pow(endoVal, 1.35) * 1.08, 0.0, 1.0);
+        outRgb = vec3(endoVal * 0.95, endoVal, endoVal * 1.05);
+    } else if (u_colorMap == 3 || u_invert == 1) {
+        // Mode 3: Inverted White Paper mode with anti-blinding air transition
         float airFactor = smoothstep(-650.0, -550.0, finalHU);
         float darkAir = 10.0 / 255.0;
         float invertedVal = 1.0 - normVal;
-        normVal = mix(darkAir, invertedVal, airFactor);
+        float g = mix(darkAir, invertedVal, airFactor);
+        outRgb = vec3(g);
+    } else {
+        // Mode 0: Standard DICOM Grayscale
+        outRgb = vec3(normVal);
     }
-    
-    fragColor = vec4(normVal, normVal, normVal, 1.0);
+
+    fragColor = vec4(outRgb, 1.0);
 }
 `;
+
+export type CbctColorMapMode = "grayscale" | "bone_density" | "endo" | "inverted";
+
+export const CBCT_COLORMAP_MODES = {
+	GRAYSCALE: 0,
+	BONE_DENSITY: 1,
+	ENDO: 2,
+	INVERTED: 3,
+} as const;
 
 export const CBCT_PANORAMIC_VERTEX_SHADER = CBCT_PANORAMIC_CURVED_VERTEX_SHADER;
 export const CBCT_PANORAMIC_FRAGMENT_SHADER = CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER;

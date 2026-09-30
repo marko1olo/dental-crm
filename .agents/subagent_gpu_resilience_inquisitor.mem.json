@@ -1,40 +1,38 @@
 {
   "agent": "subagent_gpu_resilience_inquisitor",
   "status": "COMPLETED",
-  "mission": "CBCT WebGL2 Context Loss Shield, VRAM Auto-Downsample & Multi-DPR Clamp Inquisitor",
+  "mission": "CBCT WebGL2 Hardware Sharpening & Misch Bone Density Colormap Overhaul",
   "scope": {
     "allowed": [
+      "apps/web/src/components/radiology/mpr/webgl/cbctMprShaders.ts",
       "apps/web/src/components/radiology/mpr/webgl/CbctVolumeGlContext.ts",
       "apps/web/src/components/radiology/__tests__/cbctHardwareGpuTorture.test.ts",
-      "apps/web/src/components/radiology/__tests__/cbctWebGlEngine.test.ts"
+      "apps/web/src/components/radiology/__tests__/cbctWebGlEngine.test.ts",
+      ".agents/subagent_gpu_resilience_inquisitor.mem.json"
     ],
     "forbidden": [
-      "cbctPanoramicReconstructionMath.ts",
-      "CbctVolume3DViewport.tsx",
-      "treatment-plans/"
+      "clinical/",
+      "emr/",
+      "documents/",
+      "schedule/"
     ]
   },
   "completed_steps": [
-    "Read THE_HAMMER_MASTER_PROMPT.md completely",
-    "Read AGENTS.md completely",
-    "Initialized memory file",
-    "Read CbctVolumeGlContext.ts in its entirety (730 lines)",
-    "Read cbctHardwareGpuTorture.test.ts in its entirety (1314 lines)",
-    "Read cbctWebGlEngine.test.ts in its entirety (918 lines)",
-    "Ran baseline test verification (79 tests passed)",
-    "Implemented WebGL2 context loss & restore lifecycle in CbctVolumeGlContext.ts: preventDefault, activeVolume & doctor coordinates retention, automatic texture re-upload, listener triggers",
-    "Implemented progressive VRAM downsample retry on texImage3D OOM & max3dTextureSize safety in CbctVolumeGlContext.ts",
-    "Implemented Multi-DPR clamp utilities (safeDpr = min(dpr, 1.5)) and CSS scaling in CbctVolumeGlContext.ts",
-    "Added torture tests for context loss restoration, VRAM progressive downsample, MAX_3D_TEXTURE_SIZE=256 decimation, and Multi-DPR clamp in cbctHardwareGpuTorture.test.ts",
-    "Added engine tests for safe DPR and context restoration in cbctWebGlEngine.test.ts",
-    "Executed machine verification command: node --max-old-space-size=4096 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/radiology/__tests__/cbctHardwareGpuTorture.test.ts apps/web/src/components/radiology/__tests__/cbctWebGlEngine.test.ts (91 passed, 0 failed)",
-    "Verified clean exit code 0 on all tests and verified per-file git add compliance"
+    "Phase 1: WebGL2 Context Loss Shield, progressive 2x VRAM downsample retry on OOM, and Multi-DPR clamping (<= 1.5)",
+    "Phase 2: Implemented Misch Bone Density D1-D4 colormap heatmap and Endo high contrast modes in CBCT_MPR_FRAGMENT_SHADER and CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER",
+    "Phase 2: Implemented hardware unsharp masking / trabecular edge enhancement with Laplacian gradient calculation and anti-air halo protection",
+    "Phase 2: Added colorMap and sharpenAmount uniforms and getters/setters in CbctVolumeGlContext.ts",
+    "Phase 2: Added Section 15 torture tests in cbctHardwareGpuTorture.test.ts verifying Misch D1-D4 intervals, Laplacian formula, anti-air guard, colormap resolver, and WebGL uniform uploads",
+    "Phase 2: Added Section 10 tests in cbctWebGlEngine.test.ts verifying shader declarations, colormap mode uploads, sharpening clamping [0.0, 1.0], and persistence via setColorMap/setSharpenAmount",
+    "Machine verification executed: 100/100 tests pass across 27 suites with Exit Code 0 in ~588 ms",
+    "Per-file git add completed for all 5 scope files"
   ],
   "pending_steps": [],
   "findings": [
-    "CbctVolumeGlContext had webglcontextlost/webglcontextrestored listeners but dropped the active volume reference on context loss, requiring manual re-upload and losing doctor state. Now retains activeVolume, lastCoords, lastCrosshairMm, lastAngles, re-uploads automatically upon restore without page reload, and invokes registered listeners.",
-    "texImage3D previously threw without retry if GPU VRAM was exhausted. Now implements a progressive 2x downsample loop up to 8x, successfully recovering when driver memory limits are tight.",
-    "Device pixel ratio was unconstrained on 4K/Retina displays, risking fillrate collapse on integrated GPUs (Intel UHD / Iris Xe). Now clamped to safeDpr <= 1.5, cutting fragment shader invocations by ~44% while retaining CSS display sizing.",
-    "All 91 tests across 25 test suites pass with 0 failures in < 600 ms."
+    "Misch Bone Density Heatmap: D1 cortical (>1250 HU, pearlescent white), D1/D2 dense trabecular (850..1250 HU, golden yellow), D2/D3 normal trabecular (350..850 HU, emerald green/aquamarine), D4 low density (150..350 HU, warm orange-brown), soft tissue (<150 HU, graphite slate), ambient air (<-700 HU, dark).",
+    "Endo High Contrast: Sigmoid steep curve enhances microcracks, vertical fractures, and hidden canals (MB2).",
+    "Hardware Unsharp Masking: Uses 4-neighbor cross Laplacian sampling (4*center - sum(neighbors)) on normalized slice basis axes with strict anti-air guard (hu > -700 HU) preventing bright ringing halos.",
+    "GlSliceRenderOptions accepts colorMap ('grayscale' | 'bone_density' | 'endo' | 'inverted' or 0..3) and sharpenAmount (0.0..1.0, clamped).",
+    "Zero regressions across test suites; 100/100 tests pass."
   ]
 }

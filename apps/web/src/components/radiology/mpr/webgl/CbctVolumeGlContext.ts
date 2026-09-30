@@ -22,7 +22,14 @@ import {
 } from "../../cbctObliqueMatrixMath";
 import { type RotationHandlePosition, calculateAngleFromHandleDrag } from "../../cbctObliqueMath";
 import { calculateCrosshairDragWorldMm } from "../../cbctVolumeLifecycleMath";
-import { CBCT_MPR_FRAGMENT_SHADER, CBCT_MPR_VERTEX_SHADER } from "./cbctMprShaders";
+import {
+	CBCT_COLORMAP_MODES,
+	CBCT_MPR_FRAGMENT_SHADER,
+	CBCT_MPR_VERTEX_SHADER,
+	type CbctColorMapMode,
+} from "./cbctMprShaders";
+
+export { CBCT_COLORMAP_MODES, type CbctColorMapMode };
 
 export interface GlSliceRenderOptions {
 	windowWidth: number;
@@ -34,6 +41,25 @@ export interface GlSliceRenderOptions {
 	expandObliqueDiagonal?: boolean | undefined;
 	safeDpr?: number | undefined;
 	clampDpr?: boolean | undefined;
+	colorMap?: CbctColorMapMode | number | undefined;
+	sharpenAmount?: number | undefined;
+}
+
+export function resolveColorMapCode(colorMap?: CbctColorMapMode | number): number {
+	if (typeof colorMap === "number") {
+		return Math.max(0, Math.min(3, Math.round(colorMap)));
+	}
+	switch (colorMap) {
+		case "bone_density":
+			return CBCT_COLORMAP_MODES.BONE_DENSITY;
+		case "endo":
+			return CBCT_COLORMAP_MODES.ENDO;
+		case "inverted":
+			return CBCT_COLORMAP_MODES.INVERTED;
+		case "grayscale":
+		default:
+			return CBCT_COLORMAP_MODES.GRAYSCALE;
+	}
 }
 
 export interface GlSliceCoordinates {
@@ -62,6 +88,8 @@ interface GlUniformLocations {
 	slabMode: WebGLUniformLocation | null;
 	slabSteps: WebGLUniformLocation | null;
 	trilinear: WebGLUniformLocation | null;
+	colorMap: WebGLUniformLocation | null;
+	sharpenAmount: WebGLUniformLocation | null;
 }
 
 export const MAX_SAFE_DEVICE_PIXEL_RATIO = 1.5;
@@ -384,6 +412,8 @@ export class CbctVolumeGlContext {
 	private contextRestoredListeners: Set<() => void> = new Set();
 	private contextLostListeners: Set<() => void> = new Set();
 	private contextLostState = false;
+	private currentColorMap = 0;
+	private currentSharpenAmount = 0.0;
 	private lastCrosshairMm: Point3D | null = null;
 	private lastAngles: ObliqueRotationAngles | null = null;
 	private lastCoords: GlSliceCoordinates | null = null;
@@ -507,6 +537,22 @@ export class CbctVolumeGlContext {
 		};
 	}
 
+	public setColorMap(mode: CbctColorMapMode | number): void {
+		this.currentColorMap = resolveColorMapCode(mode);
+	}
+
+	public getColorMap(): number {
+		return this.currentColorMap;
+	}
+
+	public setSharpenAmount(amount: number): void {
+		this.currentSharpenAmount = Math.max(0.0, Math.min(1.0, amount));
+	}
+
+	public getSharpenAmount(): number {
+		return this.currentSharpenAmount;
+	}
+
 	private setupShaders(): boolean {
 		const gl = this.gl;
 		if (!gl) return false;
@@ -558,6 +604,8 @@ export class CbctVolumeGlContext {
 			slabMode: gl.getUniformLocation(program, "u_slabMode"),
 			slabSteps: gl.getUniformLocation(program, "u_slabSteps"),
 			trilinear: gl.getUniformLocation(program, "u_trilinear"),
+			colorMap: gl.getUniformLocation(program, "u_colorMap"),
+			sharpenAmount: gl.getUniformLocation(program, "u_sharpenAmount"),
 		};
 		return true;
 	}
@@ -760,6 +808,18 @@ export class CbctVolumeGlContext {
 		gl.uniform1i(this.uniforms.slabSteps, coords.slabSteps);
 		gl.uniform1i(this.uniforms.trilinear, options.interpolation !== "nearest" ? 1 : 0);
 
+		const colorMapCode = options.colorMap !== undefined ? resolveColorMapCode(options.colorMap) : this.currentColorMap;
+		const sharpenAmount = options.sharpenAmount !== undefined
+			? Math.max(0.0, Math.min(1.0, options.sharpenAmount))
+			: this.currentSharpenAmount;
+
+		if (this.uniforms.colorMap) {
+			gl.uniform1i(this.uniforms.colorMap, colorMapCode);
+		}
+		if (this.uniforms.sharpenAmount) {
+			gl.uniform1f(this.uniforms.sharpenAmount, sharpenAmount);
+		}
+
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
 		if (targetCanvas) {
@@ -937,6 +997,8 @@ export class CbctVolumeGlContext {
 		this.lastOptions = null;
 		this.lastCrosshairMm = null;
 		this.lastAngles = null;
+		this.currentColorMap = 0;
+		this.currentSharpenAmount = 0.0;
 		this.gl = null; this.canvas = null; this.activeVolumeId = null;
 		this.uploadDim = null; this.isInitialized = false; this.uniforms = null;
 	}

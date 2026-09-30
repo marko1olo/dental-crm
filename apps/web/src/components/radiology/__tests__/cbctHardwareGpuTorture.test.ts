@@ -39,6 +39,8 @@ import {
 	computeSafeDprDimensions,
 	applySafeDprToCanvas,
 	MAX_SAFE_DEVICE_PIXEL_RATIO,
+	CBCT_COLORMAP_MODES,
+	resolveColorMapCode,
 	CbctVolumeGlContext,
 	getSharedCbctGlContext,
 	disposeSharedCbctGlContext,
@@ -205,8 +207,12 @@ function createDriverMockGlContext(config: DriverMockConfig) {
 		detachShader: () => {},
 
 		getUniformLocation: (_p: unknown, name: string) => ({ name }),
-		uniform1i: () => {},
-		uniform1f: () => {},
+		uniform1i: (loc: any, val: number) => {
+			calls.push(`uniform1i:${loc?.name ?? "unknown"}:${val}`);
+		},
+		uniform1f: (loc: any, val: number) => {
+			calls.push(`uniform1f:${loc?.name ?? "unknown"}:${val}`);
+		},
 		uniform3f: () => {},
 		uniform3fv: () => {},
 
@@ -1528,6 +1534,119 @@ describe("RED TEAM AUDIT: Hardware WebGL2 GPU Engine Torture & Self-Fix Verifica
 			assert.strictEqual(drawImageHeight, 900);
 
 			glCtx.dispose();
+		});
+	});
+
+	// ─── 15. CLINICAL COLORMAPS & HARDWARE UNSHARP MASKING TORTURE ────────────
+
+	describe("15. Clinical Colormaps (Misch Bone Density D1-D4) & Hardware Unsharp Masking Torture", () => {
+		it("CBCT_MPR_FRAGMENT_SHADER and CBCT_PANORAMIC_FRAGMENT_SHADER declare u_colorMap and u_sharpenAmount", () => {
+			for (const shader of [CBCT_MPR_FRAGMENT_SHADER, CBCT_PANORAMIC_FRAGMENT_SHADER]) {
+				assert.ok(shader.includes("uniform int u_colorMap;"), "Must declare uniform int u_colorMap");
+				assert.ok(shader.includes("uniform float u_sharpenAmount;"), "Must declare uniform float u_sharpenAmount");
+			}
+		});
+
+		it("Misch Bone Density D1-D4 Heatmap: shader implements all 4 density classification intervals and color targets", () => {
+			for (const shader of [CBCT_MPR_FRAGMENT_SHADER, CBCT_PANORAMIC_FRAGMENT_SHADER]) {
+				// Air boundary threshold
+				assert.ok(shader.includes("-700.0"), "Must threshold ambient air at -700 HU");
+				// Soft tissue threshold
+				assert.ok(shader.includes("150.0"), "Must threshold soft tissue at 150 HU");
+				// D4 threshold
+				assert.ok(shader.includes("350.0"), "Must threshold Misch D4 soft bone at 350 HU");
+				// D2/D3 threshold
+				assert.ok(shader.includes("850.0"), "Must threshold Misch D2/D3 normal bone at 850 HU");
+				// D1 cortical threshold
+				assert.ok(shader.includes("1250.0"), "Must threshold Misch D1 cortical bone at 1250 HU");
+			}
+		});
+
+		it("Hardware Unsharp Masking: implements Laplacian edge enhancement with anti-air halo guard", () => {
+			for (const shader of [CBCT_MPR_FRAGMENT_SHADER, CBCT_PANORAMIC_FRAGMENT_SHADER]) {
+				// Laplacian formula: 4*center - sum(neighbors)
+				assert.ok(
+					shader.includes("4.0 * finalHU - (huLeft + huRight + huUp + huDown)"),
+					"Must compute Laplacian edge gradient from 4 neighbors",
+				);
+				// Anti-air artifact guard
+				assert.ok(
+					shader.includes("huLeft > -700.0 && huRight > -700.0 && huUp > -700.0 && huDown > -700.0 && finalHU > -700.0"),
+					"Must guard against air boundary ringing halos",
+				);
+				// Bounded clamp
+				assert.ok(
+					shader.includes("clamp(finalHU + sAmt * laplacian, -1000.0, 3071.0)"),
+					"Must clamp sharpened HU to valid DICOM range [-1000, 3071]",
+				);
+			}
+		});
+
+		it("resolveColorMapCode resolves enum strings and numbers with boundary clamping", () => {
+			assert.strictEqual(resolveColorMapCode("grayscale"), 0);
+			assert.strictEqual(resolveColorMapCode("bone_density"), 1);
+			assert.strictEqual(resolveColorMapCode("endo"), 2);
+			assert.strictEqual(resolveColorMapCode("inverted"), 3);
+			assert.strictEqual(resolveColorMapCode(undefined), 0);
+			assert.strictEqual(resolveColorMapCode(0), 0);
+			assert.strictEqual(resolveColorMapCode(1), 1);
+			assert.strictEqual(resolveColorMapCode(2), 2);
+			assert.strictEqual(resolveColorMapCode(3), 3);
+			assert.strictEqual(resolveColorMapCode(-1), 0, "Negative code must clamp to 0");
+			assert.strictEqual(resolveColorMapCode(99), 3, "Out of bounds code must clamp to 3");
+			assert.strictEqual(CBCT_COLORMAP_MODES.BONE_DENSITY, 1);
+			assert.strictEqual(CBCT_COLORMAP_MODES.ENDO, 2);
+		});
+
+		it("CbctVolumeGlContext sets and uploads colorMap and sharpenAmount uniforms", () => {
+			const { gl, calls } = createDriverMockGlContext({ max3dTextureSize: 2048 });
+			const canvas = {
+				getContext: (t: string) => (t === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+			const zakharov = createZakharovProfileVolume();
+
+			// Test setColorMap and setSharpenAmount methods
+			glCtx.setColorMap("bone_density");
+			assert.strictEqual(glCtx.getColorMap(), 1);
+			glCtx.setSharpenAmount(0.65);
+			assert.strictEqual(glCtx.getSharpenAmount(), 0.65);
+
+			// Clamp extreme sharpen values
+			glCtx.setSharpenAmount(-0.5);
+			assert.strictEqual(glCtx.getSharpenAmount(), 0.0);
+			glCtx.setSharpenAmount(2.5);
+			assert.strictEqual(glCtx.getSharpenAmount(), 1.0);
+
+			// Render slice with bone_density colormap and 0.5 sharpening
+			const coords = computeGlSliceCoordinates(zakharov, "axial", { x: 0, y: 0, z: 0 }, DEFAULT_OBLIQUE_ROTATION);
+			glCtx.renderFromCoordinates(zakharov, coords, {
+				windowWidth: 1500,
+				windowLevel: 300,
+				colorMap: "bone_density",
+				sharpenAmount: 0.5,
+			});
+
+			assert.ok(calls.includes("uniform1i:u_colorMap:1"), "Must upload u_colorMap = 1 (Bone Density)");
+			assert.ok(calls.includes("uniform1f:u_sharpenAmount:0.5"), "Must upload u_sharpenAmount = 0.5");
+
+			// Render slice with endo colormap
+			glCtx.renderFromCoordinates(zakharov, coords, {
+				windowWidth: 1500,
+				windowLevel: 300,
+				colorMap: "endo",
+				sharpenAmount: 0.8,
+			});
+
+			assert.ok(calls.includes("uniform1i:u_colorMap:2"), "Must upload u_colorMap = 2 (Endo)");
+			assert.ok(calls.includes("uniform1f:u_sharpenAmount:0.8"), "Must upload u_sharpenAmount = 0.8");
+
+			glCtx.dispose();
+			assert.strictEqual(glCtx.getColorMap(), 0);
+			assert.strictEqual(glCtx.getSharpenAmount(), 0);
 		});
 	});
 });

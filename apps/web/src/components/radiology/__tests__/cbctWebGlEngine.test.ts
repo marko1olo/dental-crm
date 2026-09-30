@@ -22,6 +22,7 @@ import {
 import {
 	CBCT_MPR_VERTEX_SHADER,
 	CBCT_MPR_FRAGMENT_SHADER,
+	CBCT_PANORAMIC_FRAGMENT_SHADER,
 } from "../mpr/webgl/cbctMprShaders";
 import {
 	computeGlSliceCoordinates,
@@ -32,6 +33,8 @@ import {
 	computeSafeDprDimensions,
 	applySafeDprToCanvas,
 	MAX_SAFE_DEVICE_PIXEL_RATIO,
+	CBCT_COLORMAP_MODES,
+	resolveColorMapCode,
 	CbctVolumeGlContext,
 	getSharedCbctGlContext,
 	disposeSharedCbctGlContext,
@@ -1042,6 +1045,129 @@ describe("CBCT Hardware WebGL2 GPU Engine (FEAT-010)", () => {
 			assert.strictEqual(targetCanvas.style.height, "16px");
 			assert.strictEqual(blitWidth, 24);
 			assert.strictEqual(blitHeight, 24);
+
+			glCtx.dispose();
+		});
+	});
+
+	// ─── 10. CLINICAL COLORMAPS & HARDWARE UNSHARP MASKING ────────────────────
+
+	describe("10. Clinical Colormaps (Misch D1-D4 / Endo) & Hardware Unsharp Masking", () => {
+		it("CBCT MPR and Panoramic shaders declare u_colorMap and u_sharpenAmount uniforms", () => {
+			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("uniform int u_colorMap;"));
+			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("uniform float u_sharpenAmount;"));
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("uniform int u_colorMap;"));
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("uniform float u_sharpenAmount;"));
+		});
+
+		it("resolves and uploads colorMap mode to WebGL u_colorMap uniform", () => {
+			const { gl, uniformValues } = createMockGl2Context();
+			const canvas = {
+				getContext: (type: string) => (type === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+
+			// Default: Grayscale (0)
+			glCtx.renderSlice(volume, "axial", centerCrosshair, zeroAngles, {
+				windowWidth: 1500,
+				windowLevel: 300,
+			});
+			assert.strictEqual(uniformValues.get("u_colorMap"), 0);
+
+			// Bone Density Heatmap: Misch D1-D4 (1)
+			glCtx.renderSlice(volume, "axial", centerCrosshair, zeroAngles, {
+				windowWidth: 1500,
+				windowLevel: 300,
+				colorMap: "bone_density",
+			});
+			assert.strictEqual(uniformValues.get("u_colorMap"), 1);
+
+			// Endo High Contrast (2)
+			glCtx.renderSlice(volume, "axial", centerCrosshair, zeroAngles, {
+				windowWidth: 1500,
+				windowLevel: 300,
+				colorMap: "endo",
+			});
+			assert.strictEqual(uniformValues.get("u_colorMap"), 2);
+
+			// Inverted White Paper (3)
+			glCtx.renderSlice(volume, "axial", centerCrosshair, zeroAngles, {
+				windowWidth: 1500,
+				windowLevel: 300,
+				colorMap: "inverted",
+			});
+			assert.strictEqual(uniformValues.get("u_colorMap"), 3);
+
+			glCtx.dispose();
+		});
+
+		it("resolves and uploads sharpenAmount to WebGL u_sharpenAmount uniform with clamping", () => {
+			const { gl, uniformValues } = createMockGl2Context();
+			const canvas = {
+				getContext: (type: string) => (type === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+
+			// Default: 0.0
+			glCtx.renderSlice(volume, "axial", centerCrosshair, zeroAngles, {
+				windowWidth: 1500,
+				windowLevel: 300,
+			});
+			assert.strictEqual(uniformValues.get("u_sharpenAmount"), 0.0);
+
+			// Sharpen 0.75
+			glCtx.renderSlice(volume, "axial", centerCrosshair, zeroAngles, {
+				windowWidth: 1500,
+				windowLevel: 300,
+				sharpenAmount: 0.75,
+			});
+			assert.strictEqual(uniformValues.get("u_sharpenAmount"), 0.75);
+
+			// Negative sharpen amount is clamped to 0.0
+			glCtx.renderSlice(volume, "axial", centerCrosshair, zeroAngles, {
+				windowWidth: 1500,
+				windowLevel: 300,
+				sharpenAmount: -1.0,
+			});
+			assert.strictEqual(uniformValues.get("u_sharpenAmount"), 0.0);
+
+			// Over-range sharpen amount is clamped to 1.0
+			glCtx.renderSlice(volume, "axial", centerCrosshair, zeroAngles, {
+				windowWidth: 1500,
+				windowLevel: 300,
+				sharpenAmount: 2.5,
+			});
+			assert.strictEqual(uniformValues.get("u_sharpenAmount"), 1.0);
+
+			glCtx.dispose();
+		});
+
+		it("persists global colorMap and sharpenAmount across frames via setColorMap and setSharpenAmount", () => {
+			const { gl, uniformValues } = createMockGl2Context();
+			const canvas = {
+				getContext: (type: string) => (type === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+
+			glCtx.setColorMap("bone_density");
+			glCtx.setSharpenAmount(0.6);
+
+			glCtx.renderSlice(volume, "axial", centerCrosshair, zeroAngles, {
+				windowWidth: 1500,
+				windowLevel: 300,
+			});
+
+			assert.strictEqual(uniformValues.get("u_colorMap"), 1);
+			assert.strictEqual(uniformValues.get("u_sharpenAmount"), 0.6);
 
 			glCtx.dispose();
 		});
