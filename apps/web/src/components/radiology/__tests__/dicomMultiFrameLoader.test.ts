@@ -18,6 +18,7 @@ import {
   isMultiFrameDicom,
   parseMultiFrameDicomHeader,
   buildVolumeFromMultiFrameDicom,
+  generateMultiFrameProgressiveLodVolume,
   decodeDicomString,
   extractDicomFrame,
   calibrateMultiFrameVoxel,
@@ -670,5 +671,53 @@ describe("DICOM Multi-Frame Enhanced CT Loader", () => {
     assert.equal(calls.texSubImage3D[1]!.zoffset, 1);
     assert.equal(calls.texSubImage3D[2]!.zoffset, 2);
     assert.equal(decodedSlices.length, 3, "onSliceDecoded must be invoked for all 3 slices");
+  });
+
+  it("generateMultiFrameProgressiveLodVolume generates 2x downsampled preview volume with correct spacing", () => {
+    const buf = createSyntheticMultiFrameDicom({
+      rows: 8,
+      cols: 8,
+      numberOfFrames: 6,
+      pixelSpacing: [0.25, 0.25],
+      sliceThickness: 0.5,
+      rescaleSlope: 1.0,
+      rescaleIntercept: -1000,
+    });
+
+    const header = parseMultiFrameDicomHeader(buf);
+    const lodVol = generateMultiFrameProgressiveLodVolume(buf, header);
+
+    assert.equal(lodVol.dimensions.width, 4, "Width must be downsampled 2x (8 -> 4)");
+    assert.equal(lodVol.dimensions.height, 4, "Height must be downsampled 2x (8 -> 4)");
+    assert.equal(lodVol.dimensions.depth, 3, "Depth must be downsampled 2x (6 -> 3)");
+    assert.equal(lodVol.spacingMm.x, 0.5, "Spacing X must be 2x original (0.25 -> 0.5)");
+    assert.equal(lodVol.spacingMm.y, 0.5, "Spacing Y must be 2x original (0.25 -> 0.5)");
+    assert.equal(lodVol.isProgressivePreview, true);
+    assert.equal(lodVol.lodLevel, 1);
+  });
+
+  it("buildVolumeFromMultiFrameDicom emits onProgressiveVolumeReady before completing full volume", async () => {
+    const buf = createSyntheticMultiFrameDicom({
+      rows: 8,
+      cols: 8,
+      numberOfFrames: 4,
+      pixelSpacing: [0.2, 0.2],
+      sliceThickness: 0.4,
+    });
+
+    let progressivePreviewReceived = false;
+    let previewDimensions: { width: number; height: number; depth: number } | null = null;
+
+    const fullVol = await buildVolumeFromMultiFrameDicom(buf, {
+      onProgressiveVolumeReady: (preview) => {
+        progressivePreviewReceived = true;
+        previewDimensions = preview.dimensions;
+        assert.equal(preview.isProgressivePreview, true);
+      },
+    });
+
+    assert.equal(progressivePreviewReceived, true, "onProgressiveVolumeReady must be invoked during ingestion");
+    assert.deepEqual(previewDimensions, { width: 4, height: 4, depth: 2 });
+    assert.deepEqual(fullVol.dimensions, { width: 8, height: 8, depth: 4 });
   });
 });

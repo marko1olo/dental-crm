@@ -14,6 +14,7 @@ import {
   decodeDicomString,
   type MultiFrameDicomHeader,
 } from "./dicomMultiFrameLoader";
+import type { CbctWorkerBridge, DecodeDicomSliceTask } from "./mpr/cbctWorkerBridge";
 
 export {
   isMultiFrameDicom,
@@ -29,6 +30,8 @@ declare module "./cbctMprMath" {
     readonly isFlippedX?: boolean | undefined;
     readonly isFlippedY?: boolean | undefined;
     readonly isFlippedZ?: boolean | undefined;
+    readonly isProgressivePreview?: boolean | undefined;
+    readonly lodLevel?: number | undefined;
   }
 }
 
@@ -69,10 +72,25 @@ export interface DicomStreamingUploadTarget {
 }
 
 export interface DicomVolumeIngestionOptions {
-  onProgress?: (percent: number, message: string) => void;
-  onSliceDecoded?: (sliceIndex: number, totalSlices: number, sliceData: Int16Array) => void;
-  gpuUploadTarget?: DicomStreamingUploadTarget | null;
-  concurrency?: number;
+  onProgress?: ((percent: number, message: string) => void) | undefined;
+  onSliceDecoded?: ((sliceIndex: number, totalSlices: number, sliceData: Int16Array) => void) | undefined;
+  onProgressiveVolumeReady?: ((previewVolume: CbctVoxelVolume) => void) | undefined;
+  gpuUploadTarget?: DicomStreamingUploadTarget | null | undefined;
+  concurrency?: number | undefined;
+  workerBridge?: CbctWorkerBridge | null | undefined;
+  enableProgressiveLOD?: boolean | undefined;
+}
+
+/**
+ * Yields execution back to the browser / Node event loop to prevent UI thread starvation.
+ */
+export async function yieldToEventLoop(): Promise<void> {
+  const g = globalThis as unknown as { scheduler?: { yield?: () => Promise<void> } };
+  if (g.scheduler && typeof g.scheduler.yield === "function") {
+    await g.scheduler.yield();
+  } else {
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  }
 }
 
 /**
@@ -449,6 +467,126 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
   };
 }
 
+/**
+ * Rapidly constructs an initial 2x downsampled LOD 1 volume in < 50ms
+ * directly from raw slice buffers so 3D MPR planes are rendered immediately
+ * while full-resolution streaming ingestion proceeds in background.
+ */
+export function generateProgressiveLodVolume(
+  sliceEntries: readonly DicomSliceEntry[],
+  refHeader: ParsedDicomSliceHeader,
+  computedSpacingZ: number,
+  flipX: boolean,
+  flipY: boolean,
+): CbctVoxelVolume {
+  const width = refHeader.cols;
+  const height = refHeader.rows;
+  const depth = sliceEntries.length;
+
+  const lodWidth = Math.max(1, Math.floor(width / 2));
+  const lodHeight = Math.max(1, Math.floor(height / 2));
+  const stepZ = depth >= 4 ? 2 : 1;
+  const sampledIndices: number[] = [];
+  for (let z = 0; z < depth; z += stepZ) {
+    sampledIndices.push(z);
+  }
+  const lodDepth = sampledIndices.length;
+
+  const physicalWidthMm = width * refHeader.pixelSpacing.x;
+  const physicalHeightMm = height * refHeader.pixelSpacing.y;
+  const physicalDepthMm = depth * computedSpacingZ;
+
+  const lodSpacingX = refHeader.pixelSpacing.x * 2;
+  const lodSpacingY = refHeader.pixelSpacing.y * 2;
+  const lodSpacingZ = lodDepth > 1 ? physicalDepthMm / lodDepth : computedSpacingZ;
+
+  const totalLodVoxels = lodWidth * lodHeight * lodDepth;
+  const lodData = new Int16Array(totalLodVoxels);
+
+  const isSigned = refHeader.pixelRepresentation === 1;
+  const bitsStored = refHeader.bitsStored > 0 && refHeader.bitsStored <= 16 ? refHeader.bitsStored : 16;
+  const slope = Number.isFinite(refHeader.rescaleSlope) && refHeader.rescaleSlope > 0 ? refHeader.rescaleSlope : 1.0;
+  const intercept = Number.isFinite(refHeader.rescaleIntercept) ? refHeader.rescaleIntercept : 0.0;
+  const isLinearInteger = slope === 1.0 && Math.floor(intercept) === intercept;
+  const intIntercept = intercept | 0;
+  const mask = bitsStored < 16 ? (1 << bitsStored) - 1 : 0xffff;
+  const signBit = bitsStored < 16 ? 1 << (bitsStored - 1) : 0x8000;
+  const signExt = bitsStored < 16 ? 1 << bitsStored : 0x10000;
+
+  let minHU = 32767;
+  let maxHU = -32768;
+
+  const srcSliceVoxelCount = width * height;
+
+  for (let lz = 0; lz < lodDepth; lz++) {
+    const origZ = sampledIndices[lz]!;
+    const entry = sliceEntries[origZ];
+    if (!entry || !entry.buffer) continue;
+
+    const offset = entry.header.pixelDataByteOffset;
+    let rawSlice: Int16Array | Uint16Array;
+    if (offset % 2 === 0 && entry.buffer.byteLength >= offset + srcSliceVoxelCount * 2) {
+      rawSlice = isSigned
+        ? new Int16Array(entry.buffer, offset, srcSliceVoxelCount)
+        : new Uint16Array(entry.buffer, offset, srcSliceVoxelCount);
+    } else {
+      const sliceBuf = entry.buffer.slice(offset, offset + srcSliceVoxelCount * 2);
+      const validEven = sliceBuf.byteLength - (sliceBuf.byteLength % 2);
+      const safeBuf = validEven === sliceBuf.byteLength ? sliceBuf : sliceBuf.slice(0, validEven);
+      rawSlice = isSigned ? new Int16Array(safeBuf) : new Uint16Array(safeBuf);
+    }
+
+    const dstSliceOffset = lz * (lodWidth * lodHeight);
+
+    for (let ly = 0; ly < lodHeight; ly++) {
+      const sy = ly * 2;
+      const srcY = flipY ? height - 1 - sy : sy;
+      const srcRow = srcY * width;
+      const dstRow = dstSliceOffset + ly * lodWidth;
+
+      for (let lx = 0; lx < lodWidth; lx++) {
+        const sx = lx * 2;
+        const srcX = flipX ? width - 1 - sx : sx;
+        const raw = rawSlice[srcRow + srcX]!;
+        let val = bitsStored < 16 ? raw & mask : raw;
+        if (isSigned) {
+          if (bitsStored < 16) {
+            if ((val & signBit) !== 0) val -= signExt;
+          } else {
+            val = (val << 16) >> 16;
+          }
+        }
+        const hu = isLinearInteger ? ((val + intIntercept) | 0) : Math.round(val * slope + intercept);
+        const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+        lodData[dstRow + lx] = clamped;
+        if (clamped < minHU) minHU = clamped;
+        if (clamped > maxHU) maxHU = clamped;
+      }
+    }
+  }
+
+  return {
+    id: `progressive-lod-${Date.now()}`,
+    dimensions: { width: lodWidth, height: lodHeight, depth: lodDepth },
+    spacingMm: { x: lodSpacingX, y: lodSpacingY, z: lodSpacingZ },
+    originMm: { x: -physicalWidthMm * 0.5, y: -physicalHeightMm * 0.5, z: -physicalDepthMm * 0.5 },
+    physicalSizeMm: { x: physicalWidthMm, y: physicalHeightMm, z: physicalDepthMm },
+    data: lodData,
+    minHU: minHU === 32767 ? 0 : minHU,
+    maxHU: maxHU === -32768 ? 0 : maxHU,
+    rescaleSlope: refHeader.rescaleSlope,
+    rescaleIntercept: refHeader.rescaleIntercept,
+    defaultWindowWidth: refHeader.windowWidth > 0 ? refHeader.windowWidth : 4400,
+    defaultWindowLevel: refHeader.windowCenter !== 0 ? refHeader.windowCenter : 1300,
+    imageOrientationPatient: refHeader.imageOrientationPatient,
+    isFlippedX: flipX,
+    isFlippedY: flipY,
+    isProgressivePreview: true,
+    lodLevel: 1,
+    isDisposed: false,
+  };
+}
+
 export async function buildVolumeFromDicomBuffers(
   items: Array<{ buffer: ArrayBuffer; fileName?: string }>,
   options?: ((percent: number, message: string) => void) | DicomVolumeIngestionOptions,
@@ -459,7 +597,9 @@ export async function buildVolumeFromDicomBuffers(
 
   const onProgress = typeof options === "function" ? options : options?.onProgress;
   const onSliceDecoded = typeof options === "object" ? options?.onSliceDecoded : undefined;
+  const onProgressiveVolumeReady = typeof options === "object" ? options?.onProgressiveVolumeReady : undefined;
   const gpuTarget = typeof options === "object" ? options?.gpuUploadTarget : undefined;
+  const workerBridge = typeof options === "object" ? options?.workerBridge : undefined;
 
   // If a single DICOM file is provided and it is a Multi-Frame volume (Planmeca, KaVo, Sirona)
   if (items.length === 1 && isMultiFrameDicom(items[0]!.buffer)) {
@@ -480,6 +620,7 @@ export async function buildVolumeFromDicomBuffers(
     if (i % 25 === 0 || i === totalFiles - 1) {
       const pct = 5 + Math.round((i / totalFiles) * 35);
       onProgress?.(pct, "Прочитано " + (i + 1) + " из " + totalFiles + " срезов...");
+      await yieldToEventLoop();
     }
   }
 
@@ -503,8 +644,6 @@ export async function buildVolumeFromDicomBuffers(
     }
     return a.fileName.localeCompare(b.fileName, undefined, { numeric: true });
   });
-
-  onProgress?.(45, "Сборка 3D массива вокселей в непрерывную память...");
 
   const refHeader = sliceEntries[0]!.header;
   const width = refHeader.cols;
@@ -534,6 +673,24 @@ export async function buildVolumeFromDicomBuffers(
   const flipX = Xx < -0.5;
   // If Yy < -0.5, col axis points towards patient Anterior (-Y) instead of standard Posterior (+Y).
   const flipY = (Yy ?? 1) < -0.5;
+
+  // Progressive LOD preview: if requested and series has >= 2 slices, emit 2x downsampled volume immediately (< 50ms)
+  if (onProgressiveVolumeReady && depth >= 2) {
+    try {
+      const previewVol = generateProgressiveLodVolume(
+        sliceEntries,
+        refHeader,
+        computedSpacingZ,
+        flipX,
+        flipY,
+      );
+      onProgressiveVolumeReady(previewVol);
+    } catch (err) {
+      console.warn("[realDicomVolumeLoader] Failed to generate progressive LOD preview:", err);
+    }
+  }
+
+  onProgress?.(45, "Сборка 3D массива вокселей в непрерывную память...");
 
   const totalVoxels = width * height * depth;
   const voxelData = new Int16Array(totalVoxels);
@@ -574,123 +731,178 @@ export async function buildVolumeFromDicomBuffers(
   const signBit = bitsStored < 16 ? 1 << (bitsStored - 1) : 0x8000;
   const signExt = bitsStored < 16 ? 1 << bitsStored : 0x10000;
 
-  for (let z = 0; z < depth; z++) {
-    const entry = sliceEntries[z]!;
-    if (!entry.buffer) continue;
-    const offset = entry.header.pixelDataByteOffset;
-    const baseIdx = z * sliceVoxelCount;
+  if (workerBridge) {
+    // Multi-threaded background worker slice decoding in batches of 16
+    const batchSize = 16;
+    for (let z = 0; z < depth; z += batchSize) {
+      const endZ = Math.min(depth, z + batchSize);
+      const tasks: DecodeDicomSliceTask[] = [];
+      for (let k = z; k < endZ; k++) {
+        const entry = sliceEntries[k]!;
+        if (!entry.buffer) continue;
+        tasks.push({
+          sliceIndex: k,
+          buffer: entry.buffer,
+          pixelDataByteOffset: entry.header.pixelDataByteOffset,
+          width,
+          height,
+          bitsStored,
+          isSigned,
+          rescaleSlope: slope,
+          rescaleIntercept: intercept,
+          flipX,
+          flipY,
+        });
+      }
 
-    let rawSlice: Int16Array | Uint16Array;
-    if (offset % 2 === 0 && entry.buffer.byteLength >= offset + sliceVoxelCount * 2) {
-      // Zero-copy direct TypedArray view over existing buffer (avoids 100s of MBs of allocation)
-      rawSlice = isSigned
-        ? new Int16Array(entry.buffer, offset, sliceVoxelCount)
-        : new Uint16Array(entry.buffer, offset, sliceVoxelCount);
-    } else {
-      const sliceArrayBuf = entry.buffer.slice(offset, offset + sliceVoxelCount * 2);
-      const validEvenLength = sliceArrayBuf.byteLength - (sliceArrayBuf.byteLength % 2);
-      const safeBuf = validEvenLength === sliceArrayBuf.byteLength ? sliceArrayBuf : sliceArrayBuf.slice(0, validEvenLength);
-      rawSlice = isSigned ? new Int16Array(safeBuf) : new Uint16Array(safeBuf);
+      const decodedBatch = await workerBridge.decodeDicomSlices(tasks, false);
+      for (const res of decodedBatch) {
+        const k = res.sliceIndex;
+        const baseIdx = k * sliceVoxelCount;
+        voxelData.set(res.data, baseIdx);
+        if (res.minHU < minVoxelHU) minVoxelHU = res.minHU;
+        if (res.maxHU > maxVoxelHU) maxVoxelHU = res.maxHU;
+
+        if (gpuTarget?.gl && gpuTarget.texture) {
+          uploadSliceTo3dTexture(
+            gpuTarget.gl,
+            k,
+            width,
+            height,
+            voxelData.subarray(baseIdx, baseIdx + sliceVoxelCount),
+          );
+        }
+
+        onSliceDecoded?.(k, depth, voxelData.subarray(baseIdx, baseIdx + sliceVoxelCount));
+        sliceEntries[k]!.buffer = null; // GC prompt
+      }
+
+      await yieldToEventLoop();
+
+      const pct = 45 + Math.round((endZ / depth) * 50);
+      onProgress?.(pct, `Декодирование срезов ${endZ}/${depth}...`);
     }
+  } else {
+    // Main-thread decoding with cooperative event loop yielding every 16 slices
+    for (let z = 0; z < depth; z++) {
+      const entry = sliceEntries[z]!;
+      if (!entry.buffer) continue;
+      const offset = entry.header.pixelDataByteOffset;
+      const baseIdx = z * sliceVoxelCount;
 
-    let localMin = minVoxelHU;
-    let localMax = maxVoxelHU;
+      let rawSlice: Int16Array | Uint16Array;
+      if (offset % 2 === 0 && entry.buffer.byteLength >= offset + sliceVoxelCount * 2) {
+        // Zero-copy direct TypedArray view over existing buffer (avoids 100s of MBs of allocation)
+        rawSlice = isSigned
+          ? new Int16Array(entry.buffer, offset, sliceVoxelCount)
+          : new Uint16Array(entry.buffer, offset, sliceVoxelCount);
+      } else {
+        const sliceArrayBuf = entry.buffer.slice(offset, offset + sliceVoxelCount * 2);
+        const validEvenLength = sliceArrayBuf.byteLength - (sliceArrayBuf.byteLength % 2);
+        const safeBuf = validEvenLength === sliceArrayBuf.byteLength ? sliceArrayBuf : sliceArrayBuf.slice(0, validEvenLength);
+        rawSlice = isSigned ? new Int16Array(safeBuf) : new Uint16Array(safeBuf);
+      }
 
-    if (!flipX && !flipY) {
-      if (bitsStored >= 16) {
-        if (isLinearInteger) {
-          // Ultra-fast path: standard CT with integer intercept (e.g. -1000 / -1024)
-          for (let i = 0; i < sliceVoxelCount; i++) {
-            const val = (rawSlice[i]! + intIntercept) | 0;
-            const hu = val < -32768 ? -32768 : val > 32767 ? 32767 : val;
-            voxelData[baseIdx + i] = hu;
-            if (hu < localMin) localMin = hu;
-            if (hu > localMax) localMax = hu;
+      let localMin = minVoxelHU;
+      let localMax = maxVoxelHU;
+
+      if (!flipX && !flipY) {
+        if (bitsStored >= 16) {
+          if (isLinearInteger) {
+            // Ultra-fast path: standard CT with integer intercept (e.g. -1000 / -1024)
+            for (let i = 0; i < sliceVoxelCount; i++) {
+              const val = (rawSlice[i]! + intIntercept) | 0;
+              const hu = val < -32768 ? -32768 : val > 32767 ? 32767 : val;
+              voxelData[baseIdx + i] = hu;
+              if (hu < localMin) localMin = hu;
+              if (hu > localMax) localMax = hu;
+            }
+          } else {
+            // General float rescale
+            for (let i = 0; i < sliceVoxelCount; i++) {
+              let val = rawSlice[i]!;
+              if (isSigned) val = (val << 16) >> 16;
+              const hu = Math.round(val * slope + intercept);
+              const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+              voxelData[baseIdx + i] = clamped;
+              if (clamped < localMin) localMin = clamped;
+              if (clamped > localMax) localMax = clamped;
+            }
           }
         } else {
-          // General float rescale
-          for (let i = 0; i < sliceVoxelCount; i++) {
-            let val = rawSlice[i]!;
-            if (isSigned) val = (val << 16) >> 16;
-            const hu = Math.round(val * slope + intercept);
-            const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
-            voxelData[baseIdx + i] = clamped;
-            if (clamped < localMin) localMin = clamped;
-            if (clamped > localMax) localMax = clamped;
+          // 12-bit or 14-bit masked detector path
+          if (isLinearInteger) {
+            for (let i = 0; i < sliceVoxelCount; i++) {
+              let val = rawSlice[i]! & mask;
+              if (isSigned && (val & signBit) !== 0) val -= signExt;
+              const hu = (val + intIntercept) | 0;
+              const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+              voxelData[baseIdx + i] = clamped;
+              if (clamped < localMin) localMin = clamped;
+              if (clamped > localMax) localMax = clamped;
+            }
+          } else {
+            for (let i = 0; i < sliceVoxelCount; i++) {
+              let val = rawSlice[i]! & mask;
+              if (isSigned && (val & signBit) !== 0) val -= signExt;
+              const hu = Math.round(val * slope + intercept);
+              const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+              voxelData[baseIdx + i] = clamped;
+              if (clamped < localMin) localMin = clamped;
+              if (clamped > localMax) localMax = clamped;
+            }
           }
         }
       } else {
-        // 12-bit or 14-bit masked detector path
-        if (isLinearInteger) {
-          for (let i = 0; i < sliceVoxelCount; i++) {
-            let val = rawSlice[i]! & mask;
-            if (isSigned && (val & signBit) !== 0) val -= signExt;
-            const hu = (val + intIntercept) | 0;
-            const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
-            voxelData[baseIdx + i] = clamped;
-            if (clamped < localMin) localMin = clamped;
-            if (clamped > localMax) localMax = clamped;
-          }
-        } else {
-          for (let i = 0; i < sliceVoxelCount; i++) {
-            let val = rawSlice[i]! & mask;
-            if (isSigned && (val & signBit) !== 0) val -= signExt;
-            const hu = Math.round(val * slope + intercept);
-            const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
-            voxelData[baseIdx + i] = clamped;
-            if (clamped < localMin) localMin = clamped;
-            if (clamped > localMax) localMax = clamped;
-          }
-        }
-      }
-    } else {
-      // Flipped coordinates path (patient orientation adjustment)
-      for (let y = 0; y < height; y++) {
-        const srcY = flipY ? height - 1 - y : y;
-        const rowOffset = baseIdx + y * width;
-        const srcRowOffset = srcY * width;
-        for (let x = 0; x < width; x++) {
-          const srcX = flipX ? width - 1 - x : x;
-          const raw = rawSlice[srcRowOffset + srcX]!;
-          let val = bitsStored < 16 ? raw & mask : raw;
-          if (isSigned) {
-            if (bitsStored < 16) {
-              if ((val & signBit) !== 0) val -= signExt;
-            } else {
-              val = (val << 16) >> 16;
+        // Flipped coordinates path (patient orientation adjustment)
+        for (let y = 0; y < height; y++) {
+          const srcY = flipY ? height - 1 - y : y;
+          const rowOffset = baseIdx + y * width;
+          const srcRowOffset = srcY * width;
+          for (let x = 0; x < width; x++) {
+            const srcX = flipX ? width - 1 - x : x;
+            const raw = rawSlice[srcRowOffset + srcX]!;
+            let val = bitsStored < 16 ? raw & mask : raw;
+            if (isSigned) {
+              if (bitsStored < 16) {
+                if ((val & signBit) !== 0) val -= signExt;
+              } else {
+                val = (val << 16) >> 16;
+              }
             }
+            const hu = isLinearInteger ? ((val + intIntercept) | 0) : Math.round(val * slope + intercept);
+            const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+            voxelData[rowOffset + x] = clamped;
+            if (clamped < localMin) localMin = clamped;
+            if (clamped > localMax) localMax = clamped;
           }
-          const hu = isLinearInteger ? ((val + intIntercept) | 0) : Math.round(val * slope + intercept);
-          const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
-          voxelData[rowOffset + x] = clamped;
-          if (clamped < localMin) localMin = clamped;
-          if (clamped > localMax) localMax = clamped;
         }
       }
-    }
 
-    minVoxelHU = localMin;
-    maxVoxelHU = localMax;
+      minVoxelHU = localMin;
+      maxVoxelHU = localMax;
 
-    // Zero-copy direct streaming into WebGL 3D texture as slice arrives
-    if (gpuTarget?.gl && gpuTarget.texture) {
-      uploadSliceTo3dTexture(
-        gpuTarget.gl,
-        z,
-        width,
-        height,
-        voxelData.subarray(baseIdx, baseIdx + sliceVoxelCount),
-      );
-    }
+      // Zero-copy direct streaming into WebGL 3D texture as slice arrives
+      if (gpuTarget?.gl && gpuTarget.texture) {
+        uploadSliceTo3dTexture(
+          gpuTarget.gl,
+          z,
+          width,
+          height,
+          voxelData.subarray(baseIdx, baseIdx + sliceVoxelCount),
+        );
+      }
 
-    onSliceDecoded?.(z, depth, voxelData.subarray(baseIdx, baseIdx + sliceVoxelCount));
+      onSliceDecoded?.(z, depth, voxelData.subarray(baseIdx, baseIdx + sliceVoxelCount));
 
-    // Zero-leak GC: immediately free this slice's raw ArrayBuffer from V8 heap
-    entry.buffer = null;
+      // Zero-leak GC: immediately free this slice's raw ArrayBuffer from V8 heap
+      entry.buffer = null;
 
-    if (z % 20 === 0 || z === depth - 1) {
-      const pct = 45 + Math.round((z / depth) * 50);
-      onProgress?.(pct, "Копирование слоя " + (z + 1) + "/" + depth + " в VRAM...");
+      if (z % 16 === 0 || z === depth - 1) {
+        const pct = 45 + Math.round((z / depth) * 50);
+        onProgress?.(pct, "Копирование слоя " + (z + 1) + "/" + depth + " в VRAM...");
+        await yieldToEventLoop();
+      }
     }
   }
 
@@ -754,8 +966,9 @@ export async function buildVolumeFromDicomFiles(
 
 export async function buildVolumeFromDicomZip(
   zipBuffer: ArrayBuffer,
-  onProgress?: (percent: number, message: string) => void,
+  options?: ((percent: number, message: string) => void) | DicomVolumeIngestionOptions,
 ): Promise<CbctVoxelVolume> {
+  const onProgress = typeof options === "function" ? options : options?.onProgress;
   onProgress?.(5, "Распаковка ZIP-архива КЛКТ в памяти...");
   const unzipped = fflate.unzipSync(new Uint8Array(zipBuffer), {
     filter: (file) => {
@@ -776,7 +989,7 @@ export async function buildVolumeFromDicomZip(
     items.push({ buffer: u8.buffer, fileName: key });
     delete unzipped[key];
   }
-  return buildVolumeFromDicomBuffers(items, onProgress);
+  return buildVolumeFromDicomBuffers(items, options);
 }
 
 function getViteApiUrl(): string {
@@ -815,6 +1028,10 @@ export async function buildVolumeFromDicomweb(
     onProgress?: (percent: number, message: string) => void;
     headers?: Record<string, string>;
     baseUrl?: string;
+    onProgressiveVolumeReady?: (previewVolume: CbctVoxelVolume) => void;
+    workerBridge?: CbctWorkerBridge | null;
+    enableProgressiveLOD?: boolean;
+    gpuUploadTarget?: DicomStreamingUploadTarget | null;
   },
 ): Promise<CbctVoxelVolume> {
   const onProgress = options?.onProgress;
@@ -877,5 +1094,13 @@ export async function buildVolumeFromDicomweb(
     }
   }
 
-  return buildVolumeFromDicomBuffers(items, onProgress);
+  const ingestionOptions: DicomVolumeIngestionOptions = {
+    onProgress,
+    onProgressiveVolumeReady: options?.onProgressiveVolumeReady,
+    workerBridge: options?.workerBridge,
+    enableProgressiveLOD: options?.enableProgressiveLOD,
+    gpuUploadTarget: options?.gpuUploadTarget,
+  };
+
+  return buildVolumeFromDicomBuffers(items, ingestionOptions);
 }

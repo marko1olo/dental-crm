@@ -90,11 +90,56 @@ export interface RenderCrossSectionSeriesPayload {
 	options?: CrossSectionSeriesOptions | undefined;
 }
 
+export interface DecodeDicomSliceTask {
+	sliceIndex: number;
+	buffer: ArrayBuffer;
+	pixelDataByteOffset: number;
+	width: number;
+	height: number;
+	bitsStored: number;
+	isSigned: boolean;
+	rescaleSlope: number;
+	rescaleIntercept: number;
+	flipX?: boolean | undefined;
+	flipY?: boolean | undefined;
+}
+
+export interface DecodeDicomSlicesPayload {
+	requestId: number;
+	tasks: DecodeDicomSliceTask[];
+}
+
+export interface GenerateProgressiveLodPayload {
+	requestId: number;
+	seriesId: string;
+	width: number;
+	height: number;
+	depth: number;
+	spacingMm: { x: number; y: number; z: number };
+	originMm: Point3D;
+	physicalSizeMm: { x: number; y: number; z: number };
+	rescaleSlope: number;
+	rescaleIntercept: number;
+	defaultWindowWidth?: number | undefined;
+	defaultWindowLevel?: number | undefined;
+	bitsStored: number;
+	isSigned: boolean;
+	flipX?: boolean | undefined;
+	flipY?: boolean | undefined;
+	sampledSlices: Array<{
+		lodZ: number;
+		buffer: ArrayBuffer;
+		pixelDataByteOffset: number;
+	}>;
+}
+
 export type CbctWorkerInboundMessage =
 	| ({ type: "INIT_VOLUME" } & InitVolumePayload)
 	| ({ type: "RENDER_SLICE" } & RenderSlicePayload)
 	| ({ type: "RENDER_ALL_PLANES" } & RenderAllPlanesPayload)
 	| ({ type: "RENDER_CROSS_SECTION_SERIES" } & RenderCrossSectionSeriesPayload)
+	| ({ type: "DECODE_DICOM_SLICES" } & DecodeDicomSlicesPayload)
+	| ({ type: "GENERATE_PROGRESSIVE_LOD" } & GenerateProgressiveLodPayload)
 	| ({ type: "DISPOSE_VOLUME" } & DisposeVolumePayload);
 
 export type CbctWorkerOutboundMessage =
@@ -125,6 +170,21 @@ export type CbctWorkerOutboundMessage =
 			requestId: number;
 			volumeId: string;
 			slices: CrossSectionSliceData[];
+	  }
+	| {
+			type: "DICOM_SLICES_DECODED";
+			requestId: number;
+			results: Array<{
+				sliceIndex: number;
+				pixelBuffer: ArrayBufferLike;
+				minHU: number;
+				maxHU: number;
+			}>;
+	  }
+	| {
+			type: "PROGRESSIVE_LOD_GENERATED";
+			requestId: number;
+			volume: CbctVoxelVolume;
 	  }
 	| {
 			type: "VOLUME_DISPOSED";
@@ -352,6 +412,252 @@ export function handleWorkerMessage(
 					requestId: msg.requestId,
 					volumeId: msg.volumeId,
 					error: `Failed to render cross section series: ${err instanceof Error ? err.message : String(err)}`,
+				});
+			}
+			break;
+		}
+
+		case "DECODE_DICOM_SLICES": {
+			try {
+				const results: Array<{
+					sliceIndex: number;
+					pixelBuffer: ArrayBufferLike;
+					minHU: number;
+					maxHU: number;
+				}> = [];
+				const transferList: Transferable[] = [];
+
+				for (const task of msg.tasks) {
+					const {
+						sliceIndex,
+						buffer,
+						pixelDataByteOffset,
+						width,
+						height,
+						bitsStored,
+						isSigned,
+						rescaleSlope,
+						rescaleIntercept,
+						flipX,
+						flipY,
+					} = task;
+
+					const sliceVoxelCount = width * height;
+					const slope = Number.isFinite(rescaleSlope) && rescaleSlope > 0 ? rescaleSlope : 1.0;
+					const intercept = Number.isFinite(rescaleIntercept) ? rescaleIntercept : 0.0;
+					const isLinearInteger = slope === 1.0 && Math.floor(intercept) === intercept;
+					const intIntercept = intercept | 0;
+					const mask = bitsStored < 16 ? (1 << bitsStored) - 1 : 0xffff;
+					const signBit = bitsStored < 16 ? 1 << (bitsStored - 1) : 0x8000;
+					const signExt = bitsStored < 16 ? 1 << bitsStored : 0x10000;
+
+					let rawSlice: Int16Array | Uint16Array;
+					if (pixelDataByteOffset % 2 === 0 && buffer.byteLength >= pixelDataByteOffset + sliceVoxelCount * 2) {
+						rawSlice = isSigned
+							? new Int16Array(buffer, pixelDataByteOffset, sliceVoxelCount)
+							: new Uint16Array(buffer, pixelDataByteOffset, sliceVoxelCount);
+					} else {
+						const sliceBuf = buffer.slice(pixelDataByteOffset, pixelDataByteOffset + sliceVoxelCount * 2);
+						const validEvenLength = sliceBuf.byteLength - (sliceBuf.byteLength % 2);
+						const safeBuf = validEvenLength === sliceBuf.byteLength ? sliceBuf : sliceBuf.slice(0, validEvenLength);
+						rawSlice = isSigned ? new Int16Array(safeBuf) : new Uint16Array(safeBuf);
+					}
+
+					const sliceData = new Int16Array(sliceVoxelCount);
+					let localMin = 32767;
+					let localMax = -32768;
+
+					if (!flipX && !flipY) {
+						if (bitsStored >= 16) {
+							if (isLinearInteger) {
+								for (let i = 0; i < sliceVoxelCount; i++) {
+									const val = (rawSlice[i]! + intIntercept) | 0;
+									const hu = val < -32768 ? -32768 : val > 32767 ? 32767 : val;
+									sliceData[i] = hu;
+									if (hu < localMin) localMin = hu;
+									if (hu > localMax) localMax = hu;
+								}
+							} else {
+								for (let i = 0; i < sliceVoxelCount; i++) {
+									let val = rawSlice[i]!;
+									if (isSigned) val = (val << 16) >> 16;
+									const hu = Math.round(val * slope + intercept);
+									const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+									sliceData[i] = clamped;
+									if (clamped < localMin) localMin = clamped;
+									if (clamped > localMax) localMax = clamped;
+								}
+							}
+						} else {
+							for (let i = 0; i < sliceVoxelCount; i++) {
+								let val = rawSlice[i]! & mask;
+								if (isSigned && (val & signBit) !== 0) val -= signExt;
+								const hu = isLinearInteger ? ((val + intIntercept) | 0) : Math.round(val * slope + intercept);
+								const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+								sliceData[i] = clamped;
+								if (clamped < localMin) localMin = clamped;
+								if (clamped > localMax) localMax = clamped;
+							}
+						}
+					} else {
+						for (let y = 0; y < height; y++) {
+							const srcY = flipY ? height - 1 - y : y;
+							const rowOffset = y * width;
+							const srcRowOffset = srcY * width;
+							for (let x = 0; x < width; x++) {
+								const srcX = flipX ? width - 1 - x : x;
+								const raw = rawSlice[srcRowOffset + srcX]!;
+								let val = bitsStored < 16 ? raw & mask : raw;
+								if (isSigned) {
+									if (bitsStored < 16) {
+										if ((val & signBit) !== 0) val -= signExt;
+									} else {
+										val = (val << 16) >> 16;
+									}
+								}
+								const hu = isLinearInteger ? ((val + intIntercept) | 0) : Math.round(val * slope + intercept);
+								const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+								sliceData[rowOffset + x] = clamped;
+								if (clamped < localMin) localMin = clamped;
+								if (clamped > localMax) localMax = clamped;
+							}
+						}
+					}
+
+					const buf = sliceData.buffer;
+					if (typeof ArrayBuffer !== "undefined" && buf instanceof ArrayBuffer) {
+						transferList.push(buf);
+					}
+					results.push({
+						sliceIndex,
+						pixelBuffer: buf,
+						minHU: localMin === 32767 ? 0 : localMin,
+						maxHU: localMax === -32768 ? 0 : localMax,
+					});
+				}
+
+				postMessage(
+					{
+						type: "DICOM_SLICES_DECODED",
+						requestId: msg.requestId,
+						results,
+					},
+					transferList,
+				);
+			} catch (err) {
+				postMessage({
+					type: "ERROR",
+					requestId: msg.requestId,
+					error: `Failed to decode DICOM slices: ${err instanceof Error ? err.message : String(err)}`,
+				});
+			}
+			break;
+		}
+
+		case "GENERATE_PROGRESSIVE_LOD": {
+			try {
+				const lodWidth = Math.max(1, Math.floor(msg.width / 2));
+				const lodHeight = Math.max(1, Math.floor(msg.height / 2));
+				const lodDepth = Math.max(1, msg.sampledSlices.length);
+				const lodSpacingX = msg.spacingMm.x * 2;
+				const lodSpacingY = msg.spacingMm.y * 2;
+				const lodSpacingZ = (msg.depth * msg.spacingMm.z) / lodDepth;
+				const totalLodVoxels = lodWidth * lodHeight * lodDepth;
+				const lodData = new Int16Array(totalLodVoxels);
+
+				const slope = Number.isFinite(msg.rescaleSlope) && msg.rescaleSlope > 0 ? msg.rescaleSlope : 1.0;
+				const intercept = Number.isFinite(msg.rescaleIntercept) ? msg.rescaleIntercept : 0.0;
+				const isLinearInteger = slope === 1.0 && Math.floor(intercept) === intercept;
+				const intIntercept = intercept | 0;
+				const bitsStored = msg.bitsStored > 0 && msg.bitsStored <= 16 ? msg.bitsStored : 16;
+				const mask = bitsStored < 16 ? (1 << bitsStored) - 1 : 0xffff;
+				const signBit = bitsStored < 16 ? 1 << (bitsStored - 1) : 0x8000;
+				const signExt = bitsStored < 16 ? 1 << bitsStored : 0x10000;
+
+				let minHU = 32767;
+				let maxHU = -32768;
+
+				for (let lz = 0; lz < lodDepth; lz++) {
+					const sliceItem = msg.sampledSlices[lz]!;
+					const buf = sliceItem.buffer;
+					const off = sliceItem.pixelDataByteOffset;
+					const srcSliceVoxelCount = msg.width * msg.height;
+
+					let rawSlice: Int16Array | Uint16Array;
+					if (off % 2 === 0 && buf.byteLength >= off + srcSliceVoxelCount * 2) {
+						rawSlice = msg.isSigned
+							? new Int16Array(buf, off, srcSliceVoxelCount)
+							: new Uint16Array(buf, off, srcSliceVoxelCount);
+					} else {
+						const sliceBuf = buf.slice(off, off + srcSliceVoxelCount * 2);
+						const validEven = sliceBuf.byteLength - (sliceBuf.byteLength % 2);
+						const safeBuf = validEven === sliceBuf.byteLength ? sliceBuf : sliceBuf.slice(0, validEven);
+						rawSlice = msg.isSigned ? new Int16Array(safeBuf) : new Uint16Array(safeBuf);
+					}
+
+					const dstSliceOffset = lz * (lodWidth * lodHeight);
+
+					for (let ly = 0; ly < lodHeight; ly++) {
+						const sy = ly * 2;
+						const srcY = msg.flipY ? msg.height - 1 - sy : sy;
+						const srcRow = srcY * msg.width;
+						const dstRow = dstSliceOffset + ly * lodWidth;
+
+						for (let lx = 0; lx < lodWidth; lx++) {
+							const sx = lx * 2;
+							const srcX = msg.flipX ? msg.width - 1 - sx : sx;
+							const raw = rawSlice[srcRow + srcX]!;
+							let val = bitsStored < 16 ? raw & mask : raw;
+							if (msg.isSigned) {
+								if (bitsStored < 16) {
+									if ((val & signBit) !== 0) val -= signExt;
+								} else {
+									val = (val << 16) >> 16;
+								}
+							}
+							const hu = isLinearInteger ? ((val + intIntercept) | 0) : Math.round(val * slope + intercept);
+							const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+							lodData[dstRow + lx] = clamped;
+							if (clamped < minHU) minHU = clamped;
+							if (clamped > maxHU) maxHU = clamped;
+						}
+					}
+				}
+
+				const lodVolume: CbctVoxelVolume = {
+					id: `lod0-${msg.seriesId}`,
+					dimensions: { width: lodWidth, height: lodHeight, depth: lodDepth },
+					spacingMm: { x: lodSpacingX, y: lodSpacingY, z: lodSpacingZ },
+					originMm: msg.originMm,
+					physicalSizeMm: msg.physicalSizeMm,
+					data: lodData,
+					minHU: minHU === 32767 ? 0 : minHU,
+					maxHU: maxHU === -32768 ? 0 : maxHU,
+					rescaleSlope: msg.rescaleSlope,
+					rescaleIntercept: msg.rescaleIntercept,
+					defaultWindowWidth: msg.defaultWindowWidth ?? 4400,
+					defaultWindowLevel: msg.defaultWindowLevel ?? 1300,
+					isDisposed: false,
+				};
+
+				const transferList: Transferable[] = [];
+				if (typeof ArrayBuffer !== "undefined" && lodData.buffer instanceof ArrayBuffer) {
+					transferList.push(lodData.buffer);
+				}
+
+				postMessage(
+					{
+						type: "PROGRESSIVE_LOD_GENERATED",
+						requestId: msg.requestId,
+						volume: lodVolume,
+					},
+					transferList,
+				);
+			} catch (err) {
+				postMessage({
+					type: "ERROR",
+					requestId: msg.requestId,
+					error: `Failed to generate progressive LOD volume: ${err instanceof Error ? err.message : String(err)}`,
 				});
 			}
 			break;

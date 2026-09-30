@@ -10,6 +10,7 @@ import {
 	buildVolumeFromDicomZip,
 	buildVolumeFromDicomweb,
 } from "../realDicomVolumeLoader";
+import { getSharedCbctWorkerBridge } from "./cbctWorkerBridge";
 import { showToast } from "../../GlobalToast";
 
 export interface UseCbctDicomLoaderParams {
@@ -45,6 +46,7 @@ export function useCbctDicomLoader(params: UseCbctDicomLoaderParams) {
 
 	const folderInputRef = useRef<HTMLInputElement | null>(null);
 	const zipInputRef = useRef<HTMLInputElement | null>(null);
+	const activeLoadIdRef = useRef<number>(0);
 
 	const alignArchAndCrosshair = useCallback((vol: CbctVoxelVolume) => {
 		const arch = autoDetectDentalArch(vol, jawType);
@@ -66,23 +68,43 @@ export function useCbctDicomLoader(params: UseCbctDicomLoaderParams) {
 		return arch;
 	}, [jawType, setArchCurve, setShowDentalArch, setCrosshairMm]);
 
+	const handleProgressiveVolumeReady = useCallback(
+		(previewVol: CbctVoxelVolume, loadId: number) => {
+			if (loadId !== activeLoadIdRef.current) return;
+			setVolume(previewVol);
+			setLoadedSliceCount(previewVol.dimensions.depth);
+			if (previewVol.defaultWindowWidth) setWindowWidth(previewVol.defaultWindowWidth);
+			if (previewVol.defaultWindowLevel) setWindowLevel(previewVol.defaultWindowLevel);
+			alignArchAndCrosshair(previewVol);
+		},
+		[alignArchAndCrosshair, setLoadedSliceCount, setVolume, setWindowLevel, setWindowWidth],
+	);
+
 	const handleDicomFilesChange = useCallback(
 		async (files: File[] | FileList | null | undefined) => {
 			if (!files) return;
 			const fileArray = Array.from(files);
 			if (fileArray.length === 0) return;
 
+			const currentLoadId = ++activeLoadIdRef.current;
 			const zipFile = fileArray.find((f) => f.name.toLowerCase().endsWith(".zip"));
 			if (zipFile) {
 				setDicomLoadingStatus("Распаковка ZIP-архива КТ...");
 				setDicomProgress(5);
 				try {
 					const buf = await zipFile.arrayBuffer();
-					const vol = await buildVolumeFromDicomZip(buf, (pct, msg) => {
-						setDicomProgress(pct);
-						setDicomLoadingStatus(msg);
+					const vol = await buildVolumeFromDicomZip(buf, {
+						onProgress: (pct, msg) => {
+							if (currentLoadId !== activeLoadIdRef.current) return;
+							setDicomProgress(pct);
+							setDicomLoadingStatus(msg);
+						},
+						onProgressiveVolumeReady: (preview) => handleProgressiveVolumeReady(preview, currentLoadId),
+						workerBridge: getSharedCbctWorkerBridge(),
+						enableProgressiveLOD: true,
 					});
 
+					if (currentLoadId !== activeLoadIdRef.current) return;
 					setVolume(vol);
 					setLoadedSliceCount(vol.dimensions.depth);
 					if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
@@ -91,6 +113,7 @@ export function useCbctDicomLoader(params: UseCbctDicomLoaderParams) {
 					setDicomLoadingStatus(null);
 					showToast(`Загружен ZIP-архив КТ: ${vol.dimensions.depth} срезов, дуга ОПТГ авто-выровнена`, "success");
 				} catch (err: unknown) {
+					if (currentLoadId !== activeLoadIdRef.current) return;
 					setDicomLoadingStatus(null);
 					showToast(err instanceof Error ? err.message : "Ошибка архива", "error");
 				}
@@ -110,11 +133,18 @@ export function useCbctDicomLoader(params: UseCbctDicomLoaderParams) {
 			setDicomProgress(5);
 
 			try {
-				const vol = await buildVolumeFromDicomFiles(dcmFiles, (pct, msg) => {
-					setDicomProgress(pct);
-					setDicomLoadingStatus(msg);
+				const vol = await buildVolumeFromDicomFiles(dcmFiles, {
+					onProgress: (pct, msg) => {
+						if (currentLoadId !== activeLoadIdRef.current) return;
+						setDicomProgress(pct);
+						setDicomLoadingStatus(msg);
+					},
+					onProgressiveVolumeReady: (preview) => handleProgressiveVolumeReady(preview, currentLoadId),
+					workerBridge: getSharedCbctWorkerBridge(),
+					enableProgressiveLOD: true,
 				});
 
+				if (currentLoadId !== activeLoadIdRef.current) return;
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
 				setPatientDisplayName(resolvedPatientName);
@@ -124,25 +154,32 @@ export function useCbctDicomLoader(params: UseCbctDicomLoaderParams) {
 				setDicomLoadingStatus(null);
 				showToast(`Загружена серия DICOM (${resolvedPatientName}): авто-детектор дуги сформировал дугу ОПТГ (${arch.totalArcLengthMm.toFixed(1)} мм)`, "success");
 			} catch (err: unknown) {
+				if (currentLoadId !== activeLoadIdRef.current) return;
 				setDicomLoadingStatus(null);
 				const msg = err instanceof Error ? err.message : "Ошибка чтения DICOM";
 				showToast(msg, "error");
 			}
 		},
-		[alignArchAndCrosshair, resolvedPatientName, setLoadedSliceCount, setPatientDisplayName, setVolume, setWindowLevel, setWindowWidth],
+		[alignArchAndCrosshair, handleProgressiveVolumeReady, resolvedPatientName, setLoadedSliceCount, setPatientDisplayName, setVolume, setWindowLevel, setWindowWidth],
 	);
 
 	const handleLoadFromDicomweb = useCallback(
 		async (studyUid: string, seriesUid: string) => {
+			const currentLoadId = ++activeLoadIdRef.current;
 			setDicomLoadingStatus("Загрузка исследования из DICOMweb...");
 			setDicomProgress(5);
 			try {
 				const vol = await buildVolumeFromDicomweb(studyUid, seriesUid, {
 					onProgress: (pct, msg) => {
+						if (currentLoadId !== activeLoadIdRef.current) return;
 						setDicomProgress(pct);
 						setDicomLoadingStatus(msg);
 					},
+					onProgressiveVolumeReady: (preview) => handleProgressiveVolumeReady(preview, currentLoadId),
+					workerBridge: getSharedCbctWorkerBridge(),
+					enableProgressiveLOD: true,
 				});
+				if (currentLoadId !== activeLoadIdRef.current) return;
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
 				setPatientDisplayName(resolvedPatientName);
@@ -152,12 +189,13 @@ export function useCbctDicomLoader(params: UseCbctDicomLoaderParams) {
 				setDicomLoadingStatus(null);
 				showToast(`Загружено КТ из DICOMweb: ${vol.dimensions.depth} срезов`, "success");
 			} catch (err: unknown) {
+				if (currentLoadId !== activeLoadIdRef.current) return;
 				setDicomLoadingStatus(null);
 				const msg = err instanceof Error ? err.message : "Ошибка DICOMweb";
 				showToast(msg, "error");
 			}
 		},
-		[alignArchAndCrosshair, resolvedPatientName, setLoadedSliceCount, setPatientDisplayName, setVolume, setWindowLevel, setWindowWidth],
+		[alignArchAndCrosshair, handleProgressiveVolumeReady, resolvedPatientName, setLoadedSliceCount, setPatientDisplayName, setVolume, setWindowLevel, setWindowWidth],
 	);
 
 	const handleSelectDicomFolder = useCallback(
@@ -246,11 +284,19 @@ interface DemoCbctManifest {
 				setDicomLoadingStatus("Сборка 3D массива вокселей и анализ анатомии...");
 				setDicomProgress(48);
 
-				const vol = await buildVolumeFromDicomFiles(dcmFiles, (pct, msg) => {
-					setDicomProgress(48 + Math.round(pct * 0.5));
-					setDicomLoadingStatus(msg);
+				const currentLoadId = ++activeLoadIdRef.current;
+				const vol = await buildVolumeFromDicomFiles(dcmFiles, {
+					onProgress: (pct, msg) => {
+						if (currentLoadId !== activeLoadIdRef.current) return;
+						setDicomProgress(48 + Math.round(pct * 0.5));
+						setDicomLoadingStatus(msg);
+					},
+					onProgressiveVolumeReady: (preview) => handleProgressiveVolumeReady(preview, currentLoadId),
+					workerBridge: getSharedCbctWorkerBridge(),
+					enableProgressiveLOD: true,
 				});
 
+				if (currentLoadId !== activeLoadIdRef.current) return;
 				const demoPatientName = manifest.patientName || "Захаров Иван Дмитриевич (Демо КТ)";
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
@@ -290,6 +336,7 @@ interface DemoCbctManifest {
 	}, [
 		alignArchAndCrosshair,
 		handleDicomFilesChange,
+		handleProgressiveVolumeReady,
 		setLoadedSliceCount,
 		setPatientDisplayName,
 		setVolume,
@@ -300,6 +347,7 @@ interface DemoCbctManifest {
 	const handleLoadImageIds = useCallback(
 		async (imageIds: readonly string[]) => {
 			if (!imageIds || imageIds.length === 0) return;
+			const currentLoadId = ++activeLoadIdRef.current;
 			setDicomLoadingStatus(`Загрузка ${imageIds.length} срезов КТ...`);
 			setDicomProgress(5);
 			try {
@@ -314,14 +362,23 @@ interface DemoCbctManifest {
 					files.push(new File([blob], `slice_${String(i).padStart(3, "0")}.dcm`, { type: "application/dicom" }));
 					loaded++;
 					if (i % 5 === 0 || i === imageIds.length - 1) {
+						if (currentLoadId !== activeLoadIdRef.current) return;
 						setDicomProgress(5 + Math.round((loaded / imageIds.length) * 40));
 						setDicomLoadingStatus(`Загружено ${loaded} из ${imageIds.length} срезов...`);
 					}
 				}
-				const vol = await buildVolumeFromDicomFiles(files, (pct, msg) => {
-					setDicomProgress(45 + Math.round(pct * 0.55));
-					setDicomLoadingStatus(msg);
+				if (currentLoadId !== activeLoadIdRef.current) return;
+				const vol = await buildVolumeFromDicomFiles(files, {
+					onProgress: (pct, msg) => {
+						if (currentLoadId !== activeLoadIdRef.current) return;
+						setDicomProgress(45 + Math.round(pct * 0.55));
+						setDicomLoadingStatus(msg);
+					},
+					onProgressiveVolumeReady: (preview) => handleProgressiveVolumeReady(preview, currentLoadId),
+					workerBridge: getSharedCbctWorkerBridge(),
+					enableProgressiveLOD: true,
 				});
+				if (currentLoadId !== activeLoadIdRef.current) return;
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
 				setPatientDisplayName(resolvedPatientName);
@@ -332,13 +389,14 @@ interface DemoCbctManifest {
 				setDicomProgress(100);
 				showToast(`Загружена 3D КЛКТ: ${vol.dimensions.depth} срезов, дуга ОПТГ ${arch.totalArcLengthMm.toFixed(1)} мм`, "success");
 			} catch (err: unknown) {
+				if (currentLoadId !== activeLoadIdRef.current) return;
 				setDicomLoadingStatus(null);
 				setDicomProgress(0);
 				const msg = err instanceof Error ? err.message : "Ошибка загрузки срезов";
 				showToast(msg, "error");
 			}
 		},
-		[alignArchAndCrosshair, resolvedPatientName, setLoadedSliceCount, setPatientDisplayName, setVolume, setWindowLevel, setWindowWidth],
+		[alignArchAndCrosshair, handleProgressiveVolumeReady, resolvedPatientName, setLoadedSliceCount, setPatientDisplayName, setVolume, setWindowLevel, setWindowWidth],
 	);
 
 	return {

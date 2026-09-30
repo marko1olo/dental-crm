@@ -633,4 +633,200 @@ describe("CBCT CPU Slice Multi-Threaded Web Worker Engine (FEAT-010)", () => {
 			assert.strictEqual(bridge.isFallbackMode(), true);
 		});
 	});
+
+	describe("8. Multi-Threaded DICOM Slice Decoding & Progressive LOD Preview Engine (FEAT-010)", () => {
+		it("decodes batches of raw DICOM slices into calibrated Int16Array HU in worker message pipeline", async () => {
+			const width = 8;
+			const height = 8;
+			const sliceVoxelCount = width * height;
+			const rawBuf = new ArrayBuffer(sliceVoxelCount * 2);
+			const rawView = new Int16Array(rawBuf);
+			for (let i = 0; i < sliceVoxelCount; i++) {
+				rawView[i] = 1000 + i;
+			}
+
+			const outboundMessages: CbctWorkerOutboundMessage[] = [];
+			const transferredBuffers: Transferable[][] = [];
+			const postMsg = (msg: CbctWorkerOutboundMessage, transfer?: Transferable[]) => {
+				outboundMessages.push(msg);
+				if (transfer) transferredBuffers.push(transfer);
+			};
+
+			const workerCache = new Map<string, CbctVoxelVolume>();
+
+			// Dispatch DECODE_DICOM_SLICES to worker handler
+			handleWorkerMessage(
+				{
+					type: "DECODE_DICOM_SLICES",
+					requestId: 801,
+					tasks: [
+						{
+							sliceIndex: 0,
+							buffer: rawBuf,
+							pixelDataByteOffset: 0,
+							width,
+							height,
+							bitsStored: 16,
+							isSigned: true,
+							rescaleSlope: 1.0,
+							rescaleIntercept: -1000,
+							flipX: false,
+							flipY: false,
+						},
+					],
+				},
+				postMsg,
+				workerCache,
+			);
+
+			assert.strictEqual(outboundMessages.length, 1);
+			const res = outboundMessages[0];
+			assert.strictEqual(res?.type, "DICOM_SLICES_DECODED");
+			if (res.type !== "DICOM_SLICES_DECODED") return;
+
+			assert.strictEqual(res.requestId, 801);
+			assert.strictEqual(res.results.length, 1);
+			assert.strictEqual(res.results[0]!.sliceIndex, 0);
+			const sliceData = new Int16Array(res.results[0]!.pixelBuffer);
+			assert.strictEqual(sliceData.length, sliceVoxelCount);
+			// 1000 - 1000 = 0 HU for the first voxel
+			assert.strictEqual(sliceData[0], 0);
+			assert.strictEqual(res.results[0]!.minHU, 0);
+			assert.strictEqual(res.results[0]!.maxHU, sliceVoxelCount - 1);
+
+			// Verify zero-copy Transferable ArrayBuffer was returned
+			assert.ok(transferredBuffers.length > 0);
+			assert.strictEqual(transferredBuffers[0]![0], res.results[0]!.pixelBuffer);
+		});
+
+		it("generates a 2x downsampled progressive LOD volume in < 50ms with correct geometry", async () => {
+			const width = 16;
+			const height = 16;
+			const depth = 8;
+			const sliceVoxelCount = width * height;
+
+			const sampledSlices: Array<{ lodZ: number; buffer: ArrayBuffer; pixelDataByteOffset: number }> = [];
+			for (let z = 0; z < depth; z += 2) {
+				const buf = new ArrayBuffer(sliceVoxelCount * 2);
+				const view = new Int16Array(buf);
+				view.fill(500);
+				sampledSlices.push({
+					lodZ: z / 2,
+					buffer: buf,
+					pixelDataByteOffset: 0,
+				});
+			}
+
+			const outboundMessages: CbctWorkerOutboundMessage[] = [];
+			const transferredBuffers: Transferable[][] = [];
+			const postMsg = (msg: CbctWorkerOutboundMessage, transfer?: Transferable[]) => {
+				outboundMessages.push(msg);
+				if (transfer) transferredBuffers.push(transfer);
+			};
+
+			const workerCache = new Map<string, CbctVoxelVolume>();
+
+			const t0 = performance.now();
+			handleWorkerMessage(
+				{
+					type: "GENERATE_PROGRESSIVE_LOD",
+					requestId: 802,
+					seriesId: "test-series-1",
+					sampledSlices,
+					width,
+					height,
+					depth,
+					spacingMm: { x: 0.2, y: 0.2, z: 0.2 },
+					originMm: { x: -1.6, y: -1.6, z: -0.8 },
+					physicalSizeMm: { x: 3.2, y: 3.2, z: 1.6 },
+					bitsStored: 16,
+					isSigned: true,
+					rescaleSlope: 1.0,
+					rescaleIntercept: -1000,
+					flipX: false,
+					flipY: false,
+					defaultWindowWidth: 4400,
+					defaultWindowLevel: 1300,
+				},
+				postMsg,
+				workerCache,
+			);
+			const durationMs = performance.now() - t0;
+
+			assert.ok(durationMs < 50, `LOD generation took ${durationMs}ms (must be < 50ms)`);
+			assert.strictEqual(outboundMessages.length, 1);
+			const res = outboundMessages[0];
+			assert.strictEqual(res?.type, "PROGRESSIVE_LOD_GENERATED");
+			if (res.type !== "PROGRESSIVE_LOD_GENERATED") return;
+
+			assert.strictEqual(res.requestId, 802);
+			const lodVol = res.volume;
+			assert.strictEqual(lodVol.dimensions.width, 8); // 16 / 2
+			assert.strictEqual(lodVol.dimensions.height, 8); // 16 / 2
+			assert.strictEqual(lodVol.dimensions.depth, 4); // 8 / 2
+			assert.strictEqual(lodVol.spacingMm.x, 0.4); // 0.2 * 2
+			assert.strictEqual(lodVol.spacingMm.y, 0.4); // 0.2 * 2
+			// 500 - 1000 = -500 HU
+			assert.strictEqual(lodVol.data![0], -500);
+
+			// Verify zero-copy transferable ArrayBuffer transfer
+			assert.ok(transferredBuffers.length > 0);
+			assert.strictEqual(transferredBuffers[0]![0], lodVol.data!.buffer);
+		});
+
+		it("transparently supports decodeDicomSlices and generateProgressiveLod via CbctWorkerBridge fallback", async () => {
+			const bridge = new CbctWorkerBridge({ forceFallback: true });
+			assert.strictEqual(bridge.isFallbackMode(), true);
+
+			const width = 8;
+			const height = 8;
+			const sliceVoxelCount = width * height;
+			const rawBuf = new ArrayBuffer(sliceVoxelCount * 2);
+			const rawView = new Int16Array(rawBuf);
+			rawView.fill(1200);
+
+			const decoded = await bridge.decodeDicomSlices([
+				{
+					sliceIndex: 0,
+					buffer: rawBuf,
+					pixelDataByteOffset: 0,
+					width,
+					height,
+					bitsStored: 16,
+					isSigned: true,
+					rescaleSlope: 1.0,
+					rescaleIntercept: -1000,
+					flipX: false,
+					flipY: false,
+				},
+			]);
+
+			assert.strictEqual(decoded.length, 1);
+			assert.strictEqual(decoded[0]!.sliceIndex, 0);
+			assert.strictEqual(decoded[0]!.data[0], 200); // 1200 - 1000 = 200 HU
+
+			const lodVol = await bridge.generateProgressiveLod({
+				seriesId: "fallback-series",
+				sampledSlices: [{ lodZ: 0, buffer: rawBuf, pixelDataByteOffset: 0 }],
+				width,
+				height,
+				depth: 1,
+				spacingMm: { x: 0.25, y: 0.25, z: 0.25 },
+				originMm: { x: -1, y: -1, z: -0.125 },
+				physicalSizeMm: { x: 2, y: 2, z: 0.25 },
+				bitsStored: 16,
+				isSigned: true,
+				rescaleSlope: 1.0,
+				rescaleIntercept: -1000,
+				flipX: false,
+				flipY: false,
+			});
+
+			assert.strictEqual(lodVol.dimensions.width, 4);
+			assert.strictEqual(lodVol.dimensions.height, 4);
+			assert.strictEqual(lodVol.data![0], 200);
+
+			bridge.dispose();
+		});
+	});
 });

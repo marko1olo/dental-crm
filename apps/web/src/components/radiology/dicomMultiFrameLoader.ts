@@ -676,9 +676,141 @@ export interface MultiFrameGpuUploadTarget {
 }
 
 export interface MultiFrameVolumeIngestionOptions {
-  onProgress?: (percent: number, message: string) => void;
-  onSliceDecoded?: (sliceIndex: number, totalSlices: number, sliceData: Int16Array) => void;
-  gpuUploadTarget?: MultiFrameGpuUploadTarget | null;
+  onProgress?: ((percent: number, message: string) => void) | undefined;
+  onSliceDecoded?: ((sliceIndex: number, totalSlices: number, sliceData: Int16Array) => void) | undefined;
+  onProgressiveVolumeReady?: ((previewVolume: CbctVoxelVolume) => void) | undefined;
+  gpuUploadTarget?: MultiFrameGpuUploadTarget | null | undefined;
+  enableProgressiveLOD?: boolean | undefined;
+}
+
+/**
+ * Yields execution back to the browser / Node event loop to prevent UI thread starvation.
+ */
+export async function yieldToEventLoop(): Promise<void> {
+  const g = globalThis as unknown as { scheduler?: { yield?: () => Promise<void> } };
+  if (g.scheduler && typeof g.scheduler.yield === "function") {
+    await g.scheduler.yield();
+  } else {
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  }
+}
+
+/**
+ * Rapidly constructs an initial 2x downsampled LOD 1 volume in < 50ms
+ * directly from raw Multi-Frame DICOM buffers so 3D MPR planes are rendered immediately
+ * while full-resolution streaming ingestion proceeds in background.
+ */
+export function generateMultiFrameProgressiveLodVolume(
+  buffer: ArrayBuffer,
+  header: MultiFrameDicomHeader,
+): CbctVoxelVolume {
+  const width = header.cols;
+  const height = header.rows;
+  const depth = header.numberOfFrames;
+
+  const lodWidth = Math.max(1, Math.floor(width / 2));
+  const lodHeight = Math.max(1, Math.floor(height / 2));
+  const stepZ = depth >= 4 ? 2 : 1;
+  const sampledIndices: number[] = [];
+  for (let z = 0; z < depth; z += stepZ) {
+    sampledIndices.push(z);
+  }
+  const lodDepth = sampledIndices.length;
+
+  const physicalWidthMm = width * header.pixelSpacing.x;
+  const physicalHeightMm = height * header.pixelSpacing.y;
+  const physicalDepthMm = depth * header.zSpacing;
+
+  const lodSpacingX = header.pixelSpacing.x * 2;
+  const lodSpacingY = header.pixelSpacing.y * 2;
+  const lodSpacingZ = lodDepth > 1 ? physicalDepthMm / lodDepth : header.zSpacing;
+
+  const totalLodVoxels = lodWidth * lodHeight * lodDepth;
+  const lodData = new Int16Array(totalLodVoxels);
+
+  const slope = header.rescaleSlope;
+  const intercept = header.rescaleIntercept;
+  const isSigned = header.pixelRepresentation === 1;
+  const bits = header.bitsAllocated;
+  const bitsStored = header.bitsStored;
+
+  const isLinearInteger = slope === 1.0 && Math.floor(intercept) === intercept;
+  const intIntercept = intercept | 0;
+  const mask = bitsStored < 16 ? (1 << bitsStored) - 1 : 0xffff;
+  const signBit = bitsStored < 16 ? 1 << (bitsStored - 1) : 0x8000;
+  const signExt = bitsStored < 16 ? 1 << bitsStored : 0x10000;
+
+  const sliceVoxelCount = width * height;
+  const bytesPerPixel = bits === 8 ? 1 : 2;
+  const frameByteLength = sliceVoxelCount * bytesPerPixel;
+  const pixelDataOffset = header.pixelDataByteOffset;
+
+  let minHU = 32767;
+  let maxHU = -32768;
+
+  for (let lz = 0; lz < lodDepth; lz++) {
+    const origZ = sampledIndices[lz]!;
+    const frameOffset = pixelDataOffset + origZ * frameByteLength;
+    if (frameOffset + frameByteLength > buffer.byteLength) continue;
+
+    let rawSlice: Int16Array | Uint16Array;
+    if (frameOffset % 2 === 0) {
+      rawSlice = isSigned
+        ? new Int16Array(buffer, frameOffset, sliceVoxelCount)
+        : new Uint16Array(buffer, frameOffset, sliceVoxelCount);
+    } else {
+      const sliceBuf = buffer.slice(frameOffset, frameOffset + frameByteLength);
+      const validEven = sliceBuf.byteLength - (sliceBuf.byteLength % 2);
+      const safeBuf = validEven === sliceBuf.byteLength ? sliceBuf : sliceBuf.slice(0, validEven);
+      rawSlice = isSigned ? new Int16Array(safeBuf) : new Uint16Array(safeBuf);
+    }
+
+    // Align orientation to Inferior -> Superior (Z increasing upwards)
+    const targetZ = header.isZDescending ? lodDepth - 1 - lz : lz;
+    const dstSliceOffset = targetZ * (lodWidth * lodHeight);
+
+    for (let ly = 0; ly < lodHeight; ly++) {
+      const sy = ly * 2;
+      const srcRow = sy * width;
+      const dstRow = dstSliceOffset + ly * lodWidth;
+
+      for (let lx = 0; lx < lodWidth; lx++) {
+        const sx = lx * 2;
+        const raw = rawSlice[srcRow + sx]!;
+        let val = bitsStored < 16 ? raw & mask : raw;
+        if (isSigned) {
+          if (bitsStored < 16) {
+            if ((val & signBit) !== 0) val -= signExt;
+          } else {
+            val = (val << 16) >> 16;
+          }
+        }
+        const hu = isLinearInteger ? ((val + intIntercept) | 0) : Math.round(val * slope + intercept);
+        const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+        lodData[dstRow + lx] = clamped;
+        if (clamped < minHU) minHU = clamped;
+        if (clamped > maxHU) maxHU = clamped;
+      }
+    }
+  }
+
+  return {
+    id: `progressive-multiframe-lod-${Date.now()}`,
+    dimensions: { width: lodWidth, height: lodHeight, depth: lodDepth },
+    spacingMm: { x: lodSpacingX, y: lodSpacingY, z: lodSpacingZ },
+    originMm: { x: -physicalWidthMm * 0.5, y: -physicalHeightMm * 0.5, z: -physicalDepthMm * 0.5 },
+    physicalSizeMm: { x: physicalWidthMm, y: physicalHeightMm, z: physicalDepthMm },
+    data: lodData,
+    minHU: minHU === 32767 ? 0 : minHU,
+    maxHU: maxHU === -32768 ? 0 : maxHU,
+    rescaleSlope: header.rescaleSlope,
+    rescaleIntercept: header.rescaleIntercept,
+    defaultWindowWidth: header.windowWidth > 0 ? header.windowWidth : 4400,
+    defaultWindowLevel: header.windowCenter !== 0 ? header.windowCenter : 1300,
+    isProgressivePreview: true,
+    lodLevel: 1,
+    isDisposed: false,
+  };
 }
 
 /**
@@ -694,6 +826,7 @@ export async function buildVolumeFromMultiFrameDicom(
 ): Promise<CbctVoxelVolume> {
   const onProgress = typeof options === "function" ? options : options?.onProgress;
   const onSliceDecoded = typeof options === "object" ? options?.onSliceDecoded : undefined;
+  const onProgressiveVolumeReady = typeof options === "object" ? options?.onProgressiveVolumeReady : undefined;
   const gpuTarget = typeof options === "object" ? options?.gpuUploadTarget : undefined;
 
   onProgress?.(5, "Чтение метаданных Multi-Frame DICOM...");
@@ -718,6 +851,16 @@ export async function buildVolumeFromMultiFrameDicom(
 
   if (width <= 0 || height <= 0) {
     throw new Error(`Некорректные размеры матрицы DICOM: ${width}x${height}`);
+  }
+
+  // Progressive LOD preview: if requested and series has >= 2 frames, emit 2x downsampled volume immediately (< 50ms)
+  if (onProgressiveVolumeReady && depth >= 2) {
+    try {
+      const previewVol = generateMultiFrameProgressiveLodVolume(buffer, header);
+      onProgressiveVolumeReady(previewVol);
+    } catch (err) {
+      console.warn("[dicomMultiFrameLoader] Failed to generate progressive LOD preview:", err);
+    }
   }
 
   const sliceVoxelCount = width * height;
@@ -920,9 +1063,10 @@ export async function buildVolumeFromMultiFrameDicom(
 
     onSliceDecoded?.(targetZ, depth, voxelData.subarray(baseIdx, baseIdx + sliceVoxelCount));
 
-    if (z % 25 === 0 || z === depth - 1) {
+    if (z % 16 === 0 || z === depth - 1) {
       const pct = 15 + Math.round(((z + 1) / depth) * 80);
       onProgress?.(pct, `Обработка кадра ${z + 1}/${depth} Multi-Frame CT...`);
+      await yieldToEventLoop();
     }
   }
 
