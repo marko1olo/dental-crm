@@ -5,6 +5,7 @@ import { renderToString } from 'react-dom/server';
 import { TreatmentPlan3TierComparison } from '../TreatmentPlan3TierComparison';
 import { TreatmentPlanPhased4StageView } from '../TreatmentPlanPhased4StageView';
 import { TreatmentPlanComparatorModal } from '../comparator/TreatmentPlanComparatorModal';
+import { TreatmentPlanContractPrint } from '../TreatmentPlanContractPrint';
 import { generate3TierPlanComparison, generateTreatmentPlanStages } from '../treatmentPlanStagesEngine';
 import type { ToothData } from '../../odontogram/ToothChart';
 
@@ -131,5 +132,55 @@ describe('TreatmentPlan3TierComparison & Sticky Estimates Suite', () => {
     assert.ok(html.includes('tier-card-optimum'), 'Should render optimum desktop card in grid');
     assert.ok(html.includes('tier-card-standard'), 'Should render standard desktop card in grid');
     assert.ok(html.includes('tier-card-economy'), 'Should render economy desktop card in grid');
+  });
+
+  it('renders 3-tier materials headline, service life, and messenger copy buttons without matrix confusion', () => {
+    const html = renderToString(
+      <TreatmentPlan3TierComparison
+        tiers={sampleTiers}
+        selectedTierId="standard"
+        onSelectTier={() => {}}
+        onApproveAndSign={() => {}}
+        onOpenInstallment={() => {}}
+        onPrintContract={() => {}}
+      />
+    );
+
+    // Segmented control labels
+    assert.ok(html.includes('Эконом'), 'Segmented control must include Эконом');
+    assert.ok(html.includes('Оптимум'), 'Segmented control must include Оптимум');
+    assert.ok(html.includes('Премиум'), 'Segmented control must include Премиум');
+
+    // Materials headline
+    assert.ok(html.includes('Клинические материалы'), 'Must render materials headline badge');
+
+    // Service life
+    assert.ok(html.includes('Срок службы'), 'Must render service life heading');
+    assert.ok(html.includes('лет'), 'Must format service life in years');
+
+    // Messenger copy buttons
+    assert.ok(html.includes('data-testid="top-copy-messenger-btn"'), 'Must render top messenger copy button');
+    assert.ok(html.includes('copy-estimate-messenger-btn-standard'), 'Must render card messenger copy button');
+  });
+
+  it('renders TreatmentPlanContractPrint with patient-friendly mode, messenger copy, and Order 1051n consent', () => {
+    const html = renderToString(
+      <TreatmentPlanContractPrint
+        isOpen={true}
+        tier={sampleTiers[1]!}
+        stages={sampleStages}
+        patientName="Петрова Анна Сергеевна"
+        patientId="PAT-999"
+        doctorFullName="Д-р Соколов И. В."
+        clinicName="Клиника DENTE"
+        onClose={() => {}}
+      />
+    );
+
+    assert.ok(html.includes('data-testid="contract-view-patient-friendly-btn"'), 'Must render patient friendly mode button');
+    assert.ok(html.includes('data-testid="contract-view-official-btn"'), 'Must render official 804n mode button');
+    assert.ok(html.includes('data-testid="contract-copy-messenger-btn"'), 'Must render messenger copy button');
+    assert.ok(html.includes('1051н'), 'Must cite Order 1051n in informed consent');
+    assert.ok(html.includes('323-ФЗ'), 'Must cite 323-FZ in informed consent');
   });
 });

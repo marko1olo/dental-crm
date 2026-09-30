@@ -122,9 +122,21 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
       const code = (it.code804n || '').toLowerCase();
       const phase = String(it.phase ?? '').toLowerCase();
 
+      const isEmergency =
+        name.includes('неотложн') ||
+        name.includes('острая боль') ||
+        name.includes('острый пульпит') ||
+        name.includes('купирование боли') ||
+        name.includes('дренирование') ||
+        name.includes('вскрытие абсцесс') ||
+        code.includes('007') || // A16.07.007
+        code.includes('011') || // A16.07.011
+        code.includes('016');   // A16.07.016
+
       let targetCat: TreatmentPlanStageCategory = 'endo_therapy';
 
       if (
+        isEmergency ||
         phase.includes('hygiene') ||
         phase.includes('sanitation') ||
         code.includes('051') ||
@@ -323,7 +335,15 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                         Этап {idx + 1}
                       </span>
                       <h4 className="font-extrabold text-sm sm:text-base text-[var(--ink)] m-0 break-words">
-                        {meta.shortLabelRu}
+                        {cat === 'hygiene_sanitation'
+                          ? (items.some((it) => {
+                              const n = (it.name || '').toLowerCase();
+                              const c = (it.code804n || '').toLowerCase();
+                              return n.includes('неотложн') || n.includes('боль') || n.includes('дренирован') || c.includes('007') || c.includes('011') || c.includes('016');
+                            })
+                            ? 'Неотложная помощь и купирование боли / Санация'
+                            : 'Неотложная помощь и терапевтическая санация')
+                          : meta.shortLabelRu}
                       </h4>
                       <span
                         className="px-2 py-0.5 rounded-md text-[10px] font-bold text-white shrink-0 whitespace-nowrap"
@@ -333,7 +353,9 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                       </span>
                     </div>
                     <p className="text-xs text-[var(--muted)] m-0 mt-0.5 break-words max-w-xl">
-                      {meta.descriptionRu}
+                      {cat === 'hygiene_sanitation'
+                        ? 'Купирование острой боли, устранение очагов инфекции и профессиональная гигиена полости рта.'
+                        : meta.descriptionRu}
                     </p>
                   </div>
                 </div>
@@ -475,8 +497,8 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
 
       {/* Sticky Pinned Estimate Footer: Grand Totals & Actions */}
       <div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper))] border-t border-[var(--border)] p-3.5 sm:p-4 pb-5 sm:pb-4 rounded-2xl shadow-lg z-20 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 backdrop-blur-md mt-2">
-        <div className="flex items-center gap-3">
-          <div>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="min-w-0">
             <div className="text-xs text-[var(--muted)]">
               Итоговая смета по 4 этапам:
             </div>
@@ -488,6 +510,33 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                 (Клинические протоколы СтАР)
               </span>
             </div>
+
+            {grandTotalRub > 0 && (
+              <div className="flex flex-col gap-1 mt-1.5 pt-1.5 border-t border-[var(--border)]/60 text-[10px]">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-[var(--muted)] font-semibold flex items-center gap-1">
+                    <CreditCard size={11} className="text-[var(--teal)]" /> Рассрочка 0% клиники:
+                  </span>
+                  {([3, 6, 12, 24] as const).map((m) => {
+                    const monthly = Math.round(grandTotalRub / m);
+                    return (
+                      <span
+                        key={m}
+                        className="px-1.5 py-0.2 rounded bg-[var(--paper-strong,var(--paper))] border border-[var(--border)] text-[9.5px] font-mono font-bold text-[var(--ink)]"
+                      >
+                        {m}м: {monthly.toLocaleString("ru-RU")} ₽/мес
+                      </span>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap text-[9.5px] text-[var(--muted)]">
+                  <span className="font-semibold text-[var(--ink)]">Этапы 30/40/30:</span>
+                  <span>1. Терапия (30%): <strong className="font-mono text-[var(--ink)]">{Math.round(grandTotalRub * 0.3).toLocaleString("ru-RU")} ₽</strong></span>
+                  <span>2. Хирургия (40%): <strong className="font-mono text-[var(--ink)]">{Math.round(grandTotalRub * 0.4).toLocaleString("ru-RU")} ₽</strong></span>
+                  <span>3. Ортопедия (30%): <strong className="font-mono text-[var(--ink)]">{(grandTotalRub - Math.round(grandTotalRub * 0.3) - Math.round(grandTotalRub * 0.4)).toLocaleString("ru-RU")} ₽</strong></span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

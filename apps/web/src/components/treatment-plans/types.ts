@@ -182,6 +182,7 @@ export interface TreatmentPlanTier {
 	readonly durationWeeks: number;
 	readonly durationVisits: number;
 	readonly warrantyYears: number | string;
+	readonly serviceLifeYears?: string | number | undefined;
 	readonly materialsHeadline: string;
 	readonly materialsList: readonly string[];
 	readonly keyAdvantages: readonly string[];

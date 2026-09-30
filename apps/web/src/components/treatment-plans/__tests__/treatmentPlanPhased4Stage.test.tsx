@@ -182,5 +182,63 @@ describe('TreatmentPlanPhased4StageView Component', () => {
     const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
     assert.ok(!emojiRegex.test(html), "Rendered output must not contain cartoon emojis");
   });
+
+  it('routes emergency and acute pain relief procedures into Stage 1 (hygiene_sanitation)', () => {
+    const emergencyStages: TreatmentPlanStage[] = [
+      {
+        stageNumber: 1,
+        title: 'Неотложная помощь',
+        stageKind: 'stage_1_therapy',
+        subtitle: 'Купирование боли',
+        clinicalGoal: 'Купирование острой боли',
+        totalRub: 8000,
+        totalKopecks: 800000 as any,
+        estimatedVisits: 1,
+        estimatedWeeks: 1,
+        order804nCodes: ['A16.07.007', 'A16.07.016'],
+        items: [
+          {
+            id: 'em-1',
+            name: 'Купирование острой боли: ампутация пульпы (пульпотомия)',
+            code804n: 'A16.07.007',
+            category: 'therapy',
+            priceRub: 4500,
+            stageKind: 'stage_1_therapy',
+            phase: 1,
+            quantity: 1,
+            unitPriceRub: 4500,
+            discountRub: 0,
+            isAuto: true,
+          },
+          {
+            id: 'em-2',
+            name: 'Вскрытие поднадкостничного очага воспаления (дренирование)',
+            code804n: 'A16.07.016',
+            category: 'surgery',
+            priceRub: 3500,
+            stageKind: 'stage_1_therapy',
+            phase: 1,
+            quantity: 1,
+            unitPriceRub: 3500,
+            discountRub: 0,
+            isAuto: true,
+          },
+        ],
+      },
+    ];
+
+    const html = renderToString(
+      <TreatmentPlanPhased4StageView
+        stages={emergencyStages}
+        planTierTitle="Неотложный план"
+        patientName="Сидоров С. С."
+      />
+    );
+
+    assert.ok(html.includes('phased-stage-card-hygiene_sanitation'), 'Emergency procedures must route to Stage 1 card');
+    assert.ok(html.includes('Неотложная помощь и купирование боли / Санация'), 'Stage 1 title must reflect acute pain relief');
+    assert.ok(html.includes('Рассрочка 0% клиники'), 'Footer must display 0% installments');
+    assert.ok(html.includes('Этапы 30/40/30'), 'Footer must display 30/40/30 staged breakdown');
+  });
 });
 

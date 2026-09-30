@@ -34,7 +34,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { type Kopecks, parseKopecks } from "@dental/shared";
-import type { TreatmentPlanItem, TreatmentPlanStageKind } from "./types";
+import type { TreatmentPlanItem, TreatmentPlanStageKind, TreatmentPlanTier } from "./types";
 import { romanizeStageNumber } from "./types";
 import {
 	type BillingInvoice,
@@ -54,7 +54,11 @@ import {
 	buildStagesFromPlanItems,
 	ORDER_804N_DICTIONARY,
 } from "./treatmentPlanStagesEngine";
-import { loadPersistedCustomPlanItems } from "../radiology/ctImplantIntegrationBridge";
+import {
+	generateCbctAutoPlanScenarios,
+	extractCbctFindingsFromOdontogramAndStorage,
+	loadPersistedCustomPlanItems,
+} from "./ctImplantIntegrationBridge";
 import {
 	type InventoryItemLookup,
 	generateCompletedWorksActAndWriteOff,
@@ -274,6 +278,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 	// AI Copilot & Custom Stages State
 	const [customStages, setCustomStages] = useState<TreatmentPlanStage[] | null>(null);
+	const [cbctAutoPlanTiers, setCbctAutoPlanTiers] = useState<
+		[TreatmentPlanTier, TreatmentPlanTier, TreatmentPlanTier] | null
+	>(null);
 	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
 	const [isCopilotExecuting, setIsCopilotExecuting] = useState<boolean>(false);
 
@@ -357,10 +364,11 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const patientPhone = patient?.phone || "+7 (___) ___-__-__";
 	const patientBirthDate = patient?.birthDate;
 
-	// 1. Auto-generate 3-tier proposals from odontogram teeth findings
+	// 1. Auto-generate 3-tier proposals from odontogram teeth findings or CBCT findings
 	const planTiers = useMemo(() => {
+		if (cbctAutoPlanTiers) return cbctAutoPlanTiers;
 		return generate3TierPlanComparison(teethData, catalog, discountPercent);
-	}, [teethData, catalog, discountPercent]);
+	}, [cbctAutoPlanTiers, teethData, catalog, discountPercent]);
 
 	const currentTier = useMemo(() => {
 		return planTiers.find((t) => t.tierId === selectedTierId) ?? planTiers[2]!;
@@ -368,11 +376,10 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 	// 2. Generate granular 3 clinical stages (auto or AI-customized)
 	const autoStages = useMemo(() => {
-		const generated = generateTreatmentPlanStages(teethData, catalog, discountPercent);
-		const hasItems = generated.some((s) => s.items && s.items.length > 0);
-		if (!hasItems && currentTier?.stages && currentTier.stages.length > 0) {
+		if (currentTier?.stages && currentTier.stages.length > 0) {
 			return currentTier.stages;
 		}
+		const generated = generateTreatmentPlanStages(teethData, catalog, discountPercent);
 		return generated;
 	}, [teethData, catalog, discountPercent, currentTier]);
 
@@ -450,6 +457,36 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 			return changed ? updated : prevStages;
 		});
 	}, [patientId, autoStages]);
+
+	const handleGenerateCbctAutoPlan = () => {
+		try {
+			const findings = extractCbctFindingsFromOdontogramAndStorage(patientId, teethData);
+			const generatedTiers = generateCbctAutoPlanScenarios(findings, catalog, discountPercent);
+			setCbctAutoPlanTiers(generatedTiers);
+			setSelectedTierId("standard");
+			setCustomStages([...generatedTiers[1].stages]);
+			setActiveViewTab("3tier");
+			showToast(
+				`Автоплан по КЛКТ сформирован: 3 сценария (Эконом: ${generatedTiers[0].totalRub.toLocaleString("ru-RU")} ₽, Оптимум: ${generatedTiers[1].totalRub.toLocaleString("ru-RU")} ₽, Премиум: ${generatedTiers[2].totalRub.toLocaleString("ru-RU")} ₽) на 4 клинических этапа`,
+				"success",
+				5000,
+			);
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-cbct-autoplan-generated", {
+						detail: {
+							patientId,
+							tiers: generatedTiers,
+							findings,
+						},
+					}),
+				);
+			}
+		} catch (err: unknown) {
+			logger.error("[TreatmentPlanModule] Error generating CBCT auto plan", err);
+			showToast("Не удалось сформировать автоплан по КЛКТ", "error");
+		}
+	};
 
 	const handleUpdateItemQuantity = (itemId: string, newQty: number) => {
 		const safeQty = Math.max(1, Math.round(newQty));
@@ -1673,7 +1710,19 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<span>В кассу</span>
 					</button>
 
-					{/* Secondary 3: Overflow Dropdown Menu [⋮ Опции] */}
+					{/* Secondary 3: 1-Click CBCT Auto-Plan (Findings to 3-Tier Estimate) */}
+					<button
+						type="button"
+						onClick={handleGenerateCbctAutoPlan}
+						className="min-h-[44px] sm:min-h-[38px] sm:h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation"
+						title="Сформировать 3 сценария плана лечения на основе находок 3D КЛКТ (имплантация, синус-лифтинг, санация, ортопедия)"
+						data-testid="generate-cbct-auto-plan-btn"
+					>
+						<Sparkles size={15} className="text-amber-600 dark:text-amber-400" />
+						<span>Автоплан по КЛКТ</span>
+					</button>
+
+					{/* Secondary 4: Overflow Dropdown Menu [⋮ Опции] */}
 					<div className="relative inline-flex items-center" ref={optionsMenuRef}>
 						<button
 							type="button"
@@ -1695,6 +1744,19 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							role="menu"
 							aria-hidden={!isOptionsMenuOpen}
 						>
+							<button
+								type="button"
+								onClick={() => {
+									handleGenerateCbctAutoPlan();
+									setIsOptionsMenuOpen(false);
+								}}
+								className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+								role="menuitem"
+								data-testid="options-menu-cbct-autoplan-btn"
+							>
+								<Sparkles size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+								<span>Автоплан по КЛКТ (3 сценария)</span>
+							</button>
 							<button
 								type="button"
 								onClick={() => {
@@ -2042,11 +2104,12 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							</div>
 
 							<div className="flex items-center gap-2 shrink-0">
-								{customStages && (
+								{(customStages || cbctAutoPlanTiers) && (
 									<button
 										type="button"
 										onClick={() => {
 											setCustomStages(null);
+											setCbctAutoPlanTiers(null);
 											setCopilotFeedback(null);
 											showToast("План сброшен к исходной одонтограмме", "info");
 										}}
@@ -2129,9 +2192,17 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					selectedTierId={selectedTierId}
 					planAgeDays={planAgeDays}
 					planCreatedAtIso={planCreatedAtIso}
-					onSelectTier={(tier) => setSelectedTierId(tier.tierId)}
+					onSelectTier={(tier) => {
+						setSelectedTierId(tier.tierId);
+						if (tier.stages && tier.stages.length > 0) {
+							setCustomStages([...tier.stages]);
+						}
+					}}
 					onApproveAndSign={(tier) => {
 						setSelectedTierId(tier.tierId);
+						if (tier.stages && tier.stages.length > 0) {
+							setCustomStages([...tier.stages]);
+						}
 						setIsSignModalOpen(true);
 					}}
 					onOpenComparatorStudio={() => setIsComparatorModalOpen(true)}
@@ -2139,6 +2210,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					onOpenPriceValidatorStudio={() => setIsPriceValidatorModalOpen(true)}
 					onOpenInstallment={(tier) => {
 						setSelectedTierId(tier.tierId);
+						if (tier.stages && tier.stages.length > 0) {
+							setCustomStages([...tier.stages]);
+						}
 						if (stages.length > 0) {
 							setSelectedInstallmentStage(stages[0]!);
 							setIsInstallmentModalOpen(true);
@@ -2146,6 +2220,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					}}
 					onPrintContract={(tier) => {
 						setSelectedTierId(tier.tierId);
+						if (tier.stages && tier.stages.length > 0) {
+							setCustomStages([...tier.stages]);
+						}
 						setIsContractPrintOpen(true);
 					}}
 				/>

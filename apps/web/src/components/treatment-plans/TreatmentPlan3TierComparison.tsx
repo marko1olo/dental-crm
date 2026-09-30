@@ -22,11 +22,13 @@
 import React, { useEffect, useState } from "react";
 import {
 	Calendar,
+	Check,
 	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
 	Clock,
 	Coins,
+	Copy,
 	CreditCard,
 	Crown,
 	FileCheck,
@@ -34,6 +36,7 @@ import {
 	PenTool,
 	Percent,
 	Printer,
+	Share2,
 	Shield,
 	ShieldCheck,
 	Sparkles,
@@ -65,20 +68,28 @@ export interface TreatmentPlan3TierComparisonProps {
 }
 
 function getTierShortLabel(tier: TreatmentPlanTier): string {
-	if (tier.badge && ["эконом", "стандарт", "оптимум", "премиум"].includes(tier.badge.toLowerCase())) {
-		return tier.badge;
-	}
-	const firstWord = tier.title.split(/[\s(]/)[0]?.trim();
-	if (firstWord && firstWord.length > 0) {
-		if (firstWord.toLowerCase().startsWith("эконом") || firstWord.toLowerCase().startsWith("базов")) return "Эконом";
-		if (firstWord.toLowerCase().startsWith("стандарт") || firstWord.toLowerCase().startsWith("оптимал")) return "Оптимум";
-		if (firstWord.toLowerCase().startsWith("премиум")) return "Премиум";
-		return firstWord;
-	}
 	if (tier.tierId === "economy") return "Эконом";
-	if (tier.tierId === "standard") return "Стандарт";
-	if (tier.tierId === "optimum") return "Оптимум";
-	return "Тариф";
+	if (tier.tierId === "standard") return "Оптимум";
+	if (tier.tierId === "optimum") return "Премиум";
+	const lowerTitle = (tier.title || "").toLowerCase();
+	if (lowerTitle.includes("эконом") || lowerTitle.includes("базов")) return "Эконом";
+	if (lowerTitle.includes("стандарт") || lowerTitle.includes("оптимал")) return "Оптимум";
+	if (lowerTitle.includes("премиум") || lowerTitle.includes("vip")) return "Премиум";
+	return tier.badge || tier.title || "Тариф";
+}
+
+export function formatServiceLifeYearsText(
+	serviceLifeYears: string | number | undefined,
+	tierId: TreatmentPlanTierId,
+): string {
+	if (serviceLifeYears !== undefined && serviceLifeYears !== null && serviceLifeYears !== "") {
+		if (typeof serviceLifeYears === "number") return `${serviceLifeYears} лет`;
+		return String(serviceLifeYears);
+	}
+	if (tierId === "economy") return "до 5–7 лет";
+	if (tierId === "standard") return "15–20 лет";
+	if (tierId === "optimum") return "25+ лет (пожизненно)";
+	return "10–15 лет";
 }
 
 export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparisonProps> = ({
@@ -98,8 +109,9 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 	const [activeTierId, setActiveTierId] = useState<TreatmentPlanTierId>(selectedTierId);
 	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12 | 24>(12);
 	const [showNdflBreakdown, setShowNdflBreakdown] = useState<boolean>(true);
-	const [expandedStagesTierId, setExpandedStagesTierId] = useState<TreatmentPlanTierId | null>("optimum");
+	const [expandedStagesTierId, setExpandedStagesTierId] = useState<TreatmentPlanTierId | null>(selectedTierId);
 	const [activePaymentMode, setActivePaymentMode] = useState<"installment" | "staged" | "discount">("installment");
+	const [copiedMessengerTierId, setCopiedMessengerTierId] = useState<TreatmentPlanTierId | null>(null);
 
 	const effectivePlanAgeDays =
 		typeof planAgeDays === "number"
@@ -145,6 +157,26 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 	const toggleStagesExpand = (e: React.MouseEvent, tierId: TreatmentPlanTierId) => {
 		e.stopPropagation();
 		setExpandedStagesTierId((prev) => (prev === tierId ? null : tierId));
+	};
+
+	const handleCopyEstimateToMessenger = (e: React.MouseEvent, tierToCopy: TreatmentPlanTier) => {
+		e.stopPropagation();
+		const lines = [
+			`[План лечения] «${tierToCopy.title}»`,
+			`[Стоимость]: ${formatPlanPriceRub(tierToCopy.totalRub)}`,
+			`[Рассрочка 0% клиники]: от ${formatPlanPriceRub(tierToCopy.installments?.[12]?.monthlyPaymentRub ?? Math.round(tierToCopy.totalRub / 12))}/мес на 12 мес.`,
+			`[Гарантия]: ${formatWarrantyYearsText(tierToCopy.warrantyYears)} | [Срок службы]: ${formatServiceLifeYearsText(tierToCopy.serviceLifeYears, tierToCopy.tierId)}`,
+			`[Сроки]: ~${tierToCopy.durationWeeks} нед. (${tierToCopy.durationVisits} виз.)`,
+			tierToCopy.materialsHeadline ? `[Материалы]: ${tierToCopy.materialsHeadline}` : "",
+			tierToCopy.ndflRefundRub ? `[Налоговый вычет 13%]: до +${formatPlanPriceRub(tierToCopy.ndflRefundRub)} к возврату` : "",
+			`Подготовлено в DENTE CRM. Соответствует клиническим протоколам СтАР.`,
+		].filter(Boolean).join("\n");
+
+		if (typeof navigator !== "undefined" && navigator.clipboard) {
+			navigator.clipboard.writeText(lines).catch(() => {});
+		}
+		setCopiedMessengerTierId(tierToCopy.tierId);
+		setTimeout(() => setCopiedMessengerTierId(null), 2500);
 	};
 
 	if (!tiers || tiers.length === 0) {
@@ -357,26 +389,45 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						)}
 					</div>
 
-					{/* Flat Warranty and Visits Strip */}
-					<div className="grid grid-cols-2 gap-2 text-xs py-1">
+					{/* Flat Warranty, Service Life and Visits Strip */}
+					<div className="grid grid-cols-3 gap-1.5 text-xs py-1 border-y border-[var(--line,var(--border,#cbd5e1))]/40 my-1">
 						<div className="flex flex-col justify-between">
 							<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
-								<Shield size={11} /> Гарантия клиники
+								<Shield size={11} /> Гарантия
 							</span>
-							<strong className="text-[11px] text-[var(--ink,#0f172a)] truncate mt-0.5">
+							<strong className="text-[11px] text-[var(--ink,#0f172a)] truncate mt-0.5" title={formatWarrantyYearsText(tier.warrantyYears)}>
 								{formatWarrantyYearsText(tier.warrantyYears)}
 							</strong>
 						</div>
 
 						<div className="flex flex-col justify-between">
 							<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
-								<Calendar size={11} /> Сроки и визиты
+								<Clock size={11} /> Срок службы
+							</span>
+							<strong className="text-[11px] text-[var(--ink,#0f172a)] truncate mt-0.5" title={formatServiceLifeYearsText(tier.serviceLifeYears, tier.tierId)}>
+								{formatServiceLifeYearsText(tier.serviceLifeYears, tier.tierId)}
+							</strong>
+						</div>
+
+						<div className="flex flex-col justify-between">
+							<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
+								<Calendar size={11} /> Сроки
 							</span>
 							<strong className="text-[11px] text-[var(--ink,#0f172a)] mt-0.5">
 								{tier.durationVisits} виз. ({tier.durationWeeks} нед.)
 							</strong>
 						</div>
 					</div>
+
+					{/* Key Materials Headline Pill */}
+					{tier.materialsHeadline && (
+						<div className="p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))]/60 text-[11px] text-[var(--ink,#0f172a)] leading-snug">
+							<div className="text-[10px] font-bold text-[var(--teal,var(--brand-primary))] uppercase tracking-wider mb-0.5">
+								Клинические материалы
+							</div>
+							<div className="font-semibold">{tier.materialsHeadline}</div>
+						</div>
+					)}
 
 					{/* Stages Breakdown Accordion Toggle */}
 					<div className="pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/60">
@@ -486,7 +537,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						<span>Утвердить и подписать план</span>
 					</button>
 
-					{/* Secondary Action Strip: 1 unified action line (Installment + optional Print contract) */}
+					{/* Secondary Action Strip: 1 unified action line (Installment + Messenger copy + optional Print contract) */}
 					<div className="flex flex-wrap items-center gap-2">
 						<button
 							type="button"
@@ -496,6 +547,27 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 						>
 							<CreditCard size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 							<span className="truncate">Рассрочка 0%</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={(e) => handleCopyEstimateToMessenger(e, tier)}
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap"
+							title="Скопировать смету для WhatsApp / Telegram (понятный пациенту формат)"
+							aria-label="Скопировать смету"
+							data-testid={`copy-estimate-messenger-btn-${tier.tierId}`}
+						>
+							{copiedMessengerTierId === tier.tierId ? (
+								<>
+									<Check size={13} className="text-emerald-600 shrink-0" />
+									<span className="text-[11px] text-emerald-600 font-semibold">Скопировано</span>
+								</>
+							) : (
+								<>
+									<Share2 size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+									<span className="hidden sm:inline text-[11px]">Смета</span>
+								</>
+							)}
 						</button>
 
 						{onPrintContract && (
@@ -626,6 +698,27 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 					>
 						<ShieldCheck size={14} className="shrink-0" />
 						<span>Вычет 13%</span>
+					</button>
+
+					{/* Messenger Share Button for Active Tier */}
+					<button
+						type="button"
+						onClick={(e) => handleCopyEstimateToMessenger(e, activeTier)}
+						className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap"
+						title="Скопировать смету выбранного тарифа для WhatsApp / Telegram (понятный пациенту формат)"
+						data-testid="top-copy-messenger-btn"
+					>
+						{copiedMessengerTierId === activeTier.tierId ? (
+							<>
+								<Check size={13} className="text-emerald-600 shrink-0" />
+								<span className="text-emerald-600">Скопировано!</span>
+							</>
+						) : (
+							<>
+								<Share2 size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+								<span>Смета (WhatsApp)</span>
+							</>
+						)}
 					</button>
 
 					{/* Comparator Studio Modal Button */}

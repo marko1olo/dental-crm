@@ -2588,6 +2588,7 @@ export function generate3TierPlanComparison(
 		borderClass: string,
 		isRecommended: boolean,
 		warrantyYears: number | string,
+		serviceLifeYears: number | string,
 		materialsHeadline: string,
 		materialsList: readonly string[],
 		keyAdvantages: readonly string[],
@@ -2623,6 +2624,7 @@ export function generate3TierPlanComparison(
 			durationWeeks: estimatedWeeks,
 			durationVisits: estimatedVisits,
 			warrantyYears,
+			serviceLifeYears,
 			materialsHeadline,
 			materialsList,
 			keyAdvantages,
@@ -2656,6 +2658,7 @@ export function generate3TierPlanComparison(
 		"border-border hover:border-foreground/40",
 		false,
 		1,
+		"до 5–7 лет",
 		"Микрогибридные композиты Gradia / Charisma, металлокерамика Co-Cr, функциональный фокус",
 		[
 			"Терапевтическое перелечивание и световые композиты базовой группы (GC Gradia / Heraeus Charisma)",
@@ -2680,6 +2683,7 @@ export function generate3TierPlanComparison(
 		"border-[var(--teal,var(--brand-primary))]/50 hover:border-[var(--teal,var(--brand-primary))] shadow-md",
 		false,
 		2,
+		"15–20 лет",
 		"Монолитный диоксид циркония Prettau, стекловолоконный штифт, биологическая герметизация, имплантаты Osstem TS-III",
 		[
 			"Биологическая герметизация дентина и нанокомпозиты Estelite Asteria",
@@ -2707,6 +2711,7 @@ export function generate3TierPlanComparison(
 		"border-emerald-500 ring-2 ring-emerald-500/20 shadow-xl shadow-emerald-500/10",
 		true,
 		"5 лет (импланты: пож.)",
+		"25+ лет (пожизненно)",
 		"Швейцарские/шведские имплантаты Straumann SLActive / Astra Tech, индивидуальный циркониевый абатмент, керамика IPS e.max Press, микроскоп Leica",
 		[
 			"Лечение каналов и реставрации под дентальным микроскопом Carl Zeiss / Leica",
