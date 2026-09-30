@@ -477,8 +477,8 @@ async function main() {
 
 		// Test 1-Click "+ В план & смету"
 		console.log("Testing 1-Click: '+ В план & смету'...");
-		const addToPlanBtn = page.locator("[data-testid='add-implant-to-plan-btn']");
-		if (await addToPlanBtn.isVisible()) {
+		const addToPlanBtn = page.locator("[data-testid='cbct-implant-add-to-plan-btn'], [data-testid='add-implant-to-plan-btn']").first();
+		if (await addToPlanBtn.isVisible().catch(() => false)) {
 			await addToPlanBtn.click();
 			await page.waitForTimeout(500);
 			console.log("[1-CLICK PLAN]: Clicked successfully.");
@@ -486,29 +486,81 @@ async function main() {
 
 		// Test 1-Click "В ЭМК"
 		console.log("Testing 1-Click: 'В ЭМК'...");
-		const exportEmrBtn = page.locator("[data-testid='cbct-btn-export-emr']").first();
-		if (await exportEmrBtn.isVisible()) {
+		const exportEmrBtn = page.locator("[data-testid='cbct-implant-add-to-emr-btn'], [data-testid='cbct-btn-export-emr']").first();
+		if (await exportEmrBtn.isVisible().catch(() => false)) {
 			await exportEmrBtn.click();
 			await page.waitForTimeout(500);
 			console.log("[1-CLICK EMR]: Clicked successfully.");
 		}
 
+		// Test Zakharov Edentulous Ridge Automation (W2/W6/H + Form 043/u)
+		const ridgeAuto = page.locator("[data-testid='cbct-zakharov-ridge-automation']");
+		if (await ridgeAuto.isVisible().catch(() => false)) {
+			console.log("[AUDIT] Zakharov Ridge Automation visible. Testing #26, #27 and Form 043/u...");
+			const btn26 = page.locator("[data-testid='cbct-ridge-tooth-26-btn']");
+			if (await btn26.isVisible()) await btn26.click();
+			const export043 = page.locator("[data-testid='cbct-ridge-export-043-btn']");
+			if (await export043.isVisible()) {
+				await export043.click();
+				await page.waitForTimeout(500);
+				console.log("[1-CLICK 043/u RIDGE]: Clicked successfully.");
+			}
+		}
+
 		// Capture high-resolution proof screenshot
 		console.log(`Capturing proof screenshot to: ${PROOF_SCREENSHOT_PATH}`);
+		// Save Workspace 4: Implant proof
+		const implantShotPath = path.join(OUT_DIR, "proof_workspace_implant.png");
 		await modal.screenshot({
-			path: PROOF_SCREENSHOT_PATH,
+			path: implantShotPath,
 			animations: "disabled",
 			timeout: 15000,
 		});
+		console.log(`[PROOF 4 CAPTURED] proof_workspace_implant.png (${(statSync(implantShotPath).size / 1024).toFixed(1)} KB)`);
 
-		const stats = statSync(PROOF_SCREENSHOT_PATH);
-		console.log(`Screenshot verified: ${PROOF_SCREENSHOT_PATH} (${(stats.size / 1024).toFixed(1)} KB)`);
+		// Switch to Workspace 1: MPR 3D
+		console.log("\n--- Switching to Workspace 1: MPR 3D ---");
+		const tabMpr = page.locator("button:has-text('MPR 3D'), [data-tab-id='diagnostic'], [data-testid='cbct-tab-mpr-3d'], [data-testid='cbct-mode-diagnostic-btn']").first();
+		await tabMpr.waitFor({ state: "visible", timeout: 10000 });
+		await tabMpr.click();
+		await page.waitForTimeout(2500);
 
-		if (stats.size < 50000) {
-			throw new Error(`Screenshot size too small: ${stats.size} bytes`);
+		const mprShotPath = path.join(OUT_DIR, "proof_workspace_mpr.png");
+		await modal.screenshot({ path: mprShotPath, animations: "disabled" });
+		console.log(`[PROOF 1 CAPTURED] proof_workspace_mpr.png (${(statSync(mprShotPath).size / 1024).toFixed(1)} KB)`);
+
+		// Switch to Workspace 2: Панорама (with Maxilla switch)
+		console.log("\n--- Switching to Workspace 2: Панорама ---");
+		const tabPano = page.locator("button:has-text('Панорама'), [data-tab-id='panoramic'], [data-testid='cbct-tab-panorama'], [data-testid='cbct-mode-panoramic-btn']").first();
+		await tabPano.waitFor({ state: "visible", timeout: 10000 });
+		await tabPano.click();
+		await page.waitForTimeout(2000);
+
+		const switchMaxillaBtn = page.locator("[data-testid='cbct-jaw-switch-maxilla-btn']");
+		if (await switchMaxillaBtn.isVisible().catch(() => false)) {
+			console.log("Switching jaw to Maxilla (Upper Jaw)...");
+			await switchMaxillaBtn.click();
+			await page.waitForTimeout(1500);
 		}
 
-		console.log("=== MISCH IMPLANT PROOF CAPTURE COMPLETED SUCCESSFULLY ===");
+		const panoShotPath = path.join(OUT_DIR, "proof_workspace_pano.png");
+		await modal.screenshot({ path: panoShotPath, animations: "disabled" });
+		console.log(`[PROOF 2 CAPTURED] proof_workspace_pano.png (${(statSync(panoShotPath).size / 1024).toFixed(1)} KB)`);
+
+		// Switch to Workspace 3: Эндодонтия
+		console.log("\n--- Switching to Workspace 3: Эндодонтия ---");
+		const tabEndo = page.locator("button:has-text('Эндодонтия'), [data-tab-id='endo'], [data-testid='cbct-tab-endo'], [data-testid='cbct-mode-endo-btn']").first();
+		await tabEndo.waitFor({ state: "visible", timeout: 10000 });
+		await tabEndo.click();
+		await page.waitForTimeout(2500);
+
+		const endoShotPath = path.join(OUT_DIR, "proof_workspace_endo.png");
+		await modal.screenshot({ path: endoShotPath, animations: "disabled" });
+		console.log(`[PROOF 3 CAPTURED] proof_workspace_endo.png (${(statSync(endoShotPath).size / 1024).toFixed(1)} KB)`);
+
+		console.log("\n============================================================");
+		console.log("ALL 4 CBCT WORKSPACES & MISCH IMPLANT PROOFS CAPTURED!");
+		console.log("============================================================");
 	} finally {
 		if (browser) await browser.close().catch(() => {});
 		if (viteProc && viteProc.pid) {

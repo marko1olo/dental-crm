@@ -220,28 +220,30 @@ export function findOcclusalZPlane(
 	const enamelSpanMm = maxEnamelZ >= minEnamelZ ? maxEnamelZ - minEnamelZ : 0;
 
 	// 1. Primary: Enamel peaks (Dentate patients)
-	const enamelPeaks = findPeaks((p) => p.smoothedEnamel, 0.2);
-	if (enamelPeaks.length >= 2) {
-		enamelPeaks.sort((a, b) => a.zMm - b.zMm);
-		const dist = enamelPeaks[enamelPeaks.length - 1]!.zMm - enamelPeaks[0]!.zMm;
-		if (dist >= 12.0) {
-			// Widely separated dental arches (e.g. open mouth or synthetic dual-arch volume)
-			return jawType === "mandible" ? enamelPeaks[0]!.zMm : enamelPeaks[enamelPeaks.length - 1]!.zMm;
+	const rawEnamelPeaks = findPeaks((p) => p.smoothedEnamel, 0.3);
+	const sortedByScore = [...rawEnamelPeaks].sort((a, b) => b.score - a.score);
+	let dualArches: Array<{ zIndex: number; zMm: number; score: number }> = [];
+
+	if (sortedByScore.length >= 2) {
+		const top1 = sortedByScore[0]!;
+		const top2 = sortedByScore.slice(1).find((p) => Math.abs(p.zMm - top1.zMm) >= 14.0 && p.score >= top1.score * 0.45);
+		if (top2) {
+			dualArches = [top1, top2].sort((a, b) => a.zMm - b.zMm);
 		}
-	} else if (enamelPeaks.length === 1 && enamelSpanMm < 8.0) {
-		// Single isolated dental arch (e.g. single-jaw scan or synthetic volume)
-		return enamelPeaks[0]!.zMm;
+	}
+
+	if (dualArches.length === 2) {
+		// Widely separated dental arches (e.g. open mouth or synthetic dual-arch volume)
+		return jawType === "mandible" ? dualArches[0]!.zMm : dualArches[1]!.zMm;
+	} else if (sortedByScore.length === 1 && enamelSpanMm < 8.0) {
+		return sortedByScore[0]!.zMm;
 	}
 
 	// Clinical Multi-Slice Auto-Scoring around primary occlusal enamel contact (Bite Plane)
-	if (enamelPeaks.length > 0) {
-		let maxVal = 0;
-		let biteZ = 0.0;
+	if (rawEnamelPeaks.length > 0) {
+		let maxVal = 0, biteZ = 0.0;
 		for (const p of profile) {
-			if (p.smoothedEnamel > maxVal) {
-				maxVal = p.smoothedEnamel;
-				biteZ = p.zMm;
-			}
+			if (p.smoothedEnamel > maxVal) { maxVal = p.smoothedEnamel; biteZ = p.zMm; }
 		}
 
 		if (maxVal >= 1000) {

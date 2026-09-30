@@ -19,6 +19,8 @@ import {
 import {
 	type DentalArchCurve,
 	calculateArchTangentsAndNormals,
+	calculateVariableTroughThicknessMm,
+	type VariableFocalTroughOptions,
 } from "./cbctArchSplineMath";
 import { findOcclusalZPlane } from "./cbctAutoArchEngine";
 import { getGlobalWebGl2PanoramicEngine } from "./cbctPanoramicWebGlEngine";
@@ -52,6 +54,8 @@ export interface PanoramicReconstructionOptions {
 	readonly useAnalyticalPoly?: boolean;
 	readonly archPolyCoeffs?: readonly [number, number, number, number];
 	readonly anteriorTroughRatio?: number;
+	readonly enableVariableTrough?: boolean;
+	readonly variableTroughOptions?: VariableFocalTroughOptions;
 }
 
 /**
@@ -333,10 +337,12 @@ export function reconstructPanoramicView(
 		const normX = colNormX[col]!;
 		const normY = colNormY[col]!;
 
-		// Calculate local focal radius with physiological anterior narrowing (0.5..0.8)
+		// Calculate local focal radius with physiological anterior narrowing (0.5..0.8) or variable trough
 		let colFocalRadiusMm = focalRadiusMm;
-		if (anteriorRatio < 1.0 && halfTotalLen > 0) {
-			const targetDistMm = (col / denomW) * totalLengthMm;
+		const targetDistMm = (col / denomW) * totalLengthMm;
+		if (options.enableVariableTrough) {
+			colFocalRadiusMm = calculateVariableTroughThicknessMm(targetDistMm, totalLengthMm, options.variableTroughOptions) / 2.0;
+		} else if (anteriorRatio < 1.0 && halfTotalLen > 0) {
 			const centerNorm = Math.min(1.0, Math.abs(targetDistMm - halfTotalLen) / halfTotalLen);
 			const t = Math.max(0, Math.min(1, (centerNorm - 0.15) / 0.35));
 			const taper = anteriorRatio + (1.0 - anteriorRatio) * (t * t * (3 - 2 * t));

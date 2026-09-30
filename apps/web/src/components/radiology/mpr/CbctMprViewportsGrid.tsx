@@ -646,13 +646,10 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		renderPanoramic: (extraClassName) => renderPanoramicViewport(extraClassName),
 		renderCrossSection: (extraClassName, isMaximized) => renderCrossSectionViewport(extraClassName, isMaximized),
 		renderVolume3D: (extraClassName) => renderFourthQuadrantViewport(extraClassName),
-		// Quad view, layout_1_plus_3, and maximized fallback calls for contract compliance:
-		renderQuadFourth: (extraClassName) => renderFourthQuadrantViewport(extraClassName),
-		renderMaximizedFourth: (extraClassName) => renderFourthQuadrantViewport(extraClassName),
 	};
 
 	return (
-		<div className={`${isSidebarOpen ? "lg:col-span-8" : "lg:col-span-12"} ${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all relative`}>
+		<div className={`${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all relative`}>
 			{/* Mobile Viewport Segmented Switcher (< lg screens) */}
 			<div className="flex lg:hidden items-center bg-zinc-900 border-b border-zinc-800 p-1 gap-1 overflow-x-auto shrink-0 select-none z-10" data-testid="cbct-mobile-viewport-tabs">
 				{[

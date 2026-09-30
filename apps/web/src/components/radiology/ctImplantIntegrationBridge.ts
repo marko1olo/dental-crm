@@ -37,6 +37,9 @@ export interface CtImplantBridgeParams {
 	readonly angulationDeg: number;
 	readonly ridgeHeightMm?: number | null | undefined;
 	readonly ridgeWidthMm?: number | null | undefined;
+	readonly ridgeW2Mm?: number | null | undefined;
+	readonly ridgeW6Mm?: number | null | undefined;
+	readonly sinusLiftRecommendation?: string | null | undefined;
 	readonly mischClass?: string | null | undefined;
 	readonly meanHU: number | null;
 	readonly nerveClearanceMm: number | null;
@@ -138,25 +141,33 @@ export function buildImplantDiarySoapEntry(params: CtImplantBridgeParams): Impla
 
 	const hasH = typeof params.ridgeHeightMm === "number";
 	const hasW = typeof params.ridgeWidthMm === "number";
+	const hasW2 = typeof params.ridgeW2Mm === "number";
+	const hasW6 = typeof params.ridgeW6Mm === "number";
+
 	const ridgeLocalis =
-		hasH && hasW
-			? `высота альвеолярного гребня ${params.ridgeHeightMm!.toFixed(1)} мм, ширина ${params.ridgeWidthMm!.toFixed(1)} мм`
-			: hasH
-				? `высота альвеолярного гребня ${params.ridgeHeightMm!.toFixed(1)} мм, ширина не измерялась (—)`
-				: hasW
-					? `высота альвеолярного гребня не измерялась (—), ширина ${params.ridgeWidthMm!.toFixed(1)} мм`
-					: "замеры альвеолярного гребня штангенциркулем не проводились (—)";
+		hasW2 && hasW6 && hasH
+			? `морфометрия альвеолярного гребня: ширина W2 (на 2 мм апикальнее вершины) = ${params.ridgeW2Mm!.toFixed(1)} мм, базальная ширина W6 (на 6 мм) = ${params.ridgeW6Mm!.toFixed(1)} мм, высота кости H = ${params.ridgeHeightMm!.toFixed(1)} мм`
+			: hasH && hasW
+				? `высота альвеолярного гребня ${params.ridgeHeightMm!.toFixed(1)} мм, ширина ${params.ridgeWidthMm!.toFixed(1)} мм`
+				: hasH
+					? `высота альвеолярного гребня ${params.ridgeHeightMm!.toFixed(1)} мм, ширина не измерялась (—)`
+					: hasW
+						? `высота альвеолярного гребня не измерялась (—), ширина ${params.ridgeWidthMm!.toFixed(1)} мм`
+						: "замеры альвеолярного гребня штангенциркулем не проводились (—)";
 
 	const nerveLocalis =
 		params.nerveClearanceMm !== null
 			? `Расстояние от апекса до нижнечелюстного канала / дна верхнечелюстного синуса: ${params.nerveClearanceMm.toFixed(1)} мм.`
 			: "дистанция до нижнечелюстного канала не измерялась (—) (Канал не размечен).";
 
+	const sinusLiftPart = params.sinusLiftRecommendation ? ` Рекомендации по костной пластике: ${params.sinusLiftRecommendation}` : "";
+
 	const statusLocalis =
 		`КЛКТ-диагностика области отсутствующего зуба #${params.toothFdi}: ` +
 		`${ridgeLocalis}. Тип архитектоники костной ткани по Misch: ` +
 		`${params.mischClass ?? "не измерялась"} (${params.meanHU !== null ? `${params.meanHU} HU` : "не измерялась"}). ` +
-		nerveLocalis;
+		nerveLocalis +
+		sinusLiftPart;
 
 	const treatmentDescription =
 		`Протокол 3D КЛКТ-планирования дентальной имплантации (зуб #${params.toothFdi}):\n` +
@@ -164,7 +175,8 @@ export function buildImplantDiarySoapEntry(params: CtImplantBridgeParams): Impla
 		`2. Геометрические параметры имплантата: диаметр Ø${diameterStr} мм, длина L=${lengthStr} мм, наклон оси ${tiltStr}.\n` +
 		`3. Остеотомия ложа: ${params.drillingProtocol}.\n` +
 		`4. Ожидаемый торк первичной стабильности: ${params.recommendedTorqueNcm}.\n` +
-		`5. Рекомендована установка формирователя десны / винта-заглушки с последующей интеграцией 3-4 мес.`;
+		(params.sinusLiftRecommendation ? `5. Костная пластика: ${params.sinusLiftRecommendation}\n6.` : "5.") +
+		` Рекомендована установка формирователя десны / винта-заглушки с последующей интеграцией 3-4 мес.`;
 
 	return {
 		statusLocalis,

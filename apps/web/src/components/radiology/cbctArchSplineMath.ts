@@ -362,19 +362,61 @@ export function calculateArchTangentsAndNormals(spline: readonly Point2D[]): Arc
 	return results;
 }
 
+export interface VariableFocalTroughOptions {
+	readonly anteriorThicknessMm?: number;
+	readonly premolarThicknessMm?: number;
+	readonly molarThicknessMm?: number;
+	readonly enabled?: boolean;
+}
+
+/**
+ * Calculates continuous variable focal trough thickness along the dental arch:
+ * - Incisors: 8-10 mm (cuts off cervical spine artifact)
+ * - Premolars: 12-14 mm
+ * - Molars & Ramus: 18-22 mm (encloses wide bone and divergent roots)
+ */
+export function calculateVariableTroughThicknessMm(
+	distanceAlongArchMm: number,
+	totalArchLengthMm: number,
+	options?: VariableFocalTroughOptions,
+): number {
+	const ant = options?.anteriorThicknessMm ?? 9.0;
+	const premolar = options?.premolarThicknessMm ?? 13.0;
+	const molar = options?.molarThicknessMm ?? 20.0;
+
+	if (totalArchLengthMm <= 0) return ant;
+	const s = Math.max(0, Math.min(1, distanceAlongArchMm / totalArchLengthMm));
+	const u = Math.abs(2.0 * (s - 0.5));
+
+	if (u <= 0.5) {
+		const t = u / 0.5;
+		const smoothT = t * t * (3.0 - 2.0 * t);
+		return Number((ant + (premolar - ant) * smoothT).toFixed(2));
+	} else {
+		const t = (u - 0.5) / 0.5;
+		const smoothT = t * t * (3.0 - 2.0 * t);
+		return Number((premolar + (molar - premolar) * smoothT).toFixed(2));
+	}
+}
+
 /**
  * Computes the parallel inner and outer boundary curves of the focal trough
  * offset by +/- (thickness / 2) along the normal vectors.
- * Supports physiological anterior narrowing (anteriorTroughRatio: 0.5..0.8) per Romexis standards.
+ * Supports physiological anterior narrowing (anteriorTroughRatio: 0.5..0.8) and variable trough options.
  */
 export function getFocalTroughBoundaryCurves(
 	spline: readonly Point2D[],
 	thicknessMm: number,
-	anteriorTroughRatio = 1.0,
+	anteriorTroughRatio: number | VariableFocalTroughOptions = 1.0,
+	variableOptions?: VariableFocalTroughOptions,
 ): {
 	innerBoundary: Point2D[];
 	outerBoundary: Point2D[];
 } {
+	const isOptionsObj = typeof anteriorTroughRatio === "object" && anteriorTroughRatio !== null;
+	const varOpts = variableOptions ?? (isOptionsObj ? anteriorTroughRatio : undefined);
+	const numRatio = isOptionsObj ? 1.0 : (Number.isFinite(anteriorTroughRatio) ? anteriorTroughRatio : 1.0);
+
 	const validThickness = Number.isFinite(thicknessMm) && thicknessMm > 0 ? thicknessMm : 12.0;
 	const halfThickness = validThickness / 2.0;
 	const vectorField = calculateArchTangentsAndNormals(spline);
@@ -383,11 +425,13 @@ export function getFocalTroughBoundaryCurves(
 
 	const totalLengthMm = vectorField.length > 0 ? (vectorField[vectorField.length - 1]?.distanceAlongArchMm || 100.0) : 100.0;
 	const halfArchLength = totalLengthMm > 0 ? totalLengthMm / 2.0 : 50.0;
-	const ratioClamped = Math.max(0.1, Math.min(1.0, anteriorTroughRatio));
+	const ratioClamped = Math.max(0.1, Math.min(1.0, numRatio));
 
 	for (const node of vectorField) {
 		let effHalf = halfThickness;
-		if (ratioClamped < 1.0 && halfArchLength > 0) {
+		if (varOpts?.enabled) {
+			effHalf = calculateVariableTroughThicknessMm(node.distanceAlongArchMm, totalLengthMm, varOpts) / 2.0;
+		} else if (ratioClamped < 1.0 && halfArchLength > 0) {
 			const centerNorm = Math.min(1.0, Math.abs(node.distanceAlongArchMm - halfArchLength) / halfArchLength);
 			const t = Math.max(0, Math.min(1, (centerNorm - 0.15) / 0.35));
 			const taper = ratioClamped + (1.0 - ratioClamped) * (t * t * (3 - 2 * t));

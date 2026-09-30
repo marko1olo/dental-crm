@@ -138,11 +138,11 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 
 	return (
 		<aside
-			className={`lg:col-span-4 ${isSidebarOpen ? "" : "lg:hidden"} ${
+			className={`shrink-0 ${isSidebarOpen ? "" : "hidden"} ${
 				mobileActiveTab === "planner"
 					? "flex-1 flex flex-col min-h-0 w-full min-w-0 h-full"
-					: "hidden lg:flex lg:flex-col"
-			} bg-zinc-950 rounded-md border border-zinc-800 min-h-0 min-w-0 w-full overflow-y-auto p-3 flex flex-col gap-3`}
+					: "hidden lg:flex lg:flex-col lg:w-[380px] lg:min-w-[360px] lg:max-w-[420px]"
+			} bg-zinc-950 rounded-md border border-zinc-800 min-h-0 overflow-y-auto p-3 flex flex-col gap-3`}
 		>
 			{/* Active Cross-Section Carousel Header */}
 			<div className="flex items-center justify-between pb-2 border-b border-zinc-800">

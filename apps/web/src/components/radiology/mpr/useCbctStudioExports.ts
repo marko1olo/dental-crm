@@ -262,6 +262,19 @@ export function useCbctStudioExports({
 		}
 
 		// 3. Update visit diary Form 043/u via visitStore and custom events
+		const isMaxillaZone = targetTooth < 30;
+		const isSinusZone = isMaxillaZone && targetTooth >= 14 && targetTooth <= 27;
+		let sinusRecommendation: string | null = null;
+		if (isSinusZone && typeof effectiveRidgeHeightMm === "number") {
+			if (effectiveRidgeHeightMm < 5.0) {
+				sinusRecommendation = `Выраженная вертикальная атрофия (H=${effectiveRidgeHeightMm.toFixed(1)} мм < 5 мм). Показан открытый (латеральный) синус-лифтинг с остеопластикой.`;
+			} else if (effectiveRidgeHeightMm < 10.0) {
+				sinusRecommendation = `Умеренный дефицит высоты кости (H=${effectiveRidgeHeightMm.toFixed(1)} мм). Показан закрытый (транскрестальный) синус-лифтинг.`;
+			} else {
+				sinusRecommendation = `Высота кости достаточна (H=${effectiveRidgeHeightMm.toFixed(1)} мм >= 10 мм). Синус-лифтинг не требуется.`;
+			}
+		}
+
 		exportImplantToDiary043(
 			{
 				patientId,
@@ -273,6 +286,9 @@ export function useCbctStudioExports({
 				angulationDeg: implantAngulationDeg,
 				ridgeHeightMm: effectiveRidgeHeightMm,
 				ridgeWidthMm: effectiveRidgeWidthMm,
+				ridgeW2Mm: (activeCaliper as any)?.crestWidthMm ?? effectiveRidgeWidthMm,
+				ridgeW6Mm: (activeCaliper as any)?.midWidthMm ?? null,
+				sinusLiftRecommendation: sinusRecommendation,
 				mischClass: displayBoneClass,
 				meanHU: Math.round(displayMeanHU ?? huSamplingResult.overallMeanHU),
 				nerveClearanceMm: displayNerveClearanceMm,

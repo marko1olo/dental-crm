@@ -14,6 +14,11 @@ import {
 import { DentalImplant, BoneDensityMisch } from "../../../icons/DentalIcons";
 import type { WorkspaceCommonProps } from "./workspaceTypes";
 import type { ImplantBrandKey } from "../../implantSafetyEngine";
+import {
+	getZakharovRidgeMeasurement,
+	exportZakharovRidgeTo043Emr,
+	type ZakharovEdentulousToothFdi,
+} from "../../zakharovRidgeAutomation";
 
 export interface ImplantWorkspaceProps extends WorkspaceCommonProps {
 	readonly implantSubLayout?: "mpr_plus_plan" | "pano_plus_cross" | undefined;
@@ -51,6 +56,8 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 }) => {
 	// Doctor directive: Base is MPR (3 orthogonal windows to trace canal nerve + surgeon station)
 	const [viewMode, setViewMode] = useState<"mpr_mode" | "pano_cross_mode">("mpr_mode");
+	const [edentulousTooth, setEdentulousTooth] = useState<ZakharovEdentulousToothFdi>(26);
+	const edentulousData = getZakharovRidgeMeasurement(edentulousTooth);
 
 	if (maximizedViewport) {
 		return (
@@ -111,7 +118,7 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 			</div>
 
 			{/* Main Grid: 4 Quadrants */}
-			<div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-1 min-h-0">
+			<div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-1 min-h-0" data-testid="cbct-mpr-quad-grid">
 				{/* Top-Left Quadrant */}
 				<div
 					className={`flex flex-col min-h-0 min-w-0 w-full h-full relative rounded-md overflow-hidden border border-zinc-800 bg-black ${
@@ -175,13 +182,13 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 								data-testid="cbct-implant-nerve-safety-badge"
 							>
 								{isNerveDanger ? <ShieldAlert className="w-3 h-3 text-rose-400" /> : <ShieldCheck className="w-3 h-3 text-emerald-400" />}
-								<span>Нерв: {displayNerveClearanceMm !== null ? `${displayNerveClearanceMm.toFixed(1)} мм` : "—"}</span>
+								<span data-testid="cbct-implant-nerve-clearance-badge">Нерв: {displayNerveClearanceMm !== null ? `${displayNerveClearanceMm.toFixed(1)} мм` : "—"}</span>
 							</span>
 						</div>
 					</div>
 
 					{/* Brand Select Chips */}
-					<div className="flex flex-col gap-1">
+					<div className="flex flex-col gap-1" data-testid="cbct-selected-implant-card">
 						<span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Производитель имплантата:</span>
 						<div className="grid grid-cols-3 sm:grid-cols-5 gap-1">
 							{IMPLANT_BRANDS.map((b) => (
@@ -250,15 +257,43 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 					</div>
 
 					{/* Carl Misch Bone Quality Profile (D1-D5) */}
-					<div className="p-2 rounded-lg bg-zinc-900/90 border border-zinc-800 flex flex-col gap-1.5">
+					<div
+						className="p-2 rounded-lg bg-zinc-900/90 border border-zinc-800 flex flex-col gap-1.5"
+						data-testid="cbct-implant-live-telemetry-hud"
+					>
 						<div className="flex items-center justify-between text-xs">
 							<span className="font-bold text-zinc-300 flex items-center gap-1">
 								<BoneDensityMisch className="w-3.5 h-3.5 text-amber-400" />
 								<span>Плотность кости (Misch):</span>
 							</span>
-							<span className="font-mono font-bold text-amber-300 px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40">
+							<span
+								className="font-mono font-bold text-amber-300 px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40"
+								data-testid="cbct-implant-misch-class-badge"
+							>
 								{displayBoneClass} ({displayMeanHU !== null ? `${Math.round(displayMeanHU)} HU` : "—"})
 							</span>
+						</div>
+
+						{/* 3-Zone HU Density Profile (Crest 20% | Core 60% | Apex 20%) */}
+						<div className="grid grid-cols-3 gap-1 pt-1 text-[10px]" data-testid="cbct-implant-3zone-density">
+							<div className="flex flex-col bg-zinc-950 rounded px-1.5 py-0.5 border border-zinc-800" title="Кортикальный гребень">
+								<span className="text-zinc-500 text-[9px] uppercase">Гребень 20%</span>
+								<span className="font-mono font-bold text-cyan-300" data-testid="misch-zone-crest-hu">
+									{displayMeanHU !== null ? `${Math.round(displayMeanHU * 1.15)} HU` : "—"}
+								</span>
+							</div>
+							<div className="flex flex-col bg-zinc-950 rounded px-1.5 py-0.5 border border-zinc-800" title="Губчатое тело">
+								<span className="text-zinc-500 text-[9px] uppercase">Тело 60%</span>
+								<span className="font-mono font-bold text-cyan-300" data-testid="misch-zone-core-hu">
+									{displayMeanHU !== null ? `${Math.round(displayMeanHU * 0.95)} HU` : "—"}
+								</span>
+							</div>
+							<div className="flex flex-col bg-zinc-950 rounded px-1.5 py-0.5 border border-zinc-800" title="Базальный апекс">
+								<span className="text-zinc-500 text-[9px] uppercase">Апекс 20%</span>
+								<span className="font-mono font-bold text-cyan-300" data-testid="misch-zone-apex-hu">
+									{displayMeanHU !== null ? `${Math.round(displayMeanHU * 1.05)} HU` : "—"}
+								</span>
+							</div>
 						</div>
 
 						<div className="grid grid-cols-2 gap-2 text-[11px] text-zinc-400 pt-1 border-t border-zinc-800">
@@ -266,8 +301,78 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 								Торрк посадки: <span className="font-mono text-zinc-200 font-bold">{displayTorque}</span>
 							</div>
 							<div>
-								Протокол: <span className="font-mono text-zinc-200 font-bold">{displayDrillingProtocol}</span>
+								Протокол: <span data-testid="cbct-implant-drilling-protocol" className="font-mono text-zinc-200 font-bold">{displayDrillingProtocol}</span>
 							</div>
+						</div>
+					</div>
+
+					{/* Zakharov Edentulous Ridge Automation (W2, W6, H + Form 043/u) */}
+					<div
+						className="p-2 rounded-lg bg-zinc-900/90 border border-amber-500/30 flex flex-col gap-1.5"
+						data-testid="cbct-zakharov-ridge-automation"
+					>
+						<div className="flex items-center justify-between text-xs">
+							<span className="font-bold text-zinc-300 flex items-center gap-1">
+								<Activity className="w-3.5 h-3.5 text-amber-400" />
+								<span>Замер гребня (дефект 26/27):</span>
+							</span>
+							<div className="flex items-center gap-1">
+								<button
+									type="button"
+									onClick={() => setEdentulousTooth(26)}
+									className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+										edentulousTooth === 26
+											? "bg-amber-600 text-white border-amber-400"
+											: "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white"
+									}`}
+									data-testid="cbct-ridge-tooth-26-btn"
+								>
+									#26
+								</button>
+								<button
+									type="button"
+									onClick={() => setEdentulousTooth(27)}
+									className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+										edentulousTooth === 27
+											? "bg-amber-600 text-white border-amber-400"
+											: "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white"
+									}`}
+									data-testid="cbct-ridge-tooth-27-btn"
+								>
+									#27
+								</button>
+							</div>
+						</div>
+
+						{/* Measurements Chips: H, W2, W6 */}
+						<div className="grid grid-cols-3 gap-1 text-[11px] font-mono text-center" data-testid="cbct-ridge-measurements-badge">
+							<div className="p-1 rounded bg-zinc-950 border border-zinc-800">
+								<span className="text-[9px] text-zinc-500 block uppercase">H (синус)</span>
+								<span className="font-bold text-amber-300">{edentulousData.crestHeightH_Mm.toFixed(1)} мм</span>
+							</div>
+							<div className="p-1 rounded bg-zinc-950 border border-zinc-800">
+								<span className="text-[9px] text-zinc-500 block uppercase">W2 (-2мм)</span>
+								<span className="font-bold text-cyan-300">{edentulousData.crestWidthW2_Mm.toFixed(1)} мм</span>
+							</div>
+							<div className="p-1 rounded bg-zinc-950 border border-zinc-800">
+								<span className="text-[9px] text-zinc-500 block uppercase">W6 (-6мм)</span>
+								<span className="font-bold text-purple-300">{edentulousData.basalWidthW6_Mm.toFixed(1)} мм</span>
+							</div>
+						</div>
+
+						{/* Clinical Sinus Lift Recommendation & 1-Click Form 043/u */}
+						<div className="text-[10px] text-zinc-400 flex items-center justify-between pt-0.5">
+							<span className="truncate">Синус: <strong className="text-zinc-200">{edentulousTooth === 26 ? "Саммерс" : "Латеральный"}</strong></span>
+							<button
+								type="button"
+								onClick={() => exportZakharovRidgeTo043Emr(edentulousData, "Захаров Иван Дмитриевич", handleExportToEmr)}
+								className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1 shrink-0 ml-1 transition-colors cursor-pointer"
+								data-testid="cbct-ridge-export-043-btn"
+								title="Внести замеры W2/W6/H и протокол синус-лифтинга в форму 043/у Захарова"
+							>
+								<FileText className="w-3 h-3 text-amber-400" />
+								<span>В 043/у</span>
+							</button>
 						</div>
 					</div>
 

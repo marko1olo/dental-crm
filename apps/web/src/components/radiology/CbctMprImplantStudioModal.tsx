@@ -74,7 +74,7 @@ export const CbctMprImplantStudioModal: React.FC<
 
 	// Studio mode & layout
 	const [studioMode, setStudioMode] = useState<StudioMode>(initialStudioMode ?? "diagnostic");
-	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(initialSidebarOpen ?? (initialStudioMode === "implant"));
+	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(initialSidebarOpen ?? false);
 	const [activeCaliper, setActiveCaliper] = useState<AlveolarRidgeCaliperMeasurement | null>(initialCaliper ?? null);
 	const [viewLayout, setViewLayout] = useState<ViewLayoutMode>(initialViewLayout ?? "quad_view");
 	const [maximizedViewport, setMaximizedViewport] = useState<CbctViewportType | null>(null);
@@ -102,7 +102,6 @@ export const CbctMprImplantStudioModal: React.FC<
 
 	const handleSelectStudioMode = useCallback((mode: StudioMode) => {
 		setStudioMode(mode);
-		setIsSidebarOpen(mode === "implant");
 	}, []);
 
 	// Volume state
