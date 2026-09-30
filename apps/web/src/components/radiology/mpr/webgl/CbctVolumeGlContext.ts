@@ -281,7 +281,7 @@ export function computeGlCrossSectionCoordinates(
 	volume: CbctVoxelVolume,
 	centerMm: Point3D,
 	normal2D: Point2D,
-	options?: { widthMm?: number; heightMm?: number; pixelSpacingMm?: number; slabMode?: SlabProjectionMode; slabThicknessMm?: number },
+	options?: { widthMm?: number | undefined; heightMm?: number | undefined; pixelSpacingMm?: number | undefined; slabMode?: SlabProjectionMode | undefined; slabThicknessMm?: number | undefined },
 ): GlSliceCoordinates {
 	const dim = volume.dimensions, sp = volume.spacingMm, origin = volume.originMm;
 	const widthMm = Number.isFinite(options?.widthMm) && (options?.widthMm ?? 0) > 0 ? options!.widthMm! : 24.0;

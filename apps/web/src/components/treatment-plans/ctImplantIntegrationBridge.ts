@@ -102,11 +102,12 @@ export interface CbctAutoPlanFindingsInput {
 	readonly maxillaSinusPneumatization?: boolean | undefined;
 	readonly mandibleAtrophy?: boolean | undefined;
 	readonly notes?: string | undefined;
+	readonly tierBrands?: Partial<Record<TreatmentPlanTierId, ImplantBrandKey>> | undefined;
 }
 
 // ─── 2. СПРАВОЧНИКИ И ЦЕНЫ 804н ────────────────────────────────────────────────
 
-const BRAND_DEFAULTS: Record<ImplantBrandKey, { label: string; economy: number; standard: number; premium: number }> = {
+export const BRAND_DEFAULTS: Record<ImplantBrandKey, { label: string; economy: number; standard: number; premium: number }> = {
 	straumann: { label: "Straumann Roxolid SLActive (Швейцария)", economy: 45000, standard: 52000, premium: 65000 },
 	nobel_biocare: { label: "Nobel Biocare Replace (Швеция)", economy: 42000, standard: 49000, premium: 58000 },
 	dentium: { label: "Dentium SuperLine SLA (Южная Корея)", economy: 24000, standard: 32000, premium: 38000 },
@@ -449,7 +450,10 @@ export function generateCbctAutoPlanScenarios(
 
 		if (findings.implants && findings.implants.length > 0) {
 			for (const imp of findings.implants) {
-				s3.push(...buildImplantSurgicalPackageItems(imp, tierId, catalog));
+				const effectiveImp: CbctImplantFinding = findings.tierBrands?.[tierId]
+					? { ...imp, brand: findings.tierBrands[tierId], implantSpec: imp.implantSpec ? { ...imp.implantSpec, brand: findings.tierBrands[tierId]! } : undefined }
+					: imp;
+				s3.push(...buildImplantSurgicalPackageItems(effectiveImp, tierId, catalog));
 
 				if (
 					imp.needsSinusLift ||

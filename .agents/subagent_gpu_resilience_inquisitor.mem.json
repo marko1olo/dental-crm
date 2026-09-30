@@ -1,38 +1,38 @@
 {
   "agent": "subagent_gpu_resilience_inquisitor",
   "status": "COMPLETED",
-  "mission": "CBCT WebGL2 Hardware Sharpening & Misch Bone Density Colormap Overhaul",
+  "mission": "CBCT DOCK & RULER TOOLBAR HARDWARE COLORMAP & SHARPENING CONTROLS",
   "scope": {
     "allowed": [
-      "apps/web/src/components/radiology/mpr/webgl/cbctMprShaders.ts",
-      "apps/web/src/components/radiology/mpr/webgl/CbctVolumeGlContext.ts",
-      "apps/web/src/components/radiology/__tests__/cbctHardwareGpuTorture.test.ts",
-      "apps/web/src/components/radiology/__tests__/cbctWebGlEngine.test.ts",
+      "apps/web/src/components/radiology/CbctLeftToolDock.tsx",
+      "apps/web/src/components/radiology/mpr/CbctViewportsRuler.tsx",
+      "apps/web/src/components/radiology/__tests__/cbctUiDockControls.test.ts",
       ".agents/subagent_gpu_resilience_inquisitor.mem.json"
     ],
     "forbidden": [
       "clinical/",
       "emr/",
-      "documents/",
-      "schedule/"
+      "billing/",
+      "documents/"
     ]
   },
   "completed_steps": [
     "Phase 1: WebGL2 Context Loss Shield, progressive 2x VRAM downsample retry on OOM, and Multi-DPR clamping (<= 1.5)",
-    "Phase 2: Implemented Misch Bone Density D1-D4 colormap heatmap and Endo high contrast modes in CBCT_MPR_FRAGMENT_SHADER and CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER",
-    "Phase 2: Implemented hardware unsharp masking / trabecular edge enhancement with Laplacian gradient calculation and anti-air halo protection",
-    "Phase 2: Added colorMap and sharpenAmount uniforms and getters/setters in CbctVolumeGlContext.ts",
-    "Phase 2: Added Section 15 torture tests in cbctHardwareGpuTorture.test.ts verifying Misch D1-D4 intervals, Laplacian formula, anti-air guard, colormap resolver, and WebGL uniform uploads",
-    "Phase 2: Added Section 10 tests in cbctWebGlEngine.test.ts verifying shader declarations, colormap mode uploads, sharpening clamping [0.0, 1.0], and persistence via setColorMap/setSharpenAmount",
-    "Machine verification executed: 100/100 tests pass across 27 suites with Exit Code 0 in ~588 ms",
-    "Per-file git add completed for all 5 scope files"
+    "Phase 2: Misch Bone Density D1-D4 colormap heatmap and Endo high contrast modes in CBCT_MPR_FRAGMENT_SHADER and CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER",
+    "Phase 2: Hardware unsharp masking / trabecular edge enhancement with Laplacian gradient calculation and anti-air halo protection",
+    "Phase 3: CbctLeftToolDock colormap flyout and 1-click sharpen toggle button (32px density, Mandate 8k)",
+    "Phase 3: CbctViewportsRuler CbctQuickColormapBar HUD bar and CbctViewportRulerToolbar sharpen button (28px density)",
+    "Phase 3: Direct WebGL2 context state synchronization (setColorMap & setSharpenAmount) without lag",
+    "Phase 3: Unit test suite cbctUiDockControls.test.ts (11/11 tests pass with Exit Code 0)",
+    "Full CBCT test verification: 126/126 tests pass across 42 suites in ~566 ms",
+    "Per-file git add completed for all scoped files"
   ],
   "pending_steps": [],
   "findings": [
-    "Misch Bone Density Heatmap: D1 cortical (>1250 HU, pearlescent white), D1/D2 dense trabecular (850..1250 HU, golden yellow), D2/D3 normal trabecular (350..850 HU, emerald green/aquamarine), D4 low density (150..350 HU, warm orange-brown), soft tissue (<150 HU, graphite slate), ambient air (<-700 HU, dark).",
-    "Endo High Contrast: Sigmoid steep curve enhances microcracks, vertical fractures, and hidden canals (MB2).",
-    "Hardware Unsharp Masking: Uses 4-neighbor cross Laplacian sampling (4*center - sum(neighbors)) on normalized slice basis axes with strict anti-air guard (hu > -700 HU) preventing bright ringing halos.",
-    "GlSliceRenderOptions accepts colorMap ('grayscale' | 'bone_density' | 'endo' | 'inverted' or 0..3) and sharpenAmount (0.0..1.0, clamped).",
-    "Zero regressions across test suites; 100/100 tests pass."
+    "CbctLeftToolDock renders 32px desktop buttons for Colormaps (LUT / МИШ / ЭНД / ИНВ) and Sharpening (0% / 50% / 100%).",
+    "CbctColormapFlyout provides 4 instant clinical options with color swatches and checkmarks.",
+    "CbctQuickColormapBar provides 24-28px HUD chips for viewports with 1-click toggle for trabecular bone sharpening.",
+    "getNextSharpenAmount executes smooth 3-state cycling (0.0 -> 0.5 -> 1.0 -> 0.0).",
+    "Both components automatically synchronize with getSharedCbctGlContext() when props are omitted or provided."
   ]
 }

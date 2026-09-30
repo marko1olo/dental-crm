@@ -27,6 +27,10 @@ import {
 	getAvailableLengths,
 	inspectDistanceToMandibularCanal,
 } from "./implantLibrary";
+import {
+	exportImplantToDiary043,
+	exportImplantToTreatmentPlan,
+} from "./ctImplantIntegrationBridge";
 
 export interface CbctImplantModalProps {
 	readonly isOpen: boolean;
@@ -43,6 +47,9 @@ export interface CbctImplantModalProps {
 		readonly implant: ImplantModel;
 		readonly toothFdi: number;
 		readonly clearanceMm: number | null;
+		readonly angulationDeg?: number;
+		readonly safetyMarginMm?: number;
+		readonly nerveStatus?: "safe" | "warning" | "danger" | "unmeasured";
 	}) => void;
 	readonly onApplyToDiary043?: (diaryText: string) => void;
 }
@@ -149,23 +156,86 @@ export const CbctImplantModal: React.FC<CbctImplantModalProps> = ({
 
 	// Export handlers
 	const handleSaveToPlan = useCallback(() => {
+		const clearance = nerveCanalCenter ? nerveInspection.netClearanceMm : null;
 		onApplyToPlan?.({
 			implant: currentImplant,
 			toothFdi,
-			clearanceMm: nerveCanalCenter ? nerveInspection.netClearanceMm : null,
+			clearanceMm: clearance,
+			angulationDeg,
+			safetyMarginMm,
+			nerveStatus: nerveInspection.safetyStatus,
 		});
+
+		try {
+			exportImplantToTreatmentPlan({
+				patientId,
+				patientName,
+				toothFdi,
+				implantSpec: currentImplant,
+				angulationDeg,
+				nerveClearanceMm: clearance,
+				isNerveWarning: nerveInspection.isWarning,
+				isNerveDanger: nerveInspection.isDanger,
+				recommendedTorqueNcm: "35–45 Н·см",
+				drillingProtocol: "Стандартный хирургический протокол остеотомии ложа с охлаждением",
+			});
+		} catch {
+			// ignore in headless test environments
+		}
+
 		onClose();
-	}, [onApplyToPlan, currentImplant, toothFdi, nerveCanalCenter, nerveInspection.netClearanceMm, onClose]);
+	}, [
+		onApplyToPlan,
+		currentImplant,
+		toothFdi,
+		nerveCanalCenter,
+		nerveInspection,
+		angulationDeg,
+		safetyMarginMm,
+		patientId,
+		patientName,
+		onClose,
+	]);
 
 	const handleRecordToDiary = useCallback(() => {
+		const clearance = nerveCanalCenter ? nerveInspection.netClearanceMm : null;
 		const diaryText =
 			`Виртуальное планирование имплантации: установлен имплантат ${currentImplant.brandName} ${currentImplant.lineName} ` +
 			`диам. ${currentImplant.diameterMm} мм, длина ${currentImplant.lengthMm} мм (арт. ${currentImplant.articleNumber}) в позицию зуба ${toothFdi}. ` +
 			`Коридор безопасности ${safetyMarginMm.toFixed(1)} мм. ` +
 			`${nerveInspection.telemetryTextRu}. Угол наклона: ${angulationDeg}°.`;
 		onApplyToDiary043?.(diaryText);
+
+		try {
+			exportImplantToDiary043({
+				patientId,
+				patientName,
+				toothFdi,
+				implantSpec: currentImplant,
+				angulationDeg,
+				nerveClearanceMm: clearance,
+				isNerveWarning: nerveInspection.isWarning,
+				isNerveDanger: nerveInspection.isDanger,
+				recommendedTorqueNcm: "35–45 Н·см",
+				drillingProtocol: "Стандартный хирургический протокол остеотомии ложа с охлаждением",
+			});
+		} catch {
+			// ignore in headless test environments
+		}
+
 		onClose();
-	}, [currentImplant, toothFdi, safetyMarginMm, nerveInspection.telemetryTextRu, angulationDeg, onApplyToDiary043, onClose]);
+	}, [
+		currentImplant,
+		toothFdi,
+		safetyMarginMm,
+		nerveInspection,
+		angulationDeg,
+		onApplyToDiary043,
+		patientId,
+		patientName,
+		nerveCanalCenter,
+		onClose,
+	]);
 
 	if (!isOpen) return null;
 

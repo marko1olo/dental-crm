@@ -9,18 +9,18 @@
     "Added getSafeDevicePixelRatio(dpr) clamping safeDpr <= 1.5 for Retina/4K screens in CbctVolume3DViewport.tsx to protect fill-rate and prevent GPU OOM",
     "Created apps/web/src/components/radiology/implantLibrary.ts with comprehensive catalogs for Straumann, Nobel Biocare, Osstem, Dentium, MIS (diameters 3.0..5.5 mm, lengths 7.0..15.0 mm), 1.5-2.0 mm safety corridor geometry, calm distance telemetry ('Дистанция: X.X мм' or 'Канал не размечен'), zero sirens/lecturing, kopeck-exact pricing",
     "Created apps/web/src/components/radiology/CbctImplantModal.tsx: dedicated 3D Implant Studio modal respecting Mandate 8e Doctor Autonomy (no disabled buttons, calm nerve telemetry, 1-click plan and 043/u diary export)",
-    "Created apps/web/src/components/radiology/__tests__/cbctImplantMath.test.ts: 11 tests verifying fixture catalog, safety corridor, calm nerve telemetry, and doctor autonomy",
-    "Created apps/web/src/components/radiology/__tests__/cbctVolume3DTorture.test.ts: 17 tests verifying ray-AABB analytical intersection, orthonormal rotation matrices, clipping boxes, safeDpr <= 1.5 clamp, and HU transfer presets",
-    "Executed test suites: 28/28 tests passed with Exit Code 0",
-    "Ran check:encoding: 6350 files verified with 0 errors (strict UTF-8 without BOM)"
+    "Enhanced CbctImplantModal.tsx to autonomously dispatch exportImplantToTreatmentPlan and exportImplantToDiary043 with full findings (brand, diameter, length, FDI tooth, angulation, nerve clearance)",
+    "Enhanced apps/web/src/components/treatment-plans/ctImplantIntegrationBridge.ts: exported BRAND_DEFAULTS for all 5 brands (Straumann, Nobel Biocare, Dentium, Osstem, MIS), added tierBrands override for Doctor Autonomy, reinforced 3-tier mapping (Premium, Optimum, Economy), preserved <= 800 lines limit (719 lines)",
+    "Created apps/web/src/components/treatment-plans/__tests__/ctImplantIntegrationBridge.test.ts: 12 tests verifying all 5 brands, 3 clinical tiers, Misch D1-D4 and HU density, calm nerve clearance telemetry, ACID kopeck exactness, and Mandate 8d zero cartoon emojis",
+    "Executed full test suite across all 5 test files: 86/86 tests passed with Exit Code 0",
+    "Ran npm run check:encoding: 6352 files checked, 0 errors (strict UTF-8 without BOM)"
   ],
-  "pending_steps": [
-    "Per-file git add of isolated scope",
-    "Send comprehensive report to parent orchestrator via send_message"
-  ],
+  "pending_steps": [],
   "findings": [
-    "Mathematical flaw in camera Up vector col1 in computeVolume3DRotationMatrix caused non-orthogonality (dot(col1, col2) = -2*sinP*cosP != 0). Corrected col1 signs to [-sinY*sinP, cosY*sinP, cosP] ensuring exact orthonormality for all arbitrary angles.",
-    "Retina/4K screens without safeDpr clamp caused high GPU fillrate stress. Clamped safeDpr <= 1.5.",
-    "Nerve safety metrics in implantLibrary.ts and CbctImplantModal.tsx now strictly follow Mandate 8e: zero audio sirens, zero caps-lock lecturing ('Дистанция: 1.8 мм' / 'Канал не размечен')."
+    "Camera rotation matrix bug: computeVolume3DRotationMatrix in CbctVolume3DViewport.tsx previously had incorrect signs in col1 (Up vector), causing dot(col1, col2) != 0 at non-zero pitch. Corrected to [-sinY*sinP, cosY*sinP, cosP], ensuring exact orthonormality.",
+    "Retina/4K screen fill-rate safeguard: clamped safeDpr <= 1.5 in CbctVolume3DViewport.tsx to prevent frame drops and GPU OOM on high-DPI displays.",
+    "Mandate 8e Doctor Autonomy & Calm Telemetry: strictly eliminated alarmist sirens and caps-lock lecturing. Nerve clearance displays calm metric 'Дистанция: X.X мм' or 'Канал не размечен', preserving non-blocking doctor workflows.",
+    "All 5 global brands (Straumann, Nobel Biocare, Dentium, Osstem, MIS) mapped cleanly to 3-tier treatment plan generator with price subordination and kopeck-exact ACID arithmetic.",
+    "All modified files strictly respect <= 800 lines mandate and strict UTF-8 encoding without BOM."
   ]
 }
