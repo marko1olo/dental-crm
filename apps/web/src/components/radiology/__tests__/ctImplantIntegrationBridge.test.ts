@@ -319,6 +319,9 @@ describe("Wave 28 Domain 2 — CT Implant Engine Integration Bridge", () => {
 			...MOCK_IMPLANT_PARAMS,
 			ridgeHeightMm: null,
 			ridgeWidthMm: null,
+			nerveClearanceMm: null,
+			mischClass: null,
+			meanHU: null,
 		};
 
 		it("buildImplantTreatmentPlanItem displays 'не измерялась (—)' and zero hardcoded 22.0/8.0 when unmeasured", () => {
@@ -328,13 +331,20 @@ describe("Wave 28 Domain 2 — CT Implant Engine Integration Bridge", () => {
 			assert.equal(rationale.includes("8.0"), false);
 			assert.match(rationale, /H: не измерялась \(—\)/);
 			assert.match(rationale, /W: не измерялась \(—\)/);
+			// Zero-falsification of IAN nerve clearance: never claim safe if unmeasured
+			assert.match(rationale, /Канал IAN: не измерялся \(—\) \(требуется разметка на КЛКТ\)/);
+			assert.equal(rationale.includes("норма безопасности соблюдена"), false);
 		});
 
-		it("buildImplantDiarySoapEntry displays 'замеры альвеолярного гребня штангенциркулем не проводились (—)' when unmeasured", () => {
+		it("buildImplantDiarySoapEntry displays honest unmeasured text without claiming intact canal", () => {
 			const soap = buildImplantDiarySoapEntry(UNMEASURED_PARAMS);
 			assert.equal(soap.statusLocalis.includes("22.0"), false);
 			assert.equal(soap.statusLocalis.includes("8.0"), false);
 			assert.match(soap.statusLocalis, /замеры альвеолярного гребня штангенциркулем не проводились \(—\)/);
+			// Zero-falsification of IAN nerve in Form 043/u
+			assert.match(soap.statusLocalis, /дистанция до нижнечелюстного канала не измерялась \(—\) \(требуется разметка канала IAN на КЛКТ\)/);
+			assert.equal(soap.statusLocalis.includes("без признаков перфорации"), false);
+			assert.equal(soap.statusLocalis.includes("норма безопасности соблюдена"), false);
 		});
 
 		it("exportImplantToScheduleDraft displays 'гребень: — (не измерялся)' when unmeasured", () => {
@@ -343,5 +353,47 @@ describe("Wave 28 Domain 2 — CT Implant Engine Integration Bridge", () => {
 			assert.equal(draft.notes.includes("8.0"), false);
 			assert.match(draft.notes, /гребень: — \(не измерялся\)/);
 		});
+
+		it("correctly outputs RED ALERT (<1.5 mm) in both Treatment Plan and Form 043/u", () => {
+			const dangerParams: CtImplantBridgeParams = {
+				...MOCK_IMPLANT_PARAMS,
+				nerveClearanceMm: 1.1,
+				isNerveDanger: true,
+			};
+			const planItem = buildImplantTreatmentPlanItem(dangerParams);
+			assert.match(planItem.clinicalRationale || "", /ВНИМАНИЕ: минимальный зазор до канала \(1\.1 мм, КРАСНАЯ ТРЕВОГА < 1\.5 мм\)!/);
+
+			const soap = buildImplantDiarySoapEntry(dangerParams);
+			assert.match(soap.statusLocalis, /КРАСНАЯ ТРЕВОГА: критический риск < 1\.5 мм, риск повреждения нерва и парестезии/);
+		});
+
+		it("correctly outputs YELLOW WARNING buffer (1.5..2.0 mm) per Misch CE standard", () => {
+			const warningParams: CtImplantBridgeParams = {
+				...MOCK_IMPLANT_PARAMS,
+				nerveClearanceMm: 1.8,
+				isNerveWarning: true,
+				isNerveDanger: false,
+			};
+			const planItem = buildImplantTreatmentPlanItem(warningParams);
+			assert.match(planItem.clinicalRationale || "", /Зазор до канала\/синуса: 1\.8 мм \(ЖЕЛТОЕ ПРЕДУПРЕЖДЕНИЕ: буфер 1\.5–2\.0 мм\)/);
+
+			const soap = buildImplantDiarySoapEntry(warningParams);
+			assert.match(soap.statusLocalis, /ЖЕЛТОЕ ПРЕДУПРЕЖДЕНИЕ: буферная зона 1\.5–2\.0 мм, рекомендован зазор >= 2\.0 мм/);
+		});
+
+		it("correctly outputs GREEN SAFE (>= 2.0 mm) confirming Misch CE standard adherence", () => {
+			const safeParams: CtImplantBridgeParams = {
+				...MOCK_IMPLANT_PARAMS,
+				nerveClearanceMm: 3.2,
+				isNerveWarning: false,
+				isNerveDanger: false,
+			};
+			const planItem = buildImplantTreatmentPlanItem(safeParams);
+			assert.match(planItem.clinicalRationale || "", /Зазор до канала\/синуса: 3\.2 мм/);
+
+			const soap = buildImplantDiarySoapEntry(safeParams);
+			assert.match(soap.statusLocalis, /3\.2 мм \(норма безопасности соблюдена\)/);
+		});
 	});
 });
+

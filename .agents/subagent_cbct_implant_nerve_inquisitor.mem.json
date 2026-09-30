@@ -1,0 +1,26 @@
+{
+  "role": "CBCT 3D Implant Safety Corridor & Mandibular Nerve Inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md",
+    "Read AGENTS.md",
+    "Reconnaissance of existing radiology modules (implantSafetyEngine.ts, ctImplantIntegrationBridge.ts, cbctOverlayMeasurementRenderers.ts, cbctCaliperNerveMath.ts)",
+    "Audit & Red Team Inquisitor analysis of mathematical calculations, clearance buffers, and Form 043/u text generation",
+    "Fixed critical malpractice bug in ctImplantIntegrationBridge.ts where unmeasured nerve status defaulted to 'Безопасная зона' and claimed 'без признаков перфорации'",
+    "Implemented calculateApexToNerve3DDistance in implantSafetyEngine.ts with exact 3D segment-to-point clamped Euclidean projection and canal radius deduction",
+    "Implemented auditMandibularNerveSafety3D assessing both implant apex and cylindrical body clearances against 3D nerve spline curve",
+    "Implemented getMischClinicalGuidance and MischClinicalGuidance interface in implantSafetyEngine.ts with strict insertion torque rules (D1/D2: 35-45 N*cm, D4: 25-35 N*cm) and surgical protocol warnings",
+    "Created apps/web/src/components/radiology/cbctOverlayRenderers.ts (< 500 lines) with pure 2D canvas overlay renderers: drawMandibularNerveCanal2D, drawVirtualImplantOverlay2D, drawMischBoneQualityHUD, drawNerveSafetyAlertBanner with 3-tier color gating (Red < 1.5mm, Yellow 1.5..2.0mm, Green >= 2.0mm, Cyan unmeasured)",
+    "Expanded test suites in implantProjectionSafety.test.ts and ctImplantIntegrationBridge.test.ts (55/55 tests passing cleanly)",
+    "Verified TypeScript compiler clean passing for all files in scope",
+    "Executed per-file git add for files in scope"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "BUG-IAN-01: In ctImplantIntegrationBridge.ts, line 102 defaulted nerveStatus to 'Безопасная зона' when nerveClearanceMm was null, and line 157 wrote 'Топографо-анатомические ориентиры без признаков перфорации' when the canal was never traced. Resolved: replaced with honest 'дистанция до нижнечелюстного канала не измерялась (—)' and 'Канал IAN: не измерялся (—)'.",
+    "BUG-IAN-02: When nerve clearance was below 1.5 mm (critical danger), Form 043/u previously printed '(норма безопасности соблюдена)'. Resolved: wired 3-tier status strings (<1.5 mm RED ALERT, 1.5..2.0 mm YELLOW WARNING, >=2.0 mm GREEN SAFE).",
+    "BUG-IAN-03: Single point or empty nerve markers previously defaulted to 'safe' in some calculations. Resolved: returns 'unmeasured' if nerve spline has < 2 points.",
+    "CYLINDER-BUFFER-01: Proximity of virtual implant body to nerve must account for implant radius (diameter/2) along the entire cylindrical body, not just the apex point. A vertical implant with apex 5 mm from canal center has only 1.6 mm body clearance (5 - 1.4 - 2.0 = 1.6 mm), which correctly triggers the Misch CE warning buffer (< 2.0 mm).",
+    "MISCH-TORQUE-01: D1/D2 requires 35-45 N*cm and copious 4°C irrigation with under-drilling prohibited to prevent thermal necrosis. D4 requires 25-35 N*cm with bone condensation protocol (osteotomes) and under-drilling to ensure primary stability."
+  ]
+}

@@ -5,6 +5,9 @@ import {
 	calculateAxialImplantIntersection,
 	calculateImplant3DWorldPose,
 	auditMandibularNerveSafety,
+	calculateApexToNerve3DDistance,
+	auditMandibularNerveSafety3D,
+	getMischClinicalGuidance,
 	performCbctPlanningAudit,
 	checkImplantSliceIntersection,
 	computeLiveImplantTelemetry,
@@ -12,6 +15,8 @@ import {
 	getMischProfile,
 	DEFAULT_SAFETY_THRESHOLDS,
 	MISCH_BONE_PROFILES,
+	MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
+	MANDIBULAR_NERVE_DANGER_THRESHOLD_MM,
 	findImplantSpec,
 	sampleCrossSectionHUProfile,
 	type CrossSectionImplantPose,
@@ -19,6 +24,13 @@ import {
 	type Vec3,
 	type VolumeSamplingData,
 } from "../implantSafetyEngine";
+import {
+	drawMandibularNerveCanal2D,
+	drawVirtualImplantOverlay2D,
+	drawMischBoneQualityHUD,
+	drawNerveSafetyAlertBanner,
+	OVERLAY_COLORS,
+} from "../cbctOverlayRenderers";
 import {
 	buildDentalArchCurve,
 	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
@@ -514,4 +526,259 @@ describe("Synchronized 4-Viewport Implant 3D Projection & Safety Sentinel Suite"
 			});
 		});
 	});
+
+	describe("6. 3D Mandibular Nerve Distance & Clearance Calculus", () => {
+		// Linear nerve segment along X axis: from (0, 10, -10) to (20, 10, -10), radius = 1.4 mm
+		const linearNerve = [
+			{ x: 0, y: 10, z: -10 },
+			{ x: 20, y: 10, z: -10 },
+		];
+
+		it("calculates exact 3D distance and flags GREEN SAFE (clearance >= 2.0 mm)", () => {
+			// Apex at (10, 10, -5.0) -> center distance is 5.0 mm -> net clearance = 5.0 - 1.4 = 3.6 mm
+			const res = calculateApexToNerve3DDistance({ x: 10, y: 10, z: -5.0 }, linearNerve, 1.4, 2.0);
+			assert.equal(res.distanceToCanalCenterMm, 5.0);
+			assert.equal(res.netClearanceToCanalWallMm, 3.6);
+			assert.equal(res.safetyStatus, "safe");
+			assert.equal(res.isDangerous, false);
+			assert.equal(res.isWarning, false);
+			assert.equal(res.shouldTriggerAudioAlarm, false);
+		});
+
+		it("flags YELLOW WARNING buffer when clearance is in 1.5..2.0 mm range", () => {
+			// Center distance = 3.2 mm -> net clearance = 3.2 - 1.4 = 1.8 mm (1.5 <= 1.8 < 2.0)
+			const res = calculateApexToNerve3DDistance({ x: 10, y: 10, z: -6.8 }, linearNerve, 1.4, 2.0);
+			assert.equal(res.distanceToCanalCenterMm, 3.2);
+			assert.equal(res.netClearanceToCanalWallMm, 1.8);
+			assert.equal(res.safetyStatus, "warning");
+			assert.equal(res.isWarning, true);
+			assert.equal(res.isDangerous, false);
+			assert.equal(res.shouldTriggerAudioAlarm, false);
+			assert.match(res.clinicalMessageRu, /ЖЕЛТОЕ ПРЕДУПРЕЖДЕНИЕ/);
+		});
+
+		it("flags RED ALERT when clearance is critical (< 1.5 mm) and arms audio alarm", () => {
+			// Center distance = 2.5 mm -> net clearance = 2.5 - 1.4 = 1.1 mm (< 1.5 mm)
+			const res = calculateApexToNerve3DDistance({ x: 10, y: 10, z: -7.5 }, linearNerve, 1.4, 2.0);
+			assert.equal(res.distanceToCanalCenterMm, 2.5);
+			assert.equal(res.netClearanceToCanalWallMm, 1.1);
+			assert.equal(res.safetyStatus, "danger");
+			assert.equal(res.isDangerous, true);
+			assert.equal(res.shouldTriggerAudioAlarm, true);
+			assert.match(res.clinicalMessageRu, /КРАСНАЯ ТРЕВОГА/);
+		});
+
+		it("detects direct canal collision / penetration when clearance < 0 mm", () => {
+			// Center distance = 0.5 mm -> net clearance = 0.5 - 1.4 = -0.9 mm
+			const res = calculateApexToNerve3DDistance({ x: 10, y: 10, z: -9.5 }, linearNerve, 1.4, 2.0);
+			assert.equal(res.distanceToCanalCenterMm, 0.5);
+			assert.equal(res.netClearanceToCanalWallMm, -0.9);
+			assert.equal(res.safetyStatus, "danger");
+			assert.equal(res.isDangerous, true);
+		});
+
+		it("handles clamped scalar projection when apex is beyond spline segment endpoints", () => {
+			// Apex at (30, 10, -10): beyond endpoint (20, 10, -10) by 10 mm
+			const res = calculateApexToNerve3DDistance({ x: 30, y: 10, z: -10 }, linearNerve, 1.4, 2.0);
+			assert.equal(res.distanceToCanalCenterMm, 10.0);
+			assert.equal(res.netClearanceToCanalWallMm, 8.6);
+			assert.equal(res.safetyStatus, "safe");
+		});
+
+		it("returns honest unmeasured status without throwing on empty or single-point nerve spline", () => {
+			const resEmpty = calculateApexToNerve3DDistance({ x: 10, y: 10, z: 0 }, [], 1.4, 2.0);
+			assert.equal(resEmpty.safetyStatus, "unmeasured");
+			assert.equal(resEmpty.isDangerous, false);
+
+			const resSingle = calculateApexToNerve3DDistance({ x: 10, y: 10, z: 0 }, [{ x: 0, y: 0, z: 0 }], 1.4, 2.0);
+			assert.equal(resSingle.safetyStatus, "unmeasured");
+		});
+
+		it("auditMandibularNerveSafety3D inspects both apex and body cylinder against nerve", () => {
+			// Case A: Implant safely placed with apex at (10, 10, -4.0) and entry at (10, 10, 6.0)
+			// Distance to canal center = 6.0 mm. Apex clearance = 4.6 mm. Body clearance = 6.0 - 1.4 - 2.0 = 2.6 mm (>= 2.0 mm SAFE)
+			const resSafe = auditMandibularNerveSafety3D(
+				{
+					entry3D: { x: 10, y: 10, z: 6.0 },
+					apex3D: { x: 10, y: 10, z: -4.0 },
+					lengthMm: 10.0,
+					diameterMm: 4.0,
+				},
+				linearNerve,
+				1.4,
+				2.0,
+			);
+			assert.equal(resSafe.apexClearanceMm, 4.6);
+			assert.equal(resSafe.bodyClearanceMm, 2.6);
+			assert.equal(resSafe.worstClearanceMm, 2.6);
+			assert.equal(resSafe.safetyStatus, "safe");
+			assert.equal(resSafe.isDangerous, false);
+
+			// Case B: Apex alone at (10, 10, -5.0) has 3.6 mm clearance, but the 2.0 mm cylinder radius
+			// leaves only 1.6 mm body clearance to the canal wall (triggers Misch WARNING buffer < 2.0 mm)
+			const resWarning = auditMandibularNerveSafety3D(
+				{
+					entry3D: { x: 10, y: 10, z: 5.0 },
+					apex3D: { x: 10, y: 10, z: -5.0 },
+					lengthMm: 10.0,
+					diameterMm: 4.0,
+				},
+				linearNerve,
+				1.4,
+				2.0,
+			);
+			assert.equal(resWarning.apexClearanceMm, 3.6);
+			assert.equal(resWarning.bodyClearanceMm, 1.6);
+			assert.equal(resWarning.worstClearanceMm, 1.6);
+			assert.equal(resWarning.safetyStatus, "warning");
+			assert.equal(resWarning.isWarning, true);
+		});
+
+		it("auditMandibularNerveSafety3D flags danger if tilted implant body approaches nerve", () => {
+			// Implant tilted such that body encroaches on nerve
+			const res = auditMandibularNerveSafety3D(
+				{
+					entry3D: { x: 10, y: 10, z: 5.0 },
+					apex3D: { x: 10, y: 10, z: -7.6 }, // apex clearance = 2.4 - 1.4 = 1.0 mm (< 1.5)
+					lengthMm: 12.6,
+					diameterMm: 4.0,
+				},
+				linearNerve,
+				1.4,
+				2.0,
+			);
+			assert.equal(res.isDangerous, true);
+			assert.equal(res.safetyStatus, "danger");
+			assert.equal(res.shouldTriggerAudioAlarm, true);
+		});
+	});
+
+	describe("7. Misch Bone Density Clinical Guidance & Torque Protocol", () => {
+		it("provides Misch D1 protocol: 35–45 N·cm, under-drilling forbidden, copious 4°C irrigation", () => {
+			const d1 = getMischClinicalGuidance("D1");
+			assert.equal(d1.boneClass, "D1");
+			assert.equal(d1.recommendedTorqueNcm, "35–45 Н·см");
+			assert.equal(d1.torqueMinNcm, 35);
+			assert.equal(d1.torqueMaxNcm, 45);
+			assert.equal(d1.isUnderdrillingAllowed, false);
+			assert.match(d1.drillingProtocolRu, /Протокол недопрепарирования исключен/);
+			assert.match(d1.riskWarningRu, /Риск перегрева кости/);
+		});
+
+		it("provides Misch D2 protocol: 35–45 N·cm, under-drilling forbidden", () => {
+			const d2 = getMischClinicalGuidance(1000); // 1000 HU -> D2
+			assert.equal(d2.boneClass, "D2");
+			assert.equal(d2.recommendedTorqueNcm, "35–45 Н·см");
+			assert.equal(d2.isUnderdrillingAllowed, false);
+		});
+
+		it("provides Misch D3 protocol: 25–35 N·cm, mild compression, under-drilling allowed", () => {
+			const d3 = getMischClinicalGuidance(500); // 500 HU -> D3
+			assert.equal(d3.boneClass, "D3");
+			assert.equal(d3.recommendedTorqueNcm, "25–35 Н·см");
+			assert.equal(d3.isUnderdrillingAllowed, true);
+		});
+
+		it("provides Misch D4 protocol: 25–35 N·cm, bone condensation via osteotomes, under-drilling allowed", () => {
+			const d4 = getMischClinicalGuidance("D4");
+			assert.equal(d4.boneClass, "D4");
+			assert.equal(d4.recommendedTorqueNcm, "25–35 Н·см");
+			assert.equal(d4.torqueMinNcm, 25);
+			assert.equal(d4.torqueMaxNcm, 35);
+			assert.equal(d4.isCondensationRequired, true);
+			assert.equal(d4.isUnderdrillingAllowed, true);
+			assert.match(d4.drillingProtocolRu, /конденсации кости/);
+			assert.match(d4.riskWarningRu, /риск недостаточной первичной стабильности/);
+		});
+
+		it("provides Misch D5 protocol: < 15 N·cm, GBR required before implantation", () => {
+			const d5 = getMischClinicalGuidance(50); // < 150 HU -> D5
+			assert.equal(d5.boneClass, "D5");
+			assert.equal(d5.recommendedTorqueNcm, "< 15 Н·см");
+			assert.equal(d5.isCondensationRequired, true);
+			assert.match(d5.drillingProtocolRu, /остеопластики/);
+		});
+
+		it("provides honest unmeasured profile when input is null, undefined, or unmeasured", () => {
+			const unmeas = getMischClinicalGuidance(null);
+			assert.equal(unmeas.boneClass, "unmeasured");
+			assert.equal(unmeas.recommendedTorqueNcm, "—");
+			assert.equal(unmeas.isUnderdrillingAllowed, false);
+			assert.match(unmeas.boneTypeRu, /Не определено/);
+		});
+	});
+
+	describe("8. CBCT 2D Canvas Overlay Renderers Suite", () => {
+		const createMockCanvasContext = (): CanvasRenderingContext2D =>
+			({
+				save: () => {},
+				restore: () => {},
+				beginPath: () => {},
+				closePath: () => {},
+				moveTo: () => {},
+				lineTo: () => {},
+				stroke: () => {},
+				fill: () => {},
+				arc: () => {},
+				rect: () => {},
+				roundRect: () => {},
+				fillText: () => {},
+				measureText: (text: string) => ({ width: text.length * 7 }),
+				setLineDash: () => {},
+			}) as unknown as CanvasRenderingContext2D;
+
+		it("drawMandibularNerveCanal2D executes without throwing in all safety states", () => {
+			const ctx = createMockCanvasContext();
+			const curve = [{ x: 50, y: 100 }, { x: 150, y: 120 }, { x: 250, y: 110 }];
+
+			assert.doesNotThrow(() => drawMandibularNerveCanal2D(ctx, { curvePoints: curve, clearanceMm: 3.5, implantApexPx: { x: 150, y: 80 } }));
+			assert.doesNotThrow(() => drawMandibularNerveCanal2D(ctx, { curvePoints: curve, clearanceMm: 1.8, implantApexPx: { x: 150, y: 105 } }));
+			assert.doesNotThrow(() => drawMandibularNerveCanal2D(ctx, { curvePoints: curve, clearanceMm: 0.9, implantApexPx: { x: 150, y: 115 } }));
+			assert.doesNotThrow(() => drawMandibularNerveCanal2D(ctx, { curvePoints: curve, clearanceMm: null }));
+		});
+
+		it("drawVirtualImplantOverlay2D executes without throwing across safe, danger, and selected states", () => {
+			const ctx = createMockCanvasContext();
+			assert.doesNotThrow(() =>
+				drawVirtualImplantOverlay2D(ctx, {
+					entryPx: { x: 150, y: 40 },
+					apexPx: { x: 150, y: 100 },
+					diameterPx: 16,
+					targetToothFdi: 46,
+					label: "Ø4.0×10.0",
+					clearanceMm: 3.2,
+					isSelected: false,
+					showSafetyHalo: true,
+					showCentralAxis: true,
+				}),
+			);
+			assert.doesNotThrow(() =>
+				drawVirtualImplantOverlay2D(ctx, {
+					entryPx: { x: 150, y: 40 },
+					apexPx: { x: 150, y: 100 },
+					diameterPx: 16,
+					targetToothFdi: 46,
+					label: "Ø4.0×10.0",
+					clearanceMm: 1.2,
+					isSelected: true,
+				}),
+			);
+		});
+
+		it("drawMischBoneQualityHUD renders both compact and expanded HUD cards", () => {
+			const ctx = createMockCanvasContext();
+			assert.doesNotThrow(() => drawMischBoneQualityHUD(ctx, { posPx: { x: 20, y: 20 }, boneClass: "D1", meanHU: 1350, compact: false }));
+			assert.doesNotThrow(() => drawMischBoneQualityHUD(ctx, { posPx: { x: 20, y: 20 }, boneClass: "D4", meanHU: 250, compact: true }));
+			assert.doesNotThrow(() => drawMischBoneQualityHUD(ctx, { posPx: { x: 20, y: 20 }, boneClass: null }));
+		});
+
+		it("drawNerveSafetyAlertBanner renders all 4 safety states with exact banner texts", () => {
+			const ctx = createMockCanvasContext();
+			assert.doesNotThrow(() => drawNerveSafetyAlertBanner(ctx, { posPx: { x: 200, y: 10 }, clearanceMm: null }));
+			assert.doesNotThrow(() => drawNerveSafetyAlertBanner(ctx, { posPx: { x: 200, y: 10 }, clearanceMm: 1.2, targetToothFdi: 46 }));
+			assert.doesNotThrow(() => drawNerveSafetyAlertBanner(ctx, { posPx: { x: 200, y: 10 }, clearanceMm: 1.8, targetToothFdi: 46 }));
+			assert.doesNotThrow(() => drawNerveSafetyAlertBanner(ctx, { posPx: { x: 200, y: 10 }, clearanceMm: 3.5, targetToothFdi: 46 }));
+		});
+	});
 });
+

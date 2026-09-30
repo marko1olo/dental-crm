@@ -37,7 +37,7 @@ export interface CtImplantBridgeParams {
 	readonly angulationDeg: number;
 	readonly ridgeHeightMm?: number | null | undefined;
 	readonly ridgeWidthMm?: number | null | undefined;
-	readonly mischClass: string;
+	readonly mischClass?: string | null | undefined;
 	readonly meanHU: number | null;
 	readonly nerveClearanceMm: number | null;
 	readonly recommendedTorqueNcm: string;
@@ -95,18 +95,20 @@ export function buildImplantTreatmentPlanItem(params: CtImplantBridgeParams): Tr
 	const diameterStr = params.implantSpec.diameterMm.toFixed(1);
 	const lengthStr = params.implantSpec.lengthMm.toFixed(1);
 
-	const nerveStatus = params.isNerveDanger
-		? "ВНИМАНИЕ: минимальный зазор до канала!"
-		: params.nerveClearanceMm !== null
-			? `Зазор до канала/синуса: ${params.nerveClearanceMm.toFixed(1)} мм`
-			: "Безопасная зона";
+	const nerveStatus = params.isNerveDanger || (params.nerveClearanceMm !== null && params.nerveClearanceMm < 1.5)
+		? `ВНИМАНИЕ: минимальный зазор до канала (${params.nerveClearanceMm !== null ? `${params.nerveClearanceMm.toFixed(1)} мм, ` : ""}КРАСНАЯ ТРЕВОГА < 1.5 мм)!`
+		: params.isNerveWarning || (params.nerveClearanceMm !== null && params.nerveClearanceMm < 2.0)
+			? `Зазор до канала/синуса: ${params.nerveClearanceMm!.toFixed(1)} мм (ЖЕЛТОЕ ПРЕДУПРЕЖДЕНИЕ: буфер 1.5–2.0 мм)`
+			: params.nerveClearanceMm !== null
+				? `Зазор до канала/синуса: ${params.nerveClearanceMm.toFixed(1)} мм`
+				: "Канал IAN: не измерялся (—) (требуется разметка на КЛКТ)";
 
 	const ridgeHStr = typeof params.ridgeHeightMm === "number" ? `H=${params.ridgeHeightMm.toFixed(1)} мм` : "H: не измерялась (—)";
 	const ridgeWStr = typeof params.ridgeWidthMm === "number" ? `W=${params.ridgeWidthMm.toFixed(1)} мм` : "W: не измерялась (—)";
 
 	const clinicalRationale =
 		`КЛКТ-замеры (FDI #${params.toothFdi}): гребень ${ridgeHStr}, ` +
-		`${ridgeWStr}. Плотность кости: ${params.mischClass} ` +
+		`${ridgeWStr}. Плотность кости: ${params.mischClass ?? "не измерялась"} ` +
 		`(${params.meanHU !== null ? `${params.meanHU} HU` : "D3"}). ${nerveStatus}. ` +
 		`Торк фиксации: ${params.recommendedTorqueNcm}.`;
 
@@ -148,13 +150,20 @@ export function buildImplantDiarySoapEntry(params: CtImplantBridgeParams): Impla
 					? `высота альвеолярного гребня не измерялась (—), ширина ${params.ridgeWidthMm!.toFixed(1)} мм`
 					: "замеры альвеолярного гребня штангенциркулем не проводились (—)";
 
+	const nerveLocalis =
+		params.nerveClearanceMm !== null
+			? params.isNerveDanger || params.nerveClearanceMm < 1.5
+				? `Расстояние от апекса до нижнечелюстного канала / дна верхнечелюстного синуса: ${params.nerveClearanceMm.toFixed(1)} мм (КРАСНАЯ ТРЕВОГА: критический риск < 1.5 мм, риск повреждения нерва и парестезии).`
+				: params.isNerveWarning || params.nerveClearanceMm < 2.0
+					? `Расстояние от апекса до нижнечелюстного канала / дна верхнечелюстного синуса: ${params.nerveClearanceMm.toFixed(1)} мм (ЖЕЛТОЕ ПРЕДУПРЕЖДЕНИЕ: буферная зона 1.5–2.0 мм, рекомендован зазор >= 2.0 мм).`
+					: `Расстояние от апекса до нижнечелюстного канала / дна верхнечелюстного синуса: ${params.nerveClearanceMm.toFixed(1)} мм (норма безопасности соблюдена).`
+			: "дистанция до нижнечелюстного канала не измерялась (—) (требуется разметка канала IAN на КЛКТ).";
+
 	const statusLocalis =
 		`КЛКТ-диагностика области отсутствующего зуба #${params.toothFdi}: ` +
 		`${ridgeLocalis}. Тип архитектоники костной ткани по Misch: ` +
-		`${params.mischClass} (${params.meanHU !== null ? `${params.meanHU} HU` : "норма"}). ` +
-		(params.nerveClearanceMm !== null
-			? `Расстояние от апекса до нижнечелюстного канала / дна верхнечелюстного синуса: ${params.nerveClearanceMm.toFixed(1)} мм (норма безопасности соблюдена).`
-			: "Топографо-анатомические ориентиры без признаков перфорации кортикальной пластинки.");
+		`${params.mischClass ?? "не измерялась"} (${params.meanHU !== null ? `${params.meanHU} HU` : "не измерялась"}). ` +
+		nerveLocalis;
 
 	const treatmentDescription =
 		`Протокол 3D КЛКТ-планирования дентальной имплантации (зуб #${params.toothFdi}):\n` +

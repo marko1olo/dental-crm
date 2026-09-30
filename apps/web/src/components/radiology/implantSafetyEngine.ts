@@ -56,6 +56,7 @@ import {
 	type MischClassificationResult,
 } from "./boneDensityMischMath";
 import { MANDIBULAR_NERVE_SAFETY_MARGIN_MM } from "./cbctCaliperNerveMath";
+export { MANDIBULAR_NERVE_SAFETY_MARGIN_MM };
 import {
 	type CbctVoxelVolume,
 	type Point3D,
@@ -416,6 +417,452 @@ export function auditMandibularNerveSafety(
 		closestNervePoint: { x: closestNerveX, y: closestNerveY },
 		clinicalMessageRu: message,
 	};
+}
+
+// ─── 3D APEX-TO-NERVE DISTANCE & AUDIT MATH ─────────────────────────────────
+
+export interface ApexToNerve3DResult {
+	readonly distanceToCanalCenterMm: number;
+	readonly netClearanceToCanalWallMm: number;
+	readonly netClearanceToSafetyCorridorMm: number;
+	readonly safetyStatus: "safe" | "warning" | "danger" | "unmeasured";
+	readonly isDangerous: boolean;
+	readonly isWarning: boolean;
+	readonly isSafe: boolean;
+	readonly shouldTriggerAudioAlarm: boolean;
+	readonly closestApexPoint: { readonly x: number; readonly y: number; readonly z: number };
+	readonly closestNervePoint: { readonly x: number; readonly y: number; readonly z: number };
+	readonly closestSegmentIndex: number;
+	readonly canalRadiusMm: number;
+	readonly safetyMarginMm: number;
+	readonly clinicalMessageRu: string;
+}
+
+export interface NerveSafetyAuditResult3D extends NerveSafetyAuditResult {
+	readonly apex3D: { readonly x: number; readonly y: number; readonly z: number };
+	readonly closestNervePoint3D: { readonly x: number; readonly y: number; readonly z: number };
+	readonly apexClearanceMm: number;
+	readonly bodyClearanceMm: number;
+	readonly worstClearanceMm: number;
+	readonly isApexAtRisk: boolean;
+	readonly isBodyAtRisk: boolean;
+}
+
+/**
+ * Calculates shortest 3D physical distance from implant apex to mandibular nerve 3D spline.
+ * Clinical thresholds:
+ * - Net clearance < 1.5 mm: RED ALERT (Critical collision risk / nerve damaged or in peril).
+ * - Net clearance 1.5..2.0 mm: YELLOW WARNING (Warning buffer zone).
+ * - Net clearance >= 2.0 mm: GREEN SAFE (Safe margin per Misch standard).
+ */
+export function calculateApexToNerve3DDistance(
+	apex3D: Point3D | Vec3 | { readonly x: number; readonly y: number; readonly z: number },
+	nerveSplinePoints: readonly (Point3D | Vec3 | { readonly x: number; readonly y: number; readonly z: number })[],
+	canalRadiusMm = 1.4,
+	safetyMarginMm = MANDIBULAR_NERVE_SAFETY_MARGIN_MM,
+	apexRadiusMm = 0,
+): ApexToNerve3DResult {
+	const ax = Array.isArray(apex3D) ? apex3D[0] : apex3D.x;
+	const ay = Array.isArray(apex3D) ? apex3D[1] : apex3D.y;
+	const az = Array.isArray(apex3D) ? apex3D[2] : apex3D.z;
+
+	if (!nerveSplinePoints || nerveSplinePoints.length < 2) {
+		return {
+			distanceToCanalCenterMm: 0,
+			netClearanceToCanalWallMm: 0,
+			netClearanceToSafetyCorridorMm: 0,
+			safetyStatus: "unmeasured",
+			isDangerous: false,
+			isWarning: false,
+			isSafe: false,
+			shouldTriggerAudioAlarm: false,
+			closestApexPoint: { x: ax, y: ay, z: az },
+			closestNervePoint: { x: 0, y: 0, z: 0 },
+			closestSegmentIndex: -1,
+			canalRadiusMm,
+			safetyMarginMm,
+			clinicalMessageRu: "Нижнечелюстной канал не размечен на 3D КЛКТ (требуется трассировка IAN)",
+		};
+	}
+
+	const pts = nerveSplinePoints.map((p) => ({
+		x: Array.isArray(p) ? p[0] : p.x,
+		y: Array.isArray(p) ? p[1] : p.y,
+		z: Array.isArray(p) ? p[2] : p.z,
+	}));
+
+	let minDistance = Number.POSITIVE_INFINITY;
+	let closestPoint = { x: pts[0]!.x, y: pts[0]!.y, z: pts[0]!.z };
+	let closestSegIdx = 0;
+
+	if (pts.length === 1) {
+		const p0 = pts[0]!;
+		minDistance = Math.hypot(ax - p0.x, ay - p0.y, az - p0.z);
+		closestPoint = p0;
+	} else {
+		for (let i = 0; i < pts.length - 1; i++) {
+			const p1 = pts[i]!;
+			const p2 = pts[i + 1]!;
+			const dx = p2.x - p1.x;
+			const dy = p2.y - p1.y;
+			const dz = p2.z - p1.z;
+			const lenSq = dx * dx + dy * dy + dz * dz;
+
+			let segDist = 0;
+			let proj = { x: p1.x, y: p1.y, z: p1.z };
+
+			if (lenSq < 0.00001) {
+				segDist = Math.hypot(ax - p1.x, ay - p1.y, az - p1.z);
+			} else {
+				const t = Math.max(0, Math.min(1, ((ax - p1.x) * dx + (ay - p1.y) * dy + (az - p1.z) * dz) / lenSq));
+				proj = {
+					x: p1.x + t * dx,
+					y: p1.y + t * dy,
+					z: p1.z + t * dz,
+				};
+				segDist = Math.hypot(ax - proj.x, ay - proj.y, az - proj.z);
+			}
+
+			if (segDist < minDistance) {
+				minDistance = segDist;
+				closestPoint = proj;
+				closestSegIdx = i;
+			}
+		}
+	}
+
+	const distCenterToApex = Math.round(minDistance * 100) / 100;
+	const netClearanceWall = Math.round((distCenterToApex - canalRadiusMm - apexRadiusMm) * 100) / 100;
+	const netClearanceSafety = Math.round((netClearanceWall - safetyMarginMm) * 100) / 100;
+
+	let status: "safe" | "warning" | "danger" = "safe";
+	let message = "";
+	let audioAlarm = false;
+
+	if (netClearanceWall < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM) {
+		status = "danger";
+		audioAlarm = true;
+		if (netClearanceWall <= 0) {
+			message = `КРАСНАЯ ТРЕВОГА (CRITICAL COLLISION RISK): ПЕРФОРАЦИЯ НИЖНЕЧЕЛЮСТНОГО КАНАЛА (зазор ${netClearanceWall.toFixed(1)} мм). Нерв поврежден! Срочно уменьшите длину или измените наклон имплантата.`;
+		} else {
+			message = `КРАСНАЯ ТРЕВОГА (CRITICAL COLLISION RISK): дистанция от апекса до нерва ${netClearanceWall.toFixed(1)} мм (< 1.5 мм). Нерв в критической опасности! Высокий риск нейропатии и парестезии нижней губы.`;
+		}
+	} else if (netClearanceWall < MANDIBULAR_NERVE_SAFETY_MARGIN_MM) {
+		status = "warning";
+		audioAlarm = false;
+		message = `ЖЕЛТОЕ ПРЕДУПРЕЖДЕНИЕ (WARNING BUFFER ZONE): дистанция от апекса до нерва ${netClearanceWall.toFixed(1)} мм (буфер 1.5–2.0 мм). Рекомендуемый запас не менее 2.0 мм по стандарту Misch.`;
+	} else {
+		status = "safe";
+		audioAlarm = false;
+		message = `ЗЕЛЕНАЯ ЗОНА БЕЗОПАСНОСТИ (SAFE MARGIN): дистанция от апекса до нерва ${netClearanceWall.toFixed(1)} мм (соответствует хирургическому стандарту >= 2.0 мм).`;
+	}
+
+	return {
+		distanceToCanalCenterMm: distCenterToApex,
+		netClearanceToCanalWallMm: netClearanceWall,
+		netClearanceToSafetyCorridorMm: netClearanceSafety,
+		safetyStatus: status,
+		isDangerous: status === "danger",
+		isWarning: status === "warning",
+		isSafe: status === "safe",
+		shouldTriggerAudioAlarm: audioAlarm,
+		closestApexPoint: { x: Number(ax.toFixed(2)), y: Number(ay.toFixed(2)), z: Number(az.toFixed(2)) },
+		closestNervePoint: {
+			x: Number(closestPoint.x.toFixed(2)),
+			y: Number(closestPoint.y.toFixed(2)),
+			z: Number(closestPoint.z.toFixed(2)),
+		},
+		closestSegmentIndex: closestSegIdx,
+		canalRadiusMm,
+		safetyMarginMm,
+		clinicalMessageRu: message,
+	};
+}
+
+/**
+ * Performs comprehensive 3D safety audit of a virtual implant against 3D mandibular nerve spline.
+ * Assesses both apical tip and cylindrical body clearances.
+ */
+export function auditMandibularNerveSafety3D(
+	implant3D: Implant3DWorldProjection | {
+		readonly entry3D: Point3D | Vec3 | { readonly x: number; readonly y: number; readonly z: number };
+		readonly apex3D: Point3D | Vec3 | { readonly x: number; readonly y: number; readonly z: number };
+		readonly diameterMm?: number;
+		readonly apexDiameterMm?: number;
+		readonly platformDiameterMm?: number;
+	},
+	nerveSpline: readonly (Point3D | Vec3 | { readonly x: number; readonly y: number; readonly z: number })[] | {
+		readonly points: readonly (Point3D | Vec3 | { readonly x: number; readonly y: number; readonly z: number })[];
+		readonly radius?: number;
+		readonly safetyMarginMm?: number;
+	} | null | undefined,
+	optionsOrCanalRadius?: {
+		readonly canalRadiusMm?: number;
+		readonly safetyMarginMm?: number;
+	} | number,
+	safetyMarginMmArg?: number,
+): NerveSafetyAuditResult3D {
+	let rawPoints: readonly (Point3D | Vec3 | { readonly x: number; readonly y: number; readonly z: number })[] | undefined;
+	let canalRadiusMm = 1.4;
+	let safetyMarginMm = MANDIBULAR_NERVE_SAFETY_MARGIN_MM;
+
+	if (Array.isArray(nerveSpline)) {
+		rawPoints = nerveSpline;
+	} else if (nerveSpline && "points" in nerveSpline && Array.isArray(nerveSpline.points)) {
+		rawPoints = nerveSpline.points;
+		if (typeof nerveSpline.radius === "number") canalRadiusMm = nerveSpline.radius;
+		if (typeof nerveSpline.safetyMarginMm === "number") safetyMarginMm = nerveSpline.safetyMarginMm;
+	}
+
+	if (typeof optionsOrCanalRadius === "number") {
+		canalRadiusMm = optionsOrCanalRadius;
+		if (typeof safetyMarginMmArg === "number") {
+			safetyMarginMm = safetyMarginMmArg;
+		}
+	} else if (optionsOrCanalRadius && typeof optionsOrCanalRadius === "object") {
+		if (typeof optionsOrCanalRadius.canalRadiusMm === "number") canalRadiusMm = optionsOrCanalRadius.canalRadiusMm;
+		if (typeof optionsOrCanalRadius.safetyMarginMm === "number") safetyMarginMm = optionsOrCanalRadius.safetyMarginMm;
+	}
+
+	const apexPt = "apex3D" in implant3D ? implant3D.apex3D : { x: 0, y: 0, z: 0 };
+	const entryPt = "entry3D" in implant3D ? implant3D.entry3D : { x: 0, y: 0, z: 0 };
+
+	const ax = Array.isArray(apexPt) ? apexPt[0] : apexPt.x;
+	const ay = Array.isArray(apexPt) ? apexPt[1] : apexPt.y;
+	const az = Array.isArray(apexPt) ? apexPt[2] : apexPt.z;
+
+	const ex = Array.isArray(entryPt) ? entryPt[0] : entryPt.x;
+	const ey = Array.isArray(entryPt) ? entryPt[1] : entryPt.y;
+	const ez = Array.isArray(entryPt) ? entryPt[2] : entryPt.z;
+
+	if (!rawPoints || rawPoints.length === 0) {
+		const unmeasured2D = createUnmeasuredNerveSafety();
+		return {
+			...unmeasured2D,
+			apex3D: { x: ax, y: ay, z: az },
+			closestNervePoint3D: { x: 0, y: 0, z: 0 },
+			apexClearanceMm: 0,
+			bodyClearanceMm: 0,
+			worstClearanceMm: 0,
+			isApexAtRisk: false,
+			isBodyAtRisk: false,
+		};
+	}
+
+	const implantRadius = (implant3D.diameterMm ?? 4.0) / 2.0;
+
+	// 1. Apex clearance
+	const apexResult = calculateApexToNerve3DDistance(
+		{ x: ax, y: ay, z: az },
+		rawPoints,
+		canalRadiusMm,
+		safetyMarginMm,
+		0,
+	);
+
+	// 2. Body cylinder clearance (segment-to-segment)
+	const pts = rawPoints.map((p) => ({
+		x: Array.isArray(p) ? p[0] : p.x,
+		y: Array.isArray(p) ? p[1] : p.y,
+		z: Array.isArray(p) ? p[2] : p.z,
+	}));
+
+	let minBodyDist = Number.POSITIVE_INFINITY;
+	let closestBodyNervePt = apexResult.closestNervePoint;
+
+	const implantDx = ax - ex;
+	const implantDy = ay - ey;
+	const implantDz = az - ez;
+	const implantLenSq = implantDx * implantDx + implantDy * implantDy + implantDz * implantDz;
+
+	for (let i = 0; i < pts.length - 1; i++) {
+		const s1 = pts[i]!;
+		const s2 = pts[i + 1]!;
+		const segDx = s2.x - s1.x;
+		const segDy = s2.y - s1.y;
+		const segDz = s2.z - s1.z;
+
+		for (let step = 0; step <= 4; step++) {
+			const st = step / 4;
+			const npx = s1.x + st * segDx;
+			const npy = s1.y + st * segDy;
+			const npz = s1.z + st * segDz;
+
+			let it = 0;
+			if (implantLenSq > 0.00001) {
+				it = Math.max(0, Math.min(1, ((npx - ex) * implantDx + (npy - ey) * implantDy + (npz - ez) * implantDz) / implantLenSq));
+			}
+			const ipx = ex + it * implantDx;
+			const ipy = ey + it * implantDy;
+			const ipz = ez + it * implantDz;
+
+			const dist = Math.hypot(npx - ipx, npy - ipy, npz - ipz);
+			if (dist < minBodyDist) {
+				minBodyDist = dist;
+				closestBodyNervePt = { x: npx, y: npy, z: npz };
+			}
+		}
+	}
+
+	const netBodyClearance = Math.round((minBodyDist - canalRadiusMm - implantRadius) * 100) / 100;
+	const worstClearance = Math.min(apexResult.netClearanceToCanalWallMm, netBodyClearance);
+
+	const isDanger = worstClearance < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM;
+	const isWarning = !isDanger && worstClearance < safetyMarginMm;
+	const status: "safe" | "warning" | "danger" = isDanger ? "danger" : isWarning ? "warning" : "safe";
+
+	let clinicalMsg = apexResult.clinicalMessageRu;
+	if (netBodyClearance < apexResult.netClearanceToCanalWallMm && isDanger) {
+		clinicalMsg = `КРАСНАЯ ТРЕВОГА (CRITICAL COLLISION RISK): боковая стенка имплантата приближается к каналу на ${netBodyClearance.toFixed(1)} мм (< 1.5 мм)!`;
+	}
+
+	return {
+		distanceToCanalCenterMm: apexResult.distanceToCanalCenterMm,
+		netClearanceToCanalWallMm: worstClearance,
+		netClearanceToSafetyCorridorMm: Math.round((worstClearance - safetyMarginMm) * 100) / 100,
+		safetyStatus: status,
+		isDangerous: isDanger,
+		isWarning,
+		shouldTriggerAudioAlarm: isDanger,
+		closestImplantPoint: { x: Number(ax.toFixed(2)), y: Number(ay.toFixed(2)) },
+		closestNervePoint: { x: Number(apexResult.closestNervePoint.x.toFixed(2)), y: Number(apexResult.closestNervePoint.y.toFixed(2)) },
+		clinicalMessageRu: clinicalMsg,
+		apex3D: { x: ax, y: ay, z: az },
+		closestNervePoint3D: closestBodyNervePt,
+		apexClearanceMm: apexResult.netClearanceToCanalWallMm,
+		bodyClearanceMm: netBodyClearance,
+		worstClearanceMm: worstClearance,
+		isApexAtRisk: apexResult.netClearanceToCanalWallMm < safetyMarginMm,
+		isBodyAtRisk: netBodyClearance < safetyMarginMm,
+	};
+}
+
+// ─── MISCH BONE DENSITY CLINICAL GUIDANCE & TORQUE PROTOCOL ─────────────────
+
+export interface MischClinicalGuidance {
+	readonly boneClass: BoneClass | "D5" | "unmeasured";
+	readonly huRange: string;
+	readonly boneTypeRu: string;
+	readonly anatomicalLocationRu: string;
+	readonly recommendedTorqueNcm: string;
+	readonly torqueMinNcm: number;
+	readonly torqueMaxNcm: number;
+	readonly drillingProtocolRu: string;
+	readonly riskWarningRu: string;
+	readonly isUnderdrillingAllowed: boolean;
+	readonly isCondensationRequired: boolean;
+}
+
+/**
+ * Returns clinical Misch bone density profile with exact insertion torque guidelines and risks.
+ * Clinical Standards:
+ * - D1 (> 1250 HU): 35-45 N*cm (risk of bone overheating, underdrilling excluded, copious irrigation 4°C).
+ * - D2 (850..1250 HU): 35-45 N*cm (risk of bone overheating, underdrilling excluded, copious irrigation).
+ * - D3 (350..850 HU): 25-35 N*cm (standard / mild condensation).
+ * - D4 (150..350 HU): 25-35 N*cm (bone condensation protocol, risk of insufficient primary stability).
+ */
+export function getMischClinicalGuidance(
+	boneClassOrHU: BoneClass | string | number | null | undefined,
+): MischClinicalGuidance {
+	let cls = "unmeasured";
+
+	if (typeof boneClassOrHU === "number") {
+		if (boneClassOrHU > 1250) cls = "D1";
+		else if (boneClassOrHU >= 850) cls = "D2";
+		else if (boneClassOrHU >= 350) cls = "D3";
+		else if (boneClassOrHU >= 150) cls = "D4";
+		else cls = "D5";
+	} else if (typeof boneClassOrHU === "string") {
+		cls = boneClassOrHU.trim().toUpperCase();
+	}
+
+	switch (cls) {
+		case "D1":
+			return {
+				boneClass: "D1",
+				huRange: "> 1250 HU",
+				boneTypeRu: "Плотная кортикальная кость",
+				anatomicalLocationRu: "Передний отдел нижней челюсти (симфиз)",
+				recommendedTorqueNcm: "35–45 Н·см",
+				torqueMinNcm: 35,
+				torqueMaxNcm: 45,
+				drillingProtocolRu: "Протокол недопрепарирования исключен, нарезание резьбы метчиком на всю глубину, обильная ирригация стерильным физраствором 4°C",
+				riskWarningRu: "Риск перегрева кости (термонекроз при сверлении), протокол недопрепарирования исключен, обильная ирригация",
+				isUnderdrillingAllowed: false,
+				isCondensationRequired: false,
+			};
+		case "D2":
+			return {
+				boneClass: "D2",
+				huRange: "850–1250 HU",
+				boneTypeRu: "Плотная пористая кость (губчатая + кортикальная)",
+				anatomicalLocationRu: "Нижняя челюсть, боковые отделы; передний отдел верхней челюсти",
+				recommendedTorqueNcm: "35–45 Н·см",
+				torqueMinNcm: 35,
+				torqueMaxNcm: 45,
+				drillingProtocolRu: "Стандартный хирургический протокол, протокол недопрепарирования исключен, обильная ирригация",
+				riskWarningRu: "Риск перегрева кости, протокол недопрепарирования исключен, обильная ирригация",
+				isUnderdrillingAllowed: false,
+				isCondensationRequired: false,
+			};
+		case "D3":
+			return {
+				boneClass: "D3",
+				huRange: "350–850 HU",
+				boneTypeRu: "Тонкая пористая кость",
+				anatomicalLocationRu: "Верхняя челюсть; боковые отделы нижней челюсти",
+				recommendedTorqueNcm: "25–35 Н·см",
+				torqueMinNcm: 25,
+				torqueMaxNcm: 35,
+				drillingProtocolRu: "Щадящее препарирование без кортикального метчика, умеренная компрессия кости",
+				riskWarningRu: "Умеренная первичная стабильность",
+				isUnderdrillingAllowed: true,
+				isCondensationRequired: false,
+			};
+		case "D4":
+			return {
+				boneClass: "D4",
+				huRange: "150–350 HU",
+				boneTypeRu: "Мягкая губчатая кость",
+				anatomicalLocationRu: "Бугры верхней челюсти",
+				recommendedTorqueNcm: "25–35 Н·см",
+				torqueMinNcm: 25,
+				torqueMaxNcm: 35,
+				drillingProtocolRu: "Протокол конденсации кости (остеотомы / биконденсация), недопрепарирование ложа (under-drilling)",
+				riskWarningRu: "Протокол конденсации кости, риск недостаточной первичной стабильности",
+				isUnderdrillingAllowed: true,
+				isCondensationRequired: true,
+			};
+		case "D5":
+			return {
+				boneClass: "D5",
+				huRange: "< 150 HU",
+				boneTypeRu: "Экстремально мягкая кость / дефицит минерализации",
+				anatomicalLocationRu: "Зоны недавней экстракции, выраженная атрофия",
+				recommendedTorqueNcm: "< 15 Н·см",
+				torqueMinNcm: 5,
+				torqueMaxNcm: 15,
+				drillingProtocolRu: "Прямая имплантация противопоказана без предварительной остеопластики (GBR)",
+				riskWarningRu: "Высокий риск дезинтеграции, первичная стабильность не гарантирована",
+				isUnderdrillingAllowed: true,
+				isCondensationRequired: true,
+			};
+		case "unmeasured":
+		default:
+			return {
+				boneClass: "unmeasured",
+				huRange: "Не измерялась",
+				boneTypeRu: "Не определено (требуется КЛКТ)",
+				anatomicalLocationRu: "Требуется исследование КЛКТ",
+				recommendedTorqueNcm: "—",
+				torqueMinNcm: 0,
+				torqueMaxNcm: 0,
+				drillingProtocolRu: "Стандартный хирургический протокол (ожидает данных КЛКТ)",
+				riskWarningRu: "Параметры плотности кости не измерены",
+				isUnderdrillingAllowed: false,
+				isCondensationRequired: false,
+			};
+	}
 }
 
 // ─── ALVEOLAR BONE ENVELOPE CONTAINMENT ──────────────────────────────────────
