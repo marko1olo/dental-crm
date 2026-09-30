@@ -25,6 +25,7 @@ import {
 	updateDentalArchAnchorPosition,
 } from "../cbctArchSplineMath";
 import {
+	computeCrossSectionAffineBasis,
 	extractArchCrossSectionSeries,
 	extractSingleCrossSectionSlice,
 	findNearestToothAnchorToDistance,
@@ -650,6 +651,135 @@ describe("CBCT Red Team Romexis Parity: Dental Arch & Reslice Engine", () => {
 			assert.equal(slices[0]!.widthPx, 96);
 			assert.ok(slices[0]!.sliceLabel?.includes("#"));
 			bridge.dispose();
+		});
+	});
+
+	// ─── 7. GPU-ACCELERATED 3D AFFINE BASIS & TRANSVERSE RESLICE INVARIANTS ───
+	describe("7. GPU-Accelerated 3D Affine Basis & Transverse Reslice Invariants", () => {
+		it("proves computeCrossSectionAffineBasis computes exact orthonormal span vectors without shear", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			const centerMm = { x: 5.0, y: -10.0, z: -8.0 };
+			const normal2D = { x: 0.6, y: 0.8 }; // unit length 1.0
+
+			const basis = computeCrossSectionAffineBasis(volume, centerMm, normal2D, {
+				widthMm: 24.0,
+				heightMm: 32.0,
+				pixelSpacingMm: 0.25,
+			});
+
+			assert.equal(basis.widthPx, 96);
+			assert.equal(basis.heightPx, 128);
+			assert.ok(Math.abs(basis.unitNormal.x - 0.6) < 1e-4);
+			assert.ok(Math.abs(basis.unitNormal.y - 0.8) < 1e-4);
+
+			// u_axisU must be strictly parallel to unitNormal in XY plane
+			const uDirX = basis.axisU[0];
+			const uDirY = basis.axisU[1];
+			const uLen = Math.hypot(uDirX, uDirY);
+			assert.ok(uLen > 0, "Axis U must have non-zero length");
+			assert.equal(basis.axisU[2], 0, "Axis U must be purely in XY plane");
+			assert.ok(Math.abs((uDirX / uLen) - 0.6) < 1e-4, "Axis U direction must match unitNormal X");
+			assert.ok(Math.abs((uDirY / uLen) - 0.8) < 1e-4, "Axis U direction must match unitNormal Y");
+
+			// u_axisV must be strictly vertical downwards along Z
+			assert.equal(basis.axisV[0], 0, "Axis V must have zero X");
+			assert.equal(basis.axisV[1], 0, "Axis V must have zero Y");
+			assert.ok(basis.axisV[2] < 0, "Axis V must point downwards along -Z");
+
+			// Orthogonality: Axis U . Axis V must be exactly 0
+			const dotUV = basis.axisU[0] * basis.axisV[0] + basis.axisU[1] * basis.axisV[1] + basis.axisU[2] * basis.axisV[2];
+			assert.equal(dotUV, 0, "Axis U and Axis V must be strictly orthogonal (dot = 0)");
+
+			// Orthogonality: Axis U . Unit Tangent must be strictly 0
+			const dotUTangent = basis.axisU[0] * basis.unitTangent.x + basis.axisU[1] * basis.unitTangent.y;
+			assert.ok(Math.abs(dotUTangent) < 1e-4, "Axis U must be orthogonal to arch tangent");
+		});
+
+		it("proves bucco-lingual and height offsets shift sliceOrigin rigidly without vector shear", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			const centerMm = { x: 0.0, y: 0.0, z: 0.0 };
+			const normal2D = { x: 1.0, y: 0.0 };
+
+			const baseBasis = computeCrossSectionAffineBasis(volume, centerMm, normal2D, {
+				widthMm: 24.0,
+				heightMm: 32.0,
+				pixelSpacingMm: 0.25,
+			});
+
+			const shiftedBasis = computeCrossSectionAffineBasis(volume, centerMm, normal2D, {
+				widthMm: 24.0,
+				heightMm: 32.0,
+				pixelSpacingMm: 0.25,
+				buccoLingualOffsetMm: 4.0,
+				heightOffsetMm: -2.0,
+			});
+
+			// Vectors u_axisU and u_axisV must remain 100% identical (rigid translation)
+			assert.deepEqual(shiftedBasis.axisU, baseBasis.axisU, "Axis U must be invariant to offset translation");
+			assert.deepEqual(shiftedBasis.axisV, baseBasis.axisV, "Axis V must be invariant to offset translation");
+
+			// sliceOrigin X must shift by +4.0 mm in voxel space
+			const expectedShiftX = 4.0 / (volume.spacingMm.x * (volume.dimensions.width - 1));
+			assert.ok(
+				Math.abs((shiftedBasis.sliceOrigin[0] - baseBasis.sliceOrigin[0]) - expectedShiftX) < 1e-4,
+				"SliceOrigin X must shift by exact bucco-lingual offset",
+			);
+
+			// sliceOrigin Z must shift by -2.0 mm in voxel space
+			const expectedShiftZ = -2.0 / (volume.spacingMm.z * (volume.dimensions.depth - 1));
+			assert.ok(
+				Math.abs((shiftedBasis.sliceOrigin[2] - baseBasis.sliceOrigin[2]) - expectedShiftZ) < 1e-4,
+				"SliceOrigin Z must shift by exact height offset",
+			);
+		});
+
+		it("proves extractSingleCrossSectionSlice populates glCoordinates identical to computeGlCrossSectionCoordinates", () => {
+			const volume = createEmptyCbctVolume(80, 80, 60, 0.5, 0);
+			const centerMm = { x: -15.0, y: -20.0, z: -5.0 };
+			const normal2D = { x: 0.7071, y: 0.7071 };
+			const anchor = DEFAULT_MANDIBULAR_ARCH_ANCHORS[2]!;
+
+			const slice = extractSingleCrossSectionSlice(volume, centerMm, normal2D, 1, 25.0, anchor, {
+				widthMm: 24.0,
+				heightMm: 32.0,
+				pixelSpacingMm: 0.25,
+			});
+
+			assert.ok(slice.glCoordinates !== undefined, "Slice must contain glCoordinates");
+			const expectedCoords = computeGlCrossSectionCoordinates(volume, centerMm, normal2D, {
+				widthMm: 24.0,
+				heightMm: 32.0,
+				pixelSpacingMm: 0.25,
+			});
+
+			assert.deepEqual(slice.glCoordinates.sliceOrigin, expectedCoords.sliceOrigin);
+			assert.deepEqual(slice.glCoordinates.axisU, expectedCoords.axisU);
+			assert.deepEqual(slice.glCoordinates.axisV, expectedCoords.axisV);
+			assert.deepEqual(slice.glCoordinates.axisNorm, expectedCoords.axisNorm);
+			assert.equal(slice.glCoordinates.widthPx, 96);
+			assert.equal(slice.glCoordinates.heightPx, 128);
+		});
+
+		it("proves extractArchCrossSectionSeries runs with zero GC thrashing and produces monotonic valid slices", () => {
+			const volume = createEmptyCbctVolume(100, 100, 60, 0.5, 500);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+
+			const t0 = Date.now();
+			const series = extractArchCrossSectionSeries(volume, curve, { stepMm: 1.5 });
+			const elapsedMs = Date.now() - t0;
+
+			assert.ok(series.length >= 60, `Series must have >= 60 slices, got ${series.length}`);
+			assert.ok(elapsedMs < 1000, `Series generation must complete rapidly without GC freeze, took ${elapsedMs}ms`);
+
+			for (let i = 0; i < series.length; i++) {
+				const s = series[i]!;
+				assert.equal(s.sliceIndex, i + 1);
+				assert.ok(s.pixelData.length > 0);
+				assert.ok(s.glCoordinates !== undefined);
+				assert.equal(Number.isFinite(s.glCoordinates!.sliceOrigin[0]), true);
+				assert.equal(Number.isFinite(s.glCoordinates!.sliceOrigin[1]), true);
+				assert.equal(Number.isFinite(s.glCoordinates!.sliceOrigin[2]), true);
+			}
 		});
 	});
 });

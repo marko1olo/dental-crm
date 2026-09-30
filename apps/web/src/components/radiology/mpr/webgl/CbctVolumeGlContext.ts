@@ -8,27 +8,21 @@
  * 3. Compiles GLSL ES 3.00 shaders with sub-voxel trilinear filtering & slab projection.
  * 4. Sub-millisecond (< 0.5 ms) 60+ FPS hardware MPR slice extraction on GPU.
  * 5. Deterministic VRAM resource disposal (textures, shaders, programs) preventing memory leaks.
+ * 6. Synchronized 3D crosshair focal translation & oblique plane basis rotation into WebGL2 uniforms.
  */
 
-import type {
-	CbctVoxelVolume,
-	MprPlane,
-	Point3D,
-	SlabProjectionMode,
-} from "../../cbctMprMath";
+import type { CbctVoxelVolume, MprPlane, Point3D, SlabProjectionMode } from "../../cbctMprMath";
 import type { Point2D } from "../../cbctCaliperNerveMath";
-import {
-	worldMmToSlicePx,
-	worldMmToSlicePxContinuous,
-} from "../../cbctCoordinateMath";
+import { worldMmToSlicePx, worldMmToSlicePxContinuous } from "../../cbctCoordinateMath";
 import {
 	type ObliqueRotationAngles,
+	type ViewportTransform,
+	DEFAULT_VIEWPORT_TRANSFORM,
 	computeObliquePlaneBasis,
 } from "../../cbctObliqueMatrixMath";
-import {
-	CBCT_MPR_FRAGMENT_SHADER,
-	CBCT_MPR_VERTEX_SHADER,
-} from "./cbctMprShaders";
+import { type RotationHandlePosition, calculateAngleFromHandleDrag } from "../../cbctObliqueMath";
+import { calculateCrosshairDragWorldMm } from "../../cbctVolumeLifecycleMath";
+import { CBCT_MPR_FRAGMENT_SHADER, CBCT_MPR_VERTEX_SHADER } from "./cbctMprShaders";
 
 export interface GlSliceRenderOptions {
 	windowWidth: number;
@@ -51,6 +45,21 @@ export interface GlSliceCoordinates {
 	axisNorm: [number, number, number];
 	slabModeCode: number;
 	slabSteps: number;
+}
+
+interface GlUniformLocations {
+	volume: WebGLUniformLocation | null;
+	volumeDim: WebGLUniformLocation | null;
+	sliceOrigin: WebGLUniformLocation | null;
+	axisU: WebGLUniformLocation | null;
+	axisV: WebGLUniformLocation | null;
+	axisNorm: WebGLUniformLocation | null;
+	windowWidth: WebGLUniformLocation | null;
+	windowLevel: WebGLUniformLocation | null;
+	invert: WebGLUniformLocation | null;
+	slabMode: WebGLUniformLocation | null;
+	slabSteps: WebGLUniformLocation | null;
+	trilinear: WebGLUniformLocation | null;
 }
 
 /**
@@ -91,69 +100,47 @@ export function computeGlSliceCoordinates(
 	angles: ObliqueRotationAngles,
 	options?: GlSliceRenderOptions,
 ): GlSliceCoordinates {
-	const dim = volume.dimensions;
-	const sp = volume.spacingMm;
-	const origin = volume.originMm;
-
-	let widthPx = 0;
-	let heightPx = 0;
-	let pixelSpacingX = 0;
-	let pixelSpacingY = 0;
+	const dim = volume.dimensions, sp = volume.spacingMm, origin = volume.originMm;
+	let widthPx = 0, heightPx = 0, pixelSpacingX = 0, pixelSpacingY = 0;
 
 	switch (plane) {
 		case "axial":
-			widthPx = dim.width;
-			heightPx = dim.height;
-			pixelSpacingX = sp.x;
-			pixelSpacingY = sp.y;
+			widthPx = dim.width; heightPx = dim.height;
+			pixelSpacingX = sp.x; pixelSpacingY = sp.y;
 			break;
 		case "coronal":
-			widthPx = dim.width;
-			heightPx = Math.max(1, Math.round((dim.depth * sp.z) / (sp.x || 1.0)));
-			pixelSpacingX = sp.x;
-			pixelSpacingY = (dim.depth * sp.z) / heightPx;
+			widthPx = dim.width; heightPx = Math.max(1, Math.round((dim.depth * sp.z) / (sp.x || 1.0)));
+			pixelSpacingX = sp.x; pixelSpacingY = (dim.depth * sp.z) / heightPx;
 			break;
 		case "sagittal":
-			widthPx = dim.height;
-			heightPx = Math.max(1, Math.round((dim.depth * sp.z) / (sp.y || 1.0)));
-			pixelSpacingX = sp.y;
-			pixelSpacingY = (dim.depth * sp.z) / heightPx;
+			widthPx = dim.height; heightPx = Math.max(1, Math.round((dim.depth * sp.z) / (sp.y || 1.0)));
+			pixelSpacingX = sp.y; pixelSpacingY = (dim.depth * sp.z) / heightPx;
 			break;
 	}
 
 	const basis = computeObliquePlaneBasis(plane, crosshairMm, angles);
-
-	// Check if slice plane is rotated obliquely: expand viewport span to accommodate full 3D diagonal sqrt(W^2 + H^2)
 	const hasObliqueRotation =
 		Math.abs(angles?.axialAngleDeg ?? 0) > 0.01 ||
 		Math.abs(angles?.coronalTiltDeg ?? 0) > 0.01 ||
 		Math.abs(angles?.sagittalTiltDeg ?? 0) > 0.01;
 
 	const shouldExpandDiagonal = options?.expandObliqueDiagonal ?? true;
-
 	if (hasObliqueRotation && shouldExpandDiagonal) {
 		const diagPx = Math.max(1, Math.round(Math.hypot(widthPx, heightPx)));
 		widthPx = diagPx;
 		heightPx = diagPx;
 	}
 
-	// Use continuous sub-pixel coordinates for pivot to prevent 1-pixel discontinuous phase shudder
 	const pivotPx = worldMmToSlicePxContinuous(crosshairMm, plane, volume);
+	const maxCoordX = Math.max(1, dim.width - 1), maxCoordY = Math.max(1, dim.height - 1), maxCoordZ = Math.max(1, dim.depth - 1);
 
-	const maxCoordX = Math.max(1, dim.width - 1);
-	const maxCoordY = Math.max(1, dim.height - 1);
-	const maxCoordZ = Math.max(1, dim.depth - 1);
-
-	// World coordinate at slice pixel (0, 0)
 	const world00X = crosshairMm.x - pivotPx.x * basis.u.x * pixelSpacingX - pivotPx.y * basis.v.x * pixelSpacingY;
 	const world00Y = crosshairMm.y - pivotPx.x * basis.u.y * pixelSpacingX - pivotPx.y * basis.v.y * pixelSpacingY;
 	const world00Z = crosshairMm.z - pivotPx.x * basis.u.z * pixelSpacingX - pivotPx.y * basis.v.z * pixelSpacingY;
 
-	const vox00X = (world00X - origin.x) / sp.x;
-	const vox00Y = (world00Y - origin.y) / sp.y;
-	const vox00Z = (world00Z - origin.z) / sp.z;
-
+	const vox00X = (world00X - origin.x) / sp.x, vox00Y = (world00Y - origin.y) / sp.y, vox00Z = (world00Z - origin.z) / sp.z;
 	const sliceOrigin: [number, number, number] = [vox00X / maxCoordX, vox00Y / maxCoordY, vox00Z / maxCoordZ];
+
 	const totalSpanMmX = widthPx * pixelSpacingX;
 	const axisU: [number, number, number] = [
 		(basis.u.x * totalSpanMmX) / (sp.x * maxCoordX),
@@ -186,18 +173,7 @@ export function computeGlSliceCoordinates(
 	else if (slabMode === "minip") slabModeCode = 2;
 	else if (slabMode === "average") slabModeCode = 3;
 
-	return {
-		widthPx,
-		heightPx,
-		pixelSpacingX,
-		pixelSpacingY,
-		sliceOrigin,
-		axisU,
-		axisV,
-		axisNorm,
-		slabModeCode,
-		slabSteps,
-	};
+	return { widthPx, heightPx, pixelSpacingX, pixelSpacingY, sliceOrigin, axisU, axisV, axisNorm, slabModeCode, slabSteps };
 }
 
 /**
@@ -209,58 +185,28 @@ export function computeGlCrossSectionCoordinates(
 	volume: CbctVoxelVolume,
 	centerMm: Point3D,
 	normal2D: Point2D,
-	options?: {
-		widthMm?: number | undefined;
-		heightMm?: number | undefined;
-		pixelSpacingMm?: number | undefined;
-		slabMode?: SlabProjectionMode | undefined;
-		slabThicknessMm?: number | undefined;
-	},
+	options?: { widthMm?: number; heightMm?: number; pixelSpacingMm?: number; slabMode?: SlabProjectionMode; slabThicknessMm?: number },
 ): GlSliceCoordinates {
-	const dim = volume.dimensions;
-	const sp = volume.spacingMm;
-	const origin = volume.originMm;
-
+	const dim = volume.dimensions, sp = volume.spacingMm, origin = volume.originMm;
 	const widthMm = Number.isFinite(options?.widthMm) && (options?.widthMm ?? 0) > 0 ? options!.widthMm! : 24.0;
 	const heightMm = Number.isFinite(options?.heightMm) && (options?.heightMm ?? 0) > 0 ? options!.heightMm! : 34.0;
-	const pixelSpacingMm =
-		Number.isFinite(options?.pixelSpacingMm) && (options?.pixelSpacingMm ?? 0) > 0
-			? options!.pixelSpacingMm!
-			: 0.25;
+	const pixelSpacingMm = Number.isFinite(options?.pixelSpacingMm) && (options?.pixelSpacingMm ?? 0) > 0 ? options!.pixelSpacingMm! : 0.25;
 
 	const widthPx = Math.max(1, Math.round(widthMm / pixelSpacingMm));
 	const heightPx = Math.max(1, Math.round(heightMm / pixelSpacingMm));
-	const pixelSpacingX = pixelSpacingMm;
-	const pixelSpacingY = pixelSpacingMm;
+	const pixelSpacingX = pixelSpacingMm, pixelSpacingY = pixelSpacingMm;
+	const halfW = widthMm / 2.0, halfH = heightMm / 2.0;
 
-	const halfW = widthMm / 2.0;
-	const halfH = heightMm / 2.0;
-
-	// Normalize normal vector (across alveolar ridge)
 	const nLen = Math.hypot(normal2D.x, normal2D.y);
-	const unitNormal: Point2D =
-		Number.isFinite(nLen) && nLen > 1e-6 ? { x: normal2D.x / nLen, y: normal2D.y / nLen } : { x: 0, y: 1 };
-	const unitTangent: Point2D = {
-		x: unitNormal.y === 0 ? 0 : unitNormal.y,
-		y: unitNormal.x === 0 ? 0 : -unitNormal.x,
-	};
+	const unitNormal: Point2D = Number.isFinite(nLen) && nLen > 1e-6 ? { x: normal2D.x / nLen, y: normal2D.y / nLen } : { x: 0, y: 1 };
+	const unitTangent: Point2D = { x: unitNormal.y === 0 ? 0 : unitNormal.y, y: unitNormal.x === 0 ? 0 : -unitNormal.x };
 
-	const maxCoordX = Math.max(1, dim.width - 1);
-	const maxCoordY = Math.max(1, dim.height - 1);
-	const maxCoordZ = Math.max(1, dim.depth - 1);
-
-	// World coordinate at slice pixel (0, 0): top-left
-	const world00X = centerMm.x - unitNormal.x * halfW;
-	const world00Y = centerMm.y - unitNormal.y * halfW;
-	const world00Z = centerMm.z + halfH;
-
-	const vox00X = (world00X - origin.x) / sp.x;
-	const vox00Y = (world00Y - origin.y) / sp.y;
-	const vox00Z = (world00Z - origin.z) / sp.z;
+	const maxCoordX = Math.max(1, dim.width - 1), maxCoordY = Math.max(1, dim.height - 1), maxCoordZ = Math.max(1, dim.depth - 1);
+	const world00X = centerMm.x - unitNormal.x * halfW, world00Y = centerMm.y - unitNormal.y * halfW, world00Z = centerMm.z + halfH;
+	const vox00X = (world00X - origin.x) / sp.x, vox00Y = (world00Y - origin.y) / sp.y, vox00Z = (world00Z - origin.z) / sp.z;
 
 	const sliceOrigin: [number, number, number] = [vox00X / maxCoordX, vox00Y / maxCoordY, vox00Z / maxCoordZ];
-	const uX = (unitNormal.x * widthMm) / (sp.x * maxCoordX);
-	const uY = (unitNormal.y * widthMm) / (sp.y * maxCoordY);
+	const uX = (unitNormal.x * widthMm) / (sp.x * maxCoordX), uY = (unitNormal.y * widthMm) / (sp.y * maxCoordY);
 	const axisU: [number, number, number] = [uX === 0 ? 0 : uX, uY === 0 ? 0 : uY, 0];
 	const axisV: [number, number, number] = [0, 0, -heightMm / (sp.z * maxCoordZ)];
 
@@ -270,8 +216,7 @@ export function computeGlCrossSectionCoordinates(
 	const isSlabActive = slabMode !== "single" && slabThicknessMm > normalStepMm;
 	const slabSteps = isSlabActive ? Math.max(1, Math.round(slabThicknessMm / normalStepMm)) : 1;
 	const stepMm = isSlabActive ? slabThicknessMm / slabSteps : 0;
-	const nX = (unitTangent.x * stepMm) / (sp.x * maxCoordX);
-	const nY = (unitTangent.y * stepMm) / (sp.y * maxCoordY);
+	const nX = (unitTangent.x * stepMm) / (sp.x * maxCoordX), nY = (unitTangent.y * stepMm) / (sp.y * maxCoordY);
 	const axisNorm: [number, number, number] = [nX === 0 ? 0 : nX, nY === 0 ? 0 : nY, 0];
 
 	let slabModeCode = 0;
@@ -279,17 +224,77 @@ export function computeGlCrossSectionCoordinates(
 	else if (slabMode === "minip") slabModeCode = 2;
 	else if (slabMode === "average") slabModeCode = 3;
 
+	return { widthPx, heightPx, pixelSpacingX, pixelSpacingY, sliceOrigin, axisU, axisV, axisNorm, slabModeCode, slabSteps };
+}
+
+/**
+ * Calculates updated oblique rotation angles when dragging a rotation handle around the center.
+ * Handles Axial (axialAngleDeg), Coronal (coronalTiltDeg), and Sagittal (sagittalTiltDeg).
+ */
+export function calculateObliqueRotationFromHandle(
+	plane: MprPlane,
+	handle: RotationHandlePosition,
+	centerPx: { readonly x: number; readonly y: number },
+	pointerPx: { readonly x: number; readonly y: number },
+	currentAngles: ObliqueRotationAngles,
+): { newAngles: ObliqueRotationAngles; angleDeg: number } {
+	const angleDeg = calculateAngleFromHandleDrag(centerPx, pointerPx, handle);
+	let newAngles: ObliqueRotationAngles;
+	switch (plane) {
+		case "axial":
+			newAngles = { ...currentAngles, axialAngleDeg: angleDeg };
+			break;
+		case "coronal":
+			newAngles = { ...currentAngles, coronalTiltDeg: angleDeg };
+			break;
+		case "sagittal":
+			newAngles = { ...currentAngles, sagittalTiltDeg: angleDeg };
+			break;
+	}
+	return { newAngles, angleDeg };
+}
+
+/**
+ * Computes updated 3D crosshair position when dragging crosshair center in any MPR viewport plane.
+ */
+export function calculateCrosshairCenterDrag(
+	plane: MprPlane,
+	pointerPx: { readonly x: number; readonly y: number },
+	canvasSize: { readonly width: number; readonly height: number },
+	currentCrosshairMm: Point3D,
+	angles: ObliqueRotationAngles,
+	transform: ViewportTransform,
+	volume: CbctVoxelVolume,
+): Point3D {
+	return calculateCrosshairDragWorldMm(
+		pointerPx,
+		canvasSize,
+		plane,
+		currentCrosshairMm,
+		angles,
+		transform,
+		volume,
+	);
+}
+
+/**
+ * Computes synchronized slice coordinates (origins and basis vectors) for all 3 MPR planes
+ * when crosshair moves in 3D or oblique angles change.
+ */
+export function computeSynchronizedMprGlCoordinates(
+	volume: CbctVoxelVolume,
+	crosshairMm: Point3D,
+	angles: ObliqueRotationAngles,
+	options?: GlSliceRenderOptions,
+): {
+	axial: GlSliceCoordinates;
+	coronal: GlSliceCoordinates;
+	sagittal: GlSliceCoordinates;
+} {
 	return {
-		widthPx,
-		heightPx,
-		pixelSpacingX,
-		pixelSpacingY,
-		sliceOrigin,
-		axisU,
-		axisV,
-		axisNorm,
-		slabModeCode,
-		slabSteps,
+		axial: computeGlSliceCoordinates(volume, "axial", crosshairMm, angles, options),
+		coronal: computeGlSliceCoordinates(volume, "coronal", crosshairMm, angles, options),
+		sagittal: computeGlSliceCoordinates(volume, "sagittal", crosshairMm, angles, options),
 	};
 }
 
@@ -305,27 +310,10 @@ export class CbctVolumeGlContext {
 	private vao: WebGLVertexArrayObject | null = null;
 	private uploadDim: { width: number; height: number; depth: number } | null = null;
 	private cleanupContextListeners: (() => void) | null = null;
-
-	// Uniform locations cache
-	private uniforms: {
-		volume: WebGLUniformLocation | null;
-		volumeDim: WebGLUniformLocation | null;
-		sliceOrigin: WebGLUniformLocation | null;
-		axisU: WebGLUniformLocation | null;
-		axisV: WebGLUniformLocation | null;
-		axisNorm: WebGLUniformLocation | null;
-		windowWidth: WebGLUniformLocation | null;
-		windowLevel: WebGLUniformLocation | null;
-		invert: WebGLUniformLocation | null;
-		slabMode: WebGLUniformLocation | null;
-		slabSteps: WebGLUniformLocation | null;
-		trilinear: WebGLUniformLocation | null;
-	} | null = null;
+	private uniforms: GlUniformLocations | null = null;
 
 	constructor(canvas?: HTMLCanvasElement) {
-		if (canvas) {
-			this.init(canvas);
-		}
+		if (canvas) this.init(canvas);
 	}
 
 	public init(canvas: HTMLCanvasElement): boolean {
@@ -335,39 +323,24 @@ export class CbctVolumeGlContext {
 
 		try {
 			const gl = canvas.getContext("webgl2", {
-				alpha: false,
-				depth: false,
-				stencil: false,
-				antialias: false,
-				preserveDrawingBuffer: true,
-				powerPreference: "high-performance",
+				alpha: false, depth: false, stencil: false, antialias: false,
+				preserveDrawingBuffer: true, powerPreference: "high-performance",
 			});
-
 			if (!gl) {
 				console.warn("[CbctVolumeGlContext] WebGL2 not supported on canvas, using CPU/Worker fallback.");
 				this.isInitialized = false;
 				return false;
 			}
-
 			this.gl = gl;
 			const success = this.setupShaders();
 			this.isInitialized = success;
 
 			const onContextLost = (e: Event) => {
 				e.preventDefault();
-				this.isInitialized = false;
-				this.activeVolumeId = null;
-				this.volumeTexture = null;
-				this.uploadDim = null;
-				this.program = null;
-				this.vao = null;
-				this.uniforms = null;
+				this.isInitialized = false; this.activeVolumeId = null; this.volumeTexture = null;
+				this.uploadDim = null; this.program = null; this.vao = null; this.uniforms = null;
 			};
-			const onContextRestored = () => {
-				if (this.canvas) {
-					this.init(this.canvas);
-				}
-			};
+			const onContextRestored = () => { if (this.canvas) this.init(this.canvas); };
 			if (typeof canvas.addEventListener === "function") {
 				canvas.addEventListener("webglcontextlost", onContextLost);
 				canvas.addEventListener("webglcontextrestored", onContextRestored);
@@ -376,7 +349,6 @@ export class CbctVolumeGlContext {
 					canvas.removeEventListener("webglcontextrestored", onContextRestored);
 				};
 			}
-
 			return success;
 		} catch (err) {
 			console.warn("[CbctVolumeGlContext] WebGL2 initialization failed:", err);
@@ -389,17 +361,9 @@ export class CbctVolumeGlContext {
 		return this.isInitialized && this.gl !== null && this.program !== null;
 	}
 
-	public getCanvas(): HTMLCanvasElement | null {
-		return this.canvas;
-	}
-
-	public getGl(): WebGL2RenderingContext | null {
-		return this.gl;
-	}
-
-	public getActiveVolumeId(): string | null {
-		return this.activeVolumeId;
-	}
+	public getCanvas(): HTMLCanvasElement | null { return this.canvas; }
+	public getGl(): WebGL2RenderingContext | null { return this.gl; }
+	public getActiveVolumeId(): string | null { return this.activeVolumeId; }
 
 	private setupShaders(): boolean {
 		const gl = this.gl;
@@ -420,14 +384,10 @@ export class CbctVolumeGlContext {
 
 		this.vertexShader = compileShader(CBCT_MPR_VERTEX_SHADER, gl.VERTEX_SHADER);
 		this.fragmentShader = compileShader(CBCT_MPR_FRAGMENT_SHADER, gl.FRAGMENT_SHADER);
-
-		if (!this.vertexShader || !this.fragmentShader) {
-			return false;
-		}
+		if (!this.vertexShader || !this.fragmentShader) return false;
 
 		const program = gl.createProgram();
 		if (!program) return false;
-
 		gl.attachShader(program, this.vertexShader);
 		gl.attachShader(program, this.fragmentShader);
 		gl.linkProgram(program);
@@ -440,11 +400,8 @@ export class CbctVolumeGlContext {
 
 		this.program = program;
 		gl.useProgram(program);
-
 		this.vao = gl.createVertexArray ? gl.createVertexArray() : null;
-		if (this.vao && gl.bindVertexArray) {
-			gl.bindVertexArray(this.vao);
-		}
+		if (this.vao && gl.bindVertexArray) gl.bindVertexArray(this.vao);
 
 		this.uniforms = {
 			volume: gl.getUniformLocation(program, "u_volume"),
@@ -460,29 +417,19 @@ export class CbctVolumeGlContext {
 			slabSteps: gl.getUniformLocation(program, "u_slabSteps"),
 			trilinear: gl.getUniformLocation(program, "u_trilinear"),
 		};
-
 		return true;
 	}
 
-	/**
-	 * Uploads 16-bit signed CBCT volume data to GPU as a 3D Texture.
-	 * If the same volume is already loaded in VRAM, skips redundant re-upload.
-	 */
-	public uploadVolume(
-		volume: CbctVoxelVolume,
-		options?: { forceReupload?: boolean },
-	): boolean {
+	public uploadVolume(volume: CbctVoxelVolume, options?: { forceReupload?: boolean }): boolean {
 		const gl = this.gl;
 		if (!gl || !this.isAvailable()) return false;
 		if (gl.isContextLost && gl.isContextLost()) return false;
 		if (!volume.data || volume.isDisposed) return false;
 
-		// Already in GPU memory
 		if (!options?.forceReupload && this.activeVolumeId === volume.id && this.volumeTexture) {
 			return true;
 		}
 
-		// Delete previous texture if changing volumes or forcing re-upload
 		if (this.volumeTexture) {
 			gl.deleteTexture(this.volumeTexture);
 			this.volumeTexture = null;
@@ -494,23 +441,15 @@ export class CbctVolumeGlContext {
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_3D, texture);
-
-		// Clamp to edges for continuous boundary handling
 		gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 		gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 		gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
-
-		// Integer texture filtering setup:
-		// WebGL2 specs mandate NEAREST for integer internal formats (R16I);
-		// our GLSL fragment shader performs exact 8-point sub-voxel trilinear filtering in hardware.
 		gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-		// Hardware check: Query driver limit for 3D texture dimensions (WebGL2 min guaranteed = 256)
 		const max3dSize =
 			(typeof gl.getParameter === "function" && gl.MAX_3D_TEXTURE_SIZE !== undefined
-				? (gl.getParameter(gl.MAX_3D_TEXTURE_SIZE) as number)
-				: 2048) || 2048;
+				? (gl.getParameter(gl.MAX_3D_TEXTURE_SIZE) as number) : 2048) || 2048;
 		let step = 1;
 		while (
 			Math.ceil(volume.dimensions.width / step) > max3dSize ||
@@ -520,42 +459,23 @@ export class CbctVolumeGlContext {
 			step *= 2;
 		}
 
-		let uploadData = volume.data;
-		let uploadWidth = volume.dimensions.width;
-		let uploadHeight = volume.dimensions.height;
-		let uploadDepth = volume.dimensions.depth;
+		let uploadData = volume.data, uploadWidth = volume.dimensions.width;
+		let uploadHeight = volume.dimensions.height, uploadDepth = volume.dimensions.depth;
 
 		if (step > 1) {
-			console.warn(
-				`[CbctVolumeGlContext] Volume dimensions (${volume.dimensions.width}x${volume.dimensions.height}x${volume.dimensions.depth}) exceed GPU MAX_3D_TEXTURE_SIZE (${max3dSize}). Downsampling ${step}x for low-spec GPU compatibility.`,
-			);
+			console.warn(`[CbctVolumeGlContext] Volume downsampled ${step}x for GPU limits (${max3dSize}).`);
 			const downsampled = downsampleVolumeData(volume.data, volume.dimensions, step);
-			uploadData = downsampled.data;
-			uploadWidth = downsampled.width;
-			uploadHeight = downsampled.height;
-			uploadDepth = downsampled.depth;
+			uploadData = downsampled.data; uploadWidth = downsampled.width;
+			uploadHeight = downsampled.height; uploadDepth = downsampled.depth;
 		}
 
-		// Upload 16-bit signed integer volume data directly into VRAM
-		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2); // 16-bit short alignment
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2);
 		try {
-			gl.texImage3D(
-				gl.TEXTURE_3D,
-				0,
-				gl.R16I,
-				uploadWidth,
-				uploadHeight,
-				uploadDepth,
-				0,
-				gl.RED_INTEGER,
-				gl.SHORT,
-				uploadData,
-			);
+			gl.texImage3D(gl.TEXTURE_3D, 0, gl.R16I, uploadWidth, uploadHeight, uploadDepth, 0, gl.RED_INTEGER, gl.SHORT, uploadData);
 		} catch (err) {
 			console.error("[CbctVolumeGlContext] gl.texImage3D failed:", err);
 			gl.deleteTexture(texture);
-			this.volumeTexture = null;
-			this.activeVolumeId = null;
+			this.volumeTexture = null; this.activeVolumeId = null;
 			return false;
 		}
 
@@ -563,19 +483,13 @@ export class CbctVolumeGlContext {
 		this.activeVolumeId = volume.id;
 		this.uploadDim = { width: uploadWidth, height: uploadHeight, depth: uploadDepth };
 
-		// Update volume dimensions uniform
 		if (this.uniforms?.volumeDim) {
 			gl.useProgram(this.program);
 			gl.uniform3f(this.uniforms.volumeDim, uploadWidth, uploadHeight, uploadDepth);
 		}
-
 		return true;
 	}
 
-	/**
-	 * Explicitly marks a volume ID (or active volume) as evicted from GPU cache,
-	 * releasing its 3D texture backing store to prevent VRAM memory bloat upon patient change.
-	 */
 	public invalidateVolume(volumeId?: string): void {
 		if (!volumeId || this.activeVolumeId === volumeId) {
 			if (this.gl && this.volumeTexture) {
@@ -587,18 +501,24 @@ export class CbctVolumeGlContext {
 		}
 	}
 
-	/**
-	 * Generic hardware-accelerated slice extraction and display on target canvas from GlSliceCoordinates.
-	 * Executes in < 0.5 ms at 60+ FPS on modern GPU.
-	 */
+	public updateSliceBasisUniforms(coords: GlSliceCoordinates): boolean {
+		const gl = this.gl;
+		if (!gl || !this.isAvailable() || !this.program || !this.uniforms) return false;
+		gl.useProgram(this.program);
+		gl.uniform3fv(this.uniforms.sliceOrigin, coords.sliceOrigin);
+		gl.uniform3fv(this.uniforms.axisU, coords.axisU);
+		gl.uniform3fv(this.uniforms.axisV, coords.axisV);
+		gl.uniform3fv(this.uniforms.axisNorm, coords.axisNorm);
+		return true;
+	}
+
 	public renderFromCoordinates(
 		volume: CbctVoxelVolume,
 		coords: GlSliceCoordinates,
 		options: GlSliceRenderOptions,
 		targetCanvas?: HTMLCanvasElement | null,
 	): GlSliceCoordinates | null {
-		const gl = this.gl;
-		const canvas = this.canvas;
+		const gl = this.gl, canvas = this.canvas;
 		if (!gl || !canvas || !this.isAvailable() || !this.program || !this.uniforms) return null;
 		if (!this.uploadVolume(volume)) return null;
 
@@ -614,12 +534,8 @@ export class CbctVolumeGlContext {
 
 		gl.viewport(0, 0, coords.widthPx, coords.heightPx);
 		gl.useProgram(this.program);
+		if (this.vao && gl.bindVertexArray) gl.bindVertexArray(this.vao);
 
-		if (this.vao && gl.bindVertexArray) {
-			gl.bindVertexArray(this.vao);
-		}
-
-		// Bind 3D texture to unit 0
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_3D, this.volumeTexture);
 		gl.uniform1i(this.uniforms.volume, 0);
@@ -628,13 +544,10 @@ export class CbctVolumeGlContext {
 			gl.uniform3f(this.uniforms.volumeDim, this.uploadDim.width, this.uploadDim.height, this.uploadDim.depth);
 		}
 
-		// Set coordinate uniforms
 		gl.uniform3fv(this.uniforms.sliceOrigin, coords.sliceOrigin);
 		gl.uniform3fv(this.uniforms.axisU, coords.axisU);
 		gl.uniform3fv(this.uniforms.axisV, coords.axisV);
 		gl.uniform3fv(this.uniforms.axisNorm, coords.axisNorm);
-
-		// Set clinical window/level uniforms
 		gl.uniform1f(this.uniforms.windowWidth, options.windowWidth);
 		gl.uniform1f(this.uniforms.windowLevel, options.windowLevel);
 		gl.uniform1i(this.uniforms.invert, options.invert ? 1 : 0);
@@ -642,7 +555,6 @@ export class CbctVolumeGlContext {
 		gl.uniform1i(this.uniforms.slabSteps, coords.slabSteps);
 		gl.uniform1i(this.uniforms.trilinear, options.interpolation !== "nearest" ? 1 : 0);
 
-		// Fullscreen quad draw call (< 0.2 ms on modern GPU)
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
 		if (targetCanvas) {
@@ -653,26 +565,12 @@ export class CbctVolumeGlContext {
 			const targetCtx = targetCanvas.getContext("2d");
 			if (targetCtx) {
 				const sourceY = canvas.height - coords.heightPx;
-				targetCtx.drawImage(
-					canvas,
-					0,
-					sourceY,
-					coords.widthPx,
-					coords.heightPx,
-					0,
-					0,
-					coords.widthPx,
-					coords.heightPx,
-				);
+				targetCtx.drawImage(canvas, 0, sourceY, coords.widthPx, coords.heightPx, 0, 0, coords.widthPx, coords.heightPx);
 			}
 		}
-
 		return coords;
 	}
 
-	/**
-	 * Hardware-accelerated MPR slice extraction and display on target canvas (< 0.5 ms).
-	 */
 	public renderSlice(
 		volume: CbctVoxelVolume,
 		plane: MprPlane,
@@ -685,100 +583,118 @@ export class CbctVolumeGlContext {
 		return this.renderFromCoordinates(volume, coords, options, targetCanvas);
 	}
 
-	/**
-	 * Hardware-accelerated perpendicular transverse cross-section slice extraction on GPU (< 0.5 ms).
-	 * Reslices alveolar ridge along normal2D with width 24 mm and height 34 mm.
-	 */
 	public renderCrossSection(
 		volume: CbctVoxelVolume,
 		centerMm: Point3D,
 		normal2D: Point2D,
-		options: GlSliceRenderOptions & {
-			widthMm?: number | undefined;
-			heightMm?: number | undefined;
-			pixelSpacingMm?: number | undefined;
-		},
+		options: GlSliceRenderOptions & { widthMm?: number; heightMm?: number; pixelSpacingMm?: number },
 		targetCanvas?: HTMLCanvasElement | null,
 	): GlSliceCoordinates | null {
 		const coords = computeGlCrossSectionCoordinates(volume, centerMm, normal2D, options);
 		return this.renderFromCoordinates(volume, coords, options, targetCanvas);
 	}
 
-	/**
-	 * Renders all 3 MPR planes (Axial, Coronal, Sagittal) in hardware GPU pipeline.
-	 * Dispatches batch draw calls and optionally blits results into destination canvases.
-	 */
 	public renderAllPlanes(
 		volume: CbctVoxelVolume,
 		crosshairMm: Point3D,
 		angles: ObliqueRotationAngles,
 		options: GlSliceRenderOptions,
-		targets?: {
-			axial?: HTMLCanvasElement | null;
-			coronal?: HTMLCanvasElement | null;
-			sagittal?: HTMLCanvasElement | null;
-		},
-	): {
-		axial: GlSliceCoordinates;
-		coronal: GlSliceCoordinates;
-		sagittal: GlSliceCoordinates;
-	} | null {
-		// Pre-size offscreen canvas to maximum dimension across all 3 planes once to prevent framebuffer reallocation thrashing
+		targets?: { axial?: HTMLCanvasElement | null; coronal?: HTMLCanvasElement | null; sagittal?: HTMLCanvasElement | null },
+	): { axial: GlSliceCoordinates; coronal: GlSliceCoordinates; sagittal: GlSliceCoordinates } | null {
 		if (this.canvas) {
-			const maxDim = Math.max(
-				volume.dimensions.width,
-				Math.max(volume.dimensions.height, volume.dimensions.depth),
-			);
+			const maxDim = Math.max(volume.dimensions.width, Math.max(volume.dimensions.height, volume.dimensions.depth));
 			if (this.canvas.width < maxDim || this.canvas.height < maxDim) {
 				this.canvas.width = Math.max(this.canvas.width, maxDim);
 				this.canvas.height = Math.max(this.canvas.height, maxDim);
 			}
 		}
 
-		const axialCoords = this.renderSlice(volume, "axial", crosshairMm, angles, options, targets?.axial);
-		if (!axialCoords) return null;
+		const axial = this.renderSlice(volume, "axial", crosshairMm, angles, options, targets?.axial);
+		if (!axial) return null;
+		const coronal = this.renderSlice(volume, "coronal", crosshairMm, angles, options, targets?.coronal);
+		if (!coronal) return null;
+		const sagittal = this.renderSlice(volume, "sagittal", crosshairMm, angles, options, targets?.sagittal);
+		if (!sagittal) return null;
 
-		const coronalCoords = this.renderSlice(volume, "coronal", crosshairMm, angles, options, targets?.coronal);
-		if (!coronalCoords) return null;
-
-		const sagittalCoords = this.renderSlice(volume, "sagittal", crosshairMm, angles, options, targets?.sagittal);
-		if (!sagittalCoords) return null;
-
-		return {
-			axial: axialCoords,
-			coronal: coronalCoords,
-			sagittal: sagittalCoords,
-		};
+		return { axial, coronal, sagittal };
 	}
 
 	/**
-	 * Releases all GPU memory backing stores (textures, shaders, programs)
-	 * preventing VRAM leaks upon unmount or modal close.
+	 * Computes updated oblique rotation angles and re-calculates orthonormal basis vectors
+	 * (u_axisU, u_axisV, u_axisNorm, u_sliceOrigin) directly into WebGL2 uniforms for 60 FPS real-time scrubbing.
 	 */
+	public applyObliqueRotationFromHandle(
+		volume: CbctVoxelVolume,
+		plane: MprPlane,
+		handle: RotationHandlePosition,
+		centerPx: { readonly x: number; readonly y: number },
+		pointerPx: { readonly x: number; readonly y: number },
+		currentAngles: ObliqueRotationAngles,
+		crosshairMm: Point3D,
+		options?: GlSliceRenderOptions,
+		targetCanvas?: HTMLCanvasElement | null,
+	): { newAngles: ObliqueRotationAngles; angleDeg: number; coords: GlSliceCoordinates } | null {
+		const { newAngles, angleDeg } = calculateObliqueRotationFromHandle(plane, handle, centerPx, pointerPx, currentAngles);
+		const renderOptions: GlSliceRenderOptions = options ?? {
+			windowWidth: volume.defaultWindowWidth ?? 1500,
+			windowLevel: volume.defaultWindowLevel ?? 300,
+		};
+		const coords = this.renderSlice(volume, plane, crosshairMm, newAngles, renderOptions, targetCanvas);
+		if (!coords) return null;
+		return { newAngles, angleDeg, coords };
+	}
+
+	/**
+	 * Direct translation of crosshair focus in 3D world space (mm) and synchronization of slice origin
+	 * across all MPR planes in WebGL2 uniforms.
+	 */
+	public applyCrosshairCenterDrag(
+		volume: CbctVoxelVolume,
+		plane: MprPlane,
+		pointerPx: { readonly x: number; readonly y: number },
+		canvasSize: { readonly width: number; readonly height: number },
+		currentCrosshairMm: Point3D,
+		angles: ObliqueRotationAngles,
+		transform: ViewportTransform,
+		options?: GlSliceRenderOptions,
+		targets?: { axial?: HTMLCanvasElement | null; coronal?: HTMLCanvasElement | null; sagittal?: HTMLCanvasElement | null },
+	): { newCrosshairMm: Point3D; coords: { axial: GlSliceCoordinates; coronal: GlSliceCoordinates; sagittal: GlSliceCoordinates } } | null {
+		const newCrosshairMm = calculateCrosshairCenterDrag(plane, pointerPx, canvasSize, currentCrosshairMm, angles, transform, volume);
+		const renderOptions: GlSliceRenderOptions = options ?? {
+			windowWidth: volume.defaultWindowWidth ?? 1500,
+			windowLevel: volume.defaultWindowLevel ?? 300,
+		};
+		const coords = this.renderAllPlanes(volume, newCrosshairMm, angles, renderOptions, targets);
+		if (!coords) return null;
+		return { newCrosshairMm, coords };
+	}
+
+	/**
+	 * Synchronizes 3D crosshair focal point and renders all MPR planes in GPU VRAM (< 0.5 ms per frame).
+	 */
+	public applyCrosshairFocusSync(
+		volume: CbctVoxelVolume,
+		newCrosshairMm: Point3D,
+		angles: ObliqueRotationAngles,
+		options?: GlSliceRenderOptions,
+		targets?: { axial?: HTMLCanvasElement | null; coronal?: HTMLCanvasElement | null; sagittal?: HTMLCanvasElement | null },
+	): { axial: GlSliceCoordinates; coronal: GlSliceCoordinates; sagittal: GlSliceCoordinates } | null {
+		const renderOptions: GlSliceRenderOptions = options ?? {
+			windowWidth: volume.defaultWindowWidth ?? 1500,
+			windowLevel: volume.defaultWindowLevel ?? 300,
+		};
+		return this.renderAllPlanes(volume, newCrosshairMm, angles, renderOptions, targets);
+	}
+
 	public dispose(): void {
 		const gl = this.gl;
 		if (gl) {
-			if (this.vao && gl.deleteVertexArray) {
-				gl.deleteVertexArray(this.vao);
-				this.vao = null;
-			}
-			if (this.volumeTexture) {
-				gl.deleteTexture(this.volumeTexture);
-				this.volumeTexture = null;
-			}
+			if (this.vao && gl.deleteVertexArray) { gl.deleteVertexArray(this.vao); this.vao = null; }
+			if (this.volumeTexture) { gl.deleteTexture(this.volumeTexture); this.volumeTexture = null; }
 			if (this.program) {
-				if (this.vertexShader) {
-					gl.detachShader(this.program, this.vertexShader);
-					gl.deleteShader(this.vertexShader);
-					this.vertexShader = null;
-				}
-				if (this.fragmentShader) {
-					gl.detachShader(this.program, this.fragmentShader);
-					gl.deleteShader(this.fragmentShader);
-					this.fragmentShader = null;
-				}
-				gl.deleteProgram(this.program);
-				this.program = null;
+				if (this.vertexShader) { gl.detachShader(this.program, this.vertexShader); gl.deleteShader(this.vertexShader); this.vertexShader = null; }
+				if (this.fragmentShader) { gl.detachShader(this.program, this.fragmentShader); gl.deleteShader(this.fragmentShader); this.fragmentShader = null; }
+				gl.deleteProgram(this.program); this.program = null;
 			}
 			const loseCtx = gl.getExtension ? gl.getExtension("WEBGL_lose_context") : null;
 			if (loseCtx && typeof (loseCtx as unknown as { loseContext?: () => void }).loseContext === "function") {
@@ -788,12 +704,8 @@ export class CbctVolumeGlContext {
 
 		this.cleanupContextListeners?.();
 		this.cleanupContextListeners = null;
-		this.gl = null;
-		this.canvas = null;
-		this.activeVolumeId = null;
-		this.uploadDim = null;
-		this.isInitialized = false;
-		this.uniforms = null;
+		this.gl = null; this.canvas = null; this.activeVolumeId = null;
+		this.uploadDim = null; this.isInitialized = false; this.uniforms = null;
 	}
 }
 
@@ -803,8 +715,7 @@ let sharedGlContext: CbctVolumeGlContext | null = null;
 
 export function getSharedCbctGlContext(): CbctVolumeGlContext {
 	if (!sharedGlContext) {
-		const offscreenCanvas =
-			typeof document !== "undefined" ? document.createElement("canvas") : null;
+		const offscreenCanvas = typeof document !== "undefined" ? document.createElement("canvas") : null;
 		sharedGlContext = new CbctVolumeGlContext(offscreenCanvas ?? undefined);
 	}
 	return sharedGlContext;
@@ -816,4 +727,3 @@ export function disposeSharedCbctGlContext(): void {
 		sharedGlContext = null;
 	}
 }
-

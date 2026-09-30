@@ -6,6 +6,7 @@
 
 import {
 	type CbctVoxelVolume,
+	type SlabProjectionMode,
 	get16BitLut,
 	sampleVoxelTrilinearHU,
 	worldMmToVoxelContinuous,
@@ -19,6 +20,177 @@ import {
 	calculateArchTangentsAndNormals,
 	fitSmoothDentalArchSpline,
 } from "./cbctArchSplineMath";
+import type { GlSliceCoordinates } from "./mpr/webgl/CbctVolumeGlContext";
+
+export interface CrossSectionRenderOptions {
+	readonly widthMm?: number | undefined;
+	readonly heightMm?: number | undefined;
+	readonly pixelSpacingMm?: number | undefined;
+	readonly slabMode?: SlabProjectionMode | undefined;
+	readonly slabThicknessMm?: number | undefined;
+	readonly buccoLingualOffsetMm?: number | undefined;
+	readonly heightOffsetMm?: number | undefined;
+	readonly sliceCenterZMm?: number | undefined;
+	readonly windowWidth?: number | undefined;
+	readonly windowLevel?: number | undefined;
+	readonly invert?: boolean | undefined;
+	readonly offsetFromMidlineMm?: number | undefined;
+	readonly lut?: Uint8ClampedArray | Uint8Array | undefined;
+}
+
+export interface CrossSectionAffineBasis {
+	readonly sliceOrigin: [number, number, number]; // UVW at slice pixel (0, 0)
+	readonly axisU: [number, number, number];       // UVW span across slice width (bucco-lingual)
+	readonly axisV: [number, number, number];       // UVW span across slice height (cranial-caudal Z)
+	readonly axisNorm: [number, number, number];    // UVW step along arch tangent for slab thickness
+	readonly widthPx: number;
+	readonly heightPx: number;
+	readonly pixelSpacingX: number;
+	readonly pixelSpacingY: number;
+	readonly slabModeCode: number;                  // 0 = single, 1 = mip, 2 = minip, 3 = average
+	readonly slabSteps: number;
+	readonly world00: Point3D;                     // Physical mm at top-left pixel (0, 0)
+	readonly unitNormal: Point2D;                  // Normalized bucco-lingual vector
+	readonly unitTangent: Point2D;                 // Normalized mesio-distal vector
+	readonly stepVoxU: { readonly x: number; readonly y: number };
+	readonly stepVoxVz: number;
+	readonly vox00: Point3D;
+}
+
+/**
+ * Calculates the exact 3D Affine Basis for a perpendicular transverse cross-section slice:
+ * - u_sliceOrigin: entry point at slice pixel (0, 0) in normalized 3D Texture UVW space [0, 1]
+ * - u_axisU: span vector across slice width (bucco-lingual direction, normal to arch)
+ * - u_axisV: span vector across slice height (vertical cranial-caudal Z direction)
+ * - u_axisNorm: step vector along arch tangent for slab thickness (MIP / MinIP / Average)
+ * Standards: DICOM Part 3 PS 3.3, Misch CE, Buser, Planmeca Romexis 6.x.
+ */
+export function computeCrossSectionAffineBasis(
+	volume: CbctVoxelVolume,
+	centerMm: Point3D,
+	normal2D: Point2D,
+	options?: CrossSectionRenderOptions,
+): CrossSectionAffineBasis {
+	const dim = volume.dimensions;
+	const sp = volume.spacingMm;
+	const origin = volume.originMm;
+
+	const widthMm = Number.isFinite(options?.widthMm) && (options?.widthMm ?? 0) > 0 ? options!.widthMm! : 24.0;
+	const heightMm = Number.isFinite(options?.heightMm) && (options?.heightMm ?? 0) > 0 ? options!.heightMm! : 34.0;
+	const pixelSpacingMm =
+		Number.isFinite(options?.pixelSpacingMm) && (options?.pixelSpacingMm ?? 0) > 0
+			? options!.pixelSpacingMm!
+			: 0.25;
+
+	const widthPx = Math.max(1, Math.round(widthMm / pixelSpacingMm));
+	const heightPx = Math.max(1, Math.round(heightMm / pixelSpacingMm));
+	const pixelSpacingX = pixelSpacingMm;
+	const pixelSpacingY = pixelSpacingMm;
+
+	const halfW = widthMm / 2.0;
+	const halfH = heightMm / 2.0;
+
+	// Normalize normal vector (across alveolar ridge, bucco-lingual)
+	const nLen = Math.hypot(normal2D.x, normal2D.y);
+	const unitNormal: Point2D =
+		Number.isFinite(nLen) && nLen > 1e-6 ? { x: normal2D.x / nLen, y: normal2D.y / nLen } : { x: 0, y: 1 };
+	const unitTangent: Point2D = {
+		x: unitNormal.y === 0 ? 0 : unitNormal.y,
+		y: unitNormal.x === 0 ? 0 : -unitNormal.x,
+	};
+
+	const maxCoordX = Math.max(1, dim.width - 1);
+	const maxCoordY = Math.max(1, dim.height - 1);
+	const maxCoordZ = Math.max(1, dim.depth - 1);
+
+	// Effective center with bucco-lingual and height offsets
+	const blOffset = options?.buccoLingualOffsetMm ?? 0;
+	const zOffset = options?.heightOffsetMm ?? 0;
+	const effCenterX = centerMm.x + (blOffset !== 0 ? unitNormal.x * blOffset : 0);
+	const effCenterY = centerMm.y + (blOffset !== 0 ? unitNormal.y * blOffset : 0);
+	const effCenterZ = typeof options?.sliceCenterZMm === "number" && Number.isFinite(options.sliceCenterZMm)
+		? options.sliceCenterZMm
+		: centerMm.z + zOffset;
+
+	// World coordinate at slice pixel (0, 0): top-left
+	const world00X = effCenterX - unitNormal.x * halfW;
+	const world00Y = effCenterY - unitNormal.y * halfW;
+	const world00Z = effCenterZ + halfH;
+
+	const spX = sp.x || 0.2;
+	const spY = sp.y || 0.2;
+	const spZ = sp.z || 0.2;
+
+	const vox00X = (world00X - origin.x) / spX;
+	const vox00Y = (world00Y - origin.y) / spY;
+	const vox00Z = (world00Z - origin.z) / spZ;
+
+	const sliceOrigin: [number, number, number] = [vox00X / maxCoordX, vox00Y / maxCoordY, vox00Z / maxCoordZ];
+	const uX = (unitNormal.x * widthMm) / (spX * maxCoordX);
+	const uY = (unitNormal.y * widthMm) / (spY * maxCoordY);
+	const axisU: [number, number, number] = [uX === 0 ? 0 : uX, uY === 0 ? 0 : uY, 0];
+	const axisV: [number, number, number] = [0, 0, -heightMm / (spZ * maxCoordZ)];
+
+	const normalStepMm = Math.min(spX, Math.min(spY, spZ));
+	const slabMode = options?.slabMode ?? "single";
+	const slabThicknessMm = options?.slabThicknessMm ?? 2.0;
+	const isSlabActive = slabMode !== "single" && slabThicknessMm > normalStepMm;
+	const slabSteps = isSlabActive ? Math.max(1, Math.round(slabThicknessMm / normalStepMm)) : 1;
+	const stepMm = isSlabActive ? slabThicknessMm / slabSteps : 0;
+	const nX = (unitTangent.x * stepMm) / (spX * maxCoordX);
+	const nY = (unitTangent.y * stepMm) / (spY * maxCoordY);
+	const axisNorm: [number, number, number] = [nX === 0 ? 0 : nX, nY === 0 ? 0 : nY, 0];
+
+	let slabModeCode = 0;
+	if (slabMode === "mip") slabModeCode = 1;
+	else if (slabMode === "minip") slabModeCode = 2;
+	else if (slabMode === "average") slabModeCode = 3;
+
+	return {
+		widthPx,
+		heightPx,
+		pixelSpacingX,
+		pixelSpacingY,
+		sliceOrigin,
+		axisU,
+		axisV,
+		axisNorm,
+		slabModeCode,
+		slabSteps,
+		world00: { x: world00X, y: world00Y, z: world00Z },
+		unitNormal,
+		unitTangent,
+		stepVoxU: { x: (unitNormal.x * pixelSpacingMm) / spX, y: (unitNormal.y * pixelSpacingMm) / spY },
+		stepVoxVz: -pixelSpacingMm / spZ,
+		vox00: { x: vox00X, y: vox00Y, z: vox00Z },
+	};
+}
+
+/**
+ * Pure mathematical calculation of 3D Texture UVW coordinates for a perpendicular
+ * transverse cross-section slice (buccal-lingual span) along a dental arch curve.
+ * Standards: DICOM Part 3, Misch CE, Buser (24x34 mm span, 0.25 mm/px).
+ */
+export function computeGlCrossSectionCoordinates(
+	volume: CbctVoxelVolume,
+	centerMm: Point3D,
+	normal2D: Point2D,
+	options?: CrossSectionRenderOptions,
+): GlSliceCoordinates {
+	const basis = computeCrossSectionAffineBasis(volume, centerMm, normal2D, options);
+	return {
+		widthPx: basis.widthPx,
+		heightPx: basis.heightPx,
+		pixelSpacingX: basis.pixelSpacingX,
+		pixelSpacingY: basis.pixelSpacingY,
+		sliceOrigin: basis.sliceOrigin,
+		axisU: basis.axisU,
+		axisV: basis.axisV,
+		axisNorm: basis.axisNorm,
+		slabModeCode: basis.slabModeCode,
+		slabSteps: basis.slabSteps,
+	};
+}
 
 export interface CrossSectionSliceData {
 	readonly sliceIndex: number;
@@ -38,10 +210,12 @@ export interface CrossSectionSliceData {
 	readonly pixelData: Uint8ClampedArray; // RGBA grayscale
 	readonly corticalCrestHeightMm?: number;
 	readonly alveolarRidgeWidthMm?: number;
+	readonly glCoordinates?: GlSliceCoordinates;
 }
 
 /**
  * Reslices a single perpendicular transverse cross-section slice at a specific curve point.
+ * Powered by 3D Affine Basis with sub-voxel trilinear continuous sampling.
  */
 export function extractSingleCrossSectionSlice(
 	volume: CbctVoxelVolume,
@@ -50,15 +224,7 @@ export function extractSingleCrossSectionSlice(
 	sliceIndex: number,
 	distanceAlongArchMm: number,
 	nearestAnchor: DentalArchAnchor,
-	options: {
-		widthMm?: number;
-		heightMm?: number;
-		pixelSpacingMm?: number;
-		windowWidth?: number;
-		windowLevel?: number;
-		invert?: boolean;
-		offsetFromMidlineMm?: number;
-	} = {},
+	options: CrossSectionRenderOptions = {},
 ): CrossSectionSliceData {
 	const widthMm = Number.isFinite(options.widthMm) && (options.widthMm ?? 0) > 0 ? options.widthMm! : 24.0;
 	const heightMm = Number.isFinite(options.heightMm) && (options.heightMm ?? 0) > 0 ? options.heightMm! : 32.0;
@@ -70,34 +236,33 @@ export function extractSingleCrossSectionSlice(
 	const windowLevel = options.windowLevel ?? volume.defaultWindowLevel ?? 1300;
 	const invert = options.invert ?? false;
 
-	const widthPx = Math.round(widthMm / pixelSpacingMm);
-	const heightPx = Math.round(heightMm / pixelSpacingMm);
+	const basis = computeCrossSectionAffineBasis(volume, centerMm, normal2D, {
+		...options,
+		widthMm,
+		heightMm,
+		pixelSpacingMm,
+	});
+
+	const { widthPx, heightPx, unitNormal, unitTangent, vox00, stepVoxU, stepVoxVz } = basis;
 	const pixelData = new Uint8ClampedArray(widthPx * heightPx * 4);
-	const lut = get16BitLut(windowWidth, windowLevel, invert);
+	const lut = options.lut ?? get16BitLut(windowWidth, windowLevel, invert);
 
-	const halfW = widthMm / 2.0;
-	const halfH = heightMm / 2.0;
-
-	// Normalize normal vector (guarantee non-zero, unit length)
-	const nLen = Math.hypot(normal2D.x, normal2D.y);
-	const unitNormal: Point2D =
-		Number.isFinite(nLen) && nLen > 1e-6 ? { x: normal2D.x / nLen, y: normal2D.y / nLen } : { x: 0, y: 1 };
-	const unitTangent: Point2D = { x: unitNormal.y, y: -unitNormal.x };
-
+	// High-performance affine-basis rasterization:
+	// Zero heap allocations in the inner loop (no temporary objects or matrix conversions)
 	for (let y = 0; y < heightPx; y++) {
-		const zOffsetMm = halfH - y * pixelSpacingMm;
-		const sampleZ = centerMm.z + zOffsetMm;
+		const curZ = vox00.z + y * stepVoxVz;
+		const rowStartX = vox00.x;
+		const rowStartY = vox00.y;
+		const rowIdx = y * widthPx * 4;
 
 		for (let x = 0; x < widthPx; x++) {
-			const normalOffsetMm = -halfW + x * pixelSpacingMm;
-			const sampleX = centerMm.x + unitNormal.x * normalOffsetMm;
-			const sampleY = centerMm.y + unitNormal.y * normalOffsetMm;
+			const curX = rowStartX + x * stepVoxU.x;
+			const curY = rowStartY + x * stepVoxU.y;
 
-			const vox = worldMmToVoxelContinuous({ x: sampleX, y: sampleY, z: sampleZ }, volume);
-			const hu = sampleVoxelTrilinearHU(vox.x, vox.y, vox.z, volume);
+			const hu = sampleVoxelTrilinearHU(curX, curY, curZ, volume);
 			const gray = lut[(hu + 32768) & 0xffff]!;
 
-			const idx = (y * widthPx + x) * 4;
+			const idx = rowIdx + x * 4;
 			pixelData[idx] = gray;
 			pixelData[idx + 1] = gray;
 			pixelData[idx + 2] = gray;
@@ -126,6 +291,18 @@ export function extractSingleCrossSectionSlice(
 		widthPx,
 		heightPx,
 		pixelData,
+		glCoordinates: {
+			widthPx: basis.widthPx,
+			heightPx: basis.heightPx,
+			pixelSpacingX: basis.pixelSpacingX,
+			pixelSpacingY: basis.pixelSpacingY,
+			sliceOrigin: basis.sliceOrigin,
+			axisU: basis.axisU,
+			axisV: basis.axisV,
+			axisNorm: basis.axisNorm,
+			slabModeCode: basis.slabModeCode,
+			slabSteps: basis.slabSteps,
+		},
 	};
 }
 
@@ -228,6 +405,12 @@ export function extractArchCrossSectionSeries(
 	const vectorField = calculateArchTangentsAndNormals(archCurve.splinePointsMm);
 	if (vectorField.length === 0) return [];
 
+	// Pre-calculate 16-bit LUT once for the entire series to eliminate GC thrashing
+	const windowWidth = options.windowWidth ?? volume.defaultWindowWidth ?? 4400;
+	const windowLevel = options.windowLevel ?? volume.defaultWindowLevel ?? 1300;
+	const invert = options.invert ?? false;
+	const sharedLut = get16BitLut(windowWidth, windowLevel, invert);
+
 	const halfArchLength = archCurve.totalArcLengthMm > 0 ? archCurve.totalArcLengthMm / 2 : 55.0;
 	const slices: CrossSectionSliceData[] = [];
 	let currentTargetDist = 0;
@@ -248,6 +431,7 @@ export function extractArchCrossSectionSeries(
 				{
 					...options,
 					offsetFromMidlineMm,
+					lut: sharedLut,
 				},
 			);
 			slices.push(slice);
@@ -430,5 +614,3 @@ export function findNearestAnchorToPoint(pointMm: Point2D, archCurve: DentalArch
 	}
 	return closest;
 }
-
-export { computeGlCrossSectionCoordinates } from "./mpr/webgl/CbctVolumeGlContext";
