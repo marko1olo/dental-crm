@@ -361,7 +361,13 @@ export function findNearestToothAnchorToDistance(
 	let closestAnchor = archCurve.anchors[0]!;
 	let minDistance = Infinity;
 
-	for (const anchor of archCurve.anchors) {
+	const totalArcLen = archCurve.totalArcLengthMm || 100.0;
+	const halfArchLen = totalArcLen > 0 ? totalArcLen / 2.0 : 50.0;
+	const isTargetRight = distanceAlongArchMm < halfArchLen;
+	const candidateAnchors = archCurve.anchors.filter((a) => a.isQuadrantRight === isTargetRight);
+	const pool = candidateAnchors.length > 0 ? candidateAnchors : archCurve.anchors;
+
+	for (const anchor of pool) {
 		const dist = Math.hypot(anchor.positionMm.x - queryPoint.x, anchor.positionMm.y - queryPoint.y);
 		if (dist < minDistance) {
 			minDistance = dist;
@@ -370,6 +376,33 @@ export function findNearestToothAnchorToDistance(
 	}
 
 	return closestAnchor;
+}
+
+/**
+ * Validates that a CrossSectionAffineBasis has strictly orthonormal span and normal vectors:
+ * - u_axisU is in XY plane along unitNormal
+ * - u_axisV is vertical along -Z
+ * - u_axisNorm steps along unitTangent
+ * - All pairs are mutually perpendicular (dot product < 1e-4)
+ * Standards: DICOM Part 3 PS 3.3, Misch CE, Buser, Planmeca Romexis 6.x.
+ */
+export function isCrossSectionBasisOrthonormal(basis: CrossSectionAffineBasis, tolerance = 1e-4): boolean {
+	const dotUV = basis.axisU[0] * basis.axisV[0] + basis.axisU[1] * basis.axisV[1] + basis.axisU[2] * basis.axisV[2];
+	const dotUNorm = basis.axisU[0] * basis.unitTangent.x + basis.axisU[1] * basis.unitTangent.y;
+	const dotVNorm = basis.axisV[0] * basis.unitTangent.x + basis.axisV[1] * basis.unitTangent.y;
+	const dotNormalTangent = basis.unitNormal.x * basis.unitTangent.x + basis.unitNormal.y * basis.unitTangent.y;
+
+	const normNormal = Math.hypot(basis.unitNormal.x, basis.unitNormal.y);
+	const normTangent = Math.hypot(basis.unitTangent.x, basis.unitTangent.y);
+
+	return (
+		Math.abs(dotUV) < tolerance &&
+		Math.abs(dotUNorm) < tolerance &&
+		Math.abs(dotVNorm) < tolerance &&
+		Math.abs(dotNormalTangent) < tolerance &&
+		Math.abs(normNormal - 1.0) < tolerance &&
+		Math.abs(normTangent - 1.0) < tolerance
+	);
 }
 
 export interface CrossSectionSeriesOptions {

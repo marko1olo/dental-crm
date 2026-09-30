@@ -174,12 +174,19 @@ export function calculateToothMarkersOnPano(
 	});
 }
 
-export {
+import {
 	CBCT_PANORAMIC_CURVED_VERTEX_SHADER,
 	CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER,
 	CBCT_PANORAMIC_VERTEX_SHADER,
 	CBCT_PANORAMIC_FRAGMENT_SHADER,
 } from "./mpr/webgl/cbctMprShaders";
+
+export {
+	CBCT_PANORAMIC_CURVED_VERTEX_SHADER,
+	CBCT_PANORAMIC_CURVED_FRAGMENT_SHADER,
+	CBCT_PANORAMIC_VERTEX_SHADER,
+	CBCT_PANORAMIC_FRAGMENT_SHADER,
+};
 
 function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader | null {
 	const shader = gl.createShader(type);
@@ -364,6 +371,8 @@ export class WebGl2PanoramicEngine {
 			const rawTanY = n0.tangent.y + (n1.tangent.y - n0.tangent.y) * frac;
 			const tanLen = Math.hypot(rawTanX, rawTanY) || 1.0;
 
+			const curv = (n0.curvature ?? 0.0) + ((n1.curvature ?? 0.0) - (n0.curvature ?? 0.0)) * frac;
+
 			// Row 0: Point + Normal (RGBA32F)
 			const idx0 = col * 4;
 			splineBuf[idx0 + 0] = ptX;
@@ -375,7 +384,7 @@ export class WebGl2PanoramicEngine {
 			const idx1 = (outW + col) * 4;
 			splineBuf[idx1 + 0] = rawTanX / tanLen;
 			splineBuf[idx1 + 1] = rawTanY / tanLen;
-			splineBuf[idx1 + 2] = 0.0;
+			splineBuf[idx1 + 2] = curv;
 			splineBuf[idx1 + 3] = targetDistMm;
 		}
 
@@ -539,7 +548,10 @@ export class WebGl2PanoramicEngine {
 		gl.uniform1i(this.uniforms!.useAnalyticalPoly, options.useAnalyticalPoly ? 1 : 0);
 		const poly = options.archPolyCoeffs ?? [0.035, 0.0, -56.5, 0.0];
 		gl.uniform4f(this.uniforms!.archPolyCoeffs, poly[0], poly[1], poly[2], poly[3]);
-		gl.uniform1f(this.uniforms!.anteriorTroughRatio, options.anteriorTroughRatio ?? 1.0);
+		const effAnteriorRatio = options.anteriorTroughRatio !== undefined
+			? Math.max(0.1, Math.min(1.0, options.anteriorTroughRatio))
+			: 0.65;
+		gl.uniform1f(this.uniforms!.anteriorTroughRatio, effAnteriorRatio);
 
 		// Draw quad
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -776,6 +788,11 @@ export function reconstructPanoramicView(
 
 	const colStep = coarsePreview ? 2 : 1;
 
+	const anteriorRatio = options.anteriorTroughRatio !== undefined
+		? Math.max(0.1, Math.min(1.0, options.anteriorTroughRatio))
+		: 0.65;
+	const halfTotalLen = totalLengthMm > 0 ? totalLengthMm / 2.0 : 50.0;
+
 	// Sweep along the spline with constant physical arc-length distance
 	for (let col = 0; col < outW; col += colStep) {
 		const ptX = colPtX[col]!;
@@ -783,9 +800,19 @@ export function reconstructPanoramicView(
 		const normX = colNormX[col]!;
 		const normY = colNormY[col]!;
 
+		// Calculate local focal radius with physiological anterior narrowing (0.5..0.8)
+		let colFocalRadiusMm = focalRadiusMm;
+		if (anteriorRatio < 1.0 && halfTotalLen > 0) {
+			const targetDistMm = (col / denomW) * totalLengthMm;
+			const centerNorm = Math.min(1.0, Math.abs(targetDistMm - halfTotalLen) / halfTotalLen);
+			const t = Math.max(0, Math.min(1, (centerNorm - 0.15) / 0.35));
+			const taper = anteriorRatio + (1.0 - anteriorRatio) * (t * t * (3 - 2 * t));
+			colFocalRadiusMm = focalRadiusMm * taper;
+		}
+
 		// Precompute voxel X, Y for all slab samples in this column (invariant across rows)
 		for (let s = 0; s < numSlab; s++) {
-			const off = slabOffsets[s]!;
+			const off = ((s - slabSamples) / slabSamples) * colFocalRadiusMm;
 			sampleVx[s] = (ptX + normX * off - originX) * invSpX;
 			sampleVy[s] = (ptY + normY * off - originY) * invSpY;
 		}

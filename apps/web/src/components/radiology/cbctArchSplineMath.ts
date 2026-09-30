@@ -121,8 +121,8 @@ export function fitSmoothDentalArchSpline(
 
 			if (Number.isFinite(x) && Number.isFinite(y)) {
 				curve.push({
-					x: Number(x.toFixed(2)),
-					y: Number(y.toFixed(2)),
+					x: Math.round(x * 100) / 100,
+					y: Math.round(y * 100) / 100,
 				});
 			}
 		}
@@ -131,8 +131,8 @@ export function fitSmoothDentalArchSpline(
 	const lastPt = pts[pts.length - 1]!;
 	if (Number.isFinite(lastPt.x) && Number.isFinite(lastPt.y)) {
 		curve.push({
-			x: Number(lastPt.x.toFixed(2)),
-			y: Number(lastPt.y.toFixed(2)),
+			x: Math.round(lastPt.x * 100) / 100,
+			y: Math.round(lastPt.y * 100) / 100,
 		});
 	}
 
@@ -160,12 +160,20 @@ export function calculateArchLengthMm(spline: readonly Point2D[]): number {
  * Computes tangents and unit normal vectors along the dental spline curve.
  * Zero-division, Infinity, and NaN safe under coinciding or degenerate anchors.
  */
-export function calculateArchTangentsAndNormals(spline: readonly Point2D[]): Array<{
-	point: Point2D;
-	tangent: Point2D;
-	normal: Point2D;
-	distanceAlongArchMm: number;
-}> {
+export interface ArchVectorNode {
+	readonly point: Point2D;
+	readonly tangent: Point2D;
+	readonly normal: Point2D;
+	readonly distanceAlongArchMm: number;
+	readonly curvature: number;
+}
+
+/**
+ * Computes tangents, unit normal vectors, and Frenet-Serret curvature along the dental spline curve.
+ * Zero-division, Infinity, and NaN safe under coinciding or degenerate anchors.
+ * Standards: DICOM Part 3, Planmeca Romexis 6.x, Vatech Ez3D-i.
+ */
+export function calculateArchTangentsAndNormals(spline: readonly Point2D[]): ArchVectorNode[] {
 	if (!spline || spline.length === 0) return [];
 
 	const validSpline: Point2D[] = [];
@@ -176,7 +184,7 @@ export function calculateArchTangentsAndNormals(spline: readonly Point2D[]): Arr
 	}
 	if (validSpline.length === 0) return [];
 
-	const results: Array<{
+	const rawNodes: Array<{
 		point: Point2D;
 		tangent: Point2D;
 		normal: Point2D;
@@ -263,11 +271,58 @@ export function calculateArchTangentsAndNormals(spline: readonly Point2D[]): Arr
 		const normNormal: Point2D = { x: -unitTy, y: unitTx };
 		lastValidTangent = normTangent;
 
-		results.push({
+		rawNodes.push({
 			point: cur,
 			tangent: normTangent,
 			normal: normNormal,
 			distanceAlongArchMm: Number(accumulatedDist.toFixed(2)),
+		});
+	}
+
+	// Compute Frenet-Serret curvature: kappa = |dT/ds . N|
+	const nNodes = rawNodes.length;
+	const results: ArchVectorNode[] = [];
+
+	for (let i = 0; i < nNodes; i++) {
+		const cur = rawNodes[i]!;
+		let dTx = 0;
+		let dTy = 0;
+		let ds = 1.0;
+
+		if (nNodes < 2) {
+			results.push({ ...cur, curvature: 0.0 });
+			continue;
+		}
+
+		if (i === 0) {
+			const next = rawNodes[1]!;
+			dTx = next.tangent.x - cur.tangent.x;
+			dTy = next.tangent.y - cur.tangent.y;
+			ds = Math.max(1e-4, next.distanceAlongArchMm - cur.distanceAlongArchMm);
+		} else if (i === nNodes - 1) {
+			const prev = rawNodes[i - 1]!;
+			dTx = cur.tangent.x - prev.tangent.x;
+			dTy = cur.tangent.y - prev.tangent.y;
+			ds = Math.max(1e-4, cur.distanceAlongArchMm - prev.distanceAlongArchMm);
+		} else {
+			const prev = rawNodes[i - 1]!;
+			const next = rawNodes[i + 1]!;
+			dTx = next.tangent.x - prev.tangent.x;
+			dTy = next.tangent.y - prev.tangent.y;
+			ds = Math.max(1e-4, next.distanceAlongArchMm - prev.distanceAlongArchMm);
+		}
+
+		const dTdsX = dTx / ds;
+		const dTdsY = dTy / ds;
+		const kappa = Math.abs(dTdsX * cur.normal.x + dTdsY * cur.normal.y);
+		const safeCurvature = Number.isFinite(kappa) ? Number(kappa.toFixed(4)) : 0.0;
+
+		results.push({
+			point: cur.point,
+			tangent: cur.tangent,
+			normal: cur.normal,
+			distanceAlongArchMm: cur.distanceAlongArchMm,
+			curvature: safeCurvature,
 		});
 	}
 
@@ -277,10 +332,12 @@ export function calculateArchTangentsAndNormals(spline: readonly Point2D[]): Arr
 /**
  * Computes the parallel inner and outer boundary curves of the focal trough
  * offset by +/- (thickness / 2) along the normal vectors.
+ * Supports physiological anterior narrowing (anteriorTroughRatio: 0.5..0.8) per Romexis standards.
  */
 export function getFocalTroughBoundaryCurves(
 	spline: readonly Point2D[],
 	thicknessMm: number,
+	anteriorTroughRatio = 1.0,
 ): {
 	innerBoundary: Point2D[];
 	outerBoundary: Point2D[];
@@ -291,14 +348,26 @@ export function getFocalTroughBoundaryCurves(
 	const innerBoundary: Point2D[] = [];
 	const outerBoundary: Point2D[] = [];
 
+	const totalLengthMm = vectorField.length > 0 ? (vectorField[vectorField.length - 1]?.distanceAlongArchMm || 100.0) : 100.0;
+	const halfArchLength = totalLengthMm > 0 ? totalLengthMm / 2.0 : 50.0;
+	const ratioClamped = Math.max(0.1, Math.min(1.0, anteriorTroughRatio));
+
 	for (const node of vectorField) {
+		let effHalf = halfThickness;
+		if (ratioClamped < 1.0 && halfArchLength > 0) {
+			const centerNorm = Math.min(1.0, Math.abs(node.distanceAlongArchMm - halfArchLength) / halfArchLength);
+			const t = Math.max(0, Math.min(1, (centerNorm - 0.15) / 0.35));
+			const taper = ratioClamped + (1.0 - ratioClamped) * (t * t * (3 - 2 * t));
+			effHalf = halfThickness * taper;
+		}
+
 		innerBoundary.push({
-			x: Number((node.point.x - node.normal.x * halfThickness).toFixed(2)),
-			y: Number((node.point.y - node.normal.y * halfThickness).toFixed(2)),
+			x: Number((node.point.x - node.normal.x * effHalf).toFixed(2)),
+			y: Number((node.point.y - node.normal.y * effHalf).toFixed(2)),
 		});
 		outerBoundary.push({
-			x: Number((node.point.x + node.normal.x * halfThickness).toFixed(2)),
-			y: Number((node.point.y + node.normal.y * halfThickness).toFixed(2)),
+			x: Number((node.point.x + node.normal.x * effHalf).toFixed(2)),
+			y: Number((node.point.y + node.normal.y * effHalf).toFixed(2)),
 		});
 	}
 

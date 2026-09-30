@@ -22,7 +22,18 @@ import {
 	DEFAULT_MAXILLARY_ARCH_ANCHORS,
 	buildDentalArchCurve,
 	calculateArchTangentsAndNormals,
+	getFocalTroughBoundaryCurves,
+	type ArchVectorNode,
 } from "../cbctArchSplineMath";
+import {
+	computeCrossSectionAffineBasis,
+	isCrossSectionBasisOrthonormal,
+	findNearestToothAnchorToDistance,
+	extractArchCrossSectionSeries,
+} from "../cbctCrossSectionResliceMath";
+import {
+	drawPanoramicOverlay,
+} from "../mpr/cbctCurvedOverlayRenderers";
 import {
 	reconstructPanoramicView,
 	reconstructPanoramicViewWebGl2,
@@ -410,6 +421,240 @@ describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {
 				CBCT_PANORAMIC_FRAGMENT_SHADER.includes("float darkAir = 10.0 / 255.0;"),
 				"Protects clinician eyes by mapping air to dark charcoal on white paper mode",
 			);
+		});
+	});
+
+	// ─── 8. FRENET-SERRET FRAME CURVATURE & ANTERIOR ARCH DYNAMICS ───────────
+	describe("8. Dental Arch Spline Frenet-Serret Frame & Curvature Dynamics", () => {
+		it("computes physical Frenet-Serret curvature kappa (mm^-1) along Catmull-Rom spline", () => {
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+			const vectorField = calculateArchTangentsAndNormals(curve.splinePointsMm);
+
+			assert.ok(vectorField.length > 50);
+
+			for (const node of vectorField) {
+				assert.equal(typeof node.curvature, "number");
+				assert.equal(Number.isFinite(node.curvature), true);
+				assert.ok(node.curvature >= 0, `Curvature must be non-negative, got ${node.curvature}`);
+
+				// Unit length verification
+				const tLen = Math.hypot(node.tangent.x, node.tangent.y);
+				const nLen = Math.hypot(node.normal.x, node.normal.y);
+				assert.ok(Math.abs(tLen - 1.0) < 1e-3, `Tangent must be unit length, got ${tLen}`);
+				assert.ok(Math.abs(nLen - 1.0) < 1e-3, `Normal must be unit length, got ${nLen}`);
+
+				// Strict orthogonality: T . N = 0
+				const dot = node.tangent.x * node.normal.x + node.tangent.y * node.normal.y;
+				assert.ok(Math.abs(dot) < 1e-4, `T . N must be 0, got ${dot}`);
+			}
+
+			// In adult mandible, anterior incisor turn (around midline) has significantly higher curvature than distal molars
+			const midIdx = Math.floor(vectorField.length / 2);
+			const anteriorCurv = vectorField[midIdx]!.curvature;
+			const molarCurvRight = vectorField[2]!.curvature;
+			const molarCurvLeft = vectorField[vectorField.length - 3]!.curvature;
+
+			assert.ok(
+				anteriorCurv > molarCurvRight,
+				`Anterior curvature (${anteriorCurv}) must exceed right molar curvature (${molarCurvRight})`,
+			);
+			assert.ok(
+				anteriorCurv > molarCurvLeft,
+				`Anterior curvature (${anteriorCurv}) must exceed left molar curvature (${molarCurvLeft})`,
+			);
+			assert.ok(
+				anteriorCurv >= 0.02,
+				`Anterior arch turn must have curvature >= 0.02 mm^-1 (got ${anteriorCurv})`,
+			);
+		});
+	});
+
+	// ─── 9. FOCAL TROUGH PHYSIOLOGICAL ANTERIOR NARROWING (0.5..0.8) ─────────
+	describe("9. Focal Trough with Physiological Anterior Narrowing (0.5..0.8)", () => {
+		it("narrows boundary curves in incisor zone with anteriorTroughRatio 0.65", () => {
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible", 14.0);
+			const boundsNarrowed = getFocalTroughBoundaryCurves(curve.splinePointsMm, 14.0, 0.65);
+			const boundsUniform = getFocalTroughBoundaryCurves(curve.splinePointsMm, 14.0, 1.0);
+
+			assert.equal(boundsNarrowed.innerBoundary.length, curve.splinePointsMm.length);
+			assert.equal(boundsNarrowed.outerBoundary.length, curve.splinePointsMm.length);
+
+			const midIdx = Math.floor(curve.splinePointsMm.length / 2);
+			const pInNarrow = boundsNarrowed.innerBoundary[midIdx]!;
+			const pOutNarrow = boundsNarrowed.outerBoundary[midIdx]!;
+			const midThicknessNarrow = Math.hypot(pOutNarrow.x - pInNarrow.x, pOutNarrow.y - pInNarrow.y);
+
+			const pInUni = boundsUniform.innerBoundary[midIdx]!;
+			const pOutUni = boundsUniform.outerBoundary[midIdx]!;
+			const midThicknessUni = Math.hypot(pOutUni.x - pInUni.x, pOutUni.y - pInUni.y);
+
+			// Expected midpoint thickness: 14.0 * 0.65 = 9.1 mm
+			assert.ok(
+				Math.abs(midThicknessNarrow - 9.1) < 0.6,
+				`Midpoint thickness with ratio 0.65 must be ~9.1 mm (got ${midThicknessNarrow.toFixed(2)})`,
+			);
+			assert.ok(
+				Math.abs(midThicknessUni - 14.0) < 0.5,
+				`Uniform midpoint thickness must be ~14.0 mm (got ${midThicknessUni.toFixed(2)})`,
+			);
+
+			// Molar thickness should remain ~14.0 mm
+			const pInMolar = boundsNarrowed.innerBoundary[2]!;
+			const pOutMolar = boundsNarrowed.outerBoundary[2]!;
+			const molarThickness = Math.hypot(pOutMolar.x - pInMolar.x, pOutMolar.y - pInMolar.y);
+			assert.ok(
+				Math.abs(molarThickness - 14.0) < 0.5,
+				`Molar thickness must remain ~14.0 mm (got ${molarThickness.toFixed(2)})`,
+			);
+		});
+
+		it("reconstructs panoramic view with physiological anterior narrowing in CPU path", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible", 14.0, -10.0);
+
+			const pano = reconstructPanoramicView(volume, curve, {
+				anteriorTroughRatio: 0.65,
+				projectionMode: "mip",
+			});
+
+			assert.equal(pano.centerZMm, -10.0);
+			assert.equal(pano.focalThicknessMm, 14.0);
+			assert.ok(pano.pixelData.length > 0);
+			assert.equal(pano.toothMarkersOnPano.length, 16);
+		});
+	});
+
+	// ─── 10. TRANSVERSE CROSS-SECTIONS ORTHONORMAL BASIS & FDI 18..48 ────────
+	describe("10. Transverse Cross-Sections Orthonormal Basis & FDI 18..48 Mapping", () => {
+		it("confirms cross-section affine basis is strictly orthonormal without shear", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			const centerMm = { x: -15.0, y: -25.0, z: -10.0 };
+			const normal2D = { x: 0.8, y: 0.6 };
+
+			const basis = computeCrossSectionAffineBasis(volume, centerMm, normal2D, {
+				widthMm: 24.0,
+				heightMm: 34.0,
+				pixelSpacingMm: 0.25,
+				slabMode: "mip",
+				slabThicknessMm: 3.0,
+			});
+
+			assert.ok(
+				isCrossSectionBasisOrthonormal(basis),
+				"Cross-section affine basis must satisfy orthonormal criteria",
+			);
+			assert.equal(basis.widthPx, 96);
+			assert.equal(basis.heightPx, 136);
+			assert.equal(basis.slabModeCode, 1);
+		});
+
+		it("maps FDI tooth numbers monotonically from right to left without wrap-around", () => {
+			const curveMand = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+			const totalLenMand = curveMand.totalArcLengthMm;
+
+			// Right molar 48
+			const anchorStart = findNearestToothAnchorToDistance(0.5, curveMand);
+			assert.equal(anchorStart.toothFdi, "48", `Distance 0.5 mm must bind to 48, got ${anchorStart.toothFdi}`);
+
+			// Left molar 38
+			const anchorEnd = findNearestToothAnchorToDistance(totalLenMand - 0.5, curveMand);
+			assert.equal(anchorEnd.toothFdi, "38", `Distance ${totalLenMand - 0.5} mm must bind to 38, got ${anchorEnd.toothFdi}`);
+
+			// Incisors near midline
+			const anchorMidRight = findNearestToothAnchorToDistance(totalLenMand / 2 - 1.0, curveMand);
+			const anchorMidLeft = findNearestToothAnchorToDistance(totalLenMand / 2 + 1.0, curveMand);
+			assert.equal(anchorMidRight.toothFdi, "41");
+			assert.equal(anchorMidLeft.toothFdi, "31");
+
+			// Maxillary arch: 18 -> 11 -> 21 -> 28
+			const curveMax = buildDentalArchCurve(DEFAULT_MAXILLARY_ARCH_ANCHORS, "maxilla");
+			const totalLenMax = curveMax.totalArcLengthMm;
+			assert.equal(findNearestToothAnchorToDistance(0.5, curveMax).toothFdi, "18");
+			assert.equal(findNearestToothAnchorToDistance(totalLenMax - 0.5, curveMax).toothFdi, "28");
+		});
+
+		it("generates cross-section series with uniform 1.0 mm and 2.0 mm step", () => {
+			const volume = createEmptyCbctVolume(80, 80, 60, 0.5, 0);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+
+			const series1mm = extractArchCrossSectionSeries(volume, curve, { stepMm: 1.0 });
+			const series2mm = extractArchCrossSectionSeries(volume, curve, { stepMm: 2.0 });
+
+			assert.ok(series1mm.length > series2mm.length);
+			assert.equal(series1mm[0]!.sliceIndex, 1);
+			assert.equal(series1mm[0]!.nearestToothFdi, "48");
+			assert.equal(series1mm[series1mm.length - 1]!.nearestToothFdi, "38");
+		});
+	});
+
+	// ─── 11. CURVED MPR OVERLAY RENDERER Z-ALIGNMENT & BADGES ───────────────
+	describe("11. Curved MPR Overlay Renderer Z-Alignment & Badges", () => {
+		it("renders panoramic overlay with axial line aligned to activePano.centerZMm and tooth badges", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible", 14.0, -10.0);
+			const pano = reconstructPanoramicView(volume, curve);
+
+			// Mock CanvasRenderingContext2D
+			const drawnLines: any[] = [];
+			const drawnText: any[] = [];
+			const mockCtx = {
+				canvas: { width: pano.widthPx, height: pano.heightPx },
+				save: () => {},
+				restore: () => {},
+				translate: () => {},
+				scale: () => {},
+				beginPath: () => {},
+				moveTo: (x: number, y: number) => { drawnLines.push({ type: "moveTo", x, y }); },
+				lineTo: (x: number, y: number) => { drawnLines.push({ type: "lineTo", x, y }); },
+				stroke: () => {},
+				fill: () => {},
+				closePath: () => {},
+				arc: () => {},
+				rect: () => {},
+				roundRect: () => {},
+				setLineDash: () => {},
+				measureText: (text: string) => ({ width: text.length * 6 }),
+				fillText: (text: string, x: number, y: number) => { drawnText.push({ text, x, y }); },
+				strokeStyle: "",
+				fillStyle: "",
+				lineWidth: 1,
+				font: "",
+				textAlign: "",
+				textBaseline: "",
+			} as unknown as CanvasRenderingContext2D;
+
+			drawPanoramicOverlay(mockCtx, {
+				activePano: pano,
+				volume,
+				crosshairMm: { x: 0, y: 0, z: -10.0 }, // exactly at centerZMm
+				transform: { panX: 0, panY: 0, zoom: 1.0 },
+				slabMode: "single",
+				slabThicknessMm: 1.0,
+				interpolatedNerve3D: [],
+				archCurve: curve,
+				nervePoints: [],
+				studioMode: "panoramic",
+				activeCrossSection: null,
+				implant3DWorld: null,
+				nerveAuditResult: {
+					isDangerous: false,
+					isWarning: false,
+					netClearanceToCanalWallMm: 10,
+					clinicalMessageRu: "OK",
+				},
+				crossSections: [],
+				hoveredToothMarkerFdi: null,
+				invertColors: false,
+			});
+
+			// Axial line should be drawn at heightPx / 2
+			const expectedY = Math.round(pano.heightPx / 2);
+			const axialLines = drawnLines.filter((l) => l.y === expectedY);
+			assert.ok(axialLines.length >= 2, `Axial line must be centered at y=${expectedY} for crosshair z=-10.0`);
+
+			// Tooth badges (#48, #47, etc.) should be rendered
+			const badges = drawnText.filter((t) => t.text.startsWith("#"));
+			assert.ok(badges.length >= 10, `FDI tooth badges must be rendered along top of panorama (got ${badges.length})`);
 		});
 	});
 });

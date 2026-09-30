@@ -1,0 +1,54 @@
+{
+  "subagent": "dental_arch_spline_cross_sections_gpu_inquisitor",
+  "status": "COMPLETED",
+  "created_at": "2026-09-30T13:51:50+04:00",
+  "updated_at": "2026-09-30T14:46:40+04:00",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md",
+    "Read AGENTS.md",
+    "Audited apps/web/src/components/radiology/dentalCurveEngine.ts",
+    "Audited apps/web/src/components/radiology/cbctArchSplineMath.ts",
+    "Audited apps/web/src/components/radiology/cbctPanoramicReconstructionMath.ts",
+    "Audited apps/web/src/components/radiology/cbctCrossSectionResliceMath.ts",
+    "Audited apps/web/src/components/radiology/mpr/cbctCurvedOverlayRenderers.ts",
+    "Identified critical mathematical defects: hardcoded zero curvature in Frenet texture, missing anterior trough narrowing in CPU path, volume-depth Z mismatch in overlay, missing FDI tooth badge rendering, possible FDI wrap-around",
+    "Implemented Frenet-Serret physical curvature calculation kappa (mm^-1) in calculateArchTangentsAndNormals",
+    "Eliminated interactive drag string allocation thrashing in fitSmoothDentalArchSpline",
+    "Populated true curvature in Row 1 of WebGL2 2-row Frenet texture (splineBuf[idx1 + 2])",
+    "Implemented physiological anterior trough narrowing (anteriorTroughRatio 0.5..0.8, default 0.65) in both WebGL2 shader uniforms and CPU panoramic reconstruct loop",
+    "Implemented quadrant-aware FDI tooth anchor mapping to guarantee strictly monotonic FDI 18..48 without cross-arch wrap-around",
+    "Exported and validated isCrossSectionBasisOrthonormal for transverse cross-sections",
+    "Corrected panoramic overlay Z-height mapping for axial line and implant projection to align with activePano.centerZMm",
+    "Implemented interactive FDI tooth badges along top margin of panorama in drawPanoramicOverlay",
+    "Expanded test suite cbctPanoramicMath.test.ts with 7 new comprehensive tests (28 passed in 12 suites, Exit Code 0)",
+    "Executed per-file git add on strictly isolated scope files"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "defect": "Curvature hardcoded to 0.0 in WebGL2 2-row Frenet frame texture",
+      "file": "apps/web/src/components/radiology/cbctPanoramicReconstructionMath.ts",
+      "fix": "Interpolate physical curvature kappa from ArchVectorNode and store in splineBuf[idx1 + 2]"
+    },
+    {
+      "defect": "CPU panoramic reconstruction ignored anterior trough narrowing, causing incisor blur",
+      "file": "apps/web/src/components/radiology/cbctPanoramicReconstructionMath.ts",
+      "fix": "Calculate colFocalRadiusMm with smooth tapering based on anteriorTroughRatio (0.5..0.8) and centerNorm"
+    },
+    {
+      "defect": "Axial plane line in drawPanoramicOverlay was mapped using overall volume depth instead of panoramic vertical FOV",
+      "file": "apps/web/src/components/radiology/mpr/cbctCurvedOverlayRenderers.ts",
+      "fix": "Map crosshairMm.z into panoramic FOV [centerZMm - panoHMm/2, centerZMm + panoHMm/2] and use panoHMm / heightPx for slab corridor"
+    },
+    {
+      "defect": "FDI tooth badges were never rendered on top of panorama despite hitTestPanoramicToothMarker expecting them",
+      "file": "apps/web/src/components/radiology/mpr/cbctCurvedOverlayRenderers.ts",
+      "fix": "Render clinical FDI badge pills along top margin (y=4..20px) in Pass 2 with hover/selected highlights"
+    },
+    {
+      "defect": "Potential cross-arch FDI wrap-around under narrow or distorted arches",
+      "file": "apps/web/src/components/radiology/cbctCrossSectionResliceMath.ts",
+      "fix": "Quadrant-aware candidate filtering (isQuadrantRight) in findNearestToothAnchorToDistance"
+    }
+  ]
+}

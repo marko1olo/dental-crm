@@ -85,28 +85,32 @@ export function drawPanoramicOverlay(
 
 	// Axial Plane Intersection Line
 	if (volume) {
-		const vox = worldMmToVoxel(crosshairMm, volume);
-		const zNorm = 1.0 - vox.z / (volume.dimensions.depth - 1);
-		const zPx = Math.round(zNorm * canvas.height);
+		const centerZMm = activePano.centerZMm ?? (archCurve.planeZMm ?? 0.0);
+		const panoHMm = 38.0;
+		const zTopMm = centerZMm + panoHMm / 2.0;
+		const zBottomMm = centerZMm - panoHMm / 2.0;
+		const zPx = Math.round(((zTopMm - crosshairMm.z) / panoHMm) * activePano.heightPx);
 
-		if (slabMode !== "single" && slabThicknessMm > 1.0) {
-			drawRomexisSlabCorridor(ctx, {
-				orientation: "horizontal",
-				centerPx: zPx,
-				thicknessMm: slabThicknessMm,
-				pixelSpacingMm: volume.spacingMm.z,
-				lengthPx: canvas.width,
-				colorRgba: ROMEXIS_COLORS.axialRgba(0.6),
-				fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
-			});
+		if (crosshairMm.z >= zBottomMm && crosshairMm.z <= zTopMm) {
+			if (slabMode !== "single" && slabThicknessMm > 1.0) {
+				drawRomexisSlabCorridor(ctx, {
+					orientation: "horizontal",
+					centerPx: zPx,
+					thicknessMm: slabThicknessMm,
+					pixelSpacingMm: panoHMm / activePano.heightPx,
+					lengthPx: canvas.width,
+					colorRgba: ROMEXIS_COLORS.axialRgba(0.6),
+					fillColorRgba: ROMEXIS_COLORS.axialRgba(0.08),
+				});
+			}
+
+			ctx.strokeStyle = ROMEXIS_COLORS.axial;
+			ctx.lineWidth = 1.2;
+			ctx.beginPath();
+			ctx.moveTo(0, zPx);
+			ctx.lineTo(canvas.width, zPx);
+			ctx.stroke();
 		}
-
-		ctx.strokeStyle = ROMEXIS_COLORS.axial;
-		ctx.lineWidth = 1.2;
-		ctx.beginPath();
-		ctx.moveTo(0, zPx);
-		ctx.lineTo(canvas.width, zPx);
-		ctx.stroke();
 	}
 
 	// 3D Mandibular Canal Nerve (IAN) Projection
@@ -179,7 +183,8 @@ export function drawPanoramicOverlay(
 		);
 		const panoH = activePano.heightPx;
 		const panoHMm = 38.0;
-		const zTopMm = panoHMm / 2.0;
+		const centerZMm = activePano.centerZMm ?? (archCurve.planeZMm ?? 0.0);
+		const zTopMm = centerZMm + panoHMm / 2.0;
 
 		const yEntryPx = Math.max(
 			0,
@@ -302,6 +307,52 @@ export function drawPanoramicOverlay(
 		invertColors,
 		transform,
 	});
+
+	// Render FDI Tooth Badges along top of panorama
+	if (activePano.toothMarkersOnPano && activePano.toothMarkersOnPano.length > 0) {
+		const activeFdiStr = activeCrossSection?.nearestToothFdi;
+		ctx.save();
+		for (const marker of activePano.toothMarkersOnPano) {
+			const markerScreen = slicePxToScreenPx({ x: marker.xPx, y: 14 }, transform);
+			const isHovered = hoveredToothMarkerFdi !== null && String(hoveredToothMarkerFdi) === marker.toothFdi;
+			const isSelected = activeFdiStr === marker.toothFdi;
+
+			const labelText = `#${marker.toothFdi}`;
+			ctx.font = isHovered || isSelected ? "bold 9.5px monospace" : "8.5px monospace";
+			const textWidth = ctx.measureText(labelText).width;
+			const pillW = textWidth + 8;
+			const pillH = 15;
+			const pillX = markerScreen.x - pillW / 2;
+			const pillY = 4;
+
+			ctx.fillStyle = isSelected
+				? "rgba(16, 185, 129, 0.95)"
+				: isHovered
+					? "rgba(14, 165, 233, 0.95)"
+					: "rgba(15, 23, 42, 0.85)";
+			ctx.strokeStyle = isSelected
+				? "#34d399"
+				: isHovered
+					? "#38bdf8"
+					: "rgba(255, 255, 255, 0.25)";
+			ctx.lineWidth = isSelected || isHovered ? 1.5 : 0.8;
+
+			ctx.beginPath();
+			if (typeof ctx.roundRect === "function") {
+				ctx.roundRect(pillX, pillY, pillW, pillH, 3);
+			} else {
+				ctx.rect(pillX, pillY, pillW, pillH);
+			}
+			ctx.fill();
+			ctx.stroke();
+
+			ctx.fillStyle = "#ffffff";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(labelText, markerScreen.x, pillY + pillH / 2);
+		}
+		ctx.restore();
+	}
 
 	if (panoImplantX !== null && panoImplantYEntry !== null && implant3DWorld) {
 		const pEntryScreen = slicePxToScreenPx(
