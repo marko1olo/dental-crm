@@ -2,6 +2,7 @@ import { SAMPLE_PATIENT_RVG_URL, type RadiologyStudy } from "./types";
 
 export type HotFolderSource =
 	| "all"
+	| "fresh_15m"
 	| "ezdent"
 	| "romexis"
 	| "sidexis"
@@ -12,7 +13,7 @@ export type HotFolderSource =
 export interface HotFolderItem {
 	id: string;
 	filename: string;
-	source: Exclude<HotFolderSource, "all">;
+	source: Exclude<HotFolderSource, "all" | "fresh_15m">;
 	sourceLabel: string;
 	folderPath: string;
 	detectedModality: "intraoral_rvg" | "optg_panoramic" | "cbct_3d" | "bitewing";
@@ -24,6 +25,7 @@ export interface HotFolderItem {
 	relativeTime: string;
 	imageUrl: string;
 	status: "new" | "processing" | "imported";
+	isFresh?: boolean;
 	patientMatch?: {
 		patientName: string;
 		cardNumber: string;
@@ -47,6 +49,7 @@ export interface HotFolderIntakeModalProps {
 	patientCardNumber?: string;
 	patientBirthDate?: string;
 	doctorName?: string;
+	activeToothFdi?: string;
 	onAttachToEmr?: (result: {
 		study: RadiologyStudy;
 		teethFdi: string[];
@@ -56,6 +59,38 @@ export interface HotFolderIntakeModalProps {
 	}) => void;
 	onExportDicom?: (item: HotFolderItem) => void;
 	onSendToLab?: (item: HotFolderItem, note: string) => void;
+}
+
+/**
+ * Intelligent helper to detect if a hot folder image was captured within the last N minutes.
+ * Satisfies Directive 1: Intelligent search for fresh shots (< 15 mins).
+ */
+export function isItemFresh(item: HotFolderItem, maxMinutes = 15): boolean {
+	if (!item) return false;
+	if (typeof item.isFresh === "boolean") return item.isFresh;
+	if (item.relativeTime) {
+		if (item.relativeTime.includes("только что")) return true;
+		const minMatch = item.relativeTime.match(/(\d+)\s*мин/);
+		if (minMatch && minMatch[1]) {
+			return Number.parseInt(minMatch[1], 10) <= maxMinutes;
+		}
+		if (item.relativeTime.includes("ч назад") || item.relativeTime.includes("дн")) {
+			return false;
+		}
+	}
+	const itemDate = new Date(item.timestampIso).getTime();
+	if (!Number.isNaN(itemDate)) {
+		const diffMs = Math.abs(Date.now() - itemDate);
+		return diffMs <= maxMinutes * 60 * 1000;
+	}
+	return false;
+}
+
+/**
+ * Filters items captured within the last N minutes (default 15 min).
+ */
+export function filterFreshItems(items: HotFolderItem[], maxMinutes = 15): HotFolderItem[] {
+	return items.filter((item) => isItemFresh(item, maxMinutes));
 }
 
 export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
@@ -74,6 +109,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		relativeTime: "1 мин назад",
 		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		status: "new",
+		isFresh: true,
 		patientMatch: {
 			patientName: "Пациент",
 			cardNumber: "043/у-2026/891",
@@ -108,6 +144,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		relativeTime: "12 мин назад",
 		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		status: "new",
+		isFresh: true,
 		patientMatch: {
 			patientName: "Пациент",
 			cardNumber: "043/у-2026/891",
@@ -137,6 +174,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		relativeTime: "45 мин назад",
 		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		status: "new",
+		isFresh: false,
 		patientMatch: {
 			patientName: "Пациент",
 			cardNumber: "043/у-2026/891",
@@ -166,6 +204,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		relativeTime: "2 ч назад",
 		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		status: "new",
+		isFresh: false,
 		patientMatch: {
 			patientName: "Пациент",
 			cardNumber: "043/у-2026/891",
@@ -195,6 +234,7 @@ export const INITIAL_HOT_FOLDER_ITEMS: HotFolderItem[] = [
 		relativeTime: "3 ч назад",
 		imageUrl: SAMPLE_PATIENT_RVG_URL,
 		status: "imported",
+		isFresh: false,
 		patientMatch: {
 			patientName: "Пациент клиники",
 			cardNumber: "043/у-2026/042",
@@ -220,7 +260,15 @@ export const CLINICAL_PURPOSES = [
 	{ id: "marginal_fit", label: "Контроль краевого прилегания ортопедической конструкции" },
 ] as const;
 
-export type FilterPresetKey = "standard" | "endo" | "bone" | "caries" | "sharpen" | "negative";
+export type FilterPresetKey =
+	| "standard"
+	| "endo"
+	| "bone"
+	| "caries"
+	| "sharpen"
+	| "negative"
+	| "enamel"
+	| "pdl";
 
 export const FILTER_PRESETS: Record<
 	FilterPresetKey,
@@ -230,6 +278,9 @@ export const FILTER_PRESETS: Record<
 		contrast: number;
 		invert: boolean;
 		description: string;
+		sharpness?: number;
+		enamelHighPass?: number;
+		pdlSharpening?: number;
 	}
 > = {
 	standard: {
@@ -238,6 +289,9 @@ export const FILTER_PRESETS: Record<
 		contrast: 100,
 		invert: false,
 		description: "Сбалансированная яркость и контрастность",
+		sharpness: 0,
+		enamelHighPass: 0,
+		pdlSharpening: 0,
 	},
 	endo: {
 		label: "Эндодонтия / Апекс",
@@ -245,6 +299,9 @@ export const FILTER_PRESETS: Record<
 		contrast: 165,
 		invert: false,
 		description: "Высокий контраст для верхушек корней и гуттаперчи",
+		sharpness: 40,
+		enamelHighPass: 0,
+		pdlSharpening: 35,
 	},
 	bone: {
 		label: "Кость / Трабекулы",
@@ -252,6 +309,9 @@ export const FILTER_PRESETS: Record<
 		contrast: 145,
 		invert: false,
 		description: "Четкая визуализация кортикальной пластинки и трабекул",
+		sharpness: 25,
+		enamelHighPass: 0,
+		pdlSharpening: 45,
 	},
 	caries: {
 		label: "Скрытый кариес",
@@ -259,6 +319,9 @@ export const FILTER_PRESETS: Record<
 		contrast: 180,
 		invert: true,
 		description: "Негатив с контрастом для зон деминерализации эмали",
+		sharpness: 30,
+		enamelHighPass: 60,
+		pdlSharpening: 0,
 	},
 	sharpen: {
 		label: "Резкость (Шарп)",
@@ -266,12 +329,38 @@ export const FILTER_PRESETS: Record<
 		contrast: 135,
 		invert: false,
 		description: "Подчеркивание краевого прилегания пломб и вкладок",
+		sharpness: 50,
+		enamelHighPass: 20,
+		pdlSharpening: 20,
 	},
 	negative: {
 		label: "Негатив",
 		brightness: 100,
 		contrast: 100,
 		invert: true,
-		description: "Инверсия монохромного спектра",
+		description: "Инверсия монохромного спектра («Рентген-негатив»)",
+		sharpness: 0,
+		enamelHighPass: 0,
+		pdlSharpening: 0,
+	},
+	enamel: {
+		label: "Контраст эмали",
+		brightness: 100,
+		contrast: 155,
+		invert: false,
+		description: "Enamel High-Pass: выделение эмалево-дентинной границы и контактных пунктов",
+		sharpness: 35,
+		enamelHighPass: 80,
+		pdlSharpening: 0,
+	},
+	pdl: {
+		label: "Связка PDL",
+		brightness: 105,
+		contrast: 160,
+		invert: false,
+		description: "PDL Sharpening: резкость периодонтальной щели и кортикальной пластинки",
+		sharpness: 45,
+		enamelHighPass: 0,
+		pdlSharpening: 85,
 	},
 };

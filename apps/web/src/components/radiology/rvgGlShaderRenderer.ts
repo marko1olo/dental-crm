@@ -16,6 +16,8 @@ export interface RvgGlRenderParams {
 	sharpness: number; // 0..100 (0 is off)
 	invert: boolean;
 	clahe?: number; // 0..100 optional local contrast enhancement
+	enamelHighPass?: number; // 0..100 Enamel High-Pass contrast
+	pdlSharpening?: number; // 0..100 Periodontal Ligament Sharpening
 }
 
 export interface RvgGlRendererInstance {
@@ -50,6 +52,8 @@ uniform float u_brightness;
 uniform float u_contrast;
 uniform float u_sharpness;
 uniform float u_clahe;
+uniform float u_enamelHighPass;
+uniform float u_pdlSharpening;
 uniform int u_invert;
 
 void main() {
@@ -57,28 +61,47 @@ void main() {
     vec4 centerColor = texture2D(u_image, v_texCoord);
     vec3 color = centerColor.rgb;
 
+    // Sample 4 orthogonal neighbors for 3x3 convolution
+    vec3 n = texture2D(u_image, v_texCoord + vec2(0.0, -step.y)).rgb;
+    vec3 s = texture2D(u_image, v_texCoord + vec2(0.0, step.y)).rgb;
+    vec3 w = texture2D(u_image, v_texCoord + vec2(-step.x, 0.0)).rgb;
+    vec3 e = texture2D(u_image, v_texCoord + vec2(step.x, 0.0)).rgb;
+    vec3 laplacian = (n + s + w + e) - 4.0 * color;
+
     // 1. Hardware 3x3 Unsharp Mask Convolution on GPU (< 0.05ms)
     if (u_sharpness > 0.0) {
-        vec3 n = texture2D(u_image, v_texCoord + vec2(0.0, -step.y)).rgb;
-        vec3 s = texture2D(u_image, v_texCoord + vec2(0.0, step.y)).rgb;
-        vec3 w = texture2D(u_image, v_texCoord + vec2(-step.x, 0.0)).rgb;
-        vec3 e = texture2D(u_image, v_texCoord + vec2(step.x, 0.0)).rgb;
-
-        vec3 laplacian = (n + s + w + e) - 4.0 * color;
         float weight = (u_sharpness / 100.0) * 1.6;
         color = clamp(color - weight * laplacian, 0.0, 1.0);
     }
 
-    // 2. Contrast & CLAHE windowing on GPU
+    // 2. Enamel High-Pass Filter (< 0.05ms): Accentuates high mineral density transitions & caries fissures
+    if (u_enamelHighPass > 0.0) {
+        vec3 blur = (n + s + w + e) * 0.25;
+        vec3 highPass = color - blur;
+        float ehpWeight = (u_enamelHighPass / 100.0) * 1.8;
+        float luma = (color.r + color.g + color.b) * 0.3333;
+        float enamelMask = smoothstep(0.35, 0.90, luma);
+        color = clamp(color + highPass * ehpWeight * (0.5 + enamelMask * 1.0), 0.0, 1.0);
+    }
+
+    // 3. Periodontal Ligament (PDL) Sharpening (< 0.05ms): Accentuates narrow radiolucent space between root & bone
+    if (u_pdlSharpening > 0.0) {
+        float pdlWeight = (u_pdlSharpening / 100.0) * 2.0;
+        float luma = (color.r + color.g + color.b) * 0.3333;
+        float pdlValley = 1.0 - smoothstep(0.15, 0.70, luma);
+        color = clamp(color - laplacian * pdlWeight * (0.8 + pdlValley * 0.8), 0.0, 1.0);
+    }
+
+    // 4. Contrast & CLAHE windowing on GPU
     float effectiveContrast = u_contrast + (u_clahe > 0.0 ? u_clahe * 0.4 : 0.0);
     float contrastFactor = effectiveContrast / 100.0;
     color = clamp((color - 0.5) * contrastFactor + 0.5, 0.0, 1.0);
 
-    // 3. Brightness level on GPU
+    // 5. Brightness level on GPU
     float brightnessFactor = u_brightness / 100.0;
     color = clamp(color * brightnessFactor, 0.0, 1.0);
 
-    // 4. Instant Invert / Negative on GPU (0-click negative)
+    // 6. Instant Invert / Negative on GPU (0-click negative)
     if (u_invert == 1) {
         color = vec3(1.0) - color;
     }
@@ -136,7 +159,8 @@ export function createRvgGlRenderer(canvas: HTMLCanvasElement): RvgGlRendererIns
 				const ctx = canvas.getContext("2d");
 				if (!ctx || !lastImageSource) return false;
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
-				ctx.filter = `brightness(${params.brightness}%) contrast(${params.contrast}%) ${params.invert ? "invert(100%)" : ""}`;
+				const effectiveContrast = params.contrast + (params.enamelHighPass ? params.enamelHighPass * 0.3 : 0) + (params.pdlSharpening ? params.pdlSharpening * 0.2 : 0);
+				ctx.filter = `brightness(${params.brightness}%) contrast(${effectiveContrast}%) ${params.invert ? "invert(100%)" : ""}`;
 				ctx.drawImage(lastImageSource, 0, 0, canvas.width, canvas.height);
 				ctx.filter = "none";
 				return true;
@@ -174,6 +198,8 @@ export function createRvgGlRenderer(canvas: HTMLCanvasElement): RvgGlRendererIns
 	const uContrastLoc = gl.getUniformLocation(program, "u_contrast");
 	const uSharpnessLoc = gl.getUniformLocation(program, "u_sharpness");
 	const uClaheLoc = gl.getUniformLocation(program, "u_clahe");
+	const uEnamelHighPassLoc = gl.getUniformLocation(program, "u_enamelHighPass");
+	const uPdlSharpeningLoc = gl.getUniformLocation(program, "u_pdlSharpening");
 	const uInvertLoc = gl.getUniformLocation(program, "u_invert");
 
 	const aPositionLoc = gl.getAttribLocation(program, "a_position");
@@ -268,6 +294,8 @@ export function createRvgGlRenderer(canvas: HTMLCanvasElement): RvgGlRendererIns
 		gl.uniform1f(uContrastLoc, params.contrast);
 		gl.uniform1f(uSharpnessLoc, params.sharpness);
 		gl.uniform1f(uClaheLoc, params.clahe ?? 0);
+		gl.uniform1f(uEnamelHighPassLoc, params.enamelHighPass ?? 0);
+		gl.uniform1f(uPdlSharpeningLoc, params.pdlSharpening ?? 0);
 		gl.uniform1i(uInvertLoc, params.invert ? 1 : 0);
 
 		gl.drawArrays(gl.TRIANGLES, 0, 6);

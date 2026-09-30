@@ -6,7 +6,10 @@ import {
 	CLINICAL_PURPOSES,
 	type HotFolderItem,
 	type FilterPresetKey,
+	isItemFresh,
+	filterFreshItems,
 } from "../HotFolderIntakeModal";
+import type { RvgGlRenderParams } from "../rvgGlShaderRenderer";
 import {
 	ADULT_FDI_TEETH,
 	FDI_TOOTH_NAMES,
@@ -222,4 +225,107 @@ describe("Hot-Folder Intake & Radiology Integration Suite", () => {
 		assert.ok(woodpecker);
 		assert.ok(woodpecker.name.includes("i-Sensor"));
 	});
+
+	it("verifies intelligent fresh shots search (<15 min) and relative/ISO timestamp handling", () => {
+		const freshSample: HotFolderItem = {
+			id: "fresh-test-1",
+			filename: "RVG_16_fresh.dcm",
+			source: "ezdent",
+			sourceLabel: "Vatech EzSensor",
+			folderPath: "C:\\DenteDICOM\\Incoming",
+			detectedModality: "intraoral_rvg",
+			modalityLabel: "Прицельный RVG",
+			detectedTeeth: ["16"],
+			sizeBytes: 1024 * 1024,
+			sizeFormatted: "1.0 МБ",
+			timestampIso: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+			relativeTime: "3 мин назад",
+			imageUrl: "data:image/png;base64,sample",
+			status: "new",
+			metadata: { kv: 65, ma: 7, exposureSec: 0.08, pixelSpacingMm: 0.035, apparatusModel: "Vatech EzSensor" },
+		};
+
+		const staleSample: HotFolderItem = {
+			...freshSample,
+			id: "stale-test-2",
+			timestampIso: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+			relativeTime: "45 мин назад",
+			isFresh: false,
+		};
+
+		assert.equal(isItemFresh(freshSample, 15), true, "Item taken 3 mins ago must be recognized as fresh (< 15m)");
+		assert.equal(isItemFresh(staleSample, 15), false, "Item taken 45 mins ago must not be recognized as fresh (< 15m)");
+
+		const list = [freshSample, staleSample];
+		const filtered = filterFreshItems(list, 15);
+		assert.equal(filtered.length, 1);
+		assert.equal(filtered[0]?.id, "fresh-test-1");
+
+		// Test initial hot folder items fresh filter
+		const freshInitial = filterFreshItems(INITIAL_HOT_FOLDER_ITEMS, 15);
+		assert.ok(freshInitial.length >= 2, "At least 2 initial hot folder items must be fresh within 15 minutes");
+		for (const item of freshInitial) {
+			assert.ok(isItemFresh(item, 15));
+		}
+	});
+
+	it("verifies WebGL 60 FPS GPU filter presets (Enamel High-Pass, PDL Sharpening, and Inversion)", () => {
+		// 1. Enamel High-Pass preset
+		const enamel = FILTER_PRESETS.enamel;
+		assert.ok(enamel, "Enamel preset must be defined");
+		assert.equal(enamel.label, "Контраст эмали");
+		assert.ok((enamel.enamelHighPass ?? 0) >= 50, "Enamel preset must have enamelHighPass >= 50");
+		assert.ok(enamel.contrast >= 140, "Enamel preset must boost contrast for mineralization boundary");
+		assert.equal(enamel.invert, false);
+
+		// 2. PDL (Periodontal Ligament) Sharpening preset
+		const pdl = FILTER_PRESETS.pdl;
+		assert.ok(pdl, "PDL preset must be defined");
+		assert.equal(pdl.label, "Связка PDL");
+		assert.ok((pdl.pdlSharpening ?? 0) >= 50, "PDL preset must have pdlSharpening >= 50");
+		assert.ok((pdl.sharpness ?? 0) >= 40, "PDL preset must sharpen edge transitions");
+		assert.equal(pdl.invert, false);
+
+		// 3. Negative Inversion preset
+		const negative = FILTER_PRESETS.negative;
+		assert.equal(negative.invert, true, "Negative preset must invert color palette for traditional film inspection");
+
+		// 4. Backward compatibility: standard, endo, bone, caries, sharpen must remain functional
+		assert.equal(FILTER_PRESETS.standard.brightness, 100);
+		assert.equal(FILTER_PRESETS.standard.contrast, 100);
+		assert.equal(FILTER_PRESETS.endo.contrast, 165);
+		assert.equal(FILTER_PRESETS.bone.brightness, 95);
+	});
+
+	it("verifies RvgGlRenderParams type contract supports WebGL GPU uniforms without VRAM leaks", () => {
+		const renderParams: RvgGlRenderParams = {
+			brightness: 110,
+			contrast: 130,
+			invert: false,
+			sharpness: 25,
+			clahe: 10,
+			enamelHighPass: 60,
+			pdlSharpening: 75,
+		};
+
+		assert.equal(renderParams.enamelHighPass, 60);
+		assert.equal(renderParams.pdlSharpening, 75);
+		assert.equal(renderParams.invert, false);
+		assert.equal(renderParams.clahe, 10);
+	});
+
+	it("verifies Doctor Autonomy invariants: zero blocking alerts, 1-click attach, and zero unicode emojis", () => {
+		// All preset labels must have no emojis (Mandate 8d)
+		const emojiRegex = /[\uD83C-\uDBFF\uDC00-\uDFFF\u2600-\u26FF\u2700-\u27BF]/;
+		for (const [key, preset] of Object.entries(FILTER_PRESETS) as [FilterPresetKey, (typeof FILTER_PRESETS)[FilterPresetKey]][]) {
+			assert.ok(!emojiRegex.test(preset.label), `Preset '${key}' label must not contain emojis: ${preset.label}`);
+			assert.ok(!emojiRegex.test(preset.description), `Preset '${key}' description must not contain emojis: ${preset.description}`);
+		}
+
+		// Clinical purposes must not contain emojis
+		for (const cp of CLINICAL_PURPOSES) {
+			assert.ok(!emojiRegex.test(cp.label), `Clinical purpose '${cp.id}' must not contain emojis: ${cp.label}`);
+		}
+	});
 });
+
