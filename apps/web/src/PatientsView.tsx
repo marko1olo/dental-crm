@@ -273,7 +273,7 @@ export function executeOpenPatientVisitAutonomy({
 	}
 	setSelectedPatientId(selectedPatient.id);
 	setCurrentView("visit");
-	showToastFn(`Открыт приём: ${selectedPatient.fullName}`, "success");
+	showToastFn(`Открыт приём 043/у: ${selectedPatient.fullName}`, "success");
 	return { executed: true, reason: "visit_opened" as const };
 }
 

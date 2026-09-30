@@ -316,7 +316,7 @@ export const PrescriptionDrugCatalogSelector: React.FC<PrescriptionDrugCatalogSe
 				{activeForm === "148-1u-88" && (
 					<div>
 						<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
-							Адрес проживания пациента (Обязательно для ф. 148-1/у-88):
+							Адрес проживания пациента (рецепт строгого учета):
 						</label>
 						<input
 							type="text"

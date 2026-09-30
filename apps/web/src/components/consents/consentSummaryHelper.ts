@@ -374,7 +374,10 @@ export function buildPatientConsentSummary(params: PatientConsentSummaryParams):
 		"ООО «Стоматологическая клиника ДЕНТЕ»",
 	);
 	const effectiveClinicPhone = (params.clinicPhone || "").trim();
-	const effectiveTeeth = sanitizeConsentFieldValue(params.toothNumbers, "По плану лечения");
+	const effectiveTeeth = sanitizeConsentFieldValue(
+		params.toothNumbers,
+		params.activeMode === "single" ? "По показаниям" : "По плану лечения",
+	);
 	const hashPrefix = (params.integrityHash || "0000000000000000").slice(0, 16);
 
 	if (params.activeMode === "packages") {

@@ -1735,7 +1735,7 @@ function SanpinRegistersInner() {
 						onClick={() => handleSelectTab("pso")}
 						style={{ cursor: "pointer" }}
 					>
-						<span className="sanpin-kpi-label">ПСО за сегодня (366/у)</span>
+						<span className="sanpin-kpi-label">ПСО за сегодня</span>
 						<span className="sanpin-kpi-value">{summary.pso?.totalToday ?? 0} проб</span>
 						<span className="sanpin-kpi-subtext" style={{ color: "#059669", fontWeight: 600 }}>
 							Допущено: {summary.pso?.approvedToday ?? 0} шт.

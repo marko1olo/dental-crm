@@ -173,7 +173,7 @@ export const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
 	CONSENT_INSPECTION_1051N: "Информированное согласие (ИДС)",
 	CONSENT_PEDIATRIC: "Детская стоматология (до 15 лет)",
 	CONSENT_EGISZ_REFUSAL: "Отказ от передачи в ЕГИСЗ",
-	CONSENT_TREATMENT_REFUSAL: "Отказ от лечения (1051н)",
+	CONSENT_TREATMENT_REFUSAL: "Отказ от медицинского вмешательства",
 	CONSENT_WARRANTY_PASSPORT: "Гарантийный паспорт",
 	CONSENT_WARRANTY_POLICY: "Положение о гарантиях",
 	CONSENT_SEDATION: "Седация (ЗАКС / в/в)",

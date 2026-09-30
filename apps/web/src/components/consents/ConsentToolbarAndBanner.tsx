@@ -80,7 +80,7 @@ export const ConsentToolbarAndBanner: React.FC<ConsentToolbarAndBannerProps> = (
 						style={{ height: "24px", padding: "0 8px", fontSize: "12px" }}
 					>
 						<Layers size={13} />
-						<span>Пакеты ИДС (1 клик)</span>
+						<span>Пакеты согласий (1 клик)</span>
 					</button>
 					<button
 						type="button"

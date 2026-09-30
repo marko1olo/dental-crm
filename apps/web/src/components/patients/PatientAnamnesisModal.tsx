@@ -423,7 +423,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 								>
 									<span className="anamnesis-toggle-item__label">
 										<ZapOff className="w-3.5 h-3.5 inline mr-1 text-rose-500" />
-										Кардиостимулятор / ЭКС (Запрет УЗ и коагуляции)
+										Кардиостимулятор / ЭКС (ограничение УЗ и электрокоагуляции)
 									</span>
 									<div className="anamnesis-toggle-item__icon">
 										{profile.hasPacemakerExs ? <Check className="w-3.5 h-3.5" /> : null}

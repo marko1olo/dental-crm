@@ -112,7 +112,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 						style={{ height: "26px", padding: "0 10px", fontSize: "12px", borderRadius: "6px" }}
 					>
 						<Printer size={13} />
-						<span>Бумажный носитель (323-ФЗ)</span>
+						<span>Бумажный бланк</span>
 					</button>
 					<button
 						type="button"
@@ -122,11 +122,11 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 						style={{ height: "26px", padding: "0 10px", fontSize: "12px", borderRadius: "6px" }}
 					>
 						<PenTool size={13} />
-						<span>Векторный планшет (экран)</span>
+						<span>Планшет врача</span>
 					</button>
 				</div>
 				<span className="consent-statutory-badge shrink-0">
-					{verificationMethod === "paper_physical" ? "Оригинал в карте 043/у" : "Векторный росчерк SVG"}
+					{verificationMethod === "paper_physical" ? "Оригинал в карте" : "Векторная подпись"}
 				</span>
 			</div>
 
@@ -140,12 +140,12 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 							</span>
 						</div>
 						<span className="consent-statutory-badge">
-							Оригинал в карте 043/у
+							Оригинал в карте
 						</span>
 					</div>
 					<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
 						Пациент знакомится с текстом согласия и расписывается шариковой ручкой на бумажном бланке.
-						Бумажный оригинал подшивается в амбулаторную медицинскую карту пациента формы № 043/у (срок хранения 25 лет).
+						Бумажный оригинал подшивается в медицинскую карту пациента (срок хранения 25 лет).
 						В электронной карте фиксируется отметка с криптографическим отпечатком SHA-256.
 					</p>
 
@@ -159,7 +159,7 @@ export const ConsentSigningPanel: React.FC<ConsentSigningPanelProps> = ({
 							style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: "var(--teal, #0d9488)" }}
 						/>
 						<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
-							Оригинал подписан пациентом от руки на бумаге (подшит в карту № 043/у)
+							Оригинал подписан пациентом от руки на бумаге (подшит в карту)
 						</span>
 					</label>
 

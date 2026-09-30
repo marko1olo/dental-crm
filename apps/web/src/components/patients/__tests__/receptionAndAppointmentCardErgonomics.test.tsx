@@ -122,10 +122,11 @@ describe("Subagent 4: Reception, Patient Intake & Fast Booking Ergonomics", () =
 		});
 
 		it("guarantees ZERO cartoon emojis in PatientSearchAutocomplete source code (Mandate 8d)", () => {
-			const filePath = path.resolve(
-				process.cwd(),
-				"src/components/patients/PatientSearchAutocomplete.tsx",
-			);
+			const candidatePaths = [
+				path.resolve(process.cwd(), "apps/web/src/components/patients/PatientSearchAutocomplete.tsx"),
+				path.resolve(process.cwd(), "src/components/patients/PatientSearchAutocomplete.tsx"),
+			];
+			const filePath = candidatePaths.find((p) => fs.existsSync(p)) ?? candidatePaths[0];
 			const source = fs.readFileSync(filePath, "utf-8");
 			const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 			assert.strictEqual(

@@ -268,7 +268,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 				return prev.filter((dId) => dId !== id);
 			}
 			if (prev.length >= 3) {
-				showToast("По Приказу № 1094н на бланке 107-1/у допускается не более 3 препаратов", "warning", 3000);
+				showToast("На одном рецептурном бланке допускается не более 3 препаратов", "warning", 3000);
 				return prev;
 			}
 			return [...prev, id];
@@ -648,7 +648,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
-								Форма № 107-1/у (Стандарт)
+								Рецепт на препараты (107-1/у)
 							</button>
 							<button
 								type="button"
@@ -659,7 +659,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
-								Форма № 148-1/у-88 (ПКУ)
+								Рецепт строгого учета (№ 148-1/у-88)
 							</button>
 						</div>
 						<button

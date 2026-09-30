@@ -340,7 +340,7 @@ export function PsoRegisterTab() {
 							data-testid="generate-monthly-form366-btn"
 						>
 							<Sparkles size={14} color="#0d9488" className="shrink-0" />
-							<span className="shrink-0 whitespace-nowrap">Форма 366/у (Печать)</span>
+							<span className="shrink-0 whitespace-nowrap">Печать журнала ПСО</span>
 						</button>
 
 						<button
@@ -447,7 +447,7 @@ export function PsoRegisterTab() {
 												className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 												style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 											>
-												<Plus size={15} /> Внести вручную (Форма № 366/у)
+												<Plus size={15} /> Внести запись ПСО вручную
 											</button>
 										</div>
 									</div>
@@ -600,7 +600,7 @@ export function PsoRegisterTab() {
 						<div className="sanpin-modal-header" style={{ padding: "1.25rem 1.5rem" }}>
 							<h3 style={{ fontSize: "1.2rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
 								<FlaskConical size={22} color="var(--brand-primary, #2563eb)" />
-								Контроль предстерилизационной очистки (Форма № 366/у)
+								Контроль качества ПСО (азопирамовая проба)
 							</h3>
 							<button
 								type="button"
