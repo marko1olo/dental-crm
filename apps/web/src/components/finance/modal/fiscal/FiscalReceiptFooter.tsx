@@ -128,7 +128,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 							<ShieldCheck size={16} />
 							<span>
 								{isFiscalizing
-									? "Фискализация..."
+									? "Печать чека..."
 									: totalSumRub === 0
 										? "Пробить чек 0.00 ₽ (Гарантия)"
 										: `Пробить чек на ${formatMoneyRu(totalSumRub)}`}
@@ -292,7 +292,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 							<RotateCcw size={15} />
 							<span>
 								{isFiscalizing
-									? "Фискализация..."
+									? "Печать чека..."
 									: `Пробить чек возврата на ${formatMoneyRu(refundFiscalData.totalRub)}`}
 							</span>
 						</button>
@@ -326,7 +326,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 							<ShieldCheck size={15} />
 							<span>
 								{isFiscalizing
-									? "Фискализация..."
+									? "Печать чека..."
 									: `Пробить чек коррекции на ${formatMoneyRu(totalSumRub)}`}
 							</span>
 						</button>
@@ -337,7 +337,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 			{activeTab === "preview" && (
 				<>
 					<div className="text-xs text-[var(--muted,#64748b)]">
-						Чек 54-ФЗ (ФФД 1.2) ·{" "}
+						Кассовый чек ·{" "}
 						<strong className="font-mono text-[var(--ink,#0f172a)]">
 							{fiscalReceipt.receiptNumber}
 						</strong>

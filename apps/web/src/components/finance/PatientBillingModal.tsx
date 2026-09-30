@@ -888,7 +888,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							<span>Округление до сотен: копейки списаны в пользу пациента. К оплате ровно {totalNetRub.toLocaleString("ru-RU")} ₽</span>
 						</div>
 						<span className="text-[11px] font-mono text-amber-700 dark:text-amber-300">
-							54-ФЗ / Точность до копейки
+							Точность до копейки
 						</span>
 					</div>
 				)}
@@ -1070,7 +1070,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								</div>
 							)}
 
-							{/* Экспресс-оплата в 1 клик (без 4-страничного визарда) & 54-ФЗ без палок в колёса */}
+							{/* Экспресс-оплата в 1 клик (без многошагового визарда) */}
 							<div className="p-3.5 rounded-2xl border-2 border-teal-500/40 bg-teal-500/5 space-y-2.5" data-testid="express-payment-bar">
 								<div className="flex items-center justify-between flex-wrap gap-2">
 									<div className="flex items-center gap-2">
@@ -1081,7 +1081,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 									</div>
 									<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 inline-flex items-center gap-1">
 										<ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-										<span>54-ФЗ: ИНН с физлиц НЕ требуется</span>
+										<span>По 54-ФЗ для физлиц не требуется</span>
 									</span>
 								</div>
 								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1097,7 +1097,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										}}
 										className="min-h-[44px] px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
 										data-testid="btn-express-pay-card"
-										title="Оплатить картой 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
+										title="Оплатить картой 100% суммы и пробить чек в 1 клик"
 									>
 										<CreditCard className="w-4 h-4 shrink-0" />
 										<span>Оплатить картой (вся сумма)</span>
@@ -1115,7 +1115,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										}}
 										className="min-h-[44px] px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
 										data-testid="btn-express-pay-cash"
-										title="Оплатить наличными 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
+										title="Оплатить наличными 100% суммы и пробить чек в 1 клик"
 									>
 										<Banknote className="w-4 h-4 shrink-0" />
 										<span>Оплатить наличными (вся сумма)</span>
@@ -1132,7 +1132,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										}}
 										className="min-h-[44px] px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
 										data-testid="btn-express-pay-sbp"
-										title="Оплатить через СБП QR 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
+										title="Оплатить через СБП QR 100% суммы и пробить чек в 1 клик"
 									>
 										<QrCode className="w-4 h-4 shrink-0" />
 										<span>Оплатить через СБП</span>
@@ -1407,7 +1407,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 											Прямой прием оплаты (без привязки к акту)
 										</span>
 										<span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300">
-											Чек (54-ФЗ)
+											Чек
 										</span>
 									</div>
 									<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2049,10 +2049,11 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							onClick={() => (onFiscalize ? onFiscalize() : setIsFiscalOpen(true))}
 							className="flex-1 sm:flex-initial min-h-[44px] px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-teal-600 hover:bg-teal-700 text-white shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 							data-testid="btn-fiscalize-54fz"
-							title="Фискализировать чек по 54-ФЗ"
+							title="Пробить чек"
+							aria-label="Фискализировать (54-ФЗ)"
 						>
 							<Receipt className="w-4 h-4 text-white shrink-0" />
-							<span className="whitespace-nowrap">Фискализировать (54-ФЗ)</span>
+							<span className="whitespace-nowrap">Пробить чек</span>
 						</button>
 
 						{/* Secondary: Desktop Close */}

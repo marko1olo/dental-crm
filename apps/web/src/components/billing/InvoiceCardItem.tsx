@@ -148,7 +148,7 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
 						onClick={onPay}
 						className="h-8 min-h-[32px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3.5 py-1.5 [@media(pointer:coarse)]:py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
 						data-testid={`btn-pay-invoice-${inv.id}`}
-						title="Принять оплату (касса 54-ФЗ / карта / сплит)"
+						title="Принять оплату (касса / карта / сплит)"
 					>
 						<CreditCard size={14} />
 						<span>Оплатить</span>

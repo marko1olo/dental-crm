@@ -626,11 +626,11 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 								setIsCashRegisterModalOpen(true);
 							}}
 							className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] flex items-center gap-2.5 cursor-pointer text-[var(--ink)] transition-colors"
-							title="Открыть АРМ кассового аппарата 54-ФЗ (сверка наличности, X/Z-лента)"
+							title="Открыть АРМ кассового аппарата (сверка наличности, X/Z-лента)"
 							data-testid="btn-open-cash-register-arm"
 						>
 							<Zap size={15} className="shrink-0 text-[var(--warning-fg)]" />
-							<span>АРМ кассы 54-ФЗ (Сверка / Лента)</span>
+							<span>АРМ кассы (Сверка / Лента)</span>
 						</button>
 					</div>
 				</div>

@@ -107,9 +107,9 @@ export const FiscalOneCTab: React.FC<FiscalOneCTabProps> = ({
 									onChange={(e) => setOneCDocType(e.target.value as OneCDocumentType)}
 									className="w-full h-8 px-2 text-xs font-bold rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] cursor-pointer"
 								>
-									<option value="act">Реализация товаров и услуг (Акт 804н)</option>
+									<option value="act">Акт выполненных услуг</option>
 									<option value="invoice">Заказ покупателя (Счет на оплату)</option>
-									<option value="cash_order">Приходный кассовый ордер (ПКО)</option>
+									<option value="cash_order">Приходный ордер / Внесение (ПКО)</option>
 									<option value="acquiring_payment">Оплата картой (Эквайринг)</option>
 								</select>
 							</div>

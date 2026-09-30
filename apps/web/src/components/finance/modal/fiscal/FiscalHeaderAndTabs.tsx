@@ -157,7 +157,7 @@ export const FiscalHeaderAndTabs: React.FC<FiscalHeaderAndTabsProps> = ({
 							data-testid="btn-fiscal-retry-direct"
 						>
 							<Printer size={14} className={isFiscalizing ? "animate-spin" : ""} />
-							<span>Повторить фискализацию чека</span>
+							<span>Повторить печать чека</span>
 						</button>
 					</div>
 				</div>

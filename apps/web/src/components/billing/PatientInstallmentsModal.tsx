@@ -195,7 +195,7 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 			setActiveSubView("schedule");
 
 			showToast(
-				`Платеж ${receipt.formattedAmount} принят! Чек 54-ФЗ ${receipt.receiptNumber} сформирован.`,
+				`Платеж ${receipt.formattedAmount} принят! Чек ${receipt.receiptNumber} сформирован.`,
 				"success",
 			);
 		} catch (err) {
@@ -328,7 +328,7 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 						<div className="flex items-center gap-2">
 							<Receipt className="w-4 h-4 text-emerald-600 shrink-0" />
 							<span>
-								Чек 54-ФЗ: <strong>{lastReceipt.receiptNumber}</strong> на сумму <strong>{lastReceipt.formattedAmount}</strong> ({lastReceipt.paymentMethodRu}, {lastReceipt.calculationTypeNameRu}).
+								Чек: <strong>{lastReceipt.receiptNumber}</strong> на сумму <strong>{lastReceipt.formattedAmount}</strong> ({lastReceipt.paymentMethodRu}, {lastReceipt.calculationTypeNameRu}).
 							</span>
 						</div>
 						<button
@@ -385,7 +385,7 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 						<div className="flex items-center justify-between mb-3">
 							<span className="font-bold text-xs uppercase tracking-wider text-[var(--ink)] flex items-center gap-1.5">
 								<CreditCard className="w-3.5 h-3.5 text-teal-600" />
-								<span>1-Клик Прием платежа по рассрочке (54-ФЗ)</span>
+								<span>1-Клик Прием взноса рассрочки</span>
 							</span>
 							<button
 								type="button"
@@ -428,7 +428,7 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 
 							<div>
 								<label className="text-[11px] font-semibold text-[var(--muted)] block mb-1">
-									Способ оплаты (54-ФЗ)
+									Способ оплаты
 								</label>
 								<div className="flex gap-1">
 									<button
@@ -476,7 +476,7 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 								data-testid="btn-confirm-installment-payment"
 							>
 								<Check className="w-3.5 h-3.5" />
-								<span>Выбить чек 54-ФЗ и закрыть взнос</span>
+								<span>Пробить чек и закрыть взнос</span>
 							</button>
 						</div>
 					</div>
@@ -648,7 +648,7 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 								<th style={{ textAlign: "right", width: "110px" }}>Сумма</th>
 								<th style={{ textAlign: "right", width: "110px" }}>Оплачено</th>
 								<th style={{ width: "120px", textAlign: "center" }}>Статус</th>
-								<th>Чек 54-ФЗ / Оплата</th>
+								<th>Чек / Оплата</th>
 								<th style={{ textAlign: "right", width: "110px" }}>Действие</th>
 							</tr>
 						</thead>
@@ -719,7 +719,7 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 													onClick={() => handleInitiateQuickPay(item.id)}
 													className="h-7 px-2.5 rounded-md bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
 													data-testid={`btn-pay-item-${item.paymentNumber}`}
-													title="Принять взнос и сформировать чек 54-ФЗ"
+													title="Принять взнос и пробить чек"
 												>
 													<Check className="w-3 h-3" />
 													<span>Оплатить</span>
@@ -771,7 +771,7 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 							data-testid="btn-quick-pay-next"
 						>
 							<CreditCard className="w-3.5 h-3.5" />
-							<span>Принять очередной платеж (54-ФЗ)</span>
+							<span>Принять очередной взнос</span>
 						</button>
 					</div>
 				</div>

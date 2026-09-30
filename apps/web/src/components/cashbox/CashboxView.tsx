@@ -284,7 +284,7 @@ export function CashboxView({
 				onPaymentComplete?.(receiptData);
 			} else {
 				const err = await res.json().catch(() => ({}));
-				showToast(err.message || "Ошибка фискализации чека 0 ₽", "error");
+				showToast(err.message || "Ошибка проведения расчета 0 ₽", "error");
 			}
 		} catch {
 			showToast("Ошибка сети при проведении 100% чека", "error");
@@ -324,7 +324,7 @@ export function CashboxView({
 					<div className="flex items-center gap-2 min-w-0">
 						<Banknote className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
 						<h2 className="text-sm font-bold text-[var(--ink)] truncate">
-							Касса 54-ФЗ и расчеты (Мандат 8e / 8n)
+							Касса и чеки
 						</h2>
 					</div>
 					<div className="flex items-center gap-2 shrink-0">
@@ -464,7 +464,7 @@ export function CashboxView({
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
 					<div>
 						<label className="block text-xs font-medium text-[var(--muted)] mb-1">
-							Тип покупателя (54-ФЗ тег 1228)
+							Тип плательщика
 						</label>
 						<div className="flex gap-2">
 							<button
@@ -581,7 +581,7 @@ export function CashboxView({
 								className="flex-1 min-w-[140px] inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
 								onClick={() => handleOpenPaymentWithMethod("split")}
 								data-testid="btn-open-payment-modal"
-								title="Универсальное окно сплит-оплаты и терминала Сбербанка (54-ФЗ)"
+								title="Универсальное окно сплит-оплаты и терминала"
 							>
 								<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
 								<span>Сплит / Терминал...</span>
