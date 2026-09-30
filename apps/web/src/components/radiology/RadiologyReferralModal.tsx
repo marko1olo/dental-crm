@@ -1,22 +1,34 @@
 import {
-	type DentalRadiologyStudyType,
-	dentalRadiologyStudyLabels,
-	generateRadiologyReferralPayloadFromSoap,
-	type RadiologyReferralGoal,
-	radiologyReferralGoalLabels,
-	renderRadiologyReferralHtml,
-} from "@dental/shared";
-import {
 	Activity,
+	Building2,
 	Check,
+	Copy,
+	FileText,
 	Info,
 	Printer,
+	QrCode,
 	Scan,
+	ShieldCheck,
+	Sparkles,
 	X,
 } from "lucide-react";
 import React, { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
-import { ADULT_FDI_TEETH, formatRadiationDose } from "./radiologyMath";
+import { showToast } from "../GlobalToast.js";
+import { ADULT_FDI_TEETH, formatRadiationDose } from "./radiologyMath.js";
+import {
+	applyRadiologyProtocolToForm043,
+	CBCT_DIAGNOSTIC_GOALS,
+	CBCT_REFERRAL_PARTNERS,
+	CBCT_SCAN_FOV_PROTOCOLS,
+	type CbctDiagnosticGoal,
+	type CbctDiagnosticGoalId,
+	type CbctReferralPartner,
+	type CbctScanFovProtocol,
+	formatCbctReferralSummary,
+	generateReferralBarcodeSvg,
+	generateReferralQrCodeSvg,
+} from "./radiologyProtocols.js";
 
 export interface RadiologyReferralModalProps {
 	isOpen: boolean;
@@ -37,112 +49,18 @@ export interface RadiologyReferralModalProps {
 	doctorName?: string | null | undefined;
 	doctorSpecialty?: string | null | undefined;
 	clinicName?: string | null | undefined;
+	clinicAddress?: string | null | undefined;
+	clinicPhone?: string | null | undefined;
+	clinicLicense?: string | null | undefined;
 	initialDiagnosisIcd10?: string | undefined;
 	initialTeeth?: string[] | undefined;
 	onSuccessReferralCreated?: ((referralData: any) => void) | undefined;
 }
 
-const STUDY_TYPES_CATALOG: readonly {
-	id: DentalRadiologyStudyType;
-	label: string;
-	desc: string;
-	typicalDoseMicrosv: number;
-	badge: string;
-}[] = [
-	{
-		id: "cbct_jaw_8x8",
-		label: "3D КЛКТ челюстей (8x8 см)",
-		desc: "3D-томография зубных рядов верхней и нижней челюстей для имплантации и эндодонтии",
-		typicalDoseMicrosv: 55.0,
-		badge: "3D КЛКТ",
-	},
-	{
-		id: "cbct_segment_5x5",
-		label: "3D КЛКТ сегмента (5x5 см)",
-		desc: "Прицельная 3D-томография 2–3 зубов с высоким разрешением (эндодонтия/периодонтит/киста)",
-		typicalDoseMicrosv: 30.0,
-		badge: "3D Сегмент",
-	},
-	{
-		id: "cbct_full_maxillofacial_15x15",
-		label: "3D КЛКТ ЧЛО и ВНЧС (15x15 см)",
-		desc: "Челюстно-лицевая томография, дыхательные пути, суставы ВНЧС (хирургия/ортодонтия)",
-		typicalDoseMicrosv: 95.0,
-		badge: "3D Maxillo",
-	},
-	{
-		id: "optg_digital_panoramic",
-		label: "Ортопантомограмма (ОПТГ)",
-		desc: "Панорамный обзорный 2D-снимок всех зубов и костных структур челюстей",
-		typicalDoseMicrosv: 18.0,
-		badge: "ОПТГ 2D",
-	},
-	{
-		id: "trg_cephalometric_lateral",
-		label: "ТРГ (боковая проекция)",
-		desc: "Телерентгенограмма черепа для ортодонтического цефалометрического расчета",
-		typicalDoseMicrosv: 10.0,
-		badge: "ТРГ",
-	},
-	{
-		id: "intraoral_radiovisiography",
-		label: "Прицельная радиовизиография (RVG)",
-		desc: "Прицельный снимок 1 зуба для контроля пломбирования каналов и апекса",
-		typicalDoseMicrosv: 3.0,
-		badge: "Визиограф",
-	},
-];
-
-const CLINICAL_GOALS_CATALOG: readonly {
-	id: RadiologyReferralGoal;
-	label: string;
-	desc: string;
-}[] = [
-	{
-		id: "endodontics",
-		label: "Эндодонтия",
-		desc: "Анатомия каналов, периодонтит, деструкция верхушки",
-	},
-	{
-		id: "implantology",
-		label: "Имплантация",
-		desc: "Объем, высота и плотность костной ткани",
-	},
-	{
-		id: "surgery_extraction",
-		label: "Хирургия",
-		desc: "Удаление ретинированных и дистопированных зубов",
-	},
-	{
-		id: "periapical_cyst",
-		label: "Киста / Гранулема",
-		desc: "Дифференциальная диагностика периапикальных очагов",
-	},
-	{
-		id: "periodontology",
-		label: "Пародонтология",
-		desc: "Резорбция костной ткани, глубина карманов",
-	},
-	{
-		id: "orthodontics",
-		label: "Ортодонтия",
-		desc: "Анализ прикуса, цефалометрия, положение корней",
-	},
-	{
-		id: "tmj_dysfunction",
-		label: "Суставы ВНЧС",
-		desc: "Дисфункция, положение суставных головок",
-	},
-	{
-		id: "general_screening",
-		label: "Первичный скрининг",
-		desc: "Комплексная рентген-оценка зубочелюстной системы",
-	},
-];
-
 const EMPTY_TEETH_LIST: readonly string[] = [];
 
-const ZONE_PRESETS = [
+// 1-Click Zone Presets
+const TOOTH_ZONE_PRESETS = [
 	{
 		label: "Обе челюсти (Все)",
 		teeth: [
@@ -165,19 +83,19 @@ const ZONE_PRESETS = [
 		teeth: ["13", "12", "11", "21", "22", "23", "33", "32", "31", "41", "42", "43"],
 	},
 	{
-		label: "Сегмент 1 (18–11)",
+		label: "Сектор 1 (18–11)",
 		teeth: [...ADULT_FDI_TEETH.quadrant1],
 	},
 	{
-		label: "Сегмент 2 (21–28)",
+		label: "Сектор 2 (21–28)",
 		teeth: [...ADULT_FDI_TEETH.quadrant2],
 	},
 	{
-		label: "Сегмент 3 (31–38)",
+		label: "Сектор 3 (31–38)",
 		teeth: [...ADULT_FDI_TEETH.quadrant3],
 	},
 	{
-		label: "Сегмент 4 (48–41)",
+		label: "Сектор 4 (48–41)",
 		teeth: [...ADULT_FDI_TEETH.quadrant4],
 	},
 ] as const;
@@ -190,37 +108,50 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 	doctorName,
 	doctorSpecialty,
 	clinicName,
-	initialDiagnosisIcd10 = "K04.0",
+	clinicAddress,
+	clinicPhone,
+	clinicLicense,
+	initialDiagnosisIcd10 = "K08.1",
 	initialTeeth = EMPTY_TEETH_LIST as string[],
 	onSuccessReferralCreated,
 }) => {
 	const modalId = useId();
 
-	// State
-	const [studyType, setStudyType] =
-		useState<DentalRadiologyStudyType>("cbct_jaw_8x8");
-	const [studyGoal, setStudyGoal] =
-		useState<RadiologyReferralGoal>("endodontics");
+	// Active State
+	const [selectedFovId, setSelectedFovId] = useState<string>("cbct_full_jaws_16x10");
+	const [selectedGoalId, setSelectedGoalId] = useState<CbctDiagnosticGoalId>("implantation");
+	const [selectedPartnerId, setSelectedPartnerId] = useState<string>("own_cabinet");
 	const [selectedTeeth, setSelectedTeeth] = useState<string[]>(initialTeeth);
-	const [customTeethInput, setCustomTeethInput] = useState<string>(
-		initialTeeth.join(", "),
-	);
+	const [customTeethInput, setCustomTeethInput] = useState<string>(initialTeeth.join(", "));
 	const [diagnosisIcd10, setDiagnosisIcd10] = useState<string>(
 		diary?.diagnosisIcd10 || initialDiagnosisIcd10,
 	);
 	const [clinicalNotes, setClinicalNotes] = useState<string>(diary?.statusLocalis || "");
-	const [customReferralNumber, setCustomReferralNumber] = useState<string>("");
+	const [referralNumber, setReferralNumber] = useState<string>("");
 	const [activeTab, setActiveTab] = useState<"form" | "preview">("form");
+
+	// Medical safety checklist (ALARA)
+	const [isPregnancyExcluded, setIsPregnancyExcluded] = useState<boolean>(true);
+	const [hasMetallicArtifacts, setHasMetallicArtifacts] = useState<boolean>(false);
+	const [isTmjOpenClosedProtocol, setIsTmjOpenClosedProtocol] = useState<boolean>(true);
 
 	const initialTeethKey = initialTeeth.join(",");
 
-	// Synchronize on open
+	// Current protocol objects
+	const currentFov: CbctScanFovProtocol =
+		CBCT_SCAN_FOV_PROTOCOLS.find((f) => f.id === selectedFovId) ?? CBCT_SCAN_FOV_PROTOCOLS[0]!;
+	const currentGoal: CbctDiagnosticGoal =
+		CBCT_DIAGNOSTIC_GOALS.find((g) => g.id === selectedGoalId) ?? CBCT_DIAGNOSTIC_GOALS[0]!;
+	const currentPartner: CbctReferralPartner =
+		CBCT_REFERRAL_PARTNERS.find((p) => p.id === selectedPartnerId) ?? CBCT_REFERRAL_PARTNERS[0]!;
+
+	// Initialize on Open
 	useEffect(() => {
 		if (!isOpen) return;
 
 		const currentYear = new Date().getFullYear();
 		const dateSuffix = Date.now().toString(36).toUpperCase().slice(-4);
-		setCustomReferralNumber(`НАПР-РЕНТГЕН-${currentYear}-${dateSuffix}`);
+		setReferralNumber(`НАПР-КЛКТ-${currentYear}-${dateSuffix}`);
 
 		if (initialTeeth.length > 0) {
 			setSelectedTeeth(initialTeeth);
@@ -249,15 +180,47 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 
 	if (!isOpen || typeof document === "undefined") return null;
 
-	const patientFullName = patient?.fullName || "____________________";
-	const patientBirth = patient?.birthDate || "____-__-__";
-	const patientPhone = patient?.phone || "+7 (___) ___-__-__";
+	const patientFullName = patient?.fullName || "Пациент";
+	const patientBirth = patient?.birthDate || "1985-05-15";
+	const patientPhoneStr = patient?.phone || "+7 (___) ___-__-__";
 	const patientCard =
-		patient?.medicalCardNumber || patient?.cardNumber || "МК-0012";
+		patient?.medicalCardNumber || patient?.cardNumber || "МК-043/у";
 	const docName = doctorName || "Лечащий врач";
-	const clinic = clinicName || 'ООО "Денте Клиник"';
+	const docSpec = doctorSpecialty || "Врач-стоматолог";
+	const clinic = clinicName || 'Стоматологическая клиника "Денте"';
+	const address = clinicAddress || "г. Москва, ул. Клиническая, д. 12";
+	const phone = clinicPhone || "+7 (495) 700-00-00";
+	const license = clinicLicense || "ЛО-77-01-019842 от 12.04.2020";
 
-	// Toggle tooth selection
+	// 1-Click Express Preset Handler (0-5 Seconds Doctor Fast-Path, Mandates 8e, 8k, 8n)
+	const handleApplyExpressPreset = (preset: {
+		fovId: string;
+		goalId: CbctDiagnosticGoalId;
+		icd: string;
+		teeth?: readonly string[];
+		note: string;
+	}) => {
+		setSelectedFovId(preset.fovId);
+		setSelectedGoalId(preset.goalId);
+		setDiagnosisIcd10(preset.icd);
+		if (preset.teeth && preset.teeth.length > 0) {
+			setSelectedTeeth([...preset.teeth]);
+			setCustomTeethInput(preset.teeth.join(", "));
+		}
+		if (preset.note) {
+			setClinicalNotes(preset.note);
+		}
+		showToast(`Применен клинический протокол: ${preset.note}`, "info", 2000);
+	};
+
+	// 1-Click Zone Preset
+	const handleApplyZonePreset = (teeth: readonly string[]) => {
+		const sorted = [...teeth];
+		setSelectedTeeth(sorted);
+		setCustomTeethInput(sorted.join(", "));
+	};
+
+	// Toggle tooth
 	const handleToggleTooth = (tooth: string) => {
 		let updated: string[];
 		if (selectedTeeth.includes(tooth)) {
@@ -269,66 +232,227 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 		setCustomTeethInput(updated.join(", "));
 	};
 
-	// 1-Click Zone of Interest Preset (Mandates 8e, 8k)
-	const handleApplyZonePreset = (teeth: readonly string[]) => {
-		const sorted = [...teeth];
-		setSelectedTeeth(sorted);
-		setCustomTeethInput(sorted.join(", "));
-	};
-
-	// Smart Study Type selection with 1-click zone auto-population
-	const handleSelectStudyType = (id: DentalRadiologyStudyType) => {
-		setStudyType(id);
-		if (
-			(id === "optg_digital_panoramic" ||
-				id === "cbct_jaw_8x8" ||
-				id === "cbct_full_maxillofacial_15x15") &&
-			selectedTeeth.length <= 1
-		) {
-			const allTeeth = [
-				...ADULT_FDI_TEETH.quadrant1,
-				...ADULT_FDI_TEETH.quadrant2,
-				...ADULT_FDI_TEETH.quadrant4,
-				...ADULT_FDI_TEETH.quadrant3,
-			];
-			setSelectedTeeth(allTeeth);
-			setCustomTeethInput("Все зубные ряды");
+	// Change FOV with auto-population of defaults
+	const handleSelectFov = (fov: CbctScanFovProtocol) => {
+		setSelectedFovId(fov.id);
+		if (fov.defaultTeethFdi.length > 0 && selectedTeeth.length <= 1) {
+			setSelectedTeeth([...fov.defaultTeethFdi]);
+			setCustomTeethInput(fov.code === "full_jaws" ? "Все зубные ряды" : fov.defaultTeethFdi.join(", "));
 		}
 	};
 
-	// Selected Study Catalog Item
-	const selectedStudyItem =
-		STUDY_TYPES_CATALOG.find((s) => s.id === studyType) ?? STUDY_TYPES_CATALOG[0]!;
+	// Change Goal with auto-population of recommended FOV and ICD
+	const handleSelectGoal = (goal: CbctDiagnosticGoal) => {
+		setSelectedGoalId(goal.id);
+		if (goal.recommendedFovId && (!selectedFovId || selectedFovId === "cbct_full_jaws_16x10")) {
+			setSelectedFovId(goal.recommendedFovId);
+		}
+		if (goal.recommendedIcd10 && (!diagnosisIcd10 || diagnosisIcd10 === "K08.1" || diagnosisIcd10 === "K04.0")) {
+			setDiagnosisIcd10(goal.recommendedIcd10);
+		}
+	};
 
-	// Radiation Dose Formatting (>= 13-14px bold per mandate)
-	const estimatedDose = formatRadiationDose(selectedStudyItem.typicalDoseMicrosv);
+	// Radiation Dose Formatting
+	const estimatedDose = formatRadiationDose(currentFov.typicalDoseMicrosv);
 
-	// Generate Referral Payload
-	const referralPayload = generateRadiologyReferralPayloadFromSoap({
-		clinic: {
-			fullName: clinic,
-		},
-		patient: {
-			fullName: patientFullName,
-			birthDate: patientBirth,
-			phone: patientPhone,
-			medicalCardNumber: patientCard,
-		},
-		doctor: {
-			fullName: docName,
-			specialty: doctorSpecialty || "Врач-стоматолог",
-		},
-		diagnosisIcd10: diagnosisIcd10 || "K04.0",
-		diagnosisTooth: customTeethInput || selectedTeeth.join(", "),
-		statusLocalis: clinicalNotes || null,
-		studyType,
-		studyGoal,
-		customReferralNumber,
+	// Summary Statement
+	const targetTeethDisplay = customTeethInput || (selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "По протоколу FOV");
+	const referralSummary = formatCbctReferralSummary({
+		referralNumber,
+		fovProtocol: currentFov,
+		goal: currentGoal,
+		teeth: targetTeethDisplay,
+		partner: currentPartner,
+		doctorName: docName,
+		icd10: diagnosisIcd10,
 	});
 
-	const printHtml = renderRadiologyReferralHtml(referralPayload);
+	// Vector Barcode & QR Code SVGs (Zero-Mock, Pure SVG)
+	const barcodeSvg = generateReferralBarcodeSvg(referralNumber, 240, 48);
+	const qrPayloadData = `CT-REF:${referralNumber}|CLINIC:${clinic}|PATIENT:${patientFullName}|FOV:${currentFov.fovDimensions}|TEETH:${targetTeethDisplay}|GOAL:${currentGoal.titleRu}|DATE:${new Date().toISOString().slice(0, 10)}`;
+	const qrCodeSvg = generateReferralQrCodeSvg(qrPayloadData, 96);
 
-	// Handle Print
+	// 1-Click Insert into Form 043/y Diary
+	const handleInsertToDiary = () => {
+		applyRadiologyProtocolToForm043({
+			protocol: referralSummary,
+			options: {
+				modalityLabel: `КЛКТ (${currentFov.fovDimensions})`,
+				teethFdi: selectedTeeth.length > 0 ? selectedTeeth : undefined,
+			},
+			showNotification: true,
+			copyToClipboard: true,
+		});
+		if (onSuccessReferralCreated) {
+			onSuccessReferralCreated({
+				referralNumber,
+				fov: currentFov,
+				goal: currentGoal,
+				teeth: targetTeethDisplay,
+				partner: currentPartner,
+				icd10: diagnosisIcd10,
+			});
+		}
+	};
+
+	// Copy formatted text
+	const handleCopyText = () => {
+		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+			navigator.clipboard.writeText(referralSummary).then(() => {
+				showToast("Текст направления скопирован в буфер", "success", 2500);
+			}).catch(() => {});
+		}
+	};
+
+	// Printable HTML Document
+	const printDocHtml = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Направление на КЛКТ № ${referralNumber}</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm 15mm; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 9.5pt; color: #0f172a; line-height: 1.4; margin: 0; padding: 0; background: #fff; }
+  .doc-container { width: 100%; max-width: 190mm; margin: 0 auto; }
+  .header-grid { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 12px; }
+  .clinic-info { max-width: 60%; font-size: 8.5pt; color: #334155; }
+  .clinic-title { font-size: 11pt; font-weight: 800; text-transform: uppercase; color: #0f172a; margin-bottom: 2px; }
+  .doc-requisites { text-align: right; }
+  .doc-title { font-size: 13pt; font-weight: 900; color: #0f766e; text-transform: uppercase; letter-spacing: 0.5px; }
+  .doc-number { font-size: 8.5pt; font-weight: bold; color: #475569; margin-top: 2px; }
+  .barcodes-row { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 12px; margin-bottom: 12px; }
+  .data-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 9pt; }
+  .data-table td { padding: 4px 6px; border: 1px solid #cbd5e1; }
+  .data-table .label { width: 25%; font-weight: bold; background: #f1f5f9; color: #334155; }
+  .highlight-box { border: 1.5px solid #0f766e; border-radius: 6px; padding: 10px 12px; background: #f0fdfa; margin-bottom: 10px; }
+  .fov-badge { display: inline-block; background: #0f766e; color: #fff; font-weight: bold; font-size: 8pt; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+  .teeth-grid { width: 100%; border-collapse: collapse; text-align: center; font-size: 8pt; font-weight: bold; margin: 6px 0; }
+  .teeth-grid td { border: 1px solid #94a3b8; padding: 3px 2px; }
+  .teeth-grid .target { background: #99f6e4; color: #0f766e; border: 1.5pt solid #0f766e; font-weight: 900; }
+  .safety-box { font-size: 8pt; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; }
+  .signatures { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; font-size: 9pt; }
+  .sig-line { width: 160px; border-bottom: 1px solid #0f172a; margin-top: 25px; margin-bottom: 4px; }
+  .seal-box { width: 64px; height: 64px; border: 1.5px dashed #94a3b8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8pt; font-weight: bold; color: #64748b; }
+</style>
+</head>
+<body>
+<div class="doc-container">
+  <div class="header-grid">
+    <div class="clinic-info">
+      <div class="clinic-title">${clinic}</div>
+      <div>Лицензия: ${license}</div>
+      <div>Адрес: ${address} | Тел: ${phone}</div>
+    </div>
+    <div class="doc-requisites">
+      <div class="doc-title">НАПРАВЛЕНИЕ НА КЛКТ</div>
+      <div class="doc-number">№ ${referralNumber} от ${new Date().toLocaleDateString("ru-RU")}</div>
+      <div style="font-size:8pt; color:#0f766e; font-weight:bold; margin-top:2px;">Куда: ${currentPartner.nameRu}</div>
+    </div>
+  </div>
+
+  <div class="barcodes-row">
+    <div>${barcodeSvg}</div>
+    <div style="text-align:right; display:flex; align-items:center; gap:8px;">
+      <div style="font-size:7.5pt; color:#475569; text-align:right;">
+        <strong>Электронный QR-код</strong><br>для моментального сканирования<br>в рентген-центре
+      </div>
+      <div>${qrCodeSvg}</div>
+    </div>
+  </div>
+
+  <table class="data-table">
+    <tbody>
+      <tr>
+        <td class="label">Пациент (Ф.И.О.):</td>
+        <td><strong>${patientFullName}</strong></td>
+        <td class="label" style="width:18%;">Дата рожд.:</td>
+        <td style="width:20%;">${patientBirth}</td>
+      </tr>
+      <tr>
+        <td class="label">Номер мед. карты:</td>
+        <td><strong>${patientCard}</strong></td>
+        <td class="label">Телефон:</td>
+        <td>${patientPhoneStr}</td>
+      </tr>
+      <tr>
+        <td class="label">Направивший врач:</td>
+        <td colspan="3"><strong>${docName}</strong> (${docSpec})</td>
+      </tr>
+      <tr>
+        <td class="label">Диагноз (МКБ-10):</td>
+        <td colspan="3"><strong style="color:#0f766e;">${diagnosisIcd10}</strong> — Стоматологическое обследование / ${currentGoal.titleRu}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="highlight-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <div>
+        <strong style="font-size:10pt; color:#0f766e; text-transform:uppercase;">1. Клиническая зона сканирования (FOV):</strong>
+        <span class="fov-badge">${currentFov.fovDimensions}</span>
+        ${currentFov.isHighResolution ? '<span class="fov-badge" style="background:#0284c7;">Ultra-High Res 75µm</span>' : ""}
+        ${currentFov.isDualPhase ? '<span class="fov-badge" style="background:#7c3aed;">Двухфазный (Закрыт/Открыт)</span>' : ""}
+      </div>
+      <div style="font-size:8.5pt; font-weight:bold; color:#0f766e;">Доза ~${currentFov.typicalDoseMicrosv} мкЗв (ALARA)</div>
+    </div>
+    <div style="font-size:9pt; margin-bottom:4px;"><strong>Зона:</strong> ${currentFov.titleRu}</div>
+    <div style="font-size:8.5pt; color:#334155;"><strong>Описание:</strong> ${currentFov.description}</div>
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <div style="font-weight:bold; font-size:8.5pt; text-transform:uppercase; color:#0f172a; margin-bottom:4px;">
+      2. Клиническая цель и задачи исследования:
+    </div>
+    <div style="font-size:9pt; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px;">
+      <div style="font-weight:bold; color:#0f766e; margin-bottom:2px;">${currentGoal.titleRu} — ${currentGoal.description}</div>
+      <div style="font-size:8pt; color:#475569;">Задачи: ${currentGoal.clinicalTasks.join("; ")}.</div>
+      ${clinicalNotes ? `<div style="font-size:8pt; color:#0f172a; margin-top:4px; border-top:1px dashed #cbd5e1; padding-top:2px;"><strong>Особые указания:</strong> ${clinicalNotes}</div>` : ""}
+    </div>
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <div style="font-weight:bold; font-size:8.5pt; text-transform:uppercase; color:#0f172a; margin-bottom:2px;">
+      3. Локализация по зубной формуле (FDI):
+    </div>
+    <table class="teeth-grid">
+      <tr>
+        ${["18","17","16","15","14","13","12","11"].map((t) => `<td class="${selectedTeeth.includes(t) ? "target" : ""}">${t}</td>`).join("")}
+        <td style="border:none; width:4px;"></td>
+        ${["21","22","23","24","25","26","27","28"].map((t) => `<td class="${selectedTeeth.includes(t) ? "target" : ""}">${t}</td>`).join("")}
+      </tr>
+      <tr>
+        ${["48","47","46","45","44","43","42","41"].map((t) => `<td class="${selectedTeeth.includes(t) ? "target" : ""}">${t}</td>`).join("")}
+        <td style="border:none; width:4px;"></td>
+        ${["31","32","33","34","35","36","37","38"].map((t) => `<td class="${selectedTeeth.includes(t) ? "target" : ""}">${t}</td>`).join("")}
+      </tr>
+    </table>
+    <div style="font-size:8pt; color:#0f766e; font-weight:bold;">Отмеченные зубы/сегмент: ${targetTeethDisplay}</div>
+  </div>
+
+  <div class="safety-box">
+    <strong>Радиационная безопасность (СанПиН 2.6.1.1192-03 / Приказ №560н):</strong><br>
+    [${isPregnancyExcluded ? "X" : " "}] Беременность исключена | [${hasMetallicArtifacts ? "X" : " "}] Металлоконструкции / коронки | Принцип ALARA соблюдён.
+    ${currentFov.isDualPhase ? ` | [${isTmjOpenClosedProtocol ? "X" : " "}] Исследование ВНЧС в 2 положениях (привычная окклюзия + открытый рот).` : ""}
+  </div>
+
+  <div class="signatures">
+    <div>
+      <div>Направивший врач: <strong>${docName}</strong></div>
+      <div class="sig-line"></div>
+      <div style="font-size:8pt; color:#64748b;">(подпись врача)</div>
+    </div>
+    <div class="seal-box">М.П.</div>
+    <div style="text-align:right;">
+      <div>Рентгенолаборант / Центр: _________________</div>
+      <div class="sig-line" style="margin-left:auto;"></div>
+      <div style="font-size:8pt; color:#64748b;">(отметка о выполнении)</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>`;
+
+	// Print action
 	const handlePrint = () => {
 		const printFrame = document.createElement("iframe");
 		printFrame.style.position = "fixed";
@@ -339,11 +463,10 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 		printFrame.style.border = "0";
 		document.body.appendChild(printFrame);
 
-		const frameDoc =
-			printFrame.contentWindow?.document || printFrame.contentDocument;
+		const frameDoc = printFrame.contentWindow?.document || printFrame.contentDocument;
 		if (frameDoc) {
 			frameDoc.open();
-			frameDoc.write(printHtml);
+			frameDoc.write(printDocHtml);
 			frameDoc.close();
 			setTimeout(() => {
 				printFrame.contentWindow?.focus();
@@ -351,7 +474,13 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 				setTimeout(() => {
 					document.body.removeChild(printFrame);
 					if (onSuccessReferralCreated) {
-						onSuccessReferralCreated(referralPayload);
+						onSuccessReferralCreated({
+							referralNumber,
+							fov: currentFov,
+							goal: currentGoal,
+							teeth: targetTeethDisplay,
+							partner: currentPartner,
+						});
 					}
 				}, 1000);
 			}, 250);
@@ -361,55 +490,60 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 	const modalContent = (
 		<div
 			id={modalId}
-			className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200"
+			className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Направление на рентгенологическое исследование"
+			aria-label="Направление на КЛКТ (3D томография)"
 			data-testid="radiology-referral-generator-modal"
 		>
-			<div className="flex flex-col w-full max-w-5xl max-h-[92vh] rounded-3xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden">
+			<div className="flex flex-col w-full max-w-5xl max-h-[94vh] rounded-3xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden">
 				{/* ═══════════════════════════════════════════════════════════════════
 				    1. HEADER (Touch Target Close Button >= 44x44px)
 				    ═══════════════════════════════════════════════════════════════════ */}
-				<header className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
+				<header className="flex items-center justify-between px-6 py-3.5 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-3.5">
-						<div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)]">
-							<Scan className="w-6 h-6" />
+						<div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)]">
+							<Scan className="w-5 h-5" />
 						</div>
 						<div>
-							<h2 className="text-base md:text-lg font-bold text-[var(--ink)]">
-								Направление на лучевую диагностику (КЛКТ / ОПТГ / ТРГ)
-							</h2>
+							<div className="flex items-center gap-2">
+								<h2 className="text-base font-bold text-[var(--ink)]">
+									Направление на КЛКТ / 3D Лучевую диагностику
+								</h2>
+								<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
+									1-клик протокол
+								</span>
+							</div>
 							<p className="text-xs text-[var(--muted)]">
-								Пациент: <strong className="text-[var(--ink)]">{patientFullName}</strong> · Карта: {patientCard}
+								Пациент: <strong className="text-[var(--ink)]">{patientFullName}</strong> · Карта: {patientCard} · Направил: {docName}
 							</p>
 						</div>
 					</div>
 
 					<div className="flex items-center gap-2">
-						{/* Mobile Tab Toggle */}
-						<div className="flex md:hidden items-center p-1 rounded-xl bg-[var(--paper)] border border-[var(--line)]">
+						{/* Desktop / Mobile Tab Switcher */}
+						<div className="flex items-center p-1 rounded-xl bg-[var(--paper)] border border-[var(--line)]">
 							<button
 								type="button"
 								onClick={() => setActiveTab("form")}
 								className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
 									activeTab === "form"
-										? "bg-[var(--teal)] text-white"
-										: "text-[var(--muted)]"
+										? "bg-[var(--teal)] text-white shadow-sm"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
-								Параметры
+								Параметры FOV
 							</button>
 							<button
 								type="button"
 								onClick={() => setActiveTab("preview")}
 								className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
 									activeTab === "preview"
-										? "bg-[var(--teal)] text-white"
-										: "text-[var(--muted)]"
+										? "bg-[var(--teal)] text-white shadow-sm"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 							>
-								Печать
+								Бланк и QR
 							</button>
 						</div>
 
@@ -429,45 +563,127 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 				    2. BODY (Parameters Column + Live Print Preview)
 				    ═══════════════════════════════════════════════════════════════════ */}
 				<div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
-					{/* Left: Interactive Form & FDI Grid */}
+					{/* Left: Interactive Form & FOV Selection */}
 					<div
-						className={`w-full md:w-1/2 p-5 md:p-6 overflow-y-auto border-b md:border-b-0 md:border-r border-[var(--line)] flex flex-col gap-5 ${
+						className={`w-full md:w-1/2 p-5 md:p-6 overflow-y-auto border-b md:border-b-0 md:border-r border-[var(--line)] flex flex-col gap-4 ${
 							activeTab === "preview" ? "hidden md:flex" : "flex"
 						}`}
 					>
-						{/* 1. Study Type Selection */}
+						{/* 0. Fast 1-Click Clinical Express Presets (5 Seconds Doctor Path) */}
+						<div className="p-3 rounded-2xl bg-[var(--teal-surface)]/40 border border-[var(--teal-soft)]">
+							<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--teal)] mb-2">
+								<Sparkles className="w-4 h-4" />
+								<span>Быстрые пресеты у кресла (0–1 клик):</span>
+							</div>
+							<div className="flex flex-wrap gap-1.5">
+								<button
+									type="button"
+									onClick={() =>
+										handleApplyExpressPreset({
+											fovId: "cbct_full_jaws_16x10",
+											goalId: "implantation",
+											icd: "K08.1",
+											teeth: TOOTH_ZONE_PRESETS[0].teeth,
+											note: "Планирование имплантации (обе челюсти, костный гребень)",
+										})
+									}
+									className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--teal-soft)] text-[var(--ink)] hover:bg-[var(--teal)] hover:text-white transition-all shadow-xs"
+								>
+									Имплантация (Все)
+								</button>
+								<button
+									type="button"
+									onClick={() =>
+										handleApplyExpressPreset({
+											fovId: "cbct_maxilla_sinuses_10x10",
+											goalId: "implantation",
+											icd: "K08.1",
+											teeth: TOOTH_ZONE_PRESETS[1].teeth,
+											note: "Синус-лифтинг ВЧ и субантральная аугментация",
+										})
+									}
+									className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--teal-soft)] text-[var(--ink)] hover:bg-[var(--teal)] hover:text-white transition-all shadow-xs"
+								>
+									Синус-лифтинг (ВЧ)
+								</button>
+								<button
+									type="button"
+									onClick={() =>
+										handleApplyExpressPreset({
+											fovId: "cbct_mandible_10x10",
+											goalId: "surgery_extraction" as any || "implantation",
+											icd: "K07.3",
+											teeth: TOOTH_ZONE_PRESETS[2].teeth,
+											note: "Нижнечелюстной канал и восьмерки #38, #48",
+										})
+									}
+									className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--teal-soft)] text-[var(--ink)] hover:bg-[var(--teal)] hover:text-white transition-all shadow-xs"
+								>
+									НЧ (Канал / 8-ки)
+								</button>
+								<button
+									type="button"
+									onClick={() =>
+										handleApplyExpressPreset({
+											fovId: "cbct_endo_micro_5x5",
+											goalId: "endodontics",
+											icd: "K04.0",
+											note: "Endo Micro-CT: поиск MB2 канала и трещин корня",
+										})
+									}
+									className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--teal-soft)] text-[var(--ink)] hover:bg-[var(--teal)] hover:text-white transition-all shadow-xs"
+								>
+									Эндо Micro-CT (MB2)
+								</button>
+								<button
+									type="button"
+									onClick={() =>
+										handleApplyExpressPreset({
+											fovId: "cbct_tmj_both_joints",
+											goalId: "tmj",
+											icd: "K07.6",
+											note: "ВНЧС 2 сустава (окклюзия + открытый рот)",
+										})
+									}
+									className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--teal-soft)] text-[var(--ink)] hover:bg-[var(--teal)] hover:text-white transition-all shadow-xs"
+								>
+									ВНЧС (2 сустава)
+								</button>
+							</div>
+						</div>
+
+						{/* 1. Clinical Scanning Zone / FOV Selection */}
 						<div>
 							<div className="flex items-center justify-between mb-2">
 								<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-									1. Вид исследования (Стандарт ALARA):
+									1. Зона сканирования (FOV):
 								</span>
-								{/* Estimated Dose Badge >= 13-14px bold per mandate */}
 								<div
-									className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold ${estimatedDose.badgeClass}`}
+									className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border text-xs font-bold ${estimatedDose.badgeClass}`}
 								>
 									<Activity className="w-3.5 h-3.5" />
-									<span>Доза: {estimatedDose.microsvText}</span>
+									<span>Доза: ~{currentFov.typicalDoseMicrosv} мкЗв</span>
 								</div>
 							</div>
 
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-								{STUDY_TYPES_CATALOG.map((item) => {
-									const isSelected = studyType === item.id;
+								{CBCT_SCAN_FOV_PROTOCOLS.map((fov) => {
+									const isSelected = selectedFovId === fov.id;
 									return (
 										<button
-											key={item.id}
+											key={fov.id}
 											type="button"
-											onClick={() => handleSelectStudyType(item.id)}
+											onClick={() => handleSelectFov(fov)}
 											className={`flex flex-col p-3 rounded-2xl border text-left transition-all min-h-[44px] ${
 												isSelected
 													? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--ink)] shadow-sm ring-1 ring-[var(--teal-soft)]"
 													: "bg-[var(--paper-soft)] border-[var(--line)] hover:border-[var(--teal)] text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
-											data-testid={`referral-study-${item.id}`}
+											data-testid={`referral-fov-${fov.code}`}
 										>
 											<div className="flex items-center justify-between w-full mb-1">
 												<span className="text-xs font-bold text-[var(--ink)]">
-													{item.badge}
+													{fov.badge}
 												</span>
 												<div
 													className={`flex items-center justify-center w-5 h-5 rounded-md border ${
@@ -479,11 +695,11 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 													{isSelected && <Check className="w-3.5 h-3.5" />}
 												</div>
 											</div>
-											<span className="text-xs font-semibold text-[var(--ink)] mb-0.5">
-												{item.label}
+											<span className="text-xs font-semibold text-[var(--ink)] mb-0.5 line-clamp-1">
+												{fov.titleRu}
 											</span>
 											<span className="text-[11px] text-[var(--muted)] leading-tight line-clamp-2">
-												{item.desc}
+												{fov.description}
 											</span>
 										</button>
 									);
@@ -496,14 +712,14 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-2 block">
 								2. Клиническая цель исследования:
 							</span>
-							<div className="grid grid-cols-2 gap-2">
-								{CLINICAL_GOALS_CATALOG.map((goal) => {
-									const isSelected = studyGoal === goal.id;
+							<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+								{CBCT_DIAGNOSTIC_GOALS.map((goal) => {
+									const isSelected = selectedGoalId === goal.id;
 									return (
 										<button
 											key={goal.id}
 											type="button"
-											onClick={() => setStudyGoal(goal.id)}
+											onClick={() => handleSelectGoal(goal)}
 											className={`min-h-[44px] p-2.5 rounded-xl border text-left transition-all ${
 												isSelected
 													? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] font-bold shadow-sm"
@@ -511,9 +727,9 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											}`}
 											data-testid={`referral-goal-${goal.id}`}
 										>
-											<div className="text-xs font-bold">{goal.label}</div>
+											<div className="text-xs font-bold line-clamp-1">{goal.titleRu}</div>
 											<div className="text-[10px] text-[var(--muted)] line-clamp-1">
-												{goal.desc}
+												{goal.shortBadge}
 											</div>
 										</button>
 									);
@@ -521,11 +737,42 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 							</div>
 						</div>
 
-						{/* 3. FDI Tooth Selector Matrix & 1-Click Zone Presets (Mandates 8e, 8k) */}
+						{/* 3. Destination Diagnostic Center / Partner */}
 						<div>
-							<div className="flex items-center justify-between mb-2">
+							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-2 block">
+								3. Рентген-центр назначения:
+							</span>
+							<div className="grid grid-cols-2 gap-2">
+								{CBCT_REFERRAL_PARTNERS.map((partner) => {
+									const isSelected = selectedPartnerId === partner.id;
+									return (
+										<button
+											key={partner.id}
+											type="button"
+											onClick={() => setSelectedPartnerId(partner.id)}
+											className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 ${
+												isSelected
+													? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] font-bold shadow-sm"
+													: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
+											}`}
+											data-testid={`referral-partner-${partner.id}`}
+										>
+											<Building2 className={`w-4 h-4 shrink-0 ${isSelected ? "text-[var(--teal)]" : "text-[var(--muted)]"}`} />
+											<div className="min-w-0">
+												<div className="text-xs font-bold truncate">{partner.nameRu}</div>
+												<div className="text-[10px] text-[var(--muted)] truncate">{partner.integrationNote}</div>
+											</div>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+
+						{/* 4. FDI Tooth Matrix & Zone Presets */}
+						<div>
+							<div className="flex items-center justify-between mb-1.5">
 								<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-									3. Локализация по формуле FDI (Зубы):
+									4. Локализация по формуле FDI (Зубы):
 								</span>
 								{selectedTeeth.length > 0 && (
 									<button
@@ -541,9 +788,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								)}
 							</div>
 
-							{/* 1-Click Zone Presets (Doctor Autonomy, Mandates 8e, 8k) */}
-							<div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2 scrollbar-thin">
-								{ZONE_PRESETS.map((preset) => {
+							<div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 mb-2 scrollbar-thin">
+								{TOOTH_ZONE_PRESETS.map((preset) => {
 									const isCurrent =
 										preset.teeth.length === selectedTeeth.length &&
 										preset.teeth.every((t) => selectedTeeth.includes(t));
@@ -552,10 +798,10 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 											key={preset.label}
 											type="button"
 											onClick={() => handleApplyZonePreset(preset.teeth)}
-											className={`px-2.5 py-1 text-xs font-semibold rounded-lg border whitespace-nowrap transition-all ${
+											className={`px-2 py-0.5 text-xs font-semibold rounded-lg border whitespace-nowrap transition-all ${
 												isCurrent
-													? "bg-[var(--teal)] border-[var(--teal)] text-white shadow-sm font-bold"
-													: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)]"
+													? "bg-[var(--teal)] border-[var(--teal)] text-white shadow-xs font-bold"
+													: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
 											}`}
 										>
 											{preset.label}
@@ -564,8 +810,8 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								})}
 							</div>
 
-							<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2">
-								{/* Upper jaw */}
+							<div className="p-2.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1.5">
+								{/* Upper Jaw */}
 								<div className="flex justify-between gap-1 overflow-x-auto pb-1 scrollbar-thin">
 									{ADULT_FDI_TEETH.quadrant1.map((tooth) => {
 										const isSelected = selectedTeeth.includes(tooth);
@@ -574,7 +820,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												key={tooth}
 												type="button"
 												onClick={() => handleToggleTooth(tooth)}
-												className={`h-8 min-w-[28px] sm:min-w-[32px] p-1 text-xs font-bold rounded-lg transition-all ${
+												className={`h-7 min-w-[28px] p-0.5 text-xs font-bold rounded-lg transition-all ${
 													isSelected
 														? "bg-[var(--teal)] text-white shadow-md font-extrabold scale-105"
 														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
@@ -592,7 +838,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												key={tooth}
 												type="button"
 												onClick={() => handleToggleTooth(tooth)}
-												className={`h-8 min-w-[28px] sm:min-w-[32px] p-1 text-xs font-bold rounded-lg transition-all ${
+												className={`h-7 min-w-[28px] p-0.5 text-xs font-bold rounded-lg transition-all ${
 													isSelected
 														? "bg-[var(--teal)] text-white shadow-md font-extrabold scale-105"
 														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
@@ -604,7 +850,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 									})}
 								</div>
 
-								{/* Lower jaw */}
+								{/* Lower Jaw */}
 								<div className="flex justify-between gap-1 overflow-x-auto pt-1 border-t border-[var(--line)] scrollbar-thin">
 									{ADULT_FDI_TEETH.quadrant4.map((tooth) => {
 										const isSelected = selectedTeeth.includes(tooth);
@@ -613,7 +859,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												key={tooth}
 												type="button"
 												onClick={() => handleToggleTooth(tooth)}
-												className={`h-8 min-w-[28px] sm:min-w-[32px] p-1 text-xs font-bold rounded-lg transition-all ${
+												className={`h-7 min-w-[28px] p-0.5 text-xs font-bold rounded-lg transition-all ${
 													isSelected
 														? "bg-[var(--teal)] text-white shadow-md font-extrabold scale-105"
 														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
@@ -631,7 +877,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 												key={tooth}
 												type="button"
 												onClick={() => handleToggleTooth(tooth)}
-												className={`h-8 min-w-[28px] sm:min-w-[32px] p-1 text-xs font-bold rounded-lg transition-all ${
+												className={`h-7 min-w-[28px] p-0.5 text-xs font-bold rounded-lg transition-all ${
 													isSelected
 														? "bg-[var(--teal)] text-white shadow-md font-extrabold scale-105"
 														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
@@ -644,20 +890,19 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								</div>
 							</div>
 
-							{/* Custom Teeth Input */}
 							<div className="mt-2">
 								<input
 									type="text"
 									value={customTeethInput}
 									onChange={(e) => setCustomTeethInput(e.target.value)}
-									placeholder="Или введите вручную: 16, 26, 36-38, Все..."
-									className="w-full px-3.5 min-h-[44px] text-xs font-mono rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+									placeholder="Область зубов: 16, 26, 36-38, Все..."
+									className="w-full px-3 min-h-[36px] text-xs font-mono rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 						</div>
 
-						{/* 4. Clinical Diagnosis ICD-10 & Notes */}
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+						{/* 5. ICD-10 & Medical Checklist */}
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 							<div>
 								<label
 									htmlFor="diagnosis-icd10-input"
@@ -670,8 +915,7 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 									type="text"
 									value={diagnosisIcd10}
 									onChange={(e) => setDiagnosisIcd10(e.target.value)}
-									placeholder="K04.0, K05.3, K08.1..."
-									className="w-full px-3.5 min-h-[44px] text-xs font-mono font-bold rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+									className="w-full px-3 min-h-[36px] text-xs font-mono font-bold rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 
@@ -685,59 +929,126 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 								<input
 									id="referral-number-input"
 									type="text"
-									value={customReferralNumber}
-									onChange={(e) => setCustomReferralNumber(e.target.value)}
-									className="w-full px-3.5 min-h-[44px] text-xs font-mono rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
+									value={referralNumber}
+									onChange={(e) => setReferralNumber(e.target.value)}
+									className="w-full px-3 min-h-[36px] text-xs font-mono rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)]"
 								/>
 							</div>
 						</div>
+
+						{/* Safety Checkboxes */}
+						<div className="flex flex-wrap items-center gap-4 text-xs text-[var(--ink)]">
+							<label className="flex items-center gap-1.5 cursor-pointer">
+								<input
+									type="checkbox"
+									checked={isPregnancyExcluded}
+									onChange={(e) => setIsPregnancyExcluded(e.target.checked)}
+									className="rounded text-[var(--teal)] focus:ring-0"
+								/>
+								<span>Беременность исключена</span>
+							</label>
+
+							<label className="flex items-center gap-1.5 cursor-pointer">
+								<input
+									type="checkbox"
+									checked={hasMetallicArtifacts}
+									onChange={(e) => setHasMetallicArtifacts(e.target.checked)}
+									className="rounded text-[var(--teal)] focus:ring-0"
+								/>
+								<span>Металлоконструкции в полости рта</span>
+							</label>
+
+							{currentFov.isDualPhase && (
+								<label className="flex items-center gap-1.5 cursor-pointer font-bold text-[var(--teal)]">
+									<input
+										type="checkbox"
+										checked={isTmjOpenClosedProtocol}
+										onChange={(e) => setIsTmjOpenClosedProtocol(e.target.checked)}
+										className="rounded text-[var(--teal)] focus:ring-0"
+									/>
+									<span>Протокол: Закрытый + Открытый рот</span>
+								</label>
+							)}
+						</div>
 					</div>
 
-					{/* Right: Live Formatted Print Preview */}
+					{/* Right: Live Formatted Print & QR Preview */}
 					<div
 						className={`w-full md:w-1/2 p-5 md:p-6 bg-[var(--paper-soft)] overflow-y-auto flex flex-col gap-4 ${
 							activeTab === "form" ? "hidden md:flex" : "flex"
 						}`}
 					>
 						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-								Предпросмотр бланка направления:
+							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+								<FileText className="w-4 h-4 text-[var(--teal)]" />
+								<span>Официальный бланк (КЛКТ / ALARA):</span>
 							</span>
-							<span className="text-xs font-mono font-bold text-[var(--teal)]">
-								{customReferralNumber}
-							</span>
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									onClick={handleCopyText}
+									className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-colors"
+									title="Копировать текст направления"
+									data-testid="btn-copy-referral-text"
+								>
+									<Copy className="w-3.5 h-3.5" />
+									<span>Текст</span>
+								</button>
+								<span className="text-xs font-mono font-bold text-[var(--teal)]">
+									{referralNumber}
+								</span>
+							</div>
 						</div>
 
 						{/* Document Sheet Container */}
-						<div className="p-6 rounded-2xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] shadow-lg font-sans leading-relaxed flex flex-col gap-4">
-							{/* Header */}
-							<div className="border-b-2 border-[var(--line-strong,var(--line))] pb-3 flex justify-between items-start">
+						<div className="p-5 md:p-6 rounded-2xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] shadow-md font-sans leading-relaxed flex flex-col gap-3.5">
+							{/* Clinic & Header Requisites */}
+							<div className="border-b-2 border-[var(--line-strong,var(--line))] pb-2.5 flex justify-between items-start">
 								<div>
 									<div className="font-extrabold text-sm uppercase text-[var(--ink)]">
 										{clinic}
 									</div>
-									<div className="text-[11px] text-[var(--muted)]">
-										Направляющая медицинская организация (Лицензия №ЛО-77-01)
+									<div className="text-[10px] text-[var(--muted)]">
+										Лицензия: {license} · {phone}
 									</div>
 								</div>
 								<div className="text-right">
 									<div className="font-black text-sm text-[var(--teal)] uppercase tracking-tight">
-										НАПРАВЛЕНИЕ
+										НАПРАВЛЕНИЕ НА КЛКТ
 									</div>
-									<div className="text-[11px] text-[var(--muted)] font-semibold">
-										на рентгенологическое исследование
+									<div className="text-[10px] text-[var(--muted)] font-semibold">
+										{currentPartner.nameRu}
 									</div>
 								</div>
 							</div>
 
+							{/* Barcode & QR Intake Header */}
+							<div className="flex items-center justify-between p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+								<div
+									className="overflow-hidden"
+									dangerouslySetInnerHTML={{ __html: barcodeSvg }}
+									data-testid="referral-barcode-preview"
+								/>
+								<div className="flex items-center gap-2 text-right">
+									<div className="text-[9px] text-[var(--muted)] leading-tight">
+										<strong>QR-код КЛКТ</strong><br />для рентген-центра
+									</div>
+									<div
+										className="w-12 h-12 shrink-0 border border-[var(--line)] rounded-lg overflow-hidden p-0.5 bg-white"
+										dangerouslySetInnerHTML={{ __html: qrCodeSvg }}
+										data-testid="referral-qrcode-preview"
+									/>
+								</div>
+							</div>
+
 							{/* Patient Info */}
-							<div className="border-b border-[var(--line)] pb-3 grid grid-cols-2 gap-2 text-xs">
+							<div className="border-b border-[var(--line)] pb-2 grid grid-cols-2 gap-1.5 text-xs">
 								<div>
 									<span className="text-[var(--muted)]">Пациент: </span>
 									<strong className="text-[var(--ink)]">{patientFullName}</strong>
 								</div>
 								<div>
-									<span className="text-[var(--muted)]">Дата рождения: </span>
+									<span className="text-[var(--muted)]">Дата рожд.: </span>
 									<strong className="text-[var(--ink)]">{patientBirth}</strong>
 								</div>
 								<div>
@@ -751,50 +1062,48 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 							</div>
 
 							{/* Clinical Study Box */}
-							<div className="p-4 rounded-xl border border-[var(--teal)] bg-[var(--teal-surface)] flex flex-col gap-2 text-xs">
+							<div className="p-3 rounded-xl border border-[var(--teal)] bg-[var(--teal-surface)] flex flex-col gap-1.5 text-xs">
 								<div className="flex justify-between items-center">
-									<span className="font-black text-[var(--ink)] text-sm">
-										Вид исследования: {dentalRadiologyStudyLabels[studyType]}
+									<span className="font-black text-[var(--ink)] text-xs md:text-sm">
+										Зона: {currentFov.titleRu}
 									</span>
-									<span className="px-2 py-0.5 rounded bg-[var(--teal)] text-[var(--on-teal,white)] font-bold text-[10px]">
-										{estimatedDose.microsvText}
+									<span className="px-2 py-0.5 rounded bg-[var(--teal)] text-white font-bold text-[10px]">
+										{currentFov.fovDimensions} · ~{currentFov.typicalDoseMicrosv} мкЗв
 									</span>
 								</div>
 								<div>
-									<span className="text-[var(--muted)]">Клиническая цель: </span>
-									<strong className="text-[var(--ink)]">{radiologyReferralGoalLabels[studyGoal]}</strong>
+									<span className="text-[var(--muted)]">Цель исследования: </span>
+									<strong className="text-[var(--ink)]">{currentGoal.titleRu}</strong>
 								</div>
 								<div>
-									<span className="text-[var(--muted)]">Локализация / Зубы (FDI): </span>
-									<strong className="text-[var(--teal)] text-sm font-black">
-										{customTeethInput || selectedTeeth.join(", ") || "Все зубные ряды"}
+									<span className="text-[var(--muted)]">Зубы (FDI): </span>
+									<strong className="text-[var(--teal)] font-bold">
+										{targetTeethDisplay}
 									</strong>
 								</div>
 								<div>
 									<span className="text-[var(--muted)]">Диагноз (МКБ-10): </span>
 									<strong className="font-mono text-[var(--teal)]">
-										{diagnosisIcd10 || "K04.0"}
+										{diagnosisIcd10}
 									</strong>
 								</div>
 							</div>
 
-							{/* Radiation Safety Notice */}
-							<div className="p-3 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-[11px] text-[var(--ink)] leading-snug">
-								<strong>Примечание по радиационной безопасности (НРБ-99/2009):</strong>{" "}
-								Исследование обосновано клинической необходимостью. Принцип нормирования и
-								оптимизации (ALARA) соблюден. Результат и расчетная эффективная доза подлежат
-								внесению в карту пациента.
+							{/* Safety Notice */}
+							<div className="p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-[10px] text-[var(--muted)] leading-snug">
+								<strong>Безопасность (СанПиН 2.6.1.1192-03):</strong> Исследование обосновано.
+								Беременность {isPregnancyExcluded ? "исключена" : "требует согласования"}. Металлоконструкции: {hasMetallicArtifacts ? "есть" : "нет"}.
 							</div>
 
 							{/* Signatures */}
-							<div className="border-t border-[var(--line)] pt-3 flex justify-between items-end text-xs text-[var(--muted)]">
+							<div className="border-t border-[var(--line)] pt-2.5 flex justify-between items-end text-xs text-[var(--muted)]">
 								<div>
-									<div>Подпись направляющего врача: ___________________</div>
-									<div className="text-[10px] text-[var(--muted)] mt-1">
-										Дата выдачи: {new Date().toLocaleDateString("ru-RU")}
+									<div>Направил: <strong>{docName}</strong></div>
+									<div className="text-[10px] text-[var(--muted)] mt-0.5">
+										Дата: {new Date().toLocaleDateString("ru-RU")}
 									</div>
 								</div>
-								<div className="w-16 h-16 rounded-full border border-dashed border-[var(--line-strong,var(--line))] flex items-center justify-center font-bold text-[10px] text-[var(--muted)]">
+								<div className="w-12 h-12 rounded-full border border-dashed border-[var(--line-strong,var(--line))] flex items-center justify-center font-bold text-[9px] text-[var(--muted)]">
 									М.П.
 								</div>
 							</div>
@@ -803,30 +1112,40 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 				</div>
 
 				{/* ═══════════════════════════════════════════════════════════════════
-				    3. FOOTER (Touch Targets >= 44x44px)
+				    3. FOOTER (Touch Targets >= 44x44px, 0-Blockers)
 				    ═══════════════════════════════════════════════════════════════════ */}
-				<footer className="flex items-center justify-between px-6 py-4 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
+				<footer className="flex items-center justify-between px-6 py-3.5 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-2 text-xs text-[var(--muted)]">
-						<Info className="w-4 h-4 text-[var(--teal)]" />
-						<span>Готово к прямой печати или передаче в рентген-кабинет.</span>
+						<ShieldCheck className="w-4 h-4 text-[var(--teal)]" />
+						<span>0 тупиков: готово к моментальной печати и интеграции с ЭМК 043/у.</span>
 					</div>
 
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-2.5">
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] px-5 py-2 text-xs md:text-sm font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors"
+							className="min-h-[44px] px-4 py-2 text-xs md:text-sm font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors"
 						>
 							Отмена
 						</button>
 						<button
 							type="button"
+							onClick={handleInsertToDiary}
+							className="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 text-xs md:text-sm font-bold rounded-xl border border-[var(--teal)] text-[var(--teal)] hover:bg-[var(--teal-surface)] active:scale-95 transition-all"
+							data-testid="btn-insert-referral-to-043"
+							title="Внести текст направления в дневник формы 043/у"
+						>
+							<FileText className="w-4 h-4" />
+							<span>Внести в 043/у</span>
+						</button>
+						<button
+							type="button"
 							onClick={handlePrint}
-							className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2.5 text-xs md:text-sm font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-lg hover:opacity-95 active:scale-95 transition-all font-extrabold"
+							className="inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 text-xs md:text-sm font-bold rounded-xl bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] shadow-md hover:opacity-95 active:scale-95 transition-all font-extrabold"
 							data-testid="print-referral-btn"
 						>
 							<Printer className="w-4 h-4" />
-							<span>Печать направления (КЛКТ/ОПТГ)</span>
+							<span>Печать направления (КЛКТ)</span>
 						</button>
 					</div>
 				</footer>

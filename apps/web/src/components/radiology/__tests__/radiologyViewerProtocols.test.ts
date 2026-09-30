@@ -4,7 +4,15 @@ import path from "node:path";
 import test from "node:test";
 import {
 	applyRadiologyProtocolToForm043,
+	CBCT_DIAGNOSTIC_GOALS,
+	CBCT_REFERRAL_PARTNERS,
+	CBCT_SCAN_FOV_PROTOCOLS,
+	type CbctDiagnosticGoal,
+	type CbctScanFovProtocol,
+	formatCbctReferralSummary,
 	formatRadiologyProtocolStatement,
+	generateReferralBarcodeSvg,
+	generateReferralQrCodeSvg,
 	RADIOLOGY_STANDARD_PROTOCOLS,
 	type RadiologyProtocolPreset,
 } from "../radiologyProtocols.js";
@@ -333,4 +341,215 @@ test("Cephalometrics: UI инварианты модалки (Hero Showcase, Gui
 		"Модалка обязана вычислять недостающие точки через getRequiredLandmarksForMeasurement",
 	);
 });
+
+test("CBCT FOV Protocols: Все 5 клинических зон сканирования строго соответствуют ТЗ", () => {
+	assert.equal(
+		CBCT_SCAN_FOV_PROTOCOLS.length,
+		5,
+		"Должно быть ровно 5 канонических зон сканирования КЛКТ (FOV)",
+	);
+
+	// 1. Обе челюсти (Full Maxilla + Mandible, FOV 16x10 / 12x10)
+	const fullJaws = CBCT_SCAN_FOV_PROTOCOLS.find((f) => f.code === "full_jaws");
+	assert.ok(fullJaws, "Зона full_jaws обязана существовать");
+	assert.ok(fullJaws.fovDimensions.includes("16x10"), "FOV обеих челюстей должен содержать 16x10");
+	assert.equal(fullJaws.defaultTeethFdi.length, 32, "По умолчанию обе челюсти покрывают все 32 зуба");
+	assert.ok(fullJaws.typicalDoseMicrosv > 0, "Доза должна быть положительным числом");
+	assert.ok(fullJaws.clinicalIndications.length >= 3, "Должно быть минимум 3 показания");
+
+	// 2. Верхняя челюсть и гайморовы пазухи (Maxilla & Sinuses, FOV 10x10)
+	const maxilla = CBCT_SCAN_FOV_PROTOCOLS.find((f) => f.code === "maxilla_sinus");
+	assert.ok(maxilla, "Зона maxilla_sinus обязана существовать");
+	assert.ok(maxilla.fovDimensions.includes("10x10"), "FOV верхней челюсти должен быть 10x10");
+	assert.ok(maxilla.description.includes("гайморовы"), "Описание обязано упоминать гайморовы пазухи");
+	assert.ok(maxilla.clinicalIndications.some((ind) => ind.includes("Синус-лифтинг")), "Синус-лифтинг обязан быть среди показаний");
+
+	// 3. Нижняя челюсть (Mandible, FOV 10x10)
+	const mandible = CBCT_SCAN_FOV_PROTOCOLS.find((f) => f.code === "mandible");
+	assert.ok(mandible, "Зона mandible обязана существовать");
+	assert.ok(mandible.fovDimensions.includes("10x10"), "FOV нижней челюсти должен быть 10x10");
+	assert.ok(mandible.clinicalIndications.some((ind) => ind.includes("alveolaris inferior")), "Канал n. alveolaris inferior обязан быть среди показаний");
+
+	// 4. Локальный сегмент / Эндодонтический эндо-режим (Endo Micro-CT, FOV 5x5 / 8x8)
+	const endo = CBCT_SCAN_FOV_PROTOCOLS.find((f) => f.code === "endo_micro");
+	assert.ok(endo, "Зона endo_micro обязана существовать");
+	assert.ok(endo.fovDimensions.includes("5x5"), "FOV эндо-режима должен быть 5x5 / 8x8");
+	assert.equal(endo.isHighResolution, true, "Эндо-режим обязан иметь флаг isHighResolution");
+	assert.ok(endo.clinicalIndications.some((ind) => ind.includes("MB2")), "Поиск MB2 канала обязан быть в показаниях");
+	assert.ok(endo.clinicalIndications.some((ind) => ind.includes("Трещины")), "Трещины корня обязаны быть в показаниях");
+
+	// 5. ВНЧС (TMJ / Temporomandibular Joints — оба сустава в положении привычной окклюзии и с открытым ртом)
+	const tmj = CBCT_SCAN_FOV_PROTOCOLS.find((f) => f.code === "tmj");
+	assert.ok(tmj, "Зона tmj обязана существовать");
+	assert.equal(tmj.isDualPhase, true, "ВНЧС обязан поддерживать двухфазный протокол (isDualPhase)");
+	assert.ok(
+		tmj.description.includes("привычной окклюзии") || tmj.description.includes("привычная окклюзия"),
+		"Описание ВНЧС должно упоминать привычную окклюзию",
+	);
+	assert.ok(tmj.description.includes("открытым ртом"), "Описание ВНЧС должно упоминать открытый рот");
+});
+
+test("CBCT Goals: Покрывает все 4 клинические цели (имплантация, эндодонтия, ортодонтия, пародонтология) + ВНЧС", () => {
+	assert.ok(CBCT_DIAGNOSTIC_GOALS.length >= 5, "Должно быть минимум 5 клинических целей");
+
+	const implant = CBCT_DIAGNOSTIC_GOALS.find((g) => g.id === "implantation");
+	assert.ok(implant, "Цель 'implantation' обязана существовать");
+	assert.equal(implant.recommendedIcd10, "K08.1");
+	assert.ok(implant.clinicalTasks.some((t) => t.includes("Мишу")), "Оценка по Мишу обязана быть в задачах имплантации");
+
+	const endo = CBCT_DIAGNOSTIC_GOALS.find((g) => g.id === "endodontics");
+	assert.ok(endo, "Цель 'endodontics' обязана существовать");
+	assert.equal(endo.recommendedIcd10, "K04.0");
+	assert.equal(endo.recommendedFovId, "cbct_endo_micro_5x5");
+
+	const ortho = CBCT_DIAGNOSTIC_GOALS.find((g) => g.id === "orthodontics");
+	assert.ok(ortho, "Цель 'orthodontics' обязана существовать");
+	assert.equal(ortho.recommendedIcd10, "K07.3");
+	assert.ok(ortho.clinicalTasks.some((t) => t.includes("13, 23")), "Клыки 13, 23 обязаны упоминаться в ортодонтии");
+
+	const perio = CBCT_DIAGNOSTIC_GOALS.find((g) => g.id === "periodontics");
+	assert.ok(perio, "Цель 'periodontics' обязана существовать");
+	assert.equal(perio.recommendedIcd10, "K05.3");
+	assert.ok(perio.clinicalTasks.some((t) => t.includes("фуркаций")), "Вовлечение фуркаций обязано быть в пародонтологии");
+
+	const tmj = CBCT_DIAGNOSTIC_GOALS.find((g) => g.id === "tmj");
+	assert.ok(tmj, "Цель 'tmj' обязана существовать");
+	assert.equal(tmj.recommendedIcd10, "K07.6");
+	assert.equal(tmj.recommendedFovId, "cbct_tmj_both_joints");
+});
+
+test("CBCT Partners: Диагностические центры (Пикассо, 3D Lab, Золотое Сечение, Собственный кабинет)", () => {
+	assert.ok(CBCT_REFERRAL_PARTNERS.length >= 4, "Должно быть минимум 4 партнера / центра");
+
+	const picasso = CBCT_REFERRAL_PARTNERS.find((p) => p.id === "picasso");
+	assert.ok(picasso, "Партнер 'picasso' обязан быть в списке");
+	assert.equal(picasso.isExternal, true);
+
+	const lab3d = CBCT_REFERRAL_PARTNERS.find((p) => p.id === "3d_lab");
+	assert.ok(lab3d, "Партнер '3d_lab' обязан быть в списке");
+	assert.equal(lab3d.isExternal, true);
+
+	const own = CBCT_REFERRAL_PARTNERS.find((p) => p.id === "own_cabinet");
+	assert.ok(own, "Внутренний рентген-кабинет обязан быть в списке");
+	assert.equal(own.isExternal, false);
+});
+
+test("formatCbctReferralSummary: Формирует структурированное клиническое резюме для 043/у", () => {
+	const fullJaws = CBCT_SCAN_FOV_PROTOCOLS[0] as CbctScanFovProtocol;
+	const implantGoal = CBCT_DIAGNOSTIC_GOALS[0] as CbctDiagnosticGoal;
+	const partner = CBCT_REFERRAL_PARTNERS[0];
+
+	const summary = formatCbctReferralSummary({
+		referralNumber: "НАПР-КЛКТ-2026-TEST",
+		fovProtocol: fullJaws,
+		goal: implantGoal,
+		teeth: "16, 26, 36, 46",
+		partner,
+		doctorName: "Д-р Барабаш С.В.",
+		icd10: "K08.1",
+	});
+
+	assert.ok(summary.includes("НАПР-КЛКТ-2026-TEST"));
+	assert.ok(summary.includes(fullJaws.titleRu));
+	assert.ok(summary.includes("16, 26, 36, 46"));
+	assert.ok(summary.includes(implantGoal.titleRu));
+	assert.ok(summary.includes(partner.nameRu));
+	assert.ok(summary.includes("K08.1"));
+	assert.ok(summary.includes("мкЗв"));
+});
+
+test("generateReferralBarcodeSvg & generateReferralQrCodeSvg: Чистая векторная SVG графика без NaN", () => {
+	// Штрихкод
+	const barcode = generateReferralBarcodeSvg("НАПР-КЛКТ-2026-ABCD", 240, 48);
+	assert.ok(barcode.startsWith("<svg"), "Штрихкод обязан начинаться с <svg");
+	assert.ok(barcode.includes("<rect"), "Штрихкод обязан содержать штрихи <rect");
+	assert.ok(barcode.includes("ABCD"), "Штрихкод обязан содержать читаемый текст номера");
+	assert.ok(!barcode.includes("NaN"), "Штрихкод не может содержать NaN");
+
+	// QR-код
+	const qr = generateReferralQrCodeSvg("CT-REF:12345|CLINIC:Dente", 96);
+	assert.ok(qr.startsWith("<svg"), "QR-код обязан начинаться с <svg");
+	assert.ok(qr.includes("viewBox=\"0 0 96 96\""), "QR-код обязан иметь правильный viewBox");
+	assert.ok(qr.includes("<rect"), "QR-код обязан содержать элементы матрицы <rect");
+	assert.ok(!qr.includes("NaN"), "QR-код не может содержать NaN");
+});
+
+test("RadiologyReferralModal: Инварианты клинической формы и 0 тупиков (Мандат 8e, 8k)", () => {
+	const source = readSource("components/radiology/RadiologyReferralModal.tsx");
+
+	// 5 зон сканирования FOV
+	assert.ok(
+		source.includes('data-testid={`referral-fov-${fov.code}`}') ||
+			source.includes('data-testid="referral-fov-full_jaws"'),
+		"Кнопки зон сканирования FOV обязаны генерироваться в разметке",
+	);
+	assert.ok(
+		source.includes("CBCT_SCAN_FOV_PROTOCOLS.map"),
+		"Модалка обязана отображать все канонические зоны сканирования",
+	);
+
+	// Клинические цели
+	assert.ok(
+		source.includes('data-testid={`referral-goal-${goal.id}`}') ||
+			source.includes('data-testid="referral-goal-implantation"'),
+		"Кнопки целей исследования обязаны генерироваться в разметке",
+	);
+	assert.ok(
+		source.includes("CBCT_DIAGNOSTIC_GOALS.map"),
+		"Модалка обязана отображать все канонические цели исследования",
+	);
+
+	// Внесение в дневник 043/у и печать
+	assert.ok(
+		source.includes('data-testid="btn-insert-referral-to-043"'),
+		"Кнопка внесения в карту 'btn-insert-referral-to-043' обязана существовать",
+	);
+	assert.ok(
+		source.includes('data-testid="print-referral-btn"'),
+		"Кнопка печати 'print-referral-btn' обязана существовать",
+	);
+
+	// Предпросмотр штрихкода и QR
+	assert.ok(
+		source.includes('data-testid="referral-barcode-preview"'),
+		"Бланк обязан содержать предпросмотр штрихкода 'referral-barcode-preview'",
+	);
+	assert.ok(
+		source.includes('data-testid="referral-qrcode-preview"'),
+		"Бланк обязан содержать предпросмотр QR-кода 'referral-qrcode-preview'",
+	);
+
+	// Запрет на блокировку врача через disabled (Мандат 8e)
+	assert.ok(
+		!source.includes('disabled={'),
+		"Кнопки оформления направления не имеют права быть заблокированы атрибутом disabled",
+	);
+});
+
+test("RadiologyModule: Канонический хаб рентгенологии, плотность 32–36px, глубина модалок строго 1", () => {
+	const source = readSource("components/radiology/RadiologyModule.tsx");
+
+	// Лаунчеры подсистем рентгенологии
+	assert.ok(source.includes('data-testid="btn-open-referral-modal"'), "Хаб обязан содержать кнопку выписки направления КЛКТ");
+	assert.ok(source.includes('data-testid="btn-open-3d-cbct-studio"'), "Хаб обязан содержать кнопку запуска 3D КЛКТ Студии");
+	assert.ok(source.includes('data-testid="btn-open-dicom-viewer"'), "Хаб обязан содержать кнопку запуска DICOM просмотрщика");
+	assert.ok(source.includes('data-testid="btn-open-rvg-capture"'), "Хаб обязан содержать кнопку прямого захвата RVG");
+	assert.ok(source.includes('data-testid="btn-open-dose-sheet"'), "Хаб обязан содержать кнопку листа дозовых нагрузок");
+
+	// 1-клик протоколы рентген-нормы в Форму 043/у
+	assert.ok(
+		source.includes('data-testid={`btn-protocol-${proto.id}`}') ||
+			source.includes('data-testid="btn-protocol-norma"'),
+		"Хаб обязан содержать кнопки 1-клик протоколов рентген-нормы",
+	);
+	assert.ok(
+		source.includes("RADIOLOGY_STANDARD_PROTOCOLS.map"),
+		"Хаб обязан динамически монтировать все RADIOLOGY_STANDARD_PROTOCOLS",
+	);
+
+	// Соответствие Мандату 8c (глубина модалок строго 1 — прямое условное монтирование)
+	assert.ok(source.includes("showReferralModal &&"), "Модалка направления монтируется напрямую без промежуточных контейнеров");
+	assert.ok(source.includes("show3dStudioModal &&"), "3D Студия монтируется напрямую");
+});
+
 

@@ -2,6 +2,8 @@ export { getTissueNameFromHU, formatHuProbe } from "./cbctMprMath";
 export * from "./doseSheet";
 export * from "./radiologyMath";
 export * from "./RadiologyReferralModal";
+export * from "./radiologyProtocols";
+export * from "./RadiologyModule";
 export * from "./types";
 export * from "./cbctAnisotropicCaliperMath";
 
