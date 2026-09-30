@@ -27,6 +27,7 @@ import { createPortal } from "react-dom";
 import {
 	DEFAULT_COMMISSION_MEMBERS,
 	DEFAULT_INVENTORY_ITEMS_PRESET,
+	SOLO_DOCTOR_COMMISSION_MEMBERS,
 	type InventoryAuditTotals,
 	type WarehouseAuditItemLine,
 	type WarehouseInventoryAuditDocument,
@@ -47,6 +48,7 @@ import {
 	sortAuditItemsByFefo,
 	validateInventoryAuditDraft,
 } from "./warehouseInventoryEngine.js";
+import { isDemoShowcaseMode } from "../../utils/demoModeEngine.js";
 
 import { WarehouseInventoryAuditTable } from "./WarehouseInventoryAuditTable.js";
 import { WarehouseInventoryCommissionDrawer } from "./WarehouseInventoryCommissionDrawer.js";
@@ -99,7 +101,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 		initialDocument?.status || "reconciliation",
 	);
 	const [commission, setCommission] = useState<readonly WarehouseInventoryCommissionMember[]>(
-		initialDocument?.commission || DEFAULT_COMMISSION_MEMBERS,
+		initialDocument?.commission || (isDemoShowcaseMode() ? DEFAULT_COMMISSION_MEMBERS : SOLO_DOCTOR_COMMISSION_MEMBERS),
 	);
 
 	// 2. Строки инвентаризации
@@ -115,8 +117,10 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 		if (isOpen) {
 			if (initialDocument && initialDocument.items.length > 0) {
 				setItems([...initialDocument.items]);
-			} else {
+			} else if (isDemoShowcaseMode()) {
 				setItems([...DEFAULT_INVENTORY_ITEMS_PRESET]);
+			} else {
+				setItems([]);
 			}
 		}
 	}, [isOpen, initialDocument]);

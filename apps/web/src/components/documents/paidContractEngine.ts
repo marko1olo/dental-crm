@@ -862,6 +862,38 @@ export function createDefaultPaidContract(params: {
 		}
 	}
 
+	const isDemo = isDemoShowcaseMode();
+	const defaultServices: PaidContractServiceItem[] = isDemo
+		? [
+				{
+					code: "B01.065.001",
+					name: "Прием (осмотр, консультация) врача-стоматолога первичный",
+					toothOrArea: "Полость рта",
+					quantity: 1,
+					unitPriceKopecks: 150000,
+					discountKopecks: 0,
+					totalKopecks: 150000,
+				},
+				{
+					code: "A16.07.002.001",
+					name: "Восстановление зуба пломбой с использованием материалов светового отверждения",
+					toothOrArea: "36",
+					quantity: 1,
+					unitPriceKopecks: 650000,
+					discountKopecks: 0,
+					totalKopecks: 650000,
+				},
+		  ]
+		: [];
+
+	const resolvedServices = params.services || defaultServices;
+	const resolvedTotalAmountKopecks =
+		params.totalAmountKopecks !== undefined
+			? params.totalAmountKopecks
+			: resolvedServices.length > 0
+			? calculatePaidContractGrandTotalKopecks(resolvedServices)
+			: 0;
+
 	return {
 		contractNumber: params.contractNumber || `ДПМУ-${year || "2026"}-001`,
 		contractDate: formattedDate,
@@ -899,7 +931,7 @@ export function createDefaultPaidContract(params: {
 			directorTitle: "Генеральный директор",
 			directorFullName:
 				params.directorFullName ||
-				(isDemoShowcaseMode() ? "Смирнов Алексей Викторович" : ""),
+				(isDemo ? "Смирнов Алексей Викторович" : ""),
 			actingOnBasis: "Устава",
 		},
 		patient: {
@@ -946,34 +978,12 @@ export function createDefaultPaidContract(params: {
 		serviceScopeSummary:
 			params.serviceScopeSummary ||
 			"Комплекс стоматологических лечебно-диагностических услуг в соответствии с утвержденным Планом лечения (Сметой) и медицинской картой 043/у.",
-		services: params.services || [
-			{
-				code: "B01.065.001",
-				name: "Прием (осмотр, консультация) врача-стоматолога первичный",
-				toothOrArea: "Полость рта",
-				quantity: 1,
-				unitPriceKopecks: 150000,
-				discountKopecks: 0,
-				totalKopecks: 150000,
-			},
-			{
-				code: "A16.07.002.001",
-				name: "Восстановление зуба пломбой с использованием материалов светового отверждения",
-				toothOrArea: "36",
-				quantity: 1,
-				unitPriceKopecks: 650000,
-				discountKopecks: 0,
-				totalKopecks: 650000,
-			},
-		],
+		services: resolvedServices,
 		serviceStart: params.serviceStart || formattedDate,
 		serviceEndOrCondition:
 			params.serviceEndOrCondition ||
 			"До полного завершения согласованного объема медицинских услуг согласно Плану лечения и подписания Акта оказанных услуг.",
-		totalAmountKopecks:
-			params.totalAmountKopecks !== undefined
-				? params.totalAmountKopecks
-				: 800000,
+		totalAmountKopecks: resolvedTotalAmountKopecks,
 		paymentTerms:
 			"Оплата производится Заказчиком (Пациентом) в рублях РФ наличными денежными средствами, банковской картой или по QR-коду СБП в кассу Исполнителя в порядке 100% предоплаты либо непосредственно в день оказания соответствующей услуги с выдачей кассового чека по Федеральному закону № 54-ФЗ.",
 		priceChangeRules:

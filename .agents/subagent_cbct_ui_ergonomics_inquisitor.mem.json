@@ -1,0 +1,27 @@
+{
+  "role": "CBCT CLINICAL UI/UX ERGONOMICS & MEASUREMENT HUD INQUISITOR",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md",
+    "Read AGENTS.md",
+    "Surveyed radiology components and existing test suite",
+    "Analyzed CbctViewportHud.tsx, CbctLeftToolDock.tsx, CbctMprViewportsGrid.tsx, CbctMprImplantStudioModal.tsx, useCbctInteractionHandlers.ts, and ruler/measurement math",
+    "Audited viewport density, button sizes (strictly 28-32px limit per Mandate 8k), orientation badges (A/P/L/R, S/I/R/L)",
+    "Audited and implemented 1-click W/L presets: Bone (W2500/L500), Enamel/Dentin (W4000/L1200), Soft Tissue (W400/L40)",
+    "Implemented Caliper Ruler HUD on viewports with click-drag, distance in mm, multiple measurements, and quick clear",
+    "Created CbctViewportsRuler.tsx module and integrated into CbctMprViewportsGrid.tsx and CbctMprImplantStudioModal.tsx",
+    "Created comprehensive test suite apps/web/src/components/radiology/__tests__/cbctMprErgonomics.test.ts",
+    "Executed verification command node --max-old-space-size=4096 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/radiology/__tests__/cbctMprErgonomics.test.ts apps/web/src/components/radiology/__tests__/cbctWebGlEngine.test.ts (50/50 tests passed, Exit Code 0)",
+    "Executed npm run check:encoding (6343 files passed, 0 issues)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Caliper Ruler tool can now be activated in 1 click directly on any viewport toolbar or via keyboard hotkey 'M'",
+    "Measurement lines render with thin contrast (1.5-2.0px) and dark halo underlay without obscuring underlying bone trabeculae or cortical plate",
+    "Floating distance badge formats exact distance in mm («11.4 мм»)",
+    "Multiple measurements can be placed simultaneously and cleared via 1-click clear button on the viewport toolbar",
+    "1-Click W/L presets allow instant switching to Bone (W2500/L500), Enamel/Dentin (W4000/L1200), and Soft Tissue (W400/L40) without slider dragging",
+    "All viewport HUD and toolbar buttons strictly adhere to compact 28-32px desktop ergonomics (h-7/h-8) per Mandate 8k, expanding to 44px tap targets only on coarse pointer touch devices",
+    "Radiological orientation badges enforce patient's Right on Left of screen (A/P/L/R for Axial, S/I/R/L for Coronal, S/I/A/P for Sagittal)"
+  ]
+}

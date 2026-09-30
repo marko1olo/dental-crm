@@ -19,6 +19,7 @@ import {
 	getCurrentTimeSlot,
 	selectAuthArt,
 } from "../auth/authArtSelector";
+import { isDemoShowcaseMode } from "../../utils/demoModeEngine.js";
 import "./waitingLoungeSignage.css";
 
 export interface WaitingLoungeQueueItem {
@@ -164,7 +165,7 @@ export function WaitingLoungeSignage({
 
 	// Очередь
 	const [queueItems, setQueueItems] = useState<WaitingLoungeQueueItem[]>(
-		() => (initialItems && initialItems.length > 0 ? [...initialItems] : DEFAULT_LOUNGE_QUEUE),
+		() => (initialItems && initialItems.length > 0 ? [...initialItems] : (isDemoShowcaseMode() ? DEFAULT_LOUNGE_QUEUE : [])),
 	);
 
 	// Фон и плавное растворение
@@ -338,7 +339,12 @@ export function WaitingLoungeSignage({
 					})
 					.slice(0, 6);
 
-				if (activeAppts.length === 0) return;
+				if (activeAppts.length === 0) {
+					if (!isDemoShowcaseMode()) {
+						setQueueItems([]);
+					}
+					return;
+				}
 
 				const mappedQueue: WaitingLoungeQueueItem[] = activeAppts.map(
 					(apt: {
@@ -640,55 +646,80 @@ export function WaitingLoungeSignage({
 					</div>
 
 					<div className="lounge-queue-list">
-						{queueItems.map((item) => {
-							const isCalling = item.status === "calling";
-							const isInTreatment = item.status === "in_treatment";
-
-							return (
-								<div
-									key={item.id}
-									className={`lounge-cabinet-item ${isCalling ? "lounge-cabinet-item--calling" : ""}`}
-								>
-									<div className="lounge-cabinet-meta">
-										<span className="lounge-cabinet-number">{item.cabinetNumber}</span>
-										<span className="lounge-cabinet-spec">{item.cabinetName}</span>
-									</div>
-
-									<div className="lounge-doctor-meta">
-										<span className="lounge-doctor-name">{item.doctorName}</span>
-										<span className="lounge-doctor-role">{item.doctorRole}</span>
-									</div>
-
-									<div className="lounge-flow-arrow" aria-hidden="true">
-										<ArrowRight size={20} />
-									</div>
-
-									<div className="lounge-patient-meta">
-										<span className="lounge-patient-label">Пациент</span>
-										<span className="lounge-patient-name">{item.patientName}</span>
-									</div>
-
-									<div className="lounge-status-wrap">
-										{isCalling && (
-											<span className="lounge-status-badge lounge-status-badge--calling">
-												<span className="lounge-welcome-beacon" aria-hidden="true" />
-												Приглашается
-											</span>
-										)}
-										{isInTreatment && (
-											<span className="lounge-status-badge lounge-status-badge--treatment">
-												Идёт приём
-											</span>
-										)}
-										{!isCalling && !isInTreatment && (
-											<span className="lounge-status-badge lounge-status-badge--waiting">
-												Ожидание {item.scheduledTime ? `• ${item.scheduledTime}` : ""}
-											</span>
-										)}
-									</div>
+						{queueItems.length === 0 ? (
+							<div
+								className="lounge-empty-queue"
+								data-testid="lounge-empty-queue"
+								style={{
+									display: "flex",
+									flexDirection: "column",
+									alignItems: "center",
+									justifyContent: "center",
+									padding: "48px 24px",
+									textAlign: "center",
+									gap: "12px",
+									color: "var(--muted, #94a3b8)",
+								}}
+							>
+								<Calendar size={36} style={{ opacity: 0.5 }} />
+								<div style={{ fontSize: "16px", fontWeight: 600, color: "var(--ink, #f1f5f9)" }}>
+									В данный момент приём завершён или ожидающих пациентов нет
 								</div>
-							);
-						})}
+								<div style={{ fontSize: "13px" }}>
+									Информация о следующих приёмах появится здесь автоматически при регистрации визита
+								</div>
+							</div>
+						) : (
+							queueItems.map((item) => {
+								const isCalling = item.status === "calling";
+								const isInTreatment = item.status === "in_treatment";
+
+								return (
+									<div
+										key={item.id}
+										className={`lounge-cabinet-item ${isCalling ? "lounge-cabinet-item--calling" : ""}`}
+									>
+										<div className="lounge-cabinet-meta">
+											<span className="lounge-cabinet-number">{item.cabinetNumber}</span>
+											<span className="lounge-cabinet-spec">{item.cabinetName}</span>
+										</div>
+
+										<div className="lounge-doctor-meta">
+											<span className="lounge-doctor-name">{item.doctorName}</span>
+											<span className="lounge-doctor-role">{item.doctorRole}</span>
+										</div>
+
+										<div className="lounge-flow-arrow" aria-hidden="true">
+											<ArrowRight size={20} />
+										</div>
+
+										<div className="lounge-patient-meta">
+											<span className="lounge-patient-label">Пациент</span>
+											<span className="lounge-patient-name">{item.patientName}</span>
+										</div>
+
+										<div className="lounge-status-wrap">
+											{isCalling && (
+												<span className="lounge-status-badge lounge-status-badge--calling">
+													<span className="lounge-welcome-beacon" aria-hidden="true" />
+													Приглашается
+												</span>
+											)}
+											{isInTreatment && (
+												<span className="lounge-status-badge lounge-status-badge--treatment">
+													Идёт приём
+												</span>
+											)}
+											{!isCalling && !isInTreatment && (
+												<span className="lounge-status-badge lounge-status-badge--waiting">
+													Ожидание {item.scheduledTime ? `• ${item.scheduledTime}` : ""}
+												</span>
+											)}
+										</div>
+									</div>
+								);
+							})
+						)}
 					</div>
 				</section>
 			</main>

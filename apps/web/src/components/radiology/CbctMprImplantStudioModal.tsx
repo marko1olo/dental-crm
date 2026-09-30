@@ -58,6 +58,7 @@ import { useCbctSliceRenderer } from "./mpr/useCbctSliceRenderer";
 import { useCbctInteractionHandlers } from "./mpr/useCbctInteractionHandlers";
 import { useCbctDicomLoader } from "./mpr/useCbctDicomLoader";
 import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
+import { isDemoShowcaseMode, isDemoPatientId } from "../../utils/demoModeEngine.js";
 
 // Re-exports for zero-downtime backwards compatibility
 export type { StudioMode, ViewLayoutMode, CbctMprImplantStudioModalProps };
@@ -110,7 +111,8 @@ export const CbctMprImplantStudioModal: React.FC<
 	// Volume state
 	const [volume, setVolume] = useState<CbctVoxelVolume | null>(() => {
 		if (initialVolume) return initialVolume;
-		if (typeof window !== "undefined") {
+		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
+		if (isDemo && typeof window !== "undefined") {
 			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
 			if (win.__cbctDemoVolume) return win.__cbctDemoVolume;
 		}
@@ -319,12 +321,19 @@ export const CbctMprImplantStudioModal: React.FC<
 	}, [volume, isOpen, archCurve, crossSectionStepMm, windowWidth, windowLevel, invertColors, crosshairMm.z]);
 
 	useEffect(() => {
+		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
 		const applyVol = (vol: CbctVoxelVolume) => {
 			setVolume(vol);
 			setLoadedSliceCount(vol.dimensions.depth);
 			if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 			if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
-			setPatientDisplayName("Захаров Иван Дмитриевич (3D КЛКТ)");
+			if (patientName && patientName.trim()) {
+				setPatientDisplayName(patientName.trim());
+			} else if (isDemo) {
+				setPatientDisplayName("Захаров Иван Дмитриевич (Демо 3D КЛКТ)");
+			} else {
+				setPatientDisplayName("3D КЛКТ исследование");
+			}
 			try {
 				const detected = autoDetectDentalArch(vol, jawType);
 				setArchCurve(detected);
@@ -347,7 +356,7 @@ export const CbctMprImplantStudioModal: React.FC<
 			applyVol(initialVolume);
 		} else if (typeof window !== "undefined") {
 			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
-			if (win.__cbctDemoVolume && !volume) {
+			if (isDemo && win.__cbctDemoVolume && !volume) {
 				applyVol(win.__cbctDemoVolume);
 			}
 			const handleCustomLoad = (e: Event) => {
@@ -361,7 +370,7 @@ export const CbctMprImplantStudioModal: React.FC<
 				window.removeEventListener("dente-load-cbct-volume", handleCustomLoad);
 			};
 		}
-	}, [initialVolume, volume, jawType]);
+	}, [initialVolume, volume, jawType, patientId, patientName]);
 
 	const handleResetAll = useCallback(() => {
 		if (volume) setCrosshairMm({ x: 0, y: 0, z: 0 });
@@ -378,6 +387,21 @@ export const CbctMprImplantStudioModal: React.FC<
 	const handleFullResetViewport = useCallback((viewport: CbctViewportType) => {
 		setTransforms((prev) => ({ ...prev, [viewport]: { ...DEFAULT_VIEWPORT_TRANSFORM } }));
 		showToast(`Масштаб ${viewport} сброшен`, "info");
+	}, []);
+
+	const handleClearRulers = useCallback((plane?: CbctViewportType) => {
+		if (plane) {
+			setRulers((prev) => prev.filter((r) => r.plane !== plane));
+			showToast(`Замеры ${plane} очищены`, "info");
+		} else {
+			setRulers([]);
+			showToast("Все экранные замеры очищены", "info");
+		}
+	}, []);
+
+	const handleSelectQuickWlPreset = useCallback((preset: { windowWidth: number; windowLevel: number }) => {
+		setWindowWidth(preset.windowWidth);
+		setWindowLevel(preset.windowLevel);
 	}, []);
 
 	// DICOM Loader hook
@@ -532,10 +556,26 @@ export const CbctMprImplantStudioModal: React.FC<
 				setWindowLevel(p.windowLevel);
 			}
 		},
-		onToggleMode: () => setStudioMode((prev) => (prev === "implant" ? "diagnostic" : "implant")),
+		onToggleMode: () => setActiveTool((prev) => (prev === "ruler" ? "crosshair" : "ruler")),
 		onTogglePanel: () => setIsSidebarOpen((prev) => !prev),
 		onClose: handleCloseStudio,
 	});
+
+	// 1-Click Keyboard Shortcut 'M' / Measure for Caliper Ruler (Directive 1)
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.target && (e.target as HTMLElement).tagName && ["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) return;
+			if ((e.target as HTMLElement)?.isContentEditable) return;
+			if (e.ctrlKey || e.metaKey || e.altKey) return;
+			if (e.key === "m" || e.key === "M" || e.key === "ь" || e.key === "Ь") {
+				e.preventDefault();
+				setActiveTool((prev) => (prev === "ruler" ? "crosshair" : "ruler"));
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen]);
 
 	if (!isOpen) return null;
 
@@ -691,6 +731,11 @@ export const CbctMprImplantStudioModal: React.FC<
 						activeCrossSectionIdx={activeCrossSectionIdx}
 						crossSections={crossSections}
 						onLoadDemoVolume={dicomLoader.handleLoadDemoVolume}
+						activeTool={activeTool}
+						onSelectTool={setActiveTool}
+						rulers={rulers}
+						onClearRulers={handleClearRulers}
+						onSelectQuickWlPreset={handleSelectQuickWlPreset}
 					/>
 
 					<CbctRightSidebar

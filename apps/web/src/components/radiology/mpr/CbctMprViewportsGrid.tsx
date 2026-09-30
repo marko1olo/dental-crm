@@ -9,12 +9,14 @@ import type {
 	ObliqueRotationAngles,
 	RotationHandlePosition,
 	ViewportTransform,
+	CbctMeasurementRuler,
 } from "../cbctMprMath";
 import { resetPlaneObliqueAngle } from "../cbctMprMath";
 import type { CrossSectionSliceData } from "../dentalCurveEngine";
 import { CbctViewportHud } from "../CbctViewportHud";
 import type { StudioMode, ViewLayoutMode } from "./cbctStudioTypes";
 import { CbctVolume3DViewport } from "./CbctVolume3DViewport";
+import { CbctViewportRulerToolbar, CbctQuickWlBar } from "./CbctViewportsRuler";
 
 export interface CbctMprViewportsGridProps {
 	readonly isSidebarOpen: boolean;
@@ -78,6 +80,11 @@ export interface CbctMprViewportsGridProps {
 	readonly activeCrossSectionIdx: number;
 	readonly crossSections: CrossSectionSliceData[];
 	readonly onLoadDemoVolume?: (() => void) | undefined;
+	readonly activeTool?: string | undefined;
+	readonly onSelectTool?: ((tool: "ruler" | "crosshair") => void) | undefined;
+	readonly rulers?: readonly CbctMeasurementRuler[] | undefined;
+	readonly onClearRulers?: ((plane?: CbctViewportType) => void) | undefined;
+	readonly onSelectQuickWlPreset?: ((preset: { windowWidth: number; windowLevel: number }) => void) | undefined;
 }
 
 export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
@@ -95,6 +102,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 	handlePanoMouseDown, handlePanoMouseMove, handlePanoMouseUp,
 	handleCrossSectionMouseDown, handleCrossSectionMouseMove, handleCrossSectionMouseUp,
 	dragImplantPart, hoveredImplantPart, activeCrossSection, activeCrossSectionIdx, crossSections,
+	activeTool, onSelectTool, rulers, onClearRulers, onSelectQuickWlPreset,
 }) => {
 	// 4th Quadrant display mode: defaults to "volume3d" so the surgeon immediately sees the 3D Skull in MPR
 	const [fourthQuadrantMode, setFourthQuadrantMode] = useState<"volume3d" | "panoramic">("volume3d");
@@ -219,6 +227,34 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		return () => window.removeEventListener("pointerup", handleGlobalPointerUp);
 	}, [activeRotationHandle, isShiftRotating, handleCanvasMouseUp]);
 
+	const renderViewportOverlaysWithRuler = (viewport: CbctViewportType) => (
+		<>
+			{/* Top-Right Viewport Caliper Ruler Toolbar (Strict 28-32px density, Mandate 8k) */}
+			<div className="absolute top-1.5 right-28 pointer-events-auto flex items-center gap-1 z-30">
+				<CbctViewportRulerToolbar
+					viewportType={viewport}
+					activeTool={activeTool}
+					onSelectTool={onSelectTool}
+					rulers={rulers}
+					onClearRulers={onClearRulers}
+				/>
+			</div>
+
+			{/* Bottom-Left 1-Click W/L Contrast Presets Bar */}
+			{onSelectQuickWlPreset && (
+				<div className="absolute bottom-1.5 left-28 pointer-events-auto flex items-center gap-1 z-20">
+					<CbctQuickWlBar
+						windowWidth={windowWidth}
+						windowLevel={windowLevel}
+						onSelectPreset={onSelectQuickWlPreset}
+					/>
+				</div>
+			)}
+
+			{renderViewportOverlays(viewport)}
+		</>
+	);
+
 	const renderAxialViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("axial")}
@@ -269,7 +305,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					windowWidth={windowWidth}
 					windowLevel={windowLevel}
 				>
-					{renderViewportOverlays("axial")}
+					{renderViewportOverlaysWithRuler("axial")}
 				</CbctViewportHud>
 			</div>
 		</div>
@@ -325,7 +361,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					windowWidth={windowWidth}
 					windowLevel={windowLevel}
 				>
-					{renderViewportOverlays("coronal")}
+					{renderViewportOverlaysWithRuler("coronal")}
 				</CbctViewportHud>
 			</div>
 		</div>
@@ -381,7 +417,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					windowWidth={windowWidth}
 					windowLevel={windowLevel}
 				>
-					{renderViewportOverlays("sagittal")}
+					{renderViewportOverlaysWithRuler("sagittal")}
 				</CbctViewportHud>
 			</div>
 		</div>
@@ -485,7 +521,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					windowWidth={windowWidth}
 					windowLevel={windowLevel}
 				>
-					{renderViewportOverlays("panoramic")}
+					{renderViewportOverlaysWithRuler("panoramic")}
 				</CbctViewportHud>
 			</div>
 		</div>
@@ -561,7 +597,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					windowWidth={windowWidth}
 					windowLevel={windowLevel}
 				>
-					{renderViewportOverlays("cross_section")}
+					{renderViewportOverlaysWithRuler("cross_section")}
 				</CbctViewportHud>
 			</div>
 		</div>

@@ -40,9 +40,11 @@ import {
 	computeAuditLineItem,
 	DEFAULT_COMMISSION_MEMBERS,
 	DEFAULT_INVENTORY_ITEMS_PRESET,
+	SOLO_DOCTOR_COMMISSION_MEMBERS,
 	type WarehouseAuditItemLine,
 	type WarehouseInventoryAuditDocument,
 } from "./inventory/warehouseInventoryEngine.js";
+import { isDemoShowcaseMode } from "../utils/demoModeEngine.js";
 
 const MaterialBomsSettingsPanel = lazy(() =>
 	import("./inventory/MaterialBomsSettingsPanel").then((module) => ({
@@ -240,6 +242,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 
 	const auditInitialDoc: WarehouseInventoryAuditDocument = useMemo(() => {
 		const auditDate = new Date().toISOString().slice(0, 10);
+		const isDemo = isDemoShowcaseMode();
 		if (!items || items.length === 0) {
 			return {
 				id: `audit-${Date.now()}`,
@@ -255,8 +258,8 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 				molFullName: "Ответственный сотрудник",
 				molPosition: "Старшая медсестра / Администратор",
 				status: "reconciliation" as const,
-				commission: DEFAULT_COMMISSION_MEMBERS,
-				items: [...DEFAULT_INVENTORY_ITEMS_PRESET],
+				commission: isDemo ? DEFAULT_COMMISSION_MEMBERS : SOLO_DOCTOR_COMMISSION_MEMBERS,
+				items: isDemo ? [...DEFAULT_INVENTORY_ITEMS_PRESET] : [],
 				organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»",
 				organizationOkpo: "49201948",
 				organizationInn: "7701984512",
@@ -301,7 +304,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 			molFullName: "Ответственный сотрудник",
 			molPosition: "Старшая медсестра / Администратор",
 			status: "reconciliation" as const,
-			commission: DEFAULT_COMMISSION_MEMBERS,
+			commission: isDemo ? DEFAULT_COMMISSION_MEMBERS : SOLO_DOCTOR_COMMISSION_MEMBERS,
 			items: auditItems,
 			organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»",
 			organizationOkpo: "49201948",

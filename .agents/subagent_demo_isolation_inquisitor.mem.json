@@ -1,0 +1,46 @@
+{
+  "agent": "subagent_demo_isolation_inquisitor",
+  "started_at": "2026-09-30T12:52:00+04:00",
+  "completed_at": "2026-09-30T13:09:00+04:00",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md completely up to 800 lines and part 2",
+    "Read AGENTS.md completely up to 800 lines and part 2",
+    "Created canonical demoModeEngine SSOT (apps/web/src/utils/demoModeEngine.ts) with predicates (isDemoMode, isDemoShowcaseMode, isDemoTenant, isDemoPatientId, isDemoStudyInstanceUid), quarantineDemoData, and assertProductionPurity",
+    "Updated apps/web/src/lib/demoMode.ts to re-export from demoModeEngine for 100% backwards compatibility",
+    "Created DemoModeBanner (apps/web/src/components/demo/DemoModeBanner.tsx) with explicit exit demo action, returning null in production",
+    "Patched CbctMprImplantStudioModal to eradicate Zakharov patient rename and auto-load of win.__cbctDemoVolume in production mode",
+    "Patched WaitingLoungeSignage to quarantine DEFAULT_LOUNGE_QUEUE and render honest empty queue state in production mode",
+    "Patched paidContractEngine createDefaultPaidContract to ensure 0 mock services and 0 ₽ in production mode",
+    "Patched InventoryView and WarehouseInventoryAuditModal to eliminate mock items preset and default to solo doctor commission in production mode",
+    "Created and passed unit test suite apps/web/src/tests/demoModeIsolationInquisition.test.ts (7/7 tests pass, Exit Code 0)",
+    "Verified radiologyClinicalAutonomyAndDemoIsolation.test.ts (9/9 tests pass, Exit Code 0)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "component": "CbctMprImplantStudioModal.tsx",
+      "severity": "CRITICAL",
+      "description": "Overwrote real patient name with 'Захаров Иван Дмитриевич' on volume apply and unconditionally auto-loaded win.__cbctDemoVolume in production.",
+      "resolution": "Quarantined __cbctDemoVolume to isDemoShowcaseMode() || isDemoPatientId(patientId); prioritized patientName.trim() in applyVol."
+    },
+    {
+      "component": "WaitingLoungeSignage.tsx",
+      "severity": "HIGH",
+      "description": "Unconditionally defaulted to DEFAULT_LOUNGE_QUEUE when initialItems was empty, broadcasting mock patients on TV lounge.",
+      "resolution": "Quarantined DEFAULT_LOUNGE_QUEUE to isDemoShowcaseMode(); rendered honest clinical empty state with Calendar icon in production."
+    },
+    {
+      "component": "paidContractEngine.ts",
+      "severity": "HIGH",
+      "description": "createDefaultPaidContract injected mock tooth 36 restoration and 8,000 rubles when services was undefined/empty.",
+      "resolution": "Guarded fallback services and total kopecks with isDemoShowcaseMode(); production contracts start with 0 services and 0 kopecks."
+    },
+    {
+      "component": "InventoryView.tsx & WarehouseInventoryAuditModal.tsx",
+      "severity": "MEDIUM",
+      "description": "auditInitialDoc injected mock inventory items and 4-person commission (Zakharov) on empty warehouse in production.",
+      "resolution": "Guarded DEFAULT_INVENTORY_ITEMS_PRESET and DEFAULT_COMMISSION_MEMBERS with isDemoShowcaseMode(), defaulting to empty items and SOLO_DOCTOR_COMMISSION_MEMBERS."
+    }
+  ]
+}
