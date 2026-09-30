@@ -1,0 +1,40 @@
+{
+  "agent": "subagent_gpu_resilience_inquisitor",
+  "status": "COMPLETED",
+  "mission": "CBCT WebGL2 Context Loss Shield, VRAM Auto-Downsample & Multi-DPR Clamp Inquisitor",
+  "scope": {
+    "allowed": [
+      "apps/web/src/components/radiology/mpr/webgl/CbctVolumeGlContext.ts",
+      "apps/web/src/components/radiology/__tests__/cbctHardwareGpuTorture.test.ts",
+      "apps/web/src/components/radiology/__tests__/cbctWebGlEngine.test.ts"
+    ],
+    "forbidden": [
+      "cbctPanoramicReconstructionMath.ts",
+      "CbctVolume3DViewport.tsx",
+      "treatment-plans/"
+    ]
+  },
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md completely",
+    "Read AGENTS.md completely",
+    "Initialized memory file",
+    "Read CbctVolumeGlContext.ts in its entirety (730 lines)",
+    "Read cbctHardwareGpuTorture.test.ts in its entirety (1314 lines)",
+    "Read cbctWebGlEngine.test.ts in its entirety (918 lines)",
+    "Ran baseline test verification (79 tests passed)",
+    "Implemented WebGL2 context loss & restore lifecycle in CbctVolumeGlContext.ts: preventDefault, activeVolume & doctor coordinates retention, automatic texture re-upload, listener triggers",
+    "Implemented progressive VRAM downsample retry on texImage3D OOM & max3dTextureSize safety in CbctVolumeGlContext.ts",
+    "Implemented Multi-DPR clamp utilities (safeDpr = min(dpr, 1.5)) and CSS scaling in CbctVolumeGlContext.ts",
+    "Added torture tests for context loss restoration, VRAM progressive downsample, MAX_3D_TEXTURE_SIZE=256 decimation, and Multi-DPR clamp in cbctHardwareGpuTorture.test.ts",
+    "Added engine tests for safe DPR and context restoration in cbctWebGlEngine.test.ts",
+    "Executed machine verification command: node --max-old-space-size=4096 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/radiology/__tests__/cbctHardwareGpuTorture.test.ts apps/web/src/components/radiology/__tests__/cbctWebGlEngine.test.ts (91 passed, 0 failed)",
+    "Verified clean exit code 0 on all tests and verified per-file git add compliance"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "CbctVolumeGlContext had webglcontextlost/webglcontextrestored listeners but dropped the active volume reference on context loss, requiring manual re-upload and losing doctor state. Now retains activeVolume, lastCoords, lastCrosshairMm, lastAngles, re-uploads automatically upon restore without page reload, and invokes registered listeners.",
+    "texImage3D previously threw without retry if GPU VRAM was exhausted. Now implements a progressive 2x downsample loop up to 8x, successfully recovering when driver memory limits are tight.",
+    "Device pixel ratio was unconstrained on 4K/Retina displays, risking fillrate collapse on integrated GPUs (Intel UHD / Iris Xe). Now clamped to safeDpr <= 1.5, cutting fragment shader invocations by ~44% while retaining CSS display sizing.",
+    "All 91 tests across 25 test suites pass with 0 failures in < 600 ms."
+  ]
+}

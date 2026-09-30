@@ -28,6 +28,10 @@ import {
 	computeSynchronizedMprGlCoordinates,
 	calculateObliqueRotationFromHandle,
 	calculateCrosshairCenterDrag,
+	getSafeDevicePixelRatio,
+	computeSafeDprDimensions,
+	applySafeDprToCanvas,
+	MAX_SAFE_DEVICE_PIXEL_RATIO,
 	CbctVolumeGlContext,
 	getSharedCbctGlContext,
 	disposeSharedCbctGlContext,
@@ -555,6 +559,45 @@ describe("CBCT Hardware WebGL2 GPU Engine (FEAT-010)", () => {
 			assert.ok(calls.includes("deleteShader"), "Shaders were not deleted on dispose!");
 			assert.ok(calls.includes("deleteProgram"), "Program was not deleted on dispose!");
 		});
+
+		it("registers and triggers context restoration and context loss listeners", () => {
+			const { gl } = createMockGl2Context();
+			let lostHandler: ((e: Event) => void) | null = null;
+			let restoredHandler: (() => void) | null = null;
+
+			const canvas = {
+				getContext: (type: string) => (type === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+				addEventListener: (event: string, handler: any) => {
+					if (event === "webglcontextlost") lostHandler = handler;
+					if (event === "webglcontextrestored") restoredHandler = handler;
+				},
+				removeEventListener: () => {},
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+			let lostFired = false;
+			let restoredFired = false;
+
+			const unsubLost = glCtx.addContextLostListener(() => {
+				lostFired = true;
+			});
+			const unsubRestored = glCtx.addContextRestoredListener(() => {
+				restoredFired = true;
+			});
+
+			const fakeEvent = { preventDefault: () => {} } as Event;
+			lostHandler!(fakeEvent);
+			assert.strictEqual(lostFired, true);
+
+			restoredHandler!();
+			assert.strictEqual(restoredFired, true);
+
+			unsubLost();
+			unsubRestored();
+			glCtx.dispose();
+		});
 	});
 
 	// ─── 5. SHARED POOL MANAGEMENT ────────────────────────────────────────────
@@ -912,6 +955,95 @@ describe("CBCT Hardware WebGL2 GPU Engine (FEAT-010)", () => {
 			// Should resolve back to near center (0, 0)
 			assert.ok(Math.abs(dragWithTransform.x) < 0.1, `Expected X ~ 0, got ${dragWithTransform.x}`);
 			assert.ok(Math.abs(dragWithTransform.y) < 0.1, `Expected Y ~ 0, got ${dragWithTransform.y}`);
+		});
+	});
+
+	// ─── 9. DEVICE PIXEL RATIO (DPR) CLAMPING & HIGH-DPI ADAPTATION ───────────
+
+	describe("9. Device Pixel Ratio (DPR) Clamping & High-DPI Adaptation", () => {
+		it("getSafeDevicePixelRatio clamps high-DPI ratios to 1.5", () => {
+			assert.strictEqual(getSafeDevicePixelRatio(1.0), 1.0);
+			assert.strictEqual(getSafeDevicePixelRatio(1.25), 1.25);
+			assert.strictEqual(getSafeDevicePixelRatio(2.0), 1.5);
+			assert.strictEqual(getSafeDevicePixelRatio(3.0), 1.5);
+			assert.strictEqual(MAX_SAFE_DEVICE_PIXEL_RATIO, 1.5);
+		});
+
+		it("computeSafeDprDimensions accurately calculates clamped render and CSS dimensions", () => {
+			const dims = computeSafeDprDimensions(500, 400, 2.0);
+			assert.strictEqual(dims.cssWidth, 500);
+			assert.strictEqual(dims.cssHeight, 400);
+			assert.strictEqual(dims.safeDpr, 1.5);
+			assert.strictEqual(dims.renderWidth, 750);
+			assert.strictEqual(dims.renderHeight, 600);
+		});
+
+		it("applySafeDprToCanvas configures canvas buffer and CSS style width/height", () => {
+			const targetCanvas = {
+				width: 0,
+				height: 0,
+				style: { width: "", height: "" },
+			} as unknown as HTMLCanvasElement;
+
+			const dims = applySafeDprToCanvas(targetCanvas, 640, 480, 2.0);
+			assert.strictEqual(targetCanvas.width, 960);
+			assert.strictEqual(targetCanvas.height, 720);
+			assert.strictEqual(targetCanvas.style.width, "640px");
+			assert.strictEqual(targetCanvas.style.height, "480px");
+			assert.strictEqual(dims.safeDpr, 1.5);
+		});
+
+		it("renderSlice with clampDpr: true sets target canvas safe DPR and CSS style", () => {
+			const { gl } = createMockGl2Context();
+			const canvas = {
+				getContext: (type: string) => (type === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+
+			let blitWidth = 0;
+			let blitHeight = 0;
+			const targetCtx = {
+				drawImage: (_src: unknown, _sx: number, _sy: number, _sw: number, _sh: number, _dx: number, _dy: number, dw: number, dh: number) => {
+					blitWidth = dw;
+					blitHeight = dh;
+				},
+			};
+			const targetCanvas = {
+				getContext: () => targetCtx,
+				width: 0,
+				height: 0,
+				style: { width: "", height: "" },
+			} as unknown as HTMLCanvasElement;
+
+			const coords = glCtx.renderSlice(
+				volume,
+				"axial",
+				centerCrosshair,
+				zeroAngles,
+				{
+					windowWidth: 1500,
+					windowLevel: 300,
+					clampDpr: true,
+					safeDpr: 2.0,
+				},
+				targetCanvas,
+			);
+
+			assert.ok(coords !== null);
+			// Volume dimensions: 16x16
+			// coords.widthPx = 16, coords.heightPx = 16
+			// safeDpr = 1.5 -> renderWidth = 24, renderHeight = 24, style = 16px
+			assert.strictEqual(targetCanvas.width, 24);
+			assert.strictEqual(targetCanvas.height, 24);
+			assert.strictEqual(targetCanvas.style.width, "16px");
+			assert.strictEqual(targetCanvas.style.height, "16px");
+			assert.strictEqual(blitWidth, 24);
+			assert.strictEqual(blitHeight, 24);
+
+			glCtx.dispose();
 		});
 	});
 });

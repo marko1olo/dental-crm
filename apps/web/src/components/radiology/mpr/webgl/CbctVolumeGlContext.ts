@@ -32,6 +32,8 @@ export interface GlSliceRenderOptions {
 	slabThicknessMm?: number | undefined;
 	interpolation?: "nearest" | "trilinear" | undefined;
 	expandObliqueDiagonal?: boolean | undefined;
+	safeDpr?: number | undefined;
+	clampDpr?: boolean | undefined;
 }
 
 export interface GlSliceCoordinates {
@@ -60,6 +62,72 @@ interface GlUniformLocations {
 	slabMode: WebGLUniformLocation | null;
 	slabSteps: WebGLUniformLocation | null;
 	trilinear: WebGLUniformLocation | null;
+}
+
+export const MAX_SAFE_DEVICE_PIXEL_RATIO = 1.5;
+
+/**
+ * Calculates safe device pixel ratio clamped to max 1.5 to protect GPU fillrate on 4K/Retina displays.
+ * Prevents integrated GPUs (Intel UHD / Iris Xe) from fillrate collapse on high-DPI screens.
+ */
+export function getSafeDevicePixelRatio(customDpr?: number): number {
+	const rawDpr =
+		typeof customDpr === "number" && Number.isFinite(customDpr) && customDpr > 0
+			? customDpr
+			: typeof window !== "undefined" && typeof window.devicePixelRatio === "number" && window.devicePixelRatio > 0
+				? window.devicePixelRatio
+				: 1.0;
+	return Math.min(rawDpr, MAX_SAFE_DEVICE_PIXEL_RATIO);
+}
+
+export interface SafeDprViewportDimensions {
+	renderWidth: number;
+	renderHeight: number;
+	cssWidth: number;
+	cssHeight: number;
+	safeDpr: number;
+}
+
+/**
+ * Computes buffer render dimensions and CSS display dimensions with safe DPR clamping (<= 1.5).
+ */
+export function computeSafeDprDimensions(
+	cssWidth: number,
+	cssHeight: number,
+	customDpr?: number,
+): SafeDprViewportDimensions {
+	const safeDpr = getSafeDevicePixelRatio(customDpr);
+	const renderWidth = Math.max(1, Math.round(cssWidth * safeDpr));
+	const renderHeight = Math.max(1, Math.round(cssHeight * safeDpr));
+	return {
+		renderWidth,
+		renderHeight,
+		cssWidth,
+		cssHeight,
+		safeDpr,
+	};
+}
+
+/**
+ * Applies clamped DPR scaling to an HTMLCanvasElement: internal buffer is set to renderWidth/Height,
+ * while canvas.style width/height are set to cssWidth/Height (CSS pixels).
+ */
+export function applySafeDprToCanvas(
+	canvas: HTMLCanvasElement,
+	cssWidth: number,
+	cssHeight: number,
+	customDpr?: number,
+): SafeDprViewportDimensions {
+	const dims = computeSafeDprDimensions(cssWidth, cssHeight, customDpr);
+	if (canvas.width !== dims.renderWidth || canvas.height !== dims.renderHeight) {
+		canvas.width = dims.renderWidth;
+		canvas.height = dims.renderHeight;
+	}
+	if (canvas.style) {
+		canvas.style.width = `${dims.cssWidth}px`;
+		canvas.style.height = `${dims.cssHeight}px`;
+	}
+	return dims;
 }
 
 /**
@@ -306,11 +374,20 @@ export class CbctVolumeGlContext {
 	private fragmentShader: WebGLShader | null = null;
 	private volumeTexture: WebGLTexture | null = null;
 	private activeVolumeId: string | null = null;
+	private activeVolume: CbctVoxelVolume | null = null;
 	private isInitialized = false;
 	private vao: WebGLVertexArrayObject | null = null;
 	private uploadDim: { width: number; height: number; depth: number } | null = null;
+	private downsampleStep = 1;
 	private cleanupContextListeners: (() => void) | null = null;
 	private uniforms: GlUniformLocations | null = null;
+	private contextRestoredListeners: Set<() => void> = new Set();
+	private contextLostListeners: Set<() => void> = new Set();
+	private contextLostState = false;
+	private lastCrosshairMm: Point3D | null = null;
+	private lastAngles: ObliqueRotationAngles | null = null;
+	private lastCoords: GlSliceCoordinates | null = null;
+	private lastOptions: GlSliceRenderOptions | null = null;
 
 	constructor(canvas?: HTMLCanvasElement) {
 		if (canvas) this.init(canvas);
@@ -320,6 +397,7 @@ export class CbctVolumeGlContext {
 		this.cleanupContextListeners?.();
 		this.cleanupContextListeners = null;
 		this.canvas = canvas;
+		this.contextLostState = false;
 
 		try {
 			const gl = canvas.getContext("webgl2", {
@@ -336,11 +414,44 @@ export class CbctVolumeGlContext {
 			this.isInitialized = success;
 
 			const onContextLost = (e: Event) => {
-				e.preventDefault();
-				this.isInitialized = false; this.activeVolumeId = null; this.volumeTexture = null;
-				this.uploadDim = null; this.program = null; this.vao = null; this.uniforms = null;
+				if (typeof e.preventDefault === "function") {
+					e.preventDefault();
+				}
+				this.contextLostState = true;
+				this.isInitialized = false;
+				this.activeVolumeId = null;
+				this.volumeTexture = null;
+				this.uploadDim = null;
+				this.program = null;
+				this.vao = null;
+				this.uniforms = null;
+				for (const cb of this.contextLostListeners) {
+					try {
+						cb();
+					} catch (err) {
+						console.error("[CbctVolumeGlContext] contextLostListener error:", err);
+					}
+				}
 			};
-			const onContextRestored = () => { if (this.canvas) this.init(this.canvas); };
+			const onContextRestored = () => {
+				this.contextLostState = false;
+				if (this.canvas) {
+					const restored = this.init(this.canvas);
+					if (restored && this.activeVolume && !this.activeVolume.isDisposed) {
+						this.uploadVolume(this.activeVolume, { forceReupload: true });
+						if (this.lastCoords) {
+							this.updateSliceBasisUniforms(this.lastCoords);
+						}
+					}
+					for (const cb of this.contextRestoredListeners) {
+						try {
+							cb();
+						} catch (err) {
+							console.error("[CbctVolumeGlContext] contextRestoredListener error:", err);
+						}
+					}
+				}
+			};
 			if (typeof canvas.addEventListener === "function") {
 				canvas.addEventListener("webglcontextlost", onContextLost);
 				canvas.addEventListener("webglcontextrestored", onContextRestored);
@@ -358,12 +469,43 @@ export class CbctVolumeGlContext {
 	}
 
 	public isAvailable(): boolean {
-		return this.isInitialized && this.gl !== null && this.program !== null;
+		if (this.contextLostState || !this.isInitialized || !this.gl || !this.program) return false;
+		if (typeof this.gl.isContextLost === "function" && this.gl.isContextLost()) {
+			return false;
+		}
+		return true;
+	}
+
+	public isContextLost(): boolean {
+		return (
+			this.contextLostState ||
+			!this.gl ||
+			(typeof this.gl.isContextLost === "function" && this.gl.isContextLost())
+		);
 	}
 
 	public getCanvas(): HTMLCanvasElement | null { return this.canvas; }
 	public getGl(): WebGL2RenderingContext | null { return this.gl; }
 	public getActiveVolumeId(): string | null { return this.activeVolumeId; }
+	public getActiveVolume(): CbctVoxelVolume | null { return this.activeVolume; }
+	public getDownsampleStep(): number { return this.downsampleStep; }
+	public getLastCrosshairMm(): Point3D | null { return this.lastCrosshairMm; }
+	public getLastObliqueAngles(): ObliqueRotationAngles | null { return this.lastAngles; }
+	public getLastSliceCoordinates(): GlSliceCoordinates | null { return this.lastCoords; }
+
+	public addContextRestoredListener(listener: () => void): () => void {
+		this.contextRestoredListeners.add(listener);
+		return () => {
+			this.contextRestoredListeners.delete(listener);
+		};
+	}
+
+	public addContextLostListener(listener: () => void): () => void {
+		this.contextLostListeners.add(listener);
+		return () => {
+			this.contextLostListeners.delete(listener);
+		};
+	}
 
 	private setupShaders(): boolean {
 		const gl = this.gl;
@@ -447,9 +589,18 @@ export class CbctVolumeGlContext {
 		gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-		const max3dSize =
-			(typeof gl.getParameter === "function" && gl.MAX_3D_TEXTURE_SIZE !== undefined
-				? (gl.getParameter(gl.MAX_3D_TEXTURE_SIZE) as number) : 2048) || 2048;
+		let max3dSize = 2048;
+		try {
+			if (typeof gl.getParameter === "function" && gl.MAX_3D_TEXTURE_SIZE !== undefined) {
+				const param = gl.getParameter(gl.MAX_3D_TEXTURE_SIZE) as number;
+				if (typeof param === "number" && param > 0) {
+					max3dSize = param;
+				}
+			}
+		} catch {
+			max3dSize = 2048;
+		}
+
 		let step = 1;
 		while (
 			Math.ceil(volume.dimensions.width / step) > max3dSize ||
@@ -459,28 +610,71 @@ export class CbctVolumeGlContext {
 			step *= 2;
 		}
 
-		let uploadData = volume.data, uploadWidth = volume.dimensions.width;
-		let uploadHeight = volume.dimensions.height, uploadDepth = volume.dimensions.depth;
+		let uploadData = volume.data;
+		let uploadWidth = volume.dimensions.width;
+		let uploadHeight = volume.dimensions.height;
+		let uploadDepth = volume.dimensions.depth;
 
 		if (step > 1) {
 			console.warn(`[CbctVolumeGlContext] Volume downsampled ${step}x for GPU limits (${max3dSize}).`);
 			const downsampled = downsampleVolumeData(volume.data, volume.dimensions, step);
-			uploadData = downsampled.data; uploadWidth = downsampled.width;
-			uploadHeight = downsampled.height; uploadDepth = downsampled.depth;
+			uploadData = downsampled.data;
+			uploadWidth = downsampled.width;
+			uploadHeight = downsampled.height;
+			uploadDepth = downsampled.depth;
 		}
 
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2);
-		try {
-			gl.texImage3D(gl.TEXTURE_3D, 0, gl.R16I, uploadWidth, uploadHeight, uploadDepth, 0, gl.RED_INTEGER, gl.SHORT, uploadData);
-		} catch (err) {
-			console.error("[CbctVolumeGlContext] gl.texImage3D failed:", err);
+
+		let uploadSuccess = false;
+		while (step <= 8) {
+			try {
+				gl.texImage3D(
+					gl.TEXTURE_3D,
+					0,
+					gl.R16I,
+					uploadWidth,
+					uploadHeight,
+					uploadDepth,
+					0,
+					gl.RED_INTEGER,
+					gl.SHORT,
+					uploadData,
+				);
+				uploadSuccess = true;
+				break;
+			} catch (err) {
+				console.warn(
+					`[CbctVolumeGlContext] gl.texImage3D failed at ${uploadWidth}x${uploadHeight}x${uploadDepth} (step ${step}x), retrying with progressive 2x downsample:`,
+					err,
+				);
+				step *= 2;
+				if (step > 8) {
+					break;
+				}
+				const downsampled = downsampleVolumeData(volume.data, volume.dimensions, step);
+				uploadData = downsampled.data;
+				uploadWidth = downsampled.width;
+				uploadHeight = downsampled.height;
+				uploadDepth = downsampled.depth;
+			}
+		}
+
+		if (!uploadSuccess) {
+			console.error("[CbctVolumeGlContext] gl.texImage3D failed after progressive downsampling.");
 			gl.deleteTexture(texture);
-			this.volumeTexture = null; this.activeVolumeId = null;
+			this.volumeTexture = null;
+			this.activeVolumeId = null;
+			this.activeVolume = null;
+			this.uploadDim = null;
+			this.downsampleStep = 1;
 			return false;
 		}
 
+		this.downsampleStep = step;
 		this.volumeTexture = texture;
 		this.activeVolumeId = volume.id;
+		this.activeVolume = volume;
 		this.uploadDim = { width: uploadWidth, height: uploadHeight, depth: uploadDepth };
 
 		if (this.uniforms?.volumeDim) {
@@ -497,7 +691,9 @@ export class CbctVolumeGlContext {
 				this.volumeTexture = null;
 			}
 			this.activeVolumeId = null;
+			this.activeVolume = null;
 			this.uploadDim = null;
+			this.downsampleStep = 1;
 		}
 	}
 
@@ -522,7 +718,16 @@ export class CbctVolumeGlContext {
 		if (!gl || !canvas || !this.isAvailable() || !this.program || !this.uniforms) return null;
 		if (!this.uploadVolume(volume)) return null;
 
+		this.lastCoords = coords;
+		this.lastOptions = options;
+
 		if (targetCanvas) {
+			if (options.clampDpr) {
+				applySafeDprToCanvas(targetCanvas, coords.widthPx, coords.heightPx, options.safeDpr);
+			} else if (targetCanvas.width !== coords.widthPx || targetCanvas.height !== coords.heightPx) {
+				targetCanvas.width = coords.widthPx;
+				targetCanvas.height = coords.heightPx;
+			}
 			if (canvas.width < coords.widthPx || canvas.height < coords.heightPx) {
 				canvas.width = Math.max(canvas.width, coords.widthPx);
 				canvas.height = Math.max(canvas.height, coords.heightPx);
@@ -558,14 +763,20 @@ export class CbctVolumeGlContext {
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
 		if (targetCanvas) {
-			if (targetCanvas.width !== coords.widthPx || targetCanvas.height !== coords.heightPx) {
-				targetCanvas.width = coords.widthPx;
-				targetCanvas.height = coords.heightPx;
-			}
 			const targetCtx = targetCanvas.getContext("2d");
 			if (targetCtx) {
 				const sourceY = canvas.height - coords.heightPx;
-				targetCtx.drawImage(canvas, 0, sourceY, coords.widthPx, coords.heightPx, 0, 0, coords.widthPx, coords.heightPx);
+				targetCtx.drawImage(
+					canvas,
+					0,
+					sourceY,
+					coords.widthPx,
+					coords.heightPx,
+					0,
+					0,
+					targetCanvas.width,
+					targetCanvas.height,
+				);
 			}
 		}
 		return coords;
@@ -579,6 +790,9 @@ export class CbctVolumeGlContext {
 		options: GlSliceRenderOptions,
 		targetCanvas?: HTMLCanvasElement | null,
 	): GlSliceCoordinates | null {
+		this.lastCrosshairMm = { ...crosshairMm };
+		this.lastAngles = { ...angles };
+		this.lastOptions = options;
 		const coords = computeGlSliceCoordinates(volume, plane, crosshairMm, angles, options);
 		return this.renderFromCoordinates(volume, coords, options, targetCanvas);
 	}
@@ -590,6 +804,8 @@ export class CbctVolumeGlContext {
 		options: GlSliceRenderOptions & { widthMm?: number; heightMm?: number; pixelSpacingMm?: number },
 		targetCanvas?: HTMLCanvasElement | null,
 	): GlSliceCoordinates | null {
+		this.lastCrosshairMm = { ...centerMm };
+		this.lastOptions = options;
 		const coords = computeGlCrossSectionCoordinates(volume, centerMm, normal2D, options);
 		return this.renderFromCoordinates(volume, coords, options, targetCanvas);
 	}
@@ -601,6 +817,10 @@ export class CbctVolumeGlContext {
 		options: GlSliceRenderOptions,
 		targets?: { axial?: HTMLCanvasElement | null; coronal?: HTMLCanvasElement | null; sagittal?: HTMLCanvasElement | null },
 	): { axial: GlSliceCoordinates; coronal: GlSliceCoordinates; sagittal: GlSliceCoordinates } | null {
+		this.lastCrosshairMm = { ...crosshairMm };
+		this.lastAngles = { ...angles };
+		this.lastOptions = options;
+
 		if (this.canvas) {
 			const maxDim = Math.max(volume.dimensions.width, Math.max(volume.dimensions.height, volume.dimensions.depth));
 			if (this.canvas.width < maxDim || this.canvas.height < maxDim) {
@@ -635,6 +855,8 @@ export class CbctVolumeGlContext {
 		targetCanvas?: HTMLCanvasElement | null,
 	): { newAngles: ObliqueRotationAngles; angleDeg: number; coords: GlSliceCoordinates } | null {
 		const { newAngles, angleDeg } = calculateObliqueRotationFromHandle(plane, handle, centerPx, pointerPx, currentAngles);
+		this.lastAngles = { ...newAngles };
+		this.lastCrosshairMm = { ...crosshairMm };
 		const renderOptions: GlSliceRenderOptions = options ?? {
 			windowWidth: volume.defaultWindowWidth ?? 1500,
 			windowLevel: volume.defaultWindowLevel ?? 300,
@@ -660,6 +882,8 @@ export class CbctVolumeGlContext {
 		targets?: { axial?: HTMLCanvasElement | null; coronal?: HTMLCanvasElement | null; sagittal?: HTMLCanvasElement | null },
 	): { newCrosshairMm: Point3D; coords: { axial: GlSliceCoordinates; coronal: GlSliceCoordinates; sagittal: GlSliceCoordinates } } | null {
 		const newCrosshairMm = calculateCrosshairCenterDrag(plane, pointerPx, canvasSize, currentCrosshairMm, angles, transform, volume);
+		this.lastCrosshairMm = { ...newCrosshairMm };
+		this.lastAngles = { ...angles };
 		const renderOptions: GlSliceRenderOptions = options ?? {
 			windowWidth: volume.defaultWindowWidth ?? 1500,
 			windowLevel: volume.defaultWindowLevel ?? 300,
@@ -679,6 +903,8 @@ export class CbctVolumeGlContext {
 		options?: GlSliceRenderOptions,
 		targets?: { axial?: HTMLCanvasElement | null; coronal?: HTMLCanvasElement | null; sagittal?: HTMLCanvasElement | null },
 	): { axial: GlSliceCoordinates; coronal: GlSliceCoordinates; sagittal: GlSliceCoordinates } | null {
+		this.lastCrosshairMm = { ...newCrosshairMm };
+		this.lastAngles = { ...angles };
 		const renderOptions: GlSliceRenderOptions = options ?? {
 			windowWidth: volume.defaultWindowWidth ?? 1500,
 			windowLevel: volume.defaultWindowLevel ?? 300,
@@ -704,6 +930,13 @@ export class CbctVolumeGlContext {
 
 		this.cleanupContextListeners?.();
 		this.cleanupContextListeners = null;
+		this.contextRestoredListeners.clear();
+		this.contextLostListeners.clear();
+		this.activeVolume = null;
+		this.lastCoords = null;
+		this.lastOptions = null;
+		this.lastCrosshairMm = null;
+		this.lastAngles = null;
 		this.gl = null; this.canvas = null; this.activeVolumeId = null;
 		this.uploadDim = null; this.isInitialized = false; this.uniforms = null;
 	}

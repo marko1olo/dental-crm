@@ -35,6 +35,10 @@ import {
 import {
 	computeGlSliceCoordinates,
 	downsampleVolumeData,
+	getSafeDevicePixelRatio,
+	computeSafeDprDimensions,
+	applySafeDprToCanvas,
+	MAX_SAFE_DEVICE_PIXEL_RATIO,
 	CbctVolumeGlContext,
 	getSharedCbctGlContext,
 	disposeSharedCbctGlContext,
@@ -340,6 +344,31 @@ describe("RED TEAM AUDIT: Hardware WebGL2 GPU Engine Torture & Self-Fix Verifica
 				calls.some((c) => c.startsWith("texImage3D:300x300x157")),
 				"Must upload 2x downsampled dimensions (300x300x157) into VRAM!",
 			);
+			assert.strictEqual(glCtx.getDownsampleStep(), 2);
+			glCtx.dispose();
+		});
+
+		it("FIXED: Zakharov volume (600x600x313) downsamples automatically 4x on GPU with MAX_3D_TEXTURE_SIZE=256", () => {
+			// Simulate baseline WebGL2 minimum: Intel UHD / legacy GPU with max 256
+			const { gl, calls } = createDriverMockGlContext({ max3dTextureSize: 256 });
+			const canvas = {
+				getContext: (type: string) => (type === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+			assert.strictEqual(glCtx.isAvailable(), true);
+
+			// Must downsample 4x: 600/4 = 150, 313/4 = 79
+			const ok = glCtx.uploadVolume(zakharov);
+			assert.strictEqual(ok, true, "Upload must succeed on GPU with MAX_3D_TEXTURE_SIZE=256");
+			assert.strictEqual(glCtx.getDownsampleStep(), 4, "Downsample step must be 4x for 256 limit");
+			assert.ok(
+				calls.some((c) => c.startsWith("texImage3D:150x150x79")),
+				"Must upload 4x downsampled dimensions (150x150x79) into VRAM!",
+			);
+			glCtx.dispose();
 		});
 
 		it("FIXED: downsampleVolumeData accurately downsamples 3D volumes by 2x stride", () => {
@@ -929,6 +958,32 @@ describe("RED TEAM AUDIT: Hardware WebGL2 GPU Engine Torture & Self-Fix Verifica
 
 			const ok = glCtx.uploadVolume(vol);
 			assert.strictEqual(ok, false, "uploadVolume must return false without crashing when context is lost");
+			glCtx.dispose();
+		});
+
+		it("Progressive 2x downsample retry recovers from driver OUT_OF_MEMORY during texImage3D", () => {
+			// Simulate driver VRAM ceiling at 50 MB (triggers OOM at 215 MB for full 600x600x313, but succeeds at 2x downsample ~27 MB)
+			const { gl, calls } = createDriverMockGlContext({
+				max3dTextureSize: 2048,
+				simulateOomOnBytes: 50 * 1024 * 1024,
+			});
+			const canvas = {
+				getContext: (t: string) => (t === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+			const zakharov = createZakharovProfileVolume();
+
+			const ok = glCtx.uploadVolume(zakharov);
+			assert.strictEqual(ok, true, "Upload must recover and succeed after progressive downsampling");
+			assert.strictEqual(glCtx.getDownsampleStep(), 2, "Downsample step must step down to 2x after initial OOM");
+			assert.ok(
+				calls.some((c) => c.startsWith("texImage3D:300x300x157")),
+				"Must upload 2x downsampled dimensions (300x300x157) into VRAM after OOM retry!",
+			);
+			glCtx.dispose();
 		});
 	});
 
@@ -1229,6 +1284,75 @@ describe("RED TEAM AUDIT: Hardware WebGL2 GPU Engine Torture & Self-Fix Verifica
 			);
 			glCtx.dispose();
 		});
+
+		it("Context Loss Shield: prevents default, preserves active volume, and re-uploads upon restoration without reload", () => {
+			let lostHandler: ((e: Event) => void) | null = null;
+			let restoredHandler: (() => void) | null = null;
+			const { gl } = createDriverMockGlContext({ max3dTextureSize: 2048 });
+
+			const fakeCanvas = {
+				getContext: () => gl,
+				width: 100,
+				height: 100,
+				addEventListener: (event: string, handler: any) => {
+					if (event === "webglcontextlost") lostHandler = handler;
+					if (event === "webglcontextrestored") restoredHandler = handler;
+				},
+				removeEventListener: (event: string, handler: any) => {
+					if (event === "webglcontextlost" && lostHandler === handler) lostHandler = null;
+					if (event === "webglcontextrestored" && restoredHandler === handler) restoredHandler = null;
+				},
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(fakeCanvas);
+			const zakharov = createZakharovProfileVolume();
+
+			// Doctor sets crosshair and renders a slice
+			const focalPoint: Point3D = { x: 12.5, y: -8.0, z: 4.2 };
+			const angles: ObliqueRotationAngles = { axialAngleDeg: 15, coronalTiltDeg: 5, sagittalTiltDeg: -2 };
+			glCtx.renderSlice(zakharov, "axial", focalPoint, angles, { windowWidth: 1500, windowLevel: 300 });
+
+			assert.strictEqual(glCtx.getActiveVolumeId(), zakharov.id);
+			assert.deepStrictEqual(glCtx.getLastCrosshairMm(), focalPoint);
+			assert.deepStrictEqual(glCtx.getLastObliqueAngles(), angles);
+
+			let lostNotified = false;
+			let restoredNotified = false;
+			const unsubLost = glCtx.addContextLostListener(() => {
+				lostNotified = true;
+			});
+			const unsubRestored = glCtx.addContextRestoredListener(() => {
+				restoredNotified = true;
+			});
+
+			// Simulate TDR driver crash / context lost
+			let preventDefaultCalled = false;
+			const fakeLostEvent = {
+				preventDefault: () => {
+					preventDefaultCalled = true;
+				},
+			} as unknown as Event;
+
+			(lostHandler as any)(fakeLostEvent);
+			assert.strictEqual(preventDefaultCalled, true, "Mandatory e.preventDefault() must be called to allow restoration");
+			assert.strictEqual(lostNotified, true, "Context lost listeners must be notified");
+			assert.strictEqual(glCtx.isContextLost(), true);
+			assert.strictEqual(glCtx.isAvailable(), false);
+			assert.strictEqual(glCtx.getActiveVolume()?.id, zakharov.id, "Active volume reference must be retained in memory!");
+
+			// Simulate driver recovery / context restored
+			(restoredHandler as any)();
+			assert.strictEqual(restoredNotified, true, "Context restored listeners must be notified");
+			assert.strictEqual(glCtx.isContextLost(), false);
+			assert.strictEqual(glCtx.isAvailable(), true);
+			assert.strictEqual(glCtx.getActiveVolumeId(), zakharov.id, "Active volume must be re-uploaded automatically");
+			assert.deepStrictEqual(glCtx.getLastCrosshairMm(), focalPoint, "Doctor crosshair must be preserved after restore");
+			assert.deepStrictEqual(glCtx.getLastObliqueAngles(), angles, "Doctor oblique angles must be preserved after restore");
+
+			unsubLost();
+			unsubRestored();
+			glCtx.dispose();
+		});
 	});
 
 	// ─── 13. 3D VOLUME WEBGL2 GPU SHADER CLIPPING BOX & ADAPTIVE LOD TORTURE ─
@@ -1308,6 +1432,102 @@ describe("RED TEAM AUDIT: Hardware WebGL2 GPU Engine Torture & Self-Fix Verifica
 			assert.strictEqual(isPointInsideClippingBox([0.5, 0.40, 0.15], combinedMin, combinedMax), false);
 			// Occipital bone (Y=0.85) -> clipped
 			assert.strictEqual(isPointInsideClippingBox([0.5, 0.85, 0.45], combinedMin, combinedMax), false);
+		});
+	});
+
+	// ─── 14. MULTI-DPR CLAMP & HIGH-DPI FILLRATE SHIELD (INTEL UHD / IRIS XE) ─
+
+	describe("14. Multi-DPR Clamp & High-DPI Fillrate Shield (Intel UHD / Iris Xe 4K Protection)", () => {
+		it("getSafeDevicePixelRatio clamps high-DPI scaling to MAX_SAFE_DEVICE_PIXEL_RATIO (1.5)", () => {
+			assert.strictEqual(getSafeDevicePixelRatio(1.0), 1.0);
+			assert.strictEqual(getSafeDevicePixelRatio(1.25), 1.25);
+			assert.strictEqual(getSafeDevicePixelRatio(1.5), 1.5);
+			assert.strictEqual(getSafeDevicePixelRatio(2.0), 1.5, "DPR 2.0 (4K/Retina) must clamp to 1.5");
+			assert.strictEqual(getSafeDevicePixelRatio(3.0), 1.5, "DPR 3.0 (MacBook Retina) must clamp to 1.5");
+			assert.strictEqual(MAX_SAFE_DEVICE_PIXEL_RATIO, 1.5);
+		});
+
+		it("computeSafeDprDimensions scales internal buffer to safeDpr while retaining CSS pixels", () => {
+			// 4K viewport: 1920 x 1080 CSS pixels on DPR 2.0
+			const dims = computeSafeDprDimensions(1920, 1080, 2.0);
+			assert.strictEqual(dims.cssWidth, 1920);
+			assert.strictEqual(dims.cssHeight, 1080);
+			assert.strictEqual(dims.safeDpr, 1.5);
+			assert.strictEqual(dims.renderWidth, 2880); // 1920 * 1.5
+			assert.strictEqual(dims.renderHeight, 1620); // 1080 * 1.5
+
+			// Fragment shader savings calculation:
+			// Unclamped (DPR 2.0): 3840 * 2160 = 8,294,400 pixels
+			// Clamped (DPR 1.5):   2880 * 1620 = 4,665,600 pixels (43.75% fragment shader reduction!)
+			const unclampedPixels = 1920 * 2.0 * 1080 * 2.0;
+			const clampedPixels = dims.renderWidth * dims.renderHeight;
+			const reductionPercent = ((unclampedPixels - clampedPixels) / unclampedPixels) * 100;
+			assert.ok(Math.abs(reductionPercent - 43.75) < 0.1, "Clamping must reduce GPU fragment fillrate load by ~44%");
+		});
+
+		it("applySafeDprToCanvas configures internal buffer and CSS styles correctly", () => {
+			const fakeCanvas = {
+				width: 0,
+				height: 0,
+				style: { width: "", height: "" },
+			} as unknown as HTMLCanvasElement;
+
+			const dims = applySafeDprToCanvas(fakeCanvas, 800, 600, 2.5);
+			assert.strictEqual(fakeCanvas.width, 1200); // 800 * 1.5
+			assert.strictEqual(fakeCanvas.height, 900); // 600 * 1.5
+			assert.strictEqual(fakeCanvas.style.width, "800px");
+			assert.strictEqual(fakeCanvas.style.height, "600px");
+			assert.strictEqual(dims.safeDpr, 1.5);
+		});
+
+		it("renderFromCoordinates with clampDpr: true sets target canvas safe DPR and CSS style", () => {
+			const { gl } = createDriverMockGlContext({ max3dTextureSize: 2048 });
+			const canvas = {
+				getContext: (t: string) => (t === "webgl2" ? gl : null),
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(canvas);
+			const zakharov = createZakharovProfileVolume();
+
+			let drawImageWidth = 0;
+			let drawImageHeight = 0;
+			const targetCanvas = {
+				getContext: () => ({
+					drawImage: (_src: any, _sx: number, _sy: number, _sw: number, _sh: number, _dx: number, _dy: number, dw: number, dh: number) => {
+						drawImageWidth = dw;
+						drawImageHeight = dh;
+					},
+				}),
+				width: 0,
+				height: 0,
+				style: { width: "", height: "" },
+			} as unknown as HTMLCanvasElement;
+
+			const coords = computeGlSliceCoordinates(zakharov, "axial", { x: 0, y: 0, z: 0 }, DEFAULT_OBLIQUE_ROTATION);
+			glCtx.renderFromCoordinates(
+				zakharov,
+				coords,
+				{
+					windowWidth: 1500,
+					windowLevel: 300,
+					clampDpr: true,
+					safeDpr: 2.0, // should clamp to 1.5
+				},
+				targetCanvas,
+			);
+
+			// Original coords: widthPx = 600, heightPx = 600
+			// With safeDpr 1.5: targetCanvas.width = 900, targetCanvas.height = 900, style = 600px
+			assert.strictEqual(targetCanvas.width, 900);
+			assert.strictEqual(targetCanvas.height, 900);
+			assert.strictEqual(targetCanvas.style.width, "600px");
+			assert.strictEqual(targetCanvas.style.height, "600px");
+			assert.strictEqual(drawImageWidth, 900);
+			assert.strictEqual(drawImageHeight, 900);
+
+			glCtx.dispose();
 		});
 	});
 });
