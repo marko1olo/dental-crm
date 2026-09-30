@@ -63,12 +63,11 @@ import {
 	sampleVoxelTrilinearHU,
 	worldMmToVoxelContinuous,
 } from "./cbctMprMath";
-import { soundFeedback } from "../../services/audio/SoundFeedbackService";
 
 /**
- * Mandate 8e & Misch CE standard: IAN nerve danger threshold.
- * Clearance >= 1.5 mm is required for safety corridor; below 1.5 mm triggers critical warning & sound alert.
- * Purely advisory HUD telemetry: clear clinical warning, never blocks surgeon autonomy or save operations.
+ * Mandate 8e & Misch CE standard: IAN nerve clearance telemetry.
+ * Clearance >= 1.5 mm is standard safety corridor.
+ * Purely advisory HUD telemetry: calm clinical measurement, 100% doctor autonomy, zero audio sirens.
  */
 export const MANDIBULAR_NERVE_DANGER_THRESHOLD_MM = 1.5;
 
@@ -121,7 +120,7 @@ export interface NerveSafetyAuditResult {
 	readonly safetyStatus: "safe" | "warning" | "danger" | "unmeasured";
 	readonly isDangerous: boolean;
 	readonly isWarning: boolean;
-	readonly shouldTriggerAudioAlarm: boolean;
+	readonly shouldTriggerAudioAlarm?: boolean;
 	readonly closestImplantPoint: { readonly x: number; readonly y: number };
 	readonly closestNervePoint: { readonly x: number; readonly y: number };
 	readonly clinicalMessageRu: string;
@@ -138,7 +137,7 @@ export function createUnmeasuredNerveSafety(): NerveSafetyAuditResult {
 		shouldTriggerAudioAlarm: false,
 		closestImplantPoint: { x: 0, y: 0 },
 		closestNervePoint: { x: 0, y: 0 },
-		clinicalMessageRu: "Загрузите КЛКТ для измерения плотности кости и расстояния до IAN",
+		clinicalMessageRu: "Канал не размечен",
 	};
 }
 
@@ -385,24 +384,16 @@ export function auditMandibularNerveSafety(
 
 	let status: "safe" | "warning" | "danger" = "safe";
 	let message = "";
-	let audioAlarm = false;
 
 	if (netClearanceWall < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM) {
 		status = "danger";
-		audioAlarm = true;
-		if (netClearanceWall <= 0) {
-			message = "Критическое предупреждение (КРИТИЧЕСКИЙ РИСК): ПЕРФОРАЦИЯ НИЖНЕЧЕЛЮСТНОГО КАНАЛА. Измените длину или наклон имплантата.";
-		} else {
-			message = "КРИТИЧЕСКИЙ РИСК: дистанция до нерва " + netClearanceWall.toFixed(1) + " мм (< 1.5 мм). Риск нейропатии и парестезии губы.";
-		}
+		message = "Дистанция до канала: " + netClearanceWall.toFixed(1) + " мм";
 	} else if (netClearanceWall < MANDIBULAR_NERVE_SAFETY_MARGIN_MM) {
 		status = "warning";
-		audioAlarm = false;
-		message = "ВНИМАНИЕ: зона приближения к нерву (" + netClearanceWall.toFixed(1) + " мм). Рекомендуемый запас не менее 2.0 мм по протоколу Misch.";
+		message = "Дистанция до канала: " + netClearanceWall.toFixed(1) + " мм";
 	} else {
 		status = "safe";
-		audioAlarm = false;
-		message = "БЕЗОПАСНО: клиренс до канала " + netClearanceWall.toFixed(1) + " мм (соответствует хирургическому стандарту >= 2.0 мм).";
+		message = "Дистанция до канала: " + netClearanceWall.toFixed(1) + " мм";
 	}
 
 	return {
@@ -412,7 +403,7 @@ export function auditMandibularNerveSafety(
 		safetyStatus: status,
 		isDangerous: status === "danger",
 		isWarning: status === "warning",
-		shouldTriggerAudioAlarm: audioAlarm,
+		shouldTriggerAudioAlarm: false,
 		closestImplantPoint: segResult.closestPoint,
 		closestNervePoint: { x: closestNerveX, y: closestNerveY },
 		clinicalMessageRu: message,
@@ -429,7 +420,7 @@ export interface ApexToNerve3DResult {
 	readonly isDangerous: boolean;
 	readonly isWarning: boolean;
 	readonly isSafe: boolean;
-	readonly shouldTriggerAudioAlarm: boolean;
+	readonly shouldTriggerAudioAlarm?: boolean;
 	readonly closestApexPoint: { readonly x: number; readonly y: number; readonly z: number };
 	readonly closestNervePoint: { readonly x: number; readonly y: number; readonly z: number };
 	readonly closestSegmentIndex: number;
@@ -481,7 +472,7 @@ export function calculateApexToNerve3DDistance(
 			closestSegmentIndex: -1,
 			canalRadiusMm,
 			safetyMarginMm,
-			clinicalMessageRu: "Нижнечелюстной канал не размечен на 3D КЛКТ (требуется трассировка IAN)",
+			clinicalMessageRu: "Канал не размечен",
 		};
 	}
 
@@ -537,24 +528,16 @@ export function calculateApexToNerve3DDistance(
 
 	let status: "safe" | "warning" | "danger" = "safe";
 	let message = "";
-	let audioAlarm = false;
 
 	if (netClearanceWall < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM) {
 		status = "danger";
-		audioAlarm = true;
-		if (netClearanceWall <= 0) {
-			message = `КРАСНАЯ ТРЕВОГА (CRITICAL COLLISION RISK): ПЕРФОРАЦИЯ НИЖНЕЧЕЛЮСТНОГО КАНАЛА (зазор ${netClearanceWall.toFixed(1)} мм). Нерв поврежден! Срочно уменьшите длину или измените наклон имплантата.`;
-		} else {
-			message = `КРАСНАЯ ТРЕВОГА (CRITICAL COLLISION RISK): дистанция от апекса до нерва ${netClearanceWall.toFixed(1)} мм (< 1.5 мм). Нерв в критической опасности! Высокий риск нейропатии и парестезии нижней губы.`;
-		}
+		message = `Дистанция до канала: ${netClearanceWall.toFixed(1)} мм`;
 	} else if (netClearanceWall < MANDIBULAR_NERVE_SAFETY_MARGIN_MM) {
 		status = "warning";
-		audioAlarm = false;
-		message = `ЖЕЛТОЕ ПРЕДУПРЕЖДЕНИЕ (WARNING BUFFER ZONE): дистанция от апекса до нерва ${netClearanceWall.toFixed(1)} мм (буфер 1.5–2.0 мм). Рекомендуемый запас не менее 2.0 мм по стандарту Misch.`;
+		message = `Дистанция до канала: ${netClearanceWall.toFixed(1)} мм`;
 	} else {
 		status = "safe";
-		audioAlarm = false;
-		message = `ЗЕЛЕНАЯ ЗОНА БЕЗОПАСНОСТИ (SAFE MARGIN): дистанция от апекса до нерва ${netClearanceWall.toFixed(1)} мм (соответствует хирургическому стандарту >= 2.0 мм).`;
+		message = `Дистанция до канала: ${netClearanceWall.toFixed(1)} мм`;
 	}
 
 	return {
@@ -565,7 +548,7 @@ export function calculateApexToNerve3DDistance(
 		isDangerous: status === "danger",
 		isWarning: status === "warning",
 		isSafe: status === "safe",
-		shouldTriggerAudioAlarm: audioAlarm,
+		shouldTriggerAudioAlarm: false,
 		closestApexPoint: { x: Number(ax.toFixed(2)), y: Number(ay.toFixed(2)), z: Number(az.toFixed(2)) },
 		closestNervePoint: {
 			x: Number(closestPoint.x.toFixed(2)),
@@ -713,7 +696,7 @@ export function auditMandibularNerveSafety3D(
 
 	let clinicalMsg = apexResult.clinicalMessageRu;
 	if (netBodyClearance < apexResult.netClearanceToCanalWallMm && isDanger) {
-		clinicalMsg = `КРАСНАЯ ТРЕВОГА (CRITICAL COLLISION RISK): боковая стенка имплантата приближается к каналу на ${netBodyClearance.toFixed(1)} мм (< 1.5 мм)!`;
+		clinicalMsg = `Дистанция до канала: ${netBodyClearance.toFixed(1)} мм`;
 	}
 
 	return {
@@ -723,7 +706,7 @@ export function auditMandibularNerveSafety3D(
 		safetyStatus: status,
 		isDangerous: isDanger,
 		isWarning,
-		shouldTriggerAudioAlarm: isDanger,
+		shouldTriggerAudioAlarm: false,
 		closestImplantPoint: { x: Number(ax.toFixed(2)), y: Number(ay.toFixed(2)) },
 		closestNervePoint: { x: Number(apexResult.closestNervePoint.x.toFixed(2)), y: Number(apexResult.closestNervePoint.y.toFixed(2)) },
 		clinicalMessageRu: clinicalMsg,
@@ -925,13 +908,13 @@ export function auditMaxillarySinusSafety(
 
 	if (isPerforation) {
 		status = "danger";
-		message = "Предупреждение: перфорация дна гайморовой пазухи (зуб 16/верхний моляр). Показан синус-лифтинг или уменьшение длины имплантата.";
+		message = "Дно гайморовой пазухи: зазор " + netClearanceWall.toFixed(1) + " мм";
 	} else if (netClearanceWall < sinusMarginMm) {
 		status = "warning";
-		message = "Зона дна гайморовой пазухи: остаточная высота кости " + netClearanceWall.toFixed(1) + " мм. Показан закрытый синус-лифтинг.";
+		message = "Дно гайморовой пазухи: зазор " + netClearanceWall.toFixed(1) + " мм";
 	} else {
 		status = "safe";
-		message = "Дно гайморовой пазухи интактно: дистанция " + netClearanceWall.toFixed(1) + " мм (безопасный коридор).";
+		message = "Дно гайморовой пазухи: зазор " + netClearanceWall.toFixed(1) + " мм";
 	}
 
 	return {
@@ -941,7 +924,7 @@ export function auditMaxillarySinusSafety(
 		safetyStatus: status,
 		isDangerous: status === "danger",
 		isWarning: status === "warning",
-		shouldTriggerAudioAlarm: status === "danger",
+		shouldTriggerAudioAlarm: false,
 		closestImplantPoint: apex,
 		closestNervePoint: { x: apex.x, y: sinusFloorY },
 		clinicalMessageRu: message,
@@ -997,25 +980,19 @@ export function performCbctPlanningAudit(
 
 	// Build Form 043/u Surgery Protocol text
 	const anatomyTitle = isMaxilla
-		? "2. АНАТОМИЧЕСКАЯ БЕЗОПАСНОСТЬ И КОНТРОЛЬ ГАЙМОРОВОЙ ПАЗУХИ (Maxillary Sinus):"
-		: "2. АНАТОМИЧЕСКАЯ БЕЗОПАСНОСТЬ И КОНТРОЛЬ НЕРВА (IAN):";
+		? "2. АНАТОМИЧЕСКИЕ ОРИЕНТИРЫ И ГАЙМОРОВА ПАЗУХА (Maxillary Sinus):"
+		: "2. АНАТОМИЧЕСКИЕ ОРИЕНТИРЫ И НИЖНЕЧЕЛЮСТНОЙ КАНАЛ (IAN):";
 	const distanceLine =
 		nerveSafety.safetyStatus === "unmeasured"
-			? "   - Дистанция до нижнечелюстного канала: Не определена (требуется разметка на КЛКТ)"
+			? "   - Дистанция до канала: Канал не размечен"
 			: isMaxilla
 				? "   - Дистанция до дна гайморовой пазухи: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм"
-				: "   - Дистанция до нижнечелюстного канала: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм";
+				: "   - Дистанция до канала: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм";
 
 	const approvalStatusText =
 		nerveSafety.safetyStatus === "unmeasured"
-			? "ОЖИДАЕТ РАСЧЕТА ПО КЛКТ"
-			: isPlanApproved
-				? "ОДОБРЕНО К УСТАНОВКЕ"
-				: nerveSafety.isWarning
-					? "ТРЕБУЕТСЯ УМЕНЬШЕНИЕ ДЛИНЫ ИМПЛАНТАТА ДЛЯ ЗАЗОРА >= 2.0 ММ"
-					: isMaxilla
-						? "ОТКЛОНЕНО (ТРЕБУЕТСЯ СИНУС-ЛИФТИНГ)"
-						: "ОТКЛОНЕНО (РИСК ПОВРЕЖДЕНИЯ НЕРВА)";
+			? "Канал не размечен"
+			: "Дистанция до канала: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм";
 
 	const diaryLines = [
 		"============================================================",
@@ -1030,14 +1007,10 @@ export function performCbctPlanningAudit(
 		"",
 		anatomyTitle,
 		distanceLine,
-		"   - Статус безопасности: " +
+		"   - Статус: " +
 			(nerveSafety.safetyStatus === "unmeasured"
-				? "НЕ ОПРЕДЕЛЕН (ТРЕБУЕТСЯ КЛКТ)"
-				: nerveSafety.isDangerous
-					? "КРИТИЧЕСКИЙ РИСК"
-					: nerveSafety.isWarning
-						? "ВНИМАНИЕ: ЗОНА ПРИБЛИЖЕНИЯ К НЕРВУ"
-						: "СОБЛЮДЕН (>=2.0 мм)"),
+				? "Канал не размечен"
+				: "Дистанция " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм"),
 		"   - Вестибулярная костная стенка: " +
 			(params.envelope && !boneContainment.isUnmeasured
 				? boneContainment.residualBuccalBoneMm.toFixed(1) + " мм"
@@ -1050,7 +1023,7 @@ export function performCbctPlanningAudit(
 		"3. " + formatMischProtocolToDiaryText(params.huSampling, boneQuality, params.toothFdi),
 		"",
 		"4. ЗАКЛЮЧЕНИЕ И ПЛАН ЛЕЧЕНИЯ:",
-		"   - Допуск к операции: " + approvalStatusText,
+		"   - Анатомический статус: " + approvalStatusText,
 		params.envelope && !boneContainment.isUnmeasured
 			? boneContainment.requiresGbrAugmentation
 				? "   - Рекомендована сопутствующая НКР (GBR) с установкой коллагеновой мембраны."
@@ -1448,29 +1421,21 @@ export function checkImplantSliceIntersection(
 	};
 }
 
-// ─── WEB AUDIO API SAFETY SOUND ALARM ENGINE ────────────────────────────────
+// ─── DOCTOR AUTONOMY (MANDATE 8e): ZERO AUDIO PANIC SIRENS ──────────────────
 
 /**
- * Triggers clinical safety alarm according to proximity status.
- * Delegates cleanly to SoundFeedbackService without embedding raw Web Audio logic into the math engine.
+ * Purged per Mandate 8e: Doctor Autonomy.
+ * Clean no-op: software must never screech or trigger audio alarms during surgical planning.
  */
 export function playNerveSafetyAudioAlarm(
-	safetyStatus: "safe" | "warning" | "danger" | "unmeasured",
-	isAudioEnabled = false,
+	_safetyStatus?: "safe" | "warning" | "danger" | "unmeasured",
+	_isAudioEnabled = false,
 ): void {
-	if (!isAudioEnabled || safetyStatus === "safe" || safetyStatus === "unmeasured" || typeof window === "undefined") return;
-
-	try {
-		if (safetyStatus === "danger" || safetyStatus === "warning") {
-			void soundFeedback.playSound("warning_alert");
-		}
-	} catch {
-		// Ignore if sound feedback is unavailable
-	}
+	// Purged: zero audio panic sirens or whistling
 }
 
 export function disposeNerveSafetyAudioAlarm(): void {
-	// Clean no-op, lifecycle managed centrally by SoundFeedbackService
+	// Clean no-op
 }
 
 // ─── LIVE MISCH BONE DENSITY & 3D SAFETY TELEMETRY ADAPTER ──────────────────

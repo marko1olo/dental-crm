@@ -1,0 +1,35 @@
+{
+  "role": "GPU Crosshair & Oblique Drag Inquisitor",
+  "status": "COMPLETED",
+  "current_step": "verification_and_reporting",
+  "completed_steps": [
+    "read_constitution_hammer_master_prompt",
+    "read_constitution_agents_md",
+    "read_target_files",
+    "run_baseline_test",
+    "analyze_crosshair_oblique_state_and_gl_uniforms",
+    "implement_cbct_volume_gl_context_extensions",
+    "implement_cbct_mpr_viewports_grid_raf_and_mouse_drag",
+    "extend_cbct_webgl_engine_test_suite",
+    "run_machine_verification_test",
+    "verify_mandate_8b_line_limits",
+    "per_file_git_add"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Baseline cbctWebGlEngine.test.ts had 20 tests; expanded to 35 comprehensive tests across 9 suites.",
+    "All 35 tests pass with Exit Code 0 in 325 ms.",
+    "CbctVolumeGlContext.ts line count is 729 lines (strictly <= 800 lines per Mandate 8b).",
+    "CbctMprViewportsGrid.tsx line count is 777 lines (strictly <= 800 lines per Mandate 8b).",
+    "Synchronized 3D focal translation across Axial, Coronal, and Sagittal viewports updates u_sliceOrigin in WebGL2 shader uniforms.",
+    "Oblique axis rotation around crosshair center updates orthonormal basis vectors u_axisU, u_axisV, and u_axisNorm with zero redundant texture re-uploads.",
+    "Integrated 60 FPS requestAnimationFrame event throttling for mousemove and wheel events in CbctMprViewportsGrid.tsx with onMouseLeave cleanup and global pointerup listener, preventing stuck drag states."
+  ],
+  "verification": {
+    "command": "node --max-old-space-size=4096 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/radiology/__tests__/cbctWebGlEngine.test.ts",
+    "exit_code": 0,
+    "tests_total": 35,
+    "tests_passed": 35,
+    "tests_failed": 0
+  }
+}

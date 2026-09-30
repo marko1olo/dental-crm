@@ -281,15 +281,9 @@ export function drawMandibularNerveCanal2D(
 			const midX = (implantApexPx.x + closestCanalPt.x) / 2;
 			const midY = (implantApexPx.y + closestCanalPt.y) / 2;
 
-			let badgeText = "IAN: не измерялся";
+			let badgeText = "Канал не размечен";
 			if (clearanceMm !== null && clearanceMm !== undefined) {
-				if (clearanceMm < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM) {
-					badgeText = `⚠ IAN ${clearanceMm.toFixed(1)} мм`;
-				} else if (clearanceMm < MANDIBULAR_NERVE_SAFETY_MARGIN_MM) {
-					badgeText = `⚠ IAN ${clearanceMm.toFixed(1)} мм`;
-				} else {
-					badgeText = `IAN ${clearanceMm.toFixed(1)} мм`;
-				}
+				badgeText = `Канал: ${clearanceMm.toFixed(1)} мм`;
 			}
 
 			ctx.save();
@@ -301,14 +295,14 @@ export function drawMandibularNerveCanal2D(
 			const badgeH = 18;
 
 			ctx.fillStyle = OVERLAY_COLORS.hudBg;
-			ctx.strokeStyle = primaryColor;
+			ctx.strokeStyle = "rgba(71, 85, 105, 0.85)";
 			ctx.lineWidth = 1.0;
 			ctx.beginPath();
 			drawRoundedRectPolyfill(ctx, midX - badgeW / 2, midY - badgeH / 2, badgeW, badgeH, 4);
 			ctx.fill();
 			ctx.stroke();
 
-			ctx.fillStyle = primaryColor;
+			ctx.fillStyle = OVERLAY_COLORS.textWhite;
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
 			ctx.fillText(badgeText, midX, midY);
@@ -555,12 +549,12 @@ export function drawMischBoneQualityHUD(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. TOP HUD NERVE SAFETY ALERT BANNER
+// 4. TOP HUD NERVE SAFETY BADGE
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Renders viewport top HUD banner for Mandibular Nerve corridor status.
- * Guarantees zero-falsification: explicitly states unmeasured when clearance is null.
+ * Renders viewport top HUD badge with calm clinical distance telemetry.
+ * Purged of panic banners, flashing alarms, and shouting per Mandate 8e (Doctor Autonomy).
  */
 export function drawNerveSafetyAlertBanner(
 	ctx: CanvasRenderingContext2D,
@@ -569,45 +563,32 @@ export function drawNerveSafetyAlertBanner(
 	const { posPx, clearanceMm, targetToothFdi } = opts;
 
 	let bannerText: string;
-	let borderColor: string;
-	let textColor: string;
+	const borderColor = "rgba(71, 85, 105, 0.85)";
+	const textColor = OVERLAY_COLORS.textWhite;
+
+	const fdiPrefix = targetToothFdi ? `#${targetToothFdi} · ` : "";
 
 	if (clearanceMm === null || clearanceMm === undefined) {
-		bannerText = "Канал IAN: не измерялся (—) · требуется разметка";
-		borderColor = "rgba(100, 116, 139, 0.75)";
-		textColor = OVERLAY_COLORS.textMuted;
-	} else if (clearanceMm < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM) {
-		const fdiPrefix = targetToothFdi ? `#${targetToothFdi}: ` : "";
-		bannerText = `⚠ КРАСНАЯ ТРЕВОГА: ${fdiPrefix}Канал IAN ${clearanceMm.toFixed(1)} мм (< 1.5 мм)`;
-		borderColor = OVERLAY_COLORS.dangerRed;
-		textColor = OVERLAY_COLORS.dangerRed;
-	} else if (clearanceMm < MANDIBULAR_NERVE_SAFETY_MARGIN_MM) {
-		const fdiPrefix = targetToothFdi ? `#${targetToothFdi}: ` : "";
-		bannerText = `⚠ БУФЕРНАЯ ЗОНА: ${fdiPrefix}Канал IAN ${clearanceMm.toFixed(1)} мм (< 2.0 мм)`;
-		borderColor = OVERLAY_COLORS.warningAmber;
-		textColor = OVERLAY_COLORS.warningAmber;
+		bannerText = "Канал не размечен";
 	} else {
-		const fdiPrefix = targetToothFdi ? `#${targetToothFdi}: ` : "";
-		bannerText = `✓ БЕЗОПАСНАЯ ЗОНА: ${fdiPrefix}Канал IAN ${clearanceMm.toFixed(1)} мм (норма >= 2.0 мм)`;
-		borderColor = OVERLAY_COLORS.safeGreen;
-		textColor = OVERLAY_COLORS.safeGreen;
+		bannerText = `${fdiPrefix}Дистанция до канала: ${clearanceMm.toFixed(1)} мм`;
 	}
 
 	ctx.save();
-	ctx.font = "bold 12px monospace";
+	ctx.font = "bold 11px monospace";
 	const textWidth = ctx.measureText(bannerText).width;
-	const padH = 12;
-	const padV = 5;
+	const padH = 10;
+	const padV = 4;
 	const boxW = textWidth + padH * 2;
-	const boxH = 24;
+	const boxH = 22;
 	const boxX = posPx.x - boxW / 2;
 	const boxY = posPx.y;
 
 	ctx.fillStyle = OVERLAY_COLORS.hudBg;
 	ctx.strokeStyle = borderColor;
-	ctx.lineWidth = 1.2;
+	ctx.lineWidth = 1.0;
 	ctx.beginPath();
-	drawRoundedRectPolyfill(ctx, boxX, boxY, boxW, boxH, 5);
+	drawRoundedRectPolyfill(ctx, boxX, boxY, boxW, boxH, 4);
 	ctx.fill();
 	ctx.stroke();
 

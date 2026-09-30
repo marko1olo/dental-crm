@@ -81,67 +81,20 @@ export interface CbctMprViewportsGridProps {
 }
 
 export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
-	isSidebarOpen,
-	mobileActiveTab,
-	onSelectMobileTab,
-	hoveredViewport,
-	onHoverViewport,
-	showEdgeRulers = false,
-	volume,
-	dicomLoadingStatus,
-	dicomProgress,
-	maximizedViewport,
-	viewLayout,
-	studioMode,
-	onSelectStudioMode,
-	folderInputRef,
-	zipInputRef,
-	handleDicomFilesChange,
-	onLoadDemoVolume,
-	activeViewport,
-	setActiveViewport,
-	handleToggleMaximize,
-	axialBaseCanvasRef,
-	axialOverlayCanvasRef,
-	coronalBaseCanvasRef,
-	coronalOverlayCanvasRef,
-	sagittalBaseCanvasRef,
-	sagittalOverlayCanvasRef,
-	panoBaseCanvasRef,
-	panoOverlayCanvasRef,
-	crossSectionBaseCanvasRef,
-	crossSectionOverlayCanvasRef,
-	handleCanvasDoubleClick,
-	handleCanvasMouseDown,
-	handleCanvasMouseMove,
-	handleCanvasMouseUp,
-	handleCanvasWheel,
-	getCanvasCursor,
-	crosshairMm,
-	currentVoxel,
-	slabMode,
-	slabThicknessMm,
-	obliqueAngles,
-	setObliqueAngles,
-	handleFullResetViewport,
-	activeRotationHandle,
-	isShiftRotating,
-	hoveredHandle,
-	transforms,
-	windowWidth,
-	windowLevel,
-	renderViewportOverlays,
-	handlePanoMouseDown,
-	handlePanoMouseMove,
-	handlePanoMouseUp,
-	handleCrossSectionMouseDown,
-	handleCrossSectionMouseMove,
-	handleCrossSectionMouseUp,
-	dragImplantPart,
-	hoveredImplantPart,
-	activeCrossSection,
-	activeCrossSectionIdx,
-	crossSections,
+	isSidebarOpen, mobileActiveTab, onSelectMobileTab, hoveredViewport, onHoverViewport,
+	showEdgeRulers = false, volume, dicomLoadingStatus, dicomProgress, maximizedViewport,
+	viewLayout, studioMode, onSelectStudioMode, folderInputRef, zipInputRef,
+	handleDicomFilesChange, onLoadDemoVolume, activeViewport, setActiveViewport, handleToggleMaximize,
+	axialBaseCanvasRef, axialOverlayCanvasRef, coronalBaseCanvasRef, coronalOverlayCanvasRef,
+	sagittalBaseCanvasRef, sagittalOverlayCanvasRef, panoBaseCanvasRef, panoOverlayCanvasRef,
+	crossSectionBaseCanvasRef, crossSectionOverlayCanvasRef,
+	handleCanvasDoubleClick, handleCanvasMouseDown, handleCanvasMouseMove, handleCanvasMouseUp,
+	handleCanvasWheel, getCanvasCursor, crosshairMm, currentVoxel, slabMode, slabThicknessMm,
+	obliqueAngles, setObliqueAngles, handleFullResetViewport, activeRotationHandle, isShiftRotating,
+	hoveredHandle, transforms, windowWidth, windowLevel, renderViewportOverlays,
+	handlePanoMouseDown, handlePanoMouseMove, handlePanoMouseUp,
+	handleCrossSectionMouseDown, handleCrossSectionMouseMove, handleCrossSectionMouseUp,
+	dragImplantPart, hoveredImplantPart, activeCrossSection, activeCrossSectionIdx, crossSections,
 }) => {
 	// 4th Quadrant display mode: defaults to "volume3d" so the surgeon immediately sees the 3D Skull in MPR
 	const [fourthQuadrantMode, setFourthQuadrantMode] = useState<"volume3d" | "panoramic">("volume3d");
@@ -190,6 +143,82 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		};
 	}, [isDraggingSplitter]);
 
+	// ─── 60 FPS REQUEST ANIMATION FRAME EVENT THROTTLER ─────────────────────────
+	const pendingMouseMoveRef = useRef<{ plane: MprPlane; nativeEvent: React.MouseEvent<HTMLCanvasElement> } | null>(null);
+	const rafMouseMoveIdRef = useRef<number | null>(null);
+	const pendingWheelRef = useRef<{ viewport: CbctViewportType; nativeEvent: React.WheelEvent<HTMLCanvasElement>; accumulatedDeltaY: number } | null>(null);
+	const rafWheelIdRef = useRef<number | null>(null);
+
+	const handleThrottledMouseMove = (plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => {
+		e.persist?.();
+		pendingMouseMoveRef.current = { plane, nativeEvent: e };
+		if (rafMouseMoveIdRef.current === null) {
+			rafMouseMoveIdRef.current = requestAnimationFrame(() => {
+				rafMouseMoveIdRef.current = null;
+				if (pendingMouseMoveRef.current) {
+					const { plane: targetPlane, nativeEvent } = pendingMouseMoveRef.current;
+					pendingMouseMoveRef.current = null;
+					handleCanvasMouseMove(targetPlane, nativeEvent);
+				}
+			});
+		}
+	};
+
+	const handleThrottledMouseUp = () => {
+		if (rafMouseMoveIdRef.current !== null) {
+			cancelAnimationFrame(rafMouseMoveIdRef.current);
+			rafMouseMoveIdRef.current = null;
+		}
+		if (pendingMouseMoveRef.current) {
+			const { plane: targetPlane, nativeEvent } = pendingMouseMoveRef.current;
+			pendingMouseMoveRef.current = null;
+			handleCanvasMouseMove(targetPlane, nativeEvent);
+		}
+		handleCanvasMouseUp();
+	};
+
+	const handleThrottledWheel = (viewport: CbctViewportType, e: React.WheelEvent<HTMLCanvasElement>) => {
+		e.preventDefault();
+		e.persist?.();
+		const prevDelta = pendingWheelRef.current?.accumulatedDeltaY ?? 0;
+		const accumulatedDeltaY = prevDelta + e.deltaY;
+		pendingWheelRef.current = { viewport, nativeEvent: e, accumulatedDeltaY };
+
+		if (rafWheelIdRef.current === null) {
+			rafWheelIdRef.current = requestAnimationFrame(() => {
+				rafWheelIdRef.current = null;
+				if (pendingWheelRef.current) {
+					const { viewport: targetVp, nativeEvent, accumulatedDeltaY: deltaY } = pendingWheelRef.current;
+					pendingWheelRef.current = null;
+					const syntheticEvent = Object.create(nativeEvent, {
+						deltaY: { value: deltaY, writable: false },
+					});
+					handleCanvasWheel(targetVp, syntheticEvent);
+				}
+			});
+		}
+	};
+
+	useEffect(() => {
+		return () => {
+			if (rafMouseMoveIdRef.current !== null) {
+				cancelAnimationFrame(rafMouseMoveIdRef.current);
+				rafMouseMoveIdRef.current = null;
+			}
+			if (rafWheelIdRef.current !== null) {
+				cancelAnimationFrame(rafWheelIdRef.current);
+				rafWheelIdRef.current = null;
+			}
+		};
+	}, []);
+
+	useEffect(() => {
+		if (!activeRotationHandle && !isShiftRotating) return;
+		const handleGlobalPointerUp = () => handleThrottledMouseUp();
+		window.addEventListener("pointerup", handleGlobalPointerUp);
+		return () => window.removeEventListener("pointerup", handleGlobalPointerUp);
+	}, [activeRotationHandle, isShiftRotating, handleCanvasMouseUp]);
+
 	const renderAxialViewport = (extraClassName = "flex-1 flex flex-col") => (
 		<div
 			onDoubleClick={() => handleToggleMaximize("axial")}
@@ -212,12 +241,14 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					ref={axialOverlayCanvasRef}
 					onDoubleClick={(e) => handleCanvasDoubleClick("axial", e)}
 					onMouseDown={(e) => handleCanvasMouseDown("axial", e)}
-					onMouseMove={(e) => handleCanvasMouseMove("axial", e)}
-					onMouseUp={handleCanvasMouseUp}
-					onWheel={(e) => handleCanvasWheel("axial", e)}
+					onMouseMove={(e) => handleThrottledMouseMove("axial", e)}
+					onMouseUp={handleThrottledMouseUp}
+					onMouseLeave={handleThrottledMouseUp}
+					onWheel={(e) => handleThrottledWheel("axial", e)}
 					onContextMenu={(e) => e.preventDefault()}
 					style={{ cursor: getCanvasCursor("axial") }}
 					className="absolute inset-0 w-full h-full object-contain z-10"
+					data-testid="cbct-overlay-canvas-axial"
 				/>
 				<CbctViewportHud
 					viewportType="axial"
@@ -266,12 +297,14 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					ref={coronalOverlayCanvasRef}
 					onDoubleClick={(e) => handleCanvasDoubleClick("coronal", e)}
 					onMouseDown={(e) => handleCanvasMouseDown("coronal", e)}
-					onMouseMove={(e) => handleCanvasMouseMove("coronal", e)}
-					onMouseUp={handleCanvasMouseUp}
-					onWheel={(e) => handleCanvasWheel("coronal", e)}
+					onMouseMove={(e) => handleThrottledMouseMove("coronal", e)}
+					onMouseUp={handleThrottledMouseUp}
+					onMouseLeave={handleThrottledMouseUp}
+					onWheel={(e) => handleThrottledWheel("coronal", e)}
 					onContextMenu={(e) => e.preventDefault()}
 					style={{ cursor: getCanvasCursor("coronal") }}
 					className="absolute inset-0 w-full h-full object-contain z-10"
+					data-testid="cbct-overlay-canvas-coronal"
 				/>
 				<CbctViewportHud
 					viewportType="coronal"
@@ -320,12 +353,14 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					ref={sagittalOverlayCanvasRef}
 					onDoubleClick={(e) => handleCanvasDoubleClick("sagittal", e)}
 					onMouseDown={(e) => handleCanvasMouseDown("sagittal", e)}
-					onMouseMove={(e) => handleCanvasMouseMove("sagittal", e)}
-					onMouseUp={handleCanvasMouseUp}
-					onWheel={(e) => handleCanvasWheel("sagittal", e)}
+					onMouseMove={(e) => handleThrottledMouseMove("sagittal", e)}
+					onMouseUp={handleThrottledMouseUp}
+					onMouseLeave={handleThrottledMouseUp}
+					onWheel={(e) => handleThrottledWheel("sagittal", e)}
 					onContextMenu={(e) => e.preventDefault()}
 					style={{ cursor: getCanvasCursor("sagittal") }}
 					className="absolute inset-0 w-full h-full object-contain z-10"
+					data-testid="cbct-overlay-canvas-sagittal"
 				/>
 				<CbctViewportHud
 					viewportType="sagittal"

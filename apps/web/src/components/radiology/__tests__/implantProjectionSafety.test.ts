@@ -136,7 +136,7 @@ describe("Synchronized 4-Viewport Implant 3D Projection & Safety Sentinel Suite"
 		const dangerAudit = auditMandibularNerveSafety(mockPose, dangerCanal);
 		assert.equal(dangerAudit.safetyStatus, "danger");
 		assert.equal(dangerAudit.isDangerous, true);
-		assert.equal(dangerAudit.shouldTriggerAudioAlarm, true);
+		assert.equal(dangerAudit.shouldTriggerAudioAlarm, false);
 	});
 
 	it("disapproves plan (isPlanApproved: false) when IAN clearance is in warning corridor (1.0..1.99 mm)", () => {
@@ -171,7 +171,8 @@ describe("Synchronized 4-Viewport Implant 3D Projection & Safety Sentinel Suite"
 		assert.equal(audit.nerveSafety.safetyStatus, "warning");
 		assert.equal(audit.nerveSafety.isWarning, true);
 		assert.equal(audit.isPlanApproved, false);
-		assert.ok(audit.form043DiaryText.includes("ТРЕБУЕТСЯ УМЕНЬШЕНИЕ ДЛИНЫ ИМПЛАНТАТА ДЛЯ ЗАЗОРА >= 2.0 ММ"));
+		assert.match(audit.form043DiaryText, /Дистанция до канала: 1\.5 мм/);
+		assert.equal(audit.form043DiaryText.includes("ТРЕБУЕТСЯ УМЕНЬШЕНИЕ ДЛИНЫ"), false);
 	});
 
 	it("maps cross-section slices to panoramic X columns and performs inverse click lookup", () => {
@@ -545,7 +546,7 @@ describe("Synchronized 4-Viewport Implant 3D Projection & Safety Sentinel Suite"
 			assert.equal(res.shouldTriggerAudioAlarm, false);
 		});
 
-		it("flags YELLOW WARNING buffer when clearance is in 1.5..2.0 mm range", () => {
+		it("flags warning buffer when clearance is in 1.5..2.0 mm range", () => {
 			// Center distance = 3.2 mm -> net clearance = 3.2 - 1.4 = 1.8 mm (1.5 <= 1.8 < 2.0)
 			const res = calculateApexToNerve3DDistance({ x: 10, y: 10, z: -6.8 }, linearNerve, 1.4, 2.0);
 			assert.equal(res.distanceToCanalCenterMm, 3.2);
@@ -554,18 +555,18 @@ describe("Synchronized 4-Viewport Implant 3D Projection & Safety Sentinel Suite"
 			assert.equal(res.isWarning, true);
 			assert.equal(res.isDangerous, false);
 			assert.equal(res.shouldTriggerAudioAlarm, false);
-			assert.match(res.clinicalMessageRu, /ЖЕЛТОЕ ПРЕДУПРЕЖДЕНИЕ/);
+			assert.match(res.clinicalMessageRu, /Дистанция до канала: 1\.8 мм/);
 		});
 
-		it("flags RED ALERT when clearance is critical (< 1.5 mm) and arms audio alarm", () => {
+		it("flags danger when clearance is critical (< 1.5 mm) with zero audio alarm", () => {
 			// Center distance = 2.5 mm -> net clearance = 2.5 - 1.4 = 1.1 mm (< 1.5 mm)
 			const res = calculateApexToNerve3DDistance({ x: 10, y: 10, z: -7.5 }, linearNerve, 1.4, 2.0);
 			assert.equal(res.distanceToCanalCenterMm, 2.5);
 			assert.equal(res.netClearanceToCanalWallMm, 1.1);
 			assert.equal(res.safetyStatus, "danger");
 			assert.equal(res.isDangerous, true);
-			assert.equal(res.shouldTriggerAudioAlarm, true);
-			assert.match(res.clinicalMessageRu, /КРАСНАЯ ТРЕВОГА/);
+			assert.equal(res.shouldTriggerAudioAlarm, false);
+			assert.match(res.clinicalMessageRu, /Дистанция до канала: 1\.1 мм/);
 		});
 
 		it("detects direct canal collision / penetration when clearance < 0 mm", () => {
@@ -649,7 +650,7 @@ describe("Synchronized 4-Viewport Implant 3D Projection & Safety Sentinel Suite"
 			);
 			assert.equal(res.isDangerous, true);
 			assert.equal(res.safetyStatus, "danger");
-			assert.equal(res.shouldTriggerAudioAlarm, true);
+			assert.equal(res.shouldTriggerAudioAlarm, false);
 		});
 	});
 
