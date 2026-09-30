@@ -275,19 +275,20 @@ export const NerveCanal = createDentalIcon(
   </>
 );
 
-// 17. DentalHandpiece — Стоматологический турбинный наконечник
+// 17. DentalHandpiece — Стоматологический турбинный наконечник (MK-dent Eco Line)
 export const DentalHandpiece = createDentalIcon(
   "DentalHandpiece",
   "lucide-dental-handpiece",
   <>
-    <path d="M3 20l5.5-5.5c1.2-1.2 2.5-1.5 4-1.5l3.5-1" />
-    <path d="M4.5 21.5l5.5-5.5c1-1 2.2-1.2 3.5-1.2l2.5-.8" />
-    <path d="M3 20c-.7.7-.7 1.8 0 2.5s1.8.7 2.5 0" />
-    <circle cx="7" cy="18" r=".6" fill="currentColor" />
-    <rect x="16" y="5.5" width="5.5" height="6.5" rx="1.2" />
-    <path d="M17.25 5.5c0-1.2.7-2 1.5-2s1.5.8 1.5 2" />
-    <line x1="18.75" y1="12" x2="18.75" y2="14.5" />
-    <rect x="18" y="14.5" width="1.5" height="6" rx=".75" />
+    <line x1="9.5" y1="20" x2="14.5" y2="20" />
+    <line x1="10" y1="22.5" x2="14" y2="22.5" />
+    <line x1="12" y1="22.5" x2="12" y2="23.5" />
+    <path d="M10 20 L10 16 C9.8 12.5 9.2 9 11 5.5" />
+    <path d="M14 20 L14 16 C13.8 12.5 12.2 9 13.5 5.5" />
+    <rect x="11.2" y="2.6" width="3.8" height="4.6" rx="1.2" transform="rotate(18 13.1 4.9)" />
+    <line x1="14" y1="2.2" x2="15.8" y2="2.8" strokeWidth="2" />
+    <line x1="11" y1="5.6" x2="7" y2="4" />
+    <circle cx="6.4" cy="3.8" r="1.1" fill="currentColor" />
   </>
 );
 

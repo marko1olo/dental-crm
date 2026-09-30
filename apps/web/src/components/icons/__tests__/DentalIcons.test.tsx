@@ -214,23 +214,27 @@ test("DentalIcons: Red Team visual polish invariants for top-5 audited icons", (
     "NerveCanal must have anatomical mandible bone contour"
   );
 
-  // 8. DentalHandpiece: contra-angle neck + miniature rotor head + push-button cap + FG diamond bur
+  // 8. DentalHandpiece: MK-dent photo replica (Midwest coupling + S-curve handle + 18° rotor head + push-button + FG bur)
   const handpieceHtml = renderToStaticMarkup(React.createElement(DentalHandpiece));
   assert.ok(
-    handpieceHtml.includes('x="16" y="5.5" width="5.5" height="6.5"'),
-    "DentalHandpiece must have miniature cylindrical rotor head"
+    handpieceHtml.includes('width="3.8" height="4.6"'),
+    "DentalHandpiece must have proportional miniature rotor head"
   );
   assert.ok(
-    handpieceHtml.includes('d="M17.25 5.5c0-1.2.7-2 1.5-2s1.5.8 1.5 2"'),
-    "DentalHandpiece must have push-button chuck dome cap"
+    handpieceHtml.includes('x1="14" y1="2.2" x2="15.8" y2="2.8"'),
+    "DentalHandpiece must have low-profile push-button cap"
   );
   assert.ok(
-    handpieceHtml.includes('x1="18.75" y1="12" x2="18.75" y2="14.5"'),
-    "DentalHandpiece must have FG bur shank"
+    handpieceHtml.includes('x1="11" y1="5.6" x2="7" y2="4"'),
+    "DentalHandpiece must have FG diamond bur shank"
   );
   assert.ok(
-    handpieceHtml.includes('x="18" y="14.5" width="1.5" height="6"'),
-    "DentalHandpiece must have cylindrical FG diamond bur head"
+    handpieceHtml.includes('cx="6.4" cy="3.8"'),
+    "DentalHandpiece must have spherical diamond bur tip"
+  );
+  assert.ok(
+    handpieceHtml.includes('x1="9.5" y1="20" x2="14.5" y2="20"'),
+    "DentalHandpiece must have Midwest quick-coupling collar"
   );
 
   // 9. UltrasonicScaler: straight handpiece + sickle scaler tip + vibration waves
