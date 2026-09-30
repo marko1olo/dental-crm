@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
-	Armchair,
 	Syringe,
 	Plus,
 	AlertCircle,
@@ -13,6 +12,7 @@ import {
 	Calendar,
 	ArrowRightLeft,
 } from "lucide-react";
+import { DentalChairUnit } from "../icons/DentalIcons";
 import {
 	type DoctorChairSession,
 	type ChairSessionStatus,
@@ -115,7 +115,7 @@ export function ChairSwitcherBar({
 			{/* Вкладки параллельных кресел врача */}
 			<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none flex-nowrap shrink-0 [scrollbar-width:none]">
 				<div className="flex items-center gap-1 px-1.5 py-0.5 text-xs font-bold text-[var(--muted)] shrink-0">
-					<Armchair size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+					<DentalChairUnit size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 					<span className="hidden md:inline">Кресла:</span>
 				</div>
 

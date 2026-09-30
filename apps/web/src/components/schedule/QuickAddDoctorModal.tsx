@@ -3,12 +3,12 @@ import {
 	UserPlus,
 	X,
 	Check,
-	Armchair,
 	Phone,
 	Stethoscope,
 	Palette,
 	Pin,
 } from "lucide-react";
+import { DentalChairUnit } from "../icons/DentalIcons";
 import type { DentalSpecialty, StaffRole } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
@@ -368,7 +368,7 @@ export function QuickAddDoctorModal({
 							htmlFor="quick-doctor-preferred-chair"
 							className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5"
 						>
-							<Armchair className="w-3.5 h-3.5 text-[var(--teal)]" />
+							<DentalChairUnit className="w-3.5 h-3.5 text-[var(--teal)]" />
 							<span>Закрепленное кресло</span>
 						</label>
 						<select

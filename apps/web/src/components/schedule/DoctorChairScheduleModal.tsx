@@ -12,7 +12,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import {
-	Armchair,
 	CalendarRange,
 	Check,
 	Clock,
@@ -22,6 +21,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
+import { DentalChairUnit } from "../icons/DentalIcons";
 import {
 	CHAIR_SHIFT_PRESETS,
 	type ChairDoctorShiftAssignment,
@@ -386,7 +386,7 @@ export const DoctorChairScheduleModal: React.FC<DoctorChairScheduleModalProps> =
 				<div className="flex items-center justify-between gap-3 border-b border-[var(--line,#e2e8f0)] pb-3">
 					<div className="flex items-center gap-2.5">
 						<div className="w-10 h-10 rounded-2xl bg-[var(--teal-soft,#ccfbf1)] border border-[var(--teal,#0d9488)]/30 flex items-center justify-center text-[var(--teal,#0d9488)] shrink-0">
-							<Armchair size={20} />
+							<DentalChairUnit size={20} />
 						</div>
 						<div className="min-w-0">
 							<h3

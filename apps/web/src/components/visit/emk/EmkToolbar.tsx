@@ -1,15 +1,18 @@
 import React from "react";
 import {
-	Activity,
-	AlertTriangle,
 	Calendar,
 	Check,
 	ChevronDown,
-	FileText,
-	Scissors,
 	Sparkles,
 	Tag,
 } from "lucide-react";
+import {
+	UltrasonicScaler,
+	ToothCaries,
+	ToothPulpitis,
+	EndoFileCanal,
+	ToothExtractForceps,
+} from "../../icons/DentalIcons";
 import { CLINICAL_SOAP_PRESETS, type ClinicalSoapPreset } from "../clinicalSoapPresets";
 
 export interface EmkToolbarProps {
@@ -135,7 +138,7 @@ export function EmkToolbar({
 						onClick={() => onApplySoapPreset(hygienePreset)}
 						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
 					>
-						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+						<UltrasonicScaler className="w-3.5 h-3.5 text-teal-500 shrink-0" />
 						<span className="whitespace-nowrap shrink-0 min-w-max">Гигиена</span>
 					</button>
 				)}
@@ -147,7 +150,7 @@ export function EmkToolbar({
 						onClick={() => onApplySoapPreset(cariesPreset)}
 						className="shrink-0 flex-shrink-0 min-h-[44px] sm:min-h-[28px] h-11 sm:h-7 px-2 py-0 text-xs font-bold rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shadow-2xs min-w-max"
 					>
-						<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+						<ToothCaries className="w-3.5 h-3.5 text-blue-500 shrink-0" />
 						<span className="whitespace-nowrap shrink-0 min-w-max">Кариес</span>
 					</button>
 				)}
@@ -183,7 +186,7 @@ export function EmkToolbar({
 									}}
 									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
 								>
-									<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+									<ToothPulpitis className="w-3.5 h-3.5 text-amber-500 shrink-0" />
 									<span>Острый пульпит (K04.0)</span>
 								</button>
 							)}
@@ -197,7 +200,7 @@ export function EmkToolbar({
 									}}
 									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
 								>
-									<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+									<EndoFileCanal className="w-3.5 h-3.5 text-rose-500 shrink-0" />
 									<span>Хронический периодонтит (K04.5)</span>
 								</button>
 							)}
@@ -211,7 +214,7 @@ export function EmkToolbar({
 									}}
 									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
 								>
-									<Scissors className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+									<ToothExtractForceps className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
 									<span>Удаление зуба (K04.8)</span>
 								</button>
 							)}

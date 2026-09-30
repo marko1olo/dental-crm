@@ -9,7 +9,8 @@
 
 import React from "react";
 import type { Dashboard, ResourceLoad } from "@dental/shared";
-import { Users, UserCheck, Armchair, AlertCircle } from "lucide-react";
+import { Users, UserCheck, AlertCircle } from "lucide-react";
+import { DentalChairUnit } from "../icons/DentalIcons";
 
 export interface ScheduleShiftWarning {
 	id: string;
@@ -98,7 +99,7 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 			<article className="min-w-0 flex flex-col justify-between" data-testid="analytics-card-chairs">
 				<div className="flex items-center justify-between gap-1">
 					<span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)]">
-						<Armchair size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" aria-hidden="true" />
+						<DentalChairUnit size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" aria-hidden="true" />
 						Кресла
 					</span>
 					<strong className="text-base font-bold text-[var(--ink)]">

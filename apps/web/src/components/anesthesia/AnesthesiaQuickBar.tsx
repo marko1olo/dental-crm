@@ -1,7 +1,6 @@
 import type React from "react";
 import { useState, useMemo, useRef, useEffect } from "react";
 import {
-	Syringe,
 	AlertTriangle,
 	Heart,
 	Plus,
@@ -9,9 +8,9 @@ import {
 	ShieldAlert,
 	Activity,
 	Trash2,
-	Zap,
 	MoreHorizontal,
 } from "lucide-react";
+import { DentalSyringe } from "../icons/DentalIcons";
 import {
 	type AnestheticDrugId,
 	DENTAL_ANESTHETICS,
@@ -416,7 +415,7 @@ export function AnesthesiaQuickBar({
 			{/* ── Top Bar: Title & Somatic Tags & Weight & Configure ── */}
 			<div className="anesthesia-quick-bar-header">
 				<div className="anesthesia-quick-bar-title">
-					<Syringe size={16} className="anesthesia-icon-accent shrink-0" />
+					<DentalSyringe size={16} className="anesthesia-icon-accent shrink-0" />
 					<span className="font-bold text-xs sm:text-sm">{`Анестезия (МДД по массе тела ${patientWeightKg} кг):`}</span>
 					{isCardioRisk && (
 						<span className="anesthesia-cardio-tag" title="Кардиоваскулярный риск: лимит адреналина 0.04 мг">
@@ -560,7 +559,7 @@ export function AnesthesiaQuickBar({
 						title="1 клик норма: Артикаин 4% 1:100 000 (1.7 мл), аспирация (-), аллергий нет"
 						data-testid="anesthesia-dose-norm-preset"
 					>
-						<Zap size={14} className="text-amber-500 dark:text-amber-300 shrink-0" />
+						<DentalSyringe size={14} className="text-amber-500 dark:text-amber-300 shrink-0" />
 						<span>Норма: Артикаин 1:100k (1.7 мл)</span>
 					</button>
 
@@ -573,7 +572,7 @@ export function AnesthesiaQuickBar({
 						title="1 клик: Мандибулярная + инфильтрационная 1.7 мл Ультракаин Д-С Форте (2-пл. аспирация отр.)"
 						data-testid="anesthesia-preset-mandibular-infiltration-ultracaine-forte"
 					>
-						<Zap size={14} className="text-teal-500 shrink-0" />
+						<DentalSyringe size={14} className="text-teal-500 shrink-0" />
 						<span>Мандибулярная + инфильтр. 1.7 мл</span>
 					</button>
 
@@ -650,7 +649,7 @@ export function AnesthesiaQuickBar({
 									className="w-full inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-surface)] transition-colors cursor-pointer"
 									data-testid="anesthesia-dose-1carp-articaine-100k"
 								>
-									<Zap size={14} className="text-emerald-500 shrink-0" />
+									<DentalSyringe size={14} className="text-emerald-500 shrink-0" />
 									<span>1 карп. Артикаин 1:100k (1.7 мл)</span>
 								</button>
 								<button
@@ -663,7 +662,7 @@ export function AnesthesiaQuickBar({
 									className="w-full inline-flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-surface)] transition-colors cursor-pointer"
 									data-testid="anesthesia-preset-infiltration-septanest"
 								>
-									<Zap size={14} className="text-cyan-500 shrink-0" />
+									<DentalSyringe size={14} className="text-cyan-500 shrink-0" />
 									<span>Инфильтрация 1.7 мл (Септанест)</span>
 								</button>
 								<button

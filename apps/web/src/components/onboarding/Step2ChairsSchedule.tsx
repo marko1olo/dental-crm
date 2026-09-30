@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { WEEKDAY_LABELS } from "@dental/shared";
 import {
-	Armchair,
 	Clock,
 	Info,
 	Plus,
 	ShieldCheck,
 	Trash2,
 } from "lucide-react";
+import { DentalChairUnit } from "../icons/DentalIcons";
 import { useOnboardingStore } from "../../store/onboardingStore";
 
 export function Step2ChairsSchedule() {
@@ -37,7 +37,7 @@ export function Step2ChairsSchedule() {
 		<div className="onboarding-step-body animate-fade-in">
 			<div className="step-intro-header">
 				<div className="step-intro-badge">
-					<Armchair size={14} aria-hidden="true" />
+					<DentalChairUnit size={14} aria-hidden="true" />
 					<span>Шаг 2 из 3: Оснащение</span>
 				</div>
 				<h3>Стоматологические кресла и часы работы</h3>

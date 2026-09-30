@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Plus, X, Check, Armchair, Copy } from "lucide-react";
+import { Plus, X, Check, Copy } from "lucide-react";
+import { DentalChairUnit } from "../icons/DentalIcons";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
@@ -348,7 +349,7 @@ export function QuickAddChairModal({
 				<div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between shrink-0">
 					<div className="flex items-center gap-3">
 						<div className="w-10 h-10 rounded-2xl bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] flex items-center justify-center border border-[var(--teal,#0d9488)]/20 shrink-0">
-							<Armchair className="w-5 h-5" aria-hidden="true" />
+							<DentalChairUnit className="w-5 h-5" aria-hidden="true" />
 						</div>
 						<div>
 							<h2
