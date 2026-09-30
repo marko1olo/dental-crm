@@ -382,7 +382,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 				<header className="acceptance-modal-header">
 					<div className="acceptance-modal-title">
 						<FileDown size={20} style={{ color: "var(--teal, #0d9488)" }} />
-						<span>Приходная накладная</span>
+						<span>Приходная накладная поставщика</span>
 						<span
 							style={{
 								fontSize: 11,
@@ -392,6 +392,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 								color: "var(--teal, #0d9488)",
 								fontWeight: 700,
 							}}
+							data-mandate="Мандаты 8e / 8n"
 						>
 							FEFO контроль
 						</span>
