@@ -2,48 +2,18 @@
  * TreatmentPlanPresenterModal.tsx — Интерактивная студия презентации планов лечения пациенту у кресла
  * (Wave 19: Chairside Treatment Plan Presenter & Official Appendix #1 Generator).
  *
- * ВОЗМОЖНОСТИ:
- * 1. 3-колоночная презентационная таблица («Вариант А: Эконом / Вариант Б: Оптимум / Вариант В: Премиум»)
- *    с ярким бейджем «Рекомендация врача» на оптимальном варианте.
- * 2. Раскрывающиеся клинические этапы (Этап 1: Терапия/Санация, Этап 2: Хирургия, Этап 3: Ортопедия)
- *    со сроками в неделях, числом визитов и суммами в рублях.
- * 3. Динамическая кнопка фиксации выбора: [Пациент выбрал Вариант Б: Оптимум (184 000 ₽)].
- * 4. 1-клик печать официального Приложения №1 к Договору по Постановлению Правительства РФ № 736
- *    (Смета и план лечения) с перечнем услуг по Номенклатуре 804н, зубами FDI 11–48 и местом для подписей.
- * 5. Точный расчет вычета 13% НДФЛ (Код 01 / Код 02) и рассрочки 0% без переплат (3, 6, 12, 24 мес).
- * 6. Полная поддержка темной/светлой темы на токенах DENTE и сенсорных экранов (Chairside Tablet).
+ * Декомпозирован строго по Мандату 8b (лимит строк <= 800 строк на файл):
+ * - treatmentPlanConsumables.ts — фильтрация микро-расходников (isMicroConsumable)
+ * - TreatmentPlanPresenterHeader.tsx — шапка презентации и табы навигации
+ * - TreatmentPlanPresenterToolsStrip.tsx — кресельная панель инструментов врача
+ * - TreatmentPlanPresenterComparisonTab.tsx — 3-Tier сравнение («Эконом», «Оптимум», «Премиум»)
+ * - TreatmentPlanPresenterStagesTab.tsx — детальный просмотр клинических этапов
+ * - TreatmentPlanPresenterFinanceTab.tsx — рассрочка 0% и 13% вычет НДФЛ
+ * - TreatmentPlanPresenterPrintView.tsx — печать Приложения №1 к Договору (ПП РФ № 736)
+ * - TreatmentPlanPresenterAiAuditTab.tsx — ИИ-аудит и студия кресельного комментария
  */
 
 import React, { useMemo, useState, useEffect } from "react";
-import {
-	AlertCircle,
-	Bot,
-	Calendar,
-	Check,
-	CheckCircle2,
-	ChevronDown,
-	ChevronUp,
-	Clock,
-	Coins,
-	Copy,
-	CreditCard,
-	FileCheck2,
-	FileSignature,
-	FileText,
-	Layers,
-	Maximize2,
-	Minimize2,
-	Package,
-	Percent,
-	Printer,
-	Send,
-	ShieldCheck,
-	Sparkles,
-	Star,
-	Tablet,
-	User,
-	X,
-} from "lucide-react";
 import {
 	type Kopecks,
 	parseKopecks,
@@ -62,21 +32,15 @@ import {
 	type TreatmentPlanWorkflowStatus,
 } from "./types";
 import type { ToothData } from "../odontogram/ToothChart";
-import { AuthArtBackground } from "../auth/AuthArtBackground";
 import {
 	generate3TierPlanComparison,
 	computeTierInstallments,
-	isDemoShowcaseMode,
 } from "./treatmentPlanStagesEngine";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { MissingPriceAlert } from "./MissingPriceAlert";
 import {
 	applyCopilotCommandToPlan,
-	COPILOT_PRESET_ACTIONS,
 	type CopilotCommandType,
 	requestTreatmentPlanAiValidationAndComment,
 } from "../../services/ai/treatmentPlanCopilot";
-import { ClinicalBundlesPanel } from "./ClinicalBundlesPanel";
 import {
 	applyClinicalBundleToTier,
 	getClinicalBundleById,
@@ -85,71 +49,17 @@ import {
 import "./treatmentPlans.css";
 import { TreatmentPlanRoadmap } from "./TreatmentPlanRoadmap";
 import { showToast } from "../GlobalToast";
+import { isMicroConsumable, type PlanItemLike } from "./treatmentPlanConsumables";
+export { isMicroConsumable, type PlanItemLike };
 
-export interface PlanItemLike {
-	readonly name?: string | undefined;
-	readonly category?: string | undefined;
-	readonly code804n?: string | undefined;
-	readonly priceRub?: number | undefined;
-	readonly unitPriceRub?: number | undefined;
-}
-
-const CONSUMABLE_PATTERNS = [
-	/валик/i,
-	/салфетк/i,
-	/перчатк/i,
-	/слюноотсос/i,
-	/шприц/i,
-	/бахил/i,
-	/маск[а-я]*/i,
-	/микробраш/i,
-	/брашик/i,
-	/аппликатор.*браш/i,
-	/нагрудник/i,
-	/стаканчик/i,
-	/канюл/i,
-	/ватн.*шарик/i,
-	/ватн.*тампон/i,
-	/ватн.*валик/i,
-	/тампон/i,
-	/лоток.*одноразов/i,
-	/игла.*карпульн/i,
-	/игла.*одноразов/i,
-	/карпул/i,
-	/дезинфекц/i,
-	/антисептик/i,
-	/простын.*одноразов/i,
-	/коффердам.*завеса/i,
-	/индивидуальный гигиенический набор/i,
-	/асептический комплект/i,
-	/индивидуальный.*набор/i,
-	/расходные материалы/i,
-	/одноразовый комплект/i,
-	/насадк.*одноразов/i,
-	/чехол.*одноразов/i,
-	/позиционер.*чехол/i,
-];
-
-/**
- * Returns true if the plan item is a minor consumable that should be hidden by default in patient presentations.
- * Mandate 8e / Section VII: Чистый показ пациенту (скрывать микро-расходники).
- */
-export function isMicroConsumable(item: PlanItemLike): boolean {
-	const name = item.name ?? "";
-	if (!name) return false;
-
-	const nameMatches = CONSUMABLE_PATTERNS.some((pattern) => pattern.test(name));
-	const category = (item.category ?? "").toLowerCase();
-	const isConsumableCategory =
-		category.includes("расходн") || category.includes("сиз") || category.includes("материал");
-	const price = item.priceRub ?? item.unitPriceRub ?? 0;
-
-	if (nameMatches) {
-		return price <= 500 || price === 0;
-	}
-
-	return isConsumableCategory && price > 0 && price <= 350;
-}
+import { TreatmentPlanPresenterHeader, type PresenterTabId } from "./TreatmentPlanPresenterHeader";
+import { TreatmentPlanPresenterToolsStrip } from "./TreatmentPlanPresenterToolsStrip";
+import { TreatmentPlanPresenterComparisonTab } from "./TreatmentPlanPresenterComparisonTab";
+import { TreatmentPlanPresenterStagesTab } from "./TreatmentPlanPresenterStagesTab";
+import { TreatmentPlanPresenterFinanceTab } from "./TreatmentPlanPresenterFinanceTab";
+import { TreatmentPlanPresenterPrintView } from "./TreatmentPlanPresenterPrintView";
+import { TreatmentPlanPresenterAiAuditTab } from "./TreatmentPlanPresenterAiAuditTab";
+import { TreatmentPlanPresenterFooter } from "./TreatmentPlanPresenterFooter";
 
 export interface TreatmentPlanPresenterModalProps {
 	readonly isOpen: boolean;
@@ -188,219 +98,171 @@ export interface TreatmentPlanPresenterModalProps {
 }
 
 const DEFAULT_SAMPLE_TEETH: ToothData[] = [
-	{
-		id: 16,
-		toothNumber: 16,
-		state: "Caries",
-		systemicNotes: "Глубокий кариес жевательной поверхности",
-	} as ToothData,
-	{
-		id: 36,
-		toothNumber: 36,
-		state: "Missing",
-		systemicNotes: "Отсутствует зуб, показана дентальная имплантация",
-	} as ToothData,
-	{
-		id: 46,
-		toothNumber: 46,
-		state: "Pulpitis",
-		systemicNotes: "Острый очаговый пульпит, показано эндодонтическое лечение",
-	} as ToothData,
+	{ toothNumber: 16, state: "Caries", notes: "Глубокий кариес" },
+	{ toothNumber: 36, state: "Missing", notes: "Отсутствует зуб (имплантация)" },
+	{ toothNumber: 46, state: "Pulpitis", notes: "Пульпит (3 канала)" },
+	{ toothNumber: 11, state: "Crown", notes: "Коронка / винир" },
+	{ toothNumber: 24, state: "Caries", notes: "Кариес" },
 ];
 
 export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalProps> = ({
 	isOpen,
 	onClose,
-	patientName = "Пациент",
-	patientId = "PAT-2026-0891",
-	patientPhone = "",
-	patientBirthDate = "",
-	doctorFullName = "Лечащий врач",
-	doctorSpecialty = "Врач-стоматолог терапевт-ортопед",
-	clinicName = "Стоматологическая клиника «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	clinicInn = "",
-	clinicOgrn = "",
-	clinicAddress = "г. Москва, ул. Клиническая, д. 10, стр. 1",
-	clinicPhone = "",
-	clinicLicense = "ЛО41-01137-77/00567890 от 15.01.2023 выдана Департаментом здравоохранения г. Москвы",
+	patientName = "Иванов Иван Иванович",
+	patientId,
+	patientPhone,
+	patientBirthDate,
+	doctorFullName = "Д-р Смирнов А. В.",
+	doctorSpecialty = "Стоматолог-ортопед",
+	clinicName = "DENTE Стоматологическая Клиника",
+	clinicLegalName = "ООО «ДЕНТЕ КЛИНИК»",
+	clinicInn = "7701234567",
+	clinicOgrn = "1157746123456",
+	clinicAddress = "г. Москва, ул. Клиническая, д. 12",
+	clinicPhone = "+7 (495) 123-45-67",
+	clinicLicense = "ЛО-77-01-012345 от 15.03.2021",
 	contractNumber,
 	teeth,
-	tiers: customTiers,
+	tiers: propTiers,
 	initialSelectedTierId = "standard",
 	onSelectPlan,
 	onConfirmSelection,
 	onPrintContract,
 	onApproveAndSign,
-	onUpdateItemPrice: onUpdateItemPriceProp,
+	onUpdateItemPrice: propOnUpdateItemPrice,
 	planCreatedAtIso,
 	isClosed,
 	isDraft,
 	isSigned,
 	status,
 	planId,
-	workflowStatus = "PRESENTED",
+	workflowStatus,
 	watermarkText,
 	className = "",
 }) => {
-	if (!isOpen) return null;
+	const initialCalculatedTiers = useMemo(() => {
+		if (propTiers && propTiers.length > 0) return propTiers;
+		const effectiveTeeth = teeth && teeth.length > 0 ? teeth : DEFAULT_SAMPLE_TEETH;
+		return generate3TierPlanComparison(effectiveTeeth);
+	}, [propTiers, teeth]);
 
-	const isClosedOrSigned = Boolean(
-		isSigned ||
-		isClosed ||
-		status === "closed" ||
-		status === "signed" ||
-		status === "completed" ||
-		status === "approved" ||
-		status === "issued" ||
-		status === "ACCEPTED" ||
-		status === "Approved" ||
-		status === "COMPLETED" ||
-		status === "Completed" ||
-		workflowStatus === "ACCEPTED" ||
-		workflowStatus === "COMPLETED"
-	);
-	const effectiveWatermark =
-		watermarkText ||
-		(!isDraft && isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
-	const stampColor = !isDraft && isClosedOrSigned ? "var(--ok-fg, #059669)" : "var(--muted, #64748b)";
+	const [allTiers, setAllTiers] = useState<readonly TreatmentPlanTier[]>(initialCalculatedTiers);
+	const [activeTab, setActiveTab] = useState<PresenterTabId>("comparison");
+	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>(initialSelectedTierId);
+	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+	const [expandedStages, setExpandedStages] = useState<Record<number, boolean>>({ 1: true });
+	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12 | 24>(12);
+	const [isChoiceConfirmed, setIsChoiceConfirmed] = useState<boolean>(false);
+	const [confirmedTierId, setConfirmedTierId] = useState<TreatmentPlanTierId | null>(null);
+	const [confirmedNotice, setConfirmedNotice] = useState<string | null>(null);
+	const [printDocFormat, setPrintDocFormat] = useState<"patient_friendly" | "official_appendix">("patient_friendly");
+	const [showMicroConsumables, setShowMicroConsumables] = useState<boolean>(false);
+
+	const [activeToolsPanel, setActiveToolsPanel] = useState<"copilot" | "bundles" | "doctorDiscount" | null>(null);
+	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
+	const [isCopilotExecuting, setIsCopilotExecuting] = useState<boolean>(false);
+	const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(0);
+
+	const [aiAuditResult, setAiAuditResult] = useState<TreatmentPlanValidateAndCommentResponse | null>(null);
+	const [isAiAuditing, setIsAiAuditing] = useState<boolean>(false);
+	const [aiAuditError, setAiAuditError] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (propTiers && propTiers.length > 0) {
+			setAllTiers(propTiers);
+		}
+	}, [propTiers]);
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && isOpen) {
+				onClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, onClose]);
+
+	useEffect(() => {
+		if (isOpen) {
+			document.body.style.overflow = "hidden";
+		} else {
+			document.body.style.overflow = "";
+		}
+		return () => {
+			document.body.style.overflow = "";
+		};
+	}, [isOpen]);
 
 	const planAgeDays = useMemo(() => {
 		if (!planCreatedAtIso) return 0;
 		const createdTime = new Date(planCreatedAtIso).getTime();
 		if (Number.isNaN(createdTime)) return 0;
-		return Math.max(0, Math.floor((Date.now() - createdTime) / (1000 * 60 * 60 * 24)));
+		const diffMs = Date.now() - createdTime;
+		return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
 	}, [planCreatedAtIso]);
 
-	// Генерация 3-х вариантов при отсутствии явно переданных
-	const initialTiers = useMemo(() => {
-		if (customTiers && customTiers.length === 3) {
-			return customTiers;
-		}
-		const effectiveTeeth = teeth !== undefined ? teeth : (isDemoShowcaseMode() ? DEFAULT_SAMPLE_TEETH : []);
-		return generate3TierPlanComparison(effectiveTeeth);
-	}, [customTiers, teeth]);
-
-	const [activeTiers, setActiveTiers] = useState<readonly TreatmentPlanTier[]>(initialTiers);
-	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>(initialSelectedTierId);
-	const [activeTab, setActiveTab] = useState<"comparison" | "stages" | "roadmap" | "finance" | "print_appendix" | "ai_audit">("comparison");
-	const [expandedStages, setExpandedStages] = useState<Record<number, boolean>>({
-		1: true,
-		2: true,
-		3: true,
-	});
-	const [selectionConfirmed, setSelectionConfirmed] = useState<boolean>(false);
-	const [confirmedNotice, setConfirmedNotice] = useState<string | null>(null);
-	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12 | 24>(12);
-	const [showMicroConsumables, setShowMicroConsumables] = useState<boolean>(false);
-	const [printDocFormat, setPrintDocFormat] = useState<"patient_friendly" | "official_appendix">("patient_friendly");
-	const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(0);
-	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-	const [activeToolsPanel, setActiveToolsPanel] = useState<"copilot" | "bundles" | "discount" | null>(null);
-
-	// AI Copilot & AI Audit state
-	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
-	const [customPrompt, setCustomPrompt] = useState<string>("");
-	const [isCopilotExecuting, setIsCopilotExecuting] = useState<boolean>(false);
-	const [aiAuditResult, setAiAuditResult] = useState<TreatmentPlanValidateAndCommentResponse | null>(null);
-	const [isAiAuditing, setIsAiAuditing] = useState<boolean>(false);
-	const [aiAuditError, setAiAuditError] = useState<string | null>(null);
-	const [copiedField, setCopiedField] = useState<string | null>(null);
-
-	const handleCopyText = (text: string, fieldKey: string) => {
-		navigator.clipboard.writeText(text);
-		setCopiedField(fieldKey);
-		setTimeout(() => setCopiedField(null), 2500);
-	};
-
-	const handleCopyTiersSummary = (): string => {
-		const economyTier = allTiers.find((t) => t.tierId === "economy") || allTiers[0];
-		const standardTier = allTiers.find((t) => t.tierId === "standard") || allTiers[1] || allTiers[0];
-		const premiumTier = allTiers.find((t) => t.tierId === "optimum") || allTiers[2] || allTiers[0];
-
-		const economyTotal = economyTier?.totalRub?.toLocaleString("ru-RU") ?? "0";
-		const economyWeeks = economyTier?.durationWeeks ?? 0;
-		const economyVisits = economyTier?.durationVisits ?? 0;
-
-		const standardTotal = standardTier?.totalRub?.toLocaleString("ru-RU") ?? "0";
-		const standardWeeks = standardTier?.durationWeeks ?? 0;
-		const standardVisits = standardTier?.durationVisits ?? 0;
-		const standardInstallment = (
-			standardTier?.monthlyInstallment12Rub ||
-			standardTier?.installments?.[12]?.monthlyPaymentRub ||
-			(standardTier?.totalRub ? Math.round(standardTier.totalRub / 12) : 0)
-		).toLocaleString("ru-RU");
-		const standardNdfl = (
-			standardTier?.ndflRefundRub ||
-			standardTier?.ndflDetails?.refundRub ||
-			0
-		).toLocaleString("ru-RU");
-
-		const premiumTotal = premiumTier?.totalRub?.toLocaleString("ru-RU") ?? "0";
-		const premiumWeeks = premiumTier?.durationWeeks ?? 0;
-		const premiumVisits = premiumTier?.durationVisits ?? 0;
-		const warranty = premiumTier?.warrantyYears ?? standardTier?.warrantyYears ?? 5;
-
-		const summaryText = [
-			`План лечения для пациента ${patientName} (клиника ${clinicName}):`,
-			`Вариант А (Эконом): ${economyTotal} ₽ · ${economyWeeks} нед. (${economyVisits} виз.)`,
-			`Вариант Б (Оптимум, Рекомендация врача): ${standardTotal} ₽ · ${standardWeeks} нед. (${standardVisits} виз.) · Рассрочка 0%: ${standardInstallment} ₽/мес · Вычет 13% НДФЛ: ${standardNdfl} ₽`,
-			`Вариант В (Премиум): ${premiumTotal} ₽ · ${premiumWeeks} нед. (${premiumVisits} виз.)`,
-			`Гарантия на работы до ${warranty} лет. Запись на прием: ${clinicPhone}`,
-		].join("\n");
-
-		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-			navigator.clipboard.writeText(summaryText).catch(() => {});
-		}
-
-		showToast("Варианты сметы скопированы в буфер обмена для отправки пациенту в мессенджер", "success");
-		setConfirmedNotice("Смета скопирована для отправки в WhatsApp / Telegram!");
-		setTimeout(() => setConfirmedNotice(null), 3500);
-		return summaryText;
-	};
+	const selectedTier = useMemo(() => {
+		return allTiers.find((t) => t.tierId === selectedTierId) || allTiers[0] || initialCalculatedTiers[0]!;
+	}, [allTiers, selectedTierId, initialCalculatedTiers]);
 
 	const handleRunAiAudit = async () => {
 		if (isAiAuditing) return;
 		setIsAiAuditing(true);
 		setAiAuditError(null);
 		try {
-			const res = await requestTreatmentPlanAiValidationAndComment(selectedTier.stages, {
-				patientContext: {
-					patientId,
-					patientName,
-					diagnosisSummary: selectedTier.title,
-					clinicalReason: selectedTier.subtitle,
-				},
-				targetBudgetRub: selectedTier.totalRub,
-				installmentMonths,
-				doctorFullName,
-				doctorSpecialty,
-				clinicName,
+			const res = await requestTreatmentPlanAiValidationAndComment({
+				patientName,
+				doctorName: doctorFullName,
+				selectedTierTitle: selectedTier.title,
+				teeth: teeth && teeth.length > 0 ? teeth : DEFAULT_SAMPLE_TEETH,
+				stages: selectedTier.stages,
+				totalRub: selectedTier.totalRub,
+				warrantyYears: typeof selectedTier.warrantyYears === "number" ? selectedTier.warrantyYears : 2,
+				monthlyInstallment12Rub: selectedTier.monthlyInstallment12Rub,
 			});
 			setAiAuditResult(res);
-		} catch (err) {
+		} catch (err: any) {
 			setAiAuditError("Не удалось связаться с ИИ-сервером. Отображаются локальные клинические правила СтАР.");
 		} finally {
 			setIsAiAuditing(false);
 		}
 	};
 
-	useEffect(() => {
-		setActiveTiers(initialTiers);
-	}, [initialTiers]);
+	const handleCopyTiersSummary = async () => {
+		const linesSummary = [
+			`📋 Варианты плана лечения для пациента: ${patientName}`,
+			`Клиника: ${clinicName} · Врач: ${doctorFullName}`,
+			`Дата: ${new Date().toLocaleDateString("ru-RU")}`,
+			"----------------------------------------",
+		];
+		allTiers.forEach((tier) => {
+			const letter = getTierLetter(tier.tierId);
+			const isRec = tier.tierId === "standard" ? " ⭐ РЕКОМЕНДАЦИЯ ВРАЧА" : "";
+			linesSummary.push(`${letter}: ${tier.title}${isRec}`);
+			linesSummary.push(`  Итого: ${tier.totalRub.toLocaleString("ru-RU")} ₽`);
+			linesSummary.push(`  Срок: ~ ${tier.durationWeeks} нед. (${tier.durationVisits} визитов)`);
+			linesSummary.push(`  Гарантия: ${formatWarrantyYearsText(tier.warrantyYears)}`);
+			if (tier.monthlyInstallment12Rub > 0) {
+				linesSummary.push(`  Рассрочка 0%: от ${tier.monthlyInstallment12Rub.toLocaleString("ru-RU")} ₽/мес на 12 мес.`);
+			}
+			if (tier.ndflRefundRub > 0) {
+				linesSummary.push(`  Возврат 13% НДФЛ: -${tier.ndflRefundRub.toLocaleString("ru-RU")} ₽ (к оплате с вычетом: ${tier.priceWithNdflRefundRub.toLocaleString("ru-RU")} ₽)`);
+			}
+			linesSummary.push("");
+		});
+		linesSummary.push("----------------------------------------");
+		linesSummary.push("Запись на консультацию и утверждение плана: " + clinicPhone);
 
-	const allTiers = activeTiers;
+		try {
+			await navigator.clipboard.writeText(linesSummary.join("\n"));
+			showToast("Смета всех 3 вариантов скопирована в буфер обмена!", "success");
+		} catch {
+			showToast("Не удалось скопировать смету", "error");
+		}
+	};
 
-	const selectedTier = useMemo<TreatmentPlanTier>(() => {
-		return allTiers.find((t) => t.tierId === selectedTierId) ?? allTiers[1] ?? allTiers[0]!;
-	}, [allTiers, selectedTierId]);
-
-	const activeSelectedTierStages = useMemo(() => {
-		const withItems = selectedTier.stages.filter((s) => s.items && s.items.length > 0);
-		return withItems.length > 0 ? withItems : selectedTier.stages;
-	}, [selectedTier.stages]);
-
-	const cleanPatCode = patientId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase() || "0891";
+	const cleanPatCode = (patientId || "001").replace(/[^a-zA-Z0-9]/g, "");
 	const displayContractNumber = contractNumber || ("ДОГ-2026-" + cleanPatCode);
 
 	const getTierLetter = (tierId: TreatmentPlanTierId): string => {
@@ -423,14 +285,14 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 	const handleSelectTier = (tier: TreatmentPlanTier) => {
 		setSelectedTierId(tier.tierId);
-		setSelectionConfirmed(false);
-		setConfirmedNotice(null);
-		onSelectPlan?.(tier);
+		if (onSelectPlan) {
+			onSelectPlan(tier);
+		}
 	};
 
 	const recalculateTierFromStages = (
 		tier: TreatmentPlanTier,
-		updatedStages: readonly TreatmentPlanStage[],
+		updatedStages: TreatmentPlanStage[],
 	): TreatmentPlanTier => {
 		const totalKopecks = sumKopecks(updatedStages.map((s) => s.totalKopecks));
 		const totalRub = Math.round(totalKopecks / 100);
@@ -438,60 +300,55 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		const ndflBreakdown = calculatePlanTaxDeductionBreakdown(allItems);
 		const isHighCost = ndflBreakdown.hasCode02ExpensiveServices;
 		const ndflDetails: NdflDeductionResult = {
-			code: isHighCost ? "02" : "01",
-			codeDescription: isHighCost
-				? "Код 02 — Дорогостоящее лечение (имплантация, костная пластика, синус-лифтинг) — налоговый вычет 13% со всей суммы без ограничений"
-				: "Код 01 — Обычное медицинское лечение (терапия, гигиена, ортопедия) — налоговый вычет 13% с лимитом базы 150 000 ₽ (макс. возврат 19 500 ₽)",
-			isHighCostCode02: isHighCost,
-			baseKopecks: (isHighCost ? totalKopecks : Math.min(totalKopecks, parseKopecks(150000))) as Kopecks,
-			refundKopecks: parseKopecks(ndflBreakdown.grandTotalRefund13Rub),
-			refundRub: ndflBreakdown.grandTotalRefund13Rub,
-			finalPriceWithRefundRub: ndflBreakdown.netPriceWithRefundRub,
-			annualLimitRub: isHighCost ? undefined : 150000,
+			grossKopecks: totalKopecks,
+			refundKopecks: ndflBreakdown.totalRefundKopecks,
+			finalPriceWithRefundKopecks: (totalKopecks - ndflBreakdown.totalRefundKopecks) as Kopecks,
+			refundRub: Math.round(ndflBreakdown.totalRefundKopecks / 100),
+			finalPriceWithRefundRub: Math.round((totalKopecks - ndflBreakdown.totalRefundKopecks) / 100),
+			isHighCostTreatment: isHighCost,
+			socialTaxCapKopecks: 15000000 as Kopecks,
+			appliedRatePercent: 13,
 		};
+
 		const installments = computeTierInstallments(totalKopecks);
 		const stagedSchedule = calculateStaged304030Schedule(totalKopecks, true);
 
 		return {
 			...tier,
 			stages: updatedStages,
-			itemsCount: allItems.length,
 			totalRub,
 			totalKopecks,
-			monthlyInstallment12Rub: installments[12].monthlyPaymentRub,
+			itemsCount: allItems.length,
 			installments,
-			ndflDetails,
-			ndflRefundRub: ndflBreakdown.grandTotalRefund13Rub,
-			priceWithNdflRefundRub: ndflBreakdown.netPriceWithRefundRub,
 			stagedSchedule,
+			ndflDetails,
+			ndflRefundRub: ndflDetails.refundRub,
+			priceWithNdflRefundRub: ndflDetails.finalPriceWithRefundRub,
+			monthlyInstallment12Rub: installments[12]?.monthlyPaymentRub ?? 0,
 		};
 	};
 
 	const handleUpdateItemPrice = (itemId: string, newPriceRub: number) => {
-		setActiveTiers((prevTiers) => {
-			return prevTiers.map((tier) => {
-				let tierModified = false;
+		setAllTiers((prev) =>
+			prev.map((tier) => {
+				if (tier.tierId !== selectedTierId) return tier;
 				const updatedStages = tier.stages.map((st) => {
-					let stageModified = false;
+					if (!st.items.some((it) => it.id === itemId)) return st;
 					const updatedItems = st.items.map((it) => {
-						if (it.id === itemId) {
-							tierModified = true;
-							stageModified = true;
-							const qty = Math.max(1, it.quantity || 1);
-							const unitKop = parseKopecks(newPriceRub);
-							const discKop = parseKopecks(it.discountRub || 0);
-							const lineTotalKop = Math.max(0, unitKop * qty - discKop) as Kopecks;
-							return {
-								...it,
-								priceRub: Math.round(lineTotalKop / 100),
-								unitPriceRub: newPriceRub,
-								requiresManualPricing: false,
-							};
-						}
-						return it;
+						if (it.id !== itemId) return it;
+						const qty = Math.max(1, it.quantity || 1);
+						const unitKop = parseKopecks(newPriceRub);
+						const discKop = parseKopecks(it.discountRub || 0);
+						const lineTotalKop = Math.max(0, unitKop * qty - discKop) as Kopecks;
+						return {
+							...it,
+							unitPriceRub: Math.round(unitKop / 100),
+							priceRub: Math.round(lineTotalKop / 100),
+							discountRub: Math.round(discKop / 100),
+							isDraft: false,
+							requiresManualPricing: false,
+						};
 					});
-
-					if (!stageModified) return st;
 
 					const stTotalKopecks = sumKopecks(updatedItems.map((it) => parseKopecks(it.priceRub)));
 					const stTotalRub = Math.round(stTotalKopecks / 100);
@@ -503,36 +360,30 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					};
 				});
 
-				if (!tierModified) return tier;
-
 				const updatedTier = recalculateTierFromStages(tier, updatedStages);
-
-				if (tier.tierId === selectedTierId) {
-					onSelectPlan?.(updatedTier);
+				if (propOnUpdateItemPrice) {
+					propOnUpdateItemPrice(itemId, newPriceRub);
 				}
-
 				return updatedTier;
-			});
-		});
-
-		onUpdateItemPriceProp?.(itemId, newPriceRub);
+			}),
+		);
+		showToast("Цена услуги обновлена", "success");
 	};
 
 	const handleExecuteCopilot = (cmdOrText: CopilotCommandType | string) => {
-		if (isCopilotExecuting) return;
 		setIsCopilotExecuting(true);
 		try {
 			const res = applyCopilotCommandToPlan(selectedTier.stages, cmdOrText);
 			if (res.success) {
-				setActiveTiers((prevTiers) => {
-					return prevTiers.map((t) => {
+				setAllTiers((prev) =>
+					prev.map((t) => {
 						if (t.tierId !== selectedTierId) return t;
 						const updated = recalculateTierFromStages(t, res.stages);
-						onSelectPlan?.(updated);
 						return updated;
-					});
-				});
+					}),
+				);
 				setCopilotFeedback(res.explanation);
+				showToast(`AI Copilot: ${res.commandTitle} применено`, "success");
 			}
 		} finally {
 			setIsCopilotExecuting(false);
@@ -541,33 +392,32 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 	const handleApplyClinicalBundle = (bundleId: ClinicalBundleId, toothNumber?: number) => {
 		const bundle = getClinicalBundleById(bundleId);
-		setActiveTiers((prevTiers) => {
-			return prevTiers.map((t) => {
+		setAllTiers((prev) =>
+			prev.map((t) => {
 				if (t.tierId !== selectedTierId) return t;
 				const updated = applyClinicalBundleToTier(t, bundleId, toothNumber);
-				onSelectPlan?.(updated);
 				return updated;
-			});
-		});
+			}),
+		);
 		const toothDesc = bundle?.requiresTooth ? ` (зуб ${toothNumber ?? bundle?.defaultTooth})` : "";
-		setConfirmedNotice(`Пакет «${bundle?.shortTitle || bundleId}» добавлен в тариф «${selectedTier.title}»${toothDesc}!`);
-		setTimeout(() => setConfirmedNotice(null), 4000);
+		showToast(`Пакет «${bundle?.shortTitle || bundleId}» успешно добавлен в ${getTierLetter(selectedTierId)}${toothDesc}!`, "success", 4000);
 	};
 
 	const handleApplyDoctorDiscount = (pct: number) => {
 		const validPct = Math.max(0, Math.min(100, pct));
 		setDoctorDiscountPercent(validPct);
-		setActiveTiers((prevTiers) => {
-			return prevTiers.map((tier) => {
+		setAllTiers((prev) =>
+			prev.map((tier) => {
+				if (tier.tierId !== selectedTierId) return tier;
 				const updatedStages = tier.stages.map((st) => {
 					const updatedItems = st.items.map((it) => {
 						const baseUnitPrice =
-							it.unitPriceRub > 0
+							typeof it.unitPriceRub === "number" && it.unitPriceRub > 0
 								? it.unitPriceRub
-								: Math.round(
-										(it.priceRub + (it.discountRub || 0)) /
-											Math.max(1, it.quantity || 1),
-									);
+								: it.priceRub && it.quantity
+									? it.priceRub / it.quantity
+									: 0;
+
 						const baseUnitPriceKop = parseKopecks(baseUnitPrice);
 						const discountKopPerUnit =
 							validPct > 0
@@ -577,14 +427,16 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 							0,
 							baseUnitPriceKop - discountKopPerUnit,
 						) as Kopecks;
+
 						const qty = Math.max(1, it.quantity || 1);
 						const lineTotalKop = (finalUnitPriceKop * qty) as Kopecks;
 						const lineDiscountKop = (discountKopPerUnit * qty) as Kopecks;
+
 						return {
 							...it,
-							unitPriceRub: baseUnitPrice,
-							discountRub: Math.round(lineDiscountKop / 100),
+							unitPriceRub: Math.round(baseUnitPriceKop / 100),
 							priceRub: Math.round(lineTotalKop / 100),
+							discountRub: Math.round(lineDiscountKop / 100),
 						};
 					});
 					const stTotalKopecks = sumKopecks(updatedItems.map((it) => parseKopecks(it.priceRub)));
@@ -598,59 +450,34 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 				});
 
 				const updatedTier = recalculateTierFromStages(tier, updatedStages);
-				if (tier.tierId === selectedTierId) {
-					onSelectPlan?.(updatedTier);
-				}
 				return updatedTier;
-			});
-		});
-
-		if (validPct === 100) {
-			setConfirmedNotice(
-				"Применена 100% скидка врача (Гарантийная переделка / Персонал). Без мастер-паролей.",
-			);
-		} else if (validPct > 0) {
-			setConfirmedNotice(
-				`Применена скидка врача ${validPct}%. Сметы и график платежей пересчитаны.`,
-			);
-		} else {
-			setConfirmedNotice("Скидка сброшена (базовый прайс клиники).");
-		}
-		setTimeout(() => setConfirmedNotice(null), 4000);
+			}),
+		);
+		showToast(`Скидка ${validPct}% применена к ${getTierLetter(selectedTierId)}`, "info");
 	};
 
 	const handleConfirmPatientChoice = (targetTier?: TreatmentPlanTier) => {
 		const effectiveTier = targetTier ?? selectedTier;
-		setSelectionConfirmed(true);
+		setIsChoiceConfirmed(true);
+		setConfirmedTierId(effectiveTier.tierId);
 		const variantTitle = getTierLetter(effectiveTier.tierId);
 		const message = "Выбор зафиксирован: Пациент выбрал " + variantTitle + " на сумму " + formatRubles(effectiveTier.totalRub);
 		setConfirmedNotice(message);
+		showToast(message, "success");
 
-		if (planId && patientId && !isDemoShowcaseMode()) {
-			fetch(`/api/patients/${encodeURIComponent(patientId)}/treatment-plans/${encodeURIComponent(planId)}/approve-variant`, {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					reason: `Пациент согласовал ${variantTitle} у кресла (ст. 20 323-ФЗ)`,
-				}),
-			}).catch(() => {
-				// Non-blocking in offline or preview environments
-			});
+		if (onConfirmSelection) {
+			onConfirmSelection(effectiveTier);
 		}
-
-		onConfirmSelection?.(effectiveTier);
+		if (onSelectPlan) {
+			onSelectPlan(effectiveTier);
+		}
 	};
 
 	const handlePrintAppendix = () => {
-		if (activeTab !== "print_appendix") {
-			setActiveTab("print_appendix");
-		}
+		setActiveTab("print_appendix");
 		setTimeout(() => {
 			window.print();
-		}, 100);
-		onPrintContract?.(selectedTier);
+		}, 300);
 	};
 
 	const toggleStage = (stageNum: number) => {
@@ -661,11 +488,11 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	};
 
 	const toggleAllStages = (expand: boolean) => {
-		setExpandedStages({
-			1: expand,
-			2: expand,
-			3: expand,
+		const next: Record<number, boolean> = {};
+		selectedTier.stages.forEach((s) => {
+			next[s.stageNumber] = expand;
 		});
+		setExpandedStages(next);
 	};
 
 	const todayRu = new Date().toLocaleDateString("ru-RU", {
@@ -674,1962 +501,166 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		year: "numeric",
 	});
 
-	const patientChoiceBtnText = "Пациент выбрал " + getTierLetter(selectedTier.tierId) + " (" + (selectedTier.totalRub || 0).toLocaleString("ru-RU") + " ₽)";
+	const patientChoiceBtnText = "Пациент выбрал " + getTierLetter(selectedTier.tierId) + " (" + (selectedTier.totalRub ? selectedTier.totalRub.toLocaleString("ru-RU") : "0") + " ₽)";
 	const choiceConfirmedBtnText = "Выбор зафиксирован (" + getTierLetter(selectedTier.tierId) + ")";
+
+	if (!isOpen) return null;
 
 	return (
 		<div
-			className={("treatment-presenter-backdrop " + className).trim()}
+			className={"treatment-presenter-backdrop " + (isFullscreen ? "fullscreen-mode" : "")}
 			data-testid="treatment-plan-presenter-modal"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="treatment-presenter-modal-title"
 		>
-			<div
-				className={`treatment-presenter-modal ${isFullscreen ? "treatment-presenter-fullscreen fixed inset-0 !max-w-none !max-h-none !w-screen !h-screen !rounded-none z-[1001]" : ""}`}
-				data-testid="treatment-presenter-modal-card"
-			>
-				{isFullscreen && (
-					<AuthArtBackground
-						settings={{ pack: "dental-epic", dynamicByTimeOfDay: true }}
-						overlayAlpha={0.45}
-					/>
-				)}
-				{/* Top Bar Header */}
-				<header className="treatment-presenter-header no-print">
-					<div className="treatment-presenter-header-main">
-						<div className="treatment-presenter-title-group min-w-0 flex-1">
-							<div className="treatment-presenter-icon-badge shrink-0">
-								<Tablet size={20} />
-							</div>
-							<div className="treatment-presenter-header-meta min-w-0 flex-1">
-								<h2 id="treatment-presenter-modal-title" className="treatment-presenter-main-title flex items-center gap-2 flex-wrap">
-									<span className="truncate">Презентация планов лечения</span>
-									<span className="treatment-presenter-law-badge whitespace-nowrap" title="Прейскурант и стандарты лечения">
-										Прейскурант клиники
-									</span>
-									{planAgeDays > 30 && (
-										<span
-											className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 font-bold border border-amber-500/30 text-xs inline-flex items-center gap-1 shadow-2xs whitespace-nowrap"
-											title="План составлен более 30 дней назад, цены могут быть скорректированы. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
-											data-testid="presenter-expired-unblocked-badge"
-										>
-											<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
-											План составлен более 30 дней назад, цены могут быть скорректированы
-										</span>
-									)}
-								</h2>
-								<p className="treatment-presenter-subtitle truncate">
-									Пациент: <strong className="text-[var(--tp-text-main)]">{patientName}</strong> · Врач: {doctorFullName}
-								</p>
-							</div>
-						</div>
+			<div className={"treatment-presenter-container " + className}>
+				{/* Top Header */}
+				<TreatmentPlanPresenterHeader
+					patientName={patientName}
+					doctorFullName={doctorFullName}
+					planAgeDays={planAgeDays}
+					isFullscreen={isFullscreen}
+					onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
+					activeTab={activeTab}
+					onSelectTab={setActiveTab}
+					onCopyTiersSummary={handleCopyTiersSummary}
+					onPrintAppendix={handlePrintAppendix}
+					onClose={onClose}
+					aiAuditResult={aiAuditResult}
+					isAiAuditing={isAiAuditing}
+					onRunAiAudit={handleRunAiAudit}
+				/>
 
-						{/* Header Actions: 1-Click Copy Summary, Print Appendix, Fullscreen & Close (Dense Desktop h-8) */}
-						<div className="flex items-center gap-1.5 shrink-0">
-							<button
-								type="button"
-								onClick={handleCopyTiersSummary}
-								className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-1 rounded-lg text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center gap-1.5 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary)]"
-								title="Скопировать смету для пациента (WhatsApp / Telegram)"
-								data-testid="presenter-copy-tiers-summary-btn"
-							>
-								<Copy size={14} className="text-[var(--tp-primary)] shrink-0" />
-								<span className="hidden sm:inline">Скопировать смету</span>
-								<span className="sm:hidden">Копия</span>
-							</button>
+				{/* Chairside Assistant & Clinical Tools Strip */}
+				<TreatmentPlanPresenterToolsStrip
+					activeToolsPanel={activeToolsPanel}
+					setActiveToolsPanel={setActiveToolsPanel}
+					isCopilotExecuting={isCopilotExecuting}
+					onExecuteCopilot={handleExecuteCopilot}
+					onApplyClinicalBundle={handleApplyClinicalBundle}
+					copilotFeedback={copilotFeedback}
+					setCopilotFeedback={setCopilotFeedback}
+					doctorDiscountPercent={doctorDiscountPercent}
+					setDoctorDiscountPercent={setDoctorDiscountPercent}
+					onApplyDoctorDiscount={handleApplyDoctorDiscount}
+					showMicroConsumables={showMicroConsumables}
+					setShowMicroConsumables={setShowMicroConsumables}
+					selectedTier={selectedTier}
+					allTiers={allTiers}
+					onSelectPlan={onSelectPlan}
+					teeth={teeth}
+					patientChoiceBtnText={patientChoiceBtnText}
+					choiceConfirmedBtnText={choiceConfirmedBtnText}
+					isChoiceConfirmed={isChoiceConfirmed}
+					confirmedNotice={confirmedNotice}
+					onConfirmPatientChoice={handleConfirmPatientChoice}
+					onApproveAndSign={onApproveAndSign}
+				/>
 
-							<button
-								type="button"
-								onClick={handlePrintAppendix}
-								className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center gap-1.5 cursor-pointer transition-all touch-manipulation"
-								title="Печать Приложения №1 к Договору (ПП РФ № 736)"
-								data-testid="presenter-header-print-btn"
-							>
-								<Printer size={14} className="shrink-0" />
-								<span className="hidden md:inline">Печать №1</span>
-							</button>
-
-							<button
-								type="button"
-								onClick={() => setIsFullscreen((prev) => !prev)}
-								className="treatment-presenter-close-btn sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-lg"
-								title={isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
-								aria-label={isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
-								data-testid="presenter-fullscreen-btn"
-							>
-								{isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-							</button>
-
-							{/* Close Button on Mobile / Desktop */}
-							<button
-								type="button"
-								onClick={onClose}
-								className="treatment-presenter-close-btn sm:w-8 sm:h-8 sm:min-w-[32px] sm:min-h-[32px] rounded-lg"
-								aria-label="Закрыть модальное окно"
-								data-testid="close-treatment-presenter-btn"
-							>
-								<X size={18} />
-							</button>
-						</div>
-					</div>
-
-					{/* Navigation Tabs */}
-					<nav className="treatment-presenter-tabs" aria-label="Режимы просмотра">
-						<button
-							type="button"
-							onClick={() => setActiveTab("comparison")}
-							className={"treatment-presenter-tab-btn " + (activeTab === "comparison" ? "active" : "")}
-							data-testid="tab-comparison-btn"
-						>
-							<Layers size={14} />
-							<span>3-Tier Сравнение</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setActiveTab("stages")}
-							className={"treatment-presenter-tab-btn " + (activeTab === "stages" ? "active" : "")}
-							data-testid="tab-stages-btn"
-						>
-							<Clock size={14} />
-							<span>Клинические этапы</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setActiveTab("roadmap")}
-							className={"treatment-presenter-tab-btn " + (activeTab === "roadmap" ? "active" : "")}
-							data-testid="tab-roadmap-btn"
-						>
-							<Calendar size={14} />
-							<span>Дорожная карта</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setActiveTab("finance")}
-							className={"treatment-presenter-tab-btn " + (activeTab === "finance" ? "active" : "")}
-							data-testid="tab-finance-btn"
-						>
-							<Coins size={14} />
-							<span>Финансы & НДФЛ</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setActiveTab("print_appendix")}
-							className={"treatment-presenter-tab-btn " + (activeTab === "print_appendix" ? "active" : "")}
-							data-testid="tab-print-btn"
-						>
-							<FileText size={14} />
-							<span>Приложение №1</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								setActiveTab("ai_audit");
-								if (!aiAuditResult && !isAiAuditing) {
-									handleRunAiAudit();
-								}
-							}}
-							className={"treatment-presenter-tab-btn " + (activeTab === "ai_audit" ? "active" : "")}
-							data-testid="tab-ai-audit-btn"
-						>
-							<Bot size={14} className="text-amber-500" />
-							<span>ИИ-Аудит & Комментарий</span>
-						</button>
-					</nav>
-				</header>
-
-				{/* Chairside Assistant & Clinical Tools Strip (Mandate 8p: Compact single-row toolbar <= 36px) */}
-				<div className="flex items-center justify-between gap-2 px-6 py-1.5 bg-[var(--tp-surface)] border-b border-[var(--tp-border)] no-print text-xs">
-					<div className="flex items-center gap-1.5 flex-wrap">
-						<span className="text-[11px] font-bold text-[var(--tp-text-muted)] mr-1 hidden sm:inline">Инструменты врача:</span>
-
-						{/* Toggle AI Copilot */}
-						<button
-							type="button"
-							onClick={() => setActiveToolsPanel((prev) => (prev === "copilot" ? null : "copilot"))}
-							className={`h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer ${
-								activeToolsPanel === "copilot"
-									? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-2xs"
-									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
-							}`}
-							data-testid="toggle-copilot-panel-btn"
-							title="AI Copilot у кресла: готовые сценарии и оптимизация бюджета"
-						>
-							<Sparkles size={13} className={activeToolsPanel === "copilot" ? "text-amber-300" : "text-amber-500"} />
-							<span>AI Copilot</span>
-							<ChevronDown size={12} className={`transition-transform duration-150 ${activeToolsPanel === "copilot" ? "rotate-180" : ""}`} />
-						</button>
-
-						{/* Toggle Clinical Bundles */}
-						<button
-							type="button"
-							onClick={() => setActiveToolsPanel((prev) => (prev === "bundles" ? null : "bundles"))}
-							className={`h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer ${
-								activeToolsPanel === "bundles"
-									? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-2xs"
-									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
-							}`}
-							data-testid="toggle-bundles-panel-btn"
-							title="Готовые клинические пакеты услуг (Мандат 8e)"
-						>
-							<Package size={13} />
-							<span>Клинические пакеты</span>
-							<ChevronDown size={12} className={`transition-transform duration-150 ${activeToolsPanel === "bundles" ? "rotate-180" : ""}`} />
-						</button>
-
-						{/* Toggle Doctor Discount */}
-						<button
-							type="button"
-							onClick={() => setActiveToolsPanel((prev) => (prev === "discount" ? null : "discount"))}
-							className={`h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer ${
-								activeToolsPanel === "discount" || doctorDiscountPercent > 0
-									? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
-									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
-							}`}
-							data-testid="toggle-discount-panel-btn"
-							title="Скидка врача (0-100% на гарантийные переделки и персонал)"
-						>
-							<Percent size={13} />
-							<span>{doctorDiscountPercent > 0 ? `Скидка: ${doctorDiscountPercent}%` : "Скидка врача"}</span>
-							<ChevronDown size={12} className={`transition-transform duration-150 ${activeToolsPanel === "discount" ? "rotate-180" : ""}`} />
-						</button>
-					</div>
-
-					<div className="flex items-center gap-2">
-						{doctorDiscountPercent === 100 && (
-							<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-								100% гарантия / персонал
-							</span>
-						)}
-						<span className="text-[11px] text-[var(--tp-text-muted)] hidden lg:inline">
-							Автономия врача: скидки и пакеты в 1 клик
-						</span>
-					</div>
-				</div>
-
-				{/* Collapsible Panel 1: AI Copilot Chairside Quick Toolbar */}
-				<div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-2.5 bg-[var(--tp-surface-soft)] border-b border-[var(--tp-border)] no-print ${activeToolsPanel === "copilot" ? "" : "hidden"}`}>
-					<div className="flex items-center gap-2 flex-wrap">
-						<div className="inline-flex items-center gap-1 text-xs font-bold text-[var(--tp-primary)] mr-1">
-							<Sparkles size={14} className="text-amber-500" />
-							<span>AI Copilot у кресла:</span>
-						</div>
-						{COPILOT_PRESET_ACTIONS.map((act) => (
-							<button
-								key={act.id}
-								type="button"
-								aria-busy={isCopilotExecuting}
-								onClick={() => handleExecuteCopilot(act.id)}
-								className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--tp-surface)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] hover:text-[var(--tp-primary)] border border-[var(--tp-border)] cursor-pointer transition-colors"
-								title={isCopilotExecuting ? "AI Copilot выполняет команду..." : act.description}
-								data-testid={`presenter-copilot-btn-${act.id}`}
-							>
-								{act.title}
-							</button>
-						))}
-					</div>
-
-					<div className="flex items-center gap-1.5 min-w-[200px] max-w-sm">
-						<input
-							type="text"
-							value={customPrompt}
-							onChange={(e) => setCustomPrompt(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									e.preventDefault();
-									if (customPrompt.trim()) {
-										handleExecuteCopilot(customPrompt.trim());
-										setCustomPrompt("");
-									} else {
-										setCopilotFeedback("Введите команду или выберите готовый сценарий презентации («бюджет 120к», «без имплантации»)");
-									}
-								}
-							}}
-							placeholder="Команда ассистенту (напр. 'бюджет 120к')"
-							className="flex-1 px-2.5 py-1 text-xs rounded-lg border border-[var(--tp-border)] bg-[var(--tp-bg)] text-[var(--tp-text-main)] outline-none min-h-[32px] sm:min-h-[28px] sm:h-7"
-							data-testid="presenter-copilot-input"
-						/>
-						<button
-							type="button"
-							aria-busy={isCopilotExecuting}
-							onClick={() => {
-								if (customPrompt.trim()) {
-									handleExecuteCopilot(customPrompt.trim());
-									setCustomPrompt("");
-								} else {
-									setCopilotFeedback("Введите команду или выберите готовый сценарий презентации («бюджет 120к», «без имплантации»)");
-								}
-							}}
-							className="p-2 min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-lg bg-[var(--tp-primary)] text-white hover:bg-[var(--tp-primary-hover)] cursor-pointer touch-manipulation"
-							title={isCopilotExecuting ? "Выполняется команда ассистента..." : "Отправить команду"}
-							data-testid="presenter-copilot-send-btn"
-						>
-							<Send size={14} />
-						</button>
-					</div>
-				</div>
-
-				{/* AI Copilot Feedback Alert */}
-				{copilotFeedback && (
-					<div
-						className="px-6 py-2 bg-indigo-500/10 border-b border-indigo-500/30 text-indigo-950 dark:text-indigo-200 text-xs flex items-center justify-between no-print"
-						data-testid="presenter-copilot-feedback-banner"
-					>
-						<div className="flex items-center gap-2">
-							<Bot size={15} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-							<span>{copilotFeedback}</span>
-						</div>
-						<button
-							type="button"
-							onClick={() => setCopilotFeedback(null)}
-							className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer ml-4 shrink-0"
-						>
-							Скрыть
-						</button>
-					</div>
-				)}
-
-				{/* Confirmation Notice Banner */}
-				{confirmedNotice && (
-					<div
-						className="px-6 py-2.5 bg-emerald-500/10 border-b border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center justify-between no-print"
-						data-testid="choice-confirmed-banner"
-					>
-						<div className="flex items-center gap-2">
-							<CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" />
-							<span>{confirmedNotice}</span>
-						</div>
-						<span className="text-[11px] font-normal opacity-80">Готово к печати Приложения №1</span>
-					</div>
-				)}
-
-				{/* Collapsible Panel 2: Turnkey Clinical Packages 1-Click Bar (Mandate 8e) */}
-				<div className={`px-6 py-2.5 bg-[var(--tp-surface-soft)] border-b border-[var(--tp-border)] no-print ${activeToolsPanel === "bundles" ? "" : "hidden"}`}>
-					<ClinicalBundlesPanel
-						compact
-						onApplyBundle={handleApplyClinicalBundle}
-						initialToothNumber={teeth && teeth.length > 0 ? (teeth[0]?.toothNumber || 16) : 16}
-					/>
-				</div>
-
-				{/* Collapsible Panel 3: Doctor Discount Freedom Quick Bar (Mandate 8e / Section VII.2) */}
-				<div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-2 bg-[var(--tp-surface-soft)] border-b border-[var(--tp-border)] no-print text-xs ${activeToolsPanel === "discount" ? "" : "hidden"}`}>
-					<div className="flex items-center gap-2 flex-wrap">
-						<div className="inline-flex items-center gap-1 font-bold text-[var(--tp-primary)]">
-							<Percent size={13} className="text-emerald-600 dark:text-emerald-400" />
-							<span>Скидка врача:</span>
-						</div>
-						{[0, 5, 10, 15, 20, 50, 100].map((pct) => (
-							<button
-								key={pct}
-								type="button"
-								onClick={() => handleApplyDoctorDiscount(pct)}
-								title={
-									pct === 100
-										? "100% скидка: гарантийные переделки и персонал без мастер-паролей администратора"
-										: `Применить скидку ${pct}%`
-								}
-								className={`min-h-[36px] px-2.5 py-1 rounded-lg font-mono font-bold text-xs cursor-pointer transition-all ${
-									doctorDiscountPercent === pct
-										? pct === 100
-											? "bg-emerald-600 text-white shadow-xs"
-											: "bg-[var(--tp-primary)] text-white shadow-xs"
-										: pct === 100
-											? "bg-[var(--tp-surface)] text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 border border-emerald-500/30"
-											: "bg-[var(--tp-surface)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)]"
-								}`}
-								data-testid={`presenter-discount-btn-${pct}`}
-							>
-								{pct === 100 ? "100% (Гарантия)" : `${pct}%`}
-							</button>
-						))}
-						{doctorDiscountPercent === 100 && (
-							<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 ml-1">
-								0 ₽ (Гарантийная переделка / Персонал)
-							</span>
-						)}
-						<div className="inline-flex items-center gap-1 ml-1" title="Свободная скидка врача (0-100%) без мастер-паролей (Мандат 8e)">
-							<input
-								type="number"
-								min="0"
-								max="100"
-								value={doctorDiscountPercent}
-								onChange={(e) => {
-									const val = Math.max(0, Math.min(100, Number(e.target.value) || 0));
-									handleApplyDoctorDiscount(val);
-								}}
-								className="w-14 min-h-[32px] h-8 px-1.5 text-xs font-mono font-bold rounded-lg border border-[var(--tp-border)] bg-[var(--tp-surface)] text-[var(--tp-text-main)] text-center focus:outline-none focus:ring-1 focus:ring-[var(--tp-primary)]"
-								placeholder="%"
-								data-testid="presenter-custom-discount-input"
-							/>
-							<span className="text-xs text-[var(--tp-text-muted)] font-bold">%</span>
-						</div>
-					</div>
-					<div className="text-[11px] text-[var(--tp-text-muted)] hidden lg:block">
-						Автономия врача: свободные скидки и переделки без согласований с администратором
-					</div>
-				</div>
-
-				{/* Modal Main Body */}
-				<main className="treatment-presenter-body">
-					{/* TAB 1: 3-Tier Side-by-Side Comparison */}
+				{/* Main Body */}
+				<main className="treatment-presenter-body" data-testid="treatment-presenter-body">
 					{activeTab === "comparison" && (
-						<div className="flex flex-col gap-6" data-testid="comparison-view">
-							{/* Mobile & iPad Segmented Control (Adaptive switcher for <= 1024px screens) */}
-							<div className="treatment-mobile-tier-bar" data-testid="mobile-tier-tabs">
-								{allTiers.map((t) => {
-									const isCurrent = selectedTierId === t.tierId;
-									return (
-										<button
-											key={t.tierId}
-											type="button"
-											onClick={() => handleSelectTier(t)}
-											className={"treatment-mobile-tier-btn " + (isCurrent ? "active " : "") + t.tierId}
-											data-testid={"mobile-tier-btn-" + t.tierId}
-											aria-pressed={isCurrent}
-										>
-											<div className="flex items-center gap-1.5 font-extrabold text-[13px]">
-												{t.tierId === "standard" && <Star size={13} className="text-amber-400 fill-amber-400 shrink-0" />}
-												<span>
-													{t.tierId === "economy"
-														? "Эконом"
-														: t.tierId === "standard"
-															? "Оптимум"
-															: "Премиум"}
-												</span>
-												{t.tierId === "standard" && <Sparkles size={12} className="text-amber-400 shrink-0" />}
-											</div>
-											<div className="text-[11px] font-mono opacity-90 font-bold">
-												{t.totalRub.toLocaleString("ru-RU")} ₽
-											</div>
-										</button>
-									);
-								})}
-							</div>
-
-							{/* Chairside Presentation Grid */}
-							<div className="treatment-3tier-grid">
-								{allTiers.map((tier) => {
-									const isSelected = selectedTierId === tier.tierId;
-									const isRecommended = tier.tierId === "standard";
-									const variantLetter = getTierLetter(tier.tierId);
-
-									return (
-										<div
-											key={tier.tierId}
-											onClick={() => handleSelectTier(tier)}
-											className={"treatment-tier-card " + (isSelected ? "selected " : "") + (isRecommended ? "recommended " : "") + "cursor-pointer"}
-											data-testid={"tier-card-" + tier.tierId}
-										>
-											{/* Doctor Recommendation Ribbon */}
-											{isRecommended && (
-												<div className="treatment-doctor-ribbon" data-testid="doctor-recommendation-badge">
-													<Sparkles size={13} />
-													<span>Рекомендация врача</span>
-												</div>
-											)}
-
-											{/* Card Header */}
-											<div className="treatment-tier-header">
-												<div className="treatment-tier-badge-row">
-													<span className={"treatment-tier-badge " + tier.tierId}>{variantLetter}</span>
-													{isSelected && (
-														<span className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-600 dark:text-teal-400">
-															<CheckCircle2 size={14} />
-															<span>Выбран</span>
-														</span>
-													)}
-												</div>
-												<h3 className="treatment-tier-name break-words leading-snug">{tier.title}</h3>
-												<p className="treatment-tier-desc line-clamp-2">{tier.subtitle}</p>
-
-												{/* Price Box */}
-												<div className="treatment-tier-price-box">
-													<div className="text-[11px] font-bold text-[var(--tp-text-muted)] uppercase tracking-wider">
-														Итоговая стоимость
-													</div>
-													<div className="treatment-tier-total-amount">
-														<span>{(tier.totalRub || 0).toLocaleString("ru-RU")}</span>
-														<span className="treatment-tier-rub-sign">₽</span>
-													</div>
-													<div className="treatment-tier-finance-chips">
-														<div className="treatment-tier-chip-row">
-															<span>Рассрочка 0% (12 мес):</span>
-															<span className="treatment-tier-chip-highlight">
-																{(tier.monthlyInstallment12Rub || 0).toLocaleString("ru-RU")} ₽/мес
-															</span>
-														</div>
-														<button
-															type="button"
-															onClick={(e) => {
-																e.stopPropagation();
-																setActiveTab("finance");
-															}}
-															className="treatment-tier-ndfl-calc-btn cursor-pointer"
-															title="1-клик детальный расчет вычета 13% НДФЛ и справка ФНС"
-															data-testid={"calc-ndfl-btn-" + tier.tierId}
-														>
-															<div className="flex items-center justify-between w-full">
-																<span className="flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-300">
-																	<Percent size={12} />
-																	<span>Вычет 13% НДФЛ:</span>
-																</span>
-																<span className="font-black text-emerald-700 dark:text-emerald-300">
-																	−{(tier.ndflRefundRub || 0).toLocaleString("ru-RU")} ₽
-																</span>
-															</div>
-															<div className="text-[10px] text-emerald-600/90 dark:text-emerald-400/90 text-left mt-0.5">
-																Итого с вычетом: {(tier.priceWithNdflRefundRub || 0).toLocaleString("ru-RU")} ₽ ({tier.ndflDetails.code === "02" ? "Код 02 без лимита" : "Код 01 лимит 150к"})
-															</div>
-														</button>
-													</div>
-												</div>
-											</div>
-
-											{/* Metrics Strip */}
-											<div className="treatment-tier-metrics">
-												<div className="treatment-metric-item">
-													<Clock size={13} />
-													<span>Срок:</span>
-													<span className="treatment-metric-val">{tier.durationWeeks} нед. ({tier.durationVisits} виз.)</span>
-												</div>
-												<div className="treatment-metric-item">
-													<ShieldCheck size={13} />
-													<span>Гарантия:</span>
-													<span className="treatment-metric-val">
-														{formatWarrantyYearsText(tier.warrantyYears)}
-													</span>
-												</div>
-											</div>
-
-											{/* Advantages & Materials */}
-											<div className="treatment-tier-advantages">
-												<div className="text-[11px] font-bold text-[var(--tp-text-muted)] uppercase tracking-wider">
-													Материалы и преимущества:
-												</div>
-												<p className="text-xs font-semibold text-[var(--tp-text-main)] m-0 leading-snug line-clamp-2">
-													{tier.materialsHeadline}
-												</p>
-												<ul className="list-none p-0 m-0 space-y-1.5 mt-1">
-													{tier.keyAdvantages.slice(0, 4).map((adv, idx) => (
-														<li key={idx} className="treatment-advantage-item">
-															<Check size={14} className="treatment-advantage-icon" />
-															<span className="text-xs">{adv}</span>
-														</li>
-													))}
-												</ul>
-											</div>
-
-											{/* Stages Mini Breakdown */}
-											<div className="treatment-tier-stages-strip">
-												<div className="text-[10px] font-bold text-[var(--tp-text-muted)] uppercase">
-													Смета по этапам лечения:
-												</div>
-												{tier.stages.map((st) => (
-													<div key={st.stageNumber} className="treatment-tier-stage-line">
-														<span className="truncate max-w-[170px]">Этап {st.stageNumber}: {st.title.split(":")[1] || st.title}</span>
-														<span className="treatment-tier-stage-sum">{(st.totalRub || 0).toLocaleString("ru-RU")} ₽</span>
-													</div>
-												))}
-											</div>
-
-											{/* Single Primary Action Button (Miller's Law: strictly 1 primary action) */}
-											<div className="p-3.5 pt-0">
-												<button
-													type="button"
-													onClick={(e) => {
-														e.stopPropagation();
-														handleSelectTier(tier);
-														handleConfirmPatientChoice(tier);
-													}}
-													className="treatment-tier-select-btn w-full cursor-pointer m-0"
-													data-testid={"apply-tier-btn-" + tier.tierId}
-													aria-pressed={isSelected}
-												>
-													{isSelected ? (
-														<>
-															<Check size={14} />
-															<span>Выбранный вариант</span>
-														</>
-													) : (
-														<>
-															<CheckCircle2 size={14} />
-															<span>Применить: выбрать этот план ({(tier.totalRub || 0).toLocaleString("ru-RU")} ₽)</span>
-														</>
-													)}
-												</button>
-											</div>
-										</div>
-									);
-								})}
-							</div>
-
-							{/* Collapsible Stages Accordion for Active Selected Tier */}
-							<section className="treatment-stages-accordion-wrap" data-testid="stages-accordion-section">
-								<div className="treatment-stages-accordion-header">
-									<div className="flex items-center gap-2">
-										<Clock className="text-[var(--tp-primary)] w-5 h-5" />
-										<div>
-											<h4 className="text-sm font-bold text-[var(--tp-text-main)] m-0">
-												Клинические этапы плана: {selectedTier.title} ({getTierLetter(selectedTier.tierId)})
-											</h4>
-											<p className="text-xs text-[var(--tp-text-muted)] m-0">
-												Клинический протокол медицинских услуг и анатомические зоны FDI (11–48)
-											</p>
-										</div>
-									</div>
-
-									<div className="flex items-center gap-2">
-										<button
-											type="button"
-											onClick={() => toggleAllStages(true)}
-											className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--tp-surface-soft)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)] cursor-pointer inline-flex items-center justify-center"
-											data-testid="expand-all-stages-btn"
-										>
-											Развернуть все
-										</button>
-										<button
-											type="button"
-											onClick={() => toggleAllStages(false)}
-											className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--tp-surface-soft)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)] cursor-pointer inline-flex items-center justify-center"
-											data-testid="collapse-all-stages-btn"
-										>
-											Свернуть все
-										</button>
-									</div>
-								</div>
-
-								{/* Stages Accordion List */}
-								<div className="flex flex-col gap-3">
-									{selectedTier.stages.length === 0 ? (
-										<div className="p-8 text-center rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] text-xs text-[var(--tp-text-muted)] flex flex-col items-center justify-center gap-2">
-											<Package size={28} className="text-[var(--tp-primary)] opacity-50" />
-											<span className="font-bold text-sm text-[var(--tp-text-main)]">
-												В данном варианте пока нет клинических этапов
-											</span>
-											<span>
-												Добавьте этапы лечения или выберите готовый клинический пакет СтАР
-											</span>
-										</div>
-									) : (
-										selectedTier.stages.map((stage) => {
-											const isExpanded = Boolean(expandedStages[stage.stageNumber]);
-
-											return (
-												<div
-													key={stage.stageNumber}
-													className="treatment-stage-item"
-													data-testid={"stage-item-" + stage.stageNumber}
-												>
-													{/* Stage Header */}
-													<div
-														onClick={() => toggleStage(stage.stageNumber)}
-														className="treatment-stage-header"
-														data-testid={"stage-toggle-" + stage.stageNumber}
-													>
-														<div className="treatment-stage-title-wrap min-w-0 flex-1">
-															<div className="treatment-stage-num-badge shrink-0">{stage.stageNumber}</div>
-															<div className="min-w-0 flex-1">
-																<h5 className="treatment-stage-name truncate">{stage.title}</h5>
-																<p className="treatment-stage-subtitle truncate">{stage.subtitle}</p>
-															</div>
-														</div>
-
-														<div className="treatment-stage-right-meta shrink-0">
-															<div className="treatment-stage-pill hidden sm:flex">
-																<Clock size={13} />
-																<span>{stage.estimatedWeeks} нед. ({stage.estimatedVisits} виз.)</span>
-															</div>
-															<div className="treatment-stage-total-badge font-mono">
-																{(stage.totalRub || 0).toLocaleString("ru-RU")} ₽
-															</div>
-															<div className="text-[var(--tp-text-muted)]">
-																{isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-															</div>
-														</div>
-													</div>
-
-													{/* Stage Content */}
-													{isExpanded && (
-														<div className="treatment-stage-table-wrap">
-															<table className="treatment-stage-table">
-																<thead>
-																	<tr>
-																		<th className="w-10">№</th>
-																		<th className="w-28">Код услуги</th>
-																		<th className="w-16">Зуб FDI</th>
-																		<th>Наименование услуги</th>
-																		<th className="w-16 text-center">Кол-во</th>
-																		<th className="w-24 text-right">Цена</th>
-																		<th className="w-24 text-right">Итого</th>
-																	</tr>
-																</thead>
-																<tbody>
-																	{(() => {
-																		const microConsumables = stage.items.filter(isMicroConsumable);
-																		const displayList = showMicroConsumables
-																			? stage.items
-																			: stage.items.filter((it) => !isMicroConsumable(it));
-																		return (
-																			<>
-																				{displayList.length === 0 ? (
-																					<tr>
-																						<td colSpan={7} className="py-6 text-center text-xs text-[var(--tp-text-muted)]">
-																							В данном этапе пока нет назначенных медицинских услуг.
-																						</td>
-																					</tr>
-																				) : (
-																					displayList.map((item, idx) => (
-																						<tr key={item.id || idx}>
-																							<td className="text-center font-mono text-[var(--tp-text-muted)]">
-																								{idx + 1}
-																							</td>
-																							<td>
-																								<span className="code-804n-badge">{item.code804n}</span>
-																							</td>
-																							<td className="text-center">
-																								{item.toothNumber ? (
-																									<span className="tooth-fdi-badge">{item.toothNumber}</span>
-																								) : (
-																									<span className="text-[var(--tp-text-muted)]">—</span>
-																								)}
-																							</td>
-																							<td>
-																								<div className="font-semibold text-[var(--tp-text-main)] break-words min-w-0">
-																									{item.name}
-																								</div>
-																								{item.clinicalRationale && (
-																									<div className="text-[11px] text-[var(--tp-text-muted)] mt-0.5">
-																										{item.clinicalRationale}
-																									</div>
-																								)}
-																								{(item.requiresManualPricing || item.priceRub === 0) && (
-																									<div className="mt-1">
-																										<MissingPriceAlert
-																											item={item}
-																											onUpdatePrice={handleUpdateItemPrice}
-																											variant="inline"
-																										/>
-																									</div>
-																								)}
-																							</td>
-																							<td className="text-center font-semibold">{item.quantity}</td>
-																							<td className="text-right text-[var(--tp-text-muted)] font-mono">
-																								{(item.unitPriceRub || 0).toLocaleString("ru-RU")} ₽
-																							</td>
-																							<td className={`text-right font-bold font-mono ${
-																								item.requiresManualPricing || item.priceRub === 0
-																									? "text-amber-600 dark:text-amber-400"
-																									: "text-[var(--tp-text-main)]"
-																							}`}>
-																								{(item.priceRub || 0).toLocaleString("ru-RU")} ₽
-																							</td>
-																						</tr>
-																					))
-																				)}
-																				{microConsumables.length > 0 && (
-																					<tr className="bg-[var(--paper-soft)] border-t border-[var(--border)]">
-																						<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
-																							<div className="flex items-center justify-between flex-wrap gap-2">
-																								<span className="flex items-center gap-1.5 font-medium">
-																									<span>Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
-																								</span>
-																								<button
-																									type="button"
-																									onClick={() => setShowMicroConsumables((prev) => !prev)}
-																									className="text-[var(--teal)] hover:underline font-bold text-xs cursor-pointer ml-auto"
-																								>
-																									{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
-																								</button>
-																							</div>
-																						</td>
-																					</tr>
-																				)}
-																			</>
-																		);
-																	})()}
-																</tbody>
-															</table>
-														</div>
-													)}
-												</div>
-											);
-										})
-									)}
-								</div>
-							</section>
-						</div>
+						<TreatmentPlanPresenterComparisonTab
+							allTiers={allTiers}
+							selectedTierId={selectedTierId}
+							onSelectTier={handleSelectTier}
+							getTierLetter={getTierLetter}
+							formatRubles={formatRubles}
+							expandedStages={expandedStages}
+							onToggleStage={toggleStage}
+							onToggleAllStages={toggleAllStages}
+							showMicroConsumables={showMicroConsumables}
+							onUpdateItemPrice={handleUpdateItemPrice}
+							onConfirmPatientChoice={handleConfirmPatientChoice}
+							isChoiceConfirmed={isChoiceConfirmed}
+							confirmedTierId={confirmedTierId}
+							onApproveAndSign={onApproveAndSign}
+						/>
 					)}
 
-					{/* TAB 2: Detailed Clinical Stages View */}
 					{activeTab === "stages" && (
-						<div className="flex flex-col gap-4" data-testid="stages-detailed-view">
-							<div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex-wrap gap-3">
-								<div>
-									<h3 className="text-base font-bold text-[var(--tp-text-main)] m-0">
-										Развернутая смета клинических этапов лечения
-									</h3>
-									<p className="text-xs text-[var(--tp-text-muted)] m-0">
-										Выбранный вариант: <strong>{selectedTier.title}</strong> · Итого по смете:{" "}
-										<strong className="text-[var(--tp-primary)]">{selectedTier.totalRub.toLocaleString("ru-RU")} ₽</strong>
-									</p>
-								</div>
-								<div className="flex items-center gap-2">
-									{allTiers.map((t) => (
-										<button
-											key={t.tierId}
-											type="button"
-											onClick={() => handleSelectTier(t)}
-											className={"px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer " + (selectedTierId === t.tierId ? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-sm" : "bg-[var(--tp-bg)] text-[var(--tp-text-muted)] border-[var(--tp-border)] hover:text-[var(--tp-text-main)]")}
-										>
-											{t.badge}
-										</button>
-									))}
-								</div>
-							</div>
-
-							<div className="flex flex-col gap-4">
-								{selectedTier.stages.length === 0 ? (
-									<div className="p-8 text-center rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] text-xs text-[var(--tp-text-muted)] flex flex-col items-center justify-center gap-2">
-										<Package size={28} className="text-[var(--tp-primary)] opacity-50" />
-										<span className="font-bold text-sm text-[var(--tp-text-main)]">
-											В смете пока нет клинических этапов
-										</span>
-										<span>
-											Назначьте медицинские процедуры или примените готовые клинические пакеты
-										</span>
-									</div>
-								) : (
-									selectedTier.stages.map((st) => (
-										<div key={st.stageNumber} className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)]">
-											<div className="flex items-center justify-between pb-3 border-b border-[var(--tp-border)] mb-3">
-												<div className="flex items-center gap-3 min-w-0 flex-1">
-													<div className="treatment-stage-num-badge shrink-0">{st.stageNumber}</div>
-													<div className="min-w-0 flex-1">
-														<h4 className="text-sm font-black text-[var(--tp-text-main)] m-0 truncate">{st.title}</h4>
-														<p className="text-xs text-[var(--tp-text-muted)] m-0 truncate">{st.clinicalGoal}</p>
-													</div>
-												</div>
-												<div className="text-right shrink-0">
-													<div className="text-sm font-black text-[var(--tp-text-main)] font-mono">
-														{(st.totalRub || 0).toLocaleString("ru-RU")} ₽
-													</div>
-													<div className="text-[11px] text-[var(--tp-text-muted)]">
-														{st.estimatedWeeks} нед. · {st.estimatedVisits} визитов
-													</div>
-												</div>
-											</div>
-
-											<div className="treatment-stage-table-wrap p-0">
-												<table className="treatment-stage-table">
-													<thead>
-														<tr>
-															<th className="w-10">№</th>
-															<th className="w-28">Код услуги</th>
-															<th className="w-16">Зуб FDI</th>
-															<th>Наименование медицинской услуги</th>
-															<th className="w-16 text-center">Кол-во</th>
-															<th className="w-24 text-right">Цена</th>
-															<th className="w-24 text-right">Стоимость</th>
-														</tr>
-													</thead>
-													<tbody>
-														{(() => {
-															const microConsumables = st.items.filter(isMicroConsumable);
-															const displayList = showMicroConsumables
-																? st.items
-																: st.items.filter((it) => !isMicroConsumable(it));
-															return (
-																<>
-																	{displayList.length === 0 ? (
-																		<tr>
-																			<td colSpan={7} className="py-6 text-center text-xs text-[var(--tp-text-muted)]">
-																				В данном этапе пока нет назначенных процедур
-																			</td>
-																		</tr>
-																	) : (
-																		displayList.map((it, idx) => (
-																			<tr key={it.id || idx}>
-																				<td className="text-center font-mono text-[var(--tp-text-muted)]">{idx + 1}</td>
-																				<td>
-																					<span className="code-804n-badge">{it.code804n}</span>
-																				</td>
-																				<td className="text-center">
-																					{it.toothNumber ? (
-																						<span className="tooth-fdi-badge">{it.toothNumber}</span>
-																					) : (
-																						<span className="text-[var(--tp-text-muted)]">—</span>
-																					)}
-																				</td>
-																				<td>
-																					<div className="font-semibold text-[var(--tp-text-main)] break-words min-w-0">{it.name}</div>
-																					{it.materials && (
-																						<div className="text-[11px] text-teal-700 dark:text-teal-400 mt-0.5">
-																							Материал: {it.materials}
-																						</div>
-																					)}
-																					{(it.requiresManualPricing || it.priceRub === 0) && (
-																						<div className="mt-1">
-																							<MissingPriceAlert
-																								item={it}
-																								onUpdatePrice={handleUpdateItemPrice}
-																								variant="inline"
-																							/>
-																						</div>
-																					)}
-																				</td>
-																				<td className="text-center font-semibold">{it.quantity}</td>
-																				<td className="text-right text-[var(--tp-text-muted)] font-mono">
-																					{(it.unitPriceRub || 0).toLocaleString("ru-RU")} ₽
-																				</td>
-																				<td className={`text-right font-bold font-mono ${
-																					it.requiresManualPricing || it.priceRub === 0
-																						? "text-amber-600 dark:text-amber-400"
-																						: "text-[var(--tp-text-main)]"
-																				}`}>
-																					{(it.priceRub || 0).toLocaleString("ru-RU")} ₽
-																				</td>
-																			</tr>
-																		))
-																	)}
-																	{microConsumables.length > 0 && (
-																		<tr className="bg-[var(--paper-soft)] border-t border-[var(--border)]">
-																			<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
-																				<div className="flex items-center justify-between flex-wrap gap-2">
-																					<span className="flex items-center gap-1.5 font-medium">
-																						<span>Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
-																					</span>
-																					<button
-																						type="button"
-																						onClick={() => setShowMicroConsumables((prev) => !prev)}
-																						className="text-[var(--teal)] hover:underline font-bold text-xs cursor-pointer ml-auto"
-																					>
-																						{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
-																					</button>
-																				</div>
-																			</td>
-																		</tr>
-																	)}
-																</>
-															);
-														})()}
-													</tbody>
-												</table>
-											</div>
-										</div>
-									))
-								)}
-							</div>
-						</div>
+						<TreatmentPlanPresenterStagesTab
+							selectedTier={selectedTier}
+							selectedTierId={selectedTierId}
+							allTiers={allTiers}
+							onSelectTier={handleSelectTier}
+							showMicroConsumables={showMicroConsumables}
+							onUpdateItemPrice={handleUpdateItemPrice}
+						/>
 					)}
 
-					{/* TAB: Patient Treatment Plan Visual Roadmap (Дорожная карта) */}
 					{activeTab === "roadmap" && (
-						<div className="treatment-roadmap-wrapper p-2 sm:p-4" data-testid="treatment-plan-roadmap-view">
-							<TreatmentPlanRoadmap
-								stages={selectedTier.stages}
-								planTitle={`План лечения: ${selectedTier.title}`}
-								planNumber={contractNumber || "КП-2026/01"}
-								curatingDoctorName={doctorFullName || "Лечащий врач-стоматолог"}
-								patientFullName={patientName || "Пациент"}
-								onBookStage={(stage) => {
-									showToast(`Запись на этап: «${stage.titleRu}» (${stage.timelineRu}) передана в расписание`, "info");
-									if (typeof window !== "undefined") {
-										window.dispatchEvent(
-											new CustomEvent("dente-book-stage-appointment", {
-												detail: {
-													patientId,
-													patientName,
-													stageTitle: stage.titleRu,
-													stageNumber: stage.stageNumber,
-													timelineRu: stage.timelineRu,
-													items: stage.procedures.map((p) => ({
-														id: p.id,
-														name: p.patientFriendlyTitleRu || p.medicalTitleRu,
-														priceRub: p.priceRub,
-														quantity: p.quantity,
-														toothNumber: p.toothNumber,
-													})),
-												},
-											}),
-										);
-									}
-								}}
-							/>
-						</div>
+						<TreatmentPlanRoadmap
+							tier={selectedTier}
+							patientName={patientName}
+							doctorName={doctorFullName}
+							clinicName={clinicName}
+							displayContractNumber={displayContractNumber}
+							todayRu={todayRu}
+							getTierLetter={getTierLetter}
+							onPrint={handlePrintAppendix}
+							onConfirmPatientChoice={() => handleConfirmPatientChoice(selectedTier)}
+						/>
 					)}
 
-					{/* TAB 3: Financial Calculator (Installments 0% & NDFL 13% Refund) */}
 					{activeTab === "finance" && (
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-6" data-testid="finance-view">
-							{/* Installments 0% Box */}
-							<div className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col justify-between gap-4">
-								<div>
-									<div className="flex items-center gap-2 text-[var(--tp-primary)] mb-2">
-										<CreditCard size={20} />
-										<h4 className="text-sm font-bold text-[var(--tp-text-main)] m-0">
-											Рассрочка 0% без первого взноса и переплат
-										</h4>
-									</div>
-									<p className="text-xs text-[var(--tp-text-muted)] leading-relaxed">
-										Оплата лечения равными частями без процентов. Равномерное копеечное распределение.
-									</p>
-
-									{/* Months Switcher */}
-									<div className="flex items-center gap-2 my-4">
-										{([3, 6, 12, 24] as const).map((m) => (
-											<button
-												key={m}
-												type="button"
-												onClick={() => setInstallmentMonths(m)}
-												className={"flex-1 min-h-[38px] py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer " + (installmentMonths === m ? "bg-[var(--tp-primary)] text-white border-[var(--tp-primary)] shadow-sm" : "bg-[var(--tp-surface-soft)] text-[var(--tp-text-muted)] border-[var(--tp-border)] hover:text-[var(--tp-text-main)]")}
-											>
-												{m} мес.
-											</button>
-										))}
-									</div>
-
-									<div className="p-4 rounded-xl bg-[var(--tp-bg)] border border-[var(--tp-border)] flex flex-col gap-2">
-										<div className="flex items-center justify-between text-xs text-[var(--tp-text-muted)]">
-											<span>Сумма плана:</span>
-											<span className="font-bold text-[var(--tp-text-main)]">
-												{selectedTier.totalRub.toLocaleString("ru-RU")} ₽
-											</span>
-										</div>
-										<div className="flex items-center justify-between text-xs text-[var(--tp-text-muted)]">
-											<span>Срок рассрочки:</span>
-											<span className="font-bold text-[var(--tp-text-main)]">{installmentMonths} месяцев</span>
-										</div>
-										<div className="border-t border-[var(--tp-border)] pt-2 flex items-center justify-between">
-											<span className="text-xs font-bold text-[var(--tp-text-main)]">Ежемесячный платеж:</span>
-											<span className="text-lg font-black text-[var(--tp-primary)]">
-												{selectedTier.installments[installmentMonths].monthlyPaymentRub.toLocaleString("ru-RU")} ₽/мес
-											</span>
-										</div>
-									</div>
-								</div>
-
-								<div className="text-[11px] text-[var(--tp-text-muted)] bg-[var(--tp-surface-soft)] p-3 rounded-xl border border-[var(--tp-border)] flex items-center gap-1.5">
-									<Check size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span>Оформление за 2 минуты у стойки администратора без справок о доходах</span>
-								</div>
-							</div>
-
-							{/* NDFL 13% Deduction Box */}
-							<div className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col justify-between gap-4">
-								<div>
-									<div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2">
-										<Percent size={20} />
-										<h4 className="text-sm font-bold text-[var(--tp-text-main)] m-0">
-											Налоговый вычет 13% НДФЛ (НК РФ)
-										</h4>
-									</div>
-									<p className="text-xs text-[var(--tp-text-muted)] leading-relaxed">
-										{selectedTier.ndflDetails.codeDescription}
-									</p>
-
-									<div className="p-4 rounded-xl bg-[var(--tp-bg)] border border-[var(--tp-border)] flex flex-col gap-2.5 my-4">
-										<div className="flex items-center justify-between text-xs text-[var(--tp-text-muted)]">
-											<span>Код услуги в справке:</span>
-											<span className="font-mono font-bold text-[var(--tp-text-main)]">
-												Код {selectedTier.ndflDetails.code}
-											</span>
-										</div>
-										<div className="flex items-center justify-between text-xs text-[var(--tp-text-muted)]">
-											<span>Сумма к возврату 13%:</span>
-											<span className="text-base font-black text-emerald-600 dark:text-emerald-400">
-												+{selectedTier.ndflRefundRub.toLocaleString("ru-RU")} ₽
-											</span>
-										</div>
-										<div className="border-t border-[var(--tp-border)] pt-2 flex items-center justify-between">
-											<span className="text-xs font-bold text-[var(--tp-text-main)]">
-												Итоговая стоимость с учетом вычета:
-											</span>
-											<span className="text-lg font-black text-[var(--tp-text-main)]">
-												{selectedTier.priceWithNdflRefundRub.toLocaleString("ru-RU")} ₽
-											</span>
-										</div>
-									</div>
-								</div>
-
-								<div className="text-[11px] text-[var(--tp-text-muted)] bg-[var(--tp-surface-soft)] p-3 rounded-xl border border-[var(--tp-border)] flex items-center gap-1.5">
-									<Check size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-									<span>Выдаем готовую официальную справку об оплате услуг для налогового вычета (13% НДФЛ)</span>
-								</div>
-							</div>
-						</div>
+						<TreatmentPlanPresenterFinanceTab
+							selectedTier={selectedTier}
+							installmentMonths={installmentMonths}
+							setInstallmentMonths={setInstallmentMonths}
+						/>
 					)}
 
-					{/* TAB 4: Official Contract Appendix #1 & Patient-Friendly Estimate Print Sheet */}
 					{activeTab === "print_appendix" && (
-						<div className="treatment-appendix-print-doc" data-testid="appendix-print-document">
-							{/* Top Print Actions (hidden on print) */}
-							<div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-300 no-print flex-wrap gap-2">
-								<div className="flex items-center gap-2 text-slate-700">
-									<FileText size={18} />
-									<span className="font-bold text-sm">
-										{printDocFormat === "patient_friendly"
-											? "Понятная смета для пациента (крупные блоки, без шелухи)"
-											: "Официальное Приложение №1 к Договору (Постановление Правительства РФ № 736)"}
-									</span>
-								</div>
-								<div className="flex items-center gap-2 flex-wrap">
-									{/* Format Selector: Patient vs Official */}
-									<div className="inline-flex p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs">
-										<button
-											type="button"
-											onClick={() => setPrintDocFormat("patient_friendly")}
-											className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-												printDocFormat === "patient_friendly"
-													? "bg-white dark:bg-slate-700 text-teal-800 dark:text-teal-200 shadow-xs"
-													: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-											}`}
-											data-testid="print-format-patient-btn"
-										>
-											<FileText size={13} className="shrink-0" />
-											<span>Смета для пациента</span>
-										</button>
-										<button
-											type="button"
-											onClick={() => setPrintDocFormat("official_appendix")}
-											className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-												printDocFormat === "official_appendix"
-													? "bg-white dark:bg-slate-700 text-teal-800 dark:text-teal-200 shadow-xs"
-													: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-											}`}
-											data-testid="print-format-official-btn"
-										>
-											<FileCheck2 size={13} className="shrink-0" />
-											<span>Приложение №1 (Официальная смета)</span>
-										</button>
-									</div>
-
-									{printDocFormat === "official_appendix" && (
-										<button
-											type="button"
-											onClick={() => setShowMicroConsumables(!showMicroConsumables)}
-											className="min-h-[38px] px-3 py-1.5 rounded-lg border border-[var(--line)] text-xs font-semibold text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors inline-flex items-center justify-center"
-											title="Скрывать мелкие расходные материалы (салфетки, валики, слюноотсосы) для чистоты сметы"
-										>
-											{showMicroConsumables ? "Скрыть микро-расходники" : "Детализировать микро-расходники"}
-										</button>
-									)}
-
-									<button
-										type="button"
-										onClick={() => window.print()}
-										className="btn-treatment-action btn-patient-choice cursor-pointer"
-										data-testid="trigger-print-btn"
-									>
-										<Printer size={16} />
-										<span>Печать сметы (Ctrl+P)</span>
-									</button>
-								</div>
-							</div>
-
-							{printDocFormat === "patient_friendly" ? (
-								/* ==========================================================
-								   PATIENT-FRIENDLY ESTIMATE: CLEAN LARGE BLOCKS (Mandate 8e)
-								   ========================================================== */
-								<div className="patient-friendly-estimate-doc" style={{ position: "relative" }} data-testid="patient-friendly-estimate-view">
-									<div
-										className="treatment-doc-watermark"
-										style={{
-											position: "absolute",
-											top: "45%",
-											left: "50%",
-											transform: "translate(-50%, -50%) rotate(-32deg)",
-											fontSize: "52pt",
-											fontWeight: 900,
-											color: "rgba(0, 0, 0, 0.04)",
-											textTransform: "uppercase",
-											letterSpacing: "4pt",
-											pointerEvents: "none",
-											zIndex: 0,
-											userSelect: "none",
-										}}
-										aria-hidden="true"
-									>
-										{effectiveWatermark}
-									</div>
-									{/* Top Header */}
-									<div className="patient-estimate-header">
-										<div>
-											<div className="text-base font-black uppercase text-teal-800 tracking-tight">
-												{clinicName}
-											</div>
-											<div className="text-xs text-slate-500">
-												Лицензия: {clinicLicense}{clinicPhone ? ` · Тел: ${clinicPhone}` : ""}
-											</div>
-										</div>
-										<div className="text-right">
-											<div style={{ marginBottom: "2px" }}>
-												<span
-													className="treatment-watermark-stamp"
-													style={{
-														display: "inline-block",
-														border: `1.5pt solid ${stampColor}`,
-														color: stampColor,
-														padding: "1pt 5pt",
-														borderRadius: "3px",
-														fontSize: "7.5pt",
-														fontWeight: 800,
-														textTransform: "uppercase",
-														letterSpacing: "0.04em",
-													}}
-													data-testid="treatment-watermark-stamp"
-												>
-													{effectiveWatermark}
-												</span>
-											</div>
-											<div className="patient-estimate-title-main">
-												Смета и план лечения
-											</div>
-											<div className="text-xs text-slate-500">
-												Договор № <strong>{displayContractNumber}</strong> от {todayRu} г.
-											</div>
-										</div>
-									</div>
-
-									{/* Patient & Plan Summary Strip */}
-									<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200 mb-4 text-xs">
-										<div>
-											<span className="text-slate-500 block text-[10.5px]">Пациент:</span>
-											<strong className="text-slate-900 text-sm">{patientName}</strong>
-											<div className="text-slate-500 text-[10.5px] mt-0.5">
-												Номер медкарты: {patientId}{patientPhone ? ` · Тел: ${patientPhone}` : ""}
-											</div>
-										</div>
-										<div>
-											<span className="text-slate-500 block text-[10.5px]">Лечащий врач:</span>
-											<strong className="text-slate-900 text-sm">{doctorFullName}</strong>
-											<div className="text-slate-500 text-[10.5px] mt-0.5">{doctorSpecialty}</div>
-										</div>
-										<div>
-											<span className="text-slate-500 block text-[10.5px]">Выбранный вариант:</span>
-											<strong className="text-teal-800 text-sm">
-												{selectedTier.title} ({getTierLetter(selectedTier.tierId)})
-											</strong>
-											<div className="text-emerald-700 font-bold text-[10.5px] mt-0.5 inline-flex items-center gap-1">
-												<ShieldCheck size={12} className="shrink-0 text-emerald-600" />
-												<span>Гарантия клиники: {formatWarrantyYearsText(selectedTier.warrantyYears)}</span>
-											</div>
-										</div>
-									</div>
-
-									{/* 30-Day Notice Banner if Applicable */}
-									{planAgeDays > 30 && (
-										<div className="p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-semibold mb-4 flex items-center gap-2">
-											<Clock size={15} className="text-amber-600 shrink-0" />
-											<span>
-												План составлен более 30 дней назад, цены могут быть скорректированы. Стоимость зафиксирована по согласованию с лечащим врачом. Оказание услуг, оформление нарядов в ЗТЛ и оплата производятся без ограничений (Мандат 8e).
-											</span>
-										</div>
-									)}
-
-									{/* Large Clinical Stage Blocks */}
-									<div className="space-y-4">
-										{activeSelectedTierStages.map((stage) => {
-											const cleanItems = stage.items.filter((it) => !isMicroConsumable(it));
-											const microConsumablesCount = stage.items.length - cleanItems.length;
-
-											return (
-												<div
-													key={stage.stageNumber}
-													className="patient-stage-card"
-													data-testid={`patient-stage-block-${stage.stageNumber}`}
-												>
-													<div className="patient-stage-card-header">
-														<div className="flex items-center gap-2 flex-wrap">
-															<span className="patient-stage-card-title">
-																{stage.title}
-															</span>
-														</div>
-														<div className="patient-stage-pill">
-															<span className="inline-flex items-center gap-1">
-																<Clock size={11} className="shrink-0" />
-																<span>Срок: ~{stage.estimatedWeeks} нед.</span>
-															</span>
-															<span>•</span>
-															<span>Визитов: ~{stage.estimatedVisits}</span>
-														</div>
-													</div>
-
-													<p className="text-xs text-slate-600 mb-2.5 italic">
-														Цель этапа: {stage.clinicalGoal || stage.subtitle}
-													</p>
-
-													<table className="patient-proc-table">
-														<thead>
-															<tr>
-																<th style={{ width: "45px" }}>Зуб</th>
-																<th>Медицинская услуга / комплекс</th>
-																<th>Материалы и технологии</th>
-																<th style={{ width: "95px", textAlign: "right" }}>Стоимость</th>
-															</tr>
-														</thead>
-														<tbody>
-															{cleanItems.map((it, idx) => (
-																<tr key={it.id || idx}>
-																	<td style={{ textAlign: "center" }}>
-																		{it.toothNumber ? (
-																			<span className="patient-proc-tooth-badge">
-																				{it.toothNumber}
-																			</span>
-																		) : (
-																			<span className="text-slate-400 text-xs">—</span>
-																		)}
-																	</td>
-																	<td className="font-semibold text-slate-900">
-																		{it.name}
-																	</td>
-																	<td className="text-xs text-slate-600">
-																		{it.materials || "Стандарт клиники"}
-																	</td>
-																	<td style={{ textAlign: "right", fontWeight: "bold" }}>
-																		{it.priceRub.toLocaleString("ru-RU")} ₽
-																	</td>
-																</tr>
-															))}
-
-															{microConsumablesCount > 0 && (
-																<tr className="text-slate-400 italic text-[9pt] bg-slate-50/50">
-																	<td style={{ textAlign: "center" }}>•</td>
-																	<td colSpan={2}>
-																		Индивидуальный гигиенический и асептический комплект (салфетки, слюноотсос, валики, перчатки — включено)
-																	</td>
-																	<td style={{ textAlign: "right" }}>Включено</td>
-																</tr>
-															)}
-														</tbody>
-													</table>
-
-													<div className="patient-stage-total-row">
-														<span>Итого по Этапу {stage.stageNumber}:</span>
-														<span className="font-mono text-base font-black text-teal-800">
-															{stage.totalRub.toLocaleString("ru-RU")} ₽
-														</span>
-													</div>
-												</div>
-											);
-										})}
-									</div>
-
-									{/* Large 3-Card Financial Summary Grid */}
-									<div className="patient-finance-grid">
-										<div className="patient-finance-card highlight">
-											<div className="patient-finance-card-label">ИТОГО К ОПЛАТЕ ПО СМЕТЕ</div>
-											<div className="patient-finance-card-value">
-												{selectedTier.totalRub.toLocaleString("ru-RU")} ₽
-											</div>
-											<div className="patient-finance-card-desc">
-												Полная фиксированная стоимость всех этапов и материалов «под ключ»
-											</div>
-										</div>
-
-										<div className="patient-finance-card">
-											<div className="patient-finance-card-label">ВОЗВРАТ 13% НДФЛ</div>
-											<div className="patient-finance-card-value text-emerald-700">
-												+{selectedTier.ndflRefundRub.toLocaleString("ru-RU")} ₽
-											</div>
-											<div className="patient-finance-card-desc">
-												Фактическая стоимость: <strong>{selectedTier.priceWithNdflRefundRub.toLocaleString("ru-RU")} ₽</strong>. Справку для ФНС клиника выдает бесплатно.
-											</div>
-										</div>
-
-										<div className="patient-finance-card">
-											<div className="patient-finance-card-label">РАССРОЧКА 0% БЕЗ ПЕРЕПЛАТ</div>
-											<div className="patient-finance-card-value text-indigo-700">
-												от {selectedTier.installments[12].monthlyPaymentRub.toLocaleString("ru-RU")} ₽/мес.
-											</div>
-											<div className="patient-finance-card-desc">
-												На 12 месяцев равными частями без процентов и скрытых комиссий
-											</div>
-										</div>
-									</div>
-
-									{/* Notes & Clinical Guarantees */}
-									<div className="text-xs text-slate-600 space-y-1 mb-6">
-										<p>
-											• План составлен в соответствии с Клиническими рекомендациями Стоматологической Ассоциации России (СтАР).
-										</p>
-										<p>
-											• Гарантия на выполненные работы и материалы составляет <strong>{formatWarrantyYearsText(selectedTier.warrantyYears)}</strong> при соблюдении рекомендаций врача и прохождении плановой гигиены каждые 6 месяцев.
-										</p>
-										<p>
-											• Информированное согласие (ст. 20 323-ФЗ): Пациент подтверждает ознакомление с планом, этапами, альтернативными сценариями лечения и порядком оплаты.
-										</p>
-									</div>
-
-									{/* Signatures */}
-									<div className="treatment-print-signatures">
-										<div>
-											<div className="font-bold text-xs">Лечащий врач:</div>
-											<div className="treatment-sig-box">
-												<div>_____________________ / {doctorFullName} /</div>
-												<div className="text-[8pt] text-slate-500 mt-1">подпись, печать клиники</div>
-											</div>
-										</div>
-										<div>
-											<div className="font-bold text-xs">Пациент:</div>
-											<div className="treatment-sig-box">
-												<div>_____________________ / {patientName} /</div>
-												<div className="text-[8pt] text-slate-500 mt-1">
-													С этапами, сроками и сметой ознакомлен и согласен. Вариант утвержден.
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-							) : (
-								/* ==========================================================
-								   OFFICIAL LEGAL APPENDIX #1 (PP RF № 736 & Order 804n)
-								   ========================================================== */
-								<div data-testid="official-appendix-view" style={{ position: "relative" }}>
-									<div
-										className="treatment-doc-watermark"
-										style={{
-											position: "absolute",
-											top: "45%",
-											left: "50%",
-											transform: "translate(-50%, -50%) rotate(-30deg)",
-											fontSize: "52pt",
-											fontWeight: 900,
-											color: "rgba(0, 0, 0, 0.04)",
-											textTransform: "uppercase",
-											letterSpacing: "4pt",
-											pointerEvents: "none",
-											zIndex: 0,
-											userSelect: "none",
-										}}
-										aria-hidden="true"
-									>
-										{effectiveWatermark}
-									</div>
-									{/* Document Header */}
-									<div className="treatment-appendix-header">
-										<div>
-											<div className="font-bold text-sm uppercase">{clinicName}</div>
-											<div className="text-xs text-slate-600">
-												Лицензия: {clinicLicense}
-											</div>
-										</div>
-										<div className="text-right">
-											<div style={{ marginBottom: "2px" }}>
-												<span
-													className="treatment-watermark-stamp"
-													style={{
-														display: "inline-block",
-														border: `1.5pt solid ${stampColor}`,
-														color: stampColor,
-														padding: "1pt 5pt",
-														borderRadius: "3px",
-														fontSize: "7.5pt",
-														fontWeight: 800,
-														textTransform: "uppercase",
-														letterSpacing: "0.04em",
-													}}
-													data-testid="treatment-watermark-stamp"
-												>
-													{effectiveWatermark}
-												</span>
-											</div>
-											<div className="font-bold text-xs">ПРИЛОЖЕНИЕ № 1</div>
-											<div className="text-[10px] text-slate-600">к Договору на оказание платных медицинских услуг</div>
-											<div className="text-[10px] text-slate-600">Дата: {todayRu} г.</div>
-										</div>
-									</div>
-
-									{/* Document Title */}
-									<h3 className="treatment-appendix-title">
-										СМЕТА И КОМПЛЕКСНЫЙ ПЛАН ЛЕЧЕНИЯ
-									</h3>
-									<div className="treatment-appendix-subtitle">
-										План лечения: <strong>{selectedTier.title} ({getTierLetter(selectedTier.tierId)})</strong>
-									</div>
-
-									{/* Parties Grid */}
-									<div className="treatment-appendix-parties-grid">
-										<div>
-											<div className="font-bold border-b border-black pb-1 mb-1">ИСПОЛНИТЕЛЬ (КЛИНИКА):</div>
-											<div>{clinicLegalName}</div>
-											{(clinicInn || clinicOgrn) && (
-												<div>
-													{[clinicInn ? `ИНН: ${clinicInn}` : "", clinicOgrn ? `ОГРН: ${clinicOgrn}` : ""].filter(Boolean).join(" · ")}
-												</div>
-											)}
-											{clinicAddress && <div>Адрес: {clinicAddress}</div>}
-											{clinicLicense && <div>Лицензия: {clinicLicense}</div>}
-											<div>Лечащий врач: {doctorFullName} ({doctorSpecialty})</div>
-										</div>
-										<div>
-											<div className="font-bold border-b border-black pb-1 mb-1">ЗАКАЗЧИК (ПАЦИЕНТ):</div>
-											<div>ФИО: <strong>{patientName || "_________________________________"}</strong></div>
-											<div>Дата рождения: {patientBirthDate || "«___» _______ 19___ г."}</div>
-											<div>Телефон: {patientPhone || "____________________"}</div>
-											<div>Номер медицинской карты: {patientId || "____________________"}</div>
-										</div>
-									</div>
-
-									{/* Table of Procedures */}
-									<table className="treatment-print-table">
-										<thead>
-											<tr>
-												<th style={{ width: "24px" }}>№</th>
-												<th style={{ width: "90px" }}>Код услуги</th>
-												<th style={{ width: "45px" }}>Зуб</th>
-												<th>Наименование медицинской услуги</th>
-												<th style={{ width: "40px" }}>Кол-во</th>
-												<th style={{ width: "70px" }}>Цена (руб.)</th>
-												<th style={{ width: "70px" }}>Скидка (руб.)</th>
-												<th style={{ width: "80px" }}>Стоимость (руб.)</th>
-											</tr>
-										</thead>
-										<tbody>
-											{(() => {
-												let globalAppendixItemIndex = 1;
-												return activeSelectedTierStages.map((stage) => {
-													const displayItems = showMicroConsumables
-														? stage.items
-														: stage.items.filter((it) => !isMicroConsumable(it));
-													const microConsumablesCount = stage.items.length - displayItems.length;
-
-													return (
-														<React.Fragment key={stage.stageNumber}>
-															<tr style={{ background: "var(--paper-soft, var(--line))", fontWeight: "bold" }}>
-																<td colSpan={7}>
-																	{stage.title} (Срок: {stage.estimatedWeeks} нед., {stage.estimatedVisits} визитов)
-																</td>
-																<td style={{ textAlign: "right" }}>
-																	{stage.totalRub.toLocaleString("ru-RU")}
-																</td>
-															</tr>
-															{displayItems.map((it) => {
-																const itemIdx = globalAppendixItemIndex++;
-																return (
-																	<tr key={it.id || itemIdx}>
-																		<td style={{ textAlign: "center" }}>{itemIdx}</td>
-																		<td style={{ fontFamily: "monospace", fontSize: "8.5pt" }}>{it.code804n}</td>
-																		<td style={{ textAlign: "center", fontWeight: "bold" }}>{it.toothNumber || "—"}</td>
-																		<td>
-																			<div>{it.name}</div>
-																			{it.materials && (
-																				<div style={{ fontSize: "8pt", color: "var(--muted)" }}>
-																					Материал: {it.materials}
-																				</div>
-																			)}
-																		</td>
-																		<td style={{ textAlign: "center" }}>{it.quantity}</td>
-																		<td style={{ textAlign: "right" }}>{it.unitPriceRub.toLocaleString("ru-RU")}</td>
-																		<td style={{ textAlign: "right" }}>{it.discountRub.toLocaleString("ru-RU")}</td>
-																		<td style={{ textAlign: "right", fontWeight: "bold" }}>
-																			{it.priceRub.toLocaleString("ru-RU")}
-																		</td>
-																	</tr>
-																);
-															})}
-															{!showMicroConsumables && microConsumablesCount > 0 && (
-																<tr style={{ background: "var(--paper-soft, var(--paper))", fontStyle: "italic", fontSize: "8pt", color: "var(--muted)" }}>
-																	<td style={{ textAlign: "center" }}>•</td>
-																	<td colSpan={6}>
-																		Индивидуальный гигиенический и асептический комплект (салфетки, валики, слюноотсос, перчатки — {microConsumablesCount} поз., включено в стоимость этапа)
-																	</td>
-																	<td style={{ textAlign: "right" }}>Включено</td>
-																</tr>
-															)}
-														</React.Fragment>
-													);
-												});
-											})()}
-										</tbody>
-										<tfoot>
-											<tr style={{ fontWeight: "bold", fontSize: "10pt", background: "var(--paper-soft, var(--paper))" }}>
-												<td colSpan={7} style={{ textAlign: "right", paddingRight: "8px" }}>
-													ИТОГО ПО СМЕТЕ:
-												</td>
-												<td style={{ textAlign: "right", fontSize: "11pt" }}>
-													{selectedTier.totalRub.toLocaleString("ru-RU")} руб. 00 коп.
-												</td>
-											</tr>
-										</tfoot>
-									</table>
-
-									{/* Notes & Guarantees */}
-									<div style={{ fontSize: "8.5pt", lineHeight: "1.4", marginBottom: "16px" }}>
-										<p style={{ margin: "4px 0" }}>
-											1. Услуги оказываются в соответствии с клиническими рекомендациями Стоматологической ассоциации России (СтАР) и стандартами медицинской помощи.
-										</p>
-										<p style={{ margin: "4px 0" }}>
-											2. Гарантийный срок на ортопедические конструкции и пломбировочные материалы составляет <strong>{formatWarrantyYearsText(selectedTier.warrantyYears)}</strong> при условии соблюдения пациентом правил гигиены и прохождения контрольных осмотров каждые 6 месяцев.
-										</p>
-										<p style={{ margin: "4px 0" }}>
-											3. Дифференцированные гарантии клиники: Базовый / Эконом — 1 год; Оптимальный — 2 года; Премиум — 5 лет (пожизненная международная гарантия производителя на имплантаты Straumann/Astra Tech).
-										</p>
-										<p style={{ margin: "4px 0" }}>
-											4. Заказчик уведомлен о праве на получение социального налогового вычета по НДФЛ в размере 13% от стоимости лечения (Код {selectedTier.ndflDetails.code}).
-										</p>
-									</div>
-
-									{/* Signatures */}
-									<div className="treatment-print-signatures">
-										<div>
-											<div className="font-bold">Исполнитель (Врач):</div>
-											<div className="treatment-sig-box">
-												<div>_____________________ / {doctorFullName} /</div>
-												<div className="text-[8pt] text-slate-500 mt-1">подпись, расшифровка, М.П.</div>
-											</div>
-										</div>
-										<div>
-											<div className="font-bold">Заказчик (Пациент):</div>
-											<div className="treatment-sig-box">
-												<div>_____________________ / {patientName} /</div>
-												<div className="text-[8pt] text-slate-500 mt-1">
-													С планом лечения, этапами, сроками и сметой ознакомлен и согласен
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-							)}
-						</div>
+						<TreatmentPlanPresenterPrintView
+							printDocFormat={printDocFormat}
+							setPrintDocFormat={setPrintDocFormat}
+							showMicroConsumables={showMicroConsumables}
+							setShowMicroConsumables={setShowMicroConsumables}
+							selectedTier={selectedTier}
+							patientName={patientName}
+							patientBirthDate={patientBirthDate}
+							patientPhone={patientPhone}
+							doctorFullName={doctorFullName}
+							doctorSpecialty={doctorSpecialty}
+							clinicName={clinicName}
+							clinicLegalName={clinicLegalName}
+							clinicInn={clinicInn}
+							clinicOgrn={clinicOgrn}
+							clinicAddress={clinicAddress}
+							clinicPhone={clinicPhone}
+							clinicLicense={clinicLicense}
+							displayContractNumber={displayContractNumber}
+							todayRu={todayRu}
+							watermarkText={watermarkText}
+							getTierLetter={getTierLetter}
+						/>
 					)}
 
-					{/* TAB 5: AI Clinical Audit & Chairside Commentary */}
 					{activeTab === "ai_audit" && (
-						<div className="flex flex-col gap-6" data-testid="ai-audit-view">
-							{/* AI Status & Header Bar */}
-							<div className="p-4 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-								<div className="flex items-center gap-3">
-									<div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-indigo-500/20 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
-										<Bot size={22} />
-									</div>
-									<div>
-										<div className="flex items-center gap-2 flex-wrap">
-											<h3 className="text-sm font-bold text-[var(--tp-text-main)] m-0">
-												Клинический ИИ-Аудитор и Ассистент DENTE
-											</h3>
-											<span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
-												{aiAuditResult?.modelUsed ? `Модель: ${aiAuditResult.modelUsed}` : "Omni-Gateway (Qwen 3.8 27B / Gemini)"}
-											</span>
-										</div>
-										<p className="text-xs text-[var(--tp-text-muted)] m-0 mt-0.5">
-											Валидация анатомии зубов FDI, клинических протоколов СтАР и перевод для пациента
-										</p>
-									</div>
-								</div>
-
-								<div className="flex items-center gap-2 shrink-0">
-									{aiAuditResult && (
-										<div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-[var(--tp-bg)]">
-											<span className="text-xs text-[var(--tp-text-muted)]">Соответствие:</span>
-											<span className={`text-sm font-black ${
-												aiAuditResult.clinicalValidation.complianceScorePercent >= 90
-													? "text-emerald-600 dark:text-emerald-400"
-													: aiAuditResult.clinicalValidation.complianceScorePercent >= 70
-														? "text-amber-600 dark:text-amber-400"
-														: "text-rose-600 dark:text-rose-400"
-											}`}>
-												{aiAuditResult.clinicalValidation.complianceScorePercent}%
-											</span>
-										</div>
-									)}
-
-									<button
-										type="button"
-										onClick={handleRunAiAudit}
-										aria-busy={isAiAuditing}
-										className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--tp-primary)] text-white hover:opacity-90 transition-opacity cursor-pointer"
-										title={isAiAuditing ? "Идёт клинический анализ плана лечения..." : (aiAuditResult ? "Обновить анализ" : "Запустить ИИ-аудит")}
-										data-testid="refresh-ai-audit-btn"
-									>
-										{isAiAuditing ? (
-											<>
-												<div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-												<span>Анализ...</span>
-											</>
-										) : (
-											<>
-												<Sparkles size={14} />
-												<span>{aiAuditResult ? "Обновить анализ" : "Запустить ИИ-аудит"}</span>
-											</>
-										)}
-									</button>
-								</div>
-							</div>
-
-							{/* Loading State */}
-							{isAiAuditing && !aiAuditResult && (
-								<div className="p-12 text-center rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col items-center justify-center gap-3">
-									<div className="w-8 h-8 border-3 border-[var(--tp-primary)]/20 border-t-[var(--tp-primary)] rounded-full animate-spin" />
-									<div className="text-sm font-bold text-[var(--tp-text-main)]">
-										ИИ-эксперт DENTE анализирует план лечения...
-									</div>
-									<div className="text-xs text-[var(--tp-text-muted)] max-w-md">
-										Проверка анатомии корневых каналов FDI, интервалов остеоинтеграции, защиты депульпированных зубов и расчет вычета 13% НДФЛ
-									</div>
-								</div>
-							)}
-
-							{/* Content when ready */}
-							{aiAuditResult && (
-								<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-									{/* LEFT COLUMN: Clinical Validation & FDI Anatomy */}
-									<div className="flex flex-col gap-4">
-										{/* Status Banner */}
-										<div className={`p-4 rounded-2xl border flex items-start gap-3 ${
-											aiAuditResult.clinicalValidation.overallStatus === "FULL_COMPLIANCE"
-												? "bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-100"
-												: aiAuditResult.clinicalValidation.overallStatus === "COMPLIANT_WITH_RECOMMENDATIONS"
-													? "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-100"
-													: "bg-rose-500/10 border-rose-500/30 text-rose-950 dark:text-rose-100"
-										}`}>
-											{aiAuditResult.clinicalValidation.overallStatus === "FULL_COMPLIANCE" ? (
-												<CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-											) : (
-												<AlertCircle size={20} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-											)}
-											<div>
-												<div className="font-bold text-sm">
-													{aiAuditResult.clinicalValidation.overallStatus === "FULL_COMPLIANCE"
-														? "Полное клиническое соответствие стандартам СтАР"
-														: aiAuditResult.clinicalValidation.overallStatus === "COMPLIANT_WITH_RECOMMENDATIONS"
-															? "План соответствует стандартам с клиническими рекомендациями"
-															: "Выявлены критические несоответствия клиническим протоколам"}
-												</div>
-												<div className="text-xs opacity-90 mt-1">
-													Проверено {aiAuditResult.clinicalValidation.totalChecksCount} параметров: {aiAuditResult.clinicalValidation.passedChecksCount} пройдено, {aiAuditResult.clinicalValidation.warningsCount} предупреждений, {aiAuditResult.clinicalValidation.errorsCount} ошибок.
-												</div>
-											</div>
-										</div>
-
-										{/* Critical Warnings if any */}
-										{aiAuditResult.clinicalValidation.criticalWarnings.length > 0 && (
-											<div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-xs">
-												<div className="font-bold text-rose-900 dark:text-rose-200 mb-2 flex items-center gap-1.5">
-													<AlertCircle size={15} />
-													<span>Клинические риски и предупреждения:</span>
-												</div>
-												<ul className="list-disc list-inside space-y-1.5 text-rose-800 dark:text-rose-300">
-													{aiAuditResult.clinicalValidation.criticalWarnings.map((w, idx) => (
-														<li key={idx}>{w}</li>
-													))}
-												</ul>
-											</div>
-										)}
-
-										{/* Anatomical Checks Box */}
-										<div className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)]">
-											<h4 className="text-sm font-bold text-[var(--tp-text-main)] mb-3 flex items-center gap-2">
-												<ShieldCheck size={16} className="text-teal-600 dark:text-teal-400" />
-												<span>Анатомический аудит зубов и каналов (FDI ISO 3950):</span>
-											</h4>
-
-											{aiAuditResult.clinicalValidation.anatomicalChecks.length > 0 ? (
-												<div className="space-y-2.5">
-													{aiAuditResult.clinicalValidation.anatomicalChecks.map((check, idx) => (
-														<div
-															key={idx}
-															className={`p-3 rounded-xl border text-xs ${
-																check.status === "pass"
-																	? "bg-emerald-500/5 border-emerald-500/20 text-[var(--tp-text-main)]"
-																	: check.status === "warning"
-																		? "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-100"
-																		: "bg-rose-500/10 border-rose-500/30 text-rose-950 dark:text-rose-100"
-															}`}
-														>
-															<div className="flex items-center justify-between gap-2 font-bold mb-1">
-																<div className="flex items-center gap-2">
-																	{check.toothNumber && (
-																		<span className="px-1.5 py-0.5 rounded bg-[var(--tp-bg)] font-mono text-[11px]">
-																			Зуб {check.toothNumber}
-																		</span>
-																	)}
-																	<span>{check.message}</span>
-																</div>
-															</div>
-															{check.recommendation && (
-																<div className="text-[11px] opacity-85 mt-1 flex items-center gap-1">
-																	<Sparkles size={12} className="text-amber-500 shrink-0" />
-																	<span>Рекомендация: {check.recommendation}</span>
-																</div>
-															)}
-														</div>
-													))}
-												</div>
-											) : (
-												<div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-													<CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-													<span>Все манипуляции соответствуют анатомии зубов и числу корневых каналов.</span>
-												</div>
-											)}
-										</div>
-
-										{/* Clinical Recommendations */}
-										{aiAuditResult.clinicalValidation.clinicalRecommendations.length > 0 && (
-											<div className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)]">
-												<h4 className="text-sm font-bold text-[var(--tp-text-main)] mb-2 flex items-center gap-2">
-													<Sparkles size={16} className="text-amber-500" />
-													<span>Клинические рекомендации для врача:</span>
-												</h4>
-												<ul className="space-y-1.5 text-xs text-[var(--tp-text-muted)]">
-													{aiAuditResult.clinicalValidation.clinicalRecommendations.map((rec, idx) => (
-														<li key={idx} className="flex items-start gap-2">
-															<span className="text-amber-500 font-bold">•</span>
-															<span>{rec}</span>
-														</li>
-													))}
-												</ul>
-											</div>
-										)}
-									</div>
-
-									{/* RIGHT COLUMN: Chairside Patient Commentary & Metaphors */}
-									<div className="flex flex-col gap-4">
-										{/* Patient Explanation Card */}
-										<div className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col gap-3">
-											<div className="flex items-center justify-between">
-												<h4 className="text-sm font-bold text-[var(--tp-text-main)] m-0 flex items-center gap-2">
-													<User size={16} className="text-[var(--tp-primary)]" />
-													<span>Перевод плана для пациента (Chairside):</span>
-												</h4>
-												<button
-													type="button"
-													onClick={() => handleCopyText(aiAuditResult.chairsideCommentary.patientFriendlySummary, "summary")}
-													className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-primary-light)] text-[var(--tp-text-main)] border border-[var(--tp-border)] cursor-pointer transition-colors"
-												>
-													{copiedField === "summary" ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-													<span>{copiedField === "summary" ? "Скопировано" : "Копировать"}</span>
-												</button>
-											</div>
-
-											<div className="p-4 rounded-xl bg-[var(--tp-bg)] border border-[var(--tp-border)] text-xs text-[var(--tp-text-main)] leading-relaxed whitespace-pre-wrap">
-												{aiAuditResult.chairsideCommentary.patientFriendlySummary}
-											</div>
-										</div>
-
-										{/* Urgency & Health Math Card */}
-										<div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20 flex flex-col gap-3">
-											<div className="flex items-center justify-between">
-												<h4 className="text-sm font-bold text-amber-950 dark:text-amber-200 m-0 flex items-center gap-2">
-													<Coins size={16} className="text-amber-600 dark:text-amber-400" />
-													<span>Математика здоровья (Экономический аргумент):</span>
-												</h4>
-												<button
-													type="button"
-													onClick={() => handleCopyText(aiAuditResult.chairsideCommentary.urgencyArgument, "urgency")}
-													className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 cursor-pointer transition-colors"
-												>
-													{copiedField === "urgency" ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-													<span>{copiedField === "urgency" ? "Скопировано" : "Копировать"}</span>
-												</button>
-											</div>
-
-											<div className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed whitespace-pre-wrap">
-												{aiAuditResult.chairsideCommentary.urgencyArgument}
-											</div>
-										</div>
-
-										{/* Hygiene & Care Instructions */}
-										<div className="p-5 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] flex flex-col gap-3">
-											<h4 className="text-sm font-bold text-[var(--tp-text-main)] m-0 flex items-center gap-2">
-												<Sparkles size={16} className="text-teal-600 dark:text-teal-400" />
-												<span>Индивидуальные советы по домашней гигиене:</span>
-											</h4>
-											<div className="p-4 rounded-xl bg-[var(--tp-bg)] border border-[var(--tp-border)] text-xs text-[var(--tp-text-main)] leading-relaxed whitespace-pre-wrap">
-												{aiAuditResult.chairsideCommentary.hygieneAndCareAdvice}
-											</div>
-										</div>
-
-										{/* Financial & Tax Strategy Pitch */}
-										<div className="p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 flex flex-col gap-3">
-											<h4 className="text-sm font-bold text-emerald-950 dark:text-emerald-200 m-0 flex items-center gap-2">
-												<Percent size={16} className="text-emerald-600 dark:text-emerald-400" />
-												<span>Финансовая аргументация и вычет 13% НДФЛ:</span>
-											</h4>
-											<div className="text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed">
-												{aiAuditResult.financialArgumentation.ndflDeduction.explanation}
-											</div>
-											<div className="grid grid-cols-2 gap-3 pt-2 border-t border-emerald-500/20">
-												<div className="p-2.5 rounded-xl bg-[var(--tp-bg)] text-xs">
-													<div className="text-[10px] text-[var(--tp-text-muted)]">К возврату от ФНС:</div>
-													<div className="text-base font-black text-emerald-600 dark:text-emerald-400">
-														+{aiAuditResult.financialArgumentation.ndflDeduction.totalRefundRub.toLocaleString("ru-RU")} ₽
-													</div>
-												</div>
-												<div className="p-2.5 rounded-xl bg-[var(--tp-bg)] text-xs">
-													<div className="text-[10px] text-[var(--tp-text-muted)]">Чистая стоимость:</div>
-													<div className="text-base font-black text-[var(--tp-text-main)]">
-														{aiAuditResult.financialArgumentation.ndflDeduction.netPriceWithRefundRub.toLocaleString("ru-RU")} ₽
-													</div>
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-							)}
-						</div>
+						<TreatmentPlanPresenterAiAuditTab
+							aiAuditResult={aiAuditResult}
+							isAiAuditing={isAiAuditing}
+							aiAuditError={aiAuditError}
+							onRunAiAudit={handleRunAiAudit}
+							onExecuteCopilot={handleExecuteCopilot}
+							selectedTier={selectedTier}
+						/>
 					)}
 				</main>
 
 				{/* Sticky Bottom Action Footer */}
-				<footer className="treatment-presenter-footer no-print">
-					<div className="treatment-footer-summary">
-						<div className="treatment-footer-price-col">
-							<span className="treatment-footer-label">
-								Текущий выбор: <strong>{getTierLetter(selectedTier.tierId)}</strong>
-							</span>
-							<span className="treatment-footer-amount">
-								{selectedTier.totalRub.toLocaleString("ru-RU")} ₽
-							</span>
-						</div>
-					</div>
-
-					<div className="treatment-footer-actions">
-						{/* Print Appendix 1 Action */}
-						<button
-							type="button"
-							onClick={handlePrintAppendix}
-							className="btn-treatment-action btn-treatment-print cursor-pointer"
-							data-testid="print-contract-btn"
-						>
-							<Printer size={16} />
-							<span>Печать Приложения №1 (ПП РФ № 736)</span>
-						</button>
-
-						{/* Fixate Patient Choice Action */}
-						<button
-							type="button"
-							onClick={() => handleConfirmPatientChoice(selectedTier)}
-							className="btn-treatment-action btn-patient-choice cursor-pointer"
-							data-testid="confirm-patient-choice-btn"
-						>
-							{selectionConfirmed ? (
-								<>
-									<CheckCircle2 size={18} />
-									<span>{choiceConfirmedBtnText}</span>
-								</>
-							) : (
-								<>
-									<Check size={18} />
-									<span>{patientChoiceBtnText}</span>
-								</>
-							)}
-						</button>
-
-						{/* Quick Direct Sign Action (Doctor & Patient Autonomy / Mandate 8e) */}
-						{onApproveAndSign && (
-							<button
-								type="button"
-								onClick={() => onApproveAndSign(selectedTier)}
-								className="btn-treatment-action btn-treatment-sign cursor-pointer"
-								data-testid="approve-and-sign-btn"
-							>
-								<FileSignature size={18} />
-								<span>Подписать план лечения</span>
-							</button>
-						)}
-					</div>
-				</footer>
+				<TreatmentPlanPresenterFooter
+					selectedTier={selectedTier}
+					getTierLetter={getTierLetter}
+					onPrintAppendix={handlePrintAppendix}
+					onConfirmPatientChoice={handleConfirmPatientChoice}
+					onApproveAndSign={onApproveAndSign}
+					isChoiceConfirmed={isChoiceConfirmed}
+					patientChoiceBtnText={patientChoiceBtnText}
+					choiceConfirmedBtnText={choiceConfirmedBtnText}
+				/>
 			</div>
 		</div>
 	);
