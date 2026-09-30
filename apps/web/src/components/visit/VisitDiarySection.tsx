@@ -9,114 +9,48 @@ import {
 	FileText,
 	Lock,
 	MoreHorizontal,
-	Palette,
-	Pill,
-	Plus,
 	Printer,
-	Scan,
 	Search,
 	ShieldCheck,
 	Sparkles,
-	Stethoscope,
-	Syringe,
 	X,
 } from "lucide-react";
 import type React from "react";
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { PremiumDocumentPrintSheet } from "../documents/PremiumDocumentPrintSheet";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import {
-	ANESTHESIA_QUICK_PRESETS,
-	STANDARD_ANESTHESIA_NORM_PRESET_RU,
-	appendRecommendationToSoap,
-	CLINICAL_FAST_PRESETS,
-	extractSomaticRiskProfileFromText,
-	mergeSoapDiaryState,
-	PATIENT_RECOMMENDATIONS,
-	PERIO_PATHOLOGY_PRESETS,
-	type PerioPathologyPreset,
-} from "../../lib/clinicalProtocols043";
-import { getIcdColor, ICD_GROUP_COLORS, ICD10_DICTIONARY } from "../../lib/icd10";
-import { specialtyLabels } from "../../workspaceUiLabels";
+import { ICD10_DICTIONARY } from "../../lib/icd10";
 import { PanelLoadFailure } from "../PanelLoadFailure";
-import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { useVisitDiaryLogic } from "../useVisitDiaryLogic";
-import {
-	type DiaryPrintPhoto,
-	VisitDiaryPhotoUpload,
-} from "../VisitDiaryPhotoUpload";
-import { AnesthesiaQuickBar } from "../anesthesia/AnesthesiaQuickBar";
-import { DENTAL_ANESTHETICS } from "../anesthesia/anesthesiaCatalog";
-import { calculateAge } from "@dental/shared";
-import {
-	generatePediatricCariogramDiaryText,
-} from "../odontogram/pediatricDentitionEngine";
-import { ClinicalQuickPresetsBar } from "./ClinicalQuickPresetsBar";
+import { type DiaryPrintPhoto } from "../VisitDiaryPhotoUpload";
+import { DENTAL_ANESTHETICS, type AnestheticDrugId } from "../anesthesia/anesthesiaCatalog";
 import { CryptoProSigner } from "./CryptoProSigner";
-import { realVisitFieldId } from "./visitIdentity";
-import type { RadiologySnapshotItem } from "./VisitSummaryModal";
 import "../../styles/visit-diary-043.css";
 
-// Lazy-loaded heavy secondary modals for low-spec hardware (4GB RAM, 5400 RPM HDD)
-const EgiszRemdHubModal = lazy(() =>
-	import("../egisz/EgiszRemdHubModal").then((m) => ({ default: m.EgiszRemdHubModal }))
-);
-const PrescriptionModal = lazy(() =>
-	import("./PrescriptionModal").then((m) => ({ default: m.PrescriptionModal }))
-);
-const RadiologyReferralModal = lazy(() =>
-	import("../radiology/RadiologyReferralModal").then((m) => ({ default: m.RadiologyReferralModal }))
-);
-const VisitSummaryModal = lazy(() =>
-	import("./VisitSummaryModal").then((m) => ({ default: m.VisitSummaryModal }))
-);
-const ClinicalDiaryTemplatesModal = lazy(() =>
-	import("../emr/templates").then((m) => ({ default: m.ClinicalDiaryTemplatesModal }))
-);
+// Re-export all types and helper functions for full backwards compatibility
+export * from "./diary/visitDiaryTypes";
+
+import {
+	type VisitDiarySectionProps,
+	COMPLAINT_QUICK_CHIPS,
+} from "./diary/visitDiaryTypes";
+import { useVisitDiaryPatientInfo } from "./diary/useVisitDiaryPatientInfo";
+import { VisitDiarySoapFields } from "./diary/VisitDiarySoapFields";
+import { VisitDiaryModals } from "./diary/VisitDiaryModals";
+import { VisitDiaryRevisionsHistory } from "./diary/VisitDiaryRevisionsHistory";
+import { VisitDiaryAnesthesiaBar } from "./diary/VisitDiaryAnesthesiaBar";
+import { VisitDiaryPerioPediatricPresets } from "./diary/VisitDiaryPerioPediatricPresets";
+import { VisitDiaryHeaderMoreMenu } from "./diary/VisitDiaryHeaderMoreMenu";
+import { useVisitDiarySectionIcd } from "./diary/useVisitDiarySectionIcd";
+import { useVisitDiarySectionPerio } from "./diary/useVisitDiarySectionPerio";
+import { VisitDiaryReviseAndLockFooters } from "./diary/VisitDiaryReviseAndLockFooters";
+
+// Lazy-loaded heavy secondary modal strictly isolated (0 KB initial bundle cost)
 const PeriodontogramChart = lazy(() =>
 	import("../perio/PeriodontogramChart").then((m) => ({ default: m.PeriodontogramChart }))
 );
-
-const COMPLAINT_QUICK_CHIPS = [
-	"Острая боль от сладкого/холодного",
-	"Ноющие ночные боли",
-	"Выпала пломба",
-	"Плановый осмотр / Жалоб нет",
-	"Кровоточивость десен",
-] as const;
-
-export interface VisitDiarySectionProps {
-	visitId: string;
-	patientId: string;
-	teethData?: readonly {
-		toothNumber: number;
-		state: string;
-		surfaces?: readonly string[] | null;
-	}[];
-}
-
-function formatPersonName(
-	p:
-		| {
-				lastName?: string | null;
-				firstName?: string | null;
-				middleName?: string | null;
-				fullName?: string | null;
-		  }
-		| null
-		| undefined,
-): string {
-	if (!p) return "—";
-	if (typeof p.fullName === "string" && p.fullName.trim())
-		return p.fullName.trim();
-	const parts = [p.lastName, p.firstName, p.middleName]
-		.map((x) => (typeof x === "string" ? x.trim() : ""))
-		.filter(Boolean);
-	return parts.length ? parts.join(" ") : "—";
-}
 
 export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	visitId,
@@ -178,14 +112,13 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	const [printPhotos, setPrintPhotos] = useState<readonly DiaryPrintPhoto[]>([]);
 	const [showSummaryModal, setShowSummaryModal] = useState(false);
 	const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
-	const [showRadiologyReferralModal, setShowRadiologyReferralModal] =
-		useState(false);
+	const [showRadiologyReferralModal, setShowRadiologyReferralModal] = useState(false);
 	const [showEgiszModal, setShowEgiszModal] = useState(false);
-	const [showBrandingCustomizer, setShowBrandingCustomizer] = useState(false);
 	const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+	const [showBrandingCustomizer, setShowBrandingCustomizer] = useState(false);
+
 	const [isExtraActionsOpen, setIsExtraActionsOpen] = useState(false);
 	const moreActionsRef = useRef<HTMLDivElement>(null);
-
 	useEffect(() => {
 		if (!isExtraActionsOpen) return;
 		const handleClickOutside = (e: MouseEvent) => {
@@ -200,7 +133,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	const [isTier3PerioModalOpen, setIsTier3PerioModalOpen] = useState(false);
 	const [showPerioPathologyMenu, setShowPerioPathologyMenu] = useState(false);
 	const perioMenuRef = useRef<HTMLDivElement>(null);
-
 	useEffect(() => {
 		if (!showPerioPathologyMenu) return;
 		const handleClickOutside = (e: MouseEvent) => {
@@ -211,285 +143,56 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		document.addEventListener("mousedown", handleClickOutside);
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [showPerioPathologyMenu]);
-	const [activeTeeth, setActiveTeeth] = useState<
-		readonly {
-			toothNumber: number;
-			state: string;
-			surfaces?: readonly string[] | null;
-		}[]
-	>(teethData ?? []);
-
-	useEffect(() => {
-		if (teethData && teethData.length > 0) {
-			setActiveTeeth(teethData);
-			return;
-		}
-		if (!patientId) return;
-		let cancelled = false;
-		fetch(`/api/patients/${patientId}/tooth-states`, {
-			headers: denteAdminSecretRequestHeaders(),
-		})
-			.then((r) => (r.ok ? r.json() : null))
-			.then((data) => {
-				if (!cancelled && data?.success && Array.isArray(data.states)) {
-					setActiveTeeth(data.states);
-				}
-			})
-			.catch(() => {});
-		return () => {
-			cancelled = true;
-		};
-	}, [patientId, teethData]);
-
-	const [radiologySnapshots, setRadiologySnapshots] = useState<
-		readonly RadiologySnapshotItem[]
-	>([]);
-
-	useEffect(() => {
-		if (!patientId) return;
-		let cancelled = false;
-		fetch(`/api/xray/scans?patientId=${encodeURIComponent(patientId)}`, {
-			headers: denteAdminSecretRequestHeaders(),
-		})
-			.then((r) => (r.ok ? r.json() : null))
-			.then((data) => {
-				if (!cancelled && Array.isArray(data)) {
-					const mapped: RadiologySnapshotItem[] = data
-						.map((s: Record<string, unknown>) => {
-							const imgUri =
-								typeof s.imageDataUri === "string"
-									? s.imageDataUri
-									: typeof s.imageBase64 === "string"
-										? s.imageBase64
-										: "";
-							const thumbUri =
-								typeof s.thumbnailDataUri === "string"
-									? s.thumbnailDataUri
-									: imgUri;
-							return {
-								id: typeof s.id === "string" ? s.id : undefined,
-								imageDataUri: imgUri,
-								thumbnailDataUri: thumbUri,
-								title:
-									typeof s.aiSummary === "string"
-										? s.aiSummary
-										: typeof s.originalFilename === "string"
-											? s.originalFilename
-											: "Рентгенологический снимок",
-								kind: typeof s.kind === "string" ? s.kind : undefined,
-								toothCode:
-									typeof s.toothCode === "string" ? s.toothCode : undefined,
-								capturedAt:
-									typeof s.capturedAt === "string"
-										? s.capturedAt
-										: typeof s.createdAt === "string"
-											? s.createdAt
-											: undefined,
-								radiologicalFinding:
-									typeof s.aiReport === "string" ? s.aiReport : undefined,
-							};
-						})
-						.filter((item) => Boolean(item.imageDataUri));
-					setRadiologySnapshots(mapped);
-				}
-			})
-			.catch(() => {});
-		return () => {
-			cancelled = true;
-		};
-	}, [patientId]);
-
-	const handlePrintPhotosChange = useCallback(
-		(photos: readonly DiaryPrintPhoto[]) => {
-			setPrintPhotos(photos);
-		},
-		[],
-	);
-
-	// Mandate 8e: Doctor autonomy — failed network load does not disable inputs, doctor can continue writing and autosave locally.
-	// Interacting with fields in locked visits automatically triggers revision mode («Исправленному верить») with zero bureaucratic barriers.
-	const ensureRevisingIfLocked = useCallback(() => {
-		if (isLocked && !isRevising) {
-			beginRevise();
-			showToast(
-				"Режим правки закрытого дневника активирован («Исправленному верить»)",
-				"info",
-				3000,
-			);
-		}
-	}, [isLocked, isRevising, beginRevise]);
-	const fieldsDisabled = false;
 
 	const ctx = useAppLogicContext();
 	const activePatient = ctx.activePatient;
-	const clinicSettings = ctx.dashboard?.clinicSettings;
 	const activeDoctor = ctx.activeDoctor;
+	const clinicSettings = ctx.clinicSettings;
 
-	const selectedPatientId = realVisitFieldId(
-		activePatient && typeof activePatient === "object"
-			? (activePatient as { id?: unknown }).id
-			: null,
-	);
-	const diaryPatientId = realVisitFieldId(patientId);
-	const printPatient =
-		(diaryPatientId && selectedPatientId && selectedPatientId === diaryPatientId
-			? activePatient
-			: (ctx.dashboard?.patients || []).find((p: any) => p.id === diaryPatientId) || activePatient) ?? null;
-	const printPatientMismatch = false;
+	const {
+		activeTeeth,
+		radiologySnapshots,
+		printPatient,
+		patientFullName,
+		patientBirthDate,
+		patientCardNumber,
+		patientPassport,
+		patientOms,
+		patientSnils,
+		patientPhone,
+		patientAddress,
+		clinicName,
+		sessionDoctorName,
+		doctorName,
+		doctorSpecialty,
+	} = useVisitDiaryPatientInfo({
+		patientId,
+		initialTeethData: teethData,
+		activePatient,
+		activeDoctor,
+		clinicSettings,
+		diaryDoctorFullName,
+		diaryDoctorSpecialty,
+		ctxDashboard: ctx.dashboard,
+	});
 
-	const patientFullName = formatPersonName(printPatient);
-	const patientBirthDate =
-		typeof printPatient?.birthDate === "string"
-			? printPatient.birthDate
-			: typeof printPatient?.dateOfBirth === "string"
-				? printPatient.dateOfBirth
-				: "";
-	const patientCardNumber =
-		typeof printPatient?.cardNumber === "string"
-			? printPatient.cardNumber
-			: typeof printPatient?.medicalCardNumber === "string"
-				? printPatient.medicalCardNumber
-				: typeof printPatient?.chartNumber === "string"
-					? printPatient.chartNumber
-					: "";
+	// Мандат 8e: Врачебная автономия — поля дневника никогда не блокируются
+	const fieldsDisabled = false;
 
-	const patientPassport =
-		typeof (printPatient as any)?.administrativeProfile?.identityDocument ===
-			"string" &&
-		(printPatient as any).administrativeProfile.identityDocument.trim()
-			? (printPatient as any).administrativeProfile.identityDocument.trim()
-			: typeof (printPatient as any)?.passport === "string" &&
-					(printPatient as any).passport.trim()
-				? (printPatient as any).passport.trim()
-				: typeof (printPatient as any)?.identityDocument === "string" &&
-						(printPatient as any).identityDocument.trim()
-					? (printPatient as any).identityDocument.trim()
-					: "";
-
-	const patientOms =
-		typeof (printPatient as any)?.administrativeProfile?.omsPolis ===
-			"string" &&
-		(printPatient as any).administrativeProfile.omsPolis.trim()
-			? (printPatient as any).administrativeProfile.omsPolis.trim()
-			: typeof (printPatient as any)?.administrativeProfile
-						?.insurancePolicyNumber === "string" &&
-					(printPatient as any).administrativeProfile.insurancePolicyNumber.trim()
-				? (
-						printPatient as any
-					).administrativeProfile.insurancePolicyNumber.trim()
-				: typeof (printPatient as any)?.omsPolis === "string" &&
-						(printPatient as any).omsPolis.trim()
-					? (printPatient as any).omsPolis.trim()
-					: typeof (printPatient as any)?.insurancePolicyNumber === "string" &&
-							(printPatient as any).insurancePolicyNumber.trim()
-						? (printPatient as any).insurancePolicyNumber.trim()
-						: "";
-
-	const patientSnils =
-		typeof (printPatient as any)?.administrativeProfile?.snils === "string" &&
-		(printPatient as any).administrativeProfile.snils.trim()
-			? (printPatient as any).administrativeProfile.snils.trim()
-			: typeof (printPatient as any)?.snils === "string" &&
-					(printPatient as any).snils.trim()
-				? (printPatient as any).snils.trim()
-				: "";
-
-	const patientPhone =
-		typeof (printPatient as any)?.phone === "string" &&
-		(printPatient as any).phone.trim()
-			? (printPatient as any).phone.trim()
-			: "";
-
-	const patientAddress =
-		typeof (printPatient as any)?.administrativeProfile?.registrationAddress ===
-			"string" &&
-		(printPatient as any).administrativeProfile.registrationAddress.trim()
-			? (printPatient as any).administrativeProfile.registrationAddress.trim()
-			: typeof (printPatient as any)?.address === "string" &&
-					(printPatient as any).address.trim()
-				? (printPatient as any).address.trim()
-				: "";
-
-	// Печать доступна в любой момент: если визит не закрыт — с водяным знаком «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»
-	const printBlockedReason = undefined;
-	const printBlocked = false;
-
-	const clinicName =
-		typeof clinicSettings?.name === "string"
-			? clinicSettings.name
-			: typeof clinicSettings?.clinicName === "string"
-				? clinicSettings.clinicName
-				: "";
-	const clinicAddress =
-		typeof clinicSettings?.address === "string" ? clinicSettings.address : "";
-	const clinicInn =
-		typeof clinicSettings?.inn === "string" ? clinicSettings.inn : "";
-
-	const sessionDoctorName = formatPersonName(activeDoctor);
-	const sessionDoctorSpecialty = (() => {
-		const raw = Array.isArray(activeDoctor?.specialties)
-			? activeDoctor.specialties
-			: [];
-		const codes = raw
-			.map((x: unknown) => (typeof x === "string" ? x.trim() : ""))
-			.filter(Boolean);
-		const meaningful = codes.filter((c: string) => c !== "universal");
-		const list = meaningful.length > 0 ? meaningful : codes;
-		return list
-			.map(
-				(c: string) => specialtyLabels[c as keyof typeof specialtyLabels] ?? c,
-			)
-			.join(", ");
-	})();
-	const doctorName = diaryDoctorFullName?.trim()
-		? diaryDoctorFullName.trim()
-		: sessionDoctorName;
-	const doctorSpecialty = diaryDoctorSpecialty?.trim()
-		? diaryDoctorSpecialty.trim()
-		: sessionDoctorSpecialty;
-
-	const handleIcdSelect = (code: string) => {
-		ensureRevisingIfLocked();
-		setDiary((prev) => ({ ...prev, diagnosisIcd10: code }));
-		setIcdSearch(code);
-		setShowIcdDropdown(false);
-		scheduleDebouncedSave();
+	const ensureRevisingIfLocked = () => {
+		if (isLocked && !isRevising) {
+			beginRevise();
+		}
 	};
 
-	const filteredIcd = useMemo(() => {
-		const normalizeRu = (str: string) =>
-			(str ?? "").toLowerCase().replace(/ё/g, "е").trim();
-		const searchNormalized = normalizeRu(icdSearch ?? "");
-		const searchTokens = searchNormalized.split(/\s+/).filter(Boolean);
-
-		return (ICD10_DICTIONARY ?? [])
-			.filter((i) => {
-				if (!i) return false;
-				if (searchTokens.length === 0) return true;
-				const codeNorm = normalizeRu(i.code);
-				const labelNorm = normalizeRu(i.label);
-				const groupNorm = normalizeRu(i.group);
-				return searchTokens.every(
-					(token) =>
-						codeNorm.includes(token) ||
-						labelNorm.includes(token) ||
-						groupNorm.includes(token),
-				);
-			})
-			.slice(0, 12);
-	}, [icdSearch]);
-
-	const commitIcdInput = () => {
-		ensureRevisingIfLocked();
-		const typed = (icdSearch ?? "").trim();
-		if (!typed) return;
-		const normalized = typed.toUpperCase();
-		const exact = (ICD10_DICTIONARY ?? []).find(
-			(item) => (item?.code ?? "").toUpperCase() === normalized,
-		);
-		const candidate = exact ?? filteredIcd?.[0];
-		if (candidate?.code) handleIcdSelect(candidate.code);
-	};
+	const { filteredIcd, handleIcdSelect, commitIcdInput } = useVisitDiarySectionIcd({
+		icdSearch,
+		setIcdSearch,
+		setDiary,
+		setShowIcdDropdown,
+		ensureRevisingIfLocked,
+		scheduleDebouncedSave,
+	});
 
 	const handleAutoResize = (
 		e:
@@ -500,91 +203,23 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		e.target.style.height = `${e.target.scrollHeight}px`;
 	};
 
-	const handleInsertPerioStatus = () => {
-		ensureRevisingIfLocked();
-		const perioText = `[ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС (НОРМА В 1 КЛИК)]
-Десна бледно-розовая, плотная, зубодесневое прикрепление сохранено, патологических карманов нет (норма).
-Глубина зондирования зубодесневых борозд: 1–2 мм во всех секстантах.
-Кровоточивость при зондировании (BOP): отсутствует (0%).
-Патологическая подвижность зубов и фуркационные дефекты: не выявлены.
-Клинический диагноз: Клинически здоровый пародонт (К05.0 / Здоровый пародонт).
-Врач: ${doctorName || "Лечащий врач"}.`;
-
-		const icd10Code = "K05.0";
-
-		setDiary((prev) => ({
-			...prev,
-			diagnosisIcd10: prev.diagnosisIcd10 || icd10Code,
-			statusLocalis: prev.statusLocalis
-				? `${prev.statusLocalis}\n\n${perioText}`
-				: perioText,
-			treatmentDescription: prev.treatmentDescription
-				? `${prev.treatmentDescription}\n\n• Профилактический осмотр через 6 месяцев.`
-				: "• Контролируемая индивидуальная гигиена полости рта.\n• Профилактический осмотр через 6 месяцев.",
-		}));
-
-		if (!diary.diagnosisIcd10 && icd10Code) {
-			setIcdSearch(icd10Code);
-		}
-		scheduleDebouncedSave();
-	};
-
-	const handleApplyPerioPathology = (preset: PerioPathologyPreset) => {
-		ensureRevisingIfLocked();
-		setDiary((prev) => ({
-			...prev,
-			diagnosisIcd10: prev.diagnosisIcd10 || preset.defaultIcd10,
-			statusLocalis: prev.statusLocalis
-				? `${prev.statusLocalis}\n\n[ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС: ${preset.badge}]\n${preset.statusLocalis}`
-				: `[ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС: ${preset.badge}]\n${preset.statusLocalis}`,
-			treatmentDescription: prev.treatmentDescription
-				? `${prev.treatmentDescription}\n\n${preset.treatmentDescription}`
-				: preset.treatmentDescription,
-		}));
-
-		if (!diary.diagnosisIcd10 && preset.defaultIcd10) {
-			setIcdSearch(preset.defaultIcd10);
-		}
-		setShowPerioPathologyMenu(false);
-		scheduleDebouncedSave();
-		ctx.showToast?.(`Применён протокол: ${preset.label}`, "info");
-	};
-
-	const handleInsertPediatricStatus = () => {
-		ensureRevisingIfLocked();
-		const patientAgeYears = patientBirthDate
-			? Math.floor(
-					(Date.now() - new Date(patientBirthDate).getTime()) /
-						(365.25 * 24 * 3600 * 1000),
-				)
-			: 8;
-
-		const teethStatesMap = activeTeeth.reduce(
-			(acc, t) => ({ ...acc, [t.toothNumber]: t.state }),
-			{} as Record<number, string>,
-		);
-
-		const pediatricText = generatePediatricCariogramDiaryText({
-			patientAgeYears: Math.max(1, Math.min(18, patientAgeYears || 8)),
-			teethStates: teethStatesMap,
-		});
-
-		setDiary((prev) => ({
-			...prev,
-			diagnosisIcd10: prev.diagnosisIcd10 || "Z01.2",
-			statusLocalis: prev.statusLocalis
-				? `${prev.statusLocalis}\n\n${pediatricText}`
-				: pediatricText,
-			treatmentDescription: prev.treatmentDescription
-				? `${prev.treatmentDescription}\n\n• Комплексная детская профгигиена и ремотерапия (GC Tooth Mousse).\n• Неинвазивная герметизация фиссур постоянных моляров (16, 26, 36, 46).`
-				: "• Комплексная детская профгигиена и ремотерапия (GC Tooth Mousse).\n• Неинвазивная герметизация фиссур первых постоянных моляров (16, 26, 36, 46).\n• Обучение гигиене и подбор детской фторсодержащей пасты (1000 ppm F-).",
-		}));
-
-		if (!diary.diagnosisIcd10) {
-			setIcdSearch("Z01.2");
-		}
-		scheduleDebouncedSave();
-	};
+	const {
+		handleInsertPerioStatus,
+		handleApplyPerioPathology,
+		handleInsertPediatricStatus,
+		handleAddComplaintChip,
+	} = useVisitDiarySectionPerio({
+		ensureRevisingIfLocked,
+		setDiary,
+		scheduleDebouncedSave,
+		setIcdSearch,
+		diary,
+		doctorName,
+		patientBirthDate,
+		activeTeeth,
+		setShowPerioPathologyMenu,
+		ctxToast: ctx.showToast,
+	});
 
 	const handleApplyFullPhysiologicalNorm = () => {
 		ensureRevisingIfLocked();
@@ -606,111 +241,39 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		showToast("Применена норма: соматически здоров / осмотр в норме", "success", 4000);
 	};
 
-	const handleAddComplaintChip = (chipText: string) => {
+
+
+	const handleDisposalCarpules = (count: number, drugId: AnestheticDrugId | string) => {
 		ensureRevisingIfLocked();
-		setDiary((prev) => {
-			const cur = (prev.anamnesis ?? "").trim();
-			if (!cur) {
-				return {
-					...prev,
-					anamnesis: `${chipText}.`,
-				};
-			}
-			if (cur.includes(chipText)) {
-				return prev;
-			}
-			const separator =
-				cur.endsWith(".") || cur.endsWith(";") || cur.endsWith("!")
-					? " "
-					: ". ";
-			return {
-				...prev,
-				anamnesis: `${cur}${separator}${chipText}.`,
-			};
-		});
-		scheduleDebouncedSave();
-		showToast(`Добавлена жалоба: «${chipText}»`, "info", 2000);
+		const drugName =
+			DENTAL_ANESTHETICS[drugId as AnestheticDrugId]?.tradeNamesRu[0] ?? "Анестетик";
+		const disposalNote = `Утилизация: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, дезинфекция 1 клик без комиссии, списание по FEFO в 1 клик без комиссии).`;
+		applyAnesthesiaPreset(disposalNote);
+
+		// Автоматическое списание со склада по FEFO (Мандат 8e, 8v, 8n)
+		// Без необходимости ручного выбора партии врачом у кресла и с мягким овердрафтом
+		try {
+			fetch("/api/inventory/deduct", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					visitId,
+					items: [{ name: drugName, quantity: count }],
+					reason: `Списание карпулы анестетика у кресла (отходы Класса Б, визит ${visitId})`,
+				}),
+			}).catch((err) => {
+				console.warn("[VisitDiary] Inventory deduct fallback warning:", err);
+			});
+		} catch (err) {
+			console.warn("[VisitDiary] Inventory deduct error:", err);
+		}
 	};
 
 	const icdEntry = (ICD10_DICTIONARY ?? []).find(
 		(i) => i?.code === diary?.diagnosisIcd10,
-	);
-
-	const PrintPreviewContent = (
-		<div
-			className="vde-043-print-overlay print-layer"
-			data-testid="form-043-preview"
-			role="dialog"
-			aria-modal="true"
-			aria-label="Медицинская карта стоматологического пациента"
-		>
-			<div className="vde-043-print-sheet print-content">
-				<div className="vde-043-print-toolbar no-print flex items-center justify-between gap-2 p-3 bg-[var(--paper-soft)] border-b border-[var(--glass-border)]">
-					<div className="flex items-center gap-2">
-						<Printer className="w-5 h-5 text-[var(--teal)]" />
-						<h3 className="text-sm font-bold m-0">
-							Печатная форма медицинской карты
-						</h3>
-					</div>
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							onClick={() => setShowBrandingCustomizer(true)}
-							className="vde-043__btn text-xs"
-							title="Настроить оформление бланка, цвета и реквизиты"
-						>
-							<Palette className="w-4 h-4 text-amber-500" />
-							<span>Настроить бланк</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => window.print()}
-							className="vde-043__btn vde-043__btn--primary text-xs font-bold"
-							data-testid="form-043-print"
-						>
-							<Printer className="w-4 h-4" /> Напечатать (Ctrl+P)
-						</button>
-						<button
-							type="button"
-							onClick={() => setShowPreview(false)}
-							className="vde-043__btn vde-043__btn--ghost text-xs"
-							data-testid="form-043-close"
-						>
-							<X className="w-4 h-4" /> Закрыть
-						</button>
-					</div>
-				</div>
-
-				<div className="vde-043-print-body" id="print-043">
-					<PremiumDocumentPrintSheet
-						documentTitle="МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА"
-						documentSubtitle="Медицинская карта стоматологического пациента"
-						patient={{
-							fullName: patientFullName !== "—" ? patientFullName : null,
-							birthDate: patientBirthDate || null,
-							medicalCardNumber: patientCardNumber || null,
-							passport: patientPassport || null,
-							omsPolis: patientOms || null,
-							snils: patientSnils || null,
-							phone: patientPhone || null,
-							address: patientAddress || null,
-						}}
-						doctorName={doctorName !== "—" ? doctorName : null}
-						doctorSpecialty={doctorSpecialty || null}
-						visitDate={lastSavedAt || new Date()}
-						diary={diary}
-						icd10Label={icdEntry ? icdEntry.label : null}
-						teethData={activeTeeth as any}
-						radiologySnapshots={radiologySnapshots}
-						diaryHash={diaryHash}
-						hasCryptoSignature={hasCryptoSignature}
-						isLocked={isLocked}
-						lockedAt={lockedAt}
-						revisionCount={revisionCount}
-					/>
-				</div>
-			</div>
-		</div>
 	);
 
 	return (
@@ -723,74 +286,44 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 
 			{/* ── Header ── */}
 			<div className="vde-043__header">
-				<div className="vde-043__title-row">
-					<div className="vde-043__icon-badge">
-						<Activity className="w-5 h-5" />
-					</div>
-					<div>
-						<h2 className="vde-043__title">
-							Медицинская карта • Дневник приёма
-						</h2>
-						<div className="vde-043__meta">
-							{isSaving ? (
-								<span
-									className="vde-043__meta-item text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1 shrink-0 min-w-max whitespace-nowrap"
-									title="Идет сохранение на сервер..."
-								>
-									<span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0 inline-block" />
-									<span className="hidden sm:inline">Сохранение...</span>
-									<span className="sm:hidden">...</span>
-								</span>
-							) : localDraftSavedAt || lastSavedAt ? (
-								<span
-									className="vde-043__meta-item text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 shrink-0 min-w-max whitespace-nowrap"
-									title="Автосохранение черновика при каждом вводе в IndexedDB и LocalStorage"
-								>
-									<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 inline-block" />
-									<span className="hidden 2xl:inline">СОХРАНЕНО</span>
-									<span className="2xl:hidden">OK</span>
-									{localDraftSavedAt && (
-										<span className="font-normal text-[var(--muted)] ml-0.5 hidden 2xl:inline">
-											{localDraftSavedAt.toLocaleTimeString("ru-RU", {
-												hour: "2-digit",
-												minute: "2-digit",
-												second: "2-digit",
-											})}
-										</span>
-									)}
-								</span>
-							) : null}
-							{lastSavedAt && (
-								<span className="vde-043__meta-item">
-									<Clock className="w-3 h-3" />
-									Сервер:{" "}
-									{lastSavedAt.toLocaleTimeString("ru-RU", {
-										hour: "2-digit",
-										minute: "2-digit",
-									})}
-								</span>
-							)}
-							{revisionCount > 0 && (
-								<span className="vde-043__meta-item vde-043__meta-rev">
-									<ShieldCheck className="w-3 h-3" />
-									{revisionCount} ревиз.
-								</span>
-							)}
-						</div>
-					</div>
+				<div className="vde-043__header-title-wrap">
+					<div className="vde-043__form-badge">043/у</div>
+					<h3 className="vde-043__title">Дневник приёма</h3>
+					{lastSavedAt ? (
+						<span
+							className="vde-043__saved-badge"
+							title={`Дневник сохранён: ${new Date(lastSavedAt).toLocaleTimeString("ru-RU")}`}
+						>
+							<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+							<span>{new Date(lastSavedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>
+						</span>
+					) : (
+						<span
+							className="vde-043__saved-badge opacity-60"
+							title="Черновик ещё не сохранён на сервере"
+						>
+							<Clock className="w-3.5 h-3.5 text-amber-500" />
+							<span>Черновик</span>
+						</span>
+					)}
+					{isSaving && (
+						<span className="vde-043__saving-indicator">
+							<span className="vde-043__saving-spinner" />
+							<span>Сохраняю...</span>
+						</span>
+					)}
 				</div>
 
-				<div className="vde-043__actions">
+				<div className="vde-043__header-actions">
 					<button
 						type="button"
-						id="diary-open-templates-btn"
 						data-testid="open-1click-templates-btn"
+						className="vde-043__btn vde-043__btn--primary text-xs font-bold px-3 py-1.5 min-h-[38px] flex items-center gap-1.5"
 						onClick={() => setShowTemplatesModal(true)}
-						className="vde-043__btn"
-						title="Клинические протоколы и шаблоны приёма"
+						title="Открыть каталог 1-клик клинических протоколов и шаблонов дневника"
 					>
-						<Sparkles className="w-4 h-4 text-[var(--teal)]" />
-						Протоколы 1-Click
+						<Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+						<span>1-Click Протоколы 043/у</span>
 					</button>
 					<button
 						type="button"
@@ -802,21 +335,21 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							}
 							handleApplyFullPhysiologicalNorm();
 						}}
-						className="vde-043__btn text-emerald-700 dark:text-emerald-300 border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
-						title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию"
+						className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] font-bold text-xs transition-all touch-manipulation cursor-pointer border border-[var(--ok-border,transparent)]"
+						title="1-клик норма для осмотра: соматически здоров, зубные ряды санированы/интактны, онкоскрининг в норме"
 					>
-						<CheckCircle2 className="w-4 h-4 text-emerald-600" />
-						Норма
+						<CheckCircle2 className="w-3.5 h-3.5 text-[var(--ok-fg)] shrink-0" />
+						<span>Норма</span>
 					</button>
 					<button
 						type="button"
-						id="diary-print-btn"
 						data-testid="diary-print-043"
+						className="vde-043__btn"
 						onClick={() => setShowPreview(true)}
-						className="vde-043__btn vde-043__btn--print"
-						title="Печать медицинской карты (в черновике со штампом ЧЕРНОВИК или в закрытом визите)"
+						title="Предпросмотр и печать амбулаторной карты 043/у"
 					>
-						<Printer className="w-4 h-4" /> Печать карты
+						<Printer className="w-4 h-4" />
+						<span className="hidden sm:inline">Печать 043/у</span>
 					</button>
 					<div className="relative inline-block" ref={moreActionsRef} style={{ position: "relative" }}>
 						<button
@@ -830,103 +363,34 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						>
 							<MoreHorizontal className="w-4 h-4" />
 						</button>
-						{isExtraActionsOpen && (
-							<div
-								className="absolute right-0 top-full mt-1 z-50 min-w-[210px] p-1 bg-[var(--paper-strong)] border border-[var(--glass-border)] rounded-xl shadow-lg flex flex-col gap-1 text-xs"
-								style={{ minWidth: "210px" }}
+						<VisitDiaryHeaderMoreMenu
+							isOpen={isExtraActionsOpen}
+							onClose={() => setIsExtraActionsOpen(false)}
+							onOpenSummary={() => setShowSummaryModal(true)}
+							onOpenPrescription={() => setShowPrescriptionModal(true)}
+							onOpenRadiology={() => setShowRadiologyReferralModal(true)}
+							onOpenTier3Perio={() => setIsTier3PerioModalOpen(true)}
+							onOpenEgisz={() => setShowEgiszModal(true)}
+							onOpenBranding={() => setShowBrandingCustomizer(true)}
+						>
+							<button
+								type="button"
+								id="diary-1click-norm-btn"
+								data-testid="diary-1click-norm-btn"
+								onClick={() => {
+									setIsExtraActionsOpen(false);
+									if (isLocked && !isRevising) {
+										beginRevise();
+									}
+									handleApplyFullPhysiologicalNorm();
+								}}
+								className="sm:hidden flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
+								title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию"
 							>
-								<button
-									type="button"
-									id="diary-1click-norm-btn"
-									data-testid="diary-1click-norm-btn"
-									onClick={() => {
-										setIsExtraActionsOpen(false);
-										if (isLocked && !isRevising) {
-											beginRevise();
-										}
-										handleApplyFullPhysiologicalNorm();
-									}}
-									className="sm:hidden flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
-									title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию"
-								>
-									<CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-									<span>Норма / Здоров</span>
-								</button>
-								<button
-									type="button"
-									data-testid="diary-summary-btn"
-									onClick={() => {
-										setIsExtraActionsOpen(false);
-										setShowSummaryModal(true);
-									}}
-									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
-								>
-									<FileText className="w-4 h-4 text-[var(--teal)] shrink-0" />
-									<span>Клиническая сводка</span>
-								</button>
-								<button
-									type="button"
-									data-testid="open-prescription-btn"
-									onClick={() => {
-										setIsExtraActionsOpen(false);
-										setShowPrescriptionModal(true);
-									}}
-									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
-								>
-									<Pill className="w-4 h-4 text-blue-500 shrink-0" />
-									<span>Рецепт (107-1/у)</span>
-								</button>
-								<button
-									type="button"
-									data-testid="open-radiology-referral-btn"
-									onClick={() => {
-										setIsExtraActionsOpen(false);
-										setShowRadiologyReferralModal(true);
-									}}
-									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
-								>
-									<Scan className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
-									<span>Направление КЛКТ/ОПТГ</span>
-								</button>
-								<button
-									type="button"
-									data-testid="open-tier3-perio-btn"
-									onClick={() => {
-										setIsExtraActionsOpen(false);
-										setIsTier3PerioModalOpen(true);
-									}}
-									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
-									title="Пародонтологическая карта (6 точек зондирования, скрининг PSR / CPITN)"
-								>
-									<BarChart2 className="w-4 h-4 text-teal-500 shrink-0" />
-									<span>Пародонтограмма (6 точек)</span>
-								</button>
-								<button
-									type="button"
-									data-testid="open-egisz-semd-btn"
-									onClick={() => {
-										setIsExtraActionsOpen(false);
-										setShowEgiszModal(true);
-									}}
-									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
-								>
-									<ShieldCheck className="w-4 h-4 text-[var(--ok-fg)] shrink-0" />
-									<span>СЭМД ЕГИСЗ</span>
-								</button>
-								<button
-									type="button"
-									data-testid="open-branding-customizer-btn"
-									onClick={() => {
-										setIsExtraActionsOpen(false);
-										setShowBrandingCustomizer(true);
-									}}
-									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
-								>
-									<Palette className="w-4 h-4 text-amber-500 shrink-0" />
-									<span>Бланк и стиль</span>
-								</button>
-							</div>
-						)}
+								<CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+								<span>Норма / Здоров</span>
+							</button>
+						</VisitDiaryHeaderMoreMenu>
 					</div>
 					{isLocked && (
 						isRevising ? (
@@ -953,8 +417,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					)}
 				</div>
 			</div>
-
-
 
 			{/* ── 1-Click Fast Clinical Presets Accordion (Tier 2 Warm Context) ── */}
 			{!fieldsDisabled && (
@@ -987,7 +449,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							</div>
 						)}
 						<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none overscroll-x-contain min-w-0">
-							{/* 1-Click Physiological Norm Button (Zero Bloat, Instant Standard 043/u Fill) */}
+							{/* 1-Click Physiological Norm Button */}
 							<button
 								type="button"
 								onClick={() => {
@@ -1004,121 +466,21 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								<span className="whitespace-nowrap">Норма</span>
 							</button>
 
-							{/* Unified Perio Assessment Pill (Norm + Pathology Dropdown) */}
-							<div className="relative inline-flex items-center rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] shadow-xs shrink-0" ref={perioMenuRef}>
-								<button
-									type="button"
-									onClick={handleInsertPerioStatus}
-									className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] h-[44px] sm:min-h-[36px] sm:h-9 rounded-l-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] font-bold text-xs transition-all touch-manipulation cursor-pointer min-w-0"
-									title="Вставить физиологическую норму пародонта в 1 клик (десна бледно-розовая, плотная, карманов нет)"
-									data-testid="insert-perio-043-btn"
-								>
-									<Sparkles className="w-3.5 h-3.5 text-[var(--ok-fg)] shrink-0" />
-									<span className="whitespace-nowrap">Пародонт в норме</span>
-								</button>
-								<div className="h-5 w-px bg-[var(--line,#334155)]" />
-								<button
-									type="button"
-									onClick={() => setShowPerioPathologyMenu((v) => !v)}
-									className="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[44px] h-[44px] sm:min-h-[36px] sm:h-9 rounded-r-xl bg-[var(--paper-soft,#1e293b)] hover:bg-rose-500/15 text-rose-400 hover:text-rose-300 font-semibold text-xs transition-all touch-manipulation cursor-pointer min-w-0"
-									title="Выбрать протокол патологии пародонта (гингивит, пародонтит K05.3, абсцесс, рецессия)"
-									data-testid="perio-pathology-menu-btn"
-									aria-expanded={showPerioPathologyMenu}
-								>
-									<span className="whitespace-nowrap">Патология</span>
-									<ChevronDown className={`w-3.5 h-3.5 transition-transform ${showPerioPathologyMenu ? "rotate-180" : ""}`} />
-								</button>
-
-								{/* Dropdown Menu for Perio Pathologies */}
-								{showPerioPathologyMenu && (
-									<div
-										className="absolute top-full left-0 mt-1.5 w-80 sm:w-96 rounded-xl bg-[var(--paper-strong,#0f172a)] border border-[var(--line-strong,#334155)] shadow-2xl z-[100] py-1.5 overflow-hidden backdrop-blur-xl"
-										role="menu"
-										aria-label="Пресеты патологий пародонта"
-									>
-										<div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-[var(--line,#334155)] flex items-center justify-between">
-											<span>Патологии пародонта (МКБ-10)</span>
-											<span className="text-[10px] text-teal-400">1 клик в дневник</span>
-										</div>
-										<div className="max-h-80 overflow-y-auto py-1 divide-y divide-[var(--line-subtle,#1e293b)]">
-											{PERIO_PATHOLOGY_PRESETS.map((preset) => (
-												<button
-													key={preset.id}
-													type="button"
-													onClick={() => handleApplyPerioPathology(preset)}
-													className="w-full text-left px-3 py-2 hover:bg-rose-500/10 text-[var(--ink,#f8fafc)] hover:text-rose-200 transition-colors flex flex-col gap-0.5 group cursor-pointer"
-													role="menuitem"
-													data-testid={`perio-preset-${preset.id}`}
-												>
-													<div className="flex items-center justify-between gap-2">
-														<span className="text-xs font-bold text-slate-100 group-hover:text-rose-300">
-															{preset.label}
-														</span>
-														<span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 shrink-0">
-															{preset.badge}
-														</span>
-													</div>
-													<p className="text-[11px] text-slate-400 line-clamp-2 leading-tight">
-														{preset.statusLocalis}
-													</p>
-												</button>
-											))}
-										</div>
-									</div>
-								)}
-							</div>
-							<button
-								type="button"
-								onClick={handleInsertPediatricStatus}
-								className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[42px] sm:min-h-[44px] rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:text-purple-300 border border-purple-500/30 text-xs sm:text-sm font-bold transition-all shrink-0 flex-shrink-0 shadow-xs touch-manipulation hover:border-purple-500 min-w-max whitespace-nowrap cursor-pointer"
-								title="Вставить протокол сменного прикуса, физиологической резорбции корней и Кариограммы Bratthall"
-								data-testid="insert-pediatric-cariogram-btn"
-							>
-								<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-700 dark:text-purple-200 font-black shrink-0">
-									ДЕТИ
-								</span>
-								<Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
-								<span className="whitespace-nowrap shrink-0">Сменный прикус (резорбция + кариограмма)</span>
-							</button>
-							{CLINICAL_FAST_PRESETS.map((preset) => (
-								<button
-									key={preset.id}
-									type="button"
-									onClick={() => applyClinicalPreset(preset.id)}
-									className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[42px] sm:min-h-[44px] rounded-xl bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] border border-[var(--glass-border)] shadow-2xs text-xs sm:text-sm font-bold text-[var(--ink)] hover:border-[var(--teal)] transition-all shrink-0 flex-shrink-0 shadow-xs touch-manipulation min-w-max whitespace-nowrap cursor-pointer"
-									title={preset.description}
-									data-testid={`preset-btn-${preset.id}`}
-								>
-									<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] font-black shrink-0">
-										{preset.badge}
-									</span>
-									<span className="whitespace-nowrap shrink-0">{preset.label}</span>
-								</button>
-							))}
-						</div>
-						<div className="pt-1">
-							<ClinicalQuickPresetsBar
-								isLocked={false}
+							<VisitDiaryPerioPediatricPresets
+								perioMenuRef={perioMenuRef}
+								showPerioPathologyMenu={showPerioPathologyMenu}
+								setShowPerioPathologyMenu={setShowPerioPathologyMenu}
+								handleInsertPerioStatus={handleInsertPerioStatus}
+								handleApplyPerioPathology={handleApplyPerioPathology}
+								handleInsertPediatricStatus={handleInsertPediatricStatus}
+								applyClinicalPreset={applyClinicalPreset}
 								onOpenTemplatesModal={() => setShowTemplatesModal(true)}
-								onSelectPreset={(preset) => {
-									if (isLocked && !isRevising) {
-										beginRevise();
-									}
-									setDiary((prev) =>
-										mergeSoapDiaryState(
-											prev,
-											{
-												anamnesis: preset.anamnesis,
-												statusLocalis: preset.statusLocalis,
-												diagnosisIcd10: preset.icd10,
-												treatmentDescription: preset.treatmentDescription,
-											},
-											{ strategy: "smart_append" },
-										),
-									);
-									if (preset.icd10) setIcdSearch(preset.icd10);
-									scheduleDebouncedSave();
-								}}
+								isLocked={isLocked}
+								isRevising={isRevising}
+								beginRevise={beginRevise}
+								setDiary={setDiary}
+								setIcdSearch={setIcdSearch}
+								scheduleDebouncedSave={scheduleDebouncedSave}
 							/>
 						</div>
 					</div>
@@ -1126,118 +488,17 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			)}
 
 			{/* ── Anesthesia Quick Bar & Dosage Calculator (Tier 2 Warm Context) ── */}
-			{!fieldsDisabled && (
-				<details
-					className="group rounded-2xl border border-[var(--glass-border)] bg-[var(--paper-soft)] p-3.5 text-xs mb-2 shadow-xs"
-					data-testid="anesthesia-quick-logger-bar"
-				>
-					<summary className="cursor-pointer font-bold text-xs text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-between select-none list-none">
-						<span className="flex items-center gap-1.5">
-							<Syringe className="w-4 h-4 text-blue-500 shrink-0" />
-							<span>Местная анестезия (быстрый выбор препарата и дозы)</span>
-						</span>
-						<span className="text-[10px] font-normal text-[var(--muted)] group-open:hidden">Развернуть &darr;</span>
-					</summary>
-					<div className="pt-2.5">
-						<AnesthesiaQuickBar
-							patientWeightKg={
-								typeof (activePatient as any)?.weightKg === "number" &&
-								(activePatient as any).weightKg > 0
-									? (activePatient as any).weightKg
-									: typeof (activePatient as any)?.administrativeProfile?.weightKg ===
-												"number" &&
-										(activePatient as any).administrativeProfile.weightKg > 0
-										? (activePatient as any).administrativeProfile.weightKg
-										: 70
-							}
-							targetToothNumberFdi={diary.diagnosisTooth || 16}
-							hasCardiovascularRisk={
-								Boolean(
-									(activePatient as any)?.clinicalSafetyProfile
-										?.hasCardiovascularDisease,
-								) ||
-								Boolean(
-									(activePatient as any)?.clinicalSafetyProfile
-										?.hasPacemakerExs,
-								) ||
-								Boolean(
-									(activePatient as any)?.clinicalSafetyProfile
-										?.hasHypertension,
-								) ||
-								diary.comorbidities?.toLowerCase().includes("сердц") ||
-								diary.comorbidities?.toLowerCase().includes("давлен") ||
-								diary.comorbidities?.toLowerCase().includes("ибс") ||
-								diary.comorbidities?.toLowerCase().includes("гипертон")
-							}
-							hasSulfiteAllergy={
-								Boolean(
-									(activePatient as any)?.clinicalSafetyProfile
-										?.hasSulfiteAllergy,
-								) ||
-								diary.comorbidities?.toLowerCase().includes("сульфит") ||
-								diary.comorbidities?.toLowerCase().includes("аллерги")
-							}
-							hasBronchialAsthma={
-								Boolean(
-									(activePatient as any)?.clinicalSafetyProfile
-										?.hasBronchialAsthma,
-								) ||
-								diary.comorbidities?.toLowerCase().includes("астм") ||
-								diary.comorbidities?.toLowerCase().includes("бронх")
-							}
-							isPregnantOrLactating={
-								((activePatient as any)?.clinicalSafetyProfile
-									?.pregnancyTrimester &&
-									(activePatient as any).clinicalSafetyProfile
-										.pregnancyTrimester !== "none") ||
-								diary.comorbidities?.toLowerCase().includes("беремен") ||
-								diary.comorbidities?.toLowerCase().includes("лактац")
-							}
-							disabled={fieldsDisabled}
-							onApplyAnesthesia={(text) => {
-								ensureRevisingIfLocked();
-								applyAnesthesiaPreset(text);
-							}}
-							onDisposalCarpules={(count, drugId) => {
-								ensureRevisingIfLocked();
-								const drugName =
-									DENTAL_ANESTHETICS[drugId]?.tradeNamesRu[0] ?? "Анестетик";
-								const disposalNote = `Утилизация: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, дезинфекция 1 клик без комиссии, списание по FEFO в 1 клик без комиссии).`;
-								applyAnesthesiaPreset(disposalNote);
-
-								// Автоматическое списание со склада по FEFO (Мандат 8e, 8v, 8n)
-								// Без необходимости ручного выбора партии врачом у кресла и с мягким овердрафтом
-								try {
-									fetch("/api/inventory/deduct", {
-										method: "POST",
-										headers: {
-											"Content-Type": "application/json",
-											...denteAdminSecretRequestHeaders(),
-										},
-										body: JSON.stringify({
-											visitId,
-											items: [{ name: drugName, quantity: count }],
-											reason: `Списание карпулы анестетика у кресла (отходы Класса Б, визит ${visitId})`,
-											allowOverdraft: true,
-										}),
-									})
-										.then((res) => (res.ok ? res.json() : null))
-										.then((data) => {
-											if (data?.hasOverdraft) {
-												showToast(`Карпула «${drugName}» списана по FEFO (мягкий овердрафт склада)`, "info");
-											}
-										})
-										.catch(() => {
-											// Задержка склада не блокирует клиническую работу врача (Мандат 8e, 8n)
-										});
-								} catch {
-									// Zero Dead-Ends
-								}
-							}}
-						/>
-					</div>
-				</details>
-			)}
+			<VisitDiaryAnesthesiaBar
+				fieldsDisabled={fieldsDisabled}
+				activePatient={activePatient}
+				diary={diary}
+				doctorName={doctorName}
+				isLocked={isLocked}
+				isRevising={isRevising}
+				beginRevise={beginRevise}
+				applyAnesthesiaPreset={applyAnesthesiaPreset}
+				onDisposalCarpules={handleDisposalCarpules}
+			/>
 
 			{/* ── Load States ── */}
 			{loadState.phase === "loading" && loadStateText && (
@@ -1318,474 +579,29 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			)}
 
 			{/* ── 043/у Fields grid ── */}
-			<div className="vde-043__grid">
-				{/* I — Жалобы и анамнез */}
-				<div className="vde-043__field">
-					<label className="vde-043__label" htmlFor="diary-anamnesis">
-						<Stethoscope className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-						<span className="vde-043__letter vde-043__letter--s">I</span> —
-						Жалобы и анамнез
-						{!fieldsDisabled && (
-							<div className="vde-043__label-mic">
-								<SmartMicrophoneButton
-									context="visit"
-									sterileMode={false}
-									className="p-1"
-									title="Диктовать жалобы (Gemini Live VAD)"
-									onInterim={(interim) => {
-										setFieldInterimMap((p) => ({ ...p, anamnesis: interim }));
-									}}
-									onResult={(text) => {
-										ensureRevisingIfLocked();
-										setDiary((p) => ({
-											...p,
-											anamnesis: p.anamnesis ? `${p.anamnesis} ${text}` : text,
-										}));
-										setFieldInterimMap((p) => ({ ...p, anamnesis: "" }));
-										scheduleDebouncedSave();
-									}}
-								/>
-							</div>
-						)}
-					</label>
-					<textarea
-						id="diary-anamnesis"
-						disabled={fieldsDisabled}
-						className="auto-resize-ta vde-043__ta"
-						value={diary.anamnesis}
-						onChange={(e) => {
-							handleAutoResize(e);
-							ensureRevisingIfLocked();
-							setDiary((p) => ({ ...p, anamnesis: e.target.value }));
-							scheduleDebouncedSave();
-						}}
-						onFocus={(e) => {
-							handleAutoResize(e);
-							ensureRevisingIfLocked();
-						}}
-						placeholder="Жалобы пациента, анамнез развития заболевания (morbi) и жизни (vitae)..."
-					/>
-					{COMPLAINT_QUICK_CHIPS.length > 0 && (
-						<div
-							className="mt-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 max-w-full flex-nowrap touch-pan-x"
-							data-testid="complaint-quick-chips-bar"
-						>
-							<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1 shrink-0">
-								<Sparkles className="w-3 h-3 text-[var(--teal,var(--brand-primary))]" />
-								Быстрые жалобы:
-							</span>
-							{COMPLAINT_QUICK_CHIPS.map((chipText) => {
-								const isApplied = (diary.anamnesis ?? "").includes(chipText);
-								return (
-									<button
-										key={chipText}
-										type="button"
-										onClick={() => handleAddComplaintChip(chipText)}
-										disabled={fieldsDisabled}
-										className={`text-xs min-h-[36px] px-2.5 py-1 rounded-lg font-semibold border transition-all cursor-pointer inline-flex items-center gap-1 select-none shrink-0 ${
-											isApplied
-												? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 font-bold"
-												: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--glass-border)]"
-										}`}
-										title={
-											isApplied
-												? `Жалоба уже внесена: «${chipText}»`
-												: `Внести в анамнез: «${chipText}»`
-										}
-										data-testid={`complaint-chip-${chipText}`}
-									>
-										{chipText}
-										{isApplied ? (
-											<Check className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
-										) : (
-											<Plus className="w-3 h-3 opacity-60 shrink-0" />
-										)}
-									</button>
-								);
-							})}
-						</div>
-					)}
-					{fieldInterimMap.anamnesis && (
-						<div
-							className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-600 dark:text-blue-400 italic animate-pulse flex items-center gap-1.5 select-none"
-							data-testid="interim-text-anamnesis"
-						>
-							<span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0" />
-							<span className="font-bold shrink-0">AI Диктовка (Анамнез):</span>
-							<span className="truncate">«{fieldInterimMap.anamnesis}»</span>
-						</div>
-					)}
-				</div>
-
-				{/* II — Объективно */}
-				<div className="vde-043__field">
-					<label className="vde-043__label" htmlFor="diary-status-localis">
-						<Search className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-						<span className="vde-043__letter vde-043__letter--o">II</span> —
-						Объективно (Status Localis)
-						{!fieldsDisabled && (
-							<div className="vde-043__label-mic">
-								<SmartMicrophoneButton
-									context="visit"
-									sterileMode={false}
-									className="p-1"
-									title="Диктовать объективный статус (Gemini Live VAD)"
-									onInterim={(interim) => {
-										setFieldInterimMap((p) => ({ ...p, statusLocalis: interim }));
-									}}
-									onResult={(text) => {
-										ensureRevisingIfLocked();
-										setDiary((p) => ({
-											...p,
-											statusLocalis: p.statusLocalis
-												? `${p.statusLocalis} ${text}`
-												: text,
-										}));
-										setFieldInterimMap((p) => ({ ...p, statusLocalis: "" }));
-										scheduleDebouncedSave();
-									}}
-								/>
-							</div>
-						)}
-					</label>
-					<textarea
-						id="diary-status-localis"
-						disabled={fieldsDisabled}
-						className="auto-resize-ta vde-043__ta"
-						value={diary.statusLocalis}
-						onChange={(e) => {
-							handleAutoResize(e);
-							ensureRevisingIfLocked();
-							setDiary((p) => ({ ...p, statusLocalis: e.target.value }));
-							scheduleDebouncedSave();
-						}}
-						onFocus={(e) => {
-							handleAutoResize(e);
-							ensureRevisingIfLocked();
-						}}
-						placeholder="Внешний осмотр, перкуссия, пальпация, ЭОД, рентген..."
-					/>
-					{fieldInterimMap.statusLocalis && (
-						<div
-							className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-600 dark:text-blue-400 italic animate-pulse flex items-center gap-1.5 select-none"
-							data-testid="interim-text-status-localis"
-						>
-							<span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0" />
-							<span className="font-bold shrink-0">AI Диктовка (Статус):</span>
-							<span className="truncate">«{fieldInterimMap.statusLocalis}»</span>
-						</div>
-					)}
-				</div>
-
-				{/* III — Диагноз */}
-				<div className="vde-043__assessment">
-					<div className="vde-043__assessment-grid">
-						<div className="vde-043__field" ref={icdRef}>
-							<label className="vde-043__label" htmlFor="diary-icd-search">
-								<span className="vde-043__letter vde-043__letter--a">III</span> —
-								Диагноз МКБ-10
-							</label>
-							{diary.diagnosisIcd10 ? (
-								<div
-									className={`vde-043__icd-chip min-h-[44px] min-w-0 break-words ${getIcdColor(diary.diagnosisIcd10)}`}
-								>
-									<span className="vde-043__icd-code shrink-0">
-										{diary.diagnosisIcd10}
-									</span>
-									<span className="flex-1 min-w-0 break-words">
-										{ICD10_DICTIONARY.find(
-											(i) => i.code === diary.diagnosisIcd10,
-										)?.label ?? "Диагноз выбран"}
-									</span>
-									{!fieldsDisabled && (
-										<button
-											type="button"
-											onClick={() => {
-												ensureRevisingIfLocked();
-												setDiary((p) => ({ ...p, diagnosisIcd10: "" }));
-												setIcdSearch("");
-												scheduleDebouncedSave();
-											}}
-											className="vde-043__btn vde-043__btn--ghost vde-043__btn--icon shrink-0"
-											title="Сбросить диагноз"
-											aria-label="Сбросить диагноз МКБ-10"
-										>
-											<X className="w-3.5 h-3.5" />
-										</button>
-									)}
-								</div>
-							) : (
-								<div className="vde-043__icd-search-wrap">
-									<Search className="w-4 h-4 vde-043__icd-search-icon" />
-									<input
-										id="diary-icd-search"
-										disabled={fieldsDisabled}
-										className="vde-043__input vde-043__icd-input min-h-[44px]"
-										value={icdSearch}
-										onChange={(e) => {
-											ensureRevisingIfLocked();
-											setIcdSearch(e.target.value);
-											setShowIcdDropdown(true);
-										}}
-										onFocus={() => {
-											ensureRevisingIfLocked();
-											setShowIcdDropdown(true);
-										}}
-										onKeyDown={(e) => {
-											if (e.key === "Enter") {
-												e.preventDefault();
-												commitIcdInput();
-											}
-										}}
-										onBlur={() => {
-											window.setTimeout(() => {
-												commitIcdInput();
-												setShowIcdDropdown(false);
-											}, 120);
-										}}
-										placeholder="K02.1 Кариес... или введите название"
-									/>
-									{showIcdDropdown && filteredIcd.length > 0 && (
-										<div className="vde-043__icd-drop">
-											{(filteredIcd ?? []).map((icd) => (
-												<div
-													key={icd.code}
-													className="vde-043__icd-opt min-h-[44px] min-w-0"
-													role="option"
-													aria-selected={false}
-													tabIndex={0}
-													onMouseDown={(e) => {
-														e.preventDefault();
-														handleIcdSelect(icd.code);
-													}}
-													onKeyDown={(e) => {
-														if (e.key === "Enter" || e.key === " ") {
-															e.preventDefault();
-															handleIcdSelect(icd.code);
-														}
-													}}
-												>
-													<span
-														className={`vde-043__icd-opt-code shrink-0 ${ICD_GROUP_COLORS[icd.group] ?? ""}`}
-													>
-														{icd.code}
-													</span>
-													<div className="flex-1 min-w-0 break-words">
-														<div className="vde-043__icd-opt-label break-words whitespace-normal">
-															{icd.label}
-														</div>
-														<div className="vde-043__icd-opt-group break-words">
-															{icd.group}
-														</div>
-													</div>
-												</div>
-											))}
-										</div>
-									)}
-								</div>
-							)}
-						</div>
-
-						<div className="vde-043__field">
-							<label className="vde-043__label" htmlFor="diary-tooth">
-								Зуб
-							</label>
-							<input
-								id="diary-tooth"
-								disabled={fieldsDisabled}
-								className="vde-043__input vde-043__tooth-input"
-								value={diary.diagnosisTooth}
-								onChange={(e) => {
-									ensureRevisingIfLocked();
-									setDiary((p) => ({ ...p, diagnosisTooth: e.target.value }));
-									scheduleDebouncedSave();
-								}}
-								onFocus={() => {
-									ensureRevisingIfLocked();
-								}}
-								placeholder="16, 36..."
-								maxLength={32}
-							/>
-						</div>
-					</div>
-				</div>
-
-				{/* IV — Лечение и рекомендации */}
-				<div className="vde-043__field vde-043__field--span2">
-					<label className="vde-043__label" htmlFor="diary-treatment">
-						<FileText className="w-3 h-3 text-[var(--teal)]" />
-						<span className="vde-043__letter vde-043__letter--p">IV</span> —
-						Лечение и рекомендации
-						{!fieldsDisabled && (
-							<div className="vde-043__label-mic">
-								<SmartMicrophoneButton
-									context="visit"
-									sterileMode={false}
-									className="p-1"
-									title="Диктовать лечение и протокол (Gemini Live VAD)"
-									onInterim={(interim) => {
-										setFieldInterimMap((p) => ({ ...p, treatmentDescription: interim }));
-									}}
-									onResult={(text) => {
-										ensureRevisingIfLocked();
-										setDiary((p) => ({
-											...p,
-											treatmentDescription: p.treatmentDescription
-												? `${p.treatmentDescription} ${text}`
-												: text,
-										}));
-										setFieldInterimMap((p) => ({ ...p, treatmentDescription: "" }));
-										scheduleDebouncedSave();
-									}}
-								/>
-							</div>
-						)}
-					</label>
-					<textarea
-						id="diary-treatment"
-						disabled={fieldsDisabled}
-						className="auto-resize-ta vde-043__ta"
-						value={diary.treatmentDescription}
-						onChange={(e) => {
-							handleAutoResize(e);
-							ensureRevisingIfLocked();
-							setDiary((p) => ({ ...p, treatmentDescription: e.target.value }));
-							scheduleDebouncedSave();
-						}}
-						onFocus={(e) => {
-							handleAutoResize(e);
-							ensureRevisingIfLocked();
-						}}
-						placeholder="Анестезия, проведённые манипуляции, рекомендации..."
-					/>
-					{fieldInterimMap.treatmentDescription && (
-						<div
-							className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-600 dark:text-blue-400 italic animate-pulse flex items-center gap-1.5 select-none"
-							data-testid="interim-text-treatment"
-						>
-							<span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0" />
-							<span className="font-bold shrink-0">AI Диктовка (Лечение):</span>
-							<span className="truncate">«{fieldInterimMap.treatmentDescription}»</span>
-						</div>
-					)}
-					{!fieldsDisabled && (
-						<div
-							className="mt-2 p-2.5 rounded-lg border border-[var(--glass-border)] bg-[var(--paper-soft)] flex flex-col gap-1.5"
-							data-testid="patient-recommendations-bar"
-						>
-							<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1.5">
-								<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-								1-Click Рекомендации пациенту:
-							</span>
-							<div className="flex flex-wrap items-center gap-1.5">
-								{PATIENT_RECOMMENDATIONS.map((rec) => (
-									<button
-										key={rec.id}
-										type="button"
-										onClick={() => {
-											ensureRevisingIfLocked();
-											setDiary((prev) =>
-												appendRecommendationToSoap(prev, rec.text),
-											);
-											scheduleDebouncedSave();
-										}}
-										className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--glass-border)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-colors shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
-										title={rec.text}
-										data-testid={`rec-btn-${rec.id}`}
-									>
-										<Plus className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />
-										<span className="min-w-0 break-words">{rec.label}</span>
-									</button>
-								))}
-							</div>
-						</div>
-					)}
-				</div>
-
-				{/* Complications */}
-				<div className="vde-043__field vde-043__field--span2">
-					<label className="vde-043__label" htmlFor="vde-complications">
-						<AlertTriangle className="w-3 h-3 text-[var(--bad-fg,#b91c1c)]" />
-						Осложнения и сопутствующие заболевания
-						{!fieldsDisabled && (
-							<div className="vde-043__label-mic">
-								<SmartMicrophoneButton
-									context="visit"
-									sterileMode={false}
-									className="p-1"
-									title="Диктовать осложнения и анамнез (Gemini Live VAD)"
-									onInterim={(interim) => {
-										setFieldInterimMap((p) => ({ ...p, complications: interim }));
-									}}
-									onResult={(text) => {
-										ensureRevisingIfLocked();
-										setDiary((p) => ({
-											...p,
-											complications: p.complications
-												? `${p.complications} ${text}`
-												: text,
-										}));
-										setFieldInterimMap((p) => ({ ...p, complications: "" }));
-										scheduleDebouncedSave();
-									}}
-								/>
-							</div>
-						)}
-					</label>
-					<div className="vde-043__complications-grid">
-						<textarea
-							id="vde-complications"
-							disabled={fieldsDisabled}
-							className="auto-resize-ta vde-043__ta vde-043__ta--sm"
-							value={diary.complications}
-							onChange={(e) => {
-								handleAutoResize(e);
-								ensureRevisingIfLocked();
-								setDiary((p) => ({ ...p, complications: e.target.value }));
-								scheduleDebouncedSave();
-							}}
-							onFocus={(e) => {
-								handleAutoResize(e);
-								ensureRevisingIfLocked();
-							}}
-							placeholder="Осложнения лечения..."
-						/>
-						<textarea
-							disabled={fieldsDisabled}
-							className="auto-resize-ta vde-043__ta vde-043__ta--sm"
-							value={diary.comorbidities}
-							onChange={(e) => {
-								handleAutoResize(e);
-								ensureRevisingIfLocked();
-								setDiary((p) => ({ ...p, comorbidities: e.target.value }));
-								scheduleDebouncedSave();
-							}}
-							onFocus={(e) => {
-								handleAutoResize(e);
-								ensureRevisingIfLocked();
-							}}
-							placeholder="Сопутствующие заболевания (если есть)..."
-						/>
-					</div>
-					{fieldInterimMap.complications && (
-						<div
-							className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-600 dark:text-blue-400 italic animate-pulse flex items-center gap-1.5 select-none mt-1"
-							data-testid="interim-text-complications"
-						>
-							<span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0" />
-							<span className="font-bold shrink-0">AI Диктовка (Осложнения):</span>
-							<span className="truncate">«{fieldInterimMap.complications}»</span>
-						</div>
-					)}
-				</div>
-
-				<VisitDiaryPhotoUpload
-					visitId={visitId}
-					diaryId={diaryId}
-					isLocked={isLocked}
-					onPrintPhotosChange={handlePrintPhotosChange}
-				/>
-			</div>
+			<VisitDiarySoapFields
+				diary={diary}
+				setDiary={setDiary}
+				fieldsDisabled={fieldsDisabled}
+				fieldInterimMap={fieldInterimMap}
+				setFieldInterimMap={setFieldInterimMap}
+				ensureRevisingIfLocked={ensureRevisingIfLocked}
+				scheduleDebouncedSave={scheduleDebouncedSave}
+				handleAutoResize={handleAutoResize}
+				handleAddComplaintChip={handleAddComplaintChip}
+				icdRef={icdRef}
+				icdSearch={icdSearch}
+				setIcdSearch={setIcdSearch}
+				showIcdDropdown={showIcdDropdown}
+				setShowIcdDropdown={setShowIcdDropdown}
+				filteredIcd={filteredIcd}
+				handleIcdSelect={handleIcdSelect}
+				commitIcdInput={commitIcdInput}
+				visitId={visitId}
+				diaryId={diaryId}
+				isLocked={isLocked}
+				handlePrintPhotosChange={(p) => setPrintPhotos(p)}
+			/>
 
 			{/* ── Actions Footer ── */}
 			{!isLocked ? (
@@ -1812,424 +628,78 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						}}
 					/>
 				</div>
-			) : isRevising ? (
-				<div className="vde-043__revise-panel" data-testid="diary-revise-panel">
-					<div className="vde-043__revise-warn">
-						<AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
-						<span>
-							Режим правки закрытого дневника врачом («Исправленному верить»). Прежний текст надёжно сохраняется в истории версий.
-						</span>
-					</div>
-					<label className="vde-043__revise-label">
-						Причина правки («Исправленному верить»)
-						<input
-							data-testid="diary-revise-reason"
-							value={revisionReason}
-							onChange={(e) => setRevisionReason(e.target.value)}
-							placeholder="Исправленному верить (нажмите «Сохранить правку» для мгновенного сохранения)"
-							className="vde-043__input"
-						/>
-					</label>
-					<div className="flex flex-wrap justify-end gap-2">
-						<button
-							type="button"
-							data-testid="diary-revise-cancel"
-							onClick={() => cancelRevise()}
-							disabled={isRevisingBusy}
-							className="vde-043__btn"
-						>
-							Отмена
-						</button>
-						<button
-							type="button"
-							id="diary-revise-save-btn"
-							data-testid="diary-revise-save"
-							onClick={() => void doRevise()}
-							disabled={isRevisingBusy}
-							className="vde-043__btn vde-043__btn--amber font-bold"
-						>
-							{isRevisingBusy ? "Сохраняю правку…" : "Сохранить правку («Исправленному верить»)"}
-						</button>
-					</div>
-				</div>
 			) : (
-				<div className="vde-043__footer-locked">
-					<ShieldCheck className="w-4 h-4 shrink-0 text-[var(--green,#15803d)]" />
-					<span>
-						{hasCryptoSignature
-							? "Дневник подписан"
-							: "Дневник закрыт, оттиск УКЭП отсутствует"}
-						{lockedAt ? ` • ${new Date(lockedAt).toLocaleString("ru-RU")}` : ""}
-						.
-						{diaryHash && (
-							<span className="vde-043__hash ml-2">
-								{diaryHash.slice(0, 16)}…
-							</span>
-						)}
-					</span>
-					{!hasCryptoSignature && (
-						<CryptoProSigner
-							diaryHash={diaryHash}
-							isLocked={false}
-							lockedAt={lockedAt}
-							ensureDraftSaved={async () =>
-								diaryId ? { id: diaryId, hash: diaryHash } : null
-							}
-							onLock={async (thumbprint, signature, alreadySavedId) => {
-								await doLock(thumbprint, signature, alreadySavedId ?? diaryId);
-							}}
-						/>
-					)}
-					<button
-						type="button"
-						id="diary-revise-btn"
-						data-testid="diary-revise-begin"
-						onClick={() => beginRevise()}
-						className="vde-043__btn vde-043__btn--amber ml-auto font-bold flex items-center gap-1.5"
-						title="Внести исправление в дневник (с сохранением истории версий «Исправленному верить»)"
-					>
-						<FileText className="w-3.5 h-3.5" /> Внести исправление («Исправленному верить»)
-					</button>
-					<button
-						type="button"
-						onClick={() => setShowPreview(true)}
-						className="vde-043__btn vde-043__btn--ghost"
-						data-testid="diary-form-043-open"
-						title="Печать медицинской карты"
-					>
-						<Printer className="w-3.5 h-3.5" /> Печать карты
-					</button>
-				</div>
+				<VisitDiaryReviseAndLockFooters
+					isRevising={isRevising}
+					revisionReason={revisionReason}
+					setRevisionReason={setRevisionReason}
+					cancelRevise={cancelRevise}
+					isRevisingBusy={isRevisingBusy}
+					doRevise={doRevise}
+					beginRevise={beginRevise}
+					diaryDoctorFullName={diaryDoctorFullName}
+					lockedAt={lockedAt}
+					hasCryptoSignature={hasCryptoSignature}
+					diaryHash={diaryHash}
+					revisionCount={revisionCount}
+					setShowPreview={setShowPreview}
+				/>
 			)}
 
 			{/* ── Forensic Revisions History ── */}
-			{diaryRevisions.length > 0 && (
-				<details
-					className="vde-043__revisions no-print"
-					data-testid="diary-revisions-history"
-				>
-					<summary className="vde-043__revisions-summary">
-						История правок ({diaryRevisions.length})
-					</summary>
-					<ol className="vde-043__revisions-list">
-						{(diaryRevisions ?? []).map((rev, idx) => {
-							const when = rev.revisedAt
-								? new Date(rev.revisedAt).toLocaleString("ru-RU")
-								: "дата не указана";
-							const prevBits: { label: string; text: string }[] = [];
-							const pushPrev = (label: string, text: string | null) => {
-								if (typeof text === "string" && text.trim().length > 0) {
-									prevBits.push({ label, text: text.trim() });
-								}
-							};
-							pushPrev("S (жалобы/анамнез)", rev.previousAnamnesis);
-							pushPrev("O (status localis)", rev.previousStatusLocalis);
-							pushPrev("A (МКБ-10)", rev.previousDiagnosisIcd10);
-							pushPrev("Зуб", rev.previousDiagnosisTooth);
-							pushPrev("P (лечение)", rev.previousTreatmentDescription);
-							pushPrev("Осложнения", rev.previousComplications);
-							pushPrev("Сопутствующие", rev.previousComorbidities);
-							return (
-								<li
-									key={rev.id}
-									className="vde-043__revision-item"
-									data-testid={`diary-revision-item-${idx}`}
-								>
-									<div className="vde-043__revision-meta">
-										<span className="vde-043__revision-when">{when}</span>
-										{rev.revisedByFullName ? (
-											<span className="vde-043__revision-who">
-												Кто: {rev.revisedByFullName}
-											</span>
-										) : rev.revisedByUserId ? (
-											<span className="vde-043__revision-who vde-043__revision-who--unknown">
-												Кто: ФИО в записи не сохранено
-											</span>
-										) : null}
-										{rev.revisionReason ? (
-											<span className="vde-043__revision-reason">
-												Причина: {rev.revisionReason}
-											</span>
-										) : (
-											<span className="vde-043__revision-reason vde-043__revision-reason--missing">
-												Причина не указана
-											</span>
-										)}
-									</div>
-									{prevBits.length > 0 ? (
-										<ul className="vde-043__revision-prev">
-											{(prevBits ?? []).map((b) => (
-												<li key={b.label} className="min-w-0 break-words">
-													<strong>{b.label}:</strong>{" "}
-													<span className="vde-043__revision-prev-text min-w-0 break-words">
-														{b.text.length > 280
-															? `${b.text.slice(0, 280)}…`
-															: b.text}
-													</span>
-												</li>
-											))}
-										</ul>
-									) : (
-										<p className="vde-043__revision-empty-prev">
-											Снимок прежних полей пуст.
-										</p>
-									)}
-								</li>
-							);
-						})}
-					</ol>
-				</details>
-			)}
+			<VisitDiaryRevisionsHistory
+				revisionCount={revisionCount}
+				diaryRevisions={diaryRevisions}
+			/>
 
+			{/* ── Heavy Modals & Print Preview ── */}
+			<VisitDiaryModals
+				showSummaryModal={showSummaryModal}
+				setShowSummaryModal={setShowSummaryModal}
+				showPrescriptionModal={showPrescriptionModal}
+				setShowPrescriptionModal={setShowPrescriptionModal}
+				showRadiologyReferralModal={showRadiologyReferralModal}
+				setShowRadiologyReferralModal={setShowRadiologyReferralModal}
+				showEgiszModal={showEgiszModal}
+				setShowEgiszModal={setShowEgiszModal}
+				showTemplatesModal={showTemplatesModal}
+				setShowTemplatesModal={setShowTemplatesModal}
+				showBrandingCustomizer={showBrandingCustomizer}
+				setShowBrandingCustomizer={setShowBrandingCustomizer}
+				showPreview={showPreview}
+				setShowPreview={setShowPreview}
+				diary={diary}
+				setDiary={setDiary}
+				isLocked={isLocked}
+				isRevising={isRevising}
+				beginRevise={beginRevise}
+				scheduleDebouncedSave={scheduleDebouncedSave}
+				setIcdSearch={setIcdSearch}
+				doSave={doSave}
+				doctorName={doctorName}
+				doctorSpecialty={doctorSpecialty}
+				patientFullName={patientFullName}
+				patientBirthDate={patientBirthDate}
+				patientCardNumber={patientCardNumber}
+				patientPassport={patientPassport}
+				patientOms={patientOms}
+				patientSnils={patientSnils}
+				patientPhone={patientPhone}
+				patientAddress={patientAddress}
+				clinicName={clinicName}
+				activePatient={activePatient}
+				printPatient={printPatient}
+				lockedAt={lockedAt}
+				diaryHash={diaryHash}
+				hasCryptoSignature={hasCryptoSignature}
+				activeTeeth={activeTeeth}
+				radiologySnapshots={radiologySnapshots}
+				lastSavedAt={lastSavedAt}
+				icdEntry={icdEntry}
+				revisionCount={revisionCount}
+			/>
 
-			{/* ── Summary Modal ── */}
-			{showSummaryModal && (
-				<Suspense fallback={null}>
-					<VisitSummaryModal
-						isOpen={showSummaryModal}
-						onClose={() => setShowSummaryModal(false)}
-						patient={printPatient || activePatient}
-						diary={diary}
-						doctorName={doctorName}
-						doctorSpecialty={doctorSpecialty}
-						lockedAt={lockedAt}
-						diaryHash={diaryHash}
-						hasCryptoSignature={hasCryptoSignature}
-						isLocked={isLocked}
-						teethData={activeTeeth}
-						radiologySnapshots={radiologySnapshots}
-						onPrint={() => setShowPreview(true)}
-						onOpenPrescription={() => setShowPrescriptionModal(true)}
-						onOpenRadiologyReferral={() => setShowRadiologyReferralModal(true)}
-						onOpenEgiszExport={() => setShowEgiszModal(true)}
-						onCompleteVisit={async () => {
-							await doSave(false);
-							setShowSummaryModal(false);
-						}}
-					/>
-				</Suspense>
-			)}
-
-			{/* ── Prescription 107-1/u Modal ── */}
-			{showPrescriptionModal && (
-				<Suspense fallback={null}>
-					<PrescriptionModal
-						isOpen={showPrescriptionModal}
-						onClose={() => setShowPrescriptionModal(false)}
-						patient={
-							printPatient || activePatient
-								? {
-										fullName: patientFullName,
-										birthDate: patientBirthDate,
-										medicalCardNumber: patientCardNumber,
-									}
-								: null
-						}
-						diary={diary}
-						doctorName={doctorName}
-						doctorSpecialty={doctorSpecialty}
-						clinicName={clinicName}
-						onInsertToDiary={(diaryText) => {
-							setDiary((prev) => ({
-								...prev,
-								treatmentDescription: prev.treatmentDescription
-									? `${prev.treatmentDescription}\n\n${diaryText}`
-									: diaryText,
-							}));
-							scheduleDebouncedSave();
-						}}
-					/>
-				</Suspense>
-			)}
-
-			{/* ── Radiology Referral Modal ── */}
-			{showRadiologyReferralModal && (
-				<Suspense fallback={null}>
-					<RadiologyReferralModal
-						isOpen={showRadiologyReferralModal}
-						onClose={() => setShowRadiologyReferralModal(false)}
-						patient={
-							printPatient || activePatient
-								? {
-										fullName: patientFullName,
-										birthDate: patientBirthDate,
-										medicalCardNumber: patientCardNumber,
-									}
-								: null
-						}
-						diary={diary}
-						doctorName={doctorName}
-						doctorSpecialty={doctorSpecialty}
-						clinicName={clinicName}
-					/>
-				</Suspense>
-			)}
-
-			{/* ── EGISZ SEMD CDA Export Modal ── */}
-			{showEgiszModal && (
-				<Suspense fallback={null}>
-					<EgiszRemdHubModal
-						isOpen={showEgiszModal}
-						onClose={() => setShowEgiszModal(false)}
-						initialTab="xml"
-					/>
-				</Suspense>
-			)}
-
-			{/* ── 1-Click Clinical Protocols & Templates Modal ── */}
-			{showTemplatesModal && (
-				<Suspense fallback={null}>
-					<ClinicalDiaryTemplatesModal
-						isOpen={showTemplatesModal}
-						onClose={() => setShowTemplatesModal(false)}
-						initialToothNumber={diary.diagnosisTooth}
-						doctorFullName={doctorName}
-						doctorSpecialty={doctorSpecialty}
-						patientFullName={patientFullName}
-						onApplyDiary={(res) => {
-							if (isLocked && !isRevising) {
-								beginRevise();
-							}
-							const combinedAnamnesis = [
-								res.subjectiveComplaints?.trim(),
-								res.anamnesisMorbi?.trim(),
-							]
-								.filter(Boolean)
-								.join("\n\n");
-
-							const treatmentParts: string[] = [];
-							if (res.procedureProtocol?.trim()) {
-								treatmentParts.push(res.procedureProtocol.trim());
-							}
-							if (res.anesthesiaDetails?.trim()) {
-								treatmentParts.push(`Анестезия: ${res.anesthesiaDetails.trim()}`);
-							}
-							if (res.appliedMaterials?.trim()) {
-								treatmentParts.push(`Материалы: ${res.appliedMaterials.trim()}`);
-							}
-							if (res.homeCareRecommendations?.trim()) {
-								treatmentParts.push(`Рекомендации: ${res.homeCareRecommendations.trim()}`);
-							}
-							if (res.order804nServices && res.order804nServices.length > 0) {
-								const svcLines = res.order804nServices.map((s) => {
-									const qty = s.defaultQuantity && s.defaultQuantity > 1 ? ` (x${s.defaultQuantity})` : "";
-									const price =
-										typeof s.priceKopecks === "number" && s.priceKopecks > 0
-											? ` — ${(s.priceKopecks / 100).toLocaleString("ru-RU")} ₽`
-											: "";
-									return `• ${s.code} ${s.nameRu}${qty}${price}`;
-								});
-								treatmentParts.push(`Оказанные услуги:\n${svcLines.join("\n")}`);
-
-								// Прямая передача структурированных услуг 804н в активный счёт/смету визита (Мандаты 8b, 8e, 8n)
-								if (typeof window !== "undefined") {
-									const billableItems = res.order804nServices.map((s, idx) => {
-										const priceRub = typeof s.priceKopecks === "number" && s.priceKopecks > 0 ? s.priceKopecks / 100 : 0;
-										const qty = s.defaultQuantity && s.defaultQuantity > 1 ? s.defaultQuantity : 1;
-										const tooth = res.toothNumber ?? diary.diagnosisTooth;
-										return {
-											id: `protocol-${s.code}-${Date.now()}-${idx}`,
-											code: s.code,
-											code804n: s.code,
-											title: s.nameRu,
-											name: s.nameRu,
-											quantity: qty,
-											priceRub,
-											unitPriceRub: priceRub,
-											priceKopecks: s.priceKopecks ?? Math.round(priceRub * 100),
-											toothNumber: tooth ? Number(tooth) || tooth : undefined,
-											toothCode: tooth ? String(tooth) : undefined,
-										};
-									});
-									window.dispatchEvent(
-										new CustomEvent("dente-add-services-to-invoice", {
-											detail: {
-												services: billableItems,
-												toothNumber: res.toothNumber ?? (diary.diagnosisTooth ? Number(diary.diagnosisTooth) || diary.diagnosisTooth : undefined),
-												toothCode: res.toothNumber ? String(res.toothNumber) : diary.diagnosisTooth,
-												replaceExisting: true,
-												source: "clinical_diary_protocol",
-											},
-										}),
-									);
-								}
-							}
-							const combinedTreatment = treatmentParts.join("\n\n");
-
-							setDiary((prev) =>
-								mergeSoapDiaryState(
-									prev,
-									{
-										anamnesis: combinedAnamnesis,
-										statusLocalis: res.objectiveStatusLocalis,
-										treatmentDescription: combinedTreatment,
-										diagnosisIcd10: res.assessmentIcd10Code,
-										diagnosisTooth: res.toothNumber ? String(res.toothNumber) : prev.diagnosisTooth,
-									},
-									{ strategy: "smart_append" },
-								),
-							);
-							if (res.assessmentIcd10Code) {
-								setIcdSearch(res.assessmentIcd10Code);
-							}
-							scheduleDebouncedSave();
-						}}
-						onApplySoapText={(text, icd) => {
-							if (isLocked && !isRevising) {
-								beginRevise();
-							}
-							setDiary((prev) => ({
-								...prev,
-								treatmentDescription: prev.treatmentDescription
-									? `${prev.treatmentDescription}\n\n${text}`
-									: text,
-								diagnosisIcd10: prev.diagnosisIcd10 || icd,
-							}));
-							if (icd && !diary.diagnosisIcd10) {
-								setIcdSearch(icd);
-							}
-							scheduleDebouncedSave();
-						}}
-						onApplyServices={(services) => {
-							if (typeof window !== "undefined" && services && services.length > 0) {
-								const billableItems = services.map((s, idx) => {
-									const priceRub = typeof s.priceKopecks === "number" && s.priceKopecks > 0 ? s.priceKopecks / 100 : 0;
-									const qty = s.defaultQuantity && s.defaultQuantity > 1 ? s.defaultQuantity : 1;
-									const tooth = diary.diagnosisTooth;
-									return {
-										id: `protocol-${s.code}-${Date.now()}-${idx}`,
-										code: s.code,
-										code804n: s.code,
-										title: s.nameRu,
-										name: s.nameRu,
-										quantity: qty,
-										priceRub,
-										unitPriceRub: priceRub,
-										priceKopecks: s.priceKopecks ?? Math.round(priceRub * 100),
-										toothNumber: tooth ? Number(tooth) || tooth : undefined,
-										toothCode: tooth ? String(tooth) : undefined,
-									};
-								});
-								window.dispatchEvent(
-									new CustomEvent("dente-add-services-to-invoice", {
-										detail: {
-											services: billableItems,
-											toothNumber: diary.diagnosisTooth ? Number(diary.diagnosisTooth) || diary.diagnosisTooth : undefined,
-											toothCode: diary.diagnosisTooth || undefined,
-											replaceExisting: true,
-											source: "clinical_diary_modal_services",
-										},
-									}),
-								);
-							}
-						}}
-					/>
-				</Suspense>
-			)}
-
-			{/* ═══════════════════════════════════════════════════════════════════
-			    TIER 3 / DEEP WORKSPACE: SPECIALIZED PERIODONTOLOGY STUDIO
-			    ═══════════════════════════════════════════════════════════════════ */}
+			{/* Specialized Periodontology Studio Modal (Tier 3 Deep Workspace) */}
 			{isTier3PerioModalOpen &&
 				typeof window !== "undefined" &&
 				createPortal(
@@ -2287,11 +757,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					</div>,
 					document.body,
 				)}
-
-			{/* ── Print Preview Modal ── */}
-			{showPreview &&
-				typeof window !== "undefined" &&
-				createPortal(PrintPreviewContent, document.body)}
 		</div>
 	);
 };
