@@ -274,7 +274,7 @@ export function VisitSecondaryPanelsInner({
 							<div
 								className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold mt-1"
 								data-testid="visit-plan-expired-soft-notice"
-								title="План составлен более 30 дней назад. Оказание услуг, создание нарядов ЗТЛ и оплата разрешены без ограничений (Мандат 8e)"
+								title="План составлен более 30 дней назад. Оказание услуг, создание нарядов ЗТЛ и оплата разрешены без ограничений"
 							>
 								<Clock
 									size={13}

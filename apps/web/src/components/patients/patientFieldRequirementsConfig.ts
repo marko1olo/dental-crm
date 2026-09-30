@@ -277,7 +277,7 @@ export function validatePatientDraftWithRequirements(
 	if (requirements.requireBirthDate && !draft.isEmergencyOrPrimary) {
 		if (!birthDateTrimmed) {
 			errors.birthDate =
-				"Дата рождения обязательна для амбулаторной карты 043/у";
+				"Дата рождения обязательна для медицинской карты";
 			missingRequiredLabels.push("Дата рождения");
 		}
 	}

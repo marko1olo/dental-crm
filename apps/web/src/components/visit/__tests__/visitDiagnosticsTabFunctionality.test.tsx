@@ -502,12 +502,10 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 			const rvgTab = findByTestId(container, "tab-diagnostic-mode-rvg");
 			const photoTab = findByTestId(container, "tab-diagnostic-mode-photo");
 			const cbctTab = findByTestId(container, "tab-diagnostic-mode-cbct");
-			const endoTab = findByTestId(container, "tab-diagnostic-mode-endo-implant");
 
 			assert.ok(rvgTab, "tab-diagnostic-mode-rvg must exist");
 			assert.ok(photoTab, "tab-diagnostic-mode-photo must exist");
 			assert.ok(cbctTab, "tab-diagnostic-mode-cbct must exist");
-			assert.ok(endoTab, "tab-diagnostic-mode-endo-implant must exist");
 
 			// Active RVG tab has active classes (bg-[var(--paper)] text-[var(--teal)])
 			assert.ok(
@@ -519,14 +517,12 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 			const directRvgBtn = findByTestId(container, "btn-open-direct-rvg-modal");
 			assert.ok(directRvgBtn, "btn-open-direct-rvg-modal must be rendered in RVG mode");
 
-			// Photo card, CBCT card and Endo/Implant cards are hidden in DOM
+			// Photo card and CBCT card are hidden in DOM
 			const photoCard = findByTestId(container, "visit-photo-protocol-card");
 			const cbctCard = findByTestId(container, "visit-cbct-optg-card");
-			const endoCard = findByTestId(container, "visit-endo-log-card");
 
 			assert.ok(photoCard?.parentNode?.className?.includes("hidden"), "Photo protocol card must be hidden in RVG mode");
 			assert.ok(cbctCard?.parentNode?.className?.includes("hidden"), "CBCT card must be hidden in RVG mode");
-			assert.ok(endoCard?.parentNode?.className?.includes("hidden"), "Endo log card must be hidden in RVG mode");
 		});
 
 		it("clicking tab-diagnostic-mode-photo switches to photo mode: photo card is visible, RVG and CBCT hidden", async () => {
@@ -576,30 +572,6 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 			const addCbctServiceBtn = findByTestId(container, "btn-add-cbct-service-to-visit");
 			assert.ok(cbctStudioBtn, "btn-open-cbct-studio-modal must be rendered in CBCT card");
 			assert.ok(addCbctServiceBtn, "btn-add-cbct-service-to-visit must be rendered in CBCT card");
-		});
-
-		it("clicking tab-diagnostic-mode-endo-implant switches to endo & implant mode: both cards are visible", async () => {
-			await renderDiagnosticsTab();
-
-			const endoTab = findByTestId(container, "tab-diagnostic-mode-endo-implant");
-			assert.ok(endoTab, "tab-diagnostic-mode-endo-implant must exist");
-
-			await clickNode(endoTab);
-
-			const endoCard = findByTestId(container, "visit-endo-log-card");
-			const implantCard = findByTestId(container, "visit-implant-passport-card");
-
-			assert.ok(endoCard, "visit-endo-log-card must be present");
-			assert.ok(implantCard, "visit-implant-passport-card must be present");
-			assert.ok(
-				!endoCard.parentNode?.className?.includes("hidden"),
-				"Endo/Implant parent container must NOT be hidden",
-			);
-
-			const endoBtn = findByTestId(container, "btn-open-endo-canal-modal");
-			const implantBtn = findByTestId(container, "open-implant-passport-modal-btn");
-			assert.ok(endoBtn, "btn-open-endo-canal-modal must be present");
-			assert.ok(implantBtn, "open-implant-passport-modal-btn must be present");
 		});
 	});
 
@@ -697,48 +669,6 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 			assert.ok(modal, "CbctMprImplantStudioModal must open upon clicking btn-open-cbct-studio-modal");
 		});
 
-		it("in endo & implant mode: clicking btn-open-endo-canal-modal opens EndoCanalLogModal", async () => {
-			await renderDiagnosticsTab();
-
-			// Switch to endo mode
-			const endoTab = findByTestId(container, "tab-diagnostic-mode-endo-implant");
-			assert.ok(endoTab);
-			await clickNode(endoTab);
-
-			const endoBtn = findByTestId(container, "btn-open-endo-canal-modal");
-			assert.ok(endoBtn, "btn-open-endo-canal-modal must exist");
-
-			await clickNode(endoBtn);
-
-			await act(async () => {
-				await new Promise((r) => setTimeout(r, 60));
-			});
-
-			const modal = findByTestId(mockDoc.body, "endo-canal-log-modal");
-			assert.ok(modal, "EndoCanalLogModal must open upon clicking btn-open-endo-canal-modal");
-		});
-
-		it("in endo & implant mode: clicking open-implant-passport-modal-btn opens ImplantPassportModal", async () => {
-			await renderDiagnosticsTab();
-
-			// Switch to endo mode
-			const endoTab = findByTestId(container, "tab-diagnostic-mode-endo-implant");
-			assert.ok(endoTab);
-			await clickNode(endoTab);
-
-			const implantBtn = findByTestId(container, "open-implant-passport-modal-btn");
-			assert.ok(implantBtn, "open-implant-passport-modal-btn must exist");
-
-			await clickNode(implantBtn);
-
-			await act(async () => {
-				await new Promise((r) => setTimeout(r, 60));
-			});
-
-			const modal = findByTestId(mockDoc.body, "implant-passport-modal-backdrop");
-			assert.ok(modal, "ImplantPassportModal must open upon clicking open-implant-passport-modal-btn");
-		});
-
 		it("in advanced diagnostics: clicking toggle-advanced-diagnostics-btn expands TRG section and opening analysis modal works", async () => {
 			await renderDiagnosticsTab();
 
@@ -828,11 +758,9 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 
 			const photoTab = findByTestId(container, "tab-diagnostic-mode-photo");
 			const cbctTab = findByTestId(container, "tab-diagnostic-mode-cbct");
-			const endoTab = findByTestId(container, "tab-diagnostic-mode-endo-implant");
 
 			assert.ok(photoTab);
 			assert.ok(cbctTab);
-			assert.ok(endoTab);
 
 			assert.ok(
 				photoTab.className.includes("bg-transparent") && photoTab.className.includes("border-transparent"),
@@ -841,10 +769,6 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 			assert.ok(
 				cbctTab.className.includes("bg-transparent") && cbctTab.className.includes("border-transparent"),
 				"tab-diagnostic-mode-cbct must have 'bg-transparent border-transparent' when inactive",
-			);
-			assert.ok(
-				endoTab.className.includes("bg-transparent") && endoTab.className.includes("border-transparent"),
-				"tab-diagnostic-mode-endo-implant must have 'bg-transparent border-transparent' when inactive",
 			);
 
 			// Now click photo tab and verify rvgTab becomes inactive with 'bg-transparent border-transparent'
@@ -862,11 +786,11 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 			const sourcePath = path.resolve(__dirname, "../VisitDiagnosticsTab.tsx");
 			const source = fs.readFileSync(sourcePath, "utf8");
 
-			// Check all 4 segmented mode buttons use bg-transparent border border-transparent
+			// Check all 3 segmented mode buttons use bg-transparent border border-transparent
 			const bgTransparentCount = (source.match(/bg-transparent border border-transparent/g) || []).length;
 			assert.ok(
-				bgTransparentCount >= 4,
-				`Expected at least 4 occurrences of 'bg-transparent border border-transparent' for inactive tabs, found ${bgTransparentCount}`,
+				bgTransparentCount >= 3,
+				`Expected at least 3 occurrences of 'bg-transparent border border-transparent' for inactive tabs, found ${bgTransparentCount}`,
 			);
 
 			// Check all required testids are in the source
@@ -874,20 +798,15 @@ describe("VisitDiagnosticsTab Comprehensive Functionality & Button Test Suite", 
 				"tab-diagnostic-mode-rvg",
 				"tab-diagnostic-mode-photo",
 				"tab-diagnostic-mode-cbct",
-				"tab-diagnostic-mode-endo-implant",
 				"btn-open-direct-rvg-modal",
 				"btn-open-hot-folder-modal",
 				"btn-open-dicom-viewer-modal",
 				"btn-open-radiology-referral-modal",
 				"btn-open-cbct-studio-modal",
-				"btn-open-endo-canal-modal",
-				"open-implant-passport-modal-btn",
 				"toggle-advanced-diagnostics-btn",
 				"open-visit-ceph-modal-btn",
 				"visit-photo-protocol-card",
 				"visit-cbct-optg-card",
-				"visit-endo-log-card",
-				"visit-implant-passport-card",
 				"visit-ceph-diagnostic-card",
 			];
 

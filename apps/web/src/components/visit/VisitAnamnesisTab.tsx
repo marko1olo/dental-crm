@@ -181,7 +181,7 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 		}
 
 		showToast(
-			"Применена норма Формы 043/у (Z01.2): соматически здоров",
+			"Применена норма: соматически здоров (Z01.2)",
 			"success",
 			3000,
 		);
@@ -289,7 +289,7 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 						onClick={onOpenStomxTemplates ?? (() => window.dispatchEvent(new CustomEvent("dente-open-stomx-templates")))}
 						className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-98"
 						data-testid="btn-open-stomt-templates-anamnesis"
-						title="Открыть каталог 448 клинических шаблонов 043/у из StomX (Терапия, Ортопедия, Хирургия, Имплантология, Пародонтология)"
+						title="Открыть каталог 448 клинических шаблонов из StomX (Терапия, Ортопедия, Хирургия, Имплантология, Пародонтология)"
 					>
 						<Sparkles className="w-3.5 h-3.5" />
 						<span>Клинические шаблоны StomX (448)</span>
@@ -299,7 +299,7 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 						onClick={handleApplyPhysiologicalNorm}
 						className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-98"
 						data-testid="btn-somatic-norm-one-click"
-						title="1 клик: заполнить осмотр физиологической нормой Формы 043/у (Z01.2: соматически здоров)"
+						title="1 клик: заполнить осмотр нормой (соматически здоров)"
 					>
 						<ShieldCheck className="w-4 h-4" />
 						<span>Соматически здоров / Норма Z01.2 (1-клик)</span>
@@ -309,10 +309,10 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 						onClick={applyToDiary}
 						className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-xs sm:text-sm font-semibold hover:bg-[var(--teal-dark)] transition-colors shadow-xs cursor-pointer active:scale-98"
 						data-testid="btn-apply-anamnesis-to-diary"
-						title="Перенести текущие данные анамнеза в дневник Формы 043/у"
+						title="Перенести текущие данные анамнеза в дневник приёма"
 					>
 						<Plus className="w-3.5 h-3.5" />
-						<span>Перенести в дневник 043/у</span>
+						<span>В дневник приёма</span>
 					</button>
 				</div>
 			</div>

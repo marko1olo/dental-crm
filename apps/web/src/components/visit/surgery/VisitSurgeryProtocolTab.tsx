@@ -630,7 +630,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 								: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)]"
 						}`}
 						data-testid="btn-tab-deduct-materials"
-						title="1-Клик списание материалов операции (имплантат, графт, мембрана, расходники) со склада с мягким овердрафтом (Мандат 8e)"
+						title="1-Клик списание материалов операции (имплантат, графт, мембрана, расходники) со склада"
 					>
 						<PackageMinus size={16} />
 						<span>{isMaterialsDeducted ? "Материалы списаны" : "Списать со склада"}</span>

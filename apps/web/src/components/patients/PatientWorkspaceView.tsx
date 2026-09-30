@@ -411,7 +411,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 								{patientName || "Карточка пациента"}
 							</span>
 							<span className="text-xs font-mono font-bold text-[var(--muted)] bg-[var(--paper-soft)] px-2 py-0.5 rounded-md border border-[var(--line)] shrink-0">
-								{patientId ? `043/у-${String(patientId || "").slice(0, 8)}` : "—"}
+								{patientId ? `№ ${String(patientId || "").slice(0, 8)}` : "—"}
 							</span>
 						</div>
 
@@ -524,7 +524,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 												}
 												window.location.hash = "finance";
 											}}
-											title="Открыть счета, акты выполненных услуг и кассу"
+											title="Открыть счета, услуги и кассу"
 											data-testid="patient-workspace-open-finance-btn"
 										>
 											<Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />

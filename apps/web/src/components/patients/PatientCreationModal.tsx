@@ -1202,7 +1202,7 @@ export function PatientCreationModal({
 									const nextVal = !isSomaticNorm;
 									setIsSomaticNorm(nextVal);
 									if (nextVal) {
-										showToast("Применена физиологическая норма: соматически здоров (Мандат 8e)", "success");
+										showToast("Применена физиологическая норма: соматически здоров", "success");
 									}
 								}}
 								data-testid="btn-somatic-healthy-norm"
@@ -1211,7 +1211,7 @@ export function PatientCreationModal({
 										? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
 										: "bg-[var(--paper-strong)] hover:bg-[var(--glass-hover,var(--paper-soft))] text-[var(--ink)] border border-[var(--glass-border)] shadow-2xs"
 								}`}
-								title="Мандат 8e: 1 клик для переключения физиологической нормы"
+								title="1 клик: заполнить нормой (соматически здоров)"
 							>
 								<Check size={13} className="shrink-0" />
 								<span>{isSomaticNorm ? "Норма" : "Применить норму"}</span>

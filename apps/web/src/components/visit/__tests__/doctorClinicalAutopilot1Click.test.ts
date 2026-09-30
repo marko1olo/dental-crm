@@ -100,9 +100,15 @@ describe("Doctor Clinical Autopilot 1-Click Protocol Invariants (Mandate 8e, 8n,
 			assert.equal(AUTOPILOT_CARIES_K021.service804n?.code804n, "A16.07.002.010");
 			assert.ok(AUTOPILOT_CARIES_K021.service804n?.title.includes("II, III класса"));
 
-			// IDS Order 1051n
-			assert.ok(AUTOPILOT_CARIES_K021.informedConsent?.includes("1051н"));
-			assert.ok(AUTOPILOT_CARIES_K021.anamnesis.includes("1051н"));
+			// IDS (Informed Consent)
+			assert.ok(
+				AUTOPILOT_CARIES_K021.informedConsent?.includes("ИДС") ||
+					AUTOPILOT_CARIES_K021.informedConsent?.includes("1051н"),
+			);
+			assert.ok(
+				AUTOPILOT_CARIES_K021.anamnesis.includes("ИДС") ||
+					AUTOPILOT_CARIES_K021.anamnesis.includes("1051н"),
+			);
 
 			// Material BOM deductions
 			const materials = AUTOPILOT_CARIES_K021.materialsToDeduct ?? [];

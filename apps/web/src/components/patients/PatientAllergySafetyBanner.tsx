@@ -97,7 +97,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 				}
 				navigator.clipboard?.writeText?.(snippet).catch(() => {});
 				showToast(
-					"Клинический профиль безопасности скопирован для вставки в форму 043/у",
+					"Клинический профиль безопасности скопирован для вставки в карту",
 					"success",
 				);
 			}, [effectiveProfile, onSyncToEmkDiary]);
@@ -265,11 +265,11 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 									<button
 										type="button"
 										onClick={handleSyncToDiary}
-										title="Скопировать и вставить в дневник 043/у"
+										title="Скопировать и вставить в дневник приёма"
 										className="safety-btn safety-btn--outline text-xs min-h-[44px] sm:min-h-[32px]"
 									>
 										<Copy className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-										В 043/у
+										В карту
 									</button>
 								)}
 

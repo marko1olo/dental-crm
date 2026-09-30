@@ -175,10 +175,10 @@ export function VisitViewModals({
 					onExportCompletedAct={(exportData) => {
 						appendToEMKField(
 							"treatmentPlan",
-							`Сформирован акт выполненных работ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽.`,
+							`Сформирован счёт и акт услуг ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽.`,
 						);
 						showToast(
-							`Акт выполненных работ ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ готов к подписанию.`,
+							`Счёт и акт услуг ${exportData.orderNumber} на сумму ${exportData.totalPayableRub.toLocaleString("ru-RU")} ₽ готов к подписанию.`,
 							"success",
 						);
 					}}

@@ -443,7 +443,7 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 				<div className="flex items-center justify-between flex-wrap gap-2 text-xs">
 					<div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-200">
 						<Percent size={14} className="text-amber-600 shrink-0" />
-						<span>Свобода скидок врача (Мандат 8e • Без паролей и согласований):</span>
+						<span>Свобода скидок врача (без паролей и согласований):</span>
 					</div>
 					{globalDiscountPercent > 0 && (
 						<span

@@ -229,7 +229,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 								data-testid="btn-print-patient-card"
 								onClick={handlePrint}
 								className="border border-[var(--glass-border)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--glass-hover,var(--paper-soft))] min-h-[44px] sm:min-h-[32px] h-8 px-3.5 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
-								title="Печать карты пациента (Мандат 8e п. 5)"
+								title="Печать карты пациента"
 							>
 								<Printer className="w-4 h-4 shrink-0" />
 								<span>Печать</span>

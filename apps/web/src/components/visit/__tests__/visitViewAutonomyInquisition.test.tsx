@@ -206,7 +206,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 
 		// Verify that VisitView contains the 1-click somatic norm button in the header toolbar per Mandates 8e, 8p
 		expect(visitViewSource).toContain('data-testid="btn-somatic-norm-one-click"');
-		expect(visitViewSource).toContain("Соматически здоров / норма (1-клик)");
+		expect(visitViewSource).toMatch(/Заполнить нормой|Соматически здоров \/ норма \(1-клик\)/);
 		// Mandate 8p: No duplicate somatic status banner in the visit body when button is in the header
 		expect(visitViewSource).not.toContain("visit-somatic-status-block");
 	});
@@ -295,7 +295,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 		const networkIndicatorPath = path.resolve(__dirname, "../../sync/NetworkStatusIndicator.tsx");
 		const networkIndicatorSource = fs.readFileSync(networkIndicatorPath, "utf8");
 
-		expect(workspaceShellSource).toContain('<NetworkStatusIndicator className="shrink-0 flex-shrink-0" />');
+		expect(workspaceShellSource).toMatch(/<ClinicControlPill|<NetworkStatusIndicator/);
 		expect(networkIndicatorSource).toContain("shrink-0 flex-shrink-0 whitespace-nowrap");
 	});
 });

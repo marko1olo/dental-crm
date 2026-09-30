@@ -770,7 +770,7 @@ export function VisitConsentsTab({
 			handlePrintTodayPackage();
 		}
 
-		showToast("Сформировано и отправлено на печать доп. согласие на новые процедуры (1051н)", "success");
+		showToast("Сформировано и отправлено на печать доп. согласие на новые процедуры (ИДС)", "success");
 	}, [consentScopeMismatch, consentRecords, substitutionContext.doctorName, patientId, persistConsentToBackend, saveConsentRecords, handlePrintSingleFilled, handlePrintTodayPackage]);
 
 	// 1-Клик: Отметить доп. согласие подписанным на бумаге без печати
@@ -1581,7 +1581,7 @@ export function VisitConsentsTab({
 							</div>
 							<div className="vct-package-desc" style={{ marginTop: "4px" }}>
 								В плане приёма выявлены инвазивные процедуры:{" "}
-								<strong>{consentScopeMismatch.uncoveredProcedureNames.join(", ")}</strong>. Ранее подписанные пациентом согласия не покрывают эти вмешательства. Программа не блокирует оказание помощи (Мандат Врачебной Автономии), но фиксирует юридический риск ст. 20 323-ФЗ.
+								<strong>{consentScopeMismatch.uncoveredProcedureNames.join(", ")}</strong>. Ранее подписанные пациентом согласия не покрывают эти вмешательства. Программа не блокирует оказание помощи (врачебная автономия), но фиксирует юридический риск ст. 20 323-ФЗ.
 							</div>
 						</div>
 					</div>

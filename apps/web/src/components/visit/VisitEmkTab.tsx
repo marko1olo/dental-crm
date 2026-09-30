@@ -483,7 +483,7 @@ export function VisitEmkTab() {
 				/>
 
 				{/* Анестезия: 1-клик пресеты с чистым разделителем border-t (Мандаты 8d, 8e) */}
-				<div className="pt-3 border-t border-[var(--glass-border)] bg-transparent">
+				<div className="pt-3 border-t border-[var(--line)] bg-transparent">
 					<div className="flex items-center justify-between gap-2 mb-2">
 						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 							<Syringe size={14} className="text-sky-500" />
@@ -531,7 +531,7 @@ export function VisitEmkTab() {
 				</div>
 
 				{/* Эндодонтия: чистый аккордеон border-t */}
-				<details className="group border-t border-[var(--glass-border)] pt-2 bg-transparent">
+				<details className="group border-t border-[var(--line)] pt-2 bg-transparent">
 					<summary className="text-xs font-bold text-[var(--ink)] cursor-pointer py-1.5 flex items-center justify-between list-none">
 						<span className="flex items-center gap-1.5">
 							<Activity size={14} className="text-teal-600" />
