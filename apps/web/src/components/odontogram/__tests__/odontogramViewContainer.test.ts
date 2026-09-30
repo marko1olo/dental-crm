@@ -10,6 +10,7 @@ import {
 } from "@dental/shared";
 import {
 	ODONTOGRAM_VIEW_MODES,
+	areOdontogramViewContainerPropsEqual,
 	type OdontogramViewContainerProps,
 } from "../OdontogramViewContainer";
 import {
@@ -333,6 +334,44 @@ describe("Mandate 8y: Dual-Mode Isolation & Patient Anti-Contamination Invariant
 		assert.equal(diag.aapStage, "health", "AAP классификация: здоровье пародонта");
 		assert.equal(diag.icd10Code, "Z01.2", "МКБ-10 код: Z01.2 (осмотр/норма)");
 	});
+
+	test("areOdontogramViewContainerPropsEqual инвалидирует кэш при открытии или смене contextDrawerTooth", () => {
+		const baseProps: OdontogramViewContainerProps = {
+			teethData: createDefaultAdultTeethData(),
+			contextDrawerTooth: null,
+		};
+
+		// 1. Идентичные пропсы -> true (ререндер предотвращен)
+		assert.equal(areOdontogramViewContainerPropsEqual(baseProps, { ...baseProps }), true);
+
+		// 2. Открытие шторки зуба #16 -> false (ререндер обязателен)
+		assert.equal(
+			areOdontogramViewContainerPropsEqual(baseProps, {
+				...baseProps,
+				contextDrawerTooth: 16,
+			}),
+			false,
+		);
+
+		// 3. Переключение с зуба #16 на зуб #26 -> false (ререндер обязателен)
+		assert.equal(
+			areOdontogramViewContainerPropsEqual(
+				{ ...baseProps, contextDrawerTooth: 16 },
+				{ ...baseProps, contextDrawerTooth: 26 },
+			),
+			false,
+		);
+
+		// 4. Закрытие шторки (16 -> null) -> false (ререндер обязателен)
+		assert.equal(
+			areOdontogramViewContainerPropsEqual(
+				{ ...baseProps, contextDrawerTooth: 16 },
+				baseProps,
+			),
+			false,
+		);
+	});
 });
+
 
 

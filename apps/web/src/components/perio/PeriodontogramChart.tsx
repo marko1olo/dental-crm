@@ -96,6 +96,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 		setIsProbeKeyboardEnabled,
 		archFilter,
 		setArchFilter,
+		containerRef,
 		summary,
 		psrSextants,
 		psrSummaryText,
@@ -137,6 +138,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 
 	return (
 		<div
+			ref={containerRef}
 			id={chartContainerId}
 			tabIndex={isProbeKeyboardEnabled ? 0 : -1}
 			onKeyDown={handleKeyDown}
@@ -245,8 +247,16 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 				readOnly={readOnly}
 				onSelectTooth={setSelectedToothNumber}
 				onFocusSite={(toothNumber, siteKey) => {
+					setIsProbeKeyboardEnabled(true);
 					setFocusedSite({ toothNumber, siteKey });
 					setSelectedToothNumber(toothNumber);
+					if (typeof requestAnimationFrame !== "undefined") {
+						requestAnimationFrame(() => {
+							containerRef.current?.focus();
+						});
+					} else {
+						containerRef.current?.focus();
+					}
 				}}
 				onCycleMobility={handleCycleMobility}
 				onCycleFurcation={handleCycleFurcation}

@@ -2836,3 +2836,11 @@
 		height: auto;
 	}
 }
+
+/* Tier 2 Desktop Ergonomics: Keep left-hand dental arch visible and unobscured while tooth drawer is open */
+@media (min-width: 1024px) {
+	.dente-tooth-drawer-backdrop {
+		background: rgba(0, 0, 0, 0.12) !important;
+		backdrop-filter: blur(1px) !important;
+	}
+}

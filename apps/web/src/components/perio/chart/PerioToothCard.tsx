@@ -9,7 +9,7 @@ import {
 	isFurcationEligibleTooth,
 } from "@dental/shared";
 import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols043";
-import { probingDepthClasses, probingDepthTone } from "../perioHeatmap";
+import { probingDepthClinicalClasses } from "../perioHeatmap";
 import { PerioToothVisual } from "./PerioToothVisual";
 
 export const SITE_SHORT_RU: Record<PerioSiteKey, string> = {
@@ -183,7 +183,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 							className={`flex flex-col items-center justify-center py-0.5 px-0.5 rounded border transition-all ${
 								isFocused
 									? "ring-2 ring-teal-400 bg-teal-500/25 border-teal-400 shadow-xs"
-									: probingDepthClasses(pd)
+									: probingDepthClinicalClasses(pd)
 							}`}
 							title={`${SITE_SHORT_RU[sKey]}: карман ${pd} мм, CAL ${calculateClinicalAttachmentLevel(pd, site.gingivalMarginMm ?? 0)} мм`}
 						>
@@ -284,7 +284,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 							className={`flex flex-col items-center justify-center py-0.5 px-0.5 rounded border transition-all ${
 								isFocused
 									? "ring-2 ring-teal-400 bg-teal-500/25 border-teal-400 shadow-xs"
-									: probingDepthClasses(pd)
+									: probingDepthClinicalClasses(pd)
 							}`}
 							title={`${SITE_SHORT_RU[sKey]}: карман ${pd} мм, CAL ${calculateClinicalAttachmentLevel(pd, site.gingivalMarginMm ?? 0)} мм`}
 						>

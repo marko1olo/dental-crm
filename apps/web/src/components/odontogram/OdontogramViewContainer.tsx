@@ -274,6 +274,7 @@ export function areOdontogramViewContainerPropsEqual(
 	if (prev.className !== next.className) return false;
 	if (prev.liveGrossTotalRub !== next.liveGrossTotalRub) return false;
 	if (prev.allergyText !== next.allergyText) return false;
+	if (prev.contextDrawerTooth !== next.contextDrawerTooth) return false;
 
 	// Compare selectedTeeth array
 	if (prev.selectedTeeth !== next.selectedTeeth) {

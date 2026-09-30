@@ -23,6 +23,7 @@ import {
 	ORDER_804N_PROCEDURES,
 } from "./OdontogramLiveInvoice";
 import { isDeciduousTooth } from "../treatment-plans/treatmentPlanStagesEngine";
+import { extractCbctFindingsFromOdontogramAndStorage } from "../treatment-plans/ctImplantIntegrationBridge";
 
 export interface TreatmentPlanWizardProps {
 	isOpen: boolean;
@@ -55,14 +56,16 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 	className = "",
 }) => {
 	const [excludedKeys, setExcludedKeys] = useState<Set<string>>(new Set());
+	const [cbctItems, setCbctItems] = useState<LiveInvoiceItem[]>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [planTitle, setPlanTitle] = useState("План санации полости рта (из одонтограммы)");
 	const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(initialDiscountPercent);
 
-	// Extract all live invoice items from pathologies
+	// Extract all live invoice items from pathologies + CBCT findings
 	const rawItems = useMemo(() => {
-		return calculateLiveInvoiceItems(teethData);
-	}, [teethData]);
+		const odontogramItems = calculateLiveInvoiceItems(teethData);
+		return [...odontogramItems, ...cbctItems];
+	}, [teethData, cbctItems]);
 
 	// Filter out dismissed items
 	const activeItems = useMemo(() => {
@@ -257,6 +260,132 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 			setIsSubmitting(false);
 		}
 	}, [activeItems, doctorDiscountPercent, patientId, planTitle, onPlanCreated, onClose]);
+
+	const handleApplyCbctFindings = useCallback(() => {
+		try {
+			const findings = extractCbctFindingsFromOdontogramAndStorage(patientId, teethData);
+			const newCbctItems: LiveInvoiceItem[] = [];
+			const implants = findings.implants ?? [];
+			const boneDefects = findings.boneDefects ?? [];
+
+			// Implants -> surgical package
+			for (const imp of implants) {
+				const tooth = imp.toothFdi ?? 0;
+				newCbctItems.push({
+					toothNumber: tooth,
+					code: "A16.07.054.001",
+					title: `Внутрикостная дентальная имплантация (имплантат ${(imp.brand || "Dentium").toUpperCase()} ${imp.diameterMm ?? 4.0}x${imp.lengthMm ?? 10.0} мм)`,
+					category: "Хирургия",
+					price: 38000,
+					quantity: 1,
+				});
+				newCbctItems.push({
+					toothNumber: tooth,
+					code: "A16.07.054.002",
+					title: "Установка формирователя десны",
+					category: "Хирургия",
+					price: 4500,
+					quantity: 1,
+				});
+				newCbctItems.push({
+					toothNumber: tooth,
+					code: "A11.07.012",
+					title: "Местная анестезия (проводниковая/инфильтрационная)",
+					category: "Хирургия",
+					price: 900,
+					quantity: 1,
+				});
+				newCbctItems.push({
+					toothNumber: tooth,
+					code: "A16.07.097",
+					title: "Наложение швов Vicryl 4-0",
+					category: "Хирургия",
+					price: 1300,
+					quantity: 1,
+				});
+			}
+
+			// Bone defects -> sinus lift & bone graft
+			for (const defect of boneDefects) {
+				const tooth = defect.toothFdi ?? 0;
+				if (defect.recommendedAugmentation === "closed_sinus_lift") {
+					newCbctItems.push({
+						toothNumber: tooth,
+						code: "A16.07.041.002",
+						title: "Закрытый синус-лифтинг через ложе имплантата",
+						category: "Хирургия",
+						price: 18000,
+						quantity: 1,
+					});
+					newCbctItems.push({
+						toothNumber: tooth,
+						code: "A16.07.041",
+						title: "Костная пластика: внесение Geistlich Bio-Oss (0.5 см³)",
+						category: "Хирургия",
+						price: 14000,
+						quantity: 1,
+					});
+				} else if (defect.recommendedAugmentation === "open_sinus_lift") {
+					newCbctItems.push({
+						toothNumber: tooth,
+						code: "A16.07.041.001",
+						title: "Открытый синус-лифтинг с латеральным окном",
+						category: "Хирургия",
+						price: 32000,
+						quantity: 1,
+					});
+					newCbctItems.push({
+						toothNumber: tooth,
+						code: "A16.07.041",
+						title: "Костная пластика: аугментация костным гранулятом Geistlich Bio-Oss",
+						category: "Хирургия",
+						price: 18000,
+						quantity: 1,
+					});
+					newCbctItems.push({
+						toothNumber: tooth,
+						code: "A16.07.041.003",
+						title: "Фиксация барьерной мембраны Geistlich Bio-Gide",
+						category: "Хирургия",
+						price: 12000,
+						quantity: 1,
+					});
+				}
+			}
+
+			// Crowns on implants
+			for (const imp of implants) {
+				newCbctItems.push({
+					toothNumber: imp.toothFdi ?? 0,
+					code: "A16.07.006.001",
+					title: "Коронка из диоксида циркония на имплантате с винтовой фиксацией",
+					category: "Ортопедия",
+					price: 24000,
+					quantity: 1,
+				});
+				newCbctItems.push({
+					toothNumber: imp.toothFdi ?? 0,
+					code: "A16.07.006.002",
+					title: "Установка индивидуального титанового основания Ti-Base",
+					category: "Ортопедия",
+					price: 6500,
+					quantity: 1,
+				});
+			}
+
+			setCbctItems(newCbctItems);
+			setPlanTitle("Комплексный план реабилитации по КЛКТ 3D");
+			SoundFeedbackService.getInstance().playActionSuccess();
+			showToast(
+				`Находки КЛКТ интегрированы: ${implants.length} имплантат(ов), ${boneDefects.length} дефект(ов) кости. Добавлено ${newCbctItems.length} позиций.`,
+				"success",
+				4000,
+			);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось загрузить данные КЛКТ";
+			showToast(msg, "error");
+		}
+	}, [patientId, teethData]);
 
 	const handlePrintEstimate = () => {
 		if (typeof window !== "undefined") {
@@ -500,6 +629,16 @@ export const TreatmentPlanWizard: React.FC<TreatmentPlanWizardProps> = ({
 				{/* Footer Controls */}
 				<div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3.5 border-t border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-800 bg-[var(--odontogram-surface,#f8fafc)] dark:bg-zinc-950">
 					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handleApplyCbctFindings}
+							className="min-h-[44px] sm:min-h-[32px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl border border-amber-500/30 text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+							data-testid="wizard-cbct-autoplan-btn"
+							title="Импортировать хирургические и костные находки 3D КЛКТ (имплантация, синус-лифтинг)"
+						>
+							<Sparkles size={14} className="text-amber-600 dark:text-amber-400" />
+							<span>Автоплан по КЛКТ</span>
+						</button>
 						<button
 							type="button"
 							onClick={handlePrintEstimate}
