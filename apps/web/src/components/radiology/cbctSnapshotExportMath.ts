@@ -13,6 +13,7 @@ export interface ViewportSnapshotOptions {
 	readonly patientName?: string | undefined;
 	readonly clinicName?: string | undefined;
 	readonly studyDate?: string | undefined;
+	readonly birthDate?: string | undefined;
 	readonly targetToothFdi?: number | undefined;
 	readonly sliceLocationMm?: number | undefined;
 	readonly customScaleBarLengthMm?: number | undefined;
@@ -31,6 +32,11 @@ export interface ViewportSnapshotOptions {
 	readonly redrawCanvas?: (() => HTMLCanvasElement | null | undefined) | undefined;
 	readonly overlayCanvas?: HTMLCanvasElement | null | undefined;
 	readonly pixelRatio?: number | undefined;
+	readonly targetDpi?: number | undefined;
+	readonly isAnonymized?: boolean | undefined;
+	readonly fov?: string | undefined;
+	readonly windowWidth?: number | undefined;
+	readonly windowLevel?: number | undefined;
 }
 
 export interface CalibratedScaleBarResult {
@@ -160,8 +166,18 @@ export async function exportCleanViewportSnapshot(
 		return generateFallbackRadiologicalFrame();
 	}
 
-	const width = sourceCanvas.width > 0 ? sourceCanvas.width : 512;
-	const height = sourceCanvas.height > 0 ? sourceCanvas.height : 512;
+	const baseWidth = sourceCanvas.width > 0 ? sourceCanvas.width : 512;
+	const baseHeight = sourceCanvas.height > 0 ? sourceCanvas.height : 512;
+
+	let dpiScale = 1.0;
+	if (typeof options.targetDpi === "number" && options.targetDpi > 96) {
+		dpiScale = options.targetDpi / 96;
+	} else if (typeof options.pixelRatio === "number" && options.pixelRatio > 0) {
+		dpiScale = options.pixelRatio;
+	}
+
+	const width = Math.max(1, Math.round(baseWidth * dpiScale));
+	const height = Math.max(1, Math.round(baseHeight * dpiScale));
 
 	const exportCanvas = document.createElement("canvas");
 	exportCanvas.width = width;
@@ -178,6 +194,11 @@ export async function exportCleanViewportSnapshot(
 		} catch {
 			return generateFallbackRadiologicalFrame(width, height);
 		}
+	}
+
+	ctx.imageSmoothingEnabled = true;
+	if ("imageSmoothingQuality" in ctx) {
+		ctx.imageSmoothingQuality = "high";
 	}
 
 	const isInvertToner = Boolean(options.invertToner || options.tonerSaving);
@@ -237,30 +258,40 @@ export async function exportCleanViewportSnapshot(
 		// Ignore draw errors in headless/test environments
 	}
 
-	const pad = 12;
+	const pad = Math.round(12 * dpiScale);
 
 	// 3. Stamp Patient & Slice Metadata Badge (Top-Left)
 	if (shouldShowPatientBadge) {
 		ctx.save();
 		const titleText = viewportTitle;
-		const patientText = options.patientName ? `Пациент: ${options.patientName}` : "";
-		const dateText = options.studyDate ? `Дата: ${options.studyDate}` : "";
+		const isAnon = Boolean(options.isAnonymized);
+		const patientText = isAnon
+			? "Пациент: АНОНИМИЗИРОВАН (152-ФЗ / КОНСИЛИУМ)"
+			: options.patientName
+				? `Пациент: ${options.patientName}`
+				: "";
+		const dateText = isAnon ? "Дата: [СКРЫТО]" : options.studyDate ? `Дата: ${options.studyDate}` : "";
 		const toothText = options.targetToothFdi ? `FDI #${options.targetToothFdi}` : "";
-		const metaParts = [patientText, toothText, dateText].filter(Boolean).join(" • ");
+		const fovText = options.fov ? `FOV: ${options.fov}` : "";
+		const wlText =
+			options.windowWidth != null && options.windowLevel != null
+				? `W:${options.windowWidth} L:${options.windowLevel} HU`
+				: "";
+		const metaParts = [patientText, toothText, dateText, fovText, wlText].filter(Boolean).join(" • ");
 
-		ctx.font = "bold 12px system-ui, -apple-system, sans-serif";
+		ctx.font = `bold ${Math.round(12 * dpiScale)}px system-ui, -apple-system, sans-serif`;
 		const titleWidth = ctx.measureText(titleText).width;
-		ctx.font = "10px system-ui, -apple-system, sans-serif";
+		ctx.font = `${Math.round(10 * dpiScale)}px system-ui, -apple-system, sans-serif`;
 		const metaWidth = metaParts ? ctx.measureText(metaParts).width : 0;
-		const badgeWidth = Math.min(width - 24, Math.max(180, Math.max(titleWidth, metaWidth) + 20));
-		const badgeHeight = metaParts ? 42 : 26;
+		const badgeWidth = Math.min(width - 24 * dpiScale, Math.max(180 * dpiScale, Math.max(titleWidth, metaWidth) + 20 * dpiScale));
+		const badgeHeight = metaParts ? Math.round(42 * dpiScale) : Math.round(26 * dpiScale);
 
 		ctx.fillStyle = isInvertToner ? "rgba(241, 245, 249, 0.95)" : "rgba(15, 23, 42, 0.92)";
-		ctx.strokeStyle = isInvertToner ? "rgba(203, 213, 225, 0.9)" : "#0284c7";
-		ctx.lineWidth = 1;
+		ctx.strokeStyle = isAnon ? "#10b981" : isInvertToner ? "rgba(203, 213, 225, 0.9)" : "#0284c7";
+		ctx.lineWidth = Math.max(1, Math.round(1 * dpiScale));
 		ctx.beginPath();
 		if (typeof ctx.roundRect === "function") {
-			ctx.roundRect(pad, pad, badgeWidth, badgeHeight, 6);
+			ctx.roundRect(pad, pad, badgeWidth, badgeHeight, Math.round(6 * dpiScale));
 		} else {
 			ctx.rect(pad, pad, badgeWidth, badgeHeight);
 		}
@@ -268,15 +299,15 @@ export async function exportCleanViewportSnapshot(
 		ctx.stroke();
 
 		// Title
-		ctx.font = "bold 12px system-ui, -apple-system, sans-serif";
-		ctx.fillStyle = isInvertToner ? "#0369a1" : "#38bdf8";
-		ctx.fillText(titleText, pad + 10, pad + 16);
+		ctx.font = `bold ${Math.round(12 * dpiScale)}px system-ui, -apple-system, sans-serif`;
+		ctx.fillStyle = isAnon ? "#059669" : isInvertToner ? "#0369a1" : "#38bdf8";
+		ctx.fillText(titleText, pad + Math.round(10 * dpiScale), pad + Math.round(16 * dpiScale));
 
 		// Subtitle
 		if (metaParts) {
-			ctx.font = "10px system-ui, -apple-system, sans-serif";
+			ctx.font = `${Math.round(10 * dpiScale)}px system-ui, -apple-system, sans-serif`;
 			ctx.fillStyle = isInvertToner ? "#475569" : "#94a3b8";
-			ctx.fillText(metaParts, pad + 10, pad + 33);
+			ctx.fillText(metaParts, pad + Math.round(10 * dpiScale), pad + Math.round(33 * dpiScale));
 		}
 		ctx.restore();
 	}
@@ -284,64 +315,79 @@ export async function exportCleanViewportSnapshot(
 	// 4. Inscribe Calibrated Scale Ruler Bar (Bottom-Left)
 	if (shouldShowScaleBar) {
 		ctx.save();
-		const scaleBarInfo = calculateCalibratedScaleBar(scaleMm, width, options.customScaleBarLengthMm);
-		const scaleBarPx = scaleBarInfo.barLengthPx;
+		const scaleBarInfo = calculateCalibratedScaleBar(scaleMm, baseWidth, options.customScaleBarLengthMm);
+		const scaleBarPx = scaleBarInfo.barLengthPx * dpiScale;
 		const scaleBarLengthMm = scaleBarInfo.barLengthMm;
 
 		const sbX = pad;
-		const sbY = height - pad - 24;
-		const sbHeight = 24;
-		const sbWidth = scaleBarPx + 24;
+		const sbHeight = Math.round(24 * dpiScale);
+		const sbY = height - pad - sbHeight;
+		const sbWidth = scaleBarPx + Math.round(24 * dpiScale);
 
 		ctx.fillStyle = isInvertToner ? "rgba(241, 245, 249, 0.95)" : "rgba(15, 23, 42, 0.92)";
 		ctx.strokeStyle = isInvertToner ? "rgba(203, 213, 225, 0.9)" : "#0284c7";
-		ctx.lineWidth = 1;
+		ctx.lineWidth = Math.max(1, Math.round(1 * dpiScale));
 		ctx.beginPath();
 		if (typeof ctx.roundRect === "function") {
-			ctx.roundRect(sbX, sbY, sbWidth, sbHeight, 4);
+			ctx.roundRect(sbX, sbY, sbWidth, sbHeight, Math.round(4 * dpiScale));
 		} else {
 			ctx.rect(sbX, sbY, sbWidth, sbHeight);
 		}
 		ctx.fill();
 		ctx.stroke();
 
-		const lineStartX = sbX + 12;
+		const lineStartX = sbX + Math.round(12 * dpiScale);
 		const lineEndX = lineStartX + scaleBarPx;
-		const lineY = sbY + 15;
+		const lineY = sbY + Math.round(15 * dpiScale);
 
 		ctx.strokeStyle = isInvertToner ? "#0284c7" : "#38bdf8";
-		ctx.lineWidth = 1.5;
+		ctx.lineWidth = Math.max(1, 1.5 * dpiScale);
 		ctx.beginPath();
 		// Left bracket tick
-		ctx.moveTo(lineStartX, lineY - 6);
-		ctx.lineTo(lineStartX, lineY + 2);
+		ctx.moveTo(lineStartX, lineY - 6 * dpiScale);
+		ctx.lineTo(lineStartX, lineY + 2 * dpiScale);
 		// Horizontal bar
 		ctx.moveTo(lineStartX, lineY);
 		ctx.lineTo(lineEndX, lineY);
 		// Right bracket tick
-		ctx.moveTo(lineEndX, lineY - 6);
-		ctx.lineTo(lineEndX, lineY + 2);
+		ctx.moveTo(lineEndX, lineY - 6 * dpiScale);
+		ctx.lineTo(lineEndX, lineY + 2 * dpiScale);
+
 		// Center tick
 		const midX = lineStartX + scaleBarPx / 2;
-		ctx.moveTo(midX, lineY - 3);
+		ctx.moveTo(midX, lineY - 4 * dpiScale);
 		ctx.lineTo(midX, lineY);
+
+		// Precision millimeter tick marks
+		const pxPerMmScaled = scaleBarInfo.pxPerMm * dpiScale;
+		if (scaleBarLengthMm <= 20) {
+			for (let m = 1; m < scaleBarLengthMm; m++) {
+				if (m === Math.round(scaleBarLengthMm / 2)) continue; // Center tick already drawn
+				const tx = lineStartX + m * pxPerMmScaled;
+				const isHalfStep = m % 5 === 0;
+				const tickH = (isHalfStep ? 3.5 : 2) * dpiScale;
+				ctx.moveTo(tx, lineY - tickH);
+				ctx.lineTo(tx, lineY);
+			}
+		}
 		ctx.stroke();
 
 		// Label (WCAG AAA >= 7:1)
-		ctx.font = "bold 9px monospace";
+		ctx.font = `bold ${Math.round(9 * dpiScale)}px monospace`;
 		ctx.fillStyle = isInvertToner ? "#0f172a" : "#f8fafc";
 		ctx.textAlign = "center";
-		ctx.fillText(`${scaleBarLengthMm} мм`, midX, lineY - 7);
+		ctx.fillText(`${scaleBarLengthMm} мм`, midX, lineY - 7 * dpiScale);
 		ctx.restore();
 	}
 
 	// 5. Watermark / Branding (Bottom-Right)
 	if (shouldShowWatermark) {
 		ctx.save();
-		ctx.font = "9px system-ui, -apple-system, sans-serif";
+		ctx.font = `${Math.round(9 * dpiScale)}px system-ui, -apple-system, sans-serif`;
 		ctx.fillStyle = isInvertToner ? "rgba(71, 85, 105, 0.85)" : "rgba(148, 163, 184, 0.9)";
 		ctx.textAlign = "right";
-		ctx.fillText("DENTE 3D CBCT Studio • 16-bit DICOM", width - pad, height - pad);
+		const dpiLabel = options.targetDpi && options.targetDpi >= 300 ? " • 300 DPI" : "";
+		ctx.fillText(`DENTE 3D CBCT Studio • 16-bit DICOM${dpiLabel}`, width - pad, height - pad);
 		ctx.restore();
 	}
 
@@ -350,4 +396,19 @@ export async function exportCleanViewportSnapshot(
 	} catch {
 		return "";
 	}
+}
+
+/**
+ * Convenience helper: exports viewport canvas at high-resolution 300 DPI for clinical printing.
+ */
+export async function export300DpiViewportSnapshot(
+	canvas: HTMLCanvasElement,
+	viewportTitle: string,
+	scaleMm: number,
+	options: ViewportSnapshotOptions = {},
+): Promise<string> {
+	return exportCleanViewportSnapshot(canvas, viewportTitle, scaleMm, {
+		...options,
+		targetDpi: 300,
+	});
 }

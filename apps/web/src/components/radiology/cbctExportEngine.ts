@@ -53,7 +53,18 @@ export interface CbctReportPatientInfo {
 	readonly studyDate?: string | undefined;
 	readonly reportDate?: string | undefined;
 	readonly clinicName?: string | undefined;
+	readonly isAnonymized?: boolean | undefined;
+	readonly fov?: string | undefined;
+	readonly windowWidth?: number | undefined;
+	readonly windowLevel?: number | undefined;
+	readonly clinicLogoSvg?: string | undefined;
 }
+
+export const DEFAULT_CLINIC_VECTOR_LOGO_SVG = `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="34" height="34" rx="7" fill="#0284c7"/>
+  <path d="M17 7C13.5 7 10.5 9.5 10.5 14C10.5 18 12 21.5 13.5 25.5C14.2 27.5 15.5 28.5 17 28.5C18.5 28.5 19.8 27.5 20.5 25.5C22 21.5 23.5 18 23.5 14C23.5 9.5 20.5 7 17 7Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M13.5 14C14.5 15 16 15.5 17 15.5C18 15.5 19.5 15 20.5 14" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+</svg>`;
 
 export interface CbctReportSliceSnapshot {
 	readonly title: string;
@@ -169,6 +180,11 @@ export interface CbctReportRenderOptions {
 	readonly tonerSaving?: boolean | undefined;
 	readonly includeForm043Diary?: boolean | undefined;
 	readonly customClinicTitle?: string | undefined;
+	readonly isAnonymized?: boolean | undefined;
+	readonly fov?: string | undefined;
+	readonly windowWidth?: number | undefined;
+	readonly windowLevel?: number | undefined;
+	readonly clinicLogoSvg?: string | undefined;
 }
 
 export interface GenerateReportSnapshotsParams {
@@ -183,21 +199,27 @@ export interface GenerateReportSnapshotsParams {
 	readonly patientName?: string | undefined;
 	readonly clinicName?: string | undefined;
 	readonly studyDate?: string | undefined;
+	readonly isAnonymized?: boolean | undefined;
+	readonly targetDpi?: number | undefined;
+	readonly fov?: string | undefined;
 }
 
 /**
- * Synchronously generates all 4 diagnostic report slice snapshots directly from 3D voxel volume:
+ * Synchronously generates all diagnostic report slice snapshots directly from 3D voxel volume:
  * 1. Axial MPR slice.
- * 2. Panoramic (OPG) reconstructed dental arch slice.
- * 3. Transversal Cross-Section slice (perpendicular to dental arch at target tooth).
- * 4. Sagittal MPR slice.
+ * 2. Coronal (Frontal) MPR slice.
+ * 3. Panoramic (OPG) reconstructed dental arch slice.
+ * 4. Transversal Cross-Section slice (perpendicular to dental arch at target tooth).
+ * 5. Sagittal MPR slice.
  *
+ * Supports true 300 DPI high-resolution export and 152-FZ anonymization.
  * Guarantees zero blank/white windows in PDF exports.
  */
 export async function generateSynchronizedReportSnapshots(
 	params: GenerateReportSnapshotsParams,
 ): Promise<{
 	axial: CbctReportSliceSnapshot;
+	coronal: CbctReportSliceSnapshot;
 	panoramic: CbctReportSliceSnapshot;
 	crossSection: CbctReportSliceSnapshot;
 	sagittal: CbctReportSliceSnapshot;
@@ -214,6 +236,9 @@ export async function generateSynchronizedReportSnapshots(
 		patientName = "Пациент",
 		clinicName = "Стоматологический центр DENTE",
 		studyDate = new Date().toLocaleDateString("ru-RU"),
+		isAnonymized = false,
+		targetDpi = 300,
+		fov = "8×8 см",
 	} = params;
 
 	const pixelSpacing = volume.spacingMm.x || 0.4;
@@ -239,6 +264,20 @@ export async function generateSynchronizedReportSnapshots(
 		return c;
 	};
 
+	const commonSnapshotOpts = {
+		patientName,
+		clinicName,
+		studyDate,
+		targetToothFdi,
+		invertToner: tonerSaving,
+		cleanForReport: true,
+		isAnonymized,
+		targetDpi,
+		fov,
+		windowWidth,
+		windowLevel,
+	};
+
 	// 1. Axial MPR Slice
 	const axialRes = extractObliqueMprSlice(volume, "axial", safeCrosshair, obliqueAngles, {
 		windowWidth,
@@ -252,17 +291,30 @@ export async function generateSynchronizedReportSnapshots(
 		`Аксиальный срез (Z = ${safeCrosshair.z.toFixed(1)} мм)`,
 		pixelSpacing,
 		{
-			patientName,
-			clinicName,
-			studyDate,
-			targetToothFdi,
+			...commonSnapshotOpts,
 			sliceLocationMm: safeCrosshair.z,
-			invertToner: tonerSaving,
-			cleanForReport: true,
 		},
 	);
 
-	// 2. Panoramic (OPG) Reconstructed Slice
+	// 2. Coronal (Frontal) MPR Slice
+	const coronalRes = extractObliqueMprSlice(volume, "coronal", safeCrosshair, obliqueAngles, {
+		windowWidth,
+		windowLevel,
+		invert: false,
+		slabMode: "single",
+	});
+	const coronalCanvas = createSliceCanvas(coronalRes.data, coronalRes.metadata.widthPx, coronalRes.metadata.heightPx);
+	const coronalDataUrl = await exportCleanViewportSnapshot(
+		coronalCanvas,
+		`Корональный срез (Y = ${safeCrosshair.y.toFixed(1)} мм)`,
+		pixelSpacing,
+		{
+			...commonSnapshotOpts,
+			sliceLocationMm: safeCrosshair.y,
+		},
+	);
+
+	// 3. Panoramic (OPG) Reconstructed Slice
 	const effectiveCurve = archCurve ?? buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
 	const panoRes = reconstructPanoramicView(volume, effectiveCurve, {
 		windowWidth,
@@ -278,17 +330,10 @@ export async function generateSynchronizedReportSnapshots(
 		panoCanvas,
 		"Панорамная томограмма (ОПТГ сляб 15 мм)",
 		pixelSpacing,
-		{
-			patientName,
-			clinicName,
-			studyDate,
-			targetToothFdi,
-			invertToner: tonerSaving,
-			cleanForReport: true,
-		},
+		commonSnapshotOpts,
 	);
 
-	// 3. Cross-Section Transversal Slice
+	// 4. Cross-Section Transversal Slice
 	const csSlices = generateCrossSectionSlices(volume, effectiveCurve, 1.5, safeCrosshair.z, {
 		windowWidth,
 		windowLevel,
@@ -307,17 +352,10 @@ export async function generateSynchronizedReportSnapshots(
 		csCanvas,
 		`Трансверзальный срез (Зуб #${targetToothFdi})`,
 		pixelSpacing,
-		{
-			patientName,
-			clinicName,
-			studyDate,
-			targetToothFdi,
-			invertToner: tonerSaving,
-			cleanForReport: true,
-		},
+		commonSnapshotOpts,
 	);
 
-	// 4. Sagittal MPR Slice
+	// 5. Sagittal MPR Slice
 	const sagittalRes = extractObliqueMprSlice(volume, "sagittal", safeCrosshair, obliqueAngles, {
 		windowWidth,
 		windowLevel,
@@ -330,13 +368,8 @@ export async function generateSynchronizedReportSnapshots(
 		`Сагиттальный срез (X = ${safeCrosshair.x.toFixed(1)} мм)`,
 		pixelSpacing,
 		{
-			patientName,
-			clinicName,
-			studyDate,
-			targetToothFdi,
+			...commonSnapshotOpts,
 			sliceLocationMm: safeCrosshair.x,
-			invertToner: tonerSaving,
-			cleanForReport: true,
 		},
 	);
 
@@ -346,22 +379,33 @@ export async function generateSynchronizedReportSnapshots(
 			dataUrl: axialDataUrl,
 			orientationLabel: "AXIAL",
 			sliceLocationMm: safeCrosshair.z,
+			scaleMm: pixelSpacing,
+		},
+		coronal: {
+			title: `Корональный срез (Y = ${safeCrosshair.y.toFixed(1)} мм)`,
+			dataUrl: coronalDataUrl,
+			orientationLabel: "CORONAL",
+			sliceLocationMm: safeCrosshair.y,
+			scaleMm: pixelSpacing,
 		},
 		panoramic: {
 			title: "Панорамная реконструкция (ОПТГ сляб 15 мм)",
 			dataUrl: panoDataUrl,
 			orientationLabel: "PANORAMIC",
+			scaleMm: pixelSpacing,
 		},
 		crossSection: {
 			title: `Кросс-секция (Зуб #${targetToothFdi})`,
 			dataUrl: csDataUrl,
 			orientationLabel: `FDI #${targetToothFdi}`,
+			scaleMm: pixelSpacing,
 		},
 		sagittal: {
 			title: `Сагиттальный срез (X = ${safeCrosshair.x.toFixed(1)} мм)`,
 			dataUrl: sagittalDataUrl,
 			orientationLabel: "SAGITTAL",
 			sliceLocationMm: safeCrosshair.x,
+			scaleMm: pixelSpacing,
 		},
 	};
 }
@@ -392,6 +436,11 @@ export function buildCbctReportData(params: {
 	} | undefined;
 	readonly diary043Text?: string | undefined;
 	readonly tonerSaving?: boolean | undefined;
+	readonly isAnonymized?: boolean | undefined;
+	readonly fov?: string | undefined;
+	readonly windowWidth?: number | undefined;
+	readonly windowLevel?: number | undefined;
+	readonly clinicLogoSvg?: string | undefined;
 }): CbctReportData {
 	const {
 		patientName = "Пациент",
@@ -410,6 +459,11 @@ export function buildCbctReportData(params: {
 		snapshots = {},
 		diary043Text,
 		tonerSaving = true,
+		isAnonymized = false,
+		fov = "8×8 см",
+		windowWidth = 4400,
+		windowLevel = 1300,
+		clinicLogoSvg,
 	} = params;
 
 	const spec = implantPose.implantSpec;
@@ -443,12 +497,17 @@ export function buildCbctReportData(params: {
 
 	return {
 		patient: {
-			patientName,
+			patientName: isAnonymized ? "АНОНИМИЗИРОВАН (152-ФЗ / КОНСИЛИУМ)" : patientName,
 			doctorName,
-			studyDate,
+			studyDate: isAnonymized ? "[СКРЫТО]" : studyDate,
 			reportDate: new Date().toLocaleDateString("ru-RU"),
 			clinicName: clinicName || "Стоматологический центр DENTE",
-			cardRecordNumber: `043/у-${targetToothFdi}`,
+			cardRecordNumber: isAnonymized ? "043/у-[СКРЫТО]" : `043/у-${targetToothFdi}`,
+			isAnonymized,
+			fov,
+			windowWidth,
+			windowLevel,
+			clinicLogoSvg,
 		},
 		targetToothFdi,
 		snapshots,
@@ -584,10 +643,21 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
 	const { patient, targetToothFdi, snapshots, implant, bone, stability, nerve, clinicalRecommendations, diary043Text, implantsTable } = data;
 
 	const isTonerSaving = options.tonerSaving ?? (data.tonerSavingEnabled ?? true);
+	const isAnon = Boolean(options.isAnonymized ?? patient.isAnonymized);
+	const fovText = options.fov || patient.fov || "8×8 см";
+	const wlText =
+		options.windowWidth != null && options.windowLevel != null
+			? `W:${options.windowWidth} L:${options.windowLevel} HU`
+			: patient.windowWidth != null && patient.windowLevel != null
+				? `W:${patient.windowWidth} L:${patient.windowLevel} HU`
+				: "W:4400 L:1300 HU";
+	const clinicLogo = patient.clinicLogoSvg || options.clinicLogoSvg || DEFAULT_CLINIC_VECTOR_LOGO_SVG;
+
 	const axialImg = snapshots.axial?.dataUrl;
+	const coronalImg = snapshots.coronal?.dataUrl;
 	const panoImg = snapshots.panoramic?.dataUrl;
 	const crossSectionImg = snapshots.crossSection?.dataUrl;
-	const sagittalImg = snapshots.sagittal?.dataUrl || snapshots.coronal?.dataUrl;
+	const sagittalImg = snapshots.sagittal?.dataUrl;
 
 	const effectiveImplantsTable: readonly CbctReportImplantRow[] =
 		implantsTable && implantsTable.length > 0
@@ -809,6 +879,19 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     font-weight: 700;
     padding: 1.5px 4px;
     border-radius: 3px;
+    border: 0.5px solid #0284c7;
+  }
+  .mpr-ruler-badge {
+    position: absolute;
+    bottom: 3px;
+    left: 3px;
+    background: rgba(15, 23, 42, 0.9);
+    color: #38bdf8;
+    font-size: 7px;
+    font-family: monospace;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 2px;
     border: 0.5px solid #0284c7;
   }
   .mpr-empty {
@@ -1038,13 +1121,16 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   <!-- Header -->
   <table class="header-table">
     <tr>
-      <td>
+      <td style="width: 40px; vertical-align: middle;">
+        ${clinicLogo}
+      </td>
+      <td style="vertical-align: middle; padding-left: 8px;">
         <div class="clinic-title">${escapeHtml(options.customClinicTitle || patient.clinicName || "Стоматологический центр DENTE")}</div>
         <div class="clinic-sub">Отделение цифровой имплантологии и челюстно-лицевой рентгенодиагностики</div>
       </td>
-      <td>
+      <td style="vertical-align: middle; text-align: right;">
         <div class="doc-title">Протокол 3D КЛКТ-планирования</div>
-        <div class="doc-meta">Номенклатура МЗ РФ A16.07.054 • Дата: ${escapeHtml(patient.reportDate || patient.studyDate || "")}</div>
+        <div class="doc-meta">Номенклатура МЗ РФ A16.07.054 • Дата: ${escapeHtml(isAnon ? "[СКРЫТО]" : (patient.reportDate || patient.studyDate || ""))}</div>
       </td>
     </tr>
   </table>
@@ -1055,8 +1141,11 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
       <div class="info-item">Пациент: <b>${escapeHtml(patient.patientName)}</b></div>
       <div class="info-item">Карта: <b>${escapeHtml(patient.cardRecordNumber || "043/у")}</b></div>
       <div class="info-item">Врач: <b>${escapeHtml((patient.doctorName || "Лечащий врач").trim().replace(/^Врач[-:\s]*/i, ""))}</b></div>
+      <div class="info-item">FOV: <b>${escapeHtml(fovText)}</b></div>
+      <div class="info-item">HU: <b>${escapeHtml(wlText)}</b></div>
     </div>
     <div class="right-badges">
+      ${isAnon ? `<span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; padding:1px 5px; border-radius:3px; font-weight:700; font-size:7.5px; text-transform:uppercase;">152-ФЗ: Деперсонализировано</span>` : ""}
       <div class="tooth-pill">ЗУБ FDI #${targetToothFdi}</div>
     </div>
   </div>
@@ -1066,18 +1155,22 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
     <div class="mpr-card">
       <div class="mpr-label">1. Аксиальный срез (Z)</div>
       ${axialImg ? `<img src="${axialImg}" alt="Axial MPR" />` : `<div class="mpr-empty">Аксиальный срез</div>`}
+      <div class="mpr-ruler-badge">10 мм • 1 мм/дел</div>
     </div>
     <div class="mpr-card">
-      <div class="mpr-label">2. Панорамная реконструкция (ОПТГ)</div>
-      ${panoImg ? `<img src="${panoImg}" alt="Panorama OPG" />` : `<div class="mpr-empty">Панорамная реконструкция</div>`}
+      <div class="mpr-label">${coronalImg ? "2. Корональный срез (Y)" : "2. Панорамная реконструкция (ОПТГ)"}</div>
+      ${coronalImg ? `<img src="${coronalImg}" alt="Coronal MPR" />` : panoImg ? `<img src="${panoImg}" alt="Panorama OPG" />` : `<div class="mpr-empty">Панорамная реконструкция</div>`}
+      <div class="mpr-ruler-badge">10 мм • 1 мм/дел</div>
     </div>
     <div class="mpr-card">
-      <div class="mpr-label">3. Кросс-секция ложа FDI #${targetToothFdi}</div>
-      ${crossSectionImg ? `<img src="${crossSectionImg}" alt="Cross Section" />` : `<div class="mpr-empty">Кросс-секция ложа</div>`}
+      <div class="mpr-label">${coronalImg ? "3. Сагиттальный срез (X)" : `3. Кросс-секция ложа FDI #${targetToothFdi}`}</div>
+      ${coronalImg ? (sagittalImg ? `<img src="${sagittalImg}" alt="Sagittal MPR" />` : `<div class="mpr-empty">Сагиттальный срез</div>`) : crossSectionImg ? `<img src="${crossSectionImg}" alt="Cross Section" />` : `<div class="mpr-empty">Кросс-секция ложа</div>`}
+      <div class="mpr-ruler-badge">10 мм • 1 мм/дел</div>
     </div>
     <div class="mpr-card">
-      <div class="mpr-label">4. Косой сагиттальный срез</div>
-      ${sagittalImg ? `<img src="${sagittalImg}" alt="Sagittal MPR" />` : `<div class="mpr-empty">Сагиттальный срез</div>`}
+      <div class="mpr-label">${coronalImg ? "4. 3D-реконструкция / Панорама" : "4. Косой сагиттальный срез"}</div>
+      ${coronalImg ? ((panoImg || crossSectionImg) ? `<img src="${panoImg || crossSectionImg}" alt="Panorama/3D" />` : `<div class="mpr-empty">3D/Панорама</div>`) : (sagittalImg ? `<img src="${sagittalImg}" alt="Sagittal MPR" />` : `<div class="mpr-empty">Сагиттальный срез</div>`)}
+      <div class="mpr-ruler-badge">10 мм • 1 мм/дел</div>
     </div>
   </div>
 

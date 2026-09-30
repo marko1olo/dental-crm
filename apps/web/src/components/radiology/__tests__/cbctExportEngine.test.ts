@@ -3,8 +3,11 @@ import { describe, it } from "node:test";
 import {
 	buildCbctReportData,
 	exportCleanViewportSnapshot,
+	export300DpiViewportSnapshot,
 	generateCbctPlanningPdfReport,
+	generateSynchronizedReportSnapshots,
 	renderCbctReportHtml,
+	DEFAULT_CLINIC_VECTOR_LOGO_SVG,
 	type CbctReportData,
 } from "../cbctExportEngine";
 import {
@@ -653,7 +656,20 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 		assert.ok(!audit.form043DiaryText.includes("⛔"));
 		assert.ok(!audit.form043DiaryText.includes("✅"));
 		assert.ok(audit.form043DiaryText.includes("ПРОТОКОЛ ОПЕРАЦИИ ДЕНТАЛЬНОЙ ИМПЛАНТАЦИИ (ФОРМА 043/У)"));
-		assert.ok(audit.form043DiaryText.includes("ВНИМАНИЕ: ЗОНА ПРИБЛИЖЕНИЯ К НЕРВУ"));
+		assert.ok(audit.form043DiaryText.includes("Дистанция"));
+
+		// Verify renderStructuredDiary043 cleans legacy emoji strings into canonical warning
+		const legacyDiaryWithEmoji = "⚠️ ПРИБЛИЖЕНИЕ к нижнечелюстному каналу\nДистанция 1.0 мм";
+		const reportWithLegacyDiary = buildCbctReportData({
+			patientName: "Барабаш С.В.",
+			targetToothFdi: 46,
+			implantPose: mockPose,
+			mischResult: mockMischResult,
+			huSampling: mockHuSampling,
+			diary043Text: legacyDiaryWithEmoji,
+		});
+		const htmlWithLegacy = renderCbctReportHtml(reportWithLegacyDiary);
+		assert.ok(htmlWithLegacy.includes("ВНИМАНИЕ: ЗОНА ПРИБЛИЖЕНИЯ К НЕРВУ"));
 
 		const reportData = buildCbctReportData({
 			patientName: "Барабаш С.В.",
@@ -852,6 +868,133 @@ describe("CBCT Clinical Export & EMR Planning Report Engine Suite", () => {
 		assert.ok(html.includes("data:image/png;base64,pano_data"));
 		assert.ok(html.includes("data:image/png;base64,cs_data"));
 		assert.ok(html.includes("data:image/png;base64,sag_data"));
+	});
+
+	it("19. True 300 DPI high-resolution export with calibrated scale ruler and sub-millimeter ticks", async () => {
+		const mockCanvas = {
+			width: 512,
+			height: 512,
+			getContext: () => null,
+			toDataURL: (type: string) => `data:${type};base64,mock300dpi`,
+		} as unknown as HTMLCanvasElement;
+
+		const snap300 = await export300DpiViewportSnapshot(mockCanvas, "Аксиальный срез 300 DPI", 0.25, {
+			patientName: "Петров И.В.",
+			studyDate: "30.08.2026",
+			targetToothFdi: 36,
+		});
+		assert.ok(typeof snap300 === "string");
+		assert.ok(snap300.startsWith("data:image/png;base64,"));
+	});
+
+	it("20. 1-Click 152-FZ patient anonymization toggle for clinical consilium and scientific publication", () => {
+		const anonReport = buildCbctReportData({
+			patientName: "Сидорова Анна Сергеевна",
+			targetToothFdi: 46,
+			implantPose: mockPose,
+			mischResult: mockMischResult,
+			huSampling: mockHuSampling,
+			isAnonymized: true,
+		});
+
+		assert.equal(anonReport.patient.patientName, "АНОНИМИЗИРОВАН (152-ФЗ / КОНСИЛИУМ)");
+		assert.equal(anonReport.patient.cardRecordNumber, "043/у-[СКРЫТО]");
+		assert.equal(anonReport.patient.studyDate, "[СКРЫТО]");
+		assert.equal(anonReport.patient.isAnonymized, true);
+
+		const anonHtml = renderCbctReportHtml(anonReport);
+		assert.ok(anonHtml.includes("152-ФЗ: Деперсонализировано"));
+		assert.ok(anonHtml.includes("АНОНИМИЗИРОВАН (152-ФЗ / КОНСИЛИУМ)"));
+		assert.ok(!anonHtml.includes("Сидорова Анна Сергеевна"));
+	});
+
+	it("21. Clinical report header: Vector clinic logo SVG, FOV scan area, Window/Level HU telemetry", () => {
+		const telemetryReport = buildCbctReportData({
+			patientName: "Ковалев Н.Д.",
+			targetToothFdi: 16,
+			implantPose: mockPose,
+			mischResult: mockMischResult,
+			huSampling: mockHuSampling,
+			fov: "12×10 см (Ø120×H100 мм)",
+			windowWidth: 3800,
+			windowLevel: 1200,
+		});
+		const telemetryHtml = renderCbctReportHtml(telemetryReport);
+
+		// Vector logo in header
+		assert.ok(telemetryHtml.includes("<svg") && telemetryHtml.includes("viewBox="));
+		// FOV and W/L HU values in info-bar
+		assert.ok(telemetryHtml.includes("12×10 см"));
+		assert.ok(telemetryHtml.includes("W:3800 L:1200 HU"));
+	});
+
+	it("22. Multi-slice A4 consultation protocol: Axial + Coronal + Sagittal + 3D/Panorama with millimeter rulers", () => {
+		const multiSliceReport = buildCbctReportData({
+			patientName: "Иванов С.П.",
+			targetToothFdi: 46,
+			implantPose: mockPose,
+			mischResult: mockMischResult,
+			huSampling: mockHuSampling,
+			snapshots: {
+				axial: { title: "Аксиальный срез", dataUrl: "data:image/png;base64,axial_4s" },
+				coronal: { title: "Корональный срез", dataUrl: "data:image/png;base64,coronal_4s" },
+				sagittal: { title: "Сагиттальный срез", dataUrl: "data:image/png;base64,sagittal_4s" },
+				panoramic: { title: "Панорама 3D", dataUrl: "data:image/png;base64,pano_4s" },
+			},
+		});
+		const multiSliceHtml = renderCbctReportHtml(multiSliceReport);
+
+		assert.ok(multiSliceHtml.includes("1. Аксиальный срез (Z)"));
+		assert.ok(multiSliceHtml.includes("2. Корональный срез (Y)"));
+		assert.ok(multiSliceHtml.includes("3. Сагиттальный срез (X)"));
+		assert.ok(multiSliceHtml.includes("4. 3D-реконструкция / Панорама"));
+		assert.ok(multiSliceHtml.includes("10 мм • 1 мм/дел"));
+		assert.ok(multiSliceHtml.includes("data:image/png;base64,coronal_4s"));
+	});
+
+	it("23. Strict Mandate 8d verification: Zero informal emojis across all clinical print documents", () => {
+		const multiSliceReport = buildCbctReportData({
+			patientName: "Иванов С.П.",
+			targetToothFdi: 46,
+			implantPose: mockPose,
+			mischResult: mockMischResult,
+			huSampling: mockHuSampling,
+			snapshots: {
+				axial: { title: "Аксиальный срез", dataUrl: "data:image/png;base64,axial_4s" },
+				coronal: { title: "Корональный срез", dataUrl: "data:image/png;base64,coronal_4s" },
+				sagittal: { title: "Сагиттальный срез", dataUrl: "data:image/png;base64,sagittal_4s" },
+				panoramic: { title: "Панорама 3D", dataUrl: "data:image/png;base64,pano_4s" },
+			},
+		});
+		const html = renderCbctReportHtml(multiSliceReport);
+		const emojiRe = /\p{Extended_Pictographic}/u;
+		assert.ok(!emojiRe.test(html), "Report must not contain informal emojis");
+	});
+
+	it("24. generateSynchronizedReportSnapshots produces all 5 slices including coronal with 300 DPI support", async () => {
+		const mockVolume = {
+			dimensions: { width: 32, height: 32, depth: 32 },
+			spacingMm: { x: 0.4, y: 0.4, z: 0.4 },
+			originMm: { x: 0, y: 0, z: 0 },
+			physicalSizeMm: { x: 12.8, y: 12.8, z: 12.8 },
+			voxels: new Int16Array(32 * 32 * 32),
+			dataRange: { min: -1000, max: 3000 },
+			metadata: { patientName: "Test" },
+		};
+		const snapshots = await generateSynchronizedReportSnapshots({
+			volume: mockVolume as any,
+			crosshairMm: { x: 6.4, y: 6.4, z: 6.4 },
+			targetToothFdi: 46,
+			isAnonymized: true,
+			targetDpi: 300,
+		});
+		assert.ok(snapshots.axial);
+		assert.ok(snapshots.coronal);
+		assert.ok(snapshots.sagittal);
+		assert.ok(snapshots.panoramic);
+		assert.ok(snapshots.crossSection);
+		assert.equal(snapshots.coronal.orientationLabel, "CORONAL");
+		assert.equal(snapshots.axial.orientationLabel, "AXIAL");
 	});
 });
 

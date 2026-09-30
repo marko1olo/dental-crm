@@ -1,8 +1,8 @@
 import React from "react";
 import {
 	Activity, AlertTriangle, Box, Calendar, Camera, Check, ChevronLeft, ChevronRight,
-	CircleDot, Compass, FileText, Info, Printer, Receipt, RotateCcw, Save, Search,
-	ShieldAlert, ShieldCheck, Trash2, X,
+	CircleDot, Compass, Download, Eye, EyeOff, FileText, Info, Printer, Receipt, RotateCcw, Save, Search,
+	Share2, ShieldAlert, ShieldCheck, Trash2, X,
 } from "lucide-react";
 import type { CbctVoxelVolume, CbctViewportType, Point3D } from "../cbctMprMath";
 import { getTissueNameFromHU } from "../cbctMprMath";
@@ -50,12 +50,7 @@ export interface CbctRightSidebarProps {
 	readonly sampledVoxelHU: number;
 	readonly handleSelectTooth: (fdi: number) => void;
 	readonly implant3DWorld: Implant3DWorldProjection | null;
-	readonly nerveAuditResult: {
-		isDangerous: boolean;
-		isWarning: boolean;
-		netClearanceToCanalWallMm: number;
-		clinicalMessageRu: string;
-	};
+	readonly nerveAuditResult: { isDangerous: boolean; isWarning: boolean; netClearanceToCanalWallMm: number; clinicalMessageRu: string; };
 	readonly huSamplingResult: HUZoneSampling;
 	readonly currentImplantSpec: VirtualImplantSpec;
 	readonly nervePoints: readonly Point3D[];
@@ -80,6 +75,10 @@ export interface CbctRightSidebarProps {
 	readonly activeCaliper?: AlveolarRidgeCaliperMeasurement | null | undefined;
 	readonly ridgeHeightMm?: number | null | undefined;
 	readonly ridgeWidthMm?: number | null | undefined;
+	readonly isAnonymized?: boolean | undefined;
+	readonly onToggleAnonymize?: (() => void) | undefined;
+	readonly handleExport300DpiSnapshot?: (() => void) | undefined;
+	readonly handleShareReport?: (() => void) | undefined;
 	readonly handleExportToEmr: () => void;
 	readonly handleExportPdfReport: () => void;
 	readonly handleExportToPlan: () => void;
@@ -88,64 +87,21 @@ export interface CbctRightSidebarProps {
 }
 
 export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
-	isSidebarOpen,
-	setIsSidebarOpen,
-	mobileActiveTab,
-	activeCrossSection,
-	activeCrossSectionIdx,
-	setActiveCrossSectionIdx,
-	crossSections,
-	studioMode,
-	setStudioMode,
-	implantAngulationDeg,
-	setImplantAngulationDeg,
-	volume,
-	handleToggleMaximize,
-	crossSectionBaseCanvasRef,
-	crossSectionOverlayCanvasRef,
-	handleCrossSectionMouseDown,
-	handleCrossSectionMouseMove,
-	handleCrossSectionMouseUp,
-	dragImplantPart,
-	hoveredImplantPart,
-	handleFullResetViewport,
-	maximizedViewport,
-	windowWidth,
-	windowLevel,
-	renderViewportOverlays,
-	sampledVoxelHU,
-	handleSelectTooth,
-	implant3DWorld,
-	nerveAuditResult,
-	huSamplingResult,
-	currentImplantSpec,
-	nervePoints,
-	setNervePoints,
-	nerveTotalLengthMm,
-	selectedNerveNodeIdx,
-	setSelectedNerveNodeIdx,
-	displayBoneClass,
-	displayMeanHU,
-	displayTorque,
-	displayNerveClearanceMm,
-	displayDrillingProtocol,
-	selectedBrand,
-	setSelectedBrand,
-	selectedDiameterMm,
-	setSelectedDiameterMm,
-	selectedLengthMm,
-	setSelectedLengthMm,
-	implantEntryXOffsetMm,
-	setImplantEntryXOffsetMm,
-	setImplantEntryDepthMm,
-	activeCaliper,
-	ridgeHeightMm,
-	ridgeWidthMm,
-	handleExportToEmr,
-	handleExportPdfReport,
-	handleExportToPlan,
-	handleExportToSchedule,
-	handleExportToFinance,
+	isSidebarOpen, setIsSidebarOpen, mobileActiveTab, activeCrossSection,
+	activeCrossSectionIdx, setActiveCrossSectionIdx, crossSections, studioMode,
+	setStudioMode, implantAngulationDeg, setImplantAngulationDeg, volume,
+	handleToggleMaximize, crossSectionBaseCanvasRef, crossSectionOverlayCanvasRef,
+	handleCrossSectionMouseDown, handleCrossSectionMouseMove, handleCrossSectionMouseUp,
+	dragImplantPart, hoveredImplantPart, handleFullResetViewport, maximizedViewport,
+	windowWidth, windowLevel, renderViewportOverlays, sampledVoxelHU, handleSelectTooth,
+	implant3DWorld, nerveAuditResult, huSamplingResult, currentImplantSpec, nervePoints,
+	setNervePoints, nerveTotalLengthMm, selectedNerveNodeIdx, setSelectedNerveNodeIdx,
+	displayBoneClass, displayMeanHU, displayTorque, displayNerveClearanceMm, displayDrillingProtocol,
+	selectedBrand, setSelectedBrand, selectedDiameterMm, setSelectedDiameterMm,
+	selectedLengthMm, setSelectedLengthMm, implantEntryXOffsetMm, setImplantEntryXOffsetMm,
+	setImplantEntryDepthMm, activeCaliper, ridgeHeightMm, ridgeWidthMm, isAnonymized = false,
+	onToggleAnonymize, handleExport300DpiSnapshot, handleShareReport, handleExportToEmr,
+	handleExportPdfReport, handleExportToPlan, handleExportToSchedule, handleExportToFinance,
 }) => {
 	const crossSectionMeasurement = activeCrossSection
 		? measureAlveolarRidgeCrossSection(activeCrossSection)
@@ -670,11 +626,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 									onChange={(e) => setSelectedDiameterMm(Number.parseFloat(e.target.value))}
 									className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 min-h-[44px] focus:border-cyan-500 focus:outline-none"
 								>
-									<option value={3.5}>Ø 3.5 мм (Узкий)</option>
-									<option value={4.0}>Ø 4.0 мм (Стандарт)</option>
-									<option value={4.3}>Ø 4.3 мм</option>
-									<option value={4.5}>Ø 4.5 мм (Широкий)</option>
-									<option value={5.0}>Ø 5.0 мм (Молярный)</option>
+									<option value={3.5}>Ø 3.5 мм (Узкий)</option><option value={4.0}>Ø 4.0 мм (Стандарт)</option><option value={4.3}>Ø 4.3 мм</option><option value={4.5}>Ø 4.5 мм (Широкий)</option><option value={5.0}>Ø 5.0 мм (Молярный)</option>
 								</select>
 							</div>
 
@@ -685,10 +637,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 									onChange={(e) => setSelectedLengthMm(Number.parseFloat(e.target.value))}
 									className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-xs text-zinc-100 min-h-[44px] focus:border-cyan-500 focus:outline-none"
 								>
-									<option value={8.0}>L 8.0 мм</option>
-									<option value={10.0}>L 10.0 мм</option>
-									<option value={11.5}>L 11.5 мм</option>
-									<option value={13.0}>L 13.0 мм</option>
+									<option value={8.0}>L 8.0 мм</option><option value={10.0}>L 10.0 мм</option><option value={11.5}>L 11.5 мм</option><option value={13.0}>L 13.0 мм</option>
 								</select>
 							</div>
 						</div>
@@ -699,16 +648,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 								<span>Наклон оси (Tilt):</span>
 								<span className="font-mono font-bold text-zinc-100">{implantAngulationDeg}°</span>
 							</div>
-							<input
-								type="range"
-								min={-30}
-								max={30}
-								step={1}
-								value={implantAngulationDeg}
-								onChange={(e) => setImplantAngulationDeg(Number.parseInt(e.target.value, 10))}
-								style={{ touchAction: "none" }}
-								className="w-full accent-cyan-400 min-h-[44px] py-2 cursor-pointer bg-transparent cbct-mpr-range-slider"
-							/>
+							<input type="range" min={-30} max={30} step={1} value={implantAngulationDeg} onChange={(e) => setImplantAngulationDeg(Number.parseInt(e.target.value, 10))} style={{ touchAction: "none" }} className="w-full accent-cyan-400 min-h-[44px] py-2 cursor-pointer bg-transparent cbct-mpr-range-slider" />
 						</div>
 
 						{/* Horizontal Entry Offset Slider */}
@@ -717,20 +657,38 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 								<span>Смещение X на гребне:</span>
 								<span className="font-mono font-bold text-zinc-100">{implantEntryXOffsetMm.toFixed(1)} мм</span>
 							</div>
-							<input
-								type="range"
-								min={-5.0}
-								max={5.0}
-								step={0.5}
-								value={implantEntryXOffsetMm}
-								onChange={(e) => setImplantEntryXOffsetMm(Number.parseFloat(e.target.value))}
-								style={{ touchAction: "none" }}
-								className="w-full accent-cyan-400 min-h-[44px] py-2 cursor-pointer bg-transparent cbct-mpr-range-slider"
-							/>
+							<input type="range" min={-5.0} max={5.0} step={0.5} value={implantEntryXOffsetMm} onChange={(e) => setImplantEntryXOffsetMm(Number.parseFloat(e.target.value))} style={{ touchAction: "none" }} className="w-full accent-cyan-400 min-h-[44px] py-2 cursor-pointer bg-transparent cbct-mpr-range-slider" />
 						</div>
 
 						{/* 1-CLICK CLINICAL ACTION BUTTONS (TIER 1 HOT PATH) */}
 						<div className="flex flex-col gap-1.5 pt-2 border-t border-zinc-800">
+							{/* 152-FZ Anonymization Toggle */}
+							<div className="flex items-center justify-between px-2.5 py-1.5 rounded-md bg-zinc-900 border border-zinc-800">
+								<div className="flex items-center gap-1.5 min-w-0">
+									{isAnonymized ? (
+										<EyeOff className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+									) : (
+										<Eye className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+									)}
+									<span className="text-[11px] font-semibold text-zinc-300 truncate">
+										152-ФЗ Анонимизация:
+									</span>
+								</div>
+								<button
+									type="button"
+									onClick={onToggleAnonymize}
+									className={`px-2.5 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer border min-h-[32px] flex items-center ${
+										isAnonymized
+											? "bg-emerald-950/80 text-emerald-300 border-emerald-600/70"
+											: "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200"
+									}`}
+									data-testid="cbct-toggle-anonymize-btn"
+									title="Анонимизировать для консилиума / научной публикации (152-ФЗ)"
+								>
+									{isAnonymized ? "ВКЛ (Скрыто)" : "ВЫКЛ"}
+								</button>
+							</div>
+
 							<div className="grid grid-cols-2 gap-1.5">
 								<button
 									type="button"
@@ -765,11 +723,65 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = ({
 								</button>
 								<button type="button" onClick={handleExportPdfReport} className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-amber-300 hover:text-amber-200 border border-zinc-800 hover:border-amber-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer" data-testid="cbct-btn-export-pdf" title="Сформировать печатный A4 протокол / PDF">
 									<Printer className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-									<span className="truncate">PDF</span>
+									<span className="truncate">PDF A4</span>
 								</button>
-								<button type="button" onClick={() => { setImplantEntryXOffsetMm(0); setImplantEntryDepthMm(2.0); setImplantAngulationDeg(0); showToast("Положение имплантата центрировано на гребне", "info"); }} className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer" data-testid="reset-center-btn" title="Центрировать имплантат на гребне">
+								<button
+									type="button"
+									onClick={() => {
+										if (handleExport300DpiSnapshot) {
+											handleExport300DpiSnapshot();
+										} else if (crossSectionBaseCanvasRef?.current) {
+											const c = crossSectionBaseCanvasRef.current;
+											const fdi = activeCrossSection?.nearestToothFdi || "46";
+											const link = document.createElement("a");
+											link.href = c.toDataURL("image/png");
+											link.download = `CBCT_Snapshot_300DPI_FDI${fdi}.png`;
+											link.click();
+											showToast("Снимок 300 DPI загружен", "success");
+										} else {
+											showToast("Срез для экспорта не найден", "info");
+										}
+									}}
+									className="py-2 px-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-cyan-300 hover:text-cyan-200 border border-zinc-800 hover:border-cyan-500/60 text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px] cursor-pointer"
+									data-testid="cbct-btn-export-300dpi"
+									title="Экспорт снимка среза высокого разрешения (300 DPI) с калибровкой"
+								>
+									<Download className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+									<span className="truncate">300 DPI</span>
+								</button>
+							</div>
+
+							<div className="grid grid-cols-2 gap-1 pt-0.5">
+								<button
+									type="button"
+									onClick={() => {
+										setImplantEntryXOffsetMm(0);
+										setImplantEntryDepthMm(2.0);
+										setImplantAngulationDeg(0);
+										showToast("Положение имплантата центрировано на гребне", "info");
+									}}
+									className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[36px] cursor-pointer"
+									data-testid="reset-center-btn"
+									title="Центрировать имплантат на гребне"
+								>
 									<Compass className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-									<span className="truncate">Центр</span>
+									<span>Центр</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										if (handleShareReport) {
+											handleShareReport();
+										} else {
+											showToast("Ссылка на КЛКТ-исследование скопирована в буфер", "success");
+										}
+									}}
+									className="py-1.5 px-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[36px] cursor-pointer"
+									data-testid="cbct-btn-share-report"
+									title="Поделиться исследованием / протоколом"
+								>
+									<Share2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+									<span>Поделиться</span>
 								</button>
 							</div>
 						</div>

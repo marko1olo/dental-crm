@@ -3,7 +3,7 @@
  * Standards: Mandate 8b (<= 800 lines), Mandate 8e (Doctor Autonomy).
  */
 
-import { useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { CrossSectionSliceData } from "../dentalCurveEngine";
 import { measureAlveolarRidgeCrossSection } from "../dentalCurveEngine";
 import type {
@@ -16,6 +16,8 @@ import type { AlveolarRidgeCaliperMeasurement } from "../cbctCaliperNerveMath";
 import type { HUZoneSampling, MischClassificationResult } from "../boneDensityMischMath";
 import type { RadiologyStudy } from "../types";
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
+import { showToast } from "../../GlobalToast";
+import { exportCleanViewportSnapshot } from "../cbctSnapshotExportMath";
 import {
 	exportImplantToTreatmentPlan,
 	exportImplantToDiary043,
@@ -181,6 +183,22 @@ export function useCbctStudioExports({
 		});
 	}, [activeCrossSection, patientId, study]);
 
+	const [isAnonymized, setIsAnonymized] = useState(false);
+
+	const handleToggleAnonymize = useCallback(() => {
+		setIsAnonymized((prev) => {
+			const next = !prev;
+			showToast(
+				next
+					? "Анонимизация включена (152-ФЗ): персональные данные скрыты"
+					: "Анонимизация отключена: отображаются полные данные пациента",
+				"info",
+				3000,
+			);
+			return next;
+		});
+	}, []);
+
 	const handleExportPdfReport = useCallback(() => {
 		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
 		exportPdfImplantReport({
@@ -188,7 +206,7 @@ export function useCbctStudioExports({
 			currentImplantPose,
 			currentCanal,
 			huSamplingResult,
-			patientDisplayName,
+			patientDisplayName: isAnonymized ? "АНОНИМИЗИРОВАН (152-ФЗ / КОНСИЛИУМ)" : patientDisplayName,
 			study,
 			mischClassification,
 			nerveAuditResult,
@@ -198,15 +216,45 @@ export function useCbctStudioExports({
 		});
 	}, [
 		activeCrossSection, currentImplantPose, currentCanal, huSamplingResult,
-		patientDisplayName, study, mischClassification, nerveAuditResult,
+		patientDisplayName, isAnonymized, study, mischClassification, nerveAuditResult,
 		activeCaliper, effectiveRidgeHeightMm, effectiveRidgeWidthMm,
 	]);
 
+	const handleExport300DpiSnapshot = useCallback(async (canvas?: HTMLCanvasElement | null, title = "КЛКТ Срез (300 DPI)") => {
+		if (!canvas) {
+			showToast("Холст среза не найден для экспорта", "error");
+			return;
+		}
+		const targetTooth = Number.parseInt(activeCrossSection?.nearestToothFdi ?? "46", 10) || 46;
+		const spacing = 0.4;
+		const dataUrl = await exportCleanViewportSnapshot(canvas, title, spacing, {
+			patientName: isAnonymized ? "АНОНИМИЗИРОВАН (152-ФЗ)" : patientDisplayName,
+			studyDate: isAnonymized ? "[СКРЫТО]" : study?.studyDate || new Date().toLocaleDateString("ru-RU"),
+			targetToothFdi: targetTooth,
+			isAnonymized,
+			targetDpi: 300,
+			fov: "8×8 см",
+			cleanForReport: true,
+		});
+		if (typeof window !== "undefined" && typeof document !== "undefined") {
+			const link = document.createElement("a");
+			link.href = dataUrl;
+			link.download = `CBCT_Snapshot_300DPI_${isAnonymized ? "ANONYMIZED" : patientDisplayName.replace(/\s+/g, "_")}_FDI${targetTooth}.png`;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+		}
+		showToast("Снимок высокого разрешения (300 DPI) успешно сохранен", "success");
+	}, [activeCrossSection, isAnonymized, patientDisplayName, study]);
+
 	return {
+		isAnonymized,
+		handleToggleAnonymize,
 		handleExportToPlan,
 		handleExportToSchedule,
 		handleExportToEmr,
 		handleExportCbctToFinance,
 		handleExportPdfReport,
+		handleExport300DpiSnapshot,
 	};
 }
