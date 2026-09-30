@@ -403,3 +403,68 @@ export function persistRvgScanToServer({
 		}
 	})();
 }
+
+export interface ProcessRadiologyFileResult {
+	readonly imageUrl: string;
+	readonly detectedSensor?: string | undefined;
+	readonly matchedSensorId?: string | undefined;
+	readonly detectedTeeth?: string[] | undefined;
+	readonly suggestedProjection?: "bitewing" | "periapical" | undefined;
+	readonly clinicalNote?: string | undefined;
+}
+
+/**
+ * Reads and decodes a local radiology file (DICOM buffer, TIFF, PNG, JPG),
+ * automatically extracting detected sensor brand, FDI tooth numbers, and image data URL.
+ */
+export async function readRadiologyFileForCapture(file: File): Promise<ProcessRadiologyFileResult> {
+	const detectedSensor = detectRadiologySensorBrand(file.name);
+	const matchedSensor = POPULAR_RVG_SENSORS.find((s) => s.name === detectedSensor);
+	const detectedTeeth = extractTeethFromRadiologyFilename(file.name);
+
+	let suggestedProjection: "bitewing" | "periapical" | undefined = undefined;
+	if (detectedTeeth.length > 1) {
+		const hasUpper = detectedTeeth.some((t) => ["14", "15", "16", "17", "24", "25", "26", "27"].includes(t));
+		const hasLower = detectedTeeth.some((t) => ["44", "45", "46", "47", "34", "35", "36", "37"].includes(t));
+		if (hasUpper && hasLower) suggestedProjection = "bitewing";
+	}
+
+	const lowerName = file.name.toLowerCase();
+	const isDcm = lowerName.endsWith(".dcm") || lowerName.endsWith(".dicom");
+
+	if (isDcm) {
+		const buffer = await file.arrayBuffer();
+		const decodedUrl = convertDicomBufferToDataUrl(buffer);
+		if (decodedUrl) {
+			return {
+				imageUrl: decodedUrl,
+				detectedSensor,
+				matchedSensorId: matchedSensor?.id,
+				detectedTeeth: detectedTeeth.length > 0 ? detectedTeeth : undefined,
+				suggestedProjection,
+				clinicalNote: `Загружен снимок DICOM: ${file.name} (${Math.round(file.size / 1024)} КБ, ${detectedSensor}).`,
+			};
+		}
+	}
+
+	// Standard image or fallback
+	const dataUrl = await new Promise<string>((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => {
+			if (typeof reader.result === "string") resolve(reader.result);
+			else reject(new Error("Failed to read file as Data URL"));
+		};
+		reader.onerror = () => reject(reader.error || new Error("File read error"));
+		reader.readAsDataURL(file);
+	});
+
+	return {
+		imageUrl: dataUrl,
+		detectedSensor,
+		matchedSensorId: matchedSensor?.id,
+		detectedTeeth: detectedTeeth.length > 0 ? detectedTeeth : undefined,
+		suggestedProjection,
+		clinicalNote: `Загружен снимок: ${file.name} (${Math.round(file.size / 1024)} КБ).`,
+	};
+}
+

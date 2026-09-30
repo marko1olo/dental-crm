@@ -4,11 +4,8 @@ import { createPortal } from "react-dom";
 import {
 	Camera,
 	FileText,
-	HardDrive,
 	Scan,
-	ShieldCheck,
 	UploadCloud,
-	X,
 	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
@@ -40,17 +37,16 @@ import {
 	detectRadiologySensorBrand,
 	extractTeethFromRadiologyFilename,
 	convertDicomBufferToDataUrl,
+	readRadiologyFileForCapture,
 	POPULAR_RVG_SENSORS,
 } from "./directRvgFileValidation";
 import { DirectRvgFdiSelector } from "./DirectRvgFdiSelector";
 import { DirectRvgProjectionSelector } from "./DirectRvgProjectionSelector";
 import { DirectRvgViewportToolbar } from "./DirectRvgViewportToolbar";
 import { DirectRvgFooter } from "./DirectRvgFooter";
-import {
-	createRvgGlRenderer,
-	type RvgGlRendererInstance,
-} from "./rvgGlShaderRenderer";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { DirectRvgSensorTelemetryHeader } from "./DirectRvgSensorTelemetryHeader";
+import { useRvgGlCanvas } from "./useRvgGlCanvas";
+import { useDirectRvgPanZoom } from "./useDirectRvgPanZoom";
 if (typeof document !== "undefined") { import("./rvgCapture.css"); }
 
 // Transparent re-exports
@@ -63,8 +59,12 @@ export {
 	detectRadiologySensorBrand,
 	extractTeethFromRadiologyFilename,
 	convertDicomBufferToDataUrl,
+	readRadiologyFileForCapture,
 	POPULAR_RVG_SENSORS,
 } from "./directRvgFileValidation";
+export { DirectRvgSensorTelemetryHeader } from "./DirectRvgSensorTelemetryHeader";
+export { useRvgGlCanvas } from "./useRvgGlCanvas";
+export { useDirectRvgPanZoom } from "./useDirectRvgPanZoom";
 
 export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 	isOpen,
@@ -109,25 +109,19 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 
 	// Viewport & Image Filters
 	const [capturedImage, setCapturedImage] = useState<string>(defaultImage);
-
 	useEffect(() => {
 		setCapturedImage(defaultImage);
 	}, [defaultImage]);
+
 	const [filters, setFilters] = useState<RvgFilterValues>(DEFAULT_RVG_FILTERS);
 	const [activePresetId, setActivePresetId] = useState<string>("standard");
 	const [isSplitCompare, setIsSplitCompare] = useState<boolean>(false);
 
-	// Viewport Transformation
-	const [zoom, setZoom] = useState<number>(1.0);
-	const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-	const [rotation, setRotation] = useState<number>(0);
-	const [flipH, setFlipH] = useState<boolean>(false);
-	const [isDragging, setIsDragging] = useState<boolean>(false);
-	const dragStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+	// Pan & Zoom gestures
+	const panZoom = useDirectRvgPanZoom();
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const imageSourceRef = useRef<HTMLImageElement | null>(null);
-	const glRendererRef = useRef<RvgGlRendererInstance | null>(null);
+	const { isWebGL } = useRvgGlCanvas(canvasRef, capturedImage, filters);
 
 	// Calculated effective dose in µSv
 	const calculatedDoseMicrosv = useMemo(() => {
@@ -177,10 +171,9 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		}
 	};
 
-	// Trigger physical or instant x-ray exposure capture (Mandate 8e: <50ms instant capture, Mandate 8k: CRM != Reality Simulator)
+	// Trigger physical or instant x-ray exposure capture (Mandate 8e: <50ms instant capture)
 	const handleTriggerCapture = useCallback(() => {
 		if (sensorStatus === "acquiring") return;
-		// Мгновенный захват <50мс без искусственных задержек и симуляций калибровки шума
 		setSensorStatus("captured");
 		setAcquisitionProgress(100);
 		setCapturedImage(initialImageUrl || SAMPLE_PATIENT_RVG_URL);
@@ -191,9 +184,8 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isDragOver, setIsDragOver] = useState<boolean>(false);
 
-	const handleProcessFile = useCallback((file: File) => {
+	const handleProcessFile = useCallback(async (file: File) => {
 		const validation = validateRadiologyUploadFile(file);
-
 		if (!validation.isValid) {
 			showToast(
 				`Неподдерживаемый формат файла: ${file.name}. Поддерживаются: DICOM (.dcm), TIFF, PNG, JPG, BMP`,
@@ -202,90 +194,31 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			return false;
 		}
 
-		// Auto-detect sensor brand from filename or path if present
-		const detectedSensor = detectRadiologySensorBrand(file.name);
-		const matchedSensor = POPULAR_RVG_SENSORS.find((s) => s.name === detectedSensor);
-		if (matchedSensor) {
-			setSelectedSensorModel(matchedSensor.id);
-		}
-
-		// Auto-extract teeth from filename (e.g. Tooth16, 16_15_46_45, Bitewing)
-		const detectedTeeth = extractTeethFromRadiologyFilename(file.name);
-		if (detectedTeeth.length > 0) {
-			setSelectedTeeth(detectedTeeth);
-			if (detectedTeeth.length > 1) {
-				const hasUpper = detectedTeeth.some((t) => ["14", "15", "16", "17", "24", "25", "26", "27"].includes(t));
-				const hasLower = detectedTeeth.some((t) => ["44", "45", "46", "47", "34", "35", "36", "37"].includes(t));
-				if (hasUpper && hasLower) setProjectionType("bitewing");
+		try {
+			const res = await readRadiologyFileForCapture(file);
+			if (res.matchedSensorId) setSelectedSensorModel(res.matchedSensorId);
+			if (res.detectedTeeth && res.detectedTeeth.length > 0) {
+				setSelectedTeeth(res.detectedTeeth);
+				if (res.suggestedProjection) setProjectionType(res.suggestedProjection);
 			}
-		}
-
-		const lowerName = file.name.toLowerCase();
-		const isDcm = lowerName.endsWith(".dcm") || lowerName.endsWith(".dicom");
-
-		if (isDcm) {
-			const reader = new FileReader();
-			reader.onload = () => {
-				if (reader.result instanceof ArrayBuffer) {
-					const decodedUrl = convertDicomBufferToDataUrl(reader.result);
-					if (decodedUrl) {
-						setCapturedImage(decodedUrl);
-						setSensorStatus("captured");
-						setAcquisitionProgress(100);
-						setClinicalNotes((prev) =>
-							prev.startsWith("Контрольная прицельная")
-								? `Загружен снимок DICOM: ${file.name} (${Math.round(file.size / 1024)} КБ, ${detectedSensor}).`
-								: prev,
-						);
-						showToast(`Снимок DICOM (${file.name}) успешно декодирован и загружен`, "success");
-						return;
-					}
-				}
-				// Fallback
-				const dataUrlReader = new FileReader();
-				dataUrlReader.onload = () => {
-					if (typeof dataUrlReader.result === "string") {
-						setCapturedImage(dataUrlReader.result);
-						setSensorStatus("captured");
-						setAcquisitionProgress(100);
-						showToast(`Снимок ${file.name} успешно загружен`, "success");
-					}
-				};
-				dataUrlReader.readAsDataURL(file);
-			};
-			reader.onerror = () => {
-				showToast(`Ошибка чтения DICOM файла: ${file.name}`, "error");
-			};
-			reader.readAsArrayBuffer(file);
+			setCapturedImage(res.imageUrl);
+			setSensorStatus("captured");
+			setAcquisitionProgress(100);
+			if (res.clinicalNote) {
+				setClinicalNotes((prev) => (prev.startsWith("Контрольная прицельная") ? res.clinicalNote! : prev));
+			}
+			showToast(`Снимок ${file.name} успешно загружен`, "success");
 			return true;
-		}
-
-		const reader = new FileReader();
-		reader.onload = () => {
-			const result = reader.result;
-			if (typeof result === "string") {
-				setCapturedImage(result);
-				setSensorStatus("captured");
-				setAcquisitionProgress(100);
-				setClinicalNotes((prev) =>
-					prev.startsWith("Контрольная прицельная")
-						? `Загружен снимок: ${file.name} (${Math.round(file.size / 1024)} КБ).`
-						: prev,
-				);
-				showToast(`Снимок ${file.name} успешно загружен`, "success");
-			}
-		};
-		reader.onerror = () => {
+		} catch (err) {
 			showToast(`Ошибка чтения файла: ${file.name}`, "error");
-		};
-		reader.readAsDataURL(file);
-		return true;
+			return false;
+		}
 	}, []);
 
 	const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const files = e.target.files;
 		if (files && files.length > 0 && files[0]) {
-			handleProcessFile(files[0]);
+			void handleProcessFile(files[0]);
 		}
 		e.target.value = "";
 	};
@@ -308,117 +241,8 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		setIsDragOver(false);
 		const files = e.dataTransfer.files;
 		if (files && files.length > 0 && files[0]) {
-			handleProcessFile(files[0]);
+			void handleProcessFile(files[0]);
 		}
-	};
-
-	const applyCanvasFilters = useCallback(() => {
-		const canvas = canvasRef.current;
-		const img = imageSourceRef.current;
-		if (!canvas || !img) return;
-
-		canvas.width = img.naturalWidth || 1000;
-		canvas.height = img.naturalHeight || 1300;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-	}, []);
-
-	// Hardware WebGL 2D Shader Renderer initialization and drawing
-	useEffect(() => {
-		const canvas = canvasRef.current;
-		if (canvas && !glRendererRef.current) {
-			glRendererRef.current = createRvgGlRenderer(canvas);
-		}
-
-		if (!capturedImage) return;
-
-		const img = new Image();
-		img.crossOrigin = "anonymous";
-		img.src = capturedImage;
-		img.onload = () => {
-			imageSourceRef.current = img;
-			if (glRendererRef.current) {
-				glRendererRef.current.updateImage(img);
-				glRendererRef.current.render({
-					brightness: filters.brightness,
-					contrast: filters.contrast,
-					sharpness: filters.sharpness,
-					clahe: filters.clahe,
-					invert: filters.invert,
-				});
-			} else {
-				applyCanvasFilters();
-			}
-		};
-
-		return () => {
-			img.onload = null;
-			img.src = "";
-			imageSourceRef.current = null;
-		};
-	}, [capturedImage, applyCanvasFilters, filters]);
-
-	// Fast 0.05ms GPU shader uniform update on filter change
-	useEffect(() => {
-		if (glRendererRef.current && imageSourceRef.current) {
-			glRendererRef.current.render({
-				brightness: filters.brightness,
-				contrast: filters.contrast,
-				sharpness: filters.sharpness,
-				clahe: filters.clahe,
-				invert: filters.invert,
-			});
-		} else {
-			applyCanvasFilters();
-		}
-	}, [filters, applyCanvasFilters]);
-
-	useEffect(() => {
-		return () => {
-			if (glRendererRef.current) {
-				glRendererRef.current.dispose();
-				glRendererRef.current = null;
-			}
-		};
-	}, []);
-
-	// Reset transformation
-	const handleResetTransform = () => {
-		setZoom(1.0);
-		setPan({ x: 0, y: 0 });
-		setRotation(0);
-		setFlipH(false);
-	};
-
-	// Mouse Pan interactions
-	const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-		if (e.button !== 0) return;
-		setIsDragging(true);
-		dragStartPos.current = {
-			x: e.clientX - pan.x,
-			y: e.clientY - pan.y,
-		};
-	};
-
-	const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-		if (!isDragging) return;
-		setPan({
-			x: e.clientX - dragStartPos.current.x,
-			y: e.clientY - dragStartPos.current.y,
-		});
-	};
-
-	const handleMouseUp = () => {
-		setIsDragging(false);
-	};
-
-	const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-		e.preventDefault();
-		const zoomDelta = e.deltaY < 0 ? 0.15 : -0.15;
-		setZoom((prev) => Math.min(Math.max(Number((prev + zoomDelta).toFixed(2)), 0.5), 4.0));
 	};
 
 	// Keyboard Shortcuts
@@ -438,44 +262,31 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 				onClose();
 			} else if (e.key === "r" || e.key === "R" || e.key === "к" || e.key === "К") {
 				e.preventDefault();
-				setRotation((prev) => (prev + 90) % 360);
+				panZoom.handleRotate();
 			} else if (e.key === "+" || e.key === "=") {
 				e.preventDefault();
-				setZoom((prev) => Math.min(prev + 0.2, 4.0));
+				panZoom.handleZoomIn();
 			} else if (e.key === "-" || e.key === "_") {
 				e.preventDefault();
-				setZoom((prev) => Math.max(prev - 0.2, 0.5));
+				panZoom.handleZoomOut();
 			} else if (e.key === "0") {
 				e.preventDefault();
-				handleResetTransform();
+				panZoom.handleResetTransform();
 			}
 		};
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, sensorStatus, handleTriggerCapture, onClose]);
+	}, [isOpen, sensorStatus, handleTriggerCapture, onClose, panZoom]);
 
-	// 1-Click Action 1: Save to EMR (Карта 043/у)
-	const handleSaveToEmr = () => {
-		if (!capturedImage) {
-			showToast("Сначала выполните захват с датчика или загрузите снимок", "warning");
-			return;
-		}
-		setIsSaving(true);
+	// Factory for consistent canonical study records across all 3 export paths
+	const createStudyRecord = useCallback((idSuffix: string): { study: RadiologyStudy; pixelSpacingMm: number } => {
 		const currentSensor = SENSOR_MODELS.find((s) => s.id === selectedSensorModel);
+		const pixelSpacingMm = currentSensor?.pixelSpacing || 0.035;
 		const currentIso = new Date().toISOString();
 
-		const metadata = {
-			kv: voltageKv,
-			ma: currentMa,
-			exposureSec,
-			pixelSpacingMm: currentSensor?.pixelSpacing || 0.035,
-			apparatusModel: currentSensor?.name || "Vatech EzSensor HD",
-			sensorType: "CMOS Active Pixel",
-		};
-
-		const studyRecord: RadiologyStudy = {
-			id: `study-rvg-${Date.now()}`,
+		const study: RadiologyStudy = {
+			id: `study-rvg-${idSuffix}-${Date.now()}`,
 			patientId,
 			patientName,
 			medicalCardNumber: patientCardNumber,
@@ -494,63 +305,45 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			status: "completed",
 			diagnosisIcd10: "K04.0",
 			diagnosticNotes: clinicalNotes,
-			metadata,
+			metadata: {
+				kv: voltageKv,
+				ma: currentMa,
+				exposureSec,
+				pixelSpacingMm,
+				apparatusModel: currentSensor?.name || "Vatech EzSensor HD",
+				sensorType: "CMOS Active Pixel",
+			},
 			tags: ["RVG", "043/у", `Зуб_${selectedTeeth.join("_")}`],
 		};
+		return { study, pixelSpacingMm };
+	}, [selectedSensorModel, patientId, patientName, patientCardNumber, selectedTeeth, primaryToothName, calculatedDoseMicrosv, capturedImage, doctorName, clinicalNotes, voltageKv, currentMa, exposureSec]);
+
+	// 1-Click Action 1: Save to EMR (Карта 043/у)
+	const handleSaveToEmr = () => {
+		if (!capturedImage) {
+			showToast("Сначала выполните захват с датчика или загрузите снимок", "warning");
+			return;
+		}
+		setIsSaving(true);
+		const { study: studyRecord } = createStudyRecord("emr");
 
 		if (onSaveToEmr) {
 			onSaveToEmr(studyRecord);
 		}
 
-		if (patientId && capturedImage && (capturedImage.startsWith("data:image/") || capturedImage.startsWith("blob:"))) {
-			void (async () => {
-				try {
-					let imageBase64 = capturedImage;
-					if (capturedImage.startsWith("blob:")) {
-						const blob = await fetch(capturedImage).then((r) => r.blob());
-						imageBase64 = await new Promise<string>((resolve) => {
-							const reader = new FileReader();
-							reader.onloadend = () => resolve(reader.result as string);
-							reader.readAsDataURL(blob);
-						});
-					}
-					await fetch("/api/xray/scans", {
-						method: "POST",
-						headers: denteAdminSecretRequestHeaders({
-							"Content-Type": "application/json",
-						}),
-						body: JSON.stringify({
-							patientId,
-							imageBase64,
-							originalFilename: `rvg_tooth_${selectedTeeth.join("_")}_${Date.now()}.jpg`,
-							mimeType: "image/jpeg",
-							kind: "periapical",
-							toothCode: selectedTeeth[0] || null,
-							notes: clinicalNotes,
-							status: "done",
-						}),
-					}).catch((err) => {
-						console.warn("[DirectRvgCaptureModal] Failed to persist scan to server:", err);
-					});
-				} catch (err) {
-					console.warn("[DirectRvgCaptureModal] Server save error:", err);
-				}
-			})();
-		}
+		persistRvgScanToServer({ patientId, capturedImage, selectedTeeth, clinicalNotes });
 
 		// 1. Automatically bind RVG scan finding to active visit diary & reactive FDI tooth formula
 		try {
 			const primaryToothCode = selectedTeeth[0] || initialToothFdi || "16";
 			const rvgDiaryStatement = `[Прицельный снимок RVG] Зуб #${selectedTeeth.join(", ")}: доза ${calculatedDoseMicrosv} мкЗв. ${clinicalNotes}`;
 
-			// Append to objectiveStatus in active visit note
 			useVisitStore.getState().setVisitNoteForm((prev) => {
 				const current = prev.objectiveStatus || "";
 				const updated = current.trim() ? `${current.trim()}\n${rvgDiaryStatement}` : rvgDiaryStatement;
 				return { ...prev, objectiveStatus: updated };
 			});
 
-			// Reactively associate with tooth in visit formula
 			if (primaryToothCode) {
 				const store = useVisitStore.getState();
 				const currentState = store.visitToothStateByCode[primaryToothCode];
@@ -601,29 +394,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 
 	// 1-Click Action 2: Send to Dental Lab (ЗТЛ)
 	const handleSendToLab = () => {
-		const currentSensor = SENSOR_MODELS.find((s) => s.id === selectedSensorModel);
-		const currentIso = new Date().toISOString();
-
-		const studyRecord: RadiologyStudy = {
-			id: `study-rvg-lab-${Date.now()}`,
-			patientId,
-			patientName,
-			medicalCardNumber: patientCardNumber,
-			studyDate: currentIso.replace("T", " ").substring(0, 16),
-			studyType: "intraoral_radiovisiography",
-			modality: "intraoral_rvg",
-			modalityLabel: "Прицельная радиовизиография",
-			anatomicalArea: `Зуб ${selectedTeeth.join(", ")}`,
-			teethFdi: selectedTeeth,
-			effectiveDoseMicrosv: calculatedDoseMicrosv,
-			effectiveDoseMsv: calculatedDoseMicrosv / 1000,
-			imageUrl: capturedImage,
-			doctorName,
-			status: "completed",
-			diagnosticNotes: clinicalNotes,
-			metadata: { kv: voltageKv, ma: currentMa, exposureSec, pixelSpacingMm: currentSensor?.pixelSpacing || 0.035, apparatusModel: currentSensor?.name || "Vatech EzSensor HD" },
-		};
-
+		const { study: studyRecord } = createStudyRecord("lab");
 		if (onSendToLab) {
 			onSendToLab({
 				study: studyRecord,
@@ -631,40 +402,12 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 				note: `Прикреплен контрольный снимок RVG зуба ${selectedTeeth.join(", ")} для зуботехнической лаборатории`,
 			});
 		}
-
 		showToast(`Снимок зуба ${selectedTeeth.join(", ")} прикреплен и отправлен в заказ ЗТЛ`, "success");
 	};
 
 	// 1-Click Action 3: Export DICOM (.dcm) or Genuine Image (.jpg/.png) without extension spoofing
 	const handleExportDicom = () => {
-		const currentSensor = SENSOR_MODELS.find((s) => s.id === selectedSensorModel);
-		const currentIso = new Date().toISOString();
-
-		const studyRecord: RadiologyStudy = {
-			id: `study-rvg-dcm-${Date.now()}`,
-			patientId,
-			patientName,
-			medicalCardNumber: patientCardNumber,
-			studyDate: currentIso.replace("T", " ").substring(0, 16),
-			studyType: "intraoral_radiovisiography",
-			modality: "intraoral_rvg",
-			modalityLabel: "Прицельная радиовизиография",
-			anatomicalArea: `Зуб ${selectedTeeth.join(", ")}`,
-			teethFdi: selectedTeeth,
-			effectiveDoseMicrosv: calculatedDoseMicrosv,
-			effectiveDoseMsv: calculatedDoseMicrosv / 1000,
-			imageUrl: capturedImage,
-			doctorName,
-			status: "completed",
-			metadata: {
-				kv: voltageKv,
-				ma: currentMa,
-				exposureSec,
-				pixelSpacingMm: currentSensor?.pixelSpacing || 0.035,
-				apparatusModel: currentSensor?.name || "Vatech EzSensor HD",
-			},
-		};
-
+		const { study: studyRecord, pixelSpacingMm } = createStudyRecord("dcm");
 		exportDirectRvgImageOrDicom({
 			study: studyRecord,
 			canvas: canvasRef.current,
@@ -674,9 +417,29 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			patientCardNumber,
 			doctorName,
 			capturedImage,
-			pixelSpacingMm: currentSensor?.pixelSpacing || 0.035,
+			pixelSpacingMm,
 			onExportDicom,
 		});
+	};
+
+	const handleSelectProjectionType = (projId: ProjectionAngleType, typicalExp: number) => {
+		setProjectionType(projId);
+		setExposureSec(typicalExp);
+		if (projId === "bitewing" && selectedTeeth.length <= 1) {
+			const t = Number(selectedTeeth[0] || "16");
+			if (t >= 21 && t <= 38) {
+				setSelectedTeeth(["24", "25", "26", "27", "34", "35", "36", "37"]);
+			} else {
+				setSelectedTeeth(["17", "16", "15", "14", "47", "46", "45", "44"]);
+			}
+		} else if (projId === "occlusal" && selectedTeeth.length <= 1) {
+			const t = Number(selectedTeeth[0] || "16");
+			if (t >= 31 && t <= 48) {
+				setSelectedTeeth(["48", "47", "46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36", "37", "38"]);
+			} else {
+				setSelectedTeeth(["18", "17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "28"]);
+			}
+		}
 	};
 
 	// Compute CSS filter string with authentic SVG convolution kernel for clinical sharpness
@@ -709,124 +472,43 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			</svg>
 
 			<div className="rvg-capture-modal" data-testid="direct-rvg-capture-modal">
-				{/* ─── MODAL HEADER ─── */}
-				<div className="rvg-capture-header">
-					<div className="rvg-header-title-group min-w-0 flex-1">
-						<div className="rvg-sensor-icon-box">
-							<Camera className="w-5 h-5 animate-pulse" />
-						</div>
-						<div className="rvg-header-titles min-w-0 flex-1">
-							<h2 id={`${modalId}-title`} className="rvg-header-title min-w-0">
-								<span className="truncate">Зона радиовизиографии: прямой захват с датчика</span>
-								<span className="text-xs px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-mono font-normal shrink-0">
-									Прямой TWAIN / USB
-								</span>
-							</h2>
-							<p
-								className="rvg-header-subtitle truncate"
-								title={`${patientName} · Карта: ${patientCardNumber} · Врач: ${doctorName}`}
+				{/* ─── MODAL HEADER & SENSOR STATUS BANNER ─── */}
+				<DirectRvgSensorTelemetryHeader
+					modalId={modalId}
+					patientName={patientName}
+					patientCardNumber={patientCardNumber}
+					doctorName={doctorName}
+					onClose={onClose}
+					sensorStatus={sensorStatus}
+					acquisitionProgress={acquisitionProgress}
+					selectedSensorModel={selectedSensorModel}
+					onSelectSensorModel={setSelectedSensorModel}
+					availableSensors={availableSensors}
+					radiationDoseText={radiationDoseInfo.fullText}
+					onTriggerCapture={handleTriggerCapture}
+					uploadAction={
+						<>
+							<button
+								type="button"
+								onClick={() => fileInputRef.current?.click()}
+								className="rvg-trigger-btn rvg-trigger-btn-secondary"
+								data-testid="rvg-upload-file-btn"
+								title="Загрузить снимок с диска (DICOM, TIFF, PNG, JPG)"
 							>
-								{patientName} · Карта: {patientCardNumber} · Врач: {doctorName}
-							</p>
-						</div>
-					</div>
-
-					<div className="rvg-header-actions">
-						<button
-							type="button"
-							onClick={onClose}
-							className="rvg-close-btn"
-							aria-label="Закрыть окно захвата"
-							data-testid="rvg-modal-close-btn"
-						>
-							<X className="w-5 h-5" />
-						</button>
-					</div>
-				</div>
-
-				{/* ─── SENSOR STATUS BANNER ─── */}
-				<div
-					className={`rvg-sensor-status-banner rvg-status-${sensorStatus}`}
-					data-testid="rvg-sensor-status-banner"
-				>
-					<div className="rvg-sensor-status-state">
-						<div className="rvg-status-indicator-dot" />
-						<span className="rvg-status-badge">
-							{sensorStatus === "ready" && "Датчик готов / Ожидание экспозиции"}
-							{sensorStatus === "acquiring" && `Получение данных (${acquisitionProgress}%)`}
-							{sensorStatus === "captured" && "Снимок получен / Кадр в буфере"}
-						</span>
-					</div>
-
-					{/* Telemetry & Device Selector */}
-					<div className="rvg-sensor-telemetry">
-						<div className="rvg-telemetry-chip">
-							<HardDrive className="w-3.5 h-3.5 text-teal-400" />
-							<select
-								value={selectedSensorModel}
-								onChange={(e) => setSelectedSensorModel(e.target.value)}
-								className="bg-transparent text-slate-200 border-none outline-none font-sans text-xs cursor-pointer max-w-[180px] truncate"
-								data-testid="rvg-sensor-device-select"
-							>
-								{availableSensors.map((sensor) => (
-									<option key={sensor.id} value={sensor.id} className="bg-slate-900 text-slate-100">
-										{sensor.name} ({sensor.resolution})
-									</option>
-								))}
-							</select>
-						</div>
-
-						<div className="rvg-telemetry-chip" title="Эффективная безопасная лучевая нагрузка">
-							<ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-							<span>{radiationDoseInfo.fullText}</span>
-						</div>
-
-						{/* Hardware RVG Exposure & Frame Capture Trigger */}
-						<button
-							type="button"
-							onClick={handleTriggerCapture}
-							disabled={sensorStatus === "acquiring"}
-							className="rvg-trigger-btn"
-							data-testid="rvg-trigger-exposure-btn"
-							title={
-								sensorStatus === "acquiring"
-									? "Идет захват и передача кадра с датчика визиографа..."
-									: sensorStatus === "captured"
-										? "Повторный захват кадра с визиографа (Space)"
-										: "Запустить экспозицию и захват кадра с датчика (Space)"
-							}
-						>
-							<Zap className="w-3.5 h-3.5 fill-current" />
-							<span>
-								{sensorStatus === "acquiring"
-									? "Экспонирование..."
-									: sensorStatus === "captured"
-										? "Повторный захват (Space)"
-										: "Захват с датчика (Space)"}
-							</span>
-						</button>
-
-						{/* Direct File Upload from Disk Button (Mandate 8e: Doctor Autonomy) */}
-						<button
-							type="button"
-							onClick={() => fileInputRef.current?.click()}
-							className="rvg-trigger-btn rvg-trigger-btn-secondary"
-							data-testid="rvg-upload-file-btn"
-							title="Загрузить снимок с диска (DICOM, TIFF, PNG, JPG)"
-						>
-							<UploadCloud className="w-3.5 h-3.5 text-teal-300" />
-							<span>Загрузить с диска</span>
-						</button>
-						<input
-							ref={fileInputRef}
-							type="file"
-							accept=".dcm,.dicom,.tif,.tiff,.png,.jpg,.jpeg,.webp,image/*"
-							className="hidden"
-							onChange={handleFileInputChange}
-							data-testid="rvg-file-input"
-						/>
-					</div>
-				</div>
+								<UploadCloud className="w-3.5 h-3.5 text-teal-300" />
+								<span>Загрузить с диска</span>
+							</button>
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept=".dcm,.dicom,.tif,.tiff,.png,.jpg,.jpeg,.webp,image/*"
+								className="hidden"
+								onChange={handleFileInputChange}
+								data-testid="rvg-file-input"
+							/>
+						</>
+					}
+				/>
 
 				{/* ─── MAIN WORKSPACE ─── */}
 				<div className="rvg-capture-body">
@@ -834,17 +516,17 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 					<div className="rvg-viewport-pane" data-testid="rvg-viewport-pane">
 						{/* Top Float Toolbar */}
 						<DirectRvgViewportToolbar
-							zoom={zoom}
-							flipH={flipH}
+							zoom={panZoom.zoom}
+							flipH={panZoom.flipH}
 							isSplitCompare={isSplitCompare}
-							onZoomIn={() => setZoom((prev) => Math.min(prev + 0.25, 4.0))}
-							onZoomOut={() => setZoom((prev) => Math.max(prev - 0.25, 0.5))}
-							onRotate={() => setRotation((prev) => (prev + 90) % 360)}
-							onToggleFlipH={() => setFlipH((prev) => !prev)}
-							onResetTransform={handleResetTransform}
+							onZoomIn={panZoom.handleZoomIn}
+							onZoomOut={panZoom.handleZoomOut}
+							onRotate={panZoom.handleRotate}
+							onToggleFlipH={panZoom.handleToggleFlipH}
+							onResetTransform={panZoom.handleResetTransform}
 						/>
 
-						{/* Acquiring Animation Overlay (for external streaming / hardware transfer) */}
+						{/* Acquiring Animation Overlay */}
 						{sensorStatus === "acquiring" && (
 							<div className="rvg-acquiring-overlay" data-testid="rvg-acquiring-overlay">
 								<div className="rvg-scanner-beam" />
@@ -862,12 +544,12 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 
 						{/* Viewport Canvas Container with Drag-and-Drop Dropzone Support */}
 						<div
-							className={`rvg-canvas-container ${isDragging ? "grabbing" : ""} ${isDragOver ? "dragover" : ""}`}
-							onMouseDown={handleMouseDown}
-							onMouseMove={handleMouseMove}
-							onMouseUp={handleMouseUp}
-							onMouseLeave={handleMouseUp}
-							onWheel={handleWheel}
+							className={`rvg-canvas-container ${panZoom.isDragging ? "grabbing" : ""} ${isDragOver ? "dragover" : ""}`}
+							onMouseDown={panZoom.handleMouseDown}
+							onMouseMove={panZoom.handleMouseMove}
+							onMouseUp={panZoom.handleMouseUp}
+							onMouseLeave={panZoom.handleMouseUp}
+							onWheel={panZoom.handleWheel}
 							onDragOver={handleViewportDragOver}
 							onDragLeave={handleViewportDragLeave}
 							onDrop={handleViewportDrop}
@@ -883,44 +565,19 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 							)}
 							{!capturedImage && (
 								<div
-									className="rvg-empty-sensor-state"
+									className="rvg-empty-sensor-state flex flex-col items-center justify-center h-full w-full p-8 text-center text-slate-400 z-10"
 									data-testid="rvg-empty-sensor-state"
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										alignItems: "center",
-										justifyContent: "center",
-										height: "100%",
-										width: "100%",
-										padding: "32px",
-										textAlign: "center",
-										color: "#94a3b8",
-										zIndex: 2,
-									}}
 								>
-									<div
-										style={{
-											width: "64px",
-											height: "64px",
-											borderRadius: "50%",
-											backgroundColor: "rgba(13, 148, 136, 0.15)",
-											border: "1px solid rgba(13, 148, 136, 0.4)",
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-											marginBottom: "16px",
-											color: "#2dd4bf",
-										}}
-									>
+									<div className="w-16 h-16 rounded-full bg-teal-600/15 border border-teal-600/40 flex items-center justify-center mb-4 text-teal-400">
 										<Camera className="w-8 h-8 animate-pulse text-teal-400" />
 									</div>
-									<h3 style={{ fontSize: "16px", fontWeight: 700, color: "#f8fafc", margin: "0 0 8px 0" }}>
+									<h3 className="text-base font-bold text-slate-100 mb-2">
 										Датчик визиографа готов к экспозиции (TWAIN/USB)
 									</h3>
-									<p style={{ fontSize: "13px", maxWidth: "440px", lineHeight: "1.5", margin: "0 0 20px 0" }}>
+									<p className="text-xs max-w-md leading-relaxed text-slate-300 mb-5">
 										Нажмите «Захват с датчика» (пробел) или перетащите снимок в формате DICOM, TIFF, JPG с диска.
 									</p>
-									<div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+									<div className="flex gap-2.5 items-center flex-wrap justify-center">
 										<button
 											type="button"
 											data-testid="btn-rvg-trigger-empty-capture"
@@ -928,19 +585,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 												e.stopPropagation();
 												handleTriggerCapture();
 											}}
-											style={{
-												padding: "8px 16px",
-												borderRadius: "8px",
-												border: "none",
-												backgroundColor: "#0d9488",
-												color: "#ffffff",
-												fontSize: "13px",
-												fontWeight: 600,
-												cursor: "pointer",
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "6px",
-											}}
+											className="px-4 py-2 rounded-lg bg-teal-600 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-teal-500 transition-colors"
 										>
 											<Zap className="w-4 h-4 fill-current" /> Захват с датчика (Space)
 										</button>
@@ -951,19 +596,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 												e.stopPropagation();
 												fileInputRef.current?.click();
 											}}
-											style={{
-												padding: "8px 16px",
-												borderRadius: "8px",
-												border: "1px solid #334155",
-												backgroundColor: "#1e293b",
-												color: "#e2e8f0",
-												fontSize: "13px",
-												fontWeight: 600,
-												cursor: "pointer",
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "6px",
-											}}
+											className="px-4 py-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-200 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-slate-750 transition-colors"
 										>
 											<UploadCloud className="w-4 h-4 text-teal-300" /> Загрузить с диска
 										</button>
@@ -975,19 +608,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 												setCapturedImage(SAMPLE_PATIENT_RVG_URL);
 												setSensorStatus("captured");
 											}}
-											style={{
-												padding: "8px 14px",
-												borderRadius: "8px",
-												border: "1px dashed #475569",
-												backgroundColor: "rgba(30, 41, 59, 0.6)",
-												color: "#94a3b8",
-												fontSize: "12px",
-												fontWeight: 500,
-												cursor: "pointer",
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "6px",
-											}}
+											className="px-3.5 py-2 rounded-lg border border-dashed border-slate-600 bg-slate-800/60 text-slate-300 text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors"
 										>
 											Показать демо-снимок
 										</button>
@@ -999,8 +620,8 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 								className="rvg-render-canvas"
 								style={{
 									display: capturedImage ? "block" : "none",
-									transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})`,
-									filter: isSplitCompare ? "none" : (glRendererRef.current?.isWebGL ? "none" : cssFilterStyle),
+									transform: `translate(${panZoom.pan.x}px, ${panZoom.pan.y}px) scale(${panZoom.zoom}) rotate(${panZoom.rotation}deg) scaleX(${panZoom.flipH ? -1 : 1})`,
+									filter: isSplitCompare ? "none" : (isWebGL ? "none" : cssFilterStyle),
 								}}
 								data-testid="rvg-render-canvas"
 							/>
@@ -1032,25 +653,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 						{/* 2. Projection Angle & Exposure */}
 						<DirectRvgProjectionSelector
 							projectionType={projectionType}
-							onSelectProjectionType={(projId, typicalExp) => {
-								setProjectionType(projId);
-								setExposureSec(typicalExp);
-								if (projId === "bitewing" && selectedTeeth.length <= 1) {
-									const t = Number(selectedTeeth[0] || "16");
-									if (t >= 21 && t <= 38) {
-										setSelectedTeeth(["24", "25", "26", "27", "34", "35", "36", "37"]);
-									} else {
-										setSelectedTeeth(["17", "16", "15", "14", "47", "46", "45", "44"]);
-									}
-								} else if (projId === "occlusal" && selectedTeeth.length <= 1) {
-									const t = Number(selectedTeeth[0] || "16");
-									if (t >= 31 && t <= 48) {
-										setSelectedTeeth(["48", "47", "46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36", "37", "38"]);
-									} else {
-										setSelectedTeeth(["18", "17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "28"]);
-									}
-								}
-							}}
+							onSelectProjectionType={handleSelectProjectionType}
 							voltageKv={voltageKv} onChangeVoltageKv={setVoltageKv}
 							currentMa={currentMa} onChangeCurrentMa={setCurrentMa}
 							exposureSec={exposureSec} onChangeExposureSec={setExposureSec}
@@ -1065,7 +668,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 								onSelectPreset={(p) => setActivePresetId(p.id)}
 								isSplitCompare={isSplitCompare}
 								onToggleSplitCompare={setIsSplitCompare}
-								onRotate={() => setRotation((prev) => (prev + 90) % 360)}
+								onRotate={panZoom.handleRotate}
 								onReset={() => { setFilters(DEFAULT_RVG_FILTERS); setActivePresetId("standard"); }}
 							/>
 						</div>
