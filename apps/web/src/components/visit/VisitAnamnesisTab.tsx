@@ -326,7 +326,7 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 					<AlertCircle className="w-5 h-5 text-[#ef4444] shrink-0" />
 					<div className="flex flex-col gap-0.5">
 						<span className="font-bold text-[#ef4444]">
-							ВНИМАНИЕ: Обнаружены клинические стоп-факторы ({selectedRisks.filter((r) => r.includes("анестетики") || r.includes("антикоагулянтов") || r.includes("бисфосфонатов")).join(", ")})
+							Клинические стоп-факторы: {selectedRisks.filter((r) => r.includes("анестетики") || r.includes("антикоагулянтов") || r.includes("бисфосфонатов")).join(", ")}
 						</span>
 						<span className="text-[11px] text-rose-900 dark:text-rose-300">
 							Обязательна коррекция выбора местного анестетика, оценка риска профузного кровотечения и остеонекроза челюсти (MRONJ).

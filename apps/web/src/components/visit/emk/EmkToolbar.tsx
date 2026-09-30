@@ -184,7 +184,7 @@ export function EmkToolbar({
 									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
 								>
 									<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-									<span>Пульпит (K04.0)</span>
+									<span>Острый пульпит (K04.0)</span>
 								</button>
 							)}
 							{periodontitisPreset && (
@@ -198,7 +198,7 @@ export function EmkToolbar({
 									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
 								>
 									<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-									<span>Периодонтит (K04.5)</span>
+									<span>Хронический периодонтит (K04.5)</span>
 								</button>
 							)}
 							{surgeryPreset && (
@@ -212,7 +212,7 @@ export function EmkToolbar({
 									className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] flex items-center gap-2 cursor-pointer transition-colors"
 								>
 									<Scissors className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-									<span>Удаление (K04.8)</span>
+									<span>Удаление зуба (K04.8)</span>
 								</button>
 							)}
 							<div className="h-px bg-[var(--glass-border)] my-1" />

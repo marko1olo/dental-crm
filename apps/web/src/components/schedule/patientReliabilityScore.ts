@@ -412,11 +412,11 @@ export function calculatePatientReliability(
 		badgeText = "Новый пациент";
 		shortLabel = "Новый";
 		emoji = "new";
-		recommendation = "Первичный прием. Запросить паспорт и оформить ИДС.";
+		recommendation = "Первичный прием: запросить паспорт и оформить согласие на лечение.";
 		summary = "Нет истории визитов";
 		badgeClass = "bg-sky-500/15 text-sky-800 dark:text-sky-200 border-sky-500/40";
 		requiresTwoHourConfirmation = false;
-		receptionistAlert = "Первичный визит. Оформить договор и ИДС (или распечатать бланк со строками _______).";
+		receptionistAlert = "Первичный визит. Оформить договор и согласие на лечение (или распечатать бланк со строками _______).";
 	} else if (
 		consecutiveNoShows >= 2 ||
 		noShowCount >= 3 ||
@@ -437,7 +437,7 @@ export function calculatePatientReliability(
 				? `${consecutiveNoShows} неявки подряд. Высокий риск отмены.`
 				: `${noShowCount} неявок из ${totalFinished} визитов.`;
 		badgeClass = "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40";
-		receptionistAlert = `[Внимание] Внимание администратора: Требуется обязательное подтверждение за 2 часа до приема! У пациента ${consecutiveNoShows >= 2 ? `${consecutiveNoShows} неявки подряд` : `${noShowCount} неявок`}.`;
+		receptionistAlert = `[Внимание] Рекомендуется подтвердить визит за 2 часа до приема: у пациента ${consecutiveNoShows >= 2 ? `${consecutiveNoShows} неявки подряд` : `${noShowCount} неявок`}.`;
 	} else if (
 		noShowCount >= 1 ||
 		lateCount >= 2 ||

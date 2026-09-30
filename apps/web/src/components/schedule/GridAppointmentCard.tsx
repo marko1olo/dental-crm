@@ -635,14 +635,14 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 					data-testid="schedule-grid-collision-badge"
 					title={
 						collision.sameDoctor && !collision.sameChair
-							? "Коллизия: врач записан в два кабинета одновременно!"
+							? "Коллизия: врач записан в два кабинета одновременно"
 							: collision.sameDoctor && collision.sameChair
-								? "Коллизия: двойная запись у врача в одном кабинете!"
+								? "Коллизия: двойная запись у врача в одном кабинете"
 								: collision.sameChair
-									? "Коллизия: два пациента в одном кресле одновременно!"
+									? "Коллизия: два пациента в одном кресле одновременно"
 									: collision.sameAssistant
-										? "Коллизия: ассистент занят в другом приеме!"
-										: "Коллизия: пациент записан на два приема одновременно!"
+										? "Коллизия: ассистент занят в другом приеме"
+										: "Коллизия: пациент записан на два приема одновременно"
 					}
 				>
 					<AlertTriangle size={12} className="shrink-0 text-amber-600 dark:text-amber-400" />

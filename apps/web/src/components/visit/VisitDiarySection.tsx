@@ -2119,7 +2119,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 											: "";
 									return `• ${s.code} ${s.nameRu}${qty}${price}`;
 								});
-								treatmentParts.push(`Оказанные услуги (804н):\n${svcLines.join("\n")}`);
+								treatmentParts.push(`Оказанные услуги:\n${svcLines.join("\n")}`);
 
 								// Прямая передача структурированных услуг 804н в активный счёт/смету визита (Мандаты 8b, 8e, 8n)
 								if (typeof window !== "undefined") {

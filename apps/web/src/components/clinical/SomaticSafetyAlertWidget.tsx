@@ -362,7 +362,7 @@ export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> =
 													: "bg-amber-600/15 text-amber-700 dark:text-amber-300 border border-amber-500/40"
 											}`}
 										>
-											{factor.severity === "critical" ? "КРИТИЧНО" : "ВНИМАНИЕ"}
+											{factor.severity === "critical" ? "Высокий риск" : "Внимание"}
 										</span>
 									</div>
 
@@ -376,8 +376,8 @@ export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> =
 									{/* Жесткие запреты */}
 									{factor.prohibitions.length > 0 && (
 										<div className="flex flex-col gap-0.5 mt-0.5">
-											<span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
-												Запрещено:
+											<span className="text-[11px] font-semibold text-rose-700 dark:text-rose-400">
+												Противопоказания:
 											</span>
 											<ul className="list-disc list-inside text-xs text-rose-900 dark:text-rose-200 space-y-0.5 pl-0.5">
 												{factor.prohibitions.map((p, idx) => (
@@ -393,8 +393,8 @@ export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> =
 									{/* Клинические рекомендации у кресла */}
 									{factor.recommendations.length > 0 && (
 										<div className="flex flex-col gap-0.5 mt-0.5">
-											<span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-												Рекомендация у кресла:
+											<span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+												Рекомендации у кресла:
 											</span>
 											<ul className="list-disc list-inside text-xs text-[var(--ink)] space-y-0.5 pl-0.5">
 												{factor.recommendations.map((r, idx) => (
@@ -413,16 +413,16 @@ export const SomaticSafetyAlertWidget: React.FC<SomaticSafetyAlertWidgetProps> =
 						{/* Панель быстрых действий (1-клик в дневник, подтвердить норму, анкета) */}
 						<div className="flex items-center justify-between gap-1.5 border-t border-[var(--line)] pt-2 flex-wrap">
 							<div className="flex items-center gap-1.5">
-								{/* В дневник 043/у */}
+								{/* В дневник приёма */}
 								<button
 									type="button"
 									onClick={handleSyncToDiaryClick}
 									data-testid="btn-somatic-copy-diary"
 									className="secondary-button h-7 px-2 text-xs font-medium flex items-center gap-1 cursor-pointer rounded-md text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30"
-									title="Скопировать предупреждения и рекомендации в дневник 043/у"
+									title="Скопировать предупреждения и рекомендации в дневник приёма"
 								>
 									<Copy size={12} className="shrink-0" />
-									<span>В дневник 043/у</span>
+									<span>В дневник приёма</span>
 								</button>
 
 								{/* Анкета здоровья */}

@@ -626,14 +626,14 @@ export const EmrProtocolGeneratorModal: React.FC<EmrProtocolGeneratorModalProps>
 												: "text-[var(--muted,#64748b)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 										}`}
 									>
-										Аудит Приказа 834н ({complianceReport.complianceScore}%)
+										Стандарты оформления ({complianceReport.complianceScore}%)
 									</button>
 								</div>
 
 								{/* Статус соответствия */}
 								<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] border border-[var(--ok-fg,#059669)]/30">
 									<CheckCircle2 className="w-3.5 h-3.5 text-[var(--ok-fg,#059669)]" />
-									100% Приказ № 834н
+									100% готовность карты
 								</span>
 							</div>
 

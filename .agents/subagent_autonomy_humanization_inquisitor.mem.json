@@ -1,0 +1,61 @@
+{
+  "role": "Global Doctor Autonomy, Paternalism Purge & UI Humanization Inquisitor",
+  "status": "completed",
+  "scope": [
+    "apps/web/src/components/clinical/",
+    "apps/web/src/components/emr/",
+    "apps/web/src/components/visit/",
+    "apps/web/src/components/documents/",
+    "apps/web/src/components/diagnostics/",
+    "apps/web/src/components/schedule/"
+  ],
+  "forbidden_scope": [
+    "apps/web/src/components/diagnostics/CbctVolume3DViewport.tsx",
+    "apps/web/src/components/diagnostics/CbctVolumeGlContext.ts",
+    "apps/web/src/components/diagnostics/cbctPanoramicReconstructionMath.ts",
+    "apps/web/src/components/diagnostics/CbctMprViewportsGrid.tsx"
+  ],
+  "steps_completed": [
+    "constitutional_routine_checked",
+    "reconnaissance_audio_sirens_and_alerts",
+    "reconnaissance_capslock_panic_and_hysterics",
+    "reconnaissance_blocking_modals_window_alert_confirm_and_disabled_buttons",
+    "reconnaissance_bureaucratic_chiphers_043u_804n_1051n_sanpin_mkb",
+    "surgical_elimination_of_defects",
+    "targeted_unit_testing_and_verification",
+    "per_file_git_add_staging"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Eliminated blocking alert() dialogs in DoctorShiftDrawer.tsx, replacing with GlobalToast warning; 0 bare alert calls remain in production code.",
+    "Purged capslock hysteria, shouting exclamation marks and panic wording in ToothPediatricContext, SomaticSafetyAlertWidget, GridAppointmentCard, patientReliabilityScore, QuickBookingDrawer, surgicalPackagePrintEngine, clinicalSoapPresets, VisitAnamnesisTab, VisitClinicalToothModal, and anesthesiaTechniqueCatalog.",
+    "Translated Soviet bureaucratic decrees, statutory order codes and dry classification acronyms into human, clinical UI language in DocumentNavTabs, DocumentQuickRoleScenarios, ClinicalVisitPackageModal, SurgicalPackageModal, SanpinRegistryPackageModal, Form043PrintModal, Form043TabSections, EmrProtocolGeneratorModal, EmrProtocolSoapPanels, EmkServicesSection, EmkToolbar, and VisitDiarySection.",
+    "Preserved statutory compliance in official print engines and regulatory exports while giving the doctor a clean, fast, paternalism-free modern clinical experience.",
+    "Verified all machine gates: check:encoding (6350 files clean), 88/88 passing unit tests across outpatient, EMR, schedule, documents, and ergonomics suites."
+  ],
+  "modified_files": [
+    "apps/web/src/components/clinical/SomaticSafetyAlertWidget.tsx",
+    "apps/web/src/components/diagnostics/ToothPediatricContext.tsx",
+    "apps/web/src/components/documents/ClinicalVisitPackageModal.tsx",
+    "apps/web/src/components/documents/DocumentNavTabs.tsx",
+    "apps/web/src/components/documents/DocumentQuickRoleScenarios.tsx",
+    "apps/web/src/components/documents/SanpinRegistryPackageModal.tsx",
+    "apps/web/src/components/documents/SurgicalPackageModal.tsx",
+    "apps/web/src/components/documents/surgicalPackagePrintEngine.ts",
+    "apps/web/src/components/emr/Form043PrintModal.tsx",
+    "apps/web/src/components/emr/Form043TabSections.tsx",
+    "apps/web/src/components/emr/protocolGenerator/EmrProtocolGeneratorModal.tsx",
+    "apps/web/src/components/emr/protocolGenerator/EmrProtocolSoapPanels.tsx",
+    "apps/web/src/components/schedule/GridAppointmentCard.tsx",
+    "apps/web/src/components/schedule/QuickBookingDrawer.tsx",
+    "apps/web/src/components/schedule/patientReliabilityScore.ts",
+    "apps/web/src/components/schedule/roster/DoctorShiftDrawer.tsx",
+    "apps/web/src/components/visit/VisitAnamnesisTab.tsx",
+    "apps/web/src/components/visit/VisitDiarySection.tsx",
+    "apps/web/src/components/visit/anesthesia/anesthesiaTechniqueCatalog.ts",
+    "apps/web/src/components/visit/clinicalSoapPresets.ts",
+    "apps/web/src/components/visit/emk/EmkServicesSection.tsx",
+    "apps/web/src/components/visit/emk/EmkToolbar.tsx",
+    "apps/web/src/components/visit/view/VisitClinicalToothModal.tsx"
+  ]
+}

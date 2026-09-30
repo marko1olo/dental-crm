@@ -91,16 +91,16 @@ export function DocumentNavTabs({
 		},
 		{
 			id: "intake",
-			label: "Первичный приём и ИДС",
-			tabletLabel: "Первичный и ИДС",
-			mobileLabel: "Первичный",
+			label: "Первичный приём и согласия",
+			tabletLabel: "Приём и согласия",
+			mobileLabel: "Приём",
 			icon: <UserCheck size={15} aria-hidden="true" className="shrink-0" />,
 		},
 		{
 			id: "clinical",
-			label: "Клинический приём и 043/у",
-			tabletLabel: "Клинический / 043/у",
-			mobileLabel: "043/у",
+			label: "Лечение и медицинская карта",
+			tabletLabel: "Карта и лечение",
+			mobileLabel: "Карта",
 			icon: <Stethoscope size={15} aria-hidden="true" className="shrink-0" />,
 		},
 		{
@@ -112,9 +112,9 @@ export function DocumentNavTabs({
 		},
 		{
 			id: "certificates_sanpin",
-			label: "Справки и СанПиН",
-			tabletLabel: "Справки и СанПиН",
-			mobileLabel: "СанПиН",
+			label: "Справки, снимки и стандарты",
+			tabletLabel: "Справки и стандарты",
+			mobileLabel: "Стандарты",
 			icon: <FileCheck size={15} aria-hidden="true" className="shrink-0" />,
 		},
 	];

@@ -69,10 +69,10 @@ export function SanpinRegistryPackageModal({
 						<Building size={24} color="var(--brand-700, #0d9488)" aria-hidden="true" />
 						<div>
 							<h3 id="sanpin-package-title" style={{ margin: 0 }}>
-								Пакет «СанПиН, ЭЛН и Гос. Реестры»
+								Пакет «Безопасность, стандарты и справки»
 							</h3>
 							<span style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-								{patient ? `Пациент: ${patient.fullName}` : "Гос. реестры, СанПиН, ЭЛН и регулируемый учёт"}
+								{patient ? `Пациент: ${patient.fullName}` : "Стандарты безопасности, больничные листы и учёт"}
 							</span>
 						</div>
 					</div>
@@ -128,13 +128,13 @@ export function SanpinRegistryPackageModal({
 					</div>
 
 					<div className="document-package-items-list">
-						{/* 1. БОЛЬНИЧНЫЙ ЛИСТ ЭЛН 1089н */}
+						{/* 1. БОЛЬНИЧНЫЙ ЛИСТ ЭЛН */}
 						<div className="document-package-item-card">
 							<div className="document-package-item-info">
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 									<FileText size={18} color="var(--brand-700, #0d9488)" aria-hidden="true" />
 									<span className="document-package-item-title">
-										Электронный листок нетрудоспособности (ЭЛН 1089н)
+										Электронный больничный лист (ЭЛН)
 									</span>
 								</div>
 								<span className="document-package-item-sub">
@@ -155,13 +155,13 @@ export function SanpinRegistryPackageModal({
 							</div>
 						</div>
 
-						{/* 2. ЖУРНАЛ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ (ФОРМА № 366/У) */}
+						{/* 2. ЖУРНАЛ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ (ПСО) */}
 						<div className="document-package-item-card">
 							<div className="document-package-item-info">
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 									<FlaskConical size={18} color="var(--brand-700, #0d9488)" aria-hidden="true" />
 									<span className="document-package-item-title">
-										Журнал предстерилизационной очистки (ПСО, Форма № 366/у)
+										Журнал предстерилизационной очистки (ПСО)
 									</span>
 								</div>
 								<span className="document-package-item-sub">
@@ -182,7 +182,7 @@ export function SanpinRegistryPackageModal({
 										}
 									}}
 								>
-									Открыть Журнал 366/у
+									Открыть журнал ПСО
 								</button>
 							</div>
 						</div>
@@ -193,7 +193,7 @@ export function SanpinRegistryPackageModal({
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 									<Radiation size={18} color="var(--warn-fg, #f59e0b)" aria-hidden="true" />
 									<span className="document-package-item-title">
-										Лист учёта дозовых нагрузок (СанПиН 2.6.1.1192-03)
+										История снимков и лучевой нагрузки
 									</span>
 								</div>
 								<span className="document-package-item-sub">
@@ -234,7 +234,7 @@ export function SanpinRegistryPackageModal({
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 									<Sparkles size={18} color="var(--brand-700, #0d9488)" aria-hidden="true" />
 									<span className="document-package-item-title">
-										Журнал контроля работы стерилизаторов (Форма № 257/у)
+										Журнал автоклавирования и стерилизации
 									</span>
 								</div>
 								<span className="document-package-item-sub">
@@ -250,7 +250,7 @@ export function SanpinRegistryPackageModal({
 										onOpenAutoclaveLog257();
 									}}
 								>
-									Открыть Журнал 257/у
+									Открыть журнал стерилизации
 								</button>
 							</div>
 						</div>

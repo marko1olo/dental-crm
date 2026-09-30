@@ -1638,12 +1638,12 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 													className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5"
 												/>
 												<div className="space-y-0.5">
-													<p className="m-0 font-extrabold text-rose-700 dark:text-rose-300">
-														Требуется подтверждение за 2 часа!
+													<p className="m-0 font-bold text-rose-700 dark:text-rose-300">
+														Рекомендуется подтверждение за 2 часа
 													</p>
 													<p className="m-0 font-normal text-[11px]">
 														{patientReliability.receptionistAlert ||
-															"У пациента зафиксированы повторные неявки. Обязательно подтвердить явку перед приемом."}
+															"У пациента зафиксированы повторные неявки. Рекомендуется подтвердить визит перед приемом."}
 													</p>
 												</div>
 											</div>

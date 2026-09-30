@@ -118,7 +118,7 @@ export function DocumentQuickRoleScenarios({
 				className="document-scenario-card"
 				onClick={onOpenSurgicalPackage ? onOpenSurgicalPackage : onOpenClinicalVisit}
 				data-testid="scenario-surgical-package-btn"
-				title="Пакет документов хирургического вмешательства: ИДС на операцию, анестезия, протокол 043/у, памятка"
+				title="Пакет документов хирургического вмешательства: согласие на операцию, анестезия, хирургический протокол, памятка"
 			>
 				<div className="document-scenario-left">
 					<Scissors size={14} className="text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
@@ -127,17 +127,17 @@ export function DocumentQuickRoleScenarios({
 				<span className="document-scenario-badge">Удаление / Имплантация</span>
 			</button>
 
-			{/* 6. САНПИН ЖУРНАЛ 257/У */}
+			{/* 6. ЖУРНАЛ СТЕРИЛИЗАЦИИ И АВТОКЛАВА */}
 			<button
 				type="button"
 				className="document-scenario-card"
 				onClick={onOpenSanpinRegistry}
 				data-testid="scenario-sanpin-registry-btn"
-				title="Журнал контроля работы стерилизаторов (Форма 257/у СанПиН 3.3686-21) и ПСО для Роспотребнадзора"
+				title="Журнал контроля работы стерилизаторов (автоклавов) и предстерилизационной очистки (ПСО)"
 			>
 				<div className="document-scenario-left">
 					<ShieldPlus size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-					<span className="document-scenario-title">Журнал СанПиН (257/у)</span>
+					<span className="document-scenario-title">Журнал стерилизации (ПСО)</span>
 				</div>
 				<span className="document-scenario-badge">Журнал стерилизации</span>
 			</button>

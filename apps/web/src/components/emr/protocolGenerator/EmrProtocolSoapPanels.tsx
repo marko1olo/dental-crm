@@ -64,7 +64,7 @@ export const EmrProtocolSoapPanels: React.FC<EmrProtocolSoapPanelsProps> = React
 						{/* A */}
 						<div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-1">
 							<div className="font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider text-[11px]">
-								A (Assessment) — Диагноз по МКБ-10
+								A (Assessment) — Клинический диагноз
 							</div>
 							<div className="text-sm font-bold text-[var(--ink,#0f172a)]">
 								<span className="font-mono text-amber-600 mr-2">
@@ -116,7 +116,7 @@ export const EmrProtocolSoapPanels: React.FC<EmrProtocolSoapPanelsProps> = React
 
 						<div className="grid grid-cols-2 gap-2">
 							<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)]">
-								<div className="font-semibold text-[var(--ink,#0f172a)]">МКБ-10 классификатор</div>
+								<div className="font-semibold text-[var(--ink,#0f172a)]">Клинический диагноз (МКБ-10)</div>
 								<div className="text-xs text-[var(--ok-fg,#059669)] font-medium flex items-center">
 									<CheckCircle2 size={13} className="inline mr-1 shrink-0" />
 									<span>Валидный код ({synthesizedDiary.assessmentIcd10Code})</span>

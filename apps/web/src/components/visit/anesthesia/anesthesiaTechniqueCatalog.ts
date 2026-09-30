@@ -350,7 +350,7 @@ export const CONDUCTION_TECHNIQUES_CATALOG: Record<ConductionTechniqueId, Techni
 		},
 		aspirationPlanesRequired: 2,
 		clinicalRecommendationsRu:
-			'КРИТИЧЕСКИЙ РИСК ГЕМАТОМЫ! Крыловидное венозное сплетение (plexus venosus pterygoideus) и a. maxillaris. Двухплоскостная аспирация СТРОГО ОБЯЗАТЕЛЬНА.',
+			'Высокий риск гематомы: крыловидное венозное сплетение (plexus venosus pterygoideus) и a. maxillaris. Рекомендуется двухплоскостная аспирационная проба.',
 		contraindicationsOrCautionsRu: [
 			'Пациенты на антикоагулянтах / дезагрегантах с высоким риском кровотечения',
 			'Коагулопатии (гемофилия, тромбоцитопения)',

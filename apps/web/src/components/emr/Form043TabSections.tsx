@@ -32,7 +32,7 @@ export const Form043PassportTab: React.FC<Form043PassportTabProps> = React.memo(
 				<div className="emr043-section-card">
 					<h3 className="emr043-section-card-title">
 						<User className="w-4 h-4 text-sky-600" />
-						1. Паспортная часть и регистрационные данные (Приказ Минздрава СССР от 04.10.1980 № 1030)
+						1. Паспортная часть и данные пациента
 					</h3>
 					<div className="emr043-grid-2">
 						<div>

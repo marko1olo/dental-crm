@@ -21,6 +21,7 @@ import {
 	calculateShiftDurationHours,
 	type DoctorShift,
 } from "./doctorShiftRosterEngine";
+import { showToast } from "../../GlobalToast";
 
 export interface DoctorShiftDrawerProps {
 	editingShift: Partial<DoctorShift> | null;
@@ -70,7 +71,7 @@ export function DoctorShiftDrawer({
 			(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0]! : undefined);
 
 		if (!effectiveDoc) {
-			alert("Не выбран врач для сохранения смены.");
+			showToast("Не выбран врач для сохранения смены", "warning");
 			return;
 		}
 
@@ -80,7 +81,7 @@ export function DoctorShiftDrawer({
 			(isDemoShowcaseMode() ? CLINIC_CABINETS_CATALOG[0]! : undefined);
 
 		if (!effectiveCab) {
-			alert("Не выбран кабинет для смены.");
+			showToast("Не выбран кабинет для смены", "warning");
 			return;
 		}
 
@@ -96,7 +97,7 @@ export function DoctorShiftDrawer({
 				: undefined);
 
 		if (!effectiveChair) {
-			alert("Не выбрано кресло для смены.");
+			showToast("Не выбрано кресло для смены", "warning");
 			return;
 		}
 
