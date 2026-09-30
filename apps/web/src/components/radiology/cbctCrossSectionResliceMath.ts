@@ -14,6 +14,8 @@ import type { Point2D, Point3D } from "./cbctCaliperNerveMath";
 import {
 	type DentalArchAnchor,
 	type DentalArchCurve,
+	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
+	DEFAULT_MAXILLARY_ARCH_ANCHORS,
 	calculateArchTangentsAndNormals,
 	fitSmoothDentalArchSpline,
 } from "./cbctArchSplineMath";
@@ -26,6 +28,8 @@ export interface CrossSectionSliceData {
 	readonly tangentVector2D: Point2D; // Direction along arch (Mesial - Distal)
 	readonly nearestToothFdi: string;
 	readonly toothLabelRu: string;
+	readonly sliceLabel?: string; // Formatted label, e.g. "#46 (24.0 мм)"
+	readonly offsetFromMidlineMm?: number; // Distance from dental arch center point (+/- mm)
 	readonly widthMm: number; // Typically 24 mm
 	readonly heightMm: number; // Typically 32 mm
 	readonly pixelSpacingMm: number; // Typically 0.25 mm/px
@@ -53,16 +57,18 @@ export function extractSingleCrossSectionSlice(
 		windowWidth?: number;
 		windowLevel?: number;
 		invert?: boolean;
+		offsetFromMidlineMm?: number;
 	} = {},
 ): CrossSectionSliceData {
-	const {
-		widthMm = 24.0,
-		heightMm = 32.0,
-		pixelSpacingMm = 0.25,
-		windowWidth = 4400,
-		windowLevel = 1300,
-		invert = false,
-	} = options;
+	const widthMm = Number.isFinite(options.widthMm) && (options.widthMm ?? 0) > 0 ? options.widthMm! : 24.0;
+	const heightMm = Number.isFinite(options.heightMm) && (options.heightMm ?? 0) > 0 ? options.heightMm! : 32.0;
+	const pixelSpacingMm =
+		Number.isFinite(options.pixelSpacingMm) && (options.pixelSpacingMm ?? 0) > 0
+			? options.pixelSpacingMm!
+			: 0.25;
+	const windowWidth = options.windowWidth ?? volume.defaultWindowWidth ?? 4400;
+	const windowLevel = options.windowLevel ?? volume.defaultWindowLevel ?? 1300;
+	const invert = options.invert ?? false;
 
 	const widthPx = Math.round(widthMm / pixelSpacingMm);
 	const heightPx = Math.round(heightMm / pixelSpacingMm);
@@ -72,14 +78,20 @@ export function extractSingleCrossSectionSlice(
 	const halfW = widthMm / 2.0;
 	const halfH = heightMm / 2.0;
 
+	// Normalize normal vector (guarantee non-zero, unit length)
+	const nLen = Math.hypot(normal2D.x, normal2D.y);
+	const unitNormal: Point2D =
+		Number.isFinite(nLen) && nLen > 1e-6 ? { x: normal2D.x / nLen, y: normal2D.y / nLen } : { x: 0, y: 1 };
+	const unitTangent: Point2D = { x: unitNormal.y, y: -unitNormal.x };
+
 	for (let y = 0; y < heightPx; y++) {
 		const zOffsetMm = halfH - y * pixelSpacingMm;
 		const sampleZ = centerMm.z + zOffsetMm;
 
 		for (let x = 0; x < widthPx; x++) {
 			const normalOffsetMm = -halfW + x * pixelSpacingMm;
-			const sampleX = centerMm.x + normal2D.x * normalOffsetMm;
-			const sampleY = centerMm.y + normal2D.y * normalOffsetMm;
+			const sampleX = centerMm.x + unitNormal.x * normalOffsetMm;
+			const sampleY = centerMm.y + unitNormal.y * normalOffsetMm;
 
 			const vox = worldMmToVoxelContinuous({ x: sampleX, y: sampleY, z: sampleZ }, volume);
 			const hu = sampleVoxelTrilinearHU(vox.x, vox.y, vox.z, volume);
@@ -93,14 +105,21 @@ export function extractSingleCrossSectionSlice(
 		}
 	}
 
+	const safeDistMm = Number(distanceAlongArchMm.toFixed(2));
+	const sliceLabel = `#${nearestAnchor.toothFdi} (${safeDistMm.toFixed(1)} мм)`;
+
 	return {
 		sliceIndex,
-		distanceAlongArchMm,
+		distanceAlongArchMm: safeDistMm,
 		centerPointMm: centerMm,
-		normalVector2D: normal2D,
-		tangentVector2D: { x: normal2D.y, y: -normal2D.x },
+		normalVector2D: unitNormal,
+		tangentVector2D: unitTangent,
 		nearestToothFdi: nearestAnchor.toothFdi,
 		toothLabelRu: nearestAnchor.labelRu,
+		sliceLabel,
+		...(typeof options.offsetFromMidlineMm === "number" && Number.isFinite(options.offsetFromMidlineMm)
+			? { offsetFromMidlineMm: Number(options.offsetFromMidlineMm.toFixed(2)) }
+			: {}),
 		widthMm,
 		heightMm,
 		pixelSpacingMm,
@@ -112,19 +131,26 @@ export function extractSingleCrossSectionSlice(
 
 /**
  * Finds the nearest dental arch anchor to a given distance along the arch curve.
+ * Guaranteed continuous interpolation without wrapping around at arch boundaries.
  */
 export function findNearestToothAnchorToDistance(
 	distanceAlongArchMm: number,
 	archCurve: DentalArchCurve,
 ): DentalArchAnchor {
 	if (!archCurve.anchors || archCurve.anchors.length === 0) {
-		return {
-			id: "a-46",
-			toothFdi: "46",
-			labelRu: "46 (1-й моляр)",
-			positionMm: { x: -32.0, y: -26.0 },
-			isQuadrantRight: true,
-		};
+		const fallbackAnchors =
+			archCurve.jawType === "maxilla"
+				? DEFAULT_MAXILLARY_ARCH_ANCHORS
+				: DEFAULT_MANDIBULAR_ARCH_ANCHORS;
+		return (
+			fallbackAnchors[2] ?? {
+				id: "a-46",
+				toothFdi: "46",
+				labelRu: "46 (1-й моляр)",
+				positionMm: { x: -32.0, y: -26.0 },
+				isQuadrantRight: true,
+			}
+		);
 	}
 
 	const vectorField = calculateArchTangentsAndNormals(archCurve.splinePointsMm);
@@ -133,10 +159,25 @@ export function findNearestToothAnchorToDistance(
 	}
 
 	let queryPoint = vectorField[0]!.point;
-	for (const node of vectorField) {
-		if (node.distanceAlongArchMm >= distanceAlongArchMm) {
-			queryPoint = node.point;
-			break;
+	const lastIdx = vectorField.length - 1;
+
+	if (distanceAlongArchMm <= vectorField[0]!.distanceAlongArchMm) {
+		queryPoint = vectorField[0]!.point;
+	} else if (distanceAlongArchMm >= vectorField[lastIdx]!.distanceAlongArchMm) {
+		queryPoint = vectorField[lastIdx]!.point;
+	} else {
+		for (let i = 0; i < lastIdx; i++) {
+			const n0 = vectorField[i]!;
+			const n1 = vectorField[i + 1]!;
+			if (distanceAlongArchMm >= n0.distanceAlongArchMm && distanceAlongArchMm <= n1.distanceAlongArchMm) {
+				const span = n1.distanceAlongArchMm - n0.distanceAlongArchMm;
+				const t = span > 1e-4 ? (distanceAlongArchMm - n0.distanceAlongArchMm) / span : 0;
+				queryPoint = {
+					x: n0.point.x + (n1.point.x - n0.point.x) * t,
+					y: n0.point.y + (n1.point.y - n0.point.y) * t,
+				};
+				break;
+			}
 		}
 	}
 
@@ -144,10 +185,7 @@ export function findNearestToothAnchorToDistance(
 	let minDistance = Infinity;
 
 	for (const anchor of archCurve.anchors) {
-		const dist = Math.hypot(
-			anchor.positionMm.x - queryPoint.x,
-			anchor.positionMm.y - queryPoint.y,
-		);
+		const dist = Math.hypot(anchor.positionMm.x - queryPoint.x, anchor.positionMm.y - queryPoint.y);
 		if (dist < minDistance) {
 			minDistance = dist;
 			closestAnchor = anchor;
@@ -157,8 +195,73 @@ export function findNearestToothAnchorToDistance(
 	return closestAnchor;
 }
 
+export interface CrossSectionSeriesOptions {
+	readonly stepMm?: number;
+	readonly stepSpacingMm?: number;
+	readonly sliceCenterZMm?: number;
+	readonly widthMm?: number;
+	readonly heightMm?: number;
+	readonly pixelSpacingMm?: number;
+	readonly windowWidth?: number;
+	readonly windowLevel?: number;
+	readonly invert?: boolean;
+}
+
+/**
+ * Extracts a complete series of perpendicular transverse cross-sections along the dental arch curve.
+ * Slices are oriented along the bucco-lingual (vestibulo-oral) axis with configurable step (e.g. 1.0, 1.5, 2.0 mm).
+ * Standards: DICOM Part 3, Misch CE, Buser, Planmeca Romexis 6.x.
+ */
+export function extractArchCrossSectionSeries(
+	volume: CbctVoxelVolume,
+	archCurve: DentalArchCurve,
+	stepOrOptions: number | CrossSectionSeriesOptions = 2.0,
+): CrossSectionSliceData[] {
+	const options: CrossSectionSeriesOptions =
+		typeof stepOrOptions === "object" ? stepOrOptions : { stepMm: stepOrOptions };
+	const stepMm = options.stepMm ?? options.stepSpacingMm ?? 2.0;
+	const validStep = Number.isFinite(stepMm) && stepMm > 0 ? stepMm : 2.0;
+	const zCenter = Number.isFinite(options.sliceCenterZMm)
+		? options.sliceCenterZMm!
+		: (archCurve.planeZMm ?? -10.0);
+
+	const vectorField = calculateArchTangentsAndNormals(archCurve.splinePointsMm);
+	if (vectorField.length === 0) return [];
+
+	const halfArchLength = archCurve.totalArcLengthMm > 0 ? archCurve.totalArcLengthMm / 2 : 55.0;
+	const slices: CrossSectionSliceData[] = [];
+	let currentTargetDist = 0;
+	let sliceIdx = 1;
+
+	for (let i = 0; i < vectorField.length; i++) {
+		const node = vectorField[i]!;
+		if (node.distanceAlongArchMm >= currentTargetDist || i === vectorField.length - 1) {
+			const nearestAnchor = findNearestToothAnchorToDistance(node.distanceAlongArchMm, archCurve);
+			const offsetFromMidlineMm = node.distanceAlongArchMm - halfArchLength;
+			const slice = extractSingleCrossSectionSlice(
+				volume,
+				{ x: node.point.x, y: node.point.y, z: zCenter },
+				node.normal,
+				sliceIdx,
+				node.distanceAlongArchMm,
+				nearestAnchor,
+				{
+					...options,
+					offsetFromMidlineMm,
+				},
+			);
+			slices.push(slice);
+			sliceIdx++;
+			currentTargetDist += validStep;
+		}
+	}
+
+	return slices;
+}
+
 /**
  * Generates perpendicular transverse cross-sections along the dental arch curve at a fixed step (e.g. 1.0, 1.5, 2.0 mm).
+ * Backwards-compatible alias for extractArchCrossSectionSeries.
  */
 export function generateCrossSectionSlices(
 	volume: CbctVoxelVolume,
@@ -174,45 +277,33 @@ export function generateCrossSectionSlices(
 		invert?: boolean;
 	} = {},
 ): CrossSectionSliceData[] {
-	const vectorField = calculateArchTangentsAndNormals(archCurve.splinePointsMm);
-	if (vectorField.length === 0) return [];
-
-	const slices: CrossSectionSliceData[] = [];
-	let currentTargetDist = 0;
-	let sliceIdx = 1;
-
-	for (let i = 0; i < vectorField.length; i++) {
-		const node = vectorField[i]!;
-		if (node.distanceAlongArchMm >= currentTargetDist || i === vectorField.length - 1) {
-			const nearestAnchor = findNearestToothAnchorToDistance(node.distanceAlongArchMm, archCurve);
-			const slice = extractSingleCrossSectionSlice(
-				volume,
-				{ x: node.point.x, y: node.point.y, z: sliceCenterZMm },
-				node.normal,
-				sliceIdx,
-				node.distanceAlongArchMm,
-				nearestAnchor,
-				options,
-			);
-			slices.push(slice);
-			sliceIdx++;
-			currentTargetDist += stepMm;
-		}
-	}
-
-	return slices;
+	return extractArchCrossSectionSeries(volume, archCurve, {
+		stepMm,
+		sliceCenterZMm,
+		...options,
+	});
 }
 
 export function generateCrossSectionsAlongArch(
 	volume: CbctVoxelVolume,
 	archCurve: DentalArchCurve,
-	stepOrOptions: number | { stepSpacingMm?: number; windowWidth?: number; windowLevel?: number; widthMm?: number; heightMm?: number } = 2.0,
+	stepOrOptions:
+		| number
+		| {
+				stepSpacingMm?: number;
+				windowWidth?: number;
+				windowLevel?: number;
+				widthMm?: number;
+				heightMm?: number;
+		  } = 2.0,
 ): CrossSectionSliceData[] {
 	if (typeof stepOrOptions === "object") {
-		const step = stepOrOptions.stepSpacingMm ?? 2.0;
-		return generateCrossSectionSlices(volume, archCurve, step, -10.0, stepOrOptions);
+		return extractArchCrossSectionSeries(volume, archCurve, {
+			stepMm: stepOrOptions.stepSpacingMm ?? 2.0,
+			...stepOrOptions,
+		});
 	}
-	return generateCrossSectionSlices(volume, archCurve, stepOrOptions);
+	return extractArchCrossSectionSeries(volume, archCurve, stepOrOptions);
 }
 
 /**
@@ -339,3 +430,5 @@ export function findNearestAnchorToPoint(pointMm: Point2D, archCurve: DentalArch
 	}
 	return closest;
 }
+
+export { computeGlCrossSectionCoordinates } from "./mpr/webgl/CbctVolumeGlContext";

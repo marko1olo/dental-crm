@@ -21,11 +21,16 @@ import {
 	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
 	DEFAULT_MAXILLARY_ARCH_ANCHORS,
 	buildDentalArchCurve,
+	calculateArchTangentsAndNormals,
 } from "../cbctArchSplineMath";
 import {
 	reconstructPanoramicView,
+	reconstructPanoramicViewWebGl2,
 	resolveOcclusalCenterZ,
 	project3DNerveToPanorama,
+	calculateToothMarkersOnPano,
+	CBCT_PANORAMIC_VERTEX_SHADER,
+	CBCT_PANORAMIC_FRAGMENT_SHADER,
 } from "../cbctPanoramicReconstructionMath";
 import {
 	autoDetectDentalArch,
@@ -108,6 +113,18 @@ describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {
 
 			const pano = reconstructPanoramicView(volume, curve, { projectionMode: "minip" });
 			assert.ok(pano.pixelData.length > 0);
+		});
+
+		it("supports 'coarsePreview' mode for 60 FPS real-time spline scrubbing", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible", 14.0, -5.0);
+
+			const panoCoarse = reconstructPanoramicView(volume, curve, { coarsePreview: true });
+			assert.equal(panoCoarse.centerZMm, -5.0);
+			assert.equal(panoCoarse.focalThicknessMm, 14.0);
+			assert.equal(panoCoarse.heightPx, 220);
+			assert.ok(panoCoarse.pixelData.length > 0);
+			assert.equal(panoCoarse.toothMarkersOnPano.length, 16);
 		});
 	});
 
@@ -251,4 +268,39 @@ describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {
 			assert.equal(pano.toothMarkersOnPano.length, 0);
 		});
 	});
+
+	// ─── 6. GPU WEBGL2 PANORAMIC SHADER & ENGINE ARCHITECTURE ────────────────
+	describe("6. GPU WebGL2 Panoramic Shader & Engine Architecture", () => {
+		it("defines valid GLSL ES 3.00 panoramic shaders with 3D texture isampler3D and 1D spline texture", () => {
+			assert.ok(CBCT_PANORAMIC_VERTEX_SHADER.includes("#version 300 es"));
+			assert.ok(CBCT_PANORAMIC_VERTEX_SHADER.includes("QUAD_POSITIONS"));
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("#version 300 es"));
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("isampler3D u_volume"));
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("sampler2D u_archSplineTexture"));
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("u_projectionMode"));
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("texelFetch"));
+		});
+
+		it("exports calculateToothMarkersOnPano with exact symmetric margins", () => {
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+			const vectorField = calculateArchTangentsAndNormals(curve.splinePointsMm);
+			const markers = calculateToothMarkersOnPano(curve, vectorField, curve.totalArcLengthMm, 800);
+			assert.equal(markers.length, 16);
+			assert.ok(markers[0]!.xPx >= 20);
+			assert.ok(markers[markers.length - 1]!.xPx <= 780);
+			// Left-to-right monotonic ordering across arch
+			for (let i = 1; i < markers.length; i++) {
+				assert.ok(markers[i]!.xPx >= markers[i - 1]!.xPx);
+			}
+		});
+
+		it("handles reconstructPanoramicViewWebGl2 gracefully in headless/test environments", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+			// In node.js test environment, document is undefined, so reconstructPanoramicViewWebGl2 safely returns null
+			const res = reconstructPanoramicViewWebGl2(volume, curve);
+			assert.equal(res, null);
+		});
+	});
 });
+

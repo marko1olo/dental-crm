@@ -1,0 +1,33 @@
+{
+  "role": "ADVERSARIAL RED TEAM GPU & WEBGL2 HARDWARE INQUISITOR",
+  "status": "completed",
+  "completed_steps": [
+    "constitutional_routine_completed",
+    "pass_1_glsl_es_300_syntax_precision_inspection",
+    "pass_2_semantics_weak_gpu_context_loss_fill_rate",
+    "pass_3_stress_testing_and_machine_verification",
+    "encoding_and_token_verification_gates_passed",
+    "final_adversarial_report"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "pass_1": [
+      "CbctVolume3DViewport: Division by zero in stepSize (u_maxSteps <= 0), scale (maxDim <= 0), and MIP n calculation (u_huMax == u_huMin). Hardened with max(1, ...).",
+      "CbctVolume3DViewport: Normal fallback was arbitrary (0,1,0), causing shading step discontinuity. Corrected to -rayDir facing camera.",
+      "cbctPanoramicReconstructionMath: clamp(..., 0, int(u_outWidth)-1) had undefined behavior when u_outWidth <= 0. Fixed with max(0, int(u_outWidth)-1).",
+      "cbctPanoramicReconstructionMath: Unbounded focal trough slab loop could cause GPU TDR on weak GPUs. Clamped to safe range [1, 128]."
+    ],
+    "pass_2": [
+      "CbctVolume3DViewport: preserveDrawingBuffer was false in handleContextRestored but true in render effect, causing black screen after blur. Fixed to preserveDrawingBuffer: true everywhere.",
+      "CbctVolume3DViewport: Added try-catch around texImage3D to handle low-memory GPU allocations gracefully.",
+      "CbctVolumeGlContext: Missing webglcontextlost and webglcontextrestored lifecycle listeners; uploadedDim uniform refresh required.",
+      "rvgGlShaderRenderer: u_textureSize division by zero prevented; highp precision fallback added.",
+      "dicomMultiFrameLoader: 1:1 texImage3D streaming exceeded MAX_3D_TEXTURE_SIZE on low-end GPUs (e.g. 256/512). Added driver limit guard and mock-safe function checks for texParameteri / pixelStorei."
+    ],
+    "pass_3": [
+      "cbctHardwareGpuTorture.test.ts: Expanded torture suite with 4 new sections (Sections 9, 10, 11, 12) covering GLSL ES 3.00 invariants, multi-frame direct GPU streaming with hardware limit enforcement, extreme volume single-slice handling, and context loss retention.",
+      "Verified 111/111 tests passing across 5 radiology test suites (Exit Code 0).",
+      "npm run check:encoding verified 6322 files in 0.0s with zero issues."
+    ]
+  }
+}

@@ -37,6 +37,11 @@ export interface AnesthesiaQuickBarProps {
 	patientWeightKg?: number | undefined;
 	patientAgeYears?: number | undefined;
 	hasCardiovascularRisk?: boolean | undefined;
+	hasHypertension?: boolean | undefined;
+	hasCardiacArrhythmia?: boolean | undefined;
+	hasIschemicHeartDisease?: boolean | undefined;
+	hasMyocardialInfarctionHistory?: boolean | undefined;
+	takesBetaBlockers?: boolean | undefined;
 	hasSulfiteAllergy?: boolean | undefined;
 	hasBronchialAsthma?: boolean | undefined;
 	isPregnantOrLactating?: boolean | undefined;
@@ -93,6 +98,11 @@ export function AnesthesiaQuickBar({
 	patientWeightKg: initialWeightKg,
 	patientAgeYears = 35,
 	hasCardiovascularRisk = false,
+	hasHypertension = false,
+	hasCardiacArrhythmia = false,
+	hasIschemicHeartDisease = false,
+	hasMyocardialInfarctionHistory = false,
+	takesBetaBlockers = false,
 	hasSulfiteAllergy = false,
 	hasBronchialAsthma = false,
 	isPregnantOrLactating = false,
@@ -111,9 +121,21 @@ export function AnesthesiaQuickBar({
 	const [customWeightKg, setCustomWeightKg] = useState<number | null>(null);
 	const patientWeightKg = customWeightKg ?? defaultWeight;
 	const setPatientWeightKg = (w: number) => setCustomWeightKg(w);
+
+	const isCardioRisk = Boolean(
+		hasCardiovascularRisk ||
+		hasHypertension ||
+		hasCardiacArrhythmia ||
+		hasIschemicHeartDisease ||
+		hasMyocardialInfarctionHistory ||
+		takesBetaBlockers
+	);
+
+	const [sessionInjectedCarpules, setSessionInjectedCarpules] = useState<number>(0);
+
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId>(() => {
 		if (hasSulfiteAllergy || hasBronchialAsthma) return "mepivacaine_plain";
-		if (hasCardiovascularRisk) return "mepivacaine_plain";
+		if (isCardioRisk) return "mepivacaine_plain";
 		return "articaine_1_200k";
 	});
 	const [techniqueId, setTechniqueId] = useState<InjectionTechniqueId>("infiltration");
@@ -145,9 +167,10 @@ export function AnesthesiaQuickBar({
 		title: string;
 		text: string;
 		carpulesCount?: number;
+		suggestedDrugId?: AnestheticDrugId;
 	} | null>(null);
 
-	const asaStatus: AsaPhysicalStatus = hasCardiovascularRisk ? "asa_3" : "asa_1";
+	const asaStatus: AsaPhysicalStatus = isCardioRisk ? "asa_3" : "asa_1";
 
 	// Live calculation for 1 carpule (1.7 ml)
 	const singleCarpuleResult = useMemo(() => {
@@ -162,7 +185,12 @@ export function AnesthesiaQuickBar({
 			patientWeightKg: effectiveWeight,
 			patientAgeYears,
 			asaStatus,
-			hasCardiovascularRisk,
+			hasCardiovascularRisk: isCardioRisk,
+			hasHypertension,
+			hasCardiacArrhythmia,
+			hasIschemicHeartDisease,
+			hasMyocardialInfarctionHistory,
+			takesBetaBlockers,
 			hasSulfiteAllergy,
 			hasBronchialAsthma,
 			isPregnantOrLactating,
@@ -176,7 +204,12 @@ export function AnesthesiaQuickBar({
 		patientWeightKg,
 		patientAgeYears,
 		asaStatus,
-		hasCardiovascularRisk,
+		isCardioRisk,
+		hasHypertension,
+		hasCardiacArrhythmia,
+		hasIschemicHeartDisease,
+		hasMyocardialInfarctionHistory,
+		takesBetaBlockers,
 		hasSulfiteAllergy,
 		hasBronchialAsthma,
 		isPregnantOrLactating,
@@ -205,7 +238,12 @@ export function AnesthesiaQuickBar({
 			patientWeightKg: effectiveWeight,
 			patientAgeYears,
 			asaStatus,
-			hasCardiovascularRisk,
+			hasCardiovascularRisk: isCardioRisk,
+			hasHypertension,
+			hasCardiacArrhythmia,
+			hasIschemicHeartDisease,
+			hasMyocardialInfarctionHistory,
+			takesBetaBlockers,
 			hasSulfiteAllergy,
 			hasBronchialAsthma,
 			isPregnantOrLactating,
@@ -215,18 +253,31 @@ export function AnesthesiaQuickBar({
 			aspirationNegativeConfirmed: true,
 		});
 
+		// Check epinephrine 1:100 000 with cardio risk (Mandate: clear warning badge with clinical reasoning)
+		if (!bypassCheck && isCardioRisk && (targetDrugId === "articaine_1_100k" || targetDrugId === "lidocaine_1_100k")) {
+			setSafetyWarning({
+				title: "Кардиоваскулярный риск: Адреналин 1:100 000",
+				text: "Высокая концентрация адреналина 1:100 000 не рекомендуется при ССЗ (ИБС, гипертония, аритмии, инфаркт, прием бета-блокаторов). Лимит адреналина строго 0.04 мг (макс. 2 карпулы). Препарат выбора — Мепивакаин 3% без вазоконстриктора (Скандонест).",
+				carpulesCount,
+				suggestedDrugId: "mepivacaine_plain",
+			});
+			return;
+		}
+
 		// Check critical contraindications
 		if (!bypassCheck && (result.contraindicationsTriggered.length > 0 || (result.isOverdose && carpulesCount > 2.0))) {
 			setSafetyWarning({
-				title: "Соматический риск / Превышение МДД",
+				title: "Соматический риск / Превышение предельной дозы",
 				text: result.contraindicationsTriggered[0] || result.warnings[0] || "Обнаружен риск при введении препарата",
 				carpulesCount,
 			});
 			return;
 		}
 
+		setSessionInjectedCarpules((prev) => prev + carpulesCount);
+
 		const diaryEntry = bypassCheck
-			? `${result.diaryEntryRu} (Введено по врачебному решению)`
+			? `${result.diaryEntryRu} (Введено по экстренному врачебному решению согласно ст. 70 Федерального закона № 323-ФЗ)`
 			: result.diaryEntryRu;
 
 		onApplyAnesthesia?.(diaryEntry, result);
@@ -367,10 +418,16 @@ export function AnesthesiaQuickBar({
 				<div className="anesthesia-quick-bar-title">
 					<Syringe size={16} className="anesthesia-icon-accent shrink-0" />
 					<span className="font-bold text-xs sm:text-sm">{`Анестезия (МДД по массе тела ${patientWeightKg} кг):`}</span>
-					{hasCardiovascularRisk && (
+					{isCardioRisk && (
 						<span className="anesthesia-cardio-tag" title="Кардиоваскулярный риск: лимит адреналина 0.04 мг">
 							<Heart size={12} className="text-amber-500" />
 							<span>ССЗ: Скандонест / лимит 0.04 мг</span>
+						</span>
+					)}
+					{takesBetaBlockers && (
+						<span className="anesthesia-cardio-tag" title="Пациент принимает бета-блокаторы: строгий лимит адреналина 0.04 мг">
+							<Activity size={12} className="text-red-500" />
+							<span>Бета-блокаторы: лимит 0.04 мг</span>
 						</span>
 					)}
 					{(hasSulfiteAllergy || hasBronchialAsthma) && (
@@ -413,7 +470,7 @@ export function AnesthesiaQuickBar({
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
 				{PRIMARY_ANESTHETIC_DRUGS.map((drug) => {
 					const isSelected = selectedDrugId === drug.id;
-					const isCardioSuggested = hasCardiovascularRisk && drug.isAdrenalineFree;
+					const isCardioSuggested = isCardioRisk && drug.isAdrenalineFree;
 					const isSulfiteRisky = (hasSulfiteAllergy || hasBronchialAsthma) && !drug.isAdrenalineFree;
 
 					return (
@@ -451,6 +508,31 @@ export function AnesthesiaQuickBar({
 					);
 				})}
 			</div>
+
+			{/* ── Cardio Risk Warning Badge for 1:100 000 Epinephrine (Mandate: clear warning with rationale) ── */}
+			{isCardioRisk && (selectedDrugId === "articaine_1_100k" || selectedDrugId === "lidocaine_1_100k") && (
+				<div
+					className="flex items-start sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-800 dark:text-red-200 text-xs font-medium"
+					role="alert"
+					data-testid="anesthesia-cardio-100k-warning-badge"
+				>
+					<div className="flex items-center gap-2">
+						<AlertTriangle size={16} className="text-red-600 dark:text-red-400 shrink-0" />
+						<span>
+							<strong>Внимание, кардио-риск!</strong> Высокая концентрация адреналина 1:100 000 не рекомендуется при ССЗ (ИБС, гипертония II-III ст, аритмии, инфаркт, бета-блокаторы). Лимит адреналина: строго <strong>0.04 мг</strong> (макс. 2 карпулы). Препарат выбора — <strong>Мепивакаин 3% (Скандонест) без адреналина</strong>.
+						</span>
+					</div>
+					<button
+						type="button"
+						onClick={() => setSelectedDrugId("mepivacaine_plain")}
+						className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shrink-0 transition-colors cursor-pointer"
+						title="Переключиться на Мепивакаин 3% (Скандонест)"
+						data-testid="btn-switch-to-mepivacaine"
+					>
+						Выбрать Скандонест 3%
+					</button>
+				</div>
+			)}
 
 			{/* ── Soft Ambient Warning for Somatic Risks (Mandate 8e: Non-blocking doctor autonomy) ── */}
 			{((hasSulfiteAllergy || hasBronchialAsthma) && !selectedDrugInfo.isAdrenalineFree) && (
@@ -615,14 +697,26 @@ export function AnesthesiaQuickBar({
 					</div>
 				</div>
 
-				{/* Maximum Safe Carpules Badge & Live MRD Safety Badge */}
+				{/* Maximum Safe Carpules Badge & Live Human-Readable Dose Balance */}
 				<div className="flex items-center gap-2 flex-wrap text-xs text-[var(--muted)] font-medium shrink-0">
 					<Activity size={14} className="text-[var(--teal)]" />
-					<span>
-						{`МДД для ${patientWeightKg} кг: `}
-						<strong className="text-[var(--ink)] font-bold">
-							до {maxSafeCarpules} карп. ({(maxSafeCarpules * 1.7).toFixed(1)} мл)
-						</strong>
+					<span data-testid="anesthesia-dose-summary">
+						{sessionInjectedCarpules > 0 ? (
+							<>
+								{`Введено: ${(sessionInjectedCarpules * 1.7).toFixed(1)} мл (${sessionInjectedCarpules} карп.) · `}
+								<strong className="text-[var(--ink)] font-bold">
+									{`Безопасный остаток: ${Math.max(0, Math.floor((maxSafeCarpules - sessionInjectedCarpules) * 10) / 10)} карп. (из ${maxSafeCarpules})`}
+								</strong>
+							</>
+						) : (
+							<>
+								{`Предельная доза для ${patientWeightKg} кг: `}
+								<strong className="text-[var(--ink)] font-bold">
+									до {maxSafeCarpules} карп. ({(maxSafeCarpules * 1.7).toFixed(1)} мл)
+								</strong>
+								{` · Безопасный остаток: ${singleCarpuleResult.remainingSafeCarpulesCount ?? Math.max(0, Math.floor((maxSafeCarpules - 1.0) * 10) / 10)} карп.`}
+							</>
+						)}
 					</span>
 					<span
 						data-testid="anesthesia-mrd-safety-badge"
@@ -633,11 +727,11 @@ export function AnesthesiaQuickBar({
 								? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
 								: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30"
 						}`}
-						title={`Расчет 1 карпулы (1.7 мл): ${singleCarpuleResult.percentOfMaxDose}% от МРД`}
+						title={`Расчет 1 карпулы (1.7 мл): ${singleCarpuleResult.percentOfMaxDose}% от предельной суточной дозы`}
 					>
 						<CheckCircle2 size={12} className={singleCarpuleResult.safetyZone === "safe" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500"} />
 						<span>
-							{singleCarpuleResult.percentOfMaxDose}% от МРД — {singleCarpuleResult.safetyZone === "safe" ? "безопасно" : singleCarpuleResult.safetyZone === "caution" ? "внимание" : "опасно"}
+							{singleCarpuleResult.percentOfMaxDose}% от макс. дозы — {singleCarpuleResult.safetyZone === "safe" ? "безопасно" : singleCarpuleResult.safetyZone === "caution" ? "внимание" : "опасно"}
 						</span>
 					</span>
 				</div>

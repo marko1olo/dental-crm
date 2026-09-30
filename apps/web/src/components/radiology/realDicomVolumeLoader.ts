@@ -61,6 +61,47 @@ export interface DicomSliceEntry {
   fileName: string;
 }
 
+export interface DicomStreamingUploadTarget {
+  gl: WebGL2RenderingContext;
+  texture: WebGLTexture;
+  /** If true, texImage3D is pre-allocated with null initial storage before streaming */
+  allocateStorage?: boolean;
+}
+
+export interface DicomVolumeIngestionOptions {
+  onProgress?: (percent: number, message: string) => void;
+  onSliceDecoded?: (sliceIndex: number, totalSlices: number, sliceData: Int16Array) => void;
+  gpuUploadTarget?: DicomStreamingUploadTarget | null;
+  concurrency?: number;
+}
+
+/**
+ * Uploads a single calibrated 2D slice directly into layer z of a WebGL 3D Texture.
+ * Zero-copy GPU upload: avoids maintaining temporary 225MB intermediate CPU buffers.
+ */
+export function uploadSliceTo3dTexture(
+  gl: WebGL2RenderingContext,
+  targetZ: number,
+  width: number,
+  height: number,
+  sliceData: Int16Array,
+): void {
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2);
+  gl.texSubImage3D(
+    gl.TEXTURE_3D,
+    0,
+    0,
+    0,
+    targetZ,
+    width,
+    height,
+    1,
+    gl.RED_INTEGER,
+    gl.SHORT,
+    sliceData,
+  );
+}
+
 /**
  * Accurately extracts calibrated Hounsfield Units (HU) from raw DICOM voxel words
  * according to DICOM PS 3.5 Section 8.2 and PS 3.3 C.11.1.
@@ -158,6 +199,18 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
     const group = view.getUint16(i, true);
     const element = view.getUint16(i + 2, true);
     if (group === 0) continue;
+
+    // Fast-path group filter: skip groups that never contain geometry, tags, or pixel data
+    if (
+      group !== 0x0008 &&
+      group !== 0x0010 &&
+      group !== 0x0018 &&
+      group !== 0x0020 &&
+      group !== 0x0028 &&
+      group !== 0x7fe0
+    ) {
+      continue;
+    }
 
     const c0 = view.getUint8(i + 4);
     const c1 = view.getUint8(i + 5);
@@ -398,15 +451,19 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
 
 export async function buildVolumeFromDicomBuffers(
   items: Array<{ buffer: ArrayBuffer; fileName?: string }>,
-  onProgress?: (percent: number, message: string) => void,
+  options?: ((percent: number, message: string) => void) | DicomVolumeIngestionOptions,
 ): Promise<CbctVoxelVolume> {
   if (!items || items.length === 0) {
     throw new Error("Не передано ни одного буфера DICOM для загрузки");
   }
 
+  const onProgress = typeof options === "function" ? options : options?.onProgress;
+  const onSliceDecoded = typeof options === "object" ? options?.onSliceDecoded : undefined;
+  const gpuTarget = typeof options === "object" ? options?.gpuUploadTarget : undefined;
+
   // If a single DICOM file is provided and it is a Multi-Frame volume (Planmeca, KaVo, Sirona)
   if (items.length === 1 && isMultiFrameDicom(items[0]!.buffer)) {
-    return buildVolumeFromMultiFrameDicom(items[0]!.buffer, onProgress);
+    return buildVolumeFromMultiFrameDicom(items[0]!.buffer, options);
   }
 
   onProgress?.(5, "Чтение заголовков " + items.length + " срезов КЛКТ...");
@@ -482,17 +539,45 @@ export async function buildVolumeFromDicomBuffers(
   const voxelData = new Int16Array(totalVoxels);
   const sliceVoxelCount = width * height;
 
+  // Zero-copy direct 3D Texture allocation if GPU target is provided
+  if (gpuTarget?.gl && gpuTarget.texture) {
+    const gl = gpuTarget.gl;
+    gl.bindTexture(gl.TEXTURE_3D, gpuTarget.texture);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2);
+    if (gpuTarget.allocateStorage !== false) {
+      gl.texImage3D(
+        gl.TEXTURE_3D,
+        0,
+        gl.R16I,
+        width,
+        height,
+        depth,
+        0,
+        gl.RED_INTEGER,
+        gl.SHORT,
+        null, // preallocate VRAM backing store without CPU data copy
+      );
+    }
+  }
+
   let minVoxelHU = 32767;
   let maxVoxelHU = -32768;
+
+  // Hoisted calibration invariants across the entire series
+  const isSigned = refHeader.pixelRepresentation === 1;
+  const bitsStored = refHeader.bitsStored > 0 && refHeader.bitsStored <= 16 ? refHeader.bitsStored : 16;
+  const slope = Number.isFinite(refHeader.rescaleSlope) && refHeader.rescaleSlope > 0 ? refHeader.rescaleSlope : 1.0;
+  const intercept = Number.isFinite(refHeader.rescaleIntercept) ? refHeader.rescaleIntercept : 0.0;
+  const isLinearInteger = slope === 1.0 && Math.floor(intercept) === intercept;
+  const intIntercept = intercept | 0;
+  const mask = bitsStored < 16 ? (1 << bitsStored) - 1 : 0xffff;
+  const signBit = bitsStored < 16 ? 1 << (bitsStored - 1) : 0x8000;
+  const signExt = bitsStored < 16 ? 1 << bitsStored : 0x10000;
 
   for (let z = 0; z < depth; z++) {
     const entry = sliceEntries[z]!;
     if (!entry.buffer) continue;
     const offset = entry.header.pixelDataByteOffset;
-    const isSigned = entry.header.pixelRepresentation === 1;
-    const bitsStored = entry.header.bitsStored;
-    const slope = entry.header.rescaleSlope;
-    const intercept = entry.header.rescaleIntercept;
     const baseIdx = z * sliceVoxelCount;
 
     let rawSlice: Int16Array | Uint16Array;
@@ -508,27 +593,97 @@ export async function buildVolumeFromDicomBuffers(
       rawSlice = isSigned ? new Int16Array(safeBuf) : new Uint16Array(safeBuf);
     }
 
+    let localMin = minVoxelHU;
+    let localMax = maxVoxelHU;
+
     if (!flipX && !flipY) {
-      for (let i = 0; i < sliceVoxelCount; i++) {
-        const hu = extractCalibratedVoxelHU(rawSlice[i] ?? 0, bitsStored, isSigned, slope, intercept);
-        voxelData[baseIdx + i] = hu;
-        if (hu < minVoxelHU) minVoxelHU = hu;
-        if (hu > maxVoxelHU) maxVoxelHU = hu;
+      if (bitsStored >= 16) {
+        if (isLinearInteger) {
+          // Ultra-fast path: standard CT with integer intercept (e.g. -1000 / -1024)
+          for (let i = 0; i < sliceVoxelCount; i++) {
+            const val = (rawSlice[i]! + intIntercept) | 0;
+            const hu = val < -32768 ? -32768 : val > 32767 ? 32767 : val;
+            voxelData[baseIdx + i] = hu;
+            if (hu < localMin) localMin = hu;
+            if (hu > localMax) localMax = hu;
+          }
+        } else {
+          // General float rescale
+          for (let i = 0; i < sliceVoxelCount; i++) {
+            let val = rawSlice[i]!;
+            if (isSigned) val = (val << 16) >> 16;
+            const hu = Math.round(val * slope + intercept);
+            const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+            voxelData[baseIdx + i] = clamped;
+            if (clamped < localMin) localMin = clamped;
+            if (clamped > localMax) localMax = clamped;
+          }
+        }
+      } else {
+        // 12-bit or 14-bit masked detector path
+        if (isLinearInteger) {
+          for (let i = 0; i < sliceVoxelCount; i++) {
+            let val = rawSlice[i]! & mask;
+            if (isSigned && (val & signBit) !== 0) val -= signExt;
+            const hu = (val + intIntercept) | 0;
+            const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+            voxelData[baseIdx + i] = clamped;
+            if (clamped < localMin) localMin = clamped;
+            if (clamped > localMax) localMax = clamped;
+          }
+        } else {
+          for (let i = 0; i < sliceVoxelCount; i++) {
+            let val = rawSlice[i]! & mask;
+            if (isSigned && (val & signBit) !== 0) val -= signExt;
+            const hu = Math.round(val * slope + intercept);
+            const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+            voxelData[baseIdx + i] = clamped;
+            if (clamped < localMin) localMin = clamped;
+            if (clamped > localMax) localMax = clamped;
+          }
+        }
       }
     } else {
+      // Flipped coordinates path (patient orientation adjustment)
       for (let y = 0; y < height; y++) {
         const srcY = flipY ? height - 1 - y : y;
-        const rowOffset = y * width;
+        const rowOffset = baseIdx + y * width;
         const srcRowOffset = srcY * width;
         for (let x = 0; x < width; x++) {
           const srcX = flipX ? width - 1 - x : x;
-          const hu = extractCalibratedVoxelHU(rawSlice[srcRowOffset + srcX] ?? 0, bitsStored, isSigned, slope, intercept);
-          voxelData[baseIdx + rowOffset + x] = hu;
-          if (hu < minVoxelHU) minVoxelHU = hu;
-          if (hu > maxVoxelHU) maxVoxelHU = hu;
+          const raw = rawSlice[srcRowOffset + srcX]!;
+          let val = bitsStored < 16 ? raw & mask : raw;
+          if (isSigned) {
+            if (bitsStored < 16) {
+              if ((val & signBit) !== 0) val -= signExt;
+            } else {
+              val = (val << 16) >> 16;
+            }
+          }
+          const hu = isLinearInteger ? ((val + intIntercept) | 0) : Math.round(val * slope + intercept);
+          const clamped = hu < -32768 ? -32768 : hu > 32767 ? 32767 : hu;
+          voxelData[rowOffset + x] = clamped;
+          if (clamped < localMin) localMin = clamped;
+          if (clamped > localMax) localMax = clamped;
         }
       }
     }
+
+    minVoxelHU = localMin;
+    maxVoxelHU = localMax;
+
+    // Zero-copy direct streaming into WebGL 3D texture as slice arrives
+    if (gpuTarget?.gl && gpuTarget.texture) {
+      uploadSliceTo3dTexture(
+        gpuTarget.gl,
+        z,
+        width,
+        height,
+        voxelData.subarray(baseIdx, baseIdx + sliceVoxelCount),
+      );
+    }
+
+    onSliceDecoded?.(z, depth, voxelData.subarray(baseIdx, baseIdx + sliceVoxelCount));
 
     // Zero-leak GC: immediately free this slice's raw ArrayBuffer from V8 heap
     entry.buffer = null;
@@ -567,21 +722,34 @@ export async function buildVolumeFromDicomBuffers(
 
 export async function buildVolumeFromDicomFiles(
   files: File[],
-  onProgress?: (percent: number, message: string) => void,
+  options?: ((percent: number, message: string) => void) | DicomVolumeIngestionOptions,
 ): Promise<CbctVoxelVolume> {
   if (!files || files.length === 0) {
     throw new Error("Не передано ни одного файла DICOM для загрузки");
   }
 
-  const items: Array<{ buffer: ArrayBuffer; fileName: string }> = [];
+  const onProgress = typeof options === "function" ? options : options?.onProgress;
+  const concurrency = (typeof options === "object" && options?.concurrency && options.concurrency > 0)
+    ? options.concurrency
+    : 32;
+
   const total = files.length;
-  for (let i = 0; i < total; i++) {
-    const f = files[i]!;
-    const buf = await f.arrayBuffer();
-    items.push({ buffer: buf, fileName: f.name });
+  const items: Array<{ buffer: ArrayBuffer; fileName: string }> = new Array(total);
+
+  // Parallel chunked reading via Promise.all (avoids 100s of sequential awaits)
+  for (let i = 0; i < total; i += concurrency) {
+    const chunk = files.slice(i, i + concurrency);
+    const bufs = await Promise.all(chunk.map((f) => f.arrayBuffer()));
+    for (let j = 0; j < bufs.length; j++) {
+      items[i + j] = { buffer: bufs[j]!, fileName: chunk[j]!.name };
+    }
+    if (onProgress) {
+      const pct = Math.round(((i + chunk.length) / total) * 35);
+      onProgress(pct, `Параллельное чтение срезов КТ (${i + chunk.length}/${total})...`);
+    }
   }
 
-  return buildVolumeFromDicomBuffers(items, onProgress);
+  return buildVolumeFromDicomBuffers(items, options);
 }
 
 export async function buildVolumeFromDicomZip(

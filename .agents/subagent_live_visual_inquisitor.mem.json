@@ -1,0 +1,72 @@
+{
+  "role": "Subagent 5: Live CBCT Studio Headless Visual Proof & Inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "constitutional_reading_hammer_and_agents",
+    "inspect_capture_script",
+    "add_auto_vite_spawner_and_hmr_guard_to_script",
+    "fix_vite_api_module_route_interception",
+    "fix_webgl2_volume3d_program_linking_parameter_bug",
+    "fix_preserve_drawing_buffer_in_cbct_volume_3d_viewport",
+    "fix_matrix_vector_transposition_in_cbct_volume_3d_shader",
+    "run_capture_script",
+    "multimodal_view_file_inspection",
+    "red_team_visual_analysis",
+    "check_encoding",
+    "typecheck_verification",
+    "per_file_git_add"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "volume_assembly": {
+      "slicesCount": 312,
+      "dimensions": "600x600x312",
+      "minHU": -1000,
+      "maxHU": 3095,
+      "totalVoxels": 112320000,
+      "elapsedMs": 2000.3
+    },
+    "webgl2": {
+      "supported": true,
+      "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x000046A6) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "max3d": 2048,
+      "allocResult": "success"
+    },
+    "telemetry_proof": {
+      "axial": {
+        "bonePixelsDetected": 16384,
+        "meanBrightness": "69.2",
+        "brightnessSum": 1134395
+      },
+      "coronal": {
+        "bonePixelsDetected": 12815,
+        "meanBrightness": "61.1",
+        "brightnessSum": 783429
+      },
+      "sagittal": {
+        "bonePixelsDetected": 16384,
+        "meanBrightness": "52.4",
+        "brightnessSum": 858597
+      },
+      "volume3d_skull": {
+        "status": "rendered_webgl2",
+        "bonePixelsDetected": 16160,
+        "meanBrightness": "111.4",
+        "brightnessSum": 1799917,
+        "centerPixelRgba": [166, 156, 139, 255]
+      }
+    },
+    "visual_inquisition": {
+      "viewport1_axial": "PASS: Crisp transverse CT slice through the mandibular arch, cortical bone of ramus/body, individual tooth sockets with high-density enamel/dentin, pulp chambers, spinal vertebra behind. Arch spline curve fitted with control points. Implant planning at tooth 48 with trajectory angle indicator [FDI #48].",
+      "viewport2_coronal": "PASS: Crisp frontal slice through maxilla and mandible, clear dental roots, alveolar ridge, nasal septum, maxillary sinuses, and chin symphysis cortical bone. Orthogonal axial/sagittal reference lines aligned.",
+      "viewport3_sagittal": "PASS: Crisp profile slice through incisors, symphysis cortical bone, root canal down to apex, cervical vertebrae C1-C4, soft tissue lip profile.",
+      "viewport4_volume3d": "PASS: Complete hardware WebGL2 raymarched 3D volume reconstruction of patient Zakharov skull and jaw from isometric orbit camera angle (Yaw 35°, Pitch 20°). Shaded in warm ivory bone tones ([166, 156, 139] / base bone [240, 225, 200]). High surface depth, 0 point-cloud noise, 0 black holes. 16,160 non-background bone pixels (98.6% quadrant coverage).",
+      "crosshair": "PASS: 1.2px neutral thin crosshairs without neon halos, unobstructed center gap.",
+      "top_pacs_bar": "PASS: Classical PACS tabs (MPR, Панорама, 3D Объем, Имплантация, ВНЧС), patient metadata badge, fast action buttons, no clipping.",
+      "hygiene": "PASS: 0 black holes, 0 white glare spots, 0 text clipping, 0 button drift, strictly within dark palette."
+    },
+    "screenshot_path": "docs/screenshots/cbct_live/proof_real_zakharov_313_mpr_studio.png",
+    "screenshot_size_kb": 589.0
+  },
+  "timestamp": "2026-09-30T07:38:00Z"
+}

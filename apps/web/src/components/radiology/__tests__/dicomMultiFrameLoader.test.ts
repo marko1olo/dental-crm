@@ -19,6 +19,8 @@ import {
   parseMultiFrameDicomHeader,
   buildVolumeFromMultiFrameDicom,
   decodeDicomString,
+  extractDicomFrame,
+  calibrateMultiFrameVoxel,
 } from "../dicomMultiFrameLoader";
 import {
   parseDicomSliceHeader,
@@ -495,5 +497,178 @@ describe("DICOM Multi-Frame Enhanced CT Loader", () => {
 
     const asciiRaw = new Uint8Array([0x44, 0x4f, 0x43, 0x54, 0x4f, 0x52]);
     assert.equal(decodeDicomString(asciiRaw), "DOCTOR");
+  });
+
+  it("extracts individual frames on demand via extractDicomFrame without memory leaks", () => {
+    const rows = 4;
+    const cols = 4;
+    const frames = 5;
+    const pixelValues: number[] = [];
+    for (let z = 0; z < frames; z++) {
+      for (let p = 0; p < rows * cols; p++) {
+        pixelValues.push((z + 1) * 200);
+      }
+    }
+
+    const buf = createSyntheticMultiFrameDicom({
+      rows,
+      cols,
+      numberOfFrames: frames,
+      pixelSpacing: [0.25, 0.25],
+      rescaleSlope: 1.0,
+      rescaleIntercept: -1000,
+      pixelValues,
+    });
+
+    // Extract frame 0
+    const frame0 = extractDicomFrame(buf, 0);
+    assert.equal(frame0.frameIndex, 0);
+    assert.equal(frame0.width, 4);
+    assert.equal(frame0.height, 4);
+    assert.equal(frame0.data.length, 16); // Only 16 voxels, NOT 80! Zero memory leak
+    assert.equal(frame0.data[0], 200 - 1000); // -800 HU
+    assert.equal(frame0.minHU, -800);
+    assert.equal(frame0.maxHU, -800);
+
+    // Extract frame 2
+    const frame2 = extractDicomFrame(buf, 2);
+    assert.equal(frame2.frameIndex, 2);
+    assert.equal(frame2.data[0], 600 - 1000); // -400 HU
+    assert.equal(frame2.minHU, -400);
+
+    // Extract last frame 4
+    const frame4 = extractDicomFrame(buf, 4);
+    assert.equal(frame4.frameIndex, 4);
+    assert.equal(frame4.data[0], 1000 - 1000); // 0 HU
+
+    // Out of bounds frameIndex throws RangeError
+    assert.throws(() => extractDicomFrame(buf, -1), RangeError);
+    assert.throws(() => extractDicomFrame(buf, 5), RangeError);
+  });
+
+  it("calibrates raw detector words with bitsStored masking and 2's complement sign extension", () => {
+    // 12-bit signed: bits 0..11 are data, bit 11 is sign bit
+    // Positive 12-bit value 500: 0x01F4
+    const huPos = calibrateMultiFrameVoxel(0x01f4, 12, true, 1.0, -1000);
+    assert.equal(huPos, 500 - 1000); // -500 HU
+
+    // Negative 12-bit value -100: in 12-bit two's complement, -100 is 4096 - 100 = 3996 (0x0F9C)
+    // If high bits (12..15) contain scanner status bits e.g. 0xF000 -> 0xFF9C:
+    const huNegWithStatus = calibrateMultiFrameVoxel(0xff9c, 12, true, 1.0, 0);
+    assert.equal(huNegWithStatus, -100, "Must strip upper 4 bits and sign-extend 12-bit -100");
+
+    // 12-bit unsigned: high 4 bits masked out
+    const huUnsignedWithStatus = calibrateMultiFrameVoxel(0xf100, 12, false, 1.0, 0);
+    assert.equal(huUnsignedWithStatus, 0x0100, "Must mask out overlay bits above bit 11");
+
+    // Clamping to [-32768, 32767]
+    assert.equal(calibrateMultiFrameVoxel(30000, 16, false, 10.0, 0), 32767);
+    assert.equal(calibrateMultiFrameVoxel(-30000, 16, true, 10.0, -10000), -32768);
+  });
+
+  it("handles 12-bit CBCT detector data in multi-frame volume reconstruction", async () => {
+    const rows = 2;
+    const cols = 2;
+    const frames = 2;
+    // 12-bit words with status bits in bits 12..15 (0xA000)
+    // Word 1: 0xA064 -> 12-bit val = 100, slope 1, intercept 0 -> HU 100
+    // Word 2: 0xA0C8 -> 12-bit val = 200, slope 1, intercept 0 -> HU 200
+    const pixelValues = [
+      0xa064, 0xa064, 0xa064, 0xa064,
+      0xa0c8, 0xa0c8, 0xa0c8, 0xa0c8,
+    ];
+
+    const buf = createSyntheticMultiFrameDicom({
+      rows,
+      cols,
+      numberOfFrames: frames,
+      bitsAllocated: 16,
+      bitsStored: 12,
+      pixelRepresentation: 0,
+      rescaleSlope: 1.0,
+      rescaleIntercept: 0.0,
+      pixelValues,
+    });
+
+    const header = parseMultiFrameDicomHeader(buf);
+    assert.equal(header.bitsAllocated, 16);
+    assert.equal(header.bitsStored, 12);
+
+    const volume = await buildVolumeFromMultiFrameDicom(buf);
+    assert.equal(volume.data![0], 100);
+    assert.equal(volume.data![4], 200);
+  });
+
+  it("streams volume slices directly to WebGL 3D texture via zero-copy texSubImage3D", async () => {
+    const rows = 4;
+    const cols = 4;
+    const frames = 3;
+    const pixelValues = new Array(rows * cols * frames).fill(1200);
+
+    const buf = createSyntheticMultiFrameDicom({
+      rows,
+      cols,
+      numberOfFrames: frames,
+      pixelSpacing: [0.25, 0.25],
+      rescaleSlope: 1.0,
+      rescaleIntercept: -1000,
+      pixelValues,
+    });
+
+    const mockTex = {} as WebGLTexture;
+    const calls: {
+      bindTexture: number;
+      texImage3D: Array<{ target: number; level: number; internalformat: number; width: number; height: number; depth: number; border: number; format: number; type: number; pixels: any }>;
+      texSubImage3D: Array<{ target: number; level: number; xoffset: number; yoffset: number; zoffset: number; width: number; height: number; depth: number; format: number; type: number; pixels: any }>;
+    } = {
+      bindTexture: 0,
+      texImage3D: [],
+      texSubImage3D: [],
+    };
+
+    const mockGl = {
+      TEXTURE_3D: 0x806f,
+      R16I: 0x8233,
+      RED_INTEGER: 0x8d94,
+      SHORT: 0x1402,
+      UNPACK_ALIGNMENT: 0x0cf5,
+      pixelStorei: () => {},
+      bindTexture: (_target: number, _tex: any) => {
+        calls.bindTexture++;
+      },
+      texImage3D: (target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, pixels: any) => {
+        calls.texImage3D.push({ target, level, internalformat, width, height, depth, border, format, type, pixels });
+      },
+      texSubImage3D: (target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, pixels: any) => {
+        calls.texSubImage3D.push({ target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels });
+      },
+    } as unknown as WebGL2RenderingContext;
+
+    const decodedSlices: number[] = [];
+    const volume = await buildVolumeFromMultiFrameDicom(buf, {
+      gpuUploadTarget: {
+        gl: mockGl,
+        texture: mockTex,
+        allocateStorage: true,
+      },
+      onSliceDecoded: (z, total) => {
+        decodedSlices.push(z);
+        assert.equal(total, 3);
+      },
+    });
+
+    assert.equal(volume.dimensions.depth, 3);
+    assert.equal(calls.bindTexture, 1, "Texture must be bound once");
+    assert.equal(calls.texImage3D.length, 1, "texImage3D must be called once to allocate VRAM");
+    assert.equal(calls.texImage3D[0]!.width, 4);
+    assert.equal(calls.texImage3D[0]!.height, 4);
+    assert.equal(calls.texImage3D[0]!.depth, 3);
+    assert.equal(calls.texImage3D[0]!.pixels, null, "VRAM preallocation must pass null (zero CPU copy)");
+
+    assert.equal(calls.texSubImage3D.length, 3, "texSubImage3D must be called once per slice");
+    assert.equal(calls.texSubImage3D[0]!.zoffset, 0);
+    assert.equal(calls.texSubImage3D[1]!.zoffset, 1);
+    assert.equal(calls.texSubImage3D[2]!.zoffset, 2);
+    assert.equal(decodedSlices.length, 3, "onSliceDecoded must be invoked for all 3 slices");
   });
 });

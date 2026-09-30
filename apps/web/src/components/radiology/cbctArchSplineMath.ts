@@ -82,10 +82,16 @@ export function fitSmoothDentalArchSpline(
 	anchors: readonly DentalArchAnchor[],
 	samplesPerSegment = 8,
 ): Point2D[] {
-	if (anchors.length === 0) return [];
-	if (anchors.length === 1) return [{ ...anchors[0]!.positionMm }];
+	if (!anchors || anchors.length === 0) return [];
 
-	const pts = anchors.map((a) => a.positionMm);
+	const validAnchors = anchors.filter(
+		(a) => a && a.positionMm && Number.isFinite(a.positionMm.x) && Number.isFinite(a.positionMm.y),
+	);
+	if (validAnchors.length === 0) return [];
+	if (validAnchors.length === 1) return [{ ...validAnchors[0]!.positionMm }];
+
+	const numSamples = Math.max(1, Math.round(Number.isFinite(samplesPerSegment) ? samplesPerSegment : 8));
+	const pts = validAnchors.map((a) => a.positionMm);
 	const curve: Point2D[] = [];
 
 	for (let i = 0; i < pts.length - 1; i++) {
@@ -94,8 +100,8 @@ export function fitSmoothDentalArchSpline(
 		const p2 = pts[i + 1]!;
 		const p3 = i < pts.length - 2 ? pts[i + 2]! : pts[pts.length - 1]!;
 
-		for (let s = 0; s < samplesPerSegment; s++) {
-			const t = s / samplesPerSegment;
+		for (let s = 0; s < numSamples; s++) {
+			const t = s / numSamples;
 			const t2 = t * t;
 			const t3 = t2 * t;
 
@@ -113,18 +119,22 @@ export function fitSmoothDentalArchSpline(
 					(2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
 					(-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
 
-			curve.push({
-				x: Number(x.toFixed(2)),
-				y: Number(y.toFixed(2)),
-			});
+			if (Number.isFinite(x) && Number.isFinite(y)) {
+				curve.push({
+					x: Number(x.toFixed(2)),
+					y: Number(y.toFixed(2)),
+				});
+			}
 		}
 	}
 
 	const lastPt = pts[pts.length - 1]!;
-	curve.push({
-		x: Number(lastPt.x.toFixed(2)),
-		y: Number(lastPt.y.toFixed(2)),
-	});
+	if (Number.isFinite(lastPt.x) && Number.isFinite(lastPt.y)) {
+		curve.push({
+			x: Number(lastPt.x.toFixed(2)),
+			y: Number(lastPt.y.toFixed(2)),
+		});
+	}
 
 	return curve;
 }
@@ -133,17 +143,22 @@ export function fitSmoothDentalArchSpline(
  * Calculates total arc length in physical millimeters.
  */
 export function calculateArchLengthMm(spline: readonly Point2D[]): number {
+	if (!spline || spline.length < 2) return 0;
 	let total = 0;
 	for (let i = 0; i < spline.length - 1; i++) {
 		const p1 = spline[i]!;
 		const p2 = spline[i + 1]!;
-		total += Math.hypot(p2.x - p1.x, p2.y - p1.y);
+		const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+		if (Number.isFinite(dist)) {
+			total += dist;
+		}
 	}
 	return Number(total.toFixed(2));
 }
 
 /**
  * Computes tangents and unit normal vectors along the dental spline curve.
+ * Zero-division, Infinity, and NaN safe under coinciding or degenerate anchors.
  */
 export function calculateArchTangentsAndNormals(spline: readonly Point2D[]): Array<{
 	point: Point2D;
@@ -152,6 +167,15 @@ export function calculateArchTangentsAndNormals(spline: readonly Point2D[]): Arr
 	distanceAlongArchMm: number;
 }> {
 	if (!spline || spline.length === 0) return [];
+
+	const validSpline: Point2D[] = [];
+	for (const pt of spline) {
+		if (pt && Number.isFinite(pt.x) && Number.isFinite(pt.y)) {
+			validSpline.push(pt);
+		}
+	}
+	if (validSpline.length === 0) return [];
+
 	const results: Array<{
 		point: Point2D;
 		tangent: Point2D;
@@ -160,34 +184,84 @@ export function calculateArchTangentsAndNormals(spline: readonly Point2D[]): Arr
 	}> = [];
 
 	let accumulatedDist = 0;
+	let lastValidTangent: Point2D | null = null;
 
-	for (let i = 0; i < spline.length; i++) {
-		const cur = spline[i]!;
+	for (let i = 0; i < validSpline.length; i++) {
+		const cur = validSpline[i]!;
 		let tx = 0;
 		let ty = 0;
 
-		if (i === 0) {
-			const next = spline[1] ?? cur;
+		if (validSpline.length === 1) {
+			tx = 1.0;
+			ty = 0.0;
+		} else if (i === 0) {
+			const next = validSpline[1]!;
 			tx = next.x - cur.x;
 			ty = next.y - cur.y;
-		} else if (i === spline.length - 1) {
-			const prev = spline[i - 1] ?? cur;
+		} else if (i === validSpline.length - 1) {
+			const prev = validSpline[i - 1]!;
 			tx = cur.x - prev.x;
 			ty = cur.y - prev.y;
-			accumulatedDist += Math.hypot(tx, ty);
+			const stepDist = Math.hypot(tx, ty);
+			if (Number.isFinite(stepDist)) {
+				accumulatedDist += stepDist;
+			}
 		} else {
-			const prev = spline[i - 1]!;
-			const next = spline[i + 1]!;
+			const prev = validSpline[i - 1]!;
+			const next = validSpline[i + 1]!;
 			tx = next.x - prev.x;
 			ty = next.y - prev.y;
-			accumulatedDist += Math.hypot(cur.x - prev.x, cur.y - prev.y);
+			const stepDist = Math.hypot(cur.x - prev.x, cur.y - prev.y);
+			if (Number.isFinite(stepDist)) {
+				accumulatedDist += stepDist;
+			}
 		}
 
-		const len = Math.hypot(tx, ty) || 1.0;
-		const normTangent: Point2D = { x: tx / len, y: ty / len };
+		let len = Math.hypot(tx, ty);
+		if (!Number.isFinite(len) || len < 1e-6) {
+			// Try forward difference: cur -> next
+			if (i < validSpline.length - 1) {
+				const fwdX = validSpline[i + 1]!.x - cur.x;
+				const fwdY = validSpline[i + 1]!.y - cur.y;
+				const fwdLen = Math.hypot(fwdX, fwdY);
+				if (Number.isFinite(fwdLen) && fwdLen >= 1e-6) {
+					tx = fwdX;
+					ty = fwdY;
+					len = fwdLen;
+				}
+			}
+			// Try backward difference: prev -> cur
+			if (len < 1e-6 && i > 0) {
+				const bwdX = cur.x - validSpline[i - 1]!.x;
+				const bwdY = cur.y - validSpline[i - 1]!.y;
+				const bwdLen = Math.hypot(bwdX, bwdY);
+				if (Number.isFinite(bwdLen) && bwdLen >= 1e-6) {
+					tx = bwdX;
+					ty = bwdY;
+					len = bwdLen;
+				}
+			}
+			// Fallback to previous valid tangent
+			if (len < 1e-6 && lastValidTangent) {
+				tx = lastValidTangent.x;
+				ty = lastValidTangent.y;
+				len = 1.0;
+			}
+			// Ultimate fallback to unit X vector
+			if (len < 1e-6 || !Number.isFinite(len)) {
+				tx = 1.0;
+				ty = 0.0;
+				len = 1.0;
+			}
+		}
+
+		const unitTx = tx / len;
+		const unitTy = ty / len;
+		const normTangent: Point2D = { x: unitTx, y: unitTy };
 
 		// Normal is rotated 90 degrees counter-clockwise across ridge (Buccal to Lingual)
-		const normNormal: Point2D = { x: -normTangent.y, y: normTangent.x };
+		const normNormal: Point2D = { x: -unitTy, y: unitTx };
+		lastValidTangent = normTangent;
 
 		results.push({
 			point: cur,
@@ -211,7 +285,8 @@ export function getFocalTroughBoundaryCurves(
 	innerBoundary: Point2D[];
 	outerBoundary: Point2D[];
 } {
-	const halfThickness = thicknessMm / 2.0;
+	const validThickness = Number.isFinite(thicknessMm) && thicknessMm > 0 ? thicknessMm : 12.0;
+	const halfThickness = validThickness / 2.0;
 	const vectorField = calculateArchTangentsAndNormals(spline);
 	const innerBoundary: Point2D[] = [];
 	const outerBoundary: Point2D[] = [];

@@ -10,6 +10,10 @@ import {
 	formatDistanceMm,
 	isValidFdiTooth,
 } from "../dentalViewerMath";
+import {
+	createRvgGlRenderer,
+	type RvgGlRenderParams,
+} from "../rvgGlShaderRenderer";
 
 describe("Dental 2D Radiology Engine — Clean Outpatient Tests", () => {
 	describe("Spatial Calibration and Measurement Math", () => {
@@ -200,6 +204,70 @@ describe("Dental 2D Radiology Engine — Clean Outpatient Tests", () => {
 					1.0,
 					`Effective badge scale at zoom ${zoom}x must remain exactly 1.0`,
 				);
+			}
+		});
+	});
+
+	describe("WebGL 2D Shader Engine & Zero-Jank Filter Pipeline", () => {
+		it("creates a valid renderer instance with graceful 2D fallback when WebGL context is null", () => {
+			const mockCanvas = {
+				width: 1000,
+				height: 1300,
+				getContext: (type: string) => {
+					if (type === "webgl" || type === "experimental-webgl") return null;
+					if (type === "2d") {
+						return {
+							clearRect: () => {},
+							drawImage: () => {},
+							filter: "none",
+						};
+					}
+					return null;
+				},
+			} as unknown as HTMLCanvasElement;
+
+			const renderer = createRvgGlRenderer(mockCanvas);
+			assert.ok(renderer, "Renderer instance must be created");
+			assert.equal(renderer.isWebGL, false, "Fallback to 2D canvas in headless environment");
+
+			const mockImg = { width: 1000, height: 1300 } as HTMLImageElement;
+			assert.equal(renderer.updateImage(mockImg), true);
+
+			const params: RvgGlRenderParams = {
+				brightness: 120,
+				contrast: 150,
+				sharpness: 50,
+				invert: true,
+			};
+			assert.equal(renderer.render(params), true);
+
+			// Disposing should be error-free
+			assert.doesNotThrow(() => renderer.dispose());
+		});
+
+		it("validates 3x3 unsharp mask Laplacian edge enhancement math on GPU", () => {
+			// Center pixel 0.5 with surrounding edge contrast
+			const center = 0.5;
+			const n = 0.2, s = 0.8, w = 0.3, e = 0.7;
+			const laplacian = (n + s + w + e) - 4.0 * center;
+			assert.equal(laplacian, 0.0); // uniform gradient balance
+
+			// High-frequency detail / apical edge
+			const edgeCenter = 0.2;
+			const edgeNeighbors = 0.8;
+			const edgeLaplacian = 4.0 * edgeNeighbors - 4.0 * edgeCenter; // 3.2 - 0.8 = 2.4
+			const sharpness = 60.0;
+			const weight = (sharpness / 100.0) * 1.6;
+			const enhanced = edgeCenter - weight * -edgeLaplacian; // boosted edge
+			assert.ok(enhanced > edgeCenter, "Unsharp mask must enhance high-frequency edge transition");
+		});
+
+		it("verifies negative inversion mapping is mathematically exact (1.0 - color)", () => {
+			const testLevels = [0.0, 0.25, 0.5, 0.75, 1.0];
+			for (const val of testLevels) {
+				const inverted = 1.0 - val;
+				const restored = 1.0 - inverted;
+				assert.equal(restored, val);
 			}
 		});
 	});

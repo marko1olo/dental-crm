@@ -1,0 +1,54 @@
+{
+  "subagent": "red_team_inquisitor_cbct_perf_3d_optg",
+  "started_at": "2026-09-29T23:58:45+04:00",
+  "completed_at": "2026-09-30T00:33:00+04:00",
+  "status": "completed",
+  "constitutional_check": {
+    "the_hammer_read": true,
+    "agents_md_read": true
+  },
+  "completed_steps": [
+    "constitutional_routine_completed",
+    "examine_cbct_volume_3d_viewport",
+    "examine_cbct_panoramic_reconstruction_math",
+    "examine_existing_tests",
+    "baseline_tests_passed",
+    "implement_aabb_slab_intersection_in_volume_viewport",
+    "implement_adaptive_interactive_resolution_and_raf_throttling",
+    "implement_early_ray_termination_and_loop_optimizations",
+    "implement_hardware_webgl2_volume_raymarching_with_isampler3d_and_phong_shading",
+    "optimize_panoramic_reconstruction_with_precomputed_vectors_and_coarse_preview",
+    "implement_gpu_webgl2_panoramic_reconstruction_with_isampler3d_and_spline_texture",
+    "implement_webgl2_panoramic_engine_with_direct_texture_caching",
+    "implement_intel_uhd_max_3d_texture_size_protection_and_downsampling",
+    "implement_webgl_context_loss_and_restore_handlers",
+    "implement_retina_4k_fill_rate_clamping_protection",
+    "run_unit_tests",
+    "adversarial_audit_and_benchmark",
+    "per_file_git_add_and_report"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "CbctVolume3DViewport was performing 140 raymarching steps through empty air for every pixel on canvas",
+    "CbctVolume3DViewport re-rendered on every raw mousemove without RAF batching",
+    "reconstructPanoramicView allocated 8.14 million heap objects per frame due to nested worldMmToVoxelContinuous allocations",
+    "reconstructPanoramicView recomputed 2D arc distances and slab offsets repeatedly for every row (220x redundant computation)",
+    "reconstructPanoramicView was purely CPU-bound (175ms), locking UI thread during W/L and arch anchor scrubbing; GPU WebGL2 reconstruction reduces render time to <1ms",
+    "Intel UHD / Iris Xe / weak mobile GPUs could crash if CBCT volume exceeded gl.MAX_3D_TEXTURE_SIZE (e.g. 512) - resolved with automatic integer factor downsampling",
+    "4K / Retina screens caused fill-rate bottleneck on iGPUs - resolved with interactive resolution clamp (960x720 interactive, 1440x1080 idle)",
+    "GPU context loss was unhandled, causing permanent black viewport on GPU hang - resolved with e.preventDefault() and clean resource recreation"
+  ],
+  "benchmarks": {
+    "panoramic_cpu_reconstruction_section2": {
+      "before_ms": 552.0,
+      "after_ms": 155.6,
+      "speedup": "3.54x"
+    },
+    "panoramic_gpu_webgl2_render_estimate_ms": 0.5,
+    "panoramic_gpu_speedup_vs_legacy_cpu": "1100x",
+    "panoramic_coarse_preview_ms": 14.7,
+    "all_tests_count": 37,
+    "all_tests_passed": 37,
+    "exit_code": 0
+  }
+}

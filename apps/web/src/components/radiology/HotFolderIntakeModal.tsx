@@ -33,6 +33,14 @@ import { HotFolderFdiSelector } from "./HotFolderFdiSelector";
 import { HotFolderImageCanvas } from "./HotFolderImageCanvas";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { watchDesktopDicomFolder } from "../../native/desktopBridge";
+import { useVisitStore } from "../../store/visitStore";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import {
+	convertDicomBufferToDataUrl,
+	detectRadiologySensorBrand,
+	extractTeethFromRadiologyFilename,
+	validateRadiologyUploadFile,
+} from "./directRvgFileValidation";
 if (typeof document !== "undefined") { import("./hotFolderIntake.css"); }
 
 // Transparent re-exports for complete backward compatibility and test parity
@@ -82,6 +90,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	const [brightness, setBrightness] = useState<number>(100);
 	const [contrast, setContrast] = useState<number>(100);
 	const [invert, setInvert] = useState<boolean>(false);
+	const [sharpness, setSharpness] = useState<number>(0);
 	const [activePreset, setActivePreset] = useState<FilterPresetKey>("standard");
 	const [zoom, setZoom] = useState<number>(100);
 	const [rotation, setRotation] = useState<number>(0);
@@ -97,31 +106,17 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	// Auto-generate protocol note when teeth or purpose changes
 	useEffect(() => {
 		const teethStr = selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "—";
-		if (clinicalPurpose === "endo_control") {
-			setProtocolNote(
-				`Прицельная радиовизиография зуба ${teethStr}. Контроль качества пломбирования корневых каналов: каналы обтурированы плотно и гомогенно на всем протяжении до рентгенологического апекса. Выведения силера за верхушку корня нет. Периодонтальная щель в периапикальной зоне без деструкции кости.`,
-			);
-		} else if (clinicalPurpose === "primary_caries") {
-			setProtocolNote(
-				`Прицельная радиовизиография зуба ${teethStr}. Обнаружен кариозный дефект твердых тканей коронки, проникающий в средние/глубокие слои дентина. Периапикальные ткани интактны, кортикальная пластинка альвеолы прослеживается.`,
-			);
-		} else if (clinicalPurpose === "implant_check") {
-			setProtocolNote(
-				`Контрольная рентгенография области имплантата в позиции ${teethStr}. Интеграция тела имплантата удовлетворительная, плотный контакт с костной тканью альвеолярного гребня. Резорбции краевой кости не выявлено.`,
-			);
-		} else if (clinicalPurpose === "periapical_check") {
-			setProtocolNote(
-				`Прицельная радиовизиография зуба ${teethStr}. В области верхушки корня определяется разрежение костной ткани с нечеткими контурами (деструкция периодонта). Корневые каналы ранее не лечены.`,
-			);
-		} else if (clinicalPurpose === "orthopantomogram") {
-			setProtocolNote(
-				`Ортопантомограмма челюстей. Зубные ряды интактны, положение зачатков зубов мудрости удовлетворительное, альвеолярный край сохранен, ВНЧС симметричны.`,
-			);
-		} else {
-			setProtocolNote(
+		const notesByPurpose: Record<string, string> = {
+			endo_control: `Прицельная радиовизиография зуба ${teethStr}. Контроль качества пломбирования корневых каналов: каналы обтурированы плотно и гомогенно на всем протяжении до рентгенологического апекса. Выведения силера за верхушку корня нет. Периодонтальная щель в периапикальной зоне без деструкции кости.`,
+			primary_caries: `Прицельная радиовизиография зуба ${teethStr}. Обнаружен кариозный дефект твердых тканей коронки, проникающий в средние/глубокие слои дентина. Периапикальные ткани интактны, кортикальная пластинка альвеолы прослеживается.`,
+			implant_check: `Контрольная рентгенография области имплантата в позиции ${teethStr}. Интеграция тела имплантата удовлетворительная, плотный контакт с костной тканью альвеолярного гребня. Резорбции краевой кости не выявлено.`,
+			periapical_check: `Прицельная радиовизиография зуба ${teethStr}. В области верхушки корня определяется разрежение костной ткани с нечеткими контурами (деструкция периодонта). Корневые каналы ранее не лечены.`,
+			orthopantomogram: `Ортопантомограмма челюстей. Зубные ряды интактны, положение зачатков зубов мудрости удовлетворительное, альвеолярный край сохранен, ВНЧС симметричны.`,
+		};
+		setProtocolNote(
+			notesByPurpose[clinicalPurpose] ??
 				`Прицельная рентгенография зуба ${teethStr}. Краевое прилегание искусственной коронки/вкладки к уступу плотное, нависающих краев и вторичного кариеса под конструкцией не определяется.`,
-			);
-		}
+		);
 	}, [selectedTeeth, clinicalPurpose]);
 
 	// Apply Filter Preset
@@ -131,6 +126,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 		setBrightness(preset.brightness);
 		setContrast(preset.contrast);
 		setInvert(preset.invert);
+		setSharpness(key === "sharpen" ? 50 : 0);
 	};
 
 	// Toggle tooth in FDI Formula
@@ -146,34 +142,17 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 
 	// Quick FDI Presets
 	const handleSelectAllTeeth = () => {
-		const all = [
-			...ADULT_FDI_TEETH.quadrant1,
-			...ADULT_FDI_TEETH.quadrant2,
-			...ADULT_FDI_TEETH.quadrant3,
-			...ADULT_FDI_TEETH.quadrant4,
-		];
-		setSelectedTeeth(all);
+		setSelectedTeeth([
+			...ADULT_FDI_TEETH.quadrant1, ...ADULT_FDI_TEETH.quadrant2,
+			...ADULT_FDI_TEETH.quadrant3, ...ADULT_FDI_TEETH.quadrant4,
+		]);
 	};
 
-	const handleSelectUpperArch = () => {
-		setSelectedTeeth([...ADULT_FDI_TEETH.quadrant1, ...ADULT_FDI_TEETH.quadrant2]);
-	};
-
-	const handleSelectLowerArch = () => {
-		setSelectedTeeth([...ADULT_FDI_TEETH.quadrant4, ...ADULT_FDI_TEETH.quadrant3]);
-	};
-
-	const handleSelectFrontal = () => {
-		setSelectedTeeth(["13", "12", "11", "21", "22", "23", "43", "42", "41", "31", "32", "33"]);
-	};
-
-	const handleSelectRightMolar = () => {
-		setSelectedTeeth(["18", "17", "16", "15", "14", "48", "47", "46", "45", "44"]);
-	};
-
-	const handleSelectLeftMolar = () => {
-		setSelectedTeeth(["24", "25", "26", "27", "28", "34", "35", "36", "37", "38"]);
-	};
+	const handleSelectUpperArch = () => setSelectedTeeth([...ADULT_FDI_TEETH.quadrant1, ...ADULT_FDI_TEETH.quadrant2]);
+	const handleSelectLowerArch = () => setSelectedTeeth([...ADULT_FDI_TEETH.quadrant4, ...ADULT_FDI_TEETH.quadrant3]);
+	const handleSelectFrontal = () => setSelectedTeeth(["13", "12", "11", "21", "22", "23", "43", "42", "41", "31", "32", "33"]);
+	const handleSelectRightMolar = () => setSelectedTeeth(["18", "17", "16", "15", "14", "48", "47", "46", "45", "44"]);
+	const handleSelectLeftMolar = () => setSelectedTeeth(["24", "25", "26", "27", "28", "34", "35", "36", "37", "38"]);
 
 	// Manual scan folder trigger
 	const handleRescanFolder = async () => {
@@ -196,70 +175,100 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 
 	// Handle Drag and Drop Files
 	const handleDropFile = (file: File) => {
-		const reader = new FileReader();
-		reader.onload = () => {
-			const result = reader.result;
-			if (typeof result === "string") {
-				const lowerName = file.name.toLowerCase();
-				let modality: "intraoral_rvg" | "optg_panoramic" | "cbct_slice" | "bitewing" = "intraoral_rvg";
-				let detectedTeeth = ["16"];
+		const validation = validateRadiologyUploadFile(file);
+		if (!validation.isValid) {
+			showToast(`Неподдерживаемый формат файла: ${file.name}. Допустимы DICOM (.dcm), TIFF, PNG, JPG, BMP.`, "error");
+			return;
+		}
 
-				if (lowerName.includes("optg") || lowerName.includes("panoramic")) {
-					modality = "optg_panoramic";
-					detectedTeeth = [
-						"18", "17", "16", "15", "14", "13", "12", "11",
-						"21", "22", "23", "24", "25", "26", "27", "28",
-						"48", "47", "46", "45", "44", "43", "42", "41",
-						"31", "32", "33", "34", "35", "36", "37", "38",
-					];
-				} else if (lowerName.includes("bitewing") || lowerName.includes("bw")) {
-					modality = "bitewing";
-					detectedTeeth = ["16", "15", "46", "45"];
-				}
+		const lowerName = file.name.toLowerCase();
+		let modality: "intraoral_rvg" | "optg_panoramic" | "cbct_slice" | "bitewing" = "intraoral_rvg";
+		let detectedTeeth = ["16"];
 
-				// Extract tooth from filename if present (e.g. Tooth21, 21.dcm)
-				const toothMatch = file.name.match(/\b([1-4][1-8])\b/);
-				if (toothMatch?.[1]) {
-					detectedTeeth = [toothMatch[1]];
-				}
+		if (lowerName.includes("optg") || lowerName.includes("panoramic")) {
+			modality = "optg_panoramic";
+			detectedTeeth = [
+				...ADULT_FDI_TEETH.quadrant1, ...ADULT_FDI_TEETH.quadrant2,
+				...ADULT_FDI_TEETH.quadrant4, ...ADULT_FDI_TEETH.quadrant3,
+			];
+		} else if (lowerName.includes("bitewing") || lowerName.includes("bw")) {
+			modality = "bitewing";
+			detectedTeeth = ["16", "15", "46", "45"];
+		}
 
-				const newItem: HotFolderItem = {
-					id: `dropped-${Date.now()}`,
-					filename: file.name,
-					source: "dicom_network",
-					sourceLabel: "Область загрузки снимка (локальный файл)",
-					folderPath: "Внешний файл / Зона радиовизиографии",
-					detectedModality: modality,
-					modalityLabel: modality === "optg_panoramic" ? "ОПТГ Панорама" : "Прицельный RVG",
-					detectedTeeth,
-					sizeBytes: file.size,
-					sizeFormatted: `${(file.size / (1024 * 1024)).toFixed(1)} МБ`,
-					timestampIso: new Date().toISOString(),
-					relativeTime: "только что",
-					imageUrl: result,
-					status: "new",
-					patientMatch: {
-						patientName,
-						cardNumber: patientCardNumber,
-						confidence: 100,
-					},
-					metadata: {
-						kv: 65,
-						ma: 7.0,
-						exposureSec: 0.08,
-						pixelSpacingMm: 0.035,
-						apparatusModel: "Импортированный снимок DICOM",
-						sensorResolution: "29.2 lp/mm",
-					},
-				};
-
-				setHotFolderItems((prev) => [newItem, ...prev]);
-				setSelectedItemId(newItem.id);
-				setSelectedTeeth(detectedTeeth);
-				showToast(`Файл ${file.name} успешно загружен и привязан`, "success");
+		// Robust tooth extraction
+		const extracted = extractTeethFromRadiologyFilename(file.name);
+		if (extracted.length > 0) {
+			detectedTeeth = extracted;
+			if (extracted.length > 1 && modality !== "optg_panoramic") {
+				const hasUpper = extracted.some((t) => ["14", "15", "16", "17", "24", "25", "26", "27"].includes(t));
+				const hasLower = extracted.some((t) => ["44", "45", "46", "47", "34", "35", "36", "37"].includes(t));
+				if (hasUpper && hasLower) modality = "bitewing";
 			}
+		}
+
+		const detectedSensor = detectRadiologySensorBrand(file.name);
+
+		const createAndInsertItem = (imageUrl: string) => {
+			const newItem: HotFolderItem = {
+				id: `dropped-${Date.now()}`,
+				filename: file.name,
+				source: "dicom_network",
+				sourceLabel: `${detectedSensor} (Загрузка)`,
+				folderPath: "Внешний файл / Зона радиовизиографии",
+				detectedModality: modality,
+				modalityLabel: modality === "optg_panoramic" ? "ОПТГ Панорама" : modality === "bitewing" ? "Bite-wing (Прикусной)" : "Прицельный RVG",
+				detectedTeeth,
+				sizeBytes: file.size,
+				sizeFormatted: `${(file.size / (1024 * 1024)).toFixed(1)} МБ`,
+				timestampIso: new Date().toISOString(),
+				relativeTime: "только что",
+				imageUrl,
+				status: "new",
+				patientMatch: {
+					patientName,
+					cardNumber: patientCardNumber,
+					confidence: 100,
+				},
+				metadata: {
+					kv: 65,
+					ma: 7.0,
+					exposureSec: 0.08,
+					pixelSpacingMm: 0.035,
+					apparatusModel: detectedSensor,
+					sensorResolution: "29.2 lp/mm",
+				},
+			};
+
+			setHotFolderItems((prev) => [newItem, ...prev]);
+			setSelectedItemId(newItem.id);
+			setSelectedTeeth(detectedTeeth);
+			showToast(`Файл ${file.name} успешно загружен и привязан (${detectedSensor})`, "success");
 		};
-		reader.readAsDataURL(file);
+
+		if (validation.format === "dicom") {
+			const reader = new FileReader();
+			reader.onload = () => {
+				if (reader.result instanceof ArrayBuffer) {
+					const decodedUrl = convertDicomBufferToDataUrl(reader.result);
+					if (decodedUrl) return createAndInsertItem(decodedUrl);
+				}
+				const fallbackReader = new FileReader();
+				fallbackReader.onload = () => {
+					if (typeof fallbackReader.result === "string") createAndInsertItem(fallbackReader.result);
+				};
+				fallbackReader.readAsDataURL(file);
+			};
+			reader.onerror = () => showToast(`Ошибка чтения DICOM файла: ${file.name}`, "error");
+			reader.readAsArrayBuffer(file);
+		} else {
+			const reader = new FileReader();
+			reader.onload = () => {
+				if (typeof reader.result === "string") createAndInsertItem(reader.result);
+			};
+			reader.onerror = () => showToast(`Ошибка чтения файла: ${file.name}`, "error");
+			reader.readAsDataURL(file);
+		}
 	};
 
 	// Filtered files list
@@ -279,7 +288,9 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 
 		const study: RadiologyStudy = {
 			id: `study-${Date.now()}`,
+			patientId,
 			patientName,
+			medicalCardNumber: patientCardNumber,
 			studyDate: new Date().toISOString().slice(0, 16).replace("T", " "),
 			studyType: activeItem.detectedModality === "optg_panoramic" ? "optg_digital_panoramic" : "intraoral_radiovisiography",
 			modality: activeItem.detectedModality,
@@ -302,6 +313,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 				pixelSpacingMm: activeItem.metadata.pixelSpacingMm,
 				apparatusModel: activeItem.metadata.apparatusModel,
 			},
+			tags: ["HotFolder", "043/у", `Зуб_${selectedTeeth.join("_")}`],
 		};
 
 		// Mark item as imported
@@ -317,35 +329,102 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 			doseMicrosv,
 		});
 
+		// Persist scan to server
+		if (patientId && activeItem.imageUrl && (activeItem.imageUrl.startsWith("data:image/") || activeItem.imageUrl.startsWith("blob:"))) {
+			void (async () => {
+				try {
+					let imageBase64 = activeItem.imageUrl;
+					if (activeItem.imageUrl.startsWith("blob:")) {
+						const blob = await fetch(activeItem.imageUrl).then((r) => r.blob());
+						imageBase64 = await new Promise<string>((resolve) => {
+							const reader = new FileReader();
+							reader.onloadend = () => resolve(reader.result as string);
+							reader.readAsDataURL(blob);
+						});
+					}
+					await fetch("/api/xray/scans", {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({
+							patientId,
+							imageBase64,
+							originalFilename: activeItem.filename || `hf_tooth_${selectedTeeth.join("_")}_${Date.now()}.jpg`,
+							mimeType: "image/jpeg",
+							kind: activeItem.detectedModality === "optg_panoramic" ? "panoramic" : "periapical",
+							toothCode: selectedTeeth[0] || null,
+							notes: protocolNote,
+							status: "done",
+						}),
+					}).catch((err) => {
+						console.warn("[HotFolderIntakeModal] Failed to persist scan to server:", err);
+					});
+				} catch (err) {
+					console.warn("[HotFolderIntakeModal] Server save error:", err);
+				}
+			})();
+		}
+
+		// Update visit store & reactive tooth state
+		try {
+			const primaryToothCode = selectedTeeth[0] || "16";
+			const rvgDiaryStatement = `[Автозахват снимка ${activeItem.modalityLabel}] Зуб #${selectedTeeth.join(", ")}: доза ${doseMicrosv} мкЗв. ${protocolNote}`;
+
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const current = prev.objectiveStatus || "";
+				const updated = current.trim() ? `${current.trim()}\n${rvgDiaryStatement}` : rvgDiaryStatement;
+				return { ...prev, objectiveStatus: updated };
+			});
+
+			if (primaryToothCode) {
+				const store = useVisitStore.getState();
+				const currentState = store.visitToothStateByCode[primaryToothCode];
+				if (!currentState || currentState === "idle") {
+					store.setToothState(primaryToothCode, "treatment");
+				}
+			}
+		} catch (err) {
+			console.warn("[HotFolderIntakeModal] Failed to update visit store:", err);
+		}
+
+		// Dispatch global SOAP event & reactive scan event
+		try {
+			window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap: { objectiveStatus: `[Автозахват снимка ${activeItem.modalityLabel}] Зуб #${selectedTeeth.join(", ")}: доза ${doseMicrosv} мкЗв. ${protocolNote}` },
+					immediate: true,
+					mode: "smart_append",
+				},
+			}));
+			window.dispatchEvent(new CustomEvent("dente-rvg-scan-saved", {
+				detail: { study, toothFdi: selectedTeeth[0] || "16", teethFdi: selectedTeeth },
+			}));
+		} catch {
+			// ignore
+		}
+
 		showToast(
 			`Снимок (${activeItem.filename}) успешно прикреплен к карте пациента ${patientName} и протоколу ф. 043/у!`,
 			"success",
 		);
-	}, [activeItem, patientName, selectedTeeth, doctorName, protocolNote, clinicalPurpose, onAttachToEmr]);
+	}, [activeItem, patientId, patientCardNumber, patientName, selectedTeeth, doctorName, protocolNote, clinicalPurpose, onAttachToEmr]);
 
 	// Canvas Pan drag handlers
 	const handleMouseDownCanvas = (e: React.MouseEvent) => {
 		setIsDraggingCanvas(true);
 		dragStartRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
 	};
-
 	const handleMouseMoveCanvas = (e: React.MouseEvent) => {
-		if (!isDraggingCanvas) return;
-		setPan({
-			x: e.clientX - dragStartRef.current.x,
-			y: e.clientY - dragStartRef.current.y,
-		});
+		if (isDraggingCanvas) setPan({ x: e.clientX - dragStartRef.current.x, y: e.clientY - dragStartRef.current.y });
 	};
-
-	const handleMouseUpCanvas = () => {
-		setIsDraggingCanvas(false);
-	};
-
+	const handleMouseUpCanvas = () => setIsDraggingCanvas(false);
 	const handleResetView = () => {
 		setZoom(100);
 		setRotation(0);
 		setFlipH(false);
 		setPan({ x: 0, y: 0 });
+		setSharpness(0);
 		handleApplyPreset("standard");
 	};
 
@@ -554,16 +633,36 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 						brightness={brightness}
 						contrast={contrast}
 						invert={invert}
+						sharpness={sharpness}
 						activePreset={activePreset}
+						isDragOver={isDragOver}
 						onMouseDownCanvas={handleMouseDownCanvas}
 						onApplyPreset={handleApplyPreset}
 						setBrightness={setBrightness}
 						setContrast={setContrast}
 						setInvert={setInvert}
+						setSharpness={setSharpness}
 						setRotation={setRotation}
 						setFlipH={setFlipH}
 						setZoom={setZoom}
 						onResetView={handleResetView}
+						onDragOverViewport={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							setIsDragOver(true);
+						}}
+						onDragLeaveViewport={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							setIsDragOver(false);
+						}}
+						onDropViewport={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							setIsDragOver(false);
+							const file = e.dataTransfer.files?.[0];
+							if (file) handleDropFile(file);
+						}}
 					/>
 
 					{/* ─── 3. RIGHT PANEL: FDI FORMULA & 043/У PROTOCOL ─────────── */}
@@ -580,6 +679,26 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 								onSelectRightMolar={handleSelectRightMolar}
 								onSelectLeftMolar={handleSelectLeftMolar}
 							/>
+
+							{/* Section: Bitewing Quick Presets */}
+							<div className="flex items-center gap-1.5 px-1 py-1">
+								<button
+									type="button"
+									onClick={() => setSelectedTeeth(["17", "16", "15", "14", "47", "46", "45", "44"])}
+									className="px-2 py-1 text-[11px] rounded bg-slate-800 text-teal-300 border border-teal-500/30 hover:bg-teal-950/40 transition"
+									data-testid="hfi-bw-right-quick-btn"
+								>
+									Bite-wing R (14-17 / 44-47)
+								</button>
+								<button
+									type="button"
+									onClick={() => setSelectedTeeth(["24", "25", "26", "27", "34", "35", "36", "37"])}
+									className="px-2 py-1 text-[11px] rounded bg-slate-800 text-teal-300 border border-teal-500/30 hover:bg-teal-950/40 transition"
+									data-testid="hfi-bw-left-quick-btn"
+								>
+									Bite-wing L (24-27 / 34-37)
+								</button>
+							</div>
 
 							{/* Section: Clinical Purpose */}
 							<div className="hfi-field-group">

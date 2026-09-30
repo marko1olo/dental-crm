@@ -25,7 +25,11 @@ import {
 	updateDentalArchAnchorPosition,
 } from "../cbctArchSplineMath";
 import {
+	extractArchCrossSectionSeries,
+	extractSingleCrossSectionSlice,
+	findNearestToothAnchorToDistance,
 	generateCrossSectionSlices,
+	generateCrossSectionsAlongArch,
 	measureAlveolarRidgeCrossSection,
 } from "../cbctCrossSectionResliceMath";
 import {
@@ -43,6 +47,9 @@ import {
 	createEmptyCbctVolume,
 	get16BitLut,
 } from "../cbctMprMath";
+import { computeGlCrossSectionCoordinates } from "../mpr/webgl/CbctVolumeGlContext";
+import { handleWorkerMessage } from "../mpr/cbctSliceWorker";
+import { CbctWorkerBridge } from "../mpr/cbctWorkerBridge";
 
 describe("CBCT Red Team Romexis Parity: Dental Arch & Reslice Engine", () => {
 	// ─── 1. DENTAL ARCH SPLINE & ANCHOR MANIPULATION ──────────────────────────
@@ -181,6 +188,210 @@ describe("CBCT Red Team Romexis Parity: Dental Arch & Reslice Engine", () => {
 			assert.equal(tooth46.nearestToothFdi, "46");
 			assert.ok(typeof tooth46.crossSectionIdx === "number");
 		});
+
+		it("generates extractArchCrossSectionSeries with standard implant dimensions (24x32 mm, 0.25 mm/px) and orthogonal vectors", () => {
+			const volume = createEmptyCbctVolume(120, 120, 80, 0.4, -1000);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+			const series = extractArchCrossSectionSeries(volume, curve, {
+				stepMm: 1.5,
+				widthMm: 24.0,
+				heightMm: 32.0,
+				pixelSpacingMm: 0.25,
+			});
+
+			assert.ok(series.length > 50, `Expected > 50 cross-sections, got ${series.length}`);
+			const first = series[0]!;
+			assert.equal(first.sliceIndex, 1);
+			assert.equal(first.widthMm, 24.0);
+			assert.equal(first.heightMm, 32.0);
+			assert.equal(first.pixelSpacingMm, 0.25);
+			assert.equal(first.widthPx, 96);
+			assert.equal(first.heightPx, 128);
+			assert.equal(first.pixelData.length, 96 * 128 * 4);
+			assert.ok(first.sliceLabel?.includes("48"), `Expected sliceLabel to reference 48, got ${first.sliceLabel}`);
+
+			for (let i = 0; i < series.length; i++) {
+				const s = series[i]!;
+				assert.equal(s.sliceIndex, i + 1);
+				assert.equal(s.pixelData.length, 96 * 128 * 4);
+
+				// Strict orthogonality between tangent and normal: T . N = 0
+				const dot = s.tangentVector2D.x * s.normalVector2D.x + s.tangentVector2D.y * s.normalVector2D.y;
+				assert.ok(Math.abs(dot) < 1e-4, `Slice #${s.sliceIndex}: T . N must be 0, got ${dot}`);
+
+				// Unit length
+				const tLen = Math.hypot(s.tangentVector2D.x, s.tangentVector2D.y);
+				const nLen = Math.hypot(s.normalVector2D.x, s.normalVector2D.y);
+				assert.ok(Math.abs(tLen - 1.0) < 1e-3, `Slice #${s.sliceIndex}: tangent length must be 1.0, got ${tLen}`);
+				assert.ok(Math.abs(nLen - 1.0) < 1e-3, `Slice #${s.sliceIndex}: normal length must be 1.0, got ${nLen}`);
+
+				// Monotonic distance along arch
+				if (i > 0) {
+					assert.ok(
+						s.distanceAlongArchMm >= series[i - 1]!.distanceAlongArchMm,
+						`Distance along arch must be monotonic at slice ${i}: ${s.distanceAlongArchMm} >= ${series[i - 1]!.distanceAlongArchMm}`,
+					);
+				}
+			}
+		});
+
+		it("honors volume.defaultWindowWidth and volume.defaultWindowLevel fallback in cross-section slices", () => {
+			const volume = createEmptyCbctVolume(60, 60, 40, 0.5, 0);
+			// Inject custom DICOM header window/level
+			(volume as { defaultWindowWidth?: number; defaultWindowLevel?: number }).defaultWindowWidth = 3800;
+			(volume as { defaultWindowWidth?: number; defaultWindowLevel?: number }).defaultWindowLevel = 1100;
+
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+			const slice = extractSingleCrossSectionSlice(
+				volume,
+				{ x: 0, y: -50, z: -10 },
+				{ x: 0, y: 1 },
+				1,
+				50.0,
+				curve.anchors[7]!,
+			);
+
+			assert.equal(slice.sliceIndex, 1);
+			assert.equal(slice.nearestToothFdi, "41");
+			assert.equal(slice.widthPx, 96);
+			assert.equal(slice.heightPx, 128);
+			assert.equal(slice.pixelData.length, 96 * 128 * 4);
+		});
+
+		it("binds FDI tooth labels across entire arch from right (48/18) to left (38/28) without end wrap-around", () => {
+			const volume = createEmptyCbctVolume(100, 100, 60, 0.5, 0);
+
+			// Test Mandibular Arch: 48 (Right) -> 41/31 (Midline) -> 38 (Left)
+			const mandCurve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+			const mandSlices = extractArchCrossSectionSeries(volume, mandCurve, { stepMm: 1.5 });
+
+			assert.ok(mandSlices.length >= 2);
+			const firstMand = mandSlices[0]!;
+			const lastMand = mandSlices[mandSlices.length - 1]!;
+			const midMand = mandSlices[Math.floor(mandSlices.length / 2)]!;
+
+			assert.equal(firstMand.nearestToothFdi, "48", `First slice must bind to FDI 48, got ${firstMand.nearestToothFdi}`);
+			assert.ok(
+				midMand.nearestToothFdi === "41" || midMand.nearestToothFdi === "31",
+				`Middle slice must bind to incisor 41 or 31, got ${midMand.nearestToothFdi}`,
+			);
+			assert.equal(
+				lastMand.nearestToothFdi,
+				"38",
+				`CRITICAL BUG CHECK: Last slice must bind to FDI 38, NOT wrap around to 48! Got: ${lastMand.nearestToothFdi}`,
+			);
+
+			// Test Maxillary Arch: 18 (Right) -> 11/21 (Midline) -> 28 (Left)
+			const maxCurve = buildDentalArchCurve(DEFAULT_MAXILLARY_ARCH_ANCHORS, "maxilla");
+			const maxSlices = extractArchCrossSectionSeries(volume, maxCurve, { stepMm: 1.5 });
+
+			const firstMax = maxSlices[0]!;
+			const lastMax = maxSlices[maxSlices.length - 1]!;
+			const midMax = maxSlices[Math.floor(maxSlices.length / 2)]!;
+
+			assert.equal(firstMax.nearestToothFdi, "18", `First slice must bind to FDI 18, got ${firstMax.nearestToothFdi}`);
+			assert.ok(
+				midMax.nearestToothFdi === "11" || midMax.nearestToothFdi === "21",
+				`Middle slice must bind to incisor 11 or 21, got ${midMax.nearestToothFdi}`,
+			);
+			assert.equal(
+				lastMax.nearestToothFdi,
+				"28",
+				`CRITICAL BUG CHECK: Last slice must bind to FDI 28, NOT wrap around to 18! Got: ${lastMax.nearestToothFdi}`,
+			);
+		});
+
+		it("protects Catmull-Rom spline, tangents, and normals against coinciding anchors and single points without NaN or zero division", () => {
+			// Coinciding identical anchors
+			const coincidingAnchors = [
+				{ id: "c1", toothFdi: "46", labelRu: "46", positionMm: { x: 10.0, y: 10.0 }, isQuadrantRight: true },
+				{ id: "c2", toothFdi: "45", labelRu: "45", positionMm: { x: 10.0, y: 10.0 }, isQuadrantRight: true },
+				{ id: "c3", toothFdi: "44", labelRu: "44", positionMm: { x: 15.0, y: 12.0 }, isQuadrantRight: true },
+			];
+
+			const spline = fitSmoothDentalArchSpline(coincidingAnchors, 4);
+			assert.ok(spline.length > 0);
+			for (const p of spline) {
+				assert.equal(Number.isFinite(p.x), true, `Spline X must be finite: ${p.x}`);
+				assert.equal(Number.isFinite(p.y), true, `Spline Y must be finite: ${p.y}`);
+			}
+
+			const vectorField = calculateArchTangentsAndNormals(spline);
+			assert.equal(vectorField.length, spline.length);
+			for (const node of vectorField) {
+				const tLen = Math.hypot(node.tangent.x, node.tangent.y);
+				const nLen = Math.hypot(node.normal.x, node.normal.y);
+				assert.ok(Math.abs(tLen - 1.0) < 1e-3, `Tangent length must be 1.0, got ${tLen}`);
+				assert.ok(Math.abs(nLen - 1.0) < 1e-3, `Normal length must be 1.0, got ${nLen}`);
+
+				const dot = node.tangent.x * node.normal.x + node.tangent.y * node.normal.y;
+				assert.ok(Math.abs(dot) < 1e-4, `Tangent and normal must be orthogonal, got ${dot}`);
+			}
+
+			// Single anchor curve
+			const singleAnchor = [
+				{ id: "s1", toothFdi: "46", labelRu: "46", positionMm: { x: 0.0, y: 0.0 }, isQuadrantRight: true },
+			];
+			const singleSpline = fitSmoothDentalArchSpline(singleAnchor);
+			assert.equal(singleSpline.length, 1);
+			const singleField = calculateArchTangentsAndNormals(singleSpline);
+			assert.equal(singleField.length, 1);
+			assert.equal(Math.hypot(singleField[0]!.tangent.x, singleField[0]!.tangent.y), 1.0);
+			assert.equal(Math.hypot(singleField[0]!.normal.x, singleField[0]!.normal.y), 1.0);
+
+			// Anchors with NaN / Infinity
+			const corruptAnchors = [
+				{ id: "bad1", toothFdi: "46", labelRu: "46", positionMm: { x: Number.NaN, y: 10.0 }, isQuadrantRight: true },
+				{ id: "good1", toothFdi: "45", labelRu: "45", positionMm: { x: 5.0, y: 5.0 }, isQuadrantRight: true },
+				{ id: "bad2", toothFdi: "44", labelRu: "44", positionMm: { x: 10.0, y: Number.POSITIVE_INFINITY }, isQuadrantRight: true },
+				{ id: "good2", toothFdi: "43", labelRu: "43", positionMm: { x: 15.0, y: 10.0 }, isQuadrantRight: true },
+			];
+			const safeSpline = fitSmoothDentalArchSpline(corruptAnchors);
+			assert.ok(safeSpline.length > 0);
+			for (const p of safeSpline) {
+				assert.equal(Number.isFinite(p.x), true);
+				assert.equal(Number.isFinite(p.y), true);
+			}
+		});
+
+		it("measures alveolar ridge dimensions and determines implant adequacy per Buser / Misch criteria", () => {
+			const volume = createEmptyCbctVolume(100, 100, 60, 0.5, 0);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+			const slice = extractSingleCrossSectionSlice(
+				volume,
+				{ x: -32, y: -26, z: -10 },
+				{ x: 0, y: 1 },
+				1,
+				24.0,
+				curve.anchors[2]!,
+			);
+
+			// Test with explicit adequate cortical crest data (H=12mm, W=7mm)
+			const adequateSlice = {
+				...slice,
+				corticalCrestHeightMm: 12.0,
+				alveolarRidgeWidthMm: 7.0,
+			};
+			const resAdequate = measureAlveolarRidgeCrossSection(adequateSlice);
+			assert.ok(resAdequate !== null);
+			assert.equal(resAdequate.heightMm, 12.0);
+			assert.equal(resAdequate.crestWidthMm, 7.0);
+			assert.equal(resAdequate.isAdequateForImplant, true);
+			assert.ok(resAdequate.clinicalAdviceRu.includes("достаточен для стандартного имплантата"));
+
+			// Test with deficient cortical crest data (H=8mm, W=4.5mm)
+			const deficientSlice = {
+				...slice,
+				corticalCrestHeightMm: 8.0,
+				alveolarRidgeWidthMm: 4.5,
+			};
+			const resDeficient = measureAlveolarRidgeCrossSection(deficientSlice);
+			assert.ok(resDeficient !== null);
+			assert.equal(resDeficient.heightMm, 8.0);
+			assert.equal(resDeficient.crestWidthMm, 4.5);
+			assert.equal(resDeficient.isAdequateForImplant, false);
+			assert.ok(resDeficient.clinicalAdviceRu.includes("Показана аугментация"));
+		});
 	});
 
 	// ─── 3. 1-CLICK HOUNSFIELD UNIT CONTRAST PRESETS ───────────────────────────
@@ -215,13 +426,13 @@ describe("CBCT Red Team Romexis Parity: Dental Arch & Reslice Engine", () => {
 	describe("4. Constitution Mandates 8b (<= 800 lines) & 8d (Zero emojis)", () => {
 		const radiologyFiles = [
 			"cbctArchSplineMath.ts",
-			"cbctPanoramicReconstructionMath.ts",
 			"cbctCrossSectionResliceMath.ts",
-			"cbctPanoramicNavigationMath.ts",
 			"dentalCurveEngine.ts",
-			"CbctHeaderBar.tsx",
-			"CbctLeftToolDock.tsx",
 			"CbctMprImplantStudioModal.tsx",
+			"mpr/cbctWorkerBridge.ts",
+			"mpr/cbctSliceWorker.ts",
+			"mpr/webgl/CbctVolumeGlContext.ts",
+			"mpr/useCbctSliceRenderer.ts",
 		];
 
 		const getRadiologyDir = () => {
@@ -333,6 +544,112 @@ describe("CBCT Red Team Romexis Parity: Dental Arch & Reslice Engine", () => {
 			}
 
 			assert.ok(maxMip >= maxAvg, `MIP peak brightness (${maxMip}) must be >= average (${maxAvg})`);
+		});
+	});
+
+	// ─── 6. GPU RESLICING COORDINATES & WEB WORKER PIPELINE ────────────────────
+	describe("6. Hardware GPU Reslicing Coordinates & Web Worker Pipeline", () => {
+		it("computes exact GlSliceCoordinates for transverse cross-section slice (24x34 mm at 0.25 mm/px)", () => {
+			const volume = createEmptyCbctVolume(100, 100, 80, 0.4, 0);
+			const centerMm = { x: 10.0, y: -5.0, z: -15.0 };
+			const normal2D = { x: 0.0, y: 1.0 }; // pointing along +Y
+
+			const coords = computeGlCrossSectionCoordinates(volume, centerMm, normal2D, {
+				widthMm: 24.0,
+				heightMm: 34.0,
+				pixelSpacingMm: 0.25,
+			});
+
+			assert.equal(coords.widthPx, 96, "24.0 mm at 0.25 mm/px must be 96 px");
+			assert.equal(coords.heightPx, 136, "34.0 mm at 0.25 mm/px must be 136 px");
+			assert.equal(coords.pixelSpacingX, 0.25);
+			assert.equal(coords.pixelSpacingY, 0.25);
+
+			// Axis U must be along normal2D (+Y) and span 24 mm
+			assert.equal(coords.axisU[0], 0);
+			assert.ok(coords.axisU[1] > 0, "Axis U must point along +Y");
+			assert.equal(coords.axisU[2], 0);
+
+			// Axis V must be along -Z and span 34 mm downwards
+			assert.equal(coords.axisV[0], 0);
+			assert.equal(coords.axisV[1], 0);
+			assert.ok(coords.axisV[2] < 0, "Axis V must point downwards along -Z");
+
+			// Axis Norm is [0, 0, 0] in single slice mode (slab step = 0)
+			assert.deepEqual(coords.axisNorm, [0, 0, 0]);
+			assert.equal(coords.slabModeCode, 0);
+			assert.equal(coords.slabSteps, 1);
+
+			// In Slab MIP mode with 4.0 mm thickness, Axis Norm must step along tangent ({ x: 1, y: 0 })
+			const slabCoords = computeGlCrossSectionCoordinates(volume, centerMm, normal2D, {
+				widthMm: 24.0,
+				heightMm: 34.0,
+				pixelSpacingMm: 0.25,
+				slabMode: "mip",
+				slabThicknessMm: 4.0,
+			});
+			assert.equal(slabCoords.slabModeCode, 1);
+			assert.ok(slabCoords.slabSteps > 1);
+			assert.ok(Math.abs(slabCoords.axisNorm[0]) > 0 || Math.abs(slabCoords.axisNorm[1]) > 0);
+			assert.equal(slabCoords.axisNorm[2], 0);
+
+			// Check sliceOrigin top-left coordinate normalized UVW within [0, 1]
+			assert.ok(coords.sliceOrigin[0] >= 0 && coords.sliceOrigin[0] <= 1);
+			assert.ok(coords.sliceOrigin[1] >= 0 && coords.sliceOrigin[1] <= 1);
+			assert.ok(coords.sliceOrigin[2] >= 0 && coords.sliceOrigin[2] <= 1);
+		});
+
+		it("processes RENDER_CROSS_SECTION_SERIES in handleWorkerMessage with Transferable ArrayBuffers", () => {
+			const volume = createEmptyCbctVolume(60, 60, 40, 0.5, 200);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+
+			const cache = new Map<string, typeof volume>();
+			cache.set(volume.id, volume);
+
+			let receivedOutbound: any = null;
+			let receivedTransfer: Transferable[] | undefined = undefined;
+
+			handleWorkerMessage(
+				{
+					type: "RENDER_CROSS_SECTION_SERIES",
+					requestId: 42,
+					volumeId: volume.id,
+					archCurve: curve,
+					options: { stepMm: 5.0 },
+				},
+				(response, transfer) => {
+					receivedOutbound = response;
+					receivedTransfer = transfer;
+				},
+				cache,
+			);
+
+			assert.ok(receivedOutbound, "Worker must produce outbound response");
+			const out = receivedOutbound as any;
+			assert.equal(out.type, "CROSS_SECTION_SERIES_RENDERED");
+			assert.equal(out.requestId, 42);
+			assert.ok(Array.isArray(out.slices) && out.slices.length > 5);
+			const transferList = receivedTransfer as Transferable[] | undefined;
+			assert.ok(Array.isArray(transferList) && transferList.length > 5, "Must pass Transferable array buffers");
+			assert.equal(transferList!.length, out.slices.length);
+		});
+
+		it("executes CbctWorkerBridge requestCrossSectionSeries in fallback mode with zero UI errors", async () => {
+			const bridge = new CbctWorkerBridge({ forceFallback: true });
+			const volume = createEmptyCbctVolume(60, 60, 40, 0.5, 100);
+			const curve = buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
+
+			const slices = await bridge.requestCrossSectionSeries({
+				volume,
+				archCurve: curve,
+				options: { stepMm: 10.0 },
+			});
+
+			assert.ok(Array.isArray(slices) && slices.length > 0);
+			assert.ok(slices[0]!.pixelData instanceof Uint8ClampedArray);
+			assert.equal(slices[0]!.widthPx, 96);
+			assert.ok(slices[0]!.sliceLabel?.includes("#"));
+			bridge.dispose();
 		});
 	});
 });

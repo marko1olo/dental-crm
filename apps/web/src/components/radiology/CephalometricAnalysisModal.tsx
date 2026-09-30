@@ -11,6 +11,8 @@ import {
 	Printer,
 	Save,
 	Sparkles,
+	Target,
+	HelpCircle,
 	Trash2,
 	X,
 } from "lucide-react";
@@ -39,6 +41,100 @@ import {
 	type LandmarkMap,
 	type Point2D,
 } from "../orthodontics/cephalometricMath";
+
+export const LANDMARK_CLINICAL_ROLES: Record<LandmarkKey, { depends: string; clinicalTip: string }> = {
+	S: {
+		depends: "Углы SNA (82°±2°), SNB (80°±2°), SN-GoGn (32°±3°), U1-SN (104°±2°), Y-ось Downs",
+		clinicalTip: "Центр контура турецкого седла (гипофизарной ямки клиновидной кости).",
+	},
+	N: {
+		depends: "Ключевая точка основания черепа: углы SNA, SNB, ANB (Класс I/II/III), 1-NA, 1-NB, Facial Angle, Convexity",
+		clinicalTip: "Лобно-носовой шов на профильном контуре черепа (переход лобной кости в носовую).",
+	},
+	A: {
+		depends: "Угол SNA (ВЧ к черепу), угол ANB (Скелетный класс), Wits-число, 1-NA (22°±2° и 4±1 мм), McNamara A-Nperp",
+		clinicalTip: "Точка наибольшей вогнутости переднего контура апикального базиса верхней челюсти под остью ANS.",
+	},
+	B: {
+		depends: "Угол SNB (НЧ к черепу), угол ANB (Скелетный класс), Wits-число, 1-NB (25°±2° и 4±1 мм)",
+		clinicalTip: "Точка наибольшей вогнутости переднего контура альвеолярной части нижней челюсти над погонионом Pog.",
+	},
+	Pog: {
+		depends: "Лицевой угол Downs (N-Pog to FH), угол выпуклости Downs (N-A-Pog), McNamara Pog-Nperp",
+		clinicalTip: "Наиболее передняя точка подбородочного выступа на профиле симфиза нижней челюсти.",
+	},
+	Me: {
+		depends: "Плоскость основания нижней челюсти MP, угол FMA (25°±3°), угол наклона SN-GoGn, наклон резцов L1-MP",
+		clinicalTip: "Самая нижняя точка контура подбородочного симфиза нижней челюсти.",
+	},
+	Gn: {
+		depends: "Гнатион: угол SN-GoGn, ось роста лица Y-Axis (Downs), угол FMA (Tweed)",
+		clinicalTip: "Передне-нижняя точка контура подбородочного симфиза (между точками Pog и Me).",
+	},
+	Go: {
+		depends: "Угол нижней челюсти: плоскость MP, угол FMA (Tweed), SN-GoGn (Steiner), межбазисный угол NL-ML",
+		clinicalTip: "Вершина угла нижней челюсти (переход тела челюсти в восходящую ветвь).",
+	},
+	ANS: {
+		depends: "Нёбная плоскость NL, межбазисный угол NL-ML (Ricketts, 25°±4°), Wits-ориентир",
+		clinicalTip: "Вершина костного выступа передней носовой ости на дистальном крае грушевидного отверстия.",
+	},
+	PNS: {
+		depends: "Нёбная плоскость NL, межбазисный угол NL-ML (Ricketts), окклюзионная плоскость",
+		clinicalTip: "Задний дистальный край твердого нёба (вершина задней носовой ости).",
+	},
+	Or: {
+		depends: "Франкфуртская горизонталь FH (FMA Tweed, Facial Angle Downs, Y-Axis, McNamara)",
+		clinicalTip: "Самая нижняя точка инфраорбитального края глазницы на рентгенограмме.",
+	},
+	Po: {
+		depends: "Франкфуртская горизонталь FH (FMA Tweed, Facial Angle Downs, Y-Axis, McNamara)",
+		clinicalTip: "Верхний край наружного слухового прохода.",
+	},
+	U1t: {
+		depends: "Инклинация 1-NA (22°±2°), расстояние 1-NA (4±1 мм), U1-SN (104°±2°), межрезцовый угол U1-L1",
+		clinicalTip: "Режущий край наиболее выступающего центрального резца верхней челюсти (1.1 или 2.1).",
+	},
+	U1a: {
+		depends: "Продольная ось верхнего резца: угол 1-NA (22°±2°), угол U1-SN (104°±2°), межрезцовый U1-L1",
+		clinicalTip: "Верхушка корня центрального резца верхней челюсти.",
+	},
+	L1t: {
+		depends: "Инклинация 1-NB (25°±2°), расстояние 1-NB (4±1 мм), L1-MP / IMPA (90°±3°), межрезцовый U1-L1",
+		clinicalTip: "Режущий край наиболее выступающего центрального резца нижней челюсти (4.1 или 3.1).",
+	},
+	L1a: {
+		depends: "Продольная ось нижнего резца: угол 1-NB (25°±2°), угол L1-MP / IMPA (90°±3°), межрезцовый U1-L1",
+		clinicalTip: "Верхушка корня центрального резца нижней челюсти.",
+	},
+};
+
+export function getRequiredLandmarksForMeasurement(id: string): LandmarkKey[] {
+	switch (id) {
+		case "SNA": return ["S", "N", "A"];
+		case "SNB": return ["S", "N", "B"];
+		case "ANB": return ["S", "N", "A", "B"];
+		case "Wits": return ["A", "B", "U1t", "L1t"];
+		case "Downs-FA": return ["N", "Pog", "Po", "Or"];
+		case "Downs-Conv": return ["N", "A", "Pog"];
+		case "Downs-AB": return ["N", "Pog", "A", "B"];
+		case "SN-GoGn": return ["S", "N", "Go", "Gn"];
+		case "FMA": return ["Po", "Or", "Go", "Me"];
+		case "Downs-YAxis": return ["S", "Gn", "Po", "Or"];
+		case "Downs-CantOP": return ["Po", "Or", "U1t", "L1t"];
+		case "U1-SN": return ["S", "N", "U1t", "U1a"];
+		case "1-NA-Angle": return ["N", "A", "U1t", "U1a"];
+		case "1-NA-Dist": return ["N", "A", "U1t"];
+		case "L1-MP": return ["Go", "Me", "L1t", "L1a"];
+		case "1-NB-Angle": return ["N", "B", "L1t", "L1a"];
+		case "1-NB-Dist": return ["N", "B", "L1t"];
+		case "U1-L1": return ["U1t", "U1a", "L1t", "L1a"];
+		case "NL-ML": return ["ANS", "PNS", "Go", "Me"];
+		case "McNamara-A-Nperp": return ["N", "A", "Po", "Or"];
+		case "McNamara-Pog-Nperp": return ["N", "Pog", "Po", "Or"];
+		default: return [];
+	}
+}
 
 export interface CephalometricAnalysisModalProps {
 	readonly isOpen: boolean;
@@ -103,6 +199,12 @@ export function CephalometricAnalysisModal({
 		return calculateCephalometrics(landmarks, scaleMmPerPixel);
 	}, [landmarks, scaleMmPerPixel]);
 
+	const activeLm = useMemo(() => {
+		return activeTargetKey ? CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey) ?? null : null;
+	}, [activeTargetKey]);
+
+	const isAllPlaced = analysis.placedCount === CEPHALOMETRIC_LANDMARKS.length;
+
 	// Landmark Placement Handlers
 	const handleLandmarkChange = useCallback((key: LandmarkKey, point: Point2D) => {
 		setLandmarks((prev) => ({
@@ -111,14 +213,19 @@ export function CephalometricAnalysisModal({
 		}));
 		void SoundFeedbackService.getInstance().playActionSuccess();
 
-		// Auto advance to next unplaced landmark
+		// Auto advance to next unplaced landmark (searching ahead, then wrapping around)
 		const currentIndex = CEPHALOMETRIC_LANDMARKS.findIndex((l) => l.key === key);
 		if (currentIndex !== -1) {
-			const nextUnplaced = CEPHALOMETRIC_LANDMARKS.slice(currentIndex + 1).find(
-				(l) => !landmarks[l.key] && l.key !== key,
-			);
+			const count = CEPHALOMETRIC_LANDMARKS.length;
+			const nextUnplaced = Array.from({ length: count }, (_, offset) => {
+				const idx = (currentIndex + 1 + offset) % count;
+				return CEPHALOMETRIC_LANDMARKS[idx]!;
+			}).find((l) => l.key !== key && !landmarks[l.key]);
+
 			if (nextUnplaced) {
 				setActiveTargetKey(nextUnplaced.key);
+			} else {
+				setActiveTargetKey(null);
 			}
 		}
 	}, [landmarks]);
@@ -691,43 +798,53 @@ export function CephalometricAnalysisModal({
 										Основные углы и параметры
 									</div>
 									<div className="grid grid-cols-1 gap-1.5">
-										{analysis.measurements.map((m) => (
-											<div
-												key={m.id}
-												className="p-2 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-between text-xs"
-											>
-												<div className="min-w-0 pr-2">
-													<div className="font-bold text-white truncate">{m.name}</div>
-													<div className="text-[10px] text-slate-400 truncate">
-														{m.clinicalInterpretation} · Норма: {m.normText}
+										{analysis.measurements.map((m) => {
+											const isValValid = m.value !== null && Number.isFinite(m.value);
+											const missingKeys = getRequiredLandmarksForMeasurement(m.id).filter((k) => !landmarks[k]);
+											return (
+												<div
+													key={m.id}
+													className="p-2 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-between text-xs"
+												>
+													<div className="min-w-0 pr-2">
+														<div className="font-bold text-white truncate">{m.name}</div>
+														<div className="text-[10px] text-slate-400 truncate">
+															{m.clinicalInterpretation} · Норма: {m.normText}
+														</div>
+													</div>
+													<div className="text-right shrink-0 flex items-center gap-1.5">
+														<span className="font-mono font-black text-xs text-white">
+															{isValValid ? `${m.value}${m.unit}` : "—"}
+														</span>
+														<span
+															className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+																isValValid
+																	? m.status === "normal"
+																		? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
+																		: m.status === "increased"
+																			? "bg-rose-950 text-rose-300 border border-rose-500/40"
+																			: m.status === "decreased"
+																				? "bg-sky-950 text-sky-300 border border-sky-500/40"
+																				: "bg-slate-800 text-slate-400"
+																	: "bg-slate-800 text-amber-300 border border-amber-500/30"
+															}`}
+														>
+															{isValValid
+																? m.status === "normal"
+																	? "Норма"
+																	: m.status === "increased"
+																		? "Увелич."
+																		: m.status === "decreased"
+																			? "Уменьш."
+																			: "—"
+																: missingKeys.length > 0
+																	? `Ждёт: ${missingKeys.join(",")}`
+																	: "—"}
+														</span>
 													</div>
 												</div>
-												<div className="text-right shrink-0 flex items-center gap-1.5">
-													<span className="font-mono font-black text-xs text-white">
-														{m.value !== null ? `${m.value}${m.unit}` : "—"}
-													</span>
-													<span
-														className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
-															m.status === "normal"
-																? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
-																: m.status === "increased"
-																	? "bg-rose-950 text-rose-300 border border-rose-500/40"
-																	: m.status === "decreased"
-																		? "bg-sky-950 text-sky-300 border border-sky-500/40"
-																		: "bg-slate-800 text-slate-400"
-														}`}
-													>
-														{m.status === "normal"
-															? "Норма"
-															: m.status === "increased"
-																? "Увелич."
-																: m.status === "decreased"
-																	? "Уменьш."
-																	: "—"}
-													</span>
-												</div>
-											</div>
-										))}
+											);
+										})}
 									</div>
 								</div>
 
@@ -932,6 +1049,77 @@ export function CephalometricAnalysisModal({
 									</p>
 								</div>
 
+								{/* Active Landmark Guidance Banner for Orthodontist */}
+								{isImageLoaded && activeLm && !isAllPlaced && (
+									<div
+										data-testid="banner-active-landmark-guidance"
+										className="mb-3 p-3 rounded-xl border border-teal-500/50 bg-teal-950/40 shadow-sm space-y-1.5 shrink-0"
+									>
+										<div className="flex items-center justify-between gap-2">
+											<div className="flex items-center gap-2 min-w-0">
+												<span
+													className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs text-white shrink-0 shadow-sm"
+													style={{ backgroundColor: activeLm.color }}
+												>
+													{activeLm.code}
+												</span>
+												<span className="text-xs font-black text-teal-300 uppercase tracking-wide truncate">
+													Цель: {activeLm.nameRu} ({activeLm.latinName})
+												</span>
+											</div>
+											<button
+												type="button"
+												data-testid="btn-skip-next-landmark"
+												onClick={() => {
+													const count = CEPHALOMETRIC_LANDMARKS.length;
+													const curIdx = CEPHALOMETRIC_LANDMARKS.findIndex((l) => l.key === activeLm.key);
+													const next = Array.from({ length: count }, (_, offset) => {
+														const idx = (curIdx + 1 + offset) % count;
+														return CEPHALOMETRIC_LANDMARKS[idx]!;
+													}).find((l) => l.key !== activeLm.key && !landmarks[l.key]);
+													if (next) {
+														setActiveTargetKey(next.key);
+													}
+												}}
+												className="text-[11px] font-bold text-slate-300 hover:text-white px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 transition-colors shrink-0 cursor-pointer"
+												title="Перейти к следующему незаданному ориентиру"
+											>
+												След. точка →
+											</button>
+										</div>
+										<p className="text-xs text-slate-200 leading-snug m-0">
+											<span className="font-semibold text-teal-400">Анатомия: </span>
+											{LANDMARK_CLINICAL_ROLES[activeLm.key]?.clinicalTip || activeLm.anatomicalDescription}
+										</p>
+										<p className="text-[11px] text-slate-400 leading-tight m-0">
+											<span className="font-medium text-slate-300">Влияет на: </span>
+											{LANDMARK_CLINICAL_ROLES[activeLm.key]?.depends || "Углы и плоскости черепа"}
+										</p>
+									</div>
+								)}
+
+								{isImageLoaded && isAllPlaced && (
+									<div
+										data-testid="banner-all-landmarks-placed"
+										className="mb-3 p-3 rounded-xl border border-emerald-500/50 bg-emerald-950/40 text-xs text-emerald-200 flex items-center justify-between gap-2 shrink-0"
+									>
+										<div className="flex items-center gap-2">
+											<Check size={16} className="text-emerald-400 shrink-0" />
+											<span className="font-bold">Все 16 анатомических ориентиров расставлены!</span>
+										</div>
+										<button
+											type="button"
+											onClick={() => {
+												setActiveTab("metrics");
+												setMobileView("metrics");
+											}}
+											className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition-colors shrink-0 cursor-pointer"
+										>
+											Смотреть углы →
+										</button>
+									</div>
+								)}
+
 								{/* Landmark Item Cards with Touch Targets >= 44x44px (min-h-[52px]) */}
 								<div className="space-y-2 flex-1 overflow-y-auto pr-1 pb-4">
 									{CEPHALOMETRIC_LANDMARKS.map((lm) => {
@@ -1089,6 +1277,311 @@ export function CephalometricAnalysisModal({
 									</div>
 								</div>
 
+								{/* Core Cephalometric Angles Hero Showcase (Steiner Core: SNA, SNB, ANB, 1-NA, 1-NB) */}
+								<div className="mb-4 space-y-2">
+									<div className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center justify-between">
+										<span>Ключевые углы Штайнера (Steiner Core)</span>
+										<span className="text-[10px] text-teal-400 font-normal">Мандат 8e / Ортодонтия</span>
+									</div>
+									<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+										{/* SNA */}
+										{(() => {
+											const meas = analysis.measurements.find((m) => m.id === "SNA");
+											const isValValid = meas?.value !== null && meas?.value !== undefined && Number.isFinite(meas.value);
+											const missing = (["S", "N", "A"] as LandmarkKey[]).filter((k) => !landmarks[k]);
+											return (
+												<div
+													data-testid="core-hero-SNA"
+													className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 flex flex-col justify-between min-h-[76px]"
+												>
+													<div className="flex items-center justify-between gap-1">
+														<span className="text-[11px] font-bold text-slate-300 truncate">SNA (ВЧ)</span>
+														<span className="text-[9px] text-slate-400 font-mono">82° ± 2°</span>
+													</div>
+													<div className="my-1">
+														{isValValid ? (
+															<div
+																className={`text-lg font-black font-mono leading-none ${
+																	meas.status === "normal"
+																		? "text-emerald-400"
+																		: meas.status === "increased"
+																			? "text-rose-400"
+																			: meas.status === "decreased"
+																				? "text-cyan-400"
+																				: "text-white"
+																}`}
+															>
+																{meas.value}{meas.unit}
+															</div>
+														) : (
+															<div className="text-sm font-semibold text-slate-500 leading-none">—</div>
+														)}
+													</div>
+													<div>
+														{isValValid ? (
+															<span
+																className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+																	meas.status === "normal"
+																		? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
+																		: meas.status === "increased"
+																			? "bg-rose-950 text-rose-300 border border-rose-500/40"
+																			: meas.status === "decreased"
+																				? "bg-cyan-950 text-cyan-300 border border-cyan-500/40"
+																				: "bg-slate-800 text-slate-400"
+																}`}
+															>
+																{meas.status === "normal" ? "Норма" : meas.status === "increased" ? "Увеличен" : "Уменьшен"}
+															</span>
+														) : (
+															<span className="text-[9px] font-medium text-amber-400/90 truncate block">
+																{missing.length > 0 ? `Ждёт: ${missing.join(",")}` : "Нет данных"}
+															</span>
+														)}
+													</div>
+												</div>
+											);
+										})()}
+
+										{/* SNB */}
+										{(() => {
+											const meas = analysis.measurements.find((m) => m.id === "SNB");
+											const isValValid = meas?.value !== null && meas?.value !== undefined && Number.isFinite(meas.value);
+											const missing = (["S", "N", "B"] as LandmarkKey[]).filter((k) => !landmarks[k]);
+											return (
+												<div
+													data-testid="core-hero-SNB"
+													className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 flex flex-col justify-between min-h-[76px]"
+												>
+													<div className="flex items-center justify-between gap-1">
+														<span className="text-[11px] font-bold text-slate-300 truncate">SNB (НЧ)</span>
+														<span className="text-[9px] text-slate-400 font-mono">80° ± 2°</span>
+													</div>
+													<div className="my-1">
+														{isValValid ? (
+															<div
+																className={`text-lg font-black font-mono leading-none ${
+																	meas.status === "normal"
+																		? "text-emerald-400"
+																		: meas.status === "increased"
+																			? "text-rose-400"
+																			: meas.status === "decreased"
+																				? "text-cyan-400"
+																				: "text-white"
+																}`}
+															>
+																{meas.value}{meas.unit}
+															</div>
+														) : (
+															<div className="text-sm font-semibold text-slate-500 leading-none">—</div>
+														)}
+													</div>
+													<div>
+														{isValValid ? (
+															<span
+																className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+																	meas.status === "normal"
+																		? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
+																		: meas.status === "increased"
+																			? "bg-rose-950 text-rose-300 border border-rose-500/40"
+																			: meas.status === "decreased"
+																				? "bg-cyan-950 text-cyan-300 border border-cyan-500/40"
+																				: "bg-slate-800 text-slate-400"
+																}`}
+															>
+																{meas.status === "normal" ? "Норма" : meas.status === "increased" ? "Увеличен" : "Уменьшен"}
+															</span>
+														) : (
+															<span className="text-[9px] font-medium text-amber-400/90 truncate block">
+																{missing.length > 0 ? `Ждёт: ${missing.join(",")}` : "Нет данных"}
+															</span>
+														)}
+													</div>
+												</div>
+											);
+										})()}
+
+										{/* ANB */}
+										{(() => {
+											const meas = analysis.measurements.find((m) => m.id === "ANB");
+											const isValValid = meas?.value !== null && meas?.value !== undefined && Number.isFinite(meas.value);
+											const missing = (["S", "N", "A", "B"] as LandmarkKey[]).filter((k) => !landmarks[k]);
+											return (
+												<div
+													data-testid="core-hero-ANB"
+													className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 flex flex-col justify-between min-h-[76px]"
+												>
+													<div className="flex items-center justify-between gap-1">
+														<span className="text-[11px] font-bold text-slate-300 truncate">ANB (Класс)</span>
+														<span className="text-[9px] text-slate-400 font-mono">2° ± 2°</span>
+													</div>
+													<div className="my-1">
+														{isValValid ? (
+															<div
+																className={`text-lg font-black font-mono leading-none ${
+																	meas.status === "normal"
+																		? "text-emerald-400"
+																		: meas.status === "increased"
+																			? "text-rose-400"
+																			: meas.status === "decreased"
+																				? "text-cyan-400"
+																				: "text-white"
+																}`}
+															>
+																{meas.value}{meas.unit}
+															</div>
+														) : (
+															<div className="text-sm font-semibold text-slate-500 leading-none">—</div>
+														)}
+													</div>
+													<div>
+														{isValValid ? (
+															<span
+																className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+																	meas.status === "normal"
+																		? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
+																		: meas.status === "increased"
+																			? "bg-rose-950 text-rose-300 border border-rose-500/40"
+																			: meas.status === "decreased"
+																				? "bg-cyan-950 text-cyan-300 border border-cyan-500/40"
+																				: "bg-slate-800 text-slate-400"
+																}`}
+															>
+																{meas.status === "normal" ? "Класс I" : meas.status === "increased" ? "Класс II" : "Класс III"}
+															</span>
+														) : (
+															<span className="text-[9px] font-medium text-amber-400/90 truncate block">
+																{missing.length > 0 ? `Ждёт: ${missing.join(",")}` : "Нет данных"}
+															</span>
+														)}
+													</div>
+												</div>
+											);
+										})()}
+
+										{/* 1-NA */}
+										{(() => {
+											const angleMeas = analysis.measurements.find((m) => m.id === "1-NA-Angle");
+											const distMeas = analysis.measurements.find((m) => m.id === "1-NA-Dist");
+											const isAngleValid = angleMeas?.value !== null && angleMeas?.value !== undefined && Number.isFinite(angleMeas.value);
+											const isDistValid = distMeas?.value !== null && distMeas?.value !== undefined && Number.isFinite(distMeas.value);
+											const missing = (["N", "A", "U1t", "U1a"] as LandmarkKey[]).filter((k) => !landmarks[k]);
+											return (
+												<div
+													data-testid="core-hero-1-NA"
+													className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 flex flex-col justify-between min-h-[76px]"
+												>
+													<div className="flex items-center justify-between gap-1">
+														<span className="text-[11px] font-bold text-slate-300 truncate">1 to NA</span>
+														<span className="text-[9px] text-slate-400 font-mono">22°±2° / 4±1</span>
+													</div>
+													<div className="my-1 flex items-baseline gap-1">
+														{isAngleValid ? (
+															<span
+																className={`text-base font-black font-mono leading-none ${
+																	angleMeas.status === "normal"
+																		? "text-emerald-400"
+																		: angleMeas.status === "increased"
+																			? "text-rose-400"
+																			: "text-cyan-400"
+																}`}
+															>
+																{angleMeas.value}°
+															</span>
+														) : (
+															<span className="text-sm font-semibold text-slate-500 leading-none">—</span>
+														)}
+														{isDistValid && (
+															<span className="text-[11px] font-bold text-slate-300 font-mono leading-none">
+																({distMeas.value}мм)
+															</span>
+														)}
+													</div>
+													<div>
+														{isAngleValid ? (
+															<span
+																className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+																	angleMeas.status === "normal"
+																		? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
+																		: angleMeas.status === "increased"
+																			? "bg-rose-950 text-rose-300 border border-rose-500/40"
+																			: "bg-cyan-950 text-cyan-300 border border-cyan-500/40"
+																}`}
+															>
+																{angleMeas.status === "normal" ? "Норма" : angleMeas.status === "increased" ? "Протрузия" : "Ретрузия"}
+															</span>
+														) : (
+															<span className="text-[9px] font-medium text-amber-400/90 truncate block">
+																{missing.length > 0 ? `Ждёт: ${missing.join(",")}` : "Нет данных"}
+															</span>
+														)}
+													</div>
+												</div>
+											);
+										})()}
+
+										{/* 1-NB */}
+										{(() => {
+											const angleMeas = analysis.measurements.find((m) => m.id === "1-NB-Angle");
+											const distMeas = analysis.measurements.find((m) => m.id === "1-NB-Dist");
+											const isAngleValid = angleMeas?.value !== null && angleMeas?.value !== undefined && Number.isFinite(angleMeas.value);
+											const isDistValid = distMeas?.value !== null && distMeas?.value !== undefined && Number.isFinite(distMeas.value);
+											const missing = (["N", "B", "L1t", "L1a"] as LandmarkKey[]).filter((k) => !landmarks[k]);
+											return (
+												<div
+													data-testid="core-hero-1-NB"
+													className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 flex flex-col justify-between min-h-[76px]"
+												>
+													<div className="flex items-center justify-between gap-1">
+														<span className="text-[11px] font-bold text-slate-300 truncate">1 to NB</span>
+														<span className="text-[9px] text-slate-400 font-mono">25°±2° / 4±1</span>
+													</div>
+													<div className="my-1 flex items-baseline gap-1">
+														{isAngleValid ? (
+															<span
+																className={`text-base font-black font-mono leading-none ${
+																	angleMeas.status === "normal"
+																		? "text-emerald-400"
+																		: angleMeas.status === "increased"
+																			? "text-rose-400"
+																			: "text-cyan-400"
+																}`}
+															>
+																{angleMeas.value}°
+															</span>
+														) : (
+															<span className="text-sm font-semibold text-slate-500 leading-none">—</span>
+														)}
+														{isDistValid && (
+															<span className="text-[11px] font-bold text-slate-300 font-mono leading-none">
+																({distMeas.value}мм)
+															</span>
+														)}
+													</div>
+													<div>
+														{isAngleValid ? (
+															<span
+																className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+																	angleMeas.status === "normal"
+																		? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
+																		: angleMeas.status === "increased"
+																			? "bg-rose-950 text-rose-300 border border-rose-500/40"
+																			: "bg-cyan-950 text-cyan-300 border border-cyan-500/40"
+																}`}
+															>
+																{angleMeas.status === "normal" ? "Норма" : angleMeas.status === "increased" ? "Протрузия" : "Ретрузия"}
+															</span>
+														) : (
+															<span className="text-[9px] font-medium text-amber-400/90 truncate block">
+																{missing.length > 0 ? `Ждёт: ${missing.join(",")}` : "Нет данных"}
+															</span>
+														)}
+													</div>
+												</div>
+											);
+										})()}
+									</div>
+								</div>
+
 								{/* Measurements Grouped by Category */}
 								<div className="space-y-4 flex-1 overflow-y-auto pr-1">
 									{/* Category 1: Sagittal (Steiner, Downs, Jacobson Wits, McNamara) */}
@@ -1099,55 +1592,67 @@ export function CephalometricAnalysisModal({
 										<div className="space-y-2">
 											{analysis.measurements
 												.filter((m) => m.category === "sagittal")
-												.map((m) => (
-													<div
-														key={m.id}
-														className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 min-h-[52px]"
-													>
-														<div className="min-w-0">
-															<div className="text-sm font-bold text-white min-w-0 break-words">
-																{m.name}
+												.map((m) => {
+													const isValValid = m.value !== null && Number.isFinite(m.value);
+													const missingKeys = getRequiredLandmarksForMeasurement(m.id).filter((k) => !landmarks[k]);
+													return (
+														<div
+															key={m.id}
+															className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 min-h-[52px]"
+														>
+															<div className="min-w-0">
+																<div className="text-sm font-bold text-white min-w-0 break-words">
+																	{m.name}
+																</div>
+																<div className="text-xs text-slate-400 mt-0.5 min-w-0 break-words">
+																	{m.clinicalInterpretation} · Норма: <span className="font-bold text-slate-200">{m.normText}</span>
+																</div>
 															</div>
-															<div className="text-xs text-slate-400 mt-0.5 min-w-0 break-words">
-																{m.clinicalInterpretation} · Норма: <span className="font-bold text-slate-200">{m.normText}</span>
-															</div>
-														</div>
-														<div className="text-right shrink-0 flex flex-col items-end gap-1">
-															<div
-																className={`text-base font-black ${
-																	m.status === "normal"
-																		? "text-emerald-400"
-																		: m.status === "increased"
-																			? "text-rose-400"
-																			: m.status === "decreased"
-																				? "text-cyan-400"
-																				: "text-slate-400"
-																}`}
-															>
-																{m.value !== null ? `${m.value}${m.unit}` : "—"}
-															</div>
-															<span
-																className={`text-xs uppercase font-black px-2.5 py-1 rounded-lg border ${
-																	m.status === "normal"
-																		? "bg-emerald-950 text-emerald-300 border-emerald-500/40"
-																		: m.status === "increased"
-																			? "bg-rose-950 text-rose-300 border-rose-500/40"
-																			: m.status === "decreased"
-																				? "bg-cyan-950 text-cyan-300 border-cyan-500/40"
-																				: "bg-slate-800 text-slate-400 border-slate-700"
-																}`}
-															>
-																{m.status === "normal"
-																	? "Норма"
-																	: m.status === "increased"
-																		? "Увеличен"
-																		: m.status === "decreased"
-																			? "Уменьшен"
+															<div className="text-right shrink-0 flex flex-col items-end gap-1">
+																<div
+																	className={`text-base font-black ${
+																		isValValid
+																			? m.status === "normal"
+																				? "text-emerald-400"
+																				: m.status === "increased"
+																					? "text-rose-400"
+																					: m.status === "decreased"
+																						? "text-cyan-400"
+																						: "text-slate-400"
+																			: "text-slate-500"
+																	}`}
+																>
+																	{isValValid ? `${m.value}${m.unit}` : "—"}
+																</div>
+																<span
+																	className={`text-xs uppercase font-black px-2.5 py-1 rounded-lg border ${
+																		isValValid
+																			? m.status === "normal"
+																				? "bg-emerald-950 text-emerald-300 border-emerald-500/40"
+																				: m.status === "increased"
+																					? "bg-rose-950 text-rose-300 border-rose-500/40"
+																					: m.status === "decreased"
+																						? "bg-cyan-950 text-cyan-300 border-cyan-500/40"
+																						: "bg-slate-800 text-slate-400 border-slate-700"
+																			: "bg-slate-800 text-amber-300 border border-amber-500/30"
+																	}`}
+																>
+																	{isValValid
+																		? m.status === "normal"
+																			? "Норма"
+																			: m.status === "increased"
+																				? "Увеличен"
+																				: m.status === "decreased"
+																					? "Уменьшен"
+																					: "Нет данных"
+																		: missingKeys.length > 0
+																			? `Ожидает: ${missingKeys.join(", ")}`
 																			: "Нет данных"}
-															</span>
+																</span>
+															</div>
 														</div>
-													</div>
-												))}
+													);
+												})}
 										</div>
 									</div>
 
@@ -1159,55 +1664,67 @@ export function CephalometricAnalysisModal({
 										<div className="space-y-2">
 											{analysis.measurements
 												.filter((m) => m.category === "vertical")
-												.map((m) => (
-													<div
-														key={m.id}
-														className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 min-h-[52px]"
-													>
-														<div className="min-w-0">
-															<div className="text-sm font-bold text-white min-w-0 break-words">
-																{m.name}
+												.map((m) => {
+													const isValValid = m.value !== null && Number.isFinite(m.value);
+													const missingKeys = getRequiredLandmarksForMeasurement(m.id).filter((k) => !landmarks[k]);
+													return (
+														<div
+															key={m.id}
+															className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 min-h-[52px]"
+														>
+															<div className="min-w-0">
+																<div className="text-sm font-bold text-white min-w-0 break-words">
+																	{m.name}
+																</div>
+																<div className="text-xs text-slate-400 mt-0.5 min-w-0 break-words">
+																	{m.clinicalInterpretation} · Норма: <span className="font-bold text-slate-200">{m.normText}</span>
+																</div>
 															</div>
-															<div className="text-xs text-slate-400 mt-0.5 min-w-0 break-words">
-																{m.clinicalInterpretation} · Норма: <span className="font-bold text-slate-200">{m.normText}</span>
-															</div>
-														</div>
-														<div className="text-right shrink-0 flex flex-col items-end gap-1">
-															<div
-																className={`text-base font-black ${
-																	m.status === "normal"
-																		? "text-emerald-400"
-																		: m.status === "increased"
-																			? "text-rose-400"
-																			: m.status === "decreased"
-																				? "text-cyan-400"
-																				: "text-slate-400"
-																}`}
-															>
-																{m.value !== null ? `${m.value}${m.unit}` : "—"}
-															</div>
-															<span
-																className={`text-xs uppercase font-black px-2.5 py-1 rounded-lg border ${
-																	m.status === "normal"
-																		? "bg-emerald-950 text-emerald-300 border-emerald-500/40"
-																		: m.status === "increased"
-																			? "bg-rose-950 text-rose-300 border-rose-500/40"
-																			: m.status === "decreased"
-																				? "bg-cyan-950 text-cyan-300 border-cyan-500/40"
-																				: "bg-slate-800 text-slate-400 border-slate-700"
-																}`}
-															>
-																{m.status === "normal"
-																	? "Норма"
-																	: m.status === "increased"
-																		? "Увеличен"
-																		: m.status === "decreased"
-																			? "Уменьшен"
+															<div className="text-right shrink-0 flex flex-col items-end gap-1">
+																<div
+																	className={`text-base font-black ${
+																		isValValid
+																			? m.status === "normal"
+																				? "text-emerald-400"
+																				: m.status === "increased"
+																					? "text-rose-400"
+																					: m.status === "decreased"
+																						? "text-cyan-400"
+																						: "text-slate-400"
+																			: "text-slate-500"
+																	}`}
+																>
+																	{isValValid ? `${m.value}${m.unit}` : "—"}
+																</div>
+																<span
+																	className={`text-xs uppercase font-black px-2.5 py-1 rounded-lg border ${
+																		isValValid
+																			? m.status === "normal"
+																				? "bg-emerald-950 text-emerald-300 border-emerald-500/40"
+																				: m.status === "increased"
+																					? "bg-rose-950 text-rose-300 border-rose-500/40"
+																					: m.status === "decreased"
+																						? "bg-cyan-950 text-cyan-300 border-cyan-500/40"
+																						: "bg-slate-800 text-slate-400 border-slate-700"
+																			: "bg-slate-800 text-amber-300 border border-amber-500/30"
+																	}`}
+																>
+																	{isValValid
+																		? m.status === "normal"
+																			? "Норма"
+																			: m.status === "increased"
+																				? "Увеличен"
+																				: m.status === "decreased"
+																					? "Уменьшен"
+																					: "Нет данных"
+																		: missingKeys.length > 0
+																			? `Ожидает: ${missingKeys.join(", ")}`
 																			: "Нет данных"}
-															</span>
+																</span>
+															</div>
 														</div>
-													</div>
-												))}
+													);
+												})}
 										</div>
 									</div>
 
@@ -1219,55 +1736,67 @@ export function CephalometricAnalysisModal({
 										<div className="space-y-2">
 											{analysis.measurements
 												.filter((m) => m.category === "dental")
-												.map((m) => (
-													<div
-														key={m.id}
-														className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 min-h-[52px]"
-													>
-														<div className="min-w-0">
-															<div className="text-sm font-bold text-white min-w-0 break-words">
-																{m.name}
+												.map((m) => {
+													const isValValid = m.value !== null && Number.isFinite(m.value);
+													const missingKeys = getRequiredLandmarksForMeasurement(m.id).filter((k) => !landmarks[k]);
+													return (
+														<div
+															key={m.id}
+															className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 min-h-[52px]"
+														>
+															<div className="min-w-0">
+																<div className="text-sm font-bold text-white min-w-0 break-words">
+																	{m.name}
+																</div>
+																<div className="text-xs text-slate-400 mt-0.5 min-w-0 break-words">
+																	{m.clinicalInterpretation} · Норма: <span className="font-bold text-slate-200">{m.normText}</span>
+																</div>
 															</div>
-															<div className="text-xs text-slate-400 mt-0.5 min-w-0 break-words">
-																{m.clinicalInterpretation} · Норма: <span className="font-bold text-slate-200">{m.normText}</span>
-															</div>
-														</div>
-														<div className="text-right shrink-0 flex flex-col items-end gap-1">
-															<div
-																className={`text-base font-black ${
-																	m.status === "normal"
-																		? "text-emerald-400"
-																		: m.status === "increased"
-																			? "text-rose-400"
-																			: m.status === "decreased"
-																				? "text-cyan-400"
-																				: "text-slate-400"
-																}`}
-															>
-																{m.value !== null ? `${m.value}${m.unit}` : "—"}
-															</div>
-															<span
-																className={`text-xs uppercase font-black px-2.5 py-1 rounded-lg border ${
-																	m.status === "normal"
-																		? "bg-emerald-950 text-emerald-300 border-emerald-500/40"
-																		: m.status === "increased"
-																			? "bg-rose-950 text-rose-300 border-rose-500/40"
-																			: m.status === "decreased"
-																				? "bg-cyan-950 text-cyan-300 border-cyan-500/40"
-																				: "bg-slate-800 text-slate-400 border-slate-700"
-																}`}
-															>
-																{m.status === "normal"
-																	? "Норма"
-																	: m.status === "increased"
-																		? "Увеличен"
-																		: m.status === "decreased"
-																			? "Уменьшен"
+															<div className="text-right shrink-0 flex flex-col items-end gap-1">
+																<div
+																	className={`text-base font-black ${
+																		isValValid
+																			? m.status === "normal"
+																				? "text-emerald-400"
+																				: m.status === "increased"
+																					? "text-rose-400"
+																					: m.status === "decreased"
+																						? "text-cyan-400"
+																						: "text-slate-400"
+																			: "text-slate-500"
+																	}`}
+																>
+																	{isValValid ? `${m.value}${m.unit}` : "—"}
+																</div>
+																<span
+																	className={`text-xs uppercase font-black px-2.5 py-1 rounded-lg border ${
+																		isValValid
+																			? m.status === "normal"
+																				? "bg-emerald-950 text-emerald-300 border-emerald-500/40"
+																				: m.status === "increased"
+																					? "bg-rose-950 text-rose-300 border-rose-500/40"
+																					: m.status === "decreased"
+																						? "bg-cyan-950 text-cyan-300 border-cyan-500/40"
+																						: "bg-slate-800 text-slate-400 border-slate-700"
+																			: "bg-slate-800 text-amber-300 border border-amber-500/30"
+																	}`}
+																>
+																	{isValValid
+																		? m.status === "normal"
+																			? "Норма"
+																			: m.status === "increased"
+																				? "Увеличен"
+																				: m.status === "decreased"
+																					? "Уменьшен"
+																					: "Нет данных"
+																		: missingKeys.length > 0
+																			? `Ожидает: ${missingKeys.join(", ")}`
 																			: "Нет данных"}
-															</span>
+																</span>
+															</div>
 														</div>
-													</div>
-												))}
+													);
+												})}
 										</div>
 									</div>
 								</div>

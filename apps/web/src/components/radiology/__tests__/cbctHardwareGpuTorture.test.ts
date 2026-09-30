@@ -48,6 +48,21 @@ import {
 	computeSliceNormalDistance,
 	parseDicomSliceHeader,
 } from "../realDicomVolumeLoader";
+import {
+	CBCT_VOLUME_3D_VERTEX_SHADER,
+	CBCT_VOLUME_3D_FRAGMENT_SHADER,
+	CBCT_VOLUME_3D_PRESETS,
+	computeVolume3DRotationMatrix,
+	intersectRayAABB,
+} from "../mpr/CbctVolume3DViewport";
+import {
+	CBCT_PANORAMIC_VERTEX_SHADER,
+	CBCT_PANORAMIC_FRAGMENT_SHADER,
+} from "../cbctPanoramicReconstructionMath";
+import {
+	buildVolumeFromMultiFrameDicom,
+	calibrateMultiFrameVoxel,
+} from "../dicomMultiFrameLoader";
 
 // ─── REAL DATASET BENCHMARK PROFILES ─────────────────────────────────────────
 
@@ -151,6 +166,16 @@ function createDriverMockGlContext(config: DriverMockConfig) {
 		TRIANGLE_STRIP: 0x0005,
 		COMPILE_STATUS: 0x8b81,
 		LINK_STATUS: 0x8b82,
+		TEXTURE_WRAP_S: 0x2802,
+		TEXTURE_WRAP_T: 0x2803,
+		TEXTURE_WRAP_R: 0x8072,
+		CLAMP_TO_EDGE: 0x812f,
+		TEXTURE_MIN_FILTER: 0x2801,
+		TEXTURE_MAG_FILTER: 0x2800,
+		NEAREST: 0x2600,
+		UNPACK_ALIGNMENT: 0x0cf5,
+
+		isContextLost: () => isContextLost,
 
 		getParameter: (param: number) => {
 			if (param === 0x8073) return config.max3dTextureSize;
@@ -181,9 +206,10 @@ function createDriverMockGlContext(config: DriverMockConfig) {
 
 		createTexture: () => ({ id: `tex-${Math.random()}` }),
 		activeTexture: () => {},
-		bindTexture: () => {},
+		bindTexture: () => calls.push("bindTexture"),
 		texParameteri: () => {},
 		pixelStorei: () => {},
+		texSubImage3D: () => calls.push("texSubImage3D"),
 
 		createVertexArray: () => {
 			calls.push("createVertexArray");
@@ -901,6 +927,305 @@ describe("RED TEAM AUDIT: Hardware WebGL2 GPU Engine Torture & Self-Fix Verifica
 
 			const ok = glCtx.uploadVolume(vol);
 			assert.strictEqual(ok, false, "uploadVolume must return false without crashing when context is lost");
+		});
+	});
+
+	// ─── 9. GLSL ES 3.00 STRICT SPECIFICATION & DIVISION-BY-ZERO GUARDS ──────
+
+	describe("9. GLSL ES 3.00 Strict Specification & Anti-Division-by-Zero Invariants", () => {
+		it("CBCT 3D Skull Raymarching: contains precision qualifiers and anti-division guards", () => {
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("#version 300 es"), "Must use #version 300 es");
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("precision highp float;"), "Must specify highp float");
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("precision highp isampler3D;"), "Must specify highp isampler3D");
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("max(1.0, max(u_volumeDim.x"), "Guards scale against maxDim <= 0");
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("max(1e-5, (min(u_resolution.x"), "Guards scale against division by zero");
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("clamp(u_maxSteps, 1, 200)"), "Guards stepSize against u_maxSteps <= 0");
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("max(1.0, u_huMax - u_huMin)"), "Guards MIP normalization against u_huMax == u_huMin");
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes(": -rayDir;"), "Surface normal fallback faces camera");
+			assert.ok(CBCT_VOLUME_3D_FRAGMENT_SHADER.includes("isnan(tNear) || isnan(tFar)"), "Guards ray bounds against NaN");
+		});
+
+		it("CBCT Panoramic OPG Shader: contains safe horizontal clamp and slab loop bound", () => {
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("#version 300 es"), "Must use #version 300 es");
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("precision highp float;"), "Must specify highp float");
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("precision highp isampler3D;"), "Must specify highp isampler3D");
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("maxCol = max(0, int(u_outWidth) - 1)"), "Prevents undefined clamp on u_outWidth <= 0");
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("clamp(u_numSlabSamples, 1, 128)"), "Guards slab loop against TDR hang on weak GPUs");
+			assert.ok(CBCT_PANORAMIC_FRAGMENT_SHADER.includes("max(1.0, u_windowWidth)"), "Guards W/L against division by zero");
+		});
+
+		it("CBCT MPR Shader: discards NaN UVW coordinates and limits slab integration steps", () => {
+			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("#version 300 es"), "Must use #version 300 es");
+			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("isnan(uvw.x) || isnan(uvw.y) || isnan(uvw.z)"), "sampleHUTrilinear discards NaNs");
+			assert.ok(CBCT_MPR_FRAGMENT_SHADER.includes("clamp(u_slabSteps, 1, 64)"), "Clamps slab steps to prevent GPU timeouts on weak integrated GPUs");
+		});
+	});
+
+	// ─── 10. MULTI-FRAME DICOM GPU DIRECT STREAMING & DRIVER BOUNDS ──────────
+
+	function createTortureMultiFrameDicom(rows: number, cols: number, frames: number): ArrayBuffer {
+		const pixelBytes = rows * cols * frames * 2;
+		const buffer = new ArrayBuffer(512 + pixelBytes);
+		const view = new DataView(buffer);
+		const u8 = new Uint8Array(buffer);
+
+		u8[128] = 0x44; u8[129] = 0x49; u8[130] = 0x43; u8[131] = 0x4d; // 'DICM'
+
+		let off = 132;
+		const writeString = (group: number, element: number, vr: string, val: string) => {
+			let str = new TextEncoder().encode(val);
+			if (str.length % 2 !== 0) {
+				const padded = new Uint8Array(str.length + 1);
+				padded.set(str);
+				padded[str.length] = 0x20;
+				str = padded;
+			}
+			view.setUint16(off, group, true);
+			view.setUint16(off + 2, element, true);
+			u8[off + 4] = vr.charCodeAt(0);
+			u8[off + 5] = vr.charCodeAt(1);
+			view.setUint16(off + 6, str.length, true);
+			u8.set(str, off + 8);
+			off += 8 + str.length;
+		};
+
+		const writeUS = (group: number, element: number, val: number) => {
+			view.setUint16(off, group, true);
+			view.setUint16(off + 2, element, true);
+			u8[off + 4] = 0x55; u8[off + 5] = 0x53; // 'US'
+			view.setUint16(off + 6, 2, true);
+			view.setUint16(off + 8, val, true);
+			off += 10;
+		};
+
+		writeString(0x0028, 0x0008, "IS", frames.toString()); // NumberOfFrames
+		writeUS(0x0028, 0x0010, rows);                       // Rows
+		writeUS(0x0028, 0x0011, cols);                       // Columns
+		writeUS(0x0028, 0x0100, 16);                         // BitsAllocated
+		writeUS(0x0028, 0x0101, 16);                         // BitsStored
+		writeUS(0x0028, 0x0102, 15);                         // HighBit
+		writeUS(0x0028, 0x0103, 0);                          // PixelRepresentation
+
+		// PixelData (7FE0, 0010) OW
+		view.setUint16(off, 0x7fe0, true);
+		view.setUint16(off + 2, 0x0010, true);
+		u8[off + 4] = 0x4f; u8[off + 5] = 0x57; // 'OW'
+		view.setUint16(off + 6, 0, true);
+		view.setUint32(off + 8, pixelBytes, true);
+		off += 12;
+
+		return buffer;
+	}
+
+	describe("10. Multi-Frame DICOM GPU Direct Streaming & MAX_3D_TEXTURE_SIZE Safety", () => {
+		it("detects MAX_3D_TEXTURE_SIZE limit (256) and prevents invalid 512x512x300 allocation", async () => {
+			const { gl, calls } = createDriverMockGlContext({ max3dTextureSize: 256 });
+			const buffer = createTortureMultiFrameDicom(512, 512, 2);
+
+			const targetTexture = { id: "test-tex-stream" } as unknown as WebGLTexture;
+			const targetGl = gl as unknown as WebGL2RenderingContext;
+
+			const vol = await buildVolumeFromMultiFrameDicom(buffer, {
+				gpuUploadTarget: {
+					gl: targetGl,
+					texture: targetTexture,
+				},
+			});
+
+			assert.ok(vol);
+			assert.strictEqual(vol.dimensions.width, 512);
+			// Since width=512 > max3dSize=256, direct streaming MUST NOT call texImage3D!
+			const invalidAlloc = calls.some((c) => c.startsWith("texImage3D"));
+			assert.strictEqual(invalidAlloc, false, "Must skip 1:1 direct allocation when exceeding MAX_3D_TEXTURE_SIZE!");
+		});
+
+		it("configures CLAMP_TO_EDGE and NEAREST filtering when GPU target fits within limit (2048)", async () => {
+			const { gl, calls } = createDriverMockGlContext({ max3dTextureSize: 2048 });
+			const buffer = createTortureMultiFrameDicom(4, 4, 2);
+
+			const targetTexture = { id: "test-tex-valid" } as unknown as WebGLTexture;
+			const targetGl = gl as unknown as WebGL2RenderingContext;
+
+			const vol = await buildVolumeFromMultiFrameDicom(buffer, {
+				gpuUploadTarget: {
+					gl: targetGl,
+					texture: targetTexture,
+				},
+			});
+
+			assert.ok(vol);
+			assert.strictEqual(vol.dimensions.width, 4);
+			assert.ok(calls.includes("bindTexture"), "Must bind 3D texture");
+			assert.ok(calls.some((c) => c.startsWith("texImage3D:4x4x2")), "Must allocate storage on compliant GPU");
+			assert.ok(calls.includes("texSubImage3D"), "Must stream slices via texSubImage3D");
+		});
+
+		it("calibrateMultiFrameVoxel handles 12-bit signed and unsigned HU without overflow", () => {
+			const air = calibrateMultiFrameVoxel(0, 12, false, 1.0, -1000);
+			assert.strictEqual(air, -1000);
+			const water = calibrateMultiFrameVoxel(1000, 12, false, 1.0, -1000);
+			assert.strictEqual(water, 0);
+			const bone = calibrateMultiFrameVoxel(2500, 12, false, 1.0, -1000);
+			assert.strictEqual(bone, 1500);
+
+			// Clamping check
+			const clampedHigh = calibrateMultiFrameVoxel(65535, 16, false, 1.0, 100000);
+			assert.strictEqual(clampedHigh, 32767);
+			const clampedLow = calibrateMultiFrameVoxel(0, 16, false, 1.0, -100000);
+			assert.strictEqual(clampedLow, -32768);
+		});
+	});
+
+	// ─── 11. EXTREME VOLUME INPUTS & WEAK GPU BOUNDARY TORTURE ────────────────
+
+	describe("11. Extreme Volume Inputs & Weak GPU Boundary Torture", () => {
+		it("single-slice volume (128x128x1): computes valid finite UVW coordinates without NaN", () => {
+			const singleSliceVol: CbctVoxelVolume = {
+				id: "single-slice-test",
+				dimensions: { width: 128, height: 128, depth: 1 },
+				spacingMm: { x: 0.3, y: 0.3, z: 1.0 },
+				originMm: { x: 0, y: 0, z: 0 },
+				physicalSizeMm: { x: 38.4, y: 38.4, z: 1.0 },
+				data: new Int16Array(128 * 128 * 1),
+				minHU: -1000,
+				maxHU: 2000,
+				isDisposed: false,
+			};
+
+			const coordsAxial = computeGlSliceCoordinates(singleSliceVol, "axial", { x: 0, y: 0, z: 0 }, DEFAULT_OBLIQUE_ROTATION);
+			assert.ok(Number.isFinite(coordsAxial.sliceOrigin[0]));
+			assert.ok(Number.isFinite(coordsAxial.sliceOrigin[1]));
+			assert.ok(Number.isFinite(coordsAxial.sliceOrigin[2]));
+
+			const coordsCoronal = computeGlSliceCoordinates(singleSliceVol, "coronal", { x: 0, y: 0, z: 0 }, DEFAULT_OBLIQUE_ROTATION);
+			assert.ok(coordsCoronal.heightPx >= 1);
+			assert.ok(Number.isFinite(coordsCoronal.axisV[2]));
+
+			const coordsSagittal = computeGlSliceCoordinates(singleSliceVol, "sagittal", { x: 0, y: 0, z: 0 }, DEFAULT_OBLIQUE_ROTATION);
+			assert.ok(coordsSagittal.heightPx >= 1);
+			assert.ok(Number.isFinite(coordsSagittal.axisV[2]));
+		});
+
+		it("zero/degenerate volume: computeGlSliceCoordinates guards maxCoord and does not produce NaN", () => {
+			const zeroVol: CbctVoxelVolume = {
+				id: "zero-vol-test",
+				dimensions: { width: 0, height: 0, depth: 0 },
+				spacingMm: { x: 0.2, y: 0.2, z: 0.2 },
+				originMm: { x: 0, y: 0, z: 0 },
+				physicalSizeMm: { x: 0, y: 0, z: 0 },
+				data: new Int16Array(0),
+				minHU: -1000,
+				maxHU: 1000,
+				isDisposed: false,
+			};
+
+			const coords = computeGlSliceCoordinates(zeroVol, "axial", { x: 0, y: 0, z: 0 }, DEFAULT_OBLIQUE_ROTATION);
+			assert.ok(Number.isFinite(coords.sliceOrigin[0]));
+			assert.ok(Number.isFinite(coords.axisU[0]));
+		});
+
+		it("pathological camera rotations: yaw = ±720°, pitch = ±89.9° preserves orthonormal matrix", () => {
+			for (const yaw of [-720, -360, 0, 360, 720]) {
+				for (const pitch of [-89.9, -45, 0, 45, 89.9]) {
+					const mat = computeVolume3DRotationMatrix(yaw, pitch);
+					assert.strictEqual(mat.length, 3);
+					assert.strictEqual(mat[0]!.length, 3);
+					const len0 = Math.hypot(mat[0]![0]!, mat[0]![1]!, mat[0]![2]!);
+					const len1 = Math.hypot(mat[1]![0]!, mat[1]![1]!, mat[1]![2]!);
+					const len2 = Math.hypot(mat[2]![0]!, mat[2]![1]!, mat[2]![2]!);
+					assert.ok(Math.abs(len0 - 1.0) < 1e-5, `Row 0 length not 1.0: ${len0}`);
+					assert.ok(Math.abs(len1 - 1.0) < 1e-5, `Row 1 length not 1.0: ${len1}`);
+					assert.ok(Math.abs(len2 - 1.0) < 1e-5, `Row 2 length not 1.0: ${len2}`);
+				}
+			}
+		});
+
+		it("intersectRayAABB handles rays inside box, grazing edges, and parallel rays without NaN", () => {
+			const inside = intersectRayAABB(0, 0, 0, 0, 0, 1, -10, 10, -10, 10, -10, 10, -100, 100);
+			assert.strictEqual(inside.hit, true);
+			assert.ok(inside.tNear <= 0);
+			assert.ok(inside.tFar >= 0);
+
+			const parallelMiss = intersectRayAABB(0, 20, 0, 1, 0, 0, -10, 10, -10, 10, -10, 10, -100, 100);
+			assert.strictEqual(parallelMiss.hit, false);
+
+			const axisAligned = intersectRayAABB(0, 0, -50, 0, 0, 1, -10, 10, -10, 10, -10, 10, -100, 100);
+			assert.strictEqual(axisAligned.hit, true);
+			assert.ok(Math.abs(axisAligned.tNear - 40) < 1e-4);
+			assert.ok(Math.abs(axisAligned.tFar - 60) < 1e-4);
+		});
+
+		it("CBCT 3D Presets: all presets define valid HU ranges and RGB colors", () => {
+			assert.strictEqual(CBCT_VOLUME_3D_PRESETS.length, 4);
+			for (const p of CBCT_VOLUME_3D_PRESETS) {
+				assert.ok(p.huMax > p.huMin, `huMax must exceed huMin for ${p.id}`);
+				assert.ok(p.colorRgb.length === 3);
+				assert.ok(p.colorRgb.every((c) => c >= 0 && c <= 255));
+				assert.ok(p.label.length > 0);
+			}
+		});
+	});
+
+	// ─── 12. WEBGL CONTEXT LOSS, RESTORATION & preserveDrawingBuffer ──────────
+
+	describe("12. WebGL Context Loss, Restoration & preserveDrawingBuffer Retention", () => {
+		it("CbctVolumeGlContext registers and cleans up contextlost and contextrestored handlers", () => {
+			let lostHandler: ((e: Event) => void) | null = null;
+			let restoredHandler: (() => void) | null = null;
+
+			const fakeCanvas = {
+				getContext: () => createDriverMockGlContext({ max3dTextureSize: 2048 }).gl,
+				width: 100,
+				height: 100,
+				addEventListener: (event: string, handler: any) => {
+					if (event === "webglcontextlost") lostHandler = handler;
+					if (event === "webglcontextrestored") restoredHandler = handler;
+				},
+				removeEventListener: (event: string, handler: any) => {
+					if (event === "webglcontextlost" && lostHandler === handler) lostHandler = null;
+					if (event === "webglcontextrestored" && restoredHandler === handler) restoredHandler = null;
+				},
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(fakeCanvas);
+			assert.ok(lostHandler !== null, "Must register webglcontextlost listener");
+			assert.ok(restoredHandler !== null, "Must register webglcontextrestored listener");
+
+			// Simulate context loss
+			const fakeEvent = { preventDefault: () => {} } as Event;
+			(lostHandler as any)(fakeEvent);
+			assert.strictEqual(glCtx.isAvailable(), false, "Must become unavailable on context loss");
+			assert.strictEqual(glCtx.getActiveVolumeId(), null, "Must clear active volume ID");
+
+			// Simulate context restoration
+			(restoredHandler as any)();
+			assert.strictEqual(glCtx.isAvailable(), true, "Must restore availability upon restoration");
+
+			// Dispose cleans up event listeners
+			glCtx.dispose();
+			assert.strictEqual(lostHandler, null, "Listeners must be detached on dispose");
+			assert.strictEqual(restoredHandler, null, "Listeners must be detached on dispose");
+		});
+
+		it("preserveDrawingBuffer is explicitly true in CbctVolumeGlContext to prevent black screen flashes", () => {
+			let passedAttributes: any = null;
+			const testCanvas = {
+				getContext: (_type: string, attrs: any) => {
+					passedAttributes = attrs;
+					return createDriverMockGlContext({ max3dTextureSize: 2048 }).gl;
+				},
+				width: 100,
+				height: 100,
+			} as unknown as HTMLCanvasElement;
+
+			const glCtx = new CbctVolumeGlContext(testCanvas);
+			assert.ok(passedAttributes !== null);
+			assert.strictEqual(
+				passedAttributes.preserveDrawingBuffer,
+				true,
+				"preserveDrawingBuffer must be true in CbctVolumeGlContext!",
+			);
+			glCtx.dispose();
 		});
 	});
 });

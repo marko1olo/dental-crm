@@ -26,6 +26,14 @@ export interface AnesthesiaCalculationInput {
 	patientAgeYears: number;
 	asaStatus: AsaPhysicalStatus;
 	hasCardiovascularRisk: boolean;
+	hasHypertension?: boolean | undefined;
+	hasCardiacArrhythmia?: boolean | undefined;
+	hasIschemicHeartDisease?: boolean | undefined;
+	hasMyocardialInfarctionHistory?: boolean | undefined;
+	takesBetaBlockers?: boolean | undefined;
+	takesTricyclicAntidepressants?: boolean | undefined;
+	takesMaoInhibitors?: boolean | undefined;
+	hasThyrotoxicosis?: boolean | undefined;
 	hasSulfiteAllergy: boolean;
 	hasBronchialAsthma: boolean;
 	isPregnantOrLactating: boolean;
@@ -43,6 +51,7 @@ export interface AnesthesiaCalculationInput {
 	bpDiastolic?: number | undefined;
 	heartRateBpm?: number | undefined;
 	spo2Percent?: number | undefined;
+	overrideReason?: string | undefined;
 }
 
 export interface AnesthesiaCalculationResult {
@@ -54,11 +63,14 @@ export interface AnesthesiaCalculationResult {
 	maxSafeActiveMg: number;
 	maxSafeEpinephrineMg: number;
 	maxSafeCarpulesCount: number;
+	remainingSafeCarpulesCount: number;
 	percentOfMaxDose: number;
 	percentOfEpiMaxDose: number;
 	safetyZone: AnesthesiaSafetyZone;
 	isOverdose: boolean;
 	isEpinephrineOverdose: boolean;
+	isCardioRisk: boolean;
+	cardioRiskReasons: string[];
 	ageCategory: PatientAgeCategory;
 	ageDoseReductionFactor: number;
 	contraindicationsTriggered: string[];
@@ -191,13 +203,24 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 		? Number(maxActiveByWeight.toFixed(1))
 		: Number(Math.min(drug.absoluteMaxDoseMgAdult * ageFactor, maxActiveByWeight).toFixed(1));
 
-	const isCardioRisk =
-		input.hasCardiovascularRisk ||
-		input.asaStatus === 'asa_3' ||
-		input.asaStatus === 'asa_4' ||
-		(typeof input.bpSystolic === 'number' && input.bpSystolic >= 140) ||
-		(typeof input.heartRateBpm === 'number' && input.heartRateBpm > 90);
+	// Comprehensive Cardiovascular and Somatic Risk Evaluation
+	const cardioRiskReasons: string[] = [];
+	if (input.hasCardiovascularRisk) cardioRiskReasons.push("сердечно-сосудистая патология");
+	if (input.hasIschemicHeartDisease) cardioRiskReasons.push("ИБС");
+	if (input.hasMyocardialInfarctionHistory) cardioRiskReasons.push("инфаркт миокарда в анамнезе");
+	if (input.hasHypertension) cardioRiskReasons.push("артериальная гипертония II-III ст.");
+	if (typeof input.bpSystolic === 'number' && input.bpSystolic >= 140) cardioRiskReasons.push(`систолическая гипертензия (АД ${input.bpSystolic} мм рт. ст.)`);
+	if (typeof input.bpDiastolic === 'number' && input.bpDiastolic >= 90) cardioRiskReasons.push(`диастолическая гипертензия (ДАД ${input.bpDiastolic} мм рт. ст.)`);
+	if (input.hasCardiacArrhythmia) cardioRiskReasons.push("нарушения сердечного ритма");
+	if (typeof input.heartRateBpm === 'number' && input.heartRateBpm > 90) cardioRiskReasons.push(`тахикардия (ЧСС ${input.heartRateBpm} уд/мин)`);
+	if (input.takesBetaBlockers) cardioRiskReasons.push("прием бета-блокаторов");
+	if (input.takesTricyclicAntidepressants) cardioRiskReasons.push("прием трициклических антидепрессантов (ТЦА)");
+	if (input.asaStatus === 'asa_3') cardioRiskReasons.push("статус ASA III");
+	if (input.asaStatus === 'asa_4') cardioRiskReasons.push("статус ASA IV");
 
+	const isCardioRisk = cardioRiskReasons.length > 0;
+
+	// Epinephrine limits: 0.04 mg for cardio risk / beta-blockers / ASA III-IV; 0.20 mg for healthy adult
 	const maxSafeEpinephrineMg = isCardioRisk ? EPINEPHRINE_CEILINGS_MG.cardiovascularRisk : EPINEPHRINE_CEILINGS_MG.healthyAdult;
 
 	// Max safe carpules calculations (strict downward floor rounding)
@@ -207,6 +230,7 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 		: 99;
 
 	const maxSafeCarpulesCount = Math.floor(Math.min(maxCarpulesByActive, maxCarpulesByEpi) * 10) / 10;
+	const remainingSafeCarpulesCount = Math.max(0, Math.floor((maxSafeCarpulesCount - carpules) * 10) / 10);
 
 	// Percentage of max dose
 	const percentOfMaxDose = maxSafeActiveMg > 0 ? Math.round((injectedActiveMg / maxSafeActiveMg) * 100) : 0;
@@ -240,9 +264,47 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 		);
 	}
 
+	if (input.takesMaoInhibitors && !drug.isAdrenalineFree) {
+		contraindicationsTriggered.push(
+			'БЛОКИРУЮЩЕЕ ПРОТИВОПОКАЗАНИЕ: Пациент принимает ингибиторы МАО. Вазоконстрикторы абсолютно противопоказаны (риск гипертонического криза). Препарат выбора — Мепивакаин 3% (Скандонест).'
+		);
+	}
+
+	if (input.hasThyrotoxicosis && !drug.isAdrenalineFree) {
+		contraindicationsTriggered.push(
+			'БЛОКИРУЮЩЕЕ ПРОТИВОПОКАЗАНИЕ: Декомпенсированный тиреотоксикоз. Адреналинсодержащие анестетики противопоказаны (риск фибрилляции желудочков). Препарат выбора — Мепивакаин 3% (Скандонест).'
+		);
+	}
+
+	if (drug.id === 'bupivacaine_05') {
+		if (input.patientAgeYears < 12) {
+			contraindicationsTriggered.push(
+				'Бупивакаин (Маркаин) строго противопоказан детям до 12 лет из-за высокой кардиотоксичности!'
+			);
+		}
+		if (input.hasCardiacArrhythmia) {
+			contraindicationsTriggered.push(
+				'Бупивакаин (Маркаин) противопоказан при нарушениях сердечного ритма (высокая аритмогенность и кардиотоксичность)!'
+			);
+		}
+	}
+
 	if (input.isPregnantOrLactating && drug.vasoconstrictorRatio === '1:100000') {
 		warnings.push(
 			'Беременность / Лактация: предпочтительнее Артикаин 1:200 000 (Ультракаин Д-С) или Мепивакаин без адреналина.'
+		);
+	}
+
+	// Cardio risk advisory and choice of drug
+	if (isCardioRisk && drug.vasoconstrictorRatio === '1:100000') {
+		warnings.push(
+			`Кардиоваскулярный риск (${cardioRiskReasons.join(', ')}): Высокая концентрация адреналина 1:100 000 не рекомендуется при ССЗ! Строгий лимит адреналина 0.04 мг (максимум 2 карпулы 1:100k или 4 карпулы 1:200k). Препарат первого выбора при кардио-рисках — Мепивакаин 3% без вазоконстриктора (Скандонест/Мепивастезин).`
+		);
+	}
+
+	if (input.takesBetaBlockers && !drug.isAdrenalineFree) {
+		warnings.push(
+			'ВНИМАНИЕ: Пациент принимает бета-блокаторы! Риск тяжелого гипертонического криза и рефлекторной брадикардии при взаимодействии с адреналином. Препарат выбора — Мепивакаин 3% без вазоконстриктора (Скандонест).'
 		);
 	}
 
@@ -279,6 +341,9 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 		bpDiastolic: input.bpDiastolic,
 		heartRateBpm: input.heartRateBpm,
 		spo2Percent: input.spo2Percent,
+		overrideReason: input.overrideReason,
+		isOverdose,
+		isEpinephrineOverdose,
 	});
 
 	return {
@@ -290,11 +355,14 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 		maxSafeActiveMg,
 		maxSafeEpinephrineMg,
 		maxSafeCarpulesCount,
+		remainingSafeCarpulesCount,
 		percentOfMaxDose,
 		percentOfEpiMaxDose,
 		safetyZone,
 		isOverdose,
 		isEpinephrineOverdose,
+		isCardioRisk,
+		cardioRiskReasons,
 		ageCategory,
 		ageDoseReductionFactor: ageFactor,
 		contraindicationsTriggered,
@@ -327,6 +395,9 @@ export function generateAnesthesiaDiaryEntry(params: {
 	bpDiastolic?: number | undefined;
 	heartRateBpm?: number | undefined;
 	spo2Percent?: number | undefined;
+	overrideReason?: string | undefined;
+	isOverdose?: boolean | undefined;
+	isEpinephrineOverdose?: boolean | undefined;
 }): string {
 	const tech = INJECTION_TECHNIQUES[params.techniqueId] || INJECTION_TECHNIQUES.infiltration;
 	const needle = DENTAL_NEEDLES[params.needleType] || DENTAL_NEEDLES.g30_short_21mm;
@@ -349,7 +420,14 @@ export function generateAnesthesiaDiaryEntry(params: {
 			? ` Исходные показатели гемодинамики: АД ${params.bpSystolic}/${params.bpDiastolic ?? 80} мм рт. ст., ЧСС ${params.heartRateBpm} уд/мин${typeof params.spo2Percent === 'number' ? `, SpO2 ${params.spo2Percent}%` : ''}.`
 			: '';
 
-	return `Проведена местная ${tech.nameRu.toLowerCase()} анестезия${toothPart}. Препарат: ${params.drug.tradeNamesRu[0]} (${params.drug.activeSubstanceRu})${batchText}, объем ${params.injectedVolumeMl} мл (${params.carpulesCount} карп., ${params.injectedActiveMg} мг действующего вещества${epiText}).${vitalsText} Игла: ${needle.nameRu}. ${aspText} Анестезия наступила через ${params.drug.onsetMinutes} мин, глубина достаточная, соматических реакций нет.${nurseText}`;
+	let autonomyLegalNote = '';
+	if (params.overrideReason) {
+		autonomyLegalNote = ` [Врачебное решение (ст. 70 Федерального закона № 323-ФЗ): ${params.overrideReason}].`;
+	} else if (params.isOverdose || params.isEpinephrineOverdose) {
+		autonomyLegalNote = ' [Введено по неотложному клиническому решению врача согласно ст. 70 Федерального закона № 323-ФЗ, гемодинамика под контролем].';
+	}
+
+	return `Проведена местная ${tech.nameRu.toLowerCase()} анестезия${toothPart}. Препарат: ${params.drug.tradeNamesRu[0]} (${params.drug.activeSubstanceRu})${batchText}, объем ${params.injectedVolumeMl} мл (${params.carpulesCount} карп., ${params.injectedActiveMg} мг действующего вещества${epiText}).${vitalsText} Игла: ${needle.nameRu}. ${aspText} Анестезия наступила через ${params.drug.onsetMinutes} мин, глубина достаточная, соматических реакций нет.${nurseText}${autonomyLegalNote}`;
 }
 
 // ---------------------------------------------------------------------------

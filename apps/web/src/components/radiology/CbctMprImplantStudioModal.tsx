@@ -22,6 +22,7 @@ import {
 	generateCrossSectionSlices,
 	reconstructPanoramicView,
 } from "./dentalCurveEngine";
+import { getSharedCbctWorkerBridge } from "./mpr/cbctWorkerBridge";
 import {
 	type ImplantBrandKey, type VirtualImplantSpec, type CrossSectionImplantPose,
 	type MandibularCanalCrossSection, type Implant3DWorldProjection, type LiveImplantTelemetry, type Vec3,
@@ -267,24 +268,55 @@ export const CbctMprImplantStudioModal: React.FC<
 		}
 	}, [volume, jawType]);
 
-	// Panoramic and cross-sections update
+	// Panoramic and cross-sections update (Asynchronous Web Worker offloading for 60 FPS fluidity)
 	useEffect(() => {
 		if (!volume || !isOpen) return;
+		let isCancelled = false;
+
 		const panoRes = reconstructPanoramicView(volume, archCurve, {
 			windowWidth,
 			windowLevel,
 			invert: invertColors,
 		});
 		setPanoramicData(panoRes);
-		const crossSlices = generateCrossSectionSlices(volume, archCurve, crossSectionStepMm, crosshairMm.z, {
-			widthMm: 24.0,
-			heightMm: 34.0,
-			windowWidth,
-			windowLevel,
-			invert: invertColors,
-		});
-		setCrossSections(crossSlices);
-	}, [volume, isOpen, archCurve, crossSectionStepMm, windowWidth, windowLevel, invertColors, slabThicknessMm, activeCrossSection?.nearestToothFdi]);
+
+		const bridge = getSharedCbctWorkerBridge();
+		bridge
+			.requestCrossSectionSeries({
+				volume,
+				archCurve,
+				options: {
+					stepMm: crossSectionStepMm,
+					sliceCenterZMm: crosshairMm.z,
+					widthMm: 24.0,
+					heightMm: 34.0,
+					windowWidth,
+					windowLevel,
+					invert: invertColors,
+				},
+			})
+			.then((crossSlices) => {
+				if (!isCancelled && crossSlices.length > 0) {
+					setCrossSections(crossSlices);
+				}
+			})
+			.catch(() => {
+				if (!isCancelled) {
+					const crossSlices = generateCrossSectionSlices(volume, archCurve, crossSectionStepMm, crosshairMm.z, {
+						widthMm: 24.0,
+						heightMm: 34.0,
+						windowWidth,
+						windowLevel,
+						invert: invertColors,
+					});
+					setCrossSections(crossSlices);
+				}
+			});
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [volume, isOpen, archCurve, crossSectionStepMm, windowWidth, windowLevel, invertColors, crosshairMm.z]);
 
 	useEffect(() => {
 		const applyVol = (vol: CbctVoxelVolume) => {
@@ -380,64 +412,20 @@ export const CbctMprImplantStudioModal: React.FC<
 
 	// Slice renderer hook
 	useCbctSliceRenderer({
-		isOpen,
-		volume,
-		crosshairMm,
-		obliqueAngles,
-		windowWidth,
-		windowLevel,
-		invertColors,
-		slabMode,
-		slabThicknessMm,
-		transforms,
-		maximizedViewport,
-		viewLayout,
-		layoutBurstCount: 0,
-		activeTool,
-		studioMode,
-		rulers,
-		activeRuler,
-		angles,
-		activeAngle,
-		probeMarkers,
-		activeProbe,
-		selectedMeasurement,
-		hoveredMeasurementHandle,
-		draggingMeasurementHandle,
-		implant3DWorld,
-		currentImplantPose,
-		nerveAuditResult,
-		interpolatedNerve3D,
-		nervePoints,
-		nerveTotalLengthMm,
-		selectedNerveNodeIdx,
-		activeRotationHandle: interactions.activeRotationHandle,
-		hoveredHandle: interactions.hoveredHandle,
-		showDentalArch,
-		showEdgeRulers,
-		hoveredViewport,
-		archCurve,
-		activeCrossSection,
-		currentImplantSpec,
-		selectedArchAnchorIdx: null,
-		hoveredArchAnchorIdx: interactions.hoveredArchAnchorIdx,
-		isDraggingArchAnchor: interactions.isDraggingArchAnchor,
-		panoramicData,
-		crossSections,
-		activeCrossSectionIdx,
-		currentCanal,
-		hoveredImplantPart,
-		dragImplantPart,
-		axialBaseCanvasRef,
-		axialOverlayCanvasRef,
-		coronalBaseCanvasRef,
-		coronalOverlayCanvasRef,
-		sagittalBaseCanvasRef,
-		sagittalOverlayCanvasRef,
-		panoBaseCanvasRef,
-		panoOverlayCanvasRef,
-		crossSectionBaseCanvasRef,
-		crossSectionOverlayCanvasRef,
+		isOpen, volume, crosshairMm, obliqueAngles, windowWidth, windowLevel, invertColors, slabMode, slabThicknessMm,
+		transforms, maximizedViewport, viewLayout, layoutBurstCount: 0, activeTool, studioMode,
+		rulers, activeRuler, angles, activeAngle, probeMarkers, activeProbe,
+		selectedMeasurement, hoveredMeasurementHandle, draggingMeasurementHandle,
+		implant3DWorld, currentImplantPose, nerveAuditResult, interpolatedNerve3D,
+		nervePoints, nerveTotalLengthMm, selectedNerveNodeIdx,
+		activeRotationHandle: interactions.activeRotationHandle, hoveredHandle: interactions.hoveredHandle,
+		showDentalArch, showEdgeRulers, hoveredViewport, archCurve, activeCrossSection, currentImplantSpec,
+		selectedArchAnchorIdx: null, hoveredArchAnchorIdx: interactions.hoveredArchAnchorIdx,
+		isDraggingArchAnchor: interactions.isDraggingArchAnchor, panoramicData, crossSections,
+		activeCrossSectionIdx, currentCanal, hoveredImplantPart, dragImplantPart,
+		axialBaseCanvasRef, axialOverlayCanvasRef, coronalBaseCanvasRef, coronalOverlayCanvasRef,
+		sagittalBaseCanvasRef, sagittalOverlayCanvasRef, panoBaseCanvasRef, panoOverlayCanvasRef,
+		crossSectionBaseCanvasRef, crossSectionOverlayCanvasRef,
 	});
 
 	const {

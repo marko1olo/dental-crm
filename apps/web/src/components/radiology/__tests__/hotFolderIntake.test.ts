@@ -12,6 +12,12 @@ import {
 	FDI_TOOTH_NAMES,
 	formatRadiationDose,
 } from "../radiologyMath";
+import {
+	POPULAR_RVG_SENSORS,
+	detectRadiologySensorBrand,
+	extractTeethFromRadiologyFilename,
+	validateRadiologyUploadFile,
+} from "../directRvgFileValidation";
 
 describe("Hot-Folder Intake & Radiology Integration Suite", () => {
 	it("verifies initial hot-folder items are populated with realistic medical X-ray sources", () => {
@@ -132,5 +138,88 @@ describe("Hot-Folder Intake & Radiology Integration Suite", () => {
 		assert.ok(sample.patientMatch.patientName.length > 0);
 		assert.ok(sample.patientMatch.cardNumber.includes("043/у"));
 		assert.ok(sample.sizeFormatted.includes("МБ"));
+	});
+
+	it("validates all radiology image and DICOM formats including BMP, TIFF, 16-bit PNG", () => {
+		// Valid DICOM files
+		assert.deepEqual(validateRadiologyUploadFile({ name: "tooth16.dcm" }), { isValid: true, format: "dicom" });
+		assert.deepEqual(validateRadiologyUploadFile({ name: "PATIENT_STUDY.DICOM" }), { isValid: true, format: "dicom" });
+
+		// Valid TIFF files
+		assert.deepEqual(validateRadiologyUploadFile({ name: "rvg_export.tif" }), { isValid: true, format: "tiff" });
+		assert.deepEqual(validateRadiologyUploadFile({ name: "highres_scan.tiff" }), { isValid: true, format: "tiff" });
+
+		// Valid Images: PNG, JPG, JPEG, BMP, WebP
+		assert.deepEqual(validateRadiologyUploadFile({ name: "sensor_frame.png" }), { isValid: true, format: "image" });
+		assert.deepEqual(validateRadiologyUploadFile({ name: "intraoral_view.jpg" }), { isValid: true, format: "image" });
+		assert.deepEqual(validateRadiologyUploadFile({ name: "xray.jpeg" }), { isValid: true, format: "image" });
+		assert.deepEqual(validateRadiologyUploadFile({ name: "woodpecker_raw.bmp" }), { isValid: true, format: "image" });
+		assert.deepEqual(validateRadiologyUploadFile({ name: "radiology.webp" }), { isValid: true, format: "image" });
+
+		// Unsupported formats
+		assert.deepEqual(validateRadiologyUploadFile({ name: "malware.exe" }), { isValid: false, format: "unsupported" });
+		assert.deepEqual(validateRadiologyUploadFile({ name: "report.pdf" }), { isValid: false, format: "unsupported" });
+		assert.deepEqual(validateRadiologyUploadFile({ name: "notes.txt" }), { isValid: false, format: "unsupported" });
+	});
+
+	it("correctly detects hardware sensor brands from filenames and paths (Vatech, Carestream, KaVo, Fona, Woodpecker)", () => {
+		assert.equal(detectRadiologySensorBrand("EzSensor_HD_capture.dcm"), "Vatech EzSensor HD");
+		assert.equal(detectRadiologySensorBrand("C:\\EzDent-i\\Patient001\\01.dcm"), "Vatech EzSensor HD");
+		assert.equal(detectRadiologySensorBrand("Carestream_RVG_6200_Tooth36.dcm"), "Carestream / Kodak RVG 5200 / 6200");
+		assert.equal(detectRadiologySensorBrand("CS Imaging\\rvg 5200_tooth11.jpg"), "Carestream / Kodak RVG 5200 / 6200");
+		assert.equal(detectRadiologySensorBrand("KaVo_Gendex_GXS700_shot.png"), "KaVo Gendex GXS-700");
+		assert.equal(detectRadiologySensorBrand("Fona_CDRelite_export.tif"), "FONA CDRelite / Schick");
+		assert.equal(detectRadiologySensorBrand("Woodpecker_iSensor_H2_tooth46.bmp"), "Woodpecker i-Sensor H1 / H2");
+		assert.equal(detectRadiologySensorBrand("Planmeca_Romexis_export.dcm"), "Planmeca ProSensor HD");
+		assert.equal(detectRadiologySensorBrand("Sidexis_XIOS_XG.dcm"), "Dentsply Sirona XIOS XG Supreme");
+	});
+
+	it("extracts FDI teeth formulas, Bitewing projections, and Occlusal arches from filenames", () => {
+		// Single tooth extraction
+		assert.deepEqual(extractTeethFromRadiologyFilename("RVG_Tooth21_check.dcm"), ["21"]);
+		assert.deepEqual(extractTeethFromRadiologyFilename("46.dcm"), ["46"]);
+
+		// Multi-tooth codes
+		assert.deepEqual(extractTeethFromRadiologyFilename("rvg_16_15_control.jpg"), ["15", "16"]);
+
+		// Bitewing patterns
+		const bwRight = extractTeethFromRadiologyFilename("Bitewing_Q1Q4_right.dcm");
+		assert.ok(bwRight.includes("16") && bwRight.includes("46"));
+		assert.equal(bwRight.length, 8);
+
+		const bwLeft = extractTeethFromRadiologyFilename("bw_left_interproximal.tif");
+		assert.ok(bwLeft.includes("26") && bwLeft.includes("36"));
+		assert.equal(bwLeft.length, 8);
+
+		// Occlusal arches
+		const occlusalUpper = extractTeethFromRadiologyFilename("occlusal_upper_arch.dcm");
+		assert.equal(occlusalUpper.length, 16);
+		assert.ok(occlusalUpper.includes("11") && occlusalUpper.includes("28"));
+
+		const occlusalLower = extractTeethFromRadiologyFilename("окклюзия_низ_контроль.dcm");
+		assert.equal(occlusalLower.length, 16);
+		assert.ok(occlusalLower.includes("41") && occlusalLower.includes("38"));
+	});
+
+	it("verifies popular RVG sensor physical specs (resolution lp/mm and pixel spacing)", () => {
+		assert.ok(POPULAR_RVG_SENSORS.length >= 7);
+
+		const vatech = POPULAR_RVG_SENSORS.find((s) => s.brand === "vatech");
+		assert.ok(vatech);
+		assert.ok(vatech.resolution.includes("29.2 lp/mm"));
+		assert.equal(vatech.pixelSpacing, 0.035);
+
+		const carestream = POPULAR_RVG_SENSORS.find((s) => s.brand === "carestream");
+		assert.ok(carestream);
+		assert.ok(carestream.name.includes("RVG 5200 / 6200"));
+		assert.equal(carestream.pixelSpacing, 0.042);
+
+		const kavo = POPULAR_RVG_SENSORS.find((s) => s.brand === "kavo");
+		assert.ok(kavo);
+		assert.ok(kavo.name.includes("KaVo Gendex"));
+
+		const woodpecker = POPULAR_RVG_SENSORS.find((s) => s.brand === "woodpecker");
+		assert.ok(woodpecker);
+		assert.ok(woodpecker.name.includes("i-Sensor"));
 	});
 });

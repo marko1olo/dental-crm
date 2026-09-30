@@ -7,15 +7,18 @@
     "Implemented 4th quadrant mode switcher in CbctMprViewportsGrid.tsx with [3D Объем / Череп] and [Панорама ОПТГ] buttons",
     "Defaulted 4th quadrant to 3D volume/skull with 1-click toggle to panorama",
     "Synchronized fourthQuadrantMode with studioMode in CbctMprViewportsGrid.tsx and wired studioMode in CbctMprImplantStudioModal.tsx",
+    "Added 1-click maximize / restore controls and tablet touch gesture navigation (pinch zoom and drag orbit) to CbctVolume3DViewport",
+    "Integrated ResizeObserver on 3D canvas for responsive auto-scaling across viewport maximize and window resize",
     "Fixed volume.data nullability for strict TypeScript check",
-    "Created comprehensive unit test suite cbctVolume3DQuadrant.test.ts (14/14 tests pass, total 51/51 DICOM/CBCT suite tests pass)",
-    "Verified npm run typecheck -w @dental/web passes with Exit Code 0",
-    "Verified npm run check:encoding passes with Exit Code 0"
+    "Created comprehensive unit test suite cbctVolume3DQuadrant.test.ts (16/16 tests pass, total 54/54 DICOM/CBCT suite tests pass)",
+    "Verified npx tsc --project apps/web/tsconfig.json --noEmit passes with Exit Code 0 (0 errors)",
+    "Verified npm run check:encoding passes with Exit Code 0 (6313 files clean)"
   ],
   "pending_steps": [],
   "findings": [
     "Voxel raycasting with normal-based Lambertian diffuse shading gives clear, high-contrast bone rendering for skull and jaw visualization directly in browser 2D/3D context without external heavy binary dependencies",
-    "4th quadrant switcher seamlessly toggles between 3D Volume reconstruction and Orthopantomogram (Pano) while maintaining live slice crosshairs and MPR synchronization across Axial, Coronal, and Sagittal quadrants"
+    "4th quadrant switcher seamlessly toggles between 3D Volume reconstruction and Orthopantomogram (Pano) while maintaining live slice crosshairs and MPR synchronization across Axial, Coronal, and Sagittal quadrants",
+    "Pinch zoom and single-finger orbit touch events allow smooth clinical usage on touch tablets and hybrid laptops"
   ],
   "modified_files": [
     "apps/web/src/components/radiology/mpr/CbctVolume3DViewport.tsx",

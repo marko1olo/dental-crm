@@ -100,7 +100,8 @@ export const DENTAL_ANESTHETICS: Record<AnestheticDrugId, AnestheticDrugInfo> = 
 			'Аллергия на артикаин и амидные анестетики',
 			'Бронхиальная астма с гиперчувствительностью к сульфитам',
 			'Неконтролируемая артериальная гипертензия (АД > 180/110)',
-			'Закрытоугольная глаукома, феохромоцитома, декомпенсированный тиреотоксикоз'
+			'Закрытоугольная глаукома, феохромоцитома, декомпенсированный тиреотоксикоз',
+			'Сердечно-сосудистые патологии (ИБС, гипертония II-III ст, аритмии, инфаркт в анамнезе), прием бета-блокаторов'
 		]
 	},
 
@@ -151,7 +152,7 @@ export const DENTAL_ANESTHETICS: Record<AnestheticDrugId, AnestheticDrugInfo> = 
 		onsetMinutes: 1.5,
 		pulpalDurationMinutes: 25,
 		softTissueDurationMinutes: 120,
-		clinicalIndicationsRu: 'Препарат первого выбора для пациентов группы кардиоваскулярного риска (ASA III/IV, гипертония, ИБС), астматиков, беременных, пациентов с тиреотоксикозом.',
+		clinicalIndicationsRu: 'Препарат первого выбора для пациентов группы кардиоваскулярного риска (ИБС, гипертония II-III ст, аритмии, инфаркт в анамнезе), пациентов на бета-блокаторах, астматиков и аллергиков на сульфиты, беременных.',
 		contraindicationsRu: [
 			'Аллергия на мепивакаин / амиды',
 			'Тяжелая печеночная недостаточность'
@@ -432,14 +433,14 @@ export const STANDARD_ANESTHESIA_PRESETS: Record<string, StandardAnesthesiaPrese
 	},
 	mepivacaine_plain: {
 		id: 'mepivacaine_plain',
-		labelRu: '1-клик: Мепивакаин 3% без вазоконстриктора (1 карпула 1.7 мл, для кардиологических больных и беременных)',
+		labelRu: '1-клик: Мепивакаин 3% без вазоконстриктора (1 карпула 1.7 мл, препарат выбора при ССЗ и бета-блокаторах)',
 		shortLabelRu: 'Мепивакаин 3% (1 карп., без адреналина)',
 		testId: 'btn-anesthesia-preset-mepivacaine-plain',
 		drugId: 'mepivacaine_plain',
 		carpulesCount: 1.0,
 		techniqueId: 'infiltration',
 		needleType: 'g30_short_21mm',
-		descriptionRu: 'Анестезия без вазоконстриктора (Мепивакаин 3%, 1.7 мл, для кардиобольных и беременных)',
+		descriptionRu: 'Анестезия без вазоконстриктора (Мепивакаин 3%, 1.7 мл, препарат выбора при ССЗ и приеме бета-блокаторов)',
 		isAdrenalineFree: true,
 		hasCardioRisk: true,
 		defaultWeightKg: 70,

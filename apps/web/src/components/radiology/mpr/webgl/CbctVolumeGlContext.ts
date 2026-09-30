@@ -16,6 +16,7 @@ import type {
 	Point3D,
 	SlabProjectionMode,
 } from "../../cbctMprMath";
+import type { Point2D } from "../../cbctCaliperNerveMath";
 import {
 	worldMmToSlicePx,
 	worldMmToSlicePxContinuous,
@@ -65,26 +66,17 @@ export function downsampleVolumeData(
 	const dstH = Math.max(1, Math.ceil(srcDim.height / step));
 	const dstD = Math.max(1, Math.ceil(srcDim.depth / step));
 	const dstData = new Int16Array(dstW * dstH * dstD);
-
-	const srcW = srcDim.width;
-	const srcSlice = srcDim.width * srcDim.height;
-	const dstSlice = dstW * dstH;
+	const srcW = srcDim.width, srcSlice = srcDim.width * srcDim.height, dstSlice = dstW * dstH;
 
 	for (let dz = 0; dz < dstD; dz++) {
-		const sz = dz * step;
-		const srcZOffset = sz * srcSlice;
-		const dstZOffset = dz * dstSlice;
+		const srcZOffset = dz * step * srcSlice, dstZOffset = dz * dstSlice;
 		for (let dy = 0; dy < dstH; dy++) {
-			const sy = dy * step;
-			const srcYOffset = srcZOffset + sy * srcW;
-			const dstYOffset = dstZOffset + dy * dstW;
+			const srcYOffset = srcZOffset + dy * step * srcW, dstYOffset = dstZOffset + dy * dstW;
 			for (let dx = 0; dx < dstW; dx++) {
-				const sx = dx * step;
-				dstData[dstYOffset + dx] = srcData[srcYOffset + sx] ?? -1000;
+				dstData[dstYOffset + dx] = srcData[srcYOffset + dx * step] ?? -1000;
 			}
 		}
 	}
-
 	return { data: dstData, width: dstW, height: dstH, depth: dstD };
 }
 
@@ -161,13 +153,7 @@ export function computeGlSliceCoordinates(
 	const vox00Y = (world00Y - origin.y) / sp.y;
 	const vox00Z = (world00Z - origin.z) / sp.z;
 
-	const sliceOrigin: [number, number, number] = [
-		vox00X / maxCoordX,
-		vox00Y / maxCoordY,
-		vox00Z / maxCoordZ,
-	];
-
-	// Span across slice width (pixels 0 -> widthPx)
+	const sliceOrigin: [number, number, number] = [vox00X / maxCoordX, vox00Y / maxCoordY, vox00Z / maxCoordZ];
 	const totalSpanMmX = widthPx * pixelSpacingX;
 	const axisU: [number, number, number] = [
 		(basis.u.x * totalSpanMmX) / (sp.x * maxCoordX),
@@ -175,7 +161,6 @@ export function computeGlSliceCoordinates(
 		(basis.u.z * totalSpanMmX) / (sp.z * maxCoordZ),
 	];
 
-	// Span across slice height (pixels 0 -> heightPx)
 	const totalSpanMmY = heightPx * pixelSpacingY;
 	const axisV: [number, number, number] = [
 		(basis.v.x * totalSpanMmY) / (sp.x * maxCoordX),
@@ -183,7 +168,6 @@ export function computeGlSliceCoordinates(
 		(basis.v.z * totalSpanMmY) / (sp.z * maxCoordZ),
 	];
 
-	// Slab thickness stepping along slice normal
 	const normalStepMm = Math.min(sp.x, Math.min(sp.y, sp.z));
 	const slabMode = options?.slabMode ?? "single";
 	const slabThicknessMm = options?.slabThicknessMm ?? 2.0;
@@ -216,6 +200,99 @@ export function computeGlSliceCoordinates(
 	};
 }
 
+/**
+ * Pure mathematical calculation of 3D Texture UVW coordinates for a perpendicular
+ * transverse cross-section slice (buccal-lingual span) along a dental arch curve.
+ * Standards: DICOM Part 3, Misch CE, Buser (24x34 mm span, 0.25 mm/px).
+ */
+export function computeGlCrossSectionCoordinates(
+	volume: CbctVoxelVolume,
+	centerMm: Point3D,
+	normal2D: Point2D,
+	options?: {
+		widthMm?: number | undefined;
+		heightMm?: number | undefined;
+		pixelSpacingMm?: number | undefined;
+		slabMode?: SlabProjectionMode | undefined;
+		slabThicknessMm?: number | undefined;
+	},
+): GlSliceCoordinates {
+	const dim = volume.dimensions;
+	const sp = volume.spacingMm;
+	const origin = volume.originMm;
+
+	const widthMm = Number.isFinite(options?.widthMm) && (options?.widthMm ?? 0) > 0 ? options!.widthMm! : 24.0;
+	const heightMm = Number.isFinite(options?.heightMm) && (options?.heightMm ?? 0) > 0 ? options!.heightMm! : 34.0;
+	const pixelSpacingMm =
+		Number.isFinite(options?.pixelSpacingMm) && (options?.pixelSpacingMm ?? 0) > 0
+			? options!.pixelSpacingMm!
+			: 0.25;
+
+	const widthPx = Math.max(1, Math.round(widthMm / pixelSpacingMm));
+	const heightPx = Math.max(1, Math.round(heightMm / pixelSpacingMm));
+	const pixelSpacingX = pixelSpacingMm;
+	const pixelSpacingY = pixelSpacingMm;
+
+	const halfW = widthMm / 2.0;
+	const halfH = heightMm / 2.0;
+
+	// Normalize normal vector (across alveolar ridge)
+	const nLen = Math.hypot(normal2D.x, normal2D.y);
+	const unitNormal: Point2D =
+		Number.isFinite(nLen) && nLen > 1e-6 ? { x: normal2D.x / nLen, y: normal2D.y / nLen } : { x: 0, y: 1 };
+	const unitTangent: Point2D = {
+		x: unitNormal.y === 0 ? 0 : unitNormal.y,
+		y: unitNormal.x === 0 ? 0 : -unitNormal.x,
+	};
+
+	const maxCoordX = Math.max(1, dim.width - 1);
+	const maxCoordY = Math.max(1, dim.height - 1);
+	const maxCoordZ = Math.max(1, dim.depth - 1);
+
+	// World coordinate at slice pixel (0, 0): top-left
+	const world00X = centerMm.x - unitNormal.x * halfW;
+	const world00Y = centerMm.y - unitNormal.y * halfW;
+	const world00Z = centerMm.z + halfH;
+
+	const vox00X = (world00X - origin.x) / sp.x;
+	const vox00Y = (world00Y - origin.y) / sp.y;
+	const vox00Z = (world00Z - origin.z) / sp.z;
+
+	const sliceOrigin: [number, number, number] = [vox00X / maxCoordX, vox00Y / maxCoordY, vox00Z / maxCoordZ];
+	const uX = (unitNormal.x * widthMm) / (sp.x * maxCoordX);
+	const uY = (unitNormal.y * widthMm) / (sp.y * maxCoordY);
+	const axisU: [number, number, number] = [uX === 0 ? 0 : uX, uY === 0 ? 0 : uY, 0];
+	const axisV: [number, number, number] = [0, 0, -heightMm / (sp.z * maxCoordZ)];
+
+	const normalStepMm = Math.min(sp.x, Math.min(sp.y, sp.z));
+	const slabMode = options?.slabMode ?? "single";
+	const slabThicknessMm = options?.slabThicknessMm ?? 2.0;
+	const isSlabActive = slabMode !== "single" && slabThicknessMm > normalStepMm;
+	const slabSteps = isSlabActive ? Math.max(1, Math.round(slabThicknessMm / normalStepMm)) : 1;
+	const stepMm = isSlabActive ? slabThicknessMm / slabSteps : 0;
+	const nX = (unitTangent.x * stepMm) / (sp.x * maxCoordX);
+	const nY = (unitTangent.y * stepMm) / (sp.y * maxCoordY);
+	const axisNorm: [number, number, number] = [nX === 0 ? 0 : nX, nY === 0 ? 0 : nY, 0];
+
+	let slabModeCode = 0;
+	if (slabMode === "mip") slabModeCode = 1;
+	else if (slabMode === "minip") slabModeCode = 2;
+	else if (slabMode === "average") slabModeCode = 3;
+
+	return {
+		widthPx,
+		heightPx,
+		pixelSpacingX,
+		pixelSpacingY,
+		sliceOrigin,
+		axisU,
+		axisV,
+		axisNorm,
+		slabModeCode,
+		slabSteps,
+	};
+}
+
 export class CbctVolumeGlContext {
 	private gl: WebGL2RenderingContext | null = null;
 	private canvas: HTMLCanvasElement | null = null;
@@ -226,6 +303,8 @@ export class CbctVolumeGlContext {
 	private activeVolumeId: string | null = null;
 	private isInitialized = false;
 	private vao: WebGLVertexArrayObject | null = null;
+	private uploadDim: { width: number; height: number; depth: number } | null = null;
+	private cleanupContextListeners: (() => void) | null = null;
 
 	// Uniform locations cache
 	private uniforms: {
@@ -250,6 +329,8 @@ export class CbctVolumeGlContext {
 	}
 
 	public init(canvas: HTMLCanvasElement): boolean {
+		this.cleanupContextListeners?.();
+		this.cleanupContextListeners = null;
 		this.canvas = canvas;
 
 		try {
@@ -271,6 +352,31 @@ export class CbctVolumeGlContext {
 			this.gl = gl;
 			const success = this.setupShaders();
 			this.isInitialized = success;
+
+			const onContextLost = (e: Event) => {
+				e.preventDefault();
+				this.isInitialized = false;
+				this.activeVolumeId = null;
+				this.volumeTexture = null;
+				this.uploadDim = null;
+				this.program = null;
+				this.vao = null;
+				this.uniforms = null;
+			};
+			const onContextRestored = () => {
+				if (this.canvas) {
+					this.init(this.canvas);
+				}
+			};
+			if (typeof canvas.addEventListener === "function") {
+				canvas.addEventListener("webglcontextlost", onContextLost);
+				canvas.addEventListener("webglcontextrestored", onContextRestored);
+				this.cleanupContextListeners = () => {
+					canvas.removeEventListener("webglcontextlost", onContextLost);
+					canvas.removeEventListener("webglcontextrestored", onContextRestored);
+				};
+			}
+
 			return success;
 		} catch (err) {
 			console.warn("[CbctVolumeGlContext] WebGL2 initialization failed:", err);
@@ -455,6 +561,7 @@ export class CbctVolumeGlContext {
 
 		this.volumeTexture = texture;
 		this.activeVolumeId = volume.id;
+		this.uploadDim = { width: uploadWidth, height: uploadHeight, depth: uploadDepth };
 
 		// Update volume dimensions uniform
 		if (this.uniforms?.volumeDim) {
@@ -476,35 +583,25 @@ export class CbctVolumeGlContext {
 				this.volumeTexture = null;
 			}
 			this.activeVolumeId = null;
+			this.uploadDim = null;
 		}
 	}
 
 	/**
-	 * Hardware-accelerated slice extraction and display on target canvas.
+	 * Generic hardware-accelerated slice extraction and display on target canvas from GlSliceCoordinates.
 	 * Executes in < 0.5 ms at 60+ FPS on modern GPU.
-	 * If targetCanvas is supplied, the rendered frame is copied to targetCanvas.
 	 */
-	public renderSlice(
+	public renderFromCoordinates(
 		volume: CbctVoxelVolume,
-		plane: MprPlane,
-		crosshairMm: Point3D,
-		angles: ObliqueRotationAngles,
+		coords: GlSliceCoordinates,
 		options: GlSliceRenderOptions,
 		targetCanvas?: HTMLCanvasElement | null,
 	): GlSliceCoordinates | null {
 		const gl = this.gl;
 		const canvas = this.canvas;
-		if (!gl || !canvas || !this.isAvailable() || !this.program || !this.uniforms) {
-			return null;
-		}
+		if (!gl || !canvas || !this.isAvailable() || !this.program || !this.uniforms) return null;
+		if (!this.uploadVolume(volume)) return null;
 
-		if (!this.uploadVolume(volume)) {
-			return null;
-		}
-
-		const coords = computeGlSliceCoordinates(volume, plane, crosshairMm, angles, options);
-
-		// Avoid shrinking canvas to prevent continuous WebGL framebuffer reallocation thrashing
 		if (targetCanvas) {
 			if (canvas.width < coords.widthPx || canvas.height < coords.heightPx) {
 				canvas.width = Math.max(canvas.width, coords.widthPx);
@@ -527,7 +624,11 @@ export class CbctVolumeGlContext {
 		gl.bindTexture(gl.TEXTURE_3D, this.volumeTexture);
 		gl.uniform1i(this.uniforms.volume, 0);
 
-		// Set slice coordinate uniforms
+		if (this.uniforms.volumeDim && this.uploadDim) {
+			gl.uniform3f(this.uniforms.volumeDim, this.uploadDim.width, this.uploadDim.height, this.uploadDim.depth);
+		}
+
+		// Set coordinate uniforms
 		gl.uniform3fv(this.uniforms.sliceOrigin, coords.sliceOrigin);
 		gl.uniform3fv(this.uniforms.axisU, coords.axisU);
 		gl.uniform3fv(this.uniforms.axisV, coords.axisV);
@@ -567,6 +668,40 @@ export class CbctVolumeGlContext {
 		}
 
 		return coords;
+	}
+
+	/**
+	 * Hardware-accelerated MPR slice extraction and display on target canvas (< 0.5 ms).
+	 */
+	public renderSlice(
+		volume: CbctVoxelVolume,
+		plane: MprPlane,
+		crosshairMm: Point3D,
+		angles: ObliqueRotationAngles,
+		options: GlSliceRenderOptions,
+		targetCanvas?: HTMLCanvasElement | null,
+	): GlSliceCoordinates | null {
+		const coords = computeGlSliceCoordinates(volume, plane, crosshairMm, angles, options);
+		return this.renderFromCoordinates(volume, coords, options, targetCanvas);
+	}
+
+	/**
+	 * Hardware-accelerated perpendicular transverse cross-section slice extraction on GPU (< 0.5 ms).
+	 * Reslices alveolar ridge along normal2D with width 24 mm and height 34 mm.
+	 */
+	public renderCrossSection(
+		volume: CbctVoxelVolume,
+		centerMm: Point3D,
+		normal2D: Point2D,
+		options: GlSliceRenderOptions & {
+			widthMm?: number | undefined;
+			heightMm?: number | undefined;
+			pixelSpacingMm?: number | undefined;
+		},
+		targetCanvas?: HTMLCanvasElement | null,
+	): GlSliceCoordinates | null {
+		const coords = computeGlCrossSectionCoordinates(volume, centerMm, normal2D, options);
+		return this.renderFromCoordinates(volume, coords, options, targetCanvas);
 	}
 
 	/**
@@ -651,9 +786,12 @@ export class CbctVolumeGlContext {
 			}
 		}
 
+		this.cleanupContextListeners?.();
+		this.cleanupContextListeners = null;
 		this.gl = null;
 		this.canvas = null;
 		this.activeVolumeId = null;
+		this.uploadDim = null;
 		this.isInitialized = false;
 		this.uniforms = null;
 	}

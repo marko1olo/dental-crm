@@ -22,6 +22,7 @@ import {
 	CBCT_VOLUME_3D_PRESETS,
 	computeVolume3DRotationMatrix,
 	CbctVolume3DViewport,
+	intersectRayAABB,
 } from "../mpr/CbctVolume3DViewport";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -111,6 +112,17 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 			assert.ok(source.includes("data-testid=\"cbct-btn-orientation-isometric\""), "Must have 3D (Isometric) shortcut");
 			assert.ok(source.includes("3D Объем:"), "Must display telemetry label");
 		});
+
+		it("CbctVolume3DViewport supports 1-click maximize and touch gesture controls", () => {
+			const source = fs.readFileSync(
+				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
+				"utf-8",
+			);
+			assert.ok(source.includes("data-testid=\"cbct-btn-toggle-maximize-3d\""), "Must have toggle maximize button testid");
+			assert.ok(source.includes("onTouchStart={handleTouchStart}"), "Must bind touch start");
+			assert.ok(source.includes("onTouchMove={handleTouchMove}"), "Must bind touch move");
+			assert.ok(source.includes("onTouchEnd={handleTouchEnd}"), "Must bind touch end");
+		});
 	});
 
 	// ─── 4. 4TH QUADRANT DUAL-MODE INTEGRATION IN CBCTMPRVIEWPORTSGRID ─────────
@@ -187,6 +199,21 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 				"Must switch to volume3d when studioMode is volume3d",
 			);
 		});
+
+		it("CbctMprViewportsGrid passes isMaximized and onToggleMaximize to CbctVolume3DViewport", () => {
+			const source = fs.readFileSync(
+				path.resolve(__dirname, "../mpr/CbctMprViewportsGrid.tsx"),
+				"utf-8",
+			);
+			assert.ok(
+				source.includes("isMaximized={maximizedViewport === \"panoramic\"}"),
+				"Must pass isMaximized to CbctVolume3DViewport",
+			);
+			assert.ok(
+				source.includes("onToggleMaximize={() => handleToggleMaximize(\"panoramic\")}"),
+				"Must pass onToggleMaximize to CbctVolume3DViewport",
+			);
+		});
 	});
 
 	// ─── 5. CBCTMPRIMPLANTSTUDIOMODAL BINDINGS ────────────────────────────────
@@ -204,6 +231,89 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 				source.includes("onSelectStudioMode={handleSelectStudioMode}"),
 				"Must pass onSelectStudioMode prop to CbctMprViewportsGrid",
 			);
+		});
+	});
+
+	// ─── 6. RAY-AABB ANALYTICAL SLAB INTERSECTION & PERFORMANCE MATH ──────────
+	describe("6. Ray-AABB Analytical Slab Intersection & Performance Math", () => {
+		it("calculates exact tNear and tFar for ray passing through box center", () => {
+			// Box: [-50, 50] x [-50, 50] x [-50, 50]
+			// Ray origin: (0, 0, -200), direction: (0, 0, 1)
+			const res = intersectRayAABB(
+				0, 0, -200,
+				0, 0, 1,
+				-50, 50,
+				-50, 50,
+				-50, 50,
+				-500, 500,
+			);
+			assert.strictEqual(res.hit, true, "Ray must intersect box");
+			assert.strictEqual(Math.round(res.tNear), 150, "tNear must be 150 mm (front face at z = -50)");
+			assert.strictEqual(Math.round(res.tFar), 250, "tFar must be 250 mm (back face at z = 50)");
+		});
+
+		it("returns hit: false when ray points away in forward direction (tMinLimit >= 0)", () => {
+			// Ray origin: (0, 0, -200), direction: (0, 0, -1) (pointing away from box at [-50, 50])
+			const res = intersectRayAABB(
+				0, 0, -200,
+				0, 0, -1,
+				-50, 50,
+				-50, 50,
+				-50, 50,
+				0, 500,
+			);
+			assert.strictEqual(res.hit, false, "Forward ray pointing away must not hit");
+		});
+
+		it("returns hit: false when ray misses box laterally", () => {
+			// Ray at x = 100, y = 0, z = -200, direction: (0, 0, 1). Box x is [-50, 50].
+			const res = intersectRayAABB(
+				100, 0, -200,
+				0, 0, 1,
+				-50, 50,
+				-50, 50,
+				-50, 50,
+				-500, 500,
+			);
+			assert.strictEqual(res.hit, false, "Ray missing box laterally must return hit: false");
+		});
+
+		it("returns hit: false when ray is parallel to box slab outside volume bounds", () => {
+			// Ray origin: (100, 0, -200) (outside box x range [-50, 50]), direction: (0, 0, 1)
+			const res = intersectRayAABB(
+				100, 0, -200,
+				0, 0, 1,
+				-50, 50,
+				-50, 50,
+				-50, 50,
+				-500, 500,
+			);
+			assert.strictEqual(res.hit, false, "Parallel ray outside bounds must miss with 0 steps");
+		});
+
+		it("correctly calculates tNear and tFar when ray starts inside volume", () => {
+			// Ray origin: (0, 0, 0), direction: (0, 0, 1)
+			const res = intersectRayAABB(
+				0, 0, 0,
+				0, 0, 1,
+				-50, 50,
+				-50, 50,
+				-50, 50,
+				-500, 500,
+			);
+			assert.strictEqual(res.hit, true);
+			assert.ok(res.tNear <= 0, "tNear must be <= 0 for origin inside box");
+			assert.strictEqual(Math.round(res.tFar), 50, "tFar must be 50 mm (exit face at z = 50)");
+		});
+
+		it("CbctVolume3DViewport source integrates requestAnimationFrame throttling and AABB test", () => {
+			const source = fs.readFileSync(
+				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
+				"utf-8",
+			);
+			assert.ok(source.includes("intersectRayAABB("), "Must call intersectRayAABB in ray loop");
+			assert.ok(source.includes("requestAnimationFrame("), "Must use requestAnimationFrame for smooth 60 FPS throttling");
+			assert.ok(source.includes("isInteracting"), "Must support adaptive resolution via isInteracting state");
 		});
 	});
 });

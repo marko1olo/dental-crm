@@ -11,11 +11,18 @@
  * - Saves high-res screenshot to docs/screenshots/cbct_live/proof_real_zakharov_313_mpr_studio.png
  */
 
+import { spawn, execSync } from "node:child_process";
 import { existsSync, mkdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+const BROWSER_CANDIDATES = [
+	process.env.BROWSER_BIN,
+	"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+	"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+	"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+];
+const CHROME_PATH = BROWSER_CANDIDATES.find((p) => p && existsSync(p)) || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const OUT_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/screenshots/cbct_live");
 const PROOF_SCREENSHOT_PATH = path.join(OUT_DIR, "proof_real_zakharov_313_mpr_studio.png");
 
@@ -145,28 +152,82 @@ async function main() {
 	console.log("Executable Chrome:", CHROME_PATH);
 	console.log("Output Destination:", PROOF_SCREENSHOT_PATH);
 
-	const browser = await chromium.launch({
-		headless: true,
-		executablePath: CHROME_PATH,
-		args: [
-			"--no-sandbox",
-			"--disable-setuid-sandbox",
-			"--ignore-gpu-blocklist",
-			"--use-gl=angle",
-			"--enable-webgl",
-		],
-	});
+	let viteProc = null;
+	let browser = null;
+	const port = 5173;
+
+	try {
+		let isServerAlive = false;
+		try {
+			const ping = await fetch(`http://127.0.0.1:${port}/`);
+			isServerAlive = ping.ok || ping.status === 200 || ping.status === 304;
+		} catch {
+			isServerAlive = false;
+		}
+
+		if (!isServerAlive) {
+			console.log(`[CBCT-E2E] Port ${port} not reachable. Spawning local Vite dev server...`);
+			const viteBin = path.resolve("C:/Clinic_MVP/dental-crm/node_modules/vite/bin/vite.js");
+			viteProc = spawn(process.execPath, [viteBin, "--host", "127.0.0.1", "--port", String(port)], {
+				cwd: path.resolve("C:/Clinic_MVP/dental-crm/apps/web"),
+				stdio: "ignore",
+			});
+			for (let i = 0; i < 40; i++) {
+				await new Promise((r) => setTimeout(r, 500));
+				try {
+					const check = await fetch(`http://127.0.0.1:${port}/`);
+					if (check.ok || check.status === 200 || check.status === 304) {
+						console.log(`[CBCT-E2E] Vite dev server ready on port ${port}.`);
+						isServerAlive = true;
+						break;
+					}
+				} catch {}
+			}
+		}
+
+		if (!isServerAlive) {
+			throw new Error(`[FATAL] Local Vite dev server failed to start or respond on port ${port}`);
+		}
+
+		browser = await chromium.launch({
+			headless: true,
+			executablePath: CHROME_PATH,
+			args: [
+				"--no-sandbox",
+				"--disable-setuid-sandbox",
+				"--disable-web-security",
+				"--ignore-gpu-blocklist",
+				"--use-gl=angle",
+				"--enable-webgl",
+			],
+		});
 
 	const context = await browser.newContext({
 		viewport: { width: 1440, height: 900 },
 		deviceScaleFactor: 1,
+		serviceWorkers: "block",
 	});
 
 	const page = await context.newPage();
 
-	// Intercept backend API calls
+	// Intercept backend API calls (guard against intercepting Vite source module files)
 	await page.route("**/api/**", async (route) => {
 		const url = route.request().url();
+		let pathname = "";
+		try {
+			pathname = new URL(url).pathname;
+		} catch {}
+		if (
+			pathname.startsWith("/src/") ||
+			pathname.startsWith("/@") ||
+			pathname.includes("node_modules") ||
+			url.endsWith(".ts") ||
+			url.endsWith(".tsx") ||
+			url.endsWith(".js") ||
+			url.endsWith(".mjs")
+		) {
+			return route.continue();
+		}
 		if (url.includes("/api/dashboard")) {
 			return route.fulfill({
 				status: 200,
@@ -244,6 +305,22 @@ async function main() {
 
 	// Pre-seed localStorage to bypass auth screen and onboarding
 	await page.addInitScript(() => {
+		try {
+			const OrigWebSocket = window.WebSocket;
+			window.WebSocket = function (url, protocols) {
+				if (typeof url === "string" && (url.includes("5173") || url.includes("vite"))) {
+					return {
+						send() {},
+						close() {},
+						addEventListener() {},
+						removeEventListener() {},
+						readyState: 1,
+					};
+				}
+				return new OrigWebSocket(url, protocols);
+			};
+		} catch {}
+
 		localStorage.setItem("dente_clinic_token", "audit-token-clinic");
 		localStorage.setItem("dente_staff_token", "audit-token-staff");
 		localStorage.setItem("dente_active_role", "owner");
@@ -295,24 +372,12 @@ async function main() {
 	});
 	console.log("[WebGL2 Diagnostics & 3D Texture Test]:", webglDiag);
 
-	const studioCheck = await page.evaluate(async () => {
-		try {
-			const mod = await import("/src/components/radiology/mpr/webgl/CbctVolumeGlContext.ts");
-			const glCtx = mod.getSharedCbctGlContext();
-			return {
-				isAvail: glCtx.isAvailable(),
-				hasGl: !!glCtx.getGl(),
-				hasCanvas: !!glCtx.getCanvas(),
-			};
-		} catch (e) {
-			return { error: String(e) };
-		}
-	});
-	console.log("[CbctVolumeGlContext in Browser]:", studioCheck);
-
 	// In-page build of real 313 Zakharov dataset into CbctVoxelVolume
 	console.log("Building real Zakharov 313-slice 3D CBCT volume inside browser V8...");
-	const buildResult = await page.evaluate(async () => {
+	let buildResult;
+	for (let attempt = 1; attempt <= 3; attempt++) {
+		try {
+			buildResult = await page.evaluate(async () => {
 		const t0 = performance.now();
 		const manifestRes = await fetch("/radiology/demo_cbct/manifest.json");
 		const manifest = await manifestRes.json();
@@ -484,57 +549,18 @@ async function main() {
 			elapsedMs: performance.now() - t0,
 		};
 	});
+			break;
+		} catch (e) {
+			if (attempt < 3 && (e.message.includes("Execution context was destroyed") || e.message.includes("navigation"))) {
+				console.warn(`[WARN] Build volume context destroyed on attempt ${attempt}, waiting 3s and retrying...`);
+				await page.waitForTimeout(3000);
+				continue;
+			}
+			throw e;
+		}
+	}
 
 	console.log("[Volume Assembly Proof]:", buildResult);
-
-	const uploadTest = await page.evaluate(async () => {
-		try {
-			const mod = await import("/src/components/radiology/mpr/webgl/CbctVolumeGlContext.ts");
-			const glCtx = mod.getSharedCbctGlContext();
-			const vol = window.__cbctDemoVolume;
-			if (!vol) return { error: "no __cbctDemoVolume" };
-			const targetAxial = document.createElement("canvas");
-			const targetCoronal = document.createElement("canvas");
-			const targetSagittal = document.createElement("canvas");
-
-			const res = glCtx.renderAllPlanes(
-				vol,
-				{ x: 0, y: 0, z: 0 },
-				{ pitchDeg: 0, rollDeg: 0, yawDeg: 0 },
-				{ windowWidth: 4400, windowLevel: 1300, invert: false, slabMode: "single", slabThicknessMm: 2, interpolation: "trilinear" },
-				{ axial: targetAxial, coronal: targetCoronal, sagittal: targetSagittal }
-			);
-
-			// Check targetAxial pixels
-			const ctx = targetAxial.getContext("2d");
-			const imgData = ctx.getImageData(0, 0, targetAxial.width, targetAxial.height);
-			let nonZero = 0;
-			let sum = 0;
-			for (let i = 0; i < imgData.data.length; i += 4) {
-				const r = imgData.data[i];
-				if (r > 15) {
-					nonZero++;
-					sum += r;
-				}
-			}
-
-			return {
-				resOk: !!res,
-				axialCoords: res?.axial,
-				targetAxial: {
-					width: targetAxial.width,
-					height: targetAxial.height,
-					nonZero,
-					sum,
-					samplePixels: targetAxial.width * targetAxial.height,
-				},
-				activeVolumeId: glCtx.getActiveVolumeId(),
-			};
-		} catch (e) {
-			return { exception: String(e), stack: e?.stack };
-		}
-	});
-	console.log("[Direct renderAllPlanes in Evaluate]:", uploadTest);
 
 	// Now launch the CBCT Studio Modal
 	console.log("Locating 'КЛКТ Студия 3D' button...");
@@ -548,6 +574,13 @@ async function main() {
 	const modal = page.locator("[data-testid='cbct-studio-modal']");
 	await modal.waitFor({ state: "visible", timeout: 15000 });
 
+	// Ensure volume is dispatched into modal
+	await page.evaluate(() => {
+		if (window.__cbctDemoVolume) {
+			window.dispatchEvent(new CustomEvent("dente-load-cbct-volume", { detail: window.__cbctDemoVolume }));
+		}
+	});
+
 	// Wait for quad viewports grid to mount
 	console.log("Waiting for 4-viewport quad grid to mount...");
 	const quadGrid = page.locator("[data-testid='cbct-mpr-quad-grid']");
@@ -556,6 +589,60 @@ async function main() {
 	// Allow WebGL2 GPU shader and panoramic reconstruction to render
 	console.log("Waiting for WebGL2 MPR shaders & panoramic reconstruction to render...");
 	await page.waitForTimeout(4000);
+
+	const diag3D = await page.evaluate(() => {
+		const canvas = document.querySelector("[data-testid='cbct-volume-3d-canvas']");
+		if (!canvas) return { error: "canvas_not_found" };
+		const gl = canvas.getContext("webgl2");
+		if (!gl) return { error: "no_webgl2_on_canvas" };
+		const err = gl.getError();
+		const w = canvas.width;
+		const h = canvas.height;
+		const p = new Uint8Array(4);
+		gl.readPixels(Math.floor(w / 2), Math.floor(h / 2), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, p);
+		
+		// Sample 100 pixels along diagonals
+		let nonBg = 0;
+		const diagSamples = [];
+		for (let step = 0; step < 20; step++) {
+			const sx = Math.floor((w * (step + 1)) / 22);
+			const sy = Math.floor((h * (step + 1)) / 22);
+			const sp = new Uint8Array(4);
+			gl.readPixels(sx, sy, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, sp);
+			if (sp[0] > 15 || sp[1] > 15 || sp[2] > 20) {
+				nonBg++;
+				if (diagSamples.length < 5) diagSamples.push({ x: sx, y: sy, rgb: [sp[0], sp[1], sp[2]] });
+			}
+		}
+		return {
+			w,
+			h,
+			clientW: canvas.clientWidth,
+			clientH: canvas.clientHeight,
+			glErr: err,
+			centerPixel: [p[0], p[1], p[2], p[3]],
+			nonBgDiagonal: nonBg,
+			diagSamples,
+		};
+	});
+	console.log("[INSPECTION DIAGNOSTIC 3D CANVAS]:", diag3D);
+
+	console.log(`Capturing full studio modal screenshot: ${PROOF_SCREENSHOT_PATH}`);
+	try {
+		await modal.screenshot({
+			path: PROOF_SCREENSHOT_PATH,
+			animations: "disabled",
+			timeout: 15000,
+		});
+	} catch (e) {
+		console.warn("[WARN] modal.screenshot failed, falling back to page.screenshot:", e.message);
+		await page.screenshot({
+			path: PROOF_SCREENSHOT_PATH,
+			animations: "disabled",
+		});
+	}
+	const initialStats = statSync(PROOF_SCREENSHOT_PATH);
+	console.log(`Initial screenshot saved: ${PROOF_SCREENSHOT_PATH} (${(initialStats.size / 1024).toFixed(1)} KB)`);
 
 	// Inquisitor Inspection of WebGL2 Viewport Canvases
 	const audit = await page.evaluate(() => {
@@ -577,7 +664,46 @@ async function main() {
 				const clientW = canvas.clientWidth;
 				const clientH = canvas.clientHeight;
 				const ctx = canvas.getContext("2d");
-				if (!ctx) return { idx, status: "no_2d_ctx", width, height, clientW, clientH };
+				if (!ctx) {
+					const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+					if (gl) {
+						try {
+							const sampleW = Math.min(128, width);
+							const sampleH = Math.min(128, height);
+							const pixels = new Uint8Array(sampleW * sampleH * 4);
+							const startX = Math.floor(Math.max(0, (width - sampleW) * 0.5));
+							const startY = Math.floor(Math.max(0, (height - sampleH) * 0.5));
+							gl.readPixels(startX, startY, sampleW, sampleH, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+							let nonZero = 0;
+							let sum = 0;
+							for (let i = 0; i < pixels.length; i += 4) {
+								const r = pixels[i];
+								const g = pixels[i + 1];
+								const b = pixels[i + 2];
+								if (r > 20 || g > 20 || b > 25) {
+									nonZero++;
+									sum += r;
+								}
+							}
+							const meanBrightness = nonZero > 0 ? (sum / nonZero).toFixed(1) : 0;
+							return {
+								idx,
+								status: "rendered_webgl2",
+								width,
+								height,
+								clientW,
+								clientH,
+								sampledPixels: sampleW * sampleH,
+								bonePixelsDetected: nonZero,
+								meanBrightness,
+								brightnessSum: sum,
+							};
+						} catch (e) {
+							return { idx, status: "webgl_read_error", width, height, error: String(e) };
+						}
+					}
+					return { idx, status: "no_ctx", width, height, clientW, clientH };
+				}
 
 				try {
 					const startX = Math.floor(Math.max(0, width * 0.25));
@@ -661,18 +787,27 @@ async function main() {
 		console.log("[INQUISITION PROOF: PASS] Orthogonal viewports have distinct anatomical profiles!");
 	}
 
-	// Capture high-resolution proof screenshot
-	console.log(`Capturing full studio modal screenshot: ${PROOF_SCREENSHOT_PATH}`);
-	await modal.screenshot({
-		path: PROOF_SCREENSHOT_PATH,
-		animations: "disabled",
-	});
-
 	const stats = statSync(PROOF_SCREENSHOT_PATH);
-	console.log(`Screenshot saved successfully: ${PROOF_SCREENSHOT_PATH} (${(stats.size / 1024).toFixed(1)} KB)`);
-
-	await browser.close();
+	if (stats.size < 100000) {
+		throw new Error(`[PROOF REJECTED] Screenshot size too small (${stats.size} bytes < 100KB), indicates blank or closed modal!`);
+	}
+	console.log(`Screenshot verified and validated: ${PROOF_SCREENSHOT_PATH} (${(stats.size / 1024).toFixed(1)} KB)`);
 	console.log("=== LIVE CBCT PROOF COMPLETE ===");
+	} finally {
+		if (browser) {
+			await browser.close().catch(() => {});
+		}
+		if (viteProc && viteProc.pid) {
+			console.log("[CBCT-E2E] Terminating spawned Vite dev server...");
+			try {
+				execSync(`taskkill /pid ${viteProc.pid} /T /F`, { stdio: "ignore" });
+			} catch {
+				try {
+					viteProc.kill();
+				} catch {}
+			}
+		}
+	}
 }
 
 main().catch((err) => {

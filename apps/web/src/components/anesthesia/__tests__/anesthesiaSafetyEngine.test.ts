@@ -7,7 +7,8 @@ import {
 	screenPatientContraindications,
 	isPediatricPatient,
 	isGeriatricPatient,
-	calculateEffectiveMgPerKg
+	calculateEffectiveMgPerKg,
+	formatAnesthesiaRemainingDoseRu
 } from '../anesthesiaSafetyEngine';
 
 describe('anesthesiaSafetyEngine — 1. Adult Maximum Recommended Dose (MRD) Calculations', () => {
@@ -288,6 +289,74 @@ describe('anesthesiaSafetyEngine — 4. Somatic Screening & Blocking Contraindic
 
 		assert.equal(screening.isBlocked, false);
 		assert.ok(screening.warnings.some(w => w.includes('БЕРЕМЕННОСТЬ')));
+	});
+});
+
+describe('anesthesiaSafetyEngine — 5. Cardiac Risk, Beta-Blockers & Doctor Autonomy Invariants', () => {
+	it('enforces 0.04 mg Epinephrine limit for patient taking Beta-Blockers', () => {
+		const res = calculateAnesthesiaSafety({
+			drugId: 'articaine_4_epi_100k',
+			patientWeightKg: 70,
+			carpulesCount: 3, // 3 * 0.017 = 0.051 mg > 0.04 mg limit
+			takesBetaBlockers: true,
+		});
+
+		assert.equal(res.maxSafeEpinephrineMg, 0.04);
+		assert.equal(res.isEpinephrineOverdose, true);
+		assert.equal(res.safetyZone, 'overdose_danger');
+		assert.ok(res.warnings.some(w => w.includes('КАРДИОЛИМИТ АДРЕНАЛИНА')));
+	});
+
+	it('blocks 1:100 000 Epinephrine for Beta-Blockers in screening and recommends Mepivacaine 3%', () => {
+		const screening = screenPatientContraindications(
+			{ patientWeightKg: 70, takesBetaBlockers: true },
+			'articaine_4_epi_100k'
+		);
+
+		assert.equal(screening.isBlocked, true);
+		assert.equal(screening.recommendedAlternativeId, 'mepivacaine_3_plain');
+		assert.ok(screening.blockingContraindications.some(b => b.includes('бета-блокаторы')));
+	});
+
+	it('blocks 1:100 000 Epinephrine for Ischemic Heart Disease (IHD) and prior Myocardial Infarction', () => {
+		const screeningIhd = screenPatientContraindications(
+			{ patientWeightKg: 75, hasIschemicHeartDisease: true },
+			'articaine_4_epi_100k'
+		);
+		assert.equal(screeningIhd.isBlocked, true);
+		assert.equal(screeningIhd.recommendedAlternativeId, 'mepivacaine_3_plain');
+		assert.ok(screeningIhd.blockingContraindications.some(b => b.includes('ИБС')));
+
+		const screeningMi = screenPatientContraindications(
+			{ patientWeightKg: 75, hasMyocardialInfarctionHistory: true },
+			'articaine_4_epi_100k'
+		);
+		assert.equal(screeningMi.isBlocked, true);
+		assert.equal(screeningMi.recommendedAlternativeId, 'mepivacaine_3_plain');
+		assert.ok(screeningMi.blockingContraindications.some(b => b.includes('инфаркт миокарда')));
+	});
+
+	it('formats human-readable safe remaining dose without cryptic acronyms', () => {
+		const text = formatAnesthesiaRemainingDoseRu(1.0, 7.2, 1.7);
+		assert.equal(text, 'Введено: 1.7 мл (1 карп.) · Безопасный остаток: 6.2 карп. (предел: 7.2 карп.)');
+
+		const textZero = formatAnesthesiaRemainingDoseRu(8.0, 7.2, 1.7);
+		assert.equal(textZero, 'Введено: 13.6 мл (8 карп.) · Безопасный остаток: 0 карп. (предел: 7.2 карп.)');
+	});
+
+	it('preserves Doctor Autonomy (Mandate 1 / Mandate 8e) during clinical emergency calculation', () => {
+		const emergencyResult = calculateAnesthesiaSafety({
+			drugId: 'articaine_4_epi_100k',
+			patientWeightKg: 70,
+			carpulesCount: 8, // Overdose in emergency
+			takesBetaBlockers: true,
+		});
+
+		// Calculation never throws — returns objective data and clinical warnings
+		assert.ok(emergencyResult);
+		assert.equal(emergencyResult.isOverdose, true);
+		assert.equal(emergencyResult.isEpinephrineOverdose, true);
+		assert.ok(emergencyResult.soapDiaryText.length > 0);
 	});
 });
 

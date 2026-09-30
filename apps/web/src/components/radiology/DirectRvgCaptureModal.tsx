@@ -37,11 +37,19 @@ import {
 	getDirectRvgExportFileName,
 	persistRvgScanToServer,
 	validateRadiologyUploadFile,
+	detectRadiologySensorBrand,
+	extractTeethFromRadiologyFilename,
+	convertDicomBufferToDataUrl,
+	POPULAR_RVG_SENSORS,
 } from "./directRvgFileValidation";
 import { DirectRvgFdiSelector } from "./DirectRvgFdiSelector";
 import { DirectRvgProjectionSelector } from "./DirectRvgProjectionSelector";
 import { DirectRvgViewportToolbar } from "./DirectRvgViewportToolbar";
 import { DirectRvgFooter } from "./DirectRvgFooter";
+import {
+	createRvgGlRenderer,
+	type RvgGlRendererInstance,
+} from "./rvgGlShaderRenderer";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 if (typeof document !== "undefined") { import("./rvgCapture.css"); }
 
@@ -52,6 +60,10 @@ export {
 	validateRadiologyUploadFile,
 	createDicomSecondaryCaptureFile,
 	triggerBinaryDownload,
+	detectRadiologySensorBrand,
+	extractTeethFromRadiologyFilename,
+	convertDicomBufferToDataUrl,
+	POPULAR_RVG_SENSORS,
 } from "./directRvgFileValidation";
 
 export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
@@ -115,6 +127,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const imageSourceRef = useRef<HTMLImageElement | null>(null);
+	const glRendererRef = useRef<RvgGlRendererInstance | null>(null);
 
 	// Calculated effective dose in µSv
 	const calculatedDoseMicrosv = useMemo(() => {
@@ -129,14 +142,38 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 	const primaryTooth = selectedTeeth[0] || "16";
 	const primaryToothName = FDI_TOOTH_NAMES[primaryTooth] || `Зуб ${primaryTooth}`;
 
-	// Handle tooth selection click
-	const handleToothToggle = (tooth: string) => {
-		if (selectedTeeth.includes(tooth)) {
-			if (selectedTeeth.length > 1) {
-				setSelectedTeeth(selectedTeeth.filter((t) => t !== tooth));
+	// Popular sensors merged with SENSOR_MODELS
+	const availableSensors = useMemo(() => {
+		const list: Array<{ id: string; name: string; resolution: string; pixelSpacing: number }> = [...SENSOR_MODELS];
+		for (const s of POPULAR_RVG_SENSORS) {
+			if (!list.some((existing) => existing.id === s.id)) {
+				list.push({
+					id: s.id,
+					name: s.name,
+					resolution: s.resolution,
+					pixelSpacing: s.pixelSpacing,
+				});
+			}
+		}
+		return list;
+	}, []);
+
+	// Handle tooth selection click (1-click fast toggle or multi-select for Bitewing/Occlusal)
+	const handleToothToggle = (tooth: string, multiSelect = false) => {
+		if (multiSelect || projectionType === "bitewing" || projectionType === "occlusal") {
+			if (selectedTeeth.includes(tooth)) {
+				if (selectedTeeth.length > 1) {
+					setSelectedTeeth(selectedTeeth.filter((t) => t !== tooth));
+				}
+			} else {
+				setSelectedTeeth([...selectedTeeth, tooth].sort());
 			}
 		} else {
-			setSelectedTeeth([tooth]);
+			if (selectedTeeth.includes(tooth) && selectedTeeth.length > 1) {
+				setSelectedTeeth(selectedTeeth.filter((t) => t !== tooth));
+			} else {
+				setSelectedTeeth([tooth]);
+			}
 		}
 	};
 
@@ -159,10 +196,68 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 
 		if (!validation.isValid) {
 			showToast(
-				`Неподдерживаемый формат файла: ${file.name}. Поддерживаются: DICOM (.dcm), TIFF, PNG, JPG`,
+				`Неподдерживаемый формат файла: ${file.name}. Поддерживаются: DICOM (.dcm), TIFF, PNG, JPG, BMP`,
 				"error",
 			);
 			return false;
+		}
+
+		// Auto-detect sensor brand from filename or path if present
+		const detectedSensor = detectRadiologySensorBrand(file.name);
+		const matchedSensor = POPULAR_RVG_SENSORS.find((s) => s.name === detectedSensor);
+		if (matchedSensor) {
+			setSelectedSensorModel(matchedSensor.id);
+		}
+
+		// Auto-extract teeth from filename (e.g. Tooth16, 16_15_46_45, Bitewing)
+		const detectedTeeth = extractTeethFromRadiologyFilename(file.name);
+		if (detectedTeeth.length > 0) {
+			setSelectedTeeth(detectedTeeth);
+			if (detectedTeeth.length > 1) {
+				const hasUpper = detectedTeeth.some((t) => ["14", "15", "16", "17", "24", "25", "26", "27"].includes(t));
+				const hasLower = detectedTeeth.some((t) => ["44", "45", "46", "47", "34", "35", "36", "37"].includes(t));
+				if (hasUpper && hasLower) setProjectionType("bitewing");
+			}
+		}
+
+		const lowerName = file.name.toLowerCase();
+		const isDcm = lowerName.endsWith(".dcm") || lowerName.endsWith(".dicom");
+
+		if (isDcm) {
+			const reader = new FileReader();
+			reader.onload = () => {
+				if (reader.result instanceof ArrayBuffer) {
+					const decodedUrl = convertDicomBufferToDataUrl(reader.result);
+					if (decodedUrl) {
+						setCapturedImage(decodedUrl);
+						setSensorStatus("captured");
+						setAcquisitionProgress(100);
+						setClinicalNotes((prev) =>
+							prev.startsWith("Контрольная прицельная")
+								? `Загружен снимок DICOM: ${file.name} (${Math.round(file.size / 1024)} КБ, ${detectedSensor}).`
+								: prev,
+						);
+						showToast(`Снимок DICOM (${file.name}) успешно декодирован и загружен`, "success");
+						return;
+					}
+				}
+				// Fallback
+				const dataUrlReader = new FileReader();
+				dataUrlReader.onload = () => {
+					if (typeof dataUrlReader.result === "string") {
+						setCapturedImage(dataUrlReader.result);
+						setSensorStatus("captured");
+						setAcquisitionProgress(100);
+						showToast(`Снимок ${file.name} успешно загружен`, "success");
+					}
+				};
+				dataUrlReader.readAsDataURL(file);
+			};
+			reader.onerror = () => {
+				showToast(`Ошибка чтения DICOM файла: ${file.name}`, "error");
+			};
+			reader.readAsArrayBuffer(file);
+			return true;
 		}
 
 		const reader = new FileReader();
@@ -231,26 +326,64 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 	}, []);
 
-	// Load source image into memory and paint canvas with filters
+	// Hardware WebGL 2D Shader Renderer initialization and drawing
 	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (canvas && !glRendererRef.current) {
+			glRendererRef.current = createRvgGlRenderer(canvas);
+		}
+
+		if (!capturedImage) return;
+
 		const img = new Image();
 		img.crossOrigin = "anonymous";
 		img.src = capturedImage;
 		img.onload = () => {
 			imageSourceRef.current = img;
-			applyCanvasFilters();
+			if (glRendererRef.current) {
+				glRendererRef.current.updateImage(img);
+				glRendererRef.current.render({
+					brightness: filters.brightness,
+					contrast: filters.contrast,
+					sharpness: filters.sharpness,
+					clahe: filters.clahe,
+					invert: filters.invert,
+				});
+			} else {
+				applyCanvasFilters();
+			}
 		};
 
 		return () => {
 			img.onload = null;
 			img.src = "";
 			imageSourceRef.current = null;
-			if (canvasRef.current) {
-				canvasRef.current.width = 0;
-				canvasRef.current.height = 0;
+		};
+	}, [capturedImage, applyCanvasFilters, filters]);
+
+	// Fast 0.05ms GPU shader uniform update on filter change
+	useEffect(() => {
+		if (glRendererRef.current && imageSourceRef.current) {
+			glRendererRef.current.render({
+				brightness: filters.brightness,
+				contrast: filters.contrast,
+				sharpness: filters.sharpness,
+				clahe: filters.clahe,
+				invert: filters.invert,
+			});
+		} else {
+			applyCanvasFilters();
+		}
+	}, [filters, applyCanvasFilters]);
+
+	useEffect(() => {
+		return () => {
+			if (glRendererRef.current) {
+				glRendererRef.current.dispose();
+				glRendererRef.current = null;
 			}
 		};
-	}, [capturedImage, applyCanvasFilters]);
+	}, []);
 
 	// Reset transformation
 	const handleResetTransform = () => {
@@ -546,14 +679,12 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		});
 	};
 
-	if (!isOpen) return null;
-
-	// Compute CSS filter string
+	// Compute CSS filter string with authentic SVG convolution kernel for clinical sharpness
 	const cssFilterStyle = [
 		`brightness(${filters.brightness}%)`,
 		`contrast(${filters.contrast + (filters.clahe > 0 ? filters.clahe * 0.4 : 0)}%)`,
 		filters.invert ? "invert(100%)" : "",
-		filters.sharpness > 0 ? `drop-shadow(0 0 ${Math.max(1, filters.sharpness / 30)}px rgba(0,0,0,0.8))` : "",
+		filters.sharpness > 0 ? `url(#rvg-sharpness-kernel-${modalId}) contrast(${100 + Math.round(filters.sharpness * 0.35)}%)` : "",
 	].filter(Boolean).join(" ");
 
 	const modalContent = (
@@ -564,6 +695,19 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			aria-labelledby={`${modalId}-title`}
 			data-testid="direct-rvg-capture-modal-overlay"
 		>
+			{/* Authentic SVG 3x3 Convolution Kernel for Clinical Unsharp Masking */}
+			<svg width="0" height="0" className="absolute pointer-events-none opacity-0" aria-hidden="true">
+				<defs>
+					<filter id={`rvg-sharpness-kernel-${modalId}`}>
+						<feConvolveMatrix
+							order="3"
+							preserveAlpha="true"
+							kernelMatrix={`0 -${(filters.sharpness / 100).toFixed(2)} 0 -${(filters.sharpness / 100).toFixed(2)} ${(1 + 4 * (filters.sharpness / 100)).toFixed(2)} -${(filters.sharpness / 100).toFixed(2)} 0 -${(filters.sharpness / 100).toFixed(2)} 0`}
+						/>
+					</filter>
+				</defs>
+			</svg>
+
 			<div className="rvg-capture-modal" data-testid="direct-rvg-capture-modal">
 				{/* ─── MODAL HEADER ─── */}
 				<div className="rvg-capture-header">
@@ -624,7 +768,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 								className="bg-transparent text-slate-200 border-none outline-none font-sans text-xs cursor-pointer max-w-[180px] truncate"
 								data-testid="rvg-sensor-device-select"
 							>
-								{SENSOR_MODELS.map((sensor) => (
+								{availableSensors.map((sensor) => (
 									<option key={sensor.id} value={sensor.id} className="bg-slate-900 text-slate-100">
 										{sensor.name} ({sensor.resolution})
 									</option>
@@ -856,7 +1000,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 								style={{
 									display: capturedImage ? "block" : "none",
 									transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})`,
-									filter: isSplitCompare ? "none" : cssFilterStyle,
+									filter: isSplitCompare ? "none" : (glRendererRef.current?.isWebGL ? "none" : cssFilterStyle),
 								}}
 								data-testid="rvg-render-canvas"
 							/>
@@ -877,8 +1021,12 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 					<div className="rvg-controls-dock" data-testid="rvg-controls-dock">
 						{/* 1. FDI Tooth Selector Matrix */}
 						<DirectRvgFdiSelector
-							selectedTeeth={selectedTeeth} onToothToggle={handleToothToggle}
-							primaryTooth={primaryTooth} primaryToothName={primaryToothName}
+							selectedTeeth={selectedTeeth}
+							onToothToggle={handleToothToggle}
+							primaryTooth={primaryTooth}
+							primaryToothName={primaryToothName}
+							projectionType={projectionType}
+							onSelectTeeth={(teeth) => setSelectedTeeth(teeth)}
 						/>
 
 						{/* 2. Projection Angle & Exposure */}
@@ -887,6 +1035,21 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 							onSelectProjectionType={(projId, typicalExp) => {
 								setProjectionType(projId);
 								setExposureSec(typicalExp);
+								if (projId === "bitewing" && selectedTeeth.length <= 1) {
+									const t = Number(selectedTeeth[0] || "16");
+									if (t >= 21 && t <= 38) {
+										setSelectedTeeth(["24", "25", "26", "27", "34", "35", "36", "37"]);
+									} else {
+										setSelectedTeeth(["17", "16", "15", "14", "47", "46", "45", "44"]);
+									}
+								} else if (projId === "occlusal" && selectedTeeth.length <= 1) {
+									const t = Number(selectedTeeth[0] || "16");
+									if (t >= 31 && t <= 48) {
+										setSelectedTeeth(["48", "47", "46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36", "37", "38"]);
+									} else {
+										setSelectedTeeth(["18", "17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "28"]);
+									}
+								}
 							}}
 							voltageKv={voltageKv} onChangeVoltageKv={setVoltageKv}
 							currentMa={currentMa} onChangeCurrentMa={setCurrentMa}

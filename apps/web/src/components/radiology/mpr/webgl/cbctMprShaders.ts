@@ -58,6 +58,7 @@ uniform bool u_trilinear;       // true = sub-voxel trilinear, false = nearest n
  * Handles volume boundaries cleanly by returning -1000 HU (ambient air).
  */
 float sampleHUTrilinear(vec3 uvw) {
+    if (isnan(uvw.x) || isnan(uvw.y) || isnan(uvw.z)) return -1000.0;
     if (uvw.x < 0.0 || uvw.x > 1.0 || uvw.y < 0.0 || uvw.y > 1.0 || uvw.z < 0.0 || uvw.z > 1.0) {
         return -1000.0;
     }
@@ -94,6 +95,7 @@ float sampleHUTrilinear(vec3 uvw) {
  * Samples nearest neighbor HU value for fast preview scrubbing.
  */
 float sampleHUNearest(vec3 uvw) {
+    if (isnan(uvw.x) || isnan(uvw.y) || isnan(uvw.z)) return -1000.0;
     if (uvw.x < 0.0 || uvw.x > 1.0 || uvw.y < 0.0 || uvw.y > 1.0 || uvw.z < 0.0 || uvw.z > 1.0) {
         return -1000.0;
     }
@@ -111,13 +113,15 @@ void main() {
     vec3 baseUvw = u_sliceOrigin + v_uv.x * u_axisU + v_uv.y * u_axisV;
     float finalHU = -1000.0;
 
+    int safeSteps = clamp(u_slabSteps, 1, 64);
+    int halfSteps = safeSteps / 2;
+
     if (u_slabMode == 0 || u_slabSteps <= 1) {
         // Single slice mode (fast path)
         finalHU = sampleHU(baseUvw);
     } else if (u_slabMode == 1) {
         // Slab MIP: Maximum Intensity Projection
         float maxHU = -32768.0;
-        int halfSteps = u_slabSteps / 2;
         for (int s = -halfSteps; s <= halfSteps; s++) {
             vec3 p = baseUvw + float(s) * u_axisNorm;
             float hu = sampleHU(p);
@@ -128,7 +132,6 @@ void main() {
         // Slab MinIP: Minimum Intensity Projection (air-discarding to prevent boundary collapse)
         float minHU = 32767.0;
         int validCount = 0;
-        int halfSteps = u_slabSteps / 2;
         for (int s = -halfSteps; s <= halfSteps; s++) {
             vec3 p = baseUvw + float(s) * u_axisNorm;
             float hu = sampleHU(p);
@@ -142,7 +145,6 @@ void main() {
         // Slab Average IP
         float sumHU = 0.0;
         int count = 0;
-        int halfSteps = u_slabSteps / 2;
         for (int s = -halfSteps; s <= halfSteps; s++) {
             vec3 p = baseUvw + float(s) * u_axisNorm;
             float hu = sampleHU(p);

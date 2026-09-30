@@ -276,25 +276,10 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 				bridgeRef.current = null;
 			}
 			disposeSharedCbctGlContext();
-			const offscreens = [
-				axialOffscreenRef,
-				coronalOffscreenRef,
-				sagittalOffscreenRef,
-				panoOffscreenRef,
-				crossSectionOffscreenRef,
-			];
-			for (const offRef of offscreens) {
-				if (offRef.current) {
-					offRef.current.width = 0;
-					offRef.current.height = 0;
-					offRef.current = null;
-				}
+			for (const offRef of [axialOffscreenRef, coronalOffscreenRef, sagittalOffscreenRef, panoOffscreenRef, crossSectionOffscreenRef]) {
+				if (offRef.current) { offRef.current.width = 0; offRef.current.height = 0; offRef.current = null; }
 			}
-			axialImgDataRef.current = null;
-			coronalImgDataRef.current = null;
-			sagittalImgDataRef.current = null;
-			panoImgDataRef.current = null;
-			crossSectionImgDataRef.current = null;
+			axialImgDataRef.current = coronalImgDataRef.current = sagittalImgDataRef.current = panoImgDataRef.current = crossSectionImgDataRef.current = null;
 		};
 
 		if (!isOpen) {
@@ -542,28 +527,56 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 		panoBaseCanvasRef,
 	]);
 
-	// LAYER 1d: CROSS-SECTION BASE SLICE REDRAW
+	// LAYER 1d: CROSS-SECTION BASE SLICE REDRAW (Hardware GPU WebGL2 Priority — < 0.5 ms)
 	useEffect(() => {
 		if (!isOpen || !crossSectionBaseCanvasRef.current || !activeCrossSection) return;
 		const canvas = crossSectionBaseCanvasRef.current;
 		const cw = activeCrossSection.widthPx;
 		const ch = activeCrossSection.heightPx;
-		if (!crossSectionOffscreenRef.current) {
+		if (!crossSectionOffscreenRef.current && typeof document !== "undefined") {
 			crossSectionOffscreenRef.current = document.createElement("canvas");
 		}
 		const off = crossSectionOffscreenRef.current;
+		if (!off) return;
 		if (off.width !== cw || off.height !== ch) {
 			off.width = cw;
 			off.height = ch;
 		}
-		const offCtx = off.getContext("2d");
-		if (offCtx) {
-			if (!crossSectionImgDataRef.current || crossSectionImgDataRef.current.width !== cw || crossSectionImgDataRef.current.height !== ch) {
-				crossSectionImgDataRef.current = offCtx.createImageData(cw, ch);
-			}
-			crossSectionImgDataRef.current.data.set(activeCrossSection.pixelData);
-			offCtx.putImageData(crossSectionImgDataRef.current, 0, 0);
+
+		let renderedByGl = false;
+		const glContext = getSharedCbctGlContext();
+		if (volume && glContext.isAvailable()) {
+			const glRes = glContext.renderCrossSection(
+				volume,
+				activeCrossSection.centerPointMm,
+				activeCrossSection.normalVector2D,
+				{
+					windowWidth,
+					windowLevel,
+					invert: invertColors,
+					slabMode,
+					slabThicknessMm,
+					interpolation: "trilinear",
+					widthMm: activeCrossSection.widthMm,
+					heightMm: activeCrossSection.heightMm,
+					pixelSpacingMm: activeCrossSection.pixelSpacingMm,
+				},
+				off,
+			);
+			if (glRes) renderedByGl = true;
 		}
+
+		if (!renderedByGl) {
+			const offCtx = off.getContext("2d");
+			if (offCtx) {
+				if (!crossSectionImgDataRef.current || crossSectionImgDataRef.current.width !== cw || crossSectionImgDataRef.current.height !== ch) {
+					crossSectionImgDataRef.current = offCtx.createImageData(cw, ch);
+				}
+				crossSectionImgDataRef.current.data.set(activeCrossSection.pixelData);
+				offCtx.putImageData(crossSectionImgDataRef.current, 0, 0);
+			}
+		}
+
 		drawOffscreenToCanvas(
 			canvas,
 			off,
@@ -573,7 +586,13 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 		);
 	}, [
 		isOpen,
+		volume,
 		activeCrossSection,
+		windowWidth,
+		windowLevel,
+		invertColors,
+		slabMode,
+		slabThicknessMm,
 		transforms.cross_section,
 		crossSectionBaseCanvasRef,
 	]);
@@ -743,55 +762,17 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 			}
 		}
 	}, [
-		volume,
-		isOpen,
-		crosshairMm,
-		obliqueAngles,
-		invertColors,
-		slabMode,
-		slabThicknessMm,
-		rulers,
-		activeRuler,
-		angles,
-		activeAngle,
-		probeMarkers,
-		activeProbe,
-		selectedMeasurement,
-		hoveredMeasurementHandle,
-		draggingMeasurementHandle,
-		activeTool,
-		studioMode,
-		implant3DWorld,
-		currentImplantPose,
-		nerveAuditResult,
-		interpolatedNerve3D,
-		nervePoints,
-		nerveTotalLengthMm,
-		selectedNerveNodeIdx,
-		activeRotationHandle,
-		hoveredHandle,
-		showDentalArch,
-		params.showEdgeRulers,
-		params.hoveredViewport,
-		archCurve,
-		activeCrossSection,
-		selectedArchAnchorIdx,
-		hoveredArchAnchorIdx,
-		isDraggingArchAnchor,
-		panoramicData,
-		crossSections,
-		activeCrossSectionIdx,
-		currentCanal,
-		hoveredImplantPart,
-		dragImplantPart,
-		transforms,
-		maximizedViewport,
-		viewLayout,
-		layoutBurstCount,
-		axialOverlayCanvasRef,
-		coronalOverlayCanvasRef,
-		sagittalOverlayCanvasRef,
-		panoOverlayCanvasRef,
-		crossSectionOverlayCanvasRef,
+		volume, isOpen, crosshairMm, obliqueAngles, invertColors, slabMode, slabThicknessMm,
+		rulers, activeRuler, angles, activeAngle, probeMarkers, activeProbe,
+		selectedMeasurement, hoveredMeasurementHandle, draggingMeasurementHandle,
+		activeTool, studioMode, implant3DWorld, currentImplantPose, nerveAuditResult,
+		interpolatedNerve3D, nervePoints, nerveTotalLengthMm, selectedNerveNodeIdx,
+		activeRotationHandle, hoveredHandle, showDentalArch, params.showEdgeRulers,
+		params.hoveredViewport, archCurve, activeCrossSection, selectedArchAnchorIdx,
+		hoveredArchAnchorIdx, isDraggingArchAnchor, panoramicData, crossSections,
+		activeCrossSectionIdx, currentCanal, hoveredImplantPart, dragImplantPart,
+		transforms, maximizedViewport, viewLayout, layoutBurstCount,
+		axialOverlayCanvasRef, coronalOverlayCanvasRef, sagittalOverlayCanvasRef,
+		panoOverlayCanvasRef, crossSectionOverlayCanvasRef,
 	]);
 }

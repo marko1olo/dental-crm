@@ -19,6 +19,12 @@ import {
 	extractObliqueMprSlice,
 	type ObliqueSliceRenderOptions,
 } from "../cbctObliqueSliceMath";
+import {
+	extractArchCrossSectionSeries,
+	type CrossSectionSeriesOptions,
+	type CrossSectionSliceData,
+} from "../cbctCrossSectionResliceMath";
+import type { DentalArchCurve } from "../cbctArchSplineMath";
 import type {
 	CbctWorkerInboundMessage,
 	CbctWorkerOutboundMessage,
@@ -50,6 +56,13 @@ export interface WorkerRenderAllPlanesParams {
 	requestId?: number | undefined;
 }
 
+export interface WorkerCrossSectionSeriesParams {
+	volume: CbctVoxelVolume;
+	archCurve: DentalArchCurve;
+	options?: CrossSectionSeriesOptions | undefined;
+	requestId?: number | undefined;
+}
+
 export interface CbctWorkerBridgeOptions {
 	forceFallback?: boolean | undefined;
 	workerFactory?: (() => Worker) | undefined;
@@ -68,6 +81,12 @@ interface PendingMultiPlane {
 	volumeId: string;
 }
 
+interface PendingSeriesRequest {
+	resolve: (value: CrossSectionSliceData[]) => void;
+	reject: (reason: Error) => void;
+	volumeId: string;
+}
+
 export class CbctWorkerBridge {
 	private worker: Worker | null = null;
 	private forceFallback: boolean;
@@ -79,6 +98,7 @@ export class CbctWorkerBridge {
 
 	private pendingSingleRequests = new Map<number, PendingSingleSlice>();
 	private pendingMultiRequests = new Map<number, PendingMultiPlane>();
+	private pendingSeriesRequests = new Map<number, PendingSeriesRequest>();
 
 	constructor(options?: CbctWorkerBridgeOptions) {
 		this.forceFallback = options?.forceFallback ?? false;
@@ -132,8 +152,12 @@ export class CbctWorkerBridge {
 			for (const [, req] of this.pendingMultiRequests) {
 				req.reject(new Error(`Worker execution error: ${err.message}`));
 			}
+			for (const [, req] of this.pendingSeriesRequests) {
+				req.reject(new Error(`Worker execution error: ${err.message}`));
+			}
 			this.pendingSingleRequests.clear();
 			this.pendingMultiRequests.clear();
+			this.pendingSeriesRequests.clear();
 		};
 	}
 
@@ -180,6 +204,15 @@ export class CbctWorkerBridge {
 				break;
 			}
 
+			case "CROSS_SECTION_SERIES_RENDERED": {
+				const pending = this.pendingSeriesRequests.get(msg.requestId);
+				if (pending) {
+					this.pendingSeriesRequests.delete(msg.requestId);
+					pending.resolve(msg.slices);
+				}
+				break;
+			}
+
 			case "VOLUME_DISPOSED": {
 				if (this.initializedVolumeId === msg.volumeId) {
 					this.initializedVolumeId = null;
@@ -198,6 +231,11 @@ export class CbctWorkerBridge {
 					if (pendingMulti) {
 						this.pendingMultiRequests.delete(msg.requestId);
 						pendingMulti.reject(new Error(msg.error));
+					}
+					const pendingSeries = this.pendingSeriesRequests.get(msg.requestId);
+					if (pendingSeries) {
+						this.pendingSeriesRequests.delete(msg.requestId);
+						pendingSeries.reject(new Error(msg.error));
 					}
 				}
 				break;
@@ -387,6 +425,49 @@ export class CbctWorkerBridge {
 	}
 
 	/**
+	 * Extracts a series of cross-sections along dental arch in background Web Worker with Transferable buffers.
+	 * Returns 60 FPS responsive result without blocking main UI thread.
+	 */
+	public requestCrossSectionSeries(
+		params: WorkerCrossSectionSeriesParams,
+	): Promise<CrossSectionSliceData[]> {
+		const reqId = params.requestId ?? ++this.nextRequestId;
+		this.latestRequestedId = Math.max(this.latestRequestedId, reqId);
+
+		if (this.isFallbackMode()) {
+			return Promise.resolve(
+				extractArchCrossSectionSeries(
+					params.volume,
+					params.archCurve,
+					params.options ?? 2.0,
+				),
+			);
+		}
+
+		if (this.initializedVolumeId !== params.volume.id) {
+			this.initVolume(params.volume);
+		}
+
+		return new Promise<CrossSectionSliceData[]>((resolve, reject) => {
+			this.pendingSeriesRequests.set(reqId, {
+				resolve,
+				reject,
+				volumeId: params.volume.id,
+			});
+
+			const msg: CbctWorkerInboundMessage = {
+				type: "RENDER_CROSS_SECTION_SERIES",
+				requestId: reqId,
+				volumeId: params.volume.id,
+				archCurve: params.archCurve,
+				options: params.options,
+			};
+
+			this.worker!.postMessage(msg);
+		});
+	}
+
+	/**
 	 * Disposes worker thread, clears memory caches and terminates pending promises.
 	 */
 	public dispose(): void {
@@ -415,8 +496,12 @@ export class CbctWorkerBridge {
 		for (const [, req] of this.pendingMultiRequests) {
 			req.reject(new Error("CbctWorkerBridge disposed."));
 		}
+		for (const [, req] of this.pendingSeriesRequests) {
+			req.reject(new Error("CbctWorkerBridge disposed."));
+		}
 		this.pendingSingleRequests.clear();
 		this.pendingMultiRequests.clear();
+		this.pendingSeriesRequests.clear();
 	}
 
 	public terminate(): void {

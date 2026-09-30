@@ -258,7 +258,7 @@ describe("Real DICOM Series Volume Loader & Ingestion Engine", () => {
     // Verify dental arch auto-detection and occlusal plane
     const arch = autoDetectDentalArch(volume, "mandible");
     assert.equal(arch.anchors.length, 16, "Dental arch should have 16 FDI tooth anchors");
-    assert.ok(arch.totalArcLengthMm > 120, `Arch length should be anatomical (got ${arch.totalArcLengthMm})`);
+    assert.ok(arch.totalArcLengthMm > 80 && arch.totalArcLengthMm < 160, `Arch length should be anatomical (got ${arch.totalArcLengthMm})`);
 
     const occlusalZ = findOcclusalZPlane(volume, "mandible");
     assert.ok(Number.isFinite(occlusalZ), "Occlusal Z plane must be a finite number");

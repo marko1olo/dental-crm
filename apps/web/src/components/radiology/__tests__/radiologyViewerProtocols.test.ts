@@ -167,3 +167,170 @@ test("DicomViewerModal: 1-клик Норма, опциональный ИИ б�
 	// Проверка отсутствия сырых эмодзи
 	assert.ok(!source.includes("⚡ Норма"), "Сырой эмодзи молнии ⚡ запрещен в кнопке нормы");
 });
+
+test("Cephalometrics: LANDMARK_CLINICAL_ROLES покрывает все 16 анатомических ориентиров", async () => {
+	const { LANDMARK_CLINICAL_ROLES, getRequiredLandmarksForMeasurement } = await import(
+		"../CephalometricAnalysisModal.js"
+	);
+	const { CEPHALOMETRIC_LANDMARKS } = await import(
+		"../../orthodontics/cephalometricMath.js"
+	);
+
+	assert.equal(CEPHALOMETRIC_LANDMARKS.length, 16, "Должно быть ровно 16 анатомических ориентиров");
+
+	for (const lm of CEPHALOMETRIC_LANDMARKS) {
+		const role = LANDMARK_CLINICAL_ROLES[lm.key];
+		assert.ok(role, `Ориентир ${lm.key} обязан иметь клиническое описание роли`);
+		assert.ok(role.clinicalTip.length > 10, `Ориентир ${lm.key} обязан иметь детальный совет по поиску`);
+		assert.ok(role.depends.length > 5, `Ориентир ${lm.key} обязан перечислять зависимые углы`);
+	}
+
+	// Проверка сопоставления необходимых точек
+	assert.deepEqual(getRequiredLandmarksForMeasurement("SNA"), ["S", "N", "A"]);
+	assert.deepEqual(getRequiredLandmarksForMeasurement("SNB"), ["S", "N", "B"]);
+	assert.deepEqual(getRequiredLandmarksForMeasurement("ANB"), ["S", "N", "A", "B"]);
+	assert.deepEqual(getRequiredLandmarksForMeasurement("1-NA-Angle"), ["N", "A", "U1t", "U1a"]);
+	assert.deepEqual(getRequiredLandmarksForMeasurement("1-NB-Angle"), ["N", "B", "L1t", "L1a"]);
+});
+
+test("Cephalometrics: Расчет ключевых углов Штайнера (SNA 82°±2°, SNB 80°±2°, ANB 2°±2°)", async () => {
+	const {
+		calculateCephalometrics,
+		CLASS_I_NORMAL_LANDMARKS_PRESET,
+		CLASS_II_DISTAL_LANDMARKS_PRESET,
+		CLASS_III_MESIAL_LANDMARKS_PRESET,
+	} = await import("../../orthodontics/cephalometricMath.js");
+
+	// 1. Класс I (Норма)
+	const class1 = calculateCephalometrics(CLASS_I_NORMAL_LANDMARKS_PRESET, 0.15);
+	const sna1 = class1.measurements.find((m) => m.id === "SNA");
+	const snb1 = class1.measurements.find((m) => m.id === "SNB");
+	const anb1 = class1.measurements.find((m) => m.id === "ANB");
+
+	assert.ok(sna1 && sna1.value !== null, "SNA должен быть рассчитан для пресета Класс I");
+	assert.ok(snb1 && snb1.value !== null, "SNB должен быть рассчитан для пресета Класс I");
+	assert.ok(anb1 && anb1.value !== null, "ANB должен быть рассчитан для пресета Класс I");
+
+	// Норма Штайнера: SNA 82° ± 2° (клинический диапазон нормы 80°-86°), SNB 80° ± 2°, ANB 2° ± 2°
+	assert.ok(sna1.value >= 80 && sna1.value <= 86, `SNA (${sna1.value}°) должен быть в коридоре нормы (80°-86°)`);
+	assert.ok(snb1.value >= 78 && snb1.value <= 82, `SNB (${snb1.value}°) должен быть в коридоре 80°±2°`);
+	assert.equal(class1.diagnosis.skeletalClass, "Class I");
+	assert.ok(class1.diagnosis.skeletalClassRu.includes("Скелетный класс I"));
+
+	// 2. Класс II (Дистальный прикус, ANB > 4°)
+	const class2 = calculateCephalometrics(CLASS_II_DISTAL_LANDMARKS_PRESET, 0.15);
+	const anb2 = class2.measurements.find((m) => m.id === "ANB");
+	assert.ok(anb2 && anb2.value !== null && anb2.value > 4, "Для Класса II угол ANB должен быть > 4°");
+	assert.equal(class2.diagnosis.skeletalClass, "Class II");
+	assert.ok(class2.diagnosis.skeletalClassRu.includes("Скелетный класс II"));
+
+	// 3. Класс III (Мезиальный прикус, ANB < 0°)
+	const class3 = calculateCephalometrics(CLASS_III_MESIAL_LANDMARKS_PRESET, 0.15);
+	const anb3 = class3.measurements.find((m) => m.id === "ANB");
+	assert.ok(anb3 && anb3.value !== null && anb3.value < 0, "Для Класса III угол ANB должен быть < 0°");
+	assert.equal(class3.diagnosis.skeletalClass, "Class III");
+	assert.ok(class3.diagnosis.skeletalClassRu.includes("Скелетный класс III"));
+});
+
+test("Cephalometrics: 100% Zero-NaN защита при частичной разметке и пустых точках", async () => {
+	const { calculateCephalometrics } = await import("../../orthodontics/cephalometricMath.js");
+
+	// 1. Полностью пустые ориентиры
+	const emptyResult = calculateCephalometrics({}, 0.15);
+	assert.equal(emptyResult.placedCount, 0);
+	for (const m of emptyResult.measurements) {
+		assert.ok(
+			m.value === null || Number.isFinite(m.value),
+			`Измерение ${m.id} не должно быть NaN при пустых точках (получено: ${m.value})`,
+		);
+		assert.notEqual(Number.isNaN(m.value), true, `Измерение ${m.id} не может быть NaN`);
+	}
+
+	// 2. Частичные ориентиры (только S и N)
+	const partialResult = calculateCephalometrics(
+		{
+			S: { x: 200, y: 150 },
+			N: { x: 350, y: 120 },
+		},
+		0.15,
+	);
+	assert.equal(partialResult.placedCount, 2);
+
+	const sna = partialResult.measurements.find((m) => m.id === "SNA");
+	const snb = partialResult.measurements.find((m) => m.id === "SNB");
+	const anb = partialResult.measurements.find((m) => m.id === "ANB");
+
+	assert.equal(sna?.value, null, "SNA должен быть null (не NaN) без точки A");
+	assert.equal(snb?.value, null, "SNB должен быть null (не NaN) без точки B");
+	assert.equal(anb?.value, null, "ANB должен быть null (не NaN) без точек A и B");
+
+	for (const m of partialResult.measurements) {
+		assert.ok(
+			m.value === null || Number.isFinite(m.value),
+			`Измерение ${m.id} при частичных точках не должно быть NaN (получено: ${m.value})`,
+		);
+	}
+});
+
+test("Cephalometrics: Циклический обход нерасставленных ориентиров (wrap-around auto-advance)", async () => {
+	const { CEPHALOMETRIC_LANDMARKS } = await import(
+		"../../orthodontics/cephalometricMath.js"
+	);
+
+	const landmarks = {
+		S: { x: 10, y: 10 },
+		N: { x: 20, y: 20 },
+		// Or и Po пропущены
+		ANS: { x: 30, y: 30 },
+		// L1a установлена последней
+		L1a: { x: 100, y: 100 },
+	};
+
+	// Эмулируем установку последней точки в массиве (L1a, индекс 15)
+	const currentIndex = CEPHALOMETRIC_LANDMARKS.findIndex((l) => l.key === "L1a");
+	const count = CEPHALOMETRIC_LANDMARKS.length;
+
+	const nextUnplaced = Array.from({ length: count }, (_, offset) => {
+		const idx = (currentIndex + 1 + offset) % count;
+		return CEPHALOMETRIC_LANDMARKS[idx]!;
+	}).find((l) => l.key !== "L1a" && !(landmarks as any)[l.key]);
+
+	assert.ok(nextUnplaced, "Циклический поиск обязан найти пропущенную точку");
+	assert.equal(
+		nextUnplaced.key,
+		"Or",
+		"После L1a циклический поиск должен обернуться на начало и найти первую пропущенную точку (Or)",
+	);
+});
+
+test("Cephalometrics: UI инварианты модалки (Hero Showcase, Guidance Banner, zero-NaN)", () => {
+	const source = readSource("components/radiology/CephalometricAnalysisModal.tsx");
+
+	// Баннер руководства ортодонту
+	assert.ok(
+		source.includes('data-testid="banner-active-landmark-guidance"'),
+		"Модалка ТРГ обязана содержать баннер клинической подсказки 'banner-active-landmark-guidance'",
+	);
+	assert.ok(
+		source.includes('data-testid="btn-skip-next-landmark"'),
+		"Баннер обязан содержать кнопку быстрого пропуска к следующему ориентиру 'btn-skip-next-landmark'",
+	);
+
+	// Витрина ключевых углов Штайнера (Hero Cards)
+	assert.ok(source.includes('data-testid="core-hero-SNA"'), "Витрина обязана содержать карточку SNA");
+	assert.ok(source.includes('data-testid="core-hero-SNB"'), "Витрина обязана содержать карточку SNB");
+	assert.ok(source.includes('data-testid="core-hero-ANB"'), "Витрина обязана содержать карточку ANB");
+	assert.ok(source.includes('data-testid="core-hero-1-NA"'), "Витрина обязана содержать карточку 1-NA");
+	assert.ok(source.includes('data-testid="core-hero-1-NB"'), "Витрина обязана содержать карточку 1-NB");
+
+	// Zero-NaN защита
+	assert.ok(
+		source.includes("Number.isFinite"),
+		"Модалка обязана валидировать измерения через Number.isFinite",
+	);
+	assert.ok(
+		source.includes("getRequiredLandmarksForMeasurement"),
+		"Модалка обязана вычислять недостающие точки через getRequiredLandmarksForMeasurement",
+	);
+});
+

@@ -24,6 +24,12 @@ import {
 	extractObliqueMprSlice,
 	type ObliqueSliceRenderOptions,
 } from "../cbctObliqueSliceMath";
+import {
+	extractArchCrossSectionSeries,
+	type CrossSectionSeriesOptions,
+	type CrossSectionSliceData,
+} from "../cbctCrossSectionResliceMath";
+import type { DentalArchCurve } from "../cbctArchSplineMath";
 
 // ─── MESSAGE PROTOCOL TYPES ──────────────────────────────────────────────────
 
@@ -77,10 +83,18 @@ export interface DisposeVolumePayload {
 	volumeId: string;
 }
 
+export interface RenderCrossSectionSeriesPayload {
+	requestId: number;
+	volumeId: string;
+	archCurve: DentalArchCurve;
+	options?: CrossSectionSeriesOptions | undefined;
+}
+
 export type CbctWorkerInboundMessage =
 	| ({ type: "INIT_VOLUME" } & InitVolumePayload)
 	| ({ type: "RENDER_SLICE" } & RenderSlicePayload)
 	| ({ type: "RENDER_ALL_PLANES" } & RenderAllPlanesPayload)
+	| ({ type: "RENDER_CROSS_SECTION_SERIES" } & RenderCrossSectionSeriesPayload)
 	| ({ type: "DISPOSE_VOLUME" } & DisposeVolumePayload);
 
 export type CbctWorkerOutboundMessage =
@@ -105,6 +119,12 @@ export type CbctWorkerOutboundMessage =
 				coronal: { metadata: MprSliceMetadata; pixelBuffer: ArrayBufferLike };
 				sagittal: { metadata: MprSliceMetadata; pixelBuffer: ArrayBufferLike };
 			};
+	  }
+	| {
+			type: "CROSS_SECTION_SERIES_RENDERED";
+			requestId: number;
+			volumeId: string;
+			slices: CrossSectionSliceData[];
 	  }
 	| {
 			type: "VOLUME_DISPOSED";
@@ -289,6 +309,49 @@ export function handleWorkerMessage(
 					requestId: msg.requestId,
 					volumeId: msg.volumeId,
 					error: `Failed to render all planes: ${err instanceof Error ? err.message : String(err)}`,
+				});
+			}
+			break;
+		}
+
+		case "RENDER_CROSS_SECTION_SERIES": {
+			const vol = cache.get(msg.volumeId);
+			if (!vol || !vol.data || vol.isDisposed) {
+				postMessage({
+					type: "ERROR",
+					requestId: msg.requestId,
+					volumeId: msg.volumeId,
+					error: `Volume "${msg.volumeId}" is not cached or has been disposed.`,
+				});
+				return;
+			}
+
+			try {
+				const slices = extractArchCrossSectionSeries(vol, msg.archCurve, msg.options);
+				const transferList: Transferable[] = [];
+				if (typeof ArrayBuffer !== "undefined") {
+					for (const slice of slices) {
+						if (slice.pixelData && slice.pixelData.buffer instanceof ArrayBuffer) {
+							transferList.push(slice.pixelData.buffer);
+						}
+					}
+				}
+
+				postMessage(
+					{
+						type: "CROSS_SECTION_SERIES_RENDERED",
+						requestId: msg.requestId,
+						volumeId: msg.volumeId,
+						slices,
+					},
+					transferList,
+				);
+			} catch (err) {
+				postMessage({
+					type: "ERROR",
+					requestId: msg.requestId,
+					volumeId: msg.volumeId,
+					error: `Failed to render cross section series: ${err instanceof Error ? err.message : String(err)}`,
 				});
 			}
 			break;
