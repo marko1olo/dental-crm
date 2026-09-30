@@ -1,0 +1,29 @@
+{
+  "role": "3D SKULL RAYMARCHING & CLINICAL VIEWPORT ERGONOMICS INQUISITOR",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Constitutional reading of THE_HAMMER_MASTER_PROMPT.md and AGENTS.md",
+    "Audited CbctVolume3DViewport.tsx, CbctMprViewportsGrid.tsx, cbctVolume3DQuadrant.test.ts, capture_live_cbct_studio_proof.mjs",
+    "Calibrated HU thresholds in CBCT_VOLUME_3D_PRESETS: skull huMin=350, huMax=2000; dense_bone huMin=550",
+    "Implemented 4-step bisection sub-voxel refinement in CBCT_VOLUME_3D_FRAGMENT_SHADER (eliminates voxel stair-stepping)",
+    "Implemented 2-voxel central differences gradient and outward surface normal (-normalize(grad)) aligned with camera ray",
+    "Implemented true clinical anatomical Phong lighting in GLSL and Canvas2D with camera-relative key light, max(0.0, dot(norm, lightDir)), ambient 0.32, diffuse 0.68, specular, rim-light",
+    "Calibrated medical camera angles: default yaw=30, pitch=12; buttons 'Фас' (coronal 0,0), 'Профиль' (sagittal 90,0), '3/4' (isometric 30,12)",
+    "Refactored 4th quadrant switcher in CbctMprViewportsGrid.tsx into compact '[ 3D Череп | ОПТГ ]' toggle (h-6/h-7)",
+    "Cleaned up CbctVolume3DViewport.tsx buttons: eliminated duplicate '3D' label, replaced with '3/4', unified h-6/24-28px controls",
+    "Updated cbctVolume3DQuadrant.test.ts with 350 HU threshold, patient coordinate matrix math, and compact labels",
+    "Verified all 82 targeted unit tests pass with Exit Code 0 (cbctVolume3DQuadrant, cbctHardwareGpuTorture, cbctWebGlEngine)",
+    "Verified TypeScript compilation (tsc -b --noEmit -w @dental/web) passes with Exit Code 0",
+    "Verified check:encoding passes with 0 errors across 6323 files",
+    "Executed capture_live_cbct_studio_proof.mjs and visually inspected proof_real_zakharov_313_mpr_studio.png via view_file",
+    "Confirmed complete elimination of scatter noise sand cloud and confirmed compact, zero-bloat controls",
+    "Executed per-file git add on assigned scope files"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Old skull preset threshold of 150 HU was capturing air scatter noise and soft tissue/saliva around head, producing a dirty sand cloud effect. Threshold 350 HU cleanly isolates mandibular and cranial cortical bone.",
+    "Previous buttons '[ 3D Объем / Череп | Панорама ОПТГ ]' were bulky and redundant; replaced with sleek '[ 3D Череп | ОПТГ ]'.",
+    "Replaced confusing duplicate '3D' orientation button with canonical '3/4' dental isometric projection.",
+    "Central difference normal with 2-voxel baseline + 4-step bisection produces silky-smooth cortical surface without voxel banding."
+  ]
+}

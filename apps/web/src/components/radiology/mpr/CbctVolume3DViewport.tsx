@@ -30,28 +30,28 @@ export interface Volume3DPresetSpec {
 export const CBCT_VOLUME_3D_PRESETS: readonly Volume3DPresetSpec[] = [
 	{
 		id: "skull",
-		label: "Череп (Skull / Jaw)",
+		label: "Череп (Кость / Челюсть)",
 		shortLabel: "Череп",
-		description: "Челюстно-лицевой скелет, нижняя и верхняя челюсти, костные структуры",
-		huMin: 150,
+		description: "Челюстно-лицевой скелет, нижняя и верхняя челюсти, костные структуры (350+ HU)",
+		huMin: 350,
 		huMax: 2000,
-		colorRgb: [240, 225, 200], // Warm ivory bone
+		colorRgb: [242, 232, 214], // Clean warm bone ivory
 	},
 	{
 		id: "dense_bone",
 		label: "Плотная кость / Зубы",
 		shortLabel: "Плотная",
-		description: "Кортикальная пластинка, зубной ряд, эмаль и дентин",
-		huMin: 400,
+		description: "Кортикальная пластинка, зубной ряд, эмаль и дентин (550+ HU)",
+		huMin: 550,
 		huMax: 3000,
-		colorRgb: [255, 250, 235], // High-density cortical ivory
+		colorRgb: [255, 252, 240], // High-density cortical ivory
 	},
 	{
 		id: "soft_tissue",
 		label: "Ткани + Кость",
 		shortLabel: "Ткани",
-		description: "Мягкотканный контур лица и подлежащий костный остов",
-		huMin: -100,
+		description: "Мягкотканный контур лица и подлежащий костный остов (100+ HU)",
+		huMin: 100,
 		huMax: 1500,
 		colorRgb: [220, 180, 160], // Flesh and bone
 	},
@@ -59,8 +59,8 @@ export const CBCT_VOLUME_3D_PRESETS: readonly Volume3DPresetSpec[] = [
 		id: "mip",
 		label: "MIP (Максимум)",
 		shortLabel: "MIP",
-		description: "Проекция максимальной интенсивности по всей глубине объема",
-		huMin: -1000,
+		description: "Проекция максимальной интенсивности по всей глубине объема (250+ HU)",
+		huMin: 250,
 		huMax: 3000,
 		colorRgb: [220, 240, 255], // Clear radiologic cyan-white
 	},
@@ -161,7 +161,10 @@ export function intersectRayAABB(
 }
 
 /**
- * Computes 3D rotation matrix for azimuth (yaw) and elevation (pitch) in radians.
+ * Computes 3D rotation matrix for trackball navigation in medical coordinates.
+ * Patient space: +X = lateral (right-to-left), +Y = sagittal (anterior-to-posterior), +Z = vertical (inferior-to-superior).
+ * At yaw=0, pitch=0: camera faces patient from front (Coronal / Фас).
+ * Returns 3 columns: [col0 (Right), col1 (Up), col2 (RayDir)].
  */
 export function computeVolume3DRotationMatrix(yawDeg: number, pitchDeg: number): [number, number, number][] {
 	const yawRad = (yawDeg * Math.PI) / 180;
@@ -172,12 +175,22 @@ export function computeVolume3DRotationMatrix(yawDeg: number, pitchDeg: number):
 	const cosP = cleanZero(Math.cos(pitchRad));
 	const sinP = cleanZero(Math.sin(pitchRad));
 
-	// Combined Yaw (around Y) * Pitch (around X)
-	return [
-		[cosY, cleanZero(sinY * sinP), cleanZero(sinY * cosP)],
-		[0, cosP, cleanZero(-sinP)],
-		[cleanZero(-sinY), cleanZero(cosY * sinP), cleanZero(cosY * cosP)],
+	// Column 0: Camera Right (screen X axis -> patient lateral)
+	const col0: [number, number, number] = [cosY, sinY, 0];
+	// Column 1: Camera Up (screen Y axis -> patient vertical +Z is UP)
+	const col1: [number, number, number] = [
+		cleanZero(sinY * sinP),
+		cleanZero(-cosY * sinP),
+		cosP,
 	];
+	// Column 2: Ray Direction (marching into face -> patient anterior-to-posterior)
+	const col2: [number, number, number] = [
+		cleanZero(-sinY * cosP),
+		cleanZero(cosY * cosP),
+		cleanZero(-sinP),
+	];
+
+	return [col0, col1, col2];
 }
 
 export const CBCT_VOLUME_3D_VERTEX_SHADER = `#version 300 es
@@ -240,7 +253,7 @@ vec2 intersectAABB(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax) {
 void main() {
     float maxDim = max(1.0, max(u_volumeDim.x, max(u_volumeDim.y, u_volumeDim.z)));
     float safeZoom = max(0.01, u_zoom);
-    float scale = max(1e-5, (min(u_resolution.x, u_resolution.y) / maxDim) * safeZoom * 0.9);
+    float scale = max(1e-5, (min(u_resolution.x, u_resolution.y) / maxDim) * safeZoom * 0.95);
     
     vec2 screenPixel = v_uv * u_resolution;
     vec2 center = u_resolution * 0.5 + u_pan;
@@ -248,27 +261,29 @@ void main() {
     float viewX = (screenPixel.x - center.x) / scale;
     float viewY = -(screenPixel.y - center.y) / scale;
     
-    // Camera ray direction (Z column of rotation matrix)
+    // Camera ray direction (Column 2 of rotation matrix)
     vec3 rayDir = normalize(u_rotMatrix[2]);
     
-    // Ray plane starting point in centered coordinates
-    vec3 planePt = u_rotMatrix * vec3(viewX, viewY, 0.0);
+    // Ray plane starting point in centered coordinates:
+    // Screen X travels along Column 0, Screen Y travels along Column 1
+    vec3 planePt = u_rotMatrix[0] * viewX + u_rotMatrix[1] * viewY;
     
     vec3 halfDim = u_volumeDim * 0.5;
     vec2 tHit = intersectAABB(planePt, rayDir, -halfDim, halfDim);
     
-    float tNear = max(-maxDim * 0.8, tHit.x);
-    float tFar = min(maxDim * 0.8, tHit.y);
+    float tNear = max(-maxDim * 1.5, tHit.x);
+    float tFar = min(maxDim * 1.5, tHit.y);
     
     // If ray misses skull AABB or is NaN, instant discard (render background #09090b)
-    if (isnan(tNear) || isnan(tFar) || tNear >= tFar || tFar < -maxDim * 0.8 || tNear > maxDim * 0.8) {
+    if (isnan(tNear) || isnan(tFar) || tNear >= tFar || tFar <= 0.0) {
         fragColor = vec4(0.035, 0.035, 0.043, 1.0); // #09090b
         return;
     }
     
+    tNear = max(0.0, tNear);
     float rayDist = tFar - tNear;
     int safeMaxSteps = clamp(u_maxSteps, 1, 200);
-    float stepSize = max(1.2, rayDist / float(safeMaxSteps));
+    float stepSize = max(0.8, rayDist / float(safeMaxSteps));
     int actualSteps = int(clamp(ceil(rayDist / stepSize), 1.0, float(safeMaxSteps)));
     float dt = rayDist / float(actualSteps);
     
@@ -298,22 +313,32 @@ void main() {
             } else {
                 if (hu >= u_huMin) {
                     hit = true;
+                    // Sub-voxel bisection refinement (4 steps) to eliminate stair-stepping & grain
+                    vec3 p0 = curPos - stepVec;
+                    vec3 p1 = curPos;
+                    for (int b = 0; b < 4; b++) {
+                        vec3 pm = (p0 + p1) * 0.5;
+                        ivec3 v = clamp(ivec3(floor(pm)), ivec3(0), ivec3(u_volumeDim) - 1);
+                        float h = float(texelFetch(u_volume, v, 0).r);
+                        if (h >= u_huMin) p1 = pm; else p0 = pm;
+                    }
+                    vec3 hitPos = (p0 + p1) * 0.5;
                     hitDepth = float(i + 1) / float(actualSteps);
                     
-                    ivec3 vxP = min(ivec3(u_volumeDim) - 1, vox + ivec3(1, 0, 0));
-                    ivec3 vxM = max(ivec3(0), vox - ivec3(1, 0, 0));
-                    ivec3 vyP = min(ivec3(u_volumeDim) - 1, vox + ivec3(0, 1, 0));
-                    ivec3 vyM = max(ivec3(0), vox - ivec3(0, 1, 0));
-                    ivec3 vzP = min(ivec3(u_volumeDim) - 1, vox + ivec3(0, 0, 1));
-                    ivec3 vzM = max(ivec3(0), vox - ivec3(0, 0, 1));
-                    
-                    float gx = float(texelFetch(u_volume, vxP, 0).r) - float(texelFetch(u_volume, vxM, 0).r);
-                    float gy = float(texelFetch(u_volume, vyP, 0).r) - float(texelFetch(u_volume, vyM, 0).r);
-                    float gz = float(texelFetch(u_volume, vzP, 0).r) - float(texelFetch(u_volume, vzM, 0).r);
+                    // Central differences with 2-voxel baseline for smooth anatomical gradients
+                    ivec3 vHit = clamp(ivec3(floor(hitPos)), ivec3(2), ivec3(u_volumeDim) - 3);
+                    float gx = float(texelFetch(u_volume, vHit + ivec3(2, 0, 0), 0).r) - float(texelFetch(u_volume, vHit - ivec3(2, 0, 0), 0).r);
+                    float gy = float(texelFetch(u_volume, vHit + ivec3(0, 2, 0), 0).r) - float(texelFetch(u_volume, vHit - ivec3(0, 2, 0), 0).r);
+                    float gz = float(texelFetch(u_volume, vHit + ivec3(0, 0, 2), 0).r) - float(texelFetch(u_volume, vHit - ivec3(0, 0, 2), 0).r);
                     
                     vec3 grad = vec3(gx, gy, gz);
                     float gLen = length(grad);
-                    norm = gLen > 0.001 ? (grad / gLen) : -rayDir;
+                    // Outward surface normal points toward lower density (from bone into air)
+                    norm = gLen > 0.001 ? -normalize(grad) : -rayDir;
+                    // Ensure normal faces toward the camera
+                    if (dot(norm, -rayDir) < 0.0) {
+                        norm = -norm;
+                    }
                     break;
                 }
             }
@@ -330,12 +355,18 @@ void main() {
             fragColor = vec4(0.035, 0.035, 0.043, 1.0);
         }
     } else if (hit) {
-        // Anatomical Phong Shading: Ambient + Diffuse Lambert + Warm Ivory Specular Highlight
-        float diff = max(0.20, abs(dot(norm, u_lightDir)));
-        vec3 halfVec = normalize(u_lightDir + vec3(0.0, 0.0, 1.0));
-        float spec = pow(max(0.0, abs(dot(norm, halfVec))), 24.0) * 0.35;
-        float depthFade = 1.0 - hitDepth * 0.25;
-        vec3 lit = clamp(u_boneColor * (diff * depthFade) + vec3(0.95, 0.92, 0.85) * spec, 0.0, 1.0);
+        // Clinical Anatomical Phong Shading: Ambient + Lambert Diffuse + Enamel Specular + Rim
+        vec3 viewDir = -rayDir;
+        // Directional key light from upper-front-right relative to camera
+        vec3 lightDir = normalize(viewDir * 0.82 + u_rotMatrix[0] * 0.35 + u_rotMatrix[1] * 0.45);
+        float NdotL = max(0.0, dot(norm, lightDir));
+        float ambient = 0.32;
+        float diff = NdotL * 0.68;
+        vec3 halfVec = normalize(lightDir + viewDir);
+        float spec = pow(max(0.0, dot(norm, halfVec)), 32.0) * 0.35;
+        float rim = pow(1.0 - max(0.0, dot(norm, viewDir)), 3.0) * 0.18;
+        float depthFade = 1.0 - hitDepth * 0.15;
+        vec3 lit = clamp(u_boneColor * (ambient + diff * depthFade + rim) + vec3(1.0, 0.98, 0.92) * spec, 0.0, 1.0);
         fragColor = vec4(lit, 1.0);
     } else {
         fragColor = vec4(0.035, 0.035, 0.043, 1.0);
@@ -581,8 +612,8 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const glStateRef = useRef<WebGlVolume3DState | null>(null);
 	const [activePreset, setActivePreset] = useState<Volume3DPresetId>("skull");
-	const [yaw, setYaw] = useState<number>(35); // Default isometric angle
-	const [pitch, setPitch] = useState<number>(20);
+	const [yaw, setYaw] = useState<number>(30); // 30° canonical dental 3/4 view
+	const [pitch, setPitch] = useState<number>(12); // 12° occlusal tilt
 	const [zoom, setZoom] = useState<number>(1.0);
 	const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 	const [isInteracting, setIsInteracting] = useState<boolean>(false);
@@ -634,9 +665,9 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	const isDraggingRef = useRef<boolean>(false);
 	const dragButtonRef = useRef<number>(0);
 	const dragStartPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-	const dragStartAnglesRef = useRef<{ yaw: number; pitch: number }>({ yaw: 35, pitch: 20 });
+	const dragStartAnglesRef = useRef<{ yaw: number; pitch: number }>({ yaw: 30, pitch: 12 });
 	const dragStartPanRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-	const targetAnglesRef = useRef<{ yaw: number; pitch: number }>({ yaw: 35, pitch: 20 });
+	const targetAnglesRef = useRef<{ yaw: number; pitch: number }>({ yaw: 30, pitch: 12 });
 	const targetPanRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 	const rafIdRef = useRef<number | null>(null);
 
@@ -682,15 +713,15 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 			setYaw(90);
 			setPitch(0);
 		} else {
-			setYaw(35);
-			setPitch(20);
+			setYaw(30);
+			setPitch(12);
 		}
 		setPan({ x: 0, y: 0 });
 	}, []);
 
 	const handleResetCamera = useCallback(() => {
-		setYaw(35);
-		setPitch(20);
+		setYaw(30);
+		setPitch(12);
 		setZoom(1.0);
 		setPan({ x: 0, y: 0 });
 	}, []);
@@ -1043,13 +1074,13 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 							hit = true;
 							hitDepth = (step + 1) / numSteps;
 
-							// Central difference gradient for surface normal
-							const vxP = vx < dimW - 1 ? vx + 1 : vx;
-							const vxM = vx > 0 ? vx - 1 : vx;
-							const vyP = vy < dimH - 1 ? vy + 1 : vy;
-							const vyM = vy > 0 ? vy - 1 : vy;
-							const vzP = vz < dimD - 1 ? vz + 1 : vz;
-							const vzM = vz > 0 ? vz - 1 : vz;
+							// Central difference gradient for surface normal (step = 2 voxels)
+							const vxP = Math.min(dimW - 1, vx + 2);
+							const vxM = Math.max(0, vx - 2);
+							const vyP = Math.min(dimH - 1, vy + 2);
+							const vyM = Math.max(0, vy - 2);
+							const vzP = Math.min(dimD - 1, vz + 2);
+							const vzM = Math.max(0, vz - 2);
 
 							const zOff = vz * sliceSize;
 							const yOff = vy * dimW;
@@ -1059,9 +1090,16 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 							const gz = (data[vzP * sliceSize + yOff + vx] ?? hu) - (data[vzM * sliceSize + yOff + vx] ?? hu);
 
 							const gLen = Math.hypot(gx, gy, gz) || 1;
-							nx = gx / gLen;
-							ny = gy / gLen;
-							nz = gz / gLen;
+							// Outward surface normal points toward lower density (-grad)
+							nx = -gx / gLen;
+							ny = -gy / gLen;
+							nz = -gz / gLen;
+							// Ensure normal faces camera
+							if (nx * (-rayDirX) + ny * (-rayDirY) + nz * (-rayDirZ) < 0) {
+								nx = -nx;
+								ny = -ny;
+								nz = -nz;
+							}
 							break;
 						}
 					}
@@ -1085,14 +1123,38 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 						a = 255;
 					}
 				} else if (hit) {
-					// Lambertian diffuse lighting + ambient + depth darkening
-					const diff = Math.max(0.15, nx * lx + ny * ly + nz * lz);
-					const depthFade = 1.0 - hitDepth * 0.25;
-					const shade = diff * depthFade;
+					// Clinical Anatomical Phong Shading: Ambient + Lambert Diffuse + Enamel Specular + Rim
+					const viewDirX = -rayDirX;
+					const viewDirY = -rayDirY;
+					const viewDirZ = -rayDirZ;
 
-					r = Math.min(255, (baseR * shade) | 0);
-					g = Math.min(255, (baseG * shade) | 0);
-					b = Math.min(255, (baseB * shade) | 0);
+					const lVecX = viewDirX * 0.82 + m00 * 0.35 + m01 * 0.45;
+					const lVecY = viewDirY * 0.82 + m10 * 0.35 + m11 * 0.45;
+					const lVecZ = viewDirZ * 0.82 + m20 * 0.35 + m21 * 0.45;
+					const lLen = Math.hypot(lVecX, lVecY, lVecZ) || 1;
+					const nlx = lVecX / lLen;
+					const nly = lVecY / lLen;
+					const nlz = lVecZ / lLen;
+
+					const NdotL = Math.max(0, nx * nlx + ny * nly + nz * nlz);
+					const ambient = 0.32;
+					const diff = NdotL * 0.68;
+					const depthFade = 1.0 - hitDepth * 0.15;
+
+					const hx = nlx + viewDirX;
+					const hy = nly + viewDirY;
+					const hz = nlz + viewDirZ;
+					const hLen = Math.hypot(hx, hy, hz) || 1;
+					const NdotH = Math.max(0, nx * (hx / hLen) + ny * (hy / hLen) + nz * (hz / hLen));
+					const spec = Math.pow(NdotH, 32.0) * 0.35;
+
+					const NdotV = Math.max(0, nx * viewDirX + ny * viewDirY + nz * viewDirZ);
+					const rim = Math.pow(1.0 - NdotV, 3.0) * 0.18;
+
+					const shade = ambient + diff * depthFade + rim;
+					r = Math.min(255, Math.max(0, (baseR * shade + 255 * spec) | 0));
+					g = Math.min(255, Math.max(0, (baseG * shade + 250 * spec) | 0));
+					b = Math.min(255, Math.max(0, (baseB * shade + 235 * spec) | 0));
 					a = 255;
 				}
 
@@ -1184,11 +1246,11 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					<button
 						type="button"
 						onClick={() => handleSetOrientation("isometric")}
-						title="Изометрический ракурс (3D Volume)"
+						title="Ракурс 3/4 (Изометрия челюсти)"
 						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
 						data-testid="cbct-btn-orientation-isometric"
 					>
-						3D
+						3/4
 					</button>
 
 					<div className="w-[1px] h-3.5 bg-zinc-800 mx-0.5" />

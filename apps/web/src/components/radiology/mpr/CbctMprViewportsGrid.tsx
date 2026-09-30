@@ -365,16 +365,16 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					setFourthQuadrantMode("volume3d");
 					onSelectStudioMode?.("volume3d");
 				}}
-				className={`px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+				className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
 					fourthQuadrantMode === "volume3d"
 						? "bg-cyan-600 text-white shadow-xs"
 						: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
 				}`}
 				data-testid="cbct-btn-mode-volume3d"
-				title="3D Объем / Череп: интерактивная трехмерная реконструкция костной ткани"
+				title="3D Череп: интерактивная трехмерная реконструкция костной ткани и зубов"
 			>
 				<Box className="w-3 h-3 text-cyan-300" />
-				<span>3D Объем / Череп</span>
+				<span>3D Череп</span>
 			</button>
 			<button
 				type="button"
@@ -383,16 +383,16 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					setFourthQuadrantMode("panoramic");
 					onSelectStudioMode?.("panoramic");
 				}}
-				className={`px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+				className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
 					fourthQuadrantMode === "panoramic"
 						? "bg-purple-600 text-white shadow-xs"
 						: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
 				}`}
 				data-testid="cbct-btn-mode-panoramic"
-				title="Ортопантомограмма (ОПТГ): развернутая зубная панорама и кросс-секции"
+				title="ОПТГ: развернутая зубная панорама и кросс-секции"
 			>
 				<Spline className="w-3 h-3 text-purple-300" />
-				<span>Панорама ОПТГ</span>
+				<span>ОПТГ</span>
 			</button>
 		</div>
 	);
