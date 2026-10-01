@@ -471,8 +471,22 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 							setAdjustAmount(String(qty));
 						}}
 						onSelectItem={(item) => openEditModal(item)}
-						onWriteOffExpired={() => {
-							setIsNurseCarpuleModalOpen(true);
+						onWriteOffExpired={(item) => {
+							const name = item?.name?.toLowerCase() || "";
+							const isCarpuleOrAnesthetic =
+								name.includes("артикаин") ||
+								name.includes("ультракаин") ||
+								name.includes("септанест") ||
+								name.includes("скандонест") ||
+								name.includes("убистезин") ||
+								name.includes("мепивакаин") ||
+								name.includes("карпул");
+
+							if (isCarpuleOrAnesthetic) {
+								setIsNurseCarpuleModalOpen(true);
+							} else {
+								setIsClinicalWriteoffOpen(true);
+							}
 						}}
 					/>
 				) : (

@@ -379,6 +379,50 @@ describe("BOM Deduction & Soft Overdraft Autonomy (Mandates 8e, 8k, 8n, 8s)", ()
 			assert.equal(result.hasOverdraft, true);
 		});
 
+		it("при возникновении овердрафта отправляет alert на /api/inventory/:org/overdraft-alert", async () => {
+			const postedRequests: Array<{ url: string; body: Record<string, unknown> | null }> = [];
+			const mockFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+				postedRequests.push({
+					url: String(input),
+					body: init?.body ? JSON.parse(String(init.body)) : null,
+				});
+				return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
+			};
+
+			const result = await performAutoVisitBomDeduction({
+				visitId: "VIS-AUTO-ALERT",
+				patientId: "PAT-02",
+				doctorId: "DOC-02",
+				organizationId: "org-overdraft-test",
+				cabinetId: "CAB-3",
+				chairId: "CHAIR-1",
+				renderedServices: [
+					{
+						code: "A11.07.012",
+						name: "Анестезия",
+						quantity: 2,
+					},
+				],
+				currentStockMap: {
+					"mat-anes-art-100k": 0, // Дефицит 2 шт
+				},
+				allowOverdraft: true,
+				includeStandardPpe: false,
+				fetchFn: mockFetch as unknown as typeof fetch,
+			});
+
+			assert.equal(result.hasOverdraft, true);
+			const alertReq = postedRequests.find((r) => r.url.includes("/overdraft-alert"));
+			assert.ok(alertReq, "Запрос на /overdraft-alert должен быть отправлен");
+			assert.equal(alertReq.url, "/api/inventory/org-overdraft-test/overdraft-alert");
+			assert.equal(alertReq.body?.visitId, "VIS-AUTO-ALERT");
+			assert.equal(alertReq.body?.cabinetId, "CAB-3");
+			assert.equal(alertReq.body?.chairId, "CHAIR-1");
+			const alertItems = alertReq.body?.items as Array<{ deficitQty: number }>;
+			assert.ok(alertItems && alertItems.length >= 1);
+			assert.equal(alertItems[0]?.deficitQty, 2);
+		});
+
 		it("фоновая сетевая ошибка синхронизации не роняет процесс списания", async () => {
 			const failingFetch = async (): Promise<Response> => {
 				throw new Error("Сетевой сбой при отправке на склад");

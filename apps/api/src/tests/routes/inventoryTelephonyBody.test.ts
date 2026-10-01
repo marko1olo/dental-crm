@@ -169,7 +169,8 @@ describe("склад + АТС — Zod body (null → 400, не 500)", () => {
 		await purgeFixtureOrganizations([ORGANIZATION_ID]);
 	});
 
-	test("склад stock без токена → 401 (auth-first)", async () => {
+	test("склад stock без токена → 401 (auth-first)", async (t) => {
+		if (!databaseReady) return t.skip("база недоступна");
 		const refused = await patchStock({
 			body: { adjustment: 1 },
 			withAuth: false,
@@ -180,7 +181,8 @@ describe("склад + АТС — Zod body (null → 400, не 500)", () => {
 		);
 	});
 
-	test("склад stock пустое {} → 400 AdjustmentInvalid, не 500", async () => {
+	test("склад stock пустое {} → 400 AdjustmentInvalid, не 500", async (t) => {
+		if (!databaseReady) return t.skip("база недоступна");
 		const refused = await patchStock({ body: {} });
 		assert.equal(
 			refused.statusCode,
@@ -191,7 +193,8 @@ describe("склад + АТС — Zod body (null → 400, не 500)", () => {
 		assert.equal(refused.json.error, "AdjustmentInvalid");
 	});
 
-	test("склад stock JSON null → 400, не 500", async () => {
+	test("склад stock JSON null → 400, не 500", async (t) => {
+		if (!databaseReady) return t.skip("база недоступна");
 		const refused = await patchStock({ rawPayload: "null" });
 		assert.equal(
 			refused.statusCode,
@@ -202,7 +205,8 @@ describe("склад + АТС — Zod body (null → 400, не 500)", () => {
 		assert.equal(refused.json.error, "AdjustmentInvalid");
 	});
 
-	test("АТС webhook null body → 400, не 500", async () => {
+	test("АТС webhook null body → 400, не 500", async (t) => {
+		if (!databaseReady) return t.skip("база недоступна");
 		const refused = await postTelephony("webhook", { rawPayload: "null" });
 		assert.equal(
 			refused.statusCode,
@@ -213,7 +217,8 @@ describe("склад + АТС — Zod body (null → 400, не 500)", () => {
 		assert.equal(refused.json.error, "Missing 'from' phone number");
 	});
 
-	test("АТС SMS webhook {} → 400, не 500", async () => {
+	test("АТС SMS webhook {} → 400, не 500", async (t) => {
+		if (!databaseReady) return t.skip("база недоступна");
 		const refused = await postTelephony("sms/webhook", { body: {} });
 		assert.equal(
 			refused.statusCode,

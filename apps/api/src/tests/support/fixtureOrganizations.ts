@@ -175,7 +175,15 @@ export function fixtureUuid(namespace: string, slot: number): string {
  * который обязан быть виден, а не спрятан за `context.skip`.
  */
 export function isDatabaseUnavailable(error: unknown): boolean {
-	const message = error instanceof Error ? error.message : String(error);
+	const collectMessages = (err: unknown): string => {
+		if (!err) return "";
+		if (err instanceof Error) {
+			const causeMsg = err.cause ? ` ${collectMessages(err.cause)}` : "";
+			return `${err.message}${causeMsg}`;
+		}
+		return String(err);
+	};
+	const message = collectMessages(error);
 	return (
 		/ECONNREFUSED|ENOTFOUND|EHOSTUNREACH|ETIMEDOUT|getaddrinfo|Connection terminated|Client has encountered a connection error|password authentication failed/i.test(
 			message,

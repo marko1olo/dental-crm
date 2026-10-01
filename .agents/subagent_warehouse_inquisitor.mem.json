@@ -1,0 +1,63 @@
+{
+  "subagent": "CLINICAL WAREHOUSE & SUPPLY CHAIN INQUISITOR",
+  "started_at": "2026-10-02T02:26:40Z",
+  "completed_at": "2026-10-02T02:58:30Z",
+  "status": "DONE",
+  "scope": [
+    "apps/web/src/components/inventory/",
+    "apps/web/src/components/warehouse/",
+    "apps/web/src/components/InventoryBatchFefoPanel.tsx",
+    "apps/web/src/components/InventoryInboundInvoiceModal.tsx",
+    "apps/web/src/components/InventoryView.tsx",
+    "packages/shared/src/warehouse/",
+    "apps/api/src/routes/warehouse.ts",
+    "apps/api/src/routes/inventory.ts",
+    "apps/api/src/routes/treatmentConsumables.ts"
+  ],
+  "steps": [
+    {
+      "step": "read_rules",
+      "status": "DONE",
+      "details": "Read core.md, GEMINI.md, AGENTS.md mandates 8e, 8n, 8v, 8w, 8x, 8y, 8z."
+    },
+    {
+      "step": "run_existing_warehouse_tests",
+      "status": "DONE",
+      "details": "Executed 203 web unit tests, 90 shared warehouse tests, and api route tests. Baseline established."
+    },
+    {
+      "step": "audit_zero_dead_ends_and_soft_overdraft",
+      "status": "DONE",
+      "details": "Added missing POST /api/inventory/:organizationId/overdraft-alert endpoint in apps/api/src/routes/inventory.ts. Soft overdraft during visits logs into inventoryTransactions with transactionType emergency_overdraft and isOverdraft: true without 500 crashes or doctor checkout blocks."
+    },
+    {
+      "step": "audit_batch_fefo",
+      "status": "DONE",
+      "details": "Aligned overdraft badge condition in InventoryBatchFefoPanel.tsx (qty <= 0) with WarehouseItemsTable.tsx. Added intelligent expired item routing in InventoryView.tsx: anesthetics/carpules -> NurseCarpuleDisposalModal, general materials -> 1-click ClinicalWriteoffModal."
+    },
+    {
+      "step": "audit_inbound_transfer_inventory",
+      "status": "DONE",
+      "details": "Integrated POST /api/inventory/:organizationId/acceptance-waybill into InventoryInboundInvoiceModal.tsx for industrial waybill ingestion with lot number, FEFO expiry date, unit price, and automatic overdraft clearance. Added fallback loop and created POST /:organizationId/items alias in backend."
+    },
+    {
+      "step": "audit_all_buttons_and_handlers",
+      "status": "DONE",
+      "details": "Wired onConfirmTransfer in WarehouseTransferModal inside InventoryExternalModals.tsx to dispatch server deduction with allowOverdraft: true. Fixed import React in ClinicalWriteoffQuickStrip.tsx. Fixed isDatabaseUnavailable in fixtureOrganizations.ts to inspect nested error.cause."
+    },
+    {
+      "step": "verify_and_report",
+      "status": "DONE",
+      "details": "Created warehouseInboundOverdraftInquisitor.test.ts (5/5 pass). Full inventory suite: 203/203 pass (0 fails). Shared warehouse suite: 90/90 pass (0 fails). TypeScript check in api clean (0 errors), web warehouse components clean (0 errors)."
+    }
+  ],
+  "findings": [
+    "Defect 1 Fixed: Missing POST /:orgId/overdraft-alert causing background 404s during doctor auto-deduction overdrafts.",
+    "Defect 2 Fixed: Inbound invoice modal called POST /:organizationId/items which was missing (now aliased in Fastify routes) and omitted FEFO lots on stock update; upgraded to atomic acceptance-waybill ingestion.",
+    "Defect 3 Fixed: Missing onConfirmTransfer handler in InventoryExternalModals for WarehouseTransferModal; now deducts dispatched items with allowOverdraft: true.",
+    "Defect 4 Fixed: Overdraft badge inconsistency between WarehouseItemsTable (qty <= 0) and InventoryBatchFefoPanel (qty < 0).",
+    "Defect 5 Fixed: InventoryView previously routed ALL expired materials to nurse carpule modal; now intelligently distinguishes anesthetics vs general consumables.",
+    "Defect 6 Fixed: isDatabaseUnavailable helper in fixtureOrganizations.ts failed to check error.cause on Drizzle wrapped connection errors, leading to false negatives when postgres was offline.",
+    "Defect 7 Fixed: React type import in ClinicalWriteoffQuickStrip.tsx causing potential JSX runtime reference error."
+  ]
+}

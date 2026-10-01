@@ -253,7 +253,7 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 								{filteredBatches.map(({ item, fefoInfo, daysLeft, status }) => {
 									const qty = Number(item.stockQuantity) || 0;
 									const isLow = qty <= (Number(item.criticalThreshold) || 0);
-									const isOverdraft = qty < 0;
+									const isOverdraft = qty <= 0;
 
 									return (
 										<tr
@@ -325,7 +325,10 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 														{qty} {item.unit || "шт."}
 													</span>
 													{isOverdraft && (
-														<span className="text-[10px] text-rose-500 font-sans font-medium">
+														<span
+															className="text-[10px] text-rose-500 font-sans font-medium"
+															data-testid={`fefo-overdraft-badge-${item.id}`}
+														>
 															Овердрафт
 														</span>
 													)}

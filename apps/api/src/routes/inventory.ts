@@ -238,6 +238,26 @@ const inventoryStornoBodySchema = z.object({
 	organizationId: z.string().optional(),
 });
 
+const inventoryOverdraftAlertBodySchema = z.object({
+	visitId: z.string().optional(),
+	visitNumber: z.union([z.string(), z.number()]).optional(),
+	chairId: z.string().optional(),
+	cabinetId: z.string().optional(),
+	message: z.string().optional(),
+	items: z
+		.array(
+			z.object({
+				itemId: z.string().optional(),
+				inventoryItemId: z.string().optional(),
+				itemName: z.string().optional(),
+				deficitQty: z.number().finite().optional(),
+				quantity: z.number().finite().optional(),
+			}),
+		)
+		.default([]),
+});
+
+
 /**
  * Метка «дату прислали, но разобрать её нельзя».
  *
@@ -294,6 +314,31 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 			const { organizationId } = request.params;
 			// Security: ensure the resolved org matches the requested one
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
+
+			const items = await db
+				.select()
+				.from(inventoryItems)
+				.where(eq(inventoryItems.organizationId, organizationId))
+				.orderBy(inventoryItems.name);
+			return items;
+		},
+	);
+
+	// GET /:organizationId/items — alias for inventory read
+	server.get<{ Params: { organizationId: string } }>(
+		"/:organizationId/items",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"inventory read items",
+			);
+			if (!resolvedOrgId) return;
+
+			const { organizationId } = request.params;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
@@ -433,33 +478,13 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		},
 	);
 
-	// POST new inventory item (staff/admin only)
-	server.post<{
-		Params: { organizationId: string };
-		Body: {
-			name: string;
-			criticalThreshold?: number;
-			unitCostRub?: number;
-			stockQuantity?: number;
-			sku?: string | null;
-			barcode?: string | null;
-			lotNumber?: string | null;
-			expirationDate?: string | null;
-		};
-	}>("/:organizationId", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"inventory create",
-		);
-		if (!resolvedOrgId) return;
-
-		const { organizationId } = request.params;
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		const parsedBody = inventoryCreateBodySchema.safeParse(request.body ?? {});
+	const handleCreateInventoryItem = async (
+		organizationId: string,
+		rawBody: unknown,
+		request: FastifyRequest,
+		reply: FastifyReply,
+	) => {
+		const parsedBody = inventoryCreateBodySchema.safeParse(rawBody ?? {});
 		if (!parsedBody.success) {
 			return reply.status(400).send({
 				error: "NameRequired",
@@ -521,6 +546,44 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					"Позиция склада не создана: сервер не сохранил запись. Проверьте название и повторите; если снова не выйдет — сообщите администратору клиники.",
 			});
 		return created;
+	};
+
+	// POST new inventory item (staff/admin only)
+	server.post<{
+		Params: { organizationId: string };
+	}>("/:organizationId", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory create",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleCreateInventoryItem(organizationId, request.body, request, reply);
+	});
+
+	// POST new inventory item alias /:organizationId/items (staff/admin only)
+	server.post<{
+		Params: { organizationId: string };
+	}>("/:organizationId/items", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory create items",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleCreateInventoryItem(organizationId, request.body, request, reply);
 	});
 
 	// PATCH adjust stock quantity (staff/admin only, never below 0)
@@ -2370,6 +2433,108 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		const hash = crypto.createHash("md5").update(trimmed).digest("hex");
 		return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
 	}
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// POST /:organizationId/overdraft-alert — Асинхронное оповещение об овердрафте при приеме (Мандат 8n)
+	// ─────────────────────────────────────────────────────────────────────────
+	const handleOverdraftAlertRequest = async (
+		organizationId: string,
+		rawBody: unknown,
+		request: FastifyRequest,
+		reply: FastifyReply,
+	) => {
+		const parsed = inventoryOverdraftAlertBodySchema.safeParse(rawBody ?? {});
+		if (!parsed.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат оповещения об овердрафте",
+				details: parsed.error.errors,
+			});
+		}
+
+		const data = parsed.data;
+		const safeVisitId = toValidUuid(data.visitId);
+		const identity = getRequestIdentity(request);
+		const userContext = request.user;
+		const effectiveUserId = toValidUuid(identity.userId ?? userContext?.id ?? null);
+
+		try {
+			let recordedCount = 0;
+			if (data.items && data.items.length > 0) {
+				await db.transaction(async (tx) => {
+					for (const it of data.items) {
+						const rawItemId = it.itemId || it.inventoryItemId;
+						const validItemId = toValidUuid(rawItemId);
+						const deficit = it.deficitQty ?? it.quantity ?? 1;
+
+						await tx.insert(inventoryTransactions).values({
+							organizationId,
+							itemId: validItemId,
+							inventoryItemId: validItemId,
+							visitId: safeVisitId,
+							transactionType: "emergency_overdraft",
+							quantityChanged: `-${deficit}`,
+							qty: `-${deficit}`,
+							isOverdraft: true,
+							notes: `[Дефицит/Овердрафт] ${it.itemName ? `Материал: ${it.itemName}. ` : ""}${data.cabinetId ? `Кабинет: ${data.cabinetId}. ` : ""}${data.chairId ? `Кресло: ${data.chairId}. ` : ""}${data.message ?? ""}`.trim(),
+							userId: effectiveUserId,
+						});
+						recordedCount++;
+					}
+				});
+			}
+
+			return reply.status(200).send({
+				success: true,
+				status: "recorded",
+				recordedCount,
+				isOverdraft: true,
+				message: `Зафиксирован мягкий овердрафт: ${recordedCount} поз. (клинический прием не прерывается)`,
+			});
+		} catch (error) {
+			request.log.error(error, "Failed to record inventory overdraft alert");
+			return reply.status(500).send({
+				error: "OverdraftAlertFailed",
+				message: "Ошибка фиксации овердрафта в журнале склада",
+			});
+		}
+	};
+
+	server.post<{ Params: { organizationId: string } }>(
+		"/:organizationId/overdraft-alert",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"inventory overdraft alert",
+			);
+			if (!resolvedOrgId) return;
+
+			const { organizationId } = request.params;
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
+
+			return handleOverdraftAlertRequest(organizationId, request.body, request, reply);
+		},
+	);
+
+	server.post("/overdraft-alert", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory overdraft alert",
+		);
+		if (!resolvedOrgId) return;
+
+		const body = (request.body as { organizationId?: string } | undefined) ?? {};
+		const targetOrgId = body.organizationId || resolvedOrgId;
+		if (targetOrgId !== resolvedOrgId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handleOverdraftAlertRequest(targetOrgId, request.body, request, reply);
+	});
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// POST /:organizationId/storno — Автоматическое сторно при отмене услуг (Мандаты 8e, 8n)

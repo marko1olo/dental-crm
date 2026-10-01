@@ -177,50 +177,103 @@ export const InventoryInboundInvoiceModal: React.FC<InventoryInboundInvoiceModal
 				: { "Content-Type": "application/json" };
 
 			let updatedCount = 0;
+			let waybillSucceeded = false;
 
-			// Оприходование каждой позиции на складе
-			for (const line of lines) {
-				let targetItemId = line.inventoryItemId;
+			// 1. Попытка атомарного оприходования через промышленный шлюз acceptance-waybill (Мандаты 8e, 8n)
+			try {
+				const waybillPayload = {
+					supplierName: supplierName.trim() || "Основной поставщик",
+					supplierInn: null,
+					waybillNumber: invoiceNumber.trim() || `ПН-${Date.now().toString().slice(-6)}`,
+					receiptDate: invoiceDate || new Date().toISOString().slice(0, 10),
+					items: lines.map((line) => ({
+						inventoryItemId: line.inventoryItemId || undefined,
+						name: line.name.trim(),
+						category: "Расходные материалы",
+						unit: line.unit || "шт",
+						batchNumber:
+							line.lotNumber?.trim() ||
+							`П-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}`,
+						lotNumber: line.lotNumber?.trim() || undefined,
+						expirationDate: line.expirationDate?.trim() || "2029-12-31",
+						quantity: Number(line.quantity),
+						purchasePricePerUnit: Number(line.unitCostRub || 0),
+					})),
+				};
 
-				// Если ID нет, ищем по имени среди существующих позиций
-				if (!targetItemId) {
-					const found = inventoryItems.find(
-						(it) => it.name.trim().toLowerCase() === line.name.trim().toLowerCase(),
-					);
-					if (found) {
-						targetItemId = found.id;
-					}
-				}
-
-				if (targetItemId) {
-					// Пополнение существующего остатка
-					const res = await fetch(`/api/inventory/${organizationId}/${targetItemId}/stock`, {
-						method: "PATCH",
-						headers,
-						body: JSON.stringify({
-							adjustment: line.quantity,
-							allowOverdraft: true,
-							reason: `Приходная накладная ${invoiceNumber} от ${supplierName} (партия ${line.lotNumber}, годен до ${line.expirationDate})`,
-						}),
-					});
-					if (res.ok) updatedCount++;
-				} else {
-					// Создание новой номенклатурной единицы на складе
-					const res = await fetch(`/api/inventory/${organizationId}/items`, {
+				const waybillRes = await fetch(
+					`/api/inventory/${organizationId}/acceptance-waybill`,
+					{
 						method: "POST",
 						headers,
-						body: JSON.stringify({
-							name: line.name,
-							stockQuantity: line.quantity,
-							unit: line.unit,
-							unitCostRub: String(line.unitCostRub),
-							lotNumber: line.lotNumber,
-							expirationDate: line.expirationDate,
-							threshold: 5,
-							allowOverdraft: true,
-						}),
-					});
-					if (res.ok) updatedCount++;
+						body: JSON.stringify(waybillPayload),
+					},
+				);
+
+				if (waybillRes.ok) {
+					waybillSucceeded = true;
+					updatedCount = lines.length;
+				}
+			} catch (wbErr) {
+				console.warn(
+					"[InventoryInboundInvoiceModal] Не удалось оприходовать через acceptance-waybill, откат к построчному режиму:",
+					wbErr,
+				);
+			}
+
+			// 2. Резервный построчный контур при отсутствии acceptance-waybill
+			if (!waybillSucceeded) {
+				for (const line of lines) {
+					let targetItemId = line.inventoryItemId;
+
+					// Если ID нет, ищем по имени среди существующих позиций
+					if (!targetItemId) {
+						const found = inventoryItems.find(
+							(it) =>
+								it.name.trim().toLowerCase() === line.name.trim().toLowerCase(),
+						);
+						if (found) {
+							targetItemId = found.id;
+						}
+					}
+
+					if (targetItemId) {
+						// Пополнение существующего остатка с фиксацией партии и срока FEFO
+						const res = await fetch(
+							`/api/inventory/${organizationId}/${targetItemId}/stock`,
+							{
+								method: "PATCH",
+								headers,
+								body: JSON.stringify({
+									adjustment: line.quantity,
+									allowOverdraft: true,
+									lotNumber: line.lotNumber || undefined,
+									batchNumber: line.lotNumber || undefined,
+									expirationDate: line.expirationDate || undefined,
+									purchasePricePerUnit: line.unitCostRub || undefined,
+									reason: `Приходная накладная ${invoiceNumber} от ${supplierName} (партия ${line.lotNumber}, годен до ${line.expirationDate})`,
+								}),
+							},
+						);
+						if (res.ok) updatedCount++;
+					} else {
+						// Создание новой номенклатурной единицы на складе
+						const res = await fetch(`/api/inventory/${organizationId}/items`, {
+							method: "POST",
+							headers,
+							body: JSON.stringify({
+								name: line.name,
+								stockQuantity: line.quantity,
+								unit: line.unit,
+								unitCostRub: String(line.unitCostRub),
+								lotNumber: line.lotNumber,
+								expirationDate: line.expirationDate,
+								threshold: 0,
+								allowOverdraft: true,
+							}),
+						});
+						if (res.ok) updatedCount++;
+					}
 				}
 			}
 
