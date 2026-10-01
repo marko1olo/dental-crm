@@ -173,6 +173,20 @@ describe("order804nFiscalEngine — 54-FZ & SBP QR Fiscalization", () => {
 		});
 		assert.equal(alloc4.isFullyAllocated, false);
 		assert.equal(alloc4.isOverallocated, true);
+
+		// Case 5: Family wallet balance included in advance offset (54-FZ Tag 1215)
+		const alloc5 = calculateSplitPaymentAllocation(totalKopecks, {
+			cashRub: 14000,
+			cardRub: 30000,
+			sbpRub: 40000,
+			depositRub: 5000,
+			familyWalletRub: 5000,
+		});
+		assert.equal(alloc5.isFullyAllocated, true);
+		assert.equal(alloc5.depositRub, 5000);
+		assert.equal(alloc5.familyWalletRub, 5000);
+		assert.equal(alloc5.advanceOffsetRub, 10000);
+		assert.equal(alloc5.advanceOffsetKopecks, 1000000);
 	});
 
 	it("generates valid NSPK SBP dynamic QR payload with CRC16 checksum", () => {

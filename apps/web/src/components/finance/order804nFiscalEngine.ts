@@ -710,8 +710,8 @@ export function calculateSplitPaymentAllocation(
 	const patientCoPayKopecks = Math.max(0, totalKopecks - insuranceKopecks) as Kopecks;
 
 	// В 54-ФЗ (ФФД 1.2): Списание с депозита/аванса фискализируется в Тег 1215 (Зачет аванса).
-	// Подарочные сертификаты также являются зачетом аванса (Тег 1215), внесенного при их покупке.
-	const advanceOffsetKopecks = (depositKopecks + certificateKopecks) as Kopecks;
+	// Подарочные сертификаты и семейный баланс также являются зачетом аванса (Тег 1215), внесенного при их покупке/пополнении.
+	const advanceOffsetKopecks = (depositKopecks + familyWalletKopecks + certificateKopecks) as Kopecks;
 	const advanceOffsetRub = kopecksToRubles(advanceOffsetKopecks);
 
 	return {
@@ -860,8 +860,8 @@ export function generateFiscalReceipt54Fz(params: {
 		cashierFullName = "Кассир-администратор",
 		cashierInn,
 		clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-		clinicInn = "",
-		clinicAddress = "",
+		clinicInn = "7707083893",
+		clinicAddress = "г. Москва, ул. Профсоюзная, д. 42",
 		taxationSystem = "usn_income",
 		customReceiptNumber,
 		shiftNumber = 42,
@@ -1266,9 +1266,9 @@ export function generateShiftCloseZReport54Fz(params: {
 		cashierFullName = "Сидорова Анна Павловна",
 		cashierInn = "771234567890",
 		clinicLegalName = "ООО «ДЕНТЕ КЛИНИКА»",
-		clinicInn = "",
-		clinicKpp = "",
-		clinicAddress = "",
+		clinicInn = "7707083893",
+		clinicKpp = "770101001",
+		clinicAddress = "г. Москва, ул. Профсоюзная, д. 42",
 		kktRegNumber = "0004589210034821",
 		kktSerialNumber = "0184920042",
 		fnSerial = "9960440301234567",

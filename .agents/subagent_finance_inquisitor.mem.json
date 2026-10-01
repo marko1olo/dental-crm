@@ -1,0 +1,59 @@
+{
+  "role": "FINANCE, DUAL-PAYMENT & FISCAL 54-ФЗ INQUISITOR",
+  "status": "completed",
+  "completed_steps": [
+    "mandatory_reading_core_engineering_agents_gemini",
+    "audit_order804nFiscalEngine",
+    "audit_dual_payment_mixed_tender",
+    "audit_advance_clearance_and_deposits",
+    "audit_discounts_and_kopek_distribution",
+    "audit_act_preview_and_tax_deduction_knd1151156",
+    "audit_button_handlers_and_unhandled_rejections",
+    "run_targeted_finance_tests",
+    "fix_defects",
+    "verify_and_report"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "id": "DEFECT-FIN-01",
+      "file": "apps/web/src/components/finance/order804nFiscalEngine.ts",
+      "description": "familyWalletKopecks was excluded from advanceOffsetKopecks (Tag 1215) in calculateSplitPaymentAllocation, causing family wallet balances not to be counted as advance offset.",
+      "resolution": "Included familyWalletKopecks in advanceOffsetKopecks and added comprehensive test case 5."
+    },
+    {
+      "id": "DEFECT-FIN-02",
+      "file": "apps/web/src/components/finance/PatientBillingModal.tsx",
+      "description": "PatientBillingModal hardcoded blank clinic requisites in actParams and omitted inn in patient prop interface, rendering empty clinic details on A4 act preview and blank patient INN in tax modal.",
+      "resolution": "Added patient.inn and clinic requisites props to PatientBillingModal, resolved via clinicProfile with canonical fallbacks (Mandate 8n), forwarded patient.inn and requisites to TaxDeductionCertificateModal."
+    },
+    {
+      "id": "DEFECT-FIN-03",
+      "file": "apps/web/src/components/finance/PatientBillingActPreview.tsx",
+      "description": "Act preview header displayed blank 'ИНН:  / КПП: ' and empty address when requisites were not provided.",
+      "resolution": "Provided graceful fallback formatting so preview displays valid clinic requisites."
+    },
+    {
+      "id": "DEFECT-FIN-04",
+      "file": "apps/web/src/components/finance/TaxDeductionCertificateModal.tsx",
+      "description": "TaxDeductionCertificateModal had empty default clinic requisites and used raw window.print() which printed the entire CRM viewport.",
+      "resolution": "Added fallback resolution via appLogic.clinic and canonical defaults, replaced raw window.print() with hardwarePrinter.printHtmlWithPopupFallback in handlePrint, handlePrintBatch, and handlePrintBlank."
+    },
+    {
+      "id": "DEFECT-FIN-05",
+      "file": "apps/web/src/components/finance/modal/fiscal/FiscalReceiptFooter.tsx, FiscalActTab.tsx, FiscalCertificateTab.tsx, useFiscalRefundAndAuxTabs.ts",
+      "description": "Print buttons for Act (804n) and Tax Certificate (KND 1151156) called raw window.print() printing the viewport modal instead of standalone A4 documents.",
+      "resolution": "Implemented handlePrintAct and handlePrintTaxCertificate using generateCompletedActAndWarrantyHtml, renderOfficialTaxCertificateKnd1151156Html, and hardwarePrinter.printHtmlWithPopupFallback."
+    }
+  ],
+  "tests_passed": [
+    "order804nFiscalEngine.test.ts (17/17)",
+    "mixedFiscalReceiptWeb.test.ts (7/7)",
+    "taxDeductionCertificateAutonomy.test.tsx (4/4)",
+    "cashShiftAutonomyAndFiscal54Fz.test.tsx (14/14)",
+    "wave118FakeInnAndPhonePurification.test.ts (16/16)",
+    "invoiceEngine.test.ts (3/3)",
+    "expressFiscalRefundAutonomy.test.ts (11/11)",
+    "cashShiftAndFamilyWallet.test.ts (8/8)"
+  ]
+}

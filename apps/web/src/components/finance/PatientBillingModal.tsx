@@ -35,6 +35,7 @@ import { RefundServiceModal } from "./refunds/RefundServiceModal";
 import { TaxDeductionCertificateModal } from "./TaxDeductionCertificateModal";
 import type { TaxDeductionPaymentItem } from "@dental/shared";
 import { useModalA11y } from "../../hooks/useModalA11y";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
 import { PatientBillingDiscountsToolbar } from "./PatientBillingDiscountsToolbar";
 import {
@@ -68,6 +69,7 @@ export interface PatientBillingModalProps {
 		readonly medicalCardNumber?: string | null | undefined;
 		readonly depositRub?: number | undefined;
 		readonly familyBalanceRub?: number | undefined;
+		readonly inn?: string | null | undefined;
 	} | null | undefined;
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
@@ -75,8 +77,16 @@ export interface PatientBillingModalProps {
 		readonly fullName?: string | null | undefined;
 		readonly specialty?: string | null | undefined;
 	} | null | undefined;
+	readonly clinicName?: string | undefined;
 	readonly clinicLegalName?: string | undefined;
+	readonly clinicInn?: string | undefined;
+	readonly clinicKpp?: string | undefined;
+	readonly clinicOgrn?: string | undefined;
 	readonly clinicLicenseNumber?: string | undefined;
+	readonly clinicLicenseDate?: string | undefined;
+	readonly clinicAddress?: string | undefined;
+	readonly clinicPhone?: string | undefined;
+	readonly chiefDoctorName?: string | undefined;
 	readonly initialServices?: readonly InvoiceServiceItem[] | undefined;
 	readonly contractNumber?: string | undefined;
 	readonly contractDateIso?: string | undefined;
@@ -93,8 +103,16 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	patientDepositRub = 0,
 	patientFamilyBalanceRub = 0,
 	doctor,
-	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	clinicLicenseNumber = "ЛО41-01137-77/00368421",
+	clinicName: propClinicName,
+	clinicLegalName: propClinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+	clinicInn: propClinicInn,
+	clinicKpp: propClinicKpp,
+	clinicOgrn: propClinicOgrn,
+	clinicLicenseNumber: propClinicLicenseNumber = "ЛО41-01137-77/00368421",
+	clinicLicenseDate: propClinicLicenseDate,
+	clinicAddress: propClinicAddress,
+	clinicPhone: propClinicPhone,
+	chiefDoctorName: propChiefDoctorName,
 	initialServices = [],
 	contractNumber = "Д-2026/089",
 	contractDateIso,
@@ -103,6 +121,19 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	activeTreatmentPlan,
 	onPayTreatmentPlanStage,
 }) => {
+	const appLogic = useOptionalAppLogicContext();
+	const clinicProfile = appLogic?.clinic;
+
+	const resolvedClinicName = propClinicName || clinicProfile?.clinicName || "Стоматологическая клиника ДЕНТЕ";
+	const resolvedLegalName = propClinicLegalName || clinicProfile?.legalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
+	const resolvedInn = propClinicInn || clinicProfile?.inn || "7707083893";
+	const resolvedKpp = propClinicKpp || clinicProfile?.kpp || "770101001";
+	const resolvedOgrn = propClinicOgrn || clinicProfile?.ogrn || "1027700132195";
+	const resolvedLicenseNumber = propClinicLicenseNumber || clinicProfile?.medicalLicenseNumber || "ЛО41-01137-77/00368421";
+	const resolvedLicenseDate = propClinicLicenseDate || clinicProfile?.medicalLicenseIssuedAt || "12.10.2021";
+	const resolvedAddress = propClinicAddress || clinicProfile?.address || "г. Москва, ул. Профсоюзная, д. 42";
+	const resolvedPhone = propClinicPhone || clinicProfile?.phone || "+7 (495) 789-01-23";
+	const resolvedChiefDoctor = propChiefDoctorName || (clinicProfile as { chiefDoctorName?: string } | undefined)?.chiefDoctorName || "Смирнов Александр Владимирович";
 	const [activeTab, setActiveTab] = useState<"preview" | "friendly" | "details">("friendly");
 	const [selectedTender, setSelectedTender] = useState<PatientBillingPaymentMethod>("card");
 	const [receivedCashRub, setReceivedCashRub] = useState<number>(0);
@@ -327,16 +358,16 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 			contractDateIso: contractDateIso || new Date().toISOString(),
 			actDateIso: new Date().toISOString(),
 			clinic: {
-				name: "Стоматологическая клиника ДЕНТЕ",
-				legalName: clinicLegalName || "",
-				inn: "",
-				kpp: "",
-				ogrn: "",
-				licenseNumber: clinicLicenseNumber || "",
-				licenseDate: "12.10.2021",
-				address: "",
-				phone: "",
-				chiefDoctorName: "",
+				name: resolvedClinicName,
+				legalName: resolvedLegalName,
+				inn: resolvedInn,
+				kpp: resolvedKpp,
+				ogrn: resolvedOgrn,
+				licenseNumber: resolvedLicenseNumber,
+				licenseDate: resolvedLicenseDate,
+				address: resolvedAddress,
+				phone: resolvedPhone,
+				chiefDoctorName: resolvedChiefDoctor,
 			},
 			patient: {
 				id: patient?.id,
@@ -353,7 +384,24 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 			},
 			items: services,
 		};
-	}, [actNumber, contractNumber, contractDateIso, clinicLegalName, clinicLicenseNumber, patient, doctor, services]);
+	}, [
+		actNumber,
+		contractNumber,
+		contractDateIso,
+		resolvedClinicName,
+		resolvedLegalName,
+		resolvedInn,
+		resolvedKpp,
+		resolvedOgrn,
+		resolvedLicenseNumber,
+		resolvedLicenseDate,
+		resolvedAddress,
+		resolvedPhone,
+		resolvedChiefDoctor,
+		patient,
+		doctor,
+		services,
+	]);
 
 	const summary = useMemo(() => compileCompletedWorksAct(actParams), [actParams]);
 	const printableHtml = useMemo(() => generateCompletedActAndWarrantyHtml(actParams), [actParams]);
@@ -487,9 +535,15 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				onClose={() => setIsTaxModalOpen(false)}
 				patientName={patient?.fullName || "Пациент"}
 				patientBirthDate={patient?.birthDate || undefined}
-				patientInn=""
-				clinicName={clinicLegalName}
-				clinicLicenseNumber={clinicLicenseNumber}
+				patientInn={patient?.inn || ""}
+				clinicName={resolvedLegalName}
+				clinicInn={resolvedInn}
+				clinicKpp={resolvedKpp}
+				clinicOgrn={resolvedOgrn}
+				clinicLicenseNumber={resolvedLicenseNumber}
+				clinicLicenseDate={resolvedLicenseDate}
+				clinicAddress={resolvedAddress}
+				chiefDoctorName={resolvedChiefDoctor}
 				payments={
 					fiscalPayments && fiscalPayments.length > 0
 						? fiscalPayments

@@ -157,6 +157,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = (pr
 							activeItems={itemsHook.activeItems}
 							totalSumRub={itemsHook.totalSumRub}
 							handleCopyActData={auxHook.handleCopyActData}
+							handlePrintAct={auxHook.handlePrintAct}
 						/>
 					)}
 
@@ -172,6 +173,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = (pr
 							taxYear={auxHook.taxYear}
 							setTaxYear={auxHook.setTaxYear}
 							handleCopyCertData={auxHook.handleCopyCertData}
+							handlePrintCertificate={auxHook.handlePrintTaxCertificate}
 						/>
 					)}
 
@@ -207,6 +209,8 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = (pr
 					cashierFullName={props.cashierFullName || "Кассир"}
 					handleCopyActData={auxHook.handleCopyActData}
 					handleCopyCertData={auxHook.handleCopyCertData}
+					handlePrintAct={auxHook.handlePrintAct}
+					handlePrintCertificate={auxHook.handlePrintTaxCertificate}
 					refundFiscalData={auxHook.refundFiscalData}
 					fiscalReceipt={auxHook.fiscalReceipt}
 				/>

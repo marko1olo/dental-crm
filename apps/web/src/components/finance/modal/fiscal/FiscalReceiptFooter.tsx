@@ -33,9 +33,10 @@ export interface FiscalReceiptFooterProps {
 	oneCPatientAddress: string;
 	cashierFullName: string;
 	handleCopyActData: () => void;
-	handleCopyCertData: () => void;
 	refundFiscalData: { totalRub: number };
 	fiscalReceipt: FiscalReceipt54FzResult;
+	handlePrintAct?: () => void;
+	handlePrintCertificate?: () => void;
 }
 
 export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
@@ -65,6 +66,8 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 	cashierFullName,
 	handleCopyActData,
 	handleCopyCertData,
+	handlePrintAct,
+	handlePrintCertificate,
 	refundFiscalData,
 	fiscalReceipt,
 }) => {
@@ -219,7 +222,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						</button>
 						<button
 							type="button"
-							onClick={() => window.print()}
+							onClick={handlePrintAct || (() => window.print())}
 							className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--ok-fg,#059669)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
 						>
 							<Printer size={15} />
@@ -249,7 +252,7 @@ export const FiscalReceiptFooter: React.FC<FiscalReceiptFooterProps> = ({
 						</button>
 						<button
 							type="button"
-							onClick={() => window.print()}
+							onClick={handlePrintCertificate || (() => window.print())}
 							className="h-9 px-5 rounded-xl font-bold text-xs bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-1.5 cursor-pointer transition-colors shadow-md"
 						>
 							<Printer size={15} />

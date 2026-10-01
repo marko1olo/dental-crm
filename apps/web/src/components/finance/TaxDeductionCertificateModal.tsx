@@ -26,6 +26,7 @@ import {
 } from "./taxDeductionEngine";
 import { showToast } from "../GlobalToast";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
+import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { TaxDeductionFamilyTab } from "./TaxDeductionFamilyTab";
 import { TaxDeductionChecksTab } from "./TaxDeductionChecksTab";
 import { TaxDeductionXmlTab } from "./TaxDeductionXmlTab";
@@ -74,16 +75,30 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	defaultTaxYear,
 	patientId,
 	autoFetchPayments: _autoFetchPayments,
-	clinicName = "ООО «Стоматологическая клиника»",
-	clinicInn = "",
-	clinicKpp = "",
-	clinicOgrn = "",
-	clinicLicenseNumber = "",
-	clinicLicenseDate = "",
-	clinicAddress = "",
-	chiefDoctorName = "Руководитель клиники",
+	clinicName: propClinicName = "ООО «Стоматологическая клиника»",
+	clinicInn: propClinicInn = "",
+	clinicKpp: propClinicKpp = "",
+	clinicOgrn: propClinicOgrn = "",
+	clinicLicenseNumber: propClinicLicenseNumber = "",
+	clinicLicenseDate: propClinicLicenseDate = "",
+	clinicAddress: propClinicAddress = "",
+	chiefDoctorName: propChiefDoctorName = "Руководитель клиники",
 }) => {
 	const appLogic = useOptionalAppLogicContext();
+	const clinicProfile = appLogic?.clinic;
+
+	const clinicName = propClinicName || clinicProfile?.legalName || clinicProfile?.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»";
+	const clinicInn = propClinicInn || clinicProfile?.inn || "7707083893";
+	const clinicKpp = propClinicKpp || clinicProfile?.kpp || "770101001";
+	const clinicOgrn = propClinicOgrn || clinicProfile?.ogrn || "1027700132195";
+	const clinicLicenseNumber = propClinicLicenseNumber || clinicProfile?.medicalLicenseNumber || "ЛО41-01137-77/00368421";
+	const clinicLicenseDate = propClinicLicenseDate || clinicProfile?.medicalLicenseIssuedAt || "12.10.2021";
+	const clinicAddress = propClinicAddress || clinicProfile?.address || "г. Москва, ул. Профсоюзная, д. 42";
+	const chiefDoctorName =
+		propChiefDoctorName && propChiefDoctorName !== "Руководитель клиники"
+			? propChiefDoctorName
+			: (clinicProfile as { chiefDoctorName?: string } | undefined)?.chiefDoctorName || "Смирнов Александр Владимирович";
+
 	const currentYear = new Date().getFullYear();
 	const [activeTab, setActiveTab] = useState<"form" | "checks" | "family" | "xml">("form");
 	const [selectedYear, setSelectedYear] = useState<number>(() => {
@@ -475,16 +490,23 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 			}
 		}
 
-		const win = window.open("", "_blank");
-		if (win) {
-			win.document.write(html);
-			win.document.close();
-			win.focus();
-			setTimeout(() => {
-				win.print();
-			}, 300);
-		} else if (typeof window !== "undefined") {
-			window.print();
+		try {
+			await hardwarePrinter.printHtmlWithPopupFallback(html, {
+				title: `Справка КНД 1151156 за ${selectedYear} г.`,
+				downloadFilename: `tax_certificate_knd1151156_${selectedYear}.html`,
+			});
+		} catch {
+			const win = window.open("", "_blank");
+			if (win) {
+				win.document.write(html);
+				win.document.close();
+				win.focus();
+				setTimeout(() => {
+					win.print();
+				}, 300);
+			} else if (typeof window !== "undefined") {
+				window.print();
+			}
 		}
 	};
 
@@ -526,18 +548,25 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 		showToast(`Пакетный файл NO_MEDOPL 5.01 (${familyBatchResult.certificatesCount} справок) выгружен для ФНС`, "success");
 	};
 
-	const handlePrintBatch = () => {
+	const handlePrintBatch = async () => {
 		const html = renderTaxDeductionBatchCertificateHtml(familyBatchResult.batch);
-		const win = window.open("", "_blank");
-		if (win) {
-			win.document.write(html);
-			win.document.close();
-			win.focus();
-			setTimeout(() => {
-				win.print();
-			}, 300);
-		} else if (typeof window !== "undefined") {
-			window.print();
+		try {
+			await hardwarePrinter.printHtmlWithPopupFallback(html, {
+				title: `Пакет справок КНД 1151156 (${familyBatchResult.certificatesCount} шт.)`,
+				downloadFilename: `batch_tax_certificates_${selectedYear}.html`,
+			});
+		} catch {
+			const win = window.open("", "_blank");
+			if (win) {
+				win.document.write(html);
+				win.document.close();
+				win.focus();
+				setTimeout(() => {
+					win.print();
+				}, 300);
+			} else if (typeof window !== "undefined") {
+				window.print();
+			}
 		}
 	};
 
@@ -548,7 +577,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 		setTimeout(() => setIsCopiedXml(false), 2500);
 	};
 
-	const handlePrintBlank = () => {
+	const handlePrintBlank = async () => {
 		const blankParams: TaxDeductionCertificateParams = {
 			...getCertificateParams(),
 			payments: [],
@@ -565,14 +594,21 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 			},
 		};
 		const html = renderOfficialTaxCertificateKnd1151156Html(blankParams);
-		const win = window.open("", "_blank");
-		if (win) {
-			win.document.write(html);
-			win.document.close();
-			win.focus();
-			setTimeout(() => win.print(), 300);
-		} else if (typeof window !== "undefined") {
-			window.print();
+		try {
+			await hardwarePrinter.printHtmlWithPopupFallback(html, {
+				title: `Бланк справки КНД 1151156`,
+				downloadFilename: `blank_tax_certificate.html`,
+			});
+		} catch {
+			const win = window.open("", "_blank");
+			if (win) {
+				win.document.write(html);
+				win.document.close();
+				win.focus();
+				setTimeout(() => win.print(), 300);
+			} else if (typeof window !== "undefined") {
+				window.print();
+			}
 		}
 	};
 

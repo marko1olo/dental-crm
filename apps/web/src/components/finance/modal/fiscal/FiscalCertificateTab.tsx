@@ -17,6 +17,7 @@ export interface FiscalCertificateTabProps {
 	readonly taxYear: number;
 	readonly setTaxYear: (v: number) => void;
 	readonly handleCopyCertData: () => void;
+	readonly handlePrintCertificate?: (() => void) | undefined;
 }
 
 export const FiscalCertificateTab: React.FC<FiscalCertificateTabProps> = ({
@@ -30,6 +31,7 @@ export const FiscalCertificateTab: React.FC<FiscalCertificateTabProps> = ({
 	taxYear,
 	setTaxYear,
 	handleCopyCertData,
+	handlePrintCertificate,
 }) => {
 	return (
 		<div className="space-y-6">
@@ -162,7 +164,7 @@ export const FiscalCertificateTab: React.FC<FiscalCertificateTabProps> = ({
 				</button>
 				<button
 					type="button"
-					onClick={() => window.print()}
+					onClick={handlePrintCertificate || (() => window.print())}
 					className="min-h-[48px] px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[var(--brand-primary,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
 				>
 					<Printer size={16} />

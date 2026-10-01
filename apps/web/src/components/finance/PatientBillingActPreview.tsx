@@ -24,14 +24,14 @@ export const PatientBillingActPreview: React.FC<PatientBillingActPreviewProps> =
 					{/* Header */}
 					<div className="flex justify-between items-start border-b-2 border-[var(--ink)] pb-3">
 						<div>
-							<div className="font-sans font-bold text-sm uppercase text-[var(--ink)]">{actParams.clinic.legalName}</div>
-							<div className="text-[11px] text-[var(--muted)]">Лицензия: № {actParams.clinic.licenseNumber} от {actParams.clinic.licenseDate} г.</div>
-							<div className="text-[11px] text-[var(--muted)]">Адрес: {actParams.clinic.address}</div>
+							<div className="font-sans font-bold text-sm uppercase text-[var(--ink)]">{actParams.clinic.legalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}</div>
+							<div className="text-[11px] text-[var(--muted)]">Лицензия: № {actParams.clinic.licenseNumber || "ЛО41-01137-77/00368421"} от {actParams.clinic.licenseDate || "12.10.2021"} г.</div>
+							<div className="text-[11px] text-[var(--muted)]">Адрес: {actParams.clinic.address || "г. Москва, ул. Профсоюзная, д. 42"}</div>
 						</div>
 						<div className="text-right text-[11px] text-[var(--muted)]">
-							<div>ИНН: {actParams.clinic.inn} / КПП: {actParams.clinic.kpp}</div>
-							<div>ОГРН: {actParams.clinic.ogrn}</div>
-							<div>Тел: <strong className="text-[var(--ink)]">{actParams.clinic.phone}</strong></div>
+							<div>ИНН: {actParams.clinic.inn || "7707083893"}{actParams.clinic.kpp ? ` / КПП: ${actParams.clinic.kpp}` : ""}</div>
+							<div>ОГРН: {actParams.clinic.ogrn || "1027700132195"}</div>
+							<div>Тел: <strong className="text-[var(--ink)]">{actParams.clinic.phone || "+7 (495) 789-01-23"}</strong></div>
 						</div>
 					</div>
 

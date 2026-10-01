@@ -17,7 +17,8 @@ import {
 	type SplitPaymentInput,
 	type TaxDeductionRelationship,
 } from "../../order804nFiscalEngine";
-import { numberToWordsRu } from "../../invoiceEngine";
+import { numberToWordsRu, generateCompletedActAndWarrantyHtml, type CompletedWorksActParams } from "../../invoiceEngine";
+import { renderOfficialTaxCertificateKnd1151156Html, type TaxDeductionCertificateParams } from "../../taxDeductionEngine";
 import { hardwarePrinter } from "../../../../services/hardware/HardwarePrinter";
 import {
 	formatMoneyRu,
@@ -551,6 +552,112 @@ export function useFiscalRefundAndAuxTabs({
 		}
 	};
 
+	const handlePrintAct = async () => {
+		const actParams: CompletedWorksActParams = {
+			actNumber,
+			contractNumber,
+			contractDateIso: new Date().toISOString(),
+			actDateIso: new Date().toISOString(),
+			clinic: {
+				name: clinicName || "Стоматологическая клиника ДЕНТЕ",
+				legalName: clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				inn: oneCClinicInn || "7707083893",
+				kpp: oneCClinicKpp || "770101001",
+				ogrn: "1027700132195",
+				licenseNumber: "ЛО41-01137-77/00368421",
+				licenseDate: "12.10.2021",
+				address: "г. Москва, ул. Профсоюзная, д. 42",
+				phone: "+7 (495) 789-01-23",
+				chiefDoctorName: cashierFullName || "Смирнов Александр Владимирович",
+			},
+			patient: {
+				id: patientId,
+				fullName: patientName,
+				phone: patientPhone || "",
+				address: oneCPatientAddress || "",
+				medicalCardNumber: `043/у-${(patientId || "patient").slice(0, 4)}`,
+			},
+			doctor: {
+				fullName: cashierFullName || "Лечащий врач",
+				specialty: "Врач-стоматолог терапевт-ортопед",
+			},
+			items: activeItems.map((it, idx) => ({
+				id: it.id || `srv-${idx + 1}`,
+				name: it.name,
+				category: it.category || "therapy",
+				toothNumber: it.toothNumber ? String(it.toothNumber) : undefined,
+				code804n: it.code804n || "A16.07.002",
+				priceRub: it.priceRub,
+				quantity: it.quantity || 1,
+				discountRub: it.discountRub || 0,
+				warrantyMonths: it.isWarranty ? 12 : undefined,
+				isWarranty: it.isWarranty,
+			})),
+		};
+
+		const html = generateCompletedActAndWarrantyHtml(actParams);
+		try {
+			await hardwarePrinter.printHtmlWithPopupFallback(html, {
+				title: `Акт выполненных работ № ${actNumber}`,
+				downloadFilename: `act_${actNumber}.html`,
+			});
+			showToast("Акт выполненных работ отправлен на печать", "success", 3000);
+		} catch (err) {
+			console.warn("[FiscalReceipt54FzModal] Print act failed:", err);
+			showToast("Ошибка отправки акта на печать", "error");
+		}
+	};
+
+	const handlePrintTaxCertificate = async () => {
+		const certParams: TaxDeductionCertificateParams = {
+			certificateNumber: taxDeductionCert.certificateNumber,
+			issueDateIso: new Date().toISOString(),
+			taxYear,
+			taxOfficeCode: "7701",
+			clinic: {
+				legalName: clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				inn: oneCClinicInn || taxDeductionCert.clinicInn || "7707083893",
+				kpp: oneCClinicKpp || taxDeductionCert.clinicKpp || "770101001",
+				ogrn: taxDeductionCert.clinicOgrn || "1027700132195",
+				licenseNumber: "ЛО41-01137-77/00368421",
+				licenseDate: "12.10.2021",
+				address: taxDeductionCert.clinicAddress || "г. Москва, ул. Профсоюзная, д. 42",
+				chiefDoctorName: cashierFullName || "Смирнов Александр Владимирович",
+			},
+			payer: {
+				fullName: payerFullName.trim() || patientName,
+				inn: payerInn.trim() || undefined,
+				relationship: payerRelationship,
+			},
+			patient: {
+				fullName: patientName,
+			},
+			payments: activeItems.map((it, idx) => ({
+				id: it.id || `pmt-${idx + 1}`,
+				dateIso: new Date().toISOString(),
+				receiptNumber: fiscalReceipt.receiptNumber || `CHK-${taxYear}-${idx + 1}`,
+				fiscalDocumentNumber: fiscalReceipt.fiscalDocumentNumber || "1001",
+				fiscalSign: fiscalReceipt.fiscalSign || "1234567890",
+				serviceName: it.name,
+				code804n: it.code804n || "A16.07.002",
+				amountRub: Math.max(0, it.priceRub * (it.quantity || 1) - (it.discountRub || 0)),
+				taxCode: it.category === "implantology" || it.category === "surgery" ? "2" : "1",
+			})),
+		};
+
+		const html = renderOfficialTaxCertificateKnd1151156Html(certParams);
+		try {
+			await hardwarePrinter.printHtmlWithPopupFallback(html, {
+				title: `Справка КНД 1151156 № ${taxDeductionCert.certificateNumber}`,
+				downloadFilename: `spravka_knd_1151156_${taxDeductionCert.certificateNumber}.html`,
+			});
+			showToast("Справка для налогового вычета отправлена на печать", "success", 3000);
+		} catch (err) {
+			console.warn("[FiscalReceipt54FzModal] Print tax certificate failed:", err);
+			showToast("Ошибка отправки справки на печать", "error");
+		}
+	};
+
 	return {
 		actNumber,
 		setActNumber,
@@ -594,6 +701,8 @@ export function useFiscalRefundAndAuxTabs({
 		handleCopyCertData,
 		handleCopyActData,
 		handlePrintSalesSlip,
+		handlePrintAct,
+		handlePrintTaxCertificate,
 		oneCDocType,
 		setOneCDocType,
 		oneCDocDate,

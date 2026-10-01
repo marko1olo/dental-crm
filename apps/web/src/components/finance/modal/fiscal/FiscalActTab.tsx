@@ -16,6 +16,7 @@ export interface FiscalActTabProps {
 	readonly activeItems: readonly TreatmentPlanItem[];
 	readonly totalSumRub: number;
 	readonly handleCopyActData: () => void;
+	readonly handlePrintAct?: (() => void) | undefined;
 }
 
 export const FiscalActTab: React.FC<FiscalActTabProps> = ({
@@ -30,6 +31,7 @@ export const FiscalActTab: React.FC<FiscalActTabProps> = ({
 	activeItems,
 	totalSumRub,
 	handleCopyActData,
+	handlePrintAct,
 }) => {
 	return (
 		<div className="space-y-6">
@@ -194,7 +196,7 @@ export const FiscalActTab: React.FC<FiscalActTabProps> = ({
 				</button>
 				<button
 					type="button"
-					onClick={() => window.print()}
+					onClick={handlePrintAct || (() => window.print())}
 					className="min-h-[48px] px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[var(--ok-fg,#059669)] text-[var(--on-teal,#ffffff)] hover:opacity-90 flex items-center gap-2 cursor-pointer transition-colors shadow-md"
 				>
 					<Printer size={16} />
