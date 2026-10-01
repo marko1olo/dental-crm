@@ -584,7 +584,7 @@ export function useFiscalRefundAndAuxTabs({
 			items: activeItems.map((it, idx) => ({
 				id: it.id || `srv-${idx + 1}`,
 				name: it.name,
-				category: it.category || "therapy",
+				category: (it.category as CompletedWorksActParams["items"][number]["category"]) || "therapy",
 				toothNumber: it.toothNumber ? String(it.toothNumber) : undefined,
 				code804n: it.code804n || "A16.07.002",
 				priceRub: it.priceRub,
@@ -627,7 +627,7 @@ export function useFiscalRefundAndAuxTabs({
 			payer: {
 				fullName: payerFullName.trim() || patientName,
 				inn: payerInn.trim() || undefined,
-				relationship: payerRelationship,
+				relationship: (payerRelationship === "self" ? "patient" : payerRelationship) as TaxDeductionCertificateParams["payer"]["relationship"],
 			},
 			patient: {
 				fullName: patientName,

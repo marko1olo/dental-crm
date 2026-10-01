@@ -494,8 +494,8 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				patientPhone={patient?.phone || ""}
 				patientDepositRub={patientDepositRub || patient?.depositRub || 0}
 				patientFamilyBalanceRub={patientFamilyBalanceRub || patient?.familyBalanceRub || 0}
-				clinicName={clinicLegalName}
-				clinicLicense={clinicLicenseNumber}
+				clinicName={propClinicLegalName}
+				clinicLicense={propClinicLicenseNumber}
 			/>
 		);
 	}
@@ -599,7 +599,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								</span>
 							</div>
 							<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 mt-0.5 leading-tight flex flex-wrap items-center gap-x-1.5">
-								<span className="whitespace-nowrap shrink-0">Лицензия&nbsp;№&nbsp;{clinicLicenseNumber}</span>
+								<span className="whitespace-nowrap shrink-0">Лицензия&nbsp;№&nbsp;{propClinicLicenseNumber}</span>
 								<span>•</span>
 								<span className="whitespace-nowrap shrink-0">Прейскурант услуг (Приказ МЗ РФ № 804н)</span>
 								<span>•</span>

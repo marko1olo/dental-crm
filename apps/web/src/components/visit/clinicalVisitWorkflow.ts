@@ -44,11 +44,13 @@ export interface ClinicalEstimateItem {
 }
 
 export interface ClinicalVisitCompletionInput {
-	readonly visitId: string;
+	readonly visitId?: string | undefined;
+	readonly appointmentId?: string | undefined;
 	readonly patientId: string;
-	readonly patientName: string;
+	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
-	readonly doctorName: string;
+	readonly doctorName?: string | undefined;
+	readonly doctorUserId?: string | undefined;
 	readonly doctorSpecialty?: string | undefined;
 	readonly clinicName?: string | undefined;
 	readonly diary: DiaryState | {
@@ -57,6 +59,7 @@ export interface ClinicalVisitCompletionInput {
 		readonly diagnosisIcd10?: string | null;
 		readonly diagnosisTooth?: string | null;
 		readonly treatmentDescription?: string | null;
+		readonly recommendations?: string | null | undefined;
 		readonly order804nServices?: readonly any[] | undefined;
 	};
 	readonly completedPlanItems?: readonly any[] | undefined;
@@ -544,12 +547,12 @@ export function completeClinicalVisitAndAssembleEstimate(
 			: `https://qr.nspk.ru/AD1000${randNum}?type=02&bank=100000000007&sum=${totalNetKop}&cur=RUB&crc=8192`;
 
 	return {
-		visitId: input.visitId,
+		visitId: input.visitId || input.appointmentId || "visit-default",
 		invoiceId,
 		receiptNumber,
 		patientId: input.patientId,
-		patientName: input.patientName,
-		doctorName: input.doctorName,
+		patientName: input.patientName || "Пациент",
+		doctorName: input.doctorName || "Лечащий врач",
 		totalGrossRub: totalGross,
 		totalDiscountRub: totalDiscount,
 		totalNetRub: totalNet,

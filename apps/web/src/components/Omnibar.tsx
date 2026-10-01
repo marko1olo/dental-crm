@@ -184,21 +184,29 @@ export function Omnibar() {
 		if (q.length < 2 || !dashboard?.patients || dashboard.patients.length === 0) {
 			return [];
 		}
-		return searchPatientsQuick(dashboard.patients, q, 5).map((res) => ({
-			id: `patient-${res.patient.id}`,
-			title: `${res.patient.fullName || "Пациент"}${res.patient.phone ? ` (${res.patient.phone})` : ""}${res.patient.cardNumber ? ` [Карта: ${res.patient.cardNumber}]` : ""}`,
-			icon: <Users className="text-[var(--teal)]" />,
-			category: "Пациенты (Медицинская карта 043/у)",
-			action: () => {
-				if (setActivePatientId && res.patient.id) {
-					setActivePatientId(res.patient.id);
-				}
-				setCurrentView("patients");
-				if (typeof window !== "undefined" && res.patient.id) {
-					window.location.hash = `/patients/${res.patient.id}`;
-				}
-			},
-		}));
+		return searchPatientsQuick(dashboard.patients, q, 5).map((res) => {
+			const patientWithCard = res.patient as unknown as {
+				cardNumber?: string | null | undefined;
+				chartNumber?: string | null | undefined;
+				medicalCardNumber?: string | null | undefined;
+			};
+			const cardNum = patientWithCard.cardNumber || patientWithCard.chartNumber || patientWithCard.medicalCardNumber;
+			return {
+				id: `patient-${res.patient.id}`,
+				title: `${res.patient.fullName || "Пациент"}${res.patient.phone ? ` (${res.patient.phone})` : ""}${cardNum ? ` [Карта: ${cardNum}]` : ""}`,
+				icon: <Users className="text-[var(--teal)]" />,
+				category: "Пациенты (Медицинская карта 043/у)",
+				action: () => {
+					if (setActivePatientId && res.patient.id) {
+						setActivePatientId(res.patient.id);
+					}
+					setCurrentView("patients");
+					if (typeof window !== "undefined" && res.patient.id) {
+						window.location.hash = `/patients/${res.patient.id}`;
+					}
+				},
+			};
+		});
 	}, [query, dashboard?.patients, setActivePatientId, setCurrentView]);
 
 	const filteredCommands = useMemo(() => {
