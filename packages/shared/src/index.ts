@@ -181,6 +181,7 @@ export * from "./anesthesia/index.js";
 export * from "./insurance/index.js";
 export * from "./messaging/index.js";
 export * from "./portal/index.js";
+export { DEFAULT_CATEGORY_COMMISSION_PERCENT } from "./finance/index.js";
 export * from "./doctor-portal/index.js";
 export * from "./crypto/index.js";
 export * from "./doctor/index.js";

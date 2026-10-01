@@ -14,6 +14,7 @@ import {
 	FileText,
 	KeyRound,
 	Lock,
+	Moon,
 	Phone,
 	RefreshCw,
 	Shield,
@@ -39,6 +40,12 @@ import {
 } from "@dental/shared";
 import { formatKopecksRu } from "@dental/shared";
 import { showToast } from "../GlobalToast";
+import {
+	DoctorShiftCloseModal,
+	type DoctorShiftCashSummary,
+	type DoctorShiftEmrSummary,
+} from "../shift/DoctorShiftCloseModal";
+import type { DoctorShiftStats } from "../shift/DoctorShiftControlBar";
 import "./doctorMobileShift.css";
 
 export interface DoctorMobileShiftModalProps {
@@ -51,6 +58,7 @@ export interface DoctorMobileShiftModalProps {
 	readonly initialAppointments?: readonly DoctorShiftAppointment[];
 	readonly onAppointmentUpdate?: (appointments: readonly DoctorShiftAppointment[]) => void;
 	readonly onEmergencyVisit?: () => void;
+	readonly onShiftClose?: () => void;
 }
 
 export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
@@ -63,6 +71,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 	initialAppointments = [],
 	onAppointmentUpdate,
 	onEmergencyVisit,
+	onShiftClose,
 }) => {
 	const [appointments, setAppointments] = useState<readonly DoctorShiftAppointment[]>(
 		initialAppointments,
@@ -71,6 +80,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 		"all" | "in_chair" | "waiting" | "completed" | "needs_sign"
 	>("all");
 	const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
+	const [isCloseModalOpen, setIsCloseModalOpen] = useState<boolean>(false);
 
 	// Batch PEP SMS Signing State
 	const [signingSession, setSigningSession] = useState<EmrBatchSigningSession | null>(null);
@@ -125,6 +135,39 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 			)
 			.map((apt) => apt.id);
 	}, [doctorAppointments]);
+
+	// Shift reconciliation stats for shift close modal & Form D-1
+	const shiftStats: DoctorShiftStats = useMemo(() => {
+		return {
+			totalAppointments: earnings.totalAppointmentsCount,
+			completedCount: earnings.completedAppointmentsCount,
+			inProgressCount: earnings.inChairAppointmentsCount,
+			totalRevenueRub: Math.round(earnings.grossRevenueKop / 100),
+			doctorCommissionPct: 25,
+			estimatedDoctorPayoutRub: Math.round(earnings.totalEarnedDealKop / 100),
+			hasActiveOvertime: new Date().getHours() >= 21,
+		};
+	}, [earnings]);
+
+	const emrSummary: DoctorShiftEmrSummary = useMemo(() => {
+		return {
+			signedCount: earnings.signedEmr043Count,
+			pendingSignatureCount: unsignedAppointmentIds.length,
+			draftCount: Math.max(
+				0,
+				earnings.totalAppointmentsCount -
+					earnings.signedEmr043Count -
+					unsignedAppointmentIds.length,
+			),
+		};
+	}, [earnings, unsignedAppointmentIds.length]);
+
+	const handleConfirmCloseShift = () => {
+		setIsCloseModalOpen(false);
+		showToast("Смена врача успешно закрыта. Акт сдачи-приемки сформирован.", "success");
+		onShiftClose?.();
+		onClose();
+	};
 
 	// SMS Countdown timer
 	useEffect(() => {
@@ -579,16 +622,16 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 															{srv.nameRu}
 														</div>
 														<div className="text-[10px] text-[var(--muted)]">
-															Код: {srv.code804n} • {srv.commissionPercent}% сделка
-															{srv.directLabZtlCostKop > 0 && ` • Вычет ЗТЛ: −${formatKopecksRu(srv.directLabZtlCostKop)}`}
+															Код: {srv.code804n} • {srv.commissionPercent ?? 25}% сделка
+															{(srv.directLabZtlCostKop ?? 0) > 0 && ` • Вычет ЗТЛ: −${formatKopecksRu(srv.directLabZtlCostKop!)}`}
 														</div>
 													</div>
 													<div className="text-right whitespace-nowrap">
 														<div className="font-bold text-[var(--ink)]">
-															{formatKopecksRu(srv.finalRevenueKop)}
+															{formatKopecksRu(srv.finalRevenueKop ?? srv.totalCostKop ?? 0)}
 														</div>
 														<div className="text-[10px] font-bold text-[var(--teal)]">
-															+{formatKopecksRu(srv.earnedDoctorPayoutKop)}
+															+{formatKopecksRu(srv.earnedDoctorPayoutKop ?? 0)}
 														</div>
 													</div>
 												</div>
@@ -682,6 +725,16 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 					<div className="flex items-center gap-2 font-bold text-[var(--ink)]">
 						<span>Карты: {earnings.signedEmr043Count} подписано</span>
 					</div>
+					<button
+						type="button"
+						onClick={() => setIsCloseModalOpen(true)}
+						className="min-h-[44px] px-3.5 py-2 rounded-xl font-bold text-xs bg-[var(--rose-fill,#e11d48)] hover:bg-[var(--rose,#f43f5e)] text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer ml-auto border border-rose-600/30"
+						data-testid="doctor-pwa-close-shift-btn"
+						aria-label="Закрыть смену врача"
+					>
+						<Moon size={14} />
+						<span>Закрыть смену</span>
+					</button>
 				</div>
 
 				{/* SMS Code Verification Drawer */}
@@ -771,6 +824,20 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 					</div>
 				)}
 			</div>
+
+			{/* Doctor Shift Close Reconciliation & Handover Screen */}
+			{isCloseModalOpen && (
+				<DoctorShiftCloseModal
+					isOpen={isCloseModalOpen}
+					onClose={() => setIsCloseModalOpen(false)}
+					onConfirmClose={handleConfirmCloseShift}
+					doctorFullName={initialDoctorName}
+					doctorSpecialtyRu={initialDoctorSpecialty}
+					shiftDateLabel={formattedShiftDate}
+					shiftStats={shiftStats}
+					emrSummary={emrSummary}
+				/>
+			)}
 		</div>
 	);
 };

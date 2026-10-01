@@ -110,8 +110,8 @@ export const doctorShiftServiceItemSchema = z.object({
 	finalRevenueKop: z.number().int().min(0),
 	directLabZtlCostKop: z.number().int().min(0).default(0),
 	directMaterialCostKop: z.number().int().min(0).default(0),
-	commissionPercent: z.number().min(0).max(100).default(25),
-	earnedDoctorPayoutKop: z.number().int().min(0).default(0),
+	commissionPercent: z.number().min(0).max(100).optional(),
+	earnedDoctorPayoutKop: z.number().int().min(0).optional(),
 });
 export type DoctorShiftServiceItem = z.infer<typeof doctorShiftServiceItemSchema>;
 
@@ -384,10 +384,10 @@ export const DEFAULT_CATEGORY_COMMISSION_PERCENT: Record<string, number> = {
 export function calculateServicePieceRateAccrual(
 	item: {
 		finalRevenueKop: Kopecks;
-		directLabZtlCostKop?: Kopecks;
-		directMaterialCostKop?: Kopecks;
-		commissionPercent?: number;
-		category?: string;
+		directLabZtlCostKop?: Kopecks | undefined;
+		directMaterialCostKop?: Kopecks | undefined;
+		commissionPercent?: number | undefined;
+		category?: string | undefined;
 	},
 	fallbackCommissionPct = 25,
 ): { dealBaseKop: Kopecks; earnedPayoutKop: Kopecks } {

@@ -72,6 +72,10 @@ describe("Doctor Shift Cockpit & Header Integration (THE HAMMER Standards)", () 
 
 		// 3. Batch 043/u signing action
 		assert.ok(html.includes('data-testid="sign-all-043u-btn"'));
+
+		// 4. Shift close reconciliation trigger
+		assert.ok(html.includes('data-testid="doctor-pwa-close-shift-btn"'));
+		assert.ok(html.includes("Закрыть смену"));
 	});
 
 	it("VisitTimer: safely protects against NaN and malformed timestamps", () => {

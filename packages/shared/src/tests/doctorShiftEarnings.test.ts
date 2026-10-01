@@ -142,4 +142,106 @@ describe("Chairside HUD Doctor Shift Earnings Engine (salary-view)", () => {
 		assert.equal(res.patientsTotalCount, 0, "Neither other doctor nor yesterday appointment included");
 		assert.equal(res.totalEarnedPayoutKop, 0);
 	});
+
+	it("4. Category commission defaults apply when service has no explicit commissionPercent", () => {
+		const appointments: DoctorShiftAppointment[] = [
+			{
+				id: "apt-cat-defaults",
+				patientId: "pat-cat",
+				patientFullName: "Пациент По Категориям",
+				cardNumber: "043/у-777",
+				doctorId: "doc-cat",
+				doctorFullName: "Д-р Категоричный",
+				startsAtIso: "2026-09-25T10:00:00.000Z",
+				endsAtIso: "2026-09-25T11:00:00.000Z",
+				status: "completed",
+				emrCard043uStatus: "signed",
+				services: [
+					{
+						id: "srv-hygiene",
+						code804n: "A16.07.051",
+						nameRu: "Профгигиена",
+						category: "hygiene", // default: 30%
+						quantity: 1,
+						unitPriceKop: 1000000,
+						totalCostKop: 1000000,
+						discountKop: 0,
+						finalRevenueKop: 1000000,
+						directLabZtlCostKop: 0,
+						directMaterialCostKop: 0,
+						// No commissionPercent!
+					},
+					{
+						id: "srv-surgery",
+						code804n: "A16.07.001",
+						nameRu: "Удаление зуба сложное",
+						category: "surgery", // default: 20%
+						quantity: 1,
+						unitPriceKop: 500000,
+						totalCostKop: 500000,
+						discountKop: 0,
+						finalRevenueKop: 500000,
+						directLabZtlCostKop: 0,
+						directMaterialCostKop: 0,
+						// No commissionPercent!
+					},
+				],
+			},
+		];
+
+		const res = calculateChairsideShiftEarnings({
+			appointments,
+			doctorId: "doc-cat",
+			shiftDateIso: "2026-09-25",
+			defaultCommissionPercent: 15, // fallback if not in category map
+		});
+
+		// Hygiene: 1 000 000 * 30% = 300 000 kop
+		// Surgery: 500 000 * 20% = 100 000 kop
+		// Total payout: 400 000 kop
+		assert.equal(res.totalEarnedPayoutKop, 400000, "Calculates 30% on hygiene and 20% on surgery by default");
+	});
+
+	it("5. Custom categoryRates override default category rates", () => {
+		const appointments: DoctorShiftAppointment[] = [
+			{
+				id: "apt-custom-rates",
+				patientId: "pat-custom",
+				patientFullName: "Пациент Спец-Тариф",
+				cardNumber: "043/у-888",
+				doctorId: "doc-custom",
+				doctorFullName: "Д-р Специалист",
+				startsAtIso: "2026-09-25T10:00:00.000Z",
+				endsAtIso: "2026-09-25T11:00:00.000Z",
+				status: "completed",
+				emrCard043uStatus: "signed",
+				services: [
+					{
+						id: "srv-surgery-custom",
+						code804n: "A16.07.001",
+						nameRu: "Имплантация",
+						category: "surgery",
+						quantity: 1,
+						unitPriceKop: 2000000,
+						totalCostKop: 2000000,
+						discountKop: 0,
+						finalRevenueKop: 2000000,
+						directLabZtlCostKop: 0,
+						directMaterialCostKop: 500000, // 5k mat
+						// No commissionPercent!
+					},
+				],
+			},
+		];
+
+		const res = calculateChairsideShiftEarnings({
+			appointments,
+			doctorId: "doc-custom",
+			shiftDateIso: "2026-09-25",
+			categoryRates: { surgery: 35 }, // custom 35% instead of default 20%
+		});
+
+		// Net base: 2 000 000 - 500 000 = 1 500 000 kop. Payout: 1 500 000 * 35% = 525 000 kop
+		assert.equal(res.totalEarnedPayoutKop, 525000, "Custom 35% surgery rate applies to net base");
+	});
 });

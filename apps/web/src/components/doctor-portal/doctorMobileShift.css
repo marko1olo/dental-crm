@@ -447,12 +447,14 @@
 
 /* Bottom Safe Area / Navigation Bar */
 .doctor-pwa-bottom-bar {
-	padding: 12px 16px;
+	padding: 10px 16px;
 	background: var(--paper-strong, #0f172a);
 	border-top: 1px solid var(--line, #1e293b);
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	gap: 10px;
+	flex-wrap: wrap;
 	font-size: 11px;
 	color: var(--muted, #94a3b8);
 }

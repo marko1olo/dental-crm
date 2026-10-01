@@ -25,7 +25,11 @@ import {
 	sumKopecks,
 } from "../money.js";
 import { kopecksToRub as kopecksToRubles } from "../fiscal/kopecksArithmetic.js";
-import type { DoctorShiftAppointment, DoctorShiftServiceItem } from "../doctor-portal/doctorShiftEngine.js";
+import {
+	DEFAULT_CATEGORY_COMMISSION_PERCENT,
+	type DoctorShiftAppointment,
+	type DoctorShiftServiceItem,
+} from "../doctor-portal/doctorShiftEngine.js";
 
 export interface ChairsidePatientEarningsItem {
 	readonly appointmentId: string;
@@ -87,6 +91,7 @@ export interface CalculateChairsideShiftEarningsInput {
 	readonly doctorName?: string | undefined;
 	readonly shiftDateIso?: string | undefined;
 	readonly defaultCommissionPercent?: number | undefined;
+	readonly categoryRates?: Record<string, number> | undefined;
 }
 
 /**
@@ -142,7 +147,14 @@ export function calculateChairsideShiftEarnings(
 				const srvRev = (srv.finalRevenueKop || srv.totalCostKop || 0) as Kopecks;
 				const srvLab = (srv.directLabZtlCostKop || 0) as Kopecks;
 				const srvMat = (srv.directMaterialCostKop || 0) as Kopecks;
-				const commission = srv.commissionPercent ?? defaultCommission;
+				const commission =
+					srv.commissionPercent !== undefined
+						? srv.commissionPercent
+						: input.categoryRates?.[srv.category] !== undefined
+							? input.categoryRates[srv.category]!
+							: srv.category && DEFAULT_CATEGORY_COMMISSION_PERCENT[srv.category] !== undefined
+								? DEFAULT_CATEGORY_COMMISSION_PERCENT[srv.category]!
+								: defaultCommission;
 
 				const srvDealBase = Math.max(0, srvRev - srvLab - srvMat) as Kopecks;
 				const srvEarned = Math.round((srvDealBase * commission) / 100) as Kopecks;
@@ -173,7 +185,7 @@ export function calculateChairsideShiftEarnings(
 				labCostKop: aptLabKop,
 				materialsCostKop: aptMatKop,
 				netBaseKop: aptNetBase,
-				commissionPercent: defaultCommission,
+				commissionPercent: aptNetBase > 0 ? Math.round((aptEarnedKop * 100) / aptNetBase) : defaultCommission,
 				doctorEarnedKop: aptEarnedKop,
 				serviceTitles,
 			});

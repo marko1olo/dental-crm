@@ -1596,7 +1596,7 @@ function doctorServicesForPayrollModal(
 							serviceLabCostRub = matchedLab.priceRub || matchedLab.withheldRub || 0;
 							patientLabOrders.splice(matchIdx, 1);
 						}
-					} else if (cat === "orthopedics") {
+					} else if (cat === "orthopedics" || cat === "orthodontics") {
 						const firstLab = patientLabOrders[0];
 						if (firstLab) {
 							serviceLabCostRub = firstLab.priceRub || firstLab.withheldRub || 0;
@@ -1606,7 +1606,7 @@ function doctorServicesForPayrollModal(
 						serviceLabCostRub = patientLabOrders.reduce((s, lo) => s + (lo.priceRub || lo.withheldRub || 0), 0);
 						patientLabOrders.length = 0;
 					}
-				} else if (row.labCostRub && row.labCostRub > 0 && cat === "orthopedics") {
+				} else if (row.labCostRub && row.labCostRub > 0 && (cat === "orthopedics" || cat === "orthodontics")) {
 					const totalVisits = row.visits.length;
 					serviceLabCostRub = row.labCostRub / (totalVisits * v.services.length);
 				}
