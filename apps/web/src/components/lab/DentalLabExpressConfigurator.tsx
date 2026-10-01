@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap, Sparkles, CheckCircle2, Layers } from "lucide-react";
+import { Zap, Sparkles, CheckCircle2, Layers, Palette } from "lucide-react";
 import { DentalCrown, DentalBridge, ToothShadeGuide } from "../icons/DentalIcons";
 import { SHADE_SWATCH_MAP, addWorkingDays } from "./labMath";
 

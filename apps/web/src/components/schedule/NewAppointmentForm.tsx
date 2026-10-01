@@ -120,7 +120,10 @@ export type NewAppointmentFormProps = {
 	newAppointmentError: string | null;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	updateNewAppointmentDraft: (key: any, value: any) => void;
-	createAppointmentFromDraft: () => Promise<boolean>;
+	createAppointmentFromDraft: (options?: {
+		allowOverbooking?: boolean;
+		allowEmergencyOverride?: boolean;
+	}) => Promise<boolean>;
 	resetNewAppointmentDraft: () => void;
 	toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
 	fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
@@ -618,20 +621,31 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						typeof authRef.current?.denteClinicalMutationHeaders === "function"
 							? authRef.current.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
 							: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
-					const isPhoneOnly = /^[+\d\s()-]{5,}$/.test(q);
+					const phoneMatch = q.match(/(\+?[78][\d\s()-]{9,}\d)/);
+					let resolvedName = q;
+					let resolvedPhone: string | null = null;
+					if (phoneMatch) {
+						resolvedPhone = phoneMatch[0].trim();
+						const remaining = q.replace(phoneMatch[0], "").trim();
+						resolvedName = remaining || `Пациент (${resolvedPhone})`;
+					} else if (/^[+\d\s()-]{5,}$/.test(q)) {
+						resolvedPhone = q;
+						resolvedName = `Пациент (${q})`;
+					}
 					const res = await fetch("/api/patients", {
 						method: "POST",
 						headers,
 						body: JSON.stringify({
-							fullName: isPhoneOnly ? `Пациент (${q})` : q,
-							phone: isPhoneOnly ? q : null,
+							fullName: resolvedName,
+							phone: resolvedPhone,
 						}),
 					});
 					if (res.ok) {
 						const pat = await res.json();
 						if (pat?.id) {
+							newAppointmentDraft.patientId = pat.id;
 							updateNewAppointmentDraft("patientId", pat.id);
-							showToast(`Пациент «${pat.fullName || q}» создан и прикреплен к записи`, "success", 3000);
+							showToast(`Пациент «${pat.fullName || resolvedName}» создан и прикреплен к записи`, "success", 3000);
 						}
 					}
 				} catch (err) {
@@ -640,16 +654,27 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 			} else {
 				const firstActivePatient = (dashboard.patients ?? []).find((p) => p.status === "active");
 				if (firstActivePatient) {
+					newAppointmentDraft.patientId = firstActivePatient.id;
 					updateNewAppointmentDraft("patientId", firstActivePatient.id);
 					showToast(`Автоматически выбран пациент: ${firstActivePatient.fullName}`, "info", 2500);
 				}
 			}
 		}
+		const isCitoOrOverbook = Boolean(
+			collision.isCitoOverbooking ||
+			collision.hasCollision ||
+			newAppointmentDraft?.isCito ||
+			newAppointmentDraft?.cito
+		);
 		if (!newAppointmentDraft?.reason) {
-			const isCito = newAppointmentDraft?.isCito || newAppointmentDraft?.cito;
-			updateNewAppointmentDraft("reason", isCito ? "CITO! Острая боль" : "Осмотр и консультация");
+			const isCito = isCitoOrOverbook;
+			newAppointmentDraft.reason = isCito ? "CITO! Острая боль" : "Осмотр и консультация";
+			updateNewAppointmentDraft("reason", newAppointmentDraft.reason);
 		}
-		await createAppointmentFromDraft();
+		await createAppointmentFromDraft({
+			allowOverbooking: isCitoOrOverbook,
+			allowEmergencyOverride: isCitoOrOverbook,
+		});
 	};
 
 	/**

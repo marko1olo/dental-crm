@@ -106,6 +106,13 @@ export const COPILOT_PRESET_ACTIONS: readonly CopilotPresetAction[] = [
 ];
 
 export interface TreatmentPlanAiAuditOptions {
+	readonly patientName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly selectedTierTitle?: string | undefined;
+	readonly teeth?: readonly unknown[] | undefined;
+	readonly totalRub?: number | undefined;
+	readonly warrantyYears?: number | undefined;
+	readonly monthlyInstallment12Rub?: number | undefined;
 	readonly patientContext?: {
 		readonly patientId?: string | undefined;
 		readonly patientName?: string | undefined;

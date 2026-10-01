@@ -41,12 +41,12 @@ export interface AppointmentModalProps {
   appointmentReadinessById?: Map<string, AppointmentReadiness>;
   chairDoctorAssignments?:
     Record<string, ChairDoctorShiftAssignment> | undefined;
-  onQuickCreatePatient?: (data: {
+  onQuickCreatePatient?: ((data: {
     fullName: string;
-    phone?: string | null;
+    phone?: string | null | undefined;
   }) =>
     | Promise<{ id: string; fullName: string } | null>
     | { id: string; fullName: string }
-    | null;
-  onOpenWaitlistForSlot?: (slot: TargetSlotInfo) => void;
+    | null) | undefined;
+  onOpenWaitlistForSlot?: ((slot: TargetSlotInfo) => void) | undefined;
 }

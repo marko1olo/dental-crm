@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import {
 	Activity,
 	BarChart3,
+	Box,
 	CalendarClock,
 	CalendarDays,
 	ChevronDown,
@@ -587,6 +588,7 @@ type WorkspaceTopbarProps = {
 	todayIso: string;
 	onLockSession?: () => void;
 	onOpenDoctorShiftCockpit?: () => void;
+	onOpenCbctDemo?: () => void;
 };
 
 export function formatDisplayClinicName(name?: string | null): string {
@@ -622,6 +624,7 @@ export function WorkspaceTopbar({
 	todayIso,
 	onLockSession,
 	onOpenDoctorShiftCockpit,
+	onOpenCbctDemo,
 }: WorkspaceTopbarProps) {
 	const validDate = (() => {
 		if (todayIso && !Number.isNaN(Date.parse(`${todayIso}T12:00:00`))) {
@@ -892,6 +895,32 @@ export function WorkspaceTopbar({
 						{workspaceTopbarLabels.doctorCockpit.label}
 					</button>
 				) : null}
+
+				{/* 3D КЛКТ ЗАХАРОВ (312 срезов DICOM) — прямой доступ к реальному томографическому исследованию */}
+				<button
+					className="secondary-button"
+					type="button"
+					data-testid="topbar-open-cbct-demo-btn"
+					title="Открыть 3D КЛКТ студию: реальное исследование Захарова (312 срезов DICOM)"
+					onClick={() => {
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(new CustomEvent("dente:open-cbct-demo"));
+						}
+						onOpenCbctDemo?.();
+					}}
+					style={{
+						display: "inline-flex",
+						alignItems: "center",
+						gap: "6px",
+						backgroundColor: "rgba(168, 85, 247, 0.15)",
+						color: "#c084fc",
+						borderColor: "rgba(168, 85, 247, 0.4)",
+						fontWeight: 600,
+					}}
+				>
+					<Box className="w-4 h-4 text-purple-400" aria-hidden="true" />
+					<span>3D КЛКТ (Захаров 312 срезов)</span>
+				</button>
 
 				{/*
           ГРУППА ДЕЙСТВИЙ ПОМОЩНИКА (поиск, голос, справка) — ОДИН элемент, а не

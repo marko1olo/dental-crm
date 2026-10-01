@@ -84,8 +84,8 @@ export function getInitialDefaultScan(toothCode?: string, patientId?: string | n
 }
 
 export function buildFindingsNotice(plan: {
-	unreadableCodes: string[];
-	noFormulaStateCodes: string[];
+	readonly unreadableCodes: readonly string[];
+	readonly noFormulaStateCodes: readonly string[];
 }): string | null {
 	const notices: string[] = [];
 	if (plan.unreadableCodes.length > 0) {

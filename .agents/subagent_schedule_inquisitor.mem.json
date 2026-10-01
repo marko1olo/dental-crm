@@ -1,0 +1,92 @@
+{
+  "role": "SCHEDULE & FAST BOOKING INQUISITOR",
+  "status": "completed",
+  "started_at": "2026-10-02T01:27:00Z",
+  "completed_at": "2026-10-02T01:38:00Z",
+  "tasks": [
+    {
+      "id": "audit_patient_creation",
+      "name": "Audit PatientCreationModal.tsx for fast emergency booking, zero blocking fields (SNILS, passport, OMS/DMS optional)",
+      "status": "completed"
+    },
+    {
+      "id": "audit_new_appointment_form",
+      "name": "Audit NewAppointmentForm.tsx for 15-second acute pain booking (name + phone only), no assistant required",
+      "status": "completed"
+    },
+    {
+      "id": "audit_chair_grid_and_status",
+      "name": "Audit useChairScheduleState.ts, ScheduleFilterStrip.tsx & visit status transitions (Scheduled -> Arrived -> In chair -> Completed)",
+      "status": "completed"
+    },
+    {
+      "id": "audit_waitlist_quickfill",
+      "name": "Audit WaitlistQuickFillModal.tsx (1968 lines) for fast slot filling from waitlist",
+      "status": "completed"
+    },
+    {
+      "id": "run_tests_and_screenshots",
+      "name": "Run schedule tests and take/view schedule screenshots via view_file",
+      "status": "completed"
+    }
+  ],
+  "findings": [
+    {
+      "id": "DEFECT-1",
+      "file": "apps/web/src/components/schedule/WaitlistQuickFillModal.tsx:23",
+      "severity": "CRITICAL",
+      "summary": "Type-only import of React ('import type React from \"react\"') caused ReferenceError: React is not defined during JSX evaluation."
+    },
+    {
+      "id": "DEFECT-2",
+      "file": "apps/web/src/components/schedule/WaitlistQuickFillModal.tsx:734-795",
+      "severity": "CRITICAL",
+      "summary": "Silent phantom waitlist fulfillment: when chairs array was empty or doctor unselected, appointment creation was skipped, yet waitlist entry was marked fulfilled (PUT /api/waitlist/:id) with false success toast."
+    },
+    {
+      "id": "DEFECT-3",
+      "file": "apps/web/src/components/schedule/NewAppointmentForm.tsx:652, 1070-1086",
+      "severity": "HIGH",
+      "summary": "Overbooking & CITO 409 rejection: 'Записать CITO (Острая боль / Овербукинг)' called createAppointmentFromDraft() with no arguments, omitting allowOverbooking and failing on resource collisions."
+    },
+    {
+      "id": "DEFECT-4",
+      "file": "apps/web/src/components/schedule/NewAppointmentForm.tsx:613-640",
+      "severity": "MEDIUM",
+      "summary": "Mixed query phone loss & closure race: search string like 'Иван +79991234567' lost phone number; React state update race triggered 'выберите пациента' validation error before state propagated."
+    },
+    {
+      "id": "DEFECT-5",
+      "file": "apps/web/src/components/patients/patientFieldRequirementsConfig.ts:214-220 & PatientCreationModal.tsx:430-435",
+      "severity": "MEDIUM",
+      "summary": "CITO emergency Enter blocking: empty name triggered validation error in emergency mode, disabling Enter key submission in phone field."
+    }
+  ],
+  "fixes": [
+    {
+      "file": "apps/web/src/components/schedule/WaitlistQuickFillModal.tsx",
+      "summary": "Fixed React import, added solo chair fallback (DEFAULT_SOLO_CHAIR.id) and doctor fallback, added allowOverbooking: true to POST /api/appointments, prevented phantom waitlist fulfillment on failure or empty slot."
+    },
+    {
+      "file": "apps/web/src/components/schedule/NewAppointmentForm.tsx",
+      "summary": "Updated createAppointmentFromDraft prop type to accept options, passed { allowOverbooking: isCitoOrOverbook, allowEmergencyOverride: isCitoOrOverbook }, parsed phone and name from mixed queries, mutated draft patientId synchronously."
+    },
+    {
+      "file": "apps/web/src/components/patients/patientFieldRequirementsConfig.ts",
+      "summary": "Exempted emergency/CITO draft from mandatory fullName error, allowing auto-default to 'Пациент с острой болью (CITO)'."
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientCreationModal.tsx",
+      "summary": "Provided explicit warning toast when Enter is pressed with missing required fields in non-CITO mode."
+    },
+    {
+      "file": "apps/web/src/components/schedule/__tests__/scheduleFastBookingInquisitorWave51.test.ts",
+      "summary": "Added 7 targeted unit tests proving solo chair fallback, mixed phone parsing, overbooking detection, and CITO emergency validation."
+    }
+  ],
+  "verification": {
+    "total_tests_passing": 64,
+    "suites_passing": 19,
+    "cbct_touched": false
+  }
+}

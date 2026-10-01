@@ -8,8 +8,8 @@ export interface InventoryItemFormData {
 	unitCostRub: string;
 	lotNumber: string;
 	expirationDate: string;
-	sku?: string;
-	barcode?: string;
+	sku: string;
+	barcode: string;
 }
 
 export interface InventoryItemFormModalProps {
@@ -17,7 +17,7 @@ export interface InventoryItemFormModalProps {
 	readonly onClose: () => void;
 	readonly editingItem: InventoryItem | null;
 	readonly formData: InventoryItemFormData;
-	readonly setFormData: (data: InventoryItemFormData) => void;
+	readonly setFormData: React.Dispatch<React.SetStateAction<InventoryItemFormData>> | ((data: InventoryItemFormData) => void);
 	readonly onSubmit: (e: React.FormEvent) => void;
 	readonly isSaving: boolean;
 }

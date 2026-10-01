@@ -1,0 +1,70 @@
+{
+  "role": "RADIOLOGY MONOLITH DECOMPOSER — BATCH A (UI, 3D VIEWPORT & EXPORT TOOLS)",
+  "status": "completed",
+  "completed_steps": [
+    "constitutional_routine_completed",
+    "baseline_tests_verified_782_passed",
+    "baseline_encoding_verified",
+    "decompose_cbct_volume_3d_viewport",
+    "decompose_cbct_export_engine",
+    "decompose_radiology_referral_modal",
+    "decompose_cbct_left_tool_dock",
+    "run_unit_tests_782_passed",
+    "check_encoding_6413_passed",
+    "verify_line_counts_le_800_all_9_files",
+    "final_report_to_orchestrator"
+  ],
+  "pending_steps": [],
+  "targets": {
+    "CbctVolume3DViewport": {
+      "original_lines": 1687,
+      "status": "completed",
+      "artifacts": {
+        "cbctVolume3DMath.ts": 549,
+        "cbctVolume3DShaders.ts": 466,
+        "CbctVolume3DViewport.tsx": 763
+      },
+      "max_lines": 763,
+      "mandate_8b_satisfied": true
+    },
+    "cbctExportEngine": {
+      "original_lines": 1434,
+      "status": "completed",
+      "artifacts": {
+        "cbctReportHtmlTemplate.ts": 492,
+        "cbctExportEngine.ts": 646
+      },
+      "max_lines": 646,
+      "mandate_8b_satisfied": true
+    },
+    "RadiologyReferralModal": {
+      "original_lines": 1158,
+      "status": "completed",
+      "artifacts": {
+        "radiologyReferralPrintTemplate.tsx": 467,
+        "RadiologyReferralModal.tsx": 736
+      },
+      "max_lines": 736,
+      "mandate_8b_satisfied": true
+    },
+    "CbctLeftToolDock": {
+      "original_lines": 1056,
+      "status": "completed",
+      "artifacts": {
+        "CbctColormapFlyout.tsx": 267,
+        "CbctLeftToolDock.tsx": 729
+      },
+      "max_lines": 729,
+      "mandate_8b_satisfied": true
+    }
+  },
+  "verification": {
+    "radiology_tests_total": 782,
+    "radiology_tests_passed": 782,
+    "radiology_tests_failed": 0,
+    "encoding_checked_files": 6413,
+    "encoding_errors": 0,
+    "mandate_8b_line_limit": 800,
+    "all_files_le_800": true
+  }
+}

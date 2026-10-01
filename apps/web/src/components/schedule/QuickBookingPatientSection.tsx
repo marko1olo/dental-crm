@@ -31,7 +31,7 @@ export interface QuickBookingPatientSectionProps {
   setSearchQuery: (q: string) => void;
   isTypeaheadOpen: boolean;
   setIsTypeaheadOpen: (open: boolean) => void;
-  searchResults: Array<{ patient: Patient; isFuzzy?: boolean; suggestedName?: string }>;
+  searchResults: Array<{ patient: Patient; isFuzzy?: boolean | undefined; suggestedName?: string | undefined }>;
   highlightedIndex: number;
   setHighlightedIndex: React.Dispatch<React.SetStateAction<number>>;
   selectPatient: (p: Patient) => void;

@@ -99,7 +99,7 @@ describe("Chairside Somatic Safety Alerts Engine (somaticSafetyEngine)", () => {
 			assert.strictEqual(res.hasCriticalStop, true);
 			assert.strictEqual(res.stopFactors.length, 1);
 
-			const factor = res.stopFactors[0];
+			const factor = res.stopFactors[0]!;
 			assert.strictEqual(factor.id, "allergy_anesthetics_antibiotics");
 			assert.strictEqual(factor.category, "allergy");
 			assert.strictEqual(factor.severity, "critical");
@@ -135,7 +135,7 @@ describe("Chairside Somatic Safety Alerts Engine (somaticSafetyEngine)", () => {
 			});
 
 			assert.strictEqual(res.isHealthyNorm, false);
-			const factor = res.stopFactors[0];
+			const factor = res.stopFactors[0]!;
 			assert.ok(factor.detectedItems.some((d) => d.includes("Пенициллины")));
 			assert.ok(
 				factor.prohibitions.some((p) => p.includes("Амоксиклава") || p.includes("цефалоспорины")),
@@ -150,7 +150,7 @@ describe("Chairside Somatic Safety Alerts Engine (somaticSafetyEngine)", () => {
 				hasSulfitesAllergy: true,
 			});
 			assert.strictEqual(res.isHealthyNorm, false);
-			const factor = res.stopFactors[0];
+			const factor = res.stopFactors[0]!;
 			assert.ok(factor.detectedItems.some((d) => d.includes("Сульфиты")));
 			assert.ok(
 				factor.prohibitions.some((p) => p.includes("вазоконстриктором") || p.includes("адреналином")),

@@ -89,6 +89,8 @@ export interface CbctVoxelVolume {
 	readonly defaultWindowWidth?: number;
 	readonly defaultWindowLevel?: number;
 	readonly isDisposed: boolean;
+	readonly isProgressivePreview?: boolean | undefined;
+	readonly patientName?: string | undefined;
 }
 
 export interface HounsfieldPreset {

@@ -1,5 +1,5 @@
-import { describe, test } from "vitest";
 import assert from "node:assert/strict";
+import test, { describe } from "node:test";
 import {
 	getToothTransform,
 	getNapkinUnfoldingTransform,

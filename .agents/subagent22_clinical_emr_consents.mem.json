@@ -1,0 +1,26 @@
+{
+  "subagent": "Subagent 22: Adversarial Clinical EMR, Consents & Documents Inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md in full",
+    "Verified Mandate 8y (Dual-Mode Zero-Mock Law) across EMR, Consents, Documents, and Shared Legal",
+    "Audited 49 Ministry of Health StomX documents and 23 specialized consent templates: 0 broken tokens {undefined} or {null}",
+    "Scanned for cartoon emojis across EMR, Consents, Documents, Shared Legal: 0 emojis found (100% Lucide vector icons)",
+    "Verified 1-click 'Заполнить нормой' without blocking dialogs: window.alert, window.confirm, window.prompt are strictly 0",
+    "Eliminated hardcoded fake patient/doctor names in production mode (paidContractEngine, primaryIntakePackagePrintEngine, AnesthesiaConsentLogForm, DailyDentistWorkSheet037uForm, MedicalCardExtract003vuForm, ConsentToolbarAndBanner)",
+    "Added automated zero-mock assertions to contractsAndPrescriptionsMockPurity.test.ts",
+    "Verified machine gates: node scripts/check-encoding.mjs (6250 files checked, 0 errors, strict UTF-8 without BOM)",
+    "Verified machine gates: npm --prefix apps/web run typecheck (Exit Code 0)",
+    "Verified unit test suites: contractsAndPrescriptionsMockPurity.test.ts, paidContractEngine.test.ts, documentPackages.test.ts, extendedStomxConsents.test.ts, informedConsentPackageSigning.test.ts, stomtTemplatesSoapAutonomy.test.tsx, emr043Export.test.ts (100% PASS)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Isolated synthetic director 'Смирнов Алексей Викторович' and doctor 'Петров Петр Петрович' behind isDemoShowcaseMode() in paidContractEngine.ts; added underline fallbacks for blank production contracts",
+    "Replaced 'Иванов И.И.' synthetic director in primaryIntakePackagePrintEngine.ts with underline fallback '________________________' in production",
+    "Quarantined demo vitals, carpule batch, and assistant 'Смирнова А. В.' behind isDemoShowcaseMode() in AnesthesiaConsentLogForm.tsx",
+    "Isolated demo patient 'Смирнов Алексей Петрович' behind isDemoShowcaseMode() in DailyDentistWorkSheet037uForm.tsx and added clean EmptyState row when records.length === 0",
+    "Isolated demo diagnoses and stages behind isDemoShowcaseMode() in MedicalCardExtract003vuForm.tsx and added clean EmptyState row when stages.length === 0",
+    "Added honest indicator badges in ConsentToolbarAndBanner.tsx for unlinked/blank patient and unassigned doctor",
+    "Extended LabOrderStageKey in labClinicalStages.ts to include granular lab manufacturing stages, restoring clean tsc build (Exit Code 0)"
+  ]
+}

@@ -55,6 +55,53 @@ const pendingSessionDiskWrites = new Map<string, string>();
 let sessionDiskFlushTimer: ReturnType<typeof setTimeout> | null = null;
 let isFlushingSessionDisk = false;
 
+/**
+ * Безопасное чтение cookie по имени (с защитой от SSR / запрета в приватном режиме).
+ */
+export function safeGetCookie(name: string): string | null {
+	if (typeof document === "undefined") return null;
+	try {
+		const prefix = `${encodeURIComponent(name)}=`;
+		const cookies = document.cookie ? document.cookie.split("; ") : [];
+		for (const cookie of cookies) {
+			if (cookie.startsWith(prefix)) {
+				return decodeURIComponent(cookie.slice(prefix.length));
+			}
+		}
+	} catch {
+		// ignore
+	}
+	return null;
+}
+
+/**
+ * Запись долговечной cookie (1 год) для гарантированного сохранения сессии на компьютере (Мандат 8e).
+ * Работает и по HTTP (в локальной сети LAN по IP 192.168.x.x), и по HTTPS.
+ */
+export function safeSetCookie(name: string, value: string, days = 365): boolean {
+	if (typeof document === "undefined") return false;
+	try {
+		const expires = new Date(Date.now() + days * 864e5).toUTCString();
+		document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; expires=${expires}; SameSite=Lax`;
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Удаление cookie при явном ручном логауте пользователя.
+ */
+export function safeDeleteCookie(name: string): boolean {
+	if (typeof document === "undefined") return false;
+	try {
+		document.cookie = `${encodeURIComponent(name)}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 export function isQuotaExceededError(err: unknown): boolean {
 	if (!err || typeof err !== "object") return false;
 	const e = err as { name?: string; code?: number; message?: string };
@@ -552,8 +599,12 @@ export function safeLocalStorageGetItem(key: string): string | null {
 export function safeLocalStorageSetItem(key: string, value: string, immediate = false): boolean {
 	if (key === DENTE_STAFF_TOKEN_KEY) {
 		inMemoryStaffToken = value.trim();
+		safeSetCookie(DENTE_STAFF_TOKEN_KEY, inMemoryStaffToken, 365);
+		void saveIdbStorageFallback(DENTE_STAFF_TOKEN_KEY, inMemoryStaffToken);
 	} else if (key === DENTE_CLINIC_TOKEN_KEY) {
 		inMemoryClinicToken = value.trim();
+		safeSetCookie(DENTE_CLINIC_TOKEN_KEY, inMemoryClinicToken, 365);
+		void saveIdbStorageFallback(DENTE_CLINIC_TOKEN_KEY, inMemoryClinicToken);
 	}
 
 	// 1. Проверка на идентичность: исключаем паразитный дисковый I/O на HDD 5400 RPM, если значение не изменилось
@@ -626,8 +677,10 @@ export function safeLocalStorageSetItem(key: string, value: string, immediate = 
 export function safeLocalStorageRemoveItem(key: string): boolean {
 	if (key === DENTE_STAFF_TOKEN_KEY) {
 		inMemoryStaffToken = "";
+		safeDeleteCookie(DENTE_STAFF_TOKEN_KEY);
 	} else if (key === DENTE_CLINIC_TOKEN_KEY) {
 		inMemoryClinicToken = "";
+		safeDeleteCookie(DENTE_CLINIC_TOKEN_KEY);
 	}
 
 	const alreadyNull = inMemoryStorageCache.has(key) && inMemoryStorageCache.get(key) === null;
@@ -658,14 +711,32 @@ export function safeLocalStorageRemoveItem(key: string): boolean {
 export function readDenteStaffToken(): string {
 	if (inMemoryStaffToken !== null) return inMemoryStaffToken;
 	ensureTokenStorageListener();
-	inMemoryStaffToken = safeLocalStorageGetItem(DENTE_STAFF_TOKEN_KEY)?.trim() || "";
+	let token = safeLocalStorageGetItem(DENTE_STAFF_TOKEN_KEY)?.trim() || "";
+	// Резервное восстановление из Cookie (Мандат 8e: гарантированное сохранение сессии)
+	if (!token) {
+		const cookieToken = safeGetCookie(DENTE_STAFF_TOKEN_KEY)?.trim() || "";
+		if (cookieToken) {
+			token = cookieToken;
+			safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, token, true);
+		}
+	}
+	inMemoryStaffToken = token;
 	return inMemoryStaffToken;
 }
 
 export function readDenteClinicToken(): string {
 	if (inMemoryClinicToken !== null) return inMemoryClinicToken;
 	ensureTokenStorageListener();
-	inMemoryClinicToken = safeLocalStorageGetItem(DENTE_CLINIC_TOKEN_KEY)?.trim() || "";
+	let token = safeLocalStorageGetItem(DENTE_CLINIC_TOKEN_KEY)?.trim() || "";
+	// Резервное восстановление из Cookie (Мандат 8e: гарантированное сохранение сессии)
+	if (!token) {
+		const cookieToken = safeGetCookie(DENTE_CLINIC_TOKEN_KEY)?.trim() || "";
+		if (cookieToken) {
+			token = cookieToken;
+			safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, token, true);
+		}
+	}
+	inMemoryClinicToken = token;
 	return inMemoryClinicToken;
 }
 

@@ -1,0 +1,27 @@
+{
+  "subagent": "Subagent 9: Patient Recalls & Omnichannel Appointment Reminders Hardening Engineer",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Step 1: Read THE_HAMMER_MASTER_PROMPT.md in full",
+    "Step 2: Inspected Mandate 8za (Anti-Duplication & Reconnaissance Law) in AGENTS.md",
+    "Step 3: Initialized subagent9 .mem.json checkpoint",
+    "Step 4: Reconnaissance of existing recalls architecture (frontend components, backend routes/services, DB schema, and tests)",
+    "Step 5: Verified PostgreSQL 18.4 runtime on 127.0.0.1:5432, ran baseline tests",
+    "Step 6: Hardened Appointment Attendance Reminders (Zero No-Show Engine): added cabinet/chair room variables, wired 24h & 2h lead hours, support 1-click status update CONFIRMED and RESCHEDULE_REQUESTED via public appointment action links, migration 0205_appointment_action_codes_reschedule.sql, and communicationTasks with workflowCode: appointment_reschedule_followup",
+    "Step 7: Hardened 6-Month Clinical Retention Cycle (Clinical Recalls): enhanced cohort detection for post-hygiene/therapy (6m), post-implant surgery (3m/6m osseointegration & peri-implantitis inspection), and orthodontic retention (3m retainer check) in recallCandidates.ts and @dental/shared recallCandidates contracts",
+    "Step 8: System Integration & Zero Mocks: added PATCH and POST /api/patients/recall-candidates/:patientId/status routes in patientRecall.ts with audit logging to audit_events, communication_events, and wsBroker, wired frontend sendRecallCandidateStatusUpdate in patientRecallEngine / PatientRecallsHubModal",
+    "Step 9: Ergonomics & Visual Integrity: strictly respected Mandate 8d, 8e, 8n, 8z (purged 'диспансеризация' -> 'плановый профосмотр / контрольный осмотр / профгигиена'), maintained file size limits (PatientRecallsHubModal.tsx at 777 lines <= 800), zero emojis, tokens validated",
+    "Step 10: Machine verification: check:encoding (6240 files OK), check:css-tokens (EXIT 0), @dental/shared typecheck (EXIT 0), @dental/api typecheck (EXIT 0), @dental/web typecheck (EXIT 0), 88/88 web recall tests, 20/20 patientRecall tests, 21/21 appointmentConfirmation tests, 10/10 appointmentReminders tests, 8/8 recallStateMachine tests, 6/6 api patientRecall tests all passed 100%",
+    "Step 11: Final report and handover via send_message to parent orchestrator"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "PostgreSQL 18.4 is native on 127.0.0.1:5432 with embedded-postgres binary and data dir at .data/pg18",
+    "appointmentReminders.ts lacked selection and joining of chairs table for cabinet/chair room fast navigation in 2h reminders - added batch chair lookup and template variables",
+    "publicAppointmentActions.ts lacked explicit reschedule link handling; added migration 0205 expanding appointment_action_codes check constraint and implemented reschedule link flow",
+    "templateRenderer.ts registered {cabinet}, {chair}, and {rescheduleLink} in communicationTemplateVariables",
+    "findRecallCandidates in recallCandidates.ts now determines clinical cohort (hygiene_therapy, implant, orthodontic_retention), suggestedIntervalMonths, attendingDoctorId, and attendingDoctorName",
+    "patientRecall.ts now persists recall candidate status transitions via PATCH /api/patients/recall-candidates/:patientId/status with audit_events and communication_events tracking, and wsBroker broadcast",
+    "Strict Mandate 8z eradication of 'диспансеризация' strictly adhered to across routes, schemas, and UI"
+  ]
+}

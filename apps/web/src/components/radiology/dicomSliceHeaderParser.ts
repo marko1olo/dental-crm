@@ -57,6 +57,7 @@ export interface ParsedDicomSliceHeader {
   studyDate?: string | undefined;
   imagePositionPatient?: [number, number, number] | undefined;
   imageOrientationPatient?: [number, number, number, number, number, number] | undefined;
+  transferSyntaxUid?: string | undefined;
 }
 
 export interface DicomSliceEntry {
@@ -149,6 +150,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
   let numberOfFrames = 1;
   let patientName = "Не указан";
   let studyDate = "";
+  let transferSyntaxUid: string | undefined;
   let imagePositionPatient: [number, number, number] | undefined;
   let imageOrientationPatient: [number, number, number, number, number, number] | undefined;
 
@@ -167,6 +169,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
 
     // Fast-path group filter: skip groups that never contain geometry, tags, or pixel data
     if (
+      group !== 0x0002 &&
       group !== 0x0008 &&
       group !== 0x0010 &&
       group !== 0x0018 &&
@@ -212,7 +215,17 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
       tagValOff = i + 8;
     }
 
-    if (group === 0x0010 && element === 0x0010) {
+    if (group === 0x0002 && element === 0x0010) {
+      // TransferSyntaxUID
+      if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
+        try {
+          transferSyntaxUid = new TextDecoder("ascii")
+            .decode(new Uint8Array(buffer, tagValOff, tagLen))
+            .replace(/\0+$/, "")
+            .trim();
+        } catch {}
+      }
+    } else if (group === 0x0010 && element === 0x0010) {
       // PatientName
       if (tagLen > 0 && tagValOff + tagLen <= byteLength) {
         try {
@@ -411,6 +424,7 @@ export function parseDicomSliceHeader(buffer: ArrayBuffer): ParsedDicomSliceHead
     studyDate,
     imagePositionPatient,
     imageOrientationPatient,
+    transferSyntaxUid,
   };
 }
 

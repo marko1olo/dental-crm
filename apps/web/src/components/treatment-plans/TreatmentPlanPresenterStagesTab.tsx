@@ -15,6 +15,7 @@ export interface TreatmentPlanPresenterStagesTabProps {
 	readonly allTiers: readonly TreatmentPlanTier[];
 	readonly onSelectTier: (tier: TreatmentPlanTier) => void;
 	readonly showMicroConsumables: boolean;
+	readonly setShowMicroConsumables?: (React.Dispatch<React.SetStateAction<boolean>> | ((fn: (prev: boolean) => boolean) => void)) | undefined;
 	readonly onUpdateItemPrice: (itemId: string, newPriceRub: number) => void;
 }
 
@@ -24,6 +25,7 @@ export const TreatmentPlanPresenterStagesTab: React.FC<TreatmentPlanPresenterSta
 	allTiers,
 	onSelectTier,
 	showMicroConsumables,
+	setShowMicroConsumables,
 	onUpdateItemPrice,
 }) => {
 	return (
@@ -165,7 +167,7 @@ export const TreatmentPlanPresenterStagesTab: React.FC<TreatmentPlanPresenterSta
 																					</span>
 																					<button
 																						type="button"
-																						onClick={() => setShowMicroConsumables((prev) => !prev)}
+																						onClick={() => setShowMicroConsumables?.((prev) => !prev)}
 																						className="text-[var(--teal)] hover:underline font-bold text-xs cursor-pointer ml-auto"
 																					>
 																						{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}

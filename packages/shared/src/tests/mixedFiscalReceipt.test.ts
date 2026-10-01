@@ -109,7 +109,6 @@ describe("54-FZ Mixed Fiscal Receipts & Retail Showcase Suite", () => {
 					category: "brushes",
 					vatRate: "vat_20",
 					paymentSubject: "commodity",
-					isRetail: true,
 				},
 			],
 			tenders: {
@@ -137,12 +136,12 @@ describe("54-FZ Mixed Fiscal Receipts & Retail Showcase Suite", () => {
 		// Items verification
 		assert.equal(result.items.length, 2);
 
-		const medItem = result.items[0];
+		const medItem = result.items[0]!;
 		assert.equal(medItem.tag1212_paymentSubject, 4); // Service
 		assert.equal(medItem.tag1199_vatRate, 6); // Без НДС
 		assert.equal(medItem.vatKopecks, 0);
 
-		const retItem = result.items[1];
+		const retItem = result.items[1]!;
 		assert.equal(retItem.tag1212_paymentSubject, 1); // Commodity
 		assert.equal(retItem.tag1199_vatRate, 1); // 20% VAT
 		assert.equal(retItem.vatKopecks, 20000);
@@ -200,7 +199,6 @@ describe("54-FZ Mixed Fiscal Receipts & Retail Showcase Suite", () => {
 					category: "floss_and_rinses",
 					vatRate: "vat_20",
 					paymentSubject: "commodity",
-					isRetail: true,
 				},
 			],
 			tenders: {

@@ -28,6 +28,42 @@ import {
   type DicomSliceEntry,
 } from "./dicomSliceHeaderParser";
 import { generateProgressiveLodVolume } from "./dicomProgressiveLod";
+import * as jpegPkg from "jpeg-lossless-decoder-js";
+const JpegDecoder: any = (jpegPkg as any).Decoder || (jpegPkg as any).default?.Decoder || (jpegPkg as any).default;
+
+/**
+ * Decodes encapsulated Process 14 / First-Order Prediction JPEG Lossless (1.2.840.10008.1.2.4.70)
+ * buffer into native 16-bit voxel array.
+ */
+export function decodeJpegLosslessSliceBuffer(buffer: ArrayBuffer): Uint16Array | null {
+  const u8 = new Uint8Array(buffer);
+  let soi = -1;
+  let eoi = -1;
+  const maxSearch = Math.min(u8.length - 1, 16384);
+  for (let i = 0; i < maxSearch; i++) {
+    if (u8[i] === 0xff && u8[i + 1] === 0xd8) {
+      soi = i;
+      break;
+    }
+  }
+  if (soi === -1) return null;
+  for (let i = u8.length - 2; i >= Math.max(0, u8.length - 8192); i--) {
+    if (u8[i] === 0xff && u8[i + 1] === 0xd9) {
+      eoi = i + 2;
+      break;
+    }
+  }
+  if (eoi === -1) return null;
+  try {
+    const dec = new JpegDecoder();
+    const subBuf = u8.subarray(soi, eoi);
+    const arrBuf = subBuf.buffer.slice(subBuf.byteOffset, subBuf.byteOffset + subBuf.byteLength);
+    const decoded = dec.decode(arrBuf, 0, arrBuf.byteLength, 2);
+    return decoded instanceof Uint16Array ? decoded : new Uint16Array(decoded.buffer);
+  } catch {
+    return null;
+  }
+}
 
 // Transparent re-exports for external consumers
 export {
@@ -80,12 +116,7 @@ export interface DicomVolumeIngestionOptions {
  * Yields execution back to the browser / Node event loop to prevent UI thread starvation.
  */
 export async function yieldToEventLoop(): Promise<void> {
-  const g = globalThis as unknown as { scheduler?: { yield?: () => Promise<void> } };
-  if (g.scheduler && typeof g.scheduler.yield === "function") {
-    await g.scheduler.yield();
-  } else {
-    await new Promise<void>((resolve) => setTimeout(resolve, 0));
-  }
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
 }
 
 /**
@@ -145,10 +176,33 @@ export async function buildVolumeFromDicomBuffers(
     const header = parseDicomSliceHeader(buf);
     sliceEntries.push({ header, buffer: buf, fileName: item.fileName || `slice_${i}.dcm` });
 
-    if (i % 25 === 0 || i === totalFiles - 1) {
+    if (i % 10 === 0 || i === totalFiles - 1) {
       const pct = 5 + Math.round((i / totalFiles) * 35);
       onProgress?.(pct, "Прочитано " + (i + 1) + " из " + totalFiles + " срезов...");
       await yieldToEventLoop();
+    }
+  }
+
+  // Exclude auxiliary scout / localizer slices whose dimensions do not match the dominant CT matrix
+  if (sliceEntries.length > 1) {
+    const dimCounts = new Map<string, number>();
+    for (const e of sliceEntries) {
+      const key = `${e.header.rows}x${e.header.cols}`;
+      dimCounts.set(key, (dimCounts.get(key) ?? 0) + 1);
+    }
+    let dominantDim = "";
+    let maxCount = 0;
+    dimCounts.forEach((count, k) => {
+      if (count > maxCount) {
+        maxCount = count;
+        dominantDim = k;
+      }
+    });
+    const [domRows, domCols] = dominantDim.split("x").map(Number);
+    const filtered = sliceEntries.filter((e) => e.header.rows === domRows && e.header.cols === domCols);
+    if (filtered.length > 0 && filtered.length !== sliceEntries.length) {
+      sliceEntries.length = 0;
+      sliceEntries.push(...filtered);
     }
   }
 
@@ -258,9 +312,82 @@ export async function buildVolumeFromDicomBuffers(
   const signBit = bitsStored < 16 ? 1 << (bitsStored - 1) : 0x8000;
   const signExt = bitsStored < 16 ? 1 << bitsStored : 0x10000;
 
+  // INSTANT FIRST SLICE (Z = Math.floor(depth / 2)):
+  // Immediately decode central axial slice and emit progressive volume for instant 1-2s viewport paint
+  if (onProgressiveVolumeReady && depth >= 1) {
+    const midZ = Math.floor(depth / 2);
+    const midEntry = sliceEntries[midZ];
+    if (midEntry && midEntry.buffer) {
+      try {
+        const midOffset = midEntry.header.pixelDataByteOffset;
+        let rawMidSlice: Int16Array | Uint16Array;
+        if (midOffset % 2 === 0 && midEntry.buffer.byteLength >= midOffset + sliceVoxelCount * 2) {
+          rawMidSlice = isSigned
+            ? new Int16Array(midEntry.buffer, midOffset, sliceVoxelCount)
+            : new Uint16Array(midEntry.buffer, midOffset, sliceVoxelCount);
+        } else {
+          const sliceArrayBuf = midEntry.buffer.slice(midOffset, midOffset + sliceVoxelCount * 2);
+          const validEvenLength = sliceArrayBuf.byteLength - (sliceArrayBuf.byteLength % 2);
+          const safeBuf = validEvenLength === sliceArrayBuf.byteLength ? sliceArrayBuf : sliceArrayBuf.slice(0, validEvenLength);
+          rawMidSlice = isSigned ? new Int16Array(safeBuf) : new Uint16Array(safeBuf);
+        }
+        const midBaseIdx = midZ * sliceVoxelCount;
+        decodeSliceVoxels({
+          rawSlice: rawMidSlice,
+          voxelData,
+          baseIdx: midBaseIdx,
+          sliceVoxelCount,
+          width,
+          height,
+          bitsStored,
+          isSigned,
+          isLinearInteger,
+          intIntercept,
+          slope,
+          intercept,
+          mask,
+          signBit,
+          signExt,
+          flipX,
+          flipY,
+        });
+
+        const physicalWidthMm = width * refHeader.pixelSpacing.x;
+        const physicalHeightMm = height * refHeader.pixelSpacing.y;
+        const physicalDepthMm = depth * computedSpacingZ;
+
+        const initialSliceVol: CbctVoxelVolume = {
+          id: `dicom-preview-initial-${Date.now()}`,
+          dimensions: { width, height, depth },
+          spacingMm: { x: refHeader.pixelSpacing.x, y: refHeader.pixelSpacing.y, z: computedSpacingZ },
+          originMm: { x: -physicalWidthMm * 0.5, y: -physicalHeightMm * 0.5, z: -physicalDepthMm * 0.5 },
+          physicalSizeMm: { x: physicalWidthMm, y: physicalHeightMm, z: physicalDepthMm },
+          data: voxelData,
+          minHU: -1000,
+          maxHU: 3000,
+          rescaleSlope: refHeader.rescaleSlope,
+          rescaleIntercept: refHeader.rescaleIntercept,
+          defaultWindowWidth: refHeader.windowWidth > 0 ? refHeader.windowWidth : 4400,
+          defaultWindowLevel: refHeader.windowCenter !== 0 ? refHeader.windowCenter : 1300,
+          imageOrientationPatient: refHeader.imageOrientationPatient,
+          isFlippedX: flipX,
+          isFlippedY: flipY,
+          isProgressivePreview: true,
+          patientName: refHeader.patientName,
+          isDisposed: false,
+        };
+
+        onProgressiveVolumeReady(initialSliceVol);
+        await yieldToEventLoop();
+      } catch (err) {
+        console.warn("[realDicomVolumeLoader] Failed to emit instant first slice preview:", err);
+      }
+    }
+  }
+
   if (workerBridge) {
-    // Multi-threaded background worker slice decoding in batches of 16
-    const batchSize = 16;
+    // Multi-threaded background worker slice decoding in batches of 10 with Transferable buffers
+    const batchSize = 10;
     for (let z = 0; z < depth; z += batchSize) {
       const endZ = Math.min(depth, z + batchSize);
       const tasks: DecodeDicomSliceTask[] = [];
@@ -282,7 +409,7 @@ export async function buildVolumeFromDicomBuffers(
         });
       }
 
-      const decodedBatch = await workerBridge.decodeDicomSlices(tasks, false);
+      const decodedBatch = await workerBridge.decodeDicomSlices(tasks, true);
       for (const res of decodedBatch) {
         const k = res.sliceIndex;
         const baseIdx = k * sliceVoxelCount;
@@ -318,7 +445,18 @@ export async function buildVolumeFromDicomBuffers(
       const baseIdx = z * sliceVoxelCount;
 
       let rawSlice: Int16Array | Uint16Array;
-      if (offset % 2 === 0 && entry.buffer.byteLength >= offset + sliceVoxelCount * 2) {
+      const isEncapsulated =
+        (entry.header.transferSyntaxUid && isEncapsulatedTransferSyntax(entry.header.transferSyntaxUid)) ||
+        entry.buffer.byteLength < offset + sliceVoxelCount * 2;
+
+      if (isEncapsulated) {
+        const decoded = decodeJpegLosslessSliceBuffer(entry.buffer);
+        if (decoded && decoded.length === sliceVoxelCount) {
+          rawSlice = decoded;
+        } else {
+          rawSlice = new Uint16Array(sliceVoxelCount);
+        }
+      } else if (offset % 2 === 0 && entry.buffer.byteLength >= offset + sliceVoxelCount * 2) {
         rawSlice = isSigned
           ? new Int16Array(entry.buffer, offset, sliceVoxelCount)
           : new Uint16Array(entry.buffer, offset, sliceVoxelCount);
@@ -366,7 +504,7 @@ export async function buildVolumeFromDicomBuffers(
       onSliceDecoded?.(z, depth, voxelData.subarray(baseIdx, baseIdx + sliceVoxelCount));
       entry.buffer = null; // GC prompt
 
-      if (z % 16 === 0 || z === depth - 1) {
+      if (z % 10 === 0 || z === depth - 1) {
         const pct = 45 + Math.round((z / depth) * 50);
         onProgress?.(pct, "Копирование слоя " + (z + 1) + "/" + depth + " в VRAM...");
         await yieldToEventLoop();
@@ -396,6 +534,7 @@ export async function buildVolumeFromDicomBuffers(
     imageOrientationPatient: refHeader.imageOrientationPatient,
     isFlippedX: flipX,
     isFlippedY: flipY,
+    patientName: refHeader.patientName,
     isDisposed: false,
   };
 }
@@ -411,12 +550,12 @@ export async function buildVolumeFromDicomFiles(
   const onProgress = typeof options === "function" ? options : options?.onProgress;
   const concurrency = (typeof options === "object" && options?.concurrency && options.concurrency > 0)
     ? options.concurrency
-    : 32;
+    : 10;
 
   const total = files.length;
   const items: Array<{ buffer: ArrayBuffer; fileName: string }> = new Array(total);
 
-  // Parallel chunked reading via Promise.all
+  // Parallel chunked reading via Promise.all in batches of 10
   for (let i = 0; i < total; i += concurrency) {
     const chunk = files.slice(i, i + concurrency);
     const bufs = await Promise.all(chunk.map((f) => f.arrayBuffer()));
@@ -427,6 +566,7 @@ export async function buildVolumeFromDicomFiles(
       const pct = Math.round(((i + chunk.length) / total) * 35);
       onProgress(pct, `Параллельное чтение срезов КТ (${i + chunk.length}/${total})...`);
     }
+    await yieldToEventLoop();
   }
 
   return buildVolumeFromDicomBuffers(items, options);

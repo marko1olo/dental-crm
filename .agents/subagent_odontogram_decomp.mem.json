@@ -1,0 +1,103 @@
+{
+  "subagent": "Odontogram Monolith Decomposer",
+  "status": "completed",
+  "started_at": "2026-09-30T23:19:45+04:00",
+  "completed_at": "2026-09-30T23:46:30+04:00",
+  "target_monoliths": [
+    {
+      "file": "apps/web/src/components/odontogram/anatomicalToothGeometries.ts",
+      "initial_lines": 2007,
+      "final_lines": 200,
+      "decomposed_into": [
+        "anatomicalGeometriesTypes.ts (268 lines)",
+        "anatomicalMaterialsAndSurfaces.ts (631 lines)",
+        "anatomicalAdultGeometries.ts (424 lines)",
+        "anatomicalPediatricGeometries.ts (435 lines)",
+        "anatomicalBridges.ts (148 lines)"
+      ],
+      "status": "completed"
+    },
+    {
+      "file": "apps/web/src/components/odontogram/AnatomicalSvgOdontogram.tsx",
+      "initial_lines": 2769,
+      "final_lines": 693,
+      "decomposed_into": [
+        "AnatomicalToothColors.ts (279 lines)",
+        "AnatomicalToothSurfacesLayer.tsx (154 lines)",
+        "AnatomicalImplantSVG.tsx (210 lines)",
+        "AnatomicalRestorativeAccents.tsx (130 lines)",
+        "AnatomicalToothSVG.tsx (750 lines)",
+        "ToothWrapper.tsx (786 lines)",
+        "AnatomicalQuadrantSwitcher.tsx (242 lines)",
+        "AnatomicalDualArchView.tsx (244 lines)"
+      ],
+      "status": "completed"
+    },
+    {
+      "file": "apps/web/src/components/odontogram/OdontogramViewContainer.tsx",
+      "initial_lines": 1743,
+      "final_lines": 592,
+      "decomposed_into": [
+        "OdontogramViewTypes.tsx (259 lines)",
+        "OdontogramToolbarQuickActions.tsx (299 lines)",
+        "OdontogramToolbarMoreMenu.tsx (479 lines)",
+        "OdontogramToolbar.tsx (573 lines)",
+        "OdontogramViewModals.tsx (178 lines)"
+      ],
+      "status": "completed"
+    },
+    {
+      "file": "apps/web/src/components/odontogram/OdontogramModule.tsx",
+      "initial_lines": 2197,
+      "final_lines": 553,
+      "decomposed_into": [
+        "odontogramModuleConstants.ts (124 lines)",
+        "ToothActionMenuPortal.tsx (327 lines)",
+        "OdontogramPrintA4.tsx (199 lines)",
+        "OdontogramAiBanners.tsx (132 lines)",
+        "OdontogramModalsLayer.tsx (352 lines)",
+        "useOdontogramSync.ts (535 lines)",
+        "useOdontogramAiIntegration.ts (142 lines)",
+        "useOdontogramQuickActions.ts (180 lines)"
+      ],
+      "status": "completed"
+    }
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "name": "Decompose anatomicalToothGeometries.ts",
+      "description": "Split SVG coordinates and anatomical tooth paths into adult vs pediatric dentition tables",
+      "status": "completed",
+      "test_result": "336/336 tests passed, Exit Code 0"
+    },
+    {
+      "step": 2,
+      "name": "Decompose AnatomicalSvgOdontogram.tsx",
+      "description": "Extract tooth SVG rendering, surfaces (occlusal, vestibular, contact) and pediatric arch subcomponents",
+      "status": "completed",
+      "test_result": "336/336 tests passed, Exit Code 0"
+    },
+    {
+      "step": 3,
+      "name": "Decompose OdontogramViewContainer.tsx",
+      "description": "Extract view toggles and annotation layers into separate subcomponents",
+      "status": "completed",
+      "test_result": "336/336 tests passed, Exit Code 0"
+    },
+    {
+      "step": 4,
+      "name": "Decompose OdontogramModule.tsx",
+      "description": "Extract selected tooth drawer, mode toolbar, and tooth history into separate subcomponents",
+      "status": "completed",
+      "test_result": "336/336 tests passed, Exit Code 0"
+    },
+    {
+      "step": 5,
+      "name": "Verification & Reporting",
+      "description": "Run tests, check encoding, verify line limits <= 800 for all files, report to parent orchestrator",
+      "status": "completed",
+      "test_result": "All 336 unit tests pass, encoding clean (6561 files), CSS tokens clean, all modified/created files <= 800 lines"
+    }
+  ]
+}

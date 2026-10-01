@@ -22,33 +22,12 @@ import {
 	buildDentalArchCurve,
 } from "./dentalCurveEngine";
 
-export interface AxialMIPSlab {
-	readonly data: Float32Array;
-	readonly width: number;
-	readonly height: number;
-	readonly originMm: Point2D;
-	readonly spacingMm: Point2D;
-	readonly centerZMm: number;
-	readonly thicknessMm: number;
-}
-
-export interface OcclusalDensitySliceProfile {
-	readonly zIndex: number;
-	readonly zMm: number;
-	readonly enamelIntegral: number;
-	readonly boneIntegral: number;
-	readonly cancellousIntegral: number;
-	readonly smoothedEnamel: number;
-	readonly smoothedBone: number;
-	readonly smoothedCancellous: number;
-}
-
-export interface PolarRidgeRayResult {
-	readonly angleRad: number;
-	readonly optimalRadiusMm: number;
-	readonly peakHU: number;
-	readonly centroidWorldMm: Point2D;
-}
+import type {
+	AxialMIPSlab,
+	OcclusalDensitySliceProfile,
+	PolarRidgeRayResult,
+} from "./cbctAutoArchTypes";
+export type { AxialMIPSlab, OcclusalDensitySliceProfile, PolarRidgeRayResult };
 
 // ─── 1. OCCLUSAL Z-PLANE DETECTION ENGINE ───────────────────────────────────
 
@@ -314,7 +293,8 @@ export function findOcclusalZPlane(
 export function extractAxialMIPSlab(
 	volume: CbctVoxelVolume,
 	centerZMm: number,
-	thicknessMm = 6.0,
+	thicknessMm = 1.0,
+	mode: "mip" | "average" | "single" = thicknessMm <= 2.0 ? "average" : "mip",
 ): AxialMIPSlab {
 	const width = volume.dimensions?.width ?? 64;
 	const height = volume.dimensions?.height ?? 64;
@@ -333,6 +313,7 @@ export function extractAxialMIPSlab(
 			spacingMm,
 			centerZMm,
 			thicknessMm,
+			mode,
 		};
 	}
 
@@ -349,22 +330,37 @@ export function extractAxialMIPSlab(
 
 	const totalSliceVoxels = width * height;
 	const data = volume.data;
+	const zClosest = Math.max(0, Math.min(depth - 1, Math.round((centerZMm - originZ) / spacingZ)));
 
 	for (let y = 0; y < height; y++) {
 		const rowOffset = y * width;
 		for (let x = 0; x < width; x++) {
-			let maxHU = -32768;
+			let valHU = -32768;
 
-			for (let z = zMinIdx; z <= zMaxIdx; z++) {
-				const idx = z * totalSliceVoxels + rowOffset + x;
-				const hu = data[idx] ?? -1000;
-				if (hu > maxHU) {
-					maxHU = hu;
+			if (mode === "single") {
+				valHU = data[zClosest * totalSliceVoxels + rowOffset + x] ?? -1000;
+			} else if (mode === "average") {
+				let sumHU = 0;
+				let count = 0;
+				for (let z = zMinIdx; z <= zMaxIdx; z++) {
+					sumHU += data[z * totalSliceVoxels + rowOffset + x] ?? -1000;
+					count++;
 				}
+				valHU = count > 0 ? sumHU / count : -1000;
+			} else {
+				// mip
+				let maxHU = -32768;
+				for (let z = zMinIdx; z <= zMaxIdx; z++) {
+					const hu = data[z * totalSliceVoxels + rowOffset + x] ?? -1000;
+					if (hu > maxHU) {
+						maxHU = hu;
+					}
+				}
+				valHU = maxHU;
 			}
 
 			// Filter/clip extreme metal spikes <= 3500 HU
-			const finalHU = maxHU > 3500 ? 3500 : maxHU < -1000 ? -1000 : maxHU;
+			const finalHU = valHU > 3500 ? 3500 : valHU < -1000 ? -1000 : valHU;
 			mipBuffer[rowOffset + x] = finalHU;
 		}
 	}
@@ -377,6 +373,7 @@ export function extractAxialMIPSlab(
 		spacingMm,
 		centerZMm,
 		thicknessMm,
+		mode,
 	};
 }
 

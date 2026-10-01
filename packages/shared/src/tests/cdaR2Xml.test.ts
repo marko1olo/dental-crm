@@ -423,7 +423,7 @@ describe("EGISZ REMD CDA R2 & UKEP Suite", () => {
 
 			const rawXml = `<?xml version="1.0"?><ClinicalDocument xmlns="urn:hl7-org:v3"><id extension="TEST-1"/></ClinicalDocument>`;
 			const pkg = buildEgiszRemdPackage({
-				documentId: "TEST-1",
+				documentId: "c2c8f8b8-6a3f-427c-b63e-108b33534b8c",
 				documentVersion: 1,
 				docTypeNsiCode: "101",
 				rawXml,
@@ -434,7 +434,7 @@ describe("EGISZ REMD CDA R2 & UKEP Suite", () => {
 				clinicOgrn: SAMPLE_CLINIC.ogrn,
 			});
 
-			assert.equal(pkg.documentId, "TEST-1");
+			assert.equal(pkg.documentId, "c2c8f8b8-6a3f-427c-b63e-108b33534b8c");
 			assert.equal(pkg.docTypeNsiCode, "101");
 			assert.equal(pkg.doctorSignature.algorithmOid, EGISZ_OIDS.GOST_3410_2012_256);
 			assert.ok(pkg.moSignature);

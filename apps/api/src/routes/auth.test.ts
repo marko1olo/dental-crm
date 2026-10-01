@@ -542,7 +542,7 @@ describe("auth routes", () => {
 					.from(chairs)
 					.where(eq(chairs.organizationId, data.organizationId));
 				assert.strictEqual(orgChairs.length, 1);
-				assert.strictEqual(orgChairs[0].name, "Основной кабинет");
+				assert.strictEqual(orgChairs[0]!.name, "Основной кабинет");
 
 				// Проверяем, что созданы демо-пациенты (4 штуки)
 				const orgPatients = await tx
@@ -557,7 +557,7 @@ describe("auth routes", () => {
 					.from(appointments)
 					.where(eq(appointments.organizationId, data.organizationId));
 				assert.strictEqual(orgAppointments.length, 4);
-				assert.strictEqual(orgAppointments[0].doctorUserId, data.userId);
+				assert.strictEqual(orgAppointments[0]!.doctorUserId, data.userId);
 
 				// Чистим за собой
 				await tx.delete(appointments).where(eq(appointments.organizationId, data.organizationId));
@@ -597,6 +597,7 @@ describe("auth routes", () => {
 					.select()
 					.from(organizations)
 					.where(eq(organizations.id, data.organizationId));
+				assert.ok(org);
 				assert.strictEqual(org.clinicMode, "small_clinic");
 
 				// Для клиники создано 2 кабинета

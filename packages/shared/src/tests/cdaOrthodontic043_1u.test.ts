@@ -27,7 +27,7 @@ const VALID_CLINIC_OID = "1.2.643.5.1.13.13.12.2.77.10425";
 
 const SAMPLE_043_1U_PARAMS: CdaSemd043_1uParams = {
 	docKind: "043-1u",
-	documentId: "ORTHO-DOC-2026-0001",
+	documentId: "a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d",
 	documentVersion: 1,
 	visitDate: new Date("2026-08-27T10:00:00Z"),
 	encounterId: "ENC-ORTHO-100",

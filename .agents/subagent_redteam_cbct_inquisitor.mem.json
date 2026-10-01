@@ -1,0 +1,57 @@
+{
+  "role": "ADVERSARIAL RED TEAM CBCT INQUISITOR & ANTI-FALSIFICATION AUDITOR",
+  "status": "active_inquisition_watching_peers",
+  "started_at": "2026-10-01T02:11:29+04:00",
+  "last_audit_at": "2026-10-01T11:02:30+04:00",
+  "constitutional_routine_completed": true,
+  "round_5_findings": {
+    "catastrophic_fov_bug_bulyakov": {
+      "file": "apps/web/src/components/radiology/cbctHonestArchBlobEngine.ts#L438",
+      "bug": "Math.max(fovWidthMm, fovHeightMm) <= 85.0 classified Bulyakov (80.2mm) as small FOV",
+      "consequence": "Turned full jaw into straight transverse chord across tongue between molars 44..48; all anterior teeth lost",
+      "fix": "Lower threshold to <= 55.0 mm"
+    },
+    "cross_sections_multiview_audit": {
+      "file": "scripts/cbct_honest_slice_math.ts",
+      "progress": "Bulyakov #46 W2 fixed to 4.0 mm, genuine CT voxels, 3x3 unsharp mask CPR panorama, smooth C2 parabola in Window 1",
+      "defects_remaining": [
+        "Zakharov #26 W6 displays 0.1 mm inside sinus; must be 0.0 mm (pneumatization) or N/A",
+        "Zakharov #11 incisor marked with 'Показан синус-лифтинг' instead of nasal floor / bone augmentation",
+        "OPG tooth markers #48..#38 distributed uniformly (1/16) instead of true arc length s"
+      ]
+    },
+    "mandate_31_patient_specific_infractions": [
+      "apps/web/src/components/radiology/mpr/workspaces/ImplantWorkspace.tsx hardcodes ZakharovEdentulousToothFdi",
+      "scripts/generate_blind_test_proofs.ts hardcodes absolute world Y=2.0mm for Tuber Maxillae"
+    ],
+    "blind_benchmarks_audit": {
+      "bulyakov": "Defective (straight chord across tongue due to FOV 85mm bug)",
+      "barabash": "Pass (smooth C2 parabola, zero ramus drift)",
+      "zakharov": "Pass on mandible, but maxilla 26/27 defects missed (marked present)",
+      "sumarokova": "Corrupted (beige blown-out window/level washout)",
+      "amirova": "Pass (clean targeted endo-spline 24..27 / 34..37 without figure-8 loop)"
+    }
+  },
+  "peers_under_inquisition": [
+    {
+      "id": "d6b8aa91",
+      "role": "Parabolic Anatomical Arch & Mathematical Spline Inquisitor",
+      "mem_file": ".agents/subagent_parabolic_arch.mem.json",
+      "pending_task": "Fix FOV threshold to <= 55.0 mm in cbctHonestArchBlobEngine.ts and re-render Bulyakov"
+    },
+    {
+      "id": "a50c1e47",
+      "role": "Real Clinical CT Slices Inquisitor",
+      "mem_file": ".agents/subagent_honest_slices.mem.json",
+      "pending_task": "Handle sinus penetration on W6 when H < 6mm, fix incisor #11 nasal floor naming"
+    }
+  ],
+  "user_verbatim_mandates_logged": [
+    "«завис твой ебанатик. не вижу редтим инквизиторов и честніх срезов без мокапов и подгонки»",
+    "«ті сам посмотри на свои 'blind test' полній пиздец, на одном только +- нормально. субагентов спавнь, разбираем єтот вопрос и линии кривіе блять не парабола нихуя»",
+    "«какие нахуй бугрі имбецилі опять же разніе методики и честно надо работать и показіввать разніе методики без подгонк результаттов»",
+    "«не муляжи а подгонка параметров и разметки єто зло. пусть думаютю. и ті думай. и контролируй спавнь сбуагентов»",
+    "«какой нахуй patient spevific пидорас время от времени спавнишь редтим агенті чтобі никакого хардкода и подгонок параметрво под пациента все аналитически»",
+    "«пидорас будешь сюда на поклон их честніе сркині разніх пациентов носить проверенніе что там нет подгонки честно будем оценивать»"
+  ]
+}

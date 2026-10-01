@@ -1,0 +1,28 @@
+{
+  "subagent": "Subagent 15: Dual-Mode Zero-Mock Inquisitor Batch 2",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md Mandates 8y, 8za, 8zb",
+    "Verified monorepo git status and test environment",
+    "Audited & hardened apps/web/src/components/marketing/marketingPresets.ts (purged 100% of raw emojis per Mandate 8z)",
+    "Audited & hardened apps/web/src/MarketingView.tsx and MarketingPromosList.tsx (dual-mode promos state, honest empty state with CTA button data-testid=\"btn-empty-new-promo\", isolated DEFAULT_MARKETING_PROMOS behind isDemoShowcaseMode)",
+    "Audited & hardened apps/web/src/components/sanpin/autoclaveLog/AutoclaveLog257Modal.tsx and AutoclaveJournal257Tab.tsx (quarantined INITIAL_FORM257_RECORDS and INITIAL_BIO_RECORDS behind isDemoShowcaseMode, added clean empty state with 'Зарегистрировать первый цикл' button)",
+    "Audited & hardened apps/web/src/components/sanpin/kraft/KraftPackageBarcodeModal.tsx (quarantined generateKraftBatchRecords behind isDemoShowcaseMode, default to empty array in production, clean empty table state)",
+    "Audited & hardened apps/web/src/components/radiology/HotFolderIntakeModal.tsx (quarantined INITIAL_HOT_FOLDER_ITEMS behind isDemoShowcaseMode, honest empty state, disabled attach CTA when !activeItem)",
+    "Audited & hardened apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx (avoid DEFAULT_SAMPLE_TEETH fallback when !isDemoShowcaseMode() on line 280)",
+    "Audited & hardened apps/web/src/components/treatment-plans/comparator/TreatmentPlanComparatorModal.tsx (isolated DEFAULT_TREATMENT_PLAN_PRESETS behind isDemoShowcaseMode()/isDemoMode, added clean data-testid=\"plan-comparator-empty-state\" with return CTA)",
+    "Fixed ClinicalWriteoffModal.tsx useMemo dependencies",
+    "Machine verification: check-encoding (6244 files OK), apps/web typecheck (0 TS errors), targeted node test suites passing 100%",
+    "Adversarial self-audit and detailed before/after diffs prepared"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "MarketingView previously fell back to DEFAULT_MARKETING_PROMOS[0] in production, displaying synthetic 497,000 rub revenue even when no promos existed.",
+    "Marketing presets contained 6 raw emojis violating Mandate 8z.",
+    "AutoclaveLog257Modal pre-filled 5 synthetic sterilization cycles from INITIAL_FORM257_RECORDS even in production.",
+    "KraftPackageBarcodeModal automatically seeded 5 pre-made packages in production.",
+    "HotFolderIntakeModal seeded 4 fake DICOM/panoramic files in production.",
+    "TreatmentPlanPresenterModal and TreatmentPlanComparatorModal fell back to sample teeth and 3-tier presets when opened without data.",
+    "All components now enforce strict dual-mode: 100% honest production with zero mock leakage + authentic non-blocking EmptyStates with actionable buttons vs rich showcase demo presets."
+  ]
+}

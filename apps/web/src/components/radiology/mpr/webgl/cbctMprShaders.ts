@@ -179,6 +179,23 @@ void main() {
     float low = u_windowLevel - safeWW * 0.5;
     float gray = clamp((finalHU - low) / safeWW, 0.0, 1.0);
 
+    // Smooth clinical LUT curve with soft-knee shoulder:
+    // 1. Air background cutoff: HU <= -100 is strictly pitch black (0.0), eliminating background fog
+    // 2. Smooth rational shoulder compression capping peak enamel strictly under 180/255 (0.705)
+    if (finalHU <= -100.0) {
+        gray = 0.0;
+    } else {
+        float corticalLevel = 0.52;
+        if (gray <= corticalLevel) {
+            gray = gray * (114.0 / 255.0 / corticalLevel);
+        } else {
+            float dt = (gray - corticalLevel) / (1.0 - corticalLevel);
+            float maxComp = (178.0 - 114.0) / 255.0;
+            float comp = maxComp * (dt / (dt + 0.35));
+            gray = (114.0 / 255.0) + comp;
+        }
+    }
+
     if (u_invert) {
         // Negative / White Paper mode with smooth anti-blinding air transition
         // DICOM PS 3.3 linear VOI LUT negative: gray = 1.0 - gray;
@@ -211,9 +228,9 @@ void main() {
             float t = (finalHU - 850.0) / 400.0;
             outRgb = mix(vec3(0.96, 0.78, 0.08), vec3(1.00, 0.92, 0.22), t);
         } else {
-            // Misch D1: Dense Cortical Bone (> 1250 HU) -> Pure White / Pearlescent
+            // Misch D1: Dense Cortical Bone (> 1250 HU) -> Clinical ivory capped <= 178/255 (0.698)
             float t = clamp((finalHU - 1250.0) / 750.0, 0.0, 1.0);
-            outRgb = mix(vec3(1.00, 0.96, 0.88), vec3(0.98, 0.98, 1.00), t);
+            outRgb = mix(vec3(0.68, 0.65, 0.58), vec3(0.70, 0.70, 0.68), t);
         }
     } else if (u_colorMap == 2) {
         // Mode 2: Endo High Contrast (Microcrack / MB2 accentuation)
@@ -474,9 +491,9 @@ void main() {
         }
     }
     
-    // Hardware Unsharp Masking / Trabecular Edge Enhancer
+    // Hardware Unsharp Masking / Trabecular Edge Enhancer (Soft clinical half-tone)
     if (u_sharpenAmount > 0.001) {
-        float sAmt = clamp(u_sharpenAmount, 0.0, 1.0);
+        float sAmt = clamp(u_sharpenAmount, 0.0, 1.0) * 0.35;
         vec2 tanStepMm = tanVec * (1.0 / max(1.0, u_outWidth)) * focalRadius;
         float zStepMm = (u_zBottomMm - u_zTopMm) / max(1.0, u_volumeDim.z);
 
@@ -491,7 +508,7 @@ void main() {
         float huDown  = samplePanoramicHU(voxDown);
 
         if (huLeft > -700.0 && huRight > -700.0 && huUp > -700.0 && huDown > -700.0 && finalHU > -700.0) {
-            float laplacian = 4.0 * finalHU - (huLeft + huRight + huUp + huDown);
+            float laplacian = clamp(4.0 * finalHU - (huLeft + huRight + huUp + huDown), -350.0, 350.0);
             finalHU = clamp(finalHU + sAmt * laplacian, -1000.0, 3071.0);
         }
     }
@@ -500,6 +517,23 @@ void main() {
     float safeWW = max(1.0, u_windowWidth);
     float low = u_windowLevel - safeWW * 0.5;
     float normVal = clamp((finalHU - low) / safeWW, 0.0, 1.0);
+
+    // Smooth clinical LUT curve with soft-knee shoulder:
+    // 1. Air background cutoff: HU <= -100 is strictly pitch black (0.0), eliminating background fog
+    // 2. Smooth rational shoulder compression capping peak enamel strictly under 180/255 (0.705)
+    if (finalHU <= -100.0) {
+        normVal = 0.0;
+    } else {
+        float corticalLevel = 0.52;
+        if (normVal <= corticalLevel) {
+            normVal = normVal * (114.0 / 255.0 / corticalLevel);
+        } else {
+            float dt = (normVal - corticalLevel) / (1.0 - corticalLevel);
+            float maxComp = (178.0 - 114.0) / 255.0;
+            float comp = maxComp * (dt / (dt + 0.35));
+            normVal = (114.0 / 255.0) + comp;
+        }
+    }
 
     vec3 outRgb;
 
@@ -523,9 +557,9 @@ void main() {
             float t = (finalHU - 850.0) / 400.0;
             outRgb = mix(vec3(0.96, 0.78, 0.08), vec3(1.00, 0.92, 0.22), t);
         } else {
-            // Misch D1: Dense Cortical Bone (> 1250 HU) -> Pure White / Pearlescent
+            // Misch D1: Dense Cortical Bone (> 1250 HU) -> Clinical ivory capped <= 178/255 (0.698)
             float t = clamp((finalHU - 1250.0) / 750.0, 0.0, 1.0);
-            outRgb = mix(vec3(1.00, 0.96, 0.88), vec3(0.98, 0.98, 1.00), t);
+            outRgb = mix(vec3(0.68, 0.65, 0.58), vec3(0.70, 0.70, 0.68), t);
         }
     } else if (u_colorMap == 2) {
         // Mode 2: Endo High Contrast (Microcrack / MB2 accentuation)

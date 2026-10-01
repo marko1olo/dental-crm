@@ -59,7 +59,7 @@ export interface VisiographTopToolbarProps {
 	onResetAll: () => void;
 	onPrintProtocol: () => void;
 	onOpenExportModal: () => void;
-	onClose?: () => void;
+	onClose?: (() => void) | undefined;
 }
 
 export function VisiographTopToolbar({

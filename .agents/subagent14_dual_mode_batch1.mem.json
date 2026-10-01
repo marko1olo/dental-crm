@@ -1,0 +1,31 @@
+{
+  "subagent": "Subagent 14: Dual-Mode Zero-Mock Inquisitor & Real PostgreSQL 18 Wiring Engineer (Batch 1)",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md, Mandate 8y (Strict Dual-Mode), 8za (Anti-Duplication), 8zb (No Academic Bloat)",
+    "Backend Wiring in apps/api/src/routes/warehouse.ts: Added real PostgreSQL 18 stock read endpoints GET /api/warehouse/:organizationId/stock and GET /api/warehouse/stock querying inventoryItems with organization isolation",
+    "Component 1 (VisitServiceBillingWidget.tsx): Quarantined DEFAULT_CHAIRSIDE_SERVICES behind isDemoShowcaseMode() || isDemoPatientId(patientId). In production without initial services, returns []. Implemented honest empty state with [+ Выбрать услугу из прейскуранта] action button. Line count: 794 <= 800",
+    "Component 2 (WarehouseManagerModal.tsx): Quarantined DEFAULT_WAREHOUSE_ITEMS behind isDemoShowcaseMode(). In production, fetches live balances from /api/warehouse/:orgId/stock. If empty, renders honest empty state with [Обновить остатки] button. Line count: 760 <= 800",
+    "Component 3 (FamilyTab.tsx): Quarantined DEFAULT_FAMILY_MEMBERS and balances (84 000 ₽ / 18 500 bonuses) behind isDemoShowcaseMode() || isDemoPatientId(data.patientId). In production, defaults to 0 ₽ and []. Renders honest empty state with [+ Добавить члена семьи] button. Added pat-88 prefix to isDemoPatientId. Line count: 666 <= 800",
+    "Component 4 (QueueBillboardView.tsx): Quarantined DEFAULT_BILLBOARD_QUEUE_ITEMS behind isDemoShowcaseMode(). In production, polls /api/dashboard for real appointments queue. Renders honest empty queue states ('Кабинеты готовятся к приёму' / 'Очередь приёма пуста. Ожидайте вызова врача на приём'). Line count: 415 <= 800",
+    "Component 5 (ClinicalWriteoffModal.tsx): Quarantined DEFAULT_CLINICAL_SERVICES behind isDemoShowcaseMode(). In production, pulls completedServices from active visit context (useAppStore.getState().dashboard?.activeVisit?.completedServices). If empty, renders honest empty state. Retained title='Клиническое автосписание материалов (Приказ № 804н)' for SSR regex assertion. Line count: 745 <= 800",
+    "Verified all 5 components stay <= 800 lines (794, 760, 666, 415, 745)",
+    "Verified zero duplicate files (*V2, *New)",
+    "Passed check:encoding (0 moji-bake, UTF-8 without BOM)",
+    "Passed npx tsc -b --noEmit apps/web (Exit Code 0)",
+    "Passed npx tsc -b --noEmit apps/api (Exit Code 0)",
+    "Passed procedureMaterialDeductionAutonomy.test.tsx (12/12 passing)",
+    "Passed visitServiceBillingWidget.test.tsx (17/17 passing)",
+    "Passed QueueBillboardView.test.tsx (5/5 passing)",
+    "Passed clinical804nWriteoff.test.ts (20/20 passing)",
+    "Passed clinicalWriteoff.test.ts (24/24 passing)",
+    "Passed patientPortalEndToEndJourney.test.ts (7/7 passing)",
+    "Passed patientCabinet.test.ts FamilyTab tests (2/2 passing)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Zero mock data leakage in production for Batch 1 components",
+    "Real PostgreSQL 18 warehouse balance endpoints live on GET /api/warehouse/:organizationId/stock and /api/warehouse/stock",
+    "Strict dual-mode isolation completely active and tested across all targeted surfaces"
+  ]
+}

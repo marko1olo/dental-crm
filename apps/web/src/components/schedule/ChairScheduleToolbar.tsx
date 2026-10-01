@@ -42,7 +42,7 @@ export interface ChairScheduleToolbarProps {
   popoverSelectedDocId: Record<string, string>;
   setPopoverSelectedDocId: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   dateKey: string;
-  onAssignChairDoctor?: (chairId: string, assignment: ChairDoctorShiftAssignment | null) => void;
+  onAssignChairDoctor?: ((chairId: string, assignment: ChairDoctorShiftAssignment | null) => void) | undefined;
   handleAssignShift: (chair: ScheduleChair, preset: any) => void;
   handleUnassignShift: (chair: ScheduleChair) => void;
   handleDuplicateChair: (chair: ScheduleChair) => void;
@@ -60,7 +60,7 @@ export interface ChairScheduleToolbarProps {
   handleCopyWeekShiftsToNextWeek: () => void;
   setIsDateRangeModalOpen: (open: boolean) => void;
   handleClearAllDayShifts: () => void;
-  onOpenRosterModal?: () => void;
+  onOpenRosterModal?: (() => void) | undefined;
   setIsAddDoctorOpen: (open: boolean) => void;
 }
 

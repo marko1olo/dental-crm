@@ -1,0 +1,31 @@
+{
+  "subagent": "Subagent 7: Clinical Visit Protocols & SOAP Auto-Filling Hardening Engineer",
+  "status": "in_progress",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md Mandate 8za (Anti-Duplication), 8e (Doctor Autonomy), 8b (Exact Math to Kopeck)",
+    "Audited existing clinical template catalog and engine in apps/web/src/components/emr/templates/",
+    "Hardened Caries (K02.1) with shade A2, selective etching 37% H3PO4, OptiBond FL/Prime&Bond, finishing with Sof-Lex/Enhance/Prisma Gloss, exact kopeck prices",
+    "Hardened Pulpitis (K04.0) with WaveOne Gold/ProTaper Gold, 3% NaOCl ultrasonic irrigation + 17% EDTA, AH Plus + gutta-percha continuous wave, RVG control, exact kopecks",
+    "Hardened Periodontitis (K04.5) with canal desensitization, temporary Ca(OH)2 paste (Кальсепт/Metapex), hermetic temporary seal, exact kopecks",
+    "Hardened Simple Extraction (K08.1) with syndesmotomy, luxation, socket curettage, Alvostim sponge, sutures",
+    "Added Complex Extraction (tooth_extraction_complex_k01_1, K01.1) with mucoperiosteal flap, bone guttering, root sectioning, fragment luxation, Alvostim with iodoform, sutures, exact kopecks",
+    "Hardened Professional Hygiene (hygiene_airflow_k05_3) with EMS Piezon ultrasonic scaling, AirFlow glycine polish (25 um), deep fluoridation Clinpro White Varnish, exact kopecks",
+    "Supplied exact priceKopecks on every single statutory service across all 14 clinical templates and PHYSIOLOGICAL_NORM_PRESET",
+    "Updated clinicalDiaryTemplatesEngine.ts to calculate totalEstimatedKopecks, render ruble prices in unified SOAP text, and support PHYSIOLOGICAL_NORM_PRESET",
+    "Refactored ClinicalDiaryTemplatesModal.tsx: removed duplicate PHYSIOLOGICAL_NORM_PRESET, imported from engine, added price tags to service chips, displayed total estimated price",
+    "Updated VisitDiarySection.tsx onApplyDiary: prevented data loss by combining subjective complaints + anamnesis into diary.anamnesis, and passed full protocol, anesthesia, materials, recommendations, and billable services into treatmentDescription",
+    "Audited StomX 448 templates and Stomt clinical protocols (stomxClinicalTemplatesDeepAudit.test.ts, stomtTemplatesSoapAutonomy.test.tsx) - 100% verified and synchronized",
+    "Audited Informed Voluntary Consents (ИДС 1051н, apps/web/src/components/consents/**): verified print-first, paper fallback, SHA-256 integrity, PDF/A-1b, 100% test pass (visitPlanAndConsentAutonomy, informedConsentPackageSigning, informedConsentAutonomyWave51, informedConsentVectorPdfA, informedConsentFallbackAutonomy)",
+    "Expanded unit tests in clinicalDiaryTemplatesEngine.test.ts from 18 to 21 tests (100% PASS in 1.29s)",
+    "Verified check-encoding.mjs (6,234 files, 0 issues, strict UTF-8)"
+  ],
+  "pending_steps": [
+    "Confirm typecheck task-346 completion",
+    "Send comprehensive report to parent orchestrator via send_message"
+  ],
+  "findings": [
+    "No duplicate components were created (*V2 files avoided, 8za honored)",
+    "Exact kopeck accounting strictly maintained across all Order 804n statutory services",
+    "Zero cartoon emojis, desktop density preserved"
+  ]
+}

@@ -133,7 +133,7 @@ describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {
 			const panoCoarse = reconstructPanoramicView(volume, curve, { coarsePreview: true });
 			assert.equal(panoCoarse.centerZMm, -5.0);
 			assert.equal(panoCoarse.focalThicknessMm, 14.0);
-			assert.equal(panoCoarse.heightPx, 220);
+			assert.equal(panoCoarse.heightPx, 138);
 			assert.ok(panoCoarse.pixelData.length > 0);
 			assert.equal(panoCoarse.toothMarkersOnPano.length, 16);
 		});

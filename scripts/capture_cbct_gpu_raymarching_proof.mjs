@@ -163,6 +163,9 @@ async function run() {
 
 		const page = await context.newPage();
 
+		page.on("console", (m) => console.log(`[Browser Console ${m.type()}]`, m.text()));
+		page.on("pageerror", (e) => console.error("[Browser Error]", e.message));
+
 		await page.route("**/api/**", async (route) => {
 			const url = route.request().url();
 			let pathname = "";
@@ -389,10 +392,13 @@ async function run() {
 
 		console.log("Dispatching 3D volume into modal...");
 		await page.evaluate(() => {
+			console.log("[In-Page] Dispatching dente-load-cbct-volume, volume exists:", !!window.__cbctDemoVolume);
 			if (window.__cbctDemoVolume) {
 				window.dispatchEvent(new CustomEvent("dente-load-cbct-volume", { detail: window.__cbctDemoVolume }));
 			}
+			console.log("[In-Page] Event dispatched successfully!");
 		});
+		console.log("Event dispatch completed!");
 
 		// Switch to MPR 3D workspace tab
 		console.log("Checking for MPR 3D workspace tab...");
@@ -465,6 +471,14 @@ async function run() {
 		}
 		if (gpuDiag.nonBgCount === 0) {
 			console.warn("[WARN] 3D canvas appears dark, testing preset interaction...");
+		}
+
+		// Open preset dropdown if trigger exists
+		const presetTrigger = page.locator("[data-testid='cbct-volume-3d-preset-trigger']");
+		if (await presetTrigger.isVisible().catch(() => false)) {
+			console.log("Opening 3D preset dropdown...");
+			await presetTrigger.click();
+			await page.waitForTimeout(300);
 		}
 
 		// Test switching to Cortical Bone preset (+600..+2000 HU)

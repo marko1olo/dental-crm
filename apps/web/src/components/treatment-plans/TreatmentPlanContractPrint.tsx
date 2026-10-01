@@ -43,21 +43,21 @@ export interface TreatmentPlanContractPrintProps {
 	readonly stages: readonly TreatmentPlanStage[];
 	readonly patientName: string;
 	readonly patientId: string;
-	readonly patientPhone?: string;
-	readonly patientBirthDate?: string;
+	readonly patientPhone?: string | undefined;
+	readonly patientBirthDate?: string | undefined;
 	readonly doctorFullName: string;
 	readonly clinicName: string;
-	readonly clinicLegalName?: string;
-	readonly clinicInn?: string;
-	readonly clinicOgrn?: string;
-	readonly clinicAddress?: string;
-	readonly clinicLicense?: string;
-	readonly contractNumber?: string;
-	readonly signedAgreement?: DigitalSignatureAgreementData | null;
-	readonly discountPercent?: number;
-	readonly bonusPointsDeductedRub?: number;
-	readonly installmentMonths?: number;
-	readonly planAgeDays?: number;
+	readonly clinicLegalName?: string | undefined;
+	readonly clinicInn?: string | undefined;
+	readonly clinicOgrn?: string | undefined;
+	readonly clinicAddress?: string | undefined;
+	readonly clinicLicense?: string | undefined;
+	readonly contractNumber?: string | undefined;
+	readonly signedAgreement?: DigitalSignatureAgreementData | null | undefined;
+	readonly discountPercent?: number | undefined;
+	readonly bonusPointsDeductedRub?: number | undefined;
+	readonly installmentMonths?: number | undefined;
+	readonly planAgeDays?: number | undefined;
 	readonly onClose: () => void;
 }
 

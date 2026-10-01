@@ -394,8 +394,11 @@ export interface CompletedServicesSummary {
 	unpricedCount: number;
 	servicesForInvoice: Array<{
 		code: string;
+		code804n?: string | undefined;
 		title: string;
 		price: number;
+		priceRub?: number | undefined;
+		unitPriceRub?: number | undefined;
 		quantity: number;
 		toothCode?: string | undefined;
 	}>;
@@ -431,10 +434,14 @@ export function calculateCompletedServicesSummary(
 			totalRub += parsed.priceRub;
 		}
 
+		const unitPrice = parsed.priceRub ?? 0;
 		servicesForInvoice.push({
 			code: parsed.code804n || "804н",
+			code804n: parsed.code804n || "804н",
 			title: parsed.title,
-			price: parsed.priceRub ?? 0,
+			price: unitPrice,
+			priceRub: unitPrice,
+			unitPriceRub: unitPrice,
 			quantity: parsed.quantity,
 			toothCode: parsed.toothCode,
 		});

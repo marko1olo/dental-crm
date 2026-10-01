@@ -10,6 +10,7 @@ import type {
 	ToothData,
 	TreatmentPlanItem,
 	TreatmentPlanStage,
+	TreatmentPlanStatus,
 	TreatmentPlanTier,
 	TreatmentPlanTierId,
 	TreatmentPlanValidationPayload,
@@ -66,13 +67,13 @@ import {
 
 export interface UseTreatmentPlanLogicProps {
 	readonly patientId: string;
-	readonly patientName?: string;
+	readonly patientName?: string | undefined;
 	readonly teethData: readonly ToothData[];
 	readonly onExportToCashier?: ((data: CashierInvoiceExportData) => void) | undefined;
-	readonly onPlanSaved?: (planId: string) => void;
-	readonly planCreatedAtIso?: string;
-	readonly initialStatus?: "draft" | "agreed" | "in_progress" | "completed";
-	readonly onStatusChange?: (status: "draft" | "agreed" | "in_progress" | "completed") => void;
+	readonly onPlanSaved?: ((planId: string) => void) | undefined;
+	readonly planCreatedAtIso?: string | undefined;
+	readonly initialStatus?: TreatmentPlanStatus | undefined;
+	readonly onStatusChange?: ((status: TreatmentPlanStatus) => void) | undefined;
 }
 
 export function useTreatmentPlanLogic({
@@ -99,7 +100,7 @@ export function useTreatmentPlanLogic({
 	const [discountPercent, setDiscountPercent] = useState<number>(0);
 	const [bonusPointsToUseRub, setBonusPointsToUseRub] = useState<number>(0);
 
-	const [planStatus, setPlanStatus] = useState<"draft" | "agreed" | "in_progress" | "completed">(
+	const [planStatus, setPlanStatus] = useState<TreatmentPlanStatus>(
 		initialStatus || "agreed",
 	);
 
@@ -234,7 +235,7 @@ export function useTreatmentPlanLogic({
 		});
 	}, [patientId, autoStages]);
 
-	const handleStatusTransition = (newStatus: "draft" | "agreed" | "in_progress" | "completed") => {
+	const handleStatusTransition = (newStatus: TreatmentPlanStatus) => {
 		if (newStatus === "agreed" || newStatus === "in_progress") {
 			const allItems = stages.flatMap((s) => s.items);
 			const conflicts = detectMutuallyExclusiveToothProcedures(allItems);
@@ -251,13 +252,19 @@ export function useTreatmentPlanLogic({
 
 		setPlanStatus(newStatus);
 		onStatusChange?.(newStatus);
-		const statusLabels: Record<"draft" | "agreed" | "in_progress" | "completed", string> = {
+		const statusLabels: Partial<Record<TreatmentPlanStatus, string>> = {
 			draft: "Черновик",
+			presented: "Презентован",
 			agreed: "Согласован",
+			approved: "Утвержден",
 			in_progress: "В работе",
+			active: "Активен",
+			accepted: "Принят",
+			signed: "Подписан",
 			completed: "Завершен",
+			rejected: "Отклонен",
 		};
-		showToast(`Статус плана лечения: «${statusLabels[newStatus]}»`, "success", 3000);
+		showToast(`Статус плана лечения: «${statusLabels[newStatus] || newStatus}»`, "success", 3000);
 	};
 
 	const handleGenerateCbctAutoPlan = () => {

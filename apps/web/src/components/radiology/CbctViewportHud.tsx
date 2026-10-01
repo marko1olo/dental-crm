@@ -336,17 +336,6 @@ export const CbctViewportHud: React.FC<CbctViewportHudProps> = ({
 				{labels.right}
 			</div>
 
-			{/* 4. BOTTOM-LEFT DICOM WW/WL BADGE (DICOM PS3.3 Standard) */}
-			<div className="absolute bottom-1.5 left-1.5 pointer-events-auto flex items-center gap-1.5 z-20">
-				<div
-					className="px-1.5 py-0.5 rounded bg-zinc-900/90 backdrop-blur-sm border border-zinc-700/80 shadow-xs text-[9px] font-mono text-zinc-400 select-none"
-					title={`DICOM WW/WL: W=${windowWidth ?? 4400}, L=${windowLevel ?? 1300}`}
-					data-testid={`cbct-hud-wl-${viewportType}`}
-				>
-					W: <span className="text-zinc-100 font-bold">{windowWidth ?? 4400}</span> L:{" "}
-					<span className="text-zinc-100 font-bold">{windowLevel ?? 1300}</span>
-				</div>
-			</div>
 
 			{/* 5. BOTTOM-RIGHT 3D ORIENTATION COMPASS CUBE (Compact 28px in 2x2 grid, 40px in maximized mode) */}
 			<div className="absolute bottom-1.5 right-1.5 pointer-events-auto z-20">

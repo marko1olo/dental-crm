@@ -32,6 +32,7 @@ export interface WorkspaceCommonProps {
 	readonly maximizedViewport: CbctViewportType | null;
 	readonly handleToggleMaximize: (v: CbctViewportType) => void;
 	readonly mobileActiveTab: string;
+	readonly patientDisplayName?: string | undefined;
 	readonly jawType?: "mandible" | "maxilla" | undefined;
 	readonly onSwitchJaw?: ((jaw: "mandible" | "maxilla") => void) | undefined;
 	readonly archCurve?: DentalArchCurve | undefined;

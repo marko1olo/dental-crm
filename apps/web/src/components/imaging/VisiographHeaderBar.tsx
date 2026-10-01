@@ -5,7 +5,7 @@ export interface VisiographHeaderBarProps {
 	readonly scanHistoryCount: number;
 	readonly isLoadingHistory: boolean;
 	readonly criticalCount: number;
-	readonly historyFailure: string | null;
+	readonly historyFailure: { status: number | null } | string | null;
 	readonly hasAiReport: boolean;
 	readonly onUploadClick: () => void;
 	readonly onPrintClick: () => void;

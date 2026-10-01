@@ -1,0 +1,122 @@
+{
+  "subagent": "Human Language & Bureaucracy Purge Inquisitor",
+  "status": "COMPLETED",
+  "target_scopes": [
+    "apps/web/src/components/visit/",
+    "apps/web/src/components/patients/"
+  ],
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md completely",
+    "Read AGENTS.md completely",
+    "Verify baseline test suite status (413 -> 414 passing in visit, 125 passing in patients)",
+    "Scout occurrences of bureaucratic jargon in visit and patients components via recursive AST/grep",
+    "Inspect files completely before editing",
+    "Refactor bureaucratic jargon into clean, human language preserving test/print IDs",
+    "Verify targeted tests pass (Exit Code 0: 414 visit tests, 125 patient tests)",
+    "Run check:encoding gate (6456 files, 0 warnings)",
+    "Report findings to orchestrator"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "file": "apps/web/src/components/visit/VisitAnamnesisTab.tsx",
+      "changes": [
+        "Toast: 'Применена норма Формы 043/у (Z01.2): соматически здоров' -> 'Применена норма: соматически здоров (Z01.2)'",
+        "Button title: 'Открыть каталог 448 клинических шаблонов 043/у из StomX...' -> 'Открыть каталог 448 клинических шаблонов из StomX...'",
+        "Button title: '1 клик: заполнить осмотр физиологической нормой Формы 043/у...' -> '1 клик: заполнить осмотр нормой (соматически здоров)'",
+        "Button title: 'Перенести текущие данные анамнеза в дневник Формы 043/у' -> 'Перенести текущие данные анамнеза в дневник приёма'",
+        "Button label: 'Перенести в дневник 043/у' -> 'В дневник приёма'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/visit/PatientMemoPrintModal.tsx",
+      "changes": [
+        "Badge: 'Форма 043/у' -> 'Медицинская карта'",
+        "Button label: 'В протокол 043/у' -> 'В дневник приёма'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/visit/view/VisitViewModals.tsx",
+      "changes": [
+        "Act text: 'Сформирован акт выполненных работ...' -> 'Сформирован счёт и акт услуг...'",
+        "Toast: 'Акт выполненных работ ... готов к подписанию' -> 'Счёт и акт услуг ... готов к подписанию'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/visit/VisitView.tsx",
+      "changes": [
+        "Abort dialog note: 'Врачебная автономия (Мандат 8e): закрытие визита без принудительного заполнения 100% дневника 043/у' -> 'Закрытие визита без принудительного заполнения всех полей дневника. Все уже введенные данные сохранятся в карте как черновик.'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/visit/VisitConsentsTab.tsx",
+      "changes": [
+        "Toast: 'Сформировано и отправлено на печать доп. согласие на новые процедуры (1051н)' -> '... (ИДС)'",
+        "Warning text: '(Мандат Врачебной Автономии)' -> '(врачебная автономия)'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/visit/VisitServiceBillingWidget.tsx",
+      "changes": [
+        "Label: 'Свобода скидок врача (Мандат 8e • Без паролей и согласований):' -> 'Свобода скидок врача (без паролей и согласований):'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/visit/surgery/VisitSurgeryProtocolTab.tsx",
+      "changes": [
+        "Button title: '1-Клик списание материалов операции ... со склада с мягким овердрафтом (Мандат 8e)' -> '1-Клик списание материалов операции (имплантат, графт, мембрана, расходники) со склада'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/visit/view/VisitSecondaryPanelsInner.tsx",
+      "changes": [
+        "Notice title: '...разрешены без ограничений (Мандат 8e)' -> '...разрешены без ограничений'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientAllergySafetyBanner.tsx",
+      "changes": [
+        "Toast: 'Клинический профиль безопасности скопирован для вставки в форму 043/у' -> '... в карту'",
+        "Button title: 'Скопировать и вставить в дневник 043/у' -> 'Скопировать и вставить в дневник приёма'",
+        "Button label: 'В 043/у' -> 'В карту'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientHeaderCard.tsx",
+      "changes": [
+        "Button title: 'Выписка счёта, акты выполненных работ и касса' -> 'Выписка счёта, услуги и касса'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientWorkspaceView.tsx",
+      "changes": [
+        "Card number badge: '043/у-XXXXXXXX' -> '№ XXXXXXXX'",
+        "Button title: 'Открыть счета, акты выполненных услуг и кассу' -> 'Открыть счета, услуги и кассу'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/patients/patientFieldRequirementsConfig.ts",
+      "changes": [
+        "Validation error: 'Дата рождения обязательна для амбулаторной карты 043/у' -> 'Дата рождения обязательна для медицинской карты'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientCardModal.tsx",
+      "changes": [
+        "Button title: 'Печать карты пациента (Мандат 8e п. 5)' -> 'Печать карты пациента'"
+      ]
+    },
+    {
+      "file": "apps/web/src/components/patients/PatientCreationModal.tsx",
+      "changes": [
+        "Toast: 'Применена физиологическая норма: соматически здоров (Мандат 8e)' -> 'Применена физиологическая норма: соматически здоров'",
+        "Button title: 'Мандат 8e: 1 клик для переключения физиологической нормы' -> '1 клик: заполнить нормой (соматически здоров)'"
+      ]
+    }
+  ],
+  "verification": {
+    "visit_tests": "414 / 414 PASS (100% green)",
+    "patient_tests": "125 / 125 PASS (100% green)",
+    "encoding": "6456 files, 0 warnings (100% green)"
+  }
+}

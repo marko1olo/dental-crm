@@ -34,7 +34,7 @@ export interface AppointmentModalDoctorChairSectionProps {
   isSoloDoctor: boolean;
   doctors: Array<{ id: string; fullName: string; specialties?: string[] }>;
   assistants: Array<{ id: string; fullName: string }>;
-  chairs: Array<{ id: string; name: string; specialization?: string }>;
+  chairs: Array<{ id: string; name: string; specialization?: string | null | undefined }>;
   dutyDoctorId: string | null;
   dutyDoc: { id: string; fullName: string } | null;
   dutyDocHours: string | null;
@@ -308,7 +308,7 @@ export function AppointmentModalDoctorChairSection({
                 const matchingChair = chairs.find(
                   (c) =>
                     c.specialization &&
-                    doc.specialties.includes(c.specialization),
+                    doc.specialties?.includes(c.specialization),
                 );
                 if (matchingChair) targetChairId = matchingChair.id;
               }

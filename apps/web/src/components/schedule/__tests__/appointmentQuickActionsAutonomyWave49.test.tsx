@@ -881,8 +881,8 @@ describe("Wave 49 (Feature 232): Unblocked Communication Actions & Non-blocking 
 			const container = mockDomEnv.doc.createElement("div");
 			const root: Root = createRoot(container as unknown as HTMLElement);
 
-			let createdPatientPayload: { fullName: string; phone?: string | null } | null = null;
-			const onQuickCreateMock = async (data: { fullName: string; phone?: string | null }) => {
+			let createdPatientPayload: { fullName: string; phone?: string | null | undefined } | null = null;
+			const onQuickCreateMock = async (data: { fullName: string; phone?: string | null | undefined }) => {
 				createdPatientPayload = data;
 				return {
 					id: "pat-phone-only-123",
@@ -967,7 +967,7 @@ describe("Wave 49 (Feature 232): Unblocked Communication Actions & Non-blocking 
 				return true;
 			};
 
-			const onQuickCreateMock = async (data: { fullName: string; phone?: string | null }) => {
+			const onQuickCreateMock = async (data: { fullName: string; phone?: string | null | undefined }) => {
 				return {
 					id: "pat-auto-save-phone",
 					fullName: data.fullName,

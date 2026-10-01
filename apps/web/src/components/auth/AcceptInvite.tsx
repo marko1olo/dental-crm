@@ -71,15 +71,12 @@ export function AcceptInvite({
 		<div className="auth-overlay">
 			<div className="auth-glow auth-glow--left"></div>
 			<div className="auth-glow auth-glow--right"></div>
-			<div
-				className="auth-modal animate-fade-in-up"
-				style={{ maxWidth: "400px" }}
-			>
+			<div className="auth-modal animate-fade-in-up">
 				<div className="auth-header-center">
 					<div className="auth-logo-box">
-						<Shield size={32} />
+						<Shield size={34} />
 					</div>
-					<h2 className="auth-logo-title">DENTE CRM-MIS</h2>
+					<h2 className="auth-logo-title">DENTE</h2>
 					<p className="auth-logo-subtitle">Активация профиля по приглашению</p>
 				</div>
 

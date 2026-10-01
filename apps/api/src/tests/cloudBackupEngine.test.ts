@@ -128,8 +128,13 @@ describe("CloudBackupEngine — Zero-Knowledge 152-ФЗ Backup & Disaster Recove
 			const storage = new LocalMockS3Adapter(tempDir);
 			const mnemonic = generateMnemonic();
 
-			// Повторяющиеся клинические записи для наглядной проверки компрессии gzip
-			const clinicalRecords = [];
+			const clinicalRecords: Array<{
+				id: string;
+				fullName: string;
+				snils: string;
+				diagnosis: string;
+				anamnesis: string;
+			}> = [];
 			for (let i = 0; i < 200; i++) {
 				clinicalRecords.push({
 					id: `p-${i}`,

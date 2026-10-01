@@ -40,6 +40,7 @@ export { formatMoneyExact, numberToWordsRu, pluralizeRu } from "./treatmentPlanA
 export { TreatmentPlanActHeader } from "./TreatmentPlanActHeader";
 export { TreatmentPlanActMaterialsTable } from "./TreatmentPlanActMaterialsTable";
 export { TreatmentPlanActSignatures } from "./TreatmentPlanActSignatures";
+export type TreatmentPlanActPrintData = CompletedWorksActAndWriteOffData;
 
 export interface TreatmentPlanCompletedActPrintProps {
 	readonly isOpen: boolean;

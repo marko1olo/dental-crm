@@ -8,7 +8,7 @@ import {
 	FileText,
 	Layers,
 } from "lucide-react";
-import { type GroupedFriendlyBlock } from "../portal/patientCabinet/patientCareInstructionsEngine";
+import { type FriendlyBillingGroup } from "../portal/patientCabinet/patientCareInstructionsEngine";
 import {
 	PatientBillingPlanStagePanel,
 	type PatientBillingPlanStagePanelProps,
@@ -78,7 +78,7 @@ export interface PatientBillingFriendlyTabProps
 		PatientBillingTenderPanelProps {
 	readonly patientName: string;
 	readonly friendlyBreakdown: {
-		readonly groups: readonly GroupedFriendlyBlock[];
+		readonly groups: readonly FriendlyBillingGroup[];
 		readonly totalAmountRub: number;
 		readonly totalAmountRubFormatted: string;
 		readonly patientFriendlySummaryRu: string;

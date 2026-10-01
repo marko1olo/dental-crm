@@ -1,0 +1,25 @@
+{
+  "role": "FRESH ISOMETRIC CPR & SOFT RADIOLOGIC CONTRAST INQUISITOR",
+  "status": "COMPLETED_VICTORY_CONFIRMED",
+  "started_at": "2026-10-01T12:55:00+04:00",
+  "completed_at": "2026-10-01T13:06:00+04:00",
+  "target_scope": [
+    "apps/web/src/components/radiology/cbctPanoramicReconstructionMath.ts",
+    "scripts/multi_patient_cbct_runner.ts"
+  ],
+  "mandates": [
+    "No hardcode per patient (Zero Patient-Specific Mandate 31) - VERIFIED",
+    "Strict 1:1 isometric CPR (1 mm along arch = 1 mm along Z axis) - VERIFIED",
+    "Soft radiologic contrast (PACS standard W/L: 4200/1100, enamel ~220/255, visible pulp and trabeculae) - VERIFIED",
+    "Correct FDI dental numbering on CPR (18..28 top ribbon, 48..38 bottom ribbon) - VERIFIED",
+    "All files <= 800 lines (Mandate 8b) - cbctPanoramicReconstructionMath.ts: 624, multi_patient_cbct_runner.ts: 713 - VERIFIED",
+    "Empirical visual verification of all 5 patient benchmarks via view_file - VERIFIED"
+  ],
+  "verified_proofs": [
+    "docs/screenshots/cbct_live/blind_benchmark/proof_blind_bulyakov_both_jaws.png",
+    "docs/screenshots/cbct_live/blind_benchmark/proof_blind_zakharov_both_jaws.png",
+    "docs/screenshots/cbct_live/blind_benchmark/proof_blind_sumarokova_both_jaws.png",
+    "docs/screenshots/cbct_live/blind_benchmark/proof_blind_barabash_both_jaws.png",
+    "docs/screenshots/cbct_live/blind_benchmark/proof_blind_amirova_both_jaws.png"
+  ]
+}

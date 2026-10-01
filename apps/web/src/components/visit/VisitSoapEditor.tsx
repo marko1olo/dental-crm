@@ -51,6 +51,8 @@ export interface VisitSoapNoteValues {
 }
 
 export interface VisitSoapEditorProps {
+	readonly visitId?: string;
+	readonly patientId?: string;
 	readonly initialValues?: VisitSoapNoteValues;
 	readonly activeTooth?: number | null;
 	readonly onSelectActiveTooth?: (tooth: number) => void;
@@ -139,6 +141,8 @@ export function resolveProtocolFromTemplate(
  * Редактор медицинской карты (SOAP) с быстрым выбором протоколов StomX
  */
 export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
+	visitId,
+	patientId,
 	initialValues,
 	activeTooth = null,
 	onSelectActiveTooth,
@@ -247,10 +251,10 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 	}, [isSoapMoreOpen]);
 
 	// ── Синхронный бэкап черновика в localStorage (защита от потери при смене вкладок/звонках) ──
-	const soapStorageKey = useMemo(
-		() => `dente_soap_editor_draft_${selectedTooth ?? "general"}`,
-		[selectedTooth],
-	);
+	const soapStorageKey = useMemo(() => {
+		const prefix = visitId ? `${visitId}_` : patientId ? `${patientId}_` : "";
+		return `dente_soap_editor_draft_${prefix}${selectedTooth ?? "general"}`;
+	}, [visitId, patientId, selectedTooth]);
 
 	// Мандат 8e / 8c: Неблокирующий баннер обнаружения черновика («Обнаружен несохранённый черновик от 14:32 — [Восстановить] [Сбросить]»)
 	const [unsavedDraftNotice, setUnsavedDraftNotice] = useState<{
@@ -337,11 +341,14 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 	const handleDiscardDraft = useCallback(() => {
 		try {
 			safeLocalStorageRemoveItem(soapStorageKey);
+			if (visitId || patientId) {
+				safeLocalStorageRemoveItem(`dente_soap_editor_draft_${selectedTooth ?? "general"}`);
+			}
 		} catch (err: unknown) {
 			console.warn("[VisitSoapEditor] Failed to discard draft:", err);
 		}
 		setUnsavedDraftNotice(null);
-	}, [soapStorageKey]);
+	}, [soapStorageKey, visitId, patientId, selectedTooth]);
 
 	// Синхронизация при внешних изменениях activeTooth
 	useEffect(() => {
@@ -491,24 +498,27 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 	useEffect(() => {
 		const handleExternalSoapProtocol = (e: Event) => {
 			const customEvent = e as CustomEvent<{
-				soap?: Partial<VisitSoapNoteValues> & { statusLocalis?: string };
+				soap?: Partial<VisitSoapNoteValues> & { statusLocalis?: string; complaints?: string; diagnosisIcd10?: string };
 				mode?: "replace" | "smart_append";
 				immediate?: boolean;
-			}>;
-			if (!customEvent?.detail?.soap) return;
-			const { soap } = customEvent.detail;
-			const statusLocalis = soap.statusLocalis || soap.objectiveStatus;
+			} & Partial<VisitSoapNoteValues> & { statusLocalis?: string; complaints?: string; diagnosisIcd10?: string }>;
+			if (!customEvent?.detail) return;
+			const detail = customEvent.detail;
+			const incoming = detail.soap || detail;
+			if (!incoming || typeof incoming !== "object") return;
+			const statusLocalis = incoming.statusLocalis || incoming.objectiveStatus;
+			const complaint = incoming.complaint || incoming.complaints;
 
 			setValues((prev) => {
 				const next: VisitSoapNoteValues = {
 					...prev,
-					anamnesis: soap.anamnesis ?? prev.anamnesis,
+					anamnesis: incoming.anamnesis ?? prev.anamnesis,
 					objectiveStatus: statusLocalis ?? prev.objectiveStatus,
-					complaint: soap.complaint ?? prev.complaint,
-					diagnosis: soap.diagnosis ?? prev.diagnosis,
-					treatmentPlan: soap.treatmentPlan ?? prev.treatmentPlan,
-					recommendations: soap.recommendations ?? prev.recommendations,
-					icd10: soap.icd10 ?? prev.icd10,
+					complaint: complaint ?? prev.complaint,
+					diagnosis: incoming.diagnosis ?? prev.diagnosis,
+					treatmentPlan: incoming.treatmentPlan ?? prev.treatmentPlan,
+					recommendations: incoming.recommendations ?? prev.recommendations,
+					icd10: incoming.icd10 ?? incoming.diagnosisIcd10 ?? prev.icd10,
 				};
 				valuesRef.current = next;
 				setSaveStatus("saved");
@@ -1044,7 +1054,13 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 									onClick={() => {
 										setIsSoapMoreOpen(false);
 										setActiveViewMode("full_text");
-										setTimeout(() => window.print(), 100);
+										setTimeout(() => {
+											try {
+												window.print();
+											} catch (printErr) {
+												console.warn("[VisitSoapEditor] print failed:", printErr);
+											}
+										}, 100);
 									}}
 									className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink)] text-left cursor-pointer border-none bg-transparent"
 								>

@@ -252,7 +252,7 @@ export const InventoryBatchFefoPanel: React.FC<InventoryBatchFefoPanelProps> = (
 							<tbody className="divide-y divide-[var(--line)]">
 								{filteredBatches.map(({ item, fefoInfo, daysLeft, status }) => {
 									const qty = Number(item.stockQuantity) || 0;
-									const isLow = qty <= (Number(item.threshold) || 0);
+									const isLow = qty <= (Number(item.criticalThreshold) || 0);
 									const isOverdraft = qty < 0;
 
 									return (

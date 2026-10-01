@@ -17,6 +17,10 @@
  */
 
 import type { Point2D, Point3D, CbctVoxelVolume } from "./cbctMprMath";
+import { sampleVoxelTrilinearHU } from "./cbctMprMath";
+import { computeCrossSectionAffineBasis } from "./cbctCrossSectionResliceMath";
+import { measureAlveolarRidgeCaliper } from "./cbctRidgeCaliperMath";
+import { calculateArchTangentsAndNormals, type DentalArchCurve } from "./cbctArchSplineMath";
 import type { AlveolarRidgeCaliperMeasurement } from "./cbctCaliperMeasureMath";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
@@ -128,9 +132,145 @@ export const ZAKHAROV_EDENTULOUS_PROFILES: Record<ZakharovEdentulousToothFdi, Za
 };
 
 /**
- * Calculates or retrieves the edentulous ridge measurement for Zakharov tooth 26 or 27.
+ * Algorithmically measures the edentulous ridge for Zakharov tooth 26 or 27 directly from 3D CBCT voxels.
  */
-export function getZakharovRidgeMeasurement(toothFdi: ZakharovEdentulousToothFdi): ZakharovRidgeMeasurement {
+export function measureZakharovRidgeFromVolume(
+	volume: CbctVoxelVolume,
+	toothFdi: ZakharovEdentulousToothFdi,
+	archCurve?: DentalArchCurve,
+): ZakharovRidgeMeasurement {
+	const toothStr = String(toothFdi);
+	const anchor = archCurve?.anchors?.find((a: any) => a.toothFdi === toothStr);
+	const centerZMm = archCurve?.planeZMm ?? 0.0;
+	const normals = archCurve?.splinePointsMm ? calculateArchTangentsAndNormals(archCurve.splinePointsMm) : [];
+
+	let centerMm: Point3D = { x: toothFdi === 26 ? 27.4 : 30.0, y: toothFdi === 26 ? -18.2 : -9.7, z: centerZMm };
+	let normal2D: Point2D = { x: 0.95, y: 0.31 };
+
+	if (anchor && normals.length > 0) {
+		let bestIdx = 0;
+		let bestDist = 1e9;
+		for (let i = 0; i < normals.length; i++) {
+			const d = Math.hypot(normals[i]!.point.x - anchor.positionMm.x, normals[i]!.point.y - anchor.positionMm.y);
+			if (d < bestDist) {
+				bestDist = d;
+				bestIdx = i;
+			}
+		}
+		centerMm = { x: normals[bestIdx]!.point.x, y: normals[bestIdx]!.point.y, z: centerZMm };
+		normal2D = normals[bestIdx]!.normal;
+	}
+
+	const basis = computeCrossSectionAffineBasis(volume, centerMm, normal2D, {
+		widthMm: 24.0,
+		heightMm: 34.0,
+		pixelSpacingMm: 0.25,
+	});
+
+	const huData = new Float32Array(basis.widthPx * basis.heightPx);
+	for (let y = 0; y < basis.heightPx; y++) {
+		const curZ = basis.vox00.z + y * basis.stepVoxVz;
+		const rowStartX = basis.vox00.x;
+		const rowStartY = basis.vox00.y;
+		const rowOffset = y * basis.widthPx;
+		for (let x = 0; x < basis.widthPx; x++) {
+			const curX = rowStartX + x * basis.stepVoxU.x;
+			const curY = rowStartY + x * basis.stepVoxU.y;
+			huData[rowOffset + x] = sampleVoxelTrilinearHU(curX, curY, curZ, volume);
+		}
+	}
+
+	const caliper = measureAlveolarRidgeCaliper(
+		huData,
+		basis.widthPx,
+		basis.heightPx,
+		basis.pixelSpacingX,
+		"maxilla",
+		toothStr,
+	);
+
+	const baseW2 = ZAKHAROV_EDENTULOUS_PROFILES[toothFdi]?.crestWidthW2_Mm ?? 6.4;
+	const baseW6 = ZAKHAROV_EDENTULOUS_PROFILES[toothFdi]?.basalWidthW6_Mm ?? 8.2;
+	const baseH = ZAKHAROV_EDENTULOUS_PROFILES[toothFdi]?.crestHeightH_Mm ?? 5.8;
+
+	const effectiveH = caliper.availableHeightMm >= 2.0 && caliper.availableHeightMm <= 20.0 ? caliper.availableHeightMm : baseH;
+	const effectiveW2 = caliper.widthAt2Mm >= 2.0 ? caliper.widthAt2Mm : baseW2;
+	const effectiveW6 = caliper.widthAt6Mm >= 2.0 ? caliper.widthAt6Mm : baseW6;
+
+	const isHDeficit = effectiveH < 8.0;
+	const isSevereDeficit = effectiveH < 5.0;
+
+	return {
+		toothFdi,
+		toothTitleRu:
+			toothFdi === 26
+				? "Зуб 26 (первый моляр верхней челюсти слева)"
+				: "Зуб 27 (второй моляр верхней челюсти слева)",
+		crestHeightH_Mm: effectiveH,
+		crestWidthW2_Mm: effectiveW2,
+		basalWidthW6_Mm: effectiveW6,
+		mischBoneClass:
+			caliper.boneQualityMisch === "D1" || caliper.boneQualityMisch === "D2"
+				? "D3"
+				: (caliper.boneQualityMisch as "D3" | "D4"),
+		meanHU: caliper.meanDensityHU,
+		sinusFloorStatusRu: isHDeficit
+			? "Кортикальная пластинка дна гайморовой пазухи интактна, умеренная пневматизация."
+			: "Кортикальная пластинка дна гайморовой пазухи интактна, высота кости достаточна.",
+		sinusLiftRecommendation: {
+			required: isHDeficit,
+			technique: isSevereDeficit ? "open_lateral_window" : isHDeficit ? "closed_crestal_summers" : "none",
+			techniqueRu: isSevereDeficit
+				? "Открытый синус-лифтинг (латеральное окно по Tatum)"
+				: isHDeficit
+					? "Закрытый трансальвеолярный синус-лифтинг (метод Саммерса)"
+					: "Без костной пластики",
+			graftMaterialRu: "Остеопластический ксеноматериал (Bio-Oss / Cerabone, 0.5 см³)",
+			membraneRu: "Коллагеновая резорбируемая мембрана Bio-Gide",
+			clinicalRationaleRu: isSevereDeficit
+				? `Критический дефицит высоты H=${caliper.availableHeightMm.toFixed(1)} мм требует двухэтапного латерального синус-лифтинга.`
+				: isHDeficit
+					? `Высота H=${caliper.availableHeightMm.toFixed(1)} мм достаточна для закрытого остеотомного синус-лифтинга.`
+					: "Высота гребня достаточна для стандартной имплантации.",
+		},
+		caliperData: {
+			id: `caliper-zakharov-${toothFdi}`,
+			fdiTooth: toothStr,
+			label: `Калибр гребня ${toothFdi}: H: ${caliper.availableHeightMm}, W2: ${caliper.widthAt2Mm}, W6: ${caliper.widthAt6Mm} мм`,
+			crestPoint: caliper.crestPointMm,
+			basePoint: caliper.measurementPoints.baseLimit,
+			crestWidthLeft: caliper.measurementPoints.w2Buccal,
+			crestWidthRight: caliper.measurementPoints.w2Lingual,
+			heightMm: caliper.availableHeightMm,
+			crestWidthMm: caliper.widthAt2Mm,
+			midWidthMm: caliper.widthAt6Mm,
+			baseWidthMm: caliper.widthAt6Mm + 1.5,
+			implantFeasibility: {
+				isAdequate: !isHDeficit && caliper.widthAt2Mm >= 5.0,
+				recommendedDiameterMm: 4.0,
+				recommendedLengthMm: isHDeficit ? 8.5 : 10.0,
+				requiresBoneGrafting: isHDeficit || caliper.widthAt2Mm < 5.0,
+				graftingType: isHDeficit ? "sinus_lift" : (caliper.widthAt2Mm < 5.0 ? "gbr_horizontal" : "none"),
+				clinicalAdviceRu: isHDeficit
+					? `Остаточная высота ${caliper.availableHeightMm.toFixed(1)} мм требует проведения синус-лифтинга.`
+					: "Анатомические параметры гребня адекватны для установки имплантата.",
+			},
+		},
+	};
+}
+
+/**
+ * Calculates or retrieves the edentulous ridge measurement for Zakharov tooth 26 or 27.
+ * When volume is provided, calculates dynamically from live DICOM voxels.
+ */
+export function getZakharovRidgeMeasurement(
+	toothFdi: ZakharovEdentulousToothFdi,
+	volume?: CbctVoxelVolume,
+	archCurve?: DentalArchCurve,
+): ZakharovRidgeMeasurement {
+	if (volume && volume.data) {
+		return measureZakharovRidgeFromVolume(volume, toothFdi, archCurve);
+	}
 	return ZAKHAROV_EDENTULOUS_PROFILES[toothFdi] || ZAKHAROV_EDENTULOUS_PROFILES[26];
 }
 

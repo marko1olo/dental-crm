@@ -1,0 +1,27 @@
+{
+  "subagent": "Subagent 13: Dispensary Jargon Purge Inquisitor & Clinical Language Humanizer",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md in full",
+    "Read Mandate 8z in AGENTS.md in full",
+    "Global reconnaissance of dispensary jargon across apps/web/src",
+    "Analyze occurrences: user-visible UI vs internal schema/types",
+    "Batch 1: Purged 17 files (CommunicationsView, MarketingView, tests, Form043, Recalls, etc.)",
+    "Batch 2: Recalls & Diagnostics (recallCycleCatalog, recallTemplates, icd10CatalogPart1, icd10CatalogPart2)",
+    "Batch 3: Odontogram & Copilot (PediatricCariogramTab, pediatricDentitionEngine, ChairsideCopilotHUD)",
+    "Batch 4: Patient Portal & Scans (PatientPortalTreatmentStageCard, PlanGuaranteesAndTriage, patientExtract043Documents, patientCabinetEngine)",
+    "Batch 5: Treatment Plans & Warranty (TreatmentPlanRoadmap, planPresentationPresets, stagePaymentPresets, WarrantyPassportModal, warrantyCertificateHtml, warrantyEngine, warrantyPresets)",
+    "Batch 6: Fix surgical physiodispenser typo (clinicalWriteoffMaterials, clinicalWriteoffNorms804n)",
+    "Verified 0 remaining occurrences of 'диспансер' and 'диспанс' in apps/web/src via git grep",
+    "Verified UTF-8 encoding across 6242 files via npm run check:encoding (Exit Code 0)",
+    "Verified TypeScript compilation via npm --prefix apps/web run typecheck (Exit Code 0)",
+    "Verified 40/40 affected unit tests passing without errors"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Fixed surgical physiodispenser typo 'физдиодиспансера' -> 'физиодиспенсера' in inventory writeoffs",
+    "All internal schema keys like 'dispensaryGroup' were strictly preserved intact for backend/regulatory compatibility",
+    "All user-facing and doctor-facing labels, tooltips, cards, roadmaps, patient portal and warranty documents fully humanized according to Mandate 8z",
+    "Zero polyclinic bureaucratic jargon remaining across the entire web application frontend"
+  ]
+}

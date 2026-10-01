@@ -1,0 +1,30 @@
+{
+  "role": "Treatment Plans, 3-Tier Scenarios & Patient Consent Inquisitor",
+  "status": "completed",
+  "isolated_scope": [
+    "apps/web/src/components/treatment-plans/types.ts",
+    "apps/web/src/components/treatment-plans/treatmentPlanStagesEngine.ts",
+    "apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanPhased4StageView.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanContractPrint.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx",
+    "apps/web/src/components/treatment-plans/__tests__/treatmentPlan3TierComparison.test.tsx",
+    "apps/web/src/components/treatment-plans/__tests__/treatmentPlanPhased4Stage.test.tsx"
+  ],
+  "verification": {
+    "test_command": "node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./testCssStub.mjs --test <22 treatment-plans test files>",
+    "test_results": "174 passed, 0 failed, Exit Code 0",
+    "staged_files_count": 8
+  },
+  "completed_steps": [
+    "Audit requirements against Mandates 1..8n and treatment plans UX laws",
+    "Add serviceLifeYears to TreatmentPlanTier and populate in treatmentPlanStagesEngine",
+    "Refactor TreatmentPlan3TierComparison: 3 tiers (Эконом / Оптимум / Премиум), materials headline, warranties & service life, 1-click WhatsApp copy, expandedStagesTierId sync",
+    "Refactor TreatmentPlanPhased4StageView: Route acute pain / emergency procedures (A16.07.007/011/016) to Stage 1, dynamic title 'Неотложная помощь и купирование боли / Санация', 0% clinic installment chips and 30/40/30 split",
+    "Refactor TreatmentPlanContractPrint: Patient-friendly translation toggle vs official 804n, 1-click WhatsApp/Telegram export without emojis, legal 1051n and Article 20 323-FZ references",
+    "Refactor TreatmentPlanModule: Fix autoStages lock-in dead-end by prioritizing currentTier.stages, sync customStages on tier selection/signing/printing, purge cartoon star emojis",
+    "Extend unit tests in treatmentPlan3TierComparison.test.tsx and treatmentPlanPhased4Stage.test.tsx",
+    "Run all 22 test suites in treatment-plans, 174 passed, 0 failed (Exit Code 0)",
+    "Perform per-file git add on 8 modified files in scope"
+  ]
+}

@@ -8,6 +8,7 @@ import { Layers, Plus, Sparkles } from "lucide-react";
 import type {
 	CashierInvoiceExportData,
 	ToothData,
+	TreatmentPlanStatus,
 } from "./types";
 import { showToast } from "../GlobalToast";
 import type { InventoryItemLookup } from "./treatmentPlanMaterialEngine";
@@ -38,8 +39,8 @@ export interface TreatmentPlanModuleProps {
 	readonly className?: string;
 	readonly planCreatedAtIso?: string;
 	readonly initialOptionsMenuOpen?: boolean;
-	readonly initialStatus?: "draft" | "agreed" | "in_progress" | "completed";
-	readonly onStatusChange?: (status: "draft" | "agreed" | "in_progress" | "completed") => void;
+	readonly initialStatus?: TreatmentPlanStatus | undefined;
+	readonly onStatusChange?: ((status: TreatmentPlanStatus) => void) | undefined;
 }
 
 export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({

@@ -1,0 +1,74 @@
+{
+  "agent": "subagent_inventory_decomp",
+  "status": "COMPLETED",
+  "completed_at": "2026-09-30T23:26:00+04:00",
+  "target_file": "apps/web/src/components/InventoryView.tsx",
+  "steps": {
+    "constitution_read": true,
+    "inspect_original_monolith": true,
+    "plan_modular_breakdown": true,
+    "extract_stock_table": true,
+    "extract_batch_fefo_panel": true,
+    "extract_inbound_invoice_modal": true,
+    "extract_service_usage_panel": true,
+    "extract_operations_menu": true,
+    "refactor_coordinator": true,
+    "verify_exports_and_imports": true,
+    "run_tests_and_encoding": true,
+    "send_report_to_orchestrator": true
+  },
+  "extracted_files": [
+    {
+      "file": "apps/web/src/components/InventoryStockTable.tsx",
+      "lines": 17,
+      "purpose": "Канонический фасад таблицы складских остатков и критических запасов со 100% прозрачными реэкспортами"
+    },
+    {
+      "file": "apps/web/src/components/InventoryBatchFefoPanel.tsx",
+      "lines": 402,
+      "purpose": "Панель партионного учета по срокам годности (FEFO) и партий материалов, светофор СанПиН 3.3686-21"
+    },
+    {
+      "file": "apps/web/src/components/InventoryInboundInvoiceModal.tsx",
+      "lines": 505,
+      "purpose": "Модальное окно приходных накладных поставщиков (ТОРГ-12 / УПД) с погашением овердрафта и 0% эмодзи"
+    },
+    {
+      "file": "apps/web/src/components/InventoryServiceUsagePanel.tsx",
+      "lines": 295,
+      "purpose": "Панель технологических карт и автоматического списания расходников под услуги (BOM / Приказ 804н)"
+    },
+    {
+      "file": "apps/web/src/components/inventory/InventoryOperationsMenu.tsx",
+      "lines": 376,
+      "purpose": "Выпадающее меню специализированных складских операций (МДЛП, ИНВ-3/19, ТОРГ-13, быстрые пакеты)"
+    },
+    {
+      "file": "apps/web/src/components/inventory/InventoryItemFormModal.tsx",
+      "lines": 153,
+      "purpose": "Модальное окно добавления и редактирования складского материала"
+    },
+    {
+      "file": "apps/web/src/components/inventory/InventoryStockAdjustModal.tsx",
+      "lines": 184,
+      "purpose": "Модальное окно ручной корректировки остатков (приход / списание / мягкий овердрафт)"
+    },
+    {
+      "file": "apps/web/src/components/inventory/InventoryExternalModals.tsx",
+      "lines": 424,
+      "purpose": "Lazy-loaded контейнер внешних модальных окон склада"
+    },
+    {
+      "file": "apps/web/src/components/InventoryView.tsx",
+      "lines": 580,
+      "purpose": "Легкий презентационный координатор со 100% прозрачными реэкспортами декомпозированных модулей"
+    }
+  ],
+  "verification": {
+    "mandate_8b_line_limit_passed": true,
+    "check_encoding_passed": true,
+    "inventory_decomposition_tests_passed": "6/6 PASS",
+    "inventory_stock_table_tests_passed": "8/8 PASS",
+    "solo_doctor_ergonomics_tests_passed": "22/22 PASS"
+  }
+}

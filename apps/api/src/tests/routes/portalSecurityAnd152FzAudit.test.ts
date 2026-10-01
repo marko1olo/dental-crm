@@ -591,7 +591,7 @@ describe("Patient Portal Security, Multi-Tenant Isolation & 152-FZ Audit", () =>
 		);
 		assert.ok(savedAllergies.length >= 1, "Must sync allergy to patientDrugAllergies table");
 		assert.ok(
-			savedAllergies.some((a) => a.drugInnLatin.includes("Амоксиклав")),
+			savedAllergies.some((a) => a.drugInnLatin?.includes("Амоксиклав")),
 			"Must record specific penicillin drug in patientDrugAllergies",
 		);
 

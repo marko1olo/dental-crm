@@ -83,6 +83,7 @@ describe("Chairside HUD Doctor Shift Earnings Engine (salary-view)", () => {
 				startsAtIso: "2026-09-25T10:00:00.000Z",
 				endsAtIso: "2026-09-25T11:00:00.000Z",
 				status: "completed",
+				emrCard043uStatus: "signed",
 				services: [
 					{
 						id: "srv-99",
@@ -111,6 +112,7 @@ describe("Chairside HUD Doctor Shift Earnings Engine (salary-view)", () => {
 				startsAtIso: "2026-09-24T10:00:00.000Z", // Yesterday!
 				endsAtIso: "2026-09-24T11:00:00.000Z",
 				status: "completed",
+				emrCard043uStatus: "signed",
 				services: [
 					{
 						id: "srv-100",

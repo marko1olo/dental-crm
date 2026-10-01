@@ -16,10 +16,10 @@ import {
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawerTypes";
 
 export interface UseQuickBookingPatientSearchOptions {
-  dashboard?: Dashboard | null;
-  initialSlot?: QuickBookingSlotInfo | null;
-  initialMatchedPatient?: Patient | null;
-  setDashboard?: (dashboard: Dashboard) => void;
+  dashboard?: Dashboard | null | undefined;
+  initialSlot?: QuickBookingSlotInfo | null | undefined;
+  initialMatchedPatient?: Patient | null | undefined;
+  setDashboard?: ((dashboard: Dashboard) => void) | undefined;
   isOpen: boolean;
 }
 
@@ -138,8 +138,8 @@ export function useQuickBookingPatientSearch({
       return;
     }
     const duplicates = findPotentialDuplicates(
-      { fullName: qName, phone: qPhone },
       dashboard?.patients || [],
+      { fullName: qName, phone: qPhone },
     );
     setPotentialDuplicates(duplicates);
   }, [showInlineNewPatient, newPatientFullName, newPatientPhone, dashboard?.patients]);

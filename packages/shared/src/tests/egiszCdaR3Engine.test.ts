@@ -478,7 +478,7 @@ describe("EGISZ CDA R3 / REMD Statutory Formatter & UKEP GOST 34.10 Engine", () 
 			});
 
 			const pkg = buildEgiszRemdSubmissionPackage({
-				documentId: "REMD-001",
+				documentId: "b4e2f89c-0912-4e4b-9721-a3f1245e8712",
 				documentVersion: 1,
 				docTypeNsiCode: "101",
 				rawXml,
@@ -489,7 +489,7 @@ describe("EGISZ CDA R3 / REMD Statutory Formatter & UKEP GOST 34.10 Engine", () 
 				clinicOgrn: SAMPLE_CLINIC.ogrn,
 			});
 
-			assert.equal(pkg.documentId, "REMD-001");
+			assert.equal(pkg.documentId, "b4e2f89c-0912-4e4b-9721-a3f1245e8712");
 			assert.equal(pkg.docTypeNsiCode, "101");
 			assert.equal(pkg.metadata.clinicOid, SAMPLE_CLINIC.oid);
 			assert.equal(pkg.metadata.patientSnils, "12345678964");

@@ -26,15 +26,15 @@ export interface TreatmentPlanScenarioSelectorProps {
 	readonly onPrintContractForTier: (tier: TreatmentPlanTier) => void;
 	readonly stages: readonly TreatmentPlanStage[];
 	readonly patientName: string;
-	readonly patientId?: string;
+	readonly patientId?: string | undefined;
 	readonly planAgeDays: number;
-	readonly planCreatedAtIso?: string;
+	readonly planCreatedAtIso?: string | undefined;
 	readonly onExecuteWriteOffStage: (stage: TreatmentPlanStage) => void;
 	readonly onOpenFiscalPayment: () => void;
 	readonly onOpenInstallmentModal: () => void;
 	readonly onOpenSignModal: () => void;
 	readonly onOpenContractPrint: () => void;
-	readonly children?: React.ReactNode;
+	readonly children?: React.ReactNode | undefined;
 }
 
 export const TreatmentPlanScenarioSelector: React.FC<TreatmentPlanScenarioSelectorProps> = ({

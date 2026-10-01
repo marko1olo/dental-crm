@@ -14,9 +14,11 @@ export function AppLoadingState({
 }: AppLoadingStateProps) {
 	return (
 		<main className="boot-state" aria-busy={onAction ? undefined : "true"}>
-			<Stethoscope aria-hidden="true" className="boot-logo" />
+			<div className="boot-logo-box">
+				<Stethoscope aria-hidden="true" className="boot-logo" />
+			</div>
 			<h1 className="boot-title">DENTE</h1>
-			<p className="boot-subtitle">{message}</p>
+			<p className="boot-subtitle">{message || "Загрузка системы..."}</p>
 			{onAction ? (
 				<button
 					className="secondary-button boot-retry-button"

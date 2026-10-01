@@ -292,10 +292,12 @@ export async function requestTreatmentPlanAiValidationAndComment(
 
 	const requestBody: TreatmentPlanValidateAndCommentRequest = {
 		stages: stagesPayload,
-		patientContext: options.patientContext,
+		patientContext:
+			options.patientContext ??
+			(options.patientName ? { patientName: options.patientName } : undefined),
 		targetBudgetRub: options.targetBudgetRub,
 		installmentMonths: options.installmentMonths,
-		doctorFullName: options.doctorFullName,
+		doctorFullName: options.doctorFullName ?? options.doctorName,
 		doctorSpecialty: options.doctorSpecialty,
 		clinicName: options.clinicName,
 		userPrompt: options.userPrompt,

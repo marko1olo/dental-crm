@@ -52,13 +52,13 @@ export type ChairMaintenanceBlock = {
 
 export type ResourceCollisionOptions = {
 	excludeAppointmentId?: string | null | undefined;
-	staff?: Dashboard["clinicSettings"]["staff"];
-	chairs?: Dashboard["clinicSettings"]["chairs"];
-	patients?: Dashboard["patients"];
-	chairMaintenanceBlocks?: readonly ChairMaintenanceBlock[];
-	formatTimeFn?: (iso: string) => string;
-	allowCitoOverbooking?: boolean;
-	isCito?: boolean;
+	staff?: Dashboard["clinicSettings"]["staff"] | undefined;
+	chairs?: Dashboard["clinicSettings"]["chairs"] | undefined;
+	patients?: Dashboard["patients"] | undefined;
+	chairMaintenanceBlocks?: readonly ChairMaintenanceBlock[] | undefined;
+	formatTimeFn?: ((iso: string) => string) | undefined;
+	allowCitoOverbooking?: boolean | undefined;
+	isCito?: boolean | undefined;
 };
 
 export function findNearestAvailableSlot(

@@ -67,7 +67,6 @@ describe("RED TEAM CORE REALISM INQUISITION: REAL DB EXECUTION (POSTGRESQL 18)",
 				.values({
 					id: ORG_A_ID,
 					name: "Клиника Red Team А (Тест Реализма)",
-					timezone: "Europe/Moscow",
 				})
 				.onConflictDoNothing();
 
@@ -90,7 +89,6 @@ describe("RED TEAM CORE REALISM INQUISITION: REAL DB EXECUTION (POSTGRESQL 18)",
 				.values({
 					id: ORG_B_ID,
 					name: "Клиника Red Team Б (Изолированная)",
-					timezone: "Europe/Moscow",
 				})
 				.onConflictDoNothing();
 
@@ -217,7 +215,7 @@ describe("RED TEAM CORE REALISM INQUISITION: REAL DB EXECUTION (POSTGRESQL 18)",
 					})
 					.returning(),
 			);
-			patientId = p.id;
+			patientId = p!.id;
 		});
 
 		it("2.1. Records batch diagnoses directly into PostgreSQL tooth_states", async () => {
@@ -372,7 +370,7 @@ describe("RED TEAM CORE REALISM INQUISITION: REAL DB EXECUTION (POSTGRESQL 18)",
 					})
 					.returning(),
 			);
-			patientId = p.id;
+			patientId = p!.id;
 		});
 
 		it("4.1. Creates real dental lab order in PostgreSQL", async () => {
@@ -429,6 +427,7 @@ describe("RED TEAM CORE REALISM INQUISITION: REAL DB EXECUTION (POSTGRESQL 18)",
 					.from(labOrders)
 					.where(eq(labOrders.id, labOrderId)),
 			);
+			assert.ok(dbOrder);
 			assert.strictEqual(dbOrder.status, "sent", "Order status must be updated in DB");
 		});
 	});

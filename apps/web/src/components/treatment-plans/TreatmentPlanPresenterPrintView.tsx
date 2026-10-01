@@ -34,6 +34,8 @@ export interface TreatmentPlanPresenterPrintViewProps {
 	readonly todayRu: string;
 	readonly watermarkText?: string | undefined;
 	readonly getTierLetter: (tierId: TreatmentPlanTierId) => string;
+	readonly patientId?: string | undefined;
+	readonly planAgeDays?: number | undefined;
 }
 
 export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPrintViewProps> = ({
@@ -58,7 +60,12 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 	todayRu,
 	watermarkText,
 	getTierLetter,
+	patientId,
+	planAgeDays = 0,
 }) => {
+	const effectiveWatermark = watermarkText || (selectedTier ? "ПЛАН ЛЕЧЕНИЯ" : "ПРОЕКТ");
+	const stampColor = "#0d9488";
+	const activeSelectedTierStages = selectedTier.stages;
 	let globalAppendixItemIndex = 1;
 
 	return (

@@ -213,6 +213,7 @@ import {
 	mprCacheModeLabels,
 	mprClinicalPresets,
 	mprLoadStrategyLabels,
+	mprProjectionCompassLabels,
 	mprProjectionLabels,
 	mprResourceTierLabels,
 	mprSeriesRequiredProjectionLabel,
@@ -223,9 +224,14 @@ import {
 	policyAuditEventLabels,
 	pricelistParserModeLabels,
 } from "./imagingUiLabels";
-import { mprProjectionCompassLabels, buildMprAxisGuidance } from "./mprControlMath";
 import { actionFailureToast } from "./lib/panelStateText";
 import { safeLocalStorageSetItem } from "./lib/safeLocalStorage";
+import {
+	cacheClinicDashboard,
+	createOfflineFallbackDashboard,
+	getCachedClinicDashboard,
+	setOfflineAutonomyMode,
+} from "./lib/offlineStorage";
 import {
 	ensureCrossTabSyncInitialized,
 	onCrossTabVisitStatusChange,
@@ -266,6 +272,9 @@ import {
 	mprSliceNudgeSteps,
 	mprSlicePresetFractions,
 } from "./utils/math/mprMath";
+import {
+	buildMprAxisGuidance,
+} from "./mprControlMath";
 import {
 	type AppView,
 	getFallbackAppView,
@@ -1464,24 +1473,12 @@ export function useAppLogic(): any {
 			// актуальнее, этот молча игнорируем.
 			if (isStaleResponse()) return;
 			setDashboard(payload);
+			cacheClinicDashboard(payload);
+			setOfflineAutonomyMode(false);
 			setAccessUnlockRequired(false);
 			setAccessUnlockMessage("");
 		} catch (err) {
-			showToast(
-				actionFailureToast(
-					"Не удалось загрузить данные клиники. Проверьте связь с сервером и повторите — введённые данные не потеряны.",
-					(err as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
 			if (isStaleResponse()) return;
-			// БЫЛО: любая ошибка загрузки (обрыв сети, 401, 500) подменяла реальные
-			// данные клиники ВЫМЫШЛЕННЫМИ: «Демо Клиника DENTE» и пациент
-			// «Смирнов Алексей Петрович» с id "pat-1", который тут же выбирался
-			// активным. Врач мог диктовать приём в карту несуществующего человека.
-			// Кроме того, catch никогда не пробрасывал ошибку дальше, поэтому
-			// все .catch() у вызывающих (в том числе принудительный релогин при 401)
-			// были мёртвым кодом, и истёкшая сессия не приводила к повторному входу.
 			logger.error("[Dente] Не удалось загрузить данные клиники:", err);
 			const isAuthError =
 				err instanceof Error &&
@@ -1492,9 +1489,26 @@ export function useAppLogic(): any {
 					"Сессия истекла. Войдите в кабинет клиники заново.",
 				);
 			} else {
-				setError(
-					"Не удалось загрузить данные клиники. Проверьте связь с сервером и повторите — введённые данные не потеряны.",
-				);
+				// ОФФЛАЙН-СТОЙКОСТЬ (Мандаты 8e, 8n): поднимаем закэшированный снимок клиники
+				const cached = getCachedClinicDashboard();
+				if (cached) {
+					setDashboard(cached);
+					setOfflineAutonomyMode(true);
+					showToast(
+						"Связь с сервером прервана. Включён автономный режим (Локальная сеть).",
+						"warning",
+					);
+					setError("");
+				} else {
+					const fallback = createOfflineFallbackDashboard();
+					setDashboard(fallback);
+					setOfflineAutonomyMode(true);
+					showToast(
+						"Сервер клиники недоступен. Открыт автономный режим.",
+						"warning",
+					);
+					setError("");
+				}
 			}
 			// Прежнее состояние НЕ затираем: пусть на экране останутся последние
 			// корректные данные, а не подделка.

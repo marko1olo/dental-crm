@@ -73,12 +73,12 @@ describe("Clinical Market Materials Catalog (90%+ CIS Coverage)", () => {
 	describe("2. Dental Implants & Bone Graft Materials (16 Implants + 12 Grafts/Membranes)", () => {
 		it("implant systems registry has Osstem as #1, Dentium as #2, Straumann as #3", () => {
 			assert.ok(IMPLANT_SYSTEMS_MARKET_REGISTRY.length >= 16);
-			assert.equal(IMPLANT_SYSTEMS_MARKET_REGISTRY[0].marketRank, 1);
-			assert.ok(IMPLANT_SYSTEMS_MARKET_REGISTRY[0].nameRu.includes("Osstem"));
-			assert.equal(IMPLANT_SYSTEMS_MARKET_REGISTRY[1].marketRank, 2);
-			assert.ok(IMPLANT_SYSTEMS_MARKET_REGISTRY[1].nameRu.includes("Dentium"));
-			assert.equal(IMPLANT_SYSTEMS_MARKET_REGISTRY[2].marketRank, 3);
-			assert.ok(IMPLANT_SYSTEMS_MARKET_REGISTRY[2].nameRu.includes("Straumann"));
+			assert.equal(IMPLANT_SYSTEMS_MARKET_REGISTRY[0]!.marketRank, 1);
+			assert.ok(IMPLANT_SYSTEMS_MARKET_REGISTRY[0]!.nameRu.includes("Osstem"));
+			assert.equal(IMPLANT_SYSTEMS_MARKET_REGISTRY[1]!.marketRank, 2);
+			assert.ok(IMPLANT_SYSTEMS_MARKET_REGISTRY[1]!.nameRu.includes("Dentium"));
+			assert.equal(IMPLANT_SYSTEMS_MARKET_REGISTRY[2]!.marketRank, 3);
+			assert.ok(IMPLANT_SYSTEMS_MARKET_REGISTRY[2]!.nameRu.includes("Straumann"));
 		});
 
 		it("bone grafts registry has Bio-Oss as #1 and Bio-Gide as #1 membrane", () => {
@@ -96,10 +96,10 @@ describe("Clinical Market Materials Catalog (90%+ CIS Coverage)", () => {
 	describe("3. Surgical Sutures & Hemostatics (Mandate 8e)", () => {
 		it("contains Vicryl as #1 suture and Prolene as #2", () => {
 			assert.ok(SURGICAL_SUTURE_REGISTRY.length >= 5);
-			assert.equal(SURGICAL_SUTURE_REGISTRY[0].marketRank, 1);
-			assert.ok(SURGICAL_SUTURE_REGISTRY[0].nameRu.includes("Викрил") || SURGICAL_SUTURE_REGISTRY[0].nameRu.includes("Vicryl"));
-			assert.equal(SURGICAL_SUTURE_REGISTRY[1].marketRank, 2);
-			assert.ok(SURGICAL_SUTURE_REGISTRY[1].nameRu.includes("Пролен") || SURGICAL_SUTURE_REGISTRY[1].nameRu.includes("Prolene"));
+			assert.equal(SURGICAL_SUTURE_REGISTRY[0]!.marketRank, 1);
+			assert.ok(SURGICAL_SUTURE_REGISTRY[0]!.nameRu.includes("Викрил") || SURGICAL_SUTURE_REGISTRY[0]!.nameRu.includes("Vicryl"));
+			assert.equal(SURGICAL_SUTURE_REGISTRY[1]!.marketRank, 2);
+			assert.ok(SURGICAL_SUTURE_REGISTRY[1]!.nameRu.includes("Пролен") || SURGICAL_SUTURE_REGISTRY[1]!.nameRu.includes("Prolene"));
 		});
 
 		it("contains Spongostan, Surgicel, Alvogyl, Capramin in hemostatics", () => {
@@ -116,17 +116,17 @@ describe("Clinical Market Materials Catalog (90%+ CIS Coverage)", () => {
 		it("contains rotary files with ProTaper Gold as #1 and WaveOne Gold as #2", () => {
 			const files = ENDODONTIC_MATERIALS_REGISTRY.filter((m) => m.domain === "endo_file");
 			assert.ok(files.length >= 7);
-			assert.equal(files[0].marketRank, 1);
-			assert.ok(files[0].nameRu.includes("ProTaper"));
-			assert.equal(files[1].marketRank, 2);
-			assert.ok(files[1].nameRu.includes("WaveOne"));
+			assert.equal(files[0]!.marketRank, 1);
+			assert.ok(files[0]!.nameRu.includes("ProTaper"));
+			assert.equal(files[1]!.marketRank, 2);
+			assert.ok(files[1]!.nameRu.includes("WaveOne"));
 		});
 
 		it("contains AH Plus as #1 sealer and bioceramics (BioRoot RCS / TotalFill)", () => {
 			const sealers = ENDODONTIC_MATERIALS_REGISTRY.filter((m) => m.domain === "endo_sealer");
 			assert.ok(sealers.length >= 5);
-			assert.equal(sealers[0].marketRank, 1);
-			assert.ok(sealers[0].nameRu.includes("AH Plus"));
+			assert.equal(sealers[0]!.marketRank, 1);
+			assert.ok(sealers[0]!.nameRu.includes("AH Plus"));
 			assert.ok(sealers.some((s) => s.nameRu.includes("BioRoot")));
 		});
 
@@ -140,8 +140,8 @@ describe("Clinical Market Materials Catalog (90%+ CIS Coverage)", () => {
 		it("contains Calasept as #1 temporary dressing", () => {
 			const dressings = ENDODONTIC_MATERIALS_REGISTRY.filter((m) => m.domain === "endo_dressing");
 			assert.ok(dressings.length >= 5);
-			assert.equal(dressings[0].marketRank, 1);
-			assert.ok(dressings[0].nameRu.includes("Calasept"));
+			assert.equal(dressings[0]!.marketRank, 1);
+			assert.ok(dressings[0]!.nameRu.includes("Calasept"));
 		});
 	});
 
@@ -149,13 +149,13 @@ describe("Clinical Market Materials Catalog (90%+ CIS Coverage)", () => {
 		it("contains Elite HD+ as #1 A-silicone and RelyX U200 as #1 permanent cement", () => {
 			const aSilicones = PROSTHODONTIC_MATERIALS_REGISTRY.filter((m) => m.domain === "prostho_a_silicone");
 			assert.ok(aSilicones.length >= 6);
-			assert.equal(aSilicones[0].marketRank, 1);
-			assert.ok(aSilicones[0].nameRu.includes("Elite HD+"));
+			assert.equal(aSilicones[0]!.marketRank, 1);
+			assert.ok(aSilicones[0]!.nameRu.includes("Elite HD+"));
 
 			const permCements = PROSTHODONTIC_MATERIALS_REGISTRY.filter((m) => m.domain === "prostho_cement_perm");
 			assert.ok(permCements.length >= 4);
-			assert.equal(permCements[0].marketRank, 1);
-			assert.ok(permCements[0].nameRu.includes("RelyX U200"));
+			assert.equal(permCements[0]!.marketRank, 1);
+			assert.ok(permCements[0]!.nameRu.includes("RelyX U200"));
 
 			const allCements = PROSTHODONTIC_MATERIALS_REGISTRY.filter(
 				(m) => m.domain === "prostho_cement_perm" || m.domain === "prostho_cement_temp",
@@ -166,20 +166,20 @@ describe("Clinical Market Materials Catalog (90%+ CIS Coverage)", () => {
 		it("contains CAD/CAM lab materials (Katana/Upcera ZrO2, IPS e.max, CoCr, PMMA)", () => {
 			const cadMaterials = PROSTHODONTIC_MATERIALS_REGISTRY.filter((m) => m.domain === "lab_cad_material");
 			assert.ok(cadMaterials.length >= 5);
-			assert.equal(cadMaterials[0].marketRank, 1);
-			assert.ok(cadMaterials[0].nameRu.includes("Katana") || cadMaterials[0].nameRu.includes("Upcera"));
-			assert.equal(cadMaterials[1].marketRank, 2);
-			assert.ok(cadMaterials[1].nameRu.includes("e.max"));
+			assert.equal(cadMaterials[0]!.marketRank, 1);
+			assert.ok(cadMaterials[0]!.nameRu.includes("Katana") || cadMaterials[0]!.nameRu.includes("Upcera"));
+			assert.equal(cadMaterials[1]!.marketRank, 2);
+			assert.ok(cadMaterials[1]!.nameRu.includes("e.max"));
 		});
 	});
 
 	describe("6. Therapy (Composites & Adhesives)", () => {
 		it("contains Filtek as #1 composite and Estelite as #2", () => {
 			assert.ok(THERAPY_COMPOSITES_REGISTRY.length >= 8);
-			assert.equal(THERAPY_COMPOSITES_REGISTRY[0].marketRank, 1);
-			assert.ok(THERAPY_COMPOSITES_REGISTRY[0].nameRu.includes("Filtek"));
-			assert.equal(THERAPY_COMPOSITES_REGISTRY[1].marketRank, 2);
-			assert.ok(THERAPY_COMPOSITES_REGISTRY[1].nameRu.includes("Estelite"));
+			assert.equal(THERAPY_COMPOSITES_REGISTRY[0]!.marketRank, 1);
+			assert.ok(THERAPY_COMPOSITES_REGISTRY[0]!.nameRu.includes("Filtek"));
+			assert.equal(THERAPY_COMPOSITES_REGISTRY[1]!.marketRank, 2);
+			assert.ok(THERAPY_COMPOSITES_REGISTRY[1]!.nameRu.includes("Estelite"));
 		});
 
 		it("contains OptiBond FL, Single Bond, Clearfil SE Bond in adhesives", () => {
@@ -207,7 +207,7 @@ describe("Clinical Market Materials Catalog (90%+ CIS Coverage)", () => {
 			const composites = getClinicalMaterialsByDomain("therapy_composite");
 			assert.ok(composites.length >= 8);
 			for (let i = 0; i < composites.length; i++) {
-				assert.equal(composites[i].marketRank, i + 1);
+				assert.equal(composites[i]!.marketRank, i + 1);
 			}
 		});
 

@@ -38,6 +38,7 @@ describe("Legacy MIS Import Parsers and SmartImportEngine", () => {
 			const result = Dental4WindowsXmlParser.parse(xml);
 			assert.equal(result.patients.length, 1);
 			const p = result.patients[0];
+			assert.ok(p);
 			assert.equal(p.externalId, "D4W-001");
 			assert.equal(p.fullName, "Петров Петр Петрович");
 			assert.equal(p.birthDate, "1985-05-15");
@@ -84,10 +85,10 @@ describe("Legacy MIS Import Parsers and SmartImportEngine", () => {
 
 			const result = IdentJsonParser.parse(json);
 			assert.equal(result.patients.length, 1);
-			assert.equal(result.patients[0].fullName, "Смирнова Анна Ивановна");
-			assert.equal(result.patients[0].gender, "female");
+			assert.equal(result.patients[0]!.fullName, "Смирнова Анна Ивановна");
+			assert.equal(result.patients[0]!.gender, "female");
 			assert.equal(result.invoices.length, 1);
-			assert.equal(result.invoices[0].amountKopecks, 350000);
+			assert.equal(result.invoices[0]!.amountKopecks, 350000);
 		});
 	});
 
@@ -102,8 +103,8 @@ describe("Legacy MIS Import Parsers and SmartImportEngine", () => {
 			const csv = "Код;Карта;ФИО;Дата рождения;Телефон\nINF-1;404;Васильев Василий Васильевич;1975-03-10;89219876543";
 			const result = InfodentCsvParser.parse(csv);
 			assert.equal(result.patients.length, 1);
-			assert.equal(result.patients[0].fullName, "Васильев Василий Васильевич");
-			assert.equal(result.patients[0].phone, "+79219876543");
+			assert.equal(result.patients[0]!.fullName, "Васильев Василий Васильевич");
+			assert.equal(result.patients[0]!.phone, "+79219876543");
 		});
 	});
 
@@ -119,9 +120,9 @@ describe("Legacy MIS Import Parsers and SmartImportEngine", () => {
 			const content = 'col1;col2;col3\n"val;1";"hello ""world""";"line1\nline2"';
 			const res = parseCsv(content, { delimiter: ";" });
 			assert.equal(res.rows.length, 1);
-			assert.equal(res.rows[0]["col1"], "val;1");
-			assert.equal(res.rows[0]["col2"], 'hello "world"');
-			assert.equal(res.rows[0]["col3"], "line1\nline2");
+			assert.equal(res.rows[0]!["col1"], "val;1");
+			assert.equal(res.rows[0]!["col2"], 'hello "world"');
+			assert.equal(res.rows[0]!["col3"], "line1\nline2");
 		});
 	});
 
@@ -160,7 +161,7 @@ describe("Legacy MIS Import Parsers and SmartImportEngine", () => {
 			const detected = SmartImportEngine.detectAndParse(sample);
 			assert.equal(detected.format, "d4w_xml");
 			assert.equal(detected.patients.length, 1);
-			assert.equal(detected.patients[0].fullName, "Тестов Тест");
+			assert.equal(detected.patients[0]!.fullName, "Тестов Тест");
 		});
 
 		it("correctly identifies IDENT JSON input and produces canonical patients", () => {
@@ -171,7 +172,7 @@ describe("Legacy MIS Import Parsers and SmartImportEngine", () => {
 			const detected = SmartImportEngine.detectAndParse(sample);
 			assert.equal(detected.format, "ident_json");
 			assert.equal(detected.patients.length, 1);
-			assert.equal(detected.patients[0].fullName, "Тестовый Пациент");
+			assert.equal(detected.patients[0]!.fullName, "Тестовый Пациент");
 		});
 	});
 });

@@ -1,0 +1,77 @@
+{
+  "subagent": "schedule_monolith_decomposer",
+  "started_at": "2026-09-30T21:26:00+04:00",
+  "completed_at": "2026-09-30T22:25:00+04:00",
+  "mandate": "8b",
+  "line_limit": 800,
+  "status": "completed",
+  "targets": [
+    {
+      "file": "apps/web/src/components/schedule/AppointmentCard.tsx",
+      "initial_lines": 2854,
+      "status": "completed",
+      "files": [
+        { "name": "AppointmentCard.tsx", "lines": 454 },
+        { "name": "AppointmentCardEditor.tsx", "lines": 591 },
+        { "name": "useAppointmentCardState.ts", "lines": 544 },
+        { "name": "AppointmentStatusPopup.tsx", "lines": 519 },
+        { "name": "AppointmentCardContextMenu.tsx", "lines": 406 },
+        { "name": "AppointmentCardPrimaryActions.tsx", "lines": 269 },
+        { "name": "AppointmentPaymentBadges.tsx", "lines": 260 },
+        { "name": "AppointmentCardMemo.ts", "lines": 169 },
+        { "name": "AppointmentCardTypes.ts", "lines": 56 }
+      ]
+    },
+    {
+      "file": "apps/web/src/components/schedule/AppointmentModal.tsx",
+      "initial_lines": 2648,
+      "status": "completed",
+      "files": [
+        { "name": "AppointmentModal.tsx", "lines": 500 },
+        { "name": "useAppointmentModalState.ts", "lines": 684 },
+        { "name": "AppointmentModalDoctorChairSection.tsx", "lines": 424 },
+        { "name": "AppointmentModalPatientSection.tsx", "lines": 389 },
+        { "name": "AppointmentModalHeader.tsx", "lines": 338 },
+        { "name": "AppointmentModalStatusSection.tsx", "lines": 244 },
+        { "name": "AppointmentModalQuickReasons.tsx", "lines": 215 },
+        { "name": "useAppointmentModalPatient.ts", "lines": 214 },
+        { "name": "AppointmentModalTypes.ts", "lines": 51 }
+      ]
+    },
+    {
+      "file": "apps/web/src/components/schedule/QuickBookingDrawer.tsx",
+      "initial_lines": 2689,
+      "status": "completed",
+      "files": [
+        { "name": "QuickBookingDrawer.tsx", "lines": 218 },
+        { "name": "useQuickBookingDrawerState.ts", "lines": 657 },
+        { "name": "QuickBookingPatientSection.tsx", "lines": 585 },
+        { "name": "QuickBookingServiceSection.tsx", "lines": 601 },
+        { "name": "QuickBookingInlinePatientForm.tsx", "lines": 264 },
+        { "name": "useQuickBookingPatientSearch.ts", "lines": 240 },
+        { "name": "QuickBookingDrawerFooter.tsx", "lines": 81 },
+        { "name": "QuickBookingDrawerHeader.tsx", "lines": 72 },
+        { "name": "QuickBookingDrawerTypes.ts", "lines": 47 }
+      ]
+    },
+    {
+      "file": "apps/web/src/components/schedule/ChairScheduleView.tsx",
+      "initial_lines": 2268,
+      "status": "completed",
+      "files": [
+        { "name": "ChairScheduleView.tsx", "lines": 201 },
+        { "name": "useChairShiftOperations.ts", "lines": 582 },
+        { "name": "ChairScheduleToolbar.tsx", "lines": 534 },
+        { "name": "ChairShiftPopover.tsx", "lines": 339 },
+        { "name": "useChairScheduleState.ts", "lines": 314 },
+        { "name": "ChairScheduleTypes.ts", "lines": 311 },
+        { "name": "ChairDateRangeModal.tsx", "lines": 217 }
+      ]
+    }
+  ],
+  "verification": {
+    "encoding": "passed (6465 files verified without BOM)",
+    "tests": "passed (192/192 tests across 47 suites passing)",
+    "line_counts": "passed (all 34 files <= 800 lines, maximum 684 lines)"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "status": "completed",
+  "started_at": "2026-09-30T21:26:30+04:00",
+  "completed_at": "2026-09-30T22:15:00+04:00",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md completely",
+    "Read AGENTS.md completely",
+    "Inspect existing tests and run baseline test command in apps/web",
+    "Decompose treatmentPlanStagesEngine.ts (2942 lines -> 23 lines facade + 8 modular engines <= 800 lines)",
+    "Decompose TreatmentPlanPresenterModal.tsx (2637 lines -> 668 lines shell + 9 modular presentation subcomponents <= 800 lines)",
+    "Decompose TreatmentPlanModule.tsx (3395 lines -> 495 lines coordinator + 8 modular components, hooks, reducers, and sync <= 800 lines)",
+    "Ensure every created and modified file in apps/web/src/components/treatment-plans/ is strictly <= 800 lines (Mandate 8b)",
+    "Run targeted unit tests and verify 100% green (207 passed, 0 failed, 66 suites)",
+    "Run npm run check:encoding and verify 0 errors (6465 files checked)",
+    "Final audit and report to parent orchestrator"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "scope": "treatmentPlanStagesEngine.ts",
+      "original_lines": 2942,
+      "refactored_lines": 23,
+      "extracted_modules": [
+        { "file": "treatmentPlanNomenclature804n.ts", "lines": 790 },
+        { "file": "treatmentPlanAutoGenerator.ts", "lines": 795 },
+        { "file": "treatmentPlanTierStagesGenerator.ts", "lines": 629 },
+        { "file": "treatmentPlanPricingEngine.ts", "lines": 277 },
+        { "file": "treatmentPlanReorderEngine.ts", "lines": 281 },
+        { "file": "treatmentPlanPersistenceEngine.ts", "lines": 203 },
+        { "file": "treatmentPlanTierComparisonEngine.ts", "lines": 189 },
+        { "file": "treatmentPlanItemFactory.ts", "lines": 131 }
+      ]
+    },
+    {
+      "scope": "TreatmentPlanPresenterModal.tsx",
+      "original_lines": 2637,
+      "refactored_lines": 668,
+      "extracted_modules": [
+        { "file": "TreatmentPlanPresenterPrintView.tsx", "lines": 597 },
+        { "file": "TreatmentPlanPresenterComparisonTab.tsx", "lines": 450 },
+        { "file": "TreatmentPlanPresenterToolsStrip.tsx", "lines": 316 },
+        { "file": "TreatmentPlanPresenterAiAuditTab.tsx", "lines": 301 },
+        { "file": "TreatmentPlanPresenterHeader.tsx", "lines": 203 },
+        { "file": "TreatmentPlanPresenterStagesTab.tsx", "lines": 191 },
+        { "file": "TreatmentPlanPresenterFinanceTab.tsx", "lines": 131 },
+        { "file": "TreatmentPlanPresenterFooter.tsx", "lines": 92 },
+        { "file": "treatmentPlanConsumables.ts", "lines": 70 }
+      ]
+    },
+    {
+      "scope": "TreatmentPlanModule.tsx",
+      "original_lines": 3395,
+      "refactored_lines": 495,
+      "extracted_modules": [
+        { "file": "TreatmentPlanToolbar.tsx", "lines": 787 },
+        { "file": "useTreatmentPlanLogic.ts", "lines": 757 },
+        { "file": "TreatmentPlanSpecializedModalsHost.tsx", "lines": 626 },
+        { "file": "TreatmentPlanAddServiceModal.tsx", "lines": 513 },
+        { "file": "treatmentPlanNetworkSync.ts", "lines": 462 },
+        { "file": "treatmentPlanStageMutations.ts", "lines": 425 },
+        { "file": "TreatmentPlanCreateStageModal.tsx", "lines": 150 },
+        { "file": "TreatmentPlanScenarioSelector.tsx", "lines": 130 }
+      ]
+    }
+  ],
+  "verification": {
+    "test_command": "node --import tsx --import ./testCssStub.mjs --test \"src/components/treatment-plans/**/*.test.ts*\"",
+    "tests_passed": 207,
+    "tests_failed": 0,
+    "encoding_check": "passed",
+    "encoding_files_checked": 6465,
+    "mandate_8b_line_cap_verified": true
+  }
+}

@@ -110,7 +110,7 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 					}`}
 					data-testid="cbct-endo-paraxial-viewport"
 				>
-					<div className="absolute top-2 left-2 z-30 pointer-events-none bg-zinc-950/85 px-2 py-0.5 rounded border border-emerald-500/40 text-[10px] text-emerald-300 font-bold backdrop-blur-md">
+					<div className="absolute top-9 left-2 z-30 pointer-events-none bg-zinc-950/85 px-2 py-0.5 rounded border border-emerald-500/40 text-[10px] text-emerald-300 font-bold backdrop-blur-md shadow-md">
 						1. Продольная ось корня (Paraxial)
 					</div>
 					{renderers.renderCoronal("flex-1 flex flex-col w-full h-full")}
@@ -123,7 +123,7 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 					}`}
 					data-testid="cbct-endo-crossaxial-viewport"
 				>
-					<div className="absolute top-2 left-2 z-30 pointer-events-none bg-zinc-950/85 px-2 py-0.5 rounded border border-cyan-500/40 text-[10px] text-cyan-300 font-bold backdrop-blur-md">
+					<div className="absolute top-9 left-2 z-30 pointer-events-none bg-zinc-950/85 px-2 py-0.5 rounded border border-cyan-500/40 text-[10px] text-cyan-300 font-bold backdrop-blur-md shadow-md">
 						2. Поперечный срез канала (MB1/MB2/D)
 					</div>
 					{renderers.renderAxial("flex-1 flex flex-col w-full h-full")}
@@ -136,7 +136,7 @@ export const EndoWorkspace: React.FC<EndoWorkspaceProps> = ({
 					}`}
 					data-testid="cbct-endo-3d-zoom-viewport"
 				>
-					<div className="absolute top-2 left-2 z-30 pointer-events-none bg-zinc-950/85 px-2 py-0.5 rounded border border-purple-500/40 text-[10px] text-purple-300 font-bold backdrop-blur-md">
+					<div className="absolute top-9 left-2 z-30 pointer-events-none bg-zinc-950/85 px-2 py-0.5 rounded border border-purple-500/40 text-[10px] text-purple-300 font-bold backdrop-blur-md shadow-md">
 						3. Локальный 3D куб зуба (High-Res Voxel)
 					</div>
 					{renderers.renderVolume3D("flex-1 flex flex-col w-full h-full", { isEndoMode: true })}

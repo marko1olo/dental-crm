@@ -21,6 +21,7 @@ import {
 	LocalMutationRingBuffer,
 	type MasterLeaseHeartbeat,
 	type QueuedMeshMutation,
+	type OdontogramToothCrdtState,
 	VectorClockEngine,
 	compareEntityVectors,
 	createMasterLeaseHeartbeat,
@@ -563,25 +564,27 @@ describe("3. Split-Brain Re-convergence & Deterministic CRDT Laws", () => {
 
 	it("3.4. Odontogram Law: Same surface conflict resolves via Last-Write-Wins with vector clock timestamps", () => {
 		// Both nodes touched the Distal ("D") surface of Tooth 36
-		const localTooth = {
+		const localTooth: OdontogramToothCrdtState = {
 			toothNumber: 36,
+			statusCode: "caries",
 			surfaces: {
-				D: { material: "temporary_filling", updatedAtMs: 2000, doctor: "Д-р 1" },
+				D: { surface: "D", status: "caries", material: "temporary_filling", updatedAtMs: 2000, doctor: "Д-р 1" },
 			},
 		};
 
-		const remoteTooth = {
+		const remoteTooth: OdontogramToothCrdtState = {
 			toothNumber: 36,
+			statusCode: "restored",
 			surfaces: {
-				D: { material: "permanent_ceramic_inlay", updatedAtMs: 2500, doctor: "Д-р 2" },
+				D: { surface: "D", status: "restored", material: "permanent_ceramic_inlay", updatedAtMs: 2500, doctor: "Д-р 2" },
 			},
 		};
 
 		const merged = mergeOdontogramToothPerSurface(localTooth, remoteTooth);
-		const surfaces = merged.surfaces as Record<string, { material: string }>;
+		const surfaces = merged.surfaces as Record<string, { material?: string } | undefined>;
 
 		// 2500ms > 2000ms -> permanent_ceramic_inlay wins
-		assert.strictEqual(surfaces.D.material, "permanent_ceramic_inlay");
+		assert.strictEqual(surfaces.D?.material, "permanent_ceramic_inlay");
 	});
 
 	it("3.5. Clinical Diary Notes Law: Chronological append with doctor signatures preserved verbatim", () => {
@@ -852,8 +855,8 @@ describe("4. End-to-End Multi-PC Clinic Partition & Split-Brain Healing Simulati
 
 		// 4. Vector clock dominance verified
 		const finalClock = reconciliationResult.mergedVectorClock;
-		assert.ok(finalClock["doctor-unit-1"] >= 1);
-		assert.ok(finalClock["doctor-unit-2"] >= 1);
-		assert.ok(finalClock["reception-server"] >= 1);
+		assert.ok((finalClock["doctor-unit-1"] ?? 0) >= 1);
+		assert.ok((finalClock["doctor-unit-2"] ?? 0) >= 1);
+		assert.ok((finalClock["reception-server"] ?? 0) >= 1);
 	});
 });

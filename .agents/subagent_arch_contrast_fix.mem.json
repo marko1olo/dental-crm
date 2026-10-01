@@ -1,0 +1,36 @@
+{
+  "role": "ANATOMICAL ARCH GEOMETRY & CLINICAL CONTRAST INQUISITOR",
+  "status": "completed",
+  "completed_steps": [
+    "Read USER_VERBATIM_MANDATES.md (Requests 1-43) and THE_HAMMER_MASTER_PROMPT.md",
+    "Analyzed parent directives and user demands (Requests 41, 42, 43)",
+    "Identified root cause: polynomial parabola Y(X) = a*X^2 + b*X^4 expands outward into cheek/ramus instead of following dental row",
+    "Identified OPG contrast root cause: excessive Unsharp Masking (alpha=0.55/0.60) and wide window/level burning enamel",
+    "1. Replaced polynomial flaring parabola with adaptive enamel-bead arch spline in cbctHonestArchBlobEngine.ts",
+    "2. Enforced strict distal termination at last molar + 2.5 mm (no ramus/air drift) in cbctHonestArchBlobEngine.ts and cbctArchSplineMath.ts",
+    "3. Updated cbctPanoramicReconstructionMath.ts, cbctPanoramicWebGlEngine.ts, and CbctMprImplantStudioModal.tsx to soft clinical contrast (W: 2000, L: 450, gentle unsharp alpha=0.18)",
+    "4. Updated cbct_honest_slice_math.ts and render_honest_clinical_slices_proof.ts to use adaptive enamel arch and soft contrast",
+    "5. Updated multi_patient_cbct_runner.ts to render clean adaptive dental arches and soft contrast across all 5 patients",
+    "6. Executed render_honest_clinical_slices_proof.ts and generated proof_honest_clinical_slices_multiview.png",
+    "7. Executed multi_patient_cbct_runner.ts and generated all 5 blind benchmark images",
+    "8. Executed capture_all_4_workspaces_and_ridge_proof.mjs to generate native UI screenshots",
+    "9. Viewed each screenshot with view_file to visually confirm victory (no flaring, soft contrast, trabecular visibility)",
+    "10. Verified all files <= 800 lines (Mandate 8b) and confirmed 100/100 passing tests"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "flaring_root_cause": "Sampling u up to 46.5 mm with Y = a*u^2 + b*u^4 created lateral half-width of 46.5 mm (intermolar width 93 mm!), flying 15 mm into cheek and soft tissues.",
+    "solution": "Enamel beads (HU >= 1400) on 6mm MIP slab define true tooth positions. Molar rows run parallel to sagittal axis (dx/dy ~= 0). Curve terminates strictly at last molar + 2.5 mm, arc length strictly 105-120 mm.",
+    "contrast_solution": "Window Width 2000 HU, Window Level 450 HU, Unsharp Masking alpha 0.16-0.18 (was 0.55-0.60). Natural halftone showing bone trabeculae and root canals without burn.",
+    "verified_screenshots": [
+      "docs/screenshots/cbct_live/proof_honest_clinical_slices_multiview.png",
+      "docs/screenshots/cbct_live/blind_benchmark/proof_blind_bulyakov_both_jaws.png",
+      "docs/screenshots/cbct_live/blind_benchmark/proof_blind_zakharov_both_jaws.png",
+      "docs/screenshots/cbct_live/blind_benchmark/proof_blind_sumarokova_both_jaws.png",
+      "docs/screenshots/cbct_live/blind_benchmark/proof_blind_barabash_both_jaws.png",
+      "docs/screenshots/cbct_live/blind_benchmark/proof_blind_amirova_both_jaws.png",
+      "docs/screenshots/cbct_live/proof_workspace_pano.png",
+      "docs/screenshots/cbct_live/proof_workspace_implant.png"
+    ]
+  }
+}

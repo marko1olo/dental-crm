@@ -157,6 +157,7 @@ describe("Сохранение клинических настроек врач�
 
 			assert.equal(result.rows.length, 1, "Должна быть ровно одна запись настроек");
 			const row = result.rows[0];
+			assert.ok(row);
 			assert.equal(row.organization_id, ORG_MINE);
 			assert.equal(row.doctor_id, DOCTOR_MINE);
 			assert.equal(row.specialty, "therapist");

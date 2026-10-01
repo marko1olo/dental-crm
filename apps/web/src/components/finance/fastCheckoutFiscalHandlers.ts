@@ -7,8 +7,9 @@ import {
 	splitStateToCheckoutPayments,
 	type CheckoutPaymentMethodType,
 	type ClientLegalType,
+	type FastCheckoutValidationResult,
 	type Ffd12FiscalPayload,
-	type StageAdvanceCalculationResult,
+	type StageAdvanceCalculation,
 } from "../payments/checkout/fastCheckoutEngine";
 import { FiscalReceiptQueueManager } from "../../services/hardware/fiscalReceiptQueueManager";
 import { KktLanPrinterService } from "../../services/hardware/kktLanPrinter";
@@ -28,7 +29,7 @@ export interface FiscalExecutionParams {
 	cashTenderedRub: number;
 	remainingRub: number;
 	activeMethod: CheckoutPaymentMethodType;
-	validation: { isValid: boolean; errorMessageRu?: string; errorMessage?: string };
+	validation: FastCheckoutValidationResult;
 	clientType: ClientLegalType;
 	buyerInn: string;
 	buyerName: string;
@@ -38,7 +39,7 @@ export interface FiscalExecutionParams {
 	patientEmail?: string | undefined;
 	orderId: string;
 	effectiveCashierFullName: string;
-	stageCalc: StageAdvanceCalculationResult;
+	stageCalc: StageAdvanceCalculation;
 	onPaymentComplete?: ((payload: Ffd12FiscalPayload) => void) | undefined;
 	onClose: () => void;
 	inFlightRef: React.MutableRefObject<boolean>;
@@ -121,7 +122,6 @@ export async function executeFiscalPayment(
 	if (!validation.isValid) {
 		const errorMsg =
 			validation.errorMessageRu ||
-			validation.errorMessage ||
 			"Скорректируйте сумму оплаты перед пробитием чека";
 
 		if (clientType !== "physical_person" && validation.errorMessageRu?.includes("ИНН")) {
@@ -492,17 +492,17 @@ export async function executeFiscalPayment(
 
 export interface ManualCardTerminalParams {
 	targetBillRub: number;
-	overrideAmountRub?: number;
-	patientId?: string;
-	patientPhone?: string;
-	patientEmail?: string;
+	overrideAmountRub?: number | undefined;
+	patientId?: string | undefined;
+	patientPhone?: string | undefined;
+	patientEmail?: string | undefined;
 	effectiveCashierFullName: string;
 	orderId: string;
 	clientType: ClientLegalType;
 	buyerInn: string;
 	buyerName: string;
 	isElectronicReceiptOnly: boolean;
-	stageCalc: StageAdvanceCalculationResult;
+	stageCalc: StageAdvanceCalculation;
 	onPaymentComplete?: ((payload: Ffd12FiscalPayload) => void) | undefined;
 	onClose: () => void;
 	setIsSubmittingManualCard: (val: boolean) => void;

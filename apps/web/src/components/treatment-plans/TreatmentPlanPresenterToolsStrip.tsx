@@ -6,6 +6,7 @@
 import React, { useState } from "react";
 import {
 	Bot,
+	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
 	FileSignature,
@@ -120,9 +121,9 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 						{/* Toggle Doctor Discount */}
 						<button
 							type="button"
-							onClick={() => setActiveToolsPanel((prev) => (prev === "discount" ? null : "discount"))}
+							onClick={() => setActiveToolsPanel((prev) => (prev === "doctorDiscount" ? null : "doctorDiscount"))}
 							className={`h-7 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border transition-colors cursor-pointer ${
-								activeToolsPanel === "discount" || doctorDiscountPercent > 0
+								activeToolsPanel === "doctorDiscount" || doctorDiscountPercent > 0
 									? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
 									: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-main)] hover:bg-[var(--tp-primary-light)] border-[var(--tp-border)]"
 							}`}
@@ -131,7 +132,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 						>
 							<Percent size={13} />
 							<span>{doctorDiscountPercent > 0 ? `Скидка: ${doctorDiscountPercent}%` : "Скидка врача"}</span>
-							<ChevronDown size={12} className={`transition-transform duration-150 ${activeToolsPanel === "discount" ? "rotate-180" : ""}`} />
+							<ChevronDown size={12} className={`transition-transform duration-150 ${activeToolsPanel === "doctorDiscount" ? "rotate-180" : ""}`} />
 						</button>
 					</div>
 
@@ -253,7 +254,7 @@ export const TreatmentPlanPresenterToolsStrip: React.FC<TreatmentPlanPresenterTo
 				</div>
 
 				{/* Collapsible Panel 3: Doctor Discount Freedom Quick Bar (Mandate 8e / Section VII.2) */}
-				<div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-2 bg-[var(--tp-surface-soft)] border-b border-[var(--tp-border)] no-print text-xs ${activeToolsPanel === "discount" ? "" : "hidden"}`}>
+				<div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-2 bg-[var(--tp-surface-soft)] border-b border-[var(--tp-border)] no-print text-xs ${activeToolsPanel === "doctorDiscount" ? "" : "hidden"}`}>
 					<div className="flex items-center gap-2 flex-wrap">
 						<div className="inline-flex items-center gap-1 font-bold text-[var(--tp-primary)]">
 							<Percent size={13} className="text-emerald-600 dark:text-emerald-400" />

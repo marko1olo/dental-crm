@@ -148,7 +148,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 							<button
 								type="button"
 								onClick={() => {
-									setIsAddServiceModalOpen(false);
+									onClose();
 									setSelectedCatalogItem(null);
 								}}
 								className="p-1.5 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors"
@@ -487,7 +487,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 							<button
 								type="button"
 								onClick={() => {
-									setIsAddServiceModalOpen(false);
+									onClose();
 									setSelectedCatalogItem(null);
 								}}
 								className="min-h-[44px] sm:min-h-[36px] px-4 py-2 rounded-xl text-xs font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)] cursor-pointer transition-colors"

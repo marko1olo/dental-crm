@@ -1,0 +1,34 @@
+{
+  "subagent": "Subagent 26: Patient Search, Fuzzy Highlights & Multi-Field Duplicate Prevention Inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md in full",
+    "Inspected Mandates 8za (Strict Anti-Duplication), 8y (Dual-Mode Zero-Mock), 8z (Language Purge), 8e (Zero Dead-Ends), 8n (Solo Doctor Sovereignty) in AGENTS.md",
+    "Initialized .mem.json checkpointing",
+    "Audited canonical patient search engine and duplicate detection in apps/web/src/components/schedule/patientSearchEngine.ts",
+    "Harden highlightSearchMatches to support single-token exact substring, word-level token matches, Levenshtein fuzzy words, and national 10-digit/last-4 phone matching",
+    "Exported findPotentialDuplicates and PotentialDuplicateItem in patientSearchEngine.ts checking both fullName (>= 3 chars) AND phone (digits >= 4)",
+    "Hardened PatientCreationModal.tsx with findPotentialDuplicates, token visual highlights, duplicateReason badges, and 1-click CTAs (Выбрать эту карту / В новом окне)",
+    "Hardened QuickBookingDrawer.tsx inline duplicate warning with findPotentialDuplicates, token visual highlights, duplicateReason badges, and 1-click CTAs (Выбрать карту / В новом окне)",
+    "Enhanced PatientSearchAutocomplete.tsx with isFuzzy badge (Опечатка?) and cardHighlights / cardNumber rendering",
+    "Enhanced PatientSearchModal.tsx with fallback card number and cardHighlights support",
+    "Added unit tests 1.6-1.10 in apps/web/src/components/schedule/__tests__/patientSearchEngine.test.ts",
+    "Added unit test suite 6 in apps/web/src/tests/patientSearchFuzzy.test.ts",
+    "Ran check-encoding.mjs: verified 6256 files, 0 encoding errors",
+    "Ran node --test on both test suites: 30 of 30 tests pass 100%",
+    "Ran npm --prefix apps/web run typecheck: Exit Code 0, 0 TypeScript errors",
+    "Performed clean git diff self-audit ensuring zero dead code, zero crutches, zero debug logs, and canonical edits only"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Highlight Substring Pitfall: Russian patronymics ('Иванович') contain Russian surnames ('Иванов') as prefixes. Single-token queries must preserve direct substring matching while multi-token queries perform word-token and fuzzy matching.",
+    "Phone Prefix Normalization: +7 and 8 formats must compare the 10-digit national core to highlight and score consistently regardless of prefix formatting.",
+    "Multi-Field Duplicate Detection: Prior code only checked patient fullName, completely ignoring phone. With findPotentialDuplicates, typing a phone first or typing a typo name with matching phone produces immediate duplicate warnings.",
+    "Non-Blocking Ergonomics: Added 'Выбрать эту карту' and 'В новом окне' 1-click CTAs adhering to Mandate 8e without blocking alerts or modals."
+  ],
+  "verification": {
+    "encoding": "PASS (0 errors, 6256 files checked)",
+    "unit_tests": "PASS (30/30 tests pass)",
+    "typecheck": "PASS (tsc -b --noEmit, Exit Code 0)"
+  }
+}

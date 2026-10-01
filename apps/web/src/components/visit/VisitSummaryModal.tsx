@@ -34,6 +34,7 @@ import {
 	type ToothSurface,
 } from "../emr";
 import { useVisitCompletion } from "./useVisitCompletion";
+import { logger } from "../../utils/logger";
 import {
 	type RadiologySnapshotItem,
 	VisitSummaryRadiologyGallery,
@@ -750,11 +751,15 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						<button
 							type="button"
 							onClick={async () => {
-								onClose();
-								if (onCompleteVisit) {
-									await onCompleteVisit();
-								} else {
-									await completeVisit();
+								try {
+									if (onCompleteVisit) {
+										await onCompleteVisit();
+									} else {
+										await completeVisit();
+									}
+									onClose();
+								} catch (err) {
+									logger.error("[VisitSummaryModal] Ошибка завершения приёма:", err);
 								}
 							}}
 							disabled={isCompleting}

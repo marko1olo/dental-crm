@@ -295,12 +295,6 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 	useEffect(() => {
 		if (!volume || !isOpen) return;
 
-		if (!bridgeRef.current) {
-			bridgeRef.current = new CbctWorkerBridge();
-		}
-		const bridge = bridgeRef.current;
-		bridge.initVolume(volume);
-
 		const reqId = ++latestRenderReqIdRef.current;
 
 		if (pendingRafRef.current !== null) {
@@ -312,7 +306,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 			pendingRafRef.current = null;
 			if (!isOpen || !volume) return;
 
-			// LAYER 1a (Hardware GPU WebGL2 Priority — < 0.5 ms instantaneous MPR rendering)
+			// LAYER 1a (Hardware GPU WebGL2 Priority — < 0.5 ms instantaneous MPR rendering, CPU sleeps)
 			const glContext = getSharedCbctGlContext();
 			if (glContext.isAvailable()) {
 				if (!axialOffscreenRef.current && typeof document !== "undefined") {
@@ -371,7 +365,13 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 				}
 			}
 
-			// LAYER 1a (Transparent Fallback: Asynchronous Web Worker / Synchronous CPU)
+			// LAYER 1b (Transparent Fallback: Asynchronous Web Worker / Synchronous CPU ONLY when WebGL2 GPU is unavailable)
+			if (!bridgeRef.current) {
+				bridgeRef.current = new CbctWorkerBridge();
+			}
+			const bridge = bridgeRef.current;
+			bridge.initVolume(volume);
+
 			bridge
 				.renderAllPlanes({
 					volume,
@@ -433,62 +433,34 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 			}
 		};
 	}, [
-		volume,
-		isOpen,
-		crosshairMm,
-		obliqueAngles,
-		windowWidth,
-		windowLevel,
-		invertColors,
-		slabMode,
-		slabThicknessMm,
-		maximizedViewport,
-		viewLayout,
-		layoutBurstCount,
-		axialBaseCanvasRef,
-		coronalBaseCanvasRef,
-		sagittalBaseCanvasRef,
+		volume, isOpen, crosshairMm, obliqueAngles, windowWidth, windowLevel, invertColors,
+		slabMode, slabThicknessMm, maximizedViewport, viewLayout, layoutBurstCount, studioMode,
+		axialBaseCanvasRef, coronalBaseCanvasRef, sagittalBaseCanvasRef,
 	]);
 
-	// LAYER 1b: FAST ZERO-GC VIEWPORT PAN & ZOOM REDRAW (60 FPS)
+	// LAYER 1b: FAST ZERO-GC VIEWPORT PAN & ZOOM REDRAW (60 FPS) & WORKSPACE SWITCH TRANSFERS
 	useEffect(() => {
 		if (!isOpen) return;
-
-		if (axialOffscreenRef.current && axialOffscreenRef.current.width > 0) {
-			drawOffscreenToCanvas(
-				axialBaseCanvasRef.current,
-				axialOffscreenRef.current,
-				transforms.axial ?? DEFAULT_VIEWPORT_TRANSFORM,
-				axialOffscreenRef.current.width,
-				axialOffscreenRef.current.height,
-			);
+		const curT = transformsRef.current;
+		if (axialOffscreenRef.current?.width && axialBaseCanvasRef.current) {
+			drawOffscreenToCanvas(axialBaseCanvasRef.current, axialOffscreenRef.current, curT.axial ?? DEFAULT_VIEWPORT_TRANSFORM, axialOffscreenRef.current.width, axialOffscreenRef.current.height);
 		}
-		if (coronalOffscreenRef.current && coronalOffscreenRef.current.width > 0) {
-			drawOffscreenToCanvas(
-				coronalBaseCanvasRef.current,
-				coronalOffscreenRef.current,
-				transforms.coronal ?? DEFAULT_VIEWPORT_TRANSFORM,
-				coronalOffscreenRef.current.width,
-				coronalOffscreenRef.current.height,
-			);
+		if (coronalOffscreenRef.current?.width && coronalBaseCanvasRef.current) {
+			drawOffscreenToCanvas(coronalBaseCanvasRef.current, coronalOffscreenRef.current, curT.coronal ?? DEFAULT_VIEWPORT_TRANSFORM, coronalOffscreenRef.current.width, coronalOffscreenRef.current.height);
 		}
-		if (sagittalOffscreenRef.current && sagittalOffscreenRef.current.width > 0) {
-			drawOffscreenToCanvas(
-				sagittalBaseCanvasRef.current,
-				sagittalOffscreenRef.current,
-				transforms.sagittal ?? DEFAULT_VIEWPORT_TRANSFORM,
-				sagittalOffscreenRef.current.width,
-				sagittalOffscreenRef.current.height,
-			);
+		if (sagittalOffscreenRef.current?.width && sagittalBaseCanvasRef.current) {
+			drawOffscreenToCanvas(sagittalBaseCanvasRef.current, sagittalOffscreenRef.current, curT.sagittal ?? DEFAULT_VIEWPORT_TRANSFORM, sagittalOffscreenRef.current.width, sagittalOffscreenRef.current.height);
+		}
+		if (panoOffscreenRef.current?.width && panoBaseCanvasRef.current) {
+			drawOffscreenToCanvas(panoBaseCanvasRef.current, panoOffscreenRef.current, curT.panoramic ?? DEFAULT_VIEWPORT_TRANSFORM, panoOffscreenRef.current.width, panoOffscreenRef.current.height);
+		}
+		if (crossSectionOffscreenRef.current?.width && crossSectionBaseCanvasRef.current) {
+			drawOffscreenToCanvas(crossSectionBaseCanvasRef.current, crossSectionOffscreenRef.current, curT.cross_section ?? DEFAULT_VIEWPORT_TRANSFORM, crossSectionOffscreenRef.current.width, crossSectionOffscreenRef.current.height);
 		}
 	}, [
-		isOpen,
-		transforms.axial,
-		transforms.coronal,
-		transforms.sagittal,
-		axialBaseCanvasRef,
-		coronalBaseCanvasRef,
-		sagittalBaseCanvasRef,
+		isOpen, studioMode, maximizedViewport, viewLayout,
+		transforms.axial, transforms.coronal, transforms.sagittal, transforms.panoramic, transforms.cross_section,
+		axialBaseCanvasRef, coronalBaseCanvasRef, sagittalBaseCanvasRef, panoBaseCanvasRef, crossSectionBaseCanvasRef,
 	]);
 
 	// LAYER 1c: PANORAMIC BASE SLICE REDRAW
@@ -522,6 +494,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 		);
 	}, [
 		isOpen,
+		studioMode,
 		panoramicData,
 		transforms.panoramic,
 		panoBaseCanvasRef,
@@ -586,6 +559,7 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 		);
 	}, [
 		isOpen,
+		studioMode,
 		volume,
 		activeCrossSection,
 		windowWidth,

@@ -148,24 +148,24 @@ export const TreatmentPlanPresenterAiAuditTab: React.FC<TreatmentPlanPresenterAi
 							<h4 className="text-sm font-bold text-[var(--tp-text-main)] m-0 flex items-center justify-between">
 								<span>Клиническая экспертиза СтАР:</span>
 								<span className="text-xs font-normal text-[var(--tp-text-muted)]">
-									{aiAuditResult.clinicalValidation.rulesCheckedCount} правил проверено
+									{aiAuditResult.clinicalValidation.totalChecksCount} правил проверено
 								</span>
 							</h4>
 
 							<div className="flex flex-col gap-2">
-								{aiAuditResult.clinicalValidation.findings.length === 0 ? (
+								{aiAuditResult.clinicalValidation.anatomicalChecks.length === 0 ? (
 									<div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-200 flex items-center gap-2">
 										<Check size={16} className="text-emerald-600 shrink-0" />
 										<span>Клинических нарушений и конфликтов этапов не выявлено. План соответствует стандартам Минздрава.</span>
 									</div>
 								) : (
-									aiAuditResult.clinicalValidation.findings.map((f, idx) => (
+									aiAuditResult.clinicalValidation.anatomicalChecks.map((f, idx) => (
 										<div
 											key={idx}
 											className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 ${
-												f.severity === "error"
+												f.status === "error"
 													? "bg-rose-500/10 border-rose-500/30 text-rose-900 dark:text-rose-200"
-													: f.severity === "warning"
+													: f.status === "warning"
 														? "bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200"
 														: "bg-indigo-500/10 border-indigo-500/30 text-indigo-900 dark:text-indigo-200"
 											}`}
@@ -173,7 +173,7 @@ export const TreatmentPlanPresenterAiAuditTab: React.FC<TreatmentPlanPresenterAi
 											<AlertCircle size={15} className="shrink-0 mt-0.5" />
 											<div className="flex-1 min-w-0">
 												<div className="font-bold flex items-center justify-between gap-2">
-													<span>{f.title}</span>
+													<span>{f.rule}</span>
 													{f.toothNumber && (
 														<span className="px-1.5 py-0.2 rounded bg-black/10 dark:bg-white/10 font-mono text-[10px]">
 															Зуб {f.toothNumber}
@@ -181,9 +181,9 @@ export const TreatmentPlanPresenterAiAuditTab: React.FC<TreatmentPlanPresenterAi
 													)}
 												</div>
 												<div className="mt-1 opacity-90 leading-relaxed">{f.message}</div>
-												{f.suggestedAction && (
+												{f.recommendation && (
 													<div className="mt-1.5 pt-1.5 border-t border-current/20 font-medium">
-														💡 Рекомендация: {f.suggestedAction}
+														💡 Рекомендация: {f.recommendation}
 													</div>
 												)}
 											</div>
@@ -194,13 +194,13 @@ export const TreatmentPlanPresenterAiAuditTab: React.FC<TreatmentPlanPresenterAi
 						</div>
 
 						{/* Doctor Recommendations Card */}
-						{aiAuditResult.clinicalValidation.doctorRecommendations.length > 0 && (
+						{aiAuditResult.clinicalValidation.clinicalRecommendations.length > 0 && (
 							<div className="p-4 rounded-2xl bg-[var(--tp-surface)] border border-[var(--tp-border)] text-xs text-[var(--tp-text-main)]">
 								<h5 className="text-xs font-bold text-[var(--tp-text-muted)] uppercase tracking-wider mb-2">
 									Клинические акценты для врача:
 								</h5>
 								<ul className="m-0 pl-4 space-y-1.5">
-									{aiAuditResult.clinicalValidation.doctorRecommendations.map((rec, idx) => (
+									{aiAuditResult.clinicalValidation.clinicalRecommendations.map((rec, idx) => (
 										<li key={idx} className="flex items-start gap-2">
 											<span className="text-amber-500 font-bold">•</span>
 											<span>{rec}</span>

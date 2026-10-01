@@ -10,13 +10,13 @@ import {
 } from "lucide-react";
 import {
 	type CompletedWorksActParams,
-	type CompletedWorksActSummary,
+	type CompiledActAndWarrantySummary,
 } from "./invoiceEngine";
 import { OneCExportButton } from "./OneCExportButton";
 
 export interface PatientBillingFooterProps {
 	readonly onPrint: () => void;
-	readonly summary: CompletedWorksActSummary;
+	readonly summary: CompiledActAndWarrantySummary;
 	readonly actParams: CompletedWorksActParams;
 	readonly patient?: {
 		readonly id?: string | undefined;

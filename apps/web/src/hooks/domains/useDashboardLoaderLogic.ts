@@ -3,6 +3,12 @@ import type { Dashboard } from "@dental/shared";
 import { WorkflowResponseError, responseErrorMessage } from "../../AppHelpers";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
+import {
+	cacheClinicDashboard,
+	createOfflineFallbackDashboard,
+	getCachedClinicDashboard,
+	setOfflineAutonomyMode,
+} from "../../lib/offlineStorage";
 
 export interface DashboardLoaderLogicProps {
 	authRef: { current: any };
@@ -56,6 +62,8 @@ export function useDashboardLoaderLogic({
 				// актуальнее, этот молча игнорируем.
 				if (isStaleResponse()) return;
 				setDashboard(payload);
+				cacheClinicDashboard(payload);
+				setOfflineAutonomyMode(false);
 				setAccessUnlockRequired(false);
 				setAccessUnlockMessage("");
 			} catch (err) {
@@ -73,16 +81,28 @@ export function useDashboardLoaderLogic({
 						"Сессия истекла. Войдите в кабинет клиники заново.",
 					);
 				} else {
-					showToast(
-						actionFailureToast(
-							"Не удалось загрузить данные клиники. Проверьте связь с сервером и повторите — введённые данные не потеряны.",
-							status,
-						),
-						"error",
-					);
-					setError(
-						"Не удалось загрузить данные клиники. Проверьте связь с сервером и повторите — введённые данные не потеряны.",
-					);
+					// СЕТЕВАЯ ОШИБКА / ОФФЛАЙН / ЛОКАЛЬНАЯ СЕТЬ (Мандаты 8e, 8n)
+					// Поднимаем закэшированный снимок клиники, чтобы не блокировать приём
+					const cachedDashboard = getCachedClinicDashboard();
+					if (cachedDashboard) {
+						setDashboard(cachedDashboard);
+						setOfflineAutonomyMode(true);
+						showToast(
+							"Связь с сервером прервана. Включён автономный режим (Локальная сеть).",
+							"warning",
+						);
+						setError("");
+					} else {
+						// Если кэша ещё нет (первый запуск без сети) — создаём оффлайн-кабинет
+						const fallbackDashboard = createOfflineFallbackDashboard();
+						setDashboard(fallbackDashboard);
+						setOfflineAutonomyMode(true);
+						showToast(
+							"Сервер клиники недоступен. Открыт автономный режим (Локальная сеть).",
+							"warning",
+						);
+						setError("");
+					}
 				}
 				// Прежнее состояние НЕ затираем: пусть на экране останутся последние
 				// корректные данные, а не подделка.

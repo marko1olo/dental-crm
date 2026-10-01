@@ -159,6 +159,13 @@ async function main() {
 		});
 
 		const page = await context.newPage();
+		page.on("console", (msg) => {
+			const text = msg.text();
+			if (text.includes("Cbct") || text.includes("GL") || text.includes("render") || text.includes("error") || text.includes("warn") || text.includes("Volume")) {
+				console.log(`[PAGE ${msg.type()}]:`, text);
+			}
+		});
+		page.on("pageerror", (err) => console.error("[PAGE ERROR]:", err));
 
 		await page.route("**/api/**", async (route) => {
 			const url = route.request().url();
@@ -210,13 +217,14 @@ async function main() {
 		// Pre-seed localStorage
 		await page.addInitScript(() => {
 			try {
-				const OrigWebSocket = window.WebSocket;
-				window.WebSocket = function (url, protocols) {
-					if (typeof url === "string" && (url.includes("5173") || url.includes("vite"))) {
-						return { send() {}, close() {}, addEventListener() {}, removeEventListener() {}, readyState: 1 };
-					}
-					return new OrigWebSocket(url, protocols);
-				};
+				class SafeMockWebSocket {
+					constructor() { this.readyState = 1; }
+					send() {}
+					close() {}
+					addEventListener() {}
+					removeEventListener() {}
+				}
+				window.WebSocket = SafeMockWebSocket;
 			} catch {}
 
 			localStorage.setItem("dente_clinic_token", "audit-token-clinic");
@@ -364,8 +372,8 @@ async function main() {
 						maxHU,
 						rescaleSlope: 1.0,
 						rescaleIntercept: -1000,
-						defaultWindowWidth: 4400,
-						defaultWindowLevel: 1300,
+						defaultWindowWidth: 2200,
+						defaultWindowLevel: 450,
 						isDisposed: false,
 					};
 
@@ -405,8 +413,76 @@ async function main() {
 		// Wait for quad viewports grid
 		const quadGrid = page.locator("[data-testid='cbct-mpr-quad-grid']");
 		await quadGrid.waitFor({ state: "visible", timeout: 20000 });
-		console.log("[UI AUDIT] 4-viewport quad grid active.");
 		await page.waitForTimeout(2000);
+
+		const diag = await page.evaluate(() => {
+			const axialContainer = document.querySelector("[data-testid='cbct-viewport-container-axial']");
+			const canvases = axialContainer ? Array.from(axialContainer.querySelectorAll("canvas")) : [];
+			const baseCanvas = canvases[0];
+			const overlayCanvas = canvases[1];
+			let baseNonZero = 0;
+			if (baseCanvas) {
+				const ctx = baseCanvas.getContext("2d");
+				if (ctx) {
+					const data = ctx.getImageData(0, 0, Math.min(baseCanvas.width, 100), Math.min(baseCanvas.height, 100)).data;
+					for (let i = 0; i < data.length; i += 4) {
+						if (data[i] || data[i+1] || data[i+2] || data[i+3]) baseNonZero++;
+					}
+				}
+			}
+			return {
+				canvasesCount: canvases.length,
+				baseW: baseCanvas?.width,
+				baseH: baseCanvas?.height,
+				baseStyleW: baseCanvas?.style?.width,
+				baseStyleH: baseCanvas?.style?.height,
+				baseNonZero,
+				overlayW: overlayCanvas?.width,
+				overlayH: overlayCanvas?.height,
+			};
+		});
+		console.log("[DIAGNOSTIC AXIAL CANVAS]:", diag);
+
+		const glDiag = await page.evaluate(() => {
+			const win = window;
+			const vol = win.__cbctDemoVolume;
+			if (!vol) return { error: "No volume on window" };
+			const axialContainer = document.querySelector("[data-testid='cbct-viewport-container-axial']");
+			const canvases = axialContainer ? Array.from(axialContainer.querySelectorAll("canvas")) : [];
+			const baseCanvas = canvases[0];
+			if (!baseCanvas) return { error: "No base canvas" };
+
+			const ctx = baseCanvas.getContext("2d");
+			const pixelCenter = ctx ? Array.from(ctx.getImageData(300, 300, 1, 1).data) : null;
+			const pixel100 = ctx ? Array.from(ctx.getImageData(100, 100, 1, 1).data) : null;
+			const pixel200 = ctx ? Array.from(ctx.getImageData(200, 200, 1, 1).data) : null;
+			const pixel400 = ctx ? Array.from(ctx.getImageData(400, 400, 1, 1).data) : null;
+			const centerVox = vol.data[Math.floor(vol.dimensions.depth / 2) * 600 * 600 + 300 * 600 + 300];
+
+			// Also let's inspect the first 20 pixels around (300, 300)
+			const patch = ctx ? Array.from(ctx.getImageData(280, 280, 40, 40).data) : [];
+			let patchNonZeroR = 0, patchMaxR = 0;
+			for (let i = 0; i < patch.length; i += 4) {
+				if (patch[i] > 0) patchNonZeroR++;
+				if (patch[i] > patchMaxR) patchMaxR = patch[i];
+			}
+
+			return {
+				volDims: vol.dimensions,
+				volVoxelCenterHU: centerVox,
+				pixelCenter,
+				pixel100,
+				pixel200,
+				pixel400,
+				patchNonZeroR,
+				patchMaxR,
+				baseCanvasClientW: baseCanvas.clientWidth,
+				baseCanvasClientH: baseCanvas.clientHeight,
+				baseCanvasW: baseCanvas.width,
+				baseCanvasH: baseCanvas.height,
+			};
+		});
+		console.log("[GL DIAGNOSTIC CENTER PIXELS]:", glDiag);
 
 		// Switch to Implant Planning workspace tab (МАНДАТ 8e)
 		console.log("Switching to 'Имплантация' workspace tab...");
@@ -493,12 +569,62 @@ async function main() {
 			console.log("[1-CLICK EMR]: Clicked successfully.");
 		}
 
+		async function inspectViewportCanvases(pg, name) {
+			const result = await pg.evaluate((viewportName) => {
+				const canvases = Array.from(document.querySelectorAll("canvas"));
+				const report = [];
+				for (const c of canvases) {
+					const ctx = c.getContext("2d");
+					let nonZero = 0;
+					let maxR = 0;
+					if (ctx && c.width > 0 && c.height > 0) {
+						try {
+							const imgData = ctx.getImageData(0, 0, Math.min(c.width, 150), Math.min(c.height, 150)).data;
+							for (let i = 0; i < imgData.length; i += 4) {
+								if (imgData[i] || imgData[i + 1] || imgData[i + 2]) {
+									nonZero++;
+									if (imgData[i] > maxR) maxR = imgData[i];
+								}
+							}
+						} catch {}
+					}
+					report.push({
+						w: c.width,
+						h: c.height,
+						clientW: c.clientWidth,
+						clientH: c.clientHeight,
+						nonZero,
+						maxR,
+						className: c.className?.slice(0, 40),
+					});
+				}
+				return { viewportName, canvasesCount: canvases.length, canvases: report };
+			}, name);
+			console.log(`[PIXEL AUDIT ${name}]: Canvases: ${result.canvasesCount}`);
+			for (const [idx, c] of result.canvases.entries()) {
+				console.log(`   Canvas #${idx}: ${c.w}x${c.h} (client: ${c.clientW}x${c.clientH}), nonZeroPixels: ${c.nonZero}, maxBrightness: ${c.maxR}/255`);
+			}
+			return result;
+		}
+
 		// Test Zakharov Edentulous Ridge Automation (W2/W6/H + Form 043/u)
 		const ridgeAuto = page.locator("[data-testid='cbct-zakharov-ridge-automation']");
 		if (await ridgeAuto.isVisible().catch(() => false)) {
 			console.log("[AUDIT] Zakharov Ridge Automation visible. Testing #26, #27 and Form 043/u...");
 			const btn26 = page.locator("[data-testid='cbct-ridge-tooth-26-btn']");
 			if (await btn26.isVisible()) await btn26.click();
+
+			// Test doctor inline editing
+			const editToggle = page.locator("[data-testid='cbct-ridge-edit-043-toggle-btn']");
+			if (await editToggle.isVisible()) {
+				await editToggle.click();
+				await page.waitForTimeout(300);
+				const textarea = page.locator("[data-testid='cbct-ridge-043-textarea']");
+				if (await textarea.isVisible()) {
+					console.log("[AUDIT] Form 043/u textarea opened successfully. Doctor can edit protocol.");
+				}
+			}
+
 			const export043 = page.locator("[data-testid='cbct-ridge-export-043-btn']");
 			if (await export043.isVisible()) {
 				await export043.click();
@@ -506,6 +632,9 @@ async function main() {
 				console.log("[1-CLICK 043/u RIDGE]: Clicked successfully.");
 			}
 		}
+
+		await page.waitForTimeout(1000);
+		await inspectViewportCanvases(page, "Имплантация (Workspace 4)");
 
 		// Capture high-resolution proof screenshot
 		console.log(`Capturing proof screenshot to: ${PROOF_SCREENSHOT_PATH}`);
@@ -523,18 +652,19 @@ async function main() {
 		const tabMpr = page.locator("button:has-text('MPR 3D'), [data-tab-id='diagnostic'], [data-testid='cbct-tab-mpr-3d'], [data-testid='cbct-mode-diagnostic-btn']").first();
 		await tabMpr.waitFor({ state: "visible", timeout: 10000 });
 		await tabMpr.click();
-		await page.waitForTimeout(2500);
+		await page.waitForTimeout(2000);
+		await inspectViewportCanvases(page, "MPR 3D (Workspace 1)");
 
 		const mprShotPath = path.join(OUT_DIR, "proof_workspace_mpr.png");
 		await modal.screenshot({ path: mprShotPath, animations: "disabled" });
 		console.log(`[PROOF 1 CAPTURED] proof_workspace_mpr.png (${(statSync(mprShotPath).size / 1024).toFixed(1)} KB)`);
 
-		// Switch to Workspace 2: Панорама (with Maxilla switch)
+		// Switch to Workspace 2: Панорама (with Maxilla switch & Interactive Tooth Markers)
 		console.log("\n--- Switching to Workspace 2: Панорама ---");
 		const tabPano = page.locator("button:has-text('Панорама'), [data-tab-id='panoramic'], [data-testid='cbct-tab-panorama'], [data-testid='cbct-mode-panoramic-btn']").first();
 		await tabPano.waitFor({ state: "visible", timeout: 10000 });
 		await tabPano.click();
-		await page.waitForTimeout(2000);
+		await page.waitForTimeout(1500);
 
 		const switchMaxillaBtn = page.locator("[data-testid='cbct-jaw-switch-maxilla-btn']");
 		if (await switchMaxillaBtn.isVisible().catch(() => false)) {
@@ -542,6 +672,16 @@ async function main() {
 			await switchMaxillaBtn.click();
 			await page.waitForTimeout(1500);
 		}
+
+		// Test Interactive Tooth Marker click
+		const toothMarker26 = page.locator("[data-testid='cbct-pano-marker-tooth-26']");
+		if (await toothMarker26.isVisible().catch(() => false)) {
+			console.log("Clicking interactive tooth marker #26 on OPG...");
+			await toothMarker26.click();
+			await page.waitForTimeout(1000);
+		}
+
+		await inspectViewportCanvases(page, "Панорама (Workspace 2)");
 
 		const panoShotPath = path.join(OUT_DIR, "proof_workspace_pano.png");
 		await modal.screenshot({ path: panoShotPath, animations: "disabled" });
@@ -552,7 +692,8 @@ async function main() {
 		const tabEndo = page.locator("button:has-text('Эндодонтия'), [data-tab-id='endo'], [data-testid='cbct-tab-endo'], [data-testid='cbct-mode-endo-btn']").first();
 		await tabEndo.waitFor({ state: "visible", timeout: 10000 });
 		await tabEndo.click();
-		await page.waitForTimeout(2500);
+		await page.waitForTimeout(2000);
+		await inspectViewportCanvases(page, "Эндодонтия (Workspace 3)");
 
 		const endoShotPath = path.join(OUT_DIR, "proof_workspace_endo.png");
 		await modal.screenshot({ path: endoShotPath, animations: "disabled" });

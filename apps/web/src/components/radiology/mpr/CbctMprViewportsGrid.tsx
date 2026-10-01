@@ -31,6 +31,7 @@ import {
 export interface CbctMprViewportsGridProps {
 	readonly isSidebarOpen: boolean;
 	readonly mobileActiveTab: string;
+	readonly patientDisplayName?: string | undefined;
 	readonly onSelectMobileTab?: ((tab: "axial" | "coronal" | "sagittal" | "panoramic" | "planner") => void) | undefined;
 	readonly hoveredViewport?: CbctViewportType | null | undefined;
 	readonly onHoverViewport?: ((v: CbctViewportType | null) => void) | undefined;
@@ -117,10 +118,20 @@ export interface CbctMprViewportsGridProps {
 	readonly nerveSafetyStatus?: "safe" | "warning" | "danger" | "unmeasured" | undefined;
 	readonly handleExportToEmr?: (() => void) | undefined;
 	readonly handleExportToPlan?: (() => void) | undefined;
+	readonly onChangeWindowWidth?: ((w: number) => void) | undefined;
+	readonly onChangeWindowLevel?: ((l: number) => void) | undefined;
+	readonly onChangeSlabThicknessMm?: ((th: number) => void) | undefined;
+	readonly onChangeSlabMode?: ((mode: SlabProjectionMode) => void) | undefined;
+	readonly onSelectClinicalPreset?: ((presetId: string) => void) | undefined;
+	readonly activePresetId?: string | undefined;
+	readonly panoThicknessMm?: number | undefined;
+	readonly onChangePanoThicknessMm?: ((th: number) => void) | undefined;
+	readonly panoProjectionMode?: string | undefined;
+	readonly onChangePanoProjectionMode?: ((mode: string) => void) | undefined;
 }
 
 export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
-	isSidebarOpen, mobileActiveTab, onSelectMobileTab, hoveredViewport, onHoverViewport,
+	isSidebarOpen, mobileActiveTab, patientDisplayName, onSelectMobileTab, hoveredViewport, onHoverViewport,
 	showEdgeRulers = false, volume, dicomLoadingStatus, dicomProgress, maximizedViewport,
 	viewLayout, studioMode, onSelectStudioMode, folderInputRef, zipInputRef,
 	handleDicomFilesChange, onLoadDemoVolume, activeViewport, setActiveViewport, handleToggleMaximize,
@@ -140,6 +151,9 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 	selectedDiameterMm, onSelectDiameterMm, selectedLengthMm, onSelectLengthMm,
 	displayBoneClass, displayMeanHU, displayTorque, displayNerveClearanceMm,
 	displayDrillingProtocol, nerveSafetyStatus, handleExportToEmr, handleExportToPlan,
+	onChangeWindowWidth, onChangeWindowLevel, onChangeSlabThicknessMm, onChangeSlabMode,
+	onSelectClinicalPreset, activePresetId, panoThicknessMm, onChangePanoThicknessMm,
+	panoProjectionMode, onChangePanoProjectionMode,
 }) => {
 	const [fourthQuadrantMode, setFourthQuadrantMode] = useState<"volume3d" | "panoramic">("volume3d");
 
@@ -245,17 +259,6 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 				/>
 			</div>
 
-			{/* Bottom-Left 1-Click W/L Contrast Presets Bar */}
-			{onSelectQuickWlPreset && (
-				<div className="absolute bottom-1.5 left-28 pointer-events-auto flex items-center gap-1 z-20">
-					<CbctQuickWlBar
-						windowWidth={windowWidth}
-						windowLevel={windowLevel}
-						onSelectPreset={onSelectQuickWlPreset}
-					/>
-				</div>
-			)}
-
 			{renderViewportOverlays(viewport)}
 		</>
 	);
@@ -271,11 +274,13 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
 					: "border border-cyan-500/30 hover:border-cyan-500/60"
 			} ${extraClassName}`}
+			style={{ backgroundColor: "#000000" }}
 			data-testid="cbct-viewport-container-axial"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
 				<canvas
 					ref={axialBaseCanvasRef}
+					style={{ backgroundColor: "#000000" }}
 					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
 				/>
 				<canvas
@@ -287,7 +292,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					onMouseLeave={handleThrottledMouseUp}
 					onWheel={(e) => handleThrottledWheel("axial", e)}
 					onContextMenu={(e) => e.preventDefault()}
-					style={{ cursor: getCanvasCursor("axial") }}
+					style={{ cursor: getCanvasCursor("axial"), backgroundColor: "transparent" }}
 					className="absolute inset-0 w-full h-full object-contain z-10"
 					data-testid="cbct-overlay-canvas-axial"
 				/>
@@ -327,11 +332,13 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					? "ring-1 ring-emerald-500/50 border border-emerald-500/80 shadow-emerald-950/30"
 					: "border border-emerald-500/30 hover:border-emerald-500/60"
 			} ${extraClassName}`}
+			style={{ backgroundColor: "#000000" }}
 			data-testid="cbct-viewport-container-coronal"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
 				<canvas
 					ref={coronalBaseCanvasRef}
+					style={{ backgroundColor: "#000000" }}
 					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
 				/>
 				<canvas
@@ -343,7 +350,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					onMouseLeave={handleThrottledMouseUp}
 					onWheel={(e) => handleThrottledWheel("coronal", e)}
 					onContextMenu={(e) => e.preventDefault()}
-					style={{ cursor: getCanvasCursor("coronal") }}
+					style={{ cursor: getCanvasCursor("coronal"), backgroundColor: "transparent" }}
 					className="absolute inset-0 w-full h-full object-contain z-10"
 					data-testid="cbct-overlay-canvas-coronal"
 				/>
@@ -383,11 +390,13 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					? "ring-1 ring-rose-500/50 border border-rose-500/80 shadow-rose-950/30"
 					: "border border-rose-500/30 hover:border-rose-500/60"
 			} ${extraClassName}`}
+			style={{ backgroundColor: "#000000" }}
 			data-testid="cbct-viewport-container-sagittal"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
 				<canvas
 					ref={sagittalBaseCanvasRef}
+					style={{ backgroundColor: "#000000" }}
 					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
 				/>
 				<canvas
@@ -399,7 +408,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					onMouseLeave={handleThrottledMouseUp}
 					onWheel={(e) => handleThrottledWheel("sagittal", e)}
 					onContextMenu={(e) => e.preventDefault()}
-					style={{ cursor: getCanvasCursor("sagittal") }}
+					style={{ cursor: getCanvasCursor("sagittal"), backgroundColor: "transparent" }}
 					className="absolute inset-0 w-full h-full object-contain z-10"
 					data-testid="cbct-overlay-canvas-sagittal"
 				/>
@@ -505,6 +514,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					? "ring-1 ring-purple-500/50 border border-purple-500/80 shadow-purple-950/30"
 					: "border border-purple-500/30 hover:border-purple-500/60"
 			} ${extraClassName}`}
+			style={{ backgroundColor: "#000000" }}
 			data-testid="cbct-viewport-container-panoramic"
 		>
 			{/* Optional Compact FDI Tooth Navigation Ribbon (Toggleable in Settings, off by default per mandate) */}
@@ -517,13 +527,14 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 				/>
 			)}
 
-			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
 				{/* Top-left Mode Switcher (placed below clinical HUD badge to prevent overlap) */}
 				<div className="absolute top-9 left-2 z-30 pointer-events-auto">
 					{renderFourthQuadrantSwitcher()}
 				</div>
 				<canvas
 					ref={panoBaseCanvasRef}
+					style={{ backgroundColor: "#000000" }}
 					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
 				/>
 				<canvas
@@ -539,6 +550,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					onMouseLeave={handlePanoMouseUp}
 					onWheel={(e) => handleCanvasWheel("panoramic", e)}
 					onContextMenu={(e) => e.preventDefault()}
+					style={{ backgroundColor: "transparent" }}
 					className="absolute inset-0 w-full h-full object-contain cursor-pointer z-10"
 					data-testid="cbct-panorama-canvas"
 				/>
@@ -595,11 +607,13 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					? "ring-1 ring-amber-500/50 border border-amber-500/80 shadow-amber-950/30"
 					: "border border-amber-500/30 hover:border-amber-500/60"
 			} ${extraClassName}`}
+			style={{ backgroundColor: "#000000" }}
 			data-testid="cbct-viewport-container-cross-section"
 		>
-			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
 				<canvas
 					ref={crossSectionBaseCanvasRef}
+					style={{ backgroundColor: "#000000" }}
 					className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
 				/>
 				<canvas
@@ -615,6 +629,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					onMouseLeave={handleCrossSectionMouseUp}
 					onWheel={(e) => handleCanvasWheel("cross_section", e)}
 					onContextMenu={(e) => e.preventDefault()}
+					style={{ backgroundColor: "transparent" }}
 					className={`absolute inset-0 w-full h-full object-contain z-10 ${
 						dragImplantPart ? "cursor-grabbing" : hoveredImplantPart ? "cursor-grab" : "cursor-default"
 					}`}
@@ -646,10 +661,14 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 		renderPanoramic: (extraClassName) => renderPanoramicViewport(extraClassName),
 		renderCrossSection: (extraClassName, isMaximized) => renderCrossSectionViewport(extraClassName, isMaximized),
 		renderVolume3D: (extraClassName) => renderFourthQuadrantViewport(extraClassName),
+		// Layout contract guarantees: renderFourthQuadrantViewport(extraClassName) in quad, layout_1_plus_3: renderFourthQuadrantViewport(extraClassName)
 	};
 
 	return (
-		<div className={`${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all relative`}>
+		<div
+			className={`${mobileActiveTab === "planner" ? "hidden lg:flex" : "flex-1 flex flex-col"} min-h-0 min-w-0 w-full h-full transition-all relative bg-black`}
+			style={{ backgroundColor: "#000000" }}
+		>
 			{/* Mobile Viewport Segmented Switcher (< lg screens) */}
 			<div className="flex lg:hidden items-center bg-zinc-900 border-b border-zinc-800 p-1 gap-1 overflow-x-auto shrink-0 select-none z-10" data-testid="cbct-mobile-viewport-tabs">
 				{[
@@ -693,6 +712,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					maximizedViewport={maximizedViewport}
 					handleToggleMaximize={handleToggleMaximize}
 					mobileActiveTab={mobileActiveTab}
+					patientDisplayName={patientDisplayName}
 					jawType={jawType ?? "mandible"}
 					onSwitchJaw={onSwitchJaw ?? (() => {})}
 					archCurve={archCurve}
@@ -701,6 +721,22 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					crossSections={crossSections}
 					onChangeCrossSectionIdx={onChangeCrossSectionIdx}
 					handleSelectTooth={handleSelectTooth}
+					isUnsharpActive={isUnsharpActive}
+					onToggleUnsharp={onToggleUnsharp}
+					windowWidth={windowWidth}
+					onChangeWindowWidth={onChangeWindowWidth}
+					windowLevel={windowLevel}
+					onChangeWindowLevel={onChangeWindowLevel}
+					slabThicknessMm={slabThicknessMm}
+					onChangeSlabThicknessMm={onChangeSlabThicknessMm}
+					slabMode={slabMode}
+					onChangeSlabMode={onChangeSlabMode}
+					panoThicknessMm={panoThicknessMm}
+					onChangePanoThicknessMm={onChangePanoThicknessMm}
+					panoProjectionMode={panoProjectionMode}
+					onChangePanoProjectionMode={onChangePanoProjectionMode}
+					onSelectClinicalPreset={onSelectClinicalPreset}
+					activePresetId={activePresetId}
 				/>
 			) : studioMode === "endo" ? (
 				<EndoWorkspace
@@ -711,6 +747,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					maximizedViewport={maximizedViewport}
 					handleToggleMaximize={handleToggleMaximize}
 					mobileActiveTab={mobileActiveTab}
+					patientDisplayName={patientDisplayName}
 					activeToothFdi={activeToothFdi ?? activeCrossSection?.nearestToothFdi}
 					handleSelectTooth={handleSelectTooth}
 					isUnsharpActive={isUnsharpActive}
@@ -728,6 +765,12 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					maximizedViewport={maximizedViewport}
 					handleToggleMaximize={handleToggleMaximize}
 					mobileActiveTab={mobileActiveTab}
+					patientDisplayName={patientDisplayName}
+					activeCrossSection={activeCrossSection}
+					activeCrossSectionIdx={activeCrossSectionIdx}
+					crossSections={crossSections}
+					onChangeCrossSectionIdx={onChangeCrossSectionIdx}
+					handleSelectTooth={handleSelectTooth}
 					selectedBrand={selectedBrand}
 					onSelectBrand={onSelectBrand}
 					selectedDiameterMm={selectedDiameterMm}
@@ -752,6 +795,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					maximizedViewport={maximizedViewport}
 					handleToggleMaximize={handleToggleMaximize}
 					mobileActiveTab={mobileActiveTab}
+					patientDisplayName={patientDisplayName}
 					viewLayout={viewLayout}
 				/>
 			)}

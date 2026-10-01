@@ -152,6 +152,7 @@ export interface NdflDeductionResult {
 	readonly code: "01" | "02";
 	readonly codeDescription: string;
 	readonly isHighCostCode02: boolean;
+	readonly isHighCostTreatment?: boolean | undefined;
 	readonly baseKopecks: Kopecks;
 	readonly refundKopecks: Kopecks;
 	readonly refundRub: number;
@@ -309,3 +310,19 @@ export interface CompletedWorksActAndWriteOffData {
 	readonly createdAtIso: string;
 	readonly executedAtIso?: string;
 }
+
+export type TreatmentPlanStatus =
+	| "draft"
+	| "presented"
+	| "approved"
+	| "in_progress"
+	| "active"
+	| "agreed"
+	| "accepted"
+	| "signed"
+	| "completed"
+	| "rejected";
+
+export type TreatmentPlanAgreement = DigitalSignatureAgreementData;
+export type { ToothData } from "../odontogram/ToothChart";
+export type { TreatmentPlanValidationPayload } from "./validation/planPriceValidationPresets";

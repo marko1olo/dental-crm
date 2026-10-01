@@ -41,7 +41,7 @@ export interface VisiographExportModalProps {
 	lesions: PeriapicalLesion[];
 	calibration: CalibrationReference;
 	isCalibrated: boolean;
-	onSaveToRecord?: (
+	onSaveToRecord?: ((
 		imageDataUri: string,
 		exportMeta: {
 			rulers: RulerMeasurement[];
@@ -49,7 +49,7 @@ export interface VisiographExportModalProps {
 			lesions: PeriapicalLesion[];
 			scaleMmPerPx: number;
 		},
-	) => Promise<void> | void;
+	) => Promise<void> | void) | undefined;
 	onPrintProtocol: () => void;
 }
 

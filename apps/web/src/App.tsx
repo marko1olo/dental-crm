@@ -64,6 +64,13 @@ import {
 	DEMO_SHOWCASE_ORG_ID,
 } from "./lib/demoMode";
 import {
+	cacheActiveStaffUser,
+	clearOfflineClinicCaches,
+	getCachedActiveStaffUser,
+	getCachedStaffList,
+} from "./lib/offlineStorage";
+import { DEMO_CHIEF_DOCTOR } from "./components/auth/staffUnlockState";
+import {
 	DoctorPrivacyShield,
 	getInactivityTimeoutMs,
 } from "./components/auth/DoctorPrivacyShield";
@@ -164,6 +171,11 @@ const ScannerView = lazyWithRetry(() =>
 const LeadsKanbanView = lazyWithRetry(() =>
 	import("./components/leads/LeadsKanbanView").then((module) => ({
 		default: module.LeadsKanbanView,
+	})),
+);
+const CbctMprImplantStudioModal = lazyWithRetry(() =>
+	import("./components/radiology/CbctMprImplantStudioModal").then((module) => ({
+		default: module.CbctMprImplantStudioModal,
 	})),
 );
 /*
@@ -1049,6 +1061,44 @@ export function App() {
 		return !!readDenteStaffToken();
 	});
 	const [showStaffPinPad, setShowStaffPinPad] = useState<boolean>(false);
+	// 3D CBCT Direct Modal state (?cbct=demo or ?cbct=1 or topbar button)
+	const [isCbctDirectModalOpen, setIsCbctDirectModalOpen] = useState<boolean>(
+		() => {
+			if (typeof window === "undefined") return false;
+			const search = window.location.search || "";
+			const hash = window.location.hash || "";
+			return (
+				search.includes("cbct=") ||
+				search.includes("cbct") ||
+				hash.includes("cbct=") ||
+				hash.includes("cbct")
+			);
+		},
+	);
+
+	useEffect(() => {
+		const handleOpenCbct = () => setIsCbctDirectModalOpen(true);
+		window.addEventListener("dente:open-cbct-demo", handleOpenCbct);
+		const handleUrlChange = () => {
+			const search = window.location.search || "";
+			const hash = window.location.hash || "";
+			if (
+				search.includes("cbct=") ||
+				search.includes("cbct") ||
+				hash.includes("cbct=") ||
+				hash.includes("cbct")
+			) {
+				setIsCbctDirectModalOpen(true);
+			}
+		};
+		window.addEventListener("popstate", handleUrlChange);
+		window.addEventListener("hashchange", handleUrlChange);
+		return () => {
+			window.removeEventListener("dente:open-cbct-demo", handleOpenCbct);
+			window.removeEventListener("popstate", handleUrlChange);
+			window.removeEventListener("hashchange", handleUrlChange);
+		};
+	}, []);
 	// 152-FZ Doctor Privacy Shield (Lockscreen)
 	const [isPrivacyShieldActive, setIsPrivacyShieldActive] = useState<boolean>(
 		() => {
@@ -1058,7 +1108,18 @@ export function App() {
 		},
 	);
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const [activeStaffUser, setActiveStaffUser] = useState<any>(null);
+	const [activeStaffUser, setActiveStaffUser] = useState<any>(() => {
+		const cached = getCachedActiveStaffUser();
+		if (cached) return cached;
+		const staffToken = readDenteStaffToken();
+		if (
+			staffToken &&
+			(staffToken.startsWith("demo-") || staffToken.startsWith("dente-offline-"))
+		) {
+			return DEMO_CHIEF_DOCTOR;
+		}
+		return null;
+	});
 	const staffProfileFetchAttemptedRef = useRef<boolean>(false);
 	const initialDashboardLoadTriggeredRef = useRef<boolean>(false);
 	const loadDashboardRef = useRef(loadDashboard);
@@ -1069,7 +1130,7 @@ export function App() {
 	// Auto-login effect for Demo Showcase Mode (Mandate 8y)
 	useEffect(() => {
 		const checkAndAttemptDemoLogin = async () => {
-			if (!isDemoShowcaseMode() || clinicAuthed) return;
+			if (!isDemoShowcaseMode() || clinicAuthed || isCbctDirectModalOpen) return;
 			demoAutoLoginAttemptedRef.current = true;
 			try {
 				const response = await fetch("/api/auth/login", {
@@ -1120,12 +1181,12 @@ export function App() {
 			void loadDashboardRef.current();
 		};
 
-		if (!demoAutoLoginAttemptedRef.current && isDemoShowcaseMode() && !clinicAuthed) {
+		if (!demoAutoLoginAttemptedRef.current && isDemoShowcaseMode() && !clinicAuthed && !isCbctDirectModalOpen) {
 			void checkAndAttemptDemoLogin();
 		}
 
 		const handleHashOrUrlChange = () => {
-			if (isDemoShowcaseMode() && !clinicAuthed) {
+			if (isDemoShowcaseMode() && !clinicAuthed && !isCbctDirectModalOpen) {
 				void checkAndAttemptDemoLogin();
 			}
 		};
@@ -1136,14 +1197,15 @@ export function App() {
 			window.removeEventListener("hashchange", handleHashOrUrlChange);
 			window.removeEventListener("popstate", handleHashOrUrlChange);
 		};
-	}, [clinicAuthed]);
+	}, [clinicAuthed, isCbctDirectModalOpen]);
 
 	// On mount: if clinic token already in localStorage (page refresh / persisted session), load dashboard + restore user profile
 	useEffect(() => {
 		if (
 			clinicAuthed &&
 			!dashboard &&
-			!initialDashboardLoadTriggeredRef.current
+			!initialDashboardLoadTriggeredRef.current &&
+			!isCbctDirectModalOpen
 		) {
 			initialDashboardLoadTriggeredRef.current = true;
 			void loadDashboardRef.current().catch((e) => {
@@ -1172,11 +1234,10 @@ export function App() {
 				}
 			});
 		}
-		// Restore staff user profile from token on page refresh
+		// Restore staff user profile from token on page refresh (0 ms instant offline hydration)
 		const staffToken = readDenteStaffToken() || null;
 		if (
 			staffToken &&
-			!activeStaffUser &&
 			!staffProfileFetchAttemptedRef.current
 		) {
 			staffProfileFetchAttemptedRef.current = true;
@@ -1185,9 +1246,14 @@ export function App() {
 			})
 				.then((r) => {
 					if (r.status === 401 || r.status === 403) {
-						safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
-						setStaffAuthed(false);
-						setActiveStaffUser(null);
+						if (
+							!staffToken.startsWith("demo-") &&
+							!staffToken.startsWith("dente-offline-")
+						) {
+							safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
+							setStaffAuthed(false);
+							setActiveStaffUser(null);
+						}
 						return null;
 					}
 					return r.ok ? r.json() : null;
@@ -1195,17 +1261,30 @@ export function App() {
 				.then((data) => {
 					if (data?.user) {
 						setActiveStaffUser(data.user);
+						cacheActiveStaffUser(data.user);
 					} else if (data !== null) {
-						safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
-						setStaffAuthed(false);
-						setActiveStaffUser(null);
+						if (
+							!staffToken.startsWith("demo-") &&
+							!staffToken.startsWith("dente-offline-")
+						) {
+							safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
+							setStaffAuthed(false);
+							setActiveStaffUser(null);
+						}
 					}
 				})
 				.catch((err) => {
-					logger.warn("[Dente] Background auth profile check failed:", err);
+					logger.warn(
+						"[Dente] Background auth profile check failed (offline/LAN):",
+						err,
+					);
+					const cached = getCachedActiveStaffUser();
+					if (cached) {
+						setActiveStaffUser(cached);
+					}
 				});
 		}
-	}, [clinicAuthed, dashboard, activeStaffUser]); // Stable dependencies with single-trigger guards
+	}, [clinicAuthed, dashboard, activeStaffUser, isCbctDirectModalOpen]); // Stable dependencies with single-trigger guards
 	// 152-FZ Doctor Privacy Shield: Auto-lock on inactivity (configurable via localStorage)
 	useEffect(() => {
 		if (!clinicAuthed || !staffAuthed || isPrivacyShieldActive) return;
@@ -1238,6 +1317,7 @@ export function App() {
 		safeLocalStorageRemoveItem(DENTE_CLINIC_TOKEN_KEY);
 		safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
 		safeLocalStorageRemoveItem(DENTE_PRIVACY_SHIELD_LOCKED_KEY);
+		clearOfflineClinicCaches();
 		setIsPrivacyShieldActive(false);
 		setClinicAuthed(false);
 		setStaffAuthed(false);
@@ -1277,6 +1357,27 @@ export function App() {
 	 */
 	const [defaultClinicNoticeHidden, setDefaultClinicNoticeHidden] =
 		useState(false);
+	// 3D CBCT STANDALONE LAUNCHER (?cbct=demo, ?cbct=1, #cbct)
+	// Must be rendered at the ABSOLUTE TOP before ANY auth, unlock, error, or dashboard guards!
+	if (isCbctDirectModalOpen) {
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка 3D КЛКТ Захарова (312 срезов)..." />}>
+				<CbctMprImplantStudioModal
+					isOpen={true}
+					onClose={() => {
+						setIsCbctDirectModalOpen(false);
+						const url = new URL(window.location.href);
+						url.searchParams.delete("cbct");
+						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("cbct") ? url.hash : ""));
+					}}
+					patientName="Захаров Иван Дмитриевич (312 срезов КЛКТ)"
+					patientId="demo_cbct_patient"
+					autoLoadDemo={true}
+				/>
+			</Suspense>
+		);
+	}
+
 	// Show clinic login gate if not authed
 	if (!clinicAuthed) {
 		return (
@@ -1287,6 +1388,7 @@ export function App() {
 						if (up) {
 							setStaffAuthed(true);
 							setActiveStaffUser(up);
+							cacheActiveStaffUser(up);
 						}
 						void loadDashboard();
 					}}
@@ -1320,15 +1422,31 @@ export function App() {
 		return (
 			<Suspense fallback={<AppLoadingState message="Загрузка авторизации" />}>
 				<StaffPinPad
-					staffMembers={dashboard ? dashboard.clinicSettings?.staff : undefined}
-					staffListLoading={!dashboard && !error && !accessUnlockRequired}
+					staffMembers={
+						dashboard
+							? dashboard.clinicSettings?.staff
+							: (getCachedStaffList() ?? undefined)
+					}
+					staffListLoading={
+						!dashboard &&
+						!getCachedStaffList() &&
+						!error &&
+						!accessUnlockRequired
+					}
 					/*
 					 * Код ответа берётся из того, что о неудаче известно здесь, и не
 					 * выдумывается: отказ по доступу — 401; сводка пришла, а списка в ней нет
 					 * — 200 («ответ сервера непонятен»); до сервера не дошли — null.
 					 */
-					staffListStatus={accessUnlockRequired ? 401 : dashboard ? 200 : null}
+					staffListStatus={
+						accessUnlockRequired
+							? 401
+							: dashboard || getCachedStaffList()
+								? 200
+								: null
+					}
 					onUnlockSuccess={(user) => {
+						cacheActiveStaffUser(user);
 						setActiveStaffUser(user);
 						setStaffAuthed(true);
 						setShowStaffPinPad(false);
@@ -1607,6 +1725,7 @@ export function App() {
 						todayIso={dashboard.todayIso}
 						onLockSession={handleLockSession}
 						onOpenDoctorShiftCockpit={openDoctorShiftCockpit}
+						onOpenCbctDemo={() => setIsCbctDirectModalOpen(true)}
 					/>
 					<WorkspaceContinuityStrip
 						browserContinuityCritical={browserContinuityCritical}
@@ -3369,6 +3488,22 @@ export function App() {
 						<span>Ещё</span>
 					</a>
 				</nav>
+				{isCbctDirectModalOpen && (
+					<Suspense fallback={null}>
+						<CbctMprImplantStudioModal
+							isOpen={true}
+							onClose={() => {
+								setIsCbctDirectModalOpen(false);
+								const url = new URL(window.location.href);
+								url.searchParams.delete("cbct");
+								window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("cbct") ? url.hash : ""));
+							}}
+							patientName="Захаров Иван Дмитриевич (Демо 3D КЛКТ 312 срезов)"
+							patientId="demo_cbct_patient"
+							autoLoadDemo={true}
+						/>
+					</Suspense>
+				)}
 				<DoctorPrivacyShield
 					isOpen={isPrivacyShieldActive}
 					doctor={activeStaffUser}

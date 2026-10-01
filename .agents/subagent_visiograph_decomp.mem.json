@@ -1,0 +1,73 @@
+{
+  "role": "2D-VISIOGRAPH MONOLITH DECOMPOSER",
+  "status": "COMPLETED",
+  "started_at": "2026-09-30T23:19:00+04:00",
+  "completed_at": "2026-09-30T23:43:00+04:00",
+  "targets": [
+    {
+      "path": "apps/web/src/components/imaging/VisiographAnalyzer.tsx",
+      "initial_lines": 2944,
+      "final_lines": 782,
+      "status": "COMPLETED",
+      "extracted_modules": [
+        { "file": "VisiographHeaderBar.tsx", "lines": 164, "desc": "Header bar with counter badges, upload, print, clear buttons" },
+        { "file": "VisiographCockpitPresets.tsx", "lines": 105, "desc": "Quick preset buttons, Apex ruler, and PACS studio toggle" },
+        { "file": "VisiographViewport.tsx", "lines": 79, "desc": "Dominant viewport switching between PACS canvas and filtered slider" },
+        { "file": "VisiographFindingsSection.tsx", "lines": 103, "desc": "Findings card container with select-all and live apply to chart" },
+        { "file": "VisiographBottomActions.tsx", "lines": 73, "desc": "Bottom actions with archive delete and upload another scan" },
+        { "file": "VisiographAnalyzerStyles.ts", "lines": 98, "desc": "CSS property definitions for cockpit, buttons, and badges" },
+        { "file": "VisiographDropzone.tsx", "lines": 222, "desc": "Full-screen dropzone, demo scan trigger, RVG capture button" },
+        { "file": "VisiographHistoryDrawer.tsx", "lines": 307, "desc": "Patient scan archive gallery with lazy thumbnails" },
+        { "file": "VisiographReportViewer.tsx", "lines": 207, "desc": "Clinical AI report accordion with sanitized markdown rendering" },
+        { "file": "VisiographStatusAlerts.tsx", "lines": 174, "desc": "Alert banners for error, formula failure, and save warnings" },
+        { "file": "VisiographFindingsPills.tsx", "lines": 96, "desc": "Interactive tooth finding checkboxes and FDI pill badges" },
+        { "file": "VisiographScanHelpers.ts", "lines": 151, "desc": "XrayScan types, demo fallback generator, server save/update helpers" },
+        { "file": "VisiographPrint.ts", "lines": 28, "desc": "Sanitized print window protocol for legal Form 043/u reports" },
+        { "file": "useVisiographArchive.ts", "lines": 209, "desc": "Custom hook for patient archive fetch, load, and optimistic delete" }
+      ]
+    },
+    {
+      "path": "apps/web/src/components/visiograph/VisiographStudioCanvas.tsx",
+      "initial_lines": 2041,
+      "final_lines": 737,
+      "status": "COMPLETED",
+      "extracted_modules": [
+        { "file": "VisiographTopToolbar.tsx", "lines": 654, "desc": "Top toolbar with DICOM, Form 043/u, sensor calibrations, PACS actions" },
+        { "file": "VisiographExportModal.tsx", "lines": 363, "desc": "Export dialog for DICOM Part 10 Secondary Capture & Form 043/u protocol" },
+        { "file": "VisiographImageSliders.tsx", "lines": 132, "desc": "Brightness, contrast, gamma, sharpness unsharp mask sliders" },
+        { "file": "VisiographInteractiveOverlay.ts", "lines": 154, "desc": "HUD canvas overlays for zoom, sensor pitch, rotation, and active tool" },
+        { "file": "VisiographLegalPrintProtocol.ts", "lines": 175, "desc": "Sanitized printable medical protocol window for Form 043/u" },
+        { "file": "VisiographLesionsHud.tsx", "lines": 59, "desc": "HUD badge for classified periapical lesion areas and counts" },
+        { "file": "VisiographToolInteractions.ts", "lines": 214, "desc": "Pointer, pan, zoom, root canal, angle, and polygon event handlers" }
+      ]
+    }
+  ],
+  "verification_results": {
+    "visiograph_tests": "63 passed, 0 failed",
+    "imaging_clinical_tests": "31 passed, 0 failed",
+    "total_tests_verified": "94 passed, 0 failed",
+    "encoding_check": "6561 files verified, 0 errors (UTF-8 clean)",
+    "line_count_ceiling": "Every single file <= 800 lines (Mandate 8b PASS)",
+    "backward_compatibility": "100% transparent re-exports in index.ts for imaging and visiograph"
+  },
+  "completed_steps": [
+    "Read constitutional documents: THE_HAMMER_MASTER_PROMPT.md, AGENTS.md",
+    "Ran baseline test suites for imaging and visiograph (63 passed, 0 failed)",
+    "Measured line counts of target files: VisiographAnalyzer.tsx (2944 lines), VisiographStudioCanvas.tsx (2041 lines)",
+    "Analyzed test assertions in visiographFindings.test.ts, radiologyClinicalAutonomyAndDemoIsolation.test.ts, clinicalFrictionAndAutonomyWave60.test.tsx",
+    "Decomposed VisiographStudioCanvas.tsx (2041 -> 737 lines) into 7 modular sub-files",
+    "Decomposed VisiographAnalyzer.tsx (2944 -> 782 lines) into 14 modular sub-files and hooks",
+    "Provided 100% transparent re-exports in apps/web/src/components/visiograph/index.ts and apps/web/src/components/imaging/index.ts",
+    "Verified all 63 visiograph tests pass (Exit Code 0)",
+    "Verified all 31 radiology and clinical friction tests pass (Exit Code 0)",
+    "Verified machine encoding (npm run check:encoding: 6561 files clean)",
+    "Verified all 25 files in scope strictly <= 800 lines of code (Mandate 8b)",
+    "Updated working memory checkpoint",
+    "Reported to parent orchestrator 29d238ff-2db8-4ca7-803c-5ba5d97d388b"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Strict line checking via automated tests required exact signature retention: data-testid attributes, specific error toast strings, and store method bindings.",
+    "Preserved 100% backward compatibility for all external callers with zero API drift."
+  ]
+}

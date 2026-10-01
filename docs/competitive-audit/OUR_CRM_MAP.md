@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-25 / WAVES 175–326 / ВОЛНА 324 RED TEAM АУДИТ, ВОЛНА 325 ТОТАЛЬНЫЙ RED TEAM АУДИТ, ВОЛНА 326 СИНХРОНИЗАЦИЯ: ТАБЛО ОЧЕРЕДИ СМЕНЫ STOMX PARITY, КОМПЛЕКСНЫЕ ПАКЕТЫ 804Н «ВСЕ ВКЛЮЧЕНО», СОМАТИЧЕСКАЯ БЕЗОПАСНОСТЬ 0-КЛИК НОРМА, ФОТОПРОТОКОЛ «ДО/ПОСЛЕ», УСТРАНЕНИЕ БЛОАТА СТЕРИЛИЗАЦИИ У КРЕСЛА, ПАКЕТНАЯ ФОРМА 257/У, КОПЕЕЧНЫЙ БИЛЛИНГ И SSOT СКИДОК, СНОС ДУБЛИКАТОВ ЗТЛ И ДЕКОМПОЗИЦИЯ МОНОЛИТОВ <800 СТРОК): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 403 СИСТЕМНЫЕ АДДЕНДУМ-ФИЧИ (ВСЕГО 466 ФИЧ: 63 КАНОНИЧЕСКИЕ + 403 АДДЕНДУМ, ВСЕ 466 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], ВОЛНЫ 320–326 ЗАКРЫТЫ НА 100%, ПАРИТЕТ 100%). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-09-30 / WAVES 175–332 / ВОЛНА 332 ТОТАЛЬНАЯ ДЕКОМПОЗИЦИЯ МОНОЛИТА СКЛАДА И РАСХОДА МАТЕРИАЛОВ INVENTORYVIEW.TSX <= 800 СТРОК, ВЫНОС INVENTORYSTOCKTABLE, INVENTORYBATCHFEFOPANEL, INVENTORYINBOUNDINVOICEMODAL, INVENTORYSERVICEUSAGEPANEL, 100% РЕЭКСПОРТЫ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 405 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 468 ФИЧ, ВСЕ СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], ПАРИТЕТ 100%). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).

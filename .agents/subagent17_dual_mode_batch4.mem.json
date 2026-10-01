@@ -1,0 +1,26 @@
+{
+  "subagent": "Subagent 17: Dual-Mode Zero-Mock Inquisitor Batch 4 (Finance, Fast Checkout, Refunds & Sber POS)",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md and AGENTS.md in full (Mandates 8y, 8za, 8zb, 8e)",
+    "Harden apps/web/src/components/finance/refunds/RefundServiceModal.tsx: strictly quarantined DEFAULT_FALLBACK_SERVICES behind isDemoShowcaseMode(), render empty state data-testid=\"refund-empty-services\" in production when services is empty, disable refund execute button, defensively sanitize refundable items against NaN and format mismatches",
+    "Harden apps/web/src/components/finance/FastCheckoutModal.tsx: quarantined DEFAULT_TREATMENT_STAGES (94 000 ₽) behind isDemoShowcaseMode(), in production construct single-visit stage fallback with 100% bill amount, auto-select single_visit on load in production, fix Russian stage declensions",
+    "Harden apps/web/src/components/payments/checkout/fastCheckoutEngine.ts: defensive Number.isFinite and Math.round kopeck sanitization in calculateStageAdvanceAmount against NaN, Infinity, negative and undefined amounts",
+    "Harden apps/web/src/components/payments/sberPos/sberPosPresets.ts: added POS_TERMINAL_STORAGE_KEY, loadSavedSberTerminalConfig, saveSberTerminalConfig with SSR and globalThis.localStorage compatibility, unified types with @dental/shared",
+    "Harden apps/web/src/components/payments/sberPos/sberPosEngine.ts: added 'smartpos' to SberPosProtocolType to ensure 100% type compatibility with @dental/shared",
+    "Harden apps/web/src/components/payments/sberPos/SberPosTerminalModal.tsx: added terminalConfig and forceUnconfigured props, display data-testid=\"sber-pos-unconfigured-notice\" and 'TID НЕ НАСТРОЕН' in production when no hardware config is saved or provided, prevent auto-transaction when unconfigured, add save button in settings drawer",
+    "Harden apps/web/src/components/finance/SberPayIntegration.tsx: added terminalConfig and forceUnconfigured props, display data-testid=\"sberpay-unconfigured-notice\" and 'TID: НЕ НАСТРОЕН' in HUD, block payment execution when unconfigured and show toast notice",
+    "Create test suite apps/web/src/tests/dualModeZeroMockBatch4.test.ts (13/13 passing)",
+    "Verify no test regressions in sberPos.test.ts, sberbankTerminal.test.ts, cashierAutonomy54Fz.test.ts, order804nFiscalEngine.test.ts (84/84 passing)",
+    "Verify vitest tests in sberPosAutonomy.test.tsx (4/4 passing)",
+    "Verify typecheck: npm --prefix apps/web run typecheck (Exit code 0)",
+    "Verify encoding: node scripts/check-encoding.mjs (6246 files checked, 0 errors)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Mandate 8y strictly verified: in production (!isDemoShowcaseMode()), no cashiers, doctors, or patients ever see synthetic 94,000 ₽ treatment plans, fake services, or unverified TID 19827340.",
+    "Mandate 8za strictly verified: ZERO new duplicate components (*V2 / *New) created. All hardening done directly on canonical existing components.",
+    "Mandate 8e & 8n strictly verified: Doctor and cashier autonomy preserved with clear unconfigured guidance and fast offline-first configuration persistence.",
+    "Dual-Mode contract verified: Showroom demos retain rich interactive fixtures when isDemoShowcaseMode() is true."
+  ]
+}

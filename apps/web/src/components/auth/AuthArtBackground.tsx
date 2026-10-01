@@ -265,31 +265,12 @@ export function AuthArtBackground({
 				bottom: 0,
 				zIndex: 0,
 				overflow: "hidden",
-				backgroundColor:
-					selectedArt?.dominantColor ||
-					(isLight ? "#f0fdfa" : "var(--background, var(--paper, #0b1311))"),
+				background: isLight
+					? "radial-gradient(circle at 50% 35%, #f0fdfa 0%, #e6fffa 50%, #ccfbf1 100%)"
+					: "radial-gradient(circle at 50% 35%, #101c24 0%, #0a1117 55%, #05080b 100%)",
 				pointerEvents: "none",
 			}}
 		>
-			{/* LQIP Blur-up Background Layer */}
-			{selectedArt?.lqip && (
-				<div
-					style={{
-						position: "absolute",
-						top: "-10px",
-						left: "-10px",
-						right: "-10px",
-						bottom: "-10px",
-						backgroundImage: `url(${selectedArt.lqip})`,
-						backgroundSize: "cover",
-						backgroundPosition: "center",
-						filter: "blur(20px)",
-						transform: "scale(1.05)",
-						opacity: loaded && !imgError ? (isLight ? 0.25 : 0.35) : 0.95,
-						transition: "opacity 0.8s ease-in-out",
-					}}
-				/>
-			)}
 			{selectedArt && (
 				<picture
 					style={{
@@ -325,7 +306,7 @@ export function AuthArtBackground({
 							objectFit: "cover",
 							objectPosition: "center",
 							opacity: loaded && !imgError ? 1 : 0,
-							transition: "opacity 0.8s ease-in-out",
+							transition: "opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1)",
 							display: "block",
 						}}
 					/>
@@ -341,8 +322,8 @@ export function AuthArtBackground({
 					right: 0,
 					bottom: 0,
 					background: isLight
-						? `linear-gradient(180deg, rgba(240, 253, 250, ${effectiveScrimAlpha * 0.35}) 0%, rgba(204, 251, 241, ${effectiveScrimAlpha * 0.55}) 100%)`
-						: `linear-gradient(180deg, rgba(0,0,0,${effectiveScrimAlpha * 0.75}) 0%, rgba(0,0,0,${effectiveScrimAlpha * 1.25}) 100%)`,
+						? `linear-gradient(180deg, rgba(240, 253, 250, ${effectiveScrimAlpha * 0.4}) 0%, rgba(204, 251, 241, ${effectiveScrimAlpha * 0.7}) 100%)`
+						: `linear-gradient(180deg, rgba(9, 14, 19, ${effectiveScrimAlpha * 0.75}) 0%, rgba(5, 9, 13, ${effectiveScrimAlpha * 0.95}) 100%)`,
 				}}
 			/>
 		</div>

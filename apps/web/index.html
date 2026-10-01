@@ -18,15 +18,17 @@
     <script>
       (function() {
         try {
-          var t = localStorage.getItem("dente_theme");
-          if (!t) {
+          var t = localStorage.getItem("dente_theme_mode") || localStorage.getItem("dente_theme");
+          if (!t || t === "auto") {
             t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
           }
           if (t) {
             document.documentElement.setAttribute("data-theme", t);
             if (t === "dark" || t === "night" || t === "ocean" || t === "emerald" || t === "cyber_xray") {
               document.documentElement.classList.add("dark");
+              document.documentElement.classList.remove("light");
             } else {
+              document.documentElement.classList.add("light");
               document.documentElement.classList.remove("dark");
             }
           }
@@ -108,14 +110,14 @@
         scroll-behavior: auto !important;
       }
       :root {
-        --boot-bg: #fdfdfd;
-        --boot-title: #111827;
-        --boot-subtitle: #0f766e;
+        --boot-bg: radial-gradient(circle at 50% 35%, #f0fdfa 0%, #e6fffa 50%, #ccfbf1 100%);
+        --boot-title: #0f172a;
+        --boot-subtitle: #0d9488;
         --boot-logo: #0d9488;
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --boot-bg: #090d11;
+          --boot-bg: radial-gradient(circle at 50% 35%, #101c24 0%, #0a1117 55%, #05080b 100%);
           --boot-title: #ffffff;
           --boot-subtitle: #14b8a6;
           --boot-logo: #14b8a6;
@@ -127,25 +129,25 @@
       [data-theme="ocean"],
       [data-theme="emerald"],
       [data-theme="cyber_xray"] {
-        --boot-bg: #090d11;
+        --boot-bg: radial-gradient(circle at 50% 35%, #101c24 0%, #0a1117 55%, #05080b 100%);
         --boot-title: #ffffff;
         --boot-subtitle: #14b8a6;
         --boot-logo: #14b8a6;
       }
       [data-theme="warm_sand"] {
-        --boot-bg: #fefce8;
+        --boot-bg: radial-gradient(circle at 50% 35%, #fefce8 0%, #fef9c3 55%, #fde68a 100%);
         --boot-title: #451a03;
         --boot-subtitle: #78350f;
         --boot-logo: #78350f;
       }
       [data-theme="sakura"] {
-        --boot-bg: #fff1f2;
+        --boot-bg: radial-gradient(circle at 50% 35%, #fff1f2 0%, #ffe4e6 55%, #fbcfe8 100%);
         --boot-title: #4c0519;
         --boot-subtitle: #db2777;
         --boot-logo: #db2777;
       }
       [data-theme="calm_teal"] {
-        --boot-bg: #f0fdfa;
+        --boot-bg: radial-gradient(circle at 50% 35%, #f0fdfa 0%, #ccfbf1 55%, #99f6e4 100%);
         --boot-title: #134e4a;
         --boot-subtitle: #0f766e;
         --boot-logo: #0f766e;
@@ -158,7 +160,15 @@
       }
       body {
         margin: 0;
-        background-color: var(--boot-bg);
+        background: var(--boot-bg);
+      }
+      @keyframes bootFadeIn {
+        0% { opacity: 0; transform: translateY(6px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes bootPulseGlow {
+        0%, 100% { transform: scale(1); opacity: 0.92; }
+        50% { transform: scale(1.03); opacity: 1; filter: drop-shadow(0 0 12px rgba(20, 184, 166, 0.35)); }
       }
       .boot-state {
         align-items: center;
@@ -170,110 +180,56 @@
         justify-content: center;
         place-content: center;
         text-align: center;
-        background-color: var(--boot-bg);
+        background: var(--boot-bg);
         color: var(--boot-title);
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        animation: bootFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
-      .boot-state svg,
+      .boot-logo-box {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        background: rgba(13, 148, 136, 0.12);
+        border: 1px solid rgba(13, 148, 136, 0.25);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 4px;
+        animation: bootPulseGlow 3s ease-in-out infinite;
+      }
       .boot-logo {
         color: var(--boot-logo);
-        height: 48px;
-        width: 48px;
-        justify-self: center;
+        height: 36px;
+        width: 36px;
       }
-      .boot-state h1,
       .boot-title {
         margin: 0;
-        font-size: 2rem;
+        font-size: 26px;
         font-weight: 800;
         letter-spacing: -0.02em;
         color: var(--boot-title);
       }
-      .boot-state p,
       .boot-subtitle {
         margin: 0;
-        font-size: 1rem;
-        font-weight: 600;
+        font-size: 14px;
+        font-weight: 500;
         color: var(--boot-subtitle);
-      }
-      @media (prefers-color-scheme: dark) {
-        body {
-          background-color: #090d11;
-        }
-        .boot-state {
-          background-color: #090d11;
-        }
-        .boot-state svg,
-        .boot-logo {
-          color: #14b8a6;
-        }
-        .boot-state h1,
-        .boot-title {
-          color: #ffffff;
-        }
-        .boot-state p,
-        .boot-subtitle {
-          color: #14b8a6;
-        }
-      }
-      html.dark body,
-      [data-theme="dark"] body,
-      [data-theme="night"] body,
-      [data-theme="ocean"] body,
-      [data-theme="emerald"] body,
-      [data-theme="cyber_xray"] body {
-        background-color: #090d11;
-      }
-      [data-theme="warm_sand"] body {
-        background-color: #fefce8;
-      }
-      [data-theme="sakura"] body {
-        background-color: #fff1f2;
-      }
-      [data-theme="calm_teal"] body {
-        background-color: #f0fdfa;
-      }
-      [data-theme="contrast"] body {
-        background-color: #ffffff;
-      }
-      html.dark .boot-state,
-      [data-theme="dark"] .boot-state,
-      [data-theme="night"] .boot-state,
-      [data-theme="ocean"] .boot-state,
-      [data-theme="emerald"] .boot-state,
-      [data-theme="cyber_xray"] .boot-state {
-        background-color: #090d11;
-      }
-      html.dark .boot-state svg,
-      [data-theme="dark"] .boot-state svg,
-      html.dark .boot-logo,
-      [data-theme="dark"] .boot-logo {
-        color: #14b8a6;
-      }
-      html.dark .boot-state h1,
-      [data-theme="dark"] .boot-state h1,
-      html.dark .boot-title,
-      [data-theme="dark"] .boot-title {
-        color: #ffffff;
-      }
-      html.dark .boot-state p,
-      [data-theme="dark"] .boot-state p,
-      html.dark .boot-subtitle,
-      [data-theme="dark"] .boot-subtitle {
-        color: #14b8a6;
+        letter-spacing: 0.01em;
       }
     </style>
   </head>
   <body class="antialiased">
     <div id="root">
       <main class="boot-state" aria-busy="true">
-        <svg class="boot-logo" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
-          <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
-          <circle cx="20" cy="10" r="2"/>
-        </svg>
+        <div class="boot-logo-box">
+          <svg class="boot-logo" viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+            <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+            <circle cx="20" cy="10" r="2"/>
+          </svg>
+        </div>
         <h1 class="boot-title">DENTE</h1>
-        <p class="boot-subtitle">Загрузка CRM</p>
+        <p class="boot-subtitle">Загрузка системы...</p>
       </main>
     </div>
     <script type="module" src="/src/main.tsx"></script>

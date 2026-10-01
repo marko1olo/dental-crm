@@ -602,9 +602,8 @@ Use these exclusively. Blind terminal navigation is banned.
    - Leaves unverified assumptions without real compiler or test logs.
    is classified as a Critical Compliance Failure and must be rejected immediately with an order for a complete rewrite.
 
-
-## [ORCHESTRATION HIERARCHY v2]
-1. **Antigravity (Orchestrator L1):** Master console and process launcher. Antigravity sets up daemons and timers. Does not block. Can be closed or idled while daemons run. Оркестратор L1 не пишет крупные фичи и архитектурные пласты в соло — это задача субагентов. Однако Оркестратор обладает правом на точечные атомарные фиксы архитектурных стыков, сломанных импортов, опечаток и тривиальных синтаксических правок (<50 строк), когда запуск полного цикла субагента нерационален и сжигает ресурсы хоста.
-2. **Goose / Grok (Agent L2):** Autonomous worker running inside the UniversalDaemonLoop. Goose L2 MUST spawn 3-4 subagents for its own parallel needs (e.g., database schema verification, component audits) and MUST NOT stop or wait for user input. Completion signals are blocked by proxy DAEMON MANDATE.
-3. This architecture REPLACES the legacy Cline integrations.
+## [ORCHESTRATION HIERARCHY — GEMINI NATIVE & INHERIT SUBAGENTS]
+1. **Gemini / Antigravity (Orchestrator L1):** Верховный консольный процесс-командир. Запускает субагентов, координирует параллельные задачи, мониторит выполнение, проводит финальную интеграцию и проверку гейтов качества. Оркестратор L1 не пишет крупные фичи и архитектурные пласты в соло — это задача специализированных субагентов. Однако Оркестратор обладает правом на точечные атомарные фиксы архитектурных стыков, сломанных импортов, опечаток и тривиальных синтаксических правок (<50 строк), когда запуск полного цикла субагента нерационален и сжигает ресурсы хоста.
+2. **Gemini Subagents (Workers L2 / Inquisitors / Reviewers):** Все субагенты вызываются через `invoke_subagent` СТРОГО с параметром `Model: "inherit"`. Субагенты наследуют контекст сессии, квоты и возможности родительского Gemini. Выполняют узкие задачи по декомпозиции, верстке, E2E-тестированию, инквизиции и исправлению дефектов. Никаких сторонних демонов (Goose/Grok/Cline/UniversalDaemonLoop).
+3. **Ironclad Subagent Model Law (Strict 'inherit' Only):** Явное указание `"flash"`, `"flash_lite"` или сторонних тиров для субагентов категорически запрещено — только `"inherit"`.
 

@@ -7,7 +7,7 @@ import type { VisiographPresetType } from "./VisiographCockpitPresets";
 export interface VisiographViewportProps {
 	readonly isStudioMode: boolean;
 	readonly currentImageUrl: string;
-	readonly effectivePatientId?: string | undefined;
+	readonly effectivePatientId?: string | null | undefined;
 	readonly currentScan: XrayScan;
 	readonly initialStudioTool: "pointer" | "root_canal";
 	readonly quickPreset: VisiographPresetType;

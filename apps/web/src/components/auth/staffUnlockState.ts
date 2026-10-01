@@ -43,6 +43,18 @@ export interface StaffUnlockMember {
 	readonly color?: unknown;
 }
 
+/**
+ * Канонический резервный псевдоврач для автономной работы и демо-входа (Мандаты 8e, 8n).
+ * Доступен для экстренного открытия смены даже при полностью отключенном бэкенде.
+ */
+export const DEMO_CHIEF_DOCTOR: StaffUnlockMember = {
+	id: "demo-doctor-chief",
+	fullName: "Доктор Демо (Главный врач)",
+	role: "doctor",
+	active: true,
+	color: "var(--teal, #0d9488)",
+};
+
 export type StaffUnlockListState =
 	/** Список не прочитан: пришло не массивом. Причина — у вызывающего. */
 	| { readonly phase: "failed" }

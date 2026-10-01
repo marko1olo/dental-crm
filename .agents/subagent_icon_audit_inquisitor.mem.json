@@ -1,0 +1,82 @@
+{
+  "agent": "Clinical Icon & Semantic Visual Inquisitor",
+  "status": "COMPLETED_AUDIT_AND_DESIGN",
+  "updated_at": "2026-09-30T15:47:00+04:00",
+  "scope_directories": [
+    "apps/web/src/components/radiology/",
+    "apps/web/src/components/odontogram/",
+    "apps/web/src/components/clinical/",
+    "apps/web/src/components/perio/",
+    "apps/web/src/components/anesthesia/",
+    "apps/web/src/components/implants/",
+    "apps/web/src/components/treatment-plans/",
+    "apps/web/src/components/lab/",
+    "apps/web/src/components/schedule/",
+    "apps/web/src/components/cashbox/"
+  ],
+  "total_icons_scanned": 1597,
+  "top_semantic_defects": [
+    {
+      "defect": "Activity (кардиограмма)",
+      "occurrences": 19,
+      "clinical_abuse": "Используется для: замера оптической плотности кости (HU) на КТ, трассировки нижнеальвеолярного нерва (IAN), сустава ВНЧС, эндодонтических корневых каналов, статуса приема 'в кресле', стабильности имплантата по ISQ/Osstell и баланса карпул анестетика.",
+      "remedy": "Заменить на специализированные символы: EndoFileCanal (каналы), DentalImplant (имплантация/ISQ), PerioProbe (пародонт), DentalSyringe (анестезия), DentalChairUnit (в кресле)."
+    },
+    {
+      "defect": "Zap (молния/электричество)",
+      "occurrences": 47,
+      "clinical_abuse": "Используется для: кариеса зуба в радиальном меню, терапии, 3-канальной эндодонтии, инъекций местного анестетика (артикаин, септанест), чистой имплантации без НКР, 6-поверхностной одонтограммы FDI, прикуса и нарядов ЗТЛ.",
+      "remedy": "Заменить на клинические символы: ToothMolar (зуб/кариес), EndoFileCanal (эндодонтия), DentalSyringe (карпульная анестезия), DentalImplant (имплантат)."
+    },
+    {
+      "defect": "Hammer (слесарный молоток)",
+      "occurrences": 3,
+      "clinical_abuse": "Используется в радиальном меню зуба для статуса 'Имплант (Imp)' и 'Корень зуба (Root)'.",
+      "remedy": "Заменить на DentalImplant и EndoFileCanal. Забивание имплантата молотком в челюсть клинически недопустимо."
+    },
+    {
+      "defect": "Crown (монаршая корона)",
+      "occurrences": 9,
+      "clinical_abuse": "Используется средневековая королевская корона с зубцами и камнями для искусственных металлокерамических и циркониевых зубных коронок в нарядах ЗТЛ, планах лечения и радиальном меню.",
+      "remedy": "Заменить на DentalCrown — медицинский контур зубной коронки с уступом и анатомическим экватором."
+    },
+    {
+      "defect": "Palette (палитра художника)",
+      "occurrences": 7,
+      "clinical_abuse": "Используется деревянная палитра живописца для выбора оттенков керамики по шкале VITA Classical (A1, A2, A3) и 3D-Master.",
+      "remedy": "Заменить на ToothShadeGuide — веер эталонных образцов зубов стоматологической шкалы VITA."
+    },
+    {
+      "defect": "Box (почтовая картонная коробка)",
+      "occurrences": 13,
+      "clinical_abuse": "Используется для оптических 3D-сканов челюсти (STL/PLY), скан-боди и 3D-модулей томографа.",
+      "remedy": "Заменить на ScanBodyMarker (скан-боди) и волюметрический дентальный символ."
+    },
+    {
+      "defect": "Spline (математический векторный сплайн)",
+      "occurrences": 7,
+      "clinical_abuse": "Используется для трассировки корневых каналов зуба и замера рабочей длины (мм) на КТ.",
+      "remedy": "Заменить на EndoFileCanal."
+    },
+    {
+      "defect": "Armchair (домашнее кресло для гостиной)",
+      "occurrences": 10,
+      "clinical_abuse": "Используется кресло для отдыха вместо стоматологической установки с подголовником и гидравликой.",
+      "remedy": "Заменить на DentalChairUnit."
+    },
+    {
+      "defect": "Stethoscope (терапевтический стетоскоп)",
+      "occurrences": 17,
+      "clinical_abuse": "Используется на карточках зуба, терапевтических этапах санации и приемах стоматолога.",
+      "remedy": "Заменить на DentalMirrorProbe (стоматологическое зеркало и зонд)."
+    },
+    {
+      "defect": "FileText (однотипный офисный бланк)",
+      "occurrences": 29,
+      "clinical_abuse": "Используется без различий для 15+ кардинально разных документов: Форма 043/у, наряд-заказ ЗТЛ, ИДС, протокол КТ, смета, акт 54-ФЗ.",
+      "remedy": "Дифференцировать на DentalForm043 (с эмблемой зуба) и DentalLabOrder (планшет ЗТЛ)."
+    }
+  ],
+  "designed_svgs_count": 14,
+  "user_coordination_status": "PENDING_USER_APPROVAL"
+}

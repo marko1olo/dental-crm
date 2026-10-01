@@ -251,11 +251,13 @@ describe("ctImplantIntegrationBridge — 5-Brand Virtual Implant Planning & 3-Ti
 				);
 
 				// Verify 30/40/30 schedule balance
-				assert.ok(tier.stagedSchedule.isBalanced, `Tier ${tier.tierId} 30/40/30 schedule must be balanced`);
+				assert.ok(tier.stagedSchedule, `Tier ${tier.tierId} 30/40/30 schedule must be defined`);
+				const stagedSchedule = tier.stagedSchedule!;
+				assert.ok(stagedSchedule.isBalanced, `Tier ${tier.tierId} 30/40/30 schedule must be balanced`);
 				const scheduleTotal =
-					tier.stagedSchedule.stage1AdvanceTherapyRub +
-					tier.stagedSchedule.stage2SurgeryImplantRub +
-					tier.stagedSchedule.stage3OrthopedicsRub;
+					stagedSchedule.stage1AdvanceTherapyRub +
+					stagedSchedule.stage2SurgeryImplantRub +
+					stagedSchedule.stage3OrthopedicsRub;
 				assert.equal(scheduleTotal, tier.totalRub);
 
 				// Verify 12-month installment division

@@ -22,7 +22,14 @@ import {
 	BoneDensityMisch,
 	EndoFileCanal,
 } from "../../icons/DentalIcons";
-import { CBCT_HOUNSFIELD_PRESETS, type CbctVoxelVolume, type CbctViewportType } from "../cbctMprMath";
+import {
+	CBCT_HOUNSFIELD_PRESETS,
+	CLINICAL_RADIOLOGY_PRESETS,
+	type ClinicalRadiologyPreset,
+	type CbctVoxelVolume,
+	type CbctViewportType,
+	type SlabProjectionMode,
+} from "../cbctMprMath";
 import {
 	CBCT_WORKSPACE_TABS,
 	type StudioMode,
@@ -65,6 +72,15 @@ export interface CbctHeaderBarProps {
 	readonly isUnsharpActive?: boolean | undefined;
 	readonly onToggleUnsharp?: (() => void) | undefined;
 	readonly sharpenAmount?: number | undefined;
+	readonly windowWidth?: number | undefined;
+	readonly onChangeWindowWidth?: ((w: number) => void) | undefined;
+	readonly windowLevel?: number | undefined;
+	readonly onChangeWindowLevel?: ((l: number) => void) | undefined;
+	readonly slabThicknessMm?: number | undefined;
+	readonly onChangeSlabThicknessMm?: ((th: number) => void) | undefined;
+	readonly slabMode?: SlabProjectionMode | undefined;
+	readonly onChangeSlabMode?: ((mode: SlabProjectionMode) => void) | undefined;
+	readonly onSelectClinicalPreset?: ((presetId: string) => void) | undefined;
 }
 
 export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
@@ -103,11 +119,33 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 	isUnsharpActive = false,
 	onToggleUnsharp,
 	sharpenAmount,
+	windowWidth = 2200,
+	onChangeWindowWidth,
+	windowLevel = 450,
+	onChangeWindowLevel,
+	slabThicknessMm = 1.0,
+	onChangeSlabThicknessMm,
+	slabMode = "single",
+	onChangeSlabMode,
+	onSelectClinicalPreset,
 }) => {
+	const contrastMenuRef = React.useRef<HTMLDivElement | null>(null);
+	const [isContrastMenuOpen, setIsContrastMenuOpen] = React.useState<boolean>(false);
+
+	React.useEffect(() => {
+		if (!isContrastMenuOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (contrastMenuRef.current && !contrastMenuRef.current.contains(e.target as Node)) {
+				setIsContrastMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isContrastMenuOpen]);
 	return (
 		<header
 			data-testid="cbct-header-bar"
-			className="h-9 min-h-[36px] px-2 sm:px-3 py-0.5 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between shrink-0 gap-1.5 sm:gap-2 text-zinc-100 min-w-0 w-full max-w-full relative"
+			className="h-10 min-h-[40px] px-2 sm:px-3 py-1 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between shrink-0 gap-1.5 sm:gap-2 text-zinc-100 min-w-0 w-full max-w-full relative z-30"
 		>
 			{/* Left: 3D Dicom Cube Icon + Title + Quiet Study Status */}
 			<div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink-0">
@@ -213,6 +251,210 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 						</span>
 					</button>
 				)}
+
+				{/* Interactive Contrast / Slice HUD Controller Button */}
+				<div className="relative" ref={contrastMenuRef}>
+					<button
+						type="button"
+						onClick={() => setIsContrastMenuOpen((prev) => !prev)}
+						className={`px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-all cursor-pointer border ${
+							isContrastMenuOpen
+								? "bg-cyan-950/60 text-cyan-300 border-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.4)] font-bold"
+								: "bg-zinc-900 text-zinc-300 border-zinc-800 hover:text-white hover:bg-zinc-850"
+						}`}
+						data-testid="cbct-contrast-controls-btn"
+						id="cbct-header-contrast-controls-btn"
+						title="Настройка яркости, контраста (W/L), толщины среза и пресетов КЛКТ"
+						aria-expanded={isContrastMenuOpen}
+					>
+						<Sliders className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+						<span className="hidden xl:inline">Контраст:</span>
+						<span className="font-mono text-[10px] font-bold text-cyan-300">
+							W:{windowWidth}/L:{windowLevel}
+						</span>
+						<span className="hidden sm:inline-block text-[10px] text-zinc-500 font-mono">
+							• {slabThicknessMm} мм
+						</span>
+					</button>
+
+					{isContrastMenuOpen && (
+						<div
+							className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 w-80 bg-zinc-900/98 border border-zinc-700/90 rounded-lg shadow-2xl p-2.5 z-50 flex flex-col gap-2.5 backdrop-blur-md text-zinc-100"
+							data-testid="cbct-contrast-controls-popover"
+						>
+							<div className="flex items-center justify-between text-xs font-bold text-cyan-300 border-b border-zinc-800 pb-1.5">
+								<span className="flex items-center gap-1.5">
+									<Sliders className="w-3.5 h-3.5 text-cyan-400" />
+									Настройка КЛКТ (Контраст и Срез)
+								</span>
+								<button
+									type="button"
+									onClick={() => {
+										onSelectClinicalPreset?.("standard");
+										onChangeWindowWidth?.(2200);
+										onChangeWindowLevel?.(450);
+										onChangeSlabThicknessMm?.(1.0);
+										onChangeSlabMode?.("single");
+									}}
+									className="text-[10px] text-zinc-400 hover:text-cyan-300 underline cursor-pointer"
+									title="Сбросить на базовый дефолт (W:2200, L:450, 1.0 мм)"
+								>
+									Дефолт (2200/450)
+								</button>
+							</div>
+
+							{/* 1. Клинические базовые пресеты («Стандарт», «Кость», «Эндо / Каналы», «Имплант / Мягкий») */}
+							<div className="flex flex-col gap-1">
+								<span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+									Клинические пресеты
+								</span>
+								<div className="grid grid-cols-2 gap-1">
+									{CLINICAL_RADIOLOGY_PRESETS.map((pr) => {
+										const isSelected = activePresetId === pr.id || (
+											Math.abs(windowWidth - pr.windowWidth) <= 50 &&
+											Math.abs(windowLevel - pr.windowLevel) <= 30
+										);
+										return (
+											<button
+												key={pr.id}
+												type="button"
+												onClick={() => {
+													onSelectClinicalPreset?.(pr.id);
+													onChangeWindowWidth?.(pr.windowWidth);
+													onChangeWindowLevel?.(pr.windowLevel);
+													onChangeSlabThicknessMm?.(pr.slabThicknessMm);
+													onChangeSlabMode?.(pr.slabMode);
+												}}
+												className={`px-2 py-1 rounded text-xs font-semibold text-left transition-all border cursor-pointer ${
+													isSelected
+														? "bg-cyan-600 text-white border-cyan-400 shadow-xs font-bold"
+														: "bg-zinc-850 text-zinc-300 border-zinc-750 hover:bg-zinc-800 hover:text-white"
+												}`}
+												title={pr.descriptionRu}
+												data-testid={pr.testId}
+											>
+												<div className="truncate">{pr.label}</div>
+												<div className="text-[9px] font-mono opacity-70">
+													{pr.slabThicknessMm} мм • {pr.slabMode}
+												</div>
+											</button>
+										);
+									})}
+								</div>
+							</div>
+
+							{/* 2. Толщина среза (1 мм, 2 мм, 3 мм, 5 мм, 10 мм) */}
+							{onChangeSlabThicknessMm && (
+								<div className="flex flex-col gap-1">
+									<div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+										<span>Толщина среза (MPR / Slab)</span>
+										<span className="font-mono text-cyan-300">{slabThicknessMm} мм</span>
+									</div>
+									<div className="grid grid-cols-5 gap-1">
+										{[1.0, 2.0, 3.0, 5.0, 10.0].map((th) => {
+											const isCur = Math.abs(slabThicknessMm - th) < 0.1;
+											return (
+												<button
+													key={th}
+													type="button"
+													onClick={() => onChangeSlabThicknessMm(th)}
+													className={`py-1 px-1 rounded text-center text-xs font-semibold font-mono border transition-all cursor-pointer ${
+														isCur
+															? "bg-amber-600 text-white border-amber-400 shadow-xs font-bold"
+															: "bg-zinc-850 text-zinc-300 border-zinc-750 hover:bg-zinc-800 hover:text-white"
+													}`}
+													data-testid={`cbct-header-slab-thickness-${th}`}
+													title={`Толщина среза ${th} мм`}
+												>
+													{th} мм
+												</button>
+											);
+										})}
+									</div>
+								</div>
+							)}
+
+							{/* 3. Режим рендеринга (Тонкий срез / Ray-Sum / Мягкий интеграл / MIP) */}
+							{onChangeSlabMode && (
+								<div className="flex flex-col gap-1">
+									<span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+										Режим рендеринга среза
+									</span>
+									<div className="grid grid-cols-3 gap-1">
+										{[
+											{ id: "single", label: "Тонкий срез", title: "Одиночный тонкий чистый срез без наслоений" },
+											{ id: "average", label: "Ray-Sum / Интеграл", title: "Рентгеновский интеграл плотностей (Average IP)" },
+											{ id: "mip", label: "MIP", title: "Максимальная интенсивность (только для костных ориентиров)" },
+										].map((m) => {
+											const isCur = slabMode === m.id;
+											return (
+												<button
+													key={m.id}
+													type="button"
+													onClick={() => onChangeSlabMode(m.id as SlabProjectionMode)}
+													className={`py-1 px-1.5 rounded text-center text-xs font-semibold border transition-all cursor-pointer ${
+														isCur
+															? "bg-purple-600 text-white border-purple-400 shadow-xs font-bold"
+															: "bg-zinc-850 text-zinc-300 border-zinc-750 hover:bg-zinc-800 hover:text-white"
+													}`}
+													title={m.title}
+													data-testid={`cbct-header-slab-mode-${m.id}`}
+												>
+													{m.label}
+												</button>
+											);
+										})}
+									</div>
+								</div>
+							)}
+
+							{/* 4. Интерактивные слайдеры Window Width / Window Level */}
+							<div className="flex flex-col gap-2 pt-1 border-t border-zinc-800">
+								<div className="flex flex-col gap-0.5">
+									<div className="flex justify-between text-xs">
+										<span className="text-zinc-400">Контраст (Window Width W):</span>
+										<span className="font-mono font-bold text-amber-300">{windowWidth} HU</span>
+									</div>
+									<input
+										type="range"
+										min={400}
+										max={6000}
+										step={50}
+										value={windowWidth}
+										onChange={(e) => onChangeWindowWidth?.(Number(e.target.value))}
+										className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+										data-testid="cbct-header-slider-ww"
+									/>
+									<div className="flex justify-between text-[9px] text-zinc-500 font-mono">
+										<span>Контрастный (400)</span>
+										<span>Широкий (6000)</span>
+									</div>
+								</div>
+
+								<div className="flex flex-col gap-0.5">
+									<div className="flex justify-between text-xs">
+										<span className="text-zinc-400">Яркость (Window Level L):</span>
+										<span className="font-mono font-bold text-cyan-300">{windowLevel} HU</span>
+									</div>
+									<input
+										type="range"
+										min={-200}
+										max={1500}
+										step={25}
+										value={windowLevel}
+										onChange={(e) => onChangeWindowLevel?.(Number(e.target.value))}
+										className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+										data-testid="cbct-header-slider-wl"
+									/>
+									<div className="flex justify-between text-[9px] text-zinc-500 font-mono">
+										<span>Темный (-200)</span>
+										<span>Светлый (+1500)</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
+				</div>
 			</div>
 
 
@@ -445,6 +687,43 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 									</button>
 								</div>
 							)}
+
+							{/* Clinical Presets */}
+							<div className="h-px bg-zinc-800 my-0.5" />
+							<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-400">
+								Клинические пресеты (Базовые)
+							</div>
+							<div className="flex flex-col gap-0.5">
+								{CLINICAL_RADIOLOGY_PRESETS.map((pr) => {
+									const isSelected = activePresetId === pr.id;
+									return (
+										<button
+											key={pr.id}
+											type="button"
+											onClick={() => {
+												onSelectClinicalPreset?.(pr.id);
+												onChangeWindowWidth?.(pr.windowWidth);
+												onChangeWindowLevel?.(pr.windowLevel);
+												onChangeSlabThicknessMm?.(pr.slabThicknessMm);
+												onChangeSlabMode?.(pr.slabMode);
+												setIsStudioMenuOpen(false);
+											}}
+											className={`w-full px-2 py-1 rounded text-xs font-semibold text-left flex items-center justify-between gap-1.5 transition-colors cursor-pointer ${
+												isSelected
+													? "text-cyan-400 bg-cyan-950/40 border border-cyan-500/40 shadow-xs font-bold"
+													: "text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800"
+											}`}
+											data-testid={`cbct-header-clinical-preset-${pr.id}`}
+											title={pr.descriptionRu}
+										>
+											<span className="truncate">{pr.label}</span>
+											<span className="text-[10px] text-zinc-500 font-mono shrink-0">
+												{pr.slabThicknessMm} мм • {pr.windowWidth}/{pr.windowLevel}
+											</span>
+										</button>
+									);
+								})}
+							</div>
 
 							{/* 1-Click WW/WL Contrast Presets */}
 							{onSelectPreset && (

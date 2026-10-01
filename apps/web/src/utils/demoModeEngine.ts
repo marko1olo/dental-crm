@@ -84,25 +84,30 @@ export function isDemoShowcaseMode(explicitOverride?: boolean): boolean {
 				return false;
 			}
 
-			// Включение демо через search (?demo=true, ?demo=1, ?showcase=true)
+			// Включение демо через search (?demo=true, ?demo=1, ?showcase=true, ?cbct=demo, ?cbct=1)
 			if (
 				search.includes("demo=true") ||
 				search.includes("demo=1") ||
 				search.includes("showcase=true") ||
-				search.includes("showcase=1")
+				search.includes("showcase=1") ||
+				search.includes("cbct=demo") ||
+				search.includes("cbct=1") ||
+				search.includes("cbct=true") ||
+				search.includes("cbct")
 			) {
 				localStorage.setItem("dente_demo_showcase", "true");
 				return true;
 			}
 
-			// Включение демо через hash (#demo, #/demo, #/schedule?demo=true)
+			// Включение демо через hash (#demo, #/demo, #/schedule?demo=true, #cbct=demo)
 			if (
 				hash === "#demo" ||
 				hash.startsWith("#demo") ||
 				hash.startsWith("#/demo") ||
 				hash.includes("demo=true") ||
 				hash.includes("demo=1") ||
-				hash.includes("showcase=true")
+				hash.includes("showcase=true") ||
+				hash.includes("cbct")
 			) {
 				localStorage.setItem("dente_demo_showcase", "true");
 				return true;

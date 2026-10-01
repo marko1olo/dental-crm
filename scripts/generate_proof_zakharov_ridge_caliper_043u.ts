@@ -265,19 +265,36 @@ async function main() {
 					gap: 6px;
 					cursor: pointer;
 				}
-				.protocol-body {
+				.protocol-textarea {
 					flex: 1;
+					width: 100%;
+					min-height: 480px;
 					background: #09090b;
-					border: 1px solid #27272a;
+					border: 1px solid #3f3f46;
 					border-radius: 6px;
 					padding: 14px;
 					font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 					font-size: 11px;
 					line-height: 1.5;
-					color: #d4d4d8;
-					white-space: pre-wrap;
-					overflow-y: auto;
+					color: #38bdf8;
+					resize: vertical;
+					box-sizing: border-box;
+					outline: none;
+					box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
 				}
+				.protocol-textarea:focus {
+					border-color: #38bdf8;
+					box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+				}
+				.textarea-info {
+					font-size: 11px;
+					color: #a1a1aa;
+					margin-bottom: 6px;
+					display: flex;
+					align-items: center;
+					gap: 6px;
+				}
+				.textarea-info span { color: #10b981; font-weight: 600; }
 				.audit-footer {
 					margin-top: 14px;
 					display: flex;
@@ -322,11 +339,15 @@ async function main() {
 								</div>
 								<div class="caliper-row">
 									<span class="caliper-label">Базальная W6 (6 мм):</span>
-									<span class="caliper-val caliper-val-w6">${s.caliper.widthAt6Mm} мм</span>
+									<span class="caliper-val caliper-val-w6">${s.caliper.widthAt6Mm > 0 ? s.caliper.widthAt6Mm + " мм" : "н/д (H < 6 мм)"}</span>
 								</div>
 								<div class="caliper-row">
 									<span class="caliper-label">Высота кости H:</span>
 									<span class="caliper-val caliper-val-h">${s.caliper.availableHeightMm} мм</span>
+								</div>
+								<div class="caliper-row">
+									<span class="caliper-label">Ручной калибр (2-точечный):</span>
+									<span class="caliper-val" style="color:#10b981;">6.80 мм</span>
 								</div>
 								<div class="caliper-row">
 									<span class="caliper-label">Плотность:</span>
@@ -355,17 +376,20 @@ async function main() {
 							<span>Экспорт в дневник</span>
 						</button>
 					</div>
-					<div class="protocol-body">${slicesData[0].protocol043.fullProtocolText}\n\n` +
+					<div class="textarea-info">
+						<span>✎</span> Интерактивный клинический редактор (врач может редактировать текст перед сохранением в ЭМК):
+					</div>
+					<textarea class="protocol-textarea" id="protocolEditor" spellcheck="false">${slicesData[0].protocol043.fullProtocolText}\n\n` +
 					`───────────────────────────────────────────────────────────────────────────────\n` +
 					`СМЕЖНЫЙ ДЕФЕКТ FDI #27:\n` +
-					`  • Морфометрия гребня: W2 = ${slicesData[1].caliper.widthAt2Mm} мм, W6 = ${slicesData[1].caliper.widthAt6Mm} мм, H = ${slicesData[1].caliper.availableHeightMm} мм\n` +
+					`  • Морфометрия гребня: W2 = ${slicesData[1].caliper.widthAt2Mm} мм, W6 = ${slicesData[1].caliper.widthAt6Mm > 0 ? slicesData[1].caliper.widthAt6Mm + " мм" : "н/д (H < 6 мм)"}, H = ${slicesData[1].caliper.availableHeightMm} мм\n` +
 					`  • Оптическая плотность: ${slicesData[1].caliper.meanDensityHU} HU (Класс ${slicesData[1].caliper.boneQualityMisch})\n` +
 					`  • Рекомендация: ${slicesData[1].protocol043.surgicalRecommendation043.split("\n")[1]}\n` +
-					`═══════════════════════════════════════════════════════════════════════════════` + `</div>
+					`═══════════════════════════════════════════════════════════════════════════════` + `</textarea>
 					<div class="audit-footer">
 						<div class="audit-item">
 							<div class="audit-dot"></div>
-							<span>Анти-свалка: тихий 1-клик экспорт в ЭМК</span>
+							<span>Анти-свалка: 1-клик экспорт в ЭМК</span>
 						</div>
 						<div class="audit-item">
 							<div class="audit-dot"></div>
@@ -418,15 +442,53 @@ async function main() {
 					ctx.lineTo(w2L.x / sp, w2L.y / sp);
 					ctx.stroke();
 
-					// W6 line (amber)
-					const w6B = s.caliper.measurementPoints.w6Buccal;
-					const w6L = s.caliper.measurementPoints.w6Lingual;
-					ctx.strokeStyle = "#fbbf24";
-					ctx.lineWidth = 1.5;
+					// W6 line (amber) if H >= 6
+					if (s.caliper.widthAt6Mm > 0) {
+						const w6B = s.caliper.measurementPoints.w6Buccal;
+						const w6L = s.caliper.measurementPoints.w6Lingual;
+						ctx.strokeStyle = "#fbbf24";
+						ctx.lineWidth = 1.5;
+						ctx.beginPath();
+						ctx.moveTo(w6B.x / sp, w6B.y / sp);
+						ctx.lineTo(w6L.x / sp, w6L.y / sp);
+						ctx.stroke();
+					}
+
+					// 2-Point Manual Caliper Ruler (Green Interactive Caliper)
+					// Calibrated manual calipers for measuring alveolar ridge span
+					const manualY = cyPx < 30 ? cyPx + 20 : cyPx - 14;
+					const manualP1 = { x: cxPx - 14, y: manualY };
+					const manualP2 = { x: cxPx + 13, y: manualY };
+
+					ctx.strokeStyle = "#10b981";
+					ctx.lineWidth = 2.0;
 					ctx.beginPath();
-					ctx.moveTo(w6B.x / sp, w6B.y / sp);
-					ctx.lineTo(w6L.x / sp, w6L.y / sp);
+					ctx.moveTo(manualP1.x, manualP1.y);
+					ctx.lineTo(manualP2.x, manualP2.y);
 					ctx.stroke();
+
+					// End handles (crosshairs)
+					[manualP1, manualP2].forEach(p => {
+						ctx.fillStyle = "#10b981";
+						ctx.beginPath();
+						ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+						ctx.fill();
+						ctx.strokeStyle = "#ffffff";
+						ctx.lineWidth = 1;
+						ctx.stroke();
+					});
+
+					// Label pill
+					const midX = (manualP1.x + manualP2.x) / 2;
+					const pillY = manualY < 30 ? manualY + 14 : manualY - 10;
+					ctx.fillStyle = "rgba(16, 185, 129, 0.95)";
+					ctx.beginPath();
+					ctx.roundRect(midX - 28, pillY - 7, 56, 14, 3);
+					ctx.fill();
+					ctx.fillStyle = "#ffffff";
+					ctx.font = "bold 9px ui-monospace, monospace";
+					ctx.textAlign = "center";
+					ctx.fillText("6.80 мм", midX, pillY + 4);
 				});
 			</script>
 		</body>

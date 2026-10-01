@@ -4,10 +4,12 @@
  */
 
 import React, { Suspense, lazy } from "react";
+import type { CuratorFunnelStage } from "@dental/shared";
 import type {
 	CashierInvoiceExportData,
 	ToothData,
 	TreatmentPlanAgreement,
+	TreatmentPlanItem,
 	TreatmentPlanStage,
 	TreatmentPlanStatus,
 	TreatmentPlanTier,
@@ -15,6 +17,8 @@ import type {
 	TreatmentPlanValidationPayload,
 } from "./types";
 import type { TreatmentPlanActPrintData } from "./TreatmentPlanCompletedActPrint";
+import type { ClinicalBundleDefinition } from "./treatmentPlanBundlesEngine";
+import type { InvoiceServiceItem } from "../finance/invoiceEngine";
 import { showToast } from "../GlobalToast";
 
 // Lazy-loaded specialized studio modals (Split bundles, instant modal open)
@@ -131,27 +135,27 @@ export interface TreatmentPlanSpecializedModalsHostProps {
 	// Shared Context Data
 	readonly patientId: string;
 	readonly patientName: string;
-	readonly patientPhone?: string;
-	readonly patientBirthDate?: string;
+	readonly patientPhone?: string | undefined;
+	readonly patientBirthDate?: string | undefined;
 	readonly patientDepositRub: number;
 	readonly patientBalanceRub: number;
-	readonly patientChartNumber?: string;
+	readonly patientChartNumber?: string | undefined;
 	readonly patientAdministrativeProfile?: {
-		curatorId?: string;
-		curatorFullName?: string;
-		curatorFunnelStage?: "consultation" | "diagnosis" | "financial_approval" | "treatment" | "completed";
-	};
+		curatorId?: string | undefined;
+		curatorFullName?: string | undefined;
+		curatorFunnelStage?: "consultation" | "diagnosis" | "financial_approval" | "treatment" | "completed" | undefined;
+	} | undefined;
 	readonly doctorFullName: string;
 	readonly doctorId: string;
 	readonly clinicName: string;
-	readonly clinicInn?: string;
+	readonly clinicInn?: string | undefined;
 	readonly planAgeDays: number;
-	readonly planCreatedAtIso?: string;
-	readonly contractNumber?: string;
-	readonly teethData?: readonly ToothData[];
+	readonly planCreatedAtIso?: string | undefined;
+	readonly contractNumber?: string | undefined;
+	readonly teethData?: readonly ToothData[] | undefined;
 	readonly orthopedicTeeth: readonly number[];
-	readonly selectedLabTeeth?: readonly number[] | null;
-	readonly catalog?: readonly unknown[];
+	readonly selectedLabTeeth?: readonly number[] | null | undefined;
+	readonly catalog?: readonly unknown[] | undefined;
 	readonly currentTier: TreatmentPlanTier;
 	readonly effectiveSignTier: TreatmentPlanTier;
 	readonly planTiers: readonly TreatmentPlanTier[];
@@ -172,10 +176,33 @@ export interface TreatmentPlanSpecializedModalsHostProps {
 	readonly selectedInstallmentStage: TreatmentPlanStage | null;
 	readonly onSelectInstallmentStage: (stage: TreatmentPlanStage | null) => void;
 	readonly grandTotalRub: number;
-	readonly onExportToCashier?: (data: CashierInvoiceExportData) => void;
-	readonly onApplyChairsideBundlePlan: (bundle: any, teeth: number[], targetStageKind: any) => void;
-	readonly onApplyChairsideBundleInvoice: (bundle: any, teeth: number[]) => void;
+	readonly onExportToCashier?: ((data: CashierInvoiceExportData) => void) | undefined;
+	readonly onApplyChairsideBundlePlan: (
+		items: TreatmentPlanItem[],
+		bundle: ClinicalBundleDefinition,
+		toothNumber?: number,
+	) => void;
+	readonly onApplyChairsideBundleInvoice: (
+		items: InvoiceServiceItem[],
+		bundle: ClinicalBundleDefinition,
+		toothNumber?: number,
+	) => void;
 }
+
+const mapCuratorStage = (stage?: string | null): CuratorFunnelStage => {
+	if (stage === "treatment") return "treatment_start";
+	if (stage === "financial_approval") return "plan_negotiation";
+	if (stage === "diagnosis") return "consultation";
+	if (
+		stage === "prepayment" ||
+		stage === "plan_negotiation" ||
+		stage === "treatment_start" ||
+		stage === "completed"
+	) {
+		return stage;
+	}
+	return "consultation";
+};
 
 export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializedModalsHostProps> = ({
 	isComparatorModalOpen,
@@ -597,7 +624,7 @@ export const TreatmentPlanSpecializedModalsHost: React.FC<TreatmentPlanSpecializ
 						treatmentPlanId={`PLAN-${patientId.slice(0, 6).toUpperCase()}`}
 						treatmentPlanTitle={`${currentTier.title} (${grandTotalRub.toLocaleString("ru-RU")} ₽)`}
 						currentCuratorId={patientAdministrativeProfile?.curatorId}
-						currentStage={patientAdministrativeProfile?.curatorFunnelStage || "consultation"}
+						currentStage={mapCuratorStage(patientAdministrativeProfile?.curatorFunnelStage)}
 						onAssigned={(assigned) => {
 							showToast(`Куратор ${assigned.curatorFullName} успешно закреплен!`, "success");
 						}}

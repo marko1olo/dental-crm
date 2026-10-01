@@ -20,8 +20,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -31,6 +30,7 @@ import { logger } from "../../utils/logger";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
 import { findDoctorFreeSlots } from "./doctorFreeSlotsEngine";
+import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
 
 export type WaitlistPriority =
 	| "urgent"
@@ -734,7 +734,8 @@ export function WaitlistQuickFillModal({
 				const doctorUserId =
 					currentSlot.doctorUserId ||
 					patient.preferredDoctorId ||
-					(activeDocs.length > 0 ? activeDocs[0]?.id : null);
+					(activeDocs.length > 0 ? activeDocs[0]?.id : null) ||
+					"doctor-default";
 
 				const activeChairs = (dashboard?.clinicSettings?.chairs ?? []).filter(
 					// biome-ignore lint/suspicious/noExplicitAny: chair lookup
@@ -742,49 +743,57 @@ export function WaitlistQuickFillModal({
 				);
 				const chairId =
 					currentSlot.chairId ||
-					(activeChairs.length > 0 ? activeChairs[0]?.id : null);
+					(activeChairs.length > 0 ? activeChairs[0]?.id : null) ||
+					DEFAULT_SOLO_CHAIR.id;
 
 				const startsAt = currentSlot.startsAt;
 				const endsAt =
 					currentSlot.endsAt ||
 					new Date(Date.parse(startsAt) + 30 * 60_000).toISOString();
 
-				if (doctorUserId && chairId) {
-					const res = await fetch("/api/appointments", {
-						method: "POST",
-						headers: waitlistWriteHeaders(),
-						body: JSON.stringify({
-							patientId: patient.patientId,
-							doctorUserId,
-							chairId,
-							startsAt,
-							endsAt,
-							status: "planned",
-							reason: patient.treatmentCategory || "Запись из листа ожидания",
-							comment: `Посадка из листа ожидания в 1 клик${patient.notes ? `: ${patient.notes}` : ""}`,
-							assistantUserId: "",
-							clientMutationId: `waitlist-quickfill-${Date.now()}`,
-						}),
-					});
+				const res = await fetch("/api/appointments", {
+					method: "POST",
+					headers: waitlistWriteHeaders(),
+					body: JSON.stringify({
+						patientId: patient.patientId,
+						doctorUserId,
+						chairId,
+						startsAt,
+						endsAt,
+						status: "planned",
+						reason: patient.treatmentCategory || "Запись из листа ожидания",
+						comment: `Посадка из листа ожидания в 1 клик${patient.notes ? `: ${patient.notes}` : ""}`,
+						assistantUserId: "",
+						clientMutationId: `waitlist-quickfill-${Date.now()}`,
+						allowOverbooking: true,
+					}),
+				});
 
-					if (!res.ok) {
-						const err = await res.json().catch(() => null);
-						showToast(
-							err?.message || "Не удалось создать запись на приём",
-							"error",
-						);
-						return;
-					}
-				} else if (updateNewAppointmentDraft) {
+				if (!res.ok) {
+					const err = await res.json().catch(() => null);
+					showToast(
+						err?.message || "Не удалось создать запись на приём",
+						"error",
+					);
+					return;
+				}
+
+				if (updateNewAppointmentDraft) {
 					updateNewAppointmentDraft("patientId", patient.patientId);
-					if (doctorUserId)
-						updateNewAppointmentDraft("doctorUserId", doctorUserId);
-					if (chairId) updateNewAppointmentDraft("chairId", chairId);
+					updateNewAppointmentDraft("doctorUserId", doctorUserId);
+					updateNewAppointmentDraft("chairId", chairId);
 					updateNewAppointmentDraft("startsAt", startsAt);
 					updateNewAppointmentDraft("endsAt", endsAt);
 					updateNewAppointmentDraft("assistantUserId", "");
+				}
+			} else {
+				if (updateNewAppointmentDraft) {
+					updateNewAppointmentDraft("patientId", patient.patientId);
 					focusNewAppointmentEditor?.();
 				}
+				showToast("Слот не выбран. Открыта форма создания записи.", "info");
+				onClose();
+				return;
 			}
 
 			// Mark fulfilled on server

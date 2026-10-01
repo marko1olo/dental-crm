@@ -77,7 +77,7 @@ describe("LanMeshAutoJoinService: 6-Digit PIN & QR Pairing Protocol", () => {
 			pin: oldPin,
 			clientIp: "192.168.1.56",
 			clientName: "Assistant Tablet",
-			role: "assistant",
+			role: "reception",
 		});
 		assert.equal(joinGrace.success, true);
 	});

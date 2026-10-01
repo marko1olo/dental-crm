@@ -17,6 +17,7 @@ import type { ImplantBrandKey } from "../../implantSafetyEngine";
 import {
 	getZakharovRidgeMeasurement,
 	exportZakharovRidgeTo043Emr,
+	buildZakharov043SoapProtocol,
 	type ZakharovEdentulousToothFdi,
 } from "../../zakharovRidgeAutomation";
 
@@ -36,9 +37,13 @@ const STANDARD_DIAMETERS = [3.0, 3.5, 4.0, 4.5, 5.0, 5.5] as const;
 const STANDARD_LENGTHS = [7.0, 8.5, 10.0, 11.5, 13.0] as const;
 
 export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
+	volume,
+	archCurve,
 	renderers,
 	maximizedViewport,
 	mobileActiveTab,
+	patientDisplayName,
+	activeCrossSection,
 	selectedBrand = "osstem",
 	onSelectBrand,
 	selectedDiameterMm = 4.0,
@@ -57,7 +62,20 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 	// Doctor directive: Base is MPR (3 orthogonal windows to trace canal nerve + surgeon station)
 	const [viewMode, setViewMode] = useState<"mpr_mode" | "pano_cross_mode">("mpr_mode");
 	const [edentulousTooth, setEdentulousTooth] = useState<ZakharovEdentulousToothFdi>(26);
-	const edentulousData = getZakharovRidgeMeasurement(edentulousTooth);
+	const edentulousData = React.useMemo(() => {
+		return getZakharovRidgeMeasurement(edentulousTooth, volume ?? undefined, archCurve);
+	}, [edentulousTooth, volume, archCurve]);
+	const resolvedPatient = patientDisplayName || "Пациент КЛКТ";
+	const [isEditing043, setIsEditing043] = useState<boolean>(false);
+	const [edited043Text, setEdited043Text] = useState<string>(() => {
+		const soap = buildZakharov043SoapProtocol(edentulousData, resolvedPatient);
+		return `${soap.statusLocalis}\n\n${soap.treatmentDescription}`;
+	});
+
+	React.useEffect(() => {
+		const soap = buildZakharov043SoapProtocol(edentulousData, resolvedPatient);
+		setEdited043Text(`${soap.statusLocalis}\n\n${soap.treatmentDescription}`);
+	}, [edentulousData, resolvedPatient]);
 
 	if (maximizedViewport) {
 		return (
@@ -126,9 +144,6 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 					}`}
 					data-testid="cbct-implant-top-left-viewport"
 				>
-					<div className="absolute top-2 left-2 z-30 pointer-events-none bg-zinc-950/85 px-2 py-0.5 rounded border border-zinc-700 text-[10px] text-zinc-300 font-bold backdrop-blur-md">
-						{viewMode === "pano_cross_mode" ? "1. ОПТГ панорама и IAN-нерв" : "1. Аксиальный срез челюсти"}
-					</div>
 					{viewMode === "pano_cross_mode" ? renderers.renderPanoramic("flex-1 flex flex-col w-full h-full") : renderers.renderAxial("flex-1 flex flex-col w-full h-full")}
 				</div>
 
@@ -139,9 +154,6 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 					}`}
 					data-testid="cbct-implant-top-right-viewport"
 				>
-					<div className="absolute top-2 left-2 z-30 pointer-events-none bg-zinc-950/85 px-2 py-0.5 rounded border border-zinc-700 text-[10px] text-zinc-300 font-bold backdrop-blur-md">
-						{viewMode === "pano_cross_mode" ? "2. Поперечный срез гребня (Cross-Section)" : "2. Корональный срез челюсти"}
-					</div>
 					{viewMode === "pano_cross_mode"
 						? renderers.renderCrossSection("flex-1 flex flex-col w-full h-full", false)
 						: renderers.renderCoronal("flex-1 flex flex-col w-full h-full")}
@@ -154,9 +166,6 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 					}`}
 					data-testid="cbct-implant-bottom-left-viewport"
 				>
-					<div className="absolute top-2 left-2 z-30 pointer-events-none bg-zinc-950/85 px-2 py-0.5 rounded border border-zinc-700 text-[10px] text-zinc-300 font-bold backdrop-blur-md">
-						{viewMode === "pano_cross_mode" ? "3. Аксиальный срез (Точка входа)" : "3. Сагиттальный срез профиля"}
-					</div>
 					{viewMode === "pano_cross_mode" ? renderers.renderAxial("flex-1 flex flex-col w-full h-full") : renderers.renderSagittal("flex-1 flex flex-col w-full h-full")}
 				</div>
 
@@ -306,7 +315,7 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 						</div>
 					</div>
 
-					{/* Zakharov Edentulous Ridge Automation (W2, W6, H + Form 043/u) */}
+					{/* Anatomical Ridge Measurement & Doctor-Editable Form 043/u (Mandates 1, 8e) */}
 					<div
 						className="p-2 rounded-lg bg-zinc-900/90 border border-amber-500/30 flex flex-col gap-1.5"
 						data-testid="cbct-zakharov-ridge-automation"
@@ -314,7 +323,7 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 						<div className="flex items-center justify-between text-xs">
 							<span className="font-bold text-zinc-300 flex items-center gap-1">
 								<Activity className="w-3.5 h-3.5 text-amber-400" />
-								<span>Замер гребня (дефект 26/27):</span>
+								<span>Замер гребня (W2/W6/H):</span>
 							</span>
 							<div className="flex items-center gap-1">
 								<button
@@ -322,10 +331,11 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 									onClick={() => setEdentulousTooth(26)}
 									className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
 										edentulousTooth === 26
-											? "bg-amber-600 text-white border-amber-400"
+											? "bg-amber-600 text-white border-amber-400 shadow-xs"
 											: "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white"
 									}`}
 									data-testid="cbct-ridge-tooth-26-btn"
+									title="Позиция #26: замер альвеолярного гребня"
 								>
 									#26
 								</button>
@@ -334,27 +344,33 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 									onClick={() => setEdentulousTooth(27)}
 									className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
 										edentulousTooth === 27
-											? "bg-amber-600 text-white border-amber-400"
+											? "bg-amber-600 text-white border-amber-400 shadow-xs"
 											: "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white"
 									}`}
 									data-testid="cbct-ridge-tooth-27-btn"
+									title="Позиция #27: замер альвеолярного гребня"
 								>
 									#27
 								</button>
+								{activeCrossSection?.nearestToothFdi && activeCrossSection.nearestToothFdi !== "26" && activeCrossSection.nearestToothFdi !== "27" && (
+									<span className="px-1.5 py-0.5 rounded bg-zinc-800 text-cyan-300 border border-cyan-500/40 text-[10px] font-mono font-bold" title="Текущий срез">
+										#{activeCrossSection.nearestToothFdi}
+									</span>
+								)}
 							</div>
 						</div>
 
 						{/* Measurements Chips: H, W2, W6 */}
 						<div className="grid grid-cols-3 gap-1 text-[11px] font-mono text-center" data-testid="cbct-ridge-measurements-badge">
-							<div className="p-1 rounded bg-zinc-950 border border-zinc-800">
+							<div className="p-1 rounded bg-zinc-950 border border-zinc-800" title="Остаточная высота до дна синуса">
 								<span className="text-[9px] text-zinc-500 block uppercase">H (синус)</span>
 								<span className="font-bold text-amber-300">{edentulousData.crestHeightH_Mm.toFixed(1)} мм</span>
 							</div>
-							<div className="p-1 rounded bg-zinc-950 border border-zinc-800">
+							<div className="p-1 rounded bg-zinc-950 border border-zinc-800" title="Ширина гребня на 2 мм ниже вершины">
 								<span className="text-[9px] text-zinc-500 block uppercase">W2 (-2мм)</span>
 								<span className="font-bold text-cyan-300">{edentulousData.crestWidthW2_Mm.toFixed(1)} мм</span>
 							</div>
-							<div className="p-1 rounded bg-zinc-950 border border-zinc-800">
+							<div className="p-1 rounded bg-zinc-950 border border-zinc-800" title="Базальная ширина гребня на 6 мм ниже вершины">
 								<span className="text-[9px] text-zinc-500 block uppercase">W6 (-6мм)</span>
 								<span className="font-bold text-purple-300">{edentulousData.basalWidthW6_Mm.toFixed(1)} мм</span>
 							</div>
@@ -363,17 +379,70 @@ export const ImplantWorkspace: React.FC<ImplantWorkspaceProps> = ({
 						{/* Clinical Sinus Lift Recommendation & 1-Click Form 043/u */}
 						<div className="text-[10px] text-zinc-400 flex items-center justify-between pt-0.5">
 							<span className="truncate">Синус: <strong className="text-zinc-200">{edentulousTooth === 26 ? "Саммерс" : "Латеральный"}</strong></span>
-							<button
-								type="button"
-								onClick={() => exportZakharovRidgeTo043Emr(edentulousData, "Захаров Иван Дмитриевич", handleExportToEmr)}
-								className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1 shrink-0 ml-1 transition-colors cursor-pointer"
-								data-testid="cbct-ridge-export-043-btn"
-								title="Внести замеры W2/W6/H и протокол синус-лифтинга в форму 043/у Захарова"
-							>
-								<FileText className="w-3 h-3 text-amber-400" />
-								<span>В 043/у</span>
-							</button>
+							<div className="flex items-center gap-1">
+								<button
+									type="button"
+									onClick={() => setIsEditing043((prev) => !prev)}
+									className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+										isEditing043
+											? "bg-cyan-950 text-cyan-300 border-cyan-500"
+											: "bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700"
+									}`}
+									title={isEditing043 ? "Скрыть редактор протокола" : "Редактировать текст протокола 043/у"}
+									data-testid="cbct-ridge-edit-043-toggle-btn"
+								>
+									{isEditing043 ? "Свернуть" : "Текст 043/у"}
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										exportZakharovRidgeTo043Emr(edentulousData, resolvedPatient, handleExportToEmr);
+										if (isEditing043 && edited043Text) {
+											try {
+												window.dispatchEvent(
+													new CustomEvent("dente-apply-soap-protocol", {
+														detail: {
+															soap: {
+																statusLocalis: edited043Text,
+																treatmentDescription: "",
+																diagnosisIcd10: "K08.1",
+																diagnosisTooth: String(edentulousTooth),
+															},
+															immediate: true,
+															mode: "smart_append",
+														},
+													}),
+												);
+											} catch {}
+										}
+									}}
+									className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+									data-testid="cbct-ridge-export-043-btn"
+									title={`Внести замеры W2/W6/H и протокол синус-лифтинга в форму 043/у (${resolvedPatient})`}
+								>
+									<FileText className="w-3 h-3 text-amber-400" />
+									<span>В 043/у</span>
+								</button>
+							</div>
 						</div>
+
+						{/* Inline Doctor Editor for Form 043/u (Doctor Autonomy Mandate 1) */}
+						{isEditing043 && (
+							<div className="flex flex-col gap-1 pt-1 border-t border-zinc-800">
+								<div className="flex items-center justify-between text-[10px] text-zinc-400">
+									<span>Редактирование протокола 043/у ({resolvedPatient}):</span>
+									<span className="text-zinc-500 font-mono">{edited043Text.length} симв.</span>
+								</div>
+								<textarea
+									value={edited043Text}
+									onChange={(e) => setEdited043Text(e.target.value)}
+									rows={4}
+									className="w-full rounded bg-zinc-950 p-1.5 text-[10px] font-mono text-zinc-200 border border-zinc-700 focus:border-amber-400 focus:outline-none resize-none leading-relaxed"
+									placeholder="Текст протокола 043/у для медкарты..."
+									data-testid="cbct-ridge-043-textarea"
+								/>
+							</div>
+						)}
 					</div>
 
 					{/* 1-Click Action Buttons for Doctor */}

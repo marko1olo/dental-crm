@@ -431,7 +431,15 @@ export function PatientCreationModal({
 	) => {
 		if (event.key !== "Enter") return;
 		event.preventDefault();
-		if (!quickActionReady) return;
+		if (!quickActionReady) {
+			if (!newPatientName.trim() && !isEmergencyOrPrimary) {
+				showToast(
+					"Укажите имя пациента или включите CITO для экстренной записи",
+					"warning",
+				);
+			}
+			return;
+		}
 		void handleCreate();
 	};
 

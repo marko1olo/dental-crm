@@ -211,16 +211,18 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		setIsAiAuditing(true);
 		setAiAuditError(null);
 		try {
-			const res = await requestTreatmentPlanAiValidationAndComment({
-				patientName,
-				doctorName: doctorFullName,
-				selectedTierTitle: selectedTier.title,
-				teeth: teeth && teeth.length > 0 ? teeth : DEFAULT_SAMPLE_TEETH,
-				stages: selectedTier.stages,
-				totalRub: selectedTier.totalRub,
-				warrantyYears: typeof selectedTier.warrantyYears === "number" ? selectedTier.warrantyYears : 2,
-				monthlyInstallment12Rub: selectedTier.monthlyInstallment12Rub,
-			});
+			const res = await requestTreatmentPlanAiValidationAndComment(
+				selectedTier.stages,
+				{
+					patientName,
+					doctorName: doctorFullName,
+					selectedTierTitle: selectedTier.title,
+					teeth: teeth && teeth.length > 0 ? teeth : DEFAULT_SAMPLE_TEETH,
+					totalRub: selectedTier.totalRub,
+					warrantyYears: typeof selectedTier.warrantyYears === "number" ? selectedTier.warrantyYears : 2,
+					monthlyInstallment12Rub: selectedTier.monthlyInstallment12Rub,
+				},
+			);
 			setAiAuditResult(res);
 		} catch (err: any) {
 			setAiAuditError("Не удалось связаться с ИИ-сервером. Отображаются локальные клинические правила СтАР.");
@@ -292,7 +294,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 	const recalculateTierFromStages = (
 		tier: TreatmentPlanTier,
-		updatedStages: TreatmentPlanStage[],
+		updatedStages: readonly TreatmentPlanStage[],
 	): TreatmentPlanTier => {
 		const totalKopecks = sumKopecks(updatedStages.map((s) => s.totalKopecks));
 		const totalRub = Math.round(totalKopecks / 100);
@@ -300,14 +302,17 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		const ndflBreakdown = calculatePlanTaxDeductionBreakdown(allItems);
 		const isHighCost = ndflBreakdown.hasCode02ExpensiveServices;
 		const ndflDetails: NdflDeductionResult = {
-			grossKopecks: totalKopecks,
-			refundKopecks: ndflBreakdown.totalRefundKopecks,
-			finalPriceWithRefundKopecks: (totalKopecks - ndflBreakdown.totalRefundKopecks) as Kopecks,
-			refundRub: Math.round(ndflBreakdown.totalRefundKopecks / 100),
-			finalPriceWithRefundRub: Math.round((totalKopecks - ndflBreakdown.totalRefundKopecks) / 100),
+			code: isHighCost ? "02" : "01",
+			codeDescription: isHighCost
+				? "Дорогостоящее лечение (Код 02) — вычет со всей суммы без ограничений"
+				: "Обычное лечение (Код 01) — лимит базы 150 000 ₽",
+			isHighCostCode02: isHighCost,
 			isHighCostTreatment: isHighCost,
-			socialTaxCapKopecks: 15000000 as Kopecks,
-			appliedRatePercent: 13,
+			baseKopecks: totalKopecks as Kopecks,
+			refundKopecks: ndflBreakdown.grandTotalRefund13Kopecks as Kopecks,
+			refundRub: ndflBreakdown.grandTotalRefund13Rub,
+			finalPriceWithRefundRub: ndflBreakdown.netPriceWithRefundRub,
+			annualLimitRub: isHighCost ? undefined : 150000,
 		};
 
 		const installments = computeTierInstallments(totalKopecks);
@@ -635,6 +640,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 							todayRu={todayRu}
 							watermarkText={watermarkText}
 							getTierLetter={getTierLetter}
+							patientId={patientId}
+							planAgeDays={planAgeDays}
 						/>
 					)}
 

@@ -34,6 +34,8 @@ export interface TreatmentPlanPresenterComparisonTabProps {
 	readonly onToggleStage: (stageNum: number) => void;
 	readonly onToggleAllStages: (expand: boolean) => void;
 	readonly showMicroConsumables: boolean;
+	readonly setShowMicroConsumables?: (React.Dispatch<React.SetStateAction<boolean>> | ((fn: (prev: boolean) => boolean) => void)) | undefined;
+	readonly setActiveTab?: ((tab: "comparison" | "stages" | "finance" | "print" | "aiAudit") => void) | undefined;
 	readonly onUpdateItemPrice: (itemId: string, newPriceRub: number) => void;
 	readonly onConfirmPatientChoice: (tier?: TreatmentPlanTier) => void;
 	readonly isChoiceConfirmed: boolean;
@@ -51,6 +53,8 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 	onToggleStage,
 	onToggleAllStages,
 	showMicroConsumables,
+	setShowMicroConsumables,
+	setActiveTab,
 	onUpdateItemPrice,
 	onConfirmPatientChoice,
 	isChoiceConfirmed,
@@ -149,7 +153,7 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 															type="button"
 															onClick={(e) => {
 																e.stopPropagation();
-																setActiveTab("finance");
+																setActiveTab?.("finance");
 															}}
 															className="treatment-tier-ndfl-calc-btn cursor-pointer"
 															title="1-клик детальный расчет вычета 13% НДФЛ и справка ФНС"
@@ -422,7 +426,7 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 																								</span>
 																								<button
 																									type="button"
-																									onClick={() => setShowMicroConsumables((prev) => !prev)}
+																									onClick={() => setShowMicroConsumables?.((prev) => !prev)}
 																									className="text-[var(--teal)] hover:underline font-bold text-xs cursor-pointer ml-auto"
 																								>
 																									{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}

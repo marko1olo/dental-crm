@@ -86,7 +86,7 @@ export function drawPanoramicOverlay(
 	// Axial Plane Intersection Line
 	if (volume) {
 		const centerZMm = activePano.centerZMm ?? (archCurve.planeZMm ?? 0.0);
-		const panoHMm = 38.0;
+		const panoHMm = activePano.heightMm ?? 74.0;
 		const zTopMm = centerZMm + panoHMm / 2.0;
 		const zBottomMm = centerZMm - panoHMm / 2.0;
 		const zPx = Math.round(((zTopMm - crosshairMm.z) / panoHMm) * activePano.heightPx);
@@ -120,6 +120,10 @@ export function drawPanoramicOverlay(
 			archCurve,
 			activePano.widthPx,
 			activePano.heightPx,
+			{
+				heightMm: activePano.heightMm ?? 74.0,
+				centerZMm: activePano.centerZMm ?? (archCurve.planeZMm ?? 0.0),
+			},
 		);
 
 		if (projectedNerve.projectedPoints.length > 1) {
@@ -182,7 +186,7 @@ export function drawPanoramicOverlay(
 			archCurve.totalArcLengthMm,
 		);
 		const panoH = activePano.heightPx;
-		const panoHMm = 38.0;
+		const panoHMm = activePano.heightMm ?? 74.0;
 		const centerZMm = activePano.centerZMm ?? (archCurve.planeZMm ?? 0.0);
 		const zTopMm = centerZMm + panoHMm / 2.0;
 
@@ -302,7 +306,7 @@ export function drawPanoramicOverlay(
 		widthPx: activePano.widthPx,
 		heightPx: activePano.heightPx,
 		pixelSpacingMmX: archCurve.totalArcLengthMm / activePano.widthPx,
-		pixelSpacingMmY: 38.0 / activePano.heightPx,
+		pixelSpacingMmY: (activePano.heightMm ?? 74.0) / activePano.heightPx,
 		showScaleBar: false,
 		invertColors,
 		transform,

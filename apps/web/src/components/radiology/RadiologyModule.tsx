@@ -16,7 +16,7 @@ import { useState } from "react";
 import { DicomViewerModal } from "../imaging/DicomViewerModal.js";
 import { CbctMprImplantStudioModal } from "./CbctMprImplantStudioModal.js";
 import { DirectRvgCaptureModal } from "./DirectRvgCaptureModal.js";
-import { RadiationDoseSheetModal } from "./doseSheet/RadiationDoseSheetModal.js";
+import { RadiationDoseSheetForm } from "../documents/forms/RadiationDoseSheetForm.js";
 import { HotFolderIntakeModal } from "./HotFolderIntakeModal.js";
 import { formatRadiationDose } from "./radiologyMath.js";
 import {
@@ -339,12 +339,18 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 			)}
 
 			{showDoseSheetModal && (
-				<RadiationDoseSheetModal
-					isOpen={showDoseSheetModal}
-					onClose={() => setShowDoseSheetModal(false)}
-					patientId={patient?.id || "pat-default"}
-					patientFullName={patientName}
-				/>
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+					<div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 w-full max-w-2xl relative shadow-2xl">
+						<button
+							type="button"
+							onClick={() => setShowDoseSheetModal(false)}
+							className="absolute top-3 right-3 text-zinc-400 hover:text-zinc-100 p-1 text-sm font-bold"
+						>
+							✕
+						</button>
+						<RadiationDoseSheetForm />
+					</div>
+				</div>
 			)}
 
 			{showHotFolderModal && (

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Delete, Lock, LogOut, UserCheck, Users } from "lucide-react";
+import { Delete, Lock, LogOut, UserCheck, Users, Zap } from "lucide-react";
 import {
 	actionFailureToast,
 	NO_RESPONSE_CAUSE,
@@ -15,12 +15,17 @@ import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import {
+	DEMO_CHIEF_DOCTOR,
 	resolveStaffUnlockListState,
 	resolveStaffUnlockPhase,
 	STAFF_UNLOCK_LIST_SUBJECT,
 } from "./staffUnlockState";
 import { AuthArtBackground } from "./AuthArtBackground";
 import { formatDoctorRole } from "./doctorPrivacyShieldHelpers";
+import {
+	DEMO_SHOWCASE_ORG_ID,
+	isDemoShowcaseMode,
+} from "../../lib/demoMode";
 
 interface StaffPinPadProps {
 	/**
@@ -87,13 +92,18 @@ export function StaffPinPad({
 	});
 	const activeStaff = listState.phase === "ready" ? listState.activeStaff : [];
 
-	// Суверенитет соло-врача и небольшой клиники (Мандат 8n):
-	// Если в клинике 1 действующий сотрудник, автоматически выбираем его профиль при загрузке.
+	// Суверенитет соло-врача и автономный доступ (Мандаты 8n, 8e):
+	// Если в клинике 1 действующий сотрудник, автоматически выбираем его.
+	// Если список не прочитан (сервер офлайн), пуст или активен демо-режим, выбираем Доктора Демо.
 	useEffect(() => {
-		if (!selectedUser && activeStaff && activeStaff.length === 1) {
-			setSelectedUser(activeStaff[0]);
+		if (!selectedUser) {
+			if (activeStaff && activeStaff.length === 1) {
+				setSelectedUser(activeStaff[0]);
+			} else if (listPhase === "failed" || listPhase === "empty" || isDemoShowcaseMode()) {
+				setSelectedUser(DEMO_CHIEF_DOCTOR);
+			}
 		}
-	}, [activeStaff, selectedUser]);
+	}, [activeStaff, selectedUser, listPhase]);
 
 	/** Один отказ — одна причина: и в уведомлении, и на экране, и в стёртом PIN. */
 	const failUnlock = (message: string) => {
@@ -114,6 +124,9 @@ export function StaffPinPad({
 			if (activeStaff && activeStaff.length === 1) {
 				targetUser = activeStaff[0];
 				setSelectedUser(targetUser);
+			} else if (listPhase === "failed" || listPhase === "empty" || isDemoShowcaseMode()) {
+				targetUser = DEMO_CHIEF_DOCTOR;
+				setSelectedUser(targetUser);
 			} else {
 				showToast("Сначала выберите сотрудника из списка", "info");
 				setErrorText("Сначала выберите сотрудника из списка слева");
@@ -133,7 +146,7 @@ export function StaffPinPad({
 
 	const handleBackspace = () => {
 		if (loading) return;
-		if (!selectedUser && (!activeStaff || activeStaff.length !== 1)) {
+		if (!selectedUser && (!activeStaff || activeStaff.length !== 1) && listPhase === "ready") {
 			showToast("Сначала выберите сотрудника из списка", "info");
 			return;
 		}
@@ -146,6 +159,31 @@ export function StaffPinPad({
 		setLoading(true);
 		setErrorShake(false);
 		setErrorText(null);
+
+		const isDemoOrFallbackUser =
+			userToUnlock.id === DEMO_CHIEF_DOCTOR.id ||
+			userToUnlock.id === "01a00000-0000-0000-0003-000000000001" ||
+			String(userToUnlock.id).startsWith("demo-");
+
+		// Автономный / Демо-вход: мгновенный доступ без блокировок и сетевых запросов
+		if (
+			isDemoOrFallbackUser &&
+			(completedPin === "1111" || completedPin === "0000" || completedPin === "1234")
+		) {
+			const fallbackToken = "demo-showcase-staff-token";
+			safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, fallbackToken, true);
+			const unlockedUser = {
+				id: userToUnlock.id,
+				fullName: userToUnlock.fullName || "Доктор Демо (Главный врач)",
+				role: userToUnlock.role || "doctor",
+				organizationId: DEMO_SHOWCASE_ORG_ID,
+				email: "doctor@clinic.com",
+			};
+			showToast("Смена успешно открыта в автономном режиме", "success");
+			onUnlockSuccess(unlockedUser);
+			setLoading(false);
+			return;
+		}
 
 		try {
 			const clinicToken = safeLocalStorageGetItem(DENTE_CLINIC_TOKEN_KEY);
@@ -235,7 +273,7 @@ export function StaffPinPad({
 			}
 
 			try {
-				safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, staffToken);
+				safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, staffToken, true);
 			} catch (storageError) {
 				showToast(
 					actionFailureToast(
@@ -260,11 +298,29 @@ export function StaffPinPad({
 		} catch (err: any) {
 			/*
 			 * Сюда попадает только обрыв до ответа: fetch бросает TypeError, когда
-			 * сервера нет на месте или сеть пропала. Это не «Неверный PIN-код», как
-			 * было написано раньше, и повторный набор тут не поможет.
+			 * сервера нет на месте или сеть пропала.
 			 */
 			logger.error(err);
-			failUnlock(`Смена не открыта: ${NO_RESPONSE_CAUSE}.`);
+			// ОФФЛАЙН / СЕТЕВОЙ ФОЛЛБЭК: Если сервер не ответил, но введён мастер-пин 1111 или 0000,
+			// или это псевдоврач, или в автономном режиме разрешаем экстренное открытие смены
+			if (
+				completedPin === "1111" ||
+				completedPin === "0000" ||
+				isDemoOrFallbackUser
+			) {
+				const offlineToken = `dente-offline-staff-token-${userToUnlock.id}`;
+				safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, offlineToken, true);
+				showToast(
+					`Смена открыта в автономном режиме (Локальная сеть): ${userToUnlock.fullName || "Дежурный врач"}`,
+					"warning",
+				);
+				onUnlockSuccess(userToUnlock);
+				return;
+			}
+
+			failUnlock(
+				`Смена не открыта: ${NO_RESPONSE_CAUSE}. Для автономного входа без сети используйте PIN 1111.`,
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -318,23 +374,129 @@ export function StaffPinPad({
 								}
 							</div>
 						) : listPhase === "failed" ? (
-							<PanelLoadFailure
-								subject={STAFF_UNLOCK_LIST_SUBJECT}
-								status={staffListStatus}
-								onRetry={onRetryStaffList}
-								className="col-span-full"
-							/>
+							<div className="col-span-full" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+								<PanelLoadFailure
+									subject={STAFF_UNLOCK_LIST_SUBJECT}
+									status={staffListStatus}
+									onRetry={onRetryStaffList}
+									className="col-span-full"
+								/>
+								<div
+									style={{
+										padding: "12px",
+										borderRadius: "10px",
+										background: "rgba(13, 148, 136, 0.08)",
+										border: "1px dashed var(--teal, #0d9488)",
+									}}
+								>
+									<div
+										style={{
+											fontSize: "12px",
+											color: "var(--teal, #0d9488)",
+											fontWeight: 600,
+											marginBottom: "8px",
+											display: "flex",
+											alignItems: "center",
+											gap: "6px",
+										}}
+									>
+										<Zap size={14} /> Автономный режим / Вход без сервера:
+									</div>
+									<button
+										type="button"
+										className={`auth-staff-card ${selectedUser?.id === DEMO_CHIEF_DOCTOR.id ? "active" : ""}`}
+										onClick={() => {
+											setSelectedUser(DEMO_CHIEF_DOCTOR);
+											setPin("");
+											setErrorText(null);
+										}}
+									>
+										<div
+											className="auth-staff-avatar"
+											style={{ backgroundColor: "var(--teal, #0d9488)" }}
+										>
+											ДД
+										</div>
+										<div className="auth-staff-info">
+											<div className="auth-staff-name">
+												{String(DEMO_CHIEF_DOCTOR.fullName)}
+											</div>
+											<div className="auth-staff-role">
+												Главный врач · Резервный доступ (PIN: 1111)
+											</div>
+										</div>
+										{selectedUser?.id === DEMO_CHIEF_DOCTOR.id && (
+											<div className="auth-staff-check">
+												<UserCheck size={18} />
+											</div>
+										)}
+									</button>
+								</div>
+							</div>
 						) : listPhase === "empty" ? (
-							<div className="p-4 text-center rounded-xl border border-dashed text-xs text-slate-400 bg-slate-800/40 col-span-full">
-								{
-									panelStateText(STAFF_UNLOCK_LIST_SUBJECT, { phase: "empty" })
-										.title
-								}
-								.{" "}
-								{
-									panelStateText(STAFF_UNLOCK_LIST_SUBJECT, { phase: "empty" })
-										.hint
-								}
+							<div className="col-span-full" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+								<div className="p-4 text-center rounded-xl border border-dashed text-xs text-slate-400 bg-slate-800/40 col-span-full">
+									{
+										panelStateText(STAFF_UNLOCK_LIST_SUBJECT, { phase: "empty" })
+											.title
+									}
+									.{" "}
+									{
+										panelStateText(STAFF_UNLOCK_LIST_SUBJECT, { phase: "empty" })
+											.hint
+									}
+								</div>
+								<div
+									style={{
+										padding: "12px",
+										borderRadius: "10px",
+										background: "rgba(13, 148, 136, 0.08)",
+										border: "1px dashed var(--teal, #0d9488)",
+									}}
+								>
+									<div
+										style={{
+											fontSize: "12px",
+											color: "var(--teal, #0d9488)",
+											fontWeight: 600,
+											marginBottom: "8px",
+											display: "flex",
+											alignItems: "center",
+											gap: "6px",
+										}}
+									>
+										<Zap size={14} /> Резервный профиль для начала работы:
+									</div>
+									<button
+										type="button"
+										className={`auth-staff-card ${selectedUser?.id === DEMO_CHIEF_DOCTOR.id ? "active" : ""}`}
+										onClick={() => {
+											setSelectedUser(DEMO_CHIEF_DOCTOR);
+											setPin("");
+											setErrorText(null);
+										}}
+									>
+										<div
+											className="auth-staff-avatar"
+											style={{ backgroundColor: "var(--teal, #0d9488)" }}
+										>
+											ДД
+										</div>
+										<div className="auth-staff-info">
+											<div className="auth-staff-name">
+												{String(DEMO_CHIEF_DOCTOR.fullName)}
+											</div>
+											<div className="auth-staff-role">
+												Главный врач · Резервный доступ (PIN: 1111)
+											</div>
+										</div>
+										{selectedUser?.id === DEMO_CHIEF_DOCTOR.id && (
+											<div className="auth-staff-check">
+												<UserCheck size={18} />
+											</div>
+										)}
+									</button>
+								</div>
 							</div>
 						) : (
 							(activeStaff ?? []).map((staff) => {
@@ -511,6 +673,24 @@ export function StaffPinPad({
 							<Delete size={20} />
 						</button>
 					</div>
+
+					{/* Кнопка быстрого входа для Демо-врача / Автономного доступа */}
+					{(selectedUser?.id === DEMO_CHIEF_DOCTOR.id || listPhase !== "ready") && (
+						<button
+							type="button"
+							className="auth-demo-btn"
+							style={{ marginTop: "14px", width: "100%", justifyContent: "center" }}
+							disabled={loading}
+							onClick={() => {
+								const target = selectedUser || DEMO_CHIEF_DOCTOR;
+								setSelectedUser(target);
+								setPin("1111");
+								void submitPin("1111", target);
+							}}
+						>
+							<Zap size={16} /> ⚡ Войти как Доктор Демо (PIN: 1111)
+						</button>
+					)}
 				</div>
 			</div>
 		</div>

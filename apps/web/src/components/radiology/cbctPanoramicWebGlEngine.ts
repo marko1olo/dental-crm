@@ -100,6 +100,7 @@ export class WebGl2PanoramicEngine {
 		archPolyCoeffs: WebGLUniformLocation | null;
 		useAnalyticalPoly: WebGLUniformLocation | null;
 		anteriorTroughRatio: WebGLUniformLocation | null;
+		sharpenAmount: WebGLUniformLocation | null;
 	} | null = null;
 
 	constructor(gl: WebGL2RenderingContext) {
@@ -142,6 +143,7 @@ export class WebGl2PanoramicEngine {
 			archPolyCoeffs: gl.getUniformLocation(prog, "u_archPolyCoeffs"),
 			useAnalyticalPoly: gl.getUniformLocation(prog, "u_useAnalyticalPoly"),
 			anteriorTroughRatio: gl.getUniformLocation(prog, "u_anteriorTroughRatio"),
+			sharpenAmount: gl.getUniformLocation(prog, "u_sharpenAmount"),
 		};
 		return true;
 	}
@@ -155,21 +157,24 @@ export class WebGl2PanoramicEngine {
 			if (!this.init()) return null;
 		}
 		const gl = this.gl;
+		const defaultHeightMm = volume?.physicalSizeMm?.z ? Math.min(78.0, Math.max(55.0, volume.physicalSizeMm.z * 0.98)) : 74.0;
 		const {
-			heightMm = 38.0,
-			heightPx = 220,
+			heightMm = defaultHeightMm,
+			heightPx,
 			widthPx,
-			windowWidth = 3500,
-			windowLevel = 800,
+			windowWidth = 2000,
+			windowLevel = 450,
 			projectionMode = "mip",
 			centerZMm: userCenterZMm,
 			invert = false,
 			coarsePreview = false,
 		} = options;
 
-		const effectiveThickness = options.focalTroughThicknessMm ?? archCurve?.focalTroughThicknessMm ?? 14.0;
-		const outH = heightPx;
-		const outW = widthPx ?? Math.max(500, Math.round(archCurve.totalArcLengthMm / (volume.spacingMm?.x || 0.35)));
+		const effectiveThickness = options.focalTroughThicknessMm ?? archCurve?.focalTroughThicknessMm ?? 7.0;
+		// Isometric CPR resolution: 1 mm along arc = 1 mm along Z
+		const pixelSpacing = volume?.spacingMm?.x || 0.25;
+		const outW = widthPx ?? Math.max(500, Math.round(archCurve.totalArcLengthMm / pixelSpacing));
+		const outH = heightPx ?? Math.max(200, Math.round(heightMm / pixelSpacing));
 
 		const centerZMm = resolveOcclusalCenterZ(volume, archCurve, userCenterZMm);
 		const splinePoints = archCurve.splinePointsMm;
@@ -378,8 +383,8 @@ export class WebGl2PanoramicEngine {
 
 		gl.uniform1i(this.uniforms!.flipY, 0); // readPixels alignment: row 0 is zTopMm
 
-		const effectiveWW = windowWidth ?? (volume.defaultWindowWidth && volume.defaultWindowWidth <= 3800 ? volume.defaultWindowWidth : 3500);
-		const effectiveWL = windowLevel ?? (volume.defaultWindowLevel && volume.defaultWindowLevel <= 1000 && volume.defaultWindowLevel >= 500 ? volume.defaultWindowLevel : 800);
+		const effectiveWW = windowWidth ?? (volume.defaultWindowWidth && volume.defaultWindowWidth <= 3200 ? volume.defaultWindowWidth : 2000);
+		const effectiveWL = windowLevel ?? (volume.defaultWindowLevel && volume.defaultWindowLevel <= 800 && volume.defaultWindowLevel >= 350 ? volume.defaultWindowLevel : 450);
 		gl.uniform1f(this.uniforms!.windowWidth, effectiveWW);
 		gl.uniform1f(this.uniforms!.windowLevel, effectiveWL);
 		gl.uniform1i(this.uniforms!.invert, invert ? 1 : 0);
@@ -395,6 +400,11 @@ export class WebGl2PanoramicEngine {
 			? Math.max(0.1, Math.min(1.0, options.anteriorTroughRatio))
 			: 0.65;
 		gl.uniform1f(this.uniforms!.anteriorTroughRatio, effAnteriorRatio);
+
+		const effSharpen = (options as any).sharpenAmount ?? ((options as any).sharpen ? 0.18 : 0.0);
+		if (this.uniforms!.sharpenAmount) {
+			gl.uniform1f(this.uniforms!.sharpenAmount, effSharpen);
+		}
 
 		// Draw quad
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -412,6 +422,8 @@ export class WebGl2PanoramicEngine {
 			heightPx: outH,
 			focalThicknessMm: effectiveThickness,
 			centerZMm,
+			heightMm,
+			pixelSpacingMm: pixelSpacing,
 			pixelData,
 			toothMarkersOnPano,
 		};

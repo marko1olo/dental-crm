@@ -426,3 +426,6 @@ export const dicomReadinessCheckLabels: Record<
 	warn: "Проверить",
 	fail: "Нет",
 };
+
+export { mprProjectionCompassLabels } from "./mprControlMath";
+

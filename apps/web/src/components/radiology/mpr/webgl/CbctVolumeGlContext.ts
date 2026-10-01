@@ -76,6 +76,8 @@ export class CbctVolumeGlContext {
 	private lastAngles: ObliqueRotationAngles | null = null;
 	private lastCoords: GlSliceCoordinates | null = null;
 	private lastOptions: GlSliceRenderOptions | null = null;
+	private lastRenderTimeMs = 0;
+	private lastAllPlanesTimeMs = 0;
 
 	constructor(canvas?: HTMLCanvasElement) {
 		if (canvas) this.init(canvas);
@@ -102,6 +104,13 @@ export class CbctVolumeGlContext {
 				return false;
 			}
 			this.gl = gl;
+			// Immediately clear buffer to pure medical black (#000000) to eliminate white flashes
+			if (typeof gl.clearColor === "function") {
+				gl.clearColor(0.0, 0.0, 0.0, 1.0);
+			}
+			if (typeof gl.clear === "function" && typeof gl.COLOR_BUFFER_BIT === "number") {
+				gl.clear(gl.COLOR_BUFFER_BIT);
+			}
 			const success = this.setupShaders();
 			this.isInitialized = success;
 
@@ -184,6 +193,8 @@ export class CbctVolumeGlContext {
 	public getLastCrosshairMm(): Point3D | null { return this.lastCrosshairMm; }
 	public getLastObliqueAngles(): ObliqueRotationAngles | null { return this.lastAngles; }
 	public getLastSliceCoordinates(): GlSliceCoordinates | null { return this.lastCoords; }
+	public getLastRenderTimeMs(): number { return this.lastRenderTimeMs; }
+	public getLastAllPlanesTimeMs(): number { return this.lastAllPlanesTimeMs; }
 
 	public addContextRestoredListener(listener: () => void): () => void {
 		this.contextRestoredListeners.add(listener);
@@ -411,7 +422,11 @@ export class CbctVolumeGlContext {
 			gl.uniform1f(this.uniforms.sharpenAmount, sharpenAmount);
 		}
 
+		const tDrawStart = typeof performance !== "undefined" ? performance.now() : 0;
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		if (tDrawStart > 0 && typeof performance !== "undefined") {
+			this.lastRenderTimeMs = performance.now() - tDrawStart;
+		}
 
 		if (targetCanvas) {
 			const targetCtx = targetCanvas.getContext("2d");
@@ -480,12 +495,17 @@ export class CbctVolumeGlContext {
 			}
 		}
 
+		const tAllStart = typeof performance !== "undefined" ? performance.now() : 0;
 		const axial = this.renderSlice(volume, "axial", crosshairMm, angles, options, targets?.axial);
 		if (!axial) return null;
 		const coronal = this.renderSlice(volume, "coronal", crosshairMm, angles, options, targets?.coronal);
 		if (!coronal) return null;
 		const sagittal = this.renderSlice(volume, "sagittal", crosshairMm, angles, options, targets?.sagittal);
 		if (!sagittal) return null;
+
+		if (tAllStart > 0 && typeof performance !== "undefined") {
+			this.lastAllPlanesTimeMs = performance.now() - tAllStart;
+		}
 
 		return { axial, coronal, sagittal };
 	}
@@ -505,8 +525,8 @@ export class CbctVolumeGlContext {
 		this.lastAngles = { ...newAngles };
 		this.lastCrosshairMm = { ...crosshairMm };
 		const renderOptions: GlSliceRenderOptions = options ?? {
-			windowWidth: volume.defaultWindowWidth ?? 1500,
-			windowLevel: volume.defaultWindowLevel ?? 300,
+			windowWidth: volume.defaultWindowWidth ?? 4400,
+			windowLevel: volume.defaultWindowLevel ?? 1300,
 		};
 		const coords = this.renderSlice(volume, plane, crosshairMm, newAngles, renderOptions, targetCanvas);
 		if (!coords) return null;
@@ -528,8 +548,8 @@ export class CbctVolumeGlContext {
 		this.lastCrosshairMm = { ...newCrosshairMm };
 		this.lastAngles = { ...angles };
 		const renderOptions: GlSliceRenderOptions = options ?? {
-			windowWidth: volume.defaultWindowWidth ?? 1500,
-			windowLevel: volume.defaultWindowLevel ?? 300,
+			windowWidth: volume.defaultWindowWidth ?? 4400,
+			windowLevel: volume.defaultWindowLevel ?? 1300,
 		};
 		const coords = this.renderAllPlanes(volume, newCrosshairMm, angles, renderOptions, targets);
 		if (!coords) return null;
@@ -546,8 +566,8 @@ export class CbctVolumeGlContext {
 		this.lastCrosshairMm = { ...newCrosshairMm };
 		this.lastAngles = { ...angles };
 		const renderOptions: GlSliceRenderOptions = options ?? {
-			windowWidth: volume.defaultWindowWidth ?? 1500,
-			windowLevel: volume.defaultWindowLevel ?? 300,
+			windowWidth: volume.defaultWindowWidth ?? 4400,
+			windowLevel: volume.defaultWindowLevel ?? 1300,
 		};
 		return this.renderAllPlanes(volume, newCrosshairMm, angles, renderOptions, targets);
 	}

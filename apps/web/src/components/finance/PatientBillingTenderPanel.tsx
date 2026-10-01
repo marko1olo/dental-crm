@@ -27,7 +27,7 @@ export interface PatientBillingTenderPanelProps {
 		readonly shortageRub: number;
 	};
 	readonly primaryInputRef?: React.RefObject<HTMLInputElement | null> | undefined;
-	readonly onInputEnterKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+	readonly onInputEnterKeyDown?: ((e: React.KeyboardEvent<HTMLInputElement>) => void) | undefined;
 	readonly installmentSchedule: {
 		readonly stage1Rub: number;
 		readonly stage2Rub: number;

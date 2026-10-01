@@ -11,7 +11,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Compass, Maximize2, Minimize2, RotateCcw, Scissors } from "lucide-react";
+import { Box, ChevronDown, Compass, Maximize2, Minimize2, RotateCcw, Scissors } from "lucide-react";
 import type { CbctVoxelVolume } from "../cbctMprMath";
 import {
 	type Volume3DClippingBox,
@@ -22,6 +22,7 @@ import {
 	getVolume3DPreset,
 	getSafeDevicePixelRatio,
 	renderCanvas2DVolumeRaymarching,
+	renderCanvas2DPreviewSlice,
 } from "./cbctVolume3DMath";
 import {
 	type WebGlVolume3DState,
@@ -79,6 +80,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 			: [1.0, 1.0, 1.0],
 	});
 	const [isClippingOpen, setIsClippingOpen] = useState<boolean>(false);
+	const [isPresetOpen, setIsPresetOpen] = useState<boolean>(false);
 
 	const hasActiveClipping =
 		clipping.clipMin[0] > 0.001 ||
@@ -390,8 +392,12 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 			canvas.height = height;
 		}
 
-		// Attempt hardware WebGL2 raymarching first
-		if (!glStateRef.current || glStateRef.current.gl.canvas !== canvas) {
+		// Attempt hardware WebGL2 raymarching first (STRICT GPU PRIORITY)
+		if (
+			!glStateRef.current ||
+			glStateRef.current.gl.canvas !== canvas ||
+			(typeof glStateRef.current.gl.isContextLost === "function" && glStateRef.current.gl.isContextLost())
+		) {
 			try {
 				const gl = canvas.getContext("webgl2", {
 					alpha: false,
@@ -400,22 +406,21 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					preserveDrawingBuffer: true,
 					powerPreference: "high-performance",
 				});
-				if (gl) {
+				if (gl && !(typeof gl.isContextLost === "function" && gl.isContextLost())) {
 					glStateRef.current = initWebGl2VolumeRaymarching(gl);
 				} else {
-					console.error("[CbctVolume3D] canvas.getContext('webgl2') returned null!");
+					glStateRef.current = null;
 				}
-			} catch (e) {
-				console.error("[CbctVolume3D] getContext threw exception:", e);
+			} catch {
 				glStateRef.current = null;
 			}
 		}
 
-		if (glStateRef.current) {
+		if (glStateRef.current && !(typeof glStateRef.current.gl.isContextLost === "function" && glStateRef.current.gl.isContextLost())) {
 			if (!volume || !volume.data) {
 				const gl = glStateRef.current.gl;
 				gl.viewport(0, 0, width, height);
-				gl.clearColor(0.035, 0.035, 0.043, 1.0);
+				gl.clearColor(0.0, 0.0, 0.0, 1.0);
 				gl.clear(gl.COLOR_BUFFER_BIT);
 				return;
 			}
@@ -440,8 +445,8 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 			}
 		}
 
-		// Fallback to Canvas2D software raymarching (used in headless test environments like jsdom/node test)
-		renderCanvas2DVolumeRaymarching(
+		// Fallback to Canvas2D lightweight preview slice (FEAT-GPU-SAFEGUARD: blocks CPU-killing 224MB raymarching)
+		renderCanvas2DPreviewSlice(
 			canvas,
 			volume,
 			activePreset,
@@ -469,6 +474,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					? "ring-1 ring-cyan-500/50 border border-cyan-500/80 shadow-cyan-950/30"
 					: "border border-cyan-500/30 hover:border-cyan-500/60"
 			} ${extraClassName}`}
+			style={{ backgroundColor: "#000000" }}
 			data-testid="cbct-viewport-container-volume3d"
 		>
 			{/* TOP HEADER CONTROLS */}
@@ -478,37 +484,60 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 
 				{/* Right: Presets, Angles & Reset */}
 				<div className="flex items-center gap-1 bg-zinc-950/80 backdrop-blur-md px-1.5 py-0.5 rounded-md border border-zinc-800 shadow-md">
-					{/* Preset Selector Chips */}
-					<div className="flex items-center gap-1">
-						{ALL_CBCT_VOLUME_3D_PRESETS.map((p) => {
-							const isSelected = p.id === activePreset;
-							return (
-								<button
-									key={p.id}
-									type="button"
-									onClick={() => setActivePreset(p.id)}
-									title={`${p.label}: ${p.description} (${p.huMin}..${p.huMax} HU)`}
-									className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer ${
-										isSelected
-											? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold"
-											: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
-									}`}
-									data-testid={`cbct-preset-chip-${p.id}`}
-								>
-									{p.shortLabel}
-								</button>
-							);
-						})}
+					{/* Compact Preset Selector Popover */}
+					<div className="relative shrink-0">
+						<button
+							type="button"
+							onClick={() => setIsPresetOpen((prev) => !prev)}
+							className="px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 bg-zinc-900 border border-zinc-700 hover:border-cyan-500/60 text-cyan-300 transition-colors cursor-pointer"
+							data-testid="cbct-volume-3d-preset-trigger"
+							title={`3D Пресет: ${activePresetSpec.label} (${activePresetSpec.huMin}..${activePresetSpec.huMax} HU)`}
+						>
+							<Box className="w-3 h-3 text-cyan-400" />
+							<span>3D: {activePresetSpec.shortLabel}</span>
+							<ChevronDown className="w-2.5 h-2.5 text-zinc-400" />
+						</button>
+
+						{isPresetOpen && (
+							<div
+								className="absolute left-0 top-full mt-1 z-40 bg-zinc-950/95 backdrop-blur-md p-1.5 rounded-md border border-zinc-700 shadow-2xl flex flex-col gap-1 min-w-[140px]"
+								data-testid="cbct-volume-3d-presets-menu"
+							>
+								{ALL_CBCT_VOLUME_3D_PRESETS.map((p) => {
+									const isSelected = p.id === activePreset;
+									return (
+										<button
+											key={p.id}
+											type="button"
+											onClick={() => {
+												setActivePreset(p.id);
+												setIsPresetOpen(false);
+											}}
+											title={`${p.label}: ${p.description} (${p.huMin}..${p.huMax} HU)`}
+											className={`px-2 py-1 rounded text-[10px] font-semibold text-left transition-colors cursor-pointer flex items-center justify-between ${
+												isSelected
+													? "bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40"
+													: "text-zinc-300 hover:text-white hover:bg-zinc-800"
+											}`}
+											data-testid={`cbct-preset-chip-${p.id}`}
+										>
+											<span>{p.label}</span>
+											<span className="font-mono text-[9px] text-zinc-500">{p.huMin} HU</span>
+										</button>
+									);
+								})}
+							</div>
+						)}
 					</div>
 
-					<div className="w-[1px] h-3.5 bg-zinc-800 mx-0.5" />
+					<div className="w-[1px] h-3.5 bg-zinc-800 mx-0.5 shrink-0" />
 
 					{/* Orthogonal Angle Shortcuts */}
 					<button
 						type="button"
 						onClick={() => handleSetOrientation("coronal")}
 						title="Фронтальная проекция (Фас / Coronal)"
-						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
 						data-testid="cbct-btn-orientation-coronal"
 					>
 						Фас
@@ -517,7 +546,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 						type="button"
 						onClick={() => handleSetOrientation("sagittal")}
 						title="Сагиттальная проекция (Профиль / Sagittal)"
-						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
 						data-testid="cbct-btn-orientation-sagittal"
 					>
 						Профиль
@@ -526,7 +555,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 						type="button"
 						onClick={() => handleSetOrientation("isometric")}
 						title="Ракурс 3/4 (Изометрия челюсти)"
-						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+						className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
 						data-testid="cbct-btn-orientation-isometric"
 					>
 						3/4
@@ -705,7 +734,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 			)}
 
 			{/* INTERACTIVE 3D SKULL CANVAS */}
-			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full">
+			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
 				<canvas
 					ref={canvasRef}
 					onMouseDown={handleMouseDown}
@@ -718,6 +747,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					onTouchEnd={handleTouchEnd}
 					onTouchCancel={handleTouchEnd}
 					onContextMenu={(e) => e.preventDefault()}
+					style={{ backgroundColor: "#000000" }}
 					className="absolute inset-0 w-full h-full object-contain cursor-grab active:cursor-grabbing z-0"
 					data-testid="cbct-volume-3d-canvas"
 				/>
@@ -754,6 +784,23 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 							<span>Срез</span>
 						</span>
 					)}
+					<span
+						className={`font-mono font-semibold px-1.5 py-0.5 rounded text-[9px] ${
+							glStateRef.current && !(typeof glStateRef.current.gl.isContextLost === "function" && glStateRef.current.gl.isContextLost())
+								? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+								: "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+						}`}
+						title={
+							glStateRef.current && !(typeof glStateRef.current.gl.isContextLost === "function" && glStateRef.current.gl.isContextLost())
+								? "Аппаратный рендеринг GPU WebGL2 активен (< 2 мс / кадр, CPU спит)"
+								: "WebGL2 офлайн: активен безопасный легкий 2D превью-срез (Защита CPU)"
+						}
+						data-testid="cbct-hud-gpu-status"
+					>
+						{glStateRef.current && !(typeof glStateRef.current.gl.isContextLost === "function" && glStateRef.current.gl.isContextLost())
+							? "⚡ GPU (<2 мс)"
+							: "⚠️ CPU Превью"}
+					</span>
 					<span className="text-cyan-300 font-bold font-mono">
 						HU {activePresetSpec.huMin}..{activePresetSpec.huMax}
 					</span>

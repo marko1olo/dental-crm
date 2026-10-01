@@ -39,7 +39,7 @@ describe("Orthodontic Materials & 90% CIS Market Catalog Test Suite", () => {
 	describe("1. Orthodontic Bracket Systems (90% CIS Market)", () => {
 		it("contains at least 6 strictly ranked bracket systems with Damon Q2 as #1 market leader", () => {
 			assert.ok(ORTHO_BRACKET_MATERIALS.length >= 6);
-			const leader = ORTHO_BRACKET_MATERIALS[0];
+			const leader = ORTHO_BRACKET_MATERIALS[0]!;
 			assert.equal(leader.marketRank, 1);
 			assert.equal(leader.isMarketLeader, true);
 			assert.ok(leader.nameRu.includes("Damon Q2"), "Damon Q2 must be #1 market leader in CIS");
@@ -48,7 +48,7 @@ describe("Orthodontic Materials & 90% CIS Market Catalog Test Suite", () => {
 
 		it("maintains strict ascending marketRank order (1, 2, 3...)", () => {
 			for (let i = 0; i < ORTHO_BRACKET_MATERIALS.length; i++) {
-				assert.equal(ORTHO_BRACKET_MATERIALS[i].marketRank, i + 1);
+				assert.equal(ORTHO_BRACKET_MATERIALS[i]!.marketRank, i + 1);
 			}
 		});
 
@@ -79,7 +79,7 @@ describe("Orthodontic Materials & 90% CIS Market Catalog Test Suite", () => {
 	describe("2. Orthodontic Clear Aligners Systems (90% CIS Market)", () => {
 		it("contains top aligner brands with 3D Smile as #1 Russian market leader", () => {
 			assert.ok(ORTHO_ALIGNER_MATERIALS.length >= 6);
-			const leader = ORTHO_ALIGNER_MATERIALS[0];
+			const leader = ORTHO_ALIGNER_MATERIALS[0]!;
 			assert.equal(leader.marketRank, 1);
 			assert.ok(leader.nameRu.includes("3D Smile"), "3D Smile must be #1 Russian market leader");
 		});
@@ -104,7 +104,7 @@ describe("Orthodontic Materials & 90% CIS Market Catalog Test Suite", () => {
 
 	describe("3. Orthodontic Archwires (NiTi, CuNiTi, TMA, SS)", () => {
 		it("contains Cu-Ni-Ti as #1 initiating thermoactive archwire", () => {
-			const leader = ORTHO_ARCHWIRE_MATERIALS[0];
+			const leader = ORTHO_ARCHWIRE_MATERIALS[0]!;
 			assert.equal(leader.marketRank, 1);
 			assert.ok(leader.nameRu.includes("Copper Ni-Ti") || leader.nameRu.includes("Cu-Ni-Ti"));
 		});
@@ -127,7 +127,7 @@ describe("Orthodontic Materials & 90% CIS Market Catalog Test Suite", () => {
 
 	describe("4. Orthodontic Miniscrews / TADs", () => {
 		it("contains Bio-Ray as #1 CIS market leader in miniscrews", () => {
-			const leader = ORTHO_MINISCREW_MATERIALS[0];
+			const leader = ORTHO_MINISCREW_MATERIALS[0]!;
 			assert.equal(leader.marketRank, 1);
 			assert.ok(leader.nameRu.includes("Bio-Ray"), "Bio-Ray must be #1 miniscrew");
 		});
@@ -151,7 +151,7 @@ describe("Orthodontic Materials & 90% CIS Market Catalog Test Suite", () => {
 		it("finds orthodontic materials via getClinicalMaterialsByDomain", () => {
 			const brackets = getClinicalMaterialsByDomain("ortho_bracket");
 			assert.ok(brackets.length >= 6);
-			assert.equal(brackets[0].id, "ortho_bracket_damon_q2");
+			assert.equal(brackets[0]!.id, "ortho_bracket_damon_q2");
 
 			const aligners = getClinicalMaterialsByDomain("ortho_aligner");
 			assert.ok(aligners.length >= 6);
@@ -170,7 +170,7 @@ describe("Orthodontic Materials & 90% CIS Market Catalog Test Suite", () => {
 
 			const bioRayResults = searchClinicalMaterials("Bio-Ray");
 			assert.ok(bioRayResults.length >= 1);
-			assert.equal(bioRayResults[0].id, "ortho_screw_bioray");
+			assert.equal(bioRayResults[0]!.id, "ortho_screw_bioray");
 		});
 
 		it("links 804n code A16.07.048 to Damon Q2 and CuNiTi archwire", () => {

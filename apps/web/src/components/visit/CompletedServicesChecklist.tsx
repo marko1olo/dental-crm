@@ -261,8 +261,11 @@ export const CompletedServicesChecklist: React.FC<
 							services: [
 								{
 									code: service.code804n,
+									code804n: service.code804n,
 									title: service.title,
 									price: service.priceRub,
+									priceRub: service.priceRub,
+									unitPriceRub: service.priceRub,
 									quantity: 1,
 									toothCode: selectedTooth || undefined,
 								},
@@ -311,8 +314,11 @@ export const CompletedServicesChecklist: React.FC<
 							services: [
 								{
 									code: item.code,
+									code804n: item.code,
 									title: item.title,
 									price: item.priceRub,
+									priceRub: item.priceRub,
+									unitPriceRub: item.priceRub,
 									quantity: 1,
 									toothCode: selectedTooth || undefined,
 								},
@@ -362,8 +368,11 @@ export const CompletedServicesChecklist: React.FC<
 							toothCode: selectedTooth || undefined,
 							services: bundle.services.map((s) => ({
 								code: s.code804n,
+								code804n: s.code804n,
 								title: s.title,
 								price: s.priceRub,
+								priceRub: s.priceRub,
+								unitPriceRub: s.priceRub,
 								quantity: 1,
 								toothCode: selectedTooth || undefined,
 							})),

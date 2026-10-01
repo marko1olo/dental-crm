@@ -35,3 +35,19 @@ declare module "jspdf" {
 	export { jsPDF };
 	export default jsPDF;
 }
+
+declare module "jpeg-lossless-decoder-js" {
+	export class Decoder {
+		decode(
+			buffer: ArrayBuffer | Uint8Array,
+			offset?: number,
+			length?: number,
+			numBytes?: number,
+		): Uint16Array | Uint8Array;
+	}
+	const jpeg: {
+		Decoder: typeof Decoder;
+	};
+	export default jpeg;
+}
+

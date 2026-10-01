@@ -1,0 +1,40 @@
+{
+  "subagent": "Subagent 18: Dual-Mode Schedule & Roster Inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md in full",
+    "Inspected Mandate 8y (Strict Dual-Mode: 100% Honest Production vs Isolated Demo Showcase)",
+    "Inspected Mandate 8za (Anti-Duplication Law: ZERO *V2, *New duplicate files; harden existing components) and Mandate 8zb (No Academic Bloat)",
+    "Inspected demoMode.ts architecture (isDemoShowcaseMode, isDemoPatientId, getDemoShowcaseAppointments)",
+    "Hardened apps/web/src/components/schedule/view/useScheduleRosterData.ts (quarantined DEFAULT_CLINIC_STAFF & CLINIC_CABINETS_CATALOG behind isDemoShowcaseMode())",
+    "Hardened apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx (quarantined fallback doctors and chairs behind isDemoShowcaseMode())",
+    "Hardened apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx (quarantined default staff and cabinets behind isDemoShowcaseMode())",
+    "Hardened apps/web/src/components/schedule/roster/useDoctorShiftRosterOperations.ts (blocked phantom shift generation and creation on 0-doctor/0-cabinet production states)",
+    "Hardened apps/web/src/components/schedule/roster/DoctorShiftDrawer.tsx (added validation against saving shifts with empty doctors/cabinets in production)",
+    "Hardened apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts (preserved solo doctor fallback per Mandate 8n)",
+    "Hardened apps/web/src/components/schedule/chairRosterMath.ts (quarantined DEFAULT_CLINIC_STAFF behind isDemoShowcaseMode())",
+    "Hardened apps/web/src/components/schedule/roster/rosterChairWeeklyTemplates.ts (quarantined DEFAULT_CLINIC_STAFF behind isDemoShowcaseMode())",
+    "Hardened apps/web/src/components/schedule/roster/rosterDateRangeBinding.ts (quarantined DEFAULT_CLINIC_STAFF behind isDemoShowcaseMode())",
+    "Hardened apps/web/src/components/schedule/roster/rosterDateUtils.ts (quarantined DEFAULT_CLINIC_STAFF behind isDemoShowcaseMode())",
+    "Hardened apps/web/src/components/schedule/roster/rosterDefaultSchedule.ts (quarantined DEFAULT_CLINIC_STAFF & CLINIC_CABINETS_CATALOG behind isDemoShowcaseMode())",
+    "Hardened apps/web/src/components/schedule/roster/doctorShiftRosterEngine.ts (quarantined fallback staffList behind isDemoShowcaseMode())",
+    "Hardened apps/web/src/components/schedule/roster/DoctorRosterMatrix.tsx (honest empty states with 1-click CTAs for cabinets, doctors, T-13, and utilization)",
+    "Hardened apps/web/src/components/schedule/FreedSlotsPanel.tsx (quarantined DEMO_SHOWCASE_FREED_REPORT behind isDemoShowcaseMode(), honest empty state notice in production)",
+    "Hardened apps/web/src/components/schedule/useWaitlistDrawerOperations.ts (quarantined DEMO_SHOWCASE_WAITLIST_CANDIDATES behind isDemoShowcaseMode(), honest empty states in production)",
+    "Hardened apps/web/src/components/schedule/WaitlistQuickFillModal.tsx (quarantined DEMO_SHOWCASE_WAITLIST_ENTRIES behind isDemoShowcaseMode(), honest empty states in production)",
+    "Fixed apps/web/src/components/lab/dentalLabDemoData.ts (corrected techStage to milling_framework and patient_fixation, workTypeId to crown_zirconia)",
+    "Rebuilt @dental/shared dist for maskPhoneDisplay export",
+    "Verified apps/api/src/routes/appointments.ts resolution for doctor-solo and doctor-default",
+    "Executed check-encoding.mjs across entire repo: 6253 files passed, 0 issues",
+    "Executed npm --prefix apps/web run typecheck: Exit Code 0",
+    "Executed npm --prefix apps/api run typecheck: Exit Code 0",
+    "Executed 139 unit tests across schedule, roster, waitlist, and free slots: 139 passed, 0 failed"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Production mode is completely sealed against synthetic doctors (doc-smirnov), mock cabinets, and fake appointments.",
+    "Demo showcase mode (?demo=true) is preserved and provides rich, interactive waitlist candidate matching, freed slots, and shift allocation presets.",
+    "Zero duplicate files (*V2, *New) created. All components hardened in place.",
+    "TypeScript typecheck and UTF-8 encoding verified across all packages."
+  ]
+}

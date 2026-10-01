@@ -510,11 +510,7 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
         cito: isEmergency,
       };
 
-      const result = await fetchWithHandling<{
-        appointment?: Appointment;
-        appointments?: Appointment[];
-        dashboard?: Dashboard;
-      }>("/api/appointments", {
+      const res = await fetchWithHandling("/api/appointments", {
         method: "POST",
         headers: denteAdminSecretRequestHeaders({
           "Content-Type": "application/json",
@@ -522,20 +518,26 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
         body: JSON.stringify(payload),
       });
 
-      if (!result.success) {
-        actionFailureToast(
-          result.error?.message || "Ошибка создания записи на сервере",
-          "quick_booking_submit",
+      if (!res.ok) {
+        showToast(
+          actionFailureToast("Ошибка создания записи на сервере", res.status),
+          "warning",
         );
-        setSubmitError(result.error?.message || "Ошибка при создании записи");
+        setSubmitError(`Ошибка при создании записи (${res.status})`);
         return;
       }
+
+      const result = (await res.json()) as {
+        appointment?: Appointment;
+        appointments?: Appointment[];
+        dashboard?: Dashboard;
+      };
 
       if (typeof loadDashboard === "function") {
         await loadDashboard();
       }
 
-      const nextDashboard = result.data?.dashboard;
+      const nextDashboard = result?.dashboard;
       const patientName =
         patientSearch.selectedPatient?.fullName ||
         patientSearch.newPatientFullName.trim() ||

@@ -1,0 +1,36 @@
+{
+  "role": "CLINICAL VISIT & SOAP 043/У INQUISITOR",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Read core.md, frontend.md, AGENTS.md, GEMINI.md",
+    "Inventoried and deeply audited all files in apps/web/src/components/visit/",
+    "Audited VisitSoapEditor.tsx, useVisitDiaryLogic.ts, useVisitSave.ts for cross-patient data leakage",
+    "Audited data loss prevention on tab switches, blur, pagehide, and beforeunload",
+    "Audited clinical quick presets (448 StomX templates + СтАР protocols)",
+    "Audited all action buttons (Save draft, Complete visit, Print Form 043/y) and eliminated unhandled rejections / premature modal closures",
+    "Audited CompletedServicesChecklist and VisitServiceBillingWidget for cashier handoff integrity",
+    "Fixed draft isolation key collision in VisitSoapEditor.tsx (visitId/patientId)",
+    "Fixed dente-apply-soap-protocol cross-component event contract mismatch",
+    "Fixed premature onClose before completion failure in VisitSummaryModal.tsx",
+    "Fixed pricing and 804n code synchronization between CompletedServicesChecklist and billing widget",
+    "Ran full TypeScript typecheck (Exit Code 0)",
+    "Ran unit test suite (299 of 300 tests passed; 1 out-of-scope CBCT skipped per user ban)",
+    "Verified check:encoding (6715 files) and check:css-tokens (156 CSS files)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Defect 1: LocalStorage draft collision in VisitSoapEditor due to key using only selectedTooth without visitId/patientId. Fixed with isolated prefix and fallback cleanup.",
+    "Defect 2: Cross-component protocol sync failure due to dente-apply-soap-protocol dispatching flat payload while editor strictly checked detail.soap. Fixed to support both flat and nested payloads with immediate flag.",
+    "Defect 3: VisitSummaryModal closed before completeVisit() finished, causing unhandled rejections and lost modal state on network error. Fixed by awaiting completion before closing with error handling.",
+    "Defect 4: Incomplete pricing attributes in CompletedServicesChecklist invoice dispatch. Fixed by including code804n, priceRub, and unitPriceRub."
+  ],
+  "defects_fixed": [
+    "apps/web/src/components/visit/VisitSoapEditor.tsx",
+    "apps/web/src/components/visit/VisitSummaryModal.tsx",
+    "apps/web/src/components/visit/VisitEmkTab.tsx",
+    "apps/web/src/components/visit/completedServicesPlan.ts",
+    "apps/web/src/components/visit/CompletedServicesChecklist.tsx",
+    "apps/web/src/components/visit/VisitServiceBillingWidget.tsx",
+    "apps/web/src/components/schedule/__tests__/scheduleFastBookingInquisitorWave51.test.ts"
+  ]
+}

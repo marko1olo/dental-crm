@@ -1,0 +1,60 @@
+{
+  "role": "RED TEAM UI & AUTH INQUISITOR",
+  "status": "completed",
+  "started_at": "2026-10-01T13:57:00Z",
+  "completed_at": "2026-10-01T14:24:00Z",
+  "scope": [
+    "apps/web/index.html",
+    "apps/web/src/components/auth/AuthArtBackground.tsx",
+    "apps/web/src/components/auth/UserLogin.tsx",
+    "apps/web/src/components/auth/ClinicLogin.tsx",
+    "apps/web/src/components/auth/Register.tsx",
+    "apps/web/src/components/auth/AcceptInvite.tsx",
+    "apps/web/src/styles/auth.css",
+    "apps/web/src/AppBootState.tsx"
+  ],
+  "tasks": [
+    {
+      "id": "defect_1_boot_loading_lqip",
+      "description": "Remove blurry dirty LQIP blob from AuthArtBackground.tsx and polish initial boot loader in index.html and AppBootState.tsx",
+      "status": "completed",
+      "evidence": "Purged dirty LQIP img layer; smooth 0.9s cubic-bezier opacity fade-in on mount; noble radial gradient backdrop in index.html and AppBootState.tsx"
+    },
+    {
+      "id": "defect_2_modal_and_font_size",
+      "description": "Enlarge .auth-modal to 500px, inputs to 48px, fonts to 15-16px, labels to 13px, submit button to 48px with micro-animations",
+      "status": "completed",
+      "evidence": "apps/web/src/styles/auth.css: .auth-modal max-width 500px, padding 36px 40px; .auth-input height 48px, font-size 15px; .auth-submit-btn height 48px, font-size 15px"
+    },
+    {
+      "id": "defect_3_purge_crm_mis_title",
+      "description": "Purge bureaucratic 'DENTE CRM-MIS' across all auth views and replace with clean premium 'DENTE' and clinical subtitles",
+      "status": "completed",
+      "evidence": "Replaced 'DENTE CRM-MIS' with 'DENTE' + 'Стоматологическая платформа' in UserLogin, ClinicLogin, Register, AcceptInvite, and index.html"
+    },
+    {
+      "id": "defect_4_clarify_terminal_auth",
+      "description": "Rename confusing terminal auth labels into human-friendly Russian ('Вход для регистратуры / общий ПК клиники' and 'Вход для врачей и сотрудников')",
+      "status": "completed",
+      "evidence": "ClinicLogin role badge and title now display 'Вход для регистратуры / общий ПК клиники', switcher displays '← Вход для врачей и сотрудников (персональный доступ)'"
+    },
+    {
+      "id": "defect_5_double_eye_password",
+      "description": "Disable native browser -ms-reveal / -ms-clear in auth.css to eliminate double eye icon in Edge/Chrome on Windows",
+      "status": "completed",
+      "evidence": ".auth-input::-ms-reveal, .auth-input::-ms-clear { display: none !important; } suppresses native duplicate icon completely"
+    },
+    {
+      "id": "defect_6_demo_mode_button",
+      "description": "Add prominent ⚡ Demo Mode button on login screen enabling instant one-click demo access without credentials",
+      "status": "completed",
+      "evidence": "Added .auth-demo-btn '⚡ Быстрый вход в Демо-режим (Без пароля)' calling enableDemoShowcaseMode() in both UserLogin and ClinicLogin"
+    },
+    {
+      "id": "defect_7_visual_proof_screenshots",
+      "description": "Generate visual proof screenshots (Light and Dark, desktop and mobile) and inspect them via multimodal view_file",
+      "status": "completed",
+      "evidence": "Captured 5 screenshots (proof_auth_desktop_dark.png, proof_auth_desktop_light.png, proof_auth_clinic_mode.png, proof_auth_mobile_dark.png, proof_auth_demo_entry_success.png) and inspected via view_file"
+    }
+  ]
+}

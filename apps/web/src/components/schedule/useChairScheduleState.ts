@@ -49,8 +49,14 @@ export function useChairScheduleState(props: ChairScheduleViewProps) {
   const isSoloDoctor = chairs.length <= 1;
 
   const rawBranches = useMemo(() => {
-    return (dashboard?.clinicSettings?.branches ?? []).filter((b) => b.active);
-  }, [dashboard?.clinicSettings?.branches]);
+    return (
+      (
+        dashboard?.clinicSettings as
+          | { branches?: Array<{ id: string; name: string; active?: boolean }> }
+          | undefined
+      )?.branches ?? []
+    ).filter((b) => b.active !== false);
+  }, [dashboard?.clinicSettings]);
   const hasMultipleBranches = rawBranches.length > 1;
 
   const doctors = useMemo(() => {

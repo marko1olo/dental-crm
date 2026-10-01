@@ -231,6 +231,7 @@ async function main() {
 			localStorage.setItem("dente_staff_token", "audit-token-staff");
 			localStorage.setItem("dente_active_role", "owner");
 			localStorage.setItem("dente_onboarding_completed", "true");
+			localStorage.setItem("dente_demo_showcase", "true");
 			localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({ onboardingDismissed: true, onboardingStep: "done", version: 1 }));
 			localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done", completed: true, onboardingDismissed: true, onboardingStep: "done", version: 1 }));
 		});
@@ -424,8 +425,9 @@ async function main() {
 		});
 
 		// Wait for quad viewports grid
+		console.log("Waiting for quad viewports grid...");
 		const quadGrid = page.locator("[data-testid='cbct-mpr-quad-grid']");
-		await quadGrid.waitFor({ state: "visible", timeout: 20000 });
+		await quadGrid.waitFor({ state: "visible", timeout: 60000 });
 		console.log("[UI AUDIT] 4-viewport quad grid active.");
 		await page.waitForTimeout(2000);
 

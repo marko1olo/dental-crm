@@ -117,15 +117,27 @@ export function measureAlveolarRidgeCaliper(
 			};
 		}
 
+		// Adaptive bone core: find closest bone tissue (+/- 12 voxels) if center is low density
+		let centerX = crestX;
+		if (getHU(centerX, targetY) < 150) {
+			for (let dx = 1; dx <= 16; dx++) {
+				if (getHU(crestX + dx, targetY) >= 200) { centerX = crestX + dx; break; }
+				if (getHU(crestX - dx, targetY) >= 200) { centerX = crestX - dx; break; }
+			}
+		}
+
+		// Bone boundary threshold: trabecular bone is >= 150 HU (marrow/soft tissue < 120 HU)
+		const boneThreshold = 150;
+
 		// Find left cortical boundary (Buccal)
-		let leftX = crestX;
-		while (leftX > 1 && getHU(leftX, targetY) >= 350) {
+		let leftX = centerX;
+		while (leftX > 1 && getHU(leftX, targetY) >= boneThreshold) {
 			leftX--;
 		}
 
-		// Find right cortical boundary (Lingual)
-		let rightX = crestX;
-		while (rightX < widthPx - 2 && getHU(rightX, targetY) >= 350) {
+		// Find right cortical boundary (Lingual/Palatal)
+		let rightX = centerX;
+		while (rightX < widthPx - 2 && getHU(rightX, targetY) >= boneThreshold) {
 			rightX++;
 		}
 
@@ -313,10 +325,15 @@ export function generateRidge043ProtocolText(
 					? "дна носовой полости"
 					: "базального края челюсти";
 
+	const w6Formatted =
+		caliper.widthAt6Mm > 0
+			? `${caliper.widthAt6Mm.toFixed(1)} мм`
+			: `н/д (H = ${caliper.availableHeightMm.toFixed(1)} мм < 6.0 мм)`;
+
 	const statusLocalis043 =
 		`КЛКТ-морфометрия альвеолярного гребня в области отсутствующего зуба #${effectiveTooth}: ` +
 		`ширина гребня на 2 мм ниже вершины W2 = ${caliper.widthAt2Mm.toFixed(1)} мм, ` +
-		`базальная ширина на 6 мм ниже вершины W6 = ${caliper.widthAt6Mm.toFixed(1)} мм. ` +
+		`базальная ширина на 6 мм ниже вершины W6 = ${w6Formatted}. ` +
 		`Высота резидуальной кости до ${anatLimitRu}: H = ${caliper.availableHeightMm.toFixed(1)} мм. ` +
 		`Плотность кости: класс Misch ${caliper.boneQualityMisch} (средняя плотность ${caliper.meanDensityHU} HU).`;
 
@@ -339,12 +356,12 @@ export function generateRidge043ProtocolText(
 		`───────────────────────────────────────────────────────────────────────────────\n` +
 		`1. ОБЪЕКТИВНЫЕ ЗАМЕРЫ АЛЬВЕОЛЯРНОГО ГРЕБНЯ (МОРФОМЕТРИЯ):\n` +
 		`  • Ширина гребня W2 (на 2 мм апикальнее вершины):   ${caliper.widthAt2Mm.toFixed(1)} мм\n` +
-		`  • Базальная ширина W6 (на 6 мм апикальнее вершины): ${caliper.widthAt6Mm.toFixed(1)} мм\n` +
+		`  • Базальная ширина W6 (на 6 мм апикальнее вершины): ${w6Formatted}\n` +
 		`  • Высота доступной кости H (до ориентира):           ${caliper.availableHeightMm.toFixed(1)} мм\n` +
 		`  • Анатомический ориентир дна:                       ${anatLimitRu}\n` +
 		`  • Оптическая плотность трабекулярного ядра:         ${caliper.meanDensityHU} HU\n` +
 		`  • Классификация плотности кости по C.E. Misch:      Класс ${caliper.boneQualityMisch}\n` +
-		`───────────────────────────────────────────────────────────────────────────────\n` +
+		`───────────────────────────────────────────────────────────────────────────────\n`; +
 		`2. КЛИНИЧЕСКОЕ ЗАКЛЮЧЕНИЕ И ТАКТИКА (ФОРМА 043/У):\n` +
 		`  ${statusLocalis043}\n\n` +
 		`  Хирургические рекомендации:\n` +

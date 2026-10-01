@@ -88,7 +88,6 @@ describe("Bulletproof Outbox & Hardware Resilience Architecture", () => {
 						organizationId: ORG_ID,
 						fullName: "Барабаш Сергей Васильевич",
 						phone: "+79161112233",
-						gender: "male",
 						birthDate: "1985-05-15",
 					})
 					.onConflictDoNothing();
@@ -331,12 +330,14 @@ describe("Bulletproof Outbox & Hardware Resilience Architecture", () => {
 				normalizedCallerPhone: {
 					e164: newCallerPhone,
 					national10: "9165554433",
+					cleanDigits: "79165554433",
 					raw: newCallerPhone,
 					isValid: true,
 				},
 				normalizedTargetPhone: {
 					e164: "+74959998877",
 					national10: "4959998877",
+					cleanDigits: "74959998877",
 					raw: "+74959998877",
 					isValid: true,
 				},
@@ -390,12 +391,14 @@ describe("Bulletproof Outbox & Hardware Resilience Architecture", () => {
 				normalizedCallerPhone: {
 					e164: "+79161112233", // Matched patient
 					national10: "9161112233",
+					cleanDigits: "79161112233",
 					raw: "+79161112233",
 					isValid: true,
 				},
 				normalizedTargetPhone: {
 					e164: "+74959998877",
 					national10: "4959998877",
+					cleanDigits: "74959998877",
 					raw: "+74959998877",
 					isValid: true,
 				},
@@ -535,7 +538,7 @@ describe("Bulletproof Outbox & Hardware Resilience Architecture", () => {
 					.limit(1);
 
 				assert.ok(updatedPayment);
-				assert.equal(updatedPayment.fiscalReceiptNumber, retryResult.fiscalDocumentNumber);
+				assert.equal(updatedPayment.fiscalReceiptNumber, retryResult.fiscalReceiptNumber);
 				assert.equal(updatedPayment.fiscalReceiptUrl, retryResult.ofdUrl);
 				assert.ok((updatedPayment.fiscalReceipt as any)?.fpd);
 

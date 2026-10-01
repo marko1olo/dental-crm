@@ -1,0 +1,67 @@
+{
+  "subagent": "radiology_monolith_decomposer_batch_b",
+  "status": "completed",
+  "current_step": "done",
+  "steps": [
+    {
+      "name": "1. DirectRvgCaptureModal.tsx decomposition",
+      "target_file": "apps/web/src/components/radiology/DirectRvgCaptureModal.tsx",
+      "extracted_files": [
+        "apps/web/src/components/radiology/DirectRvgSensorTelemetryHeader.tsx",
+        "apps/web/src/components/radiology/useRvgGlCanvas.ts",
+        "apps/web/src/components/radiology/useDirectRvgPanZoom.ts",
+        "apps/web/src/components/radiology/directRvgFileValidation.ts"
+      ],
+      "status": "completed",
+      "original_lines": 1111,
+      "final_lines": 715,
+      "target_lines": "<= 760"
+    },
+    {
+      "name": "2. realDicomVolumeLoader.ts decomposition",
+      "target_file": "apps/web/src/components/radiology/realDicomVolumeLoader.ts",
+      "extracted_files": [
+        "apps/web/src/components/radiology/dicomSliceHeaderParser.ts",
+        "apps/web/src/components/radiology/dicomProgressiveLod.ts"
+      ],
+      "status": "completed",
+      "original_lines": 1106,
+      "final_lines": 574,
+      "target_lines": "<= 620"
+    },
+    {
+      "name": "3. dicomMultiFrameLoader.ts decomposition",
+      "target_file": "apps/web/src/components/radiology/dicomMultiFrameLoader.ts",
+      "extracted_files": [
+        "apps/web/src/components/radiology/dicomMultiFrameParser.ts"
+      ],
+      "status": "completed",
+      "original_lines": 1094,
+      "final_lines": 585,
+      "target_lines": "<= 600"
+    },
+    {
+      "name": "4. cbctPanoramicReconstructionMath.ts decomposition",
+      "target_file": "apps/web/src/components/radiology/cbctPanoramicReconstructionMath.ts",
+      "extracted_files": [
+        "apps/web/src/components/radiology/cbctPanoramicWebGlEngine.ts"
+      ],
+      "status": "completed",
+      "original_lines": 1058,
+      "final_lines": 591,
+      "target_lines": "<= 610"
+    }
+  ],
+  "verification": {
+    "step_1_passed": true,
+    "step_2_passed": true,
+    "step_3_passed": true,
+    "step_4_passed": true,
+    "all_files_under_800_lines": true,
+    "zero_emojis": true,
+    "encoding_gate_clean": true,
+    "unit_tests_pass": true,
+    "total_tests_passed": 782,
+    "total_tests_failed": 0
+  }
+}

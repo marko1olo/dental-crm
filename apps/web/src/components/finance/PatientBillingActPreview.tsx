@@ -2,13 +2,13 @@ import React from "react";
 import { Award, Check, ShieldCheck } from "lucide-react";
 import {
 	type CompletedWorksActParams,
-	type CompletedWorksActSummary,
+	type CompiledActAndWarrantySummary,
 } from "./invoiceEngine";
 
 export interface PatientBillingActPreviewProps {
 	readonly activeTab: "preview" | "details";
 	readonly actParams: CompletedWorksActParams;
-	readonly summary: CompletedWorksActSummary;
+	readonly summary: CompiledActAndWarrantySummary;
 }
 
 export const PatientBillingActPreview: React.FC<PatientBillingActPreviewProps> = ({

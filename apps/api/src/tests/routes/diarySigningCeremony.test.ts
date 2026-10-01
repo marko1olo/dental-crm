@@ -702,9 +702,9 @@ describe("церемония подписания дневника одинак�
 				.where(eq(inventoryTransactions.visitId, scenario.visitId)),
 		);
 		assert.equal(movements.length, 1);
-		assert.equal(movements[0].isOverdraft, true);
-		assert.equal(movements[0].transactionType, "emergency_overdraft");
-		assert.equal(Number(movements[0].quantityChanged), -4);
+		assert.equal(movements[0]!.isOverdraft, true);
+		assert.equal(movements[0]!.transactionType, "emergency_overdraft");
+		assert.equal(Number(movements[0]!.quantityChanged), -4);
 
 		// Услуга закрыта
 		const [treatment] = await withFixtureTenant(organizationId, async () =>

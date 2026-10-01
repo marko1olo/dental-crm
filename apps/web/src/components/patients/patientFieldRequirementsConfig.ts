@@ -210,11 +210,13 @@ export function validatePatientDraftWithRequirements(
 	const errors: Record<string, string> = {};
 	const missingRequiredLabels: string[] = [];
 
-	// 1. ФИО всегда обязательно
+	// 1. ФИО (для CITO / экстренного приёма допускается авто-подстановка "Пациент с острой болью (CITO)")
 	const nameTrimmed = (draft.fullName || "").trim();
 	if (!nameTrimmed) {
-		errors.fullName = "Укажите ФИО пациента";
-		missingRequiredLabels.push("ФИО");
+		if (!draft.isEmergencyOrPrimary) {
+			errors.fullName = "Укажите ФИО пациента";
+			missingRequiredLabels.push("ФИО");
+		}
 	}
 
 	// 2. Телефон (по настройке, кроме анонимного режима по ПП РФ №659)

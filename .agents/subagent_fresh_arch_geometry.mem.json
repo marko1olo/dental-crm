@@ -1,0 +1,29 @@
+{
+  "role": "FRESH CLINICAL ARCH GEOMETRY & OCCLUSAL CENTERING INQUISITOR",
+  "status": "COMPLETED",
+  "scope_files": [
+    "apps/web/src/components/radiology/cbctHonestArchBlobEngine.ts",
+    "apps/web/src/components/radiology/cbctArchSplineMath.ts"
+  ],
+  "constitutional_reading_completed": true,
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md",
+    "Read AGENTS.md",
+    "Read USER_VERBATIM_MANDATES.md (especially Request 47)",
+    "Full-file inspection of cbctHonestArchBlobEngine.ts and cbctArchSplineMath.ts",
+    "Identified root causes of vestibular shift, 8th tooth cutoff, and Catmull-Rom molar flaring",
+    "Refactored cbctArchSplineMath.ts anchors centered on occlusal central fissures with parallel molar branches (769 lines)",
+    "Refactored findAnteriorArchApexRobust with 2D COM across crown thickness shifted lingually/palatally",
+    "Refactored fitOrthodonticParabola with targetMaxDeltaY = 65.0/70.0 mm and deltaY >= 63.0/66.0 mm covering 8s",
+    "Refactored detectHonestDentalArch to project tooth centroids onto smoothSpline and pass smoothSpline as explicitSpline to buildDentalArchCurve",
+    "Verified zero line limit violations: cbctHonestArchBlobEngine.ts (734 lines <= 800), cbctArchSplineMath.ts (769 lines <= 800)",
+    "Executed verification test suite confirming 10.5 mm separation between 7s and 8s, dx/dy = 0 parallelism, and 100% clean ESM import"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Distal cutoff cause: targetMaxDeltaY was capped at 44.0/54.0 mm, truncating the arch before tooth 8, causing tooth 7 and 8 to collapse into identical coordinates.",
+    "Vestibular shift cause: molar corridor search sampled up to absU = 36.0 mm pulling the width toward the outer buccal plate, and apex search picked the outermost labial enamel row instead of the 2D crown center.",
+    "Flaring/kink cause: detectHonestDentalArch discarded smoothSpline in step 6 and ran Catmull-Rom through noisy/missing anchors, producing severe angle deviations instead of parallel rows.",
+    "Solution mathematically verified: dx/dy = 0 on molars, occlusal fissure half-width 27.4/28.8 mm, third molar coverage to 65.0/70.0 mm with 10.5 mm separation from 7."
+  ]
+}

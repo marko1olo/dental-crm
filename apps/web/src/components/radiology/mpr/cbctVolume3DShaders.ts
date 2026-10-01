@@ -242,9 +242,10 @@ void main() {
         if (maxHU > u_huMin) {
             float huSpan = max(1.0, u_huMax - u_huMin);
             float n = clamp((maxHU - u_huMin) / huSpan, 0.0, 1.0);
-            fragColor = vec4(u_boneColor * n, 1.0);
+            float clinicalPeak = 178.0 / 255.0; // Enamel burnout safeguard ceiling <= 180/255
+            fragColor = vec4(u_boneColor * (n * clinicalPeak), 1.0);
         } else {
-            fragColor = vec4(0.035, 0.035, 0.043, 1.0);
+            fragColor = vec4(0.0, 0.0, 0.0, 1.0);
         }
     } else if (hit) {
         // Clinical Anatomical Blinn-Phong Shading: Ambient + Lambert Diffuse + Specular + Rim
@@ -252,18 +253,21 @@ void main() {
         // Directional key light from upper-front-right relative to camera
         vec3 lightDir = normalize(viewDir * 0.82 + u_rotMatrix[0] * 0.35 + u_rotMatrix[1] * 0.45);
         float NdotL = max(0.0, dot(norm, lightDir));
-        float ambient = 0.30;
-        float diff = NdotL * 0.70;
+        float ambient = 0.22;
+        float diff = NdotL * 0.40;
         vec3 halfVec = normalize(lightDir + viewDir);
         float NdotH = max(0.0, dot(norm, halfVec));
-        float spec = pow(NdotH, 32.0) * 0.35;
+        float spec = pow(NdotH, 32.0) * 0.10;
         float NdotV = max(0.0, dot(norm, viewDir));
-        float rim = pow(1.0 - NdotV, 3.0) * 0.18;
+        float rim = pow(1.0 - NdotV, 3.0) * 0.08;
         float depthFade = 1.0 - hitDepth * 0.15;
-        vec3 lit = clamp(u_boneColor * (ambient + diff * depthFade + rim) + vec3(1.0, 0.98, 0.94) * spec, 0.0, 1.0);
+        // Clinical soft-knee highlight ceiling (strictly <= 178/255 to eliminate enamel blinding burnout)
+        float clinicalCeiling = 178.0 / 255.0;
+        vec3 rawLit = u_boneColor * (ambient + diff * depthFade + rim) + vec3(0.95, 0.92, 0.88) * spec;
+        vec3 lit = clamp(min(rawLit, vec3(clinicalCeiling)), 0.0, 1.0);
         fragColor = vec4(lit, 1.0);
     } else {
-        fragColor = vec4(0.035, 0.035, 0.043, 1.0);
+        fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
 }
 `;
@@ -275,6 +279,7 @@ export interface WebGlVolume3DState {
 	volumeTexture: WebGLTexture | null;
 	volumeDataRef: Int16Array | null;
 	uploadDim: { width: number; height: number; depth: number } | null;
+	lastRenderTimeMs?: number;
 	uniforms: {
 		volumeDim: WebGLUniformLocation | null;
 		rotMatrix: WebGLUniformLocation | null;
@@ -509,5 +514,9 @@ export function renderWebGl2VolumeRaymarching(
 	gl.uniform1i(uniforms.refineSteps, isInteracting ? 0 : 4);
 	gl.uniform1i(uniforms.maxSteps, isInteracting ? 64 : 256);
 
+	const tRayStart = typeof performance !== "undefined" ? performance.now() : 0;
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+	if (tRayStart > 0 && typeof performance !== "undefined") {
+		state.lastRenderTimeMs = performance.now() - tRayStart;
+	}
 }

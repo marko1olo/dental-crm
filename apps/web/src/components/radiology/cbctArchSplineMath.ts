@@ -36,49 +36,45 @@ export interface DentalArchCurve {
 // ─── DEFAULT ANATOMICAL DENTAL ARCH ANCHORS (ADULT DENTITION) ───────────────
 
 export const DEFAULT_MANDIBULAR_ARCH_ANCHORS: readonly DentalArchAnchor[] = [
-	{ id: "a-48", toothFdi: "48", labelRu: "48 (3-й моляр)", positionMm: { x: -37.0, y: -2.0 }, isQuadrantRight: true },
-	{ id: "a-47", toothFdi: "47", labelRu: "47 (2-й моляр)", positionMm: { x: -35.0, y: -14.0 }, isQuadrantRight: true },
-	{ id: "a-46", toothFdi: "46", labelRu: "46 (1-й моляр)", positionMm: { x: -32.0, y: -26.0 }, isQuadrantRight: true },
-	{ id: "a-45", toothFdi: "45", labelRu: "45 (2-й премоляр)", positionMm: { x: -28.0, y: -36.0 }, isQuadrantRight: true },
-	{ id: "a-44", toothFdi: "44", labelRu: "44 (1-й премоляр)", positionMm: { x: -23.0, y: -44.0 }, isQuadrantRight: true },
-	{ id: "a-43", toothFdi: "43", labelRu: "43 (Клык)", positionMm: { x: -16.5, y: -50.0 }, isQuadrantRight: true },
-	{ id: "a-42", toothFdi: "42", labelRu: "42 (Боковой резец)", positionMm: { x: -9.0, y: -54.5 }, isQuadrantRight: true },
-	{ id: "a-41", toothFdi: "41", labelRu: "41 (Центральный резец)", positionMm: { x: -2.8, y: -56.5 }, isQuadrantRight: true },
-	{ id: "a-31", toothFdi: "31", labelRu: "31 (Центральный резец)", positionMm: { x: 2.8, y: -56.5 }, isQuadrantRight: false },
-	{ id: "a-32", toothFdi: "32", labelRu: "32 (Боковой резец)", positionMm: { x: 9.0, y: -54.5 }, isQuadrantRight: false },
-	{ id: "a-33", toothFdi: "33", labelRu: "33 (Клык)", positionMm: { x: 16.5, y: -50.0 }, isQuadrantRight: false },
-	{ id: "a-34", toothFdi: "34", labelRu: "34 (1-й премоляр)", positionMm: { x: 23.0, y: -44.0 }, isQuadrantRight: false },
-	{ id: "a-35", toothFdi: "35", labelRu: "35 (2-й премоляр)", positionMm: { x: 28.0, y: -36.0 }, isQuadrantRight: false },
-	{ id: "a-36", toothFdi: "36", labelRu: "36 (1-й моляр)", positionMm: { x: 32.0, y: -26.0 }, isQuadrantRight: false },
-	{ id: "a-37", toothFdi: "37", labelRu: "37 (2-й моляр)", positionMm: { x: 35.0, y: -14.0 }, isQuadrantRight: false },
-	{ id: "a-38", toothFdi: "38", labelRu: "38 (3-й моляр)", positionMm: { x: 37.0, y: -2.0 }, isQuadrantRight: false },
+	{ id: "a-48", toothFdi: "48", labelRu: "48 (3-й моляр)", positionMm: { x: -28.0, y: 0.0 }, isQuadrantRight: true },
+	{ id: "a-47", toothFdi: "47", labelRu: "47 (2-й моляр)", positionMm: { x: -27.8, y: -12.0 }, isQuadrantRight: true },
+	{ id: "a-46", toothFdi: "46", labelRu: "46 (1-й моляр)", positionMm: { x: -27.5, y: -24.0 }, isQuadrantRight: true },
+	{ id: "a-45", toothFdi: "45", labelRu: "45 (2-й премоляр)", positionMm: { x: -25.0, y: -34.5 }, isQuadrantRight: true },
+	{ id: "a-44", toothFdi: "44", labelRu: "44 (1-й премоляр)", positionMm: { x: -21.5, y: -43.0 }, isQuadrantRight: true },
+	{ id: "a-43", toothFdi: "43", labelRu: "43 (Клык)", positionMm: { x: -16.0, y: -49.0 }, isQuadrantRight: true },
+	{ id: "a-42", toothFdi: "42", labelRu: "42 (Боковой резец)", positionMm: { x: -8.8, y: -53.0 }, isQuadrantRight: true },
+	{ id: "a-41", toothFdi: "41", labelRu: "41 (Центральный резец)", positionMm: { x: -2.7, y: -54.8 }, isQuadrantRight: true },
+	{ id: "a-31", toothFdi: "31", labelRu: "31 (Центральный резец)", positionMm: { x: 2.7, y: -54.8 }, isQuadrantRight: false },
+	{ id: "a-32", toothFdi: "32", labelRu: "32 (Боковой резец)", positionMm: { x: 8.8, y: -53.0 }, isQuadrantRight: false },
+	{ id: "a-33", toothFdi: "33", labelRu: "33 (Клык)", positionMm: { x: 16.0, y: -49.0 }, isQuadrantRight: false },
+	{ id: "a-34", toothFdi: "34", labelRu: "34 (1-й премоляр)", positionMm: { x: 21.5, y: -43.0 }, isQuadrantRight: false },
+	{ id: "a-35", toothFdi: "35", labelRu: "35 (2-й премоляр)", positionMm: { x: 25.0, y: -34.5 }, isQuadrantRight: false },
+	{ id: "a-36", toothFdi: "36", labelRu: "36 (1-й моляр)", positionMm: { x: 27.5, y: -24.0 }, isQuadrantRight: false },
+	{ id: "a-37", toothFdi: "37", labelRu: "37 (2-й моляр)", positionMm: { x: 27.8, y: -12.0 }, isQuadrantRight: false },
+	{ id: "a-38", toothFdi: "38", labelRu: "38 (3-й моляр)", positionMm: { x: 28.0, y: 0.0 }, isQuadrantRight: false },
 ];
 
 export const DEFAULT_MAXILLARY_ARCH_ANCHORS: readonly DentalArchAnchor[] = [
-	{ id: "a-18", toothFdi: "18", labelRu: "18 (3-й моляр)", positionMm: { x: -38.0, y: -3.0 }, isQuadrantRight: true },
-	{ id: "a-17", toothFdi: "17", labelRu: "17 (2-й моляр)", positionMm: { x: -36.0, y: -15.0 }, isQuadrantRight: true },
-	{ id: "a-16", toothFdi: "16", labelRu: "16 (1-й моляр)", positionMm: { x: -33.5, y: -27.0 }, isQuadrantRight: true },
-	{ id: "a-15", toothFdi: "15", labelRu: "15 (2-й премоляр)", positionMm: { x: -29.5, y: -37.0 }, isQuadrantRight: true },
-	{ id: "a-14", toothFdi: "14", labelRu: "14 (1-й премоляр)", positionMm: { x: -24.5, y: -45.0 }, isQuadrantRight: true },
-	{ id: "a-13", toothFdi: "13", labelRu: "13 (Клык)", positionMm: { x: -18.0, y: -51.5 }, isQuadrantRight: true },
-	{ id: "a-12", toothFdi: "12", labelRu: "12 (Боковой резец)", positionMm: { x: -10.0, y: -56.0 }, isQuadrantRight: true },
-	{ id: "a-11", toothFdi: "11", labelRu: "11 (Центральный резец)", positionMm: { x: -3.2, y: -58.0 }, isQuadrantRight: true },
-	{ id: "a-21", toothFdi: "21", labelRu: "21 (Центральный резец)", positionMm: { x: 3.2, y: -58.0 }, isQuadrantRight: false },
-	{ id: "a-22", toothFdi: "22", labelRu: "22 (Боковой резец)", positionMm: { x: 10.0, y: -56.0 }, isQuadrantRight: false },
-	{ id: "a-23", toothFdi: "23", labelRu: "23 (Клык)", positionMm: { x: 18.0, y: -51.5 }, isQuadrantRight: false },
-	{ id: "a-24", toothFdi: "24", labelRu: "24 (1-й премоляр)", positionMm: { x: 24.5, y: -45.0 }, isQuadrantRight: false },
-	{ id: "a-25", toothFdi: "25", labelRu: "25 (2-й премоляр)", positionMm: { x: 29.5, y: -37.0 }, isQuadrantRight: false },
-	{ id: "a-26", toothFdi: "26", labelRu: "26 (1-й моляр)", positionMm: { x: 33.5, y: -27.0 }, isQuadrantRight: false },
-	{ id: "a-27", toothFdi: "27", labelRu: "27 (2-й моляр)", positionMm: { x: 36.0, y: -15.0 }, isQuadrantRight: false },
-	{ id: "a-28", toothFdi: "28", labelRu: "28 (3-й моляр)", positionMm: { x: 38.0, y: -3.0 }, isQuadrantRight: false },
+	{ id: "a-18", toothFdi: "18", labelRu: "18 (3-й моляр)", positionMm: { x: -29.2, y: -1.0 }, isQuadrantRight: true },
+	{ id: "a-17", toothFdi: "17", labelRu: "17 (2-й моляр)", positionMm: { x: -29.0, y: -13.0 }, isQuadrantRight: true },
+	{ id: "a-16", toothFdi: "16", labelRu: "16 (1-й моляр)", positionMm: { x: -28.6, y: -25.0 }, isQuadrantRight: true },
+	{ id: "a-15", toothFdi: "15", labelRu: "15 (2-й премоляр)", positionMm: { x: -26.0, y: -35.5 }, isQuadrantRight: true },
+	{ id: "a-14", toothFdi: "14", labelRu: "14 (1-й премоляр)", positionMm: { x: -22.5, y: -44.0 }, isQuadrantRight: true },
+	{ id: "a-13", toothFdi: "13", labelRu: "13 (Клык)", positionMm: { x: -17.0, y: -50.2 }, isQuadrantRight: true },
+	{ id: "a-12", toothFdi: "12", labelRu: "12 (Боковой резец)", positionMm: { x: -9.6, y: -54.2 }, isQuadrantRight: true },
+	{ id: "a-11", toothFdi: "11", labelRu: "11 (Центральный резец)", positionMm: { x: -3.0, y: -56.0 }, isQuadrantRight: true },
+	{ id: "a-21", toothFdi: "21", labelRu: "21 (Центральный резец)", positionMm: { x: 3.0, y: -56.0 }, isQuadrantRight: false },
+	{ id: "a-22", toothFdi: "22", labelRu: "22 (Боковой резец)", positionMm: { x: 9.6, y: -54.2 }, isQuadrantRight: false },
+	{ id: "a-23", toothFdi: "23", labelRu: "23 (Клык)", positionMm: { x: 17.0, y: -50.2 }, isQuadrantRight: false },
+	{ id: "a-24", toothFdi: "24", labelRu: "24 (1-й премоляр)", positionMm: { x: 22.5, y: -44.0 }, isQuadrantRight: false },
+	{ id: "a-25", toothFdi: "25", labelRu: "25 (2-й премоляр)", positionMm: { x: 26.0, y: -35.5 }, isQuadrantRight: false },
+	{ id: "a-26", toothFdi: "26", labelRu: "26 (1-й моляр)", positionMm: { x: 28.6, y: -25.0 }, isQuadrantRight: false },
+	{ id: "a-27", toothFdi: "27", labelRu: "27 (2-й моляр)", positionMm: { x: 29.0, y: -13.0 }, isQuadrantRight: false },
+	{ id: "a-28", toothFdi: "28", labelRu: "28 (3-й моляр)", positionMm: { x: 29.2, y: -1.0 }, isQuadrantRight: false },
 ];
 
 // ─── 1. CATMULL-ROM SPLINE FITTING & VECTOR MATH ─────────────────────────────
-
-/**
- * Fits a smooth Catmull-Rom spline curve through dental arch anchor points.
- * Optionally extends along the distal retromolar tangents by extendRetromolarMm.
- */
+/** Fits smooth Catmull-Rom spline curve through dental arch anchor points. */
 export function fitSmoothDentalArchSpline(
 	anchors: readonly DentalArchAnchor[],
 	samplesPerSegment = 8,
@@ -99,28 +95,20 @@ export function fitSmoothDentalArchSpline(
 	if (extraControlPoints?.rightExt?.length || extraControlPoints?.leftExt?.length) {
 		pts = [...(extraControlPoints.rightExt ?? []), ...pts, ...(extraControlPoints.leftExt ?? [])];
 	} else if (extendRetromolarMm > 0 && pts.length >= 4) {
-		// Distal extension on Right quadrant (beyond 48/18)
+		// Distal extension along natural tooth arch trajectory - zero kinks, zero loopbacks
 		const p0 = pts[0]!;
 		const p1 = pts[1]!;
-		let dxR = p0.x - p1.x;
-		let dyR = p0.y - p1.y;
-		const lenR = Math.hypot(dxR, dyR) || 1;
-		dxR /= lenR;
-		dyR /= lenR;
+		const dirR = { x: p0.x - p1.x, y: p0.y - p1.y };
+		const lenR = Math.hypot(dirR.x, dirR.y) || 1;
+		const extR1 = { x: p0.x + (dirR.x / lenR) * extendRetromolarMm * 0.5, y: p0.y + (dirR.y / lenR) * extendRetromolarMm * 0.5 };
+		const extR2 = { x: p0.x + (dirR.x / lenR) * extendRetromolarMm, y: p0.y + (dirR.y / lenR) * extendRetromolarMm };
 
-		// Distal extension on Left quadrant (beyond 38/28)
 		const pLast = pts[pts.length - 1]!;
 		const pPrev = pts[pts.length - 2]!;
-		let dxL = pLast.x - pPrev.x;
-		let dyL = pLast.y - pPrev.y;
-		const lenL = Math.hypot(dxL, dyL) || 1;
-		dxL /= lenL;
-		dyL /= lenL;
-
-		const extR2 = { x: p0.x + dxR * extendRetromolarMm, y: p0.y + dyR * extendRetromolarMm };
-		const extR1 = { x: p0.x + dxR * (extendRetromolarMm * 0.5), y: p0.y + dyR * (extendRetromolarMm * 0.5) };
-		const extL1 = { x: pLast.x + dxL * (extendRetromolarMm * 0.5), y: pLast.y + dyL * (extendRetromolarMm * 0.5) };
-		const extL2 = { x: pLast.x + dxL * extendRetromolarMm, y: pLast.y + dyL * extendRetromolarMm };
+		const dirL = { x: pLast.x - pPrev.x, y: pLast.y - pPrev.y };
+		const lenL = Math.hypot(dirL.x, dirL.y) || 1;
+		const extL1 = { x: pLast.x + (dirL.x / lenL) * extendRetromolarMm * 0.5, y: pLast.y + (dirL.y / lenL) * extendRetromolarMm * 0.5 };
+		const extL2 = { x: pLast.x + (dirL.x / lenL) * extendRetromolarMm, y: pLast.y + (dirL.y / lenL) * extendRetromolarMm };
 
 		pts = [extR2, extR1, ...pts, extL1, extL2];
 	}
@@ -369,12 +357,7 @@ export interface VariableFocalTroughOptions {
 	readonly enabled?: boolean;
 }
 
-/**
- * Calculates continuous variable focal trough thickness along the dental arch:
- * - Incisors: 8-10 mm (cuts off cervical spine artifact)
- * - Premolars: 12-14 mm
- * - Molars & Ramus: 18-22 mm (encloses wide bone and divergent roots)
- */
+/** Calculates continuous variable focal trough thickness along the dental arch (incisors ~9mm, molars ~20mm). */
 export function calculateVariableTroughThicknessMm(
 	distanceAlongArchMm: number,
 	totalArchLengthMm: number,
@@ -399,11 +382,7 @@ export function calculateVariableTroughThicknessMm(
 	}
 }
 
-/**
- * Computes the parallel inner and outer boundary curves of the focal trough
- * offset by +/- (thickness / 2) along the normal vectors.
- * Supports physiological anterior narrowing (anteriorTroughRatio: 0.5..0.8) and variable trough options.
- */
+/** Computes parallel inner and outer boundary curves of the focal trough offset along normal vectors. */
 export function getFocalTroughBoundaryCurves(
 	spline: readonly Point2D[],
 	thicknessMm: number,
@@ -415,7 +394,7 @@ export function getFocalTroughBoundaryCurves(
 } {
 	const isOptionsObj = typeof anteriorTroughRatio === "object" && anteriorTroughRatio !== null;
 	const varOpts = variableOptions ?? (isOptionsObj ? anteriorTroughRatio : undefined);
-	const numRatio = isOptionsObj ? 1.0 : (Number.isFinite(anteriorTroughRatio) ? anteriorTroughRatio : 1.0);
+	const numRatio = isOptionsObj ? 1.0 : (typeof anteriorTroughRatio === "number" && Number.isFinite(anteriorTroughRatio) ? anteriorTroughRatio : 1.0);
 
 	const validThickness = Number.isFinite(thicknessMm) && thicknessMm > 0 ? thicknessMm : 12.0;
 	const halfThickness = validThickness / 2.0;
@@ -452,7 +431,59 @@ export function getFocalTroughBoundaryCurves(
 }
 
 /**
- * Builds a complete DentalArchCurve model from anchor points.
+ * Projects an arbitrary 2D physical point onto the smooth arch spline curve.
+ * Returns the closest point on the spline, arc-distance along the curve, and signed lateral offset.
+ */
+export function projectPointOntoArchSpline(
+	pt: Point2D,
+	spline: readonly Point2D[],
+): { projectedPoint: Point2D; distanceAlongArchMm: number; lateralOffsetMm: number } {
+	if (!spline || spline.length === 0) {
+		return { projectedPoint: { ...pt }, distanceAlongArchMm: 0, lateralOffsetMm: 0 };
+	}
+	if (spline.length === 1) {
+		return {
+			projectedPoint: { ...spline[0]! },
+			distanceAlongArchMm: 0,
+			lateralOffsetMm: Math.hypot(pt.x - spline[0]!.x, pt.y - spline[0]!.y),
+		};
+	}
+
+	let bestDistSq = Infinity;
+	let bestPt: Point2D = spline[0]!;
+	let bestArcDist = 0;
+	let accumulatedDist = 0;
+
+	for (let i = 0; i < spline.length - 1; i++) {
+		const p0 = spline[i]!;
+		const p1 = spline[i + 1]!;
+		const segDx = p1.x - p0.x;
+		const segDy = p1.y - p0.y;
+		const segLen = Math.hypot(segDx, segDy);
+		if (segLen < 1e-6) continue;
+
+		const t = Math.max(0, Math.min(1, ((pt.x - p0.x) * segDx + (pt.y - p0.y) * segDy) / (segLen * segLen)));
+		const projX = p0.x + t * segDx;
+		const projY = p0.y + t * segDy;
+		const distSq = (pt.x - projX) ** 2 + (pt.y - projY) ** 2;
+
+		if (distSq < bestDistSq) {
+			bestDistSq = distSq;
+			bestPt = { x: Number(projX.toFixed(2)), y: Number(projY.toFixed(2)) };
+			bestArcDist = accumulatedDist + t * segLen;
+		}
+		accumulatedDist += segLen;
+	}
+
+	return {
+		projectedPoint: bestPt,
+		distanceAlongArchMm: Number(bestArcDist.toFixed(2)),
+		lateralOffsetMm: Number(Math.sqrt(bestDistSq).toFixed(2)),
+	};
+}
+
+/**
+ * Builds a complete DentalArchCurve model from anchor points or an explicit smooth spline.
  */
 export function buildDentalArchCurve(
 	anchors: readonly DentalArchAnchor[],
@@ -461,8 +492,11 @@ export function buildDentalArchCurve(
 	planeZMm?: number,
 	extendRetromolarMm = 0,
 	extraControlPoints?: { readonly rightExt?: readonly Point2D[]; readonly leftExt?: readonly Point2D[] },
+	explicitSpline?: readonly Point2D[],
 ): DentalArchCurve {
-	const spline = fitSmoothDentalArchSpline(anchors, 8, extendRetromolarMm, extraControlPoints);
+	const spline = explicitSpline && explicitSpline.length >= 2
+		? [...explicitSpline]
+		: fitSmoothDentalArchSpline(anchors, 8, extendRetromolarMm, extraControlPoints);
 	const totalLength = calculateArchLengthMm(spline);
 
 	return {

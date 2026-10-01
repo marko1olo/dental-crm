@@ -284,19 +284,21 @@ export function computeVolume3DRotationMatrix(yawDeg: number, pitchDeg: number):
 }
 
 /**
- * Fallback to Canvas2D software raymarching (used in headless test environments like jsdom/node test).
+ * Safe Canvas2D lightweight preview slice renderer (FEAT-GPU-SAFEGUARD):
+ * Blocked heavy 224 MB CPU raymarching to prevent browser lockup.
+ * Extracts a fast 2D central slice corresponding to camera rotation (< 1 ms, 0% CPU burn).
  */
-export function renderCanvas2DVolumeRaymarching(
+export function renderCanvas2DPreviewSlice(
 	canvas: HTMLCanvasElement,
 	volume: CbctVoxelVolume | null,
-	activePreset: Volume3DPresetId,
-	yaw: number,
-	pitch: number,
-	zoom: number,
-	pan: { x: number; y: number },
-	width: number,
-	height: number,
-	isInteracting: boolean,
+	activePreset: Volume3DPresetId = "skull",
+	yaw: number = 30,
+	pitch: number = 12,
+	zoom: number = 1.0,
+	pan: { x: number; y: number } = { x: 0, y: 0 },
+	width: number = 256,
+	height: number = 256,
+	isInteracting: boolean = false,
 	clipping: Volume3DClippingBox = DEFAULT_VOLUME_3D_CLIPPING_BOX,
 ): void {
 	const ctx = canvas.getContext("2d");
@@ -317,24 +319,21 @@ export function renderCanvas2DVolumeRaymarching(
 	const preset = getVolume3DPreset(activePreset);
 	const rotMat = computeVolume3DRotationMatrix(yaw, pitch);
 
-	// Render authentic 3D raycasting of voxel volume
 	const dim = volume.dimensions;
 	const data = volume.data;
 	const huMin = preset.huMin;
 	const huMax = preset.huMax;
 
-	// Render raycast projection with surface normal shading
 	const imgData = ctx.createImageData(width, height);
-	// Pre-fill canvas with deep medical dark background (#09090b) in single fast typed array call
-	// Little-endian RGBA: R=0x09, G=0x09, B=0x0b, A=0xff -> 0xff0b0909
 	const u32 = new Uint32Array(imgData.data.buffer);
+	// Background #09090b (RGBA little-endian: 0xff0b0909)
 	u32.fill(0xff0b0909);
 
 	const centerX = width / 2 + pan.x;
 	const centerY = height / 2 + pan.y;
 	const maxDim = Math.max(dim.width, Math.max(dim.height, dim.depth));
 	const scale = (Math.min(width, height) / maxDim) * zoom * 0.9;
-	const invScale = 1.0 / scale;
+	const invScale = 1.0 / (scale || 1);
 
 	const halfW = dim.width / 2;
 	const halfH = dim.height / 2;
@@ -344,31 +343,10 @@ export function renderCanvas2DVolumeRaymarching(
 	const dimH = dim.height;
 	const dimD = dim.depth;
 
-	// Ray origin and direction rotated by view matrix (constant for all rays)
-	const rayDirX = rotMat[0]![2]!;
-	const rayDirY = rotMat[1]![2]!;
-	const rayDirZ = rotMat[2]![2]!;
-
-	// Adaptive interactive sampling: during mouse/touch drag, render fast 60 FPS sub-sampled pass.
-	// When idle/released, render razor-sharp beauty pass.
-	const canvas2dSubSample = isInteracting ? (width > 500 ? 4 : 3) : (width > 400 ? 2 : 1);
-	const maxSteps = isInteracting ? 64 : 256;
-	const nominalStepSize = isInteracting ? Math.max(2.5, maxDim / 64) : Math.max(0.8, maxDim / 256);
-
-	const lightDir = [0.4, 0.6, 0.7]; // Directional light from front-top-right
-	const lightLen = Math.hypot(lightDir[0]!, lightDir[1]!, lightDir[2]!);
-	const lx = lightDir[0]! / lightLen;
-	const ly = lightDir[1]! / lightLen;
-	const lz = lightDir[2]! / lightLen;
-
 	const baseR = preset.colorRgb[0];
 	const baseG = preset.colorRgb[1];
 	const baseB = preset.colorRgb[2];
 
-	const tMinLimit = -maxDim * 0.8;
-	const tMaxLimit = maxDim * 0.8;
-
-	// Cache matrix coefficients for fast ray-plane origin computation
 	const m00 = rotMat[0]![0]!;
 	const m01 = rotMat[0]![1]!;
 	const m10 = rotMat[1]![0]!;
@@ -376,228 +354,56 @@ export function renderCanvas2DVolumeRaymarching(
 	const m20 = rotMat[2]![0]!;
 	const m21 = rotMat[2]![1]!;
 
-	for (let py = 0; py < height; py += canvas2dSubSample) {
+	const subSample: number = isInteracting ? 4 : 2;
+
+	for (let py = 0; py < height; py += subSample) {
 		const viewY = -(py - centerY) * invScale;
 		const r01_vY = m01 * viewY;
 		const r11_vY = m11 * viewY;
 		const r21_vY = m21 * viewY;
 
-		for (let px = 0; px < width; px += canvas2dSubSample) {
+		for (let px = 0; px < width; px += subSample) {
 			const viewX = (px - centerX) * invScale;
 
-			// Ray plane starting point in centered coordinates
-			const planeX = m00 * viewX + r01_vY;
-			const planeY = m10 * viewX + r11_vY;
-			const planeZ = m20 * viewX + r21_vY;
+			// Sample single point at center of volume (t=0)
+			const curX = m00 * viewX + r01_vY + halfW;
+			const curY = m10 * viewX + r11_vY + halfH;
+			const curZ = m20 * viewX + r21_vY + halfD;
 
-			// Slab AABB bounding box intersection test:
-			// If ray completely misses the skull box [-halfW..halfW, -halfH..halfH, -halfD..halfD],
-			// instantly skip with ZERO steps!
-			const aabb = intersectRayAABB(
-				planeX,
-				planeY,
-				planeZ,
-				rayDirX,
-				rayDirY,
-				rayDirZ,
-				-halfW,
-				halfW,
-				-halfH,
-				halfH,
-				-halfD,
-				halfD,
-				tMinLimit,
-				tMaxLimit,
-			);
-
-			if (!aabb.hit || aabb.tNear >= aabb.tFar) {
-				// Ray misses skull volume entirely -> stays background color (#09090b)
+			// Clipping box check
+			const normX = curX / dimW;
+			const normY = curY / dimH;
+			const normZ = curZ / dimD;
+			if (
+				normX < clipping.clipMin[0] || normX > clipping.clipMax[0] ||
+				normY < clipping.clipMin[1] || normY > clipping.clipMax[1] ||
+				normZ < clipping.clipMin[2] || normZ > clipping.clipMax[2]
+			) {
 				continue;
 			}
 
-			const tNear = aabb.tNear;
-			const tFar = aabb.tFar;
-			const rayDist = tFar - tNear;
-			const numSteps = Math.max(1, Math.min(maxSteps, Math.ceil(rayDist / nominalStepSize)));
-			const dt = rayDist / numSteps;
+			const vx = curX | 0;
+			const vy = curY | 0;
+			const vz = curZ | 0;
 
-			let curX = planeX + rayDirX * tNear + halfW;
-			let curY = planeY + rayDirY * tNear + halfH;
-			let curZ = planeZ + rayDirZ * tNear + halfD;
-			const dX = rayDirX * dt;
-			const dY = rayDirY * dt;
-			const dZ = rayDirZ * dt;
+			if (vx >= 0 && vx < dimW && vy >= 0 && vy < dimH && vz >= 0 && vz < dimD) {
+				const hu = data[vz * sliceSize + vy * dimW + vx] ?? -1000;
+				if (hu >= huMin) {
+					const norm = Math.min(1.0, Math.max(0.0, (hu - huMin) / (huMax - huMin || 1)));
+					const shade = 0.40 + 0.60 * norm;
+					const r = Math.min(255, (baseR * shade) | 0);
+					const g = Math.min(255, (baseG * shade) | 0);
+					const b = Math.min(255, (baseB * shade) | 0);
+					const colorU32 = (255 << 24) | (b << 16) | (g << 8) | r;
 
-			let hit = false;
-			let maxHU = -1000;
-			let hitDepth = 0;
-			let nx = 0;
-			let ny = 0;
-			let nz = 0;
-
-			for (let step = 0; step < numSteps; step++) {
-				// 3D Volume Clipping Box check (normalized UVW [0, 1])
-				const normX = curX / dimW;
-				const normY = curY / dimH;
-				const normZ = curZ / dimD;
-				if (
-					normX < clipping.clipMin[0] || normX > clipping.clipMax[0] ||
-					normY < clipping.clipMin[1] || normY > clipping.clipMax[1] ||
-					normZ < clipping.clipMin[2] || normZ > clipping.clipMax[2]
-				) {
-					curX += dX;
-					curY += dY;
-					curZ += dZ;
-					continue;
-				}
-
-				const vx = curX | 0;
-				const vy = curY | 0;
-				const vz = curZ | 0;
-
-				if (vx >= 0 && vx < dimW && vy >= 0 && vy < dimH && vz >= 0 && vz < dimD) {
-					const idx = vz * sliceSize + vy * dimW + vx;
-					const hu = data[idx] ?? -1000;
-
-					if (preset.id === "mip") {
-						if (hu > maxHU) {
-							maxHU = hu;
-							// Early ray termination: maximum enamel/metal threshold reached (> 2500 HU)
-							if (maxHU >= 2500 || maxHU >= huMax) {
-								break;
+					if (subSample === 1) {
+						u32[py * width + px] = colorU32;
+					} else {
+						for (let sy = 0; sy < subSample && py + sy < height; sy++) {
+							const rowOffset = (py + sy) * width;
+							for (let sx = 0; sx < subSample && px + sx < width; sx++) {
+								u32[rowOffset + px + sx] = colorU32;
 							}
-						}
-					} else if (hu >= huMin) {
-						// Hit skull bone surface: early ray termination with bisection refinement
-						hit = true;
-						hitDepth = (step + 1) / numSteps;
-
-						let hitX = curX;
-						let hitY = curY;
-						let hitZ = curZ;
-
-						if (!isInteracting) {
-							let p0X = curX - dX;
-							let p0Y = curY - dY;
-							let p0Z = curZ - dZ;
-							let p1X = curX;
-							let p1Y = curY;
-							let p1Z = curZ;
-
-							for (let b = 0; b < 4; b++) {
-								const pmX = (p0X + p1X) * 0.5;
-								const pmY = (p0Y + p1Y) * 0.5;
-								const pmZ = (p0Z + p1Z) * 0.5;
-								const bvx = Math.max(0, Math.min(dimW - 1, pmX | 0));
-								const bvy = Math.max(0, Math.min(dimH - 1, pmY | 0));
-								const bvz = Math.max(0, Math.min(dimD - 1, pmZ | 0));
-								const bhu = data[bvz * sliceSize + bvy * dimW + bvx] ?? -1000;
-								if (bhu >= huMin) {
-									p1X = pmX; p1Y = pmY; p1Z = pmZ;
-								} else {
-									p0X = pmX; p0Y = pmY; p0Z = pmZ;
-								}
-							}
-							hitX = (p0X + p1X) * 0.5;
-							hitY = (p0Y + p1Y) * 0.5;
-							hitZ = (p0Z + p1Z) * 0.5;
-						}
-
-						const vxP = Math.min(dimW - 1, (hitX | 0) + 2);
-						const vxM = Math.max(0, (hitX | 0) - 2);
-						const vyP = Math.min(dimH - 1, (hitY | 0) + 2);
-						const vyM = Math.max(0, (hitY | 0) - 2);
-						const vzP = Math.min(dimD - 1, (hitZ | 0) + 2);
-						const vzM = Math.max(0, (hitZ | 0) - 2);
-
-						const hvy = (hitY | 0);
-						const hvz = (hitZ | 0);
-						const hvx = (hitX | 0);
-						const zOff = hvz * sliceSize;
-						const yOff = hvy * dimW;
-
-						const gx = (data[zOff + yOff + vxP] ?? hu) - (data[zOff + yOff + vxM] ?? hu);
-						const gy = (data[zOff + vyP * dimW + hvx] ?? hu) - (data[zOff + vyM * dimW + hvx] ?? hu);
-						const gz = (data[vzP * sliceSize + yOff + hvx] ?? hu) - (data[vzM * sliceSize + yOff + hvx] ?? hu);
-
-						const gLen = Math.hypot(gx, gy, gz) || 1;
-						// Outward surface normal points toward lower density (-grad)
-						nx = -gx / gLen;
-						ny = -gy / gLen;
-						nz = -gz / gLen;
-						// Ensure normal faces camera
-						if (nx * (-rayDirX) + ny * (-rayDirY) + nz * (-rayDirZ) < 0) {
-							nx = -nx;
-							ny = -ny;
-							nz = -nz;
-						}
-						break;
-					}
-				}
-
-				curX += dX;
-				curY += dY;
-				curZ += dZ;
-			}
-
-			let r = 0;
-			let g = 0;
-			let b = 0;
-			let a = 0;
-
-			if (preset.id === "mip") {
-				if (maxHU > huMin) {
-					const norm = Math.max(0, Math.min(1, (maxHU - huMin) / (huMax - huMin)));
-					r = (baseR * norm) | 0;
-					g = (baseG * norm) | 0;
-					b = (baseB * norm) | 0;
-					a = 255;
-				}
-			} else if (hit) {
-				// Clinical Anatomical Phong Shading: Ambient + Lambert Diffuse + Enamel Specular + Rim
-				const viewDirX = -rayDirX;
-				const viewDirY = -rayDirY;
-				const viewDirZ = -rayDirZ;
-
-				const lVecX = viewDirX * 0.82 + m00 * 0.35 + m01 * 0.45;
-				const lVecY = viewDirY * 0.82 + m10 * 0.35 + m11 * 0.45;
-				const lVecZ = viewDirZ * 0.82 + m20 * 0.35 + m21 * 0.45;
-				const lLen = Math.hypot(lVecX, lVecY, lVecZ) || 1;
-				const nlx = lVecX / lLen;
-				const nly = lVecY / lLen;
-				const nlz = lVecZ / lLen;
-
-				const NdotL = Math.max(0, nx * nlx + ny * nly + nz * nlz);
-				const ambient = 0.32;
-				const diff = NdotL * 0.68;
-				const depthFade = 1.0 - hitDepth * 0.15;
-
-				const hx = nlx + viewDirX;
-				const hy = nly + viewDirY;
-				const hz = nlz + viewDirZ;
-				const hLen = Math.hypot(hx, hy, hz) || 1;
-				const NdotH = Math.max(0, nx * (hx / hLen) + ny * (hy / hLen) + nz * (hz / hLen));
-				const spec = Math.pow(NdotH, 32.0) * 0.35;
-
-				const NdotV = Math.max(0, nx * viewDirX + ny * viewDirY + nz * viewDirZ);
-				const rim = Math.pow(1.0 - NdotV, 3.0) * 0.18;
-
-				const shade = ambient + diff * depthFade + rim;
-				r = Math.min(255, Math.max(0, (baseR * shade + 255 * spec) | 0));
-				g = Math.min(255, Math.max(0, (baseG * shade + 250 * spec) | 0));
-				b = Math.min(255, Math.max(0, (baseB * shade + 235 * spec) | 0));
-				a = 255;
-			}
-
-			if (a > 0) {
-				const colorU32 = (a << 24) | (b << 16) | (g << 8) | r;
-				if (canvas2dSubSample === 1) {
-					u32[py * width + px] = colorU32;
-				} else {
-					for (let sy = 0; sy < canvas2dSubSample && py + sy < height; sy++) {
-						const rowOffset = (py + sy) * width;
-						for (let sx = 0; sx < canvas2dSubSample && px + sx < width; sx++) {
-							u32[rowOffset + px + sx] = colorU32;
 						}
 					}
 				}
@@ -606,4 +412,61 @@ export function renderCanvas2DVolumeRaymarching(
 	}
 
 	ctx.putImageData(imgData, 0, 0);
+
+	// Clinical safeguard badge: WebGL2 Offline Notice
+	ctx.save();
+	ctx.fillStyle = "rgba(24, 24, 27, 0.85)";
+	ctx.strokeStyle = "rgba(234, 179, 8, 0.4)";
+	ctx.lineWidth = 1;
+	const badgeW = 270;
+	const badgeH = 22;
+	const badgeX = Math.max(8, (width - badgeW) / 2);
+	const badgeY = 8;
+	if (typeof (ctx as any).roundRect === "function") {
+		(ctx as any).roundRect(badgeX, badgeY, badgeW, badgeH, 4);
+	} else {
+		ctx.rect(badgeX, badgeY, badgeW, badgeH);
+	}
+	ctx.fill();
+	ctx.stroke();
+
+	ctx.fillStyle = "#facc15";
+	ctx.font = "bold 10px monospace";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillText("⚡ WebGL2 офлайн • Легкий 2D превью-срез", badgeX + badgeW / 2, badgeY + badgeH / 2);
+	ctx.restore();
+}
+
+/**
+ * Fallback to Canvas2D software raymarching (used in headless test environments like jsdom/node test).
+ * HARDENED (FEAT-GPU-SAFEGUARD): Heavy 224 MB CPU raymarching is permanently disabled.
+ * Automatically delegates to lightweight 2D preview slice (< 1 ms, 0% CPU burn).
+ */
+export function renderCanvas2DVolumeRaymarching(
+	canvas: HTMLCanvasElement,
+	volume: CbctVoxelVolume | null,
+	activePreset: Volume3DPresetId = "skull",
+	yaw: number = 30,
+	pitch: number = 12,
+	zoom: number = 1.0,
+	pan: { x: number; y: number } = { x: 0, y: 0 },
+	width: number = 256,
+	height: number = 256,
+	isInteracting: boolean = false,
+	clipping: Volume3DClippingBox = DEFAULT_VOLUME_3D_CLIPPING_BOX,
+): void {
+	renderCanvas2DPreviewSlice(
+		canvas,
+		volume,
+		activePreset,
+		yaw,
+		pitch,
+		zoom,
+		pan,
+		width,
+		height,
+		isInteracting,
+		clipping,
+	);
 }

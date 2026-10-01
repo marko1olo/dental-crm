@@ -6,15 +6,15 @@ import { showToast } from "../GlobalToast";
 
 export interface UseAppointmentModalPatientParams {
   isOpen: boolean;
-  initialPatientId?: string | null;
+  initialPatientId?: string | null | undefined;
   dashboard: Dashboard;
-  onQuickCreatePatient?: (data: {
+  onQuickCreatePatient?: ((data: {
     fullName: string;
-    phone?: string | null;
+    phone?: string | null | undefined;
   }) =>
     | Promise<{ id: string; fullName: string } | null>
     | { id: string; fullName: string }
-    | null;
+    | null) | undefined;
 }
 
 export function useAppointmentModalPatient({

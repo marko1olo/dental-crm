@@ -33,7 +33,7 @@ import {
 	rubToKopecks,
 } from "@dental/shared";
 import { formatFdiToothName } from "../portal/patientPortalEngine";
-import type { TreatmentPlanStage, TreatmentPlanItem } from "./types";
+import type { TreatmentPlanStage, TreatmentPlanItem, TreatmentPlanTier, TreatmentPlanTierId } from "./types";
 import "./treatmentPlanRoadmap.css";
 
 /**
@@ -89,17 +89,26 @@ export interface RoadmapStageData {
 }
 
 export interface TreatmentPlanRoadmapProps {
-	stages?: readonly TreatmentPlanStage[];
-	customRoadmapStages?: readonly RoadmapStageData[];
-	planTitle?: string;
-	planNumber?: string;
-	curatingDoctorName?: string;
-	patientFullName?: string;
-	onBookStage?: (stage: RoadmapStageData) => void;
-	onSelectStage?: (stage: RoadmapStageData) => void;
-	onBookStageSlot?: (stageNumber: number, stage: RoadmapStageData) => void;
-	onRequestTaxCertificate?: () => void;
-	className?: string;
+	tier?: TreatmentPlanTier | undefined;
+	stages?: readonly TreatmentPlanStage[] | undefined;
+	customRoadmapStages?: readonly RoadmapStageData[] | undefined;
+	planTitle?: string | undefined;
+	planNumber?: string | undefined;
+	curatingDoctorName?: string | undefined;
+	doctorName?: string | undefined;
+	patientFullName?: string | undefined;
+	patientName?: string | undefined;
+	clinicName?: string | undefined;
+	displayContractNumber?: string | undefined;
+	todayRu?: string | undefined;
+	getTierLetter?: ((tierId: TreatmentPlanTierId) => string) | undefined;
+	onPrint?: (() => void) | undefined;
+	onConfirmPatientChoice?: (() => void) | undefined;
+	onBookStage?: ((stage: RoadmapStageData) => void) | undefined;
+	onSelectStage?: ((stage: RoadmapStageData) => void) | undefined;
+	onBookStageSlot?: ((stageNumber: number, stage: RoadmapStageData) => void) | undefined;
+	onRequestTaxCertificate?: (() => void) | undefined;
+	className?: string | undefined;
 }
 
 /**
@@ -312,18 +321,30 @@ export const CANONICAL_ROADMAP_META: Record<
 };
 
 export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = ({
-	stages = [],
+	tier,
+	stages = tier?.stages || [],
 	customRoadmapStages,
-	planTitle = "Комплексный план стоматологического лечения",
+	planTitle = tier?.title || "Комплексный план стоматологического лечения",
 	planNumber = "",
 	curatingDoctorName = "Лечащий врач",
 	patientFullName = "Пациент",
+	doctorName,
+	patientName,
+	clinicName,
+	displayContractNumber,
+	todayRu,
+	getTierLetter,
+	onPrint,
+	onConfirmPatientChoice,
 	onBookStage,
 	onSelectStage,
 	onBookStageSlot,
 	onRequestTaxCertificate,
 	className = "",
 }) => {
+	const effectiveDoctorName = doctorName || curatingDoctorName;
+	const effectivePatientName = patientName || patientFullName;
+	const effectivePlanNumber = displayContractNumber || planNumber;
 	const [expandedStageNumbers, setExpandedStageNumbers] = useState<Record<number, boolean>>({
 		1: true,
 		2: true,

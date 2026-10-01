@@ -17,7 +17,7 @@ import type { InventoryItem } from "./inventory/useInventoryLogic.js";
 
 export interface InboundInvoiceItemLine {
 	id: string;
-	inventoryItemId?: string;
+	inventoryItemId?: string | undefined;
 	name: string;
 	lotNumber: string;
 	expirationDate: string;

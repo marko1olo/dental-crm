@@ -18,7 +18,7 @@ import type React from "react";
 import { useState } from "react";
 import {
 	panelStateText,
-	type PanelPhase,
+	type PanelPhaseOrReady,
 	type PanelSubject,
 } from "../../lib/panelStateText";
 import { PanelLoadFailure } from "../PanelLoadFailure";
@@ -54,7 +54,7 @@ export interface VisiographHistoryDrawerProps {
 	scanHistory: XrayHistoryItem[];
 	isLoadingHistory: boolean;
 	historyFailure: { status: number | null } | null;
-	historyPhase: PanelPhase;
+	historyPhase: PanelPhaseOrReady;
 	effectivePatientId?: string | null | undefined;
 	onLoadHistoryScan: (scan: XrayHistoryItem) => void;
 	onDeleteScan: (scan: XrayHistoryItem) => void;

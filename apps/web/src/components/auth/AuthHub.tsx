@@ -1,7 +1,13 @@
+import {
+	KeyRound,
+	Sparkles,
+	UserPlus,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { AcceptInvite } from "./AcceptInvite";
 import { AuthArtBackground } from "./AuthArtBackground";
 import { ClinicLogin } from "./ClinicLogin";
+import { DemoTourSelector } from "./DemoTourSelector";
 import { Register } from "./Register";
 import { UserLogin } from "./UserLogin";
 
@@ -10,10 +16,15 @@ interface AuthHubProps {
 	onSuccess: (clinicProfile: any, userProfile?: any) => void;
 }
 
+export type AuthHubView =
+	| "user_login"
+	| "clinic_login"
+	| "register"
+	| "demo_tour"
+	| "accept_invite";
+
 export function AuthHub({ onSuccess }: AuthHubProps) {
-	const [view, setView] = useState<
-		"clinic_login" | "user_login" | "register" | "accept_invite"
-	>("user_login");
+	const [view, setView] = useState<AuthHubView>("user_login");
 	const [inviteToken, setInviteToken] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -26,6 +37,10 @@ export function AuthHub({ onSuccess }: AuthHubProps) {
 					setInviteToken(token);
 					setView("accept_invite");
 				}
+			} else if (hash === "#/auth/register") {
+				setView("register");
+			} else if (hash === "#/auth/demo") {
+				setView("demo_tour");
 			}
 		};
 		checkHash();
@@ -33,10 +48,10 @@ export function AuthHub({ onSuccess }: AuthHubProps) {
 		return () => window.removeEventListener("hashchange", checkHash);
 	}, []);
 
-	// Shared background art layer — wraps all auth views
-	const renderContent = () => {
-		if (view === "accept_invite" && inviteToken) {
-			return (
+	if (view === "accept_invite" && inviteToken) {
+		return (
+			<div style={{ position: "fixed", inset: 0, overflow: "hidden" }}>
+				<AuthArtBackground />
 				<AcceptInvite
 					token={inviteToken}
 					onSuccess={onSuccess}
@@ -45,42 +60,95 @@ export function AuthHub({ onSuccess }: AuthHubProps) {
 						setView("user_login");
 					}}
 				/>
-			);
-		}
-
-		if (view === "register") {
-			return (
-				<Register
-					onSuccess={onSuccess}
-					onSwitchToLogin={() => setView("user_login")}
-				/>
-			);
-		}
-
-		if (view === "user_login") {
-			return (
-				<UserLogin
-					onSuccess={onSuccess}
-					onSwitchToRegister={() => setView("register")}
-					onSwitchToClinicMode={() => setView("clinic_login")}
-				/>
-			);
-		}
-
-		return (
-			<ClinicLogin
-				onLoginSuccess={(cp) => {
-					onSuccess(cp, null);
-				}}
-				onSwitchToUserLogin={() => setView("user_login")}
-			/>
+			</div>
 		);
-	};
+	}
+
+	const activeTab =
+		view === "register"
+			? "register"
+			: view === "demo_tour"
+				? "demo"
+				: "login";
 
 	return (
 		<div style={{ position: "fixed", inset: 0, overflow: "hidden" }}>
 			<AuthArtBackground />
-			{renderContent()}
+
+			<div className="auth-overlay">
+				<div className="auth-glow auth-glow--left" />
+				<div className="auth-glow auth-glow--right" />
+
+				<div
+					className={`auth-modal auth-glass-surface ${view === "demo_tour" ? "auth-modal--demo-tour" : ""}`}
+				>
+					{/* Unified Segmented Navigation Tab Bar */}
+					<div className="auth-segmented-nav">
+						<button
+							type="button"
+							onClick={() => setView("user_login")}
+							className={`auth-segmented-btn ${activeTab === "login" ? "active" : ""}`}
+							title="Вход по Email, телефону или ID клиники"
+						>
+							<KeyRound size={14} className="auth-nav-icon" />
+							<span>Вход</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setView("register")}
+							className={`auth-segmented-btn ${activeTab === "register" ? "active" : ""}`}
+							title="Создать рабочий кабинет за 30 секунд без пейволла"
+						>
+							<UserPlus size={14} className="auth-nav-icon" />
+							<span>Регистрация</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setView("demo_tour")}
+							className={`auth-segmented-btn auth-segmented-btn--highlight ${activeTab === "demo" ? "active" : ""}`}
+							title="Ознакомительный тур по 5 клиническим ролям"
+						>
+							<Sparkles size={14} className="auth-nav-icon" />
+							<span>Демо-тур</span>
+						</button>
+					</div>
+
+					{/* Active View Container */}
+					{view === "register" && (
+						<Register
+							onSuccess={onSuccess}
+							onSwitchToLogin={() => setView("user_login")}
+							onSwitchToDemoTour={() => setView("demo_tour")}
+						/>
+					)}
+
+					{view === "demo_tour" && (
+						<DemoTourSelector
+							onSuccess={onSuccess}
+							onBackToLogin={() => setView("user_login")}
+						/>
+					)}
+
+					{view === "clinic_login" && (
+						<ClinicLogin
+							onLoginSuccess={(cp) => onSuccess(cp, null)}
+							onSwitchToUserLogin={() => setView("user_login")}
+							onSwitchToDemoTour={() => setView("demo_tour")}
+						/>
+					)}
+
+					{view === "user_login" && (
+						<UserLogin
+							onSuccess={onSuccess}
+							onSwitchToRegister={() => setView("register")}
+							onSwitchToClinicMode={() => setView("clinic_login")}
+							onSwitchToDemoTour={() => setView("demo_tour")}
+						/>
+					)}
+				</div>
+			</div>
 		</div>
 	);
 }

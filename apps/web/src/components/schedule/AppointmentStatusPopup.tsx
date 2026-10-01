@@ -1,6 +1,7 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import React from "react";
 import {
+	AlertTriangle,
 	CalendarCheck,
 	CheckCircle2,
 	Clock,
@@ -37,7 +38,7 @@ export interface AppointmentStatusPopupProps {
 	handleQuickStatusChange: (status: Appointment["status"], noteAppend?: string) => Promise<void>;
 	onCloseHover: () => void;
 	onKeepHover: () => void;
-	onOpenVisit?: () => void;
+	onOpenVisit?: (() => void) | undefined;
 }
 
 export function AppointmentHoverHud({

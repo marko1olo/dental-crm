@@ -36,11 +36,12 @@ import {
 	type ClinicalBundleId,
 } from "./treatmentPlanBundlesEngine";
 import { ClinicalBundlesPanel } from "./ClinicalBundlesPanel";
+import type { TreatmentPlanStatus } from "./types";
 
 export interface TreatmentPlanToolbarProps {
 	readonly planAgeDays: number;
-	readonly planStatus: "draft" | "agreed" | "in_progress" | "completed";
-	readonly onStatusTransition: (newStatus: "draft" | "agreed" | "in_progress" | "completed") => void;
+	readonly planStatus: TreatmentPlanStatus;
+	readonly onStatusTransition: (newStatus: TreatmentPlanStatus) => void;
 	readonly patientName: string;
 	readonly totalItemsCount: number;
 	readonly activeViewTab: "3tier" | "stages" | "phased4";
@@ -706,7 +707,7 @@ export const TreatmentPlanToolbar: React.FC<TreatmentPlanToolbarProps> = ({
 							</div>
 
 							<div className="flex items-center gap-2 shrink-0">
-								{(customStages || cbctAutoPlanTiers) && (
+								{Boolean(customStages || cbctAutoPlanTiers) && (
 									<button
 										type="button"
 										onClick={onResetPlan}

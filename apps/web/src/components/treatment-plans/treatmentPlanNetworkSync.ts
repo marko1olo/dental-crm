@@ -9,6 +9,7 @@ import type {
 	CashierInvoiceExportData,
 	DigitalSignatureAgreementData,
 	TreatmentPlanStage,
+	TreatmentPlanStatus,
 	TreatmentPlanTier,
 } from "./types";
 import {
@@ -92,7 +93,7 @@ export interface ExportCashierParams {
 		netPayableRub: number;
 		netPayableKopecks: Kopecks;
 	};
-	onExportToCashier?: (data: CashierInvoiceExportData) => void;
+	onExportToCashier?: ((data: CashierInvoiceExportData) => void) | undefined;
 }
 
 export function exportPlanToCashier({
@@ -226,12 +227,12 @@ export interface SavePlanParams {
 	patientId: string;
 	currentPlanId: string | null;
 	currentTier: TreatmentPlanTier;
-	planStatus: "draft" | "agreed" | "in_progress" | "completed";
+	planStatus: TreatmentPlanStatus;
 	signedAgreement: DigitalSignatureAgreementData | null;
 	stages: readonly TreatmentPlanStage[];
 	grandTotalRub: number;
 	totalItemsCount: number;
-	onPlanSaved?: (planId: string) => void;
+	onPlanSaved?: ((planId: string) => void) | undefined;
 }
 
 export async function savePlanToPostgres({

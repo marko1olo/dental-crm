@@ -30,11 +30,15 @@ export interface PanoramicReconstructionResult {
 	readonly heightPx: number;
 	readonly focalThicknessMm: number;
 	readonly centerZMm?: number;
+	readonly heightMm?: number;
+	readonly pixelSpacingMm?: number | undefined;
 	readonly pixelData: Uint8ClampedArray; // RGBA grayscale image
 	readonly toothMarkersOnPano: ReadonlyArray<{
 		readonly toothFdi: string;
 		readonly xPx: number;
 		readonly labelRu: string;
+		readonly isUpper?: boolean;
+		readonly isLower?: boolean;
 	}>;
 }
 
@@ -42,6 +46,7 @@ export interface PanoramicReconstructionOptions {
 	readonly heightMm?: number;
 	readonly heightPx?: number;
 	readonly widthPx?: number;
+	readonly pixelSpacingMm?: number;
 	readonly centerZMm?: number;
 	readonly windowWidth?: number;
 	readonly windowLevel?: number;
@@ -56,6 +61,7 @@ export interface PanoramicReconstructionOptions {
 	readonly anteriorTroughRatio?: number;
 	readonly enableVariableTrough?: boolean;
 	readonly variableTroughOptions?: VariableFocalTroughOptions;
+	readonly softKnee?: boolean | import("./cbctLutMath").SoftKneeConfig;
 }
 
 /**
@@ -137,7 +143,7 @@ export function calculateToothMarkersOnPano(
 	vectorField: ReadonlyArray<{ point: Point2D; normal: Point2D; tangent: Point2D; distanceAlongArchMm: number }>,
 	totalLengthMm: number,
 	outW: number,
-): Array<{ toothFdi: string; xPx: number; labelRu: string }> {
+): Array<{ toothFdi: string; xPx: number; labelRu: string; isUpper: boolean; isLower: boolean }> {
 	const nNodes = vectorField.length;
 	return archCurve.anchors.map((anchor) => {
 		let minDistance = Infinity;
@@ -171,10 +177,17 @@ export function calculateToothMarkersOnPano(
 		const mappedCol = Math.round(minMarginPx + ratio * availableWidth);
 		const clampedCol = Math.max(minMarginPx, Math.min(outW - minMarginPx, mappedCol));
 
+		const fdiNum = parseInt(anchor.toothFdi, 10);
+		const quadrant = Math.floor(fdiNum / 10);
+		const isUpper = quadrant === 1 || quadrant === 2 || quadrant === 5 || quadrant === 6;
+		const isLower = quadrant === 3 || quadrant === 4 || quadrant === 7 || quadrant === 8;
+
 		return {
 			toothFdi: anchor.toothFdi,
 			xPx: clampedCol,
 			labelRu: anchor.labelRu,
+			isUpper,
+			isLower,
 		};
 	});
 }
@@ -199,20 +212,26 @@ export function reconstructPanoramicView(
 	archCurve: DentalArchCurve,
 	options: PanoramicReconstructionOptions = {},
 ): PanoramicReconstructionResult {
+	const defaultHeightMm = volume?.physicalSizeMm?.z ? Math.min(78.0, Math.max(55.0, volume.physicalSizeMm.z * 0.98)) : 74.0;
 	const {
-		heightMm = 38.0,
-		heightPx = 220,
+		heightMm = defaultHeightMm,
+		heightPx,
 		widthPx,
-		windowWidth = 3500,
-		windowLevel = 800,
-		projectionMode = "mip",
+		windowWidth = 4200,
+		windowLevel = 1100,
+		projectionMode = "ray_sum",
 		centerZMm: userCenterZMm,
 		invert = false,
 		coarsePreview = false,
 	} = options;
 
-	const effectiveThickness = options.focalTroughThicknessMm ?? archCurve?.focalTroughThicknessMm ?? 14.0;
-	const outH = heightPx;
+	const effectiveThickness = options.focalTroughThicknessMm ?? archCurve?.focalTroughThicknessMm ?? 7.0;
+	const totalLengthMm = archCurve?.totalArcLengthMm || 100.0;
+	// Strict Isometric CPR resolution: 1 physical mm along arch = 1 physical mm along Z axis
+	const stepMm = options.pixelSpacingMm ?? (volume?.spacingMm?.x && volume.spacingMm.x >= 0.15 ? volume.spacingMm.x : 0.25);
+	const pixelSpacing = stepMm;
+	const outW = widthPx ?? Math.max(100, Math.round(totalLengthMm / stepMm));
+	const outH = heightPx ?? Math.max(100, Math.round(heightMm / stepMm));
 
 	if (!volume || !volume.data || volume.isDisposed || !archCurve || !archCurve.splinePointsMm || archCurve.splinePointsMm.length === 0) {
 		const safeW = widthPx ?? 500;
@@ -221,6 +240,8 @@ export function reconstructPanoramicView(
 			heightPx: outH,
 			focalThicknessMm: effectiveThickness,
 			centerZMm: userCenterZMm ?? 0.0,
+			heightMm,
+			pixelSpacingMm: pixelSpacing,
 			pixelData: new Uint8ClampedArray(safeW * outH * 4),
 			toothMarkersOnPano: [],
 		};
@@ -231,7 +252,13 @@ export function reconstructPanoramicView(
 		try {
 			const engine = getGlobalWebGl2PanoramicEngine();
 			if (engine) {
-				const gpuResult = engine.reconstruct(volume, archCurve, options);
+				const gpuResult = engine.reconstruct(volume, archCurve, {
+					...options,
+					heightMm,
+					heightPx: outH,
+					widthPx: outW,
+					focalTroughThicknessMm: effectiveThickness,
+				});
 				if (gpuResult) return gpuResult;
 			}
 		} catch {
@@ -243,7 +270,6 @@ export function reconstructPanoramicView(
 
 	const splinePoints = archCurve.splinePointsMm;
 	const vectorField = calculateArchTangentsAndNormals(splinePoints);
-	const outW = widthPx ?? Math.max(500, Math.round(archCurve.totalArcLengthMm / (volume.spacingMm?.x || 0.35)));
 	const pixelBuffer = new Uint8ClampedArray(outW * outH * 4);
 
 	// Adaptive focal trough slab sampling (default 12-16 mm, dense sampling step 0.35 - 0.4 mm, or 0.8 mm for coarse preview)
@@ -262,7 +288,6 @@ export function reconstructPanoramicView(
 	const zBottomMm = centerZMm - heightMm / 2.0;
 	const zStepMm = (zTopMm - zBottomMm) / outH;
 	const nNodes = vectorField.length;
-	const totalLengthMm = archCurve.totalArcLengthMm || 100;
 
 	// Volume voxel spacing and origins for direct zero-allocation transformation
 	const originX = volume.originMm?.x ?? 0;
@@ -314,10 +339,10 @@ export function reconstructPanoramicView(
 		colNormY[col] = rawNormY / normLen;
 	}
 
-	// Enhanced clinical OPG contrast LUT: maps bone/enamel range cleanly
-	const effectiveWW = windowWidth ?? (volume.defaultWindowWidth && volume.defaultWindowWidth <= 3800 ? volume.defaultWindowWidth : 3500);
-	const effectiveWL = windowLevel ?? (volume.defaultWindowLevel && volume.defaultWindowLevel <= 1000 && volume.defaultWindowLevel >= 500 ? volume.defaultWindowLevel : 800);
-	const lut = get16BitLut(effectiveWW, effectiveWL, invert);
+	// Clinical soft-tone radiologic OPG contrast LUT: wide window 4200 / 1100 (enamel ~210..225/255, clear dentin, pulp & trabeculae)
+	const effectiveWW = windowWidth ?? (volume.defaultWindowWidth && volume.defaultWindowWidth >= 3000 ? volume.defaultWindowWidth : 4200);
+	const effectiveWL = windowLevel ?? (volume.defaultWindowLevel && volume.defaultWindowLevel >= 900 ? volume.defaultWindowLevel : 1100);
+	const lut = get16BitLut(effectiveWW, effectiveWL, invert, 1.0, options.softKnee);
 
 	// Zero-allocation sample voxel buffers per column
 	const sampleVx = new Float64Array(numSlab);
@@ -378,12 +403,16 @@ export function reconstructPanoramicView(
 				finalHU = minHU;
 			} else if (projectionMode === "average") {
 				finalHU = Math.round(sumHU / numSlab);
-			} else if (projectionMode === "ray_sum" || projectionMode === "raysum") {
-				// Clinical weighted ray-sum: blends 70% MIP sharpness with 30% soft tissue average
+			} else if (projectionMode === "slice" || projectionMode === "single") {
+				const centerS = slabSamples;
+				finalHU = sampleVoxelTrilinearHU(sampleVx[centerS]!, sampleVy[centerS]!, vz, volume);
+			} else if (projectionMode === "ray_sum" || projectionMode === "raysum" || projectionMode === "blend") {
+				// Clinical weighted ray-sum: blends 35% MIP sharpness with 65% soft tissue average
+				// Preserves dark pulp chambers, root canals, and trabecular patterns inside bright teeth!
 				const avgHU = sumHU / numSlab;
-				finalHU = Math.round(0.7 * maxHU + 0.3 * Math.max(0, avgHU));
+				finalHU = Math.round(0.35 * maxHU + 0.65 * avgHU);
 			} else {
-				// Default: clinical MIP (Maximum Intensity Projection)
+				// Explicit pure MIP
 				finalHU = maxHU;
 			}
 
@@ -412,6 +441,8 @@ export function reconstructPanoramicView(
 		heightPx: outH,
 		focalThicknessMm: effectiveThickness,
 		centerZMm,
+		heightMm,
+		pixelSpacingMm: pixelSpacing,
 		pixelData: pixelBuffer,
 		toothMarkersOnPano: toothMarkers,
 	};
@@ -441,7 +472,7 @@ export interface Projected3DNerveResult {
 }
 
 export interface Project3DNerveOptions {
-	readonly heightMm?: number; // Panoramic vertical field of view in mm (default 38.0 mm)
+	readonly heightMm?: number; // Panoramic vertical field of view in mm (default 74.0 mm)
 	readonly centerZMm?: number; // Center of panoramic vertical field of view in mm (default 0 or archCurve.planeZMm)
 	readonly safetyMarginMm?: number; // Safety buffer in mm (default 2.0 mm)
 	readonly canalDiameterMm?: number; // Canal diameter in mm (default 2.8 mm)

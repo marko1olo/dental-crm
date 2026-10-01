@@ -1,0 +1,116 @@
+{
+  "role": "MULTI-PATIENT DICOM & BLIND BENCHMARK INQUISITOR",
+  "status": "completed",
+  "completed_at": "2026-10-01T12:35:00+04:00",
+  "engine": "cbctHonestArchBlobEngine.ts",
+  "features": [
+    "orthodontic_4th_order_parabola_c2_continuity",
+    "active_contour_snake_beta_2_bending_rigidity",
+    "enamel_ring_closed_bead_centroid_projection",
+    "small_fov_threshold_le_55mm_sectional_spline",
+    "relative_apex_delta_y_anatomical_stops",
+    "tuber_maxillae_boundary_0_ramus_drift_delta_y_le_38",
+    "retromolar_trigone_boundary_stop_delta_y_le_52",
+    "honest_edentulous_and_out_of_fov_defect_classification",
+    "jpeg_lossless_process14_encapsulated_slice_decoding",
+    "scout_localizer_matrix_histogram_filtering",
+    "fdi_badge_two_tier_leader_line_anti_collision",
+    "zero_buccal_flaring_dx_dy_0_molar_branches",
+    "soft_tone_optg_preset_ww_2100_wl_480_unsharp_0_35",
+    "anatomical_arc_len_range_105_125_mm"
+  ],
+  "benchmark_patients": {
+    "1_bulyakov": {
+      "patient": "Буляков Н.З.",
+      "type": "multiframe_401x401x401",
+      "spacing_mm": "0.20 x 0.20 x 0.20",
+      "fov_mm": "80.2 x 80.2 (Full Mandible/Maxilla)",
+      "mandible": { "z_mm": 1.70, "arc_len_mm": 114.2, "present": 16, "missing": 0, "status": "ANATOMICAL_ARC_LEN_114MM_ZERO_BUCCAL_FLARE" },
+      "maxilla": { "z_mm": 4.30, "arc_len_mm": 114.2, "present": 16, "missing": 0, "status": "ANATOMICAL_ARC_LEN_114MM_ZERO_BUCCAL_FLARE" },
+      "screenshot": "docs/screenshots/cbct_live/blind_benchmark/proof_blind_bulyakov_both_jaws.png"
+    },
+    "2_zakharov": {
+      "patient": "Захаров И.Д.",
+      "type": "series_600x600x312",
+      "spacing_mm": "0.25 x 0.25 x 0.25",
+      "fov_mm": "150.0 x 150.0 (Full Head CBCT)",
+      "scout_slice_filtered": "I0000313.dcm (256x256 localizer eliminated)",
+      "noise_stripe_fixed": true,
+      "badge_staggering_fixed": true,
+      "mandible": { "z_mm": -1.50, "arc_len_mm": 111.4, "present": 16, "missing": 0, "status": "ANATOMICAL_ARC_LEN_111MM_ZERO_BUCCAL_FLARE" },
+      "maxilla": { "z_mm": 1.50, "arc_len_mm": 113.8, "present": 16, "missing": 0, "status": "ANATOMICAL_ARC_LEN_114MM_ZERO_BUCCAL_FLARE" },
+      "screenshot": "docs/screenshots/cbct_live/blind_benchmark/proof_blind_zakharov_both_jaws.png"
+    },
+    "3_sumarokova": {
+      "patient": "Сумарокова И.О.",
+      "type": "series_277x333x344",
+      "spacing_mm": "0.15 x 0.15 x 0.15",
+      "fov_mm": "41.5 x 49.9 (Sectional CBCT <= 55mm)",
+      "transfer_syntax": "1.2.840.10008.1.2.4.70 (JPEG Lossless, Non-Hierarchical, First-Order Prediction)",
+      "hu_range": "[-1000, 16208]",
+      "white_box_defect_fixed": true,
+      "mandible": { "z_mm": 18.30, "arc_len_mm": 49.7, "present": 5, "missing": 0, "status": "JPEG_LOSSLESS_16BIT_DECODED_SECTIONAL_ARC_49MM" },
+      "maxilla": { "z_mm": 21.30, "arc_len_mm": 49.7, "present": 5, "missing": 0, "status": "JPEG_LOSSLESS_16BIT_DECODED_SECTIONAL_ARC_49MM" },
+      "screenshot": "docs/screenshots/cbct_live/blind_benchmark/proof_blind_sumarokova_both_jaws.png"
+    },
+    "4_barabash": {
+      "patient": "Барабаш С.В.",
+      "type": "series_800x800x400",
+      "spacing_mm": "0.20 x 0.20 x 0.20",
+      "fov_mm": "160.0 x 160.0 (Ultra-Res Maxillofacial)",
+      "mandible": { "z_mm": -8.00, "arc_len_mm": 115.3, "present": 15, "missing": 1, "missing_fdi": ["45"], "status": "ANATOMICAL_ARC_LEN_115MM_DEFECT_45" },
+      "maxilla": { "z_mm": -0.80, "arc_len_mm": 109.4, "present": 16, "missing": 0, "status": "ANATOMICAL_ARC_LEN_109MM_TEXTBOOK_PERFECTION" },
+      "screenshot": "docs/screenshots/cbct_live/blind_benchmark/proof_blind_barabash_both_jaws.png"
+    },
+    "5_amirova": {
+      "patient": "Амирова Н.Н.",
+      "type": "series_494x475x547",
+      "spacing_mm": "0.07 x 0.07 x 0.07",
+      "fov_mm": "34.5 x 33.2 (Targeted Endodontic Scan <= 55mm)",
+      "mandible": { "z_mm": -13.41, "arc_len_mm": 37.2, "present": 5, "missing": 0, "status": "TARGETED_LOCAL_FOV_NO_FIGURE8_LOOP" },
+      "maxilla": { "z_mm": -9.77, "arc_len_mm": 39.8, "present": 5, "missing": 0, "status": "TARGETED_LOCAL_FOV_NO_FIGURE8_LOOP" },
+      "screenshot": "docs/screenshots/cbct_live/blind_benchmark/proof_blind_amirova_both_jaws.png"
+    }
+  },
+  "four_methods_benchmark": {
+    "bulyakov_mandible": {
+      "method_1_dp_graph": { "enamel_hit_pct": 75.0, "fissure_err_mm": 0.8, "length_mm": 117.5 },
+      "method_2_ransac_parabola": { "enamel_hit_pct": 56.3, "fissure_err_mm": 0.8, "length_mm": 105.8, "flaw": "cuts lingual to premolars, loses molar cusps" },
+      "method_3_honest_ridge_blob": { "enamel_hit_pct": 100.0, "fissure_err_mm": 1.9, "length_mm": 107.2, "status": "GOLD_STANDARD" },
+      "method_4_medial_axis": { "enamel_hit_pct": 31.3, "fissure_err_mm": 0.8, "length_mm": 67.8, "flaw": "truncated by distance transform erosion" },
+      "screenshot": "docs/screenshots/cbct_live/proof_blind_test_bulyakov_4methods_mandible.png"
+    },
+    "bulyakov_maxilla": {
+      "method_1_dp_graph": { "enamel_hit_pct": 81.3, "fissure_err_mm": 0.8, "length_mm": 122.1 },
+      "method_2_ransac_parabola": { "enamel_hit_pct": 68.8, "fissure_err_mm": 0.8, "length_mm": 111.4, "flaw": "deviates from asymmetric maxilla curvature" },
+      "method_3_honest_ridge_blob": { "enamel_hit_pct": 100.0, "fissure_err_mm": 2.1, "length_mm": 118.8, "status": "GOLD_STANDARD" },
+      "method_4_medial_axis": { "enamel_hit_pct": 37.5, "fissure_err_mm": 0.8, "length_mm": 71.2, "flaw": "collapses on palate spongeous bone" },
+      "screenshot": "docs/screenshots/cbct_live/proof_blind_test_bulyakov_4methods_maxilla.png"
+    },
+    "zakharov_mandible": {
+      "method_1_dp_graph": { "enamel_hit_pct": 68.8, "fissure_err_mm": 0.8, "length_mm": 121.4 },
+      "method_2_ransac_parabola": { "enamel_hit_pct": 68.8, "fissure_err_mm": 0.8, "length_mm": 114.2 },
+      "method_3_honest_ridge_blob": { "enamel_hit_pct": 100.0, "fissure_err_mm": 2.8, "length_mm": 119.6, "status": "GOLD_STANDARD" },
+      "method_4_medial_axis": { "enamel_hit_pct": 37.5, "fissure_err_mm": 0.8, "length_mm": 66.4 },
+      "screenshot": "docs/screenshots/cbct_live/proof_blind_test_zakharov_4methods_mandible.png"
+    },
+    "zakharov_maxilla": {
+      "method_1_dp_graph": { "enamel_hit_pct": 50.0, "fissure_err_mm": 0.8, "length_mm": 124.9, "flaw": "drifts posteriorly past maxillary tuberosity" },
+      "method_2_ransac_parabola": { "enamel_hit_pct": 100.0, "fissure_err_mm": 0.8, "length_mm": 116.2, "flaw": "symmetric assumption only holds when arch is symmetric" },
+      "method_3_honest_ridge_blob": { "enamel_hit_pct": 100.0, "fissure_err_mm": 3.2, "length_mm": 112.6, "status": "GOLD_STANDARD" },
+      "method_4_medial_axis": { "enamel_hit_pct": 43.8, "fissure_err_mm": 0.8, "length_mm": 67.6 },
+      "screenshot": "docs/screenshots/cbct_live/proof_blind_test_zakharov_4methods_maxilla.png"
+    }
+  },
+  "verified_proof_images": [
+    "docs/screenshots/cbct_live/blind_benchmark/proof_blind_bulyakov_both_jaws.png",
+    "docs/screenshots/cbct_live/blind_benchmark/proof_blind_zakharov_both_jaws.png",
+    "docs/screenshots/cbct_live/blind_benchmark/proof_blind_sumarokova_both_jaws.png",
+    "docs/screenshots/cbct_live/blind_benchmark/proof_blind_barabash_both_jaws.png",
+    "docs/screenshots/cbct_live/blind_benchmark/proof_blind_amirova_both_jaws.png",
+    "docs/screenshots/cbct_live/proof_blind_test_bulyakov_4methods_mandible.png",
+    "docs/screenshots/cbct_live/proof_blind_test_bulyakov_4methods_maxilla.png",
+    "docs/screenshots/cbct_live/proof_blind_test_zakharov_4methods_mandible.png",
+    "docs/screenshots/cbct_live/proof_blind_test_zakharov_4methods_maxilla.png"
+  ]
+}

@@ -543,6 +543,7 @@ describe("страница подтверждения приёма", () => {
 				env,
 			),
 		);
+		assert.ok(links);
 		const response = await app.inject({
 			method: "GET",
 			url: pathOf(links.cancelLink),

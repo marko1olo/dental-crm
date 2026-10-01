@@ -122,14 +122,18 @@ export function AppointmentModalHeader({
             const currentPatient = (dashboard?.patients ?? []).find(
               (p) => p.id === patientId,
             );
-            printBlankMedicalContract({
-              patientName: currentPatient?.fullName || currentPatientName || "",
-              patientPhone: currentPatient?.phone || null,
-              clinicName: dashboard?.clinicSettings?.profile?.name,
-              inn: dashboard?.clinicSettings?.profile?.inn,
-              address: dashboard?.clinicSettings?.profile?.address,
-              chiefDoctor: dashboard?.clinicSettings?.profile?.chiefDoctor,
-            });
+            printBlankMedicalContract(
+              {
+                id: currentPatient?.id,
+                fullName: currentPatient?.fullName || currentPatientName || "",
+                phone: currentPatient?.phone || null,
+              },
+              {
+                clinicName: dashboard?.clinicSettings?.profile?.clinicName,
+                clinicInn: dashboard?.clinicSettings?.profile?.inn,
+                clinicAddress: dashboard?.clinicSettings?.profile?.address,
+              },
+            );
             showToast("Печать бланка договора со строками (_____)", "info");
           }}
           className="h-8 min-h-[32px] px-2 sm:px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
@@ -150,10 +154,18 @@ export function AppointmentModalHeader({
             const currentPatient = (dashboard?.patients ?? []).find(
               (p) => p.id === patientId,
             );
-            printBlankMedicalConsent({
-              patientName: currentPatient?.fullName || currentPatientName || "",
-              clinicName: dashboard?.clinicSettings?.profile?.name,
-            });
+            printBlankMedicalConsent(
+              {
+                id: currentPatient?.id,
+                fullName: currentPatient?.fullName || currentPatientName || "",
+                phone: currentPatient?.phone || null,
+              },
+              {
+                clinicName: dashboard?.clinicSettings?.profile?.clinicName,
+                clinicInn: dashboard?.clinicSettings?.profile?.inn,
+                clinicAddress: dashboard?.clinicSettings?.profile?.address,
+              },
+            );
             showToast("Печать бланка согласия (ИДС)", "info");
           }}
           className="h-8 min-h-[32px] px-2 sm:px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
@@ -252,15 +264,19 @@ export function AppointmentModalHeader({
                 const currentPatient = (dashboard?.patients ?? []).find(
                   (p) => p.id === patientId,
                 );
-                printBlankMedicalContract({
-                  patientName:
-                    currentPatient?.fullName || currentPatientName || "",
-                  patientPhone: currentPatient?.phone || null,
-                  clinicName: dashboard?.clinicSettings?.profile?.name,
-                  inn: dashboard?.clinicSettings?.profile?.inn,
-                  address: dashboard?.clinicSettings?.profile?.address,
-                  chiefDoctor: dashboard?.clinicSettings?.profile?.chiefDoctor,
-                });
+                printBlankMedicalContract(
+                  {
+                    id: currentPatient?.id,
+                    fullName:
+                      currentPatient?.fullName || currentPatientName || "",
+                    phone: currentPatient?.phone || null,
+                  },
+                  {
+                    clinicName: dashboard?.clinicSettings?.profile?.clinicName,
+                    clinicInn: dashboard?.clinicSettings?.profile?.inn,
+                    clinicAddress: dashboard?.clinicSettings?.profile?.address,
+                  },
+                );
               }}
               className="w-full px-3 py-2 text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
               title="Распечатать бумажный договор с пропусками для подписи (1 клик)"
@@ -279,11 +295,19 @@ export function AppointmentModalHeader({
                 const currentPatient = (dashboard?.patients ?? []).find(
                   (p) => p.id === patientId,
                 );
-                printBlankMedicalConsent({
-                  patientName:
-                    currentPatient?.fullName || currentPatientName || "",
-                  clinicName: dashboard?.clinicSettings?.profile?.name,
-                });
+                printBlankMedicalConsent(
+                  {
+                    id: currentPatient?.id,
+                    fullName:
+                      currentPatient?.fullName || currentPatientName || "",
+                    phone: currentPatient?.phone || null,
+                  },
+                  {
+                    clinicName: dashboard?.clinicSettings?.profile?.clinicName,
+                    clinicInn: dashboard?.clinicSettings?.profile?.inn,
+                    clinicAddress: dashboard?.clinicSettings?.profile?.address,
+                  },
+                );
               }}
               className="w-full px-3 py-2 text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
               title="Распечатать бланк информированного добровольного согласия (1 клик)"

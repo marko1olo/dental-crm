@@ -99,14 +99,18 @@ export const VisitServiceBillingWidget: React.FC<VisitServiceBillingWidgetProps>
 			});
 			if (onAddBillingItem) {
 				newItems.forEach((it) => {
-					const toothNum = it.toothCode ? Number(it.toothCode) || undefined : undefined;
-					onAddBillingItem({
-						code804n: it.code804n,
-						title: it.title,
-						priceRub: it.unitPriceRub,
-						quantity: it.quantity,
-						...(toothNum !== undefined ? { toothNumber: toothNum } : {}),
-					});
+					try {
+						const toothNum = it.toothCode ? Number(it.toothCode) || undefined : undefined;
+						onAddBillingItem({
+							code804n: it.code804n,
+							title: it.title,
+							priceRub: it.unitPriceRub,
+							quantity: it.quantity,
+							...(toothNum !== undefined ? { toothNumber: toothNum } : {}),
+						});
+					} catch (cbErr) {
+						console.warn("[VisitServiceBillingWidget] Error in onAddBillingItem:", cbErr);
+					}
 				});
 			}
 			const totalSum = newItems.reduce((acc, it) => acc + it.unitPriceRub * it.quantity, 0);
