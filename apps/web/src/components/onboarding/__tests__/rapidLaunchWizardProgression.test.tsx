@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it, beforeEach } from "vitest";
+import { describe, it, beforeEach } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import {
@@ -182,26 +182,32 @@ describe("Clinic Onboarding & Rapid Launch Wizard Suite", () => {
 	describe("4. Step 2: Dental Chairs & Working Hours Management", () => {
 		it("allows adding and updating dental chairs", () => {
 			const store = useOnboardingStore.getState();
-			store.addChair("Кабинет 3 (Ортопедия)", "orthopedist");
+			// Solo practice starts with 1 chair
+			assert.strictEqual(store.chairs.length, 1);
+			store.addChair("Кабинет 2 (Ортопедия)", "orthopedist");
 
 			const chairs = useOnboardingStore.getState().chairs;
-			assert.strictEqual(chairs.length, 3);
+			assert.strictEqual(chairs.length, 2);
 			const added = chairs[chairs.length - 1];
-			assert.strictEqual(added?.name, "Кабинет 3 (Ортопедия)");
+			assert.strictEqual(added?.name, "Кабинет 2 (Ортопедия)");
 			assert.strictEqual(added?.specialty, "orthopedist");
 
 			// Update chair name
-			store.updateChair(added!.id, { name: "Кабинет 3 — Реставрация" });
+			store.updateChair(added!.id, { name: "Кабинет 2 — Реставрация" });
 			const updated = useOnboardingStore.getState().chairs.find((c) => c.id === added!.id);
-			assert.strictEqual(updated?.name, "Кабинет 3 — Реставрация");
+			assert.strictEqual(updated?.name, "Кабинет 2 — Реставрация");
 		});
 
 		it("prevents removing the last remaining dental chair (Mandate 8k)", () => {
 			const store = useOnboardingStore.getState();
-			// Chairs start with 2
-			assert.strictEqual(store.chairs.length, 2);
+			// Solo doctor starts with 1 chair
+			assert.strictEqual(store.chairs.length, 1);
 
-			store.removeChair(store.chairs[0]!.id);
+			// Adding a second chair allows removing one
+			store.addChair("Второе кресло", "surgeon");
+			assert.strictEqual(useOnboardingStore.getState().chairs.length, 2);
+
+			store.removeChair(useOnboardingStore.getState().chairs[1]!.id);
 			assert.strictEqual(useOnboardingStore.getState().chairs.length, 1);
 
 			// Try to remove the last chair
@@ -336,7 +342,7 @@ describe("Clinic Onboarding & Rapid Launch Wizard Suite", () => {
 		it("renders Step 3 with 15 services and 1-click seed hero bar", () => {
 			const html = renderToString(<Step3StarterPricelist />);
 
-			assert.ok(html.includes("Стартовый прейскурант клиники по Номенклатуре 804н"));
+			assert.ok(html.includes("Базовый прейскурант"));
 			assert.ok(html.includes("1-клик быстрое наполнение прайса"));
 			assert.ok(html.includes("B01.065.001"));
 			assert.ok(html.includes("A11.07.012"));

@@ -1,0 +1,45 @@
+{
+  "role": "DOCTOR ONBOARDING & FIRST-RUN JOURNEY INQUISITOR",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "READ_MANDATORY_RULES",
+    "RECONNAISSANCE_SCOPE_FILES",
+    "CHECK_EXISTING_TESTS",
+    "AUDIT_REGISTER_AND_FIRST_RUN_FLOW",
+    "AUDIT_ONBOARDING_WIZARD_STEPS",
+    "AUDIT_SOLO_PRACTICE_DEFAULTS_AND_ZERO_DEAD_ENDS",
+    "AUDIT_DEMO_PATIENTS_OR_EMPTY_STATE_RESCUE",
+    "FIX_DEFECTS_SURGICALLY",
+    "RUN_UNIT_TESTS",
+    "FINAL_REPORT"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "defect": "Vitest import failures and hook dispatcher crash in OnboardingWizardModal during SSR/Node test runs",
+      "resolution": "Converted tests to node:test + node:assert/strict with React 19 safe internals detection for initialShowRapidWizard"
+    },
+    {
+      "defect": "Register.tsx omitted practiceType and withDemoData in POST body to /api/auth/register",
+      "resolution": "Included practiceType: scale and withDemoData: seedDemoData in POST body, synchronized onboardingStore, and pre-seeded offline fallback dashboard"
+    },
+    {
+      "defect": "onboardingStore defaulted to 2 chairs and 09:00-20:00 despite solo_doctor being default profile mode",
+      "resolution": "Configured DEFAULT_SOLO_CHAIRS (1 chair: 'Кресло 1 (Терапия)') and DEFAULT_SOLO_SCHEDULE (09:00-18:00) as initial state and in resetWizard; enhanced setOperationalMode to adapt both chairs and schedule"
+    },
+    {
+      "defect": "createOfflineFallbackDashboard defaulted to 2 chairs and empty arrays (patients: [], appointments: []), causing blank screen dead-end on offline/local first-run",
+      "resolution": "Updated createOfflineFallbackDashboard to generate 1 chair for solo doctor and seed 4 starter demo patients and appointments for today when withDemoData !== false or in demo/offline mode"
+    },
+    {
+      "defect": "Step3StarterPricelist contained prohibited label 'Снимок / КЛКТ' for intraoral radiovisiography RVG",
+      "resolution": "Renamed category label from 'Снимок / КЛКТ' to 'Прицельный снимок / РВГ' to strictly honor the prohibition against CBCT/tomography triggers"
+    }
+  ],
+  "test_metrics": {
+    "total_tests": 46,
+    "total_suites": 12,
+    "passed": 46,
+    "failed": 0
+  }
+}

@@ -22,7 +22,15 @@ import {
 	safeLocalStorageSetItem,
 	safeLocalStorageSetJson,
 } from "./safeLocalStorage";
-import { DEMO_SHOWCASE_ORG_ID, DEMO_CHAIR_1_ID, DEMO_CHAIR_2_ID } from "./demoMode";
+import {
+	DEMO_SHOWCASE_ORG_ID,
+	DEMO_CHAIR_1_ID,
+	DEMO_CHAIR_2_ID,
+	isDemoShowcaseMode,
+	getDemoShowcaseStaff,
+	getDemoShowcasePatients,
+	getDemoShowcaseAppointments,
+} from "./demoMode";
 import { DEMO_CHIEF_DOCTOR } from "../components/auth/staffUnlockState";
 
 export const DENTE_CACHED_DASHBOARD_KEY = "dente_cached_dashboard_v1";
@@ -121,25 +129,39 @@ export function isOfflineAutonomyMode(): boolean {
  * Создаёт гарантированный минимальный автономный Dashboard (Zero Dead-Ends / Mandate 8n),
  * если клиника ещё ни разу не синхронизировалась с сервером, но пользователь должен работать.
  */
-export function createOfflineFallbackDashboard(existingProfile?: unknown): Dashboard {
+export function createOfflineFallbackDashboard(
+	existingProfile?: unknown,
+	options?: { withDemoData?: boolean },
+): Dashboard {
 	const profile = (existingProfile && typeof existingProfile === "object" ? existingProfile : null) as {
 		id?: string;
+		organizationId?: string;
 		name?: string;
 		mode?: string;
+		scale?: string;
+		hasDemoData?: boolean;
+		withDemoData?: boolean;
 	} | null;
 
-	const orgId = profile?.id || DEMO_SHOWCASE_ORG_ID;
+	const orgId = profile?.organizationId || profile?.id || DEMO_SHOWCASE_ORG_ID;
 	const clinicName = profile?.name || "Автономный кабинет врача DENTE";
+	const isSolo =
+		profile?.scale === "solo" ||
+		profile?.mode === "solo_doctor" ||
+		profile?.mode === "single_doctor" ||
+		profile?.mode === "solo" ||
+		profile?.mode === "one_chair";
 
-	return {
-		clinicSettings: {
-			profile: {
-				id: orgId,
-				name: clinicName,
-				mode: (profile?.mode as any) || "single_doctor",
-				timezone: "Europe/Moscow",
-			},
-			chairs: [
+	const chairsList = isSolo
+		? [
+				{
+					id: DEMO_CHAIR_1_ID,
+					name: "Кресло 1 (Основное)",
+					color: "var(--teal, #0d9488)",
+					active: true,
+				},
+			]
+		: [
 				{
 					id: DEMO_CHAIR_1_ID,
 					name: "Кресло 1 (Основное)",
@@ -152,8 +174,142 @@ export function createOfflineFallbackDashboard(existingProfile?: unknown): Dashb
 					color: "var(--accent, #6366f1)",
 					active: true,
 				},
-			],
-			staff: [
+			];
+
+	// Populated when explicitly requested or in demo/offline mode (Zero Dead-Ends, Mandates 8e, 8n)
+	const shouldSeedDemo =
+		options?.withDemoData !== false &&
+		profile?.withDemoData !== false &&
+		profile?.hasDemoData !== false &&
+		(profile?.hasDemoData === true ||
+			profile?.withDemoData === true ||
+			isDemoShowcaseMode() ||
+			isOfflineAutonomyMode());
+
+	const isDemoModeActive = isDemoShowcaseMode();
+	const today = new Date().toISOString().slice(0, 10);
+
+	const starterPatients = isDemoModeActive
+		? getDemoShowcasePatients()
+		: shouldSeedDemo
+			? [
+				{
+					id: "01a00000-0000-0000-0000-000000000001",
+					organizationId: orgId,
+					fullName: "Иванов Алексей Сергеевич",
+					birthDate: "1988-04-12",
+					gender: "male",
+					phone: "+7 (912) 345-67-89",
+					notes: "Первичный осмотр, жалоба на чувствительность 2.4",
+					status: "active",
+					balanceRub: 0,
+					administrativeProfile: null,
+					createdAt: `${today}T08:00:00.000Z`,
+					updatedAt: `${today}T08:00:00.000Z`,
+				},
+				{
+					id: "01a00000-0000-0000-0000-000000000002",
+					organizationId: orgId,
+					fullName: "Смирнова Елена Викторовна",
+					birthDate: "1992-09-25",
+					gender: "female",
+					phone: "+7 (927) 876-54-32",
+					notes: "Профгигиена полости рта (Air-Flow + ультразвук)",
+					status: "active",
+					balanceRub: 3500,
+					administrativeProfile: null,
+					createdAt: `${today}T08:00:00.000Z`,
+					updatedAt: `${today}T08:00:00.000Z`,
+				},
+				{
+					id: "01a00000-0000-0000-0000-000000000003",
+					organizationId: orgId,
+					fullName: "Кузнецов Дмитрий Михайлович",
+					birthDate: "1980-11-03",
+					gender: "male",
+					phone: "+7 (903) 555-44-33",
+					notes: "Консультация ортопеда, составление плана лечения",
+					status: "active",
+					balanceRub: 0,
+					administrativeProfile: null,
+					createdAt: `${today}T08:00:00.000Z`,
+					updatedAt: `${today}T08:00:00.000Z`,
+				},
+				{
+					id: "01a00000-0000-0000-0000-000000000004",
+					organizationId: orgId,
+					fullName: "Морозова Анна Александровна",
+					birthDate: "1995-06-18",
+					gender: "female",
+					phone: "+7 (915) 999-88-77",
+					notes: "Лечение кариеса 4.6 (световая пломба Estelite)",
+					status: "active",
+					balanceRub: 0,
+					administrativeProfile: null,
+					createdAt: `${today}T08:00:00.000Z`,
+					updatedAt: `${today}T08:00:00.000Z`,
+				},
+			]
+		: [];
+
+	const starterAppointments = isDemoModeActive
+		? getDemoShowcaseAppointments()
+		: shouldSeedDemo
+			? [
+				{
+					id: "01a00000-0000-0000-0001-000000000001",
+					organizationId: orgId,
+					patientId: "01a00000-0000-0000-0000-000000000001",
+					doctorUserId: DEMO_CHIEF_DOCTOR.id,
+					chairId: DEMO_CHAIR_1_ID,
+					status: "completed",
+					startsAt: `${today}T09:00:00.000Z`,
+					endsAt: `${today}T10:00:00.000Z`,
+					reason: "Первичный осмотр и консультация",
+					comment: "Осмотр завершен, составлен план лечения",
+				},
+				{
+					id: "01a00000-0000-0000-0001-000000000002",
+					organizationId: orgId,
+					patientId: "01a00000-0000-0000-0000-000000000002",
+					doctorUserId: DEMO_CHIEF_DOCTOR.id,
+					chairId: DEMO_CHAIR_1_ID,
+					status: "in_treatment",
+					startsAt: `${today}T10:30:00.000Z`,
+					endsAt: `${today}T11:30:00.000Z`,
+					reason: "Комплексная профгигиена полости рта",
+					comment: "Пациент в кресле",
+				},
+				{
+					id: "01a00000-0000-0000-0001-000000000003",
+					organizationId: orgId,
+					patientId: "01a00000-0000-0000-0000-000000000003",
+					doctorUserId: DEMO_CHIEF_DOCTOR.id,
+					chairId: DEMO_CHAIR_1_ID,
+					status: "scheduled",
+					startsAt: `${today}T12:00:00.000Z`,
+					endsAt: `${today}T13:00:00.000Z`,
+					reason: "Консультация ортопеда",
+					comment: "Запланирован",
+				},
+				{
+					id: "01a00000-0000-0000-0001-000000000004",
+					organizationId: orgId,
+					patientId: "01a00000-0000-0000-0000-000000000004",
+					doctorUserId: DEMO_CHIEF_DOCTOR.id,
+					chairId: DEMO_CHAIR_1_ID,
+					status: "scheduled",
+					startsAt: `${today}T14:00:00.000Z`,
+					endsAt: `${today}T15:00:00.000Z`,
+					reason: "Лечение кариеса 4.6",
+					comment: "Запланирован",
+				},
+			]
+		: [];
+
+	const fallbackStaff = isDemoModeActive
+		? getDemoShowcaseStaff()
+		: [
 				{
 					id: DEMO_CHIEF_DOCTOR.id,
 					fullName: DEMO_CHIEF_DOCTOR.fullName,
@@ -161,19 +317,31 @@ export function createOfflineFallbackDashboard(existingProfile?: unknown): Dashb
 					active: true,
 					color: DEMO_CHIEF_DOCTOR.color,
 				},
-			],
+			];
+
+	return {
+		clinicSettings: {
+			profile: {
+				id: orgId,
+				name: clinicName,
+				clinicName: clinicName,
+				mode: (isSolo ? "solo_doctor" : (profile?.mode as any) || "small_clinic"),
+				timezone: "Europe/Moscow",
+			},
+			chairs: chairsList,
+			staff: fallbackStaff,
 		},
-		appointments: [],
-		patients: [],
+		appointments: starterAppointments,
+		patients: starterPatients,
 		finance: {
-			dailyRevenueRub: 0,
-			monthlyRevenueRub: 0,
+			dailyRevenueRub: shouldSeedDemo ? 3500 : 0,
+			monthlyRevenueRub: shouldSeedDemo ? 18500 : 0,
 			cashBalanceRub: 0,
 		},
 		statistics: {
-			totalPatients: 0,
-			totalAppointments: 0,
-			occupancyRatePercent: 0,
+			totalPatients: starterPatients.length,
+			totalAppointments: starterAppointments.length,
+			occupancyRatePercent: shouldSeedDemo ? 50 : 0,
 		},
 	} as unknown as Dashboard;
 }

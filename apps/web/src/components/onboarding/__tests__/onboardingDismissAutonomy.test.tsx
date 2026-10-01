@@ -8,9 +8,10 @@
  * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty (emergency patient care never blocked).
  */
 
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
 import {
 	clinicModeLabels,
 	specialtyLabels,
@@ -20,6 +21,34 @@ import {
 	OnboardingWizardModal,
 	type OnboardingWizardModalProps,
 } from "../OnboardingWizardModal";
+
+function expect(actual: any) {
+	return {
+		toBe: (expected: any) => assert.strictEqual(actual, expected),
+		toBeFalsy: () => assert.ok(!actual, `Expected falsy, but got ${actual}`),
+		toBeTruthy: () => assert.ok(Boolean(actual), `Expected truthy, but got ${actual}`),
+		toBeNull: () => assert.strictEqual(actual, null),
+		toBeUndefined: () => assert.strictEqual(actual, undefined),
+		toContain: (substring: string) =>
+			assert.ok(
+				typeof actual === "string" && actual.includes(substring),
+				`Expected string to contain ${substring}`,
+			),
+		toMatch: (regex: RegExp) =>
+			assert.ok(
+				typeof actual === "string" && regex.test(actual),
+				`Expected string to match ${regex}`,
+			),
+		not: {
+			toBeNull: () => assert.ok(actual !== null && actual !== undefined),
+			toContain: (substring: string) =>
+				assert.ok(
+					typeof actual === "string" && !actual.includes(substring),
+					`Expected string NOT to contain ${substring}`,
+				),
+		},
+	};
+}
 
 function findElement(node: any, predicate: (n: any) => boolean): any {
 	if (!node) return null;

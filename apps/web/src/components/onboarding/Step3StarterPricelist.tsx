@@ -33,7 +33,7 @@ export function Step3StarterPricelist() {
 		therapy: { label: "Терапия", className: "cat-therapy" },
 		surgery: { label: "Хирургия", className: "cat-surgery" },
 		hygiene: { label: "Гигиена", className: "cat-hygiene" },
-		imaging: { label: "Снимок / КЛКТ", className: "cat-imaging" },
+		imaging: { label: "Прицельный снимок / РВГ", className: "cat-imaging" },
 		prosthetics: { label: "Ортопедия", className: "cat-prosthetics" },
 		orthodontics: { label: "Ортодонтия", className: "cat-orthodontics" },
 		periodontology: { label: "Пародонт", className: "cat-periodont" },

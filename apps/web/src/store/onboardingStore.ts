@@ -79,6 +79,21 @@ const DEFAULT_PROFILE: ClinicProfileOnboarding = {
 	address: "",
 };
 
+const DEFAULT_SOLO_CHAIRS: DentalChairDraft[] = [
+	{
+		id: "chair-1",
+		name: "Кресло 1 (Терапия)",
+		specialty: "therapist",
+		isDefault: true,
+	},
+];
+
+const DEFAULT_SOLO_SCHEDULE: ClinicScheduleDraft = {
+	...DEFAULT_SCHEDULE_DRAFT,
+	workdayStart: "09:00",
+	workdayEnd: "18:00",
+};
+
 const ALL_15_SERVICE_CODES = STARTER_15_ESSENTIAL_DENTAL_SERVICES.map((s) => s.code);
 
 const STEP_ORDER: OnboardingWizardStep[] = [
@@ -94,8 +109,8 @@ export const useOnboardingStore = create<OnboardingState>()(
 			currentStepIndex: 0,
 			totalSteps: 3,
 			profile: { ...DEFAULT_PROFILE },
-			chairs: [...DEFAULT_CHAIRS.map((c) => ({ ...c }))],
-			schedule: { ...DEFAULT_SCHEDULE_DRAFT, workingDays: [...DEFAULT_SCHEDULE_DRAFT.workingDays] },
+			chairs: [...DEFAULT_SOLO_CHAIRS.map((c) => ({ ...c }))],
+			schedule: { ...DEFAULT_SOLO_SCHEDULE, workingDays: [...DEFAULT_SOLO_SCHEDULE.workingDays] },
 			selectedServiceCodes: [...ALL_15_SERVICE_CODES],
 			seededServices: [...STARTER_15_ESSENTIAL_DENTAL_SERVICES],
 			isCompleted: false,
@@ -147,10 +162,17 @@ export const useOnboardingStore = create<OnboardingState>()(
 			setOperationalMode: (mode: ClinicOperationalMode) => {
 				set((state) => {
 					let newChairs = [...state.chairs];
+					const newSchedule = { ...state.schedule };
 					// Adapt default chairs if user hasn't heavily modified them
 					if (mode === "solo_doctor" || mode === "one_chair") {
 						if (newChairs.length > 1 && newChairs[0]) {
 							newChairs = [{ ...newChairs[0], name: mode === "solo_doctor" ? "Кресло 1 (Терапия)" : "Кабинет 1", isDefault: true }];
+						} else if (newChairs.length === 0) {
+							newChairs = [{ id: "chair-1", name: mode === "solo_doctor" ? "Кресло 1 (Терапия)" : "Кабинет 1", specialty: "therapist", isDefault: true }];
+						}
+						if (mode === "solo_doctor") {
+							newSchedule.workdayStart = "09:00";
+							newSchedule.workdayEnd = "18:00";
 						}
 					} else if (mode === "small_clinic") {
 						if (newChairs.length < 2) {
@@ -159,10 +181,24 @@ export const useOnboardingStore = create<OnboardingState>()(
 								{ id: "chair-2", name: "Кресло 2 (Хирургия)", specialty: "surgeon", isDefault: false },
 							];
 						}
+						newSchedule.workdayStart = "09:00";
+						newSchedule.workdayEnd = "20:00";
+					} else if (mode === "network_clinic") {
+						if (newChairs.length < 4) {
+							newChairs = [
+								{ id: "chair-1", name: "Кресло 1 (Терапия)", specialty: "therapist", isDefault: true },
+								{ id: "chair-2", name: "Кресло 2 (Хирургия)", specialty: "surgeon", isDefault: false },
+								{ id: "chair-3", name: "Кресло 3 (Ортопедия)", specialty: "orthopedist", isDefault: false },
+								{ id: "chair-4", name: "Кресло 4 (Ортодонтия)", specialty: "orthodontist", isDefault: false },
+							];
+						}
+						newSchedule.workdayStart = "08:00";
+						newSchedule.workdayEnd = "21:00";
 					}
 					return {
 						profile: { ...state.profile, mode },
 						chairs: newChairs,
+						schedule: newSchedule,
 					};
 				});
 			},
@@ -407,8 +443,8 @@ export const useOnboardingStore = create<OnboardingState>()(
 					step: "clinic_profile",
 					currentStepIndex: 0,
 					profile: { ...DEFAULT_PROFILE },
-					chairs: [...DEFAULT_CHAIRS.map((c) => ({ ...c }))],
-					schedule: { ...DEFAULT_SCHEDULE_DRAFT, workingDays: [...DEFAULT_SCHEDULE_DRAFT.workingDays] },
+					chairs: [...DEFAULT_SOLO_CHAIRS.map((c) => ({ ...c }))],
+					schedule: { ...DEFAULT_SOLO_SCHEDULE, workingDays: [...DEFAULT_SOLO_SCHEDULE.workingDays] },
 					selectedServiceCodes: [...ALL_15_SERVICE_CODES],
 					isCompleted: false,
 					isSkipped: false,

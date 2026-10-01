@@ -17,7 +17,12 @@ import {
 	DEMO_SHOWCASE_ORG_ID,
 	enableDemoShowcaseMode,
 } from "../../lib/demoMode";
-import { cacheActiveStaffUser } from "../../lib/offlineStorage";
+import {
+	cacheActiveStaffUser,
+	cacheClinicDashboard,
+	createOfflineFallbackDashboard,
+} from "../../lib/offlineStorage";
+import { useOnboardingStore } from "../../store/onboardingStore";
 import {
 	DENTE_CLINIC_TOKEN_KEY,
 	DENTE_STAFF_TOKEN_KEY,
@@ -82,6 +87,8 @@ export function Register({
 					ownerName: ownerTitle,
 					email: trimmedEmail,
 					password: password.length < 8 ? `${password}__00` : password,
+					practiceType: scale,
+					withDemoData: seedDemoData,
 				}),
 			});
 
@@ -97,6 +104,15 @@ export function Register({
 					organizationId: data.organizationId,
 				};
 				cacheActiveStaffUser(userProfile);
+
+				// Synchronize onboarding store with chosen scale and clinic name
+				const mode = scale === "solo" ? "solo_doctor" : "small_clinic";
+				useOnboardingStore.getState().setOperationalMode(mode);
+				useOnboardingStore.getState().updateProfile({
+					clinicName: clinicTitle,
+					mode,
+				});
+
 				showToast("Кабинет успешно создан! Добро пожаловать.", "success");
 				onSuccess({ organizationId: data.organizationId, name: clinicTitle }, userProfile);
 				return;
@@ -123,6 +139,24 @@ export function Register({
 			safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, `local-staff-token-${localUser.id}`);
 			cacheActiveStaffUser(localUser);
 
+			// Synchronize onboarding store with chosen mode
+			const mode = scale === "solo" ? "solo_doctor" : "small_clinic";
+			useOnboardingStore.getState().setOperationalMode(mode);
+			useOnboardingStore.getState().updateProfile({
+				clinicName: clinicTitle,
+				mode,
+			});
+
+			// Pre-seed offline fallback dashboard cache so doctor encounters no dead ends / blank screens
+			const fallbackDashboard = createOfflineFallbackDashboard({
+				id: localOrgId,
+				name: clinicTitle,
+				mode,
+				scale,
+				hasDemoData: seedDemoData,
+			});
+			cacheClinicDashboard(fallbackDashboard);
+
 			showToast(
 				`Кабинет «${clinicTitle}» готов к работе! ${seedDemoData ? "Демо-данные загружены." : ""}`,
 				"success",
@@ -131,6 +165,7 @@ export function Register({
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			enableDemoShowcaseMode();
+			const offlineClinicName = name ? (scale === "solo" ? `Кабинет д-ра ${name}` : name) : "Кабинет врача";
 			const offlineUser = {
 				id: "offline-owner",
 				fullName: name || "Доктор",
@@ -141,8 +176,25 @@ export function Register({
 			safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, "offline-token");
 			safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, "offline-staff-token");
 			cacheActiveStaffUser(offlineUser);
+
+			const mode = scale === "solo" ? "solo_doctor" : "small_clinic";
+			useOnboardingStore.getState().setOperationalMode(mode);
+			useOnboardingStore.getState().updateProfile({
+				clinicName: offlineClinicName,
+				mode,
+			});
+
+			const fallbackDashboard = createOfflineFallbackDashboard({
+				id: DEMO_SHOWCASE_ORG_ID,
+				name: offlineClinicName,
+				mode,
+				scale,
+				hasDemoData: seedDemoData,
+			});
+			cacheClinicDashboard(fallbackDashboard);
+
 			showToast("Кабинет активирован в автономном режиме!", "success");
-			onSuccess({ organizationId: DEMO_SHOWCASE_ORG_ID, name: name || "Кабинет врача" }, offlineUser);
+			onSuccess({ organizationId: DEMO_SHOWCASE_ORG_ID, name: offlineClinicName }, offlineUser);
 		} finally {
 			setLoading(false);
 		}

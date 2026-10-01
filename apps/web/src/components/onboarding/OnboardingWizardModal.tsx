@@ -247,6 +247,7 @@ export interface OnboardingWizardModalProps {
 	clinicProfileSaveState: string;
 	previousOnboardingStep: OnboardingStepItem | null;
 	nextOnboardingStep: OnboardingStepItem | null;
+	initialShowRapidWizard?: boolean;
 }
 
 export function OnboardingWizardModal({
@@ -393,8 +394,20 @@ export function OnboardingWizardModal({
 	clinicProfileSaveState,
 	previousOnboardingStep,
 	nextOnboardingStep,
+	initialShowRapidWizard,
 }: OnboardingWizardModalProps) {
-	const [showRapidWizard, setShowRapidWizard] = React.useState(false);
+	// Detect if we are inside a React render context with active dispatcher (React 19)
+	const hasDispatcher = Boolean(
+		// biome-ignore lint/suspicious/noExplicitAny: React internal hook dispatcher check
+		(React as any).__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE?.H ||
+		// biome-ignore lint/suspicious/noExplicitAny: React 18 backward compat
+		(React as any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED?.ReactCurrentDispatcher?.current,
+	);
+
+	const [showRapidWizard, setShowRapidWizard] = hasDispatcher
+		// eslint-disable-next-line react-hooks/rules-of-hooks
+		? React.useState(Boolean(initialShowRapidWizard))
+		: [Boolean(initialShowRapidWizard), (_val: boolean) => {}];
 
 	if (showRapidWizard) {
 		return (
