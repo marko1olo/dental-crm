@@ -161,23 +161,26 @@ export function StaffPinPad({
 		setErrorText(null);
 
 		const isDemoOrFallbackUser =
+			isDemoShowcaseMode() ||
 			userToUnlock.id === DEMO_CHIEF_DOCTOR.id ||
 			userToUnlock.id === "01a00000-0000-0000-0003-000000000001" ||
-			String(userToUnlock.id).startsWith("demo-");
+			userToUnlock.id === "01a00000-0000-0000-0003-000000000002" ||
+			userToUnlock.id === "01a00000-0000-0000-0003-000000000003" ||
+			userToUnlock.id === "01a00000-0000-0000-0003-000000000004" ||
+			userToUnlock.id === "01a00000-0000-0000-0003-000000000005" ||
+			String(userToUnlock.id).startsWith("demo-") ||
+			String(userToUnlock.id).startsWith("01a00000-0000-0000-0003-");
 
 		// Автономный / Демо-вход: мгновенный доступ без блокировок и сетевых запросов
-		if (
-			isDemoOrFallbackUser &&
-			(completedPin === "1111" || completedPin === "0000" || completedPin === "1234")
-		) {
-			const fallbackToken = "demo-showcase-staff-token";
+		if (isDemoOrFallbackUser) {
+			const fallbackToken = `demo-showcase-staff-token-${userToUnlock.id || "chief"}`;
 			safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, fallbackToken, true);
 			const unlockedUser = {
 				id: userToUnlock.id,
 				fullName: userToUnlock.fullName || "Доктор Демо (Главный врач)",
 				role: userToUnlock.role || "doctor",
 				organizationId: DEMO_SHOWCASE_ORG_ID,
-				email: "doctor@clinic.com",
+				email: `${userToUnlock.id || "doctor"}@dente-demo.ru`,
 			};
 			showToast("Смена успешно открыта в автономном режиме", "success");
 			onUnlockSuccess(unlockedUser);

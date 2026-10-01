@@ -63,6 +63,7 @@ import {
 	disableDemoShowcaseMode,
 	DEMO_SHOWCASE_ORG_ID,
 } from "./lib/demoMode";
+import { DemoModeBanner } from "./components/demo/DemoModeBanner";
 import {
 	cacheActiveStaffUser,
 	clearOfflineClinicCaches,
@@ -1688,58 +1689,22 @@ export function App() {
 							</div>
 						)}
 					{isDemoShowcaseMode() && (
-						<div
-							className="demo-showcase-banner"
-							role="status"
-							style={{
-								background:
-									"linear-gradient(90deg, rgba(14, 165, 233, 0.12), rgba(99, 102, 241, 0.12))",
-								borderBottom: "1px solid rgba(14, 165, 233, 0.3)",
-								padding: "4px 16px",
-								fontSize: "12px",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
-								color: "var(--ink)",
+						<DemoModeBanner
+							onExitDemo={() => {
+								disableDemoShowcaseMode();
+								const cleanUrl = window.location.pathname;
+								window.location.href = cleanUrl;
 							}}
-						>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-								}}
-							>
-								<Sparkles
-									className="w-4 h-4 text-sky-500"
-									aria-hidden="true"
-								/>
-								<span>
-									<strong>ДЕМОНСТРАЦИОННЫЙ РЕЖИМ (SHOWCASE)</strong>: витринная
-									сетка приёмов, модельные пациенты и клинические сценарии
-									(Мандат 8y).
-								</span>
-							</div>
-							<button
-								type="button"
-								onClick={() => {
-									disableDemoShowcaseMode();
-									const cleanUrl = window.location.pathname;
-									window.location.href = cleanUrl;
-								}}
-								style={{
-									border: "1px solid rgba(14, 165, 233, 0.4)",
-									borderRadius: "4px",
-									padding: "2px 8px",
-									fontSize: "11px",
-									background: "transparent",
-									cursor: "pointer",
-									color: "inherit",
-								}}
-							>
-								Выйти из демо
-							</button>
-						</div>
+							onRegisterClinic={() => {
+								disableDemoShowcaseMode();
+								clearOfflineClinicCaches();
+								safeLocalStorageRemoveItem(DENTE_CLINIC_TOKEN_KEY);
+								safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
+								setClinicAuthed(false);
+								setStaffAuthed(false);
+								window.location.hash = "#/auth/register";
+							}}
+						/>
 					)}
 					<WorkspaceTopbar
 						clinicName={dashboard.clinicName}

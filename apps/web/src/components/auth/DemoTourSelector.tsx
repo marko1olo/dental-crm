@@ -11,8 +11,15 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import type { StaffRole } from "@dental/shared";
+import type { AppView } from "../../utils/routeUtils";
 import {
 	DEMO_SHOWCASE_ORG_ID,
+	DEMO_DOCTOR_1_ID,
+	DEMO_DOCTOR_2_ID,
+	DEMO_DOCTOR_SURGEON_ID,
+	DEMO_OWNER_ID,
+	DEMO_ADMIN_ID,
 	enableDemoShowcaseMode,
 } from "../../lib/demoMode";
 import { cacheActiveStaffUser } from "../../lib/offlineStorage";
@@ -21,6 +28,8 @@ import {
 	DENTE_STAFF_TOKEN_KEY,
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
 import { showToast } from "../GlobalToast";
 
 export interface DemoRoleOption {
@@ -29,11 +38,14 @@ export interface DemoRoleOption {
 	subtitle: string;
 	badge: string;
 	doctorName: string;
-	role: "doctor" | "owner" | "admin";
+	role: StaffRole;
 	icon: React.ComponentType<{ size?: number; className?: string }>;
 	highlights: string[];
 	avatarInitials: string;
 	colorTheme: string;
+	targetView: AppView;
+	targetPatientId?: string;
+	staffId?: string;
 }
 
 export const DEMO_ROLES: DemoRoleOption[] = [
@@ -52,6 +64,9 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 		],
 		avatarInitials: "СА",
 		colorTheme: "teal",
+		targetView: "patients",
+		targetPatientId: "01a00000-0000-0000-0000-000000000001",
+		staffId: DEMO_DOCTOR_1_ID,
 	},
 	{
 		id: "orthodontist",
@@ -68,6 +83,9 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 		],
 		avatarInitials: "МЕ",
 		colorTheme: "indigo",
+		targetView: "patients",
+		targetPatientId: "01a00000-0000-0000-0000-000000000003",
+		staffId: DEMO_DOCTOR_2_ID,
 	},
 	{
 		id: "surgeon",
@@ -84,6 +102,9 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 		],
 		avatarInitials: "ГК",
 		colorTheme: "rose",
+		targetView: "patients",
+		targetPatientId: "01a00000-0000-0000-0000-000000000004",
+		staffId: DEMO_DOCTOR_SURGEON_ID,
 	},
 	{
 		id: "owner",
@@ -100,6 +121,8 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 		],
 		avatarInitials: "ВМ",
 		colorTheme: "amber",
+		targetView: "analytics",
+		staffId: DEMO_OWNER_ID,
 	},
 	{
 		id: "admin",
@@ -107,7 +130,7 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 		subtitle: "Ресепшен, расписание и касса",
 		badge: "Ресепшен и 54-ФЗ",
 		doctorName: "Смирнова А. П.",
-		role: "admin",
+		role: "administrator",
 		icon: FileSpreadsheet,
 		highlights: [
 			"Умная сетка расписания по креслам и кабинетам",
@@ -116,6 +139,8 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 		],
 		avatarInitials: "СА",
 		colorTheme: "emerald",
+		targetView: "schedule",
+		staffId: DEMO_ADMIN_ID,
 	},
 ];
 
@@ -146,7 +171,7 @@ export function DemoTourSelector({
 			};
 
 			const userProfile = {
-				id: `demo-${roleOption.id}-user`,
+				id: roleOption.staffId || `demo-${roleOption.id}-user`,
 				fullName: roleOption.doctorName,
 				role: roleOption.role,
 				email: `${roleOption.id}@dente-demo.ru`,
@@ -164,6 +189,17 @@ export function DemoTourSelector({
 			);
 
 			cacheActiveStaffUser(userProfile);
+
+			// Мгновенная синхронизация активной роли, навигации и карточки в Zustand
+			useAppStore.getState().setSelectedWorkspaceRole(roleOption.role);
+			useAppStore.getState().setCurrentView(roleOption.targetView);
+			if (roleOption.targetPatientId) {
+				usePatientStore.getState().setSelectedPatientId(roleOption.targetPatientId);
+			}
+
+			if (typeof window !== "undefined") {
+				window.location.hash = `#${roleOption.targetView}`;
+			}
 
 			showToast(
 				`Демо-тур активирован: ${roleOption.doctorName} (${roleOption.title})`,

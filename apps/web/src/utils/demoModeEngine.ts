@@ -19,6 +19,7 @@
 import type {
 	Appointment,
 	Patient,
+	StaffRole,
 	ExecutiveDashboardPayload,
 	ExecutivePeriod,
 	ExecutiveFunnelStage,
@@ -27,6 +28,7 @@ import {
 	calculateDepartmentBreakdown,
 	calculateExecutiveFunnel,
 	calculateExecutiveKpisSummary,
+	patientAdministrativeProfileSchema,
 } from "@dental/shared";
 import type { AnalyticsDashboardData } from "../pages/analyticsDoctorMetrics.js";
 
@@ -35,9 +37,96 @@ let _runtimeDemoOverride: boolean | null = null;
 export const DEMO_SHOWCASE_ORG_ID = "01a00000-0000-0000-0000-000000000000";
 export const DEMO_CHAIR_1_ID = "01a00000-0000-0000-0002-000000000001";
 export const DEMO_CHAIR_2_ID = "01a00000-0000-0000-0002-000000000002";
-export const DEMO_DOCTOR_1_ID = "01a00000-0000-0000-0003-000000000001";
-export const DEMO_DOCTOR_2_ID = "01a00000-0000-0000-0003-000000000002";
+export const DEMO_CHAIR_3_ID = "01a00000-0000-0000-0002-000000000003";
+
+// 5 клинических ролей для демо-тура (Showcase / Test-Drive)
+export const DEMO_DOCTOR_1_ID = "01a00000-0000-0000-0003-000000000001"; // Терапевт / Ортопед (Соколов А. В.)
+export const DEMO_DOCTOR_2_ID = "01a00000-0000-0000-0003-000000000002"; // Ортодонт (Морозова Е. И.)
+export const DEMO_DOCTOR_SURGEON_ID = "01a00000-0000-0000-0003-000000000003"; // Хирург-имплантолог (Громов К. Д.)
+export const DEMO_OWNER_ID = "01a00000-0000-0000-0003-000000000004"; // Главврач / Владелец (Воронов М. С.)
+export const DEMO_ADMIN_ID = "01a00000-0000-0000-0003-000000000005"; // Старший администратор (Смирнова А. П.)
+
 export const DEMO_STUDY_INSTANCE_UID = "1.2.826.0.1.3680043.8.demo.kavo.op300";
+
+export interface DemoStaffMember {
+	id: string;
+	organizationId: string;
+	fullName: string;
+	role: StaffRole;
+	specialization: string;
+	email: string;
+	phone: string;
+	active: boolean;
+	color: string;
+}
+
+/**
+ * Эталонный штат сотрудников для всех 5 клинических ролей в демо-режиме:
+ * 1. Терапевт / Ортопед (Д-р Соколов А. В.)
+ * 2. Ортодонт (Д-р Морозова Е. И.)
+ * 3. Хирург-имплантолог (Д-р Громов К. Д.)
+ * 4. Главврач / Владелец (Д-р Воронов М. С.)
+ * 5. Старший администратор (Смирнова А. П.)
+ */
+export function getDemoShowcaseStaff(): DemoStaffMember[] {
+	return [
+		{
+			id: DEMO_DOCTOR_1_ID,
+			organizationId: DEMO_SHOWCASE_ORG_ID,
+			fullName: "Д-р Соколов А. В.",
+			role: "doctor",
+			specialization: "Терапевт / Ортопед",
+			email: "therapist@dente-demo.ru",
+			phone: "+7 916 111-22-33",
+			active: true,
+			color: "var(--teal, #0d9488)",
+		},
+		{
+			id: DEMO_DOCTOR_2_ID,
+			organizationId: DEMO_SHOWCASE_ORG_ID,
+			fullName: "Д-р Морозова Е. И.",
+			role: "doctor",
+			specialization: "Ортодонт",
+			email: "orthodontist@dente-demo.ru",
+			phone: "+7 916 222-33-44",
+			active: true,
+			color: "var(--accent, #6366f1)",
+		},
+		{
+			id: DEMO_DOCTOR_SURGEON_ID,
+			organizationId: DEMO_SHOWCASE_ORG_ID,
+			fullName: "Д-р Громов К. Д.",
+			role: "doctor",
+			specialization: "Хирург-имплантолог",
+			email: "surgeon@dente-demo.ru",
+			phone: "+7 916 333-44-55",
+			active: true,
+			color: "var(--danger, #ef4444)",
+		},
+		{
+			id: DEMO_OWNER_ID,
+			organizationId: DEMO_SHOWCASE_ORG_ID,
+			fullName: "Д-р Воронов М. С.",
+			role: "owner",
+			specialization: "Главврач / Владелец",
+			email: "owner@dente-demo.ru",
+			phone: "+7 916 444-55-66",
+			active: true,
+			color: "var(--gold, #f59e0b)",
+		},
+		{
+			id: DEMO_ADMIN_ID,
+			organizationId: DEMO_SHOWCASE_ORG_ID,
+			fullName: "Смирнова А. П.",
+			role: "administrator",
+			specialization: "Старший администратор",
+			email: "admin@dente-demo.ru",
+			phone: "+7 916 555-66-77",
+			active: true,
+			color: "var(--ok-fg, #10b981)",
+		},
+	];
+}
 
 /**
  * Ручное переключение демо-режима в рантайме (для переключателей в интерфейсе).
@@ -156,12 +245,13 @@ export const isDemoMode = isDemoShowcaseMode;
  * Проверка, является ли организация/клиника демонстрационным тенантом.
  */
 export function isDemoTenant(organizationId?: string | null): boolean {
-	if (!organizationId) return false;
+	if (!organizationId || typeof organizationId !== "string") return false;
 	const lower = organizationId.toLowerCase();
 	return (
 		lower === DEMO_SHOWCASE_ORG_ID ||
 		lower.startsWith("01a00000-0000-0000-0000-") ||
 		lower.startsWith("demo_") ||
+		lower.startsWith("demo-") ||
 		lower.startsWith("sample_") ||
 		lower.startsWith("test_org")
 	);
@@ -171,11 +261,12 @@ export function isDemoTenant(organizationId?: string | null): boolean {
  * Проверка, является ли идентификатор пациента демонстрационным / тестовым образцом.
  */
 export function isDemoPatientId(patientId?: string | null): boolean {
-	if (!patientId) return false;
+	if (!patientId || typeof patientId !== "string") return false;
 	const lower = patientId.toLowerCase();
 	return (
 		lower.startsWith("sample_") ||
 		lower.startsWith("demo_") ||
+		lower.startsWith("demo-") ||
 		lower.startsWith("01a00000-0000-0000-0000-") ||
 		lower.startsWith("pat-88") ||
 		lower.includes("test_patient") ||
@@ -187,12 +278,13 @@ export function isDemoPatientId(patientId?: string | null): boolean {
  * Проверка, является ли UID исследования демонстрационным (например, KaVo OP300 Захаров).
  */
 export function isDemoStudyInstanceUid(studyUid?: string | null): boolean {
-	if (!studyUid) return false;
+	if (!studyUid || typeof studyUid !== "string") return false;
 	const lower = studyUid.toLowerCase();
 	return (
 		lower === DEMO_STUDY_INSTANCE_UID.toLowerCase() ||
 		lower.includes(".demo.") ||
 		lower.startsWith("demo_") ||
+		lower.startsWith("demo-") ||
 		lower.startsWith("sample_") ||
 		lower.includes("zakharov") ||
 		lower.includes("kavo-demo")
@@ -246,7 +338,14 @@ export function getDemoShowcasePatients(): Patient[] {
 			notes: "Соматический статус: Соматически здорова. Без хронических патологий. Аллергоанамнез не отягощен. Переносимость местных анестетиков артикаинового ряда хорошая.",
 			status: "active",
 			balanceRub: 15000,
-			administrativeProfile: null,
+			administrativeProfile: patientAdministrativeProfileSchema.parse({
+				preferredAppointmentWeekdays: [1, 3, 5],
+				preferredAppointmentStart: "09:00",
+				preferredAppointmentEnd: "14:00",
+				preferredAppointmentNote: "Утреннее время. Плановое лечение кариеса и эстетические реставрации.",
+				loyaltyTier: "silver",
+				orthodonticProgress: null,
+			}) as any,
 			createdAt: "2026-01-15T09:00:00.000Z",
 			updatedAt: "2026-09-28T08:00:00.000Z",
 		},
@@ -261,7 +360,14 @@ export function getDemoShowcasePatients(): Patient[] {
 			notes: "ВНИМАНИЕ: Аллергия на пенициллиновый ряд! Анамнез: гипертоническая болезнь 1 ст. АД под контролем (125/80).",
 			status: "active",
 			balanceRub: -4500,
-			administrativeProfile: null,
+			administrativeProfile: patientAdministrativeProfileSchema.parse({
+				preferredAppointmentWeekdays: [2, 4],
+				preferredAppointmentStart: "11:00",
+				preferredAppointmentEnd: "16:00",
+				preferredAppointmentNote: "ВНИМАНИЕ: Аллергия на пенициллины. Сложная эндодонтия зуба 36 под микроскопом.",
+				loyaltyTier: "standard",
+				orthodonticProgress: null,
+			}) as any,
 			createdAt: "2026-02-10T11:30:00.000Z",
 			updatedAt: "2026-09-28T09:30:00.000Z",
 		},
@@ -276,7 +382,18 @@ export function getDemoShowcasePatients(): Patient[] {
 			notes: "Соматически здорова. Проходит ортодонтическое лечение (элайнеры Spark, этап 8/24).",
 			status: "active",
 			balanceRub: 35000,
-			administrativeProfile: null,
+			administrativeProfile: patientAdministrativeProfileSchema.parse({
+				preferredAppointmentWeekdays: [3, 6],
+				preferredAppointmentStart: "14:00",
+				preferredAppointmentEnd: "19:00",
+				preferredAppointmentNote: "Элайнеры Spark, этап 8/24. Выдача следующего комплекта капп.",
+				loyaltyTier: "gold",
+				orthodonticProgress: JSON.stringify({
+					currentAligner: 8,
+					totalAligners: 24,
+					startDate: "2026-01-15",
+				}),
+			}) as any,
 			createdAt: "2026-03-01T14:15:00.000Z",
 			updatedAt: "2026-09-28T10:00:00.000Z",
 		},
@@ -291,7 +408,14 @@ export function getDemoShowcasePatients(): Patient[] {
 			notes: "Сахарный диабет 2 типа, компенсированный (HbA1c 6.2%). Согласован хирургический протокол имплантации Straumann BLX.",
 			status: "active",
 			balanceRub: 0,
-			administrativeProfile: null,
+			administrativeProfile: patientAdministrativeProfileSchema.parse({
+				preferredAppointmentWeekdays: [2, 5],
+				preferredAppointmentStart: "15:00",
+				preferredAppointmentEnd: "18:00",
+				preferredAppointmentNote: "Хирургическая консультация и планирование имплантации Straumann BLX по КЛКТ.",
+				loyaltyTier: "platinum",
+				orthodonticProgress: null,
+			}) as any,
 			createdAt: "2026-04-12T16:00:00.000Z",
 			updatedAt: "2026-09-28T11:00:00.000Z",
 		},
@@ -514,7 +638,7 @@ export function getDemoDashboardAnalytics(
 				fill: "var(--accent, #6366f1)",
 			},
 			{
-				chairId: "01a00000-0000-0002-0000-000000000003",
+				chairId: DEMO_CHAIR_3_ID,
 				name: "Кресло 3 (Детство/Гигиена)",
 				value: 74,
 				occupiedMinutes: 8880,
@@ -526,7 +650,7 @@ export function getDemoDashboardAnalytics(
 		doctorProfitabilityJson: [
 			{
 				doctorId: DEMO_DOCTOR_1_ID,
-				name: "Смирнов А.В. (Ортопедия / Хирургия)",
+				name: "Д-р Соколов А. В. (Терапия / Ортопедия)",
 				revenue: 2570000,
 				appointmentsCount: 86,
 				avgTicketRub: 29883,
@@ -542,7 +666,7 @@ export function getDemoDashboardAnalytics(
 			},
 			{
 				doctorId: DEMO_DOCTOR_2_ID,
-				name: "Иванова М.С. (Терапия / Эндодонтия)",
+				name: "Д-р Морозова Е. И. (Ортодонтия)",
 				revenue: 1580000,
 				appointmentsCount: 142,
 				avgTicketRub: 11126,
@@ -557,8 +681,8 @@ export function getDemoDashboardAnalytics(
 				clinicMarginRub: 1160000,
 			},
 			{
-				doctorId: "01a00000-0000-0003-0000-000000000003",
-				name: "Петров К.Д. (Ортодонтия)",
+				doctorId: DEMO_DOCTOR_SURGEON_ID,
+				name: "Д-р Громов К. Д. (Хирургия / Имплантация)",
 				revenue: 510000,
 				appointmentsCount: 28,
 				avgTicketRub: 18214,
@@ -573,8 +697,8 @@ export function getDemoDashboardAnalytics(
 				clinicMarginRub: 272500,
 			},
 			{
-				doctorId: "01a00000-0000-0003-0000-000000000004",
-				name: "Сидорова О.Н. (Детская стоматология)",
+				doctorId: DEMO_OWNER_ID,
+				name: "Д-р Воронов М. С. (Главврач / Владелец)",
 				revenue: 190000,
 				appointmentsCount: 22,
 				avgTicketRub: 8636,

@@ -1,13 +1,14 @@
 import type React from "react";
 import { useCallback, useState } from "react";
-import { AlertCircle, Eye, X } from "lucide-react";
+import { AlertCircle, Eye, Sparkles, X } from "lucide-react";
 import { isDemoShowcaseMode, disableDemoShowcaseMode } from "../../utils/demoModeEngine.js";
 
 export interface DemoModeBannerProps {
 	readonly onExitDemo?: () => void;
+	readonly onRegisterClinic?: () => void;
 }
 
-export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({ onExitDemo }) => {
+export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({ onExitDemo, onRegisterClinic }) => {
 	const isDemo = isDemoShowcaseMode();
 	const [isDismissed, setIsDismissed] = useState(false);
 
@@ -26,6 +27,27 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({ onExitDemo }) =>
 			window.location.href = url.pathname + (url.search ? url.search : "");
 		}
 	}, [onExitDemo]);
+
+	const handleRegisterClinic = useCallback(() => {
+		disableDemoShowcaseMode();
+		if (onRegisterClinic) {
+			onRegisterClinic();
+		} else if (typeof window !== "undefined") {
+			try {
+				localStorage.removeItem("dente_clinic_token");
+				localStorage.removeItem("dente_staff_token");
+				localStorage.removeItem("dente_demo_showcase");
+			} catch {
+				// storage error
+			}
+			const url = new URL(window.location.href);
+			url.searchParams.delete("demo");
+			url.searchParams.delete("showcase");
+			url.hash = "#/auth/register";
+			window.location.href = url.pathname + (url.search ? url.search : "") + url.hash;
+			window.location.reload();
+		}
+	}, [onRegisterClinic]);
 
 	if (!isDemo || isDismissed) {
 		return null;
@@ -54,12 +76,33 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({ onExitDemo }) =>
 			<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 				<Eye size={15} style={{ color: "var(--brand-accent, #6366f1)", flexShrink: 0 }} aria-hidden="true" />
 				<span>
-					<strong>ДЕМО-РЕЖИМ (Витрина):</strong> Отображаются синтетические данные расписания, картотеки и 3D-снимков.
-					Боевая база данных изолирована (Zero-Mock Invariant).
+					<strong>ДЕМО-РЕЖИМ (Витрина):</strong> Ознакомительный режим: отображаются синтетические данные расписания, картотеки и клинических сценариев.
 				</span>
 			</div>
 
 			<div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+				<button
+					type="button"
+					onClick={handleRegisterClinic}
+					data-testid="create-clinic-free-btn"
+					style={{
+						background: "var(--teal, #0d9488)",
+						color: "#ffffff",
+						border: "none",
+						borderRadius: "4px",
+						padding: "4px 12px",
+						fontSize: "11px",
+						fontWeight: 600,
+						cursor: "pointer",
+						display: "inline-flex",
+						alignItems: "center",
+						gap: "5px",
+					}}
+				>
+					<Sparkles size={13} aria-hidden="true" />
+					Создать свою клинику бесплатно
+				</button>
+
 				<button
 					type="button"
 					onClick={handleExitDemo}
@@ -69,7 +112,7 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({ onExitDemo }) =>
 						color: "#ffffff",
 						border: "none",
 						borderRadius: "4px",
-						padding: "3px 10px",
+						padding: "4px 10px",
 						fontSize: "11px",
 						fontWeight: 600,
 						cursor: "pointer",

@@ -1,0 +1,29 @@
+{
+  "role": "DEMO SHOWCASE & LIVE DOCTOR HOT-PATH INQUISITOR",
+  "status": "completed",
+  "completed_steps": [
+    "Read all mandatory authority files: core.md, frontend.md, AGENTS.md, GEMINI.md",
+    "Audited demoModeEngine.ts, DemoTourSelector.tsx, demoMode.ts, StaffPinPad.tsx, DemoModeBanner.tsx",
+    "Investigated 5 clinical roles entry and landing requirements",
+    "Investigated doctor hot-path: appointment -> open visit -> odontogram -> caries 16 -> anesthesia & composite -> 043/u -> complete visit -> receipt/cashbox",
+    "Identified root cause of role mismatch ('admin' vs 'administrator' in DemoTourSelector)",
+    "Identified missing target routing (hash, view, patient ID) upon launching demo roles in DemoTourSelector",
+    "Identified missing demo staff roster and potential undefined doctor accesses in demo mode",
+    "Identified conversion banner requirement ('Ознакомительный режим: [Создать свою клинику бесплатно]')",
+    "Enhanced demoModeEngine.ts with safe typeguards (preventing toLowerCase crashes on non-strings), DEMO_CHAIR_3_ID, DEMO_DOCTOR_ constants, getDemoShowcaseStaff() with all 5 clinical specialists, and rich administrativeProfile for Patients 1-4 with structured orthodonticProgress for Patient 3",
+    "Updated DemoTourSelector.tsx: migrated role from 'admin' to canonical 'administrator', configured targetView and targetPatientId for all 5 roles, and synchronized useAppStore (role, currentView) and usePatientStore (selectedPatientId)",
+    "Enhanced StaffPinPad.tsx: error-proof demo staff unlock for all 5 demo specialists without network blocks",
+    "Enhanced DemoModeBanner.tsx: added 'Создать свою клинику бесплатно' CTA button with smooth transition to registration (#/auth/register) without context loss",
+    "Integrated DemoModeBanner in App.tsx replacing ad-hoc inline banner",
+    "Updated offlineStorage.ts: createOfflineFallbackDashboard hydrates full 5 staff members, dense appointments, and showcase patients in demo mode",
+    "Created demoShowcaseHotPathInquisition.test.ts verifying all 8 critical invariant tests (all passing, Exit Code 0)"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "role_bug": "DemoTourSelector used role: 'admin' instead of 'administrator', which caused getFilteredAppViews to fall back incorrectly to shift view instead of schedule. FIXED.",
+    "routing_bug": "handleLaunchRole only set tokens without updating currentView, targetPatientId, or window.location.hash. FIXED.",
+    "ortho_patient": "Patient 3 lacked explicit structured orthodonticProgress in administrativeProfile. FIXED with JSON { currentAligner: 8, totalAligners: 24, startDate: '2026-01-15' }.",
+    "type_error_protection": "Need strict typeof string checks in isDemoTenant, isDemoPatientId, isDemoStudyInstanceUid to prevent any .toLowerCase() on non-strings. FIXED.",
+    "conversion_cta": "Added 'Создать свою клинику бесплатно' button (data-testid='create-clinic-free-btn') to DemoModeBanner with clean token wipe and routing to #/auth/register."
+  }
+}
