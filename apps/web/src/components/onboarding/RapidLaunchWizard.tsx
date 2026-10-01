@@ -42,12 +42,28 @@ export function RapidLaunchWizard({
 	} = useOnboardingStore();
 
 	const handleSkip = useCallback(async () => {
+		const state = useOnboardingStore.getState();
+		if (!state.profile.clinicName?.trim()) {
+			const fallback =
+				state.profile.mode === "solo_doctor"
+					? "Кабинет доктора"
+					: "Стоматологический кабинет";
+			state.updateProfile({ clinicName: fallback });
+		}
 		await skipWizard();
 		onSkipped?.();
 		onClose?.();
 	}, [skipWizard, onSkipped, onClose]);
 
 	const handleFinish = useCallback(async () => {
+		const state = useOnboardingStore.getState();
+		if (!state.profile.clinicName?.trim()) {
+			const fallback =
+				state.profile.mode === "solo_doctor"
+					? "Кабинет доктора"
+					: "Стоматологический кабинет";
+			state.updateProfile({ clinicName: fallback });
+		}
 		const ok = await finishWizard();
 		if (ok) {
 			onFinished?.();
@@ -58,8 +74,24 @@ export function RapidLaunchWizard({
 	// 0-Click Fast Start for Solo Doctor (Mandate 8n)
 	const handleZeroClickStart = useCallback(async () => {
 		useOnboardingStore.getState().setOperationalMode("solo_doctor");
+		const state = useOnboardingStore.getState();
+		if (!state.profile.clinicName?.trim()) {
+			state.updateProfile({ clinicName: "Кабинет доктора" });
+		}
 		await handleFinish();
 	}, [handleFinish]);
+
+	const handleNextStep = useCallback(() => {
+		const state = useOnboardingStore.getState();
+		if (state.step === "clinic_profile" && !state.profile.clinicName?.trim()) {
+			const fallback =
+				state.profile.mode === "solo_doctor"
+					? "Кабинет доктора"
+					: "Стоматологический кабинет";
+			state.updateProfile({ clinicName: fallback });
+		}
+		goToNextStep();
+	}, [goToNextStep]);
 
 	// Keyboard shortcut handling: Esc to skip/close
 	useEffect(() => {
@@ -95,21 +127,21 @@ export function RapidLaunchWizard({
 						type="button"
 						className="wizard-zero-click-btn"
 						onClick={() => void handleZeroClickStart()}
-						title="Мгновенный старт для соло-врача с базовыми настройками"
+						title="Мгновенный старт для соло-врача с базовыми настройками (1 кресло, 09:00–18:00)"
 					>
 						<Zap size={14} aria-hidden="true" />
 						0-клик старт (соло-врач)
 					</button>
 
-					{/* Prominent Skip Button (Doctor Autonomy Mandate 8e) */}
+					{/* Prominent Skip Button (Doctor Autonomy Mandate 8e, 8n) */}
 					<button
 						type="button"
 						className="wizard-skip-top-btn"
 						onClick={() => void handleSkip()}
-						title="Пропустить настройку и перейти в программу"
+						title="Пропустить и настроить позже"
 					>
 						<FastForward size={14} aria-hidden="true" />
-						Пропустить и настроить позже
+						Начать приём прямо сейчас (Пропустить настройку)
 					</button>
 
 					{isModal && onClose && (
@@ -184,8 +216,9 @@ export function RapidLaunchWizard({
 						type="button"
 						className="footer-ghost-skip-btn"
 						onClick={() => void handleSkip()}
+						title="Пропустить и настроить позже"
 					>
-						Пропустить и настроить позже
+						Начать приём прямо сейчас (Пропустить настройку)
 					</button>
 				</div>
 
@@ -206,7 +239,7 @@ export function RapidLaunchWizard({
 						<button
 							type="button"
 							className="wizard-next-primary-btn"
-							onClick={goToNextStep}
+							onClick={handleNextStep}
 							disabled={isSubmitting}
 						>
 							Продолжить

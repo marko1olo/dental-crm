@@ -11,8 +11,13 @@ import {
 	STARTER_15_ESSENTIAL_DENTAL_SERVICES,
 } from "@dental/shared";
 import { useOnboardingStore } from "../../../store/onboardingStore";
+import { normalizeContactInput } from "../../auth/Register";
 import { RapidLaunchWizard } from "../RapidLaunchWizard";
-import { Step1ClinicProfile } from "../Step1ClinicProfile";
+import {
+	Step1ClinicProfile,
+	formatAndNormalizePhone,
+	getDoctorDefaultClinicName,
+} from "../Step1ClinicProfile";
 import { Step2ChairsSchedule } from "../Step2ChairsSchedule";
 import { Step3StarterPricelist } from "../Step3StarterPricelist";
 
@@ -313,6 +318,7 @@ describe("Clinic Onboarding & Rapid Launch Wizard Suite", () => {
 
 			assert.ok(html.includes("Мастер быстрого запуска клиники"));
 			assert.ok(html.includes("Пропустить и настроить позже"));
+			assert.ok(html.includes("Начать приём прямо сейчас (Пропустить настройку)"));
 			assert.ok(html.includes("0-клик старт (соло-врач)"));
 			assert.ok(html.includes("Профиль и Режим"));
 			assert.ok(html.includes("Кресла и График"));
@@ -348,6 +354,69 @@ describe("Clinic Onboarding & Rapid Launch Wizard Suite", () => {
 			assert.ok(html.includes("A11.07.012"));
 			assert.ok(html.includes("A16.07.002.001"));
 			assert.ok(html.includes("A16.07.051"));
+		});
+	});
+
+	describe("8. Zero Dead-Ends & Rapid Solo Doctor Registration Invariants (Mandate 8n)", () => {
+		it("normalizes phone numbers with spaces, dashes, and parentheses", () => {
+			const t1 = normalizeContactInput("+7 (999) 123-45-67");
+			assert.strictEqual(t1.loginIdentifier, "+79991234567");
+			assert.strictEqual(t1.normalizedPhone, "+79991234567");
+			assert.strictEqual(t1.isPhone, true);
+
+			const t2 = normalizeContactInput("8 999 123-45-67");
+			assert.strictEqual(t2.loginIdentifier, "+79991234567");
+			assert.strictEqual(t2.isPhone, true);
+
+			const t3 = normalizeContactInput("9991234567");
+			assert.strictEqual(t3.loginIdentifier, "+79991234567");
+			assert.strictEqual(t3.isPhone, true);
+
+			const tEmail = normalizeContactInput("Doctor@Clinic.COM");
+			assert.strictEqual(tEmail.loginIdentifier, "doctor@clinic.com");
+			assert.strictEqual(tEmail.isPhone, false);
+		});
+
+		it("formats phone numbers cleanly for Step 1 input", () => {
+			const formatted = formatAndNormalizePhone("89991234567");
+			assert.strictEqual(formatted, "+7 (999) 123-45-67");
+
+			const formatted2 = formatAndNormalizePhone("+7 999 123 45 67");
+			assert.strictEqual(formatted2, "+7 (999) 123-45-67");
+		});
+
+		it("provides sensible doctor clinic name presets without dead ends", () => {
+			const presetSolo = getDoctorDefaultClinicName("", "solo_doctor");
+			assert.ok(presetSolo.length > 0);
+			assert.ok(presetSolo.includes("Кабинет доктора") || presetSolo.includes("Стоматологический кабинет"));
+
+			const presetClinic = getDoctorDefaultClinicName("", "small_clinic");
+			assert.strictEqual(presetClinic, "Стоматологический кабинет");
+		});
+
+		it("automatically applies fallback clinic name in finishWizard if left blank", async () => {
+			const store = useOnboardingStore.getState();
+			store.updateProfile({ clinicName: "" });
+			assert.strictEqual(useOnboardingStore.getState().profile.clinicName, "");
+
+			const ok = await store.finishWizard();
+			assert.strictEqual(ok, true);
+			const finishedProfile = useOnboardingStore.getState().profile;
+			assert.ok(finishedProfile.clinicName.trim().length > 0);
+			assert.ok(
+				finishedProfile.clinicName.includes("Кабинет доктора") ||
+				finishedProfile.clinicName.includes("Стоматологический кабинет")
+			);
+		});
+
+		it("automatically applies fallback clinic name in skipWizard if left blank", async () => {
+			const store = useOnboardingStore.getState();
+			store.updateProfile({ clinicName: "   " });
+
+			const ok = await store.skipWizard();
+			assert.strictEqual(ok, true);
+			const finishedProfile = useOnboardingStore.getState().profile;
+			assert.ok(finishedProfile.clinicName.trim().length > 0);
 		});
 	});
 });

@@ -39,6 +39,48 @@ interface RegisterProps {
 
 type PracticeScale = "solo" | "clinic";
 
+/**
+ * Нормализует телефонный номер или email (Mandate 8n Zero Dead-Ends).
+ * Если введен телефон с пробелами, дефисами, скобками:
+ * "+7 (999) 123-45-67" -> "+79991234567"
+ * "8 999 123-45-67" -> "+79991234567"
+ * "9991234567" -> "+79991234567"
+ */
+export function normalizeContactInput(input: string): {
+	loginIdentifier: string;
+	normalizedPhone?: string;
+	isPhone: boolean;
+} {
+	const trimmed = input.trim();
+	if (!trimmed) {
+		return { loginIdentifier: "", isPhone: false };
+	}
+	if (trimmed.includes("@")) {
+		return { loginIdentifier: trimmed.toLowerCase(), isPhone: false };
+	}
+
+	const digitsOnly = trimmed.replace(/\D/g, "");
+	if (digitsOnly.length >= 10) {
+		let digits = digitsOnly;
+		if (digits.length === 11 && (digits.startsWith("7") || digits.startsWith("8"))) {
+			digits = `7${digits.slice(1)}`;
+		} else if (digits.length === 10) {
+			digits = `7${digits}`;
+		}
+		const phoneFormatted = `+${digits}`;
+		return {
+			loginIdentifier: phoneFormatted,
+			normalizedPhone: phoneFormatted,
+			isPhone: true,
+		};
+	}
+
+	return {
+		loginIdentifier: trimmed,
+		isPhone: false,
+	};
+}
+
 export function Register({
 	onSuccess,
 	onSwitchToLogin,
@@ -55,10 +97,31 @@ export function Register({
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		const trimmedName = name.trim();
-		const trimmedEmail = email.trim();
+		const { loginIdentifier, normalizedPhone } = normalizeContactInput(email);
 
-		if (!trimmedName || !trimmedEmail || !password) {
-			showToast("Пожалуйста, заполните все поля формы", "warning");
+		// Защита от тупиков (Mandate 8n): если врач оставил пустое название, подставляем дефолт
+		const defaultClinicTitle = "Стоматологический кабинет";
+		const clinicTitle = trimmedName
+			? scale === "solo"
+				? `Кабинет д-ра ${trimmedName}`
+				: trimmedName
+			: defaultClinicTitle;
+
+		const ownerTitle = trimmedName
+			? scale === "solo"
+				? trimmedName
+				: `Главврач (${trimmedName})`
+			: scale === "solo"
+				? "Доктор"
+				: "Главврач";
+
+		if (!loginIdentifier) {
+			showToast("Пожалуйста, укажите email или телефон для входа", "warning");
+			return;
+		}
+
+		if (!password) {
+			showToast("Пожалуйста, укажите пароль", "warning");
 			return;
 		}
 
@@ -69,15 +132,6 @@ export function Register({
 
 		setLoading(true);
 		try {
-			const clinicTitle =
-				scale === "solo"
-					? `Кабинет д-ра ${trimmedName}`
-					: trimmedName;
-			const ownerTitle =
-				scale === "solo"
-					? trimmedName
-					: `Главврач (${trimmedName})`;
-
 			// Пробуем зарегистрироваться через API
 			const response = await fetch("/api/auth/register", {
 				method: "POST",
@@ -85,8 +139,9 @@ export function Register({
 				body: JSON.stringify({
 					clinicName: clinicTitle,
 					ownerName: ownerTitle,
-					email: trimmedEmail,
-					password: password.length < 8 ? `${password}__00` : password,
+					email: loginIdentifier,
+					phone: normalizedPhone,
+					password: password,
 					practiceType: scale,
 					withDemoData: seedDemoData,
 				}),
@@ -100,7 +155,7 @@ export function Register({
 					id: data.userId || "owner-user-id",
 					fullName: ownerTitle,
 					role: "owner",
-					email: trimmedEmail,
+					email: loginIdentifier,
 					organizationId: data.organizationId,
 				};
 				cacheActiveStaffUser(userProfile);
@@ -131,7 +186,7 @@ export function Register({
 				id: `user-${Date.now()}`,
 				fullName: ownerTitle,
 				role: "owner",
-				email: trimmedEmail,
+				email: loginIdentifier,
 				organizationId: localOrgId,
 			};
 
@@ -165,12 +220,12 @@ export function Register({
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			enableDemoShowcaseMode();
-			const offlineClinicName = name ? (scale === "solo" ? `Кабинет д-ра ${name}` : name) : "Кабинет врача";
+			const offlineClinicName = clinicTitle;
 			const offlineUser = {
 				id: "offline-owner",
-				fullName: name || "Доктор",
+				fullName: ownerTitle,
 				role: "owner",
-				email: email || "doctor@clinic.com",
+				email: loginIdentifier || "doctor@clinic.com",
 				organizationId: DEMO_SHOWCASE_ORG_ID,
 			};
 			safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, "offline-token");
@@ -251,8 +306,8 @@ export function Register({
 						onChange={(e) => setName(e.target.value)}
 						placeholder={
 							scale === "solo"
-								? "Иванов Иван Иванович"
-								: "Дентал Клиник / Стоматология №1"
+								? "Иванов Иван Иванович (или оставьте пустым)"
+								: "Дентал Клиник (или оставьте пустым)"
 						}
 						className="auth-input"
 						disabled={loading}
@@ -270,7 +325,7 @@ export function Register({
 						type="text"
 						value={email}
 						onChange={(e) => setEmail(e.target.value)}
-						placeholder="doctor@clinic.com или +7 999 123-45-67"
+						placeholder="+7 (999) 123-45-67 или doctor@clinic.com"
 						className="auth-input"
 						disabled={loading}
 						autoComplete="email"

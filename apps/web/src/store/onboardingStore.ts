@@ -343,8 +343,18 @@ export const useOnboardingStore = create<OnboardingState>()(
 			},
 
 			finishWizard: async () => {
-				const { profile, chairs, schedule, seedStarterPricelist } = get();
+				let { profile, chairs, schedule, seedStarterPricelist } = get();
 				set({ isSubmitting: true, submitError: null });
+
+				// Защита от тупиков (Mandate 8n): автоматический дефолт для пустого названия
+				if (!profile.clinicName?.trim()) {
+					const fallback =
+						profile.mode === "solo_doctor"
+							? "Кабинет доктора"
+							: "Стоматологический кабинет";
+					profile = { ...profile, clinicName: fallback };
+					set({ profile });
+				}
 
 				try {
 					// 1. Seed pricelist if not already seeded
@@ -415,6 +425,15 @@ export const useOnboardingStore = create<OnboardingState>()(
 
 			skipWizard: async () => {
 				set({ isSubmitting: true });
+				const { profile } = get();
+				if (!profile.clinicName?.trim()) {
+					const fallback =
+						profile.mode === "solo_doctor"
+							? "Кабинет доктора"
+							: "Стоматологический кабинет";
+					set({ profile: { ...profile, clinicName: fallback } });
+				}
+
 				try {
 					await saveWorkspaceFlags({
 						onboardingCompleted: true,

@@ -43,7 +43,7 @@ export function Step2ChairsSchedule() {
 				<h3>Стоматологические кресла и часы работы</h3>
 				<p>
 					Укажите рабочие установки клиники и график смены.
-					По умолчанию предзаполнены проверенные параметры: 09:00–20:00, 30 минут на визит.
+					По умолчанию предзаполнены проверенные параметры: {schedule.workdayStart}–{schedule.workdayEnd}, {schedule.defaultVisitMinutes} минут на визит.
 				</p>
 			</div>
 
@@ -63,6 +63,11 @@ export function Step2ChairsSchedule() {
 									type="text"
 									value={chair.name}
 									onChange={(e) => updateChair(chair.id, { name: e.target.value })}
+									onBlur={() => {
+										if (!chair.name.trim()) {
+											updateChair(chair.id, { name: `Кресло ${index + 1}` });
+										}
+									}}
 									placeholder="Название кресла / кабинета"
 									aria-label={`Название кресла ${index + 1}`}
 								/>
