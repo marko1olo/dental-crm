@@ -5,4 +5,5 @@ export * from "./ManagerReportsStaffAndChairsSection.js";
 export * from "./ManagerReportsQualitySection.js";
 export * from "./ManagerReportsPrepaymentsSection.js";
 export * from "./ManagerReportsKpisSection.js";
+export * from "./ReportsDashboard.js";
 export * from "./reportsCsvExport.js";

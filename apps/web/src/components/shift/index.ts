@@ -13,6 +13,13 @@ export type {
 } from "./DoctorShiftControlBar";
 export { DoctorShiftControlBar } from "./DoctorShiftControlBar";
 
+export type {
+	DoctorShiftCloseModalProps,
+	DoctorShiftCashSummary,
+	DoctorShiftEmrSummary,
+} from "./DoctorShiftCloseModal";
+export { DoctorShiftCloseModal } from "./DoctorShiftCloseModal";
+
 export * from "../doctor-portal";
 export {
 	DoctorMobileShiftModal as DoctorShiftModal,

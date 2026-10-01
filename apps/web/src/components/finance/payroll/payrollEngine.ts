@@ -11,6 +11,19 @@ import {
 	type AssistantShiftRateRule,
 } from "./payrollPresets";
 
+export const DEFAULT_CATEGORY_COMMISSION_PERCENT: Record<
+	"therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric",
+	number
+> = {
+	therapy: 25,
+	orthopedics: 25,
+	surgery: 20,
+	orthodontics: 25,
+	hygiene: 30,
+	retail_hygiene: 10,
+	pediatric: 25,
+};
+
 export interface DoctorCompletedServiceItem {
 	readonly id: string;
 	readonly dateIso: string;
@@ -19,7 +32,7 @@ export interface DoctorCompletedServiceItem {
 	readonly serviceNameRu: string;
 	readonly order804nCode?: string | undefined;
 	readonly toothCode?: string | undefined;
-	readonly category: "therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene";
+	readonly category: "therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric";
 	readonly grossRevenueKop: number;
 	readonly labCostKop: number;
 	readonly materialCostKop: number;
@@ -61,6 +74,7 @@ export interface DoctorPayrollCalculationInput {
 	readonly periodEndIso: string;
 	readonly services: readonly DoctorCompletedServiceItem[];
 	readonly customBasePercentage?: number | undefined;
+	readonly categoryRates?: Partial<Record<"therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric", number>> | undefined;
 	readonly manualAdjustmentKop?: number | undefined; // e.g. advance payment deduction or bonus
 	readonly manualAdjustmentNoteRu?: string | undefined;
 	readonly refundDeductions?: readonly DoctorRefundDeductionItem[] | undefined;
@@ -227,7 +241,34 @@ export function calculateDoctorPeriodPayroll(
 		const isFullyRefunded = item.isRefunded === true || (item.refundedAmountKop !== undefined && item.refundedAmountKop >= item.grossRevenueKop);
 		const refundKop = Math.min(item.grossRevenueKop, item.refundedAmountKop ?? (item.isRefunded ? item.grossRevenueKop : 0));
 
-		const itemCommissionPercent = item.customCommissionPercent ?? (item.category === "retail_hygiene" ? preset.retailProductsPercentage : basePercent);
+		// MANDATE 1: Orthopedic and Orthodontic services ALWAYS deduct ZTL dental lab costs,
+		// and ANY service with a direct lab invoice (labCostKop > 0) or specialty preset deducts lab.
+		const shouldDeductLab =
+			preset.deductsLabCosts ||
+			item.category === "orthopedics" ||
+			item.category === "orthodontics" ||
+			(item.labCostKop !== undefined && item.labCostKop > 0);
+		const itemLabCost = shouldDeductLab ? Math.max(0, item.labCostKop || 0) : 0;
+
+		// MANDATE 1: Surgery/Implantation (implants, bone blocks, titanium meshes, membranes)
+		// and Therapy (restorative composites) and ANY service with direct materials (materialCostKop > 0)
+		// deducts high-cost materials from the doctor's commission base.
+		const shouldDeductMaterial =
+			preset.deductsMaterialCosts ||
+			item.category === "surgery" ||
+			item.category === "therapy" ||
+			item.category === "pediatric" ||
+			(item.materialCostKop !== undefined && item.materialCostKop > 0 && preset.deductsMaterialCosts);
+		const itemMaterialCost = shouldDeductMaterial ? Math.max(0, item.materialCostKop || 0) : 0;
+
+		const itemCommissionPercent =
+			item.customCommissionPercent ??
+			input.categoryRates?.[item.category] ??
+			(input.customBasePercentage !== undefined
+				? input.customBasePercentage
+				: (preset.specialtyId === "solo_practitioner" || preset.specialtyId === "solo-doctor" || preset.defaultPercentage === 100
+					? preset.defaultPercentage
+					: (DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category] ?? (item.category === "retail_hygiene" ? preset.retailProductsPercentage : basePercent))));
 
 		if (isFullyRefunded) {
 			refundedServicesCount += 1;
@@ -236,9 +277,7 @@ export function calculateDoctorPeriodPayroll(
 			// Generate explicit storno line item for transparency
 			const receiptNum = item.refundReceiptNumber ?? item.receiptNumber ?? item.id;
 			const reason = item.refundReasonRu ?? "Полный возврат пациенту";
-			const labDed = preset.deductsLabCosts ? item.labCostKop : 0;
-			const matDed = preset.deductsMaterialCosts ? item.materialCostKop : 0;
-			const netBaseIfPaid = Math.max(0, item.grossRevenueKop - labDed - matDed);
+			const netBaseIfPaid = Math.max(0, item.grossRevenueKop - itemLabCost - itemMaterialCost);
 			const stornoComm = Math.round((netBaseIfPaid * itemCommissionPercent) / 100);
 			const stornoRub = (stornoComm / 100).toLocaleString("ru-RU");
 
@@ -281,19 +320,18 @@ export function calculateDoctorPeriodPayroll(
 		}
 
 		totalGross += effectiveGrossKop;
-
-		const labCost = preset.deductsLabCosts ? item.labCostKop : 0;
-		const materialCost = preset.deductsMaterialCosts ? item.materialCostKop : 0;
-
-		totalLab += labCost;
-		totalMaterial += materialCost;
+		totalLab += itemLabCost;
+		totalMaterial += itemMaterialCost;
 
 		if (item.category === "retail_hygiene") {
-			const itemRetailPercent = item.customCommissionPercent ?? preset.retailProductsPercentage;
+			const itemRetailPercent =
+				item.customCommissionPercent ??
+				input.categoryRates?.retail_hygiene ??
+				preset.retailProductsPercentage;
 			const retailEarned = Math.round((effectiveGrossKop * itemRetailPercent) / 100);
 			earnedRetail += retailEarned;
 		} else {
-			const netItemBase = Math.max(0, effectiveGrossKop - labCost - materialCost);
+			const netItemBase = Math.max(0, effectiveGrossKop - itemLabCost - itemMaterialCost);
 			const itemEarned = Math.round((netItemBase * itemCommissionPercent) / 100);
 			earnedBase += itemEarned;
 		}

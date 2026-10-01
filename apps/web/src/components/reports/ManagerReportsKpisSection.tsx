@@ -18,6 +18,12 @@ export function ManagerReportsKpisSection({
 	summary,
 	maxRevenue,
 }: ManagerReportsKpisSectionProps) {
+	const completedApts = Math.max(
+		0,
+		(summary.appointments?.total ?? 0) - (summary.appointments?.lostAppointments ?? 0),
+	);
+	const averageTicketRub = completedApts > 0 ? Math.round((summary.revenue?.totalRub ?? 0) / completedApts) : 0;
+
 	return (
 		<>
 			{/* ── Главные числа ─────────────────────────────────────── */}
@@ -31,6 +37,15 @@ export function ManagerReportsKpisSection({
 						{shortRub(summary.revenue?.totalRub ?? 0)}
 					</span>
 					<span className="ops-metric__label">получено</span>
+				</li>
+				<li className="ops-metric">
+					<span
+						className="ops-metric__value"
+						title={money(averageTicketRub)}
+					>
+						{shortRub(averageTicketRub)}
+					</span>
+					<span className="ops-metric__label">средний чек</span>
 				</li>
 				<li className="ops-metric">
 					<span className="ops-metric__value">

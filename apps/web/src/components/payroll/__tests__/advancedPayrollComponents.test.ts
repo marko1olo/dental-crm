@@ -94,7 +94,7 @@ describe("Wave 14: Advanced Doctor Payroll & Form T-13 Timesheet", () => {
 
 		assert.equal(res.totalGrossRevenueKop, 6300000); // 63,000 RUB
 		assert.equal(res.totalMaterialDeductionsKop, 350000); // Therapist deducts materials (2,000 + 1,500 = 3,500 RUB)
-		assert.equal(res.totalLabDeductionsKop, 0); // Therapist does not deduct lab by default config
+		assert.equal(res.totalLabDeductionsKop, 800000); // Orthopedics CAD/CAM crown deducts 8,000 RUB ZTL lab
 		assert.equal(res.comprehensivePlanBonusKop, 2000000); // 4 * 5,000 = 20,000 RUB
 		assert.equal(res.earnedRetailCommissionKop, 30000); // 10% of 3,000 RUB = 300 RUB = 30,000 kop
 		assert.ok(res.grossPayoutBeforeTaxKop > 0);

@@ -367,6 +367,16 @@ export function adaptToDoctorShiftAppointments(params: {
 // 3. REAL-TIME INTEGER KOPECKS PIECE-RATE CALCULATION
 // ─────────────────────────────────────────────────────────────────────────────
 
+export const DEFAULT_CATEGORY_COMMISSION_PERCENT: Record<string, number> = {
+	therapy: 25,
+	orthopedics: 25,
+	surgery: 20,
+	orthodontics: 25,
+	hygiene: 30,
+	retail_hygiene: 10,
+	pediatric: 25,
+};
+
 /**
  * Calculates a single service item's piece-rate commission in integer kopecks.
  * Formula: Math.round(Math.max(0, finalRevenue - labCosts - materialCosts) * (commissionPct / 100))
@@ -377,6 +387,7 @@ export function calculateServicePieceRateAccrual(
 		directLabZtlCostKop?: Kopecks;
 		directMaterialCostKop?: Kopecks;
 		commissionPercent?: number;
+		category?: string;
 	},
 	fallbackCommissionPct = 25,
 ): { dealBaseKop: Kopecks; earnedPayoutKop: Kopecks } {
@@ -385,7 +396,9 @@ export function calculateServicePieceRateAccrual(
 	const matCost = Math.max(0, Math.round(item.directMaterialCostKop || 0));
 	const pct = typeof item.commissionPercent === "number" && item.commissionPercent >= 0
 		? item.commissionPercent
-		: fallbackCommissionPct;
+		: (item.category && DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category] !== undefined
+			? DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category]!
+			: fallbackCommissionPct);
 
 	const dealBaseKop = Math.max(0, revenue - labCost - matCost);
 	const earnedPayoutKop = Math.round((dealBaseKop * pct) / 100);
@@ -474,7 +487,8 @@ export function calculateDoctorShiftEarnings(
 						finalRevenueKop: srvRev,
 						directLabZtlCostKop: srvLab,
 						directMaterialCostKop: srvMat,
-						commissionPercent: srv.commissionPercent ?? defaultCommissionPct,
+						commissionPercent: srv.commissionPercent,
+						category: srv.category,
 					},
 					defaultCommissionPct,
 				);

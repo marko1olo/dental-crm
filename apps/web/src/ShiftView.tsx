@@ -21,7 +21,11 @@ import { patientInsightRiskLabels } from "./AppConstants";
 import { formatShortDate, minutesLabel, money } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
 import { PatientAvatar } from "./components/PatientAvatar";
-import { DoctorShiftControlBar, ShiftCallout } from "./components/shift";
+import {
+	DoctorShiftCloseModal,
+	DoctorShiftControlBar,
+	ShiftCallout,
+} from "./components/shift";
 import { EmkControlBoard } from "./components/visit/EmkControlBoard";
 import { countLabel } from "./lib/russianPlural";
 import {
@@ -451,12 +455,26 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 		}
 	});
 	const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
+	const [isShiftCloseModalOpen, setIsShiftCloseModalOpen] = useState(false);
 
 	const handleToggleShift = () => {
-		const next = !isShiftOpen;
-		setIsShiftOpen(next);
+		if (isShiftOpen) {
+			setIsShiftCloseModalOpen(true);
+		} else {
+			setIsShiftOpen(true);
+			try {
+				safeLocalStorageSetItem("dente_doctor_shift_active", "true");
+			} catch (err: unknown) {
+				console.warn("[ShiftView] Error saving dente_doctor_shift_active:", err);
+			}
+		}
+	};
+
+	const handleConfirmCloseShift = () => {
+		setIsShiftOpen(false);
+		setIsShiftCloseModalOpen(false);
 		try {
-			safeLocalStorageSetItem("dente_doctor_shift_active", String(next));
+			safeLocalStorageSetItem("dente_doctor_shift_active", "false");
 		} catch (err: unknown) {
 			console.warn("[ShiftView] Error saving dente_doctor_shift_active:", err);
 		}
@@ -1571,6 +1589,18 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 					initialPeriodStart={todayIso}
 					initialPeriodEnd={todayIso}
 					initialBasePercentage={30}
+				/>
+			)}
+
+			{/* Doctor Shift Close Reconciliation & Handover Modal */}
+			{isShiftCloseModalOpen && (
+				<DoctorShiftCloseModal
+					isOpen={isShiftCloseModalOpen}
+					onClose={() => setIsShiftCloseModalOpen(false)}
+					onConfirmClose={handleConfirmCloseShift}
+					doctorFullName={staffById.get(inChairAppointment?.doctorUserId)?.fullName || "Лечащий врач"}
+					shiftStats={shiftStats}
+					clinicName={dashboard?.clinicName}
 				/>
 			)}
 		</div>

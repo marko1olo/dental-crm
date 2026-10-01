@@ -127,6 +127,19 @@ export const DOCTOR_SPECIALTY_CONFIGS: Record<DoctorSpecialtyId, DoctorSpecialty
 	},
 };
 
+export const DEFAULT_CATEGORY_COMMISSION_PERCENT: Record<
+	"therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric",
+	number
+> = {
+	therapy: 25,
+	orthopedics: 25,
+	surgery: 20,
+	orthodontics: 25,
+	hygiene: 30,
+	retail_hygiene: 10,
+	pediatric: 25,
+};
+
 export interface AssistantRatesConfig {
 	readonly baseShiftRate6hKop: number; // e.g. 3,500 RUB = 350,000 kop
 	readonly baseShiftRate12hKop: number; // e.g. 7,000 RUB = 700,000 kop
@@ -196,6 +209,7 @@ export interface DoctorStaffPayrollInput {
 	readonly comprehensivePlansCount?: number | undefined;
 	readonly comprehensivePlanBonusPerUnitKop?: number | undefined; // e.g. 5,000 RUB
 	readonly customBasePercentage?: number | undefined;
+	readonly categoryRates?: Partial<Record<"therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric", number>> | undefined;
 	readonly manualAdjustmentKop?: number | undefined;
 	readonly manualAdjustmentNoteRu?: string | undefined;
 	readonly daysWorked?: number | undefined;
@@ -393,19 +407,46 @@ export function calculateDoctorStaffPayroll(
 
 		totalGross += itemGrossKop;
 
-		const labCost = preset.deductsLabCosts ? itemLabKop : 0;
-		const materialCost = preset.deductsMaterialCosts ? itemMatKop : 0;
+		// MANDATE 1: Orthopedic and Orthodontic services ALWAYS deduct ZTL dental lab costs,
+		// and ANY service with a direct lab invoice (labCostKop > 0) or specialty preset deducts lab.
+		const shouldDeductLab =
+			preset.deductsLabCosts ||
+			item.category === "orthopedics" ||
+			item.category === "orthodontics" ||
+			itemLabKop > 0;
+		const labCost = shouldDeductLab ? Math.max(0, itemLabKop) : 0;
+
+		// MANDATE 1: Surgery/Implantation (implants, bone blocks, titanium meshes, membranes)
+		// and Therapy (restorative composites) and ANY service with direct materials (materialCostKop > 0)
+		// deducts high-cost materials from the doctor's commission base when preset or category specifies.
+		const shouldDeductMaterial =
+			preset.deductsMaterialCosts ||
+			item.category === "surgery" ||
+			item.category === "therapy" ||
+			item.category === "pediatric" ||
+			(itemMatKop > 0 && preset.deductsMaterialCosts);
+		const materialCost = shouldDeductMaterial ? Math.max(0, itemMatKop) : 0;
 
 		totalLab += labCost;
 		totalMaterial += materialCost;
 
 		if (item.category === "retail_hygiene") {
-			const retailPercent = item.customCommissionPercent ?? preset.retailProductsPercentage;
+			const retailPercent =
+				item.customCommissionPercent ??
+				input.categoryRates?.retail_hygiene ??
+				preset.retailProductsPercentage;
 			const retailEarned = Math.round((itemGrossKop * retailPercent) / 100);
 			earnedRetail += retailEarned;
 		} else {
 			const netItemBase = Math.max(0, itemGrossKop - labCost - materialCost);
-			const itemCommissionPercent = item.customCommissionPercent ?? basePercent;
+			const itemCommissionPercent =
+				item.customCommissionPercent ??
+				input.categoryRates?.[item.category] ??
+				(input.customBasePercentage !== undefined
+					? input.customBasePercentage
+					: (preset.specialtyId === "solo_practitioner" || preset.defaultPercentage === 100
+						? preset.defaultPercentage
+						: (DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category] ?? basePercent)));
 			const itemEarned = Math.round((netItemBase * itemCommissionPercent) / 100);
 			earnedBase += itemEarned;
 		}

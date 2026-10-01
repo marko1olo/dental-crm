@@ -160,6 +160,118 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 		URL.revokeObjectURL(url);
 	};
 
+	const handlePrintPayslip = () => {
+		const printWindow = window.open("", "_blank", "width=800,height=900");
+		if (!printWindow) {
+			window.print();
+			return;
+		}
+
+		const grossRub = (payrollResult.totalGrossRevenueKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const labRub = (payrollResult.totalLabDeductionsKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const matRub = (payrollResult.totalMaterialDeductionsKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const netBaseRub = (payrollResult.totalNetBaseKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const baseCommRub = (payrollResult.earnedBaseCommissionKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const retailRub = (payrollResult.earnedRetailCommissionKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const kpiRub = (payrollResult.kpiBonusEarnedKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const grossPayoutRub = (payrollResult.grossPayoutBeforeTaxKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const ndflRub = (payrollResult.ndfl13TaxKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+		const netToDocRub = (payrollResult.netPayoutToDoctorKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });
+
+		const html = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<title>Расчетный листок — ${payrollResult.doctorName}</title>
+	<style>
+		@page { size: A4; margin: 15mm; }
+		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11pt; color: #111827; margin: 0; padding: 10px; }
+		.header { text-align: center; border-bottom: 2px solid #0d9488; padding-bottom: 8px; margin-bottom: 16px; }
+		.header h1 { font-size: 16pt; margin: 0 0 4px 0; color: #0f172a; }
+		.header p { font-size: 10pt; color: #475569; margin: 0; }
+		.meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; background: #f8fafc; padding: 10px; border-radius: 6px; font-size: 10pt; }
+		.table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+		.table th, .table td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
+		.table th { background: #f1f5f9; font-weight: 600; font-size: 9pt; }
+		.table td.num { text-align: right; }
+		.summary-box { background: #f0fdfa; border: 1px solid #99f6e4; padding: 12px; border-radius: 6px; margin-bottom: 20px; }
+		.summary-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 10pt; }
+		.summary-row.total { font-size: 13pt; font-weight: bold; border-top: 1px solid #0d9488; padding-top: 8px; color: #0f766e; }
+		.signatures { display: flex; justify-content: space-between; margin-top: 40px; font-size: 10pt; }
+		.signature-line { width: 200px; border-bottom: 1px solid #475569; margin-top: 25px; }
+	</style>
+</head>
+<body>
+	<div class="header">
+		<h1>РАСЧЕТНЫЙ ЛИСТОК ЗА ПЕРИОД</h1>
+		<p>${clinicName} • Ст. 136 ТК РФ</p>
+	</div>
+
+	<div class="meta-grid">
+		<div><strong>Сотрудник:</strong> ${payrollResult.doctorName}</div>
+		<div><strong>Период:</strong> ${payrollResult.periodLabelRu}</div>
+		<div><strong>Специальность:</strong> ${payrollResult.specialtyTitleRu}</div>
+		<div><strong>Ставка сдельная:</strong> ${payrollResult.baseCommissionPercent}%</div>
+	</div>
+
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Показатель начисления / удержания</th>
+				<th style="width: 140px; text-align: right;">Сумма (руб.)</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr><td>Выручка от оказанных услуг (Gross)</td><td class="num">${grossRub} ₽</td></tr>
+			<tr><td>Удержание: Зуботехническая лаборатория (ЗТЛ)</td><td class="num" style="color: #b91c1c;">-${labRub} ₽</td></tr>
+			<tr><td>Удержание: Дорогостоящие расходные материалы</td><td class="num" style="color: #b91c1c;">-${matRub} ₽</td></tr>
+			<tr style="background: #f8fafc; font-weight: 600;"><td>Чистая сдельная база (Net Base)</td><td class="num">${netBaseRub} ₽</td></tr>
+			<tr><td>Начислено: Сдельная оплата (${payrollResult.baseCommissionPercent}%)</td><td class="num">${baseCommRub} ₽</td></tr>
+			<tr><td>Начислено: Продажа средств гигиены (Retail)</td><td class="num">${retailRub} ₽</td></tr>
+			<tr><td>Премия: Выполнение нормативов KPI (${payrollResult.kpiTierBadgeRu})</td><td class="num">${kpiRub} ₽</td></tr>
+			${payrollResult.manualAdjustmentKop !== 0 ? `<tr><td>Корректировка / Аванс</td><td class="num">${(payrollResult.manualAdjustmentKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td></tr>` : ""}
+		</tbody>
+	</table>
+
+	<div class="summary-box">
+		<div class="summary-row">
+			<span>Всего начислено (до налогообложения):</span>
+			<strong>${grossPayoutRub} ₽</strong>
+		</div>
+		<div class="summary-row" style="color: #b91c1c;">
+			<span>Удержан НДФЛ 13% (п. 6 ст. 225 НК РФ):</span>
+			<span>-${ndflRub} ₽</span>
+		</div>
+		<div class="summary-row total">
+			<span>К ВЫПЛАТЕ («НА РУКИ»):</span>
+			<span>${netToDocRub} ₽</span>
+		</div>
+	</div>
+
+	<div class="signatures">
+		<div>
+			<div>Руководитель клиники / Главврач:</div>
+			<div class="signature-line"></div>
+		</div>
+		<div>
+			<div>Врач-специалист (подпись):</div>
+			<div class="signature-line"></div>
+		</div>
+	</div>
+
+	<script>
+		window.onload = function() {
+			window.print();
+		};
+	</script>
+</body>
+</html>`;
+
+		printWindow.document.open();
+		printWindow.document.write(html);
+		printWindow.document.close();
+	};
+
 	return (
 		<div className="payroll-modal-overlay" data-testid="doctor-payroll-modal">
 			<div className="payroll-modal-container">
@@ -481,7 +593,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 						</button>
 						<button
 							type="button"
-							onClick={() => window.print()}
+							onClick={handlePrintPayslip}
 							className="h-10 px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 text-[var(--on-teal,#ffffff)] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 						>
 							<FileText className="w-4 h-4" />
