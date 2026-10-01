@@ -1,9 +1,53 @@
-import { ChevronDown, ChevronRight, Clock } from "lucide-react";
+import { ChevronDown, ChevronRight, Clock, Zap } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import {
+	safeLocalStorageGetJson,
+	safeLocalStorageSetJson,
+} from "../../lib/safeLocalStorage";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
+
+export const DENTE_LAST_ACTIVE_PATIENT_KEY = "dente_last_active_patient";
+
+export interface LastActivePatientData {
+	patientId: string;
+	patientName: string;
+	phone?: string | undefined;
+	timestamp: number;
+}
+
+export function saveLastActivePatient(patient: {
+	patientId: string;
+	patientName: string;
+	phone?: string | undefined;
+}): void {
+	safeLocalStorageSetJson(
+		DENTE_LAST_ACTIVE_PATIENT_KEY,
+		{
+			patientId: patient.patientId,
+			patientName: patient.patientName,
+			phone: patient.phone || "",
+			timestamp: Date.now(),
+		},
+		true,
+	);
+}
+
+export function getLastActivePatient(): LastActivePatientData | null {
+	const parsed = safeLocalStorageGetJson<LastActivePatientData>(
+		DENTE_LAST_ACTIVE_PATIENT_KEY,
+	);
+	if (
+		parsed &&
+		typeof parsed.patientId === "string" &&
+		typeof parsed.patientName === "string"
+	) {
+		return parsed;
+	}
+	return null;
+}
 
 interface RecentPatientItem {
 	id: string;
@@ -35,6 +79,9 @@ export const RecentPatientHistoryWidget: React.FC<{
 	const [loading, setLoading] = useState<boolean>(true);
 	const [failed, setFailed] = useState<boolean>(false);
 	const [isOpen, setIsOpen] = useState<boolean>(false);
+	const [lastPatient, setLastPatient] = useState<LastActivePatientData | null>(
+		() => getLastActivePatient(),
+	);
 	/*
 	 * Список перечитывается после того, как сервер принял отметку о просмотре.
 	 *
@@ -77,7 +124,22 @@ export const RecentPatientHistoryWidget: React.FC<{
 			})
 			.then((data) => {
 				if (!active) return;
-				setPatients(Array.isArray(data) ? data : []);
+				const list = Array.isArray(data) ? data : [];
+				setPatients(list);
+				if (list.length > 0 && list[0]) {
+					const first = list[0];
+					const firstData: LastActivePatientData = {
+						patientId: first.patientId || first.id,
+						patientName: first.patientName,
+						phone: first.phone,
+						timestamp: Date.now(),
+					};
+					// Synchronize if nothing was stored yet or cache needs refresh
+					if (!getLastActivePatient()) {
+						saveLastActivePatient(firstData);
+						setLastPatient(firstData);
+					}
+				}
 				setFailed(false);
 				setLoading(false);
 			})
@@ -91,11 +153,37 @@ export const RecentPatientHistoryWidget: React.FC<{
 		};
 	}, []);
 
-	const handleOpenPatient = (patId: string) => {
+	const handleOpenPatient = (
+		patId: string,
+		patName?: string,
+		phone?: string,
+	) => {
+		if (patName) {
+			const activeData: LastActivePatientData = {
+				patientId: patId,
+				patientName: patName,
+				phone,
+				timestamp: Date.now(),
+			};
+			saveLastActivePatient(activeData);
+			setLastPatient(activeData);
+		}
 		selectPatientById?.(patId);
 		window.location.hash = "#patients";
 		setIsOpen(false);
 	};
+
+	const firstPatient = patients.length > 0 ? patients[0] : undefined;
+	const activeLastPatient: LastActivePatientData | null =
+		lastPatient ??
+		(firstPatient
+			? {
+					patientId: firstPatient.patientId || firstPatient.id,
+					patientName: firstPatient.patientName,
+					phone: firstPatient.phone,
+					timestamp: Date.now(),
+				}
+			: null);
 
 	if (compactDropdown) {
 		return (
@@ -116,6 +204,9 @@ export const RecentPatientHistoryWidget: React.FC<{
 						fontSize: "12px",
 						fontWeight: 500,
 						color: "var(--ink-2)",
+						minHeight: "44px",
+						minWidth: "44px",
+						padding: "0 4px",
 					}}
 				>
 					<Clock
@@ -138,8 +229,8 @@ export const RecentPatientHistoryWidget: React.FC<{
 						position: "absolute",
 						top: "100%",
 						right: 0,
-						width: "300px",
-						maxHeight: "360px",
+						width: "320px",
+						maxHeight: "380px",
 						overflowY: "auto",
 						zIndex: 50,
 					}}
@@ -161,6 +252,57 @@ export const RecentPatientHistoryWidget: React.FC<{
 							ТОП 10
 						</span>
 					</div>
+
+					{activeLastPatient && (
+						<div
+							style={{
+								padding: "8px 10px",
+								borderBottom: "1px solid var(--line)",
+								background: "var(--teal-surface, rgba(13, 148, 136, 0.08))",
+							}}
+						>
+							<button
+								type="button"
+								data-testid="recent-patient-1click-restore"
+								onClick={() =>
+									handleOpenPatient(
+										activeLastPatient.patientId,
+										activeLastPatient.patientName,
+										activeLastPatient.phone,
+									)
+								}
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									gap: "8px",
+									width: "100%",
+									minHeight: "44px",
+									padding: "0 10px",
+									borderRadius: "8px",
+									border: "1px solid var(--teal, #0d9488)",
+									background: "var(--teal, #0d9488)",
+									color: "#ffffff",
+									fontSize: "12px",
+									fontWeight: 700,
+									cursor: "pointer",
+									boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+									transition: "transform 0.1s ease, filter 0.15s ease",
+								}}
+							>
+								<Zap size={14} style={{ flexShrink: 0 }} />
+								<span
+									style={{
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+									}}
+								>
+									Восстановить: {activeLastPatient.patientName} (1 клик)
+								</span>
+							</button>
+						</div>
+					)}
 
 					{loading ? (
 						<div
@@ -200,12 +342,20 @@ export const RecentPatientHistoryWidget: React.FC<{
 							<button
 								key={pat.id}
 								type="button"
-								onClick={() => handleOpenPatient(pat.patientId || pat.id)}
+								data-testid={`recent-patient-item-${pat.patientId || pat.id}`}
+								onClick={() =>
+									handleOpenPatient(
+										pat.patientId || pat.id,
+										pat.patientName,
+										pat.phone,
+									)
+								}
 								style={{
 									display: "flex",
 									alignItems: "center",
 									justifyContent: "space-between",
 									width: "100%",
+									minHeight: "44px",
 									padding: "8px 10px",
 									borderRadius: "8px",
 									border: "none",
@@ -302,6 +452,97 @@ export const RecentPatientHistoryWidget: React.FC<{
 				</div>
 			</div>
 
+			{activeLastPatient && (
+				<div
+					data-testid="recent-patient-1click-restore-card"
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						padding: "12px 16px",
+						marginBottom: "16px",
+						borderRadius: "10px",
+						border: "1px solid var(--teal, #0d9488)",
+						background: "var(--teal-surface, rgba(13, 148, 136, 0.08))",
+						gap: "12px",
+						flexWrap: "wrap",
+					}}
+				>
+					<div
+						style={{
+							minWidth: 0,
+							display: "flex",
+							alignItems: "center",
+							gap: "10px",
+						}}
+					>
+						<div
+							style={{
+								width: "36px",
+								height: "36px",
+								borderRadius: "8px",
+								background: "var(--teal, #0d9488)",
+								color: "#ffffff",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								flexShrink: 0,
+							}}
+						>
+							<Zap size={18} />
+						</div>
+						<div>
+							<div
+								style={{
+									fontSize: "11px",
+									fontWeight: 700,
+									textTransform: "uppercase",
+									color: "var(--teal, #0d9488)",
+									letterSpacing: "0.5px",
+								}}
+							>
+								Быстрый возврат к приёму
+							</div>
+							<div
+								style={{
+									fontSize: "14px",
+									fontWeight: 700,
+									color: "var(--ink)",
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+								}}
+							>
+								{activeLastPatient.patientName}
+							</div>
+						</div>
+					</div>
+					<button
+						type="button"
+						data-testid="recent-patient-1click-restore-btn"
+						onClick={() =>
+							handleOpenPatient(
+								activeLastPatient.patientId,
+								activeLastPatient.patientName,
+								activeLastPatient.phone,
+							)
+						}
+						className="primary-button"
+						style={{
+							minHeight: "44px",
+							padding: "0 18px",
+							fontSize: "12px",
+							fontWeight: 700,
+							whiteSpace: "nowrap",
+							flexShrink: 0,
+							cursor: "pointer",
+						}}
+					>
+						⚡ Восстановить карту (1 клик)
+					</button>
+				</div>
+			)}
+
 			{loading ? (
 				<div style={{ fontSize: "13px", padding: "16px 0", color: "var(--muted)" }}>
 					Загрузка...
@@ -367,13 +608,22 @@ export const RecentPatientHistoryWidget: React.FC<{
 							</div>
 							<button
 								type="button"
-								onClick={() => handleOpenPatient(pat.patientId || pat.id)}
+								data-testid={`recent-patient-grid-btn-${pat.patientId || pat.id}`}
+								onClick={() =>
+									handleOpenPatient(
+										pat.patientId || pat.id,
+										pat.patientName,
+										pat.phone,
+									)
+								}
 								className="primary-button"
 								style={{
-									minHeight: "28px",
-									padding: "0 10px",
-									fontSize: "11px",
+									minHeight: "44px",
+									minWidth: "76px",
+									padding: "0 14px",
+									fontSize: "12px",
 									fontWeight: 600,
+									cursor: "pointer",
 								}}
 							>
 								Открыть

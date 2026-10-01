@@ -68,7 +68,6 @@ export function AppLoadingState({
 			style={{
 				background: "var(--paper, #090d11)",
 				color: "var(--ink, #ffffff)",
-				minHeight: "100vh",
 				minHeight: "100dvh",
 				display: "flex",
 				flexDirection: "column",
@@ -289,7 +288,6 @@ export function AppUnlockState({
 			style={{
 				background: "var(--paper, #090d11)",
 				color: "var(--ink, #ffffff)",
-				minHeight: "100vh",
 				minHeight: "100dvh",
 			}}
 		>
