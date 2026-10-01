@@ -1,6 +1,7 @@
 {
   "role": "DOCTOR PAYROLL, SHIFT & ANALYTICS INQUISITOR",
   "status": "completed",
+  "latest_commit": "c59ca3e50",
   "completed_steps": [
     "mandatory_reading_core_engineering_agents_gemini",
     "audit_piece_rate_doctor_payroll_and_categories",
@@ -8,6 +9,8 @@
     "audit_doctor_shift_closure_cash_card_and_patients",
     "audit_manager_reports_dashboard_kpis_and_empty_states",
     "audit_buttons_print_and_export_handlers",
+    "integrate_shift_close_modal_into_doctor_mobile_pwa",
+    "synchronize_chairside_category_rates_and_orthodontics_ztl",
     "run_targeted_tests_and_fix_defects",
     "verify_and_report_verbatim"
   ],
@@ -17,20 +20,26 @@
     "DEFECT-PAY-02 (Fixed): Material deductions were not applied to surgery and therapy when preset lacked deductsMaterialCosts. Synchronized surgery, therapy, and materialCostKop > 0 deductions.",
     "DEFECT-PAY-03 (Fixed): Category commission percentages (therapy: 25%, orthopedics: 25%, surgery: 20%, orthodontics: 25%, hygiene: 30%, retail: 10%, pediatric: 25%) added to shared and web payroll engines while strictly preserving solo practitioner 100% net margin sovereignty.",
     "DEFECT-PAY-04 (Fixed): Test advancedPayrollComponents.test.ts line 97 asserted zero lab deductions for CAD/CAM crown. Fixed to assert 800,000 kop ZTL deduction and accurate kopeck math.",
+    "DEFECT-PAY-05 (Fixed): calculateChairsideShiftEarnings lacked categoryRates support and DEFAULT_CATEGORY_COMMISSION_PERCENT fallback when service lacked explicit commissionPercent. Synchronized and verified with 5/5 unit tests.",
+    "DEFECT-PAY-06 (Fixed): DoctorPayoutDashboard.tsx lines 1599/1609 only matched lab orders for orthopedics. Added orthodontics to ensure ZTL lab order deductions match for aligners and orthodontic appliances.",
     "DEFECT-SHIFT-01 (Fixed): Missing shift closure and handover reconciliation screen. Implemented DoctorShiftCloseModal.tsx with cash breakdown (cash, card/POS, SBP QR, deposits), patient attendance reconciliation, PEP 043/u signature verification, and Form D-1 shift report print view.",
+    "DEFECT-SHIFT-02 (Fixed): DoctorMobileShiftModal.tsx lacked shift closure reconciliation integration. Wired DoctorShiftCloseModal into bottom safe bar with 44x44px touch target, safe nullish coalescing, and live Form D-1 handover.",
     "DEFECT-REP-01 (Fixed): Missing unified executive analytics dashboard. Implemented ReportsDashboard.tsx with overall clinic average ticket, chair utilization by weekday and operating hour heatmap, patient flow primary share %, consultation-to-treatment funnel, zero dead-ends resilience on empty datasets, CSV export, and clean A4 print view.",
     "DEFECT-REP-02 (Fixed): ManagerReportsKpisSection.tsx lacked overall clinic average ticket in main KPI cards. Added calculated averageTicketRub with zero division protection.",
     "DEFECT-BTN-01 (Fixed): DoctorPayrollModal.tsx called raw window.print() over the dark modal backdrop. Implemented clean Form 136 TK RF payslip A4 print popup."
   ],
   "tests_passed": [
+    "packages/shared/src/tests/doctorShiftEarnings.test.ts (5/5 pass)",
     "packages/shared/src/tests/doctorPayrollT51.test.ts (6/6 pass)",
     "packages/shared/src/tests/doctorShiftEngine.test.ts (26/26 pass)",
+    "apps/web/src/components/shift/__tests__/doctorShiftCloseModalAndReportsDashboard.test.tsx (5/5 pass)",
+    "apps/web/src/components/doctor-portal/__tests__/doctorMobileShiftAutonomy.test.tsx (9/9 pass)",
+    "apps/web/src/components/doctor-portal/__tests__/doctorShiftCockpitIntegration.test.tsx (4/4 pass)",
     "apps/web/src/components/payroll/__tests__/staffPayrollEngine.test.ts",
     "apps/web/src/components/payroll/__tests__/advancedPayrollComponents.test.ts",
     "apps/web/src/components/payroll/__tests__/payrollTimesheetSoloDoctorAutonomy.test.ts",
     "apps/web/src/components/payroll/__tests__/timesheetT13Modal.test.ts",
     "apps/web/src/components/finance/payroll/__tests__/soloDoctorPayrollAutonomy.test.ts",
-    "apps/web/src/components/shift/__tests__/doctorShiftCloseModalAndReportsDashboard.test.tsx (5/5 pass)",
     "apps/web/src/tests/managerReportSlicesReachTheOwner.test.ts (6/6 pass)"
   ]
 }
