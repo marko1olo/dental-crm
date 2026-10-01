@@ -503,7 +503,7 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 
 													return (
 														<React.Fragment key={stage.stageNumber}>
-															<tr style={{ background: "var(--paper-soft, var(--line))", fontWeight: "bold" }}>
+															<tr className="treatment-print-stage-header">
 																<td colSpan={7}>
 																	{stage.title} (Срок: {stage.estimatedWeeks} нед., {stage.estimatedVisits} визитов)
 																</td>
@@ -536,7 +536,7 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 																);
 															})}
 															{!showMicroConsumables && microConsumablesCount > 0 && (
-																<tr style={{ background: "var(--paper-soft, var(--paper))", fontStyle: "italic", fontSize: "8pt", color: "var(--muted)" }}>
+																<tr className="treatment-print-micro-row" style={{ fontStyle: "italic", fontSize: "8pt", color: "var(--muted)" }}>
 																	<td style={{ textAlign: "center" }}>•</td>
 																	<td colSpan={6}>
 																		Индивидуальный гигиенический и асептический комплект (салфетки, валики, слюноотсос, перчатки — {microConsumablesCount} поз., включено в стоимость этапа)
@@ -550,7 +550,7 @@ export const TreatmentPlanPresenterPrintView: React.FC<TreatmentPlanPresenterPri
 											})()}
 										</tbody>
 										<tfoot>
-											<tr style={{ fontWeight: "bold", fontSize: "10pt", background: "var(--paper-soft, var(--paper))" }}>
+											<tr className="treatment-print-total-row" style={{ fontWeight: "bold", fontSize: "10pt" }}>
 												<td colSpan={7} style={{ textAlign: "right", paddingRight: "8px" }}>
 													ИТОГО ПО СМЕТЕ:
 												</td>

@@ -30,3 +30,4 @@ export * from "./TreatmentPlanActSignatures";
 export * from "./TreatmentPlanStageItemRow";
 export * from "./TreatmentPlanStageFooter";
 export * from "./ctImplantIntegrationBridge";
+export * from "./treatmentPlanMath";

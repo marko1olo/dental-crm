@@ -51,6 +51,11 @@ import { TreatmentPlanRoadmap } from "./TreatmentPlanRoadmap";
 import { showToast } from "../GlobalToast";
 import { isMicroConsumable, type PlanItemLike } from "./treatmentPlanConsumables";
 export { isMicroConsumable, type PlanItemLike };
+import {
+	formatChairsidePrice,
+	recalculateTierTotals,
+	applyDoctorDiscountToStages,
+} from "./treatmentPlanMath";
 
 import { TreatmentPlanPresenterHeader, type PresenterTabId } from "./TreatmentPlanPresenterHeader";
 import { TreatmentPlanPresenterToolsStrip } from "./TreatmentPlanPresenterToolsStrip";
@@ -270,9 +275,9 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	const getTierLetter = (tierId: TreatmentPlanTierId): string => {
 		switch (tierId) {
 			case "economy":
-				return "Вариант А: Эконом";
+				return "Вариант А: Базовый (Эконом)";
 			case "standard":
-				return "Вариант Б: Оптимум";
+				return "Вариант Б: Оптимум (Оптимальный)";
 			case "optimum":
 				return "Вариант В: Премиум";
 			default:
@@ -281,8 +286,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	};
 
 	const formatRubles = (amount: number | undefined | null): string => {
-		const safe = typeof amount === "number" && !Number.isNaN(amount) ? amount : 0;
-		return safe.toLocaleString("ru-RU") + " ₽";
+		return formatChairsidePrice(amount);
 	};
 
 	const handleSelectTier = (tier: TreatmentPlanTier) => {
@@ -296,41 +300,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		tier: TreatmentPlanTier,
 		updatedStages: readonly TreatmentPlanStage[],
 	): TreatmentPlanTier => {
-		const totalKopecks = sumKopecks(updatedStages.map((s) => s.totalKopecks));
-		const totalRub = Math.round(totalKopecks / 100);
-		const allItems = updatedStages.flatMap((s) => s.items);
-		const ndflBreakdown = calculatePlanTaxDeductionBreakdown(allItems);
-		const isHighCost = ndflBreakdown.hasCode02ExpensiveServices;
-		const ndflDetails: NdflDeductionResult = {
-			code: isHighCost ? "02" : "01",
-			codeDescription: isHighCost
-				? "Дорогостоящее лечение (Код 02) — вычет со всей суммы без ограничений"
-				: "Обычное лечение (Код 01) — лимит базы 150 000 ₽",
-			isHighCostCode02: isHighCost,
-			isHighCostTreatment: isHighCost,
-			baseKopecks: totalKopecks as Kopecks,
-			refundKopecks: ndflBreakdown.grandTotalRefund13Kopecks as Kopecks,
-			refundRub: ndflBreakdown.grandTotalRefund13Rub,
-			finalPriceWithRefundRub: ndflBreakdown.netPriceWithRefundRub,
-			annualLimitRub: isHighCost ? undefined : 150000,
-		};
-
-		const installments = computeTierInstallments(totalKopecks);
-		const stagedSchedule = calculateStaged304030Schedule(totalKopecks, true);
-
-		return {
-			...tier,
-			stages: updatedStages,
-			totalRub,
-			totalKopecks,
-			itemsCount: allItems.length,
-			installments,
-			stagedSchedule,
-			ndflDetails,
-			ndflRefundRub: ndflDetails.refundRub,
-			priceWithNdflRefundRub: ndflDetails.finalPriceWithRefundRub,
-			monthlyInstallment12Rub: installments[12]?.monthlyPaymentRub ?? 0,
-		};
+		return recalculateTierTotals(tier, updatedStages);
 	};
 
 	const handleUpdateItemPrice = (itemId: string, newPriceRub: number) => {
@@ -414,48 +384,8 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		setAllTiers((prev) =>
 			prev.map((tier) => {
 				if (tier.tierId !== selectedTierId) return tier;
-				const updatedStages = tier.stages.map((st) => {
-					const updatedItems = st.items.map((it) => {
-						const baseUnitPrice =
-							typeof it.unitPriceRub === "number" && it.unitPriceRub > 0
-								? it.unitPriceRub
-								: it.priceRub && it.quantity
-									? it.priceRub / it.quantity
-									: 0;
-
-						const baseUnitPriceKop = parseKopecks(baseUnitPrice);
-						const discountKopPerUnit =
-							validPct > 0
-								? percentageOfKopecks(baseUnitPriceKop, validPct * 100)
-								: (0 as Kopecks);
-						const finalUnitPriceKop = Math.max(
-							0,
-							baseUnitPriceKop - discountKopPerUnit,
-						) as Kopecks;
-
-						const qty = Math.max(1, it.quantity || 1);
-						const lineTotalKop = (finalUnitPriceKop * qty) as Kopecks;
-						const lineDiscountKop = (discountKopPerUnit * qty) as Kopecks;
-
-						return {
-							...it,
-							unitPriceRub: Math.round(baseUnitPriceKop / 100),
-							priceRub: Math.round(lineTotalKop / 100),
-							discountRub: Math.round(lineDiscountKop / 100),
-						};
-					});
-					const stTotalKopecks = sumKopecks(updatedItems.map((it) => parseKopecks(it.priceRub)));
-					const stTotalRub = Math.round(stTotalKopecks / 100);
-					return {
-						...st,
-						items: updatedItems,
-						totalRub: stTotalRub,
-						totalKopecks: stTotalKopecks,
-					};
-				});
-
-				const updatedTier = recalculateTierFromStages(tier, updatedStages);
-				return updatedTier;
+				const updatedStages = applyDoctorDiscountToStages(tier.stages, validPct);
+				return recalculateTierTotals(tier, updatedStages);
 			}),
 		);
 		showToast(`Скидка ${validPct}% применена к ${getTierLetter(selectedTierId)}`, "info");

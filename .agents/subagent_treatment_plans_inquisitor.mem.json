@@ -1,30 +1,32 @@
 {
-  "role": "Treatment Plans, 3-Tier Scenarios & Patient Consent Inquisitor",
+  "role": "TREATMENT PLAN PRESENTER & PATIENT CONVERSION INQUISITOR",
   "status": "completed",
-  "isolated_scope": [
-    "apps/web/src/components/treatment-plans/types.ts",
-    "apps/web/src/components/treatment-plans/treatmentPlanStagesEngine.ts",
-    "apps/web/src/components/treatment-plans/TreatmentPlan3TierComparison.tsx",
-    "apps/web/src/components/treatment-plans/TreatmentPlanPhased4StageView.tsx",
-    "apps/web/src/components/treatment-plans/TreatmentPlanContractPrint.tsx",
-    "apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx",
-    "apps/web/src/components/treatment-plans/__tests__/treatmentPlan3TierComparison.test.tsx",
-    "apps/web/src/components/treatment-plans/__tests__/treatmentPlanPhased4Stage.test.tsx"
+  "scope": [
+    "apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanPresenterToolsStrip.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanPresenterPrintView.tsx",
+    "apps/web/src/components/treatment-plans/TreatmentPlanPresenterComparisonTab.tsx",
+    "apps/web/src/components/treatment-plans/treatmentPlanMath.ts",
+    "apps/web/src/components/treatment-plans/treatmentPlans.css",
+    "apps/web/src/components/treatment-plans/__tests__/treatmentPlanMath.test.ts",
+    "apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterModal.test.tsx"
   ],
-  "verification": {
-    "test_command": "node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./testCssStub.mjs --test <22 treatment-plans test files>",
-    "test_results": "174 passed, 0 failed, Exit Code 0",
-    "staged_files_count": 8
-  },
   "completed_steps": [
-    "Audit requirements against Mandates 1..8n and treatment plans UX laws",
-    "Add serviceLifeYears to TreatmentPlanTier and populate in treatmentPlanStagesEngine",
-    "Refactor TreatmentPlan3TierComparison: 3 tiers (Эконом / Оптимум / Премиум), materials headline, warranties & service life, 1-click WhatsApp copy, expandedStagesTierId sync",
-    "Refactor TreatmentPlanPhased4StageView: Route acute pain / emergency procedures (A16.07.007/011/016) to Stage 1, dynamic title 'Неотложная помощь и купирование боли / Санация', 0% clinic installment chips and 30/40/30 split",
-    "Refactor TreatmentPlanContractPrint: Patient-friendly translation toggle vs official 804n, 1-click WhatsApp/Telegram export without emojis, legal 1051n and Article 20 323-FZ references",
-    "Refactor TreatmentPlanModule: Fix autoStages lock-in dead-end by prioritizing currentTier.stages, sync customStages on tier selection/signing/printing, purge cartoon star emojis",
-    "Extend unit tests in treatmentPlan3TierComparison.test.tsx and treatmentPlanPhased4Stage.test.tsx",
-    "Run all 22 test suites in treatment-plans, 174 passed, 0 failed (Exit Code 0)",
-    "Perform per-file git add on 8 modified files in scope"
+    "Read all required authority documents: core.md, frontend.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Red Team audit of chairside presentation: tablet typography, arm's length contrast, >= 44px primary CTA, print view purity",
+    "Created treatmentPlanMath.ts: integer kopeck calculations, zero penny drift 0% installments (3, 6, 12, 24 mo), NDFL 13% (Code 01 / Code 02), doctor discount autonomy (0-100%), financial integrity audit",
+    "Polished TreatmentPlanPresenterComparisonTab.tsx: 3-column tablet view, 28px font-mono prices, 46-48px touch CTA, non-gypsy tier visual hierarchy",
+    "Polished TreatmentPlanPresenterPrintView.tsx: pure white A4 print without gray backgrounds, crisp 0.5pt black table borders, doctor and patient signatures, warranty terms",
+    "Polished TreatmentPlanPresenterModal.tsx: dynamic tier naming with test parity, instant 1-click execution",
+    "Updated treatmentPlans.css: tokenized typography, print media rules, touch-target safety",
+    "Created and passed unit tests treatmentPlanMath.test.ts (15 tests / 15 passed)",
+    "Verified all treatment plan test suites (44 tests / 44 passed)",
+    "Verified check:encoding (6779 files / 0 errors) and check:css-tokens (clean)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Tests in apps/web require --import ./apps/web/testCssStub.mjs to bypass CSS file imports under tsx/node:test.",
+    "Radio/radiology MPR TypeScript errors exist outside our scope in apps/web/src/components/radiology/mpr/ (strictly untouched according to user mandate).",
+    "All treatment-plans components and test suites are 100% green and compile-clean."
   ]
 }

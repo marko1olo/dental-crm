@@ -101,20 +101,20 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 							<div className="treatment-3tier-grid">
 								{allTiers.map((tier) => {
 									const isSelected = selectedTierId === tier.tierId;
-									const isRecommended = tier.tierId === "standard";
+									const isRecommended = Boolean(tier.isRecommended || tier.tierId === "standard");
 									const variantLetter = getTierLetter(tier.tierId);
 
 									return (
 										<div
 											key={tier.tierId}
 											onClick={() => onSelectTier(tier)}
-											className={"treatment-tier-card " + (isSelected ? "selected " : "") + (isRecommended ? "recommended " : "") + "cursor-pointer"}
+											className={"treatment-tier-card " + (isSelected ? "selected " : "") + (isRecommended ? "recommended " : "") + tier.tierId + " cursor-pointer"}
 											data-testid={"tier-card-" + tier.tierId}
 										>
 											{/* Doctor Recommendation Ribbon */}
 											{isRecommended && (
 												<div className="treatment-doctor-ribbon" data-testid="doctor-recommendation-badge">
-													<Sparkles size={13} />
+													<Sparkles size={13} className="shrink-0" />
 													<span>Рекомендация врача</span>
 												</div>
 											)}
@@ -124,18 +124,22 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 												<div className="treatment-tier-badge-row">
 													<span className={"treatment-tier-badge " + tier.tierId}>{variantLetter}</span>
 													{isSelected && (
-														<span className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-600 dark:text-teal-400">
-															<CheckCircle2 size={14} />
+														<span className="inline-flex items-center gap-1 text-xs font-bold text-teal-700 dark:text-teal-300">
+															<CheckCircle2 size={15} />
 															<span>Выбран</span>
 														</span>
 													)}
 												</div>
-												<h3 className="treatment-tier-name break-words leading-snug">{tier.title}</h3>
-												<p className="treatment-tier-desc line-clamp-2">{tier.subtitle}</p>
+												<h3 className="treatment-tier-name text-[17px] font-extrabold text-[var(--tp-text-main)] break-words leading-snug">
+													{tier.title}
+												</h3>
+												<p className="treatment-tier-desc text-xs text-[var(--tp-text-muted)] line-clamp-2 leading-relaxed">
+													{tier.subtitle}
+												</p>
 
-												{/* Price Box */}
+												{/* Price Box — Optimized for arm-length reading (15-18px sub-prices, 28px total) */}
 												<div className="treatment-tier-price-box">
-													<div className="text-[11px] font-bold text-[var(--tp-text-muted)] uppercase tracking-wider">
+													<div className="text-[11px] font-extrabold text-[var(--tp-text-muted)] uppercase tracking-wider">
 														Итоговая стоимость
 													</div>
 													<div className="treatment-tier-total-amount">
@@ -143,9 +147,9 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 														<span className="treatment-tier-rub-sign">₽</span>
 													</div>
 													<div className="treatment-tier-finance-chips">
-														<div className="treatment-tier-chip-row">
-															<span>Рассрочка 0% (12 мес):</span>
-															<span className="treatment-tier-chip-highlight">
+														<div className="treatment-tier-chip-row text-xs sm:text-[13px]">
+															<span className="font-semibold text-[var(--tp-text-muted)]">Рассрочка 0% (12 мес):</span>
+															<span className="treatment-tier-chip-highlight text-sm sm:text-base font-extrabold font-mono text-[var(--tp-primary)]">
 																{(tier.monthlyInstallment12Rub || 0).toLocaleString("ru-RU")} ₽/мес
 															</span>
 														</div>
@@ -160,15 +164,15 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 															data-testid={"calc-ndfl-btn-" + tier.tierId}
 														>
 															<div className="flex items-center justify-between w-full">
-																<span className="flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-300">
-																	<Percent size={12} />
+																<span className="flex items-center gap-1 font-bold text-xs sm:text-[13px] text-emerald-700 dark:text-emerald-300">
+																	<Percent size={13} />
 																	<span>Вычет 13% НДФЛ:</span>
 																</span>
-																<span className="font-black text-emerald-700 dark:text-emerald-300">
+																<span className="font-black text-sm sm:text-base font-mono text-emerald-700 dark:text-emerald-300">
 																	−{(tier.ndflRefundRub || 0).toLocaleString("ru-RU")} ₽
 																</span>
 															</div>
-															<div className="text-[10px] text-emerald-600/90 dark:text-emerald-400/90 text-left mt-0.5">
+															<div className="text-[11px] font-medium text-emerald-700/90 dark:text-emerald-300/90 text-left mt-0.5">
 																Итого с вычетом: {(tier.priceWithNdflRefundRub || 0).toLocaleString("ru-RU")} ₽ ({tier.ndflDetails.code === "02" ? "Код 02 без лимита" : "Код 01 лимит 150к"})
 															</div>
 														</button>
@@ -178,15 +182,17 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 
 											{/* Metrics Strip */}
 											<div className="treatment-tier-metrics">
-												<div className="treatment-metric-item">
-													<Clock size={13} />
+												<div className="treatment-metric-item text-xs sm:text-[12.5px]">
+													<Clock size={14} className="shrink-0" />
 													<span>Срок:</span>
-													<span className="treatment-metric-val">{tier.durationWeeks} нед. ({tier.durationVisits} виз.)</span>
+													<span className="treatment-metric-val font-bold text-[var(--tp-text-main)]">
+														{tier.durationWeeks} нед. ({tier.durationVisits} виз.)
+													</span>
 												</div>
-												<div className="treatment-metric-item">
-													<ShieldCheck size={13} />
+												<div className="treatment-metric-item text-xs sm:text-[12.5px]">
+													<ShieldCheck size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
 													<span>Гарантия:</span>
-													<span className="treatment-metric-val">
+													<span className="treatment-metric-val font-bold text-[var(--tp-text-main)]">
 														{formatWarrantyYearsText(tier.warrantyYears)}
 													</span>
 												</div>
@@ -194,17 +200,17 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 
 											{/* Advantages & Materials */}
 											<div className="treatment-tier-advantages">
-												<div className="text-[11px] font-bold text-[var(--tp-text-muted)] uppercase tracking-wider">
-													Материалы и преимущества:
+												<div className="text-[11px] font-extrabold text-[var(--tp-text-muted)] uppercase tracking-wider">
+													Материалы и технологии:
 												</div>
-												<p className="text-xs font-semibold text-[var(--tp-text-main)] m-0 leading-snug line-clamp-2">
+												<div className="text-xs font-bold text-[var(--tp-text-main)] p-2 rounded-lg bg-[var(--tp-surface-soft)] border border-[var(--tp-border)] leading-snug line-clamp-2">
 													{tier.materialsHeadline}
-												</p>
+												</div>
 												<ul className="list-none p-0 m-0 space-y-1.5 mt-1">
 													{tier.keyAdvantages.slice(0, 4).map((adv, idx) => (
 														<li key={idx} className="treatment-advantage-item">
-															<Check size={14} className="treatment-advantage-icon" />
-															<span className="text-xs">{adv}</span>
+															<Check size={14} className="treatment-advantage-icon shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+															<span className="text-xs sm:text-[12.5px] leading-snug">{adv}</span>
 														</li>
 													))}
 												</ul>
@@ -212,18 +218,22 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 
 											{/* Stages Mini Breakdown */}
 											<div className="treatment-tier-stages-strip">
-												<div className="text-[10px] font-bold text-[var(--tp-text-muted)] uppercase">
+												<div className="text-[10px] font-extrabold text-[var(--tp-text-muted)] uppercase">
 													Смета по этапам лечения:
 												</div>
 												{tier.stages.map((st) => (
 													<div key={st.stageNumber} className="treatment-tier-stage-line">
-														<span className="truncate max-w-[170px]">Этап {st.stageNumber}: {st.title.split(":")[1] || st.title}</span>
-														<span className="treatment-tier-stage-sum">{(st.totalRub || 0).toLocaleString("ru-RU")} ₽</span>
+														<span className="truncate max-w-[170px] text-xs font-medium">
+															Этап {st.stageNumber}: {st.title.split(":")[1] || st.title}
+														</span>
+														<span className="treatment-tier-stage-sum text-xs sm:text-sm font-bold font-mono text-[var(--tp-text-main)]">
+															{(st.totalRub || 0).toLocaleString("ru-RU")} ₽
+														</span>
 													</div>
 												))}
 											</div>
 
-											{/* Single Primary Action Button (Miller's Law: strictly 1 primary action) */}
+											{/* Single Prominent Primary Action Button (>= 44px height, 1-click execution) */}
 											<div className="p-3.5 pt-0">
 												<button
 													type="button"
@@ -232,19 +242,20 @@ export const TreatmentPlanPresenterComparisonTab: React.FC<TreatmentPlanPresente
 														onSelectTier(tier);
 														onConfirmPatientChoice(tier);
 													}}
-													className="treatment-tier-select-btn w-full cursor-pointer m-0"
+													className={"treatment-tier-select-btn w-full cursor-pointer m-0 " + (isSelected ? "selected" : "")}
 													data-testid={"apply-tier-btn-" + tier.tierId}
 													aria-pressed={isSelected}
+													title="Выбрать этот вариант и начать лечение в 1 клик"
 												>
 													{isSelected ? (
 														<>
-															<Check size={14} />
-															<span>Выбранный вариант</span>
+															<CheckCircle2 size={16} className="shrink-0" />
+															<span>Выбранный вариант — Начать лечение</span>
 														</>
 													) : (
 														<>
-															<CheckCircle2 size={14} />
-															<span>Применить: выбрать этот план ({(tier.totalRub || 0).toLocaleString("ru-RU")} ₽)</span>
+															<Check size={16} className="shrink-0" />
+															<span>Применить: выбрать этот вариант и начать лечение ({(tier.totalRub || 0).toLocaleString("ru-RU")} ₽)</span>
 														</>
 													)}
 												</button>
