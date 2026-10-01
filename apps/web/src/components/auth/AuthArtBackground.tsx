@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { safeLocalStorageGetItem } from "../../lib/safeLocalStorage";
 import { logger } from "../../utils/logger";
@@ -50,6 +50,36 @@ export function calculateAdaptiveScrimAlpha(
 	}
 }
 
+export function isThemeLight(theme?: string | null): boolean {
+	if (!theme) return false;
+	const lightThemes = new Set(["light", "warm_sand", "sakura", "calm_teal", "contrast"]);
+	if (lightThemes.has(theme)) return true;
+	const darkThemes = new Set(["dark", "night", "ocean", "emerald", "cyber_xray"]);
+	if (darkThemes.has(theme)) return false;
+	return false;
+}
+
+function resolveInitialThemeIsLight(): boolean {
+	if (typeof document !== "undefined" && document.documentElement) {
+		const dataTheme = document.documentElement.getAttribute?.("data-theme");
+		if (dataTheme) {
+			if (isThemeLight(dataTheme)) return true;
+			if (["dark", "night", "ocean", "emerald", "cyber_xray"].includes(dataTheme)) return false;
+		}
+		if (document.documentElement.classList?.contains?.("light")) return true;
+		if (document.documentElement.classList?.contains?.("dark")) return false;
+	}
+	const stored = safeLocalStorageGetItem("dente_theme_mode") || safeLocalStorageGetItem("dente_theme");
+	if (stored) {
+		if (isThemeLight(stored)) return true;
+		if (["dark", "night", "ocean", "emerald", "cyber_xray"].includes(stored)) return false;
+	}
+	if (typeof window !== "undefined" && window.matchMedia) {
+		return !window.matchMedia("(prefers-color-scheme: dark)").matches;
+	}
+	return false;
+}
+
 export function AuthArtBackground({
 	settings: propSettings,
 	overlayAlpha = 0.25,
@@ -64,37 +94,13 @@ export function AuthArtBackground({
 	});
 	const [loaded, setLoaded] = useState(false);
 	const [imgError, setImgError] = useState(false);
-	const [isLight, setIsLight] = useState<boolean>(() => {
-		if (typeof document !== "undefined" && document.documentElement) {
-			const dataTheme = document.documentElement.getAttribute?.("data-theme");
-			if (dataTheme === "light") return true;
-			if (document.documentElement.classList?.contains?.("light")) return true;
-			if (dataTheme && dataTheme !== "light") return false;
-		}
-		const stored = safeLocalStorageGetItem("dente_theme_mode");
-		if (stored === "light") return true;
-		if (stored && stored !== "auto" && stored !== "light") return false;
-		if (typeof window !== "undefined" && window.matchMedia) {
-			return !window.matchMedia("(prefers-color-scheme: dark)").matches;
-		}
-		return false;
-	});
+	const [isLight, setIsLight] = useState<boolean>(resolveInitialThemeIsLight);
 
 	useEffect(() => {
 		if (typeof document === "undefined" || !document.documentElement) return;
 
 		const checkTheme = () => {
-			const dataTheme = document.documentElement.getAttribute?.("data-theme");
-			const hasLightClass = document.documentElement.classList?.contains?.("light");
-			const stored = safeLocalStorageGetItem("dente_theme_mode");
-			const light =
-				dataTheme === "light" ||
-				hasLightClass ||
-				stored === "light" ||
-				(stored === "auto" &&
-					window.matchMedia &&
-					!window.matchMedia("(prefers-color-scheme: dark)").matches);
-			setIsLight(Boolean(light));
+			setIsLight(resolveInitialThemeIsLight());
 		};
 
 		checkTheme();
@@ -266,8 +272,9 @@ export function AuthArtBackground({
 				zIndex: 0,
 				overflow: "hidden",
 				background: isLight
-					? "radial-gradient(circle at 50% 35%, #f0fdfa 0%, #e6fffa 50%, #ccfbf1 100%)"
-					: "radial-gradient(circle at 50% 35%, #101c24 0%, #0a1117 55%, #05080b 100%)",
+					? "radial-gradient(circle at 50% 35%, var(--teal-soft, #f0fdfa) 0%, var(--surface-muted, #e6fffa) 50%, var(--paper, #ccfbf1) 100%)"
+					: "radial-gradient(circle at 50% 35%, var(--paper-soft, #101c24) 0%, var(--paper, #0a1117) 55%, var(--surface, #05080b) 100%)",
+				transition: "background 0.3s ease-in-out",
 				pointerEvents: "none",
 			}}
 		>

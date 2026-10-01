@@ -1,0 +1,166 @@
+/* DoctorKickoffWidget.css — Стили утреннего старта и сводки врача (Zero CLS, Design Tokens) */
+
+.doctor-kickoff-widget {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 12px 16px;
+	margin-bottom: 12px;
+	box-shadow: var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.05));
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	min-height: 84px; /* Резервирование высоты для CLS = 0 */
+	color: var(--ink);
+	transition: background 0.2s ease, border-color 0.2s ease;
+	box-sizing: border-box;
+}
+
+.doctor-kickoff-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.doctor-kickoff-title-group {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	flex: 1 1 300px;
+}
+
+.doctor-kickoff-icon-box {
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--teal, #0d9488);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.doctor-kickoff-greeting {
+	margin: 0;
+	font-size: 14.5px;
+	font-weight: 700;
+	color: var(--ink);
+	line-height: 1.25;
+	letter-spacing: -0.01em;
+}
+
+.doctor-kickoff-summary {
+	margin: 2px 0 0;
+	font-size: 12.5px;
+	color: var(--muted);
+	line-height: 1.35;
+	font-weight: 500;
+}
+
+/* Индикатор тихой сетевой телеметрии (Quiet Telemetry) */
+.doctor-kickoff-telemetry {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 8px;
+	font-size: 11.5px;
+	font-weight: 600;
+	flex-shrink: 0;
+	transition: background 0.2s ease, color 0.2s ease;
+}
+
+.doctor-kickoff-telemetry.telemetry-online {
+	background: var(--ok-bg, rgba(21, 128, 61, 0.1));
+	color: var(--ok-fg, #15803d);
+	border: 1px solid var(--ok-border, rgba(21, 128, 61, 0.2));
+}
+
+.doctor-kickoff-telemetry.telemetry-offline {
+	background: var(--warn-bg, rgba(234, 88, 12, 0.1));
+	color: var(--warn-fg, #c2410c);
+	border: 1px solid var(--warn-border, rgba(234, 88, 12, 0.2));
+}
+
+.telemetry-dot {
+	font-size: 10px;
+	line-height: 1;
+}
+
+/* Кнопки быстрого старта */
+.doctor-kickoff-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.kickoff-action-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 32px;
+	height: 32px;
+	padding: 4px 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+.kickoff-action-btn:hover {
+	background: var(--paper-strong, var(--surface));
+	border-color: var(--line-strong, var(--line));
+}
+
+.kickoff-action-btn.btn-shift-active {
+	background: var(--ok-bg, rgba(21, 128, 61, 0.1));
+	color: var(--ok-fg, #15803d);
+	border-color: var(--ok-border, rgba(21, 128, 61, 0.25));
+}
+
+.kickoff-action-btn.btn-shift-open {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border: 1px solid var(--teal, #0d9488);
+}
+
+.kickoff-action-btn.btn-shift-open:hover {
+	filter: brightness(1.08);
+}
+
+/* Тач-эргономика для мобильных и планшетов у кресла */
+@media (pointer: coarse) {
+	.kickoff-action-btn {
+		min-height: 44px;
+		height: 44px;
+		padding: 8px 16px;
+		font-size: 13px;
+	}
+}
+
+/* Dark theme overrides with 100% token safety */
+:root[data-theme="dark"] .doctor-kickoff-widget,
+html.dark .doctor-kickoff-widget,
+[data-theme="dark"] .doctor-kickoff-widget {
+	background: var(--paper);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+:root[data-theme="dark"] .kickoff-action-btn.btn-shift-active,
+html.dark .kickoff-action-btn.btn-shift-active,
+[data-theme="dark"] .kickoff-action-btn.btn-shift-active {
+	background: var(--ok-bg, rgba(74, 222, 128, 0.15));
+	color: var(--ok-fg, #4ade80);
+	border-color: var(--ok-border, rgba(74, 222, 128, 0.3));
+}
