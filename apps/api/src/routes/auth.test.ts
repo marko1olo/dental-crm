@@ -1,10 +1,18 @@
 import assert from "node:assert";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
+import { eq } from "drizzle-orm";
 import Fastify from "fastify";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import * as rls from "../db/rls.js";
-import { organizations, users } from "../db/schema.js";
+import {
+	appointments,
+	chairs,
+	clinics,
+	organizations,
+	patients,
+	users,
+} from "../db/schema.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,
@@ -309,6 +317,314 @@ describe("auth routes", () => {
 			assert.strictEqual(response.json().ok, true);
 			assert.ok(response.json().clinicToken);
 			assert.ok(response.json().staffToken);
+		});
+
+		test("returns 200 on login with email and 6-char password", async () => {
+			const orgId = nextOrgId();
+			const userId = fixtureUuid("auth.test.ts", testIndex++);
+			const email = "min6_user@example.com";
+			const password = "pass12"; // Exactly 6 chars
+			const passwordHash = await hashCredential(password);
+
+			await withTenantCtx(orgId, async (tx) => {
+				await tx.insert(organizations).values({
+					id: orgId,
+					name: "Min 6 Password Clinic",
+				});
+				await tx.insert(users).values({
+					id: userId,
+					organizationId: orgId,
+					fullName: "Doctor Min Six",
+					email,
+					role: "doctor",
+					passwordHash,
+					isActive: true,
+				});
+			});
+
+			const response = await app.inject({
+				method: "POST",
+				url: "/api/auth/login",
+				payload: {
+					identifier: email,
+					password,
+				},
+			});
+
+			assert.strictEqual(response.statusCode, 200);
+			assert.strictEqual(response.json().ok, true);
+			assert.ok(response.json().clinicToken);
+			assert.ok(response.json().staffToken);
+			assert.strictEqual(response.json().user.email, email);
+		});
+
+		test("returns 200 on login with phone number (formatted identifier)", async () => {
+			const orgId = nextOrgId();
+			const userId = fixtureUuid("auth.test.ts", testIndex++);
+			const phone = "+7 (999) 765-43-21";
+			const password = "phonePassword123";
+			const passwordHash = await hashCredential(password);
+
+			await withTenantCtx(orgId, async (tx) => {
+				await tx.insert(organizations).values({
+					id: orgId,
+					name: "Phone Auth Clinic",
+				});
+				await tx.insert(users).values({
+					id: userId,
+					organizationId: orgId,
+					fullName: "Phone Doctor",
+					phone,
+					role: "doctor",
+					passwordHash,
+					isActive: true,
+				});
+			});
+
+			// 1. Вход с точным форматированием
+			const resFormatted = await app.inject({
+				method: "POST",
+				url: "/api/auth/login",
+				payload: {
+					identifier: "+7 (999) 765-43-21",
+					password,
+				},
+			});
+			assert.strictEqual(resFormatted.statusCode, 200);
+			assert.strictEqual(resFormatted.json().ok, true);
+			assert.strictEqual(resFormatted.json().user.id, userId);
+
+			// 2. Вход с альтернативным написанием (89997654321)
+			const resDigits = await app.inject({
+				method: "POST",
+				url: "/api/auth/login",
+				payload: {
+					identifier: "89997654321",
+					password,
+				},
+			});
+			assert.strictEqual(resDigits.statusCode, 200);
+			assert.strictEqual(resDigits.json().ok, true);
+			assert.strictEqual(resDigits.json().user.id, userId);
+		});
+
+		test("returns 200 on login with clinic UUID identifier", async () => {
+			const orgId = nextOrgId();
+			const userId = fixtureUuid("auth.test.ts", testIndex++);
+			const password = "clinicOrgPassword";
+			const passwordHash = await hashCredential(password);
+
+			await withTenantCtx(orgId, async (tx) => {
+				await tx.insert(organizations).values({
+					id: orgId,
+					name: "UUID Clinic Hub",
+					passwordHash,
+				});
+				await tx.insert(users).values({
+					id: userId,
+					organizationId: orgId,
+					fullName: "Hub Owner",
+					role: "owner",
+					isActive: true,
+				});
+			});
+
+			const response = await app.inject({
+				method: "POST",
+				url: "/api/auth/login",
+				payload: {
+					identifier: orgId,
+					password,
+				},
+			});
+
+			assert.strictEqual(response.statusCode, 200);
+			assert.strictEqual(response.json().ok, true);
+			assert.ok(response.json().clinicToken);
+			assert.ok(response.json().staffToken);
+			assert.strictEqual(response.json().user.id, userId);
+		});
+
+		test("returns 200 on login with clinic loginId code identifier", async () => {
+			const orgId = nextOrgId();
+			const userId = fixtureUuid("auth.test.ts", testIndex++);
+			const clinicCode = "stom_samara_center";
+			const password = "clinicCodePassword";
+			const passwordHash = await hashCredential(password);
+
+			await withTenantCtx(orgId, async (tx) => {
+				await tx.insert(organizations).values({
+					id: orgId,
+					name: "Samara Center Stom",
+					loginId: clinicCode,
+					passwordHash,
+				});
+				await tx.insert(users).values({
+					id: userId,
+					organizationId: orgId,
+					fullName: "Center Director",
+					role: "owner",
+					isActive: true,
+				});
+			});
+
+			const response = await app.inject({
+				method: "POST",
+				url: "/api/auth/login",
+				payload: {
+					identifier: clinicCode,
+					password,
+				},
+			});
+
+			assert.strictEqual(response.statusCode, 200);
+			assert.strictEqual(response.json().ok, true);
+			assert.ok(response.json().clinicToken);
+			assert.ok(response.json().staffToken);
+			assert.strictEqual(response.json().user.id, userId);
+		});
+	});
+
+	describe("zero-paywall registration (/api/auth/register)", () => {
+		test("registers solo practice with 6-char password, 1 chair, autonomy flags, and demo data", async () => {
+			const email = `solo_${randomUUID().slice(0, 8)}@example.com`;
+			const phone = "+7 (900) 111-22-33";
+			const password = "solo12"; // 6 chars min
+
+			const response = await app.inject({
+				method: "POST",
+				url: "/api/auth/register",
+				payload: {
+					clinicName: "Кабинет доктора Смирнова",
+					ownerName: "Смирнов Петр Алексеевич",
+					email,
+					password,
+					practiceType: "solo",
+					phone,
+					withDemoData: true,
+				},
+			});
+
+			assert.strictEqual(response.statusCode, 201);
+			const data = response.json();
+			assert.strictEqual(data.ok, true);
+			assert.ok(data.clinicToken);
+			assert.ok(data.staffToken);
+			assert.ok(data.organizationId);
+			assert.ok(data.userId);
+			assert.strictEqual(data.practiceType, "solo");
+			assert.strictEqual(data.demoDataSeeded, true);
+
+			// Проверяем состояние созданной организации и сущностей в базе
+			await withTenantCtx(data.organizationId, async (tx) => {
+				const [org] = await tx
+					.select()
+					.from(organizations)
+					.where(eq(organizations.id, data.organizationId));
+				assert.ok(org);
+				assert.strictEqual(org.clinicMode, "solo_doctor");
+
+				const [owner] = await tx
+					.select()
+					.from(users)
+					.where(eq(users.id, data.userId));
+				assert.ok(owner);
+				assert.strictEqual(owner.role, "owner");
+				assert.strictEqual(owner.phone, phone);
+				// Mandate 8e: Doctor Autonomy flags
+				assert.strictEqual(owner.canSignMedicalRecords, true);
+				assert.strictEqual(owner.canManageMoney, true);
+				assert.strictEqual(owner.canManageImports, true);
+
+				// Проверяем, что для solo создан ровно 1 кабинет
+				const orgChairs = await tx
+					.select()
+					.from(chairs)
+					.where(eq(chairs.organizationId, data.organizationId));
+				assert.strictEqual(orgChairs.length, 1);
+				assert.strictEqual(orgChairs[0].name, "Основной кабинет");
+
+				// Проверяем, что созданы демо-пациенты (4 штуки)
+				const orgPatients = await tx
+					.select()
+					.from(patients)
+					.where(eq(patients.organizationId, data.organizationId));
+				assert.strictEqual(orgPatients.length, 4);
+
+				// Проверяем, что созданы демо-записи в расписании (4 штуки)
+				const orgAppointments = await tx
+					.select()
+					.from(appointments)
+					.where(eq(appointments.organizationId, data.organizationId));
+				assert.strictEqual(orgAppointments.length, 4);
+				assert.strictEqual(orgAppointments[0].doctorUserId, data.userId);
+
+				// Чистим за собой
+				await tx.delete(appointments).where(eq(appointments.organizationId, data.organizationId));
+				await tx.delete(patients).where(eq(patients.organizationId, data.organizationId));
+				await tx.delete(chairs).where(eq(chairs.organizationId, data.organizationId));
+				await tx.delete(clinics).where(eq(clinics.organizationId, data.organizationId));
+				await tx.delete(users).where(eq(users.organizationId, data.organizationId));
+				await tx.delete(organizations).where(eq(organizations.id, data.organizationId));
+			});
+		});
+
+		test("registers clinic practice with 2 chairs and without demo data if requested", async () => {
+			const email = `clinic_nodemo_${randomUUID().slice(0, 8)}@example.com`;
+			const password = "clin12"; // 6 chars min
+
+			const response = await app.inject({
+				method: "POST",
+				url: "/api/auth/register",
+				payload: {
+					clinicName: "Стоматология ДЕНТЕ Плюс",
+					ownerName: "Васильева Ольга Николаевна",
+					email,
+					password,
+					practiceType: "clinic",
+					withDemoData: false,
+				},
+			});
+
+			assert.strictEqual(response.statusCode, 201);
+			const data = response.json();
+			assert.strictEqual(data.ok, true);
+			assert.strictEqual(data.practiceType, "clinic");
+			assert.strictEqual(data.demoDataSeeded, false);
+
+			await withTenantCtx(data.organizationId, async (tx) => {
+				const [org] = await tx
+					.select()
+					.from(organizations)
+					.where(eq(organizations.id, data.organizationId));
+				assert.strictEqual(org.clinicMode, "small_clinic");
+
+				// Для клиники создано 2 кабинета
+				const orgChairs = await tx
+					.select()
+					.from(chairs)
+					.where(eq(chairs.organizationId, data.organizationId));
+				assert.strictEqual(orgChairs.length, 2);
+
+				// Демо-пациенты и расписание не создавались
+				const orgPatients = await tx
+					.select()
+					.from(patients)
+					.where(eq(patients.organizationId, data.organizationId));
+				assert.strictEqual(orgPatients.length, 0);
+
+				const orgAppointments = await tx
+					.select()
+					.from(appointments)
+					.where(eq(appointments.organizationId, data.organizationId));
+				assert.strictEqual(orgAppointments.length, 0);
+
+				// Чистим за собой
+				await tx.delete(chairs).where(eq(chairs.organizationId, data.organizationId));
+				await tx.delete(clinics).where(eq(clinics.organizationId, data.organizationId));
+				await tx.delete(users).where(eq(users.organizationId, data.organizationId));
+				await tx.delete(organizations).where(eq(organizations.id, data.organizationId));
+			});
 		});
 	});
 
@@ -759,7 +1075,7 @@ describe("auth routes", () => {
 			assert.strictEqual(response.json().error, "ValidationError");
 			assert.strictEqual(
 				response.json().message,
-				"Пароль должен быть не короче 8 символов.",
+				"Пароль должен быть не короче 6 символов.",
 			);
 		});
 

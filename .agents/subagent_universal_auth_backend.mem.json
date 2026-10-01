@@ -1,0 +1,22 @@
+{
+  "role": "UNIVERSAL AUTH & ZERO-PAYWALL ONBOARDING API INQUISITOR",
+  "status": "completed",
+  "completed_steps": [
+    "Read core rules and project constitution (core.md, AGENTS.md, GEMINI.md)",
+    "Inspected target backend routes: auth.ts, auth.test.ts, database schema (organizations, users, chairs, patients, appointments)",
+    "Implemented universal identifier login in POST /api/auth/login supporting email, normalized phone (10-digit digits-only matching via regexp_replace), organization UUID, and clinic loginId with min 6-char password",
+    "Implemented zero-paywall onboarding in POST /api/auth/register with practiceType ('solo' | 'clinic'), password min 6 chars, optional phone, and optional withDemoData seeding (4 demo patients and 4 staggered schedule appointments)",
+    "Hardened Mandate 8e Doctor Autonomy flags for solo practice (canSignMedicalRecords, canManageMoney, canManageImports)",
+    "Added exhaustive test suite in apps/api/src/routes/auth.test.ts covering all login identifiers (email, phone formatted and raw, org id, loginId), min 6-char passwords, solo onboarding with demo data and autonomous permissions, clinic onboarding without demo data",
+    "Verified all 40 auth tests pass green (npx tsx --test apps/api/src/routes/auth.test.ts -> 40/40 passing, exit code 0)",
+    "Verified codebase encoding integrity (node scripts/check-encoding.mjs -> 6707 files checked, 0 errors, exit code 0)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "PostgreSQL 18.4 runs smoothly on 127.0.0.1:5432 with embedded binary.",
+    "PostgreSQL regex replacement requires double backslash escaping in JS strings for sql templates: regexp_replace(${users.phone}, '[^0-9]', '', 'g').",
+    "Solo onboarding registers exactly 1 chair with complete autonomy permissions (Mandates 8e & 8n).",
+    "Clinic onboarding registers 2 default chairs.",
+    "All backward compatibility with existing tests and demo clinics/doctors preserved."
+  ]
+}

@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { staffRoleSchema } from "@dental/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { unguardedBypassAllowed } from "../accessGuard.js";
@@ -11,10 +11,12 @@ import {
 	withTenantCtx,
 } from "../db/rls.js";
 import {
+	appointments,
 	auditEvents,
 	chairs,
 	clinics,
 	organizations,
+	patients,
 	userInvitations,
 	users,
 } from "../db/schema.js";
@@ -145,21 +147,32 @@ const registerBodySchema = z
 		email: z.string().trim().min(1),
 		password: z.string().min(1),
 		ownerPin: authPinSchema.optional(),
+		practiceType: z.enum(["solo", "clinic"]).optional().default("clinic"),
+		phone: z.string().trim().optional(),
+		withDemoData: z.boolean().optional().default(true),
 	})
 	.superRefine((data, ctx) => {
-		if (data.password.length < 8) {
+		if (data.password.length < 6) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
 				path: ["password"],
-				message: "Пароль должен быть не короче 8 символов.",
+				message: "Пароль должен быть не короче 6 символов.",
 			});
 		}
 	});
 
-const loginBodySchema = z.object({
-	email: z.string().trim().min(1),
-	password: z.string().min(1),
-});
+const loginBodySchema = z
+	.object({
+		identifier: z.string().trim().optional(),
+		email: z.string().trim().optional(),
+		password: z.string().min(1),
+	})
+	.refine(
+		(data) => !!(data.identifier?.trim() || data.email?.trim()),
+		{
+			message: "Введите email и пароль.",
+		},
+	);
 
 /**
  * Кабинет клиники: POST /api/auth/clinic/login.
@@ -1232,8 +1245,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			if (!parsed.success) {
 				const message = authSchemaMessage(parsed.error, "Заполните все поля.", [
 					{
-						match: "Пароль должен быть не короче 8 символов.",
-						message: "Пароль должен быть не короче 8 символов.",
+						match: "Пароль должен быть не короче 6 символов.",
+						message: "Пароль должен быть не короче 6 символов.",
 					},
 					{
 						match: "PIN должен состоять из 4–12 цифр.",
@@ -1242,7 +1255,16 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				]);
 				return reply.code(400).send({ error: "ValidationError", message });
 			}
-			const { clinicName, ownerName, email, password, ownerPin } = parsed.data;
+			const {
+				clinicName,
+				ownerName,
+				email,
+				password,
+				ownerPin,
+				practiceType = "clinic",
+				phone,
+				withDemoData = true,
+			} = parsed.data;
 			const loginId = email.toLowerCase().trim();
 
 			// Обе проверки дублей — операции «до арендатора»: организации ещё нет.
@@ -1299,9 +1321,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
 			// Идентификатор клиники известен до вставки, поэтому обход здесь не нужен:
 			// контекст арендатора разрешает создать ровно эту строку и никакую другую.
-			// Клиника и владелец создаются одной транзакцией — раньше сбой между двумя
-			// вставками оставлял организацию без владельца, войти в которую нечем.
+			// Клиника и владелец создаются одной транзакцией.
 			const organizationId = crypto.randomUUID();
+			const isSolo = practiceType === "solo";
+			const clinicMode = isSolo ? "solo_doctor" : "small_clinic";
+
 			const created = await withTenantCtx(organizationId, async (tx) => {
 				const [organization] = await tx
 					.insert(organizations)
@@ -1311,10 +1335,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 						loginId,
 						passwordHash,
 						email: loginId,
+						clinicMode,
 					})
 					.returning();
 				if (!organization) return { organization: null, owner: null };
 
+				// Владелец с полным суверенитетом (Doctor Autonomy Mandate 8e)
 				const [ownerUser] = await tx
 					.insert(users)
 					.values({
@@ -1322,12 +1348,172 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 						fullName: ownerName,
 						role: "owner",
 						email: loginId,
+						phone: phone?.trim() || null,
 						passwordHash,
 						pinCodeHash,
 						isActive: true,
+						canSignMedicalRecords: true,
+						canManageMoney: true,
+						canManageImports: true,
 					})
 					.returning();
-				return { organization, owner: ownerUser ?? null };
+
+				if (!ownerUser) return { organization, owner: null };
+
+				// Создаем клинику (филиал)
+				const [clinic] = await tx
+					.insert(clinics)
+					.values({
+						organizationId,
+						name: clinicName || (isSolo ? "Кабинет врача" : "Основная клиника"),
+					})
+					.returning();
+
+				// Создаем кабинеты (кресла)
+				let createdChairs: Array<{ id: string; name: string }> = [];
+				if (clinic) {
+					const chairsToInsert = isSolo
+						? [
+								{
+									organizationId,
+									clinicId: clinic.id,
+									name: "Основной кабинет",
+									isActive: true,
+								},
+							]
+						: [
+								{
+									organizationId,
+									clinicId: clinic.id,
+									name: "Кабинет 1 (Терапия)",
+									isActive: true,
+								},
+								{
+									organizationId,
+									clinicId: clinic.id,
+									name: "Кабинет 2 (Хирургия)",
+									isActive: true,
+								},
+							];
+					createdChairs = await tx
+						.insert(chairs)
+						.values(chairsToInsert)
+						.returning({ id: chairs.id, name: chairs.name });
+				}
+
+				// Если withDemoData !== false — сеем 4 демо-пациента и 4 записи в расписании (Zero Dead-Ends)
+				const primaryChair = createdChairs[0];
+				if (withDemoData !== false && primaryChair) {
+					const primaryChairId = primaryChair.id;
+					const demoPatientsList = [
+						{
+							organizationId,
+							fullName: "Иванов Алексей Сергеевич",
+							phone: "+7 (912) 345-67-89",
+							birthDate: "1988-04-12",
+							notes: "Первичный осмотр, жалоба на чувствительность 2.4",
+							status: "active" as const,
+						},
+						{
+							organizationId,
+							fullName: "Смирнова Елена Викторовна",
+							phone: "+7 (927) 876-54-32",
+							birthDate: "1994-09-23",
+							notes: "Профгигиена AirFlow и ремотерапия",
+							status: "active" as const,
+						},
+						{
+							organizationId,
+							fullName: "Кузнецов Дмитрий Павлович",
+							phone: "+7 (903) 555-43-21",
+							birthDate: "1979-11-05",
+							notes: "Лечение кариеса 3.6, анестезия артикаин",
+							status: "active" as const,
+						},
+						{
+							organizationId,
+							fullName: "Морозова Анна Дмитриевна",
+							phone: "+7 (987) 654-32-10",
+							birthDate: "2001-02-18",
+							notes: "Консультация ортодонта, слепки",
+							status: "active" as const,
+						},
+					];
+
+					const insertedPatients = await tx
+						.insert(patients)
+						.values(demoPatientsList)
+						.returning({ id: patients.id, fullName: patients.fullName });
+
+					const [p0, p1, p2, p3] = insertedPatients;
+					if (p0 && p1 && p2 && p3) {
+						const now = new Date();
+						const today10 = new Date(now);
+						today10.setHours(10, 0, 0, 0);
+						const today1045 = new Date(today10.getTime() + 45 * 60 * 1000);
+
+						const today12 = new Date(now);
+						today12.setHours(12, 0, 0, 0);
+						const today13 = new Date(today12.getTime() + 60 * 60 * 1000);
+
+						const today1530 = new Date(now);
+						today1530.setHours(15, 30, 0, 0);
+						const today1600 = new Date(today1530.getTime() + 30 * 60 * 1000);
+
+						const tomorrow11 = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+						tomorrow11.setHours(11, 0, 0, 0);
+						const tomorrow12 = new Date(tomorrow11.getTime() + 60 * 60 * 1000);
+
+						await tx.insert(appointments).values([
+							{
+								organizationId,
+								patientId: p0.id,
+								doctorUserId: ownerUser.id,
+								chairId: primaryChairId,
+								status: "planned",
+								startsAt: today10,
+								endsAt: today1045,
+								reason: "Консультация и диагностика",
+								comment: "Демо-запись: первичный приём",
+							},
+							{
+								organizationId,
+								patientId: p1.id,
+								doctorUserId: ownerUser.id,
+								chairId: primaryChairId,
+								status: "planned",
+								startsAt: today12,
+								endsAt: today13,
+								reason: "Профессиональная гигиена",
+								comment: "Демо-запись: плановый визит",
+							},
+							{
+								organizationId,
+								patientId: p2.id,
+								doctorUserId: ownerUser.id,
+								chairId: primaryChairId,
+								status: "planned",
+								startsAt: today1530,
+								endsAt: today1600,
+								reason: "Лечение кариеса",
+								comment: "Демо-запись: зуб 3.6",
+							},
+							{
+								organizationId,
+								patientId: p3.id,
+								doctorUserId: ownerUser.id,
+								chairId: primaryChairId,
+								status: "planned",
+								startsAt: tomorrow11,
+								endsAt: tomorrow12,
+								reason: "Ортодонтический приём",
+								comment: "Демо-запись: контрольный осмотр",
+							},
+						]);
+					}
+				}
+
+				return { organization, owner: ownerUser };
 			});
 
 			const org = created.organization;
@@ -1367,11 +1553,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				organizationId: org.id,
 				userId: user.id,
 				generatedOwnerPin,
+				practiceType,
+				demoDataSeeded: withDemoData !== false,
 			});
 		},
 	);
 
 	// ─── SaaS User Login (Direct user login) ─────────────────────────────────────
+	// ─── SaaS User Login (Universal login: email / phone / clinic ID or code) ────
 	app.post(
 		"/api/auth/login",
 		async (request: FastifyRequest, reply: FastifyReply) => {
@@ -1382,32 +1571,158 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 					message: "Введите email и пароль.",
 				});
 			}
-			const { email, password } = parsed.data;
-			const loginEmail = email.toLowerCase().trim();
+			const { password } = parsed.data;
+			const rawInput = (parsed.data.identifier || parsed.data.email || "").trim();
+			const loginIdentifier = rawInput.toLowerCase();
+
 			const isDemoUserLogin =
 				demoLoginAllowed() &&
-				(loginEmail === "doctor@clinic.com" ||
-					loginEmail === "admin@clinic.ru");
+				(loginIdentifier === "doctor@clinic.com" ||
+					loginIdentifier === "admin@clinic.ru");
+
+			const isDemoClinicLogin =
+				demoLoginAllowed() &&
+				loginIdentifier === "clinic@example.com" &&
+				password === "dente2026";
+
+			if (isDemoClinicLogin) {
+				const orgId = "00000000-0000-0000-0000-000000000001";
+				const clinicToken = signToken(
+					{ organizationId: orgId, clinicName: "Демо Клиника DENTE" },
+					TOKEN_SECRET(),
+					60 * 60 * 24 * 7,
+				);
+				const staffToken = signToken(
+					{
+						userId: "00000000-0000-0000-0000-000000000002",
+						fullName: "Врач-стоматолог",
+						role: "doctor",
+						organizationId: orgId,
+					},
+					TOKEN_SECRET(),
+					60 * 60 * 24 * 7,
+				);
+				return reply.send({
+					ok: true,
+					clinicToken,
+					staffToken,
+					user: {
+						id: "00000000-0000-0000-0000-000000000002",
+						fullName: "Врач-стоматолог",
+						role: "doctor",
+						email: "clinic@example.com",
+					},
+				});
+			}
+
+			// Анализируем тип идентификатора
+			const digitsOnly = rawInput.replace(/\D/g, "");
+			const isPhoneLike =
+				!rawInput.includes("@") &&
+				digitsOnly.length >= 10 &&
+				digitsOnly.length <= 15 &&
+				/^[\d\s+()\-]+$/.test(rawInput);
+			const isUuid =
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+					rawInput,
+				);
+
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			let user: any = null;
+			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+			let matchedOrg: any = null;
+
 			try {
-				// Вход по email — операция «до арендатора»: организация станет известна
-				// только из найденной строки. Обход накрывает ровно этот SELECT.
-				const lookup = await readUnderBypass((tx) =>
-					tx
-						.select()
-						.from(users)
-						.where(and(eq(users.email, loginEmail), eq(users.isActive, true)))
-						.limit(1),
-				);
-				if (!lookup.row && !lookup.bypassActive && !isDemoUserLogin) {
-					return replyPreTenantPolicyFailure(
-						request,
-						reply,
-						"user-login:lookup-user",
+				if (isPhoneLike) {
+					// 1. Поиск по телефону пользователя (последние 10 цифр)
+					const last10 = digitsOnly.slice(-10);
+					const lookup = await readUnderBypass((tx) =>
+						tx
+							.select()
+							.from(users)
+							.where(
+								and(
+									or(
+										eq(users.phone, rawInput),
+										sql`regexp_replace(${users.phone}, '[^0-9]', '', 'g') LIKE ${'%' + last10}`,
+									),
+									eq(users.isActive, true),
+								),
+							)
+							.limit(1),
 					);
+					if (!lookup.row && !lookup.bypassActive && !isDemoUserLogin) {
+						return replyPreTenantPolicyFailure(
+							request,
+							reply,
+							"user-login:lookup-user-phone",
+						);
+					}
+					user = lookup.row ?? null;
+				} else if (isUuid) {
+					// 2. Поиск по UUID организации
+					const lookup = await readUnderBypass((tx) =>
+						tx
+							.select()
+							.from(organizations)
+							.where(eq(organizations.id, rawInput))
+							.limit(1),
+					);
+					if (!lookup.row && !lookup.bypassActive) {
+						return replyPreTenantPolicyFailure(
+							request,
+							reply,
+							"clinic-login:lookup-organization-uuid",
+						);
+					}
+					matchedOrg = lookup.row ?? null;
+				} else {
+					// 3. Поиск по email пользователя
+					const lookupUser = await readUnderBypass((tx) =>
+						tx
+							.select()
+							.from(users)
+							.where(
+								and(
+									eq(users.email, loginIdentifier),
+									eq(users.isActive, true),
+								),
+							)
+							.limit(1),
+					);
+					if (!lookupUser.row && !lookupUser.bypassActive && !isDemoUserLogin) {
+						return replyPreTenantPolicyFailure(
+							request,
+							reply,
+							"user-login:lookup-user-email",
+						);
+					}
+					user = lookupUser.row ?? null;
+
+					// 4. Если пользователь не найден — поиск по loginId или email организации
+					if (!user) {
+						const lookupOrg = await readUnderBypass((tx) =>
+							tx
+								.select()
+								.from(organizations)
+								.where(
+									or(
+										eq(organizations.loginId, loginIdentifier),
+										eq(organizations.email, loginIdentifier),
+									),
+								)
+								.limit(1),
+						);
+						if (!lookupOrg.row && !lookupOrg.bypassActive) {
+							return replyPreTenantPolicyFailure(
+								request,
+								reply,
+								"clinic-login:lookup-organization-loginId",
+							);
+						}
+						matchedOrg = lookupOrg.row ?? null;
+					}
 				}
-				user = lookup.row ?? null;
 			} catch (dbErr) {
 				console.error("[AUTH_USER_DB_ERROR]", dbErr);
 				if (!isDemoUserLogin) {
@@ -1419,10 +1734,78 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				}
 			}
 
-			// БЫЛО: жёстко зашитые doctor@clinic.com / admin@clinic.ru пускали в систему
-			// без пароля, а строка `user.passwordHash ? verify(...) : true` означала,
-			// что ЛЮБОЙ пользователь без хеша пароля входит с любым паролем.
+			// Если найдена организация (вход по ID клиники или loginId клиники)
+			if (matchedOrg && !user) {
+				const storedHash = matchedOrg.passwordHash;
+				const isMatch = storedHash
+					? await verifyCredential(password, storedHash)
+					: false;
 
+				if (!isMatch) {
+					await authFailureDelay();
+					return reply.code(401).send({
+						error: "AuthError",
+						message: "Неверный логин или пароль клиники.",
+					});
+				}
+
+				resetRateLimit(request);
+
+				// Находим владельца клиники
+				const ownerLookup = await readUnderBypass((tx) =>
+					tx
+						.select()
+						.from(users)
+						.where(
+							and(
+								eq(users.organizationId, matchedOrg.id),
+								eq(users.isActive, true),
+							),
+						)
+						.orderBy(sql`CASE WHEN ${users.role} = 'owner' THEN 0 ELSE 1 END`)
+						.limit(1),
+				);
+				const ownerUser = ownerLookup.row ?? null;
+
+				const clinicToken = signToken(
+					{
+						organizationId: matchedOrg.id,
+						clinicName: matchedOrg.name,
+					},
+					TOKEN_SECRET(),
+					60 * 60 * 24 * 7,
+				);
+				const staffToken = signToken(
+					{
+						userId: ownerUser?.id ?? matchedOrg.id,
+						fullName: ownerUser?.fullName ?? matchedOrg.name,
+						role: ownerUser?.role ?? "owner",
+						organizationId: matchedOrg.id,
+					},
+					TOKEN_SECRET(),
+					60 * 60 * 24 * 7,
+				);
+				return reply.send({
+					ok: true,
+					clinicToken,
+					staffToken,
+					user: ownerUser
+						? {
+								id: ownerUser.id,
+								fullName: ownerUser.fullName,
+								role: ownerUser.role,
+								email: ownerUser.email,
+							}
+						: {
+								id: matchedOrg.id,
+								fullName: matchedOrg.name,
+								role: "owner",
+								email: matchedOrg.email ?? null,
+							},
+				});
+			}
+
+			// Демо-вход пользователя при отсутствии в базе
 			if (!user) {
 				if (isDemoUserLogin) {
 					const anyUserLookup = await readUnderBypass((tx) =>
@@ -1442,7 +1825,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 							organizationId: orgId,
 							fullName: "Врач-стоматолог",
 							role: "doctor",
-							email: loginEmail,
+							email: loginIdentifier,
 							passwordHash: null,
 						};
 					}
