@@ -17,6 +17,7 @@ import React, { useEffect } from "react";
 import { useAppStore } from "../../store/appStore";
 import { HelpDrawer } from "../common/HelpDrawer";
 import type { ClinicalGuideTab } from "../help";
+import { DoctorClinicalTrainingTour } from "../workspace/DoctorClinicalTrainingTour";
 import { ClinicalGuidanceModal } from "./ClinicalGuidanceModal";
 
 export const ClinicalGuidanceHost: React.FC = React.memo(() => {
@@ -84,6 +85,8 @@ export const ClinicalGuidanceHost: React.FC = React.memo(() => {
 					setShortcutsModalOpen(true);
 				}}
 			/>
+
+			<DoctorClinicalTrainingTour />
 		</>
 	);
 });

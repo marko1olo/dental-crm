@@ -99,7 +99,7 @@ export const ClinicalGuidanceModal: React.FC<ClinicalGuidanceModalProps> = React
 
 	return (
 		<div
-			className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+			className="fixed inset-0 z-[1100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="shortcuts-modal-title"
@@ -109,7 +109,7 @@ export const ClinicalGuidanceModal: React.FC<ClinicalGuidanceModalProps> = React
 				}
 			}}
 		>
-			<div className="relative w-full max-w-2xl bg-[var(--paper)] text-[var(--ink)] rounded-xl border border-[var(--line)] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+			<div className="relative w-full max-w-2xl bg-[var(--paper)] text-[var(--ink)] rounded-xl border border-[var(--line)] shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[88vh] overflow-hidden z-[1101]">
 				{/* Modal Header */}
 				<div className="p-4 border-b border-[var(--line)] flex items-center justify-between gap-3 bg-[var(--paper-soft)]">
 					<div className="flex items-center gap-2.5">
@@ -173,7 +173,7 @@ export const ClinicalGuidanceModal: React.FC<ClinicalGuidanceModalProps> = React
 				</div>
 
 				{/* Shortcuts List Content */}
-				<div className="p-4 overflow-y-auto space-y-2 text-xs flex-1 divide-y divide-[var(--line)]/50">
+				<div className="p-4 overflow-y-auto space-y-2 text-xs flex-1 divide-y divide-[var(--line)]/50 min-h-0">
 					{filteredShortcuts.length === 0 ? (
 						<div className="py-8 text-center text-[var(--muted)] space-y-1">
 							<HelpCircle size={24} className="mx-auto text-[var(--muted)]/50" />
@@ -248,19 +248,34 @@ export const ClinicalGuidanceModal: React.FC<ClinicalGuidanceModalProps> = React
 						<span>для закрытия</span>
 					</div>
 
-					{onOpenHelpDrawer && (
+					<div className="flex items-center gap-2">
 						<button
 							type="button"
 							onClick={() => {
 								onClose();
-								onOpenHelpDrawer();
+								window.dispatchEvent(new CustomEvent("dente:start-doctor-tour"));
 							}}
-							className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-xs font-medium text-[var(--ink)] hover:border-teal-500 hover:text-teal-500 transition-colors cursor-pointer shadow-2xs"
+							className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500/10 border border-teal-500/30 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:bg-teal-500 hover:text-white transition-colors cursor-pointer shadow-2xs"
+							title="Запустить интерактивное пошаговое обучение ключевым операциям клиники"
 						>
-							<BookOpen size={13} />
-							<span>Иллюстрированные руководства клиники</span>
+							<Sparkles size={13} />
+							<span>Интерактивное обучение</span>
 						</button>
-					)}
+
+						{onOpenHelpDrawer && (
+							<button
+								type="button"
+								onClick={() => {
+									onClose();
+									onOpenHelpDrawer();
+								}}
+								className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-xs font-medium text-[var(--ink)] hover:border-teal-500 hover:text-teal-500 transition-colors cursor-pointer shadow-2xs"
+							>
+								<BookOpen size={13} />
+								<span>Иллюстрированные руководства</span>
+							</button>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>

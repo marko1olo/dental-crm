@@ -111,7 +111,7 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = React.memo(({
 
 	return (
 		<div
-			className="fixed inset-0 z-[90] flex justify-end bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
+			className="fixed inset-0 z-[1000] flex justify-end bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="help-drawer-title"
@@ -122,7 +122,7 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = React.memo(({
 			}}
 		>
 			<div
-				className="w-full max-w-2xl bg-[var(--paper)] text-[var(--ink)] border-l border-[var(--line)] shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-200"
+				className="w-full max-w-2xl bg-[var(--paper)] text-[var(--ink)] border-l border-[var(--line)] shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-200 z-[1001] overflow-hidden"
 				onClick={(e) => e.stopPropagation()}
 			>
 				{/* Drawer Header */}
@@ -177,6 +177,20 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = React.memo(({
 							/>
 						</div>
 
+						{/* Interactive Tour Button */}
+						<button
+							type="button"
+							onClick={() => {
+								onClose();
+								window.dispatchEvent(new CustomEvent("dente:start-doctor-tour"));
+							}}
+							className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-medium text-[var(--ink)] hover:border-teal-500 hover:text-teal-500 transition-colors cursor-pointer shrink-0"
+							title="Запустить интерактивное обучение врача (4 шага)"
+						>
+							<Sparkles size={13} className="text-teal-500" />
+							<span className="hidden sm:inline">Обучение</span>
+						</button>
+
 						{onOpenShortcutsModal && (
 							<button
 								type="button"
@@ -184,7 +198,7 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = React.memo(({
 									onClose();
 									onOpenShortcutsModal();
 								}}
-								className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-medium text-[var(--ink)] hover:border-teal-500 hover:text-teal-500 transition-colors cursor-pointer shrink-0"
+								className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-medium text-[var(--ink)] hover:border-teal-500 hover:text-teal-500 transition-colors cursor-pointer shrink-0"
 								title="Открыть шпаргалку горячих клавиш"
 							>
 								<Keyboard size={14} className="text-teal-500" />
@@ -225,7 +239,7 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = React.memo(({
 				</div>
 
 				{/* Drawer Body — Active Guide Content */}
-				<div className="flex-1 overflow-y-auto p-4 space-y-4">
+				<div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
 					{filteredGuides.length === 0 ? (
 						<div className="py-12 text-center text-[var(--muted)] space-y-1.5">
 							<HelpCircle size={28} className="mx-auto text-[var(--muted)]/50" />
@@ -244,9 +258,17 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = React.memo(({
 
 				{/* Drawer Footer */}
 				<div className="p-3 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between text-[11px] shrink-0">
-					<div className="text-[var(--muted)]">
-						DENTE Clinical HIG • Tier 2 Контекстная помощь
-					</div>
+					<button
+						type="button"
+						onClick={() => {
+							onClose();
+							window.dispatchEvent(new CustomEvent("dente:start-doctor-tour"));
+						}}
+						className="text-[var(--teal,#0d9488)] hover:underline font-semibold cursor-pointer inline-flex items-center gap-1"
+					>
+						<Sparkles size={12} />
+						<span>Интерактивный тур врача</span>
+					</button>
 					<div className="flex items-center gap-1.5 text-[var(--muted)]">
 						<kbd className="px-1.5 py-0.5 bg-[var(--paper)] border border-[var(--line)] rounded text-[10px] font-mono">
 							Esc

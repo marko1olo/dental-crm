@@ -1,0 +1,32 @@
+{
+  "agent": "CLINICAL TRAINING & COACH MARKS INQUISITOR",
+  "status": "completed",
+  "started_at": "2026-10-02T02:49:00Z",
+  "last_updated": "2026-10-02T03:02:00Z",
+  "completed_steps": [
+    "mandatory_reading_core_rules",
+    "mandatory_reading_frontend_rules",
+    "mandatory_reading_agents_constitution",
+    "mandatory_reading_gemini_shim",
+    "initial_reconnaissance_scope",
+    "audit_existing_guidance_and_help_systems",
+    "architect_clinical_training_coach_marks_component",
+    "implement_doctor_key_operations_coach_marks",
+    "ensure_zero_visual_landfill_and_non_blocking_clickthrough",
+    "guarantee_localstorage_persistence_dente_tour_completed",
+    "audit_and_fix_modals_notifications_zindex_and_1366x768_laptop_overflow",
+    "write_comprehensive_unit_and_integration_tests",
+    "run_workspace_and_modal_tests_with_exit_code_0"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Scope strictly limited to workspace, modals, notifications, guidance. Absolute ban on CBCT/CT respected (zero touches on CT/DICOM).",
+    "Implemented DoctorClinicalTrainingTour.tsx with 4 core clinical steps: Schedule 1-click (Space/Enter), Odontogram formula (Shift+N norm, FDI 1..8, C/P/K/X), Protocol 043/u & diary (Ctrl+S, F12), and Fast Cashier 54-FZ (F9, split tenders cash/card/family balance, no individual INN requirement).",
+    "Non-blocking ergonomics: target beacon uses pointer-events: none at z-index 1049, coach mark card is smart-positioned at z-index 1050 (above regular layout, below modals 1100).",
+    "Doctor autonomy: dismissible via Escape, outside click (pointerdown), [X] button, and permanent 'Больше не показывать' button writing dente_tour_completed: 'true' to localStorage.",
+    "Integrated tour launchers into HelpDrawer.tsx (drawer footer + quick action) and ClinicalGuidanceModal.tsx (modal footer button) via CustomEvent('dente:start-doctor-tour').",
+    "Z-index scale harmonized across components: Popover z-[60], Drawer z-[1000]/[1001], Tour Card z-[1050], Modals z-[1100]/[1101], Toasts z-[1200].",
+    "1366x768 laptop screen protection: added min-h-0 on flex containers and @media (max-height: 800px) ceilings to modals.css (max-height: calc(100vh - 40px)) and NotificationBell (max-h-[calc(100vh-4.5rem)]).",
+    "Automated unit test suite DoctorClinicalTrainingTour.test.ts created with 7 passing tests; all related tests pass with Exit Code 0."
+  ]
+}

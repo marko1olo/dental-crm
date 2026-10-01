@@ -424,6 +424,15 @@ export function WorkspaceSidebar({
 						<a
 							className={`nav-item ${currentView === view ? "active" : ""}`}
 							href={`#${view}`}
+							data-tour={
+								view === "visit"
+									? "visit-diary"
+									: view === "finance"
+										? "fast-cashier"
+										: view === "schedule"
+											? "schedule-nav"
+											: undefined
+							}
 							key={view}
 							aria-current={currentView === view ? "page" : undefined}
 							aria-label={`${viewLabels[view]}: ${sidebarHints[view] || viewHints[view]}`}
@@ -822,6 +831,8 @@ export function WorkspaceTopbar({
 				<button
 					className="primary-button"
 					type="button"
+					id="topbar-booking-action-btn"
+					data-tour="schedule-booking"
 					title={workspaceTopbarLabels.book.title}
 					onPointerEnter={() => onViewIntent?.("schedule", "hover")}
 					onPointerLeave={() => onViewIntent?.("schedule", "cancel")}
@@ -854,6 +865,8 @@ export function WorkspaceTopbar({
 					<button
 						className="secondary-button daily-top-button"
 						type="button"
+						id="topbar-doctor-visit-btn"
+						data-tour="visit-diary"
 						title={workspaceTopbarLabels.visit.title}
 						onPointerEnter={() => onViewIntent?.("visit", "hover")}
 						onPointerLeave={() => onViewIntent?.("visit", "cancel")}

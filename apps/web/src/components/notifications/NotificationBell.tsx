@@ -121,7 +121,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
 			{/* Всплывающее компактное окно центра уведомлений (глубина <= 1) */}
 			{isOpen && (
 				<div
-					className="absolute right-0 top-full mt-1.5 w-[360px] sm:w-[440px] max-w-[440px] h-[480px] max-h-[80vh] z-50 rounded-xl shadow-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] overflow-hidden flex flex-col"
+					className="absolute right-0 top-full mt-1.5 w-[360px] sm:w-[440px] max-w-[calc(100vw-2rem)] h-[480px] max-h-[calc(100vh-4.5rem)] z-[60] rounded-xl shadow-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,var(--paper,#ffffff))] overflow-hidden flex flex-col"
 					data-testid="notification-bell-popover"
 				>
 					<PatientNotificationCenter

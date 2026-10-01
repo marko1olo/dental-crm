@@ -275,6 +275,30 @@
 	}
 }
 
+@media (max-height: 800px) {
+	.modal-content {
+		max-height: calc(100vh - 40px);
+		gap: 0.75rem;
+		padding: 14px;
+	}
+	._ccm-content {
+		height: calc(100vh - 40px);
+		max-height: calc(100vh - 40px);
+		gap: 0.75rem;
+	}
+	._ccm-panel {
+		padding: 0.85rem 0.75rem;
+		border-radius: 14px;
+	}
+	._ccm-center {
+		padding: 0.85rem 0.5rem;
+		border-radius: 14px;
+	}
+	.drawer-content {
+		padding: 16px;
+	}
+}
+
 @keyframes fade-in {
 	from {
 		opacity: 0;
