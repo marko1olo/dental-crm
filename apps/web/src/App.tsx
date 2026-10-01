@@ -178,6 +178,11 @@ const CbctMprImplantStudioModal = lazyWithRetry(() =>
 		default: module.CbctMprImplantStudioModal,
 	})),
 );
+const CbctTunerPlayground = lazyWithRetry(() =>
+	import("./components/radiology/tuner/CbctTunerPlayground").then((module) => ({
+		default: module.CbctTunerPlayground,
+	})),
+);
 /*
  * Панель вставлена сюда, а не в AppRouter.tsx: тот файл никто не импортировал —
  * это был мёртвый код, и панели, добавленные в него, не отрисовывались вообще.
@@ -1061,12 +1066,21 @@ export function App() {
 		return !!readDenteStaffToken();
 	});
 	const [showStaffPinPad, setShowStaffPinPad] = useState<boolean>(false);
+	// 3D CBCT Tuner state (?cbct=tuner or #cbct=tuner or event)
+	const [isCbctTunerOpen, setIsCbctTunerOpen] = useState<boolean>(() => {
+		if (typeof window === "undefined") return false;
+		const search = window.location.search || "";
+		const hash = window.location.hash || "";
+		return search.includes("cbct=tuner") || hash.includes("cbct=tuner");
+	});
+
 	// 3D CBCT Direct Modal state (?cbct=demo or ?cbct=1 or topbar button)
 	const [isCbctDirectModalOpen, setIsCbctDirectModalOpen] = useState<boolean>(
 		() => {
 			if (typeof window === "undefined") return false;
 			const search = window.location.search || "";
 			const hash = window.location.hash || "";
+			if (search.includes("cbct=tuner") || hash.includes("cbct=tuner")) return false;
 			return (
 				search.includes("cbct=") ||
 				search.includes("cbct") ||
@@ -1078,10 +1092,17 @@ export function App() {
 
 	useEffect(() => {
 		const handleOpenCbct = () => setIsCbctDirectModalOpen(true);
+		const handleOpenTuner = () => setIsCbctTunerOpen(true);
 		window.addEventListener("dente:open-cbct-demo", handleOpenCbct);
+		window.addEventListener("dente:open-cbct-tuner", handleOpenTuner);
+
 		const handleUrlChange = () => {
 			const search = window.location.search || "";
 			const hash = window.location.hash || "";
+			if (search.includes("cbct=tuner") || hash.includes("cbct=tuner")) {
+				setIsCbctTunerOpen(true);
+				return;
+			}
 			if (
 				search.includes("cbct=") ||
 				search.includes("cbct") ||
@@ -1095,6 +1116,7 @@ export function App() {
 		window.addEventListener("hashchange", handleUrlChange);
 		return () => {
 			window.removeEventListener("dente:open-cbct-demo", handleOpenCbct);
+			window.removeEventListener("dente:open-cbct-tuner", handleOpenTuner);
 			window.removeEventListener("popstate", handleUrlChange);
 			window.removeEventListener("hashchange", handleUrlChange);
 		};
@@ -1357,6 +1379,24 @@ export function App() {
 	 */
 	const [defaultClinicNoticeHidden, setDefaultClinicNoticeHidden] =
 		useState(false);
+	// 3D CBCT CONTRAST & SLICE TUNER PLAYGROUND (?cbct=tuner)
+	// Must be rendered at the ABSOLUTE TOP before ANY auth, unlock, error, or dashboard guards!
+	if (isCbctTunerOpen) {
+		return (
+			<Suspense fallback={<AppLoadingState message="Загрузка интерактивного тюнера КЛКТ..." />}>
+				<CbctTunerPlayground
+					isOpen={true}
+					onClose={() => {
+						setIsCbctTunerOpen(false);
+						const url = new URL(window.location.href);
+						url.searchParams.delete("cbct");
+						window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("cbct") ? url.hash : ""));
+					}}
+				/>
+			</Suspense>
+		);
+	}
+
 	// 3D CBCT STANDALONE LAUNCHER (?cbct=demo, ?cbct=1, #cbct)
 	// Must be rendered at the ABSOLUTE TOP before ANY auth, unlock, error, or dashboard guards!
 	if (isCbctDirectModalOpen) {
@@ -3488,6 +3528,19 @@ export function App() {
 						<span>Ещё</span>
 					</a>
 				</nav>
+				{isCbctTunerOpen && (
+					<Suspense fallback={null}>
+						<CbctTunerPlayground
+							isOpen={true}
+							onClose={() => {
+								setIsCbctTunerOpen(false);
+								const url = new URL(window.location.href);
+								url.searchParams.delete("cbct");
+								window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + (url.hash && !url.hash.includes("cbct") ? url.hash : ""));
+							}}
+						/>
+					</Suspense>
+				)}
 				{isCbctDirectModalOpen && (
 					<Suspense fallback={null}>
 						<CbctMprImplantStudioModal

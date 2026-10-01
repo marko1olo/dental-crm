@@ -277,6 +277,22 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = ({
 						</span>
 					</button>
 
+					{/* Standalone CBCT Contrast & Slice Tuner Playground Button */}
+					<button
+						type="button"
+						onClick={() => {
+							const url = new URL(window.location.href);
+							url.searchParams.set("cbct", "tuner");
+							window.history.pushState({}, "", url.toString());
+							window.dispatchEvent(new CustomEvent("dente:open-cbct-tuner"));
+						}}
+						className="px-2 sm:px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap h-7 min-h-0 flex items-center gap-1.5 transition-all cursor-pointer border bg-emerald-950/60 text-emerald-300 border-emerald-500/70 hover:bg-emerald-900/80 shadow-[0_0_8px_rgba(16,185,129,0.35)]"
+						data-testid="cbct-header-tuner-btn"
+						title="Открыть интерактивный тюнер контраста, плотности и срезов КЛКТ"
+					>
+						<span>🧪 Тюнер контраста</span>
+					</button>
+
 					{isContrastMenuOpen && (
 						<div
 							className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 w-80 bg-zinc-900/98 border border-zinc-700/90 rounded-lg shadow-2xl p-2.5 z-50 flex flex-col gap-2.5 backdrop-blur-md text-zinc-100"
