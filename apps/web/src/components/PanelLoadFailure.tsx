@@ -1,5 +1,5 @@
+import React from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
-import type React from "react";
 import { type PanelSubject, panelStateText } from "../lib/panelStateText";
 
 /**

@@ -82,7 +82,8 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 
 	return (
 		<div
-			className={`appointment-patient-hover-preview absolute ${isNearRightEdge ? "right-0 left-auto" : "left-0"} ${isNearBottom ? "bottom-full mb-1.5 top-auto" : "top-full mt-1.5"} w-[330px] max-w-[330px] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-50 pointer-events-auto`}
+			className={`appointment-patient-hover-preview absolute ${isNearRightEdge ? "right-0 left-auto" : "left-0"} ${isNearBottom ? "bottom-full mb-1.5 top-auto" : "top-full mt-1.5"} w-[330px] max-w-[330px] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-[100] pointer-events-auto`}
+			style={{ contain: "layout style" }}
 			data-testid="schedule-grid-patient-hover-preview"
 			onMouseEnter={() => {
 				onKeepHovered(a.id);
@@ -311,7 +312,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								showToast(`Пациент ${pName}: статус «Ожидает приёма»`, "info");
 								onMouseLeave();
 							}}
-							className={`min-h-[30px] px-1.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
+							className={`min-h-[44px] px-1.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
 								a.status === "arrived"
 									? "bg-amber-500 text-white border-amber-500 shadow-2xs"
 									: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20"
@@ -319,7 +320,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 							title="Пациент в холле клиники — перевести в статус «Ожидает приёма» (1 клик)"
 							aria-label="Ожидает приёма"
 						>
-							<UserCheck size={12} className="shrink-0" />
+							<UserCheck size={14} className="shrink-0" />
 							<span className="truncate">Ожидает</span>
 						</button>
 						<button
@@ -331,7 +332,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								showToast(`Пациент ${pName}: статус «На приёме»`, "info");
 								onMouseLeave();
 							}}
-							className={`min-h-[30px] px-1.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
+							className={`min-h-[44px] px-1.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
 								isAppointmentInChair(a.status)
 									? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)] shadow-2xs"
 									: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
@@ -339,7 +340,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 							title="Пациент в кабинете — статус «На приёме» (1 клик)"
 							aria-label="На приёме"
 						>
-							<CalendarCheck size={12} className="shrink-0" />
+							<CalendarCheck size={14} className="shrink-0" />
 							<span className="truncate">На приёме</span>
 						</button>
 						<button
@@ -351,7 +352,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								showToast(`Пациент ${pName}: статус «Ожидает оплаты»`, "info");
 								onMouseLeave();
 							}}
-							className={`min-h-[30px] px-1.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
+							className={`min-h-[44px] px-1.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
 								a.status === "completed"
 									? "bg-slate-700 dark:bg-slate-600 text-white border-slate-700 shadow-2xs"
 									: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30 hover:bg-slate-500/20"
@@ -359,7 +360,7 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 							title="Приём завершён — перевести в статус «Ожидает оплаты» (1 клик)"
 							aria-label="Ожидает оплаты"
 						>
-							<CheckCircle2 size={12} className="shrink-0" />
+							<CheckCircle2 size={14} className="shrink-0" />
 							<span className="truncate">На оплату</span>
 						</button>
 					</div>
@@ -419,10 +420,10 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								useAppStore.getState().setCurrentView("visit");
 								showToast(`Приём начат: ${pName} в кресле`, "success");
 							}}
-							className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+							className="min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
 							title="Начать приём: перевести в статус «На приёме» и открыть карту приёма (1 клик)"
 						>
-							<Stethoscope size={13} className="shrink-0" />
+							<Stethoscope size={14} className="shrink-0" />
 							<span className="whitespace-nowrap">Начать приём</span>
 						</button>
 
@@ -441,10 +442,10 @@ export function GridAppointmentHoverHud(props: GridAppointmentHoverHudProps) {
 								useAppStore.getState().setCurrentView("finance");
 								showToast(`Быстрый расчёт: ${pName}`, "info");
 							}}
-							className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+							className="min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
 							title="Быстрый расчёт: перейти к кассовому расчёту (1 клик)"
 						>
-							<CreditCard size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 							<span className="whitespace-nowrap">Быстрый расчёт</span>
 						</button>
 					</div>

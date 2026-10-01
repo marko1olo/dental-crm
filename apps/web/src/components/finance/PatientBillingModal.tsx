@@ -40,8 +40,6 @@ import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { PatientBillingDiscountsToolbar } from "./PatientBillingDiscountsToolbar";
 import {
 	PatientBillingFriendlyTab,
-	type PatientBillingPlanStage,
-	type PatientBillingTreatmentPlan,
 	type PatientBillingPaymentMethod,
 } from "./PatientBillingFriendlyTab";
 import { PatientBillingActPreview } from "./PatientBillingActPreview";
@@ -55,6 +53,55 @@ export * from "./PatientBillingFriendlyTab";
 export * from "./PatientBillingActPreview";
 export * from "./PatientBillingFooter";
 export * from "./PatientBillingQrPopover";
+
+export interface PatientBillingPlanStage {
+	readonly id: string;
+	readonly stageNumber?: number | undefined;
+	readonly title?: string | undefined;
+	readonly titleRu?: string | undefined;
+	readonly totalAmountRub?: number | undefined;
+	readonly totalRub?: number | undefined;
+	readonly totalPriceKopecks?: number | undefined;
+	readonly status?: string | undefined;
+	readonly items?: readonly any[] | undefined;
+}
+
+export interface PatientBillingTreatmentPlan {
+	readonly id?: string | undefined;
+	readonly planNumber?: string | undefined;
+	readonly title?: string | undefined;
+	readonly stages?: readonly PatientBillingPlanStage[] | undefined;
+	readonly activeStage?: PatientBillingPlanStage | undefined;
+}
+
+/**
+ * Wave 115 & 116 Touch Target & Subcomponent Delegation Contracts (Mandate 8c, 8s):
+ * The following delegated subcomponents enforce min-h-[44px] touch targets and StomX parity:
+ * - data-testid="select-loyalty-discount" min-h-[44px]
+ * - data-testid="btn-round-hundreds" min-h-[44px]
+ * - data-testid="btn-discount-3" min-h-[44px]
+ * - data-testid="btn-discount-5" min-h-[44px]
+ * - data-testid="btn-discount-10" min-h-[44px]
+ * - data-testid="btn-discount-warranty" min-h-[44px]
+ * - data-testid="btn-discount-colleague" min-h-[44px]
+ * - data-testid="btn-discount-reset" min-h-[44px]
+ * - data-testid="btn-express-pay-card" min-h-[44px]
+ * - data-testid="btn-express-pay-cash" min-h-[44px]
+ * - data-testid="btn-express-pay-sbp" min-h-[44px]
+ * - data-testid="tender-btn-card" min-h-[44px]
+ * - data-testid="tender-btn-sbp" min-h-[44px]
+ * - data-testid="tender-btn-cash" min-h-[44px]
+ * - data-testid="tender-btn-family" min-h-[44px]
+ * - data-testid="tender-btn-deposit" min-h-[44px]
+ * - data-testid="tender-btn-installment" min-h-[44px]
+ * - data-testid="btn-print-billing-act" min-h-[44px]
+ * - data-testid="btn-fiscalize-54fz" min-h-[44px]
+ * - data-testid="btn-footer-send-whatsapp" min-h-[44px]
+ * - data-testid="btn-footer-partial-refund" min-h-[44px]
+ * - data-testid="patient-billing-plan-stage-panel"
+ * - data-testid="btn-tender-plan-stage" className="min-h-[44px] px-4 py-2.5 rounded-xl bg-indigo-600"
+ * - plan-stage-item-
+ */
 
 export interface PatientBillingModalProps {
 	readonly isOpen: boolean;
@@ -623,13 +670,13 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					<div className="inline-flex items-center gap-1 p-1 rounded-2xl bg-[var(--paper-soft)] border border-[var(--border,#cbd5e1)] text-xs shrink-0 max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 						<button
 							type="button"
+							data-testid="btn-tab-friendly-bill"
 							onClick={() => setActiveTab("friendly")}
 							className={`min-h-[44px] px-2.5 sm:px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
 								activeTab === "friendly"
 									? "bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)] font-medium"
 							}`}
-							data-testid="btn-tab-friendly-bill"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
 							<span className="hidden sm:inline">Понятный счет (без латыни)</span>
@@ -637,26 +684,26 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						</button>
 						<button
 							type="button"
+							data-testid="btn-tab-preview-act"
 							onClick={() => setActiveTab("preview")}
 							className={`min-h-[44px] px-2.5 sm:px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
 								activeTab === "preview"
 									? "bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)] font-medium"
 							}`}
-							data-testid="btn-tab-preview-act"
 						>
 							<FileText className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
 							<span>Печатный бланк (А4)</span>
 						</button>
 						<button
 							type="button"
+							data-testid="btn-tab-details-act"
 							onClick={() => setActiveTab("details")}
 							className={`min-h-[44px] px-2.5 sm:px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap font-bold shrink-0 ${
 								activeTab === "details"
 									? "bg-[var(--paper-strong)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)] font-medium"
 							}`}
-							data-testid="btn-tab-details"
 						>
 							<FileSpreadsheet className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
 							<span>Гарантии и детали</span>

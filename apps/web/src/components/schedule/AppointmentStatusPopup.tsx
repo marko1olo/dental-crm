@@ -39,6 +39,8 @@ export interface AppointmentStatusPopupProps {
 	onCloseHover: () => void;
 	onKeepHover: () => void;
 	onOpenVisit?: (() => void) | undefined;
+	isNearRightEdge?: boolean | undefined;
+	isNearBottom?: boolean | undefined;
 }
 
 export function AppointmentHoverHud({
@@ -51,16 +53,40 @@ export function AppointmentHoverHud({
 	appointmentDoctor,
 	appointmentChair,
 	cardTeeth,
+	allergyAlert,
 	appointmentLabels,
 	formatTime,
 	handleQuickStatusChange,
 	onCloseHover,
 	onKeepHover,
 	onOpenVisit,
+	isNearRightEdge,
+	isNearBottom,
 }: AppointmentStatusPopupProps) {
+	const hudRef = React.useRef<HTMLDivElement>(null);
+	const [alignRight, setAlignRight] = React.useState(Boolean(isNearRightEdge));
+	const [flipUp, setFlipUp] = React.useState(Boolean(isNearBottom));
+
+	React.useEffect(() => {
+		if (hudRef.current && typeof window !== "undefined") {
+			const rect = hudRef.current.getBoundingClientRect();
+			if (!isNearRightEdge && rect.right > window.innerWidth - 16) {
+				setAlignRight(true);
+			}
+			if (!isNearBottom && rect.bottom > window.innerHeight - 16 && rect.top > 320) {
+				setFlipUp(true);
+			}
+		}
+	}, [isNearRightEdge, isNearBottom]);
+
+	const rightClass = (isNearRightEdge || alignRight) ? "right-0 left-auto" : "left-0";
+	const verticalClass = (isNearBottom || flipUp) ? "bottom-full mb-1.5 top-auto" : "top-full mt-1.5";
+
 	return (
 		<div
-			className="appointment-patient-hover-preview absolute top-full left-0 mt-1.5 w-[330px] max-w-[330px] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-50 pointer-events-auto select-none"
+			ref={hudRef}
+			className={`appointment-patient-hover-preview absolute ${verticalClass} ${rightClass} w-[340px] max-w-[calc(100vw-32px)] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-[100] pointer-events-auto select-none`}
+			style={{ contain: "layout style" }}
 			data-testid="timeline-appointment-hover-preview"
 			onMouseEnter={onKeepHover}
 			onMouseLeave={onCloseHover}
@@ -138,7 +164,15 @@ export function AppointmentHoverHud({
 				</div>
 			)}
 
-			{/* 3. Быстрый просмотр жалоб и услуг */}
+			{/* 3. Яркий янтарный алерт аллергий / противопоказаний */}
+			{allergyAlert && (
+				<div className="p-2.5 rounded-xl bg-amber-500/15 border-2 border-amber-500/60 text-amber-900 dark:text-amber-200 text-xs font-black flex items-center gap-2 shadow-xs">
+					<AlertTriangle size={15} className="text-amber-600 shrink-0 animate-bounce" />
+					<span>{allergyAlert}</span>
+				</div>
+			)}
+
+			{/* 4. Быстрый просмотр жалоб и услуг */}
 			<div className="pt-2 border-t border-[var(--line)] space-y-1">
 				<div className="flex items-center gap-1.5 text-xs text-[var(--ink)]">
 					<Clock size={13} className="text-[var(--teal)] shrink-0" />
@@ -179,15 +213,33 @@ export function AppointmentHoverHud({
 				</div>
 			</div>
 
-			{/* 5. Оперативная очередь StomX: 1-кликовое перемещение между этапами */}
+			{/* 5. Оперативная очередь StomX: 4-кликовое перемещение между этапами (Запланирован -> В клинике -> В кресле -> Завершен) */}
 			<div className="pt-2 border-t border-[var(--line)]">
 				<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5 flex items-center justify-between">
-					<span>Очередь смены (StomX 3-Stage Queue)</span>
+					<span>Очередь смены (StomX 4-Stage Queue)</span>
 					<span className="text-[10px] font-semibold text-[var(--teal,var(--brand-primary))]">
 						{appointmentLabels?.[displayStatus] || displayStatus}
 					</span>
 				</div>
-				<div className="grid grid-cols-3 gap-1 mb-2">
+				<div className="grid grid-cols-2 gap-1.5 mb-2">
+					<button
+						type="button"
+						data-testid={`timeline-hover-status-planned-${appointment.id}`}
+						onClick={(e) => {
+							e.stopPropagation();
+							void handleQuickStatusChange("planned");
+							onCloseHover();
+						}}
+						className={`min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+							displayStatus === "planned"
+								? "bg-sky-500 text-white border-sky-500 shadow-2xs"
+								: "bg-sky-500/10 text-sky-800 dark:text-sky-200 border-sky-500/30 hover:bg-sky-500/20"
+						}`}
+						title="Перевести в статус «Запланирован»"
+					>
+						<Clock size={14} className="shrink-0" />
+						<span className="truncate">Запланирован</span>
+					</button>
 					<button
 						type="button"
 						data-testid={`timeline-hover-status-arrived-${appointment.id}`}
@@ -196,15 +248,15 @@ export function AppointmentHoverHud({
 							void handleQuickStatusChange("arrived");
 							onCloseHover();
 						}}
-						className={`min-h-[30px] px-1.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
+						className={`min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
 							displayStatus === "arrived"
 								? "bg-amber-500 text-white border-amber-500 shadow-2xs"
 								: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20"
 						}`}
-						title="Перевести в статус «Ожидает приёма»"
+						title="Перевести в статус «Пациент в клинике / Ожидает»"
 					>
-						<UserCheck size={12} className="shrink-0" />
-						<span className="truncate">Ожидает</span>
+						<UserCheck size={14} className="shrink-0" />
+						<span className="truncate">В клинике</span>
 					</button>
 					<button
 						type="button"
@@ -214,15 +266,15 @@ export function AppointmentHoverHud({
 							void handleQuickStatusChange("in_treatment");
 							onCloseHover();
 						}}
-						className={`min-h-[30px] px-1.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
+						className={`min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
 							displayStatus === "in_treatment"
 								? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)] shadow-2xs"
 								: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"
 						}`}
-						title="Перевести в статус «На приёме»"
+						title="Перевести в статус «В кресле / На приёме»"
 					>
-						<CalendarCheck size={12} className="shrink-0" />
-						<span className="truncate">На приёме</span>
+						<CalendarCheck size={14} className="shrink-0" />
+						<span className="truncate">В кресле</span>
 					</button>
 					<button
 						type="button"
@@ -232,15 +284,15 @@ export function AppointmentHoverHud({
 							void handleQuickStatusChange("completed");
 							onCloseHover();
 						}}
-						className={`min-h-[30px] px-1.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer select-none ${
+						className={`min-h-[44px] px-2 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
 							displayStatus === "completed"
 								? "bg-slate-700 dark:bg-slate-600 text-white border-slate-700 shadow-2xs"
 								: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30 hover:bg-slate-500/20"
 						}`}
-						title="Перевести в статус «Ожидает оплаты»"
+						title="Перевести в статус «Завершен / На оплату»"
 					>
-						<CheckCircle2 size={12} className="shrink-0" />
-						<span className="truncate">На оплату</span>
+						<CheckCircle2 size={14} className="shrink-0" />
+						<span className="truncate">Завершен</span>
 					</button>
 				</div>
 
@@ -264,10 +316,10 @@ export function AppointmentHoverHud({
 							}
 							showToast(`Приём начат: ${appointmentPatientName} в кресле`, "success");
 						}}
-						className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-						title="Начать приём: перевести в статус «На приёме» и открыть карту приёма 043/у (1 клик)"
+						className="min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--teal,var(--brand-primary))] text-[var(--on-teal,#ffffff)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+						title="Начать приём: перевести в статус «В кресле» и открыть карту приёма 043/у (1 клик)"
 					>
-						<Stethoscope size={13} className="shrink-0" />
+						<Stethoscope size={14} className="shrink-0" />
 						<span className="whitespace-nowrap">Начать приём</span>
 					</button>
 
@@ -287,10 +339,10 @@ export function AppointmentHoverHud({
 							useAppStore.getState().setCurrentView("finance");
 							showToast(`Быстрый расчёт: ${appointmentPatientName}`, "info");
 						}}
-						className="min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+						className="min-h-[44px] px-2.5 py-1.5 rounded-xl text-xs font-bold border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
 						title="Быстрый расчёт: перейти к оплате (1 клик)"
 					>
-						<CreditCard size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span className="whitespace-nowrap">Быстрый расчёт</span>
 					</button>
 				</div>
@@ -473,44 +525,60 @@ export function AppointmentMobileBottomSheet({
 					<div className="grid grid-cols-2 gap-2">
 						<button
 							type="button"
+							data-testid="mobile-sheet-status-planned"
+							onClick={() => {
+								void handleQuickStatusChange("planned");
+								onClose();
+							}}
+							className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-sky-500/15 border border-sky-500/40 text-sky-800 dark:text-sky-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
+						>
+							<Clock size={14} />
+							<span>Запланирован</span>
+						</button>
+						<button
+							type="button"
+							data-testid="mobile-sheet-status-confirmed"
 							onClick={() => {
 								void handleQuickStatusChange("confirmed");
 								onClose();
 							}}
-							className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-violet-500/15 border border-violet-500/40 text-violet-800 dark:text-violet-200 flex items-center justify-center gap-2 cursor-pointer"
+							className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-violet-500/15 border border-violet-500/40 text-violet-800 dark:text-violet-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
 						>
 							<PhoneCall size={14} />
 							<span>Подтвержден</span>
 						</button>
 						<button
 							type="button"
+							data-testid="mobile-sheet-status-arrived"
 							onClick={() => {
 								void handleQuickStatusChange("arrived");
 								onClose();
 							}}
-							className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-200 flex items-center justify-center gap-2 cursor-pointer"
+							className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
 						>
 							<UserCheck size={14} />
-							<span>Пришел</span>
+							<span>В клинике</span>
 						</button>
 						<button
 							type="button"
+							data-testid="mobile-sheet-status-in-treatment"
 							onClick={() => {
 								void handleQuickStatusChange("in_treatment");
 								onClose();
 							}}
-							className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-[var(--teal-soft)] border border-[var(--teal)]/40 text-[var(--teal-dark)] flex items-center justify-center gap-2 cursor-pointer"
+							className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-[var(--teal-soft)] border border-[var(--teal)]/40 text-[var(--teal-dark)] flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
 						>
 							<CalendarCheck size={14} />
 							<span>В кресле</span>
 						</button>
 						<button
 							type="button"
+							data-testid="mobile-sheet-status-completed"
 							onClick={() => {
 								void handleQuickStatusChange("completed");
 								onClose();
 							}}
-							className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-2 cursor-pointer"
+							className="col-span-2 min-h-[44px] px-3 rounded-xl text-xs font-bold bg-slate-500/15 border border-slate-500/40 text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
 						>
 							<CheckCircle2 size={14} />
 							<span>Завершен</span>
