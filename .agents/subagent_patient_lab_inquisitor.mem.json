@@ -1,0 +1,28 @@
+{
+  "role": "PATIENT REGISTRY, FUZZY SEARCH & DENTAL LAB INQUISITOR",
+  "status": "completed",
+  "completed_steps": [
+    "Read all mandatory authority files: core.md, frontend.md, AGENTS.md, GEMINI.md completely without skimming",
+    "Audited patientSearchFuzzy.ts, LabOrdersPanel.tsx, PatientWorkspaceView.tsx, and Omnibar.tsx",
+    "Fixed LabOrdersPanel status transition bug: mapped fitting to refitting (matching PostgreSQL 18 schema and labOrderStatusSchema enum) and passed stage",
+    "Added clasp/buegel denture (clasp_denture / buegel_cocr_clasp) to RESTORATION_TYPES and MATERIALS with full kopeck financial math",
+    "Added fittingDate (дата примерки каркаса/бисквита) alongside dueDate (срок сдачи) in LabOrdersPanel quick inline form",
+    "Enhanced patientSearchFuzzy.ts to resolve all card fields (cardNumber, chartNumber, medicalCardNumber, medCardNumber, administrativeProfile.cardNumber) and strip 043/у prefixes",
+    "Added alternative phone fields resolution in patientSearchFuzzy.ts (phone, mobilePhone, contactPhone, administrativeProfile.patientPhone)",
+    "Connected fuzzy patient lookup directly into Omnibar.tsx (Ctrl+K global search with keyboard navigation and active patient selection)",
+    "Displayed outpatient medical card number and formatted financial balance pill badge in PatientWorkspaceView header",
+    "Added 3 new unit tests in patientSearchFuzzy.test.ts (Suite 12) for 043/у prefixes, chartNumber, and alternative phone fields",
+    "Executed and verified all 43 tests in patientSearchFuzzy.test.ts: 43/43 PASSED",
+    "Executed and verified all 96 patient component tests: 96/96 PASSED",
+    "Ran check:encoding verification: 6728 files checked, 0 errors, EXIT 0",
+    "Strictly respected boundary: Zero touch on CBCT/tomography/imaging files"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "LabOrdersPanel was sending status: 'fitting' which failed Zod validation with 400 ValidationError because schema defines 'refitting'. Fixed to send status: 'refitting' and stage: 'fitting_in_mouth'.",
+    "patientSearchFuzzy was missing outpatient card 043/у normalization ('043/у-1001' resulted in '0431001' which failed to match card '1001'). Fixed with normalizeCardQuery.",
+    "Patients with card numbers stored in chartNumber or medicalCardNumber were not matched. Fixed by extracting all card fields via extractPatientCardNumbers.",
+    "Patients with phone stored in mobilePhone or administrativeProfile were not matched. Fixed via extractPatientPhones.",
+    "Omnibar previously only searched navigation items and showed false 'Ничего не найдено' on patient names. Now seamlessly queries patient registry via searchPatientsQuick."
+  ]
+}

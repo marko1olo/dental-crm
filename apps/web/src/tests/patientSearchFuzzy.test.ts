@@ -475,4 +475,77 @@ describe("Fuzzy Levenshtein Patient Search & Duplication Guard Suite", () => {
 			assert.equal(typeof modalsModule.PatientDuplicateMergeModal, "object");
 		});
 	});
+
+	describe("12. Outpatient Card 043/у & Multi-Field Search (chartNumber, mobilePhone)", () => {
+		it("finds patient when query contains 043/у prefix ('043/у-1001', 'карта 1001', '043-1001')", () => {
+			const res1 = searchPatientsQuick(samplePatients, "043/у-1001");
+			assert.equal(res1.length >= 1, true);
+			assert.equal(res1[0]?.patient.id, "pat-ivanov");
+			assert.equal(res1[0]?.matchedBy, "card");
+
+			const res2 = searchPatientsQuick(samplePatients, "карта 1002");
+			assert.equal(res2.length >= 1, true);
+			assert.equal(res2[0]?.patient.id, "pat-smirnov");
+			assert.equal(res2[0]?.matchedBy, "card");
+
+			const res3 = searchPatientsQuick(samplePatients, "043 1003");
+			assert.equal(res3.length >= 1, true);
+			assert.equal(res3[0]?.patient.id, "pat-kuznetsov");
+			assert.equal(res3[0]?.matchedBy, "card");
+		});
+
+		it("finds patient when card number is stored in chartNumber or medicalCardNumber", () => {
+			const customPatients = [
+				{
+					id: "pat-chart",
+					fullName: "Белов Сергей Николаевич",
+					phone: "+7 (911) 222-33-44",
+					chartNumber: "043-7788",
+				} as unknown as Patient,
+				{
+					id: "pat-medcard",
+					fullName: "Соколова Елена Игоревна",
+					phone: "+7 (921) 333-44-55",
+					medicalCardNumber: "МК-9900",
+				} as unknown as Patient,
+			];
+
+			const resChart = searchPatientsQuick(customPatients, "7788");
+			assert.equal(resChart.length, 1);
+			assert.equal(resChart[0]?.patient.id, "pat-chart");
+			assert.equal(resChart[0]?.matchedBy, "card");
+
+			const resMedcard = searchPatientsQuick(customPatients, "043/у-9900");
+			assert.equal(resMedcard.length, 1);
+			assert.equal(resMedcard[0]?.patient.id, "pat-medcard");
+			assert.equal(resMedcard[0]?.matchedBy, "card");
+		});
+
+		it("finds patient when phone is stored in mobilePhone or administrativeProfile", () => {
+			const altPhonePatients = [
+				{
+					id: "pat-alt-mobile",
+					fullName: "Новиков Денис Андреевич",
+					mobilePhone: "+7 (905) 555-88-11",
+				} as unknown as Patient,
+				{
+					id: "pat-admin-phone",
+					fullName: "Федорова Ольга Михайловна",
+					administrativeProfile: {
+						patientPhone: "+7 (909) 444-22-33",
+					},
+				} as unknown as Patient,
+			];
+
+			const resMobile = searchPatientsQuick(altPhonePatients, "8811");
+			assert.equal(resMobile.length, 1);
+			assert.equal(resMobile[0]?.patient.id, "pat-alt-mobile");
+			assert.equal(resMobile[0]?.matchedBy, "phone");
+
+			const resAdmin = searchPatientsQuick(altPhonePatients, "2233");
+			assert.equal(resAdmin.length, 1);
+			assert.equal(resAdmin[0]?.patient.id, "pat-admin-phone");
+			assert.equal(resAdmin[0]?.matchedBy, "phone");
+		});
+	});
 });

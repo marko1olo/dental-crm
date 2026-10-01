@@ -209,6 +209,20 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 				);
 			}, [dashboard?.patients, patientId]);
 
+			const patientCardNumber = useMemo(() => {
+				return (
+					(currentPatient as any)?.cardNumber ||
+					(currentPatient as any)?.chartNumber ||
+					(currentPatient as any)?.medicalCardNumber ||
+					null
+				);
+			}, [currentPatient]);
+
+			const patientBalanceRub = useMemo(() => {
+				const b = (currentPatient as any)?.balanceRub ?? (currentPatient as any)?.balance;
+				return typeof b === "number" ? b : null;
+			}, [currentPatient]);
+
 			const patientStudies = useMemo(() => {
 				const all = (dashboard?.imagingStudies ?? []) as any[];
 				const filtered = all.filter((s) => String(s?.patientId) === String(patientId));
@@ -406,13 +420,28 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 					<PatientDuplicateAlert patientId={patientId} />
 
 					<div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[var(--line)] pb-3">
-						<div className="flex items-center gap-2 min-w-0">
+						<div className="flex items-center gap-2 min-w-0 flex-wrap">
 							<span className="text-sm md:text-base font-black text-[var(--ink)] truncate">
 								{patientName || "Карточка пациента"}
 							</span>
 							<span className="text-xs font-mono font-bold text-[var(--muted)] bg-[var(--paper-soft)] px-2 py-0.5 rounded-md border border-[var(--line)] shrink-0">
-								{patientId ? `№ ${String(patientId || "").slice(0, 8)}` : "—"}
+								{patientCardNumber ? `Карта: ${patientCardNumber}` : patientId ? `№ ${String(patientId || "").slice(0, 8)}` : "—"}
 							</span>
+							{patientBalanceRub !== null && (
+								<span
+									className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md border shrink-0 ${
+										patientBalanceRub < 0
+											? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+											: patientBalanceRub > 0
+												? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+												: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
+									}`}
+									title={`Текущий баланс пациента: ${patientBalanceRub.toLocaleString("ru-RU")} ₽`}
+									data-testid="patient-workspace-balance-badge"
+								>
+									Баланс: {patientBalanceRub > 0 ? "+" : ""}{patientBalanceRub.toLocaleString("ru-RU")} ₽
+								</span>
+							)}
 						</div>
 
 						<div className="flex items-center gap-1.5 flex-wrap">

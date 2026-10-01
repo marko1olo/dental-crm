@@ -363,11 +363,18 @@ export function isFuzzyNameMatch(
 export interface PatientSearchableFields {
 	fullName?: string | null | undefined;
 	phone?: string | null | undefined;
+	mobilePhone?: string | null | undefined;
+	contactPhone?: string | null | undefined;
 	birthDate?: string | null | undefined;
 	cardNumber?: string | null | undefined;
+	chartNumber?: string | null | undefined;
+	medicalCardNumber?: string | null | undefined;
+	medCardNumber?: string | null | undefined;
 	administrativeProfile?: {
 		legalRepresentativePhone?: string | null | undefined;
 		legalRepresentativeFullName?: string | null | undefined;
+		cardNumber?: string | null | undefined;
+		patientPhone?: string | null | undefined;
 	} | null | undefined;
 }
 
@@ -378,6 +385,72 @@ export interface PatientSearchScoredResult {
 	readonly isExact: boolean;
 	readonly isFuzzy: boolean;
 	readonly suggestedName?: string | undefined;
+}
+
+/**
+ * Извлекает все варианты номеров медицинских карт пациента (043/у, chartNumber, cardNumber и т.д.)
+ */
+export function extractPatientCardNumbers(
+	patient: PatientSearchableFields | null | undefined,
+): string[] {
+	if (!patient) return [];
+	const rawList = [
+		patient.cardNumber,
+		patient.chartNumber,
+		patient.medicalCardNumber,
+		patient.medCardNumber,
+		patient.administrativeProfile?.cardNumber,
+	].filter((c): c is string => Boolean(c && typeof c === "string" && c.trim().length > 0));
+
+	return Array.from(new Set(rawList.map((c) => c.trim())));
+}
+
+/**
+ * Извлекает все телефонные номера пациента из различных профилей и полей.
+ */
+export function extractPatientPhones(
+	patient: PatientSearchableFields | null | undefined,
+): string[] {
+	if (!patient) return [];
+	const rawList = [
+		patient.phone,
+		patient.mobilePhone,
+		patient.contactPhone,
+		patient.administrativeProfile?.patientPhone,
+	].filter((p): p is string => Boolean(p && typeof p === "string" && p.trim().length > 0));
+
+	return Array.from(new Set(rawList.map((p) => p.trim())));
+}
+
+/**
+ * Очищает поисковый запрос от префиксов медкарты 043/у («форма 043», «043/у», «карта», «№» и др.)
+ */
+export function normalizeCardQuery(rawQuery: string): {
+	isCardExplicit: boolean;
+	cleanCardToken: string;
+	cardDigits: string;
+} {
+	const trimmed = rawQuery.trim();
+	const lower = trimmed.toLowerCase().replaceAll("ё", "е");
+
+	const hasCardPrefix =
+		/^(форма\s+)?(043[\s/\\_-]*[уy]?|ф\.?\s*043[\s/\\_-]*[уy]?)/i.test(lower) ||
+		/^(медкарта|карточка|карта|мед\.?\s*карта)\s*(№|n|#)?/i.test(lower) ||
+		/^(№|n|#)\s*/i.test(lower) ||
+		/^[кk][-_\s]\d+/i.test(lower);
+
+	let cleaned = lower;
+	cleaned = cleaned.replace(/^(форма\s+)?(043[\s/\\_-]*[уy]?|ф\.?\s*043[\s/\\_-]*[уy]?)\s*[-_\s]*/i, "");
+	cleaned = cleaned.replace(/^(медкарта|карточка|карта|мед\.?\s*карта)\s*(№|n|#)?\s*[-_\s]*/i, "");
+	cleaned = cleaned.replace(/^(№|n|#)\s*/i, "");
+
+	const cardDigits = cleaned.replace(/\D/g, "");
+
+	return {
+		isCardExplicit: hasCardPrefix,
+		cleanCardToken: cleaned.trim(),
+		cardDigits,
+	};
 }
 
 /**
@@ -414,39 +487,42 @@ export function scorePatientSearch(
 	const normalizedFullName = normalizeCyrillicText(patient.fullName);
 
 	// 1. Поиск по номеру телефона пациента и представителя
+	const patientPhones = extractPatientPhones(patient);
 	if (queryDigits.length >= 3) {
-		const patientPhoneDigits = (patient.phone ?? "").replace(/\D/g, "");
-		const patientNational = normalizePhoneToNational(patient.phone);
+		for (const pPhone of patientPhones) {
+			const pPhoneDigits = pPhone.replace(/\D/g, "");
+			const pNational = normalizePhoneToNational(pPhone);
 
-		if (queryDigits.length >= 10 && patientNational === queryNational) {
-			return {
-				isMatch: true,
-				score: 100,
-				matchedBy: "phone",
-				isExact: true,
-				isFuzzy: false,
-			};
-		}
-		if (queryDigits.length >= 4 && patientPhoneDigits.endsWith(queryDigits)) {
-			return {
-				isMatch: true,
-				score: 85,
-				matchedBy: "phone",
-				isExact: true,
-				isFuzzy: false,
-			};
-		}
-		if (
-			patientPhoneDigits.includes(queryDigits) ||
-			(queryNational.length >= 3 && patientNational.includes(queryNational))
-		) {
-			return {
-				isMatch: true,
-				score: 60,
-				matchedBy: "phone",
-				isExact: true,
-				isFuzzy: false,
-			};
+			if (queryDigits.length >= 10 && pNational === queryNational) {
+				return {
+					isMatch: true,
+					score: 100,
+					matchedBy: "phone",
+					isExact: true,
+					isFuzzy: false,
+				};
+			}
+			if (queryDigits.length >= 4 && pPhoneDigits.endsWith(queryDigits)) {
+				return {
+					isMatch: true,
+					score: 85,
+					matchedBy: "phone",
+					isExact: true,
+					isFuzzy: false,
+				};
+			}
+			if (
+				pPhoneDigits.includes(queryDigits) ||
+				(queryNational.length >= 3 && pNational.includes(queryNational))
+			) {
+				return {
+					isMatch: true,
+					score: 60,
+					matchedBy: "phone",
+					isExact: true,
+					isFuzzy: false,
+				};
+			}
 		}
 
 		// Телефон законного представителя
@@ -469,21 +545,69 @@ export function scorePatientSearch(
 		}
 	}
 
-	// 2. Номер медицинской карты
-	if (patient.cardNumber) {
-		const normCard = normalizeCyrillicText(patient.cardNumber);
-		const cardDigits = patient.cardNumber.replace(/\D/g, "");
-		if (
-			normCard.includes(normalizedQuery) ||
-			(queryDigits.length >= 2 && cardDigits && cardDigits.includes(queryDigits))
-		) {
-			return {
-				isMatch: true,
-				score: 80,
-				matchedBy: "card",
-				isExact: true,
-				isFuzzy: false,
-			};
+	// 2. Номер медицинской карты 043/у (проверяем все варианты: cardNumber, chartNumber, medicalCardNumber)
+	const patientCards = extractPatientCardNumbers(patient);
+	if (patientCards.length > 0) {
+		const cardQuery = normalizeCardQuery(query);
+
+		for (const card of patientCards) {
+			const normCard = normalizeCyrillicText(card);
+			const cardDigits = card.replace(/\D/g, "");
+
+			// Точное или почти точное совпадение очищенного номера карты
+			if (
+				normCard === normalizedQuery ||
+				(cardQuery.cleanCardToken && normCard === cardQuery.cleanCardToken)
+			) {
+				return {
+					isMatch: true,
+					score: 80,
+					matchedBy: "card",
+					isExact: true,
+					isFuzzy: false,
+				};
+			}
+
+			// Если запрос явно содержит маркер карты 043/у («043/у-1001», «карта 1001»)
+			if (cardQuery.isCardExplicit && cardQuery.cardDigits.length >= 1) {
+				if (cardDigits === cardQuery.cardDigits || cardDigits.endsWith(cardQuery.cardDigits)) {
+					return {
+						isMatch: true,
+						score: 80,
+						matchedBy: "card",
+						isExact: true,
+						isFuzzy: false,
+					};
+				}
+			}
+
+			// Подстрока в номере карты
+			if (
+				normCard.includes(normalizedQuery) ||
+				(cardQuery.cleanCardToken && normCard.includes(cardQuery.cleanCardToken))
+			) {
+				return {
+					isMatch: true,
+					score: 80,
+					matchedBy: "card",
+					isExact: true,
+					isFuzzy: false,
+				};
+			}
+
+			// Поиск по цифрам карты
+			if (
+				(queryDigits.length >= 2 && cardDigits && cardDigits.includes(queryDigits)) ||
+				(cardQuery.cardDigits.length >= 2 && cardDigits && cardDigits.includes(cardQuery.cardDigits))
+			) {
+				return {
+					isMatch: true,
+					score: 80,
+					matchedBy: "card",
+					isExact: true,
+					isFuzzy: false,
+				};
+			}
 		}
 	}
 
@@ -629,10 +753,11 @@ export function highlightSearchMatches(
 	const translitQ = transliterateLatinToCyrillic(normalizedQ);
 	const keyboardQ = convertKeyboardMistype(normalizedQ);
 
+	const cardInfo = normalizeCardQuery(q);
 	const queryTokens = Array.from(
 		new Set(
-			[normalizedQ, translitQ, keyboardQ]
-				.flatMap((item) => item.split(/\s+/))
+			[normalizedQ, translitQ, keyboardQ, cardInfo.cleanCardToken, cardInfo.cardDigits]
+				.flatMap((item) => (item ? item.split(/\s+/) : []))
 				.filter(Boolean),
 		),
 	);
@@ -809,13 +934,15 @@ export function searchPatientsQuick(
 			continue;
 		}
 
-		const cardNumber = (patient as any).cardNumber ?? undefined;
+		const cardNumbers = extractPatientCardNumbers(patient as PatientSearchableFields);
+		const cardNumber = cardNumbers[0] ?? undefined;
+		const displayPhone = extractPatientPhones(patient as PatientSearchableFields)[0] ?? patient.phone ?? undefined;
 
 		results.push({
 			patient,
 			score: scored.score,
 			fullNameHighlights: highlightSearchMatches(patient.fullName, query),
-			phoneHighlights: highlightSearchMatches(patient.phone, query),
+			phoneHighlights: highlightSearchMatches(displayPhone, query),
 			cardHighlights: cardNumber ? highlightSearchMatches(cardNumber, query) : undefined,
 			matchedBy: scored.matchedBy,
 			isFuzzy: scored.isFuzzy,

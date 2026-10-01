@@ -387,6 +387,16 @@ export const MATERIALS = [
 		baseCostKopecks: 1600000,
 		unitCostRub: 16000,
 	},
+	{
+		id: "buegel_cocr_clasp",
+		name: "Бюгельный протез CoCr (литой кламмерный / замковый)",
+		desc: "Высокоточный дуговой каркас из кобальт-хрома с литыми кламмерами или замками (Bredent/MK1)",
+		category: "Съемное",
+		tag: "Бюгель",
+		costTier: "Стандарт",
+		baseCostKopecks: 1400000,
+		unitCostRub: 14000,
+	},
 ] as const;
 
 export const LAB_MATERIALS = MATERIALS;

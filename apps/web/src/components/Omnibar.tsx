@@ -15,14 +15,15 @@ import {
 	Users,
 	X,
 } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAppStore } from "../store/appStore";
+import { searchPatientsQuick } from "./patients/patientSearchFuzzy";
 import { WorkspaceActionsSlot } from "./workspaceActions/WorkspaceActions";
 import { workspaceActionsLabels } from "./workspaceActions/workspaceActionsLabels";
 
 export function Omnibar() {
-	const { isOmnibarOpen, setOmnibarOpen, setCurrentView } = useAppStore();
+	const { isOmnibarOpen, setOmnibarOpen, setCurrentView, dashboard, setActivePatientId } = useAppStore();
 	const [query, setQuery] = useState("");
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -178,11 +179,37 @@ export function Omnibar() {
 		},
 	];
 
-	const filteredCommands = (commands ?? []).filter(
-		(cmd) =>
-			(cmd?.title ?? "").toLowerCase().includes((query ?? "").toLowerCase()) ||
-			(cmd?.category ?? "").toLowerCase().includes((query ?? "").toLowerCase()),
-	);
+	const patientResults = useMemo(() => {
+		const q = query.trim();
+		if (q.length < 2 || !dashboard?.patients || dashboard.patients.length === 0) {
+			return [];
+		}
+		return searchPatientsQuick(dashboard.patients, q, 5).map((res) => ({
+			id: `patient-${res.patient.id}`,
+			title: `${res.patient.fullName || "Пациент"}${res.patient.phone ? ` (${res.patient.phone})` : ""}${res.patient.cardNumber ? ` [Карта: ${res.patient.cardNumber}]` : ""}`,
+			icon: <Users className="text-[var(--teal)]" />,
+			category: "Пациенты (Медицинская карта 043/у)",
+			action: () => {
+				if (setActivePatientId && res.patient.id) {
+					setActivePatientId(res.patient.id);
+				}
+				setCurrentView("patients");
+				if (typeof window !== "undefined" && res.patient.id) {
+					window.location.hash = `/patients/${res.patient.id}`;
+				}
+			},
+		}));
+	}, [query, dashboard?.patients, setActivePatientId, setCurrentView]);
+
+	const filteredCommands = useMemo(() => {
+		const q = (query ?? "").toLowerCase().trim();
+		const matchedCommands = (commands ?? []).filter(
+			(cmd) =>
+				(cmd?.title ?? "").toLowerCase().includes(q) ||
+				(cmd?.category ?? "").toLowerCase().includes(q),
+		);
+		return [...patientResults, ...matchedCommands];
+	}, [commands, query, patientResults]);
 
 	useEffect(() => {
 		if (!isOmnibarOpen) {

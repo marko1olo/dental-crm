@@ -106,6 +106,7 @@ const RESTORATION_TYPES = [
 	{ value: "all_on_4_6", label: "Тотал All-on-4 / All-on-6" },
 	{ value: "pmma_provisional", label: "Временная коронка PMMA" },
 	{ value: "occlusal_splint", label: "Окклюзионная сплинт-каппа" },
+	{ value: "clasp_denture", label: "Бюгельный протез (кламмеры / замки)" },
 ];
 
 export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
@@ -185,6 +186,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	const [colorVita, setColorVita] = useState("A2");
 	const [stumpShade, setStumpShade] = useState<string>("");
 	const [cementGap, setCementGap] = useState(30);
+	const [fittingDate, setFittingDate] = useState("");
 	const [dueDate, setDueDate] = useState("");
 	const [clinicalNotes, setClinicalNotes] = useState("");
 	const [submitting, setSubmitting] = useState(false);
@@ -255,14 +257,22 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 	// 1-Click Status Transition Handler
 	const handleStatusTransition = async (orderId: string, targetStatus: CanonicalLabOrderStatus) => {
-		// Map canonical status to API status
+		// Map canonical status to API status (DB enum has refitting, not fitting)
 		const apiStatusMap: Record<CanonicalLabOrderStatus, string> = {
 			sent: "sent",
 			ready: "received",
-			fitting: "fitting",
+			fitting: "refitting",
 			completed: "completed",
 		};
 		const statusToSend = apiStatusMap[targetStatus] || "sent";
+		const stageToSend =
+			targetStatus === "fitting"
+				? "fitting_in_mouth"
+				: targetStatus === "ready"
+					? "ready_in_clinic"
+					: targetStatus === "completed"
+						? "completed"
+						: "sent_to_lab";
 
 		// Optimistic update
 		const previousOrders = orders;
@@ -277,7 +287,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 					"Content-Type": "application/json",
 					...denteAdminSecretRequestHeaders(),
 				},
-				body: JSON.stringify({ status: statusToSend }),
+				body: JSON.stringify({ status: statusToSend, stage: stageToSend }),
 			});
 
 			if (!res.ok) {
@@ -492,6 +502,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 			const fullNotes = [
 				clinicalNotes,
+				fittingDate ? `Примерка каркаса/бисквита: ${new Date(fittingDate).toLocaleDateString("ru-RU")}` : null,
 				bridgeNote,
 				`Шкала: ${shadeSystem === "3d_master" ? "VITA 3D-Master" : shadeSystem === "bleach" ? "Bleach" : "VITA Classical"}`,
 				stumpShade ? `Культя: ${stumpShade}` : null,
@@ -568,6 +579,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			showToast("Наряд в лабораторию успешно оформлен!", "success");
 			setShowQuickForm(false);
 			setSelectedTeeth([]);
+			setFittingDate("");
 			setDueDate("");
 			setClinicalNotes("");
 			await fetchOrders();
@@ -1230,8 +1242,21 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						)}
 					</div>
 
-					{/* Deadline & Clinical Notes */}
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+					{/* Deadlines & Clinical Notes */}
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+						<div>
+							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
+								Дата примерки (каркас/бисквит)
+							</label>
+							<input
+								type="date"
+								value={fittingDate}
+								onChange={(e) => setFittingDate(e.target.value)}
+								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
+								data-testid="lab-order-quick-fitting-date-input"
+							/>
+						</div>
+
 						<div>
 							<label className="block text-[11px] font-bold text-[var(--muted)] mb-1">
 								Срок сдачи / Дедлайн ЗТЛ
@@ -1241,6 +1266,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 								value={dueDate}
 								onChange={(e) => setDueDate(e.target.value)}
 								className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal)]"
+								data-testid="lab-order-quick-due-date-input"
 							/>
 						</div>
 
