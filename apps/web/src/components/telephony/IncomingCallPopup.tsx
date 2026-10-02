@@ -14,9 +14,11 @@ import {
 	useTelephonyStore,
 } from "../../store/telephonyStore";
 import { showToast } from "../GlobalToast";
-import { CallAudioPlayer } from "./CallAudioPlayer";
-import { IncomingCallQuickBooking, type QuickSlotType } from "./IncomingCallQuickBooking";
-import { IncomingCallerCard } from "./IncomingCallerCard";
+import {
+	IncomingCallQuickBooking,
+	computeQuickBookingSlots,
+	type QuickSlotType,
+} from "./IncomingCallQuickBooking";
 import { IncomingCallPastHistory } from "./IncomingCallPastHistory";
 import { IncomingCallBadgeMoreMenu } from "./IncomingCallBadgeMoreMenu";
 import { IncomingCallPatientDrawer } from "./IncomingCallPatientDrawer";
@@ -207,26 +209,30 @@ export function IncomingCallPopup() {
 		}
 	};
 
-	// 1-Click Fast Appointment Booking (Mandates 8e, 8n - solo doctor autonomy)
+	// 1-Click Fast Appointment Booking with collision check SSOT (Mandates 8b, 8e, 8n - solo doctor autonomy)
+	const { slots: quickSlots, getSlotInterval } = useMemo(
+		() => computeQuickBookingSlots(dashboard, resolvedPatient?.id),
+		[dashboard, resolvedPatient?.id],
+	);
+
 	const handleQuickBook = (slotType: QuickSlotType = "today_standard") => {
-		const todayIso = dashboard?.todayIso || new Date().toISOString().split("T")[0];
-		const defaultDoctorId = dashboard?.clinicSettings?.staff?.[0]?.id || "doc-1";
-		const defaultChairId = dashboard?.clinicSettings?.chairs?.[0]?.id || "";
+		const defaultDoctorId =
+			dashboard?.clinicSettings?.staff?.find(
+				(s) => s.active && (s.role === "doctor" || s.role === "owner"),
+			)?.id ||
+			dashboard?.clinicSettings?.staff?.[0]?.id ||
+			"doc-1";
+		const defaultChairId =
+			dashboard?.clinicSettings?.chairs?.find((c) => c.active)?.id ||
+			dashboard?.clinicSettings?.chairs?.[0]?.id ||
+			"";
 
-		let startsAt = `${todayIso}T14:30:00.000Z`;
-		let endsAt = `${todayIso}T15:00:00.000Z`;
+		const { startsAt, endsAt } = getSlotInterval(slotType);
+
 		let comment = `Быстрая запись из звонка (${formattedPhone})`;
-
 		if (slotType === "today_urgent") {
-			startsAt = `${todayIso}T10:00:00.000Z`;
-			endsAt = `${todayIso}T10:30:00.000Z`;
 			comment = `Острая боль! Внеочередная запись из звонка (${formattedPhone})`;
 		} else if (slotType === "tomorrow") {
-			const d = new Date(todayIso);
-			d.setDate(d.getDate() + 1);
-			const tomorrowIso = d.toISOString().split("T")[0];
-			startsAt = `${tomorrowIso}T11:00:00.000Z`;
-			endsAt = `${tomorrowIso}T11:30:00.000Z`;
 			comment = `Запись на завтра из звонка (${formattedPhone})`;
 		}
 
@@ -688,6 +694,7 @@ export function IncomingCallPopup() {
 											isCapturingLead={isCapturingLead}
 											onCaptureLead={handleCaptureLead}
 											onQuickBook={handleQuickBook}
+											quickSlots={quickSlots}
 											upcomingAppointment={upcomingAppointment}
 											onSendWhatsApp={handleSendWhatsAppConfirmation}
 											onCopySms={handleCopySmsConfirmation}
@@ -759,6 +766,7 @@ export function IncomingCallPopup() {
 				showQuickBooking={showQuickBooking}
 				onToggleQuickBooking={() => setShowQuickBooking((p) => !p)}
 				onQuickBook={handleQuickBook}
+				quickSlots={quickSlots}
 				onOpenFullPatientView={handleOpenFullPatientView}
 				isCallAnswered={isCallAnswered}
 				showTransferPanel={showTransferPanel}
