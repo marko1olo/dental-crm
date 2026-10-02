@@ -16,7 +16,9 @@ import {
 	CLINICAL_IMAGING_COLORS,
 	DEFAULT_DICOM_VIEWPORT_STATE,
 	EMBOSS_SHADOW_KERNEL_3X3,
+	MAX_RES_KERNEL_3X3,
 	SHARPEN_KERNEL_3X3,
+	SMOOTH_KERNEL_3X3,
 	apply2DConvolutionFilter,
 	buildDicomTonalLUT,
 	calculate1FingerPan,
@@ -163,10 +165,18 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 				imgData.data[i + 2] = lut[imgData.data[i + 2]!]!;
 			}
 
-			// Bypass expensive 2D CPU convolution filters (sharpen/emboss) on low-spec hardware
+			// Bypass expensive 2D CPU convolution filters (sharpen/emboss/smooth/maxRes) on low-spec hardware
 			// A 3x3 matrix convolution on 1-4M pixels on a dual-core Celeron blocks the UI thread for 150-300ms
 			// High-performance workstations retain full convolution filtering
 			if (!isLowSpec) {
+				if ((viewportState as any).smooth && targetWidth <= 1200) {
+					const smoothed = apply2DConvolutionFilter(imgData.data, targetWidth, targetHeight, SMOOTH_KERNEL_3X3);
+					imgData.data.set(smoothed);
+				}
+				if ((viewportState as any).maxRes && targetWidth <= 1200) {
+					const maxResized = apply2DConvolutionFilter(imgData.data, targetWidth, targetHeight, MAX_RES_KERNEL_3X3);
+					imgData.data.set(maxResized);
+				}
 				if (viewportState.sharpen > 0 && targetWidth <= 1200) {
 					const sharpened = apply2DConvolutionFilter(imgData.data, targetWidth, targetHeight, SHARPEN_KERNEL_3X3);
 					imgData.data.set(sharpened);
@@ -187,6 +197,8 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		viewportState.gamma,
 		viewportState.sharpen,
 		viewportState.emboss,
+		(viewportState as any).smooth,
+		(viewportState as any).maxRes,
 	]);
 
 	// Render canvas scene: zero DOM allocation during pan/zoom

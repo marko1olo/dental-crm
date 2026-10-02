@@ -11,25 +11,37 @@
  * - Hotkeys (F7, Tab, R, W) & Interactive Imaging Diagnostics Tour
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
+	Activity,
 	Box,
+	CheckCircle2,
 	Compass,
 	Crosshair,
 	Eye,
 	Gamepad2,
 	HelpCircle,
 	Maximize2,
+	MousePointer,
 	Ruler,
 	Sliders,
 	Sparkles,
 	Zap,
 } from "lucide-react";
+import type { ClinicalGuideProps } from "./index";
 import { startDoctorTour } from "../workspace/DoctorClinicalTrainingTour";
 
-export const Imaging3DGuide: React.FC = () => {
+export const Imaging3DGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => {
+	const [activePreset, setActivePreset] = useState<"bone" | "teeth" | "soft">("bone");
+	const [activeProjection, setActiveProjection] = useState<"axial" | "coronal" | "sagittal" | "panoramic">("axial");
+	const [isRulerActive, setIsRulerActive] = useState(true);
+
 	const handleLaunchTour = () => {
-		startDoctorTour("imaging_diagnostics");
+		if (onLaunchTour) {
+			onLaunchTour("imaging_diagnostics");
+		} else {
+			startDoctorTour("imaging_diagnostics");
+		}
 	};
 
 	return (
@@ -49,6 +61,211 @@ export const Imaging3DGuide: React.FC = () => {
 					<div className="text-[var(--muted)] text-[11px] mt-1 leading-relaxed">
 						Встроенная диагностическая станция клиники: мгновенный просмотр прицельных визиографических снимков и 3D томограмм (DICOM).
 						Поддерживает срезы MPR, панораму, замер ширины альвеолярного гребня и безопасную зону до нижнечелюстного канала.
+					</div>
+				</div>
+			</div>
+
+			{/* НАГЛЯДНАЯ СХЕМА СТАНЦИИ ДИАГНОСТИКИ (Visual 3D MPR Proof) */}
+			<div className="p-3.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] space-y-3">
+				<div className="flex items-center justify-between gap-2">
+					<div className="font-semibold text-xs text-[var(--ink)] flex items-center gap-1.5">
+						<MousePointer size={14} className="text-purple-500" />
+						<span>Диагностическая станция: 3D MPR и визиограф у кресла</span>
+					</div>
+					<span className="text-[10px] text-purple-600 dark:text-purple-400 font-medium bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+						&lt;50 мс открытие снимков
+					</span>
+				</div>
+
+				{/* Visual Mockup Window */}
+				<div className="rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] overflow-hidden shadow-xs space-y-0">
+					{/* Toolbar */}
+					<div className="px-3.5 py-2 bg-[var(--paper)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2">
+						<div className="flex items-center gap-2">
+							<span className="font-bold text-xs text-[var(--ink)]">
+								КЛКТ 3D: Верхняя и нижняя челюсти · Срезы 0.5 мм
+							</span>
+							<span className="text-[10px] px-2 py-0.2 rounded bg-purple-500/15 text-purple-700 dark:text-purple-300 font-semibold">
+								16-bit DICOM
+							</span>
+						</div>
+
+						{/* Contrast Presets & Ruler Toggle */}
+						<div className="flex items-center gap-1.5">
+							<div className="flex items-center bg-[var(--paper-soft)] p-0.5 rounded border border-[var(--line)] text-[10px]">
+								<button
+									type="button"
+									onClick={() => setActivePreset("bone")}
+									className={`px-2 py-0.5 rounded font-semibold cursor-pointer transition-all ${
+										activePreset === "bone" ? "bg-purple-600 text-white shadow-xs" : "text-[var(--muted)]"
+									}`}
+								>
+									Кость (Bone)
+								</button>
+								<button
+									type="button"
+									onClick={() => setActivePreset("teeth")}
+									className={`px-2 py-0.5 rounded font-semibold cursor-pointer transition-all ${
+										activePreset === "teeth" ? "bg-purple-600 text-white shadow-xs" : "text-[var(--muted)]"
+									}`}
+								>
+									Зубы (Teeth)
+								</button>
+							</div>
+
+							<button
+								type="button"
+								onClick={() => setIsRulerActive((prev) => !prev)}
+								className={`px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all ${
+									isRulerActive
+										? "bg-purple-600 text-white shadow-xs"
+										: "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]"
+								}`}
+							>
+								<Ruler size={11} />
+								<span>Линейка (R)</span>
+							</button>
+						</div>
+					</div>
+
+					{/* 4-Quadrant MPR Grid */}
+					<div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+						{/* Viewport 1: Axial (Аксиальный) */}
+						<div
+							onClick={() => setActiveProjection("axial")}
+							className={`p-2.5 rounded border transition-all cursor-pointer space-y-1.5 ${
+								activeProjection === "axial"
+									? "bg-[var(--paper)] border-purple-500 ring-1 ring-purple-500/30"
+									: "bg-[var(--paper)]/60 border-[var(--line)] hover:border-purple-400/50"
+							}`}
+						>
+							<div className="flex items-center justify-between text-[11px] font-semibold text-[var(--ink)]">
+								<span className="flex items-center gap-1">
+									<Crosshair size={12} className="text-purple-500" />
+									<span>Аксиальный срез (Axial)</span>
+								</span>
+								<span className="text-[10px] text-[var(--muted)]">Z: +18.4 мм</span>
+							</div>
+
+							{/* Simulated CT Canvas */}
+							<div className="h-24 rounded bg-slate-950 border border-slate-800 flex items-center justify-center relative overflow-hidden text-slate-400">
+								{/* Stylized Arch Contour */}
+								<div className="w-28 h-16 rounded-t-full border-2 border-slate-600 border-b-0 opacity-70 flex items-center justify-center">
+									<div className="text-[9px] font-mono text-purple-300">Дуга челюсти</div>
+								</div>
+
+								{/* Caliper Overlay */}
+								{isRulerActive && (
+									<div className="absolute top-2 right-2 p-1.5 rounded bg-black/80 border border-purple-500/40 text-[9px] font-mono text-purple-300">
+										Ширина гребня: <strong>6.8 мм</strong>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Viewport 2: Coronal (Корональный) */}
+						<div
+							onClick={() => setActiveProjection("coronal")}
+							className={`p-2.5 rounded border transition-all cursor-pointer space-y-1.5 ${
+								activeProjection === "coronal"
+									? "bg-[var(--paper)] border-purple-500 ring-1 ring-purple-500/30"
+									: "bg-[var(--paper)]/60 border-[var(--line)] hover:border-purple-400/50"
+							}`}
+						>
+							<div className="flex items-center justify-between text-[11px] font-semibold text-[var(--ink)]">
+								<span className="flex items-center gap-1">
+									<Sliders size={12} className="text-purple-500" />
+									<span>Корональный срез (Coronal)</span>
+								</span>
+								<span className="text-[10px] text-[var(--muted)]">Y: -12.1 мм</span>
+							</div>
+
+							{/* Simulated CT Canvas */}
+							<div className="h-24 rounded bg-slate-950 border border-slate-800 flex items-center justify-center relative overflow-hidden text-slate-400">
+								<div className="w-24 h-16 border-2 border-slate-600 rounded-b-lg opacity-70 flex flex-col items-center justify-between p-1">
+									<span className="text-[8px] text-teal-400">Пазуха</span>
+									<span className="text-[8px] text-purple-300">Альвеолярный отросток</span>
+								</div>
+
+								{/* Height Caliper */}
+								{isRulerActive && (
+									<div className="absolute bottom-2 left-2 p-1.5 rounded bg-black/80 border border-purple-500/40 text-[9px] font-mono text-purple-300">
+										Высота кости: <strong>11.4 мм</strong>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Viewport 3: Sagittal (Сагиттальный) */}
+						<div
+							onClick={() => setActiveProjection("sagittal")}
+							className={`p-2.5 rounded border transition-all cursor-pointer space-y-1.5 ${
+								activeProjection === "sagittal"
+									? "bg-[var(--paper)] border-purple-500 ring-1 ring-purple-500/30"
+									: "bg-[var(--paper)]/60 border-[var(--line)] hover:border-purple-400/50"
+							}`}
+						>
+							<div className="flex items-center justify-between text-[11px] font-semibold text-[var(--ink)]">
+								<span className="flex items-center gap-1">
+									<Compass size={12} className="text-purple-500" />
+									<span>Сагиттальный срез (Sagittal)</span>
+								</span>
+								<span className="text-[10px] text-[var(--muted)]">X: +24.0 мм</span>
+							</div>
+
+							{/* Simulated CT Canvas */}
+							<div className="h-24 rounded bg-slate-950 border border-slate-800 flex items-center justify-center relative overflow-hidden text-slate-400">
+								<div className="w-16 h-18 border-2 border-dashed border-slate-600 rounded opacity-75 flex flex-col items-center justify-center text-[8px] text-purple-300">
+									<span>Наклон корня</span>
+									<span className="text-emerald-400 font-bold mt-1">Ось: 82°</span>
+								</div>
+							</div>
+						</div>
+
+						{/* Viewport 4: Synthetic Panoramic (Панорама ОПТГ) */}
+						<div
+							onClick={() => setActiveProjection("panoramic")}
+							className={`p-2.5 rounded border transition-all cursor-pointer space-y-1.5 ${
+								activeProjection === "panoramic"
+									? "bg-[var(--paper)] border-purple-500 ring-1 ring-purple-500/30"
+									: "bg-[var(--paper)]/60 border-[var(--line)] hover:border-purple-400/50"
+							}`}
+						>
+							<div className="flex items-center justify-between text-[11px] font-semibold text-[var(--ink)]">
+								<span className="flex items-center gap-1">
+									<Eye size={12} className="text-purple-500" />
+									<span>Панорама и Кросс-секции</span>
+								</span>
+								<span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+									Шаг 1.0 мм
+								</span>
+							</div>
+
+							{/* Simulated Panoramic Canvas */}
+							<div className="h-24 rounded bg-slate-950 border border-slate-800 flex items-center justify-around relative overflow-hidden p-2 text-slate-400">
+								{/* Safety Canal Marker */}
+								<div className="w-full flex items-center justify-between px-2">
+									<div className="text-[9px] font-mono text-slate-400">Синтетическая ОПТГ</div>
+									<div className="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-[9px] font-mono text-emerald-300 font-bold">
+										До канала: 3.2 мм (БЕЗОПАСНО &gt; 2 мм)
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* Bottom Autonomy / Norma Status Bar */}
+					<div className="px-4 py-2 bg-[var(--paper)] border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-2 text-[10px] text-[var(--muted)]">
+						<div className="flex items-center gap-2">
+							<span className="text-emerald-600 dark:text-emerald-400 font-bold">
+								✓ Без принудительных нейросетей
+							</span>
+							<span>·</span>
+							<span>Снимок загружается мгновенно без блокировки интерфейса (Мандат 8e)</span>
+						</div>
+						<div className="flex items-center gap-1 font-mono">
+							<span>W: 2400 · L: 600 (Bone Window)</span>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -146,12 +363,17 @@ export const Imaging3DGuide: React.FC = () => {
 						</div>
 					</div>
 
-					<div className="p-2 rounded bg-[var(--paper-soft)] flex items-start gap-2">
-						<Eye size={14} className="text-purple-500 shrink-0 mt-0.5" />
-						<div>
-							<strong className="text-[var(--ink)]">Панорама и Кросс-секции:</strong>
-							<p className="text-[var(--muted)] text-[10px] mt-0.5">
-								Синтетическая ОПТГ по зубной дуге с серией перпендикулярных срезов шагом 1 мм под импланты.
+					<div className="p-2 rounded bg-[var(--paper-soft)] flex items-start gap-2 sm:col-span-2 border border-teal-500/20 bg-teal-500/5">
+						<Eye size={14} className="text-teal-500 shrink-0 mt-0.5" />
+						<div className="space-y-1">
+							<div className="flex items-center justify-between">
+								<strong className="text-[var(--ink)]">Режим «РАЗДЕЛ» (Vatech Ez3D-i Sectioning Parity):</strong>
+								<span className="text-[10px] px-1.5 py-0.2 rounded bg-teal-500/15 text-teal-700 dark:text-teal-300 font-semibold">
+									Золотой стандарт имплантологии
+								</span>
+							</div>
+							<p className="text-[var(--muted)] text-[10px] leading-relaxed">
+								Включает 3 синхронизированных окна: <strong>Scout</strong> (аксиальная дуга с параболической кривой и веером лучей 1..70), <strong>Панорама</strong> (криволинейная ОПТГ с мм-маркерами 20-40-60-80 мм) и <strong>Матрица 3x3 кросс-секций</strong> альвеолярного отростка. Активный срез выделен коралловой рамкой (#ff6b4a), оснащен субмиллиметровыми линейками X/Y, метками L (язычная) / B (щечная), трассировкой нижнечелюстного канала и контролем безопасного отступа (&gt;2.0 мм).
 							</p>
 						</div>
 					</div>
@@ -210,6 +432,10 @@ export const Imaging3DGuide: React.FC = () => {
 					<li className="flex items-start gap-1.5">
 						<strong className="text-[var(--ink)] shrink-0">• Как откалибровать линейку на прицельном снимке?</strong>
 						<span>Зажмите Shift и проведите отрезок по известному ориентиру (длина коронки или штифта), система откалибрует масштаб до десятых долей миллиметра.</span>
+					</li>
+					<li className="flex items-start gap-1.5">
+						<strong className="text-[var(--ink)] shrink-0">• Как рассчитать размер имплантата и отступ до канала?</strong>
+						<span>В окне КЛКТ нажмите кнопку «РАЗДЕЛ» (или вкладку РАЗДЕЛ в Ez3D-i). Выберите номер среза по зубной дуге, активируйте тул «Имплант» (выберите Ø и длину) — система мгновенно рассчитает расстояние до нижнечелюстного канала и выдаст зеленый бейдж безопасности (&gt;2.0 мм) либо предупреждение, а кнопка «В карту 043/у» скопирует протокол в 1 клик.</span>
 					</li>
 				</ul>
 			</div>
