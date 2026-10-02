@@ -206,6 +206,7 @@ export class PersistentOutboxService {
 		this.pollTimer = setInterval(() => {
 			this.processNextBatch();
 		}, this.pollIntervalMs);
+		this.pollTimer.unref();
 
 		// Trigger immediate first run
 		setImmediate(() => this.processNextBatch());
@@ -232,7 +233,10 @@ export class PersistentOutboxService {
 			const hasActive =
 				this.activeJobsCount > 0 ||
 				Array.from(this.queue.values()).some(
-					(i) => i.status === "pending" || i.status === "processing",
+					(i) =>
+						i.status === "pending" ||
+						i.status === "processing" ||
+						i.status === "failed_retryable",
 				);
 			if (!hasActive) {
 				return;

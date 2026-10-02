@@ -106,6 +106,7 @@ describe("Bulletproof Outbox & Hardware Resilience Architecture", () => {
 	});
 
 	after(async () => {
+		persistentOutboxService.stop();
 		if (dbAvailable) {
 			try {
 				await purgeFixtureOrganizations([ORG_ID]);

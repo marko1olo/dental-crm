@@ -90,6 +90,7 @@ export interface ProactiveAlertsAggregate {
 export class DaemonScheduler {
 	private timer: NodeJS.Timeout | null = null;
 	private isRunning = false;
+	private isChecking = false;
 	private lastExecutedDateHourMinute = new Map<DaemonJobName, string>();
 	private options: DaemonSchedulerOptions;
 	private nowProvider: () => Date;
@@ -244,6 +245,7 @@ export class DaemonScheduler {
 				this.log(`Error during checkAndRunJobs: ${err?.message || err}`);
 			});
 		}, pollMs);
+		this.timer.unref();
 
 		// Trigger check immediately on startup
 		this.checkAndRunJobs().catch((err) => {
@@ -295,103 +297,109 @@ export class DaemonScheduler {
 	 * Evaluates current time against registered jobs and executes matching tasks.
 	 */
 	public async checkAndRunJobs(now?: Date): Promise<DaemonJobName[]> {
-		const currentNow = now ?? this.nowProvider();
-		const executedJobs: DaemonJobName[] = [];
-		const currentHour = String(currentNow.getHours()).padStart(2, "0");
-		const currentMin = String(currentNow.getMinutes()).padStart(2, "0");
-		const currentTimeStr = `${currentHour}:${currentMin}`;
-		const currentDayOfWeek = currentNow.getDay();
-		const dateKey = `${currentNow.getFullYear()}-${currentNow.getMonth() + 1}-${currentNow.getDate()}_${currentTimeStr}`;
+		if (this.isChecking) return [];
+		this.isChecking = true;
+		try {
+			const currentNow = now ?? this.nowProvider();
+			const executedJobs: DaemonJobName[] = [];
+			const currentHour = String(currentNow.getHours()).padStart(2, "0");
+			const currentMin = String(currentNow.getMinutes()).padStart(2, "0");
+			const currentTimeStr = `${currentHour}:${currentMin}`;
+			const currentDayOfWeek = currentNow.getDay();
+			const dateKey = `${currentNow.getFullYear()}-${currentNow.getMonth() + 1}-${currentNow.getDate()}_${currentTimeStr}`;
 
-		for (const job of this.jobs) {
-			if (
-				job.name === "somatic_radar_0730" &&
-				this.options.enableSomaticRadar === false
-			)
-				continue;
-			if (
-				job.name === "ztl_lookahead_0800" &&
-				this.options.enableZtlLookAhead === false
-			)
-				continue;
-			if (
-				job.name === "emr_savior_2100" &&
-				this.options.enableEmrSavior === false
-			)
-				continue;
-			if (
-				job.name === "sanpin_inventory_2130" &&
-				this.options.enableSanpinAndInventory === false
-			)
-				continue;
-			if (
-				job.name === "weekly_retention_sunday" &&
-				this.options.enableWeeklyRetention === false
-			)
-				continue;
+			for (const job of this.jobs) {
+				if (
+					job.name === "somatic_radar_0730" &&
+					this.options.enableSomaticRadar === false
+				)
+					continue;
+				if (
+					job.name === "ztl_lookahead_0800" &&
+					this.options.enableZtlLookAhead === false
+				)
+					continue;
+				if (
+					job.name === "emr_savior_2100" &&
+					this.options.enableEmrSavior === false
+				)
+					continue;
+				if (
+					job.name === "sanpin_inventory_2130" &&
+					this.options.enableSanpinAndInventory === false
+				)
+					continue;
+				if (
+					job.name === "weekly_retention_sunday" &&
+					this.options.enableWeeklyRetention === false
+				)
+					continue;
 
-			if (job.daysOfWeek && !job.daysOfWeek.includes(currentDayOfWeek)) {
-				continue;
-			}
-
-			if (job.scheduledTime === currentTimeStr) {
-				const lastRun = this.lastExecutedDateHourMinute.get(job.name);
-				if (lastRun === dateKey) {
+				if (job.daysOfWeek && !job.daysOfWeek.includes(currentDayOfWeek)) {
 					continue;
 				}
 
-				let lockAcquired = true;
-				try {
-					const lockResult = await db.execute<{ acquired: boolean }>(
-						sql`SELECT pg_try_advisory_lock(hashtext(${`daemon_${job.name}`})) AS acquired`,
-					);
-					const row = lockResult.rows?.[0] as
-						| { acquired?: boolean }
-						| undefined;
-					if (row && row.acquired === false) {
-						lockAcquired = false;
-						this.log(
-							`Job «${job.name}» skipped: advisory lock held by another cluster instance.`,
-						);
+				if (job.scheduledTime === currentTimeStr) {
+					const lastRun = this.lastExecutedDateHourMinute.get(job.name);
+					if (lastRun === dateKey) {
 						continue;
 					}
-				} catch {
-					// Fallback in environments without live DB connection or mock test runners
-				}
 
-				this.log(
-					`Executing scheduled job «${job.name}» (${job.description})...`,
-				);
-				this.lastExecutedDateHourMinute.set(job.name, dateKey);
-
-				try {
-					const runOpts: { organizationId?: string; now?: Date } = {
-						now: currentNow,
-					};
-					if (this.options.organizationId) {
-						runOpts.organizationId = this.options.organizationId;
-					}
-					await job.runner(runOpts);
-					executedJobs.push(job.name);
-					this.log(`Successfully completed job «${job.name}».`);
-				} catch (err: unknown) {
-					const errorMsg = err instanceof Error ? err.message : String(err);
-					this.log(`Job «${job.name}» failed: ${errorMsg}`);
-				} finally {
-					if (lockAcquired) {
-						try {
-							await db.execute(
-								sql`SELECT pg_advisory_unlock(hashtext(${`daemon_${job.name}`}))`,
+					let lockAcquired = true;
+					try {
+						const lockResult = await db.execute<{ acquired: boolean }>(
+							sql`SELECT pg_try_advisory_lock(hashtext(${`daemon_${job.name}`})) AS acquired`,
+						);
+						const row = lockResult.rows?.[0] as
+							| { acquired?: boolean }
+							| undefined;
+						if (row && row.acquired === false) {
+							lockAcquired = false;
+							this.log(
+								`Job «${job.name}» skipped: advisory lock held by another cluster instance.`,
 							);
-						} catch {
-							// Safe ignore
+							continue;
+						}
+					} catch {
+						// Fallback in environments without live DB connection or mock test runners
+					}
+
+					this.log(
+						`Executing scheduled job «${job.name}» (${job.description})...`,
+					);
+					this.lastExecutedDateHourMinute.set(job.name, dateKey);
+
+					try {
+						const runOpts: { organizationId?: string; now?: Date } = {
+							now: currentNow,
+						};
+						if (this.options.organizationId) {
+							runOpts.organizationId = this.options.organizationId;
+						}
+						await job.runner(runOpts);
+						executedJobs.push(job.name);
+						this.log(`Successfully completed job «${job.name}».`);
+					} catch (err: unknown) {
+						const errorMsg = err instanceof Error ? err.message : String(err);
+						this.log(`Job «${job.name}» failed: ${errorMsg}`);
+					} finally {
+						if (lockAcquired) {
+							try {
+								await db.execute(
+									sql`SELECT pg_advisory_unlock(hashtext(${`daemon_${job.name}`}))`,
+								);
+							} catch {
+								// Safe ignore
+							}
 						}
 					}
 				}
 			}
-		}
 
-		return executedJobs;
+			return executedJobs;
+		} finally {
+			this.isChecking = false;
+		}
 	}
 
 	// ─── ROUTE-LEVEL ON-DEMAND TRIGGER METHODS (COPILOT & REST) ─────────────

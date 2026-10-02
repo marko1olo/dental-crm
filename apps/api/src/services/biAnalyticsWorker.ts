@@ -622,14 +622,38 @@ function runScheduledSnapshots(): void {
 	});
 }
 
-export function startBiAnalyticsWorker() {
-	// Run async without blocking startup
-	setTimeout(() => runScheduledSnapshots(), 5000).unref();
+let biWorkerInterval: NodeJS.Timeout | null = null;
+let biStartupTimeout: NodeJS.Timeout | null = null;
 
-	return setInterval(
+export function startBiAnalyticsWorker(): NodeJS.Timeout {
+	if (biWorkerInterval) {
+		return biWorkerInterval;
+	}
+
+	biStartupTimeout = setTimeout(() => {
+		biStartupTimeout = null;
+		runScheduledSnapshots();
+	}, 5000);
+	biStartupTimeout.unref();
+
+	biWorkerInterval = setInterval(
 		() => {
 			runScheduledSnapshots();
 		},
 		1000 * 60 * 60,
-	).unref();
+	);
+	biWorkerInterval.unref();
+
+	return biWorkerInterval;
+}
+
+export function stopBiAnalyticsWorker(): void {
+	if (biStartupTimeout) {
+		clearTimeout(biStartupTimeout);
+		biStartupTimeout = null;
+	}
+	if (biWorkerInterval) {
+		clearInterval(biWorkerInterval);
+		biWorkerInterval = null;
+	}
 }

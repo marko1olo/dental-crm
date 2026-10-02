@@ -60,6 +60,8 @@ import { registerHealthRoutes } from "./routes/health.js";
 import { registerHardwareRoutes } from "./routes/hardware.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
 import { registerImagingPlanningRoutes } from "./routes/imaging_planning.js";
+import { registerRadiologyDicomRoutes } from "./routes/radiology/dicomReceiverRoutes.js";
+import { dicomCStoreScpServer, vatechDirectBridgeService } from "./services/dicom/index.js";
 import { registerImportRoutes } from "./routes/imports.js";
 import { registerIngestionRoutes } from "./routes/ingestion.js";
 import { registerInsuranceRoutes } from "./routes/insurance.js";
@@ -149,7 +151,14 @@ import {
 	stopBackupDaemon,
 } from "./services/backupWorker.js";
 import { defaultDaemonScheduler } from "./services/daemons/index.js";
-import { TaskQueueService } from "./services/TaskQueueService.js";
+import { TaskQueueService, type WorkerHandle } from "./services/TaskQueueService.js";
+import { persistentOutboxService } from "./services/outbox/persistentOutboxService.js";
+import { dicomWatcherDaemon } from "./services/imaging/dicomFolderWatcherDaemon.js";
+import { stopCloudRelayClient } from "./services/cloudRelayClient.js";
+import { stopNotificationWorker } from "./services/notificationWorker.js";
+import { stopBiAnalyticsWorker } from "./services/biAnalyticsWorker.js";
+import { resetLanMeshServiceForTest } from "./services/lanMeshService.js";
+import { resetLanMeshAutoJoinServiceForTest } from "./services/lanMeshAutoJoinService.js";
 import {
 	startLanDiscoveryService,
 	stopLanDiscoveryService,
@@ -669,6 +678,7 @@ export async function createDenteApiApp(
 	await registerDocumentTemplateRoutes(app);
 	await registerImagingRoutes(app);
 	await registerImagingPlanningRoutes(app);
+	await registerRadiologyDicomRoutes(app);
 	await registerIngestionRoutes(app);
 	await registerImportRoutes(app);
 	// Движок переноса чужой базы: стейджинг, карантин, сверка, откат.
@@ -891,6 +901,20 @@ export async function createDenteApiApp(
 		}
 	}
 
+	app.addHook("onClose", async () => {
+		if (dicomCStoreScpServer.isRunning()) {
+			await dicomCStoreScpServer.stop();
+		}
+		await vatechDirectBridgeService.stop();
+		persistentOutboxService.stop();
+		dicomWatcherDaemon.stop();
+		stopCloudRelayClient();
+		stopNotificationWorker();
+		stopBiAnalyticsWorker();
+		resetLanMeshServiceForTest();
+		resetLanMeshAutoJoinServiceForTest();
+	});
+
 	/*
 	 * ЗДЕСЬ НЕТ ЗАКРЫТИЯ ПУЛА — И ЭТО НАМЕРЕННО.
 	 *
@@ -949,6 +973,8 @@ export async function startDenteApiServer() {
 	try {
 		await app.listen({ host, port });
 
+		let taskQueueWorker: WorkerHandle | null = null;
+
 		const gracefulShutdown = async (signal: string) => {
 			app.log.info(
 				`[Shutdown] Received ${signal}, closing HTTP server and draining database pool...`,
@@ -960,13 +986,22 @@ export async function startDenteApiServer() {
 				flushHddLogger();
 				process.exit(1);
 			}, 10000);
+			forceKillTimeout.unref();
 			try {
 				if (taskQueueWorker) {
 					await taskQueueWorker.stop();
+					taskQueueWorker = null;
 				}
 				stopBackupDaemon();
 				stopLanDiscoveryService();
 				defaultDaemonScheduler.stop();
+				persistentOutboxService.stop();
+				dicomWatcherDaemon.stop();
+				stopCloudRelayClient();
+				stopNotificationWorker();
+				stopBiAnalyticsWorker();
+				resetLanMeshServiceForTest();
+				resetLanMeshAutoJoinServiceForTest();
 				await app.close();
 				// Единственное закрытие пула на процесс: владелец — процесс, не
 				// приложение. endPool идемпотентен, повторный вызов дожидается
@@ -986,7 +1021,7 @@ export async function startDenteApiServer() {
 		};
 
 		// Фоновый обработчик персистентных очередей задач (PostgreSQL FOR UPDATE SKIP LOCKED)
-		const taskQueueWorker = TaskQueueService.startWorker({
+		taskQueueWorker = TaskQueueService.startWorker({
 			queues: ["default", "system", "communications"],
 			logger: app.log,
 		});

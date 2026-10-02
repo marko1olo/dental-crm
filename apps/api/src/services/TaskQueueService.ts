@@ -440,11 +440,13 @@ export class TaskQueueService {
 				processing = false;
 				if (running) {
 					timeoutId = setTimeout(tick, pollIntervalMs);
+					timeoutId.unref();
 				}
 			}
 		};
 
 		timeoutId = setTimeout(tick, 0);
+		timeoutId.unref();
 
 		return {
 			isRunning: () => running,

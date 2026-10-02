@@ -831,6 +831,7 @@ export class FiscalResilienceService {
 				console.error("[FiscalResilienceService] Background worker tick error:", err);
 			}
 		}, intervalMs);
+		this.pollerTimer.unref();
 	}
 
 	public static stopBackgroundWorker(): void {

@@ -4,6 +4,7 @@ import { db } from "../../db/client.js";
 import {
 	doctorProfitabilityRow,
 	startBiAnalyticsWorker,
+	stopBiAnalyticsWorker,
 } from "../biAnalyticsWorker.js";
 
 /**
@@ -97,6 +98,7 @@ describe("doctorProfitabilityRow", () => {
 });
 
 test("startBiAnalyticsWorker scheduling and execution", (t) => {
+	stopBiAnalyticsWorker();
 	t.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
 	const setTimeoutMock = t.mock.method(global, "setTimeout");
 	const setIntervalMock = t.mock.method(global, "setInterval");
@@ -113,5 +115,12 @@ test("startBiAnalyticsWorker scheduling and execution", (t) => {
 	);
 	assert.ok(timerId);
 
+	// Idempotent secondary start returns the same active timer without double scheduling
+	const secondTimerId = startBiAnalyticsWorker();
+	assert.strictEqual(secondTimerId, timerId);
+	assert.strictEqual(setIntervalMock.mock.calls.length, 1);
+
+	// Stop cleanly disarms all timers
+	stopBiAnalyticsWorker();
 	t.mock.timers.reset();
 });

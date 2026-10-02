@@ -1,0 +1,77 @@
+{
+  "agent": "subagent_redteam_backend_services_inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-03T03:49:00Z",
+  "mandates": ["8c", "8e", "8l", "8n", "8s", "8t"],
+  "completed_steps": [
+    "Read all required constitutional rule files completely (core.md, frontend.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md)",
+    "Deep transcript relay of predecessor subagents 1dbdea6a-926d-424b-a6d1-5913f9bce85b and 3b1d18d1-7f4d-46dd-b2d1-1b810a213c53",
+    "Exhaustive reconnaissance of all backend services, daemons, workers, queue handlers, intervals, and sockets in apps/api",
+    "Audit of lifecycle shutdown hooks, Fastify onClose registration, and graceful shutdown signal handlers",
+    "Self-fixed biAnalyticsWorker: added stopBiAnalyticsWorker, tracked timers with unref(), idempotent start, and test coverage",
+    "Self-fixed persistentOutboxService: added unref() on 100ms pollTimer and wired stop() into Fastify onClose and gracefulShutdown",
+    "Self-fixed daemonScheduler: added timer unref() and concurrency guard isChecking on checkAndRunJobs",
+    "Self-fixed TaskQueueService: added unref() to setTimeout in startWorker loop",
+    "Self-fixed fiscalReceiptQueueService and fiscalResilienceService: added unref() to background retry pollers",
+    "Self-fixed server.ts: registered Fastify onClose hooks for persistentOutboxService, dicomWatcherDaemon, stopCloudRelayClient, stopNotificationWorker, stopBiAnalyticsWorker, resetLanMeshServiceForTest, resetLanMeshAutoJoinServiceForTest; hoisted and awaited taskQueueWorker stop in gracefulShutdown",
+    "Executed targeted test biAnalyticsWorker.test.ts (8/8 pass)",
+    "Executed check-encoding.mjs (7167 files verified clean)",
+    "Audited git diff for clean, surgical changes with zero regressions"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "id": "DEFECT-BACKEND-01",
+      "severity": "HIGH",
+      "component": "apps/api/src/services/biAnalyticsWorker.ts",
+      "description": "Resource leak & missing teardown: startBiAnalyticsWorker started an untracked hourly setInterval without export of stopBiAnalyticsWorker. Calling it multiple times spawned multiple orphaned intervals with no cleanup on server close.",
+      "status": "FIXED"
+    },
+    {
+      "id": "DEFECT-BACKEND-02",
+      "severity": "HIGH",
+      "component": "apps/api/src/services/outbox/persistentOutboxService.ts",
+      "description": "Event loop pinning & orphaned poll timer: persistentOutboxService was initialized with autoStart: true, running a 100ms setInterval without unref() and without being stopped when Fastify onClose fired or server stopped.",
+      "status": "FIXED"
+    },
+    {
+      "id": "DEFECT-BACKEND-03",
+      "severity": "MEDIUM",
+      "component": "apps/api/src/services/daemons/daemonScheduler.ts",
+      "description": "Concurrency race & event loop pin: 30-second setInterval in start() did not call unref(), and checkAndRunJobs() had no concurrency guard, allowing overlapping runs if previous jobs stalled.",
+      "status": "FIXED"
+    },
+    {
+      "id": "DEFECT-BACKEND-04",
+      "severity": "HIGH",
+      "component": "apps/api/src/server.ts",
+      "description": "Lifecycle shutdown gap: createDenteApiApp did not register onClose hooks for persistentOutboxService, dicomWatcherDaemon, cloudRelayClient, notificationWorker, biAnalyticsWorker, and lanMesh services. Additionally, in startDenteApiServer, taskQueueWorker was not stopped in gracefulShutdown.",
+      "status": "FIXED"
+    },
+    {
+      "id": "DEFECT-BACKEND-05",
+      "severity": "MEDIUM",
+      "component": "apps/api/src/services/TaskQueueService.ts",
+      "description": "Event loop pin in queue worker: setTimeout calls in tick() did not call unref(), pinning the Node event loop unnecessarily when idle.",
+      "status": "FIXED"
+    },
+    {
+      "id": "DEFECT-BACKEND-06",
+      "severity": "LOW",
+      "component": "apps/api/src/services/hardware/fiscalReceiptQueueService.ts & fiscalResilienceService.ts",
+      "description": "Background auto-retry poller intervals did not call unref().",
+      "status": "FIXED"
+    }
+  ],
+  "fixes": [
+    "apps/api/src/services/biAnalyticsWorker.ts",
+    "apps/api/src/services/tests/biAnalyticsWorker.test.ts",
+    "apps/api/src/services/outbox/persistentOutboxService.ts",
+    "apps/api/src/tests/services/outboxResilience.test.ts",
+    "apps/api/src/services/daemons/daemonScheduler.ts",
+    "apps/api/src/services/TaskQueueService.ts",
+    "apps/api/src/services/hardware/fiscalReceiptQueueService.ts",
+    "apps/api/src/services/fiscalResilienceService.ts",
+    "apps/api/src/server.ts"
+  ]
+}

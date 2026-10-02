@@ -437,6 +437,7 @@ export class FiscalQueueRetryWorker {
 				console.error("[FiscalQueueRetryWorker] Auto-retry tick error:", err);
 			}
 		}, intervalMs);
+		this.intervalTimer.unref();
 	}
 
 	/**
