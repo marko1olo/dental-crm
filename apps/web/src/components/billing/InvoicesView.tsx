@@ -15,7 +15,9 @@
 
 import { rubToKopecks } from "@dental/shared";
 import {
+	CreditCard,
 	Plus,
+	Printer,
 	Receipt,
 	Search,
 	Wallet,
@@ -32,6 +34,9 @@ import {
 const PaymentModal = lazy(() =>
 	import("../finance/PaymentModal.js").then((m) => ({ default: m.PaymentModal })),
 );
+import { CashboxShiftModal } from "../finance/CashboxShiftModal.js";
+import { CashReceiptPrintModal } from "../finance/CashReceiptPrintModal.js";
+import { PaymentSplitModal } from "../finance/PaymentSplitModal.js";
 import { PatientInstallmentsModal } from "./PatientInstallmentsModal.js";
 import { showToast } from "../GlobalToast.js";
 import {
@@ -99,6 +104,11 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 	);
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
 	const [isInstallmentsModalOpen, setIsInstallmentsModalOpen] = useState<boolean>(false);
+	const [isShiftModalOpen, setIsShiftModalOpen] = useState<boolean>(false);
+	const [activeSplitInvoice, setActiveSplitInvoice] =
+		useState<BillingInvoice | null>(null);
+	const [receiptToPrint, setReceiptToPrint] =
+		useState<BillingInvoice | null>(null);
 
 	// Memory leak protection & DOM virtualization (Wave 252-Perf2 / Low-RAM Laptop Protection)
 	const memoryGuard = useMemoryLeakGuard({ debugName: "InvoicesView" });
@@ -581,6 +591,39 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
 					<button
 						type="button"
+						onClick={() => setIsShiftModalOpen(true)}
+						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
+						data-testid="btn-cashbox-shift-open"
+						title="Смена кассы (Z/X отчеты 54-ФЗ)"
+					>
+						<Receipt size={14} className="text-emerald-600 dark:text-emerald-400" />
+						<span className="hidden md:inline">Смена кассы</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setActiveSplitInvoice(invoices[0] || null)}
+						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-purple-500/40 bg-purple-50 dark:bg-purple-950/30 text-purple-800 dark:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
+						data-testid="btn-payment-split-open"
+						title="Сплит-оплата (несколько плательщиков / методов)"
+					>
+						<CreditCard size={14} className="text-purple-600 dark:text-purple-400" />
+						<span className="hidden md:inline">Сплит-оплата</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setReceiptToPrint(invoices[0] || null)}
+						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
+						data-testid="btn-cash-receipt-print-open"
+						title="Печать фискального чека 54-ФЗ"
+					>
+						<Printer size={14} className="text-teal-600 dark:text-teal-400" />
+						<span className="hidden md:inline">Чек 54-ФЗ</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={() => setIsInstallmentsModalOpen(true)}
 						className="min-h-[44px] h-11 sm:h-7 sm:min-h-[28px] px-3 rounded-lg border border-teal-500/40 bg-teal-50 dark:bg-teal-950/30 text-teal-800 dark:text-teal-200 hover:bg-teal-100 dark:hover:bg-teal-900/40 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 shrink-0 whitespace-nowrap"
 						data-testid="btn-installments-modal-open"
@@ -768,6 +811,46 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 					patientId={patientId}
 					patientName={patientName}
 					clinicName={clinicLegalName}
+				/>
+			)}
+
+			{isShiftModalOpen && (
+				<CashboxShiftModal
+					isOpen={isShiftModalOpen}
+					onClose={() => setIsShiftModalOpen(false)}
+					clinicLegalName={clinicLegalName}
+					cashierFullName={currentDoctorName}
+				/>
+			)}
+
+			{activeSplitInvoice && (
+				<PaymentSplitModal
+					isOpen={Boolean(activeSplitInvoice)}
+					onClose={() => setActiveSplitInvoice(null)}
+					totalBillRub={activeSplitInvoice.totalAmountRub}
+					patientId={activeSplitInvoice.patientId}
+					patientName={activeSplitInvoice.patientName}
+					patientPhone={activeSplitInvoice.patientPhone}
+					attendingDoctorName={activeSplitInvoice.doctorName}
+					cashierFullName={currentDoctorName}
+					orderId={activeSplitInvoice.id}
+					onPaymentComplete={() => {
+						setActiveSplitInvoice(null);
+						showToast(
+							`Сплит-оплата по счету ${activeSplitInvoice.number} успешно проведена`,
+							"success",
+						);
+					}}
+				/>
+			)}
+
+			{receiptToPrint && (
+				<CashReceiptPrintModal
+					isOpen={Boolean(receiptToPrint)}
+					onClose={() => setReceiptToPrint(null)}
+					clinicName={clinicLegalName}
+					attendingDoctorName={receiptToPrint.doctorName}
+					cashierFullName={currentDoctorName}
 				/>
 			)}
 		</div>

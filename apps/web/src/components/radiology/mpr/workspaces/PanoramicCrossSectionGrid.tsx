@@ -26,6 +26,7 @@ export interface MultiCrossSectionItem {
 	readonly deltaOffsetMm: number;
 	readonly isCenter: boolean;
 	readonly labelMm: string;
+	readonly sliceNumber: number;
 }
 
 /**
@@ -89,8 +90,8 @@ export function findArchPointAndNormalAtDistance(
 }
 
 /**
- * Extracts a balanced 2-row multi-slice transverse gallery (6, 8, or 10 slices)
- * centered around the active cursor/tooth position along the dental arch.
+ * Extracts a balanced multi-slice transverse gallery (3x3 grid / 9 slices or 2-row 6/8 slices)
+ * centered around the active cursor/tooth position along the dental arch (Ez3D-i Section mode).
  */
 export function extractMultiCrossSectionsAroundCenter(
 	volume: CbctVoxelVolume,
@@ -104,9 +105,10 @@ export function extractMultiCrossSectionsAroundCenter(
 		readonly windowLevel?: number | undefined;
 		readonly gamma?: number | undefined;
 		readonly useGpu?: boolean | undefined;
+		readonly centerSliceIndex?: number | undefined;
 	} = {},
 ): MultiCrossSectionItem[] {
-	const count = options.count === 6 ? 6 : options.count === 10 ? 10 : 8;
+	const count = options.count === 9 ? 9 : options.count === 6 ? 6 : options.count === 10 ? 10 : 8;
 	const stepMm = Number.isFinite(options.stepMm) && (options.stepMm ?? 0) > 0 ? options.stepMm! : 1.0;
 	const zCenter = Number.isFinite(options.sliceCenterZMm)
 		? options.sliceCenterZMm!
@@ -114,9 +116,10 @@ export function extractMultiCrossSectionsAroundCenter(
 	const windowWidth = options.windowWidth ?? 4025;
 	const windowLevel = options.windowLevel ?? 525;
 	const gamma = options.gamma ?? 1.50;
+	const centerSliceNumber = (options.centerSliceIndex ?? 8) + 1;
 
-	// Center index in array
-	const centerIndex = count === 6 ? 2 : count === 10 ? 4 : 3;
+	// Center index in array (4 for 9-grid 3x3, 2 for 6, 3 for 8)
+	const centerIndex = count === 9 ? 4 : count === 6 ? 2 : count === 10 ? 4 : 3;
 
 	const totalArcLen = archCurve.totalArcLengthMm || 100.0;
 	const items: MultiCrossSectionItem[] = [];
@@ -132,12 +135,13 @@ export function extractMultiCrossSectionsAroundCenter(
 		const labelMm = isCenter
 			? "0.0 мм (центр)"
 			: `${deltaOffsetMm > 0 ? "+" : ""}${deltaOffsetMm.toFixed(1)} мм`;
+		const sliceNumber = Math.max(1, centerSliceNumber + offsetIdx);
 
 		const slice = extractSingleCrossSectionSlice(
 			volume,
 			{ x: point.x, y: point.y, z: zCenter },
 			normal,
-			i + 1,
+			sliceNumber,
 			targetDistanceMm,
 			nearestAnchor,
 			{
@@ -154,6 +158,7 @@ export function extractMultiCrossSectionsAroundCenter(
 			deltaOffsetMm,
 			isCenter,
 			labelMm,
+			sliceNumber,
 		});
 	}
 
@@ -172,10 +177,16 @@ export interface PanoramicCrossSectionGridProps {
 	readonly windowWidth?: number | undefined;
 	readonly windowLevel?: number | undefined;
 	readonly jawType?: "mandible" | "maxilla" | undefined;
+	readonly onSwitchJaw?: ((jaw: "mandible" | "maxilla") => void) | undefined;
 	readonly className?: string | undefined;
 }
 
-const COUNT_OPTIONS = [6, 8, 10] as const;
+const COUNT_OPTIONS = [
+	{ count: 9, label: "3×3" },
+	{ count: 8, label: "2×4" },
+	{ count: 6, label: "2×3" },
+] as const;
+
 const STEP_OPTIONS = [
 	{ step: 1.0, label: "1 мм" },
 	{ step: 1.5, label: "1.5 мм" },
@@ -194,9 +205,11 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 	windowWidth = 4025,
 	windowLevel = 525,
 	jawType = "mandible",
+	onSwitchJaw,
 	className = "",
 }) => {
-	const [sliceCount, setSliceCount] = useState<6 | 8 | 10>(8);
+	// Default to Ez3D-i canonical 3x3 (9 slices) grid
+	const [sliceCount, setSliceCount] = useState<9 | 8 | 6>(9);
 	const [localStepMm, setLocalStepMm] = useState<number>(crossSectionStepMm || 1.0);
 
 	const activeStep = crossSectionStepMm ?? localStepMm;
@@ -237,6 +250,7 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 					windowLevel,
 					gamma: 1.50,
 					useGpu: true,
+					centerSliceIndex: activeCrossSectionIdx,
 				},
 			);
 			if (resliced.length > 0) return resliced;
@@ -244,7 +258,7 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 
 		// Option B: Select from existing crossSections array based on arc distance
 		if (crossSections.length > 0) {
-			const centerIdx = sliceCount === 6 ? 2 : sliceCount === 10 ? 4 : 3;
+			const centerIdx = sliceCount === 9 ? 4 : sliceCount === 6 ? 2 : 3;
 			const items: MultiCrossSectionItem[] = [];
 
 			for (let i = 0; i < sliceCount; i++) {
@@ -267,12 +281,14 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 				const labelMm = isCenter
 					? "0.0 мм (центр)"
 					: `${deltaOffsetMm > 0 ? "+" : ""}${deltaOffsetMm.toFixed(1)} мм`;
+				const sliceNumber = Math.max(1, activeCrossSectionIdx + 1 + offsetStep);
 
 				items.push({
 					slice: bestSlice,
 					deltaOffsetMm,
 					isCenter,
 					labelMm,
+					sliceNumber,
 				});
 			}
 
@@ -290,6 +306,7 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 		windowWidth,
 		windowLevel,
 		crossSections,
+		activeCrossSectionIdx,
 	]);
 
 	const totalSectionsCount = crossSections.length;
@@ -332,12 +349,43 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 				<div className="flex items-center gap-1.5 min-w-0">
 					<Grid2X2 className="w-3.5 h-3.5 text-amber-500/70 shrink-0" />
 					<span className="font-medium text-zinc-400 text-[11px] truncate">
-						Срезы гребня (2 ряда)
+						Срезы гребня ({sliceCount === 9 ? "3×3 Ez3D" : sliceCount === 8 ? "2×4" : "2×3"})
 					</span>
 				</div>
 
-				{/* Center: Controls for Step (1 mm | 1.5 mm | 2 mm) & Count (6 | 8 | 10) */}
+				{/* Center: Controls for Curve 1..8, Step & Count */}
 				<div className="flex items-center gap-2">
+					{/* Curve Selectors 1..8 (Ez3D-i Arch presets) */}
+					<div
+						className="hidden sm:flex items-center bg-zinc-900/90 rounded border border-zinc-800 p-0.5 text-[10px]"
+						role="group"
+						aria-label="Выбор кривой"
+					>
+						<span className="text-zinc-500 px-1 font-semibold hidden md:inline">Дуга:</span>
+						{[1, 2, 3, 4, 5, 6, 7, 8].map((cNum) => {
+							const isCur = (jawType === "maxilla" && cNum === 2) || (jawType !== "maxilla" && cNum === 1);
+							return (
+								<button
+									key={cNum}
+									type="button"
+									onClick={() => {
+										if (cNum === 2) onSwitchJaw?.("maxilla");
+										else if (cNum === 1) onSwitchJaw?.("mandible");
+									}}
+									className={`w-4.5 h-4.5 rounded font-mono font-bold flex items-center justify-center transition-colors cursor-pointer ${
+										isCur
+											? "bg-emerald-600 text-white shadow-xs border border-emerald-400"
+											: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+									}`}
+									title={cNum === 1 ? "Дуга 1: Нижняя челюсть (НЧ)" : cNum === 2 ? "Дуга 2: Верхняя челюсть (ВЧ)" : `Дуга ${cNum}: Пользовательский сегмент`}
+									data-testid={`cbct-curve-btn-${cNum}`}
+								>
+									{cNum}
+								</button>
+							);
+						})}
+					</div>
+
 					{/* Step Selector */}
 					<div
 						className="flex items-center bg-zinc-900/90 rounded border border-zinc-800 p-0.5 text-[10px]"
@@ -366,29 +414,28 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 						})}
 					</div>
 
-					{/* Count Selector */}
+					{/* Count/Layout Selector (3x3 | 2x4 | 2x3) */}
 					<div
 						className="flex items-center bg-zinc-900/90 rounded border border-zinc-800 p-0.5 text-[10px]"
 						role="group"
-						aria-label="Количество срезов"
+						aria-label="Сетка срезов"
 					>
-						<span className="text-zinc-500 px-1 font-semibold hidden md:inline">Срезов:</span>
-						{COUNT_OPTIONS.map((cnt) => {
-							const isCur = sliceCount === cnt;
+						{COUNT_OPTIONS.map((opt) => {
+							const isCur = sliceCount === opt.count;
 							return (
 								<button
-									key={cnt}
+									key={opt.count}
 									type="button"
-									onClick={() => setSliceCount(cnt)}
-									className={`w-5 h-4.5 rounded font-mono font-medium flex items-center justify-center transition-colors cursor-pointer ${
+									onClick={() => setSliceCount(opt.count as 9 | 8 | 6)}
+									className={`px-1.5 h-4.5 rounded font-mono font-medium flex items-center justify-center transition-colors cursor-pointer ${
 										isCur
-											? "bg-purple-950/70 text-purple-200 border border-purple-500/50 font-semibold shadow-xs"
+											? "bg-orange-950/70 text-orange-200 border border-orange-500/50 font-semibold shadow-xs"
 											: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
 									}`}
-									title={`${cnt} срезов в 2 ряда`}
-									data-testid={`cbct-grid-count-${cnt}`}
+									title={`${opt.label} (${opt.count} срезов)`}
+									data-testid={`cbct-grid-count-${opt.count}`}
 								>
-									{cnt}
+									{opt.label}
 								</button>
 							);
 						})}
@@ -420,20 +467,20 @@ export const PanoramicCrossSectionGrid: React.FC<PanoramicCrossSectionGridProps>
 				</div>
 			</div>
 
-			{/* Main 2-Row Gallery Container */}
+			{/* Main Gallery Container (3x3 grid by default, or 2-row) */}
 			<div
 				className={`flex-1 min-h-0 min-w-0 w-full h-full p-1 grid gap-1 overflow-hidden ${
-					sliceCount === 6
-						? "grid-cols-3 grid-rows-2"
-						: sliceCount === 10
-							? "grid-cols-5 grid-rows-2"
+					sliceCount === 9
+						? "grid-cols-3 grid-rows-3"
+						: sliceCount === 6
+							? "grid-cols-3 grid-rows-2"
 							: "grid-cols-4 grid-rows-2"
 				}`}
 				data-testid="cbct-panoramic-2row-grid-container"
 			>
 				{multiSliceItems.map((item, idx) => (
 					<MultiCrossSectionCard
-						key={`cs-multi-${idx}-${item.deltaOffsetMm.toFixed(1)}`}
+						key={`cs-multi-${idx}-${item.sliceNumber}-${item.deltaOffsetMm.toFixed(1)}`}
 						item={item}
 						indexInGrid={idx}
 						onClick={() => handleCardClick(item)}
@@ -463,7 +510,7 @@ const MultiCrossSectionCard: React.FC<MultiCrossSectionCardProps> = ({
 	onClick,
 }) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const { slice, isCenter, labelMm } = item;
+	const { slice, isCenter, labelMm, sliceNumber } = item;
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -478,26 +525,100 @@ const MultiCrossSectionCard: React.FC<MultiCrossSectionCardProps> = ({
 			canvas.height = height;
 		}
 
-		// Draw crisp radiological voxels
+		// 1. Draw radiological slice voxels
 		const imgData = new ImageData(new Uint8ClampedArray(slice.pixelData), width, height);
 		ctx.putImageData(imgData, 0, 0);
+
+		// 2. Draw Ez3D-i Millimeter Scales (Vertical 30..-20 mm, Horizontal 20-10-0-10-20 mm)
+		ctx.save();
+		const spacing = slice.pixelSpacingMm || 0.25;
+		const pxPerMm = 1.0 / spacing;
+		const centerX = width / 2.0;
+		const centerY = height / 2.0;
+
+		// Vertical scale on the right
+		const rightX = width - 2;
+		ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+		ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+		ctx.font = "8px monospace";
+		ctx.textAlign = "right";
+		ctx.textBaseline = "middle";
+
+		for (let mm = -30; mm <= 30; mm += 1) {
+			const y = centerY - mm * pxPerMm;
+			if (y < 4 || y > height - 4) continue;
+			const is10 = mm % 10 === 0;
+			const is5 = mm % 5 === 0;
+			const tickLen = is10 ? 5 : is5 ? 3 : 1.5;
+
+			ctx.beginPath();
+			ctx.moveTo(rightX, y);
+			ctx.lineTo(rightX - tickLen, y);
+			ctx.stroke();
+
+			if (is10) {
+				ctx.fillText(String(Math.abs(mm)), rightX - 6, y);
+			}
+		}
+
+		// Horizontal scale at the bottom
+		const bottomY = height - 2;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "bottom";
+
+		for (let mm = -20; mm <= 20; mm += 1) {
+			const x = centerX + mm * pxPerMm;
+			if (x < 6 || x > width - 6) continue;
+			const is10 = mm % 10 === 0;
+			const is5 = mm % 5 === 0;
+			const tickLen = is10 ? 5 : is5 ? 3 : 1.5;
+
+			ctx.beginPath();
+			ctx.moveTo(x, bottomY);
+			ctx.lineTo(x, bottomY - tickLen);
+			ctx.stroke();
+
+			if (is10) {
+				ctx.fillText(String(Math.abs(mm)), x, bottomY - 6);
+			}
+		}
+
+		ctx.restore();
 	}, [slice]);
 
 	return (
 		<div
 			onClick={onClick}
-			className={`flex flex-col min-h-0 min-w-0 rounded overflow-hidden border transition-all cursor-pointer relative bg-black select-none ${
+			className={`flex flex-col min-h-0 min-w-0 rounded overflow-hidden transition-all cursor-pointer relative bg-black select-none ${
 				isCenter
-					? "border-amber-500/90 shadow-[0_0_8px_rgba(245,158,11,0.3)] ring-1 ring-amber-500/70"
-					: "border-zinc-850 hover:border-zinc-700 hover:bg-zinc-950/60"
+					? "border-2 border-[#D96B27] ring-2 ring-[#D96B27]/70 shadow-[0_0_14px_rgba(217,107,39,0.45)]"
+					: "border border-zinc-850 hover:border-zinc-700 hover:bg-zinc-950/60"
 			}`}
 			data-testid={`cbct-multi-cross-card-${indexInGrid}`}
 			role="button"
 			tabIndex={0}
 			aria-pressed={isCenter}
-			title={`Срез со смещением ${labelMm}. Клик для центрирования.`}
+			title={`Срез Section ${sliceNumber} (${labelMm}). Клик для центрирования.`}
 		>
-			{/* Canvas Container with Anatomical Vestibular (B) / Lingual (L) markers */}
+			{/* Header: Section Number & Anatomical L / B Badges (Ez3D-i style) */}
+			<div
+				className={`h-4.5 px-1.5 flex items-center justify-between text-[10px] font-mono shrink-0 select-none ${
+					isCenter
+						? "bg-[#D96B27]/20 border-b border-[#D96B27]/50 text-orange-200 font-bold"
+						: "bg-zinc-950/90 border-b border-zinc-900 text-zinc-400"
+				}`}
+			>
+				<span className="truncate">
+					Section {sliceNumber}
+				</span>
+				<div className="flex items-center gap-1.5 text-[9px] font-bold">
+					<span className="text-zinc-300" title="Lingual (Язычная сторона)">L</span>
+					<span className="text-zinc-500">•</span>
+					<span className="text-zinc-300" title="Buccal (Щёчная сторона)">B</span>
+				</div>
+			</div>
+
+			{/* Canvas Container with Millimeter Overlays */}
 			<div className="flex-1 relative min-h-0 w-full h-full flex items-center justify-center bg-black overflow-hidden">
 				<canvas
 					ref={canvasRef}
@@ -505,20 +626,20 @@ const MultiCrossSectionCard: React.FC<MultiCrossSectionCardProps> = ({
 					data-testid={`cbct-multi-cross-canvas-${indexInGrid}`}
 				/>
 
-				{/* Anatomical Side Markers (B = Buccal, L = Lingual) — Quiet text */}
-				<span className="absolute bottom-0.5 left-1 text-[8px] font-mono font-bold text-zinc-600 uppercase pointer-events-none select-none">
-					B
-				</span>
-				<span className="absolute bottom-0.5 right-1 text-[8px] font-mono font-bold text-zinc-600 uppercase pointer-events-none select-none">
+				{/* Anatomical Orientation Watermark on Slice Corners */}
+				<span className="absolute top-1 left-1.5 text-[9px] font-mono font-bold text-zinc-400 bg-black/60 px-1 rounded pointer-events-none select-none">
 					L
+				</span>
+				<span className="absolute top-1 right-1.5 text-[9px] font-mono font-bold text-zinc-400 bg-black/60 px-1 rounded pointer-events-none select-none">
+					B
 				</span>
 			</div>
 
 			{/* Sub-label: Exact Millimeter Distance Relative to Center */}
 			<div
-				className={`h-4.5 px-1 flex items-center justify-between text-[10px] font-mono shrink-0 border-t ${
+				className={`h-4 px-1.5 flex items-center justify-between text-[9px] font-mono shrink-0 border-t ${
 					isCenter
-						? "bg-amber-950/40 border-amber-600/40 text-amber-300 font-bold"
+						? "bg-orange-950/40 border-orange-600/40 text-orange-200 font-bold"
 						: "bg-zinc-950/90 border-zinc-900 text-zinc-500"
 				}`}
 			>

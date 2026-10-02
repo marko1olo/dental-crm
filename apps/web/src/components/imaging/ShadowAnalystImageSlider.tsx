@@ -175,8 +175,12 @@ export function ShadowAnalystImageSlider({
 
 				if (distPx > 8) {
 					const lengthMm = Math.round(distPx * (pixelSpacingMm || 0.04) * 10) / 10;
+					const measurementId =
+						typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+							? `m-${crypto.randomUUID()}`
+							: `m-${Date.now()}-${Math.floor(performance.now() * 1000)}`;
 					const newM: ViewerRulerMeasurement = {
-						id: `m-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+						id: measurementId,
 						startX: drawingRuler.startX,
 						startY: drawingRuler.startY,
 						endX: currentEndX,

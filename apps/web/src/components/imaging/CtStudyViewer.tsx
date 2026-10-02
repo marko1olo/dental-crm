@@ -11,6 +11,8 @@ import {
 	AlertCircle,
 	HardDrive,
 	ExternalLink,
+	Grid3X3,
+	Settings,
 } from "lucide-react";
 import { DicomViewerModal } from "./DicomViewerModal.js";
 import { showToast } from "../GlobalToast.js";
@@ -18,19 +20,22 @@ import { showToast } from "../GlobalToast.js";
 export interface CtStudyViewerProps {
 	studyId: string;
 	title: string;
-	patientId?: string | null;
-	patientName?: string | null;
-	modality?: string | null;
-	manufacturer?: string | null;
-	sliceCount?: number | null;
-	dimensions?: string | null;
-	voxelSpacing?: string | null;
-	capturedAt?: string | null;
-	storagePath?: string | null;
-	bindingStatus?: string | null;
-	bindingConfidence?: number | null;
-	onAttachToVisit?: (studyId: string) => void;
-	className?: string;
+	patientId?: string | null | undefined;
+	patientName?: string | null | undefined;
+	modality?: string | null | undefined;
+	manufacturer?: string | null | undefined;
+	sliceCount?: number | null | undefined;
+	dimensions?: string | null | undefined;
+	voxelSpacing?: string | null | undefined;
+	capturedAt?: string | null | undefined;
+	storagePath?: string | null | undefined;
+	bindingStatus?: string | null | undefined;
+	bindingConfidence?: number | null | undefined;
+	onAttachToVisit?: ((studyId: string) => void) | undefined;
+	onOpenStudio?: ((studyId: string) => void) | undefined;
+	onOpenControl?: ((studyId: string) => void) | undefined;
+	className?: string | undefined;
+	dataTestId?: string | undefined;
 }
 
 export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
@@ -48,9 +53,13 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 	bindingStatus = "auto_bound",
 	bindingConfidence = 100,
 	onAttachToVisit,
+	onOpenStudio,
+	onOpenControl,
 	className = "",
+	dataTestId,
 }) => {
 	const [isViewerOpen, setIsViewerOpen] = useState<boolean>(false);
+	const [selectedViewMode, setSelectedViewMode] = useState<"2d" | "3d_mpr" | "sectioning">("3d_mpr");
 
 	const isAutoBound = bindingStatus === "auto_bound";
 	const formattedDate = capturedAt
@@ -63,6 +72,7 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 
 	return (
 		<div
+			data-testid={dataTestId || `patient-study-card-${studyId}`}
 			className={`rounded-2xl border p-4 space-y-3.5 transition-all shadow-sm ${className}`}
 			style={{
 				background: "var(--paper, #ffffff)",
@@ -126,21 +136,67 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 				</div>
 
 				<div className="flex items-center gap-1.5 flex-wrap">
+					{onOpenControl && (
+						<button
+							type="button"
+							data-testid={`btn-patient-study-control-${studyId}`}
+							onClick={() => onOpenControl(studyId)}
+							className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 active:scale-95"
+							style={{
+								borderColor: "var(--line, #e2e8f0)",
+								color: "var(--ink, #0f172a)",
+							}}
+							title="Проверить сопоставление с DICOM"
+						>
+							<Settings className="w-3.5 h-3.5 opacity-70" />
+							<span>Контроль</span>
+						</button>
+					)}
+
 					<button
 						type="button"
-						onClick={() => setIsViewerOpen(true)}
+						data-testid={`btn-launch-3d-studio-${studyId}`}
+						onClick={() => {
+							if (onOpenStudio) {
+								onOpenStudio(studyId);
+							} else {
+								setSelectedViewMode("3d_mpr");
+								setIsViewerOpen(true);
+							}
+						}}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white shadow-sm transition-all duration-150 cursor-pointer hover:opacity-95 active:scale-95"
 						style={{
 							background: "var(--accent, #0d9488)",
 						}}
 					>
 						<Box className="w-3.5 h-3.5" />
-						<span>4-MPR Ez3D-i</span>
+						<span>3D КЛКТ Студия</span>
 					</button>
 
 					<button
 						type="button"
-						onClick={() => setIsViewerOpen(true)}
+						data-testid="btn-ct-sectioning-open"
+						onClick={() => {
+							setSelectedViewMode("sectioning");
+							setIsViewerOpen(true);
+						}}
+						className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 active:scale-95"
+						style={{
+							borderColor: "var(--line, #e2e8f0)",
+							color: "var(--ink, #0f172a)",
+						}}
+					>
+						<Grid3X3 className="w-3.5 h-3.5 opacity-70" />
+						<span>Раздел (Кросс-секции)</span>
+					</button>
+
+					<button
+						type="button"
+						data-testid="btn-ct-2d-open"
+						onClick={() => {
+							setSelectedViewMode("2d");
+							setIsViewerOpen(true);
+						}}
 						className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 active:scale-95"
 						style={{
 							borderColor: "var(--line, #e2e8f0)",
@@ -211,9 +267,11 @@ export const CtStudyViewer: React.FC<CtStudyViewerProps> = ({
 					patientName={patientName ?? undefined}
 					patientId={patientId ?? undefined}
 					studyDate={capturedAt ?? undefined}
-					initialViewMode="3d_mpr"
+					initialViewMode={selectedViewMode}
 				/>
 			)}
 		</div>
 	);
 };
+
+export default CtStudyViewer;

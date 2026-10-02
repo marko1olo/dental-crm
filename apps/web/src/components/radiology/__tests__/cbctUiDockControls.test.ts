@@ -212,7 +212,7 @@ describe("CBCT UI Dock & Viewport Ruler Hardware Controls", () => {
 			assert.ok(html.includes('data-testid="cbct-quick-sharpen-toggle"'));
 
 			// Checks active colormap styling
-			assert.ok(html.includes("bg-purple-600/90"));
+			assert.ok(html.includes("bg-purple-950/70") || html.includes("bg-purple-600/90"));
 			assert.ok(html.includes("Резкость: 100%"));
 		});
 

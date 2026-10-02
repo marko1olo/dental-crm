@@ -22,6 +22,8 @@ export type TemplateCategory =
 	| "treatment_plan"
 	| "nps_survey"
 	| "sbp_payment"
+	| "birthday_greeting"
+	| "hygiene_recall"
 	| "custom";
 
 export interface InteractiveButtonPayload {

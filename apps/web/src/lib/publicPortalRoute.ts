@@ -43,6 +43,18 @@ export type PublicPortalRoute =
 			readonly organizationId: string | null;
 	  }
 	| {
+			/** Терминал самообслуживания / планшет экспресс-чекина в клинике. */
+			readonly kind: "kiosk";
+			/** Идентификатор организации/клиники (опционален для автономного терминала). */
+			readonly organizationId: string | null;
+	  }
+	| {
+			/** Личный кабинет пациента (PWA / СБП / документы / планы лечения). */
+			readonly kind: "cabinet";
+			/** Идентификатор организации/клиники (опционален). */
+			readonly organizationId: string | null;
+	  }
+	| {
 			/** Портал согласования сметы пациентом: цифровая подпись ПЭП. */
 			readonly kind: "budget";
 			/** Токен сметы из ссылки. */
@@ -71,6 +83,20 @@ export const BUDGET_PORTAL_PATH = "/portal/budget/";
  * на стойку код вёл в никуда. Форма адреса теперь одна и совпадает с сервером.
  */
 export const PUBLIC_BOOKING_PORTAL_PATH = "/portal/booking/";
+
+/**
+ * Пути терминала самочекина (киоск / планшет стойки регистрации):
+ * `#/portal/kiosk/<идентификатор клиники>` или `#/portal/checkin/<идентификатор клиники>`.
+ */
+export const KIOSK_PORTAL_PATH = "/portal/kiosk/";
+export const CHECKIN_PORTAL_PATH = "/portal/checkin/";
+
+/**
+ * Пути личного кабинета пациента:
+ * `#/portal/cabinet/<идентификатор клиники>` или `#/portal/patient/<идентификатор клиники>`.
+ */
+export const CABINET_PORTAL_PATH = "/portal/cabinet/";
+export const PATIENT_PORTAL_PATH = "/portal/patient/";
 
 /**
  * Снимает процентное кодирование с одного сегмента адреса.
@@ -142,6 +168,44 @@ export function publicPortalRouteFromHash(
 		};
 	}
 
+	for (const kioskPath of [KIOSK_PORTAL_PATH, CHECKIN_PORTAL_PATH]) {
+		const kioskBase = kioskPath.replace(/\/$/, "");
+		if (
+			path === kioskBase ||
+			path.startsWith(`${kioskBase}/`) ||
+			path.startsWith(`${kioskBase}?`)
+		) {
+			const rawOrg =
+				path
+					.slice(kioskBase.length)
+					.replace(/^\//, "")
+					.split(/[/?#&]/)[0] ?? "";
+			return {
+				kind: "kiosk",
+				organizationId: decodeSegment(rawOrg) || null,
+			};
+		}
+	}
+
+	for (const cabinetPath of [CABINET_PORTAL_PATH, PATIENT_PORTAL_PATH]) {
+		const cabinetBase = cabinetPath.replace(/\/$/, "");
+		if (
+			path === cabinetBase ||
+			path.startsWith(`${cabinetBase}/`) ||
+			path.startsWith(`${cabinetBase}?`)
+		) {
+			const rawOrg =
+				path
+					.slice(cabinetBase.length)
+					.replace(/^\//, "")
+					.split(/[/?#&]/)[0] ?? "";
+			return {
+				kind: "cabinet",
+				organizationId: decodeSegment(rawOrg) || null,
+			};
+		}
+	}
+
 	if (path.startsWith(BUDGET_PORTAL_PATH)) {
 		const rawToken =
 			path.slice(BUDGET_PORTAL_PATH.length).split(/[/?#&]/)[0] ?? "";
@@ -178,6 +242,36 @@ export function buildPublicBookingPortalUrl(
 	const base = origin.trim().replace(/\/$/, "");
 	if (!org || !base) return null;
 	const path = `${PUBLIC_BOOKING_PORTAL_PATH.replace(/\/$/, "")}/${encodeURIComponent(org)}`;
+	return `${base}/#${path}`;
+}
+
+/**
+ * Полный URL терминала самообслуживания / планшета экспресс-чекина.
+ */
+export function buildKioskPortalUrl(
+	organizationId?: string | null,
+	origin: string = typeof window !== "undefined" ? window.location.origin : "",
+): string {
+	const base = origin.trim().replace(/\/$/, "");
+	const org = (organizationId || "").trim();
+	const path = org
+		? `${KIOSK_PORTAL_PATH.replace(/\/$/, "")}/${encodeURIComponent(org)}`
+		: KIOSK_PORTAL_PATH.replace(/\/$/, "");
+	return `${base}/#${path}`;
+}
+
+/**
+ * Полный URL личного кабинета пациента (PWA / СБП).
+ */
+export function buildPatientCabinetPortalUrl(
+	organizationId?: string | null,
+	origin: string = typeof window !== "undefined" ? window.location.origin : "",
+): string {
+	const base = origin.trim().replace(/\/$/, "");
+	const org = (organizationId || "").trim();
+	const path = org
+		? `${CABINET_PORTAL_PATH.replace(/\/$/, "")}/${encodeURIComponent(org)}`
+		: CABINET_PORTAL_PATH.replace(/\/$/, "");
 	return `${base}/#${path}`;
 }
 

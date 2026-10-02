@@ -1,0 +1,39 @@
+{
+  "role": "RED TEAM SELF-FIXING INQUISITOR: DENTAL LAB (ZTL), WAREHOUSE SOFT-STOCK & SANPIN",
+  "status": "completed",
+  "completed_steps": [
+    "Read all required constitutional rules in full (core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md)",
+    "Deep reconnaissance across packages/shared, apps/web, apps/api for Dental Lab (ZTL), Warehouse & Inventory, SanPiN & Sterilization",
+    "Audited Zero-Mocks & Math.random: discovered and eradicated live Math.random() in packages/shared/src/lab/labOrders.ts:693 for batchCode generation, replaced with CSPRNG generateSecureAlphanumericId",
+    "Verified Mandate 8s (Anti-Bloat & Duplicate Analysis): verified LabWorkOrderModal delegate to DentalLabOrderModal, verified distinct roles of DentalLabOrdersHubModal vs DentalLabOrdersTrackerModal vs DentalLabTrackerCard vs LabOrderCard",
+    "Audited Mandate 8ab (Warehouse Soft-Stock & Zero Warehouse Invasion): verified useVisitCompletion, ChairsideBillingItemRow, VisitSurgeryProtocolTab operate in non-blocking background mode with allowOverdraft: true; backend POST /soft-overdraft-deduct and batch deduct support silent soft negative overdraft without throwing or blocking doctor",
+    "Audited Mandate 8v (Nurse Autonomy & SanPiN): verified useVisitDiaryTrayHandlers does not block doctor on missing sterilization tray; verified SeniorNurseKraftUnsealModal is a clean null-returning facade; verified 1-click generation of SanPiN journals (Form 257/u autoclave, Form 366/u PSO, azopyram test, consolidated binder HTML/CSV) without interactive nurse routine",
+    "Ran isolated target test suites: packages/shared/src/lab/labOrders.test.ts (19/19 passing), packages/shared/src/lab/__tests__/wave127LabOrders.test.ts (23/23 passing), apps/web/src/components/lab/__tests__/dentalLabZeroMockInquisitor.test.tsx (11/11 passing), packages/shared/src/tests/sanpin.test.ts + kraftPackageSanpin.test.ts (77/77 passing), apps/web/src/components/inventory/__tests__/autoBomDeductionAndSoftOverdraft.test.ts + warehouseSoftOverdraftAndWriteOffAutonomyWave64.test.tsx + procedureMaterialPackageAutonomy.test.tsx (33/33 passing with testCssStub), apps/api/src/tests/routes/warehouseSoftOverdraftAndTechCardInquisitor.test.ts (9/9 passing)",
+    "Ran static gates: check-encoding.mjs (7128 files clean), check-css-tokens.mjs (0 unresolved tokens)",
+    "Strictly complied with Iron Invariants: ZERO touches to CBCT / DICOM / radiology files, ZERO global typecheck/build invocations"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "severity": "CRITICAL_FIXED",
+      "location": "packages/shared/src/lab/labOrders.ts:693",
+      "defect": "Live Math.random() call in batchCode generation for ProstheticWarrantyPassport",
+      "fix": "Replaced with generateSecureAlphanumericId(6, false).toUpperCase() and added automated Zero-Mock test assertion in labOrders.test.ts"
+    },
+    {
+      "severity": "VERIFIED_COMPLIANT",
+      "location": "apps/web/src/components/visit/useVisitCompletion.ts:164",
+      "compliance": "Mandate 8ab & 8n: allowOverdraft: true passed into performAutoVisitBomDeduction, zero doctor interruption on stock deficit"
+    },
+    {
+      "severity": "VERIFIED_COMPLIANT",
+      "location": "apps/web/src/components/sanpin/SanpinRegisters.tsx:1151",
+      "compliance": "Mandate 8v: 1-click consolidated SanPiN inspection binder generation (Form 257/u, 366/u, azopyram, temp/humidity) without interactive nurse routine"
+    },
+    {
+      "severity": "VERIFIED_COMPLIANT",
+      "location": "apps/web/src/components/visit/diaryLogic/useVisitDiaryTrayHandlers.ts:25",
+      "compliance": "Mandate 8v: non-blocking linkSterilizationTray logic (if (!trayBarcode || isLocked) return { ok: true }), zero barrier to diary saving"
+    }
+  ]
+}

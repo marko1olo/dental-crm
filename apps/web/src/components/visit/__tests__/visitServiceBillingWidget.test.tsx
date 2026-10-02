@@ -56,6 +56,8 @@ describe("VisitServiceBillingWidget — Chairside Billing & Inline Price Editing
 		assert.ok(html.includes("Восстановление зуба пломбой"), "Must render second service");
 		assert.ok(html.includes("A25.07.001"), "Must render 804n code");
 		assert.ok(html.includes("зуб 36"), "Must render tooth code");
+		assert.ok(html.includes('data-testid="btn-print-visit-billing-estimate"'), "Must render print estimate button");
+		assert.ok(html.includes("Печать сметы"), "Must render print estimate label");
 	});
 
 	it("renders honest empty state in production when no services are added to visit", () => {

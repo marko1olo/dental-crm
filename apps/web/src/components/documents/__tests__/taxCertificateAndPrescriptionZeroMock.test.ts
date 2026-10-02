@@ -447,7 +447,7 @@ describe("Tax Certificates (FNS KND 1151156) & Form 107-1/у Prescriptions Zero-
 	describe("6. Zero Mocks & Zero Emojis Purity Inspection", () => {
 		const SCOPED_ENGINE_FILES = [
 			"taxCertificateEngine.ts",
-			"TaxCertificateModal.tsx",
+			"../finance/TaxDeductionCertificateModal.tsx",
 			"prescriptionPrintEngine.ts",
 		];
 

@@ -26,6 +26,8 @@ import { parseKopecks } from "../money.js";
 import {
 	buildAppointmentReminder24h,
 	buildAppointmentReminder2h,
+	buildBirthdayGreeting,
+	buildHygieneRecall6m,
 	buildClinicMapLinks,
 	classifyTextIntent,
 	extractFirstNameRu,
@@ -265,6 +267,52 @@ describe("Omnichannel Bot, NPS Survey & SBP Payment Engines", () => {
 			assert.equal(res4.action, "UNKNOWN");
 			assert.equal(res4.nextAppointmentStatus, null);
 			assert.equal(res4.confidence, "unrecognized");
+		});
+
+		it("1.10 builds Birthday Greeting package with bonus and interactive buttons", () => {
+			const bdayPkg = buildBirthdayGreeting(
+				sampleContext,
+				{ bonusAmountRubles: 1500, promoCode: "BDAY2026", validDays: 14 },
+				"whatsapp",
+			);
+			assert.equal(bdayPkg.triggerType, "birthday_greeting");
+			assert.equal(bdayPkg.channel, "whatsapp");
+			assert.ok(bdayPkg.plainText.includes("1500 ₽"));
+			assert.ok(bdayPkg.plainText.includes("BDAY2026"));
+			assert.ok(bdayPkg.plainText.includes("14 дней"));
+			assert.ok(bdayPkg.whatsappPayload?.interactive.action.buttons.length === 2);
+
+			const tgBday = buildBirthdayGreeting(
+				sampleContext,
+				{ bonusAmountRubles: 2000, promoCode: "SMILE", validDays: 30 },
+				"telegram",
+			);
+			assert.equal(tgBday.channel, "telegram");
+			assert.ok(tgBday.telegramPayload && "text" in tgBday.telegramPayload);
+			assert.ok(tgBday.plainText.includes("2000 ₽"));
+		});
+
+		it("1.11 builds 6-Month Hygiene Recall package adhering to Mandate 8z", () => {
+			const hygienePkg = buildHygieneRecall6m(
+				sampleContext,
+				{ lastVisitMonthsAgo: 6, recommendedDoctorFullName: "Д-р Смирнова Е.А." },
+				"whatsapp",
+			);
+			assert.equal(hygienePkg.triggerType, "hygiene_recall_6m");
+			assert.equal(hygienePkg.channel, "whatsapp");
+			// Mandate 8z: No Soviet bureaucratic slang "диспансеризация" in patient copy!
+			assert.ok(!hygienePkg.plainText.includes("диспансер"));
+			assert.ok(hygienePkg.plainText.includes("профессиональную гигиену"));
+			assert.ok(hygienePkg.plainText.includes("6 месяцев"));
+			assert.ok(hygienePkg.whatsappPayload?.interactive.action.buttons.length === 2);
+
+			const tgHygiene = buildHygieneRecall6m(
+				sampleContext,
+				{ lastVisitMonthsAgo: 6 },
+				"telegram",
+			);
+			assert.equal(tgHygiene.channel, "telegram");
+			assert.ok(tgHygiene.telegramPayload && "text" in tgHygiene.telegramPayload);
 		});
 	});
 

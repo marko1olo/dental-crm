@@ -1,0 +1,18 @@
+{
+  "role": "RED TEAM SELF-FIXING INQUISITOR: MARKETING, LEADS, ACQUISITION CHANNELS & OMNICHANNEL MESSENGERS",
+  "status": "in_progress",
+  "current_phase": "reconnaissance_and_defect_census",
+  "completed_steps": [
+    "Read core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Initialized subagent memory checkpoint"
+  ],
+  "pending_steps": [
+    "Reconnaissance of marketing, leads, messengers, channels, webhooks, analytics in api and web",
+    "Defect cataloging across backend, frontend, schemas, and UX",
+    "Self-fixing defects in-place (TypeScript, CSS, routes, schemas)",
+    "Targeted testing and encoding/token gate validation",
+    "Final adversarial audit and reporting"
+  ],
+  "findings": [],
+  "fixed_defects": []
+}

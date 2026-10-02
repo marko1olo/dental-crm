@@ -1,4 +1,5 @@
 import type { NetworkState } from "./utils/networkConnectivity";
+import { NetworkStatusIndicator } from "./components/sync/NetworkStatusIndicator";
 
 export interface WorkspaceContinuityStripProps {
 	browserContinuityCritical: boolean;
@@ -161,6 +162,7 @@ export function WorkspaceContinuityStrip({
 						{isPendingVisitSyncing ? "Отправляю..." : "Отправить приемы"}
 					</button>
 				) : null}
+				<NetworkStatusIndicator compact />
 			</div>
 		</section>
 	);

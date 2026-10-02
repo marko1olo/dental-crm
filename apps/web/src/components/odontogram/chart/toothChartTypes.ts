@@ -37,7 +37,27 @@ function areSurfacesEqual(
 }
 export { areSurfacesEqual };
 
-export type ToothState = CrmToothState;
+export type ToothState =
+	| CrmToothState
+	| "Temporary_Crown"
+	| "Veneer"
+	| "Inlay"
+	| "Primary"
+	| "Resection"
+	| "Gingivitis"
+	| "Periodontitis_Mild"
+	| "Periodontitis_Moderate"
+	| "Periodontitis_Severe"
+	| "Mobility_1"
+	| "Mobility_2"
+	| "Mobility_3"
+	| "Furcation_1"
+	| "Furcation_2"
+	| "Furcation_3"
+	| "Calculus"
+	| "Bleeding"
+	| "Recession"
+	| "Pocket";
 
 /**
  * Русские названия состояний — для доступного имени зуба.
@@ -59,6 +79,25 @@ export const TOOTH_STATE_LABELS: Record<ToothState, string> = {
 	Healthy: "здоров",
 	Retained: "ретинированный",
 	Root: "разрушенный корень",
+	Temporary_Crown: "временная коронка",
+	Veneer: "винир",
+	Inlay: "вкладка",
+	Primary: "молочный зуб",
+	Resection: "резекция верхушки",
+	Gingivitis: "гингивит",
+	Periodontitis_Mild: "легкий пародонтит",
+	Periodontitis_Moderate: "средний пародонтит",
+	Periodontitis_Severe: "тяжелый пародонтит",
+	Mobility_1: "подвижность I ст.",
+	Mobility_2: "подвижность II ст.",
+	Mobility_3: "подвижность III ст.",
+	Furcation_1: "фуркация I кл.",
+	Furcation_2: "фуркация II кл.",
+	Furcation_3: "фуркация III кл.",
+	Calculus: "зубной камень",
+	Bleeding: "кровоточивость",
+	Recession: "рецессия десны",
+	Pocket: "пародонтальный карман",
 };
 
 import { getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols043";

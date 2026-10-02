@@ -67,6 +67,12 @@ const LazyTelephonyFloatingWidget = lazyWithRetry(() =>
 		default: m.TelephonyFloatingWidget,
 	})),
 );
+
+const LazyTelephonyDrawer = lazyWithRetry(() =>
+	import("./components/telephony/TelephonyDrawer").then((m) => ({
+		default: m.TelephonyDrawer,
+	})),
+);
 import { useWebsocket } from "./hooks/useWebsocket";
 import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import {
@@ -718,8 +724,8 @@ export function WorkspaceTopbar({
 
 	return (
 		<header className="topbar min-h-[44px] sm:h-11 sm:max-h-11 pl-3 sm:pl-4 flex items-center justify-between overflow-visible">
-			<div className="topbar-context min-w-0 flex-1 flex items-center flex-nowrap overflow-visible gap-2 sm:gap-3">
-				<div className="topbar-clinic shrink-0 min-w-[120px] sm:max-w-[280px] max-w-[200px] pl-3 sm:pl-0 flex flex-col justify-center leading-tight">
+			<div className="topbar-context shrink-0 min-w-fit flex items-center flex-nowrap overflow-visible gap-2 sm:gap-3">
+				<div className="topbar-clinic shrink-0 min-w-[140px] sm:max-w-[280px] max-w-[200px] pl-3 sm:pl-0 flex flex-col justify-center leading-tight">
 					<p className="eyebrow truncate leading-none text-[10px] m-0 mb-0.5">
 						{formattedDate.replace(" г.", "").replace(",", " ·")}
 					</p>
@@ -946,7 +952,7 @@ export function WorkspaceTopbar({
 
 				{/* 🧪 ТЮНЕР КОНТРАСТА И СРЕЗОВ КЛКТ (Playground) — прямое окно настройки ползунков */}
 				<button
-					className="secondary-button hidden lg:inline-flex items-center gap-1.5"
+					className="secondary-button hidden 2xl:inline-flex items-center gap-1.5"
 					type="button"
 					data-testid="topbar-open-cbct-tuner-btn"
 					title="Открыть интерактивный тюнер контраста, срезов и ОПТГ панорамы (?cbct=tuner)"
@@ -1043,7 +1049,7 @@ export function WorkspaceTopbar({
         */}
 				<button
 					id="topbar-learning-hub-btn"
-					className="secondary-button topbar-learning-button hidden sm:inline-flex items-center gap-1.5"
+					className="secondary-button topbar-learning-button hidden 2xl:inline-flex items-center gap-1.5"
 					type="button"
 					data-testid="topbar-learning-hub-btn"
 					title={workspaceTopbarLabels.learning.title}
@@ -1130,6 +1136,7 @@ export function WorkspaceTopbar({
 					) : (
 						<LazyTelephonyFloatingWidget defaultExpanded={false} />
 					)}
+					<LazyTelephonyDrawer />
 				</Suspense>
 			) : null}
 		</header>

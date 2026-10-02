@@ -88,7 +88,7 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 						className="text-base sm:text-lg font-bold m-0 flex items-center gap-2 flex-wrap"
 					>
 						<ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
-						<span>Прием оплаты • {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+						<span className="whitespace-nowrap">Прием оплаты • {totalDueRub.toLocaleString("ru-RU")}&nbsp;₽</span>
 						{discountRub > 0 && (
 							<span
 								className="text-xs font-normal line-through text-[var(--muted,#64748b)]"
@@ -216,7 +216,7 @@ export const PaymentModalHeader: React.FC<PaymentModalHeaderProps> = ({
 			</div>
 
 			{/* Method Selector Tabs */}
-			<div className="p-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center gap-2 overflow-x-auto flex-nowrap shrink-0 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div className="p-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center gap-1.5 sm:gap-2 overflow-x-auto flex-nowrap sm:flex-wrap shrink-0">
 				<button
 					type="button"
 					onClick={() => setActiveMethod("card_terminal")}

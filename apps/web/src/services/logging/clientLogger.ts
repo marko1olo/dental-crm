@@ -21,10 +21,15 @@ import {
 	sanitizeString,
 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import {
+	staffTelemetryService,
+	registerTelemetryLoggerBridge,
+	LEGACY_OFFLINE_STAFF_AUDIT_KEY,
+} from "./staffTelemetryService.js";
 
 export const MAX_SYSTEM_LOGS = 500;
 export const MAX_NETWORK_LOGS = 200;
-export const OFFLINE_STAFF_AUDIT_STORAGE_KEY = "dente_offline_staff_audit_buffer";
+export const OFFLINE_STAFF_AUDIT_STORAGE_KEY = LEGACY_OFFLINE_STAFF_AUDIT_KEY;
 
 export type LogListener = (entry: ClientLogEntry) => void;
 export type NetworkListener = (entry: NetworkLogEntry) => void;
@@ -43,6 +48,7 @@ class ClientLoggerService {
 	private globalErrorListenersInstalled = false;
 
 	constructor() {
+		registerTelemetryLoggerBridge(this);
 		if (typeof window !== "undefined" && typeof window.document !== "undefined") {
 			this.loadOfflineAuditBuffer();
 			this.installFetchInterceptor();
@@ -310,24 +316,7 @@ class ClientLoggerService {
 	 * Загрузка сохраненного буфера аудита действий персонала из localStorage
 	 */
 	public loadOfflineAuditBuffer(): void {
-		const storage =
-			typeof window !== "undefined" && window.localStorage
-				? window.localStorage
-				: typeof localStorage !== "undefined"
-					? localStorage
-					: null;
-		if (!storage) return;
-		try {
-			const saved = storage.getItem(OFFLINE_STAFF_AUDIT_STORAGE_KEY);
-			if (saved) {
-				const parsed = JSON.parse(saved);
-				if (Array.isArray(parsed)) {
-					this.offlineStaffAuditBuffer = parsed;
-				}
-			}
-		} catch {
-			this.offlineStaffAuditBuffer = [];
-		}
+		this.offlineStaffAuditBuffer = [...staffTelemetryService.getQueuedEvents()];
 	}
 
 	/**
@@ -367,116 +356,31 @@ class ClientLoggerService {
 		reason?: string | null | undefined;
 		organizationId?: string | undefined;
 	}): StaffActionAuditEntry {
-		let sanitizedDetails: Record<string, unknown> = {};
-		if (entry.details) {
-			try {
-				sanitizedDetails = sanitizeAuditPayload(entry.details) as Record<string, unknown>;
-			} catch {
-				sanitizedDetails = { error: "unserializable_details" };
-			}
-		}
-
-		const fullEntry: StaffActionAuditEntry = {
-			id: generateUuidV7(),
-			organizationId: entry.organizationId || "00000000-0000-0000-0000-000000000000",
-			actionType: entry.actionType,
-			entityType: sanitizeString(entry.entityType),
-			entityId: sanitizeString(entry.entityId),
-			patientId: entry.patientId || null,
-			actorUserId: entry.actorUserId || null,
-			actorRole: entry.actorRole ? sanitizeString(entry.actorRole) : null,
-			actorName: entry.actorName ? sanitizeString(entry.actorName) : null,
-			details: sanitizedDetails,
-			reason: entry.reason ? sanitizeString(entry.reason) : null,
-			clientTimestamp: new Date().toISOString(),
-		};
-
-		this.offlineStaffAuditBuffer.push(fullEntry);
-		if (this.offlineStaffAuditBuffer.length > 300) {
-			this.offlineStaffAuditBuffer.shift();
-		}
-		this.saveOfflineAuditBuffer();
-
-		// Логируем в локальный журнал
-		this.audit(
-			`[StaffAction] ${fullEntry.actionType} on ${fullEntry.entityType}:${fullEntry.entityId}`,
-			fullEntry.details,
-			{ module: "StaffAudit" },
-		);
-
-		// Запускаем отложенный сброс буфера на сервер
-		this.scheduleFlushStaffAuditBuffer();
-
+		const fullEntry = staffTelemetryService.recordAction(entry);
+		this.offlineStaffAuditBuffer = [...staffTelemetryService.getQueuedEvents()];
 		return fullEntry;
 	}
 
 	/**
-	 * Планирование отправки буфера аудита на сервер (с дебаунсом 1.5 сек)
+	 * Планирование отправки буфера аудита на сервер
 	 */
 	public scheduleFlushStaffAuditBuffer(): void {
-		if (this.flushDebounceTimer) {
-			clearTimeout(this.flushDebounceTimer);
-		}
-		this.flushDebounceTimer = setTimeout(() => {
-			this.flushDebounceTimer = null;
-			void this.flushStaffAuditBuffer();
-		}, 1500);
+		void staffTelemetryService.flushQueue();
 	}
 
 	/**
 	 * Пакетная отправка буфера аудита персонала на сервер (/api/audit/events/batch)
 	 */
 	public async flushStaffAuditBuffer(): Promise<number> {
-		if (this.isFlushingStaffAudit || this.offlineStaffAuditBuffer.length === 0) {
-			return 0;
-		}
-		if (typeof navigator !== "undefined" && !navigator.onLine) {
-			return 0;
-		}
-
-		this.isFlushingStaffAudit = true;
-		let flushedCount = 0;
-
-		try {
-			const batch = this.offlineStaffAuditBuffer.slice(0, 50);
-			if (batch.length === 0) return 0;
-
-			const response = await fetch("/api/audit/events/batch", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
-				},
-				body: JSON.stringify({ events: batch }),
-			});
-
-			if (response.ok) {
-				const sentIds = new Set(batch.map((e) => e.id));
-				this.offlineStaffAuditBuffer = this.offlineStaffAuditBuffer.filter(
-					(e) => !sentIds.has(e.id),
-				);
-				this.saveOfflineAuditBuffer();
-				flushedCount = batch.length;
-
-				// Если в буфере еще остались записи, отправляем следующую пачку
-				if (this.offlineStaffAuditBuffer.length > 0) {
-					setTimeout(() => void this.flushStaffAuditBuffer(), 200);
-				}
-			}
-		} catch (err) {
-			// Сохраняем в локальном буфере до восстановления связи
-			this.warn("Фоновая синхронизация журнала аудита отложена до восстановления сети", err, {
-				module: "StaffAudit",
-			});
-		} finally {
-			this.isFlushingStaffAudit = false;
-		}
-
-		return flushedCount;
+		const countBefore = staffTelemetryService.getQueuedEvents().length;
+		await staffTelemetryService.flushQueue();
+		const countAfter = staffTelemetryService.getQueuedEvents().length;
+		this.offlineStaffAuditBuffer = [...staffTelemetryService.getQueuedEvents()];
+		return Math.max(0, countBefore - countAfter);
 	}
 
 	public getPendingStaffAuditCount(): number {
-		return this.offlineStaffAuditBuffer.length;
+		return staffTelemetryService.getQueuedEvents().length;
 	}
 
 	/**

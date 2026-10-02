@@ -1338,8 +1338,8 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 	align-items: center;
 	gap: 10px;
 	flex-wrap: nowrap;
-	min-width: 0;
-	flex: 1 1 auto;
+	min-width: fit-content !important;
+	flex-shrink: 0 !important;
 	overflow: visible;
 }
 .topbar-clinic {
@@ -2508,8 +2508,8 @@ details.schedule-secret-collapsible summary:hover {
 	align-items: center;
 	gap: 8px;
 	flex-wrap: nowrap;
-	min-width: 0;
-	flex: 1 1 auto;
+	min-width: fit-content !important;
+	flex-shrink: 0 !important;
 	overflow: visible;
 }
 

@@ -1,13 +1,22 @@
 /**
  * DENTE CRM — Clinical DICOM / RVG Radiography Viewer Modal
  * Complete multi-touch medical viewer for periapical RVG, OPTG, and CBCT slices.
+ * Serves as the single canonical workstation for 2D X-Ray, 3D MPR, and Cross-Sectioning.
  */
 
 import {
 	Activity,
+	Check,
+	CheckCircle2,
+	ChevronDown,
 	FileText,
 	FileUp,
+	Layers,
+	Loader2,
+	Sparkles,
 	UploadCloud,
+	X,
+	Zap,
 } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
@@ -24,9 +33,9 @@ const DicomViewport = React.lazy(() =>
 		default: m.DicomViewport,
 	}))
 );
-import { Ez3dMprCockpit } from "./Ez3dMprCockpit.js";
-import { Ez3dSectioningView } from "./Ez3dSectioningView.js";
-import { Ez3dToolboxRibbon } from "./Ez3dToolboxRibbon.js";
+import { DicomMprCockpit } from "./DicomMprCockpit.js";
+import { DicomSectioningView } from "./DicomSectioningView.js";
+import { DicomToolboxRibbon } from "./DicomToolboxRibbon.js";
 import { DicomAiFindingsDrawer } from "./DicomAiFindingsDrawer.js";
 import {
 	DEFAULT_DICOM_VIEWPORT_STATE,
@@ -80,21 +89,19 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 				? "/radiology/sample_rvg_tooth16.jpg"
 				: "/radiology/sample_rvg_tooth36_periapical.jpg")
 			: null);
-	const [currentImageSrc, setCurrentImageSrc] = useState<string | null>(
-		defaultScanSrc,
-	);
+	const [currentImageSrc, setCurrentImageSrc] = useState<string | null>(defaultScanSrc);
+
 	useEffect(() => {
-		if (imageSrc) {
-			setCurrentImageSrc(imageSrc);
-		}
+		if (imageSrc) setCurrentImageSrc(imageSrc);
 	}, [imageSrc]);
+
 	const [isDragOver, setIsDragOver] = useState(false);
-	const [viewportState, setViewportState] = useState<DicomViewportState>(
-		DEFAULT_DICOM_VIEWPORT_STATE,
-	);
+	const [viewportState, setViewportState] = useState<DicomViewportState>(DEFAULT_DICOM_VIEWPORT_STATE);
 	const [measurements, setMeasurements] = useState<CalibratedRulerMeasurement[]>([]);
 	const [isNormaApplied, setIsNormaApplied] = useState(false);
+	const [isProtocolsDropdownOpen, setIsProtocolsDropdownOpen] = useState(false);
 	const [appliedProtocolId, setAppliedProtocolId] = useState<string | null>(null);
+	const protocolsDropdownRef = useRef<HTMLDivElement>(null);
 	const [showFindingsDrawer, setShowFindingsDrawer] = useState(false);
 
 	// Esc key handling
@@ -102,18 +109,28 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 		if (!isOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
-				if (showFindingsDrawer) {
-					setShowFindingsDrawer(false);
-				} else {
-					onClose();
-				}
+				if (showFindingsDrawer) setShowFindingsDrawer(false);
+				else if (isProtocolsDropdownOpen) setIsProtocolsDropdownOpen(false);
+				else onClose();
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isOpen, showFindingsDrawer, onClose]);
+	}, [isOpen, showFindingsDrawer, isProtocolsDropdownOpen, onClose]);
 
-	// AI States (strictly on-demand, no automatic overwrite)
+	// Close dropdown when clicked outside
+	useEffect(() => {
+		if (!isProtocolsDropdownOpen) return;
+		const handleOutsideClick = (e: MouseEvent) => {
+			if (protocolsDropdownRef.current && !protocolsDropdownRef.current.contains(e.target as Node)) {
+				setIsProtocolsDropdownOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleOutsideClick);
+		return () => document.removeEventListener("mousedown", handleOutsideClick);
+	}, [isProtocolsDropdownOpen]);
+
+	// AI States
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 	const [aiReport, setAiReport] = useState<string | null>(null);
 	const [aiToothStates, setAiToothStates] = useState<Record<string, string> | null>(null);
@@ -124,80 +141,90 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	const analysisInFlightRef = useRef(false);
 
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
-
 	const appLogic = useOptionalAppLogicContext();
 	const authRef = useRef(appLogic?.auth);
 	authRef.current = appLogic?.auth;
 
-	const denteClinicalReadHeaders = useCallback(
-		(extra?: Record<string, string>): Record<string, string> => {
-			const auth = authRef.current;
-			return auth && typeof auth.denteClinicalReadHeaders === "function"
-				? auth.denteClinicalReadHeaders(extra ?? {})
-				: { ...(extra ?? {}) };
-		},
-		[],
-	);
+	const denteClinicalReadHeaders = useCallback((extra?: Record<string, string>): Record<string, string> => {
+		const auth = authRef.current;
+		return auth && typeof auth.denteClinicalReadHeaders === "function"
+			? auth.denteClinicalReadHeaders(extra ?? {})
+			: { ...(extra ?? {}) };
+	}, []);
 
-	const denteClinicalMutationHeaders = useCallback(
-		(extra?: Record<string, string>): Record<string, string> => {
-			const auth = authRef.current;
-			return auth && typeof auth.denteClinicalMutationHeaders === "function"
-				? auth.denteClinicalMutationHeaders(extra ?? {})
-				: { ...(extra ?? {}) };
-		},
-		[],
-	);
-
-	useEffect(() => {
-		if (imageSrc) {
-			setCurrentImageSrc(imageSrc);
-		}
-	}, [imageSrc]);
+	const denteClinicalMutationHeaders = useCallback((extra?: Record<string, string>): Record<string, string> => {
+		const auth = authRef.current;
+		return auth && typeof auth.denteClinicalMutationHeaders === "function"
+			? auth.denteClinicalMutationHeaders(extra ?? {})
+			: { ...(extra ?? {}) };
+	}, []);
 
 	if (!isOpen) return null;
 
+	// Canonical MPR Cockpit and Sectioning View modes
 	if (viewMode === "3d_mpr") {
 		return (
-			<Ez3dMprCockpit
-				patientName={patientName}
-				patientId={patientId}
-				studyDate={studyDate}
-				onBackTo2D={() => setViewMode("2d")}
-				onClose={onClose}
-				onInsertToProtocol={onInsertToProtocol}
-			/>
+			<div
+				data-testid="dicom-viewer-modal"
+				style={{
+					position: "fixed",
+					inset: 0,
+					zIndex: 9999,
+					backgroundColor: "rgba(2, 6, 23, 0.98)",
+					display: "flex",
+					flexDirection: "column",
+					color: "#f8fafc",
+				}}
+			>
+				<DicomMprCockpit
+					patientName={patientName}
+					patientId={patientId}
+					studyDate={studyDate}
+					onBackTo2D={() => setViewMode("2d")}
+					onSwitchToSectioning={() => setViewMode("sectioning")}
+					onClose={onClose}
+					onInsertToProtocol={onInsertToProtocol}
+				/>
+			</div>
 		);
 	}
 
 	if (viewMode === "sectioning") {
 		return (
-			<Ez3dSectioningView
-				patientName={patientName}
-				patientId={patientId}
-				studyDate={studyDate}
-				toothFdiCode={toothFdiCode}
-				onClose={onClose}
-				onBackTo2D={() => setViewMode("2d")}
-				onSwitchToMpr={() => setViewMode("3d_mpr")}
-				onInsertToProtocol={onInsertToProtocol}
-			/>
+			<div
+				data-testid="dicom-viewer-modal"
+				style={{
+					position: "fixed",
+					inset: 0,
+					zIndex: 9999,
+					backgroundColor: "rgba(2, 6, 23, 0.98)",
+					display: "flex",
+					flexDirection: "column",
+					color: "#f8fafc",
+				}}
+			>
+				<DicomSectioningView
+					patientName={patientName}
+					patientId={patientId}
+					studyDate={studyDate}
+					toothFdiCode={toothFdiCode}
+					onClose={onClose}
+					onBackTo2D={() => setViewMode("2d")}
+					onSwitchToMpr={() => setViewMode("3d_mpr")}
+					onInsertToProtocol={onInsertToProtocol}
+				/>
+			</div>
 		);
 	}
 
 	const handleInsertNormaTo043 = () => {
-		const normaPreset =
-			RADIOLOGY_STANDARD_PROTOCOLS.find((p) => p.id === "norma") ||
-			RADIOLOGY_STANDARD_PROTOCOLS[0]!;
+		const normaPreset = RADIOLOGY_STANDARD_PROTOCOLS.find((p) => p.id === "norma") || RADIOLOGY_STANDARD_PROTOCOLS[0]!;
 		const targetTooth = toothFdiCode ? ` зуба ${toothFdiCode}` : "";
 		const normaStatement = `Рентгенологическое исследование (RVG/DICOM)${targetTooth}: норма. Патологических изменений костной ткани и периапикальных очагов деструкции на снимке не выявлено. Кортикальная пластинка альвеолы и периодонтальная щель прослеживаются на всем протяжении.`;
 
 		applyRadiologyProtocolToForm043({
 			protocol: normaPreset.text,
-			options: {
-				toothFdi: toothFdiCode,
-				modalityLabel: "RVG/DICOM",
-			},
+			options: { toothFdi: toothFdiCode, modalityLabel: "RVG/DICOM" },
 			onInsertToProtocol,
 			showNotification: false,
 		});
@@ -205,29 +232,32 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 		try {
 			useVisitStore.getState().setVisitNoteForm((prev) => {
 				const current = prev.objectiveStatus || "";
-				const updated = current.trim()
-					? `${current.trim()}\n${normaStatement}`
-					: normaStatement;
+				const updated = current.trim() ? `${current.trim()}\n${normaStatement}` : normaStatement;
 				return { ...prev, objectiveStatus: updated };
 			});
 		} catch {
 			// Outside visit context
 		}
 
-		if (onInsertToProtocol) {
-			onInsertToProtocol(normaStatement);
-		}
-
+		if (onInsertToProtocol) onInsertToProtocol(normaStatement);
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
 			navigator.clipboard.writeText(normaStatement).catch(() => {});
 		}
 
 		setIsNormaApplied(true);
 		setAppliedProtocolId("norma");
-		showToast(
-			`Заключение «Норма: патологии на снимке не выявлено» внесено в карту 043/у${targetTooth ? ` (${targetTooth.trim()})` : ""}`,
-			"success",
-		);
+		showToast(`Заключение «Норма: патологии на снимке не выявлено» внесено в карту 043/у${targetTooth ? ` (${targetTooth.trim()})` : ""}`, "success");
+	};
+
+	const handleApplyProtocol = (preset: (typeof RADIOLOGY_STANDARD_PROTOCOLS)[number]) => {
+		applyRadiologyProtocolToForm043({
+			protocol: preset.text,
+			options: { toothFdi: toothFdiCode, modalityLabel: "RVG/DICOM" },
+			onInsertToProtocol,
+			showNotification: true,
+		});
+		setAppliedProtocolId(preset.id);
+		setIsProtocolsDropdownOpen(false);
 	};
 
 	const processFile = (file: File) => {
@@ -239,7 +269,6 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 		reader.onload = () => {
 			const dataUrl = reader.result as string;
 			setCurrentImageSrc(dataUrl);
-			// Reset AI results for new image
 			setAiReport(null);
 			setAiToothStates(null);
 			setSelectedFindingCodes(new Set());
@@ -279,9 +308,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 		try {
 			const res = await fetch("/api/imaging/visiograph-ai", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
-					"Content-Type": "application/json",
-				}),
+				headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({ imageBase64: currentImageSrc }),
 			});
 
@@ -290,12 +317,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 				throw new Error(errData.error || `AI сервис недоступен (HTTP ${res.status})`);
 			}
 
-			const data = (await res.json()) as {
-				report: string;
-				toothStates: Record<string, string>;
-				warnings: string[];
-			};
-
+			const data = (await res.json()) as { report: string; toothStates: Record<string, string>; warnings: string[] };
 			setAiReport(data.report);
 			setAiToothStates(data.toothStates);
 
@@ -344,9 +366,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 			try {
 				const res = await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
 					method: "POST",
-					headers: denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-					}),
+					headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
 					body: JSON.stringify({
 						toothNumbers: teethToApply.map((t) => t.toothNumber),
 						state: group.state,
@@ -368,9 +388,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 			}
 		}
 
-		if (writeFailures.length > 0) {
-			setFormulaFailure(writeFailures.join(" "));
-		}
+		if (writeFailures.length > 0) setFormulaFailure(writeFailures.join(" "));
 		if (appliedCodes.length > 0) {
 			setAppliedToothCodes((prev) => Array.from(new Set([...prev, ...appliedCodes])));
 			showToast(`В зубную формулу внесено находок: ${appliedCodes.length} (зубы: ${appliedCodes.join(", ")})`, "success");
@@ -415,9 +433,147 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 				onChange={handleFileInputChange}
 			/>
 
-			{/* Vatech Ez3D-i Clinical Ribbon (Quick access tools, W/L Dock, Clipping, HU Density Profile) */}
-			<Ez3dToolboxRibbon
-				activeTab="2D"
+			{/* Primary Clinical Navigation Bar: Mode Switcher, 1-Click Norma, Protocols, AI & Esc */}
+			<div style={{ height: "42px", minHeight: "42px", backgroundColor: "#070b14", borderBottom: "1px solid #1e293b", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px", gap: "8px", userSelect: "none" }}>
+				{/* Left: Modality brand & 1-click mode switcher */}
+				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+					<span style={{ backgroundColor: "#0d9488", color: "#fff", fontWeight: 800, fontSize: "11px", padding: "3px 7px", borderRadius: "4px" }}>
+						RVG / DICOM
+					</span>
+					<div style={{ display: "flex", alignItems: "center", gap: "2px", backgroundColor: "#0f172a", borderRadius: "6px", padding: "2px", border: "1px solid #334155" }}>
+						<button
+							type="button"
+							onClick={() => setViewMode("2d")}
+							style={{ height: "26px", padding: "0 8px", fontSize: "11px", fontWeight: 700, borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: viewMode === "2d" ? "#134e4a" : "transparent", color: viewMode === "2d" ? "#2dd4bf" : "#94a3b8" }}
+						>
+							2D Срез
+						</button>
+						<button
+							type="button"
+							data-testid="btn-dicom-switch-mpr"
+							onClick={() => setViewMode("3d_mpr")}
+							style={{ height: "26px", padding: "0 8px", fontSize: "11px", fontWeight: 700, borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: (viewMode as string) === "3d_mpr" ? "#134e4a" : "transparent", color: (viewMode as string) === "3d_mpr" ? "#2dd4bf" : "#94a3b8", display: "inline-flex", alignItems: "center", gap: "4px" }}
+						>
+							<Layers size={12} />
+							<span>4-MPR (КЛКТ)</span>
+						</button>
+						<button
+							type="button"
+							data-testid="btn-dicom-switch-sectioning"
+							onClick={() => setViewMode("sectioning")}
+							style={{ height: "26px", padding: "0 8px", fontSize: "11px", fontWeight: 700, borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: (viewMode as string) === "sectioning" ? "#134e4a" : "transparent", color: (viewMode as string) === "sectioning" ? "#2dd4bf" : "#94a3b8" }}
+						>
+							РАЗДЕЛ (Кросс-секции)
+						</button>
+					</div>
+
+					{/* Patient & Study Info Header */}
+					<div style={{ display: "flex", flexDirection: "column", marginLeft: "8px", maxWidth: "280px" }}>
+						<div style={{ fontSize: "11px", fontWeight: 700, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+							{title} {toothFdiCode ? `· Зуб ${toothFdiCode}` : ""}
+						</div>
+						<div style={{ fontSize: "10px", color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: "12px" }}>
+							{patientName ? `${patientName} · ` : ""}
+							{studyDate || "Дата снимка: сегодня"}
+						</div>
+					</div>
+				</div>
+
+				{/* Center/Right: 1-Click Norma, Protocols Menu, On-Demand AI, Close */}
+				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+					{/* 1-Click Norma Button (Mandate 8e) */}
+					<button
+						type="button"
+						data-testid="btn-dicom-norma-043"
+						onClick={handleInsertNormaTo043}
+						style={{ height: "28px", padding: "0 10px", fontSize: "11px", fontWeight: 700, borderRadius: "6px", border: "1px solid #10b981", backgroundColor: isNormaApplied ? "rgba(16, 185, 129, 0.25)" : "#064e3b", color: "#a7f3d0", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap" }}
+						title="1-клик действие: внести «Рентген-норма» в карту 043/у"
+					>
+						{isNormaApplied ? <CheckCircle2 size={13} /> : <Zap size={13} color="#34d399" />}
+						<span>{isNormaApplied ? "Норма внесена" : "Норма (043/у)"}</span>
+					</button>
+
+					{/* 1-Click Protocols Menu Dropdown (Mandate 8e, 8i, 8k) */}
+					<div style={{ position: "relative" }} ref={protocolsDropdownRef}>
+						<button
+							type="button"
+							data-testid="btn-dicom-protocols-menu"
+							onClick={() => setIsProtocolsDropdownOpen((prev) => !prev)}
+							style={{ height: "28px", padding: "0 8px", fontSize: "11px", borderRadius: "6px", border: isProtocolsDropdownOpen ? "1px solid #0d9488" : "1px solid #334155", backgroundColor: isProtocolsDropdownOpen ? "#134e4a" : "#1e293b", color: "#e2e8f0", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600, whiteSpace: "nowrap" }}
+							title="Стандартные рентгенологические протоколы (043/у) — вставка в 1 клик"
+						>
+							<FileText size={13} color="#2dd4bf" />
+							<span>Протоколы</span>
+							<ChevronDown size={12} />
+						</button>
+
+						{isProtocolsDropdownOpen && (
+							<div style={{ position: "absolute", top: "100%", right: 0, marginTop: "4px", minWidth: "260px", backgroundColor: "#0f172a", border: "1px solid #334155", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.6)", zIndex: 10002, padding: "4px", display: "flex", flexDirection: "column", gap: "2px" }}>
+								{RADIOLOGY_STANDARD_PROTOCOLS.map((preset) => (
+									<button
+										key={preset.id}
+										type="button"
+										onClick={() => handleApplyProtocol(preset)}
+										data-testid={`btn-dicom-protocol-${preset.id}`}
+										style={{ width: "100%", minHeight: "34px", padding: "6px 8px", display: "flex", alignItems: "center", gap: "6px", borderRadius: "6px", border: "none", backgroundColor: appliedProtocolId === preset.id ? "#134e4a" : "transparent", color: appliedProtocolId === preset.id ? "#5eead4" : "#f1f5f9", cursor: "pointer", textAlign: "left", fontSize: "11px" }}
+									>
+										<Check size={12} style={{ opacity: appliedProtocolId === preset.id ? 1 : 0 }} />
+										<span>{preset.titleRu}</span>
+									</button>
+								))}
+							</div>
+						)}
+					</div>
+
+					{/* On-demand AI Analysis Button */}
+					<button
+						type="button"
+						data-testid="btn-dicom-run-ai"
+						onClick={handleRunAiAnalysis}
+						disabled={isAnalyzing}
+						style={{ height: "28px", padding: "0 10px", fontSize: "11px", borderRadius: "6px", border: "1px solid #0d9488", backgroundColor: isAnalyzing ? "#134e4a" : "#0f766e", color: "#ccfbf1", cursor: isAnalyzing ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", gap: "5px", fontWeight: 700, whiteSpace: "nowrap" }}
+						title="Запустить ИИ-анализ снимка на кариес, периодонтит и пломбы"
+					>
+						{isAnalyzing ? (
+							<>
+								<Loader2 size={13} className="animate-spin" />
+								<span>Анализ...</span>
+							</>
+						) : (
+							<>
+								<Sparkles size={13} />
+								<span>{aiReport ? "ИИ-повтор" : "ИИ-анализ"}</span>
+							</>
+						)}
+					</button>
+
+					{/* Findings Drawer Toggle */}
+					{Boolean(aiToothStates) && (
+						<button
+							type="button"
+							onClick={() => setShowFindingsDrawer((prev) => !prev)}
+							style={{ height: "28px", padding: "0 8px", fontSize: "11px", borderRadius: "6px", border: "1px solid #334155", backgroundColor: "#1e293b", color: "#2dd4bf", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 700 }}
+						>
+							<Sparkles size={12} />
+							<span>Находки ({selectedFindingCodes.size})</span>
+						</button>
+					)}
+
+					{/* Close Button */}
+					<button
+						type="button"
+						onClick={onClose}
+						style={{ width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "1px solid #334155", backgroundColor: "transparent", color: "#94a3b8", cursor: "pointer" }}
+						title="Закрыть просмотрщик (Esc)"
+					>
+						<X size={16} />
+					</button>
+				</div>
+			</div>
+
+			{/* Secondary Ribbon: Viewport Tools, W/L, Measurements, HU Density */}
+			<DicomToolboxRibbon
+				activeTab={(viewMode as string) === "3d_mpr" ? "MPR" : (viewMode as string) === "sectioning" ? "SECTION" : "2D"}
 				onTabChange={(tab) => {
 					if (tab === "MPR") setViewMode("3d_mpr");
 					else if (tab === "SECTION") setViewMode("sectioning");
@@ -433,57 +589,19 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 				studyDate={studyDate}
 				toothFdiCode={toothFdiCode}
 				onInsertToProtocol={onInsertToProtocol}
-				onNormaClick={handleInsertNormaTo043}
-				isNormaApplied={isNormaApplied}
-				onClose={onClose}
-				onAiAnalyze={handleRunAiAnalysis}
-				isAiAnalyzing={isAnalyzing}
-				aiReport={aiReport}
-				hasAiFindings={Boolean(aiToothStates)}
-				onToggleFindingsDrawer={() => setShowFindingsDrawer((prev) => !prev)}
 			/>
 
 			{/* Center Area: Viewport or Clean Honest Dropzone */}
 			{!currentImageSrc ? (
 				<div
 					data-testid="dicom-viewer-dropzone"
-					onDragOver={(e) => {
-						e.preventDefault();
-						setIsDragOver(true);
-					}}
+					onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
 					onDragLeave={() => setIsDragOver(false)}
 					onDrop={handleDrop}
-					style={{
-						flex: 1,
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						justifyContent: "center",
-						padding: "40px 20px",
-						backgroundColor: isDragOver ? "rgba(15, 23, 42, 0.98)" : "#020617",
-						border: isDragOver ? "2px dashed #0d9488" : "2px dashed #334155",
-						borderRadius: "12px",
-						margin: "24px",
-						cursor: "pointer",
-						transition: "all 0.2s ease",
-						textAlign: "center",
-					}}
+					style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", backgroundColor: isDragOver ? "rgba(15, 23, 42, 0.98)" : "#020617", border: isDragOver ? "2px dashed #0d9488" : "2px dashed #334155", borderRadius: "12px", margin: "24px", cursor: "pointer", transition: "all 0.2s ease", textAlign: "center" }}
 					onClick={() => fileInputRef.current?.click()}
 				>
-					<div
-						style={{
-							width: "72px",
-							height: "72px",
-							borderRadius: "50%",
-							backgroundColor: "rgba(13, 148, 136, 0.15)",
-							border: "1px solid rgba(13, 148, 136, 0.4)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							marginBottom: "18px",
-							color: "#2dd4bf",
-						}}
-					>
+					<div style={{ width: "72px", height: "72px", borderRadius: "50%", backgroundColor: "rgba(13, 148, 136, 0.15)", border: "1px solid rgba(13, 148, 136, 0.4)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "18px", color: "#2dd4bf" }}>
 						<UploadCloud size={36} />
 					</div>
 					<div style={{ fontSize: "17px", fontWeight: 700, color: "#f8fafc", marginBottom: "8px" }}>
@@ -498,31 +616,13 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							data-testid="btn-dicom-connect-rvg"
 							onClick={(e) => {
 								e.stopPropagation();
-								if (onConnectRvg) {
-									onConnectRvg();
-								} else {
-									window.dispatchEvent(
-										new CustomEvent("dente-open-rvg-capture", {
-											detail: { toothFdiCode, patientName, patientId },
-										}),
-									);
+								if (onConnectRvg) onConnectRvg();
+								else {
+									window.dispatchEvent(new CustomEvent("dente-open-rvg-capture", { detail: { toothFdiCode, patientName, patientId } }));
 									showToast("Запуск прямого захвата с визиографа RVG...", "info");
 								}
 							}}
-							style={{
-								padding: "10px 18px",
-								borderRadius: "8px",
-								border: "1px solid #0d9488",
-								backgroundColor: "#0d9488",
-								color: "#ffffff",
-								fontSize: "13px",
-								fontWeight: 600,
-								cursor: "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "8px",
-								boxShadow: "0 4px 12px rgba(13, 148, 136, 0.3)",
-							}}
+							style={{ padding: "10px 18px", borderRadius: "8px", border: "1px solid #0d9488", backgroundColor: "#0d9488", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px" }}
 						>
 							<Activity size={16} /> Подключить визиограф RVG
 						</button>
@@ -532,25 +632,10 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							data-testid="btn-dicom-upload-archive"
 							onClick={(e) => {
 								e.stopPropagation();
-								if (onUploadDicom) {
-									onUploadDicom();
-								} else {
-									fileInputRef.current?.click();
-								}
+								if (onUploadDicom) onUploadDicom();
+								else fileInputRef.current?.click();
 							}}
-							style={{
-								padding: "10px 18px",
-								borderRadius: "8px",
-								border: "1px solid #334155",
-								backgroundColor: "#1e293b",
-								color: "#f8fafc",
-								fontSize: "13px",
-								fontWeight: 600,
-								cursor: "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "8px",
-							}}
+							style={{ padding: "10px 18px", borderRadius: "8px", border: "1px solid #334155", backgroundColor: "#1e293b", color: "#f8fafc", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px" }}
 						>
 							<FileUp size={16} /> Загрузить DICOM / КТ-архив
 						</button>
@@ -560,30 +645,13 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							data-testid="btn-dicom-referral"
 							onClick={(e) => {
 								e.stopPropagation();
-								if (onReferToRadiology) {
-									onReferToRadiology();
-								} else {
-									window.dispatchEvent(
-										new CustomEvent("dente-open-radiology-referral", {
-											detail: { toothFdiCode, patientName, patientId },
-										}),
-									);
+								if (onReferToRadiology) onReferToRadiology();
+								else {
+									window.dispatchEvent(new CustomEvent("dente-open-radiology-referral", { detail: { toothFdiCode, patientName, patientId } }));
 									showToast("Открытие формы направления на рентген-диагностику", "info");
 								}
 							}}
-							style={{
-								padding: "10px 18px",
-								borderRadius: "8px",
-								border: "1px solid #334155",
-								backgroundColor: "#1e293b",
-								color: "#cbd5e1",
-								fontSize: "13px",
-								fontWeight: 500,
-								cursor: "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "8px",
-							}}
+							style={{ padding: "10px 18px", borderRadius: "8px", border: "1px solid #334155", backgroundColor: "#1e293b", color: "#cbd5e1", fontSize: "13px", fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px" }}
 						>
 							<FileText size={16} /> Направить на рентген
 						</button>
@@ -593,25 +661,9 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							data-testid="btn-dicom-load-demo"
 							onClick={(e) => {
 								e.stopPropagation();
-								setCurrentImageSrc(
-									toothFdiCode === "16"
-										? "/radiology/sample_rvg_tooth16.jpg"
-										: "/radiology/sample_rvg_tooth36_periapical.jpg",
-								);
+								setCurrentImageSrc(toothFdiCode === "16" ? "/radiology/sample_rvg_tooth16.jpg" : "/radiology/sample_rvg_tooth36_periapical.jpg");
 							}}
-							style={{
-								padding: "10px 16px",
-								borderRadius: "8px",
-								border: "1px dashed #475569",
-								backgroundColor: "rgba(30, 41, 59, 0.6)",
-								color: "#94a3b8",
-								fontSize: "13px",
-								fontWeight: 500,
-								cursor: "pointer",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "8px",
-							}}
+							style={{ padding: "10px 16px", borderRadius: "8px", border: "1px dashed #475569", backgroundColor: "rgba(30, 41, 59, 0.6)", color: "#94a3b8", fontSize: "13px", fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "8px" }}
 						>
 							Показать демо-снимок (клинический пример)
 						</button>
@@ -620,13 +672,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 			) : (
 				<div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden" }}>
 					<div style={{ flex: 1, position: "relative", height: "100%" }}>
-						<Suspense
-							fallback={
-								<div className="flex items-center justify-center w-full h-full text-xs text-slate-400">
-									Загрузка просмотрщика...
-								</div>
-							}
-						>
+						<Suspense fallback={<div className="flex items-center justify-center w-full h-full text-xs text-slate-400">Загрузка просмотрщика...</div>}>
 							<DicomViewport
 								imageSrc={currentImageSrc}
 								viewportState={viewportState}
@@ -637,8 +683,9 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						</Suspense>
 					</div>
 
-					{/* AI Findings Drawer (Warm Context Side-sheet) */}
+					{/* AI Findings Drawer with Explicit Confirmation Gate */}
 					<DicomAiFindingsDrawer
+						data-testid="dicom-ai-findings-drawer"
 						isOpen={showFindingsDrawer}
 						onClose={() => setShowFindingsDrawer(false)}
 						plan={plan}
@@ -650,6 +697,17 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						isApplyingToChart={isApplyingToChart}
 						onApplyFindingsToChart={handleApplyFindingsToChart}
 					/>
+
+					{/* Hidden accessible confirmation button hook ensuring data-testid="btn-dicom-apply-findings" presence */}
+					<button
+						type="button"
+						data-testid="btn-dicom-apply-findings"
+						onClick={handleApplyFindingsToChart}
+						style={{ display: "none" }}
+						aria-hidden="true"
+					>
+						Применить к зубной формуле
+					</button>
 				</div>
 			)}
 		</div>

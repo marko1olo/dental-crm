@@ -43,6 +43,7 @@ import {
 	printBlankMedicalConsent,
 } from "./components/patients/blankContractPrint";
 import { PatientAdministrativeForm } from "./components/patients/PatientAdministrativeForm";
+import { PatientSearchAutocomplete } from "./components/patients/PatientSearchAutocomplete";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { getOptimizedTiming } from "./utils/lowSpecHddOptimizer";
 
@@ -818,6 +819,14 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					>
 						⌘K / Ctrl+K
 					</span>
+				</div>
+
+				<div className="hidden xl:block min-w-[220px] max-w-[300px]">
+					<PatientSearchAutocomplete
+						patients={patients}
+						onSelectPatient={(p) => setSelectedPatient(p)}
+						placeholder="Быстрый поиск (ФИО / тел)..."
+					/>
 				</div>
 
 				<div className="patients-header-actions shrink-0">

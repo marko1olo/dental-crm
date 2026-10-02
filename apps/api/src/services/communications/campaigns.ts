@@ -87,6 +87,10 @@ const CAMPAIGN_SAFE_VARIABLES = new Set([
 	"clinicAddress",
 	"link",
 	"reviewLink",
+	"discountPercent",
+	"promoCode",
+	"validUntil",
+	"bonusAmount",
 ]);
 
 function campaignTemplateProblems(

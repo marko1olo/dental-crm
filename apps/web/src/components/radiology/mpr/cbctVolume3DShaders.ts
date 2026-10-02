@@ -191,7 +191,10 @@ void main() {
                     }
                 }
             } else {
-                if (hu >= u_huMin) {
+                bool isHit = (u_presetMode == 2)
+                    ? (hu >= u_huMin && hu <= u_huMax)
+                    : (hu >= u_huMin);
+                if (isHit) {
                     hit = true;
                     vec3 hitPos = curPos;
                     // Sub-voxel bisection refinement (4 steps) on mouseUp (u_refineSteps > 0)
@@ -202,7 +205,8 @@ void main() {
                             if (b >= u_refineSteps) break;
                             vec3 pm = (p0 + p1) * 0.5;
                             float h = sampleHUTrilinear(pm);
-                            if (h >= u_huMin) p1 = pm; else p0 = pm;
+                            bool hHit = (u_presetMode == 2) ? (h >= u_huMin && h <= u_huMax) : (h >= u_huMin);
+                            if (hHit) p1 = pm; else p0 = pm;
                         }
                         hitPos = (p0 + p1) * 0.5;
                     }
@@ -226,7 +230,10 @@ void main() {
                     }
                     float gLen = length(grad);
                     // Outward surface normal points toward lower density (from bone into air)
-                    norm = gLen > 0.001 ? -normalize(grad) : -rayDir;
+                    // For airway, surface normal points inward toward cavity lumen
+                    norm = gLen > 0.001
+                        ? (u_presetMode == 2 ? normalize(grad) : -normalize(grad))
+                        : -rayDir;
                     // Ensure normal faces toward the camera
                     if (dot(norm, -rayDir) < 0.0) {
                         norm = -norm;
@@ -481,7 +488,8 @@ export function renderWebGl2VolumeRaymarching(
 	gl.uniform1f(uniforms.zoom, zoom);
 	gl.uniform1f(uniforms.huMin, preset.huMin);
 	gl.uniform1f(uniforms.huMax, preset.huMax);
-	gl.uniform1i(uniforms.presetMode, preset.id === "mip" ? 1 : 0);
+	const presetModeCode = preset.id === "mip" ? 1 : preset.id === "airway" ? 2 : 0;
+	gl.uniform1i(uniforms.presetMode, presetModeCode);
 
 	gl.uniform3f(
 		uniforms.boneColor,

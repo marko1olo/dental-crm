@@ -465,22 +465,9 @@ export const getLabOrderStatusTool: ToolDefinition<
 			}
 		}
 
-		if (orderItems.length === 0) {
-			orderItems.push({
-				orderId: args.orderId || "lab_mock_01",
-				patientId: args.patientId || "patient_01",
-				toothFdi: "46",
-				workType: "Ортопедическая коронка",
-				material: "Диоксид циркония",
-				colorVita: "A2",
-				status: "in_progress",
-				dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-				isDelayed: false,
-				portalToken: "mock-token",
-			});
-		}
-
-		const summaryRu = `Найдено нарядов ЗТЛ: ${orderItems.length}. Активный статус: ${orderItems[0]?.status} (зуб FDI ${orderItems[0]?.toothFdi}).`;
+		const summaryRu = orderItems.length > 0
+			? `Найдено нарядов ЗТЛ: ${orderItems.length}. Активный статус: ${orderItems[0]?.status} (зуб FDI ${orderItems[0]?.toothFdi ?? "не указан"}).`
+			: "Нарядов ЗТЛ не найдено.";
 
 		return {
 			success: true,

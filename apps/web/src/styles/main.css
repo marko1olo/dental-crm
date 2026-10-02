@@ -10420,6 +10420,17 @@ section.imaging-panel {
 	border: 1px solid #334155;
 }
 
+:root[data-theme="dark"] .status-in_treatment,
+:root[data-theme="dark"] .status-arrived,
+[data-theme="dark"] .status-in_treatment,
+[data-theme="dark"] .status-arrived,
+.dark .status-in_treatment,
+.dark .status-arrived {
+	background: rgba(45, 212, 191, 0.18) !important;
+	color: var(--teal, #2dd4bf) !important;
+	border: 1px solid rgba(45, 212, 191, 0.35) !important;
+}
+
 .search-box,
 .quick-create {
 	align-items: center;

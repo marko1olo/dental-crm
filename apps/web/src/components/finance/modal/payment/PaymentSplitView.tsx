@@ -206,7 +206,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 							setSplitCertificateRub(0);
 							setSplitBonusRub(0);
 						}}
-						className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 cursor-pointer flex items-center gap-1"
+						className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 					>
 						<Zap size={12} />
 						<span>Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Карта</span>
@@ -226,7 +226,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 							setSplitCertificateRub(0);
 							setSplitBonusRub(0);
 						}}
-						className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 cursor-pointer flex items-center gap-1"
+						className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 					>
 						<Zap size={12} />
 						<span>Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Нал</span>
@@ -242,7 +242,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 						setSplitCertificateRub(0);
 						setSplitBonusRub(0);
 					}}
-					className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-blue-400 cursor-pointer flex items-center"
+					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 				>
 					Всё на карту
 				</button>
@@ -256,28 +256,28 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 						setSplitCertificateRub(0);
 						setSplitBonusRub(0);
 					}}
-					className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 cursor-pointer flex items-center"
+					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 				>
 					Всё наличными
 				</button>
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("card")}
-					className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-blue-400 cursor-pointer flex items-center"
+					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 				>
 					Остаток на карту
 				</button>
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("cash")}
-					className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 cursor-pointer flex items-center"
+					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 				>
 					Остаток наличными
 				</button>
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("sbp")}
-					className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-purple-400 cursor-pointer flex items-center"
+					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 					data-testid="btn-payment-remainder-sbp"
 				>
 					Остаток через СБП
@@ -285,7 +285,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("certificate")}
-					className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-amber-400 cursor-pointer flex items-center"
+					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 					data-testid="btn-payment-remainder-certificate"
 				>
 					Остаток сертификатом
@@ -293,7 +293,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("bonus")}
-					className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-pink-400 cursor-pointer flex items-center"
+					className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 					data-testid="btn-payment-remainder-bonus"
 				>
 					Остаток бонусами
@@ -302,7 +302,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 					<button
 						type="button"
 						onClick={() => applySplitRemainder("deposit")}
-						className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-indigo-400 cursor-pointer flex items-center"
+						className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 						data-testid="btn-payment-remainder-deposit"
 					>
 						Остаток из аванса
@@ -312,7 +312,7 @@ export const PaymentSplitView: React.FC<PaymentSplitViewProps> = ({
 					<button
 						type="button"
 						onClick={() => applySplitRemainder("family")}
-						className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-teal-400 cursor-pointer flex items-center"
+						className="min-h-[44px] sm:min-h-[28px] px-2.5 py-1 sm:py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
 						data-testid="btn-payment-remainder-family"
 					>
 						Остаток из семьи

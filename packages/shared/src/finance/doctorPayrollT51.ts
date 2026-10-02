@@ -232,6 +232,19 @@ export interface DoctorPayrollStornoLineItem {
 	readonly labelRu: string;
 }
 
+export interface DoctorRefundDeductionItem {
+	readonly serviceId?: string | undefined;
+	readonly toothCode?: string | undefined;
+	readonly serviceNameRu?: string | undefined;
+	readonly refundedGrossKop: number;
+	readonly reasonRu?: string | undefined;
+	readonly receiptNumber?: string | undefined;
+	readonly dateIso?: string | undefined;
+	readonly customCommissionPercent?: number | undefined;
+	readonly performerId?: string | undefined;
+	readonly doctorId?: string | undefined;
+}
+
 export interface DoctorPayrollCalculationInput {
 	readonly doctorId: string;
 	readonly doctorName: string;
@@ -241,15 +254,10 @@ export interface DoctorPayrollCalculationInput {
 	readonly services: readonly DoctorCompletedServiceItem[];
 	readonly customBasePercentage?: number | undefined;
 	readonly categoryRates?: Partial<Record<"therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric", number>> | undefined;
+	readonly useClinicalCategoryRates?: boolean | undefined;
 	readonly manualAdjustmentKop?: number | undefined; // e.g. advance payment deduction or bonus
 	readonly manualAdjustmentNoteRu?: string | undefined;
-	readonly refundDeductions?: readonly {
-		readonly serviceId?: string | undefined;
-		readonly toothCode?: string | undefined;
-		readonly serviceNameRu?: string | undefined;
-		readonly refundedGrossKop: number;
-		readonly reasonRu?: string | undefined;
-	}[] | undefined;
+	readonly refundDeductions?: readonly DoctorRefundDeductionItem[] | undefined;
 }
 
 export interface DoctorPayrollResult {
@@ -264,6 +272,8 @@ export interface DoctorPayrollResult {
 	readonly totalRefundDeductionsKop: number;
 	readonly totalRefundClawbackKop: number;
 	readonly refundedServicesCount: number;
+	readonly stornoItems: readonly DoctorPayrollStornoLineItem[];
+	readonly warrantyServicesCount: number;
 	readonly baseCommissionPercent: number;
 	readonly earnedBaseCommissionKop: number;
 	readonly kpiBonusPercent: number;
@@ -302,20 +312,58 @@ export interface AssistantPayrollResult {
 	readonly netPayoutToAssistantKop: number;
 }
 
+export function splitVisitServicesByDoctor(
+	services: readonly DoctorCompletedServiceItem[],
+	fallbackDoctorId?: string
+): Map<string, DoctorCompletedServiceItem[]> {
+	const map = new Map<string, DoctorCompletedServiceItem[]>();
+	for (const service of services) {
+		const targetDoctorId = service.performerId ?? service.doctorId ?? fallbackDoctorId ?? "unassigned";
+		const list = map.get(targetDoctorId) ?? [];
+		list.push(service);
+		map.set(targetDoctorId, list);
+	}
+	return map;
+}
+
+export function filterServicesForDoctor(
+	services: readonly DoctorCompletedServiceItem[],
+	doctorId: string
+): DoctorCompletedServiceItem[] {
+	return services.filter((srv) => {
+		const assigned = srv.performerId ?? srv.doctorId;
+		return !assigned || assigned === doctorId;
+	});
+}
+
+export function resolveDoctorPreset(specialtyId: string): DoctorSpecialtyCommissionRule {
+	const defaultPreset =
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "general_dentist") ??
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS[0]!;
+
+	return (
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === specialtyId) ??
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find(
+			(p) =>
+				(specialtyId === "solo-doctor" && p.specialtyId === "general_dentist") ||
+				(specialtyId === "surgeon" && p.specialtyId === "surgeon_implantologist") ||
+				(specialtyId === "pediatric" && p.specialtyId === "pediatric_dentist")
+		) ??
+		defaultPreset
+	);
+}
+
 /**
- * Calculates kopeck-exact doctor piece-rate payroll with lab/material deductions and KPI tiers
+ * Calculates kopeck-exact doctor piece-rate payroll with ZTL and material deductions,
+ * differentiated clinical rates, KPI tiers, and Personal Income Tax (НДФЛ 13%).
  */
 export function calculateDoctorPeriodPayroll(
-	input: DoctorPayrollCalculationInput,
+	input: DoctorPayrollCalculationInput
 ): DoctorPayrollResult {
-	const defaultPreset =
-		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "therapist") ??
-		DOCTOR_SPECIALTY_PAYROLL_PRESETS[0]!;
-	const preset: DoctorSpecialtyCommissionRule =
-		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === input.specialtyId) ??
-		defaultPreset;
-
+	const preset = resolveDoctorPreset(input.specialtyId);
 	const basePercent = input.customBasePercentage ?? preset.defaultPercentage;
+
+	const doctorServices = filterServicesForDoctor(input.services, input.doctorId);
 
 	let totalGross = 0;
 	let totalLab = 0;
@@ -323,15 +371,82 @@ export function calculateDoctorPeriodPayroll(
 	let earnedBase = 0;
 	let earnedRetail = 0;
 	let refundedServicesCount = 0;
+	let warrantyServicesCount = 0;
 	let totalItemRefundsKop = 0;
+	const stornoItems: DoctorPayrollStornoLineItem[] = [];
 
-	for (const item of input.services) {
-		const isFullyRefunded = item.isRefunded === true || (item.refundedAmountKop && item.refundedAmountKop >= item.grossRevenueKop);
+	for (const item of doctorServices) {
+		if (item.isDepositAdvanceOnly) {
+			continue;
+		}
+
+		if (item.isWarrantyRework) {
+			warrantyServicesCount += 1;
+			if (item.warrantyType === "clinic_warranty" || item.warrantyType === "lab_warranty") {
+				const fixedComp = item.warrantyFixedCompensationKop ?? 0;
+				if (fixedComp > 0) {
+					earnedBase += fixedComp;
+				}
+			}
+			if (item.deductMaterialFromDoctor && item.materialCostKop > 0) {
+				totalMaterial += item.materialCostKop;
+			}
+			continue;
+		}
+
+		const isFullyRefunded = item.isRefunded === true || (item.refundedAmountKop !== undefined && item.refundedAmountKop >= item.grossRevenueKop);
 		const refundKop = Math.min(item.grossRevenueKop, item.refundedAmountKop ?? (item.isRefunded ? item.grossRevenueKop : 0));
+
+		// CLINICAL INVARIANT: Orthopedic & Orthodontic services ALWAYS deduct ZTL lab costs
+		const shouldDeductLab =
+			preset.deductsLabCosts ||
+			item.category === "orthopedics" ||
+			item.category === "orthodontics" ||
+			(item.labCostKop !== undefined && item.labCostKop > 0);
+		const itemLabCost = shouldDeductLab ? Math.max(0, item.labCostKop || 0) : 0;
+
+		// CLINICAL INVARIANT: Surgery/Implantation (implants, bone blocks) & Therapy deduct materials
+		const shouldDeductMaterial =
+			preset.deductsMaterialCosts ||
+			item.category === "surgery" ||
+			item.category === "therapy" ||
+			item.category === "pediatric" ||
+			(item.materialCostKop !== undefined && item.materialCostKop > 0 && preset.deductsMaterialCosts);
+		const itemMaterialCost = shouldDeductMaterial ? Math.max(0, item.materialCostKop || 0) : 0;
+
+		const clinicalRate = input.useClinicalCategoryRates ? CLINICAL_CATEGORY_COMMISSION_PERCENT[item.category] : undefined;
+
+		const itemCommissionPercent =
+			item.customCommissionPercent ??
+			input.categoryRates?.[item.category] ??
+			clinicalRate ??
+			(input.customBasePercentage !== undefined
+				? input.customBasePercentage
+				: (preset.specialtyId === "solo_practitioner" || preset.specialtyId === "solo-doctor" || preset.defaultPercentage === 100
+					? preset.defaultPercentage
+					: (DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category] ?? (item.category === "retail_hygiene" ? preset.retailProductsPercentage : basePercent))));
 
 		if (isFullyRefunded) {
 			refundedServicesCount += 1;
 			totalItemRefundsKop += item.grossRevenueKop;
+
+			const receiptNum = item.refundReceiptNumber ?? item.receiptNumber ?? item.id;
+			const reason = item.refundReasonRu ?? "Полный возврат пациенту";
+			const netBaseIfPaid = Math.max(0, item.grossRevenueKop - itemLabCost - itemMaterialCost);
+			const stornoComm = Math.round((netBaseIfPaid * itemCommissionPercent) / 100);
+			const stornoRub = (stornoComm / 100).toLocaleString("ru-RU");
+
+			stornoItems.push({
+				id: `storno-srv-${item.id}`,
+				serviceId: item.id,
+				dateIso: item.refundDateIso ?? item.dateIso,
+				serviceNameRu: item.serviceNameRu,
+				receiptNumber: receiptNum,
+				reasonRu: reason,
+				refundedGrossKop: item.grossRevenueKop,
+				stornoCommissionKop: stornoComm,
+				labelRu: `Сторно комиссии: Возврат по чеку №${receiptNum} (-${stornoRub} ₽)`,
+			});
 			continue;
 		}
 
@@ -339,31 +454,28 @@ export function calculateDoctorPeriodPayroll(
 		if (refundKop > 0) {
 			refundedServicesCount += 1;
 			totalItemRefundsKop += refundKop;
+
+			const receiptNum = item.refundReceiptNumber ?? item.receiptNumber ?? item.id;
+			const reason = item.refundReasonRu ?? "Частичный возврат пациенту";
+			const partialStornoComm = Math.round((refundKop * itemCommissionPercent) / 100);
+			const stornoRub = (partialStornoComm / 100).toLocaleString("ru-RU");
+
+			stornoItems.push({
+				id: `storno-partial-${item.id}`,
+				serviceId: item.id,
+				dateIso: item.refundDateIso ?? item.dateIso,
+				serviceNameRu: `${item.serviceNameRu} (частично)`,
+				receiptNumber: receiptNum,
+				reasonRu: reason,
+				refundedGrossKop: refundKop,
+				stornoCommissionKop: partialStornoComm,
+				labelRu: `Сторно комиссии: Возврат по чеку №${receiptNum} (-${stornoRub} ₽)`,
+			});
 		}
 
 		totalGross += effectiveGrossKop;
-
-		// MANDATE 1: Orthopedic and Orthodontic services ALWAYS deduct ZTL dental lab costs,
-		// and ANY service with a direct lab invoice (labCostKop > 0) or specialty preset deducts lab.
-		const shouldDeductLab =
-			preset.deductsLabCosts ||
-			item.category === "orthopedics" ||
-			item.category === "orthodontics" ||
-			(item.labCostKop !== undefined && item.labCostKop > 0);
-		const labCost = shouldDeductLab ? Math.max(0, item.labCostKop || 0) : 0;
-
-		// MANDATE 1: Surgery/Implantation (implants, bone blocks, titanium meshes, membranes)
-		// and Therapy (restorative composites) and ANY service with direct materials (materialCostKop > 0)
-		// deducts high-cost materials from the doctor's commission base.
-		const shouldDeductMaterial =
-			preset.deductsMaterialCosts ||
-			item.category === "surgery" ||
-			item.category === "therapy" ||
-			(item.materialCostKop !== undefined && item.materialCostKop > 0);
-		const materialCost = shouldDeductMaterial ? Math.max(0, item.materialCostKop || 0) : 0;
-
-		totalLab += labCost;
-		totalMaterial += materialCost;
+		totalLab += itemLabCost;
+		totalMaterial += itemMaterialCost;
 
 		if (item.category === "retail_hygiene") {
 			const itemRetailPercent =
@@ -373,38 +485,50 @@ export function calculateDoctorPeriodPayroll(
 			const retailEarned = Math.round((effectiveGrossKop * itemRetailPercent) / 100);
 			earnedRetail += retailEarned;
 		} else {
-			const netItemBase = Math.max(0, effectiveGrossKop - labCost - materialCost);
-			const itemCommissionPercent =
-				item.customCommissionPercent ??
-				input.categoryRates?.[item.category] ??
-				(input.customBasePercentage !== undefined
-					? input.customBasePercentage
-					: (preset.specialtyId === "solo_practitioner" || preset.specialtyId === "solo-doctor" || preset.defaultPercentage === 100
-						? preset.defaultPercentage
-						: (DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category] ?? basePercent)));
+			const netItemBase = Math.max(0, effectiveGrossKop - itemLabCost - itemMaterialCost);
 			const itemEarned = Math.round((netItemBase * itemCommissionPercent) / 100);
 			earnedBase += itemEarned;
 		}
 	}
 
-	// External explicit refund deductions
 	let explicitRefundKop = 0;
 	let explicitRefundClawbackKop = 0;
 
 	if (input.refundDeductions && input.refundDeductions.length > 0) {
 		for (const ref of input.refundDeductions) {
+			const assignedDoctorId = ref.performerId ?? ref.doctorId;
+			if (assignedDoctorId && assignedDoctorId !== input.doctorId) {
+				continue;
+			}
+
+			const refRate = ref.customCommissionPercent ?? basePercent;
+			const clawbackKop = Math.round((ref.refundedGrossKop * refRate) / 100);
 			explicitRefundKop += ref.refundedGrossKop;
-			explicitRefundClawbackKop += Math.round((ref.refundedGrossKop * basePercent) / 100);
+			explicitRefundClawbackKop += clawbackKop;
 			refundedServicesCount += 1;
+
+			const receiptNum = ref.receiptNumber ?? ref.serviceId ?? "б/н";
+			const stornoRub = (clawbackKop / 100).toLocaleString("ru-RU");
+			const labelRu = `Сторно комиссии: Возврат по чеку №${receiptNum} (-${stornoRub} ₽)`;
+
+			stornoItems.push({
+				id: `storno-deduct-${ref.serviceId ?? `${ref.dateIso ?? input.periodEndIso}-${stornoItems.length + 1}`}`,
+				serviceId: ref.serviceId,
+				dateIso: ref.dateIso ?? input.periodEndIso,
+				serviceNameRu: ref.serviceNameRu ?? "Возврат за ранее оплаченную услугу",
+				receiptNumber: receiptNum,
+				reasonRu: ref.reasonRu ?? "Возврат пациенту",
+				refundedGrossKop: ref.refundedGrossKop,
+				stornoCommissionKop: clawbackKop,
+				labelRu,
+			});
 		}
 	}
 
 	const totalRefundDeductionsKop = totalItemRefundsKop + explicitRefundKop;
 	const totalRefundClawbackKop = explicitRefundClawbackKop;
-
 	const totalNetBase = Math.max(0, totalGross - totalLab - totalMaterial);
 
-	// KPI Bonus evaluation
 	let kpiPercent = 0;
 	let kpiBadge = "Базовая ставка";
 	for (const tier of KPI_BONUS_TIERS) {
@@ -419,9 +543,12 @@ export function calculateDoctorPeriodPayroll(
 	const manualAdj = input.manualAdjustmentKop ?? 0;
 
 	let preGuaranteePayout = earnedBase + earnedRetail + kpiBonusEarned + manualAdj - totalRefundClawbackKop;
-	let guaranteeApplied = false;
+	if (!Number.isFinite(preGuaranteePayout)) {
+		preGuaranteePayout = 0;
+	}
 
-	if (preGuaranteePayout < preset.minGuaranteeMonthlyKop && input.services.length > 0) {
+	let guaranteeApplied = false;
+	if (preGuaranteePayout < preset.minGuaranteeMonthlyKop && doctorServices.length > 0) {
 		preGuaranteePayout = preset.minGuaranteeMonthlyKop;
 		guaranteeApplied = true;
 	}
@@ -443,6 +570,8 @@ export function calculateDoctorPeriodPayroll(
 		totalRefundDeductionsKop,
 		totalRefundClawbackKop,
 		refundedServicesCount,
+		stornoItems,
+		warrantyServicesCount,
 		baseCommissionPercent: basePercent,
 		earnedBaseCommissionKop: earnedBase,
 		kpiBonusPercent: kpiPercent,
@@ -454,7 +583,7 @@ export function calculateDoctorPeriodPayroll(
 		netPayoutToDoctorKop: netToDoctor,
 		minimumGuaranteeApplied: guaranteeApplied,
 		manualAdjustmentKop: manualAdj,
-		serviceCount: input.services.length,
+		serviceCount: doctorServices.length,
 	};
 }
 

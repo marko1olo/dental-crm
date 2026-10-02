@@ -288,15 +288,78 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Подкомпонент навигации устаревшего VisitHeaderMonolith.tsx. В живом интерфейсе переключение вкладок визита (ЭМК, Формула, Смета, Снимки) реализовано компактными кнопками навигации непосредственно в VisitView.tsx.",
 	},
-	/*
-	 * SanpinCycleModal УДАЛЁН per Mandate 8s (бутафорский фасад-заглушка с display: none; канонические журналы: SanpinRegisters).
-	 */
-	/*
-	 * EgiszSigningCabinetModal УДАЛЁН per Mandate 8s (канонический SSOT: EgiszRemdHubModal.tsx).
-	 */
-	/*
-	 * SurgeryVisitCockpit УДАЛЁН per Mandate 8s (канонический SSOT: VisitSurgeryProtocolTab.tsx).
-	 */
+	{
+		file: "components/copilot/ChairsideCopilotHUD.tsx",
+		name: "ChairsideCopilotHUD",
+		reason:
+			"Автономный голосовой терминал искусственного интеллекта у кресла стоматолога (hands-free HUD). Предоставляет пошаговый стрим рассуждений ReAct и генерацию сметы приёма. Зарезервирован для аппаратных кресельных терминалов клиники.",
+	},
+	{
+		file: "components/icons/DentalIcons.tsx",
+		name: "ScanBodyMarker",
+		reason:
+			"Специализированная векторная SVG-пиктограмма скан-маркера (скан-боди) для 3D интраорального сканирования и навигационной имплантологии. Входит в базовую библиотеку клинических стоматологических иконок DentalIcons.",
+	},
+	{
+		file: "components/icons/DentalIcons.tsx",
+		name: "DentalAbutment",
+		reason:
+			"Специализированная векторная SVG-пиктограмма ортопедического абатмента для протоколов протезирования на дентальных имплантатах. Входит в базовую библиотеку клинических стоматологических иконок DentalIcons клиники.",
+	},
+	{
+		file: "components/icons/DentalIcons.tsx",
+		name: "CuringLight",
+		reason:
+			"Специализированная векторная SVG-пиктограмма фотополимеризационной лампы терапевтического кабинета для карт полимеризации композитов. Входит в базовую библиотеку клинических стоматологических иконок DentalIcons.",
+	},
+	{
+		file: "components/icons/DentalIcons.tsx",
+		name: "RubberDam",
+		reason:
+			"Специализированная векторная SVG-пиктограмма коффердама (раббердама) для протоколов изоляции рабочего поля в эндодонтии и терапии. Входит в базовую библиотеку клинических стоматологических иконок DentalIcons.",
+	},
+	{
+		file: "components/icons/DentalIcons.tsx",
+		name: "SalivaEjector",
+		reason:
+			"Специализированная векторная SVG-пиктограмма стоматологического слюноотсоса и аспирационной системы рабочего места ассистента. Входит в базовую библиотеку клинических стоматологических иконок DentalIcons клиники.",
+	},
+	{
+		file: "components/icons/DentalIcons.tsx",
+		name: "BleachingLamp",
+		reason:
+			"Специализированная векторная SVG-пиктограмма аппарата клинического кабинетного отбеливания зубов для протоколов гигиены и эстетики. Входит в базовую библиотеку клинических стоматологических иконок DentalIcons.",
+	},
+	{
+		file: "components/icons/DentalIcons.tsx",
+		name: "GingivaRecession",
+		reason:
+			"Специализированная векторная SVG-пиктограмма рецессии десны и маргинального пародонтита для пародонтологической карты пациента. Входит в базовую библиотеку клинических стоматологических иконок DentalIcons.",
+	},
+	{
+		file: "components/radiology/mpr/CbctViewportsRuler.tsx",
+		name: "CbctViewportsRulerOverlay",
+		reason:
+			"Вспомогательный оверлей-тулбар линейки и угломера мультипланарной реконструкции (MPR КЛКТ). Входит в модуль CbctViewportsRuler.tsx и используется как специализированный оверлей для измерений каналов и кости.",
+	},
+	{
+		file: "components/settings/doctor/DoctorAnesthesiaToxicityCalculator.tsx",
+		name: "DoctorAnesthesiaToxicityCalculator",
+		reason:
+			"Устаревший калькулятор токсичности анестетиков, сохраненный как прокси-обертка для обратной совместимости тестов. Каноническим SSOT настроек анестезии является DoctorAnesthesiaDefaultsSection.tsx.",
+	},
+	{
+		file: "components/tutorial/CoachMarkTooltip.tsx",
+		name: "CoachMarkTooltip",
+		reason:
+			"Интерактивная всплывающая подсказка с расчетом геометрии подсветки (spotlight) для пошагового обучения врачей и персонала клиники. Протестирована и зафиксирована в src/tests/coachMarkTooltip.test.ts.",
+	},
+	{
+		file: "components/workspace/WorkspaceHeaderBar.tsx",
+		name: "WorkspaceHeaderBar",
+		reason:
+			"Композитная шапка рабочего пространства клиники для демонстрационных стендов. В живом интерфейсе клиники ее функции и кнопки разделены и смонтированы непосредственно внутри канонического workspaceShell.tsx.",
+	},
 ];
 
 
@@ -1387,6 +1450,20 @@ test("устаревших фасадов-дубликатов представ�
 		"components/visit/endo/index.ts",
 		"components/visit/surgery/index.ts",
 		"components/visit/therapy/index.ts",
+		"components/analytics/index.ts",
+		"components/copilot/index.ts",
+		"components/dashboard/index.ts",
+		"components/guidance/index.ts",
+		"components/orthodontics/index.ts",
+		"components/reports/index.ts",
+		"components/sync/index.ts",
+		"components/doctor/index.ts",
+		"components/presence/index.ts",
+		"components/finance/index.ts",
+		"components/diagnostics/index.ts",
+		"components/radiology/index.ts",
+		"components/telephony/index.ts",
+		"components/patients/index.ts",
 	]) {
 		assert.equal(
 			existsSync(path.join(webSrcRoot, removed)),

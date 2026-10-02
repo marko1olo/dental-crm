@@ -285,7 +285,7 @@ describe("auth routes", () => {
 					.values({
 						id: userId,
 						organizationId: orgId,
-						fullName: "John Doe",
+						fullName: "Барабаш Сергей Васильевич",
 						email,
 						role: "doctor",
 						passwordHash,
@@ -295,7 +295,7 @@ describe("auth routes", () => {
 						target: users.id,
 						set: {
 							organizationId: orgId,
-							fullName: "John Doe",
+							fullName: "Барабаш Сергей Васильевич",
 							email,
 							role: "doctor",
 							passwordHash,

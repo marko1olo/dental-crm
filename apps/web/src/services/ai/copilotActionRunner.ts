@@ -115,8 +115,12 @@ export class CopilotActionRunner {
 			autoConfirmSafe?: boolean;
 		} = {},
 	): Promise<CRMActionResult> {
-		const { apiBaseUrl = "", autoConfirmSafe = true } = options;
-		const callId = toolCall.callId || `call_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+		const { apiBaseUrl = "", autoConfirmSafe = false } = options;
+		const callId =
+			toolCall.callId ||
+			(typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+				? `call_${crypto.randomUUID()}`
+				: `call_${Date.now()}_${Math.floor(performance.now() * 1000)}`);
 		const name = toolCall.name;
 		const args = toolCall.arguments || {};
 		const destructive = isDestructiveAction(name, args);

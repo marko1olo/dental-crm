@@ -1,5 +1,6 @@
 import React from "react";
 import type { DebouncedEmkTextareaProps } from "./EmkTypes";
+export type { DebouncedEmkTextareaProps };
 
 export function DebouncedEmkTextarea({
 	fieldKey,
@@ -52,7 +53,7 @@ export function DebouncedEmkTextarea({
 				lastCommittedValueRef.current = nextVal;
 				onCommitRef.current(fieldKey, nextVal);
 			}
-		}, 400); // Debounced autosave 300-500ms (Мандаты 8e, 8n)
+		}, 600); // Debounced autosave 500-1000ms (Мандаты 8e, 8n)
 	};
 
 	const handleBlur = () => {

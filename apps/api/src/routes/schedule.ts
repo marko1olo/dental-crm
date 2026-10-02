@@ -49,20 +49,7 @@ const clipboardPasteResourcesMissingMessage =
 	"Вставка не выполнена: у исходной записи нет пациента, врача или кресла. Откройте карточку и заполните их, затем скопируйте снова.";
 
 export async function registerScheduleRoutes(app: FastifyInstance) {
-	app.post("/api/appointments", createAppointmentHandler);
-	app.patch("/api/appointments/:appointmentId", updateAppointmentHandler);
-	app.patch(
-		"/api/appointments/:appointmentId/status",
-		updateAppointmentHandler,
-	);
-	app.put(
-		"/api/schedule/appointments/:appointmentId",
-		updateAppointmentHandler,
-	);
-	app.put(
-		"/api/schedule/appointments/:appointmentId/status",
-		updateAppointmentHandler,
-	);
+	await registerAppointmentsRoutes(app);
 
 	/**
 	 * Буфер обмена расписания — быстрый перенос приёма на другое время.

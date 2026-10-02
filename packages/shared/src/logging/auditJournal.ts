@@ -68,6 +68,13 @@ export const staffActionTypeSchema = z.enum([
 	"document_print",
 	"document_export",
 	"custom_action",
+	"appointment_create",
+	"appointment_reschedule",
+	"appointment_delete",
+	"diary_revision",
+	"auth_login",
+	"auth_logout",
+	"material_adjustment",
 ]);
 export type StaffActionType = z.infer<typeof staffActionTypeSchema>;
 

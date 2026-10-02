@@ -4,6 +4,7 @@
  */
 
 import type { Point2D } from "./cbctCaliperNerveMath";
+import type { CbctVoxelVolume } from "./cbctMprMath";
 
 export interface AxialMIPSlab {
 	readonly data: Float32Array;
@@ -71,3 +72,112 @@ export function sampleMipHUContinuous(
 
 	return top + dy * (bottom - top);
 }
+
+/**
+ * Computes Z-axis enamel, cortical bone, and cancellous ridge density profiles across the CBCT volume.
+ * Multi-tier thresholds:
+ * - Enamel integral (HU >= 2000) for dentate crowns
+ * - Cortical bone integral (HU >= 800) for alveolar bone crest
+ * - Cancellous/trabecular ridge integral (HU >= 350) for edentulous and osteoporotic jaws
+ * Metal artifact clipping (<= 3500 HU) prevents streak distortions.
+ */
+export function computeOcclusalDensityProfile(
+	volume: CbctVoxelVolume,
+	sampleStepX = 4,
+	sampleStepY = 4,
+): OcclusalDensitySliceProfile[] {
+	if (!volume || !volume.data || volume.isDisposed || volume.dimensions.depth <= 0) {
+		return [];
+	}
+
+	const { width, height, depth } = volume.dimensions;
+	const { z: spacingZ } = volume.spacingMm;
+	const originZ = volume.originMm.z;
+	const totalSliceVoxels = width * height;
+	const data = volume.data;
+
+	const rawProfiles: Array<{
+		zIndex: number;
+		zMm: number;
+		enamelIntegral: number;
+		boneIntegral: number;
+		cancellousIntegral: number;
+	}> = new Array(depth);
+
+	for (let z = 0; z < depth; z++) {
+		const zOffset = z * totalSliceVoxels;
+		const zMm = Number((originZ + z * spacingZ).toFixed(2));
+		let enamelSum = 0;
+		let boneSum = 0;
+		let cancellousSum = 0;
+
+		for (let y = 0; y < height; y += sampleStepY) {
+			const yOffset = zOffset + y * width;
+			for (let x = 0; x < width; x += sampleStepX) {
+				const rawHu = data[yOffset + x] ?? -1000;
+				// Metal artifact clipping to 3500 HU
+				const hu = Math.min(rawHu, 3500);
+
+				if (hu >= 2000) {
+					// Enamel threshold (dentate crowns)
+					enamelSum += hu - 2000;
+					boneSum += hu - 800;
+					cancellousSum += hu - 350;
+				} else if (hu >= 800) {
+					// Cortical bone threshold (alveolar ridge)
+					boneSum += hu - 800;
+					cancellousSum += hu - 350;
+				} else if (hu >= 350) {
+					// Cancellous bone / edentulous ridge threshold
+					cancellousSum += hu - 350;
+				}
+			}
+		}
+
+		rawProfiles[z] = {
+			zIndex: z,
+			zMm,
+			enamelIntegral: enamelSum,
+			boneIntegral: boneSum,
+			cancellousIntegral: cancellousSum,
+		};
+	}
+
+	// 1D Gaussian kernel smoothing (sigma = 1.5 slices, radius = 2)
+	const kernel = [0.06136, 0.24477, 0.38774, 0.24477, 0.06136];
+	const kRadius = 2;
+
+	return rawProfiles.map((p, idx) => {
+		let smoothEnamel = 0;
+		let smoothBone = 0;
+		let smoothCancellous = 0;
+		let weightSum = 0;
+
+		for (let k = -kRadius; k <= kRadius; k++) {
+			const neighborIdx = idx + k;
+			if (neighborIdx >= 0 && neighborIdx < depth) {
+				const w = kernel[k + kRadius] ?? 0;
+				smoothEnamel += (rawProfiles[neighborIdx]?.enamelIntegral ?? 0) * w;
+				smoothBone += (rawProfiles[neighborIdx]?.boneIntegral ?? 0) * w;
+				smoothCancellous += (rawProfiles[neighborIdx]?.cancellousIntegral ?? 0) * w;
+				weightSum += w;
+			}
+		}
+
+		const smoothedEnamel = weightSum > 0 ? smoothEnamel / weightSum : p.enamelIntegral;
+		const smoothedBone = weightSum > 0 ? smoothBone / weightSum : p.boneIntegral;
+		const smoothedCancellous = weightSum > 0 ? smoothCancellous / weightSum : p.cancellousIntegral;
+
+		return {
+			zIndex: p.zIndex,
+			zMm: p.zMm,
+			enamelIntegral: p.enamelIntegral,
+			boneIntegral: p.boneIntegral,
+			cancellousIntegral: p.cancellousIntegral,
+			smoothedEnamel,
+			smoothedBone,
+			smoothedCancellous,
+		};
+	});
+}
+

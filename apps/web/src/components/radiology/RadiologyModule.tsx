@@ -2,6 +2,7 @@ import {
 	Activity,
 	Box,
 	Camera,
+	Compass,
 	FileText,
 	FolderInput,
 	Layers,
@@ -14,6 +15,7 @@ import {
 import React, { useState } from "react";
 import { DicomViewerModal } from "../imaging/DicomViewerModal.js";
 import { CbctMprImplantStudioModal } from "./CbctMprImplantStudioModal.js";
+import { CbctImplantModal } from "./CbctImplantModal.js";
 import { DirectRvgCaptureModal } from "./DirectRvgCaptureModal.js";
 import { RadiationDoseSheetForm } from "../documents/forms/RadiationDoseSheetForm.js";
 import { HotFolderIntakeModal } from "./HotFolderIntakeModal.js";
@@ -59,6 +61,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 	const [showRvgCaptureModal, setShowRvgCaptureModal] = useState<boolean>(false);
 	const [showDoseSheetModal, setShowDoseSheetModal] = useState<boolean>(false);
 	const [showHotFolderModal, setShowHotFolderModal] = useState<boolean>(false);
+	const [showImplantModal, setShowImplantModal] = useState<boolean>(false);
 
 	// Active View (Archive vs Hub)
 	const [activeView, setActiveView] = useState<"archive" | "hub">("archive");
@@ -227,6 +230,17 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					>
 						<FolderInput className="w-3.5 h-3.5" />
 						<span>Hot Folder</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setShowImplantModal(true)}
+						className="inline-flex items-center gap-1.5 h-8 px-2.5 text-xs font-semibold rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,var(--line))] transition-colors"
+						data-testid="btn-open-implant-modal"
+						title="3D Библиотека имплантатов (Straumann, Nobel, Osstem, Dentium, MIS)"
+					>
+						<Compass className="w-3.5 h-3.5 text-teal-600" />
+						<span>Имплантаты</span>
 					</button>
 
 					{onClose && (
@@ -449,6 +463,16 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					patientName={patient?.fullName || undefined}
 					patientCardNumber={patient?.medicalCardNumber || patient?.cardNumber || undefined}
 					patientBirthDate={patient?.birthDate || undefined}
+				/>
+			)}
+
+			{showImplantModal && (
+				<CbctImplantModal
+					isOpen={showImplantModal}
+					onClose={() => setShowImplantModal(false)}
+					patientId={patient?.id || undefined}
+					patientName={patientName}
+					toothFdi={activeToothFdi ? Number(activeToothFdi) : 46}
 				/>
 			)}
 		</div>

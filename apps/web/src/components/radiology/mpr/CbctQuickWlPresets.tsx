@@ -106,6 +106,15 @@ export const CBCT_QUICK_WL_PRESETS: readonly CbctQuickWlPreset[] = [
 		descriptionRu: "Слизистая оболочка, десна и мягкотканные структуры (W400 / L40)",
 		testId: "cbct-quick-wl-soft",
 	},
+	{
+		id: "ez3d_bone",
+		label: "Ez3D-i Кость (W5031/L1039)",
+		shortLabel: "Ez3D-i",
+		windowWidth: 5031,
+		windowLevel: 1039,
+		descriptionRu: "Клинический стандарт Vatech Ez3D-i (МЕДИКОМ): W5031 / L1039",
+		testId: "cbct-quick-wl-ez3d-bone",
+	},
 ] as const;
 
 /**

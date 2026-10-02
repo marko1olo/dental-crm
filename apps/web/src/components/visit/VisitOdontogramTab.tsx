@@ -151,7 +151,7 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 		>
 			{/* Dentition Status Banner if child or mixed */}
 			{dentitionPhaseBadge && (
-				<div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-teal-50/80 dark:bg-teal-950/40 border border-teal-200/60 dark:border-teal-800/40 text-xs">
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 px-3 py-1.5 rounded-lg bg-teal-50/80 dark:bg-teal-950/40 border border-teal-200/60 dark:border-teal-800/40 text-xs">
 					<div className="flex items-center gap-2">
 						<span className="font-bold text-teal-900 dark:text-teal-200">
 							Зубная формула:
@@ -160,7 +160,7 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 							{dentitionPhaseBadge.label}
 						</span>
 					</div>
-					<span className="text-slate-500 dark:text-slate-400 text-[11px]">
+					<span className="text-slate-500 dark:text-slate-400 text-[11px] leading-tight">
 						{dentitionPhaseBadge.hint}
 					</span>
 				</div>

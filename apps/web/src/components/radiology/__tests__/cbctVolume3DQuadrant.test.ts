@@ -399,16 +399,22 @@ describe("CBCT 3D Volume & Skull Viewport in 4th Quadrant Test Suite", () => {
 				path.resolve(__dirname, "../mpr/CbctVolume3DViewport.tsx"),
 				"utf-8",
 			);
-			assert.ok(source.includes("Срез позвонков (Z-min)"), "Must render spine cut slider label");
-			assert.ok(source.includes("Срез затылка (Y-max)"), "Must render occiput cut slider label");
-			assert.ok(source.includes("Корональный срез (X)"), "Must render coronal cut slider label");
-			assert.ok(source.includes("data-testid=\"cbct-clip-slider-z-min\""), "Must have Z-min slider testid");
-			assert.ok(source.includes("data-testid=\"cbct-clip-slider-y-max\""), "Must have Y-max slider testid");
-			assert.ok(source.includes("data-testid=\"cbct-clip-slider-x\""), "Must have X slider testid");
+			const clippingPanelSource = fs.readFileSync(
+				path.resolve(__dirname, "../mpr/CbctVolume3DClippingPanel.tsx"),
+				"utf-8",
+			);
+			assert.ok(source.includes("CbctVolume3DClippingPanel"), "Must render CbctVolume3DClippingPanel");
 			assert.ok(source.includes("data-testid=\"cbct-btn-toggle-clipping\""), "Must have toggle clipping button testid");
-			assert.ok(source.includes("data-testid=\"cbct-btn-reset-clipping\""), "Must have reset clipping button testid");
-			assert.ok(source.includes("data-testid=\"cbct-btn-clip-spine\""), "Must have quick clip spine button testid");
-			assert.ok(source.includes("data-testid=\"cbct-btn-clip-occiput\""), "Must have quick clip occiput button testid");
+
+			assert.ok(clippingPanelSource.includes("Срез позвонков (Z-min)"), "Must render spine cut slider label");
+			assert.ok(clippingPanelSource.includes("Срез затылка (Y-max)"), "Must render occiput cut slider label");
+			assert.ok(clippingPanelSource.includes("Корональный срез (X)"), "Must render coronal cut slider label");
+			assert.ok(clippingPanelSource.includes("data-testid=\"cbct-clip-slider-z-min\""), "Must have Z-min slider testid");
+			assert.ok(clippingPanelSource.includes("data-testid=\"cbct-clip-slider-y-max\""), "Must have Y-max slider testid");
+			assert.ok(clippingPanelSource.includes("data-testid=\"cbct-clip-slider-x\""), "Must have X slider testid");
+			assert.ok(clippingPanelSource.includes("data-testid=\"cbct-btn-reset-clipping\""), "Must have reset clipping button testid");
+			assert.ok(clippingPanelSource.includes("data-testid=\"cbct-btn-clip-spine\""), "Must have quick clip spine button testid");
+			assert.ok(clippingPanelSource.includes("data-testid=\"cbct-btn-clip-occiput\""), "Must have quick clip occiput button testid");
 		});
 	});
 

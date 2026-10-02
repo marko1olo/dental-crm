@@ -637,6 +637,59 @@ describe("Shared Fiscal 54-FZ & FFD 1.2 Suite", () => {
 			assert.equal(parsed.data.items[0]?.agentSign, "commission_agent");
 		}
 	});
+
+	it("1.21 Mandates 8e & 8n: Customer INN is strictly optional for physical persons (empty string and spaces sanitize to null)", () => {
+		const basePayload = {
+			patientId: "d0000000-0000-0000-0000-000000000001",
+			customerContact: "+79991234567",
+			cashierFullName: "Иванова А. С.",
+			items: [
+				{
+					name: "Первичный осмотр и консультация",
+					priceKopecks: 150000,
+					quantity: 1,
+					amountKopecks: 150000,
+					vatRate: "vat_none" as const,
+				},
+			],
+			cashKopecks: 150000,
+			totalKopecks: 150000,
+		};
+
+		// 1. Empty string customerInn
+		const resEmpty = createFiscalReceiptPayloadSchema.safeParse({
+			...basePayload,
+			customerInn: "",
+		});
+		assert.equal(resEmpty.success, true, "Empty string customerInn must NOT throw validation error");
+		if (resEmpty.success) {
+			assert.equal(resEmpty.data.customerInn, null);
+		}
+
+		// 2. Whitespace string customerInn
+		const resWhitespace = createFiscalReceiptPayloadSchema.safeParse({
+			...basePayload,
+			customerInn: "   ",
+		});
+		assert.equal(resWhitespace.success, true, "Whitespace customerInn must NOT throw validation error");
+		if (resWhitespace.success) {
+			assert.equal(resWhitespace.data.customerInn, null);
+		}
+
+		// 3. Undefined customerInn
+		const resUndefined = createFiscalReceiptPayloadSchema.safeParse({
+			...basePayload,
+			customerInn: undefined,
+		});
+		assert.equal(resUndefined.success, true, "Undefined customerInn must succeed");
+
+		// 4. Invalid customerInn length (e.g. 5 digits) must still be rejected
+		const resInvalid = createFiscalReceiptPayloadSchema.safeParse({
+			...basePayload,
+			customerInn: "12345",
+		});
+		assert.equal(resInvalid.success, false, "Invalid non-empty customerInn must be rejected");
+	});
 });
 
 

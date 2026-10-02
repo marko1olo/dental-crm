@@ -4,8 +4,14 @@ import path from "node:path";
 import test from "node:test";
 import {
 	BUDGET_PORTAL_PATH,
+	CABINET_PORTAL_PATH,
+	CHECKIN_PORTAL_PATH,
+	KIOSK_PORTAL_PATH,
 	LAB_ORDER_PORTAL_PATH,
+	PATIENT_PORTAL_PATH,
 	PUBLIC_BOOKING_PORTAL_PATH,
+	buildKioskPortalUrl,
+	buildPatientCabinetPortalUrl,
 	publicPortalRouteFromHash,
 } from "../lib/publicPortalRoute";
 
@@ -260,4 +266,64 @@ test("PublicBookingWidget интегрирует AuthArtBackground с overlayAlp
 	);
 });
 
+test("ссылка терминала самочекина (киоска) разбирается в маршрут kind=kiosk", () => {
+	const orgId = "6f9619ff-8b86-d011-b42d-00c04fc964ff";
 
+	assert.deepEqual(publicPortalRouteFromHash(`#${KIOSK_PORTAL_PATH}${orgId}`), {
+		kind: "kiosk",
+		organizationId: orgId,
+	});
+	assert.deepEqual(publicPortalRouteFromHash(`#${CHECKIN_PORTAL_PATH}${orgId}`), {
+		kind: "kiosk",
+		organizationId: orgId,
+	});
+	assert.deepEqual(publicPortalRouteFromHash(`#${KIOSK_PORTAL_PATH}`), {
+		kind: "kiosk",
+		organizationId: null,
+	});
+	assert.deepEqual(publicPortalRouteFromHash("#/portal/kiosk"), {
+		kind: "kiosk",
+		organizationId: null,
+	});
+	assert.deepEqual(publicPortalRouteFromHash("#/portal/checkin"), {
+		kind: "kiosk",
+		organizationId: null,
+	});
+});
+
+test("ссылка личного кабинета пациента разбирается в маршрут kind=cabinet", () => {
+	const orgId = "6f9619ff-8b86-d011-b42d-00c04fc964ff";
+
+	assert.deepEqual(publicPortalRouteFromHash(`#${CABINET_PORTAL_PATH}${orgId}`), {
+		kind: "cabinet",
+		organizationId: orgId,
+	});
+	assert.deepEqual(publicPortalRouteFromHash(`#${PATIENT_PORTAL_PATH}${orgId}`), {
+		kind: "cabinet",
+		organizationId: orgId,
+	});
+	assert.deepEqual(publicPortalRouteFromHash("#/portal/cabinet"), {
+		kind: "cabinet",
+		organizationId: null,
+	});
+	assert.deepEqual(publicPortalRouteFromHash("#/portal/patient"), {
+		kind: "cabinet",
+		organizationId: null,
+	});
+});
+
+test("main.tsx монтирует MobileSelfCheckinModal для kiosk и PublicBookingWidget для cabinet", () => {
+	const entry = readSource("main.tsx");
+	assert.ok(
+		entry.includes("<MobileSelfCheckinModal"),
+		"main.tsx обязан рендерить MobileSelfCheckinModal для терминала киоска/самочекина",
+	);
+	assert.ok(
+		entry.includes('kind === "kiosk"'),
+		"main.tsx обязан различать маршрут kiosk",
+	);
+	assert.ok(
+		entry.includes('kind === "cabinet"'),
+		"main.tsx обязан различать маршрут cabinet",
+	);
+});

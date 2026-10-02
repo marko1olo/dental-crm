@@ -293,6 +293,7 @@ export const lanP2PEventTypeSchema = z.enum([
 	"invoice_transferred_to_cashier",
 	"peer_presence_ping",
 	"custom_alert",
+	"staff_action_telemetry",
 ]);
 export type LanP2PEventType = z.infer<typeof lanP2PEventTypeSchema>;
 

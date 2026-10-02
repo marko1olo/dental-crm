@@ -25,6 +25,8 @@ import type { ImagingStudy } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { CbctMprImplantStudioModal } from "../../radiology/CbctMprImplantStudioModal";
 import { DicomViewerModal } from "../../imaging/DicomViewerModal";
+import { DicomAutoDetectStatusBadge } from "../../imaging/DicomAutoDetectStatusBadge";
+import { CtStudyViewer } from "../../imaging/CtStudyViewer";
 import { HotFolderIntakeModal } from "../../radiology/HotFolderIntakeModal";
 import { StudyPatientBindControlModal } from "../../radiology/archive/StudyPatientBindControlModal";
 import { convertImagingStudyToRadiologyStudy } from "../../radiology/archive/radiologyStudyAdapter";
@@ -260,6 +262,9 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 				</div>
 
 				<div className="flex items-center gap-2 flex-wrap">
+					{/* Фоновый статус автообнаружения DICOM/PACS */}
+					<DicomAutoDetectStatusBadge onStudyBound={loadPatientStudies} />
+
 					{/* Кнопка загрузки КТ для пациента */}
 					<button
 						type="button"
@@ -336,6 +341,28 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 				<div className="flex flex-col gap-2.5" data-testid="patient-radiology-list">
 					{sortedStudies.map((study) => {
 						const isCbct = study.kind === "cbct" || (study.sliceCount && study.sliceCount > 1);
+
+						if (isCbct) {
+							return (
+								<CtStudyViewer
+									key={study.id}
+									studyId={study.id}
+									title={study.title}
+									patientId={patientId || study.patientId}
+									patientName={patientName || study.patientFullName}
+									modality={study.modality || "КЛКТ"}
+									manufacturer={study.seriesDescription || study.sourceName}
+									sliceCount={study.sliceCount}
+									dimensions={study.dimensions}
+									voxelSpacing={study.voxelSpacing}
+									capturedAt={study.capturedAt || study.studyDate}
+									bindingStatus={study.bindingStatus}
+									bindingConfidence={study.bindingConfidence}
+									onOpenStudio={() => handleOpen3d(study)}
+									onOpenControl={() => setActiveControlStudy(study)}
+								/>
+							);
+						}
 
 						return (
 							<div

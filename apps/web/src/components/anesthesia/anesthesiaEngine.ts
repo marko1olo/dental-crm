@@ -130,10 +130,8 @@ export function calculateAgeReductionFactor(ageYears: number, weightKg?: number)
 	return 1.0;
 }
 
-/**
- * Re-export canonical weight resolver from @dental/shared (Single Source of Truth).
- */
-export { resolveClinicalDefaultWeightKg } from "@dental/shared";
+import { resolveClinicalDefaultWeightKg } from "@dental/shared";
+export { resolveClinicalDefaultWeightKg };
 
 // ---------------------------------------------------------------------------
 // 2. Safe Dosage & Toxic Threshold Calculator

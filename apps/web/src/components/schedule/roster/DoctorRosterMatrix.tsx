@@ -448,7 +448,7 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 																		title="Хирургический приём рекомендуется проводить с ассистентом"
 																	>
 																		<AlertTriangle size={11} className="shrink-0" />
-																		<span>Без ассистента</span>
+																		<span>Без ассистента (соло-приём)</span>
 																	</div>
 																) : (
 																	<div

@@ -165,6 +165,9 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 				: "0,00 ₽",
 			orderId: `ORD-${Date.now().toString().slice(-6)}`,
 			paymentLink: "",
+			bonusAmount: "1 000 ₽",
+			promoCode: "BIRTHDAY",
+			validDays: "30 дней",
 		};
 
 		const filled = replaceTemplateVariables(template.templateText, context);

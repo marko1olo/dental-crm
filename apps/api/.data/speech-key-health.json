@@ -1,49 +1,76 @@
 {
   "version": 1,
-  "savedAt": "2026-10-02T20:06:18.549Z",
+  "savedAt": "2026-10-02T22:12:05.173Z",
   "health": {
     "cloudflare_whisper:89d9d83a5665": {
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
+      "successes": 2,
+      "lastUsedAt": 1790979125164,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "gemini:086400c4e22a": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
       "successes": 1,
-      "lastUsedAt": 1790971578538,
+      "lastUsedAt": 1790979116282,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "gemini:dc3b77f3539e": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1790979114351,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "google_speech:26987e457b44": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1790979083756,
       "lastStatusCode": null,
       "lastError": null
     },
     "google_speech:45dd3fb17bd3": {
-      "cooldownUntil": 1790972176973,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 1790980323465,
+      "failures": 2,
+      "consecutiveFailures": 2,
       "successes": 0,
-      "lastUsedAt": 1790971576973,
+      "lastUsedAt": 1790979123465,
       "lastStatusCode": null,
       "lastError": "Gemini Live WS closed abnormally (code: 1008, reason: Policy violation or key invalid)"
     },
     "google_speech:542f1132ccf8": {
-      "cooldownUntil": 1790971637016,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 1790979243500,
+      "failures": 2,
+      "consecutiveFailures": 2,
       "successes": 0,
-      "lastUsedAt": 1790971577016,
+      "lastUsedAt": 1790979123500,
       "lastStatusCode": null,
       "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
     },
     "google_speech:6c77bd48f901": {
-      "cooldownUntil": 1790971637060,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 1790979243526,
+      "failures": 2,
+      "consecutiveFailures": 2,
       "successes": 0,
-      "lastUsedAt": 1790971577060,
+      "lastUsedAt": 1790979123526,
       "lastStatusCode": null,
       "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
     },
     "google_speech:7256ee58f8c6": {
-      "cooldownUntil": 1790971637097,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 1790979243558,
+      "failures": 2,
+      "consecutiveFailures": 2,
       "successes": 0,
-      "lastUsedAt": 1790971577097,
+      "lastUsedAt": 1790979123558,
       "lastStatusCode": null,
       "lastError": "Gemini Live API Error [403]: The caller does not have permission / quota exhausted"
     },
@@ -51,17 +78,17 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1790971577197,
+      "successes": 2,
+      "lastUsedAt": 1790979123617,
       "lastStatusCode": null,
       "lastError": null
     },
     "google_speech:ee19a8772084": {
-      "cooldownUntil": 1790971636917,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 1790979243415,
+      "failures": 2,
+      "consecutiveFailures": 2,
       "successes": 0,
-      "lastUsedAt": 1790971576917,
+      "lastUsedAt": 1790979123415,
       "lastStatusCode": null,
       "lastError": "Gemini Live API Error [429]: Quota exceeded for project"
     },
@@ -69,17 +96,17 @@
       "cooldownUntil": 0,
       "failures": 1,
       "consecutiveFailures": 1,
-      "successes": 2,
-      "lastUsedAt": 1790971577147,
+      "successes": 4,
+      "lastUsedAt": 1790979123592,
       "lastStatusCode": null,
       "lastError": "Gemini Live WS closed abnormally (code: 1006, reason: Dropped)"
     },
     "groq_whisper:5510319c53a6": {
-      "cooldownUntil": 1790971608548,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 1790979185172,
+      "failures": 2,
+      "consecutiveFailures": 2,
       "successes": 0,
-      "lastUsedAt": 1790971578548,
+      "lastUsedAt": 1790979125172,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
@@ -87,8 +114,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1790971578513,
+      "successes": 2,
+      "lastUsedAt": 1790979125154,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -96,53 +123,98 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1790971578465,
+      "successes": 2,
+      "lastUsedAt": 1790979125119,
       "lastStatusCode": null,
       "lastError": null
     },
     "groq_whisper:a408a6ddaa5d": {
-      "cooldownUntil": 1790971608505,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 1790979185147,
+      "failures": 2,
+      "consecutiveFailures": 2,
       "successes": 0,
-      "lastUsedAt": 1790971578505,
+      "lastUsedAt": 1790979125147,
       "lastStatusCode": 500,
       "lastError": "Internal server error"
     },
     "groq_whisper:e1fc3fd8f14e": {
-      "cooldownUntil": 1790971608532,
-      "failures": 1,
-      "consecutiveFailures": 1,
+      "cooldownUntil": 1790979185160,
+      "failures": 2,
+      "consecutiveFailures": 2,
       "successes": 0,
-      "lastUsedAt": 1790971578532,
+      "lastUsedAt": 1790979125160,
       "lastStatusCode": 503,
       "lastError": "503 "
     },
-    "groq:83177d60e957": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1790971569609,
-      "lastStatusCode": null,
-      "lastError": null
-    },
-    "groq:caf98f576295": {
-      "cooldownUntil": 0,
-      "failures": 0,
-      "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1790971568226,
-      "lastStatusCode": null,
-      "lastError": null
-    },
-    "openai_transcribe:8234d0fc8e1f": {
-      "cooldownUntil": 1790971638535,
+    "groq:6058314b22ec": {
+      "cooldownUntil": 1790979164707,
       "failures": 1,
       "consecutiveFailures": 1,
       "successes": 0,
-      "lastUsedAt": 1790971578535,
+      "lastUsedAt": 1790979104707,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Request too large for model `qwen/qwen3.8-27b` in organization `org_01kvq0pcpje21bzaccwx8m7nzk` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1266. The request'"
+    },
+    "groq:6ea9f119eff0": {
+      "cooldownUntil": 1790979165252,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 0,
+      "lastUsedAt": 1790979105252,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Request too large for model `qwen/qwen3.8-27b` in organization `org_01kx0pb1jbf59sfvanqbgxk3fd` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1266. The request'"
+    },
+    "groq:6eed7e8c3252": {
+      "cooldownUntil": 1790979164084,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 0,
+      "lastUsedAt": 1790979104084,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Request too large for model `qwen/qwen3.8-27b` in organization `org_01kw1wmwr7e3gawf9sjcrnjwe2` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1595. The request'"
+    },
+    "groq:83177d60e957": {
+      "cooldownUntil": 1790979163557,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 1,
+      "lastUsedAt": 1790979103557,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Request too large for model `qwen/qwen3.8-27b` in organization `org_01kx0p5e6zf9vb59msp25t3zgh` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1266. The request'"
+    },
+    "groq:c50f385b1343": {
+      "cooldownUntil": 1790979165695,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 0,
+      "lastUsedAt": 1790979105695,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Request too large for model `qwen/qwen3.8-27b` in organization `org_01kx0pjm7bfzp8yzyhxwvenyw4` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1266. The request'"
+    },
+    "groq:c73b9c86b8c4": {
+      "cooldownUntil": 1790979166210,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 0,
+      "lastUsedAt": 1790979106210,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Request too large for model `qwen/qwen3.8-27b` in organization `org_01kx0ppgmxet9t6p0z1wppd9v9` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1266. The request'"
+    },
+    "groq:caf98f576295": {
+      "cooldownUntil": 1790979162842,
+      "failures": 1,
+      "consecutiveFailures": 1,
+      "successes": 1,
+      "lastUsedAt": 1790979102842,
+      "lastStatusCode": 429,
+      "lastError": "[groq] Groq HTTP 429: {\"error\":{\"message\":\"Request too large for model `qwen/qwen3.8-27b` in organization `org_01kw6zfm8cfaav523xyhct4bs9` service tier `on_demand` on output tokens per minute (OTPM): Limit 1000, Requested 1266. The request'"
+    },
+    "openai_transcribe:8234d0fc8e1f": {
+      "cooldownUntil": 1790979245162,
+      "failures": 2,
+      "consecutiveFailures": 2,
+      "successes": 0,
+      "lastUsedAt": 1790979125162,
       "lastStatusCode": 429,
       "lastError": "429 "
     },
@@ -150,8 +222,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1790971578507,
+      "successes": 2,
+      "lastUsedAt": 1790979125149,
       "lastStatusCode": null,
       "lastError": null
     },
@@ -159,8 +231,8 @@
       "cooldownUntil": 0,
       "failures": 0,
       "consecutiveFailures": 0,
-      "successes": 1,
-      "lastUsedAt": 1790971578515,
+      "successes": 2,
+      "lastUsedAt": 1790979125155,
       "lastStatusCode": null,
       "lastError": null
     }

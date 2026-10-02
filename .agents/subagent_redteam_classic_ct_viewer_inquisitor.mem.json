@@ -1,0 +1,37 @@
+{
+  "subagent": "Red Team Inquisitor #4 (Classic CT Viewer Consolidation)",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-03T01:45:00+04:00",
+  "task": "Consolidate classic CT & DICOM viewers, replace Ez3d branding with native DENTE КТ 3D / КТ РАЗДЕЛ, eliminate rogue duplicate Ez3d* files (Mandate 8s), ensure line-budget <= 800 lines (Mandate 8b), and preserve zero regressions",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, and rules adhering to Critical Law #0",
+    "Created canonical DicomMprCockpit.tsx (747 lines, Mandate 8b <= 800) with 4-quadrant MPR, 3D VR presets, airway volumetric calculation, and seamless 2D/MPR/Sectioning switching",
+    "Created canonical DicomSectioningView.tsx (480 lines, Mandate 8b <= 800) with 3x3 multi-tile alveolar ridge cross-sections, IAN nerve canal tracing, safety margin checks (<2.0mm warning), and 043/u diary export",
+    "Created canonical DicomToolboxRibbon.tsx (769 lines, Mandate 8b <= 800) with Carl E. Misch bone density classification (D1..D5), W/L presets, 3D clipping box, and HU profile stats",
+    "Created canonical DicomMprSidebar.tsx (343 lines) and DicomQuadrant3d.tsx (201 lines)",
+    "Created canonical dicomMprTypes.ts (154 lines) with backward-compatibility type aliases",
+    "Consolidated CtStudyViewer.tsx (248 lines) with 3D MPR, Раздел (Кросс-секции), and 2D buttons passing exact selectedViewMode",
+    "Consolidated DicomViewerModal.tsx (705 lines, Mandate 8b <= 800), routing viewMode 3d_mpr -> DicomMprCockpit and sectioning -> DicomSectioningView, preserving all 8e doctor autonomy gates (btn-dicom-norma-043, btn-dicom-run-ai, btn-dicom-apply-findings, dicom-ai-findings-drawer, /tooth-states/batch)",
+    "Deleted obsolete duplicate files per Mandate 8s: Ez3dMprCockpit.tsx, Ez3dMprSidebar.tsx, Ez3dQuadrant3d.tsx, Ez3dSectioningView.tsx, Ez3dToolboxRibbon.tsx, ez3dMprTypes.ts",
+    "Updated apps/web/src/components/imaging/index.ts to export canonical Dicom components",
+    "Updated apps/web/src/tests/ez3dToolboxRibbonAndHuDensity.test.ts to audit canonical DicomToolboxRibbon.tsx, DicomMprCockpit.tsx, and DicomSectioningView.tsx",
+    "Verified all targeted tests: ez3dToolboxRibbonAndHuDensity.test.ts (5/5 PASS), visiographFindings.test.ts (11/11 PASS), radiologyClinicalAutonomyAndDemoIsolation.test.ts (9/9 PASS), cbctMprViewerEngine.test.ts + mprControlMath.test.ts + mprClinicalStatus.test.ts (55/55 PASS)",
+    "Verified machine encoding gate: check-encoding.mjs (7116 files, 0 errors)",
+    "Verified CSS token consistency: check:css-tokens (164 CSS files, 0 unresolved tokens)"
+  ],
+  "verified_invariants": {
+    "mandate_8b_line_counts": {
+      "DicomMprCockpit.tsx": 747,
+      "DicomSectioningView.tsx": 480,
+      "DicomToolboxRibbon.tsx": 769,
+      "DicomMprSidebar.tsx": 343,
+      "DicomQuadrant3d.tsx": 201,
+      "dicomMprTypes.ts": 154,
+      "DicomViewerModal.tsx": 705,
+      "CtStudyViewer.tsx": 248
+    },
+    "mandate_8s_zero_duplicates": true,
+    "mandate_8t_single_compiler_gate": true,
+    "mandate_8e_doctor_autonomy": true
+  }
+}

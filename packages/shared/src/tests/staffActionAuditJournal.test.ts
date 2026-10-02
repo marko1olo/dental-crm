@@ -23,6 +23,13 @@ describe("Staff Action Audit Journal & 152-FZ Sanitizer (@dental/shared)", () =>
 			"document_print",
 			"document_export",
 			"custom_action",
+			"appointment_create",
+			"appointment_reschedule",
+			"appointment_delete",
+			"diary_revision",
+			"auth_login",
+			"auth_logout",
+			"material_adjustment",
 		] as const;
 
 		for (const action of expectedActions) {

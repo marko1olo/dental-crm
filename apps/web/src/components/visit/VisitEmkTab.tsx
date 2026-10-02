@@ -77,6 +77,7 @@ import {
 	completeClinicalVisitAndAssembleEstimate,
 } from "./clinicalVisitWorkflow";
 import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
+import { Icd10ClinicalSelector } from "../diagnostics/Icd10ClinicalSelector";
 import { EmkVoicePilot } from "./EmkVoicePilot";
 import { useVisitSave } from "./useVisitSave";
 import { VisitFlowProgress } from "./VisitFlowProgress";
@@ -201,10 +202,48 @@ export function VisitEmkTab() {
 	}, [flushSoloPendingSave]);
 
 	React.useEffect(() => {
-		return () => {
-			if (debouncedDraftTimerRef.current) clearTimeout(debouncedDraftTimerRef.current);
+		const flushPending = () => {
+			if (debouncedDraftTimerRef.current) {
+				clearTimeout(debouncedDraftTimerRef.current);
+				debouncedDraftTimerRef.current = null;
+			}
+			void flushSoloPendingSave();
 		};
-	}, []);
+
+		const handleVisibilityChange = () => {
+			if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+				flushPending();
+			}
+		};
+
+		if (typeof document !== "undefined") {
+			document.addEventListener("visibilitychange", handleVisibilityChange);
+		}
+		if (typeof window !== "undefined") {
+			window.addEventListener("pagehide", flushPending);
+			window.addEventListener("beforeunload", flushPending);
+			window.addEventListener("blur", flushPending);
+			window.addEventListener("dente-telephony-incoming-call", flushPending);
+			window.addEventListener("dente:visit-tab-change", flushPending);
+		}
+
+		return () => {
+			if (debouncedDraftTimerRef.current) {
+				clearTimeout(debouncedDraftTimerRef.current);
+				debouncedDraftTimerRef.current = null;
+			}
+			if (typeof document !== "undefined") {
+				document.removeEventListener("visibilitychange", handleVisibilityChange);
+			}
+			if (typeof window !== "undefined") {
+				window.removeEventListener("pagehide", flushPending);
+				window.removeEventListener("beforeunload", flushPending);
+				window.removeEventListener("blur", flushPending);
+				window.removeEventListener("dente-telephony-incoming-call", flushPending);
+				window.removeEventListener("dente:visit-tab-change", flushPending);
+			}
+		};
+	}, [flushSoloPendingSave]);
 
 	const handleApplyPhysiologicalNorm = React.useCallback(() => {
 		updateVisitNoteField(
@@ -537,6 +576,23 @@ export function VisitEmkTab() {
 
 				<div className="pt-2" data-testid="egisz-multiple-diagnoses-container">
 					<EgiszMultipleDiagnosesWidget />
+					<details className="group border-t border-[var(--line)] mt-3 pt-2 bg-transparent" data-testid="emk-icd10-selector-details">
+						<summary className="cursor-pointer text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] flex items-center justify-between py-1 select-none">
+							<span className="flex items-center gap-1.5">
+								<Tag size={14} className="text-emerald-500" />
+								<span>Клинический классификатор МКБ-10 (Стоматология)</span>
+							</span>
+						</summary>
+						<div className="pt-2">
+							<Icd10ClinicalSelector
+								selectedTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || undefined}
+								onSelect={(item, tooth) => {
+									const toothSuffix = tooth ? ` (зуб ${tooth})` : "";
+									updateVisitNoteField("diagnosis", `${item.code} ${item.nameRu}${toothSuffix}`);
+								}}
+							/>
+						</div>
+					</details>
 				</div>
 			</div>
 

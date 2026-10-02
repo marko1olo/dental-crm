@@ -218,7 +218,7 @@ export function DoctorShiftDrawer({
 							}));
 						}}
 					>
-						<option value="">(Без ассистента)</option>
+						<option value="">-- Без ассистента (соло-приём) --</option>
 						{staffList
 							.filter((s) => s.isAssistant)
 							.map((asst) => (

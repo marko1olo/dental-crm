@@ -9,6 +9,7 @@ import {
 	Printer,
 	ShieldCheck,
 } from "lucide-react";
+import { FiscalReceiptStatusBadge } from "../finance/FiscalReceiptStatusBadge.js";
 import type { BillingInvoice } from "./invoiceTypes.js";
 
 export interface InvoiceCardItemProps {
@@ -120,6 +121,12 @@ export const InvoiceCardItem: React.FC<InvoiceCardItemProps> = ({
 								</span>
 							</>
 						)}
+					</div>
+					<div className="mt-1">
+						<FiscalReceiptStatusBadge
+							status={isPaid ? "fiscalized" : "pending"}
+							receiptNumber={inv.number}
+						/>
 					</div>
 				</div>
 			</div>

@@ -124,11 +124,21 @@ describe("АРМ Врача: Автономия смет, согласий и Ф
 	});
 
 	test("7. Инспекция исходного кода TreatmentPlanPriceValidatorModal: мягкое предупреждение и автономия врача", () => {
-		const validatorPath = path.resolve(
+		const validatorDir = path.resolve(
 			__dirname,
-			"../../treatment-plans/validation/TreatmentPlanPriceValidatorModal.tsx",
+			"../../treatment-plans/validation",
 		);
-		const validatorSource = fs.readFileSync(validatorPath, "utf8");
+		const validatorPath = path.resolve(
+			validatorDir,
+			"TreatmentPlanPriceValidatorModal.tsx",
+		);
+		const headerPath = path.resolve(validatorDir, "PriceValidatorHeader.tsx");
+		const pricesPath = path.resolve(validatorDir, "PriceValidatorPricesTab.tsx");
+		const footerPath = path.resolve(validatorDir, "PriceValidatorFooter.tsx");
+
+		const validatorSource = [validatorPath, headerPath, pricesPath, footerPath]
+			.map((p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : ""))
+			.join("\n");
 
 		assert.ok(validatorSource.includes("validator-expired-unblocked-badge"), "Бейдж истечения плана присутствует");
 		assert.ok(validatorSource.includes("validator-plan-expired-soft-banner"), "Мягкий баннер без блокировок присутствует");

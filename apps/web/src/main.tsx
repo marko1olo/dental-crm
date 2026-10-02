@@ -23,6 +23,11 @@ const PatientBudgetSignView = React.lazy(() =>
 		default: m.PatientBudgetSignView,
 	})),
 );
+const MobileSelfCheckinModal = React.lazy(() =>
+	import("./components/portal/selfCheckin/MobileSelfCheckinModal").then((m) => ({
+		default: m.MobileSelfCheckinModal,
+	})),
+);
 const WaitingLoungeSignage = React.lazy(() =>
 	import("./components/lounge/WaitingLoungeSignage").then((m) => ({
 		default: m.WaitingLoungeSignage,
@@ -156,7 +161,24 @@ if (publicPortalRoute) {
 					{publicPortalRoute.kind === "booking" ? (
 						<PublicBookingWidget
 							organizationId={publicPortalRoute.organizationId}
+							defaultMode="booking"
 						/>
+					) : publicPortalRoute.kind === "cabinet" ? (
+						<PublicBookingWidget
+							organizationId={publicPortalRoute.organizationId}
+							defaultMode="cabinet"
+						/>
+					) : publicPortalRoute.kind === "kiosk" ? (
+						<div className="w-screen h-screen overflow-auto bg-slate-900 flex items-center justify-center p-2 sm:p-4">
+							<MobileSelfCheckinModal
+								isOpen={true}
+								onClose={() => {
+									window.location.hash = publicPortalRoute.organizationId
+										? `#/portal/kiosk/${encodeURIComponent(publicPortalRoute.organizationId)}`
+										: "#/portal/kiosk";
+								}}
+							/>
+						</div>
 					) : publicPortalRoute.kind === "budget" ? (
 						<PatientBudgetSignView token={publicPortalRoute.token} />
 					) : (

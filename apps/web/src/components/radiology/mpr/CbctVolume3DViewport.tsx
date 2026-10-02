@@ -10,8 +10,8 @@
  * 5. Full telemetry HUD showing volume dimensions, voxel spacing, rotation angles and navigation hints.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Box, ChevronDown, Compass, Maximize2, Minimize2, RotateCcw, Scissors } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Box, ChevronDown, Compass, Maximize2, Minimize2, RotateCcw, Scissors, Wind } from "lucide-react";
 import type { CbctVoxelVolume } from "../cbctMprMath";
 import {
 	type Volume3DClippingBox,
@@ -28,10 +28,14 @@ import {
 	initWebGl2VolumeRaymarching,
 	renderWebGl2VolumeRaymarching,
 } from "./cbctVolume3DShaders";
+import { CbctSkullProjectionsToolbar } from "./CbctSkullProjectionsToolbar";
+import { CbctVolume3DClippingPanel } from "./CbctVolume3DClippingPanel";
+import { analyzeAirwayVolume, type AirwayAnalysisResult } from "../cbctAirwayAnalysisMath";
 
 // 100% Transparent Re-exports for zero regression across tests and components
 export * from "./cbctVolume3DMath";
 export * from "./cbctVolume3DShaders";
+export * from "./CbctSkullProjectionsToolbar";
 
 export interface CbctVolume3DViewportProps {
 	readonly volume: CbctVoxelVolume | null;
@@ -76,6 +80,13 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	});
 	const [isClippingOpen, setIsClippingOpen] = useState<boolean>(false);
 	const [isPresetOpen, setIsPresetOpen] = useState<boolean>(false);
+
+	const airwayResult = useMemo<AirwayAnalysisResult | null>(() => {
+		if (activePreset === "airway" && volume && volume.data && !volume.isDisposed) {
+			return analyzeAirwayVolume(volume);
+		}
+		return null;
+	}, [activePreset, volume]);
 
 	const hasActiveClipping =
 		clipping.clipMin[0] > 0.001 || clipping.clipMin[1] > 0.001 || clipping.clipMin[2] > 0.001 ||
@@ -597,117 +608,36 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 
 			{/* INTERACTIVE CLIPPING BOX CONTROLS PANEL */}
 			{isClippingOpen && (
+				<CbctVolume3DClippingPanel
+					clipping={clipping}
+					onClipChange={handleClipChange}
+					onResetClipping={handleResetClipping}
+					onQuickClipSpine={handleQuickClipSpine}
+					onQuickClipOcciput={handleQuickClipOcciput}
+					onStartInteraction={() => setIsInteracting(true)}
+					onEndInteraction={() => setIsInteracting(false)}
+				/>
+			)}
+
+			{/* CLINICAL AIRWAY ANALYSIS HUD BADGE */}
+			{airwayResult && (
 				<div
-					className="absolute top-10 right-2 z-30 bg-zinc-950/95 backdrop-blur-md p-2.5 rounded-md border border-zinc-800/90 shadow-2xl text-[11px] w-64 flex flex-col gap-2.5 select-none pointer-events-auto"
-					data-testid="cbct-clipping-box-panel"
+					className="absolute top-10 left-2 z-30 bg-zinc-950/90 backdrop-blur-md px-3 py-2 rounded-md border border-cyan-500/50 shadow-2xl flex flex-col gap-1 text-[11px] pointer-events-auto max-w-[280px]"
+					data-testid="cbct-airway-analysis-hud"
 				>
-					<div className="flex items-center justify-between pb-1 border-b border-zinc-800/80">
-						<span className="font-semibold text-zinc-200 flex items-center gap-1 text-[11px]">
-							<Scissors className="w-3 h-3 text-cyan-400" />
-							Отсечение 3D черепа
+					<div className="flex items-center justify-between font-bold text-cyan-300">
+						<span className="flex items-center gap-1">
+							<Wind className="w-3.5 h-3.5 text-cyan-400" />
+							<span>Дыхательные пути (Airway)</span>
 						</span>
-						<button
-							type="button"
-							onClick={handleResetClipping}
-							title="Сбросить все срезы черепа"
-							className="text-[10px] text-zinc-400 hover:text-cyan-300 underline cursor-pointer"
-							data-testid="cbct-btn-reset-clipping"
-						>
-							Сброс срезов
-						</button>
+						<span className="font-mono text-xs">{airwayResult.totalVolumeCm3.toFixed(1)} см³</span>
 					</div>
-
-					{/* Quick Preset Buttons */}
-					<div className="flex items-center gap-1.5">
-						<button
-							type="button"
-							onClick={handleQuickClipSpine}
-							title="Срез позвонков: срез шейного отдела позвоночника (Z-min = 28%)"
-							className={`flex-1 px-1.5 py-1 rounded text-[10px] font-medium transition-colors cursor-pointer border text-center ${
-								clipping.clipMin[2] >= 0.2
-									? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 font-bold"
-									: "bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-200"
-							}`}
-							data-testid="cbct-btn-clip-spine"
-						>
-							Срез позвонков
-						</button>
-						<button
-							type="button"
-							onClick={handleQuickClipOcciput}
-							title="Срез затылка: отсечение затылочной кости (Y-max = 72%)"
-							className={`flex-1 px-1.5 py-1 rounded text-[10px] font-medium transition-colors cursor-pointer border text-center ${
-								clipping.clipMax[1] <= 0.8
-									? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 font-bold"
-									: "bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-200"
-							}`}
-							data-testid="cbct-btn-clip-occiput"
-						>
-							Срез затылка
-						</button>
+					<div className="flex items-center justify-between text-zinc-300 text-[10px]">
+						<span>Мин. просвет (Constriction):</span>
+						<span className="font-mono font-bold text-amber-300">{airwayResult.minAreaMm2.toFixed(0)} мм²</span>
 					</div>
-
-					{/* Slider 1: Срез позвонков (Z-min) */}
-					<div className="flex flex-col gap-1">
-						<div className="flex justify-between items-center text-[10px]">
-							<span className="text-zinc-300 font-medium">Срез позвонков (Z-min)</span>
-							<span className="font-mono text-cyan-300">{Math.round(clipping.clipMin[2] * 100)}%</span>
-						</div>
-						<input
-							type="range"
-							min={0}
-							max={70}
-							step={1}
-							value={Math.round(clipping.clipMin[2] * 100)}
-							onPointerDown={() => setIsInteracting(true)}
-							onPointerUp={() => setIsInteracting(false)}
-							onChange={(e) => handleClipChange("zMin", Number(e.target.value) / 100)}
-							className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-							data-testid="cbct-clip-slider-z-min"
-							aria-label="Срез позвонков (Z-min)"
-						/>
-					</div>
-
-					{/* Slider 2: Срез затылка (Y-max) */}
-					<div className="flex flex-col gap-1">
-						<div className="flex justify-between items-center text-[10px]">
-							<span className="text-zinc-300 font-medium">Срез затылка (Y-max)</span>
-							<span className="font-mono text-cyan-300">{Math.round(clipping.clipMax[1] * 100)}%</span>
-						</div>
-						<input
-							type="range"
-							min={30}
-							max={100}
-							step={1}
-							value={Math.round(clipping.clipMax[1] * 100)}
-							onPointerDown={() => setIsInteracting(true)}
-							onPointerUp={() => setIsInteracting(false)}
-							onChange={(e) => handleClipChange("yMax", Number(e.target.value) / 100)}
-							className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-							data-testid="cbct-clip-slider-y-max"
-							aria-label="Срез затылка (Y-max)"
-						/>
-					</div>
-
-					{/* Slider 3: Корональный срез (X) */}
-					<div className="flex flex-col gap-1">
-						<div className="flex justify-between items-center text-[10px]">
-							<span className="text-zinc-300 font-medium">Корональный срез (X)</span>
-							<span className="font-mono text-cyan-300">{Math.round(clipping.clipMax[0] * 100)}%</span>
-						</div>
-						<input
-							type="range"
-							min={20}
-							max={100}
-							step={1}
-							value={Math.round(clipping.clipMax[0] * 100)}
-							onPointerDown={() => setIsInteracting(true)}
-							onPointerUp={() => setIsInteracting(false)}
-							onChange={(e) => handleClipChange("xMax", Number(e.target.value) / 100)}
-							className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-							data-testid="cbct-clip-slider-x"
-							aria-label="Корональный срез (X)"
-						/>
+					<div className="text-[9.5px] leading-tight text-zinc-400 border-t border-zinc-800/80 pt-1">
+						{airwayResult.clinicalSummary}
 					</div>
 				</div>
 			)}
@@ -729,6 +659,19 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 					style={{ backgroundColor: "#000000" }}
 					className="absolute inset-0 w-full h-full object-contain cursor-grab active:cursor-grabbing z-0"
 					data-testid="cbct-volume-3d-canvas"
+				/>
+			</div>
+
+			{/* EZ3D-I 8 SKULL PROJECTIONS ORIENTATION TOOLBAR (ABOVE HUD) */}
+			<div className="absolute bottom-9 left-1/2 -translate-x-1/2 pointer-events-auto z-20">
+				<CbctSkullProjectionsToolbar
+					currentYaw={yaw}
+					currentPitch={pitch}
+					onSelectProjection={(targetYaw, targetPitch) => {
+						setYaw(targetYaw);
+						setPitch(targetPitch);
+					}}
+					onResetCamera={handleResetCamera}
 				/>
 			</div>
 

@@ -1,0 +1,39 @@
+{
+  "role": "Red Team Backend Inquisitor - Orphans, Duplicates & Mocks",
+  "status": "completed",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, DATABASE.md, GEMINI.md (Rule #0)",
+    "Fixed fatal build breaker in packages/shared/src/index.ts (DEFAULT_PATIENT_FIELD_REQUIREMENTS export)",
+    "Reconnaissance & Fix: Fastify routes census — eliminated all route orphans (appointments.ts and fiscalReceiptRoutes.ts)",
+    "Consolidated duplicate endpoints between schedule.ts and appointments.ts",
+    "Wired orphaned backend service labScanDirectUpload.ts into apps/api/src/routes/lab.ts (3D scans upload/download presigned URLs with tenant isolation)",
+    "Created apps/api/src/services/messaging/index.ts barrel to connect notificationGateway.ts and messaging ecosystem",
+    "Hunted in-memory mocks: eliminated fake lab order mock injection in apps/api/src/services/agent/tools/crmWarehouseLabTools.ts",
+    "Verified live tree route census: 173 total route modules, 0 unregistered modules with HTTP routes (100% registered)",
+    "Executed check-encoding (7125 files, 0 issues)",
+    "Executed targeted unit tests: dentalLabRoutes (7/7 passed), routeRegistrationCensus (8/8 passed), notificationGateway (3/3 passed), surgeryRoutes (6/6 passed)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "type": "BUILD_BREAKER",
+      "file": "apps/api/src/routes/marketing.ts",
+      "details": "Imported DEFAULT_PATIENT_FIELD_REQUIREMENTS from @dental/shared which was not exported from packages/shared/src/index.ts. Fixed and compiled @dental/shared."
+    },
+    {
+      "type": "ORPHAN_ROUTE_MODULES",
+      "files": ["apps/api/src/routes/appointments.ts", "apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts"],
+      "details": "appointments.ts was bypassed by schedule.ts copying routes manually. fiscalReceiptRoutes.ts was re-exported through intermediate barrels not tracked as invoked. Fixed by direct wiring and verified with denteApiCensus."
+    },
+    {
+      "type": "ORPHAN_SERVICES",
+      "files": ["apps/api/src/services/labScanDirectUpload.ts", "apps/api/src/services/messaging/notificationGateway.ts"],
+      "details": "labScanDirectUpload.ts generated AWS SigV4 Presigned URLs for 3D scans but was unreferenced in routes. Added POST /api/lab/orders/:id/scans/upload-url, GET /api/lab/orders/:id/scans/download-url, and GET /api/portal/lab-order/:token/scans/download-url with strict multi-tenant isolation. Created services/messaging/index.ts."
+    },
+    {
+      "type": "MOCK_LEAK",
+      "file": "apps/api/src/services/agent/tools/crmWarehouseLabTools.ts",
+      "details": "When 0 lab orders were found for a patient, it pushed a fake mock lab order 'lab_mock_01' with 'mock-token' violating Mandate 8c (Zero Mocks). Eliminated mock injection, returning genuine empty state with clean summary."
+    }
+  ]
+}

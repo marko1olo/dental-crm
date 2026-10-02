@@ -33,6 +33,7 @@ import {
 import { countLabel, money } from "../AppHelpers";
 import { CuratorDashboard } from "../components/analytics/CuratorDashboard";
 import { DirectorExecutiveDashboard } from "../components/analytics/DirectorExecutiveDashboard";
+import { ClinicAnalyticsDashboard } from "../components/analytics/ClinicAnalyticsDashboard";
 import { LostPatientsPanel } from "../components/analytics/LostPatientsPanel";
 import { EmptyState } from "../components/EmptyState.js";
 import { isDemoShowcaseMode, getDemoDashboardAnalytics } from "../lib/demoMode";
@@ -135,7 +136,7 @@ export function AnalyticsDashboardView() {
 	const [dateRange, setDateRange] = useState<string>("all");
 	const [branchFilter, setBranchFilter] = useState<string>("all");
 	const [analyticsSection, setAnalyticsSection] = useState<
-		"executive" | "operational" | "curators" | "lost_patients" | "freed_slots" | "marketing"
+		"executive" | "operational" | "curators" | "lost_patients" | "freed_slots" | "marketing" | "clinic"
 	>("executive");
 	const [isMarketingRoiOpen, setIsMarketingRoiOpen] = useState(false);
 	const [isFinancialAnalyticsOpen, setIsFinancialAnalyticsOpen] = useState(false);
@@ -570,6 +571,25 @@ export function AnalyticsDashboardView() {
 								)}
 							</button>
 
+							<button
+								type="button"
+								className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+									analyticsSection === "clinic"
+										? "bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal-dark,#0f766e)] font-semibold"
+										: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								}`}
+								role="menuitem"
+								onClick={() => {
+									setAnalyticsSection("clinic");
+									setIsSectionMoreOpen(false);
+								}}
+							>
+								<span>Сводный пульт клиники (Zero-Mock)</span>
+								{analyticsSection === "clinic" && (
+									<Check size={14} className="text-[var(--teal)]" />
+								)}
+							</button>
+
 							<div className="my-1 border-t border-[var(--line)]" />
 
 							<button
@@ -647,6 +667,10 @@ export function AnalyticsDashboardView() {
 
 			{analyticsSection === "freed_slots" && (
 				<FreedSlotsPanel />
+			)}
+
+			{analyticsSection === "clinic" && (
+				<ClinicAnalyticsDashboard />
 			)}
 
 			{analyticsSection === "operational" && (

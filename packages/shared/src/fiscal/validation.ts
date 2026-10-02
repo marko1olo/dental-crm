@@ -98,7 +98,11 @@ export type FiscalReceiptItemInput = z.infer<typeof fiscalReceiptItemSchema>;
  */
 export const createFiscalReceiptPayloadSchema = z
 	.object({
-		clientMutationId: z.string().trim().min(1).max(128).optional().nullable(),
+		clientMutationId: z
+			.preprocess(
+				(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+				z.string().trim().min(1).max(128).optional().nullable()
+			),
 		invoiceId: z.string().uuid().optional().nullable(),
 		visitId: z.string().uuid().optional().nullable(),
 		documentId: z.string().uuid().optional().nullable(),
@@ -112,15 +116,27 @@ export const createFiscalReceiptPayloadSchema = z
 			.trim()
 			.min(5, "Укажите телефон или email для отправки чека")
 			.max(100, "Контакт клиента не может превышать 100 символов"),
-		customerName: z.string().trim().max(256).optional().nullable(),
-		customerInn: z.string().trim().regex(/^(\d{10}|\d{12})$/, "ИНН покупателя должен содержать 10 (для ЮЛ) или 12 (для ИП/ФЛ) цифр").optional().nullable(),
+		customerName: z
+			.preprocess(
+				(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+				z.string().trim().max(256).optional().nullable()
+			),
+		customerInn: z
+			.preprocess(
+				(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+				z.string().trim().regex(/^(\d{10}|\d{12})$/, "ИНН покупателя должен содержать 10 (для ЮЛ) или 12 (для ИП/ФЛ) цифр").optional().nullable()
+			),
 		cashierFullName: z
 			.string()
 			.trim()
 			.min(1, "ФИО кассира обязательно")
 			.max(120, "ФИО кассира не может превышать 120 символов")
 			.default("Кассир-администратор"),
-		cashierInn: z.string().trim().max(12).optional().nullable(),
+		cashierInn: z
+			.preprocess(
+				(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+				z.string().trim().max(12).optional().nullable()
+			),
 		paymentAddress: z.string().trim().max(256).optional().nullable(),
 		paymentPlace: z.string().trim().max(256).optional().nullable(),
 		items: z.array(fiscalReceiptItemSchema).min(1, "Чек должен содержать хотя бы одну позицию"),
@@ -133,13 +149,25 @@ export const createFiscalReceiptPayloadSchema = z
 		taxDeductionSummaryCode: taxDeductionCategorySchema.default("code_1_standard"),
 		/** Decree 659: Upsell Consent Shield attributes (Rules of 2026) */
 		treatmentPlanId: z.string().uuid().optional().nullable(),
-		addendumNumber: z.string().trim().max(64).optional().nullable(),
+		addendumNumber: z
+			.preprocess(
+				(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+				z.string().trim().max(64).optional().nullable()
+			),
 		addendumConfirmed: z.boolean().optional().default(false),
 		/** Optional 54-FZ correction attributes */
 		isCorrection: z.boolean().optional().default(false),
 		correctionType: ffd12CorrectionTypeSchema.optional().nullable(),
-		correctionDocDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Формат даты коррекции: ГГГГ-ММ-ДД").optional().nullable(),
-		correctionDocNumber: z.string().trim().max(64).optional().nullable(),
+		correctionDocDate: z
+			.preprocess(
+				(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+				z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Формат даты коррекции: ГГГГ-ММ-ДД").optional().nullable()
+			),
+		correctionDocNumber: z
+			.preprocess(
+				(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+				z.string().trim().max(64).optional().nullable()
+			),
 	})
 	.superRefine((val, ctx) => {
 		// Strict parity: Sum of payment tenders MUST EQUAL total receipt amount

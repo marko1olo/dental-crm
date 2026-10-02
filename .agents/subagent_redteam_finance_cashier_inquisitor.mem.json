@@ -1,0 +1,55 @@
+{
+  "role": "RED TEAM SELF-FIXING INQUISITOR: FINANCE, CASHIER, 54-FZ & FISCAL GATE",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Read core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md completely",
+    "Deep reconnaissance of finance, cashier 54-FZ, KKT pipeline, billing and checkout engines",
+    "Audited patient INN validation in 54-FZ cashier checkout (Mandates 8e & 8n: citizen INN is optional)",
+    "Detected defect in packages/shared/src/fiscal/validation.ts where empty customerInn string rejected by regex",
+    "Fixed customerInn, cashierInn, correctionDocDate, correctionDocNumber, addendumNumber to preprocess empty strings to null",
+    "Audited 100% discount / warranty remake handling (0.00 RUB) to verify KKT hardware bypass and warranty act generation",
+    "Audited 30-day treatment plan expiration logic in planToInvoiceValidator.ts to ensure non-blocking billing and work orders",
+    "Audited exact integer kopecks arithmetic vs floating-point drift across split tenders, invoices and refunds",
+    "Audited codebase for Math.random() and synthetic mocks across finance, payments and billing",
+    "Added automated test case 1.21 in packages/shared/src/tests/fiscal54fz.test.ts verifying empty string INN sanitization",
+    "Passed all isolated test suites (fiscal54fz, mixedFiscalReceipt, planToInvoiceValidator, frozenServicesInquisition, zeroMockCashierInquisition, wave118FakeInnAndPhonePurification, cashierAutonomy54Fz, fastCheckoutEngine, fastCheckoutInvariants, expressFiscalRefundAutonomy)",
+    "Verified check:encoding (7128 files clean) and check:css-tokens (gate passed)",
+    "Verified zero CBCT/radiology modifications and zero global typecheck per Mandate 8t"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "id": "DEFECT-FIN-01",
+      "severity": "CRITICAL_FIXED",
+      "target": "packages/shared/src/fiscal/validation.ts#L116",
+      "description": "Zod schema createFiscalReceiptPayloadSchema rejected empty string customerInn with regex /^(\\d{10}|\\d{12})$/ failure, blocking checkout for physical persons who left INN empty. Sanitized via z.preprocess to convert empty strings and whitespace to null, while preserving strict 10/12 digit validation for non-empty INNs."
+    },
+    {
+      "id": "AUDIT-FIN-02",
+      "severity": "VERIFIED_COMPLIANT",
+      "target": "apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts#L913 & lanKktDriverService.ts#L352",
+      "description": "100% warranty discounts (totalKopecks === 0) cleanly intercepted before KKT hardware dispatch. System generates internal warranty/write-off act ('АКТ-ГАР-...') and records cash operation with zero KKT error."
+    },
+    {
+      "id": "AUDIT-FIN-03",
+      "severity": "VERIFIED_COMPLIANT",
+      "target": "packages/shared/src/finance/planToInvoiceValidator.ts#L569-L572",
+      "description": "Plans older than 30 days mark isPlanExpired: true for informational warnings but never block invoice generation (canGenerateInvoice = true) or ZTL work orders (canGenerateWorkOrder = true) per Mandates 8e & 8n."
+    },
+    {
+      "id": "AUDIT-FIN-04",
+      "severity": "VERIFIED_COMPLIANT",
+      "target": "packages/shared/src/utils/money.ts & splitPayment.ts",
+      "description": "All financial operations, splits, discounts, tax calculations, and cash change calculations operate in exact integer kopecks using Hamilton largest remainder method with zero float drift."
+    },
+    {
+      "id": "AUDIT-FIN-05",
+      "severity": "VERIFIED_COMPLIANT",
+      "target": "apps/web/src/components/finance/ & apps/web/src/components/payments/",
+      "description": "Zero Math.random() calls and zero synthetic fake INNs/phones exist in production finance code, verified by zeroMockCashierInquisition.test.ts and wave118FakeInnAndPhonePurification.test.ts."
+    }
+  ],
+  "fixed_defects": [
+    "DEFECT-FIN-01: packages/shared/src/fiscal/validation.ts customerInn empty string regex rejection"
+  ]
+}

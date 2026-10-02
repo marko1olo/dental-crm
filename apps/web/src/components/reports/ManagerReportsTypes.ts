@@ -6,6 +6,7 @@ import type { ClinicMode } from "../../lib/clinicCapabilities";
 
 export type ReportSectionTab =
 	| "all"
+	| "executive"
 	| "revenue"
 	| "doctors"
 	| "chairs"

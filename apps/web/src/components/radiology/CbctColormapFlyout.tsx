@@ -158,7 +158,8 @@ export type CbctToolMode =
 	| "angle"
 	| "probe"
 	| "nerve"
-	| "endo_canal";
+	| "endo_canal"
+	| "airway";
 
 export interface CbctLeftToolDockProps {
 	/** Active cursor / mouse tool */

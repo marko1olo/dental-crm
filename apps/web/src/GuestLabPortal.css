@@ -319,8 +319,8 @@
 		margin: 8mm 12mm;
 	}
 	html, body {
-		background: #ffffff !important;
-		color: #000000 !important;
+		background: var(--paper) !important;
+		color: var(--ink) !important;
 		-webkit-print-color-adjust: exact !important;
 		print-color-adjust: exact !important;
 	}
@@ -334,8 +334,8 @@
 		box-shadow: none !important;
 		padding: 0 !important;
 		max-width: 100% !important;
-		background: #ffffff !important;
-		color: #000000 !important;
+		background: var(--paper) !important;
+		color: var(--ink) !important;
 	}
 	.guest-portal-grid,
 	.guest-portal-scan-card,

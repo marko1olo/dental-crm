@@ -4,6 +4,11 @@ import {
 	calculateBusinessDaysDueDate,
 	CANONICAL_DENTAL_LAB_PRESETS,
 } from "../../routes/lab.js";
+import {
+	getLabScanDownloadPresignedUrl,
+	getLabScanUploadPresignedUrl,
+	validateScanFileMeta,
+} from "../../services/labScanDirectUpload.js";
 
 describe("Dental Lab Express Presets & Mandate 8e Invariants", () => {
 	it("contains standard 1-click preset for ZrO2 crown (5 business days, A2, anatomical shape)", () => {
@@ -56,3 +61,55 @@ describe("Dental Lab Express Presets & Mandate 8e Invariants", () => {
 		assert.equal(requiresSeniorTechnicianApproval, false);
 	});
 });
+
+describe("Lab 3D Scans Direct Upload & Tenant Protection (Mandate 8c & 8s)", () => {
+	it("validates 3D scan filenames and extensions strictly", () => {
+		const validStl = validateScanFileMeta("upper_jaw_scan.stl", 1024 * 1024);
+		assert.equal(validStl.isValid, true);
+		assert.equal(validStl.extension, "stl");
+		assert.equal(validStl.mimeType, "model/stl");
+
+		const validPly = validateScanFileMeta("lower_jaw.PLY", 5 * 1024 * 1024);
+		assert.equal(validPly.isValid, true);
+		assert.equal(validPly.extension, "ply");
+
+		const maliciousExe = validateScanFileMeta("trojan.exe", 100);
+		assert.equal(maliciousExe.isValid, false);
+		assert.ok(maliciousExe.error?.includes("Недопустимый формат файла"));
+
+		const oversized = validateScanFileMeta("huge.stl", 600 * 1024 * 1024);
+		assert.equal(oversized.isValid, false);
+		assert.ok(oversized.error?.includes("превышает допустимый лимит 500 МБ"));
+	});
+
+	it("generates presigned upload URL with strict tenant prefix", () => {
+		const orgId = "0192e2b0-8451-789a-bcde-000000000001";
+		const labOrderId = "0192e2b0-8451-789a-bcde-000000000002";
+		const result = getLabScanUploadPresignedUrl({
+			organizationId: orgId,
+			labOrderId,
+			fileName: "mandible_scan.stl",
+			fileSizeBytes: 2048,
+		});
+
+		assert.ok(result.uploadUrl, "Upload URL should be present");
+		assert.ok(result.storageKey, "Storage key should be present");
+		const expectedPrefix = `org_${orgId.replace(/[^a-zA-Z0-9_-]/g, "")}/lab_orders/${labOrderId.replace(/[^a-zA-Z0-9_-]/g, "")}/`;
+		assert.ok(
+			result.storageKey.startsWith(expectedPrefix),
+			`Storage key ${result.storageKey} should start with ${expectedPrefix}`,
+		);
+	});
+
+	it("generates presigned download URL and guards against missing key", () => {
+		const storageKey = "org_123/lab_orders/456/test_scan.stl";
+		const result = getLabScanDownloadPresignedUrl({ storageKey });
+		assert.ok(result.downloadUrl);
+		assert.equal(result.storageKey, storageKey);
+
+		assert.throws(() => {
+			getLabScanDownloadPresignedUrl({ storageKey: "" });
+		}, /storageKey обязателен/);
+	});
+});
+

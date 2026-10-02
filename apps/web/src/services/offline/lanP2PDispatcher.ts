@@ -21,6 +21,7 @@ import {
 	type LanNodeRole,
 	type LanP2PEventType,
 	type LanP2PMessage,
+	type StaffActionAuditEntry,
 	type VectorClock,
 	createAssistantCitoEvent,
 	createChairStatusEvent,
@@ -71,6 +72,11 @@ export type InvoiceTransferListener = (
 	envelope: LanP2PMessage<LanInvoiceTransferEvent>,
 ) => void;
 
+export type StaffActionListener = (
+	event: StaffActionAuditEntry,
+	envelope: LanP2PMessage<StaffActionAuditEntry>,
+) => void;
+
 export type AnyP2PEventListener = (envelope: LanP2PMessage) => void;
 
 export class LanP2PDispatcher {
@@ -93,6 +99,7 @@ export class LanP2PDispatcher {
 	private chairStatusListeners = new Set<ChairStatusListener>();
 	private assistantCitoListeners = new Set<AssistantCitoListener>();
 	private invoiceTransferListeners = new Set<InvoiceTransferListener>();
+	private staffActionListeners = new Set<StaffActionListener>();
 	private anyEventListeners = new Set<AnyP2PEventListener>();
 
 	private totalSent = 0;
@@ -360,6 +367,17 @@ export class LanP2PDispatcher {
 				}
 				break;
 			}
+			case "staff_action_telemetry": {
+				const event = msg.payload as unknown as StaffActionAuditEntry;
+				for (const listener of this.staffActionListeners) {
+					try {
+						listener(event, msg as LanP2PMessage<StaffActionAuditEntry>);
+					} catch (err) {
+						logger.error("[LanP2PDispatcher] Error in staffActionListener:", err);
+					}
+				}
+				break;
+			}
 			case "peer_presence_ping":
 			case "custom_alert":
 				break;
@@ -518,6 +536,25 @@ export class LanP2PDispatcher {
 	}
 
 	/**
+	 * Broadcasts a Staff Action Telemetry event across LAN peers (reception desk, doctor tablet).
+	 */
+	public async broadcastStaffAction(
+		action: StaffActionAuditEntry,
+	): Promise<LanP2PMessage<StaffActionAuditEntry>> {
+		const message = createLanP2PMessage({
+			eventType: "staff_action_telemetry",
+			senderNodeId: this.nodeId,
+			senderRole: this.nodeRole,
+			senderName: this.nodeName,
+			organizationId: this.organizationId,
+			payload: action as unknown as Record<string, unknown>,
+		}) as LanP2PMessage<StaffActionAuditEntry>;
+
+		await this.broadcastMessage(message);
+		return message;
+	}
+
+	/**
 	 * Sends a lightweight presence ping over WebSocket.
 	 */
 	public sendPresencePing(): void {
@@ -559,6 +596,13 @@ export class LanP2PDispatcher {
 		this.invoiceTransferListeners.add(listener);
 		return () => {
 			this.invoiceTransferListeners.delete(listener);
+		};
+	}
+
+	public onStaffActionTelemetry(listener: StaffActionListener): () => void {
+		this.staffActionListeners.add(listener);
+		return () => {
+			this.staffActionListeners.delete(listener);
 		};
 	}
 
@@ -613,6 +657,7 @@ export class LanP2PDispatcher {
 		this.chairStatusListeners.clear();
 		this.assistantCitoListeners.clear();
 		this.invoiceTransferListeners.clear();
+		this.staffActionListeners.clear();
 		this.anyEventListeners.clear();
 		this.seenMessageIds.clear();
 	}

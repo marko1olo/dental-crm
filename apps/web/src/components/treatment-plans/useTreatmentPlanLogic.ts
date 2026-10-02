@@ -243,11 +243,10 @@ export function useTreatmentPlanLogic({
 			if (conflicts.length > 0) {
 				const first = conflicts[0]!;
 				showToast(
-					`Невозможно согласовать план: обнаружен клинический конфликт на зубе №${first.toothNumber}! Одновременно назначены «${first.procedureA.name}» и «${first.procedureB.name}».`,
-					"error",
-					7000,
+					`Внимание: обнаружен клинический конфликт на зубе №${first.toothNumber}! («${first.procedureA.name}» и «${first.procedureB.name}»). Статус изменён под клиническую ответственность врача.`,
+					"warning",
+					6000,
 				);
-				return;
 			}
 		}
 

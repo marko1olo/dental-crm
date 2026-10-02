@@ -334,7 +334,7 @@ export const GridAppointmentCard = memo(function GridAppointmentCard(props: Grid
 									}}
 									className={`h-[24px] min-h-[24px] text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1 transition-all cursor-pointer hover:opacity-90 active:scale-95 w-fit max-w-full truncate ${
 										isAppointmentInChair(a.status)
-											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs ring-1 ring-teal-400/50"
+											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs ring-1 ring-teal-400/50 dark:bg-teal-500/25 dark:text-teal-300 dark:border dark:border-teal-400/50 dark:ring-0"
 											: a.status === "arrived"
 												? "bg-amber-500 text-white shadow-xs"
 												: a.status === "confirmed"

@@ -787,96 +787,7 @@ const NO_CONTRACT_PAIR: readonly {
 	readonly exportName: string;
 	readonly contractIsAnonymous?: true;
 	readonly reason: string;
-}[] = [
-	{
-		exportName: "communicationDirection",
-		contractIsAnonymous: true,
-		reason:
-			'Контракт ЕСТЬ, но объявлен безымянным литералом внутри объекта: `direction: z.enum(["inbound", ' +
-			'"outbound"])` в packages/shared/src/index.ts. Набор совпадает со схемой один в один (проверяется ' +
-			"тестом о безымянных контрактах), но перепись видит только именованные экспорты. Починка — вынести " +
-			"в communicationDirectionSchema.",
-	},
-	{
-		exportName: "denteTelegramWebhookStatus",
-		contractIsAnonymous: true,
-		reason:
-			'Контракт ЕСТЬ, но безымянный: `status: z.enum(["processing", "processed", "duplicate", ' +
-			'"ignored", "rejected"])` в packages/shared/src/index.ts — набор совпадает со схемой полностью. ' +
-			"Пара не строится только из-за отсутствия именованного экспорта.",
-	},
-	{
-		exportName: "documentStatus",
-		contractIsAnonymous: true,
-		reason:
-			'Контракт ЕСТЬ, но безымянный И продублирован: ДВА литерала `status: z.enum(["draft", "issued", ' +
-			'"voided"])` в packages/shared/src/index.ts, оба совпадают со схемой. Две копии одного перечисления ' +
-			"разъедутся молча — тем более нужен один именованный экспорт.",
-	},
-	{
-		exportName: "imagingStudyStatus",
-		contractIsAnonymous: true,
-		reason:
-			'Контракт ЕСТЬ, но безымянный: `status: z.enum(["available", "needs_review", "failed"])` в ' +
-			"packages/shared/src/index.ts — набор совпадает со схемой. Пара не строится только из-за отсутствия " +
-			"именованного экспорта.",
-	},
-	{
-		exportName: "communicationConsentScope",
-		reason:
-			"Контракта НЕТ вовсе: значений service/marketing в packages/shared/src не встречается. Перечисление " +
-			"живое — им типизирована колонка scope в db/communicationsSchema.ts со значением по умолчанию " +
-			"marketing, а согласие на рекламу по сетям электросвязи требуется по ФЗ «О рекламе» ст. 18 ч. 1. " +
-			"Значение попадает в базу без проверки контрактом. Долг ведущему: packages/shared вне зоны участка.",
-	},
-	{
-		exportName: "communicationConsentState",
-		reason:
-			'Контракта НЕТ вовсе: поиск по "granted" в packages/shared/src даёт ноль совпадений. Отзыв ' +
-			"согласия — юридически значимое действие, и его состояние попадает в базу без проверки на входе. " +
-			"Долг ведущему: packages/shared вне зоны участка сторожей.",
-	},
-	{
-		exportName: "communicationOutboxStatus",
-		reason:
-			'Контракта НЕТ вовсе: поиск по "suppressed" в packages/shared/src даёт ноль совпадений. Ближайший ' +
-			"по имени communicationStatusSchema — ДРУГОЙ набор (queued/scheduled/needs_call/sent/delivered/" +
-			"completed/failed/skipped) и другая таблица, он уже спарен с pgEnum communication_status; " +
-			"подставлять его сюда нельзя. Долг ведущему.",
-	},
-	{
-		exportName: "treatmentPlanStatus",
-		reason:
-			"Контракта НЕТ вовсе: ни treatmentPlanStatusSchema, ни набора Draft/Active/Approved/Completed/" +
-			"Rejected в packages/shared/src не встречается — ближайший по имени treatmentPlanItemStatusSchema " +
-			"это ДРУГАЯ таблица и другой набор (proposed/approved/in_progress/completed/cancelled), он уже " +
-			"спарен с pgEnum treatment_plan_item_status. Перечисление живое: тип treatment_plan_status создан " +
-			"миграцией 0000 и типизирует колонку status в treatment_plans. До 2026-07-29 колонка была объявлена " +
-			"как text с умолчанием «draft» — значения, которого в наборе НЕТ, — поэтому регистр никто не " +
-			"сверял: воронка планов в scripts/cronAnalyticsWorker.ts ищет строчные ключи и считает нули. " +
-			"Долг ведущему: packages/shared вне зоны участка.",
-	},
-	{
-		exportName: "ledgerPaymentMethod",
-		reason:
-			'Контракта НЕТ вовсе: поиск по "installment_balance" в packages/shared/src даёт ноль совпадений. ' +
-			"paymentMethodSchema — ДРУГОЙ набор из семи значений, уже спаренный с pgEnum payment_method: в нём " +
-			"нет dms и installment_balance, зато есть лишние bank_transfer, online, insurance, other. Способ " +
-			"оплаты в кассовой книге — это деньги, и проверять его чужим набором нельзя. Долг ведущему.",
-	},
-	{
-		exportName: "clinicalTaskStatus",
-		reason:
-			"Контракта НЕТ вовсе: clinicalTaskStatus (pending/in_progress/completed/cancelled) типизирует клинические задачи " +
-			"в db/schema.ts. Долг ведущему: перенести контракт в packages/shared.",
-	},
-	{
-		exportName: "egiszOutboxStatus",
-		reason:
-			"Контракта НЕТ вовсе: egiszOutboxStatus (pending/signed/transmitted/accepted/rejected/failed) типизирует " +
-			"исходящие сообщения ЕГИСЗ в db/schema.ts. Долг ведущему: перенести контракт в packages/shared.",
-	},
-];
+}[] = [];
 
 /* ------------------------------------------------------------------ *
  * Самопроверка разбора на фикстурах.
@@ -1089,9 +1000,9 @@ test("перепись перечислений базы не выродилас
 		(item) => contractEnumFor(census, item.exportName) !== null,
 	);
 	assert.ok(
-		paired.length >= 37,
+		paired.length >= 48,
 		`Пар «перечисление базы + контракт» нашлось ${paired.length}, а на момент установки порога их было ` +
-			"37. Каждая потерянная пара — это перечисление, чьи значения больше не сверяются с контрактом, а " +
+			"48 (37 изначальных + 11 спаренных в ходе рефакторинга). Каждая потерянная пара — это перечисление, чьи значения больше не сверяются с контрактом, а " +
 			"расхождение стоит строк в рабочем кабинете: непрошедшие safeParse ряды гидратация молча " +
 			"отбрасывает. Либо разбор контракта перестал узнавать запись перечисления, либо именованный " +
 			"экспорт убрали.",
@@ -1102,9 +1013,9 @@ test("перепись контракта читает исходник, а не
 	const census = contractSourceCensus();
 
 	assert.ok(
-		census.named.size >= 162,
+		census.named.size >= 173,
 		`Перепись контракта нашла ${census.named.size} перечислений в packages/shared/src, а на момент ` +
-			"установки порога их было 162. Сокращение означает либо поломку разбора, либо удаление экспортов; " +
+			"установки порога их было 173. Сокращение означает либо поломку разбора, либо удаление экспортов; " +
 			"в первом случае зелёное ниже получено на урезанном множестве.",
 	);
 

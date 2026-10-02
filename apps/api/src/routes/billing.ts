@@ -23,6 +23,7 @@ import {
 	getVisitForBilling,
 } from "../db/billingQuery.js";
 import { db } from "../db/client.js";
+import { recordAuditEventInDb } from "../db/auditQuery.js";
 import { fiscalReceiptQueue } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 import {
@@ -723,6 +724,23 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 		}
 		try {
 			const payment = await createPaymentInDb(orgId, paymentInput);
+
+			try {
+				const identity = getRequestIdentity(request);
+				await recordAuditEventInDb(orgId, {
+					entityType: "payment",
+					entityId: payment.id,
+					action: "payment_receive",
+					reason: paymentInput.note ?? null,
+					actorUserId: identity.userId ?? null,
+				});
+			} catch (auditErr) {
+				request.log.warn(
+					{ err: auditErr, paymentId: payment.id, orgId },
+					"[billing] Не удалось записать событие приема оплаты в журнал аудита",
+				);
+			}
+
 			return reply.code(201).send(paymentSchema.parse(payment));
 		} catch (error) {
 			if (error instanceof Decree659Error) {
@@ -891,6 +909,23 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 				organizationId: orgId,
 				...parsed.data,
 			});
+
+			try {
+				const identity = getRequestIdentity(request);
+				await recordAuditEventInDb(orgId, {
+					entityType: "payment_refund",
+					entityId: result.paymentId,
+					action: "payment_refund",
+					reason: parsed.data.customReasonDetailsRu || parsed.data.reasonCategory || null,
+					actorUserId: identity.userId ?? null,
+				});
+			} catch (auditErr) {
+				request.log.warn(
+					{ err: auditErr, orgId },
+					"[billing] Не удалось записать событие частичного возврата в журнал аудита",
+				);
+			}
+
 			return reply.code(200).send(result);
 		} catch (err) {
 			if (err instanceof PartialRefundValidationError) {

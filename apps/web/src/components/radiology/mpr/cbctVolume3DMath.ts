@@ -60,8 +60,12 @@ export function getSafeDevicePixelRatio(dpr?: number): number {
 export type Volume3DPresetId =
 	| "skull"
 	| "dense_bone"
+	| "hard_bone"
 	| "soft_tissue"
 	| "mip"
+	| "transparent_skull"
+	| "vessels"
+	| "airway"
 	| "cortical_bone"
 	| "cancellous_bone"
 	| "enamel_metal";
@@ -76,6 +80,9 @@ export interface Volume3DPresetSpec {
 	colorRgb: [number, number, number]; // Base bone tint [R, G, B]
 }
 
+/**
+ * 4 Primary Canonical Volume Rendering (VR) Color Presets
+ */
 export const CBCT_VOLUME_3D_PRESETS: readonly Volume3DPresetSpec[] = [
 	{
 		id: "skull",
@@ -106,12 +113,58 @@ export const CBCT_VOLUME_3D_PRESETS: readonly Volume3DPresetSpec[] = [
 	},
 	{
 		id: "mip",
-		label: "MIP (Максимум)",
+		label: "MIP (Макс. интенсивность)",
 		shortLabel: "MIP",
 		description: "Проекция максимальной интенсивности по всей глубине объема (250+ HU)",
 		huMin: 250,
 		huMax: 3000,
 		colorRgb: [220, 240, 255], // Clear radiologic cyan-white
+	},
+] as const;
+
+/**
+ * 8 Clinical Volume Rendering (VR) Color Presets according to Vatech Ez3D-i & Romexis
+ */
+export const CBCT_EXTENDED_VOLUME_3D_PRESETS: readonly Volume3DPresetSpec[] = [
+	CBCT_VOLUME_3D_PRESETS[0]!, // skull
+	CBCT_VOLUME_3D_PRESETS[1]!, // dense_bone
+	{
+		id: "hard_bone",
+		label: "Hard Bone (Твердая кость / Эмаль)",
+		shortLabel: "Hard Bone",
+		description: "Высокоминерализованные структуры челюсти, альвеолярный край и зубы (700+ HU)",
+		huMin: 700,
+		huMax: 3000,
+		colorRgb: [255, 255, 250],
+	},
+	CBCT_VOLUME_3D_PRESETS[3]!, // mip
+	CBCT_VOLUME_3D_PRESETS[2]!, // soft_tissue
+	{
+		id: "transparent_skull",
+		label: "Прозрачный череп (X-Ray VR)",
+		shortLabel: "Прозрачный",
+		description: "Полупрозрачный рентгенологический вид черепа для оценки корней и синусов (200..1600 HU)",
+		huMin: 200,
+		huMax: 1600,
+		colorRgb: [195, 215, 235], // Translucent bluish-gray
+	},
+	{
+		id: "vessels",
+		label: "Сосуды и контраст (+40..+450 HU)",
+		shortLabel: "Сосуды",
+		description: "Сосудистое русло, мягкотканные инфильтраты и контрастирование (+40..+450 HU)",
+		huMin: 40,
+		huMax: 450,
+		colorRgb: [230, 80, 70], // Blood vessel crimson tint
+	},
+	{
+		id: "airway",
+		label: "Дыхательные пути (Airway VR)",
+		shortLabel: "Воздух",
+		description: "Селективное выделение воздушного столба носоглотки и ротоглотки (-1024..-650 HU)",
+		huMin: -1000,
+		huMax: -650,
+		colorRgb: [6, 182, 212], // Luminous cyan-blue airway
 	},
 ] as const;
 
@@ -143,21 +196,12 @@ export const CBCT_CLINICAL_VOLUME_PRESETS: readonly Volume3DPresetSpec[] = [
 		huMax: 3000,
 		colorRgb: [255, 255, 255],
 	},
-	{
-		id: "soft_tissue",
-		label: "Мягкие ткани (-100..+300 HU)",
-		shortLabel: "Ткани",
-		description: "Слизистая оболочка, десна и контуры мягких тканей лица (-100..+300 HU)",
-		huMin: -100,
-		huMax: 300,
-		colorRgb: [225, 185, 170],
-	},
 ] as const;
 
 export const ALL_CBCT_VOLUME_3D_PRESETS: readonly Volume3DPresetSpec[] = [
-	...CBCT_VOLUME_3D_PRESETS,
+	...CBCT_EXTENDED_VOLUME_3D_PRESETS,
 	...CBCT_CLINICAL_VOLUME_PRESETS.filter(
-		(cp) => !CBCT_VOLUME_3D_PRESETS.some((bp) => bp.id === cp.id),
+		(cp) => !CBCT_EXTENDED_VOLUME_3D_PRESETS.some((bp) => bp.id === cp.id),
 	),
 ];
 
@@ -388,9 +432,11 @@ export function renderCanvas2DPreviewSlice(
 
 			if (vx >= 0 && vx < dimW && vy >= 0 && vy < dimH && vz >= 0 && vz < dimD) {
 				const hu = data[vz * sliceSize + vy * dimW + vx] ?? -1000;
-				if (hu >= huMin) {
+				const isAirway = activePreset === "airway";
+				const isHit = isAirway ? (hu >= huMin && hu <= huMax) : (hu >= huMin);
+				if (isHit) {
 					const norm = Math.min(1.0, Math.max(0.0, (hu - huMin) / (huMax - huMin || 1)));
-					const shade = 0.40 + 0.60 * norm;
+					const shade = isAirway ? 0.85 : 0.40 + 0.60 * norm;
 					const r = Math.min(255, (baseR * shade) | 0);
 					const g = Math.min(255, (baseG * shade) | 0);
 					const b = Math.min(255, (baseB * shade) | 0);

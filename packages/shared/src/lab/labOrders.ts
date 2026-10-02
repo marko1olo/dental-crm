@@ -5,6 +5,7 @@
  */
 
 import { z } from "zod";
+import { generateSecureAlphanumericId } from "../utils/idGenerators.js";
 
 // ─── WORK TYPES & PROSTHETIC CONSTRUCTIONS ────────────────────────────────────
 
@@ -690,7 +691,9 @@ export function generateProstheticWarrantyPassport(params: {
 	const expiration = new Date(fixation.getTime());
 	expiration.setFullYear(expiration.getFullYear() + years);
 
-	const batchCode = params.batchCode || `LOT-${fixation.getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+	const batchCode =
+		params.batchCode ||
+		`LOT-${fixation.getFullYear()}-${generateSecureAlphanumericId(6, false).toUpperCase()}`;
 
 	return {
 		orderNumber: params.orderNumber,

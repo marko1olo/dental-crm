@@ -35,7 +35,7 @@ const repoRoot = path.resolve(webSource, "../../..");
 
 const SHIFT_VIEW = "ShiftView.tsx";
 const HELPERS = "AppHelpers.tsx";
-const SHARED_CONTRACT = path.join(repoRoot, "packages/shared/src/index.ts");
+const SHARED_CONTRACT = path.join(repoRoot, "packages/shared/src/patients/patientSchemas.ts");
 
 function readWeb(relativePath: string): string {
 	return readFileSync(path.join(webSource, relativePath), "utf8");

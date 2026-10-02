@@ -36,13 +36,13 @@ import {
 export interface CbctImplantModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patientId?: string;
-	readonly patientName?: string;
-	readonly toothFdi?: number;
-	readonly volume?: CbctVoxelVolume | null;
-	readonly nerveCanalCenter?: { readonly x: number; readonly y: number; readonly z?: number } | null;
-	readonly initialBrand?: ImplantBrandKey;
-	readonly initialDiameterMm?: number;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly toothFdi?: number | undefined;
+	readonly volume?: CbctVoxelVolume | null | undefined;
+	readonly nerveCanalCenter?: { readonly x: number; readonly y: number; readonly z?: number } | null | undefined;
+	readonly initialBrand?: ImplantBrandKey | undefined;
+	readonly initialDiameterMm?: number | undefined;
 	readonly initialLengthMm?: number;
 	readonly onApplyToPlan?: (item: {
 		readonly implant: ImplantModel;

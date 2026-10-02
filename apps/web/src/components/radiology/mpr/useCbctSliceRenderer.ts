@@ -614,6 +614,8 @@ export function useCbctSliceRenderer(params: UseCbctSliceRendererParams): void {
 			showEdgeRulers: params.showEdgeRulers,
 			archCurve,
 			activeCrossSection,
+			crossSections,
+			activeCrossSectionIdx,
 			selectedArchAnchorIdx,
 			hoveredArchAnchorIdx,
 			isDraggingArchAnchor,

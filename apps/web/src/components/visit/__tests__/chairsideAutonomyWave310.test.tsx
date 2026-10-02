@@ -24,7 +24,10 @@ describe("Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisito
 	const visitSoapEditorSource = fs.readFileSync(visitSoapEditorPath, "utf8");
 
 	const visitEmkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
-	const visitEmkTabSource = fs.readFileSync(visitEmkTabPath, "utf8");
+	const debouncedEmkPath = path.resolve(__dirname, "../emk/DebouncedEmkTextarea.tsx");
+	const visitEmkTabSource =
+		fs.readFileSync(visitEmkTabPath, "utf8") +
+		(fs.existsSync(debouncedEmkPath) ? fs.readFileSync(debouncedEmkPath, "utf8") : "");
 
 	const visitViewPath = path.resolve(__dirname, "../../../VisitView.tsx");
 	const visitViewSource = fs.readFileSync(visitViewPath, "utf8");

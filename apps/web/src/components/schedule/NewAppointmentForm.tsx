@@ -1499,7 +1499,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 											updateNewAppointmentDraft("assistantUserId", "")
 										}
 									>
-										Без ассистента
+										Без ассистента (соло-приём)
 									</button>
 									{(dashboard.clinicSettings?.staff ?? [])
 										.filter(

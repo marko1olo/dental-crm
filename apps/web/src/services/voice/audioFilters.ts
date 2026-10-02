@@ -362,6 +362,7 @@ export class DentalCabinetAcousticSimulator {
 		let b0 = 0;
 		let b1 = 0;
 		let b2 = 0;
+		let noiseSeed = 123456789;
 
 		for (let i = 0; i < numSamples; i++) {
 			let sample = 0;
@@ -380,9 +381,10 @@ export class DentalCabinetAcousticSimulator {
 				sample += 0.12 * Math.sin(2 * Math.PI * 6000 * t);
 			}
 
-			// 3. Шипение аспиратора / слюноотсоса (фильтрованный шум)
+			// 3. Шипение аспиратора / слюноотсоса (фильтрованный детерминированный шум)
 			if (enableAspirationNoise) {
-				const white = Math.random() * 2 - 1;
+				noiseSeed = (noiseSeed * 1664525 + 1013904223) >>> 0;
+				const white = (noiseSeed / 4294967296) * 2 - 1;
 				b0 = 0.99765 * b0 + white * 0.099046;
 				b1 = 0.963 * b1 + white * 0.2965164;
 				b2 = 0.57 * b2 + white * 1.0526913;

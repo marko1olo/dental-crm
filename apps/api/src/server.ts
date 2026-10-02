@@ -101,7 +101,7 @@ import { registerReferralRoutes } from "./routes/referrals.js";
 import { registerReportRoutes } from "./routes/reports.js";
 import { registerSberbankRoutes } from "./routes/sberbank.js";
 import { registerSberPosWebhookRoutes } from "./routes/payments/sberPosWebhookRoute.js";
-import { registerFiscalReceiptRoutes } from "./routes/fiscal/index.js";
+import { registerFiscalReceiptRoutes } from "./routes/fiscal/fiscalReceiptRoutes.js";
 import { registerSbpQrRoutes } from "./routes/sbpQr.js";
 import { registerScheduleRoutes } from "./routes/schedule.js";
 import { registerSettingsRoutes } from "./routes/settings.js";

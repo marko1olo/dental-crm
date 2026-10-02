@@ -28,7 +28,6 @@ import {
 import {
 	type ChairsideShiftEarningsSummary,
 	calculateChairsideShiftEarnings,
-	createSampleChairsideShiftAppointments,
 } from "./doctorShiftEarnings.js";
 import {
 	type DoctorShiftAppointment,
@@ -60,13 +59,10 @@ export const DoctorShiftEarningsWidget: React.FC<DoctorShiftEarningsWidgetProps>
 	const [showPatientDetails, setShowPatientDetails] = useState<boolean>(false);
 	const containerRef = useRef<HTMLDivElement | null>(null);
 
-	// Fallback to sample appointments if none provided
+	// Fallback to empty array if none provided (Zero-Mocks invariant, Mandates 8s, 8e)
 	const effectiveAppointments = useMemo(() => {
-		if (appointments && appointments.length > 0) {
-			return appointments;
-		}
-		return createSampleChairsideShiftAppointments(doctorId, doctorName, shiftDateIso);
-	}, [appointments, doctorId, doctorName, shiftDateIso]);
+		return appointments ?? [];
+	}, [appointments]);
 
 	// Calculate shift earnings
 	const summary: ChairsideShiftEarningsSummary = useMemo(() => {

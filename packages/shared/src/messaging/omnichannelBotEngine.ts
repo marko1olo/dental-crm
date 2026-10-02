@@ -41,6 +41,8 @@ export const omnichannelTriggerTypeSchema = z.enum([
 	"appointment_cancelled",
 	"post_visit_nps",
 	"sbp_payment",
+	"birthday_greeting",
+	"hygiene_recall_6m",
 	"custom",
 ]);
 export type OmnichannelTriggerType = z.infer<typeof omnichannelTriggerTypeSchema>;
@@ -495,6 +497,243 @@ export function buildAppointmentReminder2h(
 	};
 }
 
+// ─── Birthday Greeting & Hygiene Recall Engine ───
+
+export interface BirthdayGreetingOptions {
+	bonusAmountRubles?: number;
+	discountPercent?: number;
+	promoCode?: string;
+	validDays?: number;
+}
+
+export interface HygieneRecall6mOptions {
+	lastVisitMonthsAgo?: number;
+	recommendedDoctorFullName?: string;
+	discountPercent?: number;
+}
+
+/**
+ * Builds Birthday Greeting Dispatch Package with custom bonuses or discount vouchers.
+ */
+export function buildBirthdayGreeting(
+	contextInput: OmnichannelAppointmentContext,
+	options: BirthdayGreetingOptions = {},
+	channel: OmnichannelChannel = "whatsapp",
+): OmnichannelDispatchPackage {
+	const context = omnichannelAppointmentContextSchema.parse(contextInput);
+	const firstName = context.patientFirstName || extractFirstNameRu(context.patientFullName);
+	const bonus = options.bonusAmountRubles ?? 1000;
+	const promoCode = options.promoCode || "BIRTHDAY";
+	const validDays = options.validDays ?? 30;
+
+	const bodyText =
+		`Здравствуйте, ${firstName}!\n` +
+		`Команда клиники ${context.clinicName} от всей души поздравляет вас с днем рождения! 🎂🎉\n\n` +
+		`Желаем вам крепкого здоровья, сияющей улыбки и отличного настроения! ` +
+		`В честь праздника дарим вам бонус ${bonus} ₽ (промокод: ${promoCode}) на любые стоматологические процедуры или комплексную профгигиену.\n\n` +
+		`Подарок действует в течение ${validDays} дней. Будем рады видеть вас на приеме!`;
+
+	const appointmentId = context.appointmentId;
+
+	const whatsappPayload: WhatsappWabaButtonPayload = {
+		messaging_product: "whatsapp",
+		recipient_type: "individual",
+		to: context.patientPhone,
+		type: "interactive",
+		interactive: {
+			type: "button",
+			header: {
+				type: "text",
+				text: `С днем рождения от ${context.clinicName}! 🎉`,
+			},
+			body: {
+				text: bodyText,
+			},
+			footer: {
+				text: `Промокод: ${promoCode} (активен ${validDays} дн.)`,
+			},
+			action: {
+				buttons: [
+					{
+						type: "reply",
+						reply: {
+							id: `btn_bday_book_${appointmentId}`,
+							title: "Записаться на прием",
+						},
+					},
+					{
+						type: "reply",
+						reply: {
+							id: `btn_bday_bonus_${appointmentId}`,
+							title: "Узнать баланс бонусов",
+						},
+					},
+				],
+			},
+		},
+	};
+
+	const telegramPayload: TelegramSendMessagePayload = {
+		chat_id: context.telegramChatId || context.patientPhone,
+		text:
+			`🎂 <b>Поздравляем с днем рождения!</b>\n\n` +
+			`Здравствуйте, <b>${firstName}</b>!\n` +
+			`Команда стоматологической клиники <b>${context.clinicName}</b> желает вам крепкого здоровья, радости и прекрасной улыбки!\n\n` +
+			`🎁 <b>Ваш праздничный подарок:</b> сертификат на <b>${bonus} ₽</b> (промокод: <code>${promoCode}</code>).\n` +
+			`⏳ Сертификат действителен ${validDays} дней.\n\n` +
+			`Ждем вас в гости!`,
+		parse_mode: "HTML",
+		reply_markup: {
+			inline_keyboard: [
+				[
+					{
+						text: "🎁 Записаться на прием",
+						callback_data: `appt:bday_book:${appointmentId}`,
+					},
+					{
+						text: "📞 Связаться с клиникой",
+						callback_data: `appt:bday_call:${appointmentId}`,
+					},
+				],
+			],
+		},
+	};
+
+	const smsPayload: SmsDispatchPayload = {
+		to: context.patientPhone,
+		text: `${context.clinicName}: Поздравляем с днем рождения! Ваш подарок: ${bonus} руб. Промокод ${promoCode}. Действует ${validDays} дн. Тел: ${context.clinicPhone}`,
+	};
+
+	const provider: OmnichannelProvider =
+		channel === "telegram"
+			? "telegram_bot"
+			: channel === "sms"
+			? "sms_gateway"
+			: "waba_360dialog";
+
+	return {
+		triggerType: "birthday_greeting",
+		channel,
+		provider,
+		recipientId: channel === "telegram" && context.telegramChatId ? String(context.telegramChatId) : context.patientPhone,
+		appointmentId,
+		plainText: bodyText,
+		whatsappPayload: channel === "whatsapp" ? whatsappPayload : undefined,
+		telegramPayload: channel === "telegram" ? telegramPayload : undefined,
+		smsPayload: channel === "sms" ? smsPayload : undefined,
+	};
+}
+
+/**
+ * Builds 6-Month Routine Hygiene Recall Dispatch Package (Strict Mandate 8z - Zero Soviet bureaucratic slang).
+ */
+export function buildHygieneRecall6m(
+	contextInput: OmnichannelAppointmentContext,
+	options: HygieneRecall6mOptions = {},
+	channel: OmnichannelChannel = "whatsapp",
+): OmnichannelDispatchPackage {
+	const context = omnichannelAppointmentContextSchema.parse(contextInput);
+	const firstName = context.patientFirstName || extractFirstNameRu(context.patientFullName);
+	const months = options.lastVisitMonthsAgo ?? 6;
+	const doctor = options.recommendedDoctorFullName || context.doctorFullName;
+
+	const bodyText =
+		`Здравствуйте, ${firstName}!\n` +
+		`Прошло уже ${months} месяцев с вашего последнего визита к доктору ${doctor}.\n\n` +
+		`Стоматологи рекомендуют проходить плановый профилактический осмотр и профессиональную гигиену полости рта каждые полгода. ` +
+		`Это позволяет сохранить здоровье зубов, предотвратить образование налета и камня, а также выявить любые скрытые процессы на начальном этапе.\n\n` +
+		`Будем рады подобрать для вас удобное время в клинике ${context.clinicName}!`;
+
+	const appointmentId = context.appointmentId;
+
+	const whatsappPayload: WhatsappWabaButtonPayload = {
+		messaging_product: "whatsapp",
+		recipient_type: "individual",
+		to: context.patientPhone,
+		type: "interactive",
+		interactive: {
+			type: "button",
+			header: {
+				type: "text",
+				text: `Плановая профгигиена в ${context.clinicName}`,
+			},
+			body: {
+				text: bodyText,
+			},
+			footer: {
+				text: "Забота о здоровье вашей улыбки",
+			},
+			action: {
+				buttons: [
+					{
+						type: "reply",
+						reply: {
+							id: `btn_hygiene_book_${appointmentId}`,
+							title: "Записаться на гигиену",
+						},
+					},
+					{
+						type: "reply",
+						reply: {
+							id: `btn_hygiene_snooze_${appointmentId}`,
+							title: "Напомнить через 2 нед.",
+						},
+					},
+				],
+			},
+		},
+	};
+
+	const telegramPayload: TelegramSendMessagePayload = {
+		chat_id: context.telegramChatId || context.patientPhone,
+		text:
+			`🦷 <b>Плановый профилактический осмотр и профгигиена</b>\n\n` +
+			`Здравствуйте, <b>${firstName}</b>!\n` +
+			`Прошло ${months} месяцев с вашего предыдущего приема у доктора ${doctor}.\n\n` +
+			`✨ <i>Регулярная гигиена раз в полгода — лучший способ сохранить улыбку здоровой и избежать сложного лечения.</i>\n\n` +
+			`Подберем удобное время?`,
+		parse_mode: "HTML",
+		reply_markup: {
+			inline_keyboard: [
+				[
+					{
+						text: "✨ Записаться на гигиену",
+						callback_data: `appt:hygiene_book:${appointmentId}`,
+					},
+					{
+						text: "⏳ Напомнить через 2 недели",
+						callback_data: `appt:hygiene_snooze:${appointmentId}`,
+					},
+				],
+			],
+		},
+	};
+
+	const smsPayload: SmsDispatchPayload = {
+		to: context.patientPhone,
+		text: `${context.clinicName}: Здравствуйте, ${firstName}! Подошел срок плановой профгигиены (прошло ${months} мес.). Записаться: ответ 1 или тел: ${context.clinicPhone}`,
+	};
+
+	const provider: OmnichannelProvider =
+		channel === "telegram"
+			? "telegram_bot"
+			: channel === "sms"
+			? "sms_gateway"
+			: "waba_360dialog";
+
+	return {
+		triggerType: "hygiene_recall_6m",
+		channel,
+		provider,
+		recipientId: channel === "telegram" && context.telegramChatId ? String(context.telegramChatId) : context.patientPhone,
+		appointmentId,
+		plainText: bodyText,
+		whatsappPayload: channel === "whatsapp" ? whatsappPayload : undefined,
+		telegramPayload: channel === "telegram" ? telegramPayload : undefined,
+		smsPayload: channel === "sms" ? smsPayload : undefined,
+	};
+}
+
 // ─── Inbound Webhook Parser & Patient Intent Classifier ───
 
 export interface ParsedOmnichannelWebhookResult {
@@ -619,6 +858,42 @@ function parseTelegramWebhook(payload: Record<string, unknown>): ParsedOmnichann
 					rawMessageText: data,
 					nextAppointmentStatus: "confirmed",
 					autoReplyText: "⏳ Спасибо, что предупредили! Передали информацию доктору. Ждем вас.",
+				};
+			}
+			if (actionStr === "bday_book" || actionStr === "hygiene_book") {
+				return {
+					channel: "telegram",
+					senderId,
+					appointmentId: entityId,
+					action: "CONFIRMED",
+					confidence: "explicit_button",
+					rawMessageText: data,
+					nextAppointmentStatus: "confirmed",
+					autoReplyText: "🎉 Спасибо за отклик! Администратор клиники уже подбирает для вас удобное время визита.",
+				};
+			}
+			if (actionStr === "bday_call") {
+				return {
+					channel: "telegram",
+					senderId,
+					appointmentId: entityId,
+					action: "CONFIRMED",
+					confidence: "explicit_button",
+					rawMessageText: data,
+					nextAppointmentStatus: null,
+					autoReplyText: "📞 Наш администратор перезвонит вам в течение 10 минут.",
+				};
+			}
+			if (actionStr === "hygiene_snooze") {
+				return {
+					channel: "telegram",
+					senderId,
+					appointmentId: entityId,
+					action: "RESCHEDULE_REQUESTED",
+					confidence: "explicit_button",
+					rawMessageText: data,
+					nextAppointmentStatus: "reschedule_requested",
+					autoReplyText: "⏳ Хорошо! Мы напомним вам о профгигиене через 2 недели.",
 				};
 			}
 		}
@@ -757,6 +1032,48 @@ function parseWhatsappWebhook(payload: Record<string, unknown>): ParsedOmnichann
 				rawMessageText: buttonId,
 				nextAppointmentStatus: "confirmed",
 				autoReplyText: "🚗 Спасибо! Доктор ждет вас в клинике.",
+			};
+		}
+
+		if (buttonId.startsWith("btn_bday_book_") || buttonId.startsWith("btn_hygiene_book_")) {
+			const apptId = buttonId.replace(/btn_(bday|hygiene)_book_/, "");
+			return {
+				channel: "whatsapp",
+				senderId: senderPhone,
+				appointmentId: apptId,
+				action: "CONFIRMED",
+				confidence: "explicit_button",
+				rawMessageText: buttonId,
+				nextAppointmentStatus: "confirmed",
+				autoReplyText: "🎉 Спасибо за отклик! Администратор клиники уже подбирает для вас удобное время визита.",
+			};
+		}
+
+		if (buttonId.startsWith("btn_bday_bonus_")) {
+			const apptId = buttonId.replace("btn_bday_bonus_", "");
+			return {
+				channel: "whatsapp",
+				senderId: senderPhone,
+				appointmentId: apptId,
+				action: "CONFIRMED",
+				confidence: "explicit_button",
+				rawMessageText: buttonId,
+				nextAppointmentStatus: null,
+				autoReplyText: "🎁 Ваш праздничный бонус начислен и готов к списанию на ресепшн или при онлайн-оплате!",
+			};
+		}
+
+		if (buttonId.startsWith("btn_hygiene_snooze_")) {
+			const apptId = buttonId.replace("btn_hygiene_snooze_", "");
+			return {
+				channel: "whatsapp",
+				senderId: senderPhone,
+				appointmentId: apptId,
+				action: "RESCHEDULE_REQUESTED",
+				confidence: "explicit_button",
+				rawMessageText: buttonId,
+				nextAppointmentStatus: "reschedule_requested",
+				autoReplyText: "⏳ Принято! Напомним вам о профгигиене через 2 недели.",
 			};
 		}
 

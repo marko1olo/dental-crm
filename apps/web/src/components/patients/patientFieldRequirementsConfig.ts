@@ -9,35 +9,24 @@
  * 4. «Дата рождения» / «Паспорт» — опциональные строгие режимы.
  */
 
-import { validateStaffSnils } from "@dental/shared";
-import { z } from "zod";
+import {
+	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
+	PATIENT_FIELD_REQUIREMENTS_STORAGE_KEY,
+	patientFieldRequirementsSchema,
+	type PatientFieldRequirements,
+	validateStaffSnils,
+} from "@dental/shared";
 import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
 } from "../../lib/safeLocalStorage";
 
-export const patientFieldRequirementsSchema = z.object({
-	requirePhone: z.boolean().default(true),
-	requireAdvertisingSource: z.boolean().default(false),
-	requireSnils: z.boolean().default(false),
-	requireBirthDate: z.boolean().default(false),
-	requireIdentityDocument: z.boolean().default(false),
-});
-
-export type PatientFieldRequirements = z.infer<
-	typeof patientFieldRequirementsSchema
->;
-
-export const DEFAULT_PATIENT_FIELD_REQUIREMENTS: PatientFieldRequirements = {
-	requirePhone: true,
-	requireAdvertisingSource: false,
-	requireSnils: false,
-	requireBirthDate: false,
-	requireIdentityDocument: false,
+export {
+	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
+	PATIENT_FIELD_REQUIREMENTS_STORAGE_KEY,
+	patientFieldRequirementsSchema,
+	type PatientFieldRequirements,
 };
-
-export const PATIENT_FIELD_REQUIREMENTS_STORAGE_KEY =
-	"dental_crm_patient_field_requirements_v1";
 
 /**
  * Рекламные источники и каналы привлечения пациентов для стоматологии.

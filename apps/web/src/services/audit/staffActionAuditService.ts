@@ -323,7 +323,65 @@ export class StaffActionAuditService {
 	}
 
 	/**
-	 * 8. Отмена / удаление приема в расписании
+	 * 8.1 Создание приема в расписании
+	 */
+	public static logAppointmentCreate(params: {
+		appointmentId: string;
+		patientId?: string | null | undefined;
+		scheduledTime?: string | null | undefined;
+		doctorUserId?: string | null | undefined;
+		reason?: string | null | undefined;
+		actorUserId?: string | null | undefined;
+		actorRole?: string | null | undefined;
+	}): StaffActionAuditEntry | null {
+		return StaffActionAuditService.logAction({
+			actionType: "appointment_create",
+			entityType: "appointment",
+			entityId: params.appointmentId,
+			patientId: params.patientId ?? null,
+			actorUserId: params.actorUserId,
+			actorRole: params.actorRole,
+			reason: params.reason ?? "Создание первичной записи в расписании",
+			details: {
+				appointmentId: params.appointmentId,
+				scheduledTime: params.scheduledTime ?? null,
+				doctorUserId: params.doctorUserId ?? null,
+				reason: params.reason ?? null,
+			},
+		});
+	}
+
+	/**
+	 * 8.2 Перенос / перепланирование времени приема
+	 */
+	public static logAppointmentReschedule(params: {
+		appointmentId: string;
+		patientId?: string | null | undefined;
+		oldTime?: string | null | undefined;
+		newTime?: string | null | undefined;
+		reason?: string | null | undefined;
+		actorUserId?: string | null | undefined;
+		actorRole?: string | null | undefined;
+	}): StaffActionAuditEntry | null {
+		return StaffActionAuditService.logAction({
+			actionType: "appointment_reschedule",
+			entityType: "appointment",
+			entityId: params.appointmentId,
+			patientId: params.patientId ?? null,
+			actorUserId: params.actorUserId,
+			actorRole: params.actorRole,
+			reason: params.reason ?? "Перенос времени приёма",
+			details: {
+				appointmentId: params.appointmentId,
+				oldTime: params.oldTime ?? null,
+				newTime: params.newTime ?? null,
+				reason: params.reason ?? null,
+			},
+		});
+	}
+
+	/**
+	 * 8.3 Отмена / удаление приема в расписании
 	 */
 	public static logAppointmentCancel(params: {
 		appointmentId: string;
@@ -345,6 +403,58 @@ export class StaffActionAuditService {
 				appointmentId: params.appointmentId,
 				scheduledTime: params.scheduledTime ?? null,
 				reason: params.reason,
+			},
+		});
+	}
+
+	/**
+	 * 8.4 Удаление приема из расписания
+	 */
+	public static logAppointmentDelete(params: {
+		appointmentId: string;
+		patientId?: string | null | undefined;
+		reason: string;
+		actorUserId?: string | null | undefined;
+		actorRole?: string | null | undefined;
+	}): StaffActionAuditEntry | null {
+		return StaffActionAuditService.logAction({
+			actionType: "appointment_delete",
+			entityType: "appointment",
+			entityId: params.appointmentId,
+			patientId: params.patientId ?? null,
+			actorUserId: params.actorUserId,
+			actorRole: params.actorRole,
+			reason: params.reason,
+			details: {
+				appointmentId: params.appointmentId,
+				reason: params.reason,
+			},
+		});
+	}
+
+	/**
+	 * 8.5 Сохранение ревизии дневника («Исправленному верить»)
+	 */
+	public static logRevisionSaved(params: {
+		patientId: string;
+		visitId: string;
+		revisionReason: string;
+		actorUserId?: string | null | undefined;
+		actorRole?: string | null | undefined;
+	}): StaffActionAuditEntry | null {
+		return StaffActionAuditService.logAction({
+			actionType: "diary_revision",
+			entityType: "diary_revision",
+			entityId: params.visitId,
+			patientId: params.patientId,
+			actorUserId: params.actorUserId,
+			actorRole: params.actorRole,
+			reason: params.revisionReason,
+			details: {
+				visitId: params.visitId,
+				revisionReason: params.revisionReason,
+				protocol: "Исправленному верить",
+				savedAt: new Date().toISOString(),
 			},
 		});
 	}

@@ -427,6 +427,59 @@ const CrossSectionCard: React.FC<CrossSectionCardProps> = ({
 			ctx.restore();
 		}
 
+		// 2b. Ez3D-i Millimeter Scales (Vertical 30..-20 mm, Horizontal 20-10-0-10-20 mm)
+		ctx.save();
+		const centerX = width / 2.0;
+		const centerY = height / 2.0;
+
+		// Vertical scale on the right
+		const rightX = width - 2;
+		ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+		ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+		ctx.font = "8px monospace";
+		ctx.textAlign = "right";
+		ctx.textBaseline = "middle";
+
+		for (let mm = -30; mm <= 30; mm += 1) {
+			const y = centerY - mm * pxPerMm;
+			if (y < 4 || y > height - 4) continue;
+			const is10 = mm % 10 === 0;
+			const is5 = mm % 5 === 0;
+			const tickLen = is10 ? 5 : is5 ? 3 : 1.5;
+
+			ctx.beginPath();
+			ctx.moveTo(rightX, y);
+			ctx.lineTo(rightX - tickLen, y);
+			ctx.stroke();
+
+			if (is10) {
+				ctx.fillText(String(Math.abs(mm)), rightX - 6, y);
+			}
+		}
+
+		// Horizontal scale at the bottom
+		const bottomY = height - 2;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "bottom";
+
+		for (let mm = -20; mm <= 20; mm += 1) {
+			const x = centerX + mm * pxPerMm;
+			if (x < 6 || x > width - 6) continue;
+			const is10 = mm % 10 === 0;
+			const is5 = mm % 5 === 0;
+			const tickLen = is10 ? 5 : is5 ? 3 : 1.5;
+
+			ctx.beginPath();
+			ctx.moveTo(x, bottomY);
+			ctx.lineTo(x, bottomY - tickLen);
+			ctx.stroke();
+
+			if (is10) {
+				ctx.fillText(String(Math.abs(mm)), x, bottomY - 6);
+			}
+		}
+		ctx.restore();
+
 		// 3. Alveolar Ridge Caliper Overlay (W2, W4, W6, H)
 		if (showMorphometry && morphometry && morphometry.isDetected) {
 			ctx.save();
@@ -529,29 +582,42 @@ const CrossSectionCard: React.FC<CrossSectionCardProps> = ({
 	return (
 		<div
 			onClick={onClick}
-			className={`flex flex-col rounded-lg overflow-hidden border transition-all cursor-pointer relative bg-zinc-950 select-none ${
+			className={`flex flex-col rounded-lg overflow-hidden transition-all cursor-pointer relative bg-zinc-950 select-none ${
 				isActive
-					? "border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.35)] ring-1 ring-amber-400/80"
-					: "border-zinc-800 hover:border-zinc-700 bg-zinc-900/60"
+					? "border-2 border-orange-500 ring-2 ring-orange-500/70 shadow-[0_0_14px_rgba(249,115,22,0.45)]"
+					: "border border-zinc-800 hover:border-zinc-700 bg-zinc-900/60"
 			}`}
 			data-testid={`cbct-cross-section-card-${sliceIdx}`}
 			role="button"
 			tabIndex={0}
 			aria-pressed={isActive}
 		>
-			{/* Card Header: Slice Index, Arc Distance, FDI Tooth */}
-			<div className="flex items-center justify-between px-2 py-1 bg-zinc-900/90 border-b border-zinc-800 text-[11px]">
+			{/* Card Header: Section Index, Arc Distance, Anatomical L/B, FDI Tooth */}
+			<div
+				className={`flex items-center justify-between px-2 py-1 border-b text-[11px] ${
+					isActive
+						? "bg-orange-950/60 border-orange-500/50"
+						: "bg-zinc-900/90 border-zinc-800"
+				}`}
+			>
 				<div className="flex items-center gap-1.5 min-w-0">
-					<span className="font-mono font-bold text-amber-300">#{sliceIdx + 1}</span>
+					<span className={`font-mono font-bold ${isActive ? "text-orange-300" : "text-zinc-200"}`}>
+						Section {sliceIdx + 1}
+					</span>
 					<span className="text-[10px] text-zinc-400 font-mono">({slice.distanceAlongArchMm.toFixed(1)} мм)</span>
 				</div>
 
-				<div className="flex items-center gap-1">
+				<div className="flex items-center gap-1.5">
+					<div className="flex items-center gap-1 text-[9px] font-bold font-mono text-zinc-400">
+						<span title="Lingual (Язычная)">L</span>
+						<span>•</span>
+						<span title="Buccal (Щёчная)">B</span>
+					</div>
 					{fdiTooth && (
 						<span
 							className={`text-[10px] font-bold px-1.5 py-0.2 rounded font-mono ${
 								isActive
-									? "bg-amber-500/25 text-amber-300 border border-amber-500/40"
+									? "bg-orange-500/25 text-orange-200 border border-orange-500/40"
 									: "bg-zinc-800 text-cyan-300 border border-zinc-700"
 							}`}
 							title={`Ближайший зуб FDI #${fdiTooth}`}
@@ -560,7 +626,7 @@ const CrossSectionCard: React.FC<CrossSectionCardProps> = ({
 						</span>
 					)}
 					{isActive && (
-						<span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.8)] animate-pulse" />
+						<span className="w-2 h-2 rounded-full bg-orange-400 shadow-[0_0_6px_rgba(249,115,22,0.9)] animate-pulse" />
 					)}
 				</div>
 			</div>
@@ -573,12 +639,12 @@ const CrossSectionCard: React.FC<CrossSectionCardProps> = ({
 					data-testid={`cbct-cross-canvas-${sliceIdx}`}
 				/>
 
-				{/* Anatomical Side Markers (B = Buccal, L = Lingual) */}
-				<span className="absolute bottom-1 left-1.5 text-[9px] font-bold text-zinc-500 uppercase pointer-events-none">
-					B (Вестиб)
+				{/* Anatomical Side Markers (L = Lingual top-left, B = Buccal top-right) */}
+				<span className="absolute top-1 left-1.5 text-[9px] font-mono font-bold text-zinc-400 bg-black/60 px-1 rounded pointer-events-none">
+					L
 				</span>
-				<span className="absolute bottom-1 right-1.5 text-[9px] font-bold text-zinc-500 uppercase pointer-events-none">
-					L (Орал)
+				<span className="absolute top-1 right-1.5 text-[9px] font-mono font-bold text-zinc-400 bg-black/60 px-1 rounded pointer-events-none">
+					B
 				</span>
 
 				{/* Morphometry Mini HUD (W2, W4, W6 badges) — compact, non-intrusive */}

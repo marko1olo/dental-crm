@@ -83,7 +83,7 @@ export const MRD_DRUG_CATALOG: Record<MrdDrugId, MrdDrugSpecification> = Object.
 			},
 		];
 	}),
-) as Record<MrdDrugId, MrdDrugSpecification>;
+) as unknown as Record<MrdDrugId, MrdDrugSpecification>;
 
 export const EPINEPHRINE_LIMITS_MG = {
 	healthyAdult: 0.20,

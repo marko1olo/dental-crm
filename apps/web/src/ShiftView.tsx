@@ -12,20 +12,25 @@ import {
 	ImageIcon,
 	Info,
 	MessageSquare,
+	Monitor,
 	Phone,
 	UserCheck,
 	Users,
+	X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { patientInsightRiskLabels } from "./AppConstants";
 import { formatShortDate, minutesLabel, money } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
 import { PatientAvatar } from "./components/PatientAvatar";
+import { TodayQueueBoard } from "./components/schedule/TodayQueueBoard";
 import {
 	DoctorShiftCloseModal,
 	DoctorShiftControlBar,
 	ShiftCallout,
 } from "./components/shift";
+import { DoctorKickoffWidget } from "./components/dashboard/DoctorKickoffWidget";
+import { DoctorShiftEarningsWidget } from "./components/doctor/DoctorShiftEarningsWidget";
 import { EmkControlBoard } from "./components/visit/EmkControlBoard";
 import { countLabel } from "./lib/russianPlural";
 import {
@@ -320,6 +325,7 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 
 	const [showAnalytics, setShowAnalytics] = useState(false);
 	const [showOtherQueues, setShowOtherQueues] = useState(false);
+	const [isQueueBoardModalOpen, setIsQueueBoardModalOpen] = useState(false);
 
 	// StomX Operational Shift Board Queues
 	const [shiftQueueFilter, setShiftQueueFilter] = useState<
@@ -658,6 +664,28 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 
 	return (
 		<div className="shift-view-scroll-container min-w-0">
+			<div className="px-2 pt-2 pb-1 space-y-2">
+				<DoctorKickoffWidget
+					doctorName={dashboard?.activeDoctor?.fullName}
+					appointmentsCount={todayAppointments.length}
+					isShiftOpen={isShiftOpen}
+					onToggleShift={handleToggleShift}
+					onOpenSchedule={() => {
+						window.location.hash = "schedule";
+					}}
+					onOpenCheckout={() => {
+						window.location.hash = "invoices";
+					}}
+				/>
+				<DoctorShiftEarningsWidget
+					doctorId={dashboard?.activeDoctor?.id || "doc-1"}
+					doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
+					shiftDateIso={todayIso}
+					compact={true}
+					appointments={todayAppointments as any}
+				/>
+			</div>
+
 			<DoctorShiftControlBar
 				isShiftOpen={isShiftOpen}
 				onToggleShift={handleToggleShift}
@@ -869,6 +897,23 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 							<span className="today-schedule-count">
 								{appointmentsCountLabel(todayAppointments.length)}
 							</span>
+							<button
+								type="button"
+								className="secondary-button"
+								style={{
+									fontSize: "11.5px",
+									padding: "3px 8px",
+									minHeight: "28px",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "4px",
+								}}
+								onClick={() => setIsQueueBoardModalOpen(true)}
+								title="Открыть интерактивную доску очереди StomX и ТВ-табло"
+								data-testid="btn-open-today-queue-board"
+							>
+								<Monitor size={13} aria-hidden="true" /> Доска очереди
+							</button>
 							<button
 								type="button"
 								className="secondary-button"
@@ -1782,6 +1827,50 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 					shiftStats={shiftStats}
 					clinicName={dashboard?.clinicName}
 				/>
+			)}
+
+			{/* Интерактивная доска очереди StomX и ТВ-табло холла */}
+			{isQueueBoardModalOpen && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs"
+					role="dialog"
+					aria-modal="true"
+					data-testid="today-queue-board-modal"
+				>
+					<div className="bg-[var(--paper-strong)] border border-[var(--glass-border)] text-[var(--ink)] w-full max-w-5xl max-h-[92vh] rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col gap-3 overflow-hidden">
+						<div className="flex items-center justify-between border-b border-[var(--glass-border)] pb-2.5">
+							<h3 className="m-0 font-bold text-sm sm:text-base text-[var(--ink)] flex items-center gap-2">
+								<Monitor size={18} className="text-teal-600" />
+								<span>Оперативная доска смены & ТВ-табло холла</span>
+							</h3>
+							<button
+								type="button"
+								onClick={() => setIsQueueBoardModalOpen(false)}
+								className="w-8 h-8 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer"
+								aria-label="Закрыть доску очереди"
+								data-testid="btn-close-queue-board-modal"
+							>
+								<X size={18} />
+							</button>
+						</div>
+						<div className="flex-1 overflow-y-auto">
+							<TodayQueueBoard
+								appointments={todayAppointments}
+								onStatusChange={(appointmentId, newStatus) => {
+									if (typeof (props as any).onUpdateAppointmentStatus === "function") {
+										(props as any).onUpdateAppointmentStatus(appointmentId, newStatus);
+									}
+								}}
+								onOpenAppointment={(appId) => {
+									setIsQueueBoardModalOpen(false);
+									if (typeof (props as any).onSelectAppointment === "function") {
+										(props as any).onSelectAppointment(appId);
+									}
+								}}
+							/>
+						</div>
+					</div>
+				</div>
 			)}
 		</div>
 	);

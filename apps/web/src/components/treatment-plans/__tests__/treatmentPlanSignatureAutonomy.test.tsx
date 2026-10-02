@@ -466,6 +466,90 @@ describe("Treatment Plan Signature & Estimator Paper-First Autonomy (Mandates 8e
 				root?.unmount();
 			});
 		});
+
+		it("upholds Doctor Autonomy (Mandates 8e, 8y): buttons remain enabled and allow confirmation even with clinical conflicts", async () => {
+			const { doc } = setupMockDom();
+			let root: Root | null = null;
+			let receivedAgreement: DigitalSignatureAgreementData | null = null;
+
+			const conflictingTier: TreatmentPlanTier = {
+				...sampleTier,
+				stages: [
+					{
+						id: "stage-conflicts",
+						title: "Хирургический этап",
+						items: [
+							{
+								id: "item-ext",
+								name: "Удаление зуба сложное",
+								code804n: "A16.07.001.001",
+								category: "SURGERY",
+								priceRub: 5000,
+								quantity: 1,
+								toothNumber: 16,
+								isDraft: false,
+							},
+							{
+								id: "item-crown",
+								name: "Восстановление зуба коронкой постоянной",
+								code804n: "A16.07.004.001",
+								category: "PROSTHETICS",
+								priceRub: 25000,
+								quantity: 1,
+								toothNumber: 16,
+								isDraft: false,
+							},
+						],
+					} as any,
+				],
+			};
+
+			const container = doc.createElement("div");
+			doc.body.appendChild(container);
+
+			await act(async () => {
+				root = createRoot(container as unknown as HTMLElement);
+				root.render(
+					<TreatmentPlanSignatureModal
+						isOpen={true}
+						tier={conflictingTier}
+						patientName="Иванова Анна Сергеевна"
+						patientId="PAT-2026-1042"
+						doctorFullName="Д-р Воронова М.А."
+						clinicName="Стоматология ДЕНТЕ"
+						onClose={() => {}}
+						onSignedSuccess={(agreement) => {
+							receivedAgreement = agreement;
+						}}
+					/>,
+				);
+			});
+
+			// Verify conflict alert is displayed as advisory
+			const conflictAlert = findNodeByTestId(doc.body, "clinical-conflict-alert");
+			expect(conflictAlert).not.toBeNull();
+
+			// Doctor Autonomy: buttons MUST NOT be disabled
+			const paperConfirmBtn = findNodeByTestId(doc.body, "paper-signature-confirm-btn");
+			expect(paperConfirmBtn).not.toBeNull();
+			assert.equal(paperConfirmBtn?.getAttribute("disabled"), null, "Paper button must not be disabled when conflicts exist");
+
+			const confirmBtn = findNodeByTestId(doc.body, "confirm-sign-plan-btn");
+			expect(confirmBtn).not.toBeNull();
+			assert.equal(confirmBtn?.getAttribute("disabled"), null, "Sign button must not be disabled when conflicts exist");
+
+			// Doctor confirms anyway: signature succeeds without blocking
+			await clickNode(paperConfirmBtn!);
+
+			expect(receivedAgreement).not.toBeNull();
+			const agreement = receivedAgreement as unknown as DigitalSignatureAgreementData;
+			expect(agreement.patientId).toBe("PAT-2026-1042");
+			expect(agreement.termsAccepted).toBe(true);
+
+			await act(async () => {
+				root?.unmount();
+			});
+		});
 	});
 
 	describe("2. TreatmentEstimator — 1-Click Paper Confirmation Toolbar Button", () => {

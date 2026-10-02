@@ -213,4 +213,116 @@ describe("StaffActionAuditService (apps/web Offline-First Staff Telemetry)", () 
 		assert.ok(Array.isArray(parsed));
 		assert.ok(parsed.length > 0);
 	});
+
+	it("10. Logs appointment creation with scheduled time and doctor attribution", () => {
+		const entry = StaffActionAuditService.logAppointmentCreate({
+			appointmentId: "appt-create-101",
+			patientId: "patient-uuid-010",
+			scheduledTime: "2026-10-10T14:30:00.000Z",
+			doctorUserId: "doctor-uuid-200",
+			reason: "Консультация ортодонта",
+			actorUserId: "admin-uuid-001",
+			actorRole: "administrator",
+		});
+
+		assert.ok(entry);
+		assert.strictEqual(entry.actionType, "appointment_create");
+		assert.strictEqual(entry.entityType, "appointment");
+		assert.strictEqual(entry.entityId, "appt-create-101");
+		assert.strictEqual(entry.patientId, "patient-uuid-010");
+		assert.strictEqual(entry.actorRole, "administrator");
+		assert.strictEqual((entry.details as any).doctorUserId, "doctor-uuid-200");
+		assert.strictEqual((entry.details as any).scheduledTime, "2026-10-10T14:30:00.000Z");
+	});
+
+	it("11. Logs appointment reschedule with old and new timestamps", () => {
+		const entry = StaffActionAuditService.logAppointmentReschedule({
+			appointmentId: "appt-resched-102",
+			patientId: "patient-uuid-011",
+			oldTime: "2026-10-10T14:30:00.000Z",
+			newTime: "2026-10-12T16:00:00.000Z",
+			reason: "Просьба пациента в связи с командировкой",
+			actorUserId: "admin-uuid-001",
+			actorRole: "administrator",
+		});
+
+		assert.ok(entry);
+		assert.strictEqual(entry.actionType, "appointment_reschedule");
+		assert.strictEqual(entry.entityId, "appt-resched-102");
+		assert.strictEqual((entry.details as any).oldTime, "2026-10-10T14:30:00.000Z");
+		assert.strictEqual((entry.details as any).newTime, "2026-10-12T16:00:00.000Z");
+		assert.strictEqual(entry.reason, "Просьба пациента в связи с командировкой");
+	});
+
+	it("12. Logs appointment deletion with justification", () => {
+		const entry = StaffActionAuditService.logAppointmentDelete({
+			appointmentId: "appt-delete-103",
+			patientId: "patient-uuid-012",
+			reason: "Дублирующая запись, созданная по ошибке",
+			actorUserId: "admin-uuid-001",
+		});
+
+		assert.ok(entry);
+		assert.strictEqual(entry.actionType, "appointment_delete");
+		assert.strictEqual(entry.entityId, "appt-delete-103");
+		assert.strictEqual(entry.reason, "Дублирующая запись, созданная по ошибке");
+	});
+
+	it("13. Logs revision protocol «Исправленному верить» for medical diary", () => {
+		const entry = StaffActionAuditService.logRevisionSaved({
+			patientId: "patient-uuid-013",
+			visitId: "visit-uuid-500",
+			revisionReason: "Уточнение описания окклюзионных контактов",
+			actorUserId: "doctor-uuid-100",
+			actorRole: "doctor",
+		});
+
+		assert.ok(entry);
+		assert.strictEqual(entry.actionType, "diary_revision");
+		assert.strictEqual(entry.entityType, "diary_revision");
+		assert.strictEqual(entry.entityId, "visit-uuid-500");
+		assert.strictEqual((entry.details as any).protocol, "Исправленному верить");
+	});
+
+	it("14. Dual persistence mirrors to both canonical and legacy keys", () => {
+		StaffActionAuditService.logEmrOpen({
+			patientId: "patient-dual-01",
+			cardId: "card-dual-01",
+		});
+
+		// Both keys must be populated
+		const legacyRaw = storageMap.get(OFFLINE_STAFF_AUDIT_STORAGE_KEY);
+		const canonicalRaw = storageMap.get("dente_staff_audit_events_v1");
+
+		assert.ok(legacyRaw, "Legacy buffer must be present");
+		assert.ok(canonicalRaw, "Canonical buffer must be present");
+
+		const legacyParsed = JSON.parse(legacyRaw);
+		const canonicalParsed = JSON.parse(canonicalRaw);
+
+		assert.strictEqual(legacyParsed.length, canonicalParsed.length);
+	});
+
+	it("15. Non-blocking Doctor Autonomy: never throws on corrupted inputs or storage errors", () => {
+		// Mock throwing storage
+		const brokenStorage = {
+			...mockLocalStorage,
+			setItem: () => {
+				throw new Error("QuotaExceededError: LocalStorage limit reached");
+			},
+		};
+		(globalThis as any).localStorage = brokenStorage;
+
+		const result = StaffActionAuditService.logAction({
+			actionType: "custom_action",
+			entityType: "resilience_check",
+			entityId: "res-001",
+		});
+
+		// Must not throw, returns entry or null
+		assert.ok(result);
+
+		// Restore mock
+		(globalThis as any).localStorage = mockLocalStorage;
+	});
 });

@@ -2,6 +2,7 @@ import React from "react";
 import { Spline, Layers, Sparkles } from "lucide-react";
 import type { WorkspaceCommonProps } from "./workspaceTypes";
 import { PanoramicCrossSectionGrid } from "./PanoramicCrossSectionGrid";
+import { CbctPanoramicFdiRibbon } from "../CbctPanoramicFdiRibbon";
 
 export interface PanoramicWorkspaceProps extends WorkspaceCommonProps {
 	readonly jawType?: "mandible" | "maxilla" | undefined;
@@ -70,6 +71,7 @@ export const PanoramicWorkspace: React.FC<PanoramicWorkspaceProps> = ({
 						windowWidth={windowWidth}
 						windowLevel={windowLevel}
 						jawType={jawType}
+						onSwitchJaw={onSwitchJaw}
 						className="flex-1 flex flex-col w-full h-full"
 					/>
 				)}
@@ -154,6 +156,12 @@ export const PanoramicWorkspace: React.FC<PanoramicWorkspaceProps> = ({
 						)}
 					</div>
 				</div>
+				{handleSelectTooth && (
+					<CbctPanoramicFdiRibbon
+						onSelectTooth={handleSelectTooth}
+						archCurve={archCurve}
+					/>
+				)}
 
 				{/* OPG Viewport Canvas Area (100% clean, zero control overlap on teeth) */}
 				<div className="flex-1 relative flex flex-col min-h-0 w-full h-full bg-black">
@@ -230,6 +238,7 @@ export const PanoramicWorkspace: React.FC<PanoramicWorkspaceProps> = ({
 						windowWidth={windowWidth}
 						windowLevel={windowLevel}
 						jawType={jawType}
+						onSwitchJaw={onSwitchJaw}
 					/>
 				</div>
 			</div>

@@ -73,7 +73,11 @@ export class AIAssistantService {
 
 	public getSessionId(): string {
 		if (!this.activeSessionId) {
-			this.activeSessionId = `sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+			const entropy =
+				typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+					? crypto.randomUUID()
+					: `${Date.now()}_${Math.floor(performance.now() * 1000)}`;
+			this.activeSessionId = `sess_${entropy}`;
 		}
 		return this.activeSessionId;
 	}
@@ -133,7 +137,10 @@ export class AIAssistantService {
 		} = {},
 	): Promise<AssistantMessage> {
 		const messageId =
-			options.messageId || `msg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+			options.messageId ||
+			(typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+				? `msg_${crypto.randomUUID()}`
+				: `msg_${Date.now()}_${Math.floor(performance.now() * 1000)}`);
 		const contextHeader = this.buildContextSnapshot();
 		const fullPrompt = `${contextHeader}\n\n${prompt.trim()}`;
 

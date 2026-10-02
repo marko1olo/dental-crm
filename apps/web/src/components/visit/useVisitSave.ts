@@ -48,6 +48,8 @@ export interface UseVisitSaveOptions {
 	visitNoteForm?: VisitNoteForm | undefined;
 	transcript?: string | undefined;
 	isLocked?: boolean | undefined;
+	allowLockedRevision?: boolean | undefined;
+	isRevising?: boolean | undefined;
 	debounceMs?: number | undefined;
 	onSaveSuccess?: ((savedDraft?: VisitDraftAutosave | null) => void) | undefined;
 	onSaveError?: ((error: unknown) => void) | undefined;
@@ -73,11 +75,15 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 		visitNoteForm,
 		transcript = "",
 		isLocked = false,
+		allowLockedRevision = false,
+		isRevising = false,
 		debounceMs = defaultDebounceMs,
 		onSaveSuccess,
 		onSaveError,
 		silent = false,
 	} = options;
+
+	const canSave = !isLocked || allowLockedRevision || isRevising;
 
 	const storeVisitNoteForm = useVisitStore((s) => s.visitNoteForm);
 	const setVisitNoteForm = useVisitStore((s) => s.setVisitNoteForm);
@@ -202,7 +208,7 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 		async (opts?: { silent?: boolean; force?: boolean }): Promise<{ success: boolean; error?: string }> => {
 			const form = currentFormRef.current;
 			const tr = currentTranscriptRef.current;
-			if (isLocked) {
+			if (!canSave) {
 				return { success: true };
 			}
 
@@ -357,7 +363,7 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 			}
 		},
 		[
-			isLocked,
+			canSave,
 			computeSignature,
 			visitId,
 			activeVisit,
@@ -374,7 +380,7 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 
 	// Debounced change listener & instant L1 RAM + debounced disk draft mirror
 	useEffect(() => {
-		if (isLocked) return;
+		if (!canSave) return;
 		const signature = computeSignature(effectiveVisitNoteForm, transcript);
 		if (!signature) return;
 
@@ -406,7 +412,7 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 				clearTimeout(debounceTimerRef.current);
 			}
 		};
-	}, [effectiveVisitNoteForm, transcript, debounceMs, isLocked, computeSignature, executeSave, visitId, activeVisit, organizationId]);
+	}, [effectiveVisitNoteForm, transcript, debounceMs, canSave, computeSignature, executeSave, visitId, activeVisit, organizationId]);
 
 	// Auto-flush on tab switch / window unload / pagehide to guarantee 0 data loss (Mandate 8e)
 	useEffect(() => {

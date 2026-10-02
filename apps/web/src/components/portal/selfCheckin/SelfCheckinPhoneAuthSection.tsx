@@ -174,7 +174,7 @@ export const SelfCheckinPhoneAuthSection: React.FC<SelfCheckinPhoneAuthSectionPr
 				>
 					{showOptionalDocs
 						? "Скрыть нормативные документы"
-						: "Документы (согласие на приём и обработку данных) и анкета"}
+						: "Нормативные документы (согласие на приём и обработку данных) и анкета"}
 				</button>
 
 				{showOptionalDocs && (

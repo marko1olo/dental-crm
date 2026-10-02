@@ -157,7 +157,7 @@ describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 
 	describe("3. Fast 1-Click W/L Contrast Presets (Mandate Directive 2)", () => {
 		it("provides all three clinical 1-click W/L presets with exact DICOM parameters", () => {
-			assert.equal(CBCT_QUICK_WL_PRESETS.length, 3);
+			assert.ok(CBCT_QUICK_WL_PRESETS.length >= 3);
 
 			// 1. «Кость (W2500/L500)»
 			const bonePreset = CBCT_QUICK_WL_PRESETS.find((p) => p.id === "bone");

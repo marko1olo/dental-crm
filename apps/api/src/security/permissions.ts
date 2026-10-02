@@ -269,13 +269,16 @@ export interface StaffAuthorityFlags {
 
 export function staffAuthorityFlags(
 	role: string | null | undefined,
+	isSoloDoctor?: boolean,
 ): StaffAuthorityFlags {
+	const isSolo = Boolean(isSoloDoctor) && (role?.toLowerCase() === "doctor" || role?.toLowerCase() === "owner");
 	return {
-		canSignMedicalRecords: roleHasPermission(role, "clinical.write"),
-		canManageMoney: roleHasPermission(role, "finance.write"),
-		canManageImports: roleHasPermission(role, "settings.write"),
+		canSignMedicalRecords: isSolo || roleHasPermission(role, "clinical.write"),
+		canManageMoney: isSolo || roleHasPermission(role, "finance.write"),
+		canManageImports: isSolo || roleHasPermission(role, "settings.write"),
 	};
 }
+
 
 /* ==================================================================== */
 /*  ТЕКСТ ОТКАЗА ДЛЯ ЧЕЛОВЕКА                                            */

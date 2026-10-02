@@ -41,7 +41,9 @@ import {
 } from "./PriceValidatorStarTab";
 import { PriceValidatorSummaryTab } from "./PriceValidatorSummaryTab";
 import { PriceValidatorFooter } from "./PriceValidatorFooter";
-import "./planPriceValidation.css";
+if (typeof document !== "undefined") {
+	void import("./planPriceValidation.css");
+}
 
 export type PriceValidatorActiveTab = "prices" | "star_protocols" | "summary";
 

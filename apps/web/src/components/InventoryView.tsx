@@ -14,7 +14,7 @@ import { isDemoShowcaseMode } from "../utils/demoModeEngine.js";
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog.js";
 import { useInventoryLogic } from "./inventory/useInventoryLogic.js";
 import { WarehousePackageWriteOffBar } from "./inventory/WarehousePackageWriteOffBar.js";
-import { WarehouseItemsTable } from "./warehouse/WarehouseItemsTable.js";
+import { InventoryStockTable } from "./InventoryStockTable.js";
 import {
 	computeAuditLineItem,
 	DEFAULT_COMMISSION_MEMBERS,
@@ -491,7 +491,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 					/>
 				) : (
 					/* TABLE: Calibrated 7-column DENTE warehouse table */
-					<WarehouseItemsTable
+					<InventoryStockTable
 						items={inventorySlice.visibleItems}
 						isLoading={isLoading}
 						organizationId={organizationId}

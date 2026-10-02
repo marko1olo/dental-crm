@@ -51,6 +51,7 @@ import { SettingsPricesTab } from "./SettingsPricesTab";
 import { SettingsReportingTab } from "./SettingsReportingTab";
 import { SettingsSourcesTab } from "./SettingsSourcesTab";
 import { StaffCommissionsPanel } from "./StaffCommissionsPanel";
+import { OwnerPriceList804nSection } from "./owner/OwnerPriceList804nSection";
 
 export type OwnerSubTab =
 	| "clinic"
@@ -441,6 +442,7 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 								</section>
 							)}
 
+							<OwnerPriceList804nSection />
 							<SettingsPricesTab />
 						</div>
 					</ErrorBoundary>

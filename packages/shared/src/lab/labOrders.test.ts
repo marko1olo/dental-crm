@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 import test, { describe } from "node:test";
 import {
 	labWorkTypeSchema,
@@ -262,6 +264,20 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 		assert.ok(FORM_ZTL_1_METADATA.mandate8eClauseRu.includes("30 дней"));
 		assert.ok(FORM_ZTL_1_METADATA.sanpinClauseRu.includes("СанПиН 3.3686-21"));
 		assert.ok(FORM_ZTL_1_METADATA.warrantyGostRu.includes("ГОСТ Р 51087-97"));
+	});
+
+	test("Zero-Mocks: packages/shared/src/lab/labOrders.ts strictly contains zero Math.random() calls", () => {
+		const filePath = fileURLToPath(new URL("./labOrders.ts", import.meta.url));
+		const content = fs.readFileSync(filePath, "utf-8");
+		const lines = content.split("\n");
+		const mathRandomLines = lines.filter(
+			(l) => !l.trim().startsWith("//") && !l.trim().startsWith("*") && l.includes("Math.random()")
+		);
+		assert.equal(
+			mathRandomLines.length,
+			0,
+			`Found Math.random() calls in labOrders.ts: ${mathRandomLines.join(", ")}`
+		);
 	});
 });
 

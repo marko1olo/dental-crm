@@ -46,7 +46,15 @@ describe("Wave 65 (Feature 254): Blank Contract 1-Click Print & Non-blocking Pat
 	const visitDraftHelpersSource = fs.readFileSync(visitDraftHelpersPath, "utf8");
 
 	const documentsViewPath = path.resolve(__dirname, "../../../DocumentsView.tsx");
-	const documentsViewSource = fs.readFileSync(documentsViewPath, "utf8");
+	const documentHeaderSectionPath = path.resolve(
+		__dirname,
+		"../tabs/DocumentHeaderSection.tsx",
+	);
+	const documentsViewSource =
+		fs.readFileSync(documentsViewPath, "utf8") +
+		(fs.existsSync(documentHeaderSectionPath)
+			? fs.readFileSync(documentHeaderSectionPath, "utf8")
+			: "");
 
 	const requiredFieldsPanelPath = path.resolve(
 		__dirname,

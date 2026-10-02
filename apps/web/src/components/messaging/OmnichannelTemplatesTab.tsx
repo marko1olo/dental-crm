@@ -5,6 +5,8 @@ import {
 	Calendar,
 	CheckCircle2,
 	FileText,
+	Gift,
+	Sparkles,
 	Star,
 	Zap,
 } from "lucide-react";
@@ -54,6 +56,12 @@ export const OmnichannelTemplatesTab: React.FC<OmnichannelTemplatesTabProps> = (
 								)}
 								{tpl.category === "sbp_payment" && (
 									<span className="inline-flex items-center gap-1"><Zap size={13} /> Оплата СБП</span>
+								)}
+								{tpl.category === "birthday_greeting" && (
+									<span className="inline-flex items-center gap-1"><Gift size={13} /> Поздравление</span>
+								)}
+								{tpl.category === "hygiene_recall" && (
+									<span className="inline-flex items-center gap-1"><Sparkles size={13} /> Профгигиена (6 мес)</span>
 								)}
 								{tpl.category === "custom" && (
 									<span className="inline-flex items-center gap-1"><FileText size={13} /> Шаблон</span>

@@ -52,6 +52,8 @@ export interface MprOverlayParams {
 	isHovered?: boolean | undefined;
 	archCurve?: DentalArchCurve | undefined;
 	activeCrossSection?: CrossSectionSliceData | null | undefined;
+	crossSections?: readonly CrossSectionSliceData[] | undefined;
+	activeCrossSectionIdx?: number | undefined;
 	selectedArchAnchorIdx?: number | null;
 	hoveredArchAnchorIdx?: number | null;
 	isDraggingArchAnchor?: number | null;

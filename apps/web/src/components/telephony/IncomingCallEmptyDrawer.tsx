@@ -5,12 +5,14 @@ export interface IncomingCallEmptyDrawerProps {
 	isOpen: boolean;
 	onClose: () => void;
 	isConnected: boolean;
+	onOpenDialer?: () => void;
 }
 
 export function IncomingCallEmptyDrawer({
 	isOpen,
 	onClose,
 	isConnected,
+	onOpenDialer,
 }: IncomingCallEmptyDrawerProps) {
 	if (!isOpen) return null;
 
@@ -75,7 +77,18 @@ export function IncomingCallEmptyDrawer({
 					<span>Провайдер: UIS / Mango / Asterisk / Zadarma</span>
 				</div>
 			</div>
-			<div className="shrink-0 p-3.5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] flex items-center justify-end">
+			<div className="shrink-0 p-3.5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] flex items-center justify-end gap-2">
+				{onOpenDialer && (
+					<button
+						type="button"
+						onClick={onOpenDialer}
+						className="px-4 py-2.5 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 text-white text-xs font-bold transition-all min-h-[44px] cursor-pointer flex items-center gap-1.5 shadow-xs"
+						data-testid="btn-open-telephony-dialer"
+					>
+						<PhoneCall size={14} />
+						<span>Набрать номер</span>
+					</button>
+				)}
 				<button
 					type="button"
 					onClick={onClose}

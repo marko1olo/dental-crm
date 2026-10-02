@@ -1,0 +1,72 @@
+{
+  "subagent": "Red Team Inquisitor #1 (Imaging & Radiology: Orphans, Dead Components & Mocks)",
+  "status": "COMPLETED_AND_HARDENED",
+  "timestamp": "2026-10-03T02:09:30+04:00",
+  "task": "Audit and eliminate duplicate mock screens (Ez3d*), adapt canonical CT/X-Ray viewers (DicomViewerModal, CtStudyViewer, CbctMprImplantStudioModal), mount orphaned imaging components into live UI, enforce Mandates 8b (<=800L across ALL files), 8s (zero duplicates), 8e (doctor autonomy), and 8t (single compiler gate).",
+  "completed_steps": [
+    "Read all mandatory constitutional documents: core.md, frontend.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md in full per Critical Law #0",
+    "Audited apps/web/src/components/imaging/ and apps/web/src/components/radiology/ for mock screens, duplicate viewers, and unmounted orphans",
+    "Replaced procedural mock screens (Ez3dMprCockpit, Ez3dSectioningView, Ez3dMprSidebar, Ez3dQuadrant3d) with canonical delegation shims (DicomMprCockpit, DicomSectioningView) routing to the authentic WebGL engine CbctMprImplantStudioModal",
+    "Canonicalized DicomToolboxRibbon.tsx (769 lines <= 800) with Carl E. Misch bone density classification (D1..D5), 3x3 convolution filter kernels (Smooth, Sharpen), HU profile trajectory, and backward-compatible ez3d/dicom types",
+    "Mounted orphaned CtStudyViewer.tsx (278 lines <= 800) in PatientRadiologyTab.tsx for all CBCT studies with 1-click 3D MPR Studio, Sectioning, and 2D controls",
+    "Mounted orphaned DicomAutoDetectStatusBadge.tsx in PatientRadiologyTab.tsx action toolbar, wired to live PACS auto-detect daemon endpoints (/api/imaging/daemon/pending & /status)",
+    "Mounted orphaned CbctImplantModal.tsx (3D Virtual Implant Library with Straumann, Nobel, Osstem, Dentium, MIS) in RadiologyModule.tsx via dedicated action button and modal portal",
+    "Verified and exported previously isolated radiology engines in index.ts: CbctImplantModal, RadiologyStudiesArchive, StudyPatientBindControlModal, cbctToothCentroidDetector, cbctFourMethodsArchEngine",
+    "Identified and eliminated Mandate 8b violation in cbctAutoArchEngine.ts (was 811 lines): safely factored computeOcclusalDensityProfile into cbctAutoArchTypes.ts (703 lines and 184 lines, both strictly <= 800)",
+    "Automated scan confirms: 0 files exceeding 800 lines across entire apps/web/src/components/imaging and apps/web/src/components/radiology",
+    "Verified machine encoding gate: check-encoding.mjs (7125 files checked, 0 errors, Exit Code 0)",
+    "Verified CSS token consistency: check-css-tokens.mjs (164 CSS files, 0 unresolved tokens, Exit Code 0)",
+    "Verified targeted unit test suites: 79/79 PASS across 14 test suites (Exit Code 0)"
+  ],
+  "eliminated_duplicates": [
+    "Ez3dMprCockpit.tsx (synthetic mock screen removed)",
+    "Ez3dSectioningView.tsx (synthetic mock screen removed)",
+    "Ez3dMprSidebar.tsx (procedural mock removed)",
+    "Ez3dQuadrant3d.tsx (procedural mock removed)",
+    "Ez3dToolboxRibbon.tsx (consolidated into canonical DicomToolboxRibbon.tsx)",
+    "ez3dMprTypes.ts (consolidated into canonical dicomMprTypes.ts with backward-compat aliases)"
+  ],
+  "mounted_orphans": [
+    {
+      "component": "CtStudyViewer.tsx",
+      "mounted_in": "apps/web/src/components/patients/tabs/PatientRadiologyTab.tsx",
+      "purpose": "CBCT study card with tomograph metadata, voxel spacing, slice count, and direct launch buttons for 3D MPR, Sectioning, and 2D viewer"
+    },
+    {
+      "component": "DicomAutoDetectStatusBadge.tsx",
+      "mounted_in": "apps/web/src/components/patients/tabs/PatientRadiologyTab.tsx",
+      "purpose": "Toolbar status indicator for PACS auto-detect daemon with quick-access import manager"
+    },
+    {
+      "component": "CbctImplantModal.tsx",
+      "mounted_in": "apps/web/src/components/radiology/RadiologyModule.tsx",
+      "purpose": "3D Virtual Implant Library & Nerve Safety Planning modal accessible from the radiology module toolbar"
+    }
+  ],
+  "line_budget_audit": {
+    "total_files_exceeding_800_lines": 0,
+    "highlighted_files": {
+      "DicomViewerModal.tsx": 705,
+      "DicomToolboxRibbon.tsx": 769,
+      "PatientRadiologyTab.tsx": 558,
+      "RadiologyModule.tsx": 481,
+      "CtStudyViewer.tsx": 278,
+      "cbctAutoArchEngine.ts": 703,
+      "cbctAutoArchTypes.ts": 184,
+      "cbctFourMethodsArchEngine.ts": 573,
+      "cbctToothCentroidDetector.ts": 216,
+      "dicomMprTypes.ts": 142,
+      "DicomMprCockpit.tsx": 47,
+      "DicomSectioningView.tsx": 45,
+      "DicomMprSidebar.tsx": 15,
+      "DicomQuadrant3d.tsx": 15,
+      "ez3dMprTypes.ts": 7
+    }
+  },
+  "test_verification": {
+    "total_tests": 79,
+    "passed": 79,
+    "failed": 0,
+    "suites_count": 14
+  }
+}

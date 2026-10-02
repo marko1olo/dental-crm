@@ -20,6 +20,7 @@ import {
 	Mic,
 	MicOff,
 	Send,
+	SlidersHorizontal,
 	Sparkles,
 	Trash2,
 	X,
@@ -37,6 +38,7 @@ export type DictationCommand = ParsedClinicalVoiceCommand;
 export type { ParsedClinicalVoiceCommand, ClinicalVoiceParseResult, SoapAggregatedNote };
 import { UnifiedAudioClient } from "../../services/voice/UnifiedAudioClient";
 import { CanvasWaveform } from "../audio/CanvasWaveform";
+import { MicrophoneCalibrationModal } from "../audio/MicrophoneCalibrationModal";
 import "./voiceAssistant.css";
 
 export interface VoiceDictationAssistantModalProps {
@@ -83,6 +85,7 @@ export function VoiceDictationAssistantModal({
 	const [appliedCommandIds, setAppliedCommandIds] = useState<Set<string>>(
 		new Set(),
 	);
+	const [showCalibrationModal, setShowCalibrationModal] = useState(false);
 
 	const clientRef = useRef<UnifiedAudioClient | null>(null);
 
@@ -286,15 +289,40 @@ export function VoiceDictationAssistantModal({
 							</p>
 						</div>
 					</div>
-					<button
-						type="button"
-						onClick={onClose}
-						className="dnt-voice-modal-close-btn"
-						aria-label="Закрыть голосовой ассистент"
-						title="Закрыть"
-					>
-						<X size={22} aria-hidden="true" />
-					</button>
+					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+						<button
+							type="button"
+							onClick={() => setShowCalibrationModal(true)}
+							className="dnt-voice-modal-calibrate-btn"
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								padding: "6px 12px",
+								borderRadius: "8px",
+								border: "1px solid var(--line)",
+								background: "var(--paper-soft)",
+								color: "var(--ink)",
+								fontSize: "12px",
+								fontWeight: 600,
+								cursor: "pointer",
+							}}
+							title="Тест и калибровка микрофона (шумоподавление DSP)"
+							data-testid="voice-modal-calibrate-mic-btn"
+						>
+							<SlidersHorizontal size={14} aria-hidden="true" />
+							<span>Калибровка микрофона</span>
+						</button>
+						<button
+							type="button"
+							onClick={onClose}
+							className="dnt-voice-modal-close-btn"
+							aria-label="Закрыть голосовой ассистент"
+							title="Закрыть"
+						>
+							<X size={22} aria-hidden="true" />
+						</button>
+					</div>
 				</div>
 
 				{/* Body */}
@@ -674,6 +702,13 @@ export function VoiceDictationAssistantModal({
 					</div>
 				</div>
 			</div>
+
+			{showCalibrationModal && (
+				<MicrophoneCalibrationModal
+					isOpen={showCalibrationModal}
+					onClose={() => setShowCalibrationModal(false)}
+				/>
+			)}
 		</div>
 	);
 }

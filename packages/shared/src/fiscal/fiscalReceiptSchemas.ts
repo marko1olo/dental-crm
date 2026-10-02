@@ -23,6 +23,15 @@ export const paymentMethodSchema = z.enum([
 ]);
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
 
+export const ledgerPaymentMethodSchema = z.enum([
+	"cash",
+	"card",
+	"dms",
+	"installment_balance",
+	"family_wallet",
+]);
+export type LedgerPaymentMethod = z.infer<typeof ledgerPaymentMethodSchema>;
+
 export const paymentStatusSchema = z.enum([
 	"planned",
 	"paid",

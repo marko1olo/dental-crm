@@ -22,6 +22,7 @@ import { ManagerReportsKpisSection } from "./ManagerReportsKpisSection";
 import { ManagerReportsPrepaymentsSection } from "./ManagerReportsPrepaymentsSection";
 import { ManagerReportsQualitySection } from "./ManagerReportsQualitySection";
 import { ManagerReportsStaffAndChairsSection } from "./ManagerReportsStaffAndChairsSection";
+import { ReportsDashboard } from "./ReportsDashboard";
 import type {
 	CalendarPeriod,
 	ChairRow,
@@ -360,6 +361,7 @@ export function ManagerReportsPanel({
 			<div className="ops-section-tabs mb-3 flex flex-wrap gap-1.5" role="tablist" aria-label="Разделы отчёта">
 				{[
 					{ id: "all", label: "Все разделы" },
+					{ id: "executive", label: "Дашборд KPI" },
 					{ id: "revenue", label: "Выручка" },
 					{ id: "doctors", label: "Врачи" },
 					{ id: "chairs", label: "Кресла" },
@@ -411,6 +413,21 @@ export function ManagerReportsPanel({
 					</p>
 				) : (
 					<>
+						{(activeSection === "all" || activeSection === "executive") && (
+							<div className="mb-4">
+								<ReportsDashboard
+									summary={summary}
+									scheduleLoad={scheduleLoad.data}
+									serviceSales={services.data}
+									period={{ from, to }}
+									clinicName={appLogic?.auth?.clinic?.name}
+									onExportCsv={handleExportCsv}
+									onRefresh={() => void load()}
+									isLoading={loading}
+								/>
+							</div>
+						)}
+
 						{(activeSection === "all" || activeSection === "revenue") && (
 							<ManagerReportsKpisSection summary={summary} maxRevenue={maxRevenue} />
 						)}

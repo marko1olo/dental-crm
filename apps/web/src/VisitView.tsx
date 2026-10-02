@@ -20,6 +20,8 @@ import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
 import { SomaticSafetyAlertWidget } from "./components/clinical/SomaticSafetyAlertWidget";
 import { VisitConsentsTab } from "./components/visit/VisitConsentsTab";
 import { VisitTimer } from "./components/visit/VisitTimer";
+import { SoftPresenceIndicator } from "./components/presence/SoftPresenceIndicator";
+import { useSoftPresence } from "./hooks/useSoftPresence";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { ClinicalErrorBoundary } from "./components/common/ClinicalErrorBoundary";
 import "./styles/VisitView.css";
@@ -74,6 +76,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		visitWarnings,
 		visitPrimaryAction,
 	} = props;
+
+	const { activePeers, summaryText } = useSoftPresence({
+		patientId: activePatient?.id,
+		visitId: activeAppointment?.id,
+	});
 
 	const [visitSubViewTab, setVisitSubViewTab] = useState<string>("emk");
 	const [activeQuadrant, setActiveQuadrant] = useState<number | null>(null);
@@ -336,15 +343,28 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						<div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 overflow-hidden">
 							<PatientAvatar fullName={activePatient.fullName} size={22} className="!w-5 !h-5 sm:!w-[26px] sm:!h-[26px] shrink-0" />
 							<span
-								className="font-bold text-xs sm:text-sm text-[var(--ink)] min-w-0 max-w-[180px] truncate sm:max-w-none sm:shrink-0 sm:overflow-visible sm:whitespace-nowrap"
+								className="font-bold text-xs sm:text-sm text-[var(--ink)] shrink-0 min-w-fit whitespace-nowrap"
 								title={activePatient.fullName || activePatient.name}
 							>
-								{activePatient.fullName || activePatient.name}
+								<span className="sm:hidden font-bold">
+									{(() => {
+										const fn = activePatient.fullName || activePatient.name || "";
+										const parts = fn.trim().split(/\s+/);
+										if (parts.length >= 2) {
+											return `${parts[0]} ${parts.slice(1).map((p: string) => (p[0] ? `${p[0]}.` : "")).join("")}`;
+										}
+										return fn;
+									})()}
+								</span>
+								<span className="hidden sm:inline">
+									{activePatient.fullName || activePatient.name}
+								</span>
 							</span>
 							{patientAge && <span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline">· {patientAge}</span>}
 							<span className="hidden sm:inline-flex shrink-0">
 								<VisitTimer createdAt={activeAppointment?.startTime || activeAppointment?.startAt || activeAppointment?.createdAt || null} />
 							</span>
+							<SoftPresenceIndicator activePeers={activePeers} summaryText={summaryText} className="hidden sm:inline-flex shrink-0" />
 
 							{/* Бейджи аллергий и критических соматических рисков в Tier 1 */}
 							{activePatientCriticalBadges.map((badge) => (

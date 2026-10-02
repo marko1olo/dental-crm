@@ -144,7 +144,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 						</div>
 					</div>
 
-					<div className="document-primary-intake-btn-group">
+					<div className="document-primary-intake-btn-group document-intake-quick-action-bar" data-testid="document-intake-quick-action-bar">
 						<button
 							type="button"
 							className="primary-button document-intake-quick-print-btn"

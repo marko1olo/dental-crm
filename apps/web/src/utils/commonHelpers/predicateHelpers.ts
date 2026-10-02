@@ -1,11 +1,17 @@
-import type {
-	AiJobKind,
-	AiRecognitionTarget,
-	Dashboard,
-	ImagingSourceKind,
-	ImagingStudyKind,
-	PaymentMethod,
-	PricelistSourceKind,
+import {
+	type AiJobKind,
+	type AiRecognitionTarget,
+	type Dashboard,
+	type ImagingSourceKind,
+	type ImagingStudyKind,
+	type PaymentMethod,
+	type PricelistSourceKind,
+	type PaymentRefundCorrectionAction,
+	type PaymentRefundCorrectionMethod,
+	paymentRefundCorrectionActionSchema,
+	paymentRefundCorrectionMethodSchema,
+	PAYMENT_REFUND_CORRECTION_ACTIONS,
+	PAYMENT_REFUND_CORRECTION_METHODS,
 } from "@dental/shared";
 import { imagingKindLabels, imagingSourceLabels } from "../../imagingUiLabels";
 import { pricelistSourceKindLabels } from "../../pricelistUiMeta";
@@ -82,31 +88,14 @@ export function createLocalQueueId(): string {
 	return `local-${Date.now()}-${Math.abs(hash).toString(16)}`;
 }
 
-export type PaymentRefundCorrectionAction =
-	| "full_refund"
-	| "partial_refund"
-	| "payment_transfer"
-	| "receipt_correction"
-	| "payer_details_correction";
-
-export type PaymentRefundCorrectionMethod =
-	| "cash"
-	| "card"
-	| "bank_transfer"
-	| "internal_offset"
-	| "no_money_movement";
+export type { PaymentRefundCorrectionAction, PaymentRefundCorrectionMethod };
+export { paymentRefundCorrectionActionSchema, paymentRefundCorrectionMethodSchema };
 
 export const paymentRefundCorrectionActionOptions: readonly PaymentRefundCorrectionAction[] =
-	[
-		"full_refund",
-		"partial_refund",
-		"payment_transfer",
-		"receipt_correction",
-		"payer_details_correction",
-	];
+	PAYMENT_REFUND_CORRECTION_ACTIONS;
 
 export const paymentRefundCorrectionMethodOptions: readonly PaymentRefundCorrectionMethod[] =
-	["cash", "card", "bank_transfer", "internal_offset", "no_money_movement"];
+	PAYMENT_REFUND_CORRECTION_METHODS;
 
 export const aiJobKindPreferenceValues: readonly AiJobKind[] = [
 	"voice_transcription",

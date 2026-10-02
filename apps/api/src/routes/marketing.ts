@@ -25,15 +25,12 @@ import {
 	requireClinicalMutationAccess,
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
-import { formatInitialsOnly, maskRussianPhone } from "@dental/shared";
-
-const patientFieldRequirementsInputSchema = z.object({
-	requirePhone: z.boolean().default(true),
-	requireAdvertisingSource: z.boolean().default(false),
-	requireSnils: z.boolean().default(false),
-	requireBirthDate: z.boolean().default(false),
-	requireIdentityDocument: z.boolean().default(false),
-});
+import {
+	formatInitialsOnly,
+	maskRussianPhone,
+	patientFieldRequirementsSchema,
+	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
+} from "@dental/shared";
 
 function cleanPhoneDigits(phone?: string | null): string {
 	return (phone || "").replace(/\D/g, "");
@@ -428,13 +425,9 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				.limit(1);
 
 			const flags = (org?.flags as Record<string, unknown>) || {};
-			const requirements = (flags.patientFieldRequirements as z.infer<typeof patientFieldRequirementsInputSchema> | undefined) || {
-				requirePhone: true,
-				requireAdvertisingSource: false,
-				requireSnils: false,
-				requireBirthDate: false,
-				requireIdentityDocument: false,
-			};
+			const requirements =
+				(flags.patientFieldRequirements as z.infer<typeof patientFieldRequirementsSchema> | undefined) ||
+				DEFAULT_PATIENT_FIELD_REQUIREMENTS;
 
 			return reply.code(200).send(requirements);
 		} catch (err) {
@@ -457,7 +450,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply, "update patient field requirements");
 		if (!orgId) return;
 
-		const parsed = patientFieldRequirementsInputSchema.safeParse(request.body);
+		const parsed = patientFieldRequirementsSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",

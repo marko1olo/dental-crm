@@ -103,6 +103,13 @@ export interface HounsfieldPreset {
 
 export const CBCT_HOUNSFIELD_PRESETS: readonly HounsfieldPreset[] = [
 	{
+		id: "ez3d_bone",
+		label: "Ez3D-i Кость (5031/1039)",
+		windowWidth: 5031,
+		windowLevel: 1039,
+		descriptionRu: "Стоматологический стандарт Vatech Ez3D-i (МЕДИКОМ): кортикальная кость, трабекулы и зубы без засветки",
+	},
+	{
 		id: "bone_dense",
 		label: "Зубы и Кость (Dental)",
 		windowWidth: 4400,

@@ -211,6 +211,24 @@ export function generateSbpPaymentShareText(params: {
 	return `Здравствуйте, ${params.patientName}!\nСчет на оплату медицинских услуг в клинике ${params.clinicName}:\nЗаказ №${params.orderId}\nСумма к оплате: ${formatCurrencyRu(params.sumRub)}\nОплата через СБП без комиссии по ссылке:\n${params.nspkUrl}\n\nПосле оплаты чек будет автоматически отправлен вам в этот чат.`;
 }
 
+export function generateBirthdayGreetingText(
+	contact: PatientOmnichannelContact,
+	clinicName = "DENTE Dental Clinic",
+	bonusRub = 1000,
+	promoCode = "BIRTHDAY",
+): string {
+	return `Здравствуйте, ${contact.fullName}!\nКоманда клиники ${clinicName} от всей души поздравляет вас с днем рождения! 🎂🎉\nЖелаем вам крепкого здоровья, сияющей улыбки и отличного настроения!\n\nВ честь праздника дарим вам бонус ${formatCurrencyRu(bonusRub)} (промокод: ${promoCode}) на любые процедуры клиники или профессиональную гигиену. Будем рады видеть вас!`;
+}
+
+export function generateHygieneRecallText(
+	contact: PatientOmnichannelContact,
+	clinicName = "DENTE Dental Clinic",
+	monthsAgo = 6,
+): string {
+	const docStr = contact.nextAppointment?.doctorName || "вашего лечащего врача";
+	return `Здравствуйте, ${contact.fullName}!\nПрошло уже ${monthsAgo} месяцев с вашего предыдущего приема у стоматолога (${docStr}).\n\nСтоматологи рекомендуют проходить плановый профилактический осмотр и профессиональную гигиену каждые полгода, чтобы защитить зубы от кариеса и сохранить здоровье десен.\n\nБудем рады подобрать для вас удобное время в ${clinicName}!`;
+}
+
 /**
  * Формирует прямую web-ссылку WhatsApp (wa.me) с корректной нормализацией номера РФ (7XXXXXXXXXX).
  */
@@ -341,6 +359,46 @@ export const DEFAULT_TEMPLATES: readonly OmnichannelTemplate[] = [
 			"{orderId}",
 			"{treatmentSum}",
 			"{paymentLink}",
+		],
+	},
+	{
+		id: "tpl-birthday",
+		name: "Поздравление с днем рождения",
+		category: "birthday_greeting",
+		channel: "all",
+		title: "Поздравление и праздничный бонус",
+		description: "Персональное поздравление пациента с днем рождения с начислением подарочных бонусов",
+		templateText:
+			"Здравствуйте, {patientName}!\nКоманда клиники {clinicName} поздравляет вас с днем рождения! 🎉\nЖелаем вам крепкого здоровья, отличного настроения и прекрасной улыбки!\n\nВ честь праздника дарим вам сертификат на {bonusAmount} (промокод: {promoCode}), действующий {validDays}.\nЖдем вас в гости!",
+		interactiveButtons: [
+			{ id: "btn-bday-book", title: "Записаться на прием", action: "book_visit", variant: "primary" },
+			{ id: "btn-bday-call", title: "Связаться с клиникой", action: "call_clinic", variant: "secondary" },
+		],
+		variables: [
+			"{patientName}",
+			"{clinicName}",
+			"{bonusAmount}",
+			"{promoCode}",
+			"{validDays}",
+		],
+	},
+	{
+		id: "tpl-hygiene-recall",
+		name: "Плановая профгигиена и профосмотр (6 месяцев)",
+		category: "hygiene_recall",
+		channel: "all",
+		title: "Контрольный осмотр и гигиена полости рта",
+		description: "Приглашение на плановую профгигиену через 6 месяцев после санации (строго без советской терминологии)",
+		templateText:
+			"Здравствуйте, {patientName}!\nПрошло 6 месяцев с вашего последнего визита к доктору {doctorName}.\n\nСтоматологи рекомендуют проходить плановый профосмотр и профессиональную гигиену каждые полгода, чтобы предотвратить появление зубного камня и сохранить здоровье зубов.\n\nПодберем удобное для вас время в {clinicName}?",
+		interactiveButtons: [
+			{ id: "btn-hygiene-book", title: "Записаться на гигиену", action: "book_hygiene", variant: "primary" },
+			{ id: "btn-hygiene-snooze", title: "Напомнить через 2 нед.", action: "snooze_recall", variant: "secondary" },
+		],
+		variables: [
+			"{patientName}",
+			"{clinicName}",
+			"{doctorName}",
 		],
 	},
 ];

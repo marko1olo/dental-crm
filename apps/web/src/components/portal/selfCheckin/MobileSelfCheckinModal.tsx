@@ -63,6 +63,12 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 }) => {
 	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
 
+	const [serverPatientName, setServerPatientName] = useState<string | null>(null);
+	const [serverDoctorName, setServerDoctorName] = useState<string | null>(null);
+	const [serverAppointmentTime, setServerAppointmentTime] = useState<string | null>(null);
+	const [serverCabinetName, setServerCabinetName] = useState<string | null>(null);
+	const [serverQueueTicket, setServerQueueTicket] = useState<string | null>(null);
+
 	const effectivePhone =
 		initialPhone !== undefined
 			? initialPhone
@@ -70,29 +76,33 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 				? "+7 (913) 770-41-99"
 				: "";
 	const effectivePatientName =
-		patientName !== undefined
+		serverPatientName ||
+		(patientName !== undefined
 			? patientName
 			: isDemo
 				? "Смирнова Анна Викторовна"
-				: "";
+				: "");
 	const effectiveDoctorName =
-		doctorName !== undefined
+		serverDoctorName ||
+		(doctorName !== undefined
 			? doctorName
 			: isDemo
 				? "Д-р Воронова Е. С. (Терапевт-микроскопист)"
-				: "";
+				: "");
 	const effectiveAppointmentTime =
-		appointmentTime !== undefined
+		serverAppointmentTime ||
+		(appointmentTime !== undefined
 			? appointmentTime
 			: isDemo
 				? "Сегодня в 14:30 (Кабинет 3)"
-				: "";
+				: "");
 	const effectiveQueueTicket =
-		queueTicket !== undefined
+		serverQueueTicket ||
+		(queueTicket !== undefined
 			? queueTicket
 			: isDemo
 				? "Талон № А-07"
-				: "";
+				: "");
 	const [step, setStep] = useState<CheckinStep>(initialStep);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [authError, setAuthError] = useState<string | null>(null);

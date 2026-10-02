@@ -11,6 +11,7 @@ import {
 	Hand,
 	History,
 	Image as ImageIcon,
+	Layers,
 	MoreVertical,
 	Plus,
 	RefreshCw,
@@ -24,6 +25,7 @@ import {
 	ZoomOut,
 } from "lucide-react";
 import type { ViewerRulerMeasurement } from "./components/imaging/ShadowAnalystImageSlider";
+import { RadiologyModule } from "./components/radiology/RadiologyModule.js";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { readDenteClinicToken, readDenteStaffToken } from "./lib/safeLocalStorage";
 import { decodeHeicImage } from "./services/imaging/heicDecoder";
@@ -478,6 +480,7 @@ export function ImagingView(props: ImagingViewProps) {
 	const [enhancementOn, setEnhancementOn] = useState(false);
 	const [isCbctStudioOpen, setIsCbctStudioOpen] = useState(false);
 	const [isPanoramicWindowOpen, setIsPanoramicWindowOpen] = useState(false);
+	const [isRadiologyModuleOpen, setIsRadiologyModuleOpen] = useState(false);
 	const [isMobileImagingMenuOpen, setIsMobileImagingMenuOpen] = useState(false);
 	const mobileImagingMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -1244,6 +1247,16 @@ export function ImagingView(props: ImagingViewProps) {
 						<Sparkles aria-hidden="true" className="w-3.5 h-3.5 text-amber-400 shrink-0" />{" "}
 						<span>ОПТГ</span>
 					</button>
+					<button
+						className="secondary-button !hidden md:!inline-flex items-center gap-1 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 text-xs font-medium shrink-0 whitespace-nowrap"
+						type="button"
+						data-testid="imaging-open-radiology-module"
+						onClick={() => setIsRadiologyModuleOpen(true)}
+						title="Рентген-кабинет: направления, архив исследований, лучевая нагрузка"
+					>
+						<Layers aria-hidden="true" className="w-3.5 h-3.5 text-teal-500 shrink-0" />{" "}
+						<span>Рентген-кабинет</span>
+					</button>
 
 					{isBrowserImagingFolderPicking && browserImagingScanProgress ? (
 						<button
@@ -1372,6 +1385,18 @@ export function ImagingView(props: ImagingViewProps) {
 								>
 									<Sparkles size={14} className="text-amber-400 shrink-0" />
 									<span>ОПТГ панорама</span>
+								</button>
+								<button
+									className="secondary-button text-xs py-1.5 px-2.5 flex items-center gap-2 justify-start font-medium border-0 hover:bg-[var(--paper-soft)] rounded-lg w-full text-left"
+									type="button"
+									data-testid="imaging-mobile-open-radiology-module"
+									onClick={() => {
+										setIsMobileImagingMenuOpen(false);
+										setIsRadiologyModuleOpen(true);
+									}}
+								>
+									<Layers size={14} className="text-teal-500 shrink-0" />
+									<span>Рентген-кабинет</span>
 								</button>
 								<div className="border-t border-[var(--line)] my-1" />
 								<span className="text-[10px] font-bold text-[var(--muted)] px-2 uppercase tracking-wider">
@@ -3259,6 +3284,30 @@ export function ImagingView(props: ImagingViewProps) {
 							patientId={activePatient?.id ?? null}
 						/>
 					</Suspense>
+				</div>
+			)}
+
+			{isRadiologyModuleOpen && (
+				<div className="radiology-module-modal fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-2 sm:p-4">
+					<div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] p-4 shadow-2xl">
+						<RadiologyModule
+							patient={
+								activePatient
+									? {
+											id: activePatient.id,
+											fullName: activePatient.fullName || activePatient.name,
+											birthDate: activePatient.birthDate,
+											phone: activePatient.phone,
+											cardNumber: activePatient.cardNumber,
+											medicalCardNumber: activePatient.medicalCardNumber,
+										}
+									: null
+							}
+							doctorName={activeAppointment?.doctorName}
+							clinicName={auth?.clinic?.name || "ООО «ДЕНТЕ»"}
+							onClose={() => setIsRadiologyModuleOpen(false)}
+						/>
+					</div>
 				</div>
 			)}
 		</section>

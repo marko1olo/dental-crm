@@ -1,0 +1,17 @@
+{
+  "role": "RED TEAM SELF-FIXING INQUISITOR: PATIENT PORTAL, SELF-REGISTRATION KIOSK & ONLINE BOOKING ENGINE",
+  "status": "INITIALIZED",
+  "completed_steps": [
+    "Read core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md completely",
+    "Initialized memory checkpoint"
+  ],
+  "pending_steps": [
+    "Reconnaissance across codebase: search for portal, kiosk, online booking components, routes, hooks, schemas, API endpoints",
+    "Identify defects: false mocks, broken styles, bird-language, disconnected orphans, tenant isolation leaks, overbooking vulnerabilities",
+    "Surgically fix code defects across Web and API without touching DICOM/radiology",
+    "Verify targeted unit tests, encoding check and css-tokens",
+    "Report verbatim defect-list and factual completion"
+  ],
+  "findings": [],
+  "defects_catalog": []
+}

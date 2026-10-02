@@ -1,0 +1,65 @@
+{
+  "role": "Red Team Frontend Inquisitor - Orphans, Duplicates & Mocks",
+  "status": "completed",
+  "completed_steps": [
+    "Law 0: Read THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, GEMINI.md, core.md, frontend.md in full",
+    "Reconnaissance: Census audit across 2114 source files and 1137 components in apps/web/src",
+    "Zero-mocks enforcement: Purged synthetic createSampleChairsideShiftAppointments fallback in DoctorShiftEarningsWidget.tsx (Mandates 8c, 8n)",
+    "Mounted active orphans into canonical host views: DoctorKickoffWidget and DoctorShiftEarningsWidget (ShiftView), CopilotChatPanel (CopilotDrawer), Icd10ClinicalSelector (VisitEmkTab), TelephonyDialerModal (TelephonyDrawer, IncomingCallEmptyDrawer), PatientSearchAutocomplete (PatientsView), FiscalReceiptStatusBadge (InvoiceCardItem), PaymentSplitModal, CashReceiptPrintModal, CashboxShiftModal (InvoicesView), SoftPresenceIndicator (VisitView), RadiologyModule (ImagingView), OrthodonticMaterialsQuickSelector (OrthodonticPerspectiveView), ReportsDashboard (ManagerReportsPanel), GuidanceCheatSheet (HelpDrawer), NetworkStatusIndicator (workspaceContinuityStrip)",
+    "Barrel audit and purging: Identified and purged 14 dead zero-consumer index.ts barrels (analytics, copilot, dashboard, guidance, orthodontics, reports, sync, doctor, presence, finance, diagnostics, radiology, telephony, patients) per Mandate 8s",
+    "Standardized DECLARED_UNMOUNTED in panelsAreMounted.test.ts: Registered legitimate non-mounted utilities (ChairsideCopilotHUD, DentalIcons specialized SVG markers, CbctViewportsRulerOverlay, DoctorAnesthesiaToxicityCalculator proxy, CoachMarkTooltip spotlight engine, WorkspaceHeaderBar) with full clinical rationale >= 120 chars",
+    "Machine Verification Gate 1: panelsAreMounted.test.ts - 15/15 tests passing, 0 unmounted orphans, 0 ceiling regressions (LEGACY_BACKLOG_CEILING = 0, DEMOUNTED_MODAL_SHIRMS_CEILING = 0)",
+    "Machine Verification Gate 2: scripts/check-encoding.mjs - 7119 files verified clean",
+    "Machine Verification Gate 3: scripts/check-css-tokens.mjs - 164 CSS files verified, 0 unresolved tokens across all themes",
+    "Machine Verification Gate 4: visitOrderBillingPipeline.test.ts - 8/8 tests passing",
+    "Report verbatim findings to parent orchestrator via send_message"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "orphans_mounted": [
+      "DoctorKickoffWidget (src/ShiftView.tsx)",
+      "DoctorShiftEarningsWidget (src/ShiftView.tsx)",
+      "CopilotChatPanel (src/components/copilot/CopilotDrawer.tsx)",
+      "Icd10ClinicalSelector (src/components/visit/VisitEmkTab.tsx)",
+      "TelephonyDialerModal (src/components/telephony/TelephonyDrawer.tsx & IncomingCallEmptyDrawer.tsx)",
+      "PatientSearchAutocomplete (src/PatientsView.tsx)",
+      "FiscalReceiptStatusBadge (src/components/billing/InvoiceCardItem.tsx)",
+      "PaymentSplitModal (src/components/billing/InvoicesView.tsx)",
+      "CashReceiptPrintModal (src/components/billing/InvoicesView.tsx)",
+      "CashboxShiftModal (src/components/billing/InvoicesView.tsx)",
+      "SoftPresenceIndicator (src/VisitView.tsx)",
+      "RadiologyModule (src/ImagingView.tsx - connects CbctImplantModal & RadiologyStudiesArchive)",
+      "OrthodonticMaterialsQuickSelector (src/components/orthodontics/OrthodonticPerspectiveView.tsx)",
+      "ReportsDashboard (src/components/reports/ManagerReportsPanel.tsx)",
+      "GuidanceCheatSheet (src/components/common/HelpDrawer.tsx)",
+      "NetworkStatusIndicator (src/workspaceContinuityStrip.tsx)"
+    ],
+    "dead_barrels_eradicated": [
+      "components/analytics/index.ts",
+      "components/copilot/index.ts",
+      "components/dashboard/index.ts",
+      "components/guidance/index.ts",
+      "components/orthodontics/index.ts",
+      "components/reports/index.ts",
+      "components/sync/index.ts",
+      "components/doctor/index.ts",
+      "components/presence/index.ts",
+      "components/finance/index.ts",
+      "components/diagnostics/index.ts",
+      "components/radiology/index.ts",
+      "components/telephony/index.ts",
+      "components/patients/index.ts"
+    ],
+    "mocks_purged": [
+      "DoctorShiftEarningsWidget.tsx: createSampleChairsideShiftAppointments synthetic generator completely eliminated"
+    ],
+    "declared_unmounted_cataloged": [
+      "ChairsideCopilotHUD (autonomous hands-free chairside terminal HUD)",
+      "7 DentalIcons (ScanBodyMarker, DentalAbutment, CuringLight, RubberDam, SalivaEjector, BleachingLamp, GingivaRecession)",
+      "CbctViewportsRulerOverlay (MPR ruler overlay HUD)",
+      "DoctorAnesthesiaToxicityCalculator (backwards-compat proxy for DoctorAnesthesiaDefaultsSection)",
+      "CoachMarkTooltip (onboarding spotlight geometry tooltip engine)",
+      "WorkspaceHeaderBar (composite demonstration header bar)"
+    ]
+  }
+}

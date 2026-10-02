@@ -54,7 +54,7 @@ export function computeQuickBookingSlots(
 	slots: QuickSlotOption[];
 	getSlotInterval: (slotType: QuickSlotType) => { startsAt: string; endsAt: string };
 } {
-	const todayIso = dashboard?.todayIso || new Date().toISOString().split("T")[0];
+	const todayIso = dashboard?.todayIso || new Date().toISOString().slice(0, 10);
 	const appointments = dashboard?.appointments || [];
 	const activeStaff =
 		dashboard?.clinicSettings?.staff?.filter(
@@ -227,8 +227,8 @@ export function computeQuickBookingSlots(
 
 export interface IncomingCallQuickBookingProps {
 	onSelectSlot: (slotType: QuickSlotType) => void;
-	slots?: readonly QuickSlotOption[];
-	className?: string;
+	slots?: readonly QuickSlotOption[] | undefined;
+	className?: string | undefined;
 }
 
 /**

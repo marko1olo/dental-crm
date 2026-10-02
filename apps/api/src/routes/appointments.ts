@@ -9,8 +9,10 @@ import {
 	createAppointmentInDb,
 	updateAppointmentInDb,
 } from "../db/appointmentsQuery.js";
+import { recordAuditEventInDb } from "../db/auditQuery.js";
 import { db } from "../db/client.js";
 import { getDashboardFromDb } from "../db/dashboardQuery.js";
+import { getRequestIdentity } from "../security/identity.js";
 import {
 	chairs,
 	clinics,
@@ -200,6 +202,22 @@ export const createAppointmentHandler = async (
 	try {
 		const created = await createAppointmentInDb(orgId, input);
 
+		try {
+			const identity = getRequestIdentity(request);
+			await recordAuditEventInDb(orgId, {
+				entityType: "appointment",
+				entityId: created.id,
+				action: "appointment_create",
+				reason: input.reason ?? null,
+				actorUserId: identity.userId ?? created.doctorUserId ?? null,
+			});
+		} catch (auditErr) {
+			request.log.warn(
+				{ err: auditErr, appointmentId: created.id, orgId },
+				"[appointments] Не удалось записать событие создания приёма в журнал аудита",
+			);
+		}
+
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "APPOINTMENT_CREATED",
 			payload: {
@@ -343,6 +361,28 @@ export const updateAppointmentHandler = async (
 	}
 	try {
 		await updateAppointmentInDb(orgId, params.appointmentId, input);
+
+		try {
+			const identity = getRequestIdentity(request);
+			const auditAction =
+				input.status === "cancelled"
+					? "appointment_cancel"
+					: input.startsAt || input.endsAt
+						? "appointment_reschedule"
+						: "appointment_update";
+			await recordAuditEventInDb(orgId, {
+				entityType: "appointment",
+				entityId: params.appointmentId,
+				action: auditAction,
+				reason: (input as { reason?: string }).reason ?? (input as { cancelReason?: string }).cancelReason ?? null,
+				actorUserId: identity.userId ?? (input as { doctorUserId?: string }).doctorUserId ?? null,
+			});
+		} catch (auditErr) {
+			request.log.warn(
+				{ err: auditErr, appointmentId: params.appointmentId, orgId },
+				"[appointments] Не удалось записать событие обновления приёма в журнал аудита",
+			);
+		}
 
 		if (input.status === "in_treatment") {
 			try {

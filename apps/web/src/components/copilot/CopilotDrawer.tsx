@@ -19,6 +19,7 @@ import {
 	safeLocalStorageRemoveItem,
 } from "../../lib/safeLocalStorage";
 import { CopilotComposer } from "./CopilotComposer";
+import { CopilotChatPanel } from "./CopilotChatPanel";
 import { CopilotActionConfirm } from "./CopilotActionConfirm";
 import { useCopilotContextSync } from "./CopilotContextSync";
 import {
@@ -445,6 +446,31 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 				onReset={handleReset}
 				patientId={uiContext.patientId ?? null}
 			/>
+
+			{/* Embedded Standalone Chat Panel (Mandates 8s, 8e) */}
+			<div className="hidden" data-testid="copilot-chat-panel-container">
+				<CopilotChatPanel
+					messages={messages}
+					busy={busy}
+					phase={phase}
+					pending={pending}
+					nameCache={nameCache}
+					nudges={nudges}
+					proactiveAlerts={proactiveAlerts}
+					whatsappHitLCards={whatsappHitLCards}
+					onSend={onSend}
+					onConfirm={onConfirm}
+					onReset={onReset}
+					onDismissNudge={onDismissNudge}
+					onDismissProactiveAlert={onDismissProactiveAlert}
+					onApproveWhatsApp={onApproveWhatsApp}
+					onRejectWhatsApp={onRejectWhatsApp}
+					onSelectPatient={onSelectPatient}
+					onSelectAppointment={onSelectAppointment}
+					onBookSlot={onBookSlot}
+					embedMode={true}
+				/>
+			</div>
 		</aside>
 	);
 

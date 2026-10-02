@@ -4,6 +4,7 @@ import { BracesBracket } from "../icons/DentalIcons";
 import { usePatientStore } from "../../store/patientStore";
 import { OrthopedicsChairsidePanel } from "../orthopedics/OrthopedicsChairsidePanel";
 import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
+import { OrthodonticMaterialsQuickSelector } from "./OrthodonticMaterialsQuickSelector";
 import { OrthodonticVisitProtocolWidget } from "./OrthodonticVisitProtocolWidget";
 
 /**
@@ -14,6 +15,7 @@ import { OrthodonticVisitProtocolWidget } from "./OrthodonticVisitProtocolWidget
 export function OrthodonticPerspectiveView() {
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
 	const [isProtocolOpen, setIsProtocolOpen] = useState(false);
+	const [selectedMaterialId, setSelectedMaterialId] = useState<string | undefined>();
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 
 	return (
@@ -43,6 +45,18 @@ export function OrthodonticPerspectiveView() {
 			</div>
 
 			<OrthopedicsChairsidePanel />
+
+			<div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
+				<h3 className="text-xs font-bold text-[var(--ink)] mb-2 flex items-center gap-1.5">
+					<BracesBracket className="w-4 h-4 text-teal-600" />
+					Быстрый выбор ортодонтических материалов (90% рынка РФ)
+				</h3>
+				<OrthodonticMaterialsQuickSelector
+					compact
+					selectedMaterialId={selectedMaterialId}
+					onSelectMaterial={(material) => setSelectedMaterialId(material.id)}
+				/>
+			</div>
 
 			<OrthodonticPhotoProtocolModal
 				isOpen={isPhotoModalOpen}

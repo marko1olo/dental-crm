@@ -1,5 +1,5 @@
 import { CalendarCheck, Check, ChevronDown, ChevronUp, Clock, MoreHorizontal, PhoneCall, PhoneOff, UserCheck, X } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { captureLeadFromIncomingCall } from "./telephonyAttribution";
@@ -19,6 +19,7 @@ import {
 	computeQuickBookingSlots,
 	type QuickSlotType,
 } from "./IncomingCallQuickBooking";
+import { IncomingCallerCard } from "./IncomingCallerCard";
 import { IncomingCallPastHistory } from "./IncomingCallPastHistory";
 import { IncomingCallBadgeMoreMenu } from "./IncomingCallBadgeMoreMenu";
 import { IncomingCallPatientDrawer } from "./IncomingCallPatientDrawer";

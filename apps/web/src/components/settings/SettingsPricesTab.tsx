@@ -1,25 +1,8 @@
-import type {
-	DentalSpecialty,
-	ServiceCatalogItem,
-	ServiceCategory,
-} from "@dental/shared";
+import type { DentalSpecialty, ServiceCatalogItem, ServiceCategory } from "@dental/shared";
 import {
-	Bot,
-	CheckCircle2,
-	ChevronDown,
-	Database,
-	Download,
-	Edit3,
-	FolderTree,
-	Plus,
-	ReceiptText,
-	Search,
-	ShieldCheck,
-	Sparkles,
-	Tag,
-	Trash2,
-	Upload,
-	X,
+	Bot, CheckCircle2, ChevronDown, Database, Download, Edit3,
+	FolderTree, Plus, ReceiptText, Search, ShieldCheck, Sparkles,
+	Tag, Trash2, Upload, X,
 } from "lucide-react";
 import "./SettingsPricesTab.css";
 import {
@@ -32,10 +15,7 @@ import { money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { normalizeRubAmountInput } from "../../rubAmountInput";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
-import {
-	type SettingsAccessHeaders,
-	staffMutationHeaders,
-} from "./staffMutationRequest";
+import { type SettingsAccessHeaders, staffMutationHeaders } from "./staffMutationRequest";
 import { ServicePricelistManagerModal } from "../catalog/pricelist/ServicePricelistManagerModal";
 import {
 	BASELINE_804N_PRICELIST_SERVICES,
@@ -60,13 +40,30 @@ export function SettingsPricesTab() {
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {
-		dashboard, pricelistSourceKindLabels, pricelistSourceKind, setPricelistSourceKind,
-		clearPricelistImage, setPricelistAnalysis, pricelistRecognitionServiceGroups,
-		pricelistRecognitionBrandGroups, pricelistText, setPricelistText, pricelistImageName,
-		attachPricelistImage, usePricelistAi, setUsePricelistAi, analyzePricelist,
-		isPricelistAnalyzing, pricelistImageBase64, pricelistAnalysis, pricelistParserModeLabels,
-		serviceCategoryLabels, specialtyLabels, createServiceCatalogItem,
-		updateServiceCatalogItem, deleteServiceCatalogItem,
+		dashboard,
+		pricelistSourceKindLabels,
+		pricelistSourceKind,
+		setPricelistSourceKind,
+		clearPricelistImage,
+		setPricelistAnalysis,
+		pricelistRecognitionServiceGroups,
+		pricelistRecognitionBrandGroups,
+		pricelistText,
+		setPricelistText,
+		pricelistImageName,
+		attachPricelistImage,
+		usePricelistAi,
+		setUsePricelistAi,
+		analyzePricelist,
+		isPricelistAnalyzing,
+		pricelistImageBase64,
+		pricelistAnalysis,
+		pricelistParserModeLabels,
+		serviceCategoryLabels,
+		specialtyLabels,
+		createServiceCatalogItem,
+		updateServiceCatalogItem,
+		deleteServiceCatalogItem,
 	} = mergedProps;
 
 	const [activeTab, setActiveTab] = useState<"catalog" | "ai_import">(

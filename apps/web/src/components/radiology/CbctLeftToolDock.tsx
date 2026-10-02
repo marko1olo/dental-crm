@@ -21,6 +21,7 @@ import {
 	Sliders,
 	Sparkles,
 	SunMoon,
+	Wind,
 	ZoomIn,
 } from "lucide-react";
 import {
@@ -415,6 +416,28 @@ export const CbctLeftToolDock: React.FC<CbctLeftToolDockProps> = ({
 						subtitle="Измерить длину и кривизну канала (по Шнайдеру)"
 						shortcut="E"
 						titleColor="text-teal-300"
+					/>
+				</div>
+
+				{/* 8f. Airway Analysis Tool (Ez3D-i Volumetric Airway & Obstruction Risk) */}
+				<div className="relative group flex items-center justify-center">
+					<button
+						type="button"
+						onClick={() => onSelectTool(activeTool === "airway" ? "crosshair" : "airway")}
+						className={getToolBtnClass(
+							activeTool === "airway",
+							"bg-cyan-500/20 text-cyan-300 border border-cyan-500/60 shadow-xs shadow-cyan-950/40",
+						)}
+						title="Дыхательные пути (Анализ объема и сужения по Ez3D-i)"
+						aria-label="Анализ дыхательных путей"
+						data-testid="cbct-tool-airway"
+					>
+						<Wind className="w-4 h-4 [@media(pointer:coarse)]:w-5 [@media(pointer:coarse)]:h-5 text-cyan-400 shrink-0" />
+					</button>
+					<DockTooltip
+						title="Дыхательные пути"
+						subtitle="Объем воздуха и сужение (Ez3D-i)"
+						titleColor="text-cyan-300"
 					/>
 				</div>
 

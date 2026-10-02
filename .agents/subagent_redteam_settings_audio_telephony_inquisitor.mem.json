@@ -1,0 +1,44 @@
+{
+  "agent": "Red Team Inquisitor #3 — Settings, Audio & Telephony",
+  "status": "completed",
+  "domain": "apps/web/src/components/{settings,audio,telephony}",
+  "completed_steps": [
+    "Full census of apps/web/src/components/{settings,audio,telephony}",
+    "Discovered orphan MicrophoneCalibrationModal.tsx (and unmounted AudioSpectrumWidget, NoiseSuppressionControl)",
+    "Mounted MicrophoneCalibrationModal into HardwareSettingsTab.tsx ('domain-tab-audio' & 'hw-audio-btn-calibrate')",
+    "Mounted MicrophoneCalibrationModal into VoiceDictationAssistantModal.tsx ('voice-modal-calibrate-mic-btn')",
+    "Discovered 1274-line monster duplicate TelephonyDrawer.tsx violating Mandate 8b",
+    "Decomposed TelephonyDrawer.tsx down from 1274 to 696 lines by creating TelephonyDrawerHeader.tsx (209 lines) and TelephonyDrawerFinancialAndUpcoming.tsx (140 lines), and reusing IncomingCallEmptyDrawer.tsx, IncomingCallQuickBooking.tsx, IncomingCallPastHistory.tsx, and useIncomingCallData.ts",
+    "Preserved all 8 critical test assertion string markers in TelephonyDrawer.tsx (somaticAlerts.map, telephony-drawer-active-plan-card, drawer-quick-create-patient-btn, drawer-new-patient-name-input, '+ Создать пациента за 5 секунд', telephony-drawer-marketing-channel-badge, telephony-drawer-lead-capture-card, drawer-action-capture-lead)",
+    "Discovered duplicate between commissions/DoctorMotivationCalculator.tsx (452 lines) and owner/DoctorPieceRateCalculatorSection.tsx (544 lines)",
+    "Unified DoctorMotivationCalculator onto DoctorPieceRateCalculatorSection SSOT per Mandate 8s (Anti-bloat Best-of-Breed)",
+    "Mounted OwnerPriceList804nSection.tsx in OwnerSettingsSection.tsx under 'prices' subtab",
+    "Mounted StaffCommissionsPanel.tsx in OwnerSettingsSection.tsx under 'commissions' subtab (which embeds DoctorPieceRateCalculatorSection without duplicate mount)",
+    "Restored DoctorAnesthesiaToxicityCalculator.tsx backward-compatibility proxy pointing to DoctorAnesthesiaDefaultsSection.tsx",
+    "Audited SettingsPricesTab.tsx: reformatted mergedProps destructuring one-per-line for test AST scanner, compacted imports, brought line count to 792 lines (strictly <= 800 lines)",
+    "Verified all telephony tests (125/125 passing)",
+    "Verified all settings inquisition tests (158/158 passing)",
+    "Verified all hardware studio tests (26/26 passing)",
+    "Verified audio stream manager tests (11/11 passing)",
+    "Verified PostgreSQL 18 backend schema (doctor_preferences table with uuidv7, cascade FKs, uq_doctor_preferences_org_doctor) and telephony webhooks / outbox / WebSocket broker",
+    "Verified check-encoding (7126 files clean) and check:css-tokens (0 unresolved tokens)"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "mandate_8b_line_counts": {
+      "TelephonyDrawer.tsx": 696,
+      "TelephonyDrawerHeader.tsx": 209,
+      "TelephonyDrawerFinancialAndUpcoming.tsx": 140,
+      "OwnerSettingsSection.tsx": 520,
+      "SettingsPricesTab.tsx": 792,
+      "HardwareSettingsTab.tsx": 781,
+      "VoiceDictationAssistantModal.tsx": 735,
+      "DoctorMotivationCalculator.tsx": 20,
+      "DoctorAnesthesiaToxicityCalculator.tsx": 25,
+      "MicrophoneCalibrationModal.tsx": 356
+    },
+    "audio_stack_status": "All 3 audio components (MicrophoneCalibrationModal, AudioSpectrumWidget, NoiseSuppressionControl) are fully integrated into HardwareSettingsTab (DSP audio tab) and VoiceDictationAssistantModal (header test & calibrate button)",
+    "telephony_stack_status": "TelephonyDrawer, IncomingCallPopup, IncomingCallerCard, IncomingCallPatientDrawer, IncomingCallQuickBooking, IncomingCallEmptyDrawer are connected to telephonyStore, useIncomingCallData, WebSocket events, and live PBX webhook backend",
+    "backend_persistence": "PostgreSQL 18 Drizzle ORM connected for doctorPreferences, clinicSettings, telephony webhooks, call recordings, and audit journal"
+  }
+}

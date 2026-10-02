@@ -13,6 +13,7 @@ import {
 } from "../../../AppHelpers";
 import { showToast } from "../../../components/GlobalToast";
 import { DEFAULT_SOLO_CHAIR } from "../../../components/schedule/ScheduleGrid";
+import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
 import { useSettingsStore } from "../../../store/settingsStore";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import { scheduleAdminSecretRefusal } from "./scheduleAdminSecretRefusal";
@@ -231,6 +232,20 @@ export function useAppointmentMutations({
 						appointmentScheduleDraftFromAppointment(savedAppointment),
 				}));
 			}
+			if (savedAppointment) {
+				const isTimeChanged = latestDraft?.startsAt && latestDraft.startsAt !== savedAppointment.startsAt;
+				if (isTimeChanged) {
+					StaffActionAuditService.logAppointmentReschedule({
+						appointmentId,
+						patientId: savedAppointment.patientId,
+						oldTime: latestDraft?.startsAt,
+						newTime: savedAppointment.startsAt,
+						reason: savedAppointment.reason,
+						actorUserId: auth?.user?.id,
+						actorRole: auth?.user?.role,
+					});
+				}
+			}
 			if (latestMatchesSaved) {
 				setAppointmentScheduleDirtyIds((current: Set<string>) => {
 					const next = new Set(current);
@@ -400,6 +415,16 @@ export function useAppointmentMutations({
 						appointmentScheduleDraftFromAppointment(createdAppointment),
 				}));
 				setEditingAppointmentId(createdAppointment.id);
+
+				StaffActionAuditService.logAppointmentCreate({
+					appointmentId: createdAppointment.id,
+					patientId: createdAppointment.patientId,
+					scheduledTime: createdAppointment.startsAt,
+					doctorUserId: createdAppointment.doctorUserId,
+					reason: createdAppointment.reason,
+					actorUserId: auth?.user?.id,
+					actorRole: auth?.user?.role,
+				});
 			}
 			setError(null);
 			return true;

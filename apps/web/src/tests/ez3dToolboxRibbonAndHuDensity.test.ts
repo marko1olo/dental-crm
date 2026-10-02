@@ -85,7 +85,9 @@ describe("Mandate 8l: Ez3D-i Clinical Tooling & HU Bone Density Math", () => {
 
 	it("should enforce Mandate 8b line-budget invariant (strictly <= 800 lines per file)", () => {
 		const filesToAudit = [
-			"apps/web/src/components/imaging/Ez3dToolboxRibbon.tsx",
+			"apps/web/src/components/imaging/DicomToolboxRibbon.tsx",
+			"apps/web/src/components/imaging/DicomMprCockpit.tsx",
+			"apps/web/src/components/imaging/DicomSectioningView.tsx",
 			"apps/web/src/components/imaging/DicomViewerModal.tsx",
 			"apps/web/src/components/imaging/DicomAiFindingsDrawer.tsx",
 			"apps/web/src/components/imaging/rvgViewerEngine.ts",
@@ -104,10 +106,10 @@ describe("Mandate 8l: Ez3D-i Clinical Tooling & HU Bone Density Math", () => {
 		}
 	});
 
-	it("should contain zero mock markers or fake stubs in Ez3dToolboxRibbon", () => {
-		const fullPath = path.resolve("apps/web/src/components/imaging/Ez3dToolboxRibbon.tsx");
+	it("should contain zero mock markers or fake stubs in DicomToolboxRibbon", () => {
+		const fullPath = path.resolve("apps/web/src/components/imaging/DicomToolboxRibbon.tsx");
 		const content = fs.readFileSync(fullPath, "utf8");
-		assert.ok(!content.includes("// TODO:"), "Forbidden // TODO stub found in Ez3dToolboxRibbon.tsx");
-		assert.ok(!content.includes("mockData"), "Forbidden mockData found in Ez3dToolboxRibbon.tsx");
+		assert.ok(!content.includes("// TODO:"), "Forbidden // TODO stub found in DicomToolboxRibbon.tsx");
+		assert.ok(!content.includes("mockData"), "Forbidden mockData found in DicomToolboxRibbon.tsx");
 	});
 });

@@ -56,6 +56,7 @@ import {
 	TreatmentPlansGuide,
 	searchClinicalGuides,
 } from "../help";
+import { GuidanceCheatSheet } from "../guidance/GuidanceCheatSheet";
 
 export interface HelpDrawerProps {
 	readonly isOpen: boolean;
@@ -361,6 +362,9 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = React.memo(({
 							{activeTab === "analytics" && <AnalyticsReportsGuide />}
 						</>
 					)}
+					<div className="pt-2">
+						<GuidanceCheatSheet onOpenFullModal={onOpenShortcutsModal} />
+					</div>
 				</div>
 
 				{/* Drawer Footer */}

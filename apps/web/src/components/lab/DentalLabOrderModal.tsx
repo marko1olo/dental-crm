@@ -20,7 +20,9 @@ import {
 	DentalBridge,
 	DentalLabOrder,
 } from "../icons/DentalIcons";
-import "./labOrders.css";
+if (typeof document !== "undefined") {
+	void import("./labOrders.css");
+}
 import {
 	type DentalLabOrderModalProps,
 	formatJawScopeLabel,

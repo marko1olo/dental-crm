@@ -1252,6 +1252,19 @@ export const egiszStatusSchema = z.enum([
 ]);
 export type EgiszStatus = z.infer<typeof egiszStatusSchema>;
 
+export const egiszOutboxStatusSchema = z.enum([
+	"queued",
+	"validating",
+	"signing_pending",
+	"ready_for_dispatch",
+	"sending",
+	"registered_in_remd",
+	"delivered_to_epgu",
+	"failed",
+	"rejected_by_remd",
+]);
+export type EgiszOutboxStatus = z.infer<typeof egiszOutboxStatusSchema>;
+
 export const clinicModeSchema = z.enum([
 	"solo_doctor",
 	"one_chair",
@@ -1309,6 +1322,15 @@ export type TreatmentPlanItemStatus = z.infer<
 	typeof treatmentPlanItemStatusSchema
 >;
 
+export const treatmentPlanStatusSchema = z.enum([
+	"Draft",
+	"Active",
+	"Approved",
+	"Completed",
+	"Rejected",
+]);
+export type TreatmentPlanStatus = z.infer<typeof treatmentPlanStatusSchema>;
+
 export const treatmentPlanScenarioStrategySchema = z.enum([
 	"urgent",
 	"standard",
@@ -1328,6 +1350,14 @@ export const treatmentPlanScenarioPrioritySchema = z.enum([
 export type TreatmentPlanScenarioPriority = z.infer<
 	typeof treatmentPlanScenarioPrioritySchema
 >;
+
+export const clinicalTaskStatusSchema = z.enum([
+	"pending",
+	"in_progress",
+	"completed",
+	"cancelled",
+]);
+export type ClinicalTaskStatus = z.infer<typeof clinicalTaskStatusSchema>;
 
 export const clinicalRuleSeveritySchema = z.enum([
 	"info",
@@ -1438,6 +1468,43 @@ export const communicationTaskOutcomeSchema = z.enum([
 ]);
 export type CommunicationTaskOutcome = z.infer<
 	typeof communicationTaskOutcomeSchema
+>;
+
+export const communicationDirectionSchema = z.enum([
+	"inbound",
+	"outbound",
+]);
+export type CommunicationDirection = z.infer<
+	typeof communicationDirectionSchema
+>;
+
+export const communicationConsentScopeSchema = z.enum([
+	"service",
+	"marketing",
+]);
+export type CommunicationConsentScope = z.infer<
+	typeof communicationConsentScopeSchema
+>;
+
+export const communicationConsentStateSchema = z.enum([
+	"granted",
+	"revoked",
+]);
+export type CommunicationConsentState = z.infer<
+	typeof communicationConsentStateSchema
+>;
+
+export const communicationOutboxStatusSchema = z.enum([
+	"queued",
+	"sending",
+	"sent",
+	"delivered",
+	"failed",
+	"cancelled",
+	"suppressed",
+]);
+export type CommunicationOutboxStatus = z.infer<
+	typeof communicationOutboxStatusSchema
 >;
 
 export const integrationCategorySchema = z.enum([
@@ -2635,6 +2702,8 @@ import {
 	type Payment,
 	paymentMethodSchema,
 	type PaymentMethod,
+	ledgerPaymentMethodSchema,
+	type LedgerPaymentMethod,
 	paymentStatusSchema,
 	type PaymentStatus,
 	STATUTORY_PAYMENT_METHOD_LABELS_RU,
@@ -2653,6 +2722,8 @@ export {
 	type Payment,
 	paymentMethodSchema,
 	type PaymentMethod,
+	ledgerPaymentMethodSchema,
+	type LedgerPaymentMethod,
 	paymentStatusSchema,
 	type PaymentStatus,
 	STATUTORY_PAYMENT_METHOD_LABELS_RU,
@@ -2737,7 +2808,7 @@ export const communicationEventSchema = z.object({
 	patientId: z.string().uuid(),
 	actorUserId: z.string().uuid().nullable(),
 	channel: communicationChannelSchema,
-	direction: z.enum(["inbound", "outbound"]),
+	direction: communicationDirectionSchema,
 	status: communicationStatusSchema,
 	message: z.string(),
 	createdAt: z.string(),
@@ -3238,6 +3309,17 @@ export type DenteTelegramUpdateKind = z.infer<
 	typeof denteTelegramUpdateKindSchema
 >;
 
+export const denteTelegramWebhookStatusSchema = z.enum([
+	"processing",
+	"processed",
+	"duplicate",
+	"ignored",
+	"rejected",
+]);
+export type DenteTelegramWebhookStatus = z.infer<
+	typeof denteTelegramWebhookStatusSchema
+>;
+
 export const denteTelegramWebhookEventSchema = z.object({
 	id: z.string().uuid(),
 	organizationId: z.string().uuid(),
@@ -3246,13 +3328,7 @@ export const denteTelegramWebhookEventSchema = z.object({
 	chatFingerprint: z.string().nullable(),
 	updateKind: denteTelegramUpdateKindSchema,
 	command: z.string().max(64).nullable(),
-	status: z.enum([
-		"processing",
-		"processed",
-		"duplicate",
-		"ignored",
-		"rejected",
-	]),
+	status: denteTelegramWebhookStatusSchema,
 	action: z.string(),
 	warnings: z.array(z.string()),
 	createdAt: z.string(),
@@ -4770,15 +4846,35 @@ export type VisitAttendanceCertificatePayload = z.infer<
 	typeof visitAttendanceCertificatePayloadSchema
 >;
 
+export const paymentRefundCorrectionActionSchema = z.enum([
+	"full_refund",
+	"partial_refund",
+	"payment_transfer",
+	"receipt_correction",
+	"payer_details_correction",
+]);
+export type PaymentRefundCorrectionAction = z.infer<
+	typeof paymentRefundCorrectionActionSchema
+>;
+export const PAYMENT_REFUND_CORRECTION_ACTIONS =
+	paymentRefundCorrectionActionSchema.options;
+
+export const paymentRefundCorrectionMethodSchema = z.enum([
+	"cash",
+	"card",
+	"bank_transfer",
+	"internal_offset",
+	"no_money_movement",
+]);
+export type PaymentRefundCorrectionMethod = z.infer<
+	typeof paymentRefundCorrectionMethodSchema
+>;
+export const PAYMENT_REFUND_CORRECTION_METHODS =
+	paymentRefundCorrectionMethodSchema.options;
+
 export const paymentRefundCorrectionPayloadSchema = z
 	.object({
-		action: z.enum([
-			"full_refund",
-			"partial_refund",
-			"payment_transfer",
-			"receipt_correction",
-			"payer_details_correction",
-		]),
+		action: paymentRefundCorrectionActionSchema,
 		selectedPaymentIds: z.array(z.string().uuid()).min(1).max(20),
 		/*
 		 * Возврат или коррекция оплаты. Полный возврат обязан быть РАВЕН платежу, а
@@ -4788,13 +4884,7 @@ export const paymentRefundCorrectionPayloadSchema = z
 		 */
 		amountRub: positiveMoneyRubSchema,
 		reason: z.string().trim().min(1).max(500),
-		refundMethod: z.enum([
-			"cash",
-			"card",
-			"bank_transfer",
-			"internal_offset",
-			"no_money_movement",
-		]),
+		refundMethod: paymentRefundCorrectionMethodSchema,
 		recipientFullName: z.string().trim().min(1).max(240),
 		recipientIdentityDocument: z.string().trim().min(1).max(240),
 		bankDetails: z.string().trim().max(1000).nullable().optional(),
@@ -5208,6 +5298,9 @@ export const taxXmlSnapshotSchema = z
 	.strict();
 export type TaxXmlSnapshot = z.infer<typeof taxXmlSnapshotSchema>;
 
+export const documentStatusSchema = z.enum(["draft", "issued", "voided"]);
+export type DocumentStatus = z.infer<typeof documentStatusSchema>;
+
 export const generatedDocumentSchema = z.object({
 	id: z.string().uuid(),
 	organizationId: z.string().uuid(),
@@ -5215,7 +5308,7 @@ export const generatedDocumentSchema = z.object({
 	visitId: z.string().uuid().nullable(),
 	kind: documentKindSchema,
 	title: z.string(),
-	status: z.enum(["draft", "issued", "voided"]),
+	status: documentStatusSchema,
 	issuedAt: z.string().nullable(),
 	/*
 	 * Сумма выданного документа. Было z.number().nonnegative(): копейки
@@ -5261,7 +5354,6 @@ export const generatedDocumentSchema = z.object({
 	doctorSignedAt: z.string().nullable().optional(),
 });
 export type GeneratedDocument = z.infer<typeof generatedDocumentSchema>;
-export type DocumentStatus = GeneratedDocument["status"];
 export const documentChainSummarySchema = z
 	.object({
 		paidMedicalServicesContract: z
@@ -5313,7 +5405,7 @@ export const documentAuditFactsSchema = z.object({
 	visitId: z.string().uuid().nullable(),
 	kind: documentKindSchema,
 	title: z.string(),
-	status: z.enum(["draft", "issued", "voided"]),
+	status: documentStatusSchema,
 	issuedAt: z.string().nullable(),
 	issuedByUserId: z.string().uuid().nullable(),
 	signatureAttestation: documentIssueSignatureAttestationSchema.nullable(),
@@ -5369,6 +5461,13 @@ export type ImagingStudyBindingStatus = z.infer<
 	typeof imagingStudyBindingStatusSchema
 >;
 
+export const imagingStudyStatusSchema = z.enum([
+	"available",
+	"needs_review",
+	"failed",
+]);
+export type ImagingStudyStatus = z.infer<typeof imagingStudyStatusSchema>;
+
 export const imagingStudySchema = z.object({
 	id: z.string().uuid(),
 	organizationId: z.string().uuid(),
@@ -5399,7 +5498,7 @@ export const imagingStudySchema = z.object({
 	dicomPatientId: z.string().nullable().optional(),
 	dicomBirthDate: z.string().nullable().optional(),
 	patientFullName: z.string().nullable().optional(),
-	status: z.enum(["available", "needs_review", "failed"]),
+	status: imagingStudyStatusSchema,
 	aiSummary: z.string().nullable(),
 	previewUrl: z.string(),
 	viewerUrl: z.string().nullable(),
@@ -6227,6 +6326,10 @@ import {
 	type UpdatePatientInput,
 	updatePatientAdministrativeProfileSchema,
 	type UpdatePatientAdministrativeProfileInput,
+	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
+	PATIENT_FIELD_REQUIREMENTS_STORAGE_KEY,
+	patientFieldRequirementsSchema,
+	type PatientFieldRequirements,
 } from "./patients/index.js";
 export {
 	createPatientSchema,
@@ -6235,6 +6338,10 @@ export {
 	type UpdatePatientInput,
 	updatePatientAdministrativeProfileSchema,
 	type UpdatePatientAdministrativeProfileInput,
+	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
+	PATIENT_FIELD_REQUIREMENTS_STORAGE_KEY,
+	patientFieldRequirementsSchema,
+	type PatientFieldRequirements,
 };
 
 export const updateClinicModeSchema = z.object({

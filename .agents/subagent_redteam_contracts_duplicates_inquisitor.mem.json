@@ -1,0 +1,58 @@
+{
+  "role": "Red Team Inquisitor: Cross-Module Contracts and Types",
+  "status": "completed",
+  "checkpoint": "all_tasks_completed_and_verified",
+  "completed_steps": [
+    "Read THE_HAMMER_MASTER_PROMPT.md",
+    "Read AGENTS.md",
+    "Read GEMINI.md",
+    "Read core.md",
+    "Read frontend.md",
+    "Autonomous reconnaissance of packages/shared, apps/api, apps/web using ast-grep/regex/custom scanners",
+    "Identified 11 database enums missing named exported Zod schemas (causing 11 NO_CONTRACT_PAIR bypasses in enumContractDrift.test.ts)",
+    "Identified duplicate patientFieldRequirements schema declarations in apps/api/src/routes/marketing.ts and apps/web/src/components/patients/patientFieldRequirementsConfig.ts",
+    "Identified duplicate PaymentRefundCorrectionAction and PaymentRefundCorrectionMethod declarations across apps/web and packages/shared",
+    "Identified orphaned export of fnsNdflXmlEngine in packages/shared/src/fiscal/index.ts",
+    "Identified clown mock data (John Doe, fake INN) in tests",
+    "Surgically added 11 named enum schemas in packages/shared/src/index.ts and packages/shared/src/fiscal/",
+    "Created SSOT packages/shared/src/patients/patientFieldRequirements.ts and re-exported in shared",
+    "Centralized paymentRefundCorrectionActionSchema and paymentRefundCorrectionMethodSchema in packages/shared/src/index.ts",
+    "Deduplicated apps/web/src/utils/commonHelpers/predicateHelpers.ts to import from @dental/shared",
+    "Updated apps/api/src/routes/marketing.ts and apps/web/src/components/patients/patientFieldRequirementsConfig.ts to use @dental/shared SSOT",
+    "Fixed artificial status restriction in apps/api/src/routes/tasks.ts:113 by wiring clinicalTaskStatusSchema",
+    "Eliminated all 11 NO_CONTRACT_PAIR entries in apps/api/src/tests/enumContractDrift.test.ts, raising paired contract count from 37 to 48 and named census from 162 to 173",
+    "Rebuilt @dental/shared dist cleanly (exit code 0)",
+    "Eradicated clown mock data in apps/api/src/tests/db/billingQuery.test.ts and apps/api/src/routes/auth.test.ts",
+    "Created targeted regression test packages/shared/src/patients/__tests__/patientFieldRequirements.test.ts (100% pass)",
+    "Verified all 13 tests in apps/api/src/tests/enumContractDrift.test.ts pass 100%",
+    "Verified node scripts/check-encoding.mjs passes (7121 files, 0 defects)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "defect": "11 DB enums lacked named exported Zod schemas in packages/shared",
+      "severity": "HIGH",
+      "resolution": "Created communicationDirectionSchema, communicationConsentScopeSchema, communicationConsentStateSchema, communicationOutboxStatusSchema, denteTelegramWebhookStatusSchema, documentStatusSchema, imagingStudyStatusSchema, treatmentPlanStatusSchema, ledgerPaymentMethodSchema, clinicalTaskStatusSchema, egiszOutboxStatusSchema in packages/shared/src/index.ts and packages/shared/src/fiscal/fiscalReceiptSchemas.ts. All paired in enumContractDrift.test.ts (total paired = 48)."
+    },
+    {
+      "defect": "Duplicate patientFieldRequirementsSchema across marketing.ts and patientFieldRequirementsConfig.ts",
+      "severity": "MEDIUM",
+      "resolution": "Centralized in packages/shared/src/patients/patientFieldRequirements.ts. Re-exported in packages/shared/src/patients/index.ts and packages/shared/src/index.ts. Both api and web now import SSOT."
+    },
+    {
+      "defect": "Duplicate PaymentRefundCorrectionAction and PaymentRefundCorrectionMethod declarations",
+      "severity": "MEDIUM",
+      "resolution": "Exported named schemas and options from packages/shared/src/index.ts and imported in apps/web/src/utils/commonHelpers/predicateHelpers.ts."
+    },
+    {
+      "defect": "Unexported fnsNdflXmlEngine in packages/shared/src/fiscal/index.ts",
+      "severity": "LOW",
+      "resolution": "Added export * from './fnsNdflXmlEngine.js' to packages/shared/src/fiscal/index.ts."
+    },
+    {
+      "defect": "Clown mock data ('John Doe', fake INN) in billingQuery.test.ts and auth.test.ts",
+      "severity": "LOW",
+      "resolution": "Replaced with realistic authentic clinical Russian data ('Барабаш Сергей Васильевич', '770123456789')."
+    }
+  ]
+}

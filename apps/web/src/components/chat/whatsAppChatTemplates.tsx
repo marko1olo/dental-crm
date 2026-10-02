@@ -6,6 +6,7 @@ import {
 	CreditCard,
 	FileCheck,
 	FileText,
+	Gift,
 	MapPin,
 	Shield,
 	Sparkles,
@@ -136,6 +137,22 @@ export function buildQuickTemplates({
 			category: "administrative",
 			buildText: () =>
 				`Здравствуйте, ${effectiveName}! Ваша справка для налогового вычета (со всеми чеками и лицензией клиники ${clinicName}) готова. Вы можете забрать её на ресепшн или запросить скан в ответном сообщении.`,
+		},
+		{
+			id: "birthday_congrats",
+			icon: <Gift size={14} className="text-pink-400" />,
+			label: "Поздравление с днем рождения",
+			category: "marketing",
+			buildText: () =>
+				`Здравствуйте, ${effectiveName}! Команда клиники ${clinicName} поздравляет вас с днем рождения! Желаем крепкого здоровья, отличного настроения и сияющей улыбки! В честь праздника дарим вам бонус 1 000 ₽ на любые процедуры или профессиональную гигиену (действует 30 дней). Будем рады видеть вас!`,
+		},
+		{
+			id: "hygiene_recall_6m",
+			icon: <Sparkles size={14} className="text-cyan-400" />,
+			label: "Профгигиена / Осмотр (6 мес)",
+			category: "clinical",
+			buildText: () =>
+				`Здравствуйте, ${effectiveName}! Напоминаем, что подошел срок планового осмотра и профессиональной гигиены в клинике ${clinicName}. Стоматологи рекомендуют проходить профосмотр каждые полгода, чтобы сохранить здоровье зубов и свежесть дыхания. Будем рады подобрать для вас удобное время!`,
 		},
 		{
 			id: "address_parking",
