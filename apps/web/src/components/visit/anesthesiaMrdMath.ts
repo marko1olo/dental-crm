@@ -24,6 +24,7 @@ export type CarpuleVolumeMl = 1.7 | 1.8 | 2.0;
 export type PediatricFormula = 'clark' | 'young' | 'direct_mg_kg';
 
 import { resolveClinicalDefaultWeightKg } from '../anesthesia/anesthesiaEngine';
+import { DENTAL_ANESTHETICS } from '../anesthesia/anesthesiaCatalog';
 export { resolveClinicalDefaultWeightKg };
 
 export type SafetyZone = 'green_safe' | 'yellow_caution' | 'orange_warning' | 'red_stop';
@@ -55,110 +56,34 @@ export interface MrdDrugSpecification {
 	readonly clinicalDescriptionRu: string;
 }
 
-export const MRD_DRUG_CATALOG: Record<MrdDrugId, MrdDrugSpecification> = {
-	articaine_1_100k: {
-		id: 'articaine_1_100k',
-		tradeNamesRu: ['Ультракаин Д-С форте', 'Септонест 1:100 000', 'Убистезин форте', 'Брилокаин форте'],
-		activeSubstanceRu: 'Артикаин 4% + Эпинефрин 1:100 000',
-		concentrationPercent: 4.0,
-		mgPerMlActive: 40.0,
-		vasoconstrictorNameRu: 'Эпинефрин (Адреналин) 1:100 000',
-		vasoconstrictorRatio: '1:100000',
-		epinephrineMgPerMl: 0.01,
-		defaultVolumeMl: 1.7,
-		maxDoseMgPerKgAdult: 7.0,
-		absoluteMaxDoseMgAdult: 500.0,
-		maxDoseMgPerKgPediatric: 5.0,
-		containsSulfites: true,
-		isAdrenalineFree: false,
-		clinicalDescriptionRu: 'Высокая глубина анестезии для травматичных вмешательств, пульпитов и хирургии.',
-	},
-	articaine_1_200k: {
-		id: 'articaine_1_200k',
-		tradeNamesRu: ['Ультракаин Д-С', 'Убистезин', 'Септонест 1:200 000', 'Артифрин'],
-		activeSubstanceRu: 'Артикаин 4% + Эпинефрин 1:200 000',
-		concentrationPercent: 4.0,
-		mgPerMlActive: 40.0,
-		vasoconstrictorNameRu: 'Эпинефрин (Адреналин) 1:200 000',
-		vasoconstrictorRatio: '1:200000',
-		epinephrineMgPerMl: 0.005,
-		defaultVolumeMl: 1.7,
-		maxDoseMgPerKgAdult: 7.0,
-		absoluteMaxDoseMgAdult: 500.0,
-		maxDoseMgPerKgPediatric: 5.0,
-		containsSulfites: true,
-		isAdrenalineFree: false,
-		clinicalDescriptionRu: 'Стандартная терапия кариеса, препарирование под коронки, эндодонтия. Оптимальный профиль безопасности.',
-	},
-	mepivacaine_plain: {
-		id: 'mepivacaine_plain',
-		tradeNamesRu: ['Скандонест 3%', 'Мепивастезин 3%', 'Мепивакаин-Бинергия'],
-		activeSubstanceRu: 'Мепивакаин 3% (без вазоконстриктора)',
-		concentrationPercent: 3.0,
-		mgPerMlActive: 30.0,
-		vasoconstrictorNameRu: 'Без вазоконстриктора',
-		vasoconstrictorRatio: 'none',
-		epinephrineMgPerMl: 0.0,
-		defaultVolumeMl: 1.7,
-		maxDoseMgPerKgAdult: 4.4,
-		absoluteMaxDoseMgAdult: 300.0,
-		maxDoseMgPerKgPediatric: 4.4,
-		containsSulfites: false,
-		isAdrenalineFree: true,
-		clinicalDescriptionRu: 'Препарат первого выбора при ИБС, гипертонии, аритмии, астме, аллергии на сульфиты и для пожилых пациентов.',
-	},
-	lidocaine_1_100k: {
-		id: 'lidocaine_1_100k',
-		tradeNamesRu: ['Ксилонор', 'Лидокаин с адреналином 1:100 000', 'Octocaine 1:100k'],
-		activeSubstanceRu: 'Лидокаин 2% + Эпинефрин 1:100 000',
-		concentrationPercent: 2.0,
-		mgPerMlActive: 20.0,
-		vasoconstrictorNameRu: 'Эпинефрин 1:100 000',
-		vasoconstrictorRatio: '1:100000',
-		epinephrineMgPerMl: 0.01,
-		defaultVolumeMl: 1.7,
-		maxDoseMgPerKgAdult: 4.4,
-		absoluteMaxDoseMgAdult: 300.0,
-		maxDoseMgPerKgPediatric: 4.4,
-		containsSulfites: true,
-		isAdrenalineFree: false,
-		clinicalDescriptionRu: 'Классическая инфильтрационная и проводниковая анестезия при непереносимости артикаина.',
-	},
-	lidocaine_plain: {
-		id: 'lidocaine_plain',
-		tradeNamesRu: ['Лидокаин 2% (чистый)', 'Ксилокаин'],
-		activeSubstanceRu: 'Лидокаин 2% (без вазоконстриктора)',
-		concentrationPercent: 2.0,
-		mgPerMlActive: 20.0,
-		vasoconstrictorNameRu: 'Без вазоконстриктора',
-		vasoconstrictorRatio: 'none',
-		epinephrineMgPerMl: 0.0,
-		defaultVolumeMl: 2.0,
-		maxDoseMgPerKgAdult: 4.4,
-		absoluteMaxDoseMgAdult: 300.0,
-		maxDoseMgPerKgPediatric: 4.4,
-		containsSulfites: false,
-		isAdrenalineFree: true,
-		clinicalDescriptionRu: 'Кратковременные манипуляции, снятие швов, ретракция десны.',
-	},
-	bupivacaine_05: {
-		id: 'bupivacaine_05',
-		tradeNamesRu: ['Маркаин 0.5% с адреналином', 'Бупивакаин Дентал'],
-		activeSubstanceRu: 'Бупивакаин 0.5% + Эпинефрин 1:200 000',
-		concentrationPercent: 0.5,
-		mgPerMlActive: 5.0,
-		vasoconstrictorNameRu: 'Эпинефрин 1:200 000',
-		vasoconstrictorRatio: '1:200000',
-		epinephrineMgPerMl: 0.005,
-		defaultVolumeMl: 1.8,
-		maxDoseMgPerKgAdult: 2.0,
-		absoluteMaxDoseMgAdult: 90.0,
-		maxDoseMgPerKgPediatric: 1.5,
-		containsSulfites: true,
-		isAdrenalineFree: false,
-		clinicalDescriptionRu: 'Длительные операции, имплантация, послеоперационное обезболивание на 6–8 часов.',
-	},
-};
+export const MRD_DRUG_CATALOG: Record<MrdDrugId, MrdDrugSpecification> = Object.fromEntries(
+	(Object.keys(DENTAL_ANESTHETICS) as MrdDrugId[]).map((drugId) => {
+		const drug = DENTAL_ANESTHETICS[drugId];
+		const maxDoseMgPerKgPediatric =
+			drugId.startsWith("articaine") ? 5.0 :
+			drugId === "bupivacaine_05" ? 1.5 : 4.4;
+		return [
+			drugId,
+			{
+				id: drug.id as MrdDrugId,
+				tradeNamesRu: drug.tradeNamesRu,
+				activeSubstanceRu: drug.activeSubstanceRu,
+				concentrationPercent: drug.activeConcentrationPercent,
+				mgPerMlActive: drug.mgPerMlActive,
+				vasoconstrictorNameRu: drug.vasoconstrictorNameRu,
+				vasoconstrictorRatio: drug.vasoconstrictorRatio,
+				epinephrineMgPerMl: drug.epinephrineMgPerMl,
+				defaultVolumeMl: (drug.id === "lidocaine_plain" ? 2.0 : drug.id === "bupivacaine_05" ? 1.8 : 1.7) as CarpuleVolumeMl,
+				maxDoseMgPerKgAdult: drug.maxDoseMgPerKgAdult,
+				absoluteMaxDoseMgAdult: drug.absoluteMaxDoseMgAdult,
+				maxDoseMgPerKgPediatric,
+				containsSulfites: drug.containsSulfites,
+				isAdrenalineFree: drug.isAdrenalineFree,
+				clinicalDescriptionRu: drug.clinicalIndicationsRu,
+			},
+		];
+	}),
+) as Record<MrdDrugId, MrdDrugSpecification>;
 
 export const EPINEPHRINE_LIMITS_MG = {
 	healthyAdult: 0.20,
