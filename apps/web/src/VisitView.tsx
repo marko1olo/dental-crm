@@ -19,12 +19,12 @@ import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import { VisitConsentsTab } from "./components/visit/VisitConsentsTab";
 import { VisitTimer } from "./components/visit/VisitTimer";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { isNegativeAllergyStatement } from "./components/patients/safetyMath";
 import { ClinicalErrorBoundary } from "./components/common/ClinicalErrorBoundary";
 import "./styles/VisitView.css";
 
 import {
 	type VisitViewProps,
+	calculateActivePatientCriticalBadges,
 	executePolishTranscriptAutonomy,
 	executeApplySomaticNormAutonomy,
 	executeApplyHygienePresetAutonomy,
@@ -190,68 +190,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		return `${years} лет`;
 	}, [activePatient?.birthDate]);
 
-	// Tier 1 Critical Badges & Autonomy (Mandates 8e, 8i)
+	// Tier 1 Critical Badges & Autonomy (Mandates 8e, 8i, 8y)
 	const activePatientCriticalBadges = useMemo(() => {
-		if (!activePatient) return [];
-		const badges: any[] = [];
-		const rawAllergies = activePatient.allergies || "";
-		const allergyText = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies);
-		if (allergyText && !isNegativeAllergyStatement(allergyText)) {
-			badges.push({
-				id: "allergy",
-				testId: "visit-focus-allergy-alert",
-				title: `Аллергоанамнез: ${allergyText}`,
-				shortLabel: "АЛЛЕРГИЯ",
-				fullLabel: `Аллергия: ${allergyText}`,
-			});
-		}
-		const somaticNotes = `${activePatient.somaticNotes || ""} ${activePatient.concomitantDiseases || ""} ${visitNoteForm?.anamnesis || ""}`.toLowerCase();
-		if (somaticNotes.includes("кардиостимулятор") || somaticNotes.includes("экс")) {
-			badges.push({
-				id: "pacemaker",
-				testId: "visit-focus-pacemaker-alert",
-				title: "Наличие ЭКС: ЗАПРЕТ УЗ-скейлера и электрокоагулятора!",
-				shortLabel: "ЭКС",
-				fullLabel: "ЭКС (кардиостимулятор) — ЗАПРЕТ УЗ!",
-			});
-		}
-		if (somaticNotes.includes("антикоагулянт") || somaticNotes.includes("варфарин") || somaticNotes.includes("ксарелто")) {
-			badges.push({
-				id: "anticoagulant",
-				testId: "visit-focus-anticoagulant-alert",
-				title: "Антикоагулянтная терапия: риск кровотечения",
-				shortLabel: "АКТ",
-				fullLabel: "Антикоагулянты (риск кровотечения)",
-			});
-		}
-		if (somaticNotes.includes("диабет") || somaticNotes.includes("сахарный диабет")) {
-			badges.push({
-				id: "diabetes",
-				testId: "visit-focus-diabetes-alert",
-				title: "Сахарный диабет: риск гипогликемии и замедленной регенерации",
-				shortLabel: "СД",
-				fullLabel: "Сахарный диабет",
-			});
-		}
-		if (somaticNotes.includes("беременн") || somaticNotes.includes("триместр")) {
-			badges.push({
-				id: "pregnancy",
-				testId: "visit-focus-pregnancy-alert",
-				title: "Беременность: ограничение адреналина и рентгена",
-				shortLabel: "БЕРЕМ.",
-				fullLabel: "Беременность",
-			});
-		}
-		if (somaticNotes.includes("бисфосфон") || somaticNotes.includes("остеопороз")) {
-			badges.push({
-				id: "bisphosphonates",
-				testId: "visit-focus-bisphosphonates-alert",
-				title: "Бисфосфонаты: риск остеонекроза челюсти!",
-				shortLabel: "БИСФОСФ.",
-				fullLabel: "Бисфосфонаты — риск некроза челюсти!",
-			});
-		}
-		return badges;
+		return calculateActivePatientCriticalBadges(activePatient, visitNoteForm?.anamnesis);
 	}, [activePatient, visitNoteForm?.anamnesis]);
 
 	const handleApplySomaticNormQuick = useCallback(() => {

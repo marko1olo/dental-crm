@@ -19,35 +19,21 @@ import { LeadConvertModal } from "./LeadConvertModal";
 import { LeadFormModal } from "./LeadFormModal";
 import { LeadsKanbanHeader } from "./LeadsKanbanHeader";
 import {
-	bookingFailureMessage,
 	COLUMNS,
-	DEFAULT_LEAD_VISIT_MINUTES,
 	FALLBACK_DEFAULT_CHAIR,
 	FALLBACK_SOLO_DOCTOR,
 	getLeadSlaStatus,
-	isLeadBookingDisabled,
 	resolveLeadBookingChairs,
 	resolveLeadBookingStaff,
 	resolveLeadVisitMinutes,
+	STAGE_DISPLAY_LABELS,
 	type BookableChair,
 	type BookableDoctor,
 } from "./leadsKanbanTypes";
 import "./leadsKanban.css";
 
-// Transparent re-exports for backwards compatibility and test imports
-export {
-	DEFAULT_LEAD_VISIT_MINUTES,
-	FALLBACK_DEFAULT_CHAIR,
-	FALLBACK_SOLO_DOCTOR,
-	isLeadBookingDisabled,
-	resolveLeadBookingChairs,
-	resolveLeadBookingStaff,
-	resolveLeadVisitMinutes,
-	type BookableChair,
-	type BookableDoctor,
-	COLUMNS,
-	bookingFailureMessage,
-};
+// Re-export all kanban types and helpers for backwards compatibility
+export * from "./leadsKanbanTypes";
 
 const LeadsFunnelAnalyticsModal = lazy(() =>
 	import("./LeadsFunnelAnalyticsModal").then((module) => ({
@@ -114,15 +100,7 @@ export function LeadsKanbanView() {
 		e.stopPropagation();
 		try {
 			await updateLeadStatus(leadId, nextStatus);
-			const stageLabels: Record<Lead["status"], string> = {
-				new: "«1. Новые»",
-				contacted: "«2. Квалифицированные»",
-				consult_booked: "«3. Консультация»",
-				showed_up: "«4. Дошли»",
-				no_answer: "«Недозвон»",
-				trash: "«Отказ»",
-			};
-			showToast(`Статус изменен на ${stageLabels[nextStatus]}`, "success");
+			showToast(`Статус изменен на ${STAGE_DISPLAY_LABELS[nextStatus] || nextStatus}`, "success");
 		} catch (err: unknown) {
 			const text =
 				err instanceof Error && err.message.trim()
@@ -288,16 +266,8 @@ export function LeadsKanbanView() {
 		if (id) {
 			void updateLeadStatus(id, status)
 				.then(() => {
-					const STAGE_LABELS: Record<Lead["status"], string> = {
-						new: "«1. Новые»",
-						contacted: "«2. Квалифицированные»",
-						consult_booked: "«3. Консультация»",
-						showed_up: "«4. Дошли»",
-						no_answer: "«Недозвон»",
-						trash: "«Отказ»",
-					};
 					showToast(
-						`Обращение переведено в статус ${STAGE_LABELS[status] || status}.`,
+						`Обращение переведено в статус ${STAGE_DISPLAY_LABELS[status] || status}.`,
 						"success",
 					);
 				})

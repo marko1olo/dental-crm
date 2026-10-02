@@ -25,6 +25,10 @@ import {
 	type ClinicalBundleItemTemplate,
 } from "./treatmentPlanBundlesPresets";
 import { computeTierInstallments } from "./treatmentPlanStagesEngine";
+import {
+	type CatalogServiceLookupItem,
+	matchCatalogService,
+} from "./treatmentPlanPricingEngine";
 import type {
 	CashierInvoiceExportData,
 	NdflDeductionResult,
@@ -130,11 +134,13 @@ export interface CreateBundlePlanItemsOptions {
 	readonly toothNumber?: number | undefined;
 	readonly selectedItemIds?: readonly string[] | undefined;
 	readonly customPriceMap?: Record<string, number> | undefined;
+	readonly catalogPricelist?: readonly CatalogServiceLookupItem[] | undefined;
+	readonly isDemoMode?: boolean | undefined;
 }
 
 /**
  * Создать массив элементов плана лечения (TreatmentPlanItem[]) для указанного пакета.
- * Поддерживает как простой вызов toothNumber, так и объект options с фильтрацией позиций.
+ * Поддерживает как простой вызов toothNumber, так и объект options с фильтрацией позиций и каталогом цен клиники.
  */
 export function createBundlePlanItems(
 	bundleId: ClinicalBundleId,
@@ -148,6 +154,8 @@ export function createBundlePlanItems(
 	let toothNumber: number | undefined;
 	let selectedItemIds: readonly string[] | undefined;
 	let customPriceMap: Record<string, number> | undefined;
+	let catalogPricelist: readonly CatalogServiceLookupItem[] | undefined;
+	let isDemoMode: boolean | undefined;
 
 	if (typeof toothNumberOrOptions === "number") {
 		toothNumber = toothNumberOrOptions;
@@ -155,6 +163,8 @@ export function createBundlePlanItems(
 		toothNumber = toothNumberOrOptions.toothNumber;
 		selectedItemIds = toothNumberOrOptions.selectedItemIds;
 		customPriceMap = toothNumberOrOptions.customPriceMap;
+		catalogPricelist = toothNumberOrOptions.catalogPricelist;
+		isDemoMode = toothNumberOrOptions.isDemoMode;
 	}
 
 	const effectiveTooth = bundle.requiresTooth
@@ -167,22 +177,50 @@ export function createBundlePlanItems(
 	const now = Date.now();
 
 	return breakdown.selectedItems.map((item, idx) => {
-		const priceRub =
-			customPriceMap && customPriceMap[item.id] !== undefined
-				? Math.max(0, customPriceMap[item.id]!)
-				: item.defaultPriceRub;
+		let finalPriceRub: number;
+		let priceId: string;
+		let fromCatalog = false;
+		let isDraft = false;
+		let requiresManualPricing = false;
+
+		if (customPriceMap && customPriceMap[item.id] !== undefined) {
+			finalPriceRub = Math.max(0, customPriceMap[item.id]!);
+			priceId = `custom-${bundle.id}-${item.id}`;
+			fromCatalog = false;
+		} else if (catalogPricelist && catalogPricelist.length > 0) {
+			const matched = matchCatalogService(
+				catalogPricelist,
+				item.category,
+				[item.name, item.code804n],
+				item.defaultPriceRub,
+				item.code804n,
+				isDemoMode !== undefined ? { isDemoMode } : undefined,
+			);
+			finalPriceRub = matched.priceRub;
+			priceId = matched.priceId || `bundle-${bundle.id}-${item.id}`;
+			fromCatalog = matched.fromCatalog;
+			isDraft = matched.isDraft;
+			requiresManualPricing = matched.requiresManualPricing;
+		} else {
+			finalPriceRub = item.defaultPriceRub;
+			priceId = `bundle-${bundle.id}-${item.id}`;
+			fromCatalog = true;
+			isDraft = false;
+			requiresManualPricing = false;
+		}
 
 		const toothPrefix = effectiveTooth ? `[Зуб ${effectiveTooth}] ` : "";
 		const uniqueId = `item-bundle-${bundle.id}-${effectiveTooth ?? "mouth"}-${now}-${idx + 1}`;
 
 		return {
 			id: uniqueId,
+			priceId,
 			toothNumber: effectiveTooth,
 			code804n: item.code804n,
 			name: `${toothPrefix}${item.name}`,
 			category: item.category,
-			priceRub,
-			unitPriceRub: priceRub,
+			priceRub: finalPriceRub,
+			unitPriceRub: finalPriceRub,
 			discountRub: 0,
 			quantity: 1,
 			phase: bundle.stageNumber,
@@ -190,9 +228,9 @@ export function createBundlePlanItems(
 			isAuto: false,
 			materials: item.materials,
 			clinicalRationale: item.clinicalRationale,
-			fromCatalog: true,
-			isDraft: false,
-			requiresManualPricing: false,
+			fromCatalog,
+			isDraft,
+			requiresManualPricing,
 		};
 	});
 }

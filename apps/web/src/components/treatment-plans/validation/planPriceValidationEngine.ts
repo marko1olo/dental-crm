@@ -110,6 +110,8 @@ export interface PlanPriceValidationReport {
 	readonly adminOverride: AdminOverrideMetadata;
 }
 
+export type TreatmentPlanPriceValidationReport = PlanPriceValidationReport;
+
 export interface WorkOrderExportItem {
 	readonly itemId: string;
 	readonly toothNumber?: number | undefined;

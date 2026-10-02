@@ -427,7 +427,8 @@ export function calculateDoctorPeriodPayroll(
 	}
 
 	const grossPayout = Math.max(0, preGuaranteePayout);
-	const ndfl13 = Math.round((grossPayout * 13) / 100);
+	// Округление НДФЛ 13% строго до целых рублей (п. 6 ст. 225 НК РФ)
+	const ndfl13 = Math.round((grossPayout * 13) / 10000) * 100;
 	const netToDoctor = Math.max(0, grossPayout - ndfl13);
 
 	return {
@@ -489,7 +490,8 @@ export function calculateAssistantPeriodPayroll(
 	const radiographPayout = totalRadiographs * rules.radiographBonusKop;
 	const surgeryPayout = totalSurgeries * rules.surgeryAssistanceBonusKop;
 	const grossTotal = baseShiftPayout + radiographPayout + surgeryPayout;
-	const ndfl13 = Math.round((grossTotal * 13) / 100);
+	// Округление НДФЛ 13% строго до целых рублей (п. 6 ст. 225 НК РФ)
+	const ndfl13 = Math.round((grossTotal * 13) / 10000) * 100;
 	const netToAssistant = Math.max(0, grossTotal - ndfl13);
 
 	return {

@@ -199,6 +199,21 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 				})
 				: auxHook.fiscalReceipt;
 
+			// 54-ФЗ / ФФД 1.2 & Мандат 8e: 100% гарантийная скидка (0.00 ₽) — чек в ККТ не отправляется, формируется внутренний Акт гарантии
+			if (activeTab === "payment" && (receiptToFiscalize.totalRub <= 0 || receiptToFiscalize.isWarrantyZeroAct)) {
+				showToast(
+					`Оформлен Акт гарантийного обслуживания / списания услуг №${receiptToFiscalize.receiptNumber} (скидка 100%, 0 ₽). Визит закрыт без обращения к кассе!`,
+					"success",
+					5000,
+				);
+				if (onReceiptFiscalized) {
+					onReceiptFiscalized(receiptToFiscalize.receiptNumber);
+				}
+				setInterruptedFiscalState(null);
+				setActiveTab("act");
+				return;
+			}
+
 			showToast(
 				`${opText} №${receiptToFiscalize.receiptNumber} на сумму ${formatMoneyRu(receiptToFiscalize.totalRub)} успешно фискализирован в ОФД!`,
 				"success",
@@ -255,6 +270,12 @@ export function useFiscalReceipt54FzLogic(props: FiscalReceipt54FzModalProps) {
 	};
 
 	const handleRetryFiscalizationWithoutBalanceImpact = async () => {
+		if (itemsHook.totalSumRub <= 0) {
+			showToast("Оформлен Акт гарантийного обслуживания (скидка 100%, 0 ₽). Фискализация не требуется.", "info", 4000);
+			setInterruptedFiscalState(null);
+			setActiveTab("act");
+			return;
+		}
 		setIsFiscalizing(true);
 		try {
 			const printPayload: FiscalReceiptPrintPayload = {

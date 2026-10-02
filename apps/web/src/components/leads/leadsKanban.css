@@ -175,7 +175,6 @@
 	color: var(--teal-dark, var(--teal));
 	font-weight: 600;
 }
-
 .expanded-focus-metric-pill--breached {
 	background: var(--rust-soft);
 	color: var(--rust);
@@ -204,7 +203,6 @@
 	transition: all 0.15s ease;
 	line-height: 1;
 }
-
 .expanded-focus-close-btn:hover {
 	background: var(--paper-soft);
 	color: var(--ink);
@@ -283,17 +281,9 @@
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-.expanded-focus-tab--fresh.is-active {
-	color: var(--ok-fg);
-}
-
-.expanded-focus-tab--warning.is-active {
-	color: var(--amber-dark, var(--amber));
-}
-
-.expanded-focus-tab--breached.is-active {
-	color: var(--rust);
-}
+.expanded-focus-tab--fresh.is-active { color: var(--ok-fg); }
+.expanded-focus-tab--warning.is-active { color: var(--amber-dark, var(--amber)); }
+.expanded-focus-tab--breached.is-active { color: var(--rust); }
 
 .expanded-focus-sort-cluster {
 	display: flex;
@@ -468,15 +458,10 @@
 }
 
 @media (max-width: 1280px) {
-	.expanded-focus-cards-grid {
-		grid-template-columns: repeat(2, 1fr);
-	}
+	.expanded-focus-cards-grid { grid-template-columns: repeat(2, 1fr); }
 }
-
 @media (max-width: 768px) {
-	.expanded-focus-cards-grid {
-		grid-template-columns: 1fr;
-	}
+	.expanded-focus-cards-grid { grid-template-columns: 1fr; }
 }
 
 .expanded-focus-card {
@@ -491,17 +476,14 @@
 	transition: all 0.15s ease;
 	cursor: pointer;
 }
-
 .expanded-focus-card:hover {
 	border-color: var(--teal);
 	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
-
 .expanded-focus-card.is-selected {
 	border-color: var(--teal);
 	background: var(--teal-soft);
 }
-
 .expanded-focus-card.has-sla-breach {
 	border-left: 3px solid var(--rust);
 }
@@ -563,6 +545,26 @@
 .expanded-focus-phone-link:hover {
 	text-decoration: underline;
 	color: var(--teal);
+}
+
+.expanded-focus-whatsapp-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--teal-dark, var(--teal));
+	background: var(--teal-soft);
+	border: 1px solid var(--teal);
+	border-radius: 4px;
+	padding: 1px 4px;
+	text-decoration: none;
+	font-size: 11px;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+}
+
+.expanded-focus-whatsapp-link:hover {
+	background: var(--teal);
+	color: var(--paper-strong, #ffffff);
 }
 
 .expanded-focus-card-notes {
@@ -648,28 +650,10 @@
 	border: 1px solid var(--teal);
 	flex: 1;
 }
-
-.expanded-focus-action-btn--advance:hover {
-	background: var(--teal);
-	color: var(--paper-strong, #ffffff);
-}
-
-.expanded-focus-action-btn--schedule {
-	background: var(--paper-soft);
-	color: var(--ink);
-	border: 1px solid var(--line);
-}
-
-.expanded-focus-action-btn--schedule:hover {
-	border-color: var(--teal);
-	color: var(--teal);
-}
-
-.expanded-focus-action-btn--patient {
-	background: var(--ok-bg);
-	color: var(--ok-fg);
-	border: 1px solid var(--line);
-}
+.expanded-focus-action-btn--advance:hover { background: var(--teal); color: var(--paper-strong, #ffffff); }
+.expanded-focus-action-btn--schedule { background: var(--paper-soft); color: var(--ink); border: 1px solid var(--line); }
+.expanded-focus-action-btn--schedule:hover { border-color: var(--teal); color: var(--teal); }
+.expanded-focus-action-btn--patient { background: var(--ok-bg); color: var(--ok-fg); border: 1px solid var(--line); }
 
 /* VIEW 2: CLINICAL SPREADSHEET (32px Dense Table) */
 .expanded-focus-table-container {
@@ -718,22 +702,10 @@
 	white-space: nowrap;
 }
 
-.expanded-focus-tr {
-	transition: background 0.15s ease;
-	cursor: pointer;
-}
-
-.expanded-focus-tr:hover {
-	background: var(--paper-soft);
-}
-
-.expanded-focus-tr.is-selected {
-	background: var(--teal-soft);
-}
-
-.expanded-focus-tr.is-breached-row {
-	border-left: 3px solid var(--rust);
-}
+.expanded-focus-tr { transition: background 0.15s ease; cursor: pointer; }
+.expanded-focus-tr:hover { background: var(--paper-soft); }
+.expanded-focus-tr.is-selected { background: var(--teal-soft); }
+.expanded-focus-tr.is-breached-row { border-left: 3px solid var(--rust); }
 
 .expanded-focus-table-name {
 	font-weight: 600;
@@ -742,7 +714,6 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-
 .expanded-focus-table-source {
 	font-size: 11px;
 	color: var(--muted);
@@ -750,7 +721,6 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-
 .expanded-focus-table-notes {
 	font-size: 11.5px;
 	color: var(--ink);

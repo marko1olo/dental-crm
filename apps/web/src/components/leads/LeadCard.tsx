@@ -20,11 +20,13 @@ import {
 	Eye,
 	FileText,
 	Globe,
+	MessageSquare,
 	Phone,
 	Tag,
 	UserPlus,
 } from "lucide-react";
 import type { Lead } from "../../store/leadsStore";
+import { formatWhatsAppUrl } from "../messaging/omnichannelEngine";
 import {
 	CHANNEL_BADGE_COLORS,
 	CHANNEL_DISPLAY_NAMES,
@@ -259,6 +261,34 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 							title="Позвонить контакту"
 						>
 							{lead.phone}
+						</a>
+						<a
+							href={formatWhatsAppUrl(
+								lead.phone,
+								`Здравствуйте, ${lead.name}! Вас беспокоит стоматологическая клиника DENTE.`,
+							)}
+							target="_blank"
+							rel="noopener noreferrer"
+							onClick={(e) => e.stopPropagation()}
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								color: "var(--teal-dark, var(--teal))",
+								background: "var(--teal-soft)",
+								border: "1px solid var(--teal)",
+								borderRadius: 4,
+								padding: "1px 4px",
+								textDecoration: "none",
+								fontSize: 10,
+								flexShrink: 0,
+								marginLeft: 2,
+							}}
+							title="Написать пациенту в WhatsApp"
+							aria-label="Написать пациенту в WhatsApp"
+							data-testid={`lead-whatsapp-btn-${lead.id}`}
+						>
+							<MessageSquare size={10} />
 						</a>
 					</div>
 				) : (

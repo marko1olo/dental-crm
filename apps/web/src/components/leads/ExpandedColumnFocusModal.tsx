@@ -26,6 +26,7 @@ import {
 	Globe,
 	LayoutGrid,
 	Maximize2,
+	MessageSquare,
 	Minimize2,
 	Phone,
 	Search,
@@ -38,6 +39,7 @@ import {
 	X,
 } from "lucide-react";
 import type { Lead, LeadStatus } from "../../store/leadsStore";
+import { formatWhatsAppUrl } from "../messaging/omnichannelEngine";
 import {
 	CHANNEL_BADGE_COLORS,
 	CHANNEL_DISPLAY_NAMES,
@@ -669,6 +671,21 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 													>
 														{lead.phone}
 													</a>
+													<a
+														href={formatWhatsAppUrl(
+															lead.phone,
+															`Здравствуйте, ${lead.name}! Вас беспокоит стоматологическая клиника DENTE.`,
+														)}
+														target="_blank"
+														rel="noopener noreferrer"
+														onClick={(e) => e.stopPropagation()}
+														className="expanded-focus-whatsapp-link"
+														title="Написать пациенту в WhatsApp"
+														aria-label="Написать пациенту в WhatsApp"
+														data-testid={`focus-lead-whatsapp-${lead.id}`}
+													>
+														<MessageSquare size={11} />
+													</a>
 												</div>
 											) : (
 												<div />
@@ -872,13 +889,30 @@ export const ExpandedColumnFocusModal: React.FC<ExpandedColumnFocusModalProps> =
 												{/* Phone */}
 												<td>
 													{lead.phone ? (
-														<a
-															href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
-															onClick={(e) => e.stopPropagation()}
-															className="expanded-focus-phone-link"
-														>
-															{lead.phone}
-														</a>
+														<div className="flex items-center gap-1.5">
+															<a
+																href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
+																onClick={(e) => e.stopPropagation()}
+																className="expanded-focus-phone-link"
+															>
+																{lead.phone}
+															</a>
+															<a
+																href={formatWhatsAppUrl(
+																	lead.phone,
+																	`Здравствуйте, ${lead.name}! Вас беспокоит стоматологическая клиника DENTE.`,
+																)}
+																target="_blank"
+																rel="noopener noreferrer"
+																onClick={(e) => e.stopPropagation()}
+																className="expanded-focus-whatsapp-link"
+																title="Написать пациенту в WhatsApp"
+																aria-label="Написать пациенту в WhatsApp"
+																data-testid={`focus-table-whatsapp-${lead.id}`}
+															>
+																<MessageSquare size={11} />
+															</a>
+														</div>
 													) : (
 														<span className="text-[var(--muted)]">—</span>
 													)}

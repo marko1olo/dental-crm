@@ -55,6 +55,8 @@ export interface StarProtocolValidationSummary {
 	readonly validatedAtIso: string;
 }
 
+export type TreatmentPlanStarValidationReport = StarProtocolValidationSummary;
+
 export interface MutuallyExclusiveToothConflict {
 	readonly toothNumber: number;
 	readonly conflictType: "EXTRACTION_VS_PRESERVATION" | "EXTRACTION_VS_PROSTHETICS";

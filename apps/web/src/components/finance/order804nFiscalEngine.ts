@@ -25,6 +25,8 @@ import {
 	resolveTaxDeductionCategoryShared,
 	EXPENSIVE_TREATMENT_804N_CODES,
 	TAX_DEDUCTION_RELATIONSHIP_MAP,
+	computeFpd54Fz,
+	kopecksToNumericString,
 } from "@dental/shared";
 export const ANNUAL_TAX_DEDUCTION_LIMIT_RUB = 150000;
 export const ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 = 150000;
@@ -165,6 +167,8 @@ export interface FiscalReceipt54FzResult {
 	readonly originalFiscalDocumentNumber?: string | undefined;
 	readonly originalFiscalSign?: string | undefined;
 	readonly refundReason?: string | undefined;
+	/** ФФД 1.2 / 54-ФЗ: Признак внутреннего акта гарантийного обслуживания (скидка 100%, 0.00 ₽, без обращения к ККТ) */
+	readonly isWarrantyZeroAct?: boolean | undefined;
 }
 
 export type TaxDeductionRelationship = "self" | "spouse" | "parent" | "child";
@@ -867,15 +871,32 @@ export function generateFiscalReceipt54Fz(params: {
 		second: "2-digit",
 	});
 
-	const prefix = operationType === "income_return" ? "CHK-RET" : isCorrection ? "CHK-COR" : "CHK";
+	const isWarrantyZeroAct = payments.totalKopecks === 0;
+	const prefix = isWarrantyZeroAct
+		? "АКТ-ГАР"
+		: operationType === "income_return"
+			? "CHK-RET"
+			: isCorrection
+				? "CHK-COR"
+				: "CHK";
 	const receiptNumber =
 		customReceiptNumber ||
 		`${prefix}-${now.getFullYear()}-0001`;
-	const fnSerial = "9960440301234567";
-	const fiscalDocumentNumber = "1001";
-	const fiscalSign = "1234567890";
+	const fnSerial = isWarrantyZeroAct ? "0000000000000000" : "9960440301234567";
+	const fiscalDocumentNumber = isWarrantyZeroAct ? "0" : "1001";
+	const fiscalSign = isWarrantyZeroAct
+		? "0000000000"
+		: computeFpd54Fz({
+				fnSerial,
+				fiscalDocumentNumber,
+				issuedAt: now,
+				totalKopecks: payments.totalKopecks,
+				operationType,
+			});
 
-	const ofdUrl = `https://ofd.ru/check?fn=${fnSerial}&fd=${fiscalDocumentNumber}&fpd=${fiscalSign}&s=${payments.totalRub}.00&n=${operationType === "income_return" ? "2" : "1"}`;
+	const ofdUrl = isWarrantyZeroAct
+		? ""
+		: `https://ofd.ru/check?fn=${fnSerial}&fd=${fiscalDocumentNumber}&fpd=${fiscalSign}&s=${kopecksToNumericString(payments.totalKopecks)}&n=${operationType === "income_return" ? "2" : "1"}`;
 
 	// SBP QR generation if SBP payment amount > 0 and operation is regular income
 	let sbpPayloadUrl: string | undefined;
@@ -951,6 +972,7 @@ export function generateFiscalReceipt54Fz(params: {
 		payerType,
 		...(buyerInn?.trim() ? { buyerInn: buyerInn.trim() } : {}),
 		...(buyerName?.trim() ? { buyerName: buyerName.trim() } : {}),
+		...(isWarrantyZeroAct ? { isWarrantyZeroAct: true } : {}),
 	};
 }
 

@@ -163,6 +163,15 @@ export const COLUMNS: {
 	},
 ];
 
+export const STAGE_DISPLAY_LABELS: Record<LeadStatus, string> = {
+	new: "«1. Новые»",
+	contacted: "«2. Квалифицированные»",
+	consult_booked: "«3. Консультация»",
+	showed_up: "«4. Дошли»",
+	no_answer: "«Недозвон»",
+	trash: "«Отказ»",
+};
+
 /** The 4 canonical active funnel stages for the primary clinic patient flow */
 export const CORE_FUNNEL_COLUMNS = COLUMNS.slice(0, 4);
 

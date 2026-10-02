@@ -14,7 +14,8 @@
  *   Zero friction on the hot path: lead conversion must work smoothly with sensible defaults.
  */
 
-import { describe, it, expect } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
 	DEFAULT_LEAD_VISIT_MINUTES,
 	FALLBACK_DEFAULT_CHAIR,
@@ -25,7 +26,7 @@ import {
 	resolveLeadVisitMinutes,
 	type BookableChair,
 	type BookableDoctor,
-} from "../LeadsKanbanView.js";
+} from "../leadsKanbanTypes.js";
 
 describe("Leads Kanban Booking Autonomy — Solo Doctor & Zero Dead-Ends (Mandates 8e, 8n, 8k)", () => {
 	describe("1. resolveLeadBookingStaff — Fallback Doctor Autonomy", () => {
@@ -33,17 +34,17 @@ describe("Leads Kanban Booking Autonomy — Solo Doctor & Zero Dead-Ends (Mandat
 			const emptyStaff: BookableDoctor[] = [];
 			const result = resolveLeadBookingStaff(emptyStaff);
 
-			expect(result).toHaveLength(1);
-			expect(result[0]).toEqual(FALLBACK_SOLO_DOCTOR);
-			expect(result[0]?.id).toBe("default-doctor");
-			expect(result[0]?.fullName).toBe("Дежурный врач (соло-практика)");
-			expect(result[0]?.role).toBe("doctor");
-			expect(result[0]?.active).toBe(true);
+			assert.equal(result.length, 1);
+			assert.deepEqual(result[0], FALLBACK_SOLO_DOCTOR);
+			assert.equal(result[0]?.id, "default-doctor");
+			assert.equal(result[0]?.fullName, "Дежурный врач (соло-практика)");
+			assert.equal(result[0]?.role, "doctor");
+			assert.equal(result[0]?.active, true);
 		});
 
 		it("returns FALLBACK_SOLO_DOCTOR when staff is null or undefined", () => {
-			expect(resolveLeadBookingStaff(null)[0]?.id).toBe("default-doctor");
-			expect(resolveLeadBookingStaff(undefined)[0]?.id).toBe("default-doctor");
+			assert.equal(resolveLeadBookingStaff(null)[0]?.id, "default-doctor");
+			assert.equal(resolveLeadBookingStaff(undefined)[0]?.id, "default-doctor");
 		});
 
 		it("preserves real staff when active doctors are present in clinic settings", () => {
@@ -65,9 +66,9 @@ describe("Leads Kanban Booking Autonomy — Solo Doctor & Zero Dead-Ends (Mandat
 			];
 
 			const result = resolveLeadBookingStaff(realStaff);
-			expect(result).toHaveLength(2);
-			expect(result[0]?.id).toBe("doc-1");
-			expect(result[1]?.id).toBe("doc-2");
+			assert.equal(result.length, 2);
+			assert.equal(result[0]?.id, "doc-1");
+			assert.equal(result[1]?.id, "doc-2");
 		});
 	});
 
@@ -76,15 +77,15 @@ describe("Leads Kanban Booking Autonomy — Solo Doctor & Zero Dead-Ends (Mandat
 			const emptyChairs: BookableChair[] = [];
 			const result = resolveLeadBookingChairs(emptyChairs);
 
-			expect(result).toHaveLength(1);
-			expect(result[0]).toEqual(FALLBACK_DEFAULT_CHAIR);
-			expect(result[0]?.id).toBe("default-chair");
-			expect(result[0]?.name).toBe("Кресло №1 (Основное)");
+			assert.equal(result.length, 1);
+			assert.deepEqual(result[0], FALLBACK_DEFAULT_CHAIR);
+			assert.equal(result[0]?.id, "default-chair");
+			assert.equal(result[0]?.name, "Кресло №1 (Основное)");
 		});
 
 		it("returns FALLBACK_DEFAULT_CHAIR when chairs is null or undefined", () => {
-			expect(resolveLeadBookingChairs(null)[0]?.id).toBe("default-chair");
-			expect(resolveLeadBookingChairs(undefined)[0]?.id).toBe("default-chair");
+			assert.equal(resolveLeadBookingChairs(null)[0]?.id, "default-chair");
+			assert.equal(resolveLeadBookingChairs(undefined)[0]?.id, "default-chair");
 		});
 
 		it("preserves real chairs when configured in clinic settings", () => {
@@ -94,41 +95,40 @@ describe("Leads Kanban Booking Autonomy — Solo Doctor & Zero Dead-Ends (Mandat
 			];
 
 			const result = resolveLeadBookingChairs(realChairs);
-			expect(result).toHaveLength(2);
-			expect(result[0]?.id).toBe("chair-alpha");
-			expect(result[1]?.id).toBe("chair-beta");
+			assert.equal(result.length, 2);
+			assert.equal(result[0]?.id, "chair-alpha");
+			assert.equal(result[1]?.id, "chair-beta");
 		});
 	});
 
 	describe("3. resolveLeadVisitMinutes — Default Duration Autonomy", () => {
 		it("returns DEFAULT_LEAD_VISIT_MINUTES (30) when clinic settings are not yet loaded (null)", () => {
-			expect(resolveLeadVisitMinutes(null)).toBe(30);
-			expect(DEFAULT_LEAD_VISIT_MINUTES).toBe(30);
+			assert.equal(resolveLeadVisitMinutes(null), 30);
+			assert.equal(DEFAULT_LEAD_VISIT_MINUTES, 30);
 		});
 
 		it("returns DEFAULT_LEAD_VISIT_MINUTES (30) when visitMinutes is undefined or 0", () => {
-			expect(resolveLeadVisitMinutes(undefined)).toBe(30);
-			expect(resolveLeadVisitMinutes(0)).toBe(30);
+			assert.equal(resolveLeadVisitMinutes(undefined), 30);
+			assert.equal(resolveLeadVisitMinutes(0), 30);
 		});
 
 		it("preserves custom clinic defaultVisitMinutes when configured", () => {
-			expect(resolveLeadVisitMinutes(45)).toBe(45);
-			expect(resolveLeadVisitMinutes(60)).toBe(60);
-			expect(resolveLeadVisitMinutes(120)).toBe(120);
+			assert.equal(resolveLeadVisitMinutes(45), 45);
+			assert.equal(resolveLeadVisitMinutes(60), 60);
+			assert.equal(resolveLeadVisitMinutes(120), 120);
 		});
 	});
 
 	describe("4. isLeadBookingDisabled — Non-Blocking Submit Autonomy (Mandate 8e)", () => {
 		it("submit button is NOT disabled when isBooking is false", () => {
-			expect(isLeadBookingDisabled(false)).toBe(false);
+			assert.equal(isLeadBookingDisabled(false), false);
 		});
 
 		it("submit button is disabled ONLY during active in-flight booking request (isBooking = true)", () => {
-			expect(isLeadBookingDisabled(true)).toBe(true);
+			assert.equal(isLeadBookingDisabled(true), true);
 		});
 
 		it("truth table: unconfigured clinic never disables the submit button", () => {
-			// Simulating unconfigured clinic states
 			const unconfiguredStates = [
 				{ staffCount: 0, chairCount: 0, visitMinutes: null, isBooking: false },
 				{ staffCount: 0, chairCount: 1, visitMinutes: 30, isBooking: false },
@@ -142,10 +142,10 @@ describe("Leads Kanban Booking Autonomy — Solo Doctor & Zero Dead-Ends (Mandat
 				const effectiveMins = resolveLeadVisitMinutes(state.visitMinutes);
 				const disabled = isLeadBookingDisabled(state.isBooking);
 
-				expect(effectiveStaff.length > 0).toBe(true);
-				expect(effectiveChairs.length > 0).toBe(true);
-				expect(effectiveMins > 0).toBe(true);
-				expect(disabled).toBe(false);
+				assert.equal(effectiveStaff.length > 0, true);
+				assert.equal(effectiveChairs.length > 0, true);
+				assert.equal(effectiveMins > 0, true);
+				assert.equal(disabled, false);
 			}
 		});
 	});
@@ -166,18 +166,18 @@ describe("Leads Kanban Booking Autonomy — Solo Doctor & Zero Dead-Ends (Mandat
 			const finalDoctorId = selectedDoctorId || effectiveStaff[0]?.id || FALLBACK_SOLO_DOCTOR.id;
 			const finalChairId = selectedChairId || effectiveChairs[0]?.id || FALLBACK_DEFAULT_CHAIR.id;
 
-			expect(finalDoctorId).toBe("default-doctor");
-			expect(finalChairId).toBe("default-chair");
-			expect(duration).toBe(30);
+			assert.equal(finalDoctorId, "default-doctor");
+			assert.equal(finalChairId, "default-chair");
+			assert.equal(duration, 30);
 
 			const appointmentDate = "2026-09-07";
 			const appointmentTime = "14:00";
 			const startDateTime = new Date(`${appointmentDate}T${appointmentTime}:00`);
 			const endDateTime = new Date(startDateTime.getTime() + duration * 60000);
 
-			expect(endDateTime.getTime() - startDateTime.getTime()).toBe(30 * 60000);
-			expect(Number.isNaN(startDateTime.getTime())).toBe(false);
-			expect(Number.isNaN(endDateTime.getTime())).toBe(false);
+			assert.equal(endDateTime.getTime() - startDateTime.getTime(), 30 * 60000);
+			assert.equal(Number.isNaN(startDateTime.getTime()), false);
+			assert.equal(Number.isNaN(endDateTime.getTime()), false);
 		});
 	});
 });

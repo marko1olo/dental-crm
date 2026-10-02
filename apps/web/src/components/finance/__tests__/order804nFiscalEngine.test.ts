@@ -581,6 +581,40 @@ describe("order804nFiscalEngine — 54-FZ & SBP QR Fiscalization", () => {
 		assert.equal(payload.paymentsDistribution.electronicKop, 0);
 		assert.equal(payload.clientContact, "+7 (999) 777-66-55");
 	});
+
+	it("handles 100% warranty discount (0.00 ₽) generating internal warranty act without OFD transmission", () => {
+		const warrantyItems: TreatmentPlanItem[] = [
+			{
+				id: "proc-warranty-1",
+				toothNumber: 26,
+				code804n: "A16.07.002.001",
+				name: "Коррекция пломбы по гарантии",
+				category: "Терапия",
+				stageKind: "stage_1_therapy",
+				unitPriceRub: 4000,
+				priceRub: 0,
+				quantity: 1,
+				discountRub: 4000,
+			},
+		];
+
+		const receipt = generateFiscalReceipt54Fz({
+			items: warrantyItems,
+			splitPayment: { cashRub: 0, cardRub: 0 },
+			patientId: "patient-warranty-1",
+			patientName: "Гарантийный Пациент",
+			customerContact: "+7 (999) 000-11-22",
+			cashierFullName: "Иванова А. С.",
+		});
+
+		assert.equal(receipt.totalRub, 0);
+		assert.equal(receipt.totalKopecks, 0);
+		assert.equal(receipt.isWarrantyZeroAct, true);
+		assert.ok(receipt.receiptNumber.startsWith("АКТ-ГАР-"));
+		assert.equal(receipt.ofdUrl, "");
+		assert.equal(receipt.fiscalDocumentNumber, "0");
+		assert.equal(receipt.fiscalSign, "0000000000");
+	});
 });
 
 

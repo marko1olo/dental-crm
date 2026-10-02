@@ -12,45 +12,32 @@
  *    - Рассрочка 0% без переплат (3, 6, 12, 24 мес).
  *    - Поэтапная оплата 30/40/30 (Аванс -> Хирургия -> Ортопедия).
  *    - Скидка 5% при 100% единовременной оплате.
- * 4. Налоговый вычет 13% НДФЛ по НК РФ:
- *    - Код 01 (обычное лечение с лимитом 150 000 ₽) / Код 02 (дорогостоящее лечение без лимита).
- *    - Отображение точной суммы возврата и чистой стоимости с учетом вычета.
- * 5. Жестко зафиксированный подвал (sticky bottom-0 bg-[var(--paper-soft)] border-t) с кнопками «Утвердить план», «Рассрочка 0%», «Договор (QR)».
+ * 4. Налоговый вычет 13% НДФЛ по НК РФ.
+ * 5. Жестко зафиксированный подвал (sticky bottom-0) с кнопками утверждения плана и рассрочки.
  * 6. Анти-матрешка: плоские клинические этапы и номенклатура 804н без вложенных коробок.
+ *
+ * Архитектурно декомпозирован согласно Engineering Rule 2 (< 300 строк):
+ * - TreatmentPlanTierCard: карточка отдельного тарифа со всеми расчетами и действиями.
+ * - TreatmentPlan3TierToolbar: верхняя компактная панель переключения режимов.
+ * - TreatmentPlanRoadmapGrid: бесшовная плоская сетка клинического маршрута.
  */
 
 import React, { useEffect, useState } from "react";
+import { Clock, Star } from "lucide-react";
 import {
-	Calendar,
-	Check,
-	CheckCircle2,
-	ChevronDown,
-	ChevronUp,
-	Clock,
-	Coins,
-	Copy,
-	CreditCard,
-	Crown,
-	FileCheck,
-	Layers,
-	PenTool,
-	Percent,
-	Printer,
-	Share2,
-	Shield,
-	ShieldCheck,
-	Sparkles,
-	Star,
-} from "lucide-react";
-import { parseKopecks } from "@dental/shared";
-import { formatWarrantyYearsText, type TreatmentPlanTier, type TreatmentPlanTierId } from "./types";
-import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
+	formatWarrantyYearsText,
+	type TreatmentPlanTier,
+	type TreatmentPlanTierId,
+} from "./types";
+import { formatPlanPriceRub } from "./planPricing";
 import {
-	calculateInstallmentScheduleKopecks,
-	calculateStagedPaymentScheduleKopecks,
-	formatPlanPriceRub,
-	isPlanPriceImmutable,
-} from "./planPricing";
+	formatServiceLifeYearsText,
+	TreatmentPlanTierCard,
+} from "./TreatmentPlanTierCard";
+import { TreatmentPlan3TierToolbar } from "./TreatmentPlan3TierToolbar";
+import { TreatmentPlanRoadmapGrid } from "./TreatmentPlanRoadmapGrid";
+
+export { formatServiceLifeYearsText } from "./TreatmentPlanTierCard";
 
 export interface TreatmentPlan3TierComparisonProps {
 	readonly tiers: readonly TreatmentPlanTier[];
@@ -76,20 +63,6 @@ function getTierShortLabel(tier: TreatmentPlanTier): string {
 	if (lowerTitle.includes("стандарт") || lowerTitle.includes("оптимал")) return "Оптимум";
 	if (lowerTitle.includes("премиум") || lowerTitle.includes("vip")) return "Премиум";
 	return tier.badge || tier.title || "Тариф";
-}
-
-export function formatServiceLifeYearsText(
-	serviceLifeYears: string | number | undefined,
-	tierId: TreatmentPlanTierId,
-): string {
-	if (serviceLifeYears !== undefined && serviceLifeYears !== null && serviceLifeYears !== "") {
-		if (typeof serviceLifeYears === "number") return `${serviceLifeYears} лет`;
-		return String(serviceLifeYears);
-	}
-	if (tierId === "economy") return "до 5–7 лет";
-	if (tierId === "standard") return "15–20 лет";
-	if (tierId === "optimum") return "25+ лет (пожизненно)";
-	return "10–15 лет";
 }
 
 export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparisonProps> = ({
@@ -185,408 +158,25 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 	const activeTier = tiers.find((t) => t.tierId === activeTierId) ?? tiers[0]!;
 
-	/**
-	 * Рендеринг карточки тарифа с полным клинико-финансовым расчетом
-	 */
-	const renderTierCard = (tier: TreatmentPlanTier, isMobile: boolean) => {
-		const isSelected = activeTierId === tier.tierId;
-		const isExpandedStages = expandedStagesTierId === tier.tierId;
-
-		// Financial Calculations in whole rubles with kopeck-exact precision (Mandates 8b, 8e, 8n)
-		const safeTotalRub = Number.isFinite(tier.totalRub) ? tier.totalRub : 0;
-		const effectiveTotalKopecks =
-			tier.totalKopecks || (safeTotalRub > 0 ? parseKopecks(safeTotalRub) : 0);
-
-		// Kopeck-exact installment 0% calculation
-		const exactInstallment = calculateInstallmentScheduleKopecks(
-			effectiveTotalKopecks,
-			installmentMonths,
-		);
-		const monthlyPayment =
-			tier.installments?.[installmentMonths]?.monthlyPaymentRub ??
-			exactInstallment.monthlyPaymentRub;
-
-		const discount5PctKopecks = Math.round(effectiveTotalKopecks * 0.05);
-		const discount5PctAmount = Math.round(discount5PctKopecks / 100);
-		const priceWith5PctDiscount = Math.max(
-			0,
-			Math.round((effectiveTotalKopecks - discount5PctKopecks) / 100),
-		);
-
-		// Staged 30/40/30 from exact kopeck schedule
-		const exactStaged = calculateStagedPaymentScheduleKopecks(effectiveTotalKopecks, [30, 40, 30]);
-		const stage1Rub = tier.stagedSchedule?.stage1AdvanceTherapyRub ?? exactStaged.stage1Rub;
-		const stage2Rub = tier.stagedSchedule?.stage2SurgeryImplantRub ?? exactStaged.stage2Rub;
-		const stage3Rub =
-			tier.stagedSchedule?.stage3OrthopedicsRub ?? (safeTotalRub - stage1Rub - stage2Rub);
-
-		const isTierImmutable =
-			isPlanPriceImmutable(tier.workflowStatus) || Boolean(tier.isPriceLocked);
-		const hasPriceDrift = Boolean(
-			tier.hasPriceDrift || (tier.catalogDriftRub && Math.abs(tier.catalogDriftRub) > 0),
-		);
-
-		return (
-			<div
-				key={tier.tierId}
-				onClick={() => handleCardClick(tier)}
-				className={`relative flex flex-col justify-between rounded-3xl p-4 sm:p-5 border transition-all duration-200 cursor-pointer bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] h-full flex-1 min-w-0 ${
-					isSelected
-						? `${tier.borderClass} shadow-xl ring-2 ring-[var(--teal,var(--brand-primary))]/20 z-10`
-						: "border-[var(--line,var(--border,#cbd5e1))] opacity-95 hover:opacity-100 hover:border-[var(--line-strong)] shadow-md"
-				}`}
-				data-testid={isMobile ? `tier-card-mobile-${tier.tierId}` : `tier-card-${tier.tierId}`}
-			>
-				{/* Recommended Pill with Elevation */}
-				{tier.isRecommended && (
-					<div className="absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-[11px] font-black shadow-lg uppercase tracking-wider whitespace-nowrap z-30">
-						<Crown size={13} />
-						<span>{tier.badge}</span>
-					</div>
-				)}
-
-				{/* Card Header */}
-				<div className="space-y-1.5 pt-1 min-w-0">
-					<div className="flex items-center justify-between gap-2 min-w-0">
-						<span
-							className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border truncate max-w-[160px] whitespace-nowrap ${tier.badgeClass}`}
-							title={tier.title.split("(")[0]?.trim()}
-						>
-							{tier.title.split("(")[0]?.trim()}
-						</span>
-
-						<span className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1 whitespace-nowrap shrink-0">
-							<Clock size={12} /> {tier.durationWeeks} нед. · {tier.durationVisits} виз.
-						</span>
-					</div>
-
-					<h3 className="text-sm sm:text-base font-extrabold text-[var(--ink,#0f172a)] leading-snug m-0 break-words" title={tier.title}>
-						{tier.title}
-					</h3>
-					<p className="text-xs text-[var(--muted,#64748b)] line-clamp-2 m-0">
-						{tier.subtitle}
-					</p>
-				</div>
-
-				{/* Scrollable Card Body: monolithic flat stages and materials */}
-				<div
-					className="flex-1 sm:overflow-y-auto min-h-0 pr-1 space-y-2 sm:space-y-2.5 my-2 sm:my-3 sm:overscroll-contain sm:max-h-[560px] pb-4 sm:pb-12"
-					style={{ scrollPaddingBottom: "240px" }}
-				>
-					{/* Monolithic Pricing Section: Flat tonal underlay (Anti-Matryoshka Law) */}
-					<div className="p-2.5 sm:p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] space-y-1 sm:space-y-1.5">
-						<div className="flex items-baseline justify-between gap-2">
-							<span className="text-xs text-[var(--muted,#64748b)] font-medium">
-								Полная стоимость:
-							</span>
-							<span className="text-lg sm:text-xl font-black text-[var(--ink,#0f172a)] font-mono whitespace-nowrap">
-								{formatPlanPriceRub(tier.totalRub)}
-							</span>
-						</div>
-
-						{/* Price lock guarantee badge when tier is approved/in_progress (Mandates 8e, 8n) */}
-						{isTierImmutable && (
-							<div
-								className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20"
-								data-testid={`tier-locked-badge-${tier.tierId}`}
-								title="Смета тарифа утверждена: цены и график платежей заморожены (Мандат 8e, 8n)"
-							>
-								<ShieldCheck size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-								<span>Смета зафиксирована по гарантии</span>
-							</div>
-						)}
-
-						{/* Price drift badge if catalog updated */}
-						{hasPriceDrift && tier.catalogDriftRub !== undefined && (
-							<div
-								className="text-[10px] text-slate-600 dark:text-slate-400 font-medium bg-slate-200/50 dark:bg-slate-800/50 px-2 py-0.5 rounded border border-slate-300/50 dark:border-slate-700/50"
-								data-testid={`tier-drift-badge-${tier.tierId}`}
-								title="Цены в действующем каталоге изменились, смета тарифа сохранена неизменной"
-							>
-								В прайсе: {formatPlanPriceRub(safeTotalRub + tier.catalogDriftRub)} · В плане зафиксировано: {formatPlanPriceRub(safeTotalRub)}
-							</div>
-						)}
-
-						{/* Mode 1: Installment 0% */}
-						{activePaymentMode === "installment" && (
-							<div className="flex items-center justify-between text-xs pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/30 gap-2">
-								<span className="text-[var(--muted,#64748b)] flex items-center gap-1">
-									<Percent size={12} className="text-[var(--teal,var(--brand-primary))]" />
-									Рассрочка {installmentMonths} мес:
-								</span>
-								<span className="font-bold text-[var(--teal,var(--brand-primary))] font-mono whitespace-nowrap">
-									{monthlyPayment.toLocaleString("ru-RU")} ₽/мес
-								</span>
-							</div>
-						)}
-
-						{/* Mode 2: Staged Payment (30/40/30) */}
-						{activePaymentMode === "staged" && (
-							<div className="space-y-1 text-[11px] pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/30">
-								<div className="flex justify-between text-[var(--muted,#64748b)] gap-2">
-									<span>1. Аванс/Санация (30%):</span>
-									<strong className="font-mono text-[var(--ink,#0f172a)] whitespace-nowrap">
-										{formatPlanPriceRub(stage1Rub)}
-									</strong>
-								</div>
-								<div className="flex justify-between text-[var(--muted,#64748b)] gap-2">
-									<span>2. Хирургия/Имплант (40%):</span>
-									<strong className="font-mono text-[var(--ink,#0f172a)] whitespace-nowrap">
-										{formatPlanPriceRub(stage2Rub)}
-									</strong>
-								</div>
-								<div className="flex justify-between text-[var(--muted,#64748b)] gap-2">
-									<span>3. Ортопедия (30%):</span>
-									<strong className="font-mono text-[var(--ink,#0f172a)] whitespace-nowrap">
-										{formatPlanPriceRub(stage3Rub)}
-									</strong>
-								</div>
-							</div>
-						)}
-
-						{/* Mode 3: 5% Single Payment Discount */}
-						{activePaymentMode === "discount" && (
-							<div className="space-y-1 text-[11px] pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/30">
-								<div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold gap-2">
-									<span>Скидка 5% за 100% оплату:</span>
-									<span className="font-mono whitespace-nowrap">
-										-{formatPlanPriceRub(discount5PctAmount)}
-									</span>
-								</div>
-								<div className="flex justify-between text-slate-800 dark:text-slate-200 font-bold gap-2">
-									<span>Итого со скидкой:</span>
-									<span className="font-mono text-[var(--teal,var(--brand-primary))] whitespace-nowrap">
-										{formatPlanPriceRub(priceWith5PctDiscount)}
-									</span>
-								</div>
-							</div>
-						)}
-
-						{/* NDFL Deduction box */}
-						{showNdflBreakdown && (tier.ndflRefundRub ?? 0) > 0 && (
-							<div
-								className="pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/30 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-0.5"
-								title={tier.ndflDetails?.codeDescription || "Налоговый вычет по НК РФ"}
-							>
-								<div className="flex items-center justify-between font-semibold gap-2">
-									<span className="flex items-center gap-1">
-										<span>Возврат 13% НДФЛ:</span>
-										<span className="text-[9px] px-1 py-0.2 rounded bg-emerald-600 text-white font-mono font-bold">
-											{tier.ndflDetails?.code === "02" ? "Код 02" : "Код 01"}
-										</span>
-									</span>
-									<span className="font-mono font-bold whitespace-nowrap">
-										+{formatPlanPriceRub(tier.ndflRefundRub)}
-									</span>
-								</div>
-								<div className="flex justify-between text-[10px] text-emerald-700 dark:text-emerald-400 gap-2">
-									<span>С учетом возврата:</span>
-									<span className="font-bold font-mono whitespace-nowrap">
-										{formatPlanPriceRub(tier.priceWithNdflRefundRub)}
-									</span>
-								</div>
-							</div>
-						)}
-					</div>
-
-					{/* Flat Warranty, Service Life and Visits Strip */}
-					<div className="grid grid-cols-3 gap-1.5 text-xs py-1 border-y border-[var(--line,var(--border,#cbd5e1))]/40 my-1">
-						<div className="flex flex-col justify-between">
-							<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
-								<Shield size={11} /> Гарантия
-							</span>
-							<strong className="text-[11px] text-[var(--ink,#0f172a)] truncate mt-0.5" title={formatWarrantyYearsText(tier.warrantyYears)}>
-								{formatWarrantyYearsText(tier.warrantyYears)}
-							</strong>
-						</div>
-
-						<div className="flex flex-col justify-between">
-							<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
-								<Clock size={11} /> Срок службы
-							</span>
-							<strong className="text-[11px] text-[var(--ink,#0f172a)] truncate mt-0.5" title={formatServiceLifeYearsText(tier.serviceLifeYears, tier.tierId)}>
-								{formatServiceLifeYearsText(tier.serviceLifeYears, tier.tierId)}
-							</strong>
-						</div>
-
-						<div className="flex flex-col justify-between">
-							<span className="text-[10px] text-[var(--muted,#64748b)] flex items-center gap-1">
-								<Calendar size={11} /> Сроки
-							</span>
-							<strong className="text-[11px] text-[var(--ink,#0f172a)] mt-0.5">
-								{tier.durationVisits} виз. ({tier.durationWeeks} нед.)
-							</strong>
-						</div>
-					</div>
-
-					{/* Key Materials Headline Pill */}
-					{tier.materialsHeadline && (
-						<div className="p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))]/60 text-[11px] text-[var(--ink,#0f172a)] leading-snug">
-							<div className="text-[10px] font-bold text-[var(--teal,var(--brand-primary))] uppercase tracking-wider mb-0.5">
-								Клинические материалы
-							</div>
-							<div className="font-semibold">{tier.materialsHeadline}</div>
-						</div>
-					)}
-
-					{/* Stages Breakdown Accordion Toggle */}
-					<div className="pt-1.5 border-t border-[var(--line,var(--border,#cbd5e1))]/60">
-						<button
-							type="button"
-							onClick={(e) => toggleStagesExpand(e, tier.tierId)}
-							className="w-full min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center justify-between text-xs font-bold text-[var(--ink,#0f172a)] hover:text-[var(--teal,var(--brand-primary))] cursor-pointer py-1.5"
-						>
-							<span className="flex items-center gap-1.5 min-w-0">
-								<Layers size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-								<span className="truncate">Клинические этапы I, II, III ({tier.stages.length})</span>
-							</span>
-							{isExpandedStages ? <ChevronUp size={14} className="shrink-0" /> : <ChevronDown size={14} className="shrink-0" />}
-						</button>
-
-						{/* Expanded Stages Content - Flat Monolithic List without nested card box */}
-						{isExpandedStages && (
-							<div className="mt-1.5 max-h-56 overflow-y-auto min-h-0 divide-y divide-[var(--line,var(--border,#cbd5e1))]/40 text-[11px] px-1 py-1">
-								{tier.stages.map((stg) => (
-									<div
-										key={stg.stageNumber}
-										className="py-1.5 first:pt-0 last:pb-0 space-y-0.5 min-w-0"
-									>
-										<div className="flex justify-between items-center font-bold gap-2 min-w-0">
-											<span className="text-[var(--teal-dark,var(--teal))] truncate min-w-0" title={stg.title}>
-												Этап {stg.stageNumber}: {stg.title.split(":")[1]?.trim() || stg.title}
-											</span>
-											<span className="font-mono text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0">
-												{formatPlanPriceRub(stg.totalRub)}
-											</span>
-										</div>
-										<p className="text-[10px] text-[var(--muted,#64748b)] m-0 truncate" title={stg.clinicalGoal}>
-											{stg.clinicalGoal} · ~{stg.estimatedWeeks} нед. ({stg.estimatedVisits} виз.)
-										</p>
-										{(() => {
-											const displayItems = stg.items.filter((it) => !isMicroConsumable(it));
-											return displayItems.length > 0 ? (
-												<ul className="max-h-24 overflow-y-auto min-h-0 text-[9px] text-[var(--muted,#64748b)] space-y-0.5 pl-1.5 border-l border-[var(--teal,var(--brand-primary))]/30 m-0 list-none mt-1 min-w-0">
-													{displayItems.slice(0, 4).map((it) => (
-														<li key={it.id} className="truncate min-w-0" title={it.name}>
-															• {it.toothNumber ? `Зуб ${it.toothNumber}: ` : ""}{it.name}
-														</li>
-													))}
-													{displayItems.length > 4 && (
-														<li className="italic text-[var(--teal,var(--brand-primary))] truncate min-w-0">
-															+ еще {displayItems.length - 4} процедур
-														</li>
-													)}
-												</ul>
-											) : null;
-										})()}
-									</div>
-								))}
-							</div>
-						)}
-					</div>
-
-					{/* Materials & Technologies Highlights */}
-					<div className="space-y-1.5 pt-1.5 border-t border-[var(--border,#cbd5e1)]/60">
-						<h4 className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5 m-0">
-							<Sparkles size={13} className="text-[var(--teal,var(--brand-primary))]" />
-							<span>Материалы и технологии</span>
-						</h4>
-						<ul className="space-y-1 text-xs text-[var(--muted,#64748b)] m-0 list-none p-0">
-							{(tier.materialsList ?? []).map((mat, i) => (
-								<li key={i} className="flex items-start gap-2 text-[11px] leading-tight">
-									<CheckCircle2
-										size={13}
-										className="text-emerald-500 shrink-0 mt-0.5"
-									/>
-									<span className="text-[var(--ink,#0f172a)]">{mat}</span>
-								</li>
-							))}
-						</ul>
-					</div>
-
-					{/* Key Patient Advantages */}
-					<div className="space-y-1 pt-1.5 border-t border-[var(--border,#cbd5e1)]/60">
-						<h4 className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5 m-0">
-							<Star size={13} className="text-amber-500" />
-							<span>Преимущества для пациента</span>
-						</h4>
-						<ul className="space-y-0.5 text-[11px] text-[var(--muted,#64748b)] m-0 list-none p-0">
-							{tier.keyAdvantages.map((adv, idx) => (
-								<li key={idx} className="flex items-start gap-1.5">
-									<span className="text-amber-500 font-bold">•</span>
-									<span>{adv}</span>
-								</li>
-							))}
-						</ul>
-					</div>
-				</div>
-
-				{/* Actions Bottom: Sticky Fixed Footer on Desktop & Mobile (Miller's Law: <= 2 Action Buttons) */}
-				<div className="sticky bottom-0 bg-[var(--paper-soft,var(--paper,#ffffff))] border-t border-[var(--line,var(--border,#cbd5e1))] p-3 sm:p-3.5 pb-3.5 sm:pb-3.5 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 rounded-b-3xl mt-auto z-10 space-y-1.5 shadow-xs shrink-0">
-					<button
-						type="button"
-						onClick={(e) => handleSignClick(e, tier)}
-						className={`w-full min-h-[44px] sm:min-h-[34px] sm:h-[34px] flex items-center justify-center gap-1.5 px-3 rounded-xl text-xs font-extrabold shadow-sm cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-98 ${
-							isSelected
-								? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-emerald-600/20"
-								: "bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))]"
-						}`}
-						data-testid={`approve-tier-btn-${tier.tierId}`}
-					>
-						<PenTool size={14} />
-						<span>Утвердить и подписать план</span>
-					</button>
-
-					{/* Secondary Action Strip: 1 unified action line (Installment + Messenger copy + optional Print contract) */}
-					<div className="flex flex-wrap items-center gap-2">
-						<button
-							type="button"
-							onClick={(e) => handleInstallmentClick(e, tier)}
-							className="flex-1 min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center justify-center gap-1.5 px-3 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap min-w-0"
-							title="Оформить рассрочку 0% по данному варианту"
-						>
-							<CreditCard size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-							<span className="truncate">Рассрочка 0%</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={(e) => handleCopyEstimateToMessenger(e, tier)}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap"
-							title="Скопировать смету для WhatsApp / Telegram (понятный пациенту формат)"
-							aria-label="Скопировать смету"
-							data-testid={`copy-estimate-messenger-btn-${tier.tierId}`}
-						>
-							{copiedMessengerTierId === tier.tierId ? (
-								<>
-									<Check size={13} className="text-emerald-600 shrink-0" />
-									<span className="text-[11px] text-emerald-600 font-semibold">Скопировано</span>
-								</>
-							) : (
-								<>
-									<Share2 size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-									<span className="hidden sm:inline text-[11px]">Смета</span>
-								</>
-							)}
-						</button>
-
-						{onPrintContract && (
-							<button
-								type="button"
-								onClick={(e) => handlePrintClick(e, tier)}
-								className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg text-xs font-bold bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap"
-								title="Распечатать договор и смету"
-								aria-label="Договор и смета (QR)"
-							>
-								<Printer size={13} className="shrink-0" />
-								<span className="hidden sm:inline text-[11px]">Договор</span>
-							</button>
-						)}
-					</div>
-				</div>
-			</div>
-		);
-	};
+	const renderSingleTierCard = (tier: TreatmentPlanTier, isMobile: boolean) => (
+		<TreatmentPlanTierCard
+			key={tier.tierId}
+			tier={tier}
+			isSelected={activeTierId === tier.tierId}
+			isMobile={isMobile}
+			activePaymentMode={activePaymentMode}
+			installmentMonths={installmentMonths}
+			showNdflBreakdown={showNdflBreakdown}
+			isExpandedStages={expandedStagesTierId === tier.tierId}
+			copiedMessengerTierId={copiedMessengerTierId}
+			onCardClick={handleCardClick}
+			onSignClick={handleSignClick}
+			onInstallmentClick={handleInstallmentClick}
+			onCopyMessengerClick={handleCopyEstimateToMessenger}
+			onPrintClick={onPrintContract ? handlePrintClick : undefined}
+			onToggleStagesExpand={toggleStagesExpand}
+		/>
+	);
 
 	return (
 		<div
@@ -606,166 +196,23 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 				</div>
 			)}
 
-			{/* Top Control Bar: Installments, Modes & Studio Triggers (Hick's Law: 1 Compact 32-36px Row) */}
-			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))] text-xs text-[var(--ink,#0f172a)]">
-				<div className="flex items-center gap-2.5 min-w-0">
-					<div className="p-2 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
-						<Sparkles size={16} />
-					</div>
-					<div className="min-w-0">
-						<div className="flex items-center gap-2 flex-wrap">
-							<span className="font-black text-xs sm:text-sm text-[var(--ink,#0f172a)] whitespace-normal sm:whitespace-nowrap shrink-0">
-								3-Tier Сравнение планов (Эконом / Оптимум / Премиум)
-							</span>
-							<span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20 whitespace-nowrap">
-								Стандарты СтАР
-							</span>
-						</div>
-						<p className="text-[11px] text-[var(--muted,#64748b)] m-0 mt-0.5 leading-relaxed break-words">
-							Интерактивное сравнение клинических этапов, сроков, гарантий и программ оплаты 0%
-						</p>
-					</div>
-				</div>
+			{/* Top Control Bar: Installments, Modes & Studio Triggers */}
+			<TreatmentPlan3TierToolbar
+				activePaymentMode={activePaymentMode}
+				onPaymentModeChange={setActivePaymentMode}
+				installmentMonths={installmentMonths}
+				onInstallmentMonthsChange={setInstallmentMonths}
+				showNdflBreakdown={showNdflBreakdown}
+				onToggleNdflBreakdown={() => setShowNdflBreakdown((prev) => !prev)}
+				activeTier={activeTier}
+				copiedMessengerTierId={copiedMessengerTierId}
+				onCopyEstimateToMessenger={handleCopyEstimateToMessenger}
+				onOpenComparatorStudio={onOpenComparatorStudio}
+				onOpenStagePaymentStudio={onOpenStagePaymentStudio}
+				onOpenPriceValidatorStudio={onOpenPriceValidatorStudio}
+			/>
 
-				<div className="flex flex-wrap items-center gap-2 shrink-0">
-					{/* Payment Mode Selector with 32px standard height */}
-					<div className="flex flex-wrap items-center gap-2 p-1 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,var(--border,#cbd5e1))]">
-						<button
-							type="button"
-							onClick={() => setActivePaymentMode("installment")}
-							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg font-bold text-xs transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
-								activePaymentMode === "installment"
-									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
-							}`}
-						>
-							Рассрочка 0%
-						</button>
-						<button
-							type="button"
-							onClick={() => setActivePaymentMode("staged")}
-							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg font-bold text-xs transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
-								activePaymentMode === "staged"
-									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
-							}`}
-						>
-							Этапы (30/40/30)
-						</button>
-						<button
-							type="button"
-							onClick={() => setActivePaymentMode("discount")}
-							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg font-bold text-xs transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
-								activePaymentMode === "discount"
-									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
-							}`}
-						>
-							Скидка 5% (100%)
-						</button>
-					</div>
-
-					{/* Term Selector (when in installment mode) */}
-					{activePaymentMode === "installment" && (
-						<div className="flex items-center gap-1 bg-[var(--paper-strong,var(--paper,#ffffff))] p-1 rounded-xl border border-[var(--line,var(--border,#cbd5e1))]">
-							{[3, 6, 12, 24].map((m) => (
-								<button
-									key={m}
-									type="button"
-									onClick={() => setInstallmentMonths(m as 3 | 6 | 12 | 24)}
-									className={`min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8 px-2 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center whitespace-nowrap ${
-										installmentMonths === m
-											? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft)]"
-									}`}
-								>
-									{m}м
-								</button>
-							))}
-						</div>
-					)}
-
-					{/* NDFL Toggle */}
-					<button
-						type="button"
-						onClick={() => setShowNdflBreakdown((prev) => !prev)}
-						className={`min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3 rounded-lg border text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-							showNdflBreakdown
-								? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-								: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border-[var(--line,var(--border,#cbd5e1))]"
-						}`}
-						title="Показать расчет налогового вычета 13% по НК РФ"
-					>
-						<ShieldCheck size={14} className="shrink-0" />
-						<span>Вычет 13%</span>
-					</button>
-
-					{/* Messenger Share Button for Active Tier */}
-					<button
-						type="button"
-						onClick={(e) => handleCopyEstimateToMessenger(e, activeTier)}
-						className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap"
-						title="Скопировать смету выбранного тарифа для WhatsApp / Telegram (понятный пациенту формат)"
-						data-testid="top-copy-messenger-btn"
-					>
-						{copiedMessengerTierId === activeTier.tierId ? (
-							<>
-								<Check size={13} className="text-emerald-600 shrink-0" />
-								<span className="text-emerald-600">Скопировано!</span>
-							</>
-						) : (
-							<>
-								<Share2 size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-								<span>Смета (WhatsApp)</span>
-							</>
-						)}
-					</button>
-
-					{/* Comparator Studio Modal Button */}
-					{onOpenComparatorStudio && (
-						<button
-							type="button"
-							onClick={onOpenComparatorStudio}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap"
-							title="Открыть полноэкранную презентационную студию сравнения"
-						>
-							<Sparkles size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-							<span className="hidden sm:inline">Студия</span>
-						</button>
-					)}
-
-					{/* Stage Payment Modal Button */}
-					{onOpenStagePaymentStudio && (
-						<button
-							type="button"
-							onClick={onOpenStagePaymentStudio}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap"
-							title="Открыть студию поэтапной оплаты и эскроу-депозитов"
-						>
-							<Coins size={13} className="text-amber-500 shrink-0" />
-							<span className="hidden sm:inline">Эскроу</span>
-						</button>
-					)}
-
-					{/* Price Validator Modal Button */}
-					{onOpenPriceValidatorStudio && (
-						<button
-							type="button"
-							onClick={onOpenPriceValidatorStudio}
-							className="min-h-[44px] sm:min-h-[32px] sm:h-8 flex items-center gap-1.5 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-slate-100 dark:hover:bg-slate-800 border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors whitespace-nowrap"
-							title="Проверить цены по прайсу и протоколам СтАР"
-						>
-							<FileCheck size={13} className="text-emerald-600 shrink-0" />
-							<span className="hidden sm:inline">Валидация</span>
-						</button>
-					)}
-				</div>
-			</div>
-
-			{/* ========================================================================= */}
-			{/* Apple HIG Segmented Control for Mobile Viewports (<= 640px / sm:hidden)    */}
-			{/* Заменяет 2500px вертикальный скролл-туннель на переключатель тарифов         */}
-			{/* ========================================================================= */}
+			{/* Apple HIG Segmented Control for Mobile Viewports (<= 640px / sm:hidden) */}
 			<div
 				className="sm:hidden w-full p-1 rounded-2xl bg-[var(--paper-soft,#f1f5f9)] dark:bg-slate-800/80 border border-[var(--line,var(--border,#cbd5e1))] shadow-inner flex items-stretch gap-1"
 				data-testid="treatment-3tier-segmented-control"
@@ -799,70 +246,18 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 				})}
 			</div>
 
-			{/* ========================================================================= */}
-			{/* Mobile Single Card View: только активный тариф (<= 640px / sm:hidden)      */}
-			{/* ========================================================================= */}
+			{/* Mobile Single Card View (<= 640px / sm:hidden) */}
 			<div className="sm:hidden flex flex-col w-full min-w-0">
-				{renderTierCard(activeTier, true)}
+				{renderSingleTierCard(activeTier, true)}
 			</div>
 
-			{/* ========================================================================= */}
-			{/* Desktop 3-Tier Grid Layout: side-by-side сравнение (>= 640px / hidden sm:grid) */}
-			{/* ========================================================================= */}
+			{/* Desktop 3-Tier Grid Layout (>= 640px / hidden sm:grid) */}
 			<div className="hidden sm:grid sm:grid-cols-3 gap-4 sm:gap-5 items-stretch">
-				{tiers.map((tier) => renderTierCard(tier, false))}
+				{tiers.map((tier) => renderSingleTierCard(tier, false))}
 			</div>
 
-			{/* Bottom Block: Clinical Treatment Roadmap (Anti-Matryoshka Seamless Flat 4-Column Grid, DEF-5) */}
-			{activeTier && activeTier.stages && activeTier.stages.length > 0 && (
-				<section className="text-[var(--ink,#0f172a)] space-y-2 mt-4">
-					<div className="flex items-center justify-between gap-3 flex-wrap px-1 py-1">
-						<h4 className="text-xs sm:text-sm font-extrabold text-[var(--ink,#0f172a)] flex items-center gap-2 m-0">
-							<Clock size={16} className="text-[var(--teal,var(--brand-primary))]" />
-							<span>
-								Клинический маршрут лечения: {activeTier.title} ({activeTier.durationWeeks} нед. · {activeTier.durationVisits} виз.)
-							</span>
-						</h4>
-						<span className="text-xs font-mono font-bold text-[var(--teal,var(--brand-primary))]">
-							Итого по маршруту: {activeTier.totalRub.toLocaleString("ru-RU")} ₽
-						</span>
-					</div>
-
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--line,var(--border,#cbd5e1))] rounded-2xl border border-[var(--line,var(--border,#cbd5e1))] bg-[var(--paper-soft,#f8fafc)] overflow-hidden">
-						{activeTier.stages.map((stg) => (
-							<div key={stg.stageNumber} className="p-3 sm:p-3.5 space-y-2 min-w-0">
-								<div className="flex items-center justify-between gap-2 min-w-0">
-									<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20 shrink-0">
-										Этап {stg.stageNumber}
-									</span>
-									<span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0">
-										{stg.totalRub.toLocaleString("ru-RU")} ₽
-									</span>
-								</div>
-
-								<div className="min-w-0">
-									<h5 className="font-bold text-xs text-[var(--ink,#0f172a)] m-0 leading-snug truncate" title={stg.title}>
-										{stg.title.split(":")[1]?.trim() || stg.title}
-									</h5>
-									<p className="text-[10px] text-[var(--muted,#64748b)] m-0 mt-0.5 truncate" title={stg.clinicalGoal}>
-										{stg.clinicalGoal} · ~{stg.estimatedWeeks} нед. ({stg.estimatedVisits} виз.)
-									</p>
-								</div>
-
-								{stg.items && stg.items.length > 0 && (
-									<ul className="max-h-28 overflow-y-auto min-h-0 text-[10px] text-[var(--muted,#64748b)] space-y-1 pl-1.5 border-l-2 border-[var(--teal,var(--brand-primary))]/30 m-0 list-none min-w-0">
-										{stg.items.filter((it) => !isMicroConsumable(it)).map((it) => (
-											<li key={it.id} className="truncate min-w-0" title={it.name}>
-												• {it.toothNumber ? `Зуб ${it.toothNumber}: ` : ""}{it.name}
-											</li>
-										))}
-									</ul>
-								)}
-							</div>
-						))}
-					</div>
-				</section>
-			)}
+			{/* Bottom Block: Clinical Treatment Roadmap */}
+			<TreatmentPlanRoadmapGrid activeTier={activeTier} />
 		</div>
 	);
 };

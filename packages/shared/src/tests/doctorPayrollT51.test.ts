@@ -235,4 +235,38 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		assert.ok(csv.includes("52200.00")); // Net payout rub "На руки"
 		assert.ok(csv.includes("7800.00"));  // NDFL 13% tax rub
 	});
+
+	it("1.7 Enforces NDFL 13% rounding to whole rubles per Art. 225 p. 6 Tax Code RF with non-trivial kopecks", () => {
+		const res = calculateDoctorPeriodPayroll({
+			doctorId: "doc-exact",
+			doctorName: "Д-р Точный Р. Ф.",
+			specialtyId: "therapist", // 25%
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			services: [
+				{
+					id: "srv-exact-1",
+					dateIso: "2026-08-10",
+					patientName: "Пациент",
+					medicalCardNumber: "043/у-exact",
+					serviceNameRu: "Эндодонтия сложная",
+					category: "therapy",
+					grossRevenueKop: 40000000, // 400,000.00 RUB
+					labCostKop: 0,
+					materialCostKop: 13333333, // 133,333.33 RUB
+				},
+			],
+		});
+
+		// Net base: 400,000.00 - 133,333.33 = 266,666.67 RUB (26,666,667 kop)
+		assert.equal(res.totalNetBaseKop, 26666667);
+		// 25% of net base = Math.round(26666667 * 0.25) = 6,666,667 kop (66,666.67 RUB)
+		assert.equal(res.grossPayoutBeforeTaxKop, 6666667);
+		// Art. 225 p. 6 Tax Code RF: 66,666.67 * 0.13 = 8,666.6671 RUB -> rounded to full ruble = 8,667 RUB (866,700 kop)
+		assert.equal(res.ndfl13TaxKop, 866700);
+		// Net payout: 6,666,667 - 866,700 = 5,799,967 kop (57,999.67 RUB)
+		assert.equal(res.netPayoutToDoctorKop, 5799967);
+		// Zero drift invariant: gross = ndfl + net
+		assert.equal(res.grossPayoutBeforeTaxKop, res.ndfl13TaxKop + res.netPayoutToDoctorKop);
+	});
 });

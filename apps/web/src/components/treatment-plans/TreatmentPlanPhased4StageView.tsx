@@ -17,6 +17,7 @@ import { DentalCrown } from '../icons/DentalIcons.js';
 import {
   STAGE_CATEGORY_META,
   recalculateTreatmentPlanTotals,
+  map3StageKindTo4StageCategory,
   type TreatmentPlanStageCategory,
   type StageCategoryMetadata,
   type Kopecks,
@@ -118,67 +119,12 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
     };
 
     for (const it of allItems) {
-      const name = (it.name || '').toLowerCase();
-      const code = (it.code804n || '').toLowerCase();
-      const phase = String(it.phase ?? '').toLowerCase();
-
-      const isEmergency =
-        name.includes('неотложн') ||
-        name.includes('острая боль') ||
-        name.includes('острый пульпит') ||
-        name.includes('купирование боли') ||
-        name.includes('дренирование') ||
-        name.includes('вскрытие абсцесс') ||
-        code.includes('007') || // A16.07.007
-        code.includes('011') || // A16.07.011
-        code.includes('016');   // A16.07.016
-
-      let targetCat: TreatmentPlanStageCategory = 'endo_therapy';
-
-      if (
-        isEmergency ||
-        phase.includes('hygiene') ||
-        phase.includes('sanitation') ||
-        code.includes('051') ||
-        code.includes('050') ||
-        name.includes('гигиен') ||
-        name.includes('чистк') ||
-        name.includes('air-flow') ||
-        name.includes('ультразвук') ||
-        name.includes('пародонт') ||
-        name.includes('отложени')
-      ) {
-        targetCat = 'hygiene_sanitation';
-      } else if (
-        phase.includes('surgery') ||
-        phase.includes('implant') ||
-        (code.includes('001') && name.includes('удален')) ||
-        code.includes('054') ||
-        code.includes('041') ||
-        name.includes('удален') ||
-        name.includes('имплант') ||
-        name.includes('синус') ||
-        name.includes('костн') ||
-        name.includes('пластик')
-      ) {
-        targetCat = 'surgery_implant';
-      } else if (
-        phase.includes('ortho') ||
-        phase.includes('prosthet') ||
-        code.includes('004') ||
-        code.includes('006') ||
-        name.includes('коронк') ||
-        name.includes('протез') ||
-        name.includes('винир') ||
-        name.includes('e.max') ||
-        name.includes('циркон') ||
-        name.includes('брекет') ||
-        name.includes('элайнер')
-      ) {
-        targetCat = 'ortho_prosthetics';
-      } else {
-        targetCat = 'endo_therapy';
-      }
+      const targetCat: TreatmentPlanStageCategory = map3StageKindTo4StageCategory(
+        it.stageKind || String(it.phase ?? ''),
+        it.code804n,
+        it.name,
+        it.category,
+      );
 
       const qty = it.quantity || 1;
       const unitPriceKop = parseKopecks(it.unitPriceRub || 0);

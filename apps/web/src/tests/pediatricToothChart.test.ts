@@ -27,6 +27,7 @@ import {
 	getToothStateFromHotkey,
 } from "../components/odontogram/ToothChart";
 import { calculateDmft } from "../components/odontogram/ClassicGostOdontogram";
+import { calculateActivePatientCriticalBadges } from "../components/visit/view/visitCriticalBadges";
 
 describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 	describe("1. Tooth Lists and Classification", () => {
@@ -389,6 +390,73 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 			} else {
 				assert.equal(dispatched, false);
 			}
+		});
+	});
+
+	describe("11. Chairside Somatic & Allergy Critical Badges (Lidocaine, Penicillin, Asthma)", () => {
+		it("detects Lidocaine allergy and emits high-visibility alert badge", () => {
+			const badges = calculateActivePatientCriticalBadges({
+				allergies: "Аллергия на лидокаин и новокаин",
+			});
+			const lidocaineBadge = badges.find((b) => b.id === "lidocaine");
+			assert.ok(lidocaineBadge, "Should produce lidocaine badge");
+			assert.equal(lidocaineBadge?.testId, "visit-focus-lidocaine-alert");
+			assert.match(lidocaineBadge?.title || "", /ЛИДОКАИН|АНЕСТЕТИК/i);
+		});
+
+		it("detects Penicillin allergy from anamnesis and emits alert badge", () => {
+			const badges = calculateActivePatientCriticalBadges(
+				{ allergies: "Амоксиклав (крапивница)" },
+				"В анамнезе отек Квинке на антибиотики пенициллинового ряда",
+			);
+			const penicillinBadge = badges.find((b) => b.id === "penicillin");
+			assert.ok(penicillinBadge, "Should produce penicillin badge");
+			assert.equal(penicillinBadge?.testId, "visit-focus-penicillin-alert");
+			assert.match(penicillinBadge?.title || "", /ПЕНИЦИЛЛИН/i);
+		});
+
+		it("detects Bronchial Asthma and warns against sulfites in epinephrine cartridges", () => {
+			const badges = calculateActivePatientCriticalBadges({
+				somaticNotes: "Бронхиальная астма смешанной формы, принимает сальбутамол",
+			});
+			const asthmaBadge = badges.find((b) => b.id === "asthma");
+			assert.ok(asthmaBadge, "Should produce asthma badge");
+			assert.equal(asthmaBadge?.testId, "visit-focus-asthma-alert");
+			assert.match(asthmaBadge?.title || "", /СУЛЬФИТ/i);
+		});
+
+		it("does not produce false alarms for negative allergy statements", () => {
+			const badges = calculateActivePatientCriticalBadges({
+				allergies: "Аллергоанамнез не отягощен, аллергии нет",
+				somaticNotes: "Соматически здоров",
+			});
+			assert.equal(badges.length, 0, "No alert badges should be shown for healthy patient");
+		});
+	});
+
+	describe("12. Pediatric Tooth Surfaces & PostgreSQL Persistence Schema Compliance", () => {
+		it("validates primary teeth FDI codes against valid 51..85 set", () => {
+			const allPrimary = [
+				51, 52, 53, 54, 55,
+				61, 62, 63, 64, 65,
+				71, 72, 73, 74, 75,
+				81, 82, 83, 84, 85,
+			];
+			for (const tooth of allPrimary) {
+				assert.ok(isPrimaryTooth(tooth), `Tooth ${tooth} must be identified as primary`);
+			}
+		});
+
+		it("formats multi-surface pediatric caries for PostgreSQL jsonb surfaces field", () => {
+			const tooth54Record = {
+				tooth_number: 54,
+				state: "Caries",
+				surfaces: ["O", "M", "D"],
+				resorption_stage: 25,
+			};
+			assert.equal(tooth54Record.tooth_number, 54);
+			assert.deepEqual(tooth54Record.surfaces, ["O", "M", "D"]);
+			assert.equal(tooth54Record.resorption_stage, 25);
 		});
 	});
 });

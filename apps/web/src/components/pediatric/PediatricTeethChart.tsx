@@ -35,6 +35,8 @@ export type ToothClinicalFinding =
 	| "Extracted"
 	| "Crown";
 
+export type ToothSurfaceCode = "O" | "V" | "L" | "M" | "D";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ANATOMICAL TEETH DEFINITIONS (FDI WORLD DENTAL FEDERATION)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -96,6 +98,10 @@ export interface PediatricTeethChartProps {
 	readonly onResorptionChange?: ((toothNumber: number, stage: ResorptionStagePercent) => void) | undefined;
 	/** Обработчик быстрого изменения клинического состояния зуба (Mandate 8e: автономия врача в 1 клик) */
 	readonly onToothFindingChange?: ((toothNumber: number, finding: ToothClinicalFinding) => void) | undefined;
+	/** Выбранные поверхности для зубов (O, V, L, M, D) */
+	readonly toothSurfaces?: Readonly<Record<number, readonly ToothSurfaceCode[]>> | undefined;
+	/** Обработчик переключения поверхности зуба в 1 клик */
+	readonly onSurfaceToggle?: ((toothNumber: number, surface: ToothSurfaceCode) => void) | undefined;
 	/** Пакетный обработчик установки всех молочных в здоровые */
 	readonly onSetAllHealthy?: () => void;
 	/** Пакетный обработчик физиологической смены прикуса */
@@ -111,8 +117,10 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 	onModeChange,
 	toothFindings = {},
 	resorptionStages = {},
+	toothSurfaces = {},
 	onResorptionChange,
 	onToothFindingChange,
+	onSurfaceToggle,
 	onSetAllHealthy,
 	onApplyMixedDentitionPreset,
 	className = "",
@@ -138,6 +146,8 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 		const finding = toothFindings[tooth.toothNumber] ?? "Healthy";
 		const isPrimary = tooth.isPrimary;
 		const resorption = isPrimary && resorptionStages ? resorptionStages[tooth.toothNumber] : undefined;
+		const surfaces = toothSurfaces[tooth.toothNumber] || [];
+		const surfacesBadge = surfaces.length > 0 ? surfaces.join("") : "";
 
 		// Semantic color according to clinical finding
 		let findingBadge = "";
@@ -173,7 +183,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 						? "border-teal-600 bg-teal-50/90 text-teal-950 shadow-sm ring-2 ring-teal-500/40 dark:border-teal-400 dark:bg-teal-950/70 dark:text-teal-100 font-extrabold z-10"
 						: `${findingClass} hover:border-teal-400 hover:bg-[var(--paper-soft,#f8fafc)]`
 				} ${!tooth.isPrimary ? "ring-1 ring-sky-500/30" : ""}`}
-				title={`${tooth.toothNumber} — ${tooth.anatomicalNameRu}${findingBadge ? ` (${findingBadge})` : ""}${typeof resorption === "number" && resorption > 0 ? ` [Резорбция: ${resorption}%]` : ""}`}
+				title={`${tooth.toothNumber} — ${tooth.anatomicalNameRu}${findingBadge ? ` (${findingBadge})` : ""}${typeof resorption === "number" && resorption > 0 ? ` [Резорбция: ${resorption}%]` : ""}${surfacesBadge ? ` [Поверхности: ${surfacesBadge}]` : ""}`}
 				data-testid={`pediatric-tooth-btn-${tooth.toothNumber}`}
 			>
 				{/* Permanent molar indicator badge */}
@@ -194,6 +204,16 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 				{findingBadge && finding !== "Healthy" && (
 					<span className="mt-0.5 rounded px-1 text-[8px] font-bold bg-black/5 dark:bg-white/10 truncate max-w-full">
 						{findingBadge}
+					</span>
+				)}
+
+				{surfacesBadge && (
+					<span
+						className="mt-0.5 rounded px-1 text-[7px] font-mono font-semibold bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 truncate max-w-full"
+						title={`Поверхности: ${surfacesBadge}`}
+						data-testid={`tooth-surfaces-badge-${tooth.toothNumber}`}
+					>
+						{surfacesBadge}
 					</span>
 				)}
 
@@ -353,7 +373,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 			{/* ═════════════════════════════════════════════════════════════════ */}
 			{/* БЫСТРАЯ СМЕНА СТАТУСА И РЕЗОРБЦИИ АКТИВНОГО ЗУБА (МАНДАТ 8e В 1 КЛИК) */}
 			{/* ═════════════════════════════════════════════════════════════════ */}
-			{activeTooth && (onToothFindingChange || onResorptionChange) && (
+			{activeTooth && (onToothFindingChange || onResorptionChange || onSurfaceToggle) && (
 				<div
 					className="mt-3 pt-2.5 border-t border-[var(--line,#e2e8f0)] flex flex-wrap items-center justify-between gap-2"
 					data-testid="pediatric-active-tooth-toolbar"
@@ -396,33 +416,90 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 						)}
 					</div>
 
-					{isPrimaryTooth(activeTooth) && onResorptionChange && (
-						<div className="flex items-center gap-1 shrink-0" data-testid="active-tooth-resorption-group">
-							<span className="text-[10px] font-black uppercase text-[var(--muted,#64748b)] mr-0.5">
-								Резорбция:
-							</span>
-							{([0, 25, 50, 75, 100] as const).map((r) => {
-								const currentRes = resorptionStages?.[activeTooth] ?? 0;
-								const isCurrent = currentRes === r;
-								return (
-									<button
-										key={r}
-										type="button"
-										onClick={() => onResorptionChange(activeTooth, r)}
-										className={`min-h-[28px] sm:min-h-0 sm:h-6 px-1.5 rounded text-[10px] font-mono font-bold border transition cursor-pointer select-none active:scale-95 ${
-											isCurrent
-												? "bg-rose-600 text-white border-rose-600 shadow-xs"
-												: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
-										}`}
-										title={`Резорбция ${r}%: ${RESORPTION_STAGE_DEFINITIONS[r]?.descriptionRu}`}
-										data-testid={`active-tooth-resorption-${r}`}
-									>
-										{r}%
-									</button>
-								);
-							})}
-						</div>
-					)}
+					<div className="flex flex-wrap items-center gap-2">
+						{onSurfaceToggle && (
+							<details
+								className="group/surfaces relative rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-zinc-850 px-2 py-0.5 text-xs shrink-0"
+								data-testid="pediatric-surfaces-disclosure"
+							>
+								<summary
+									className="flex items-center gap-1.5 cursor-pointer select-none text-[10px] font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors list-none"
+									title="Указать анатомические поверхности коронки (опционально)"
+								>
+									<span>Поверхности (опц.)</span>
+									{(toothSurfaces[activeTooth] || []).length > 0 && (
+										<span className="font-mono text-[9px] font-bold text-teal-600 dark:text-teal-400">
+											[{(toothSurfaces[activeTooth] || []).join("")}]
+										</span>
+									)}
+									<span className="text-[8px] text-[var(--muted,#64748b)] transition-transform group-open/surfaces:rotate-180">
+										▼
+									</span>
+								</summary>
+								<div
+									className="flex items-center gap-1 pt-1.5 pb-0.5"
+									data-testid="active-tooth-surfaces-group"
+								>
+									{(
+										[
+											{ id: "O", label: "O (Ж)", title: "Окклюзионная (жевательная)" },
+											{ id: "V", label: "V (В)", title: "Вестибулярная (щечная/губная)" },
+											{ id: "L", label: "L (Я)", title: "Язычная / нёбная" },
+											{ id: "M", label: "M (М)", title: "Медиальная" },
+											{ id: "D", label: "D (Д)", title: "Дистальная" },
+										] as const
+									).map((sf) => {
+										const currentSurfaces = toothSurfaces[activeTooth] || [];
+										const isSelected = currentSurfaces.includes(sf.id);
+										return (
+											<button
+												key={sf.id}
+												type="button"
+												onClick={() => onSurfaceToggle(activeTooth, sf.id)}
+												className={`min-h-[24px] sm:min-h-0 sm:h-5 px-1.5 rounded text-[10px] font-mono font-medium border transition cursor-pointer select-none active:scale-95 ${
+													isSelected
+														? "bg-zinc-700 text-white border-zinc-700 shadow-xs dark:bg-zinc-600"
+														: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]"
+												}`}
+												title={sf.title}
+												data-testid={`active-tooth-surface-${sf.id}`}
+											>
+												{sf.label}
+											</button>
+										);
+									})}
+								</div>
+							</details>
+						)}
+
+						{isPrimaryTooth(activeTooth) && onResorptionChange && (
+							<div className="flex items-center gap-1 shrink-0" data-testid="active-tooth-resorption-group">
+								<span className="text-[10px] font-black uppercase text-[var(--muted,#64748b)] mr-0.5">
+									Резорбция:
+								</span>
+								{([0, 25, 50, 75, 100] as const).map((r) => {
+									const currentRes = resorptionStages?.[activeTooth] ?? 0;
+									const isCurrent = currentRes === r;
+									return (
+										<button
+											key={r}
+											type="button"
+											onClick={() => onResorptionChange(activeTooth, r)}
+											className={`min-h-[28px] sm:min-h-0 sm:h-6 px-1.5 rounded text-[10px] font-mono font-bold border transition cursor-pointer select-none active:scale-95 ${
+												isCurrent
+													? "bg-rose-600 text-white border-rose-600 shadow-xs"
+													: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
+											}`}
+											title={`Резорбция ${r}%: ${RESORPTION_STAGE_DEFINITIONS[r]?.descriptionRu}`}
+											data-testid={`active-tooth-resorption-${r}`}
+										>
+											{r}%
+										</button>
+									);
+								})}
+							</div>
+						)}
+					</div>
 				</div>
 			)}
 		</div>

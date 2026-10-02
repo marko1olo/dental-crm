@@ -473,3 +473,149 @@ export type TreatmentPlanValidateAndCommentResponse = z.infer<
 	typeof treatmentPlanValidateAndCommentResponseSchema
 >;
 
+/**
+ * Canonical classifier mapping a medical procedure to one of the 4 clinical phases (Mandate 8b, 8za SSOT).
+ */
+export function classifyProcedure4StageCategory(
+	code804n?: string | null,
+	nameRu?: string | null,
+	categoryRu?: string | null,
+): TreatmentPlanStageCategory {
+	const code = (code804n || "").trim();
+	const name = (nameRu || "").toLowerCase();
+	const cat = (categoryRu || "").toLowerCase();
+
+	// 1. Orthopedics, Prosthetics & Orthodontics (4th Phase)
+	if (
+		code.startsWith("A16.07.004") ||
+		code.startsWith("A16.07.006") ||
+		code.startsWith("A16.07.003") ||
+		code.startsWith("A16.07.005") ||
+		code.startsWith("A16.07.036") ||
+		code.startsWith("A16.07.023") ||
+		code.startsWith("A16.07.049") ||
+		code.startsWith("A16.07.046") ||
+		code.startsWith("A16.07.047") ||
+		code.startsWith("A16.07.048") ||
+		cat.includes("ортопед") ||
+		cat.includes("протез") ||
+		cat.includes("коронк") ||
+		cat.includes("винир") ||
+		cat.includes("бюгел") ||
+		cat.includes("вкладк") ||
+		cat.includes("ортодонт") ||
+		cat.includes("брекет") ||
+		cat.includes("элайнер") ||
+		name.includes("коронк") ||
+		name.includes("протез") ||
+		name.includes("винир") ||
+		name.includes("e.max") ||
+		name.includes("циркон") ||
+		name.includes("брекет") ||
+		name.includes("элайнер")
+	) {
+		return "ortho_prosthetics";
+	}
+
+	// 2. Surgery & Implantology (3rd Phase)
+	if (
+		code.startsWith("A16.07.001") ||
+		code.startsWith("A16.07.041") ||
+		code.startsWith("A16.07.054") ||
+		code.startsWith("A16.07.093") ||
+		code.startsWith("A16.07.026") ||
+		code.startsWith("A16.07.011") ||
+		code.startsWith("A16.07.040") ||
+		code.startsWith("A16.07.055") ||
+		code.startsWith("A16.07.096") ||
+		cat.includes("хирург") ||
+		cat.includes("имплант") ||
+		cat.includes("синус") ||
+		cat.includes("удален") ||
+		cat.includes("костн") ||
+		name.includes("удален") ||
+		name.includes("имплант") ||
+		name.includes("синус") ||
+		name.includes("костн") ||
+		name.includes("пластик")
+	) {
+		return "surgery_implant";
+	}
+
+	// 3. Hygiene, Sanitation & Emergency Pain Relief (1st Phase)
+	const isEmergency =
+		code.startsWith("A16.07.007") || // Pulpotomy for acute pain
+		code.startsWith("A16.07.016") || // Drainage / abscess opening
+		name.includes("неотложн") ||
+		name.includes("острая боль") ||
+		name.includes("острый пульпит") ||
+		name.includes("купирование боли") ||
+		name.includes("дренирование") ||
+		name.includes("вскрытие абсцесс");
+
+	if (
+		isEmergency ||
+		code.startsWith("A16.07.051") ||
+		code.startsWith("A16.07.020") ||
+		code.startsWith("A16.07.050") ||
+		code.startsWith("A16.07.019") ||
+		cat.includes("гигиен") ||
+		cat.includes("пародонт") ||
+		cat.includes("sanitation") ||
+		cat.includes("hygiene") ||
+		name.includes("гигиен") ||
+		name.includes("чистк") ||
+		name.includes("air-flow") ||
+		name.includes("ультразвук") ||
+		name.includes("пародонт") ||
+		name.includes("отложени") ||
+		name.includes("скейлинг") ||
+		name.includes("srp")
+	) {
+		return "hygiene_sanitation";
+	}
+
+	// 4. Endodontics, Therapy & Caries (2nd Phase)
+	return "endo_therapy";
+}
+
+/**
+ * Maps a 3-stage model stageKind ('stage_1_therapy', 'stage_2_surgery', 'stage_3_orthopedics')
+ * to the corresponding 4-stage category ('hygiene_sanitation', 'endo_therapy', 'surgery_implant', 'ortho_prosthetics').
+ */
+export function map3StageKindTo4StageCategory(
+	stageKind: string,
+	code804n?: string | null,
+	nameRu?: string | null,
+	categoryRu?: string | null,
+): TreatmentPlanStageCategory {
+	if (stageKind === "stage_3_orthopedics" || stageKind.includes("ortho") || stageKind.includes("prosthet")) {
+		return "ortho_prosthetics";
+	}
+	if (stageKind === "stage_2_surgery" || stageKind.includes("surg") || stageKind.includes("implant")) {
+		return "surgery_implant";
+	}
+	if (stageKind === "stage_1_therapy" || stageKind.includes("therap")) {
+		return classifyProcedure4StageCategory(code804n, nameRu, categoryRu);
+	}
+	return classifyProcedure4StageCategory(code804n, nameRu, categoryRu);
+}
+
+/**
+ * Maps a 4-stage category to the corresponding 3-stage kind.
+ */
+export function map4StageCategoryTo3StageKind(
+	category: TreatmentPlanStageCategory,
+): "stage_1_therapy" | "stage_2_surgery" | "stage_3_orthopedics" {
+	switch (category) {
+		case "hygiene_sanitation":
+		case "endo_therapy":
+			return "stage_1_therapy";
+		case "surgery_implant":
+			return "stage_2_surgery";
+		case "ortho_prosthetics":
+			return "stage_3_orthopedics";
+	}
+}
+
+

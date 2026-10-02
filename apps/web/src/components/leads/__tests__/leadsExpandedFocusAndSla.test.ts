@@ -11,7 +11,8 @@
  * - Excel-Compliant CSV Export with UTF-8 BOM
  */
 
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import type { Lead } from "../../../store/leadsStore";
 import {
 	exportLeadsToCsv,
@@ -26,19 +27,18 @@ describe("Leads Kanban Focus Workspace & Clinical SLA Timers", () => {
 
 	describe("1. Speed-to-Lead SLA Calculation (getLeadSlaStatus)", () => {
 		it("detects fresh lead (< 15 mins) with green badge and formatted duration", () => {
-			// Created 5 minutes ago
 			const lead: Pick<Lead, "createdAt" | "stageEnteredAt"> = {
 				createdAt: new Date("2026-09-28T11:55:00.000Z").toISOString(),
 			};
 			const status = getLeadSlaStatus(lead, fixedNow);
 
-			expect(status.urgency).toBe("fresh");
-			expect(status.isBreached).toBe(false);
-			expect(status.minutesElapsed).toBe(5);
-			expect(status.label).toBe("Свежий (5м)");
-			expect(status.formattedDuration).toBe("5м");
-			expect(status.badgeBg).toBe("var(--ok-bg)");
-			expect(status.badgeColor).toBe("var(--ok-fg)");
+			assert.equal(status.urgency, "fresh");
+			assert.equal(status.isBreached, false);
+			assert.equal(status.minutesElapsed, 5);
+			assert.equal(status.label, "Свежий (5м)");
+			assert.equal(status.formattedDuration, "5м");
+			assert.equal(status.badgeBg, "var(--ok-bg)");
+			assert.equal(status.badgeColor, "var(--ok-fg)");
 		});
 
 		it("detects brand new lead (< 1 min) as '< 1м'", () => {
@@ -47,76 +47,72 @@ describe("Leads Kanban Focus Workspace & Clinical SLA Timers", () => {
 			};
 			const status = getLeadSlaStatus(lead, fixedNow);
 
-			expect(status.urgency).toBe("fresh");
-			expect(status.minutesElapsed).toBe(0);
-			expect(status.label).toBe("Свежий (< 1м)");
-			expect(status.formattedDuration).toBe("< 1м");
+			assert.equal(status.urgency, "fresh");
+			assert.equal(status.minutesElapsed, 0);
+			assert.equal(status.label, "Свежий (< 1м)");
+			assert.equal(status.formattedDuration, "< 1м");
 		});
 
 		it("detects warning urgency (15 to 59 mins) with amber badge", () => {
-			// Created 35 minutes ago
 			const lead: Pick<Lead, "createdAt"> = {
 				createdAt: new Date("2026-09-28T11:25:00.000Z").toISOString(),
 			};
 			const status = getLeadSlaStatus(lead, fixedNow);
 
-			expect(status.urgency).toBe("warning");
-			expect(status.isBreached).toBe(false);
-			expect(status.minutesElapsed).toBe(35);
-			expect(status.label).toBe("Внимание (35м)");
-			expect(status.badgeBg).toBe("var(--amber-soft)");
-			expect(status.badgeColor).toContain("var(--amber");
+			assert.equal(status.urgency, "warning");
+			assert.equal(status.isBreached, false);
+			assert.equal(status.minutesElapsed, 35);
+			assert.equal(status.label, "Внимание (35м)");
+			assert.equal(status.badgeBg, "var(--amber-soft)");
+			assert.equal(status.badgeColor.includes("var(--amber"), true);
 		});
 
 		it("detects breached SLA (>= 60 mins) with coral badge and +hours duration", () => {
-			// Created 95 minutes ago (1 hour 35 mins)
 			const lead: Pick<Lead, "createdAt"> = {
 				createdAt: new Date("2026-09-28T10:25:00.000Z").toISOString(),
 			};
 			const status = getLeadSlaStatus(lead, fixedNow);
 
-			expect(status.urgency).toBe("breached");
-			expect(status.isBreached).toBe(true);
-			expect(status.minutesElapsed).toBe(95);
-			expect(status.label).toBe("SLA просрочен (+1ч 35м)");
-			expect(status.formattedDuration).toBe("+1ч 35м");
-			expect(status.badgeBg).toBe("var(--rust-soft)");
-			expect(status.badgeColor).toBe("var(--rust)");
+			assert.equal(status.urgency, "breached");
+			assert.equal(status.isBreached, true);
+			assert.equal(status.minutesElapsed, 95);
+			assert.equal(status.label, "SLA просрочен (+1ч 35м)");
+			assert.equal(status.formattedDuration, "+1ч 35м");
+			assert.equal(status.badgeBg, "var(--rust-soft)");
+			assert.equal(status.badgeColor, "var(--rust)");
 		});
 
 		it("detects breached SLA with exact round hours", () => {
-			// Exactly 120 minutes ago (2 hours)
 			const lead: Pick<Lead, "createdAt"> = {
 				createdAt: new Date("2026-09-28T10:00:00.000Z").toISOString(),
 			};
 			const status = getLeadSlaStatus(lead, fixedNow);
 
-			expect(status.urgency).toBe("breached");
-			expect(status.isBreached).toBe(true);
-			expect(status.label).toBe("SLA просрочен (+2ч)");
+			assert.equal(status.urgency, "breached");
+			assert.equal(status.isBreached, true);
+			assert.equal(status.label, "SLA просрочен (+2ч)");
 		});
 
 		it("prioritizes stageEnteredAt over createdAt for current stage SLA", () => {
-			// Lead created 3 hours ago, but moved to current stage only 10 minutes ago
 			const lead: Pick<Lead, "createdAt" | "stageEnteredAt"> = {
 				createdAt: new Date("2026-09-28T09:00:00.000Z").toISOString(),
 				stageEnteredAt: new Date("2026-09-28T11:50:00.000Z").toISOString(),
 			};
 			const status = getLeadSlaStatus(lead, fixedNow);
 
-			expect(status.urgency).toBe("fresh");
-			expect(status.isBreached).toBe(false);
-			expect(status.minutesElapsed).toBe(10);
-			expect(status.label).toBe("Свежий (10м)");
+			assert.equal(status.urgency, "fresh");
+			assert.equal(status.isBreached, false);
+			assert.equal(status.minutesElapsed, 10);
+			assert.equal(status.label, "Свежий (10м)");
 		});
 
 		it("handles missing or invalid dates gracefully without throwing", () => {
 			const emptyLead: Pick<Lead, "createdAt"> = {};
 			const status = getLeadSlaStatus(emptyLead, fixedNow);
 
-			expect(status.urgency).toBe("fresh");
-			expect(status.isBreached).toBe(false);
-			expect(status.minutesElapsed).toBe(0);
+			assert.equal(status.urgency, "fresh");
+			assert.equal(status.isBreached, false);
+			assert.equal(status.minutesElapsed, 0);
 		});
 	});
 
@@ -127,80 +123,80 @@ describe("Leads Kanban Focus Workspace & Clinical SLA Timers", () => {
 				name: "Борисова А.А.",
 				status: "new",
 				expectedRevenue: "25000",
-				createdAt: new Date("2026-09-28T11:55:00.000Z").toISOString(), // 5m ago
+				createdAt: new Date("2026-09-28T11:55:00.000Z").toISOString(),
 			},
 			{
 				id: "lead-breached",
 				name: "Яковлев В.В.",
 				status: "new",
 				expectedRevenue: "150000",
-				createdAt: new Date("2026-09-28T10:00:00.000Z").toISOString(), // 120m ago
+				createdAt: new Date("2026-09-28T10:00:00.000Z").toISOString(),
 			},
 			{
 				id: "lead-warning",
 				name: "Алексеев М.И.",
 				status: "new",
 				expectedRevenue: "60000",
-				createdAt: new Date("2026-09-28T11:20:00.000Z").toISOString(), // 40m ago
+				createdAt: new Date("2026-09-28T11:20:00.000Z").toISOString(),
 			},
 		];
 
 		it("sorts by sla_urgent placing breached leads first, then descending by wait time", () => {
 			const sorted = sortLeads(testLeads, "sla_urgent", fixedNow);
 
-			expect(sorted[0]?.id).toBe("lead-breached");
-			expect(sorted[1]?.id).toBe("lead-warning");
-			expect(sorted[2]?.id).toBe("lead-fresh");
+			assert.equal(sorted[0]?.id, "lead-breached");
+			assert.equal(sorted[1]?.id, "lead-warning");
+			assert.equal(sorted[2]?.id, "lead-fresh");
 		});
 
 		it("sorts by created_desc placing newest lead first", () => {
 			const sorted = sortLeads(testLeads, "created_desc");
 
-			expect(sorted[0]?.id).toBe("lead-fresh");
-			expect(sorted[2]?.id).toBe("lead-breached");
+			assert.equal(sorted[0]?.id, "lead-fresh");
+			assert.equal(sorted[2]?.id, "lead-breached");
 		});
 
 		it("sorts by created_asc placing oldest lead first", () => {
 			const sorted = sortLeads(testLeads, "created_asc");
 
-			expect(sorted[0]?.id).toBe("lead-breached");
-			expect(sorted[2]?.id).toBe("lead-fresh");
+			assert.equal(sorted[0]?.id, "lead-breached");
+			assert.equal(sorted[2]?.id, "lead-fresh");
 		});
 
 		it("sorts by revenue_desc placing highest expected revenue first", () => {
 			const sorted = sortLeads(testLeads, "revenue_desc");
 
-			expect(sorted[0]?.id).toBe("lead-breached"); // 150 000
-			expect(sorted[1]?.id).toBe("lead-warning");  // 60 000
-			expect(sorted[2]?.id).toBe("lead-fresh");    // 25 000
+			assert.equal(sorted[0]?.id, "lead-breached");
+			assert.equal(sorted[1]?.id, "lead-warning");
+			assert.equal(sorted[2]?.id, "lead-fresh");
 		});
 
 		it("sorts by name_asc in Russian alphabetical order", () => {
 			const sorted = sortLeads(testLeads, "name_asc");
 
-			expect(sorted[0]?.name).toBe("Алексеев М.И.");
-			expect(sorted[1]?.name).toBe("Борисова А.А.");
-			expect(sorted[2]?.name).toBe("Яковлев В.В.");
+			assert.equal(sorted[0]?.name, "Алексеев М.И.");
+			assert.equal(sorted[1]?.name, "Борисова А.А.");
+			assert.equal(sorted[2]?.name, "Яковлев В.В.");
 		});
 	});
 
 	describe("3. Call Audio Duration Formatter (formatAudioDuration)", () => {
 		it("formats 0 or missing duration as '0:00'", () => {
-			expect(formatAudioDuration(undefined)).toBe("0:00");
-			expect(formatAudioDuration(null)).toBe("0:00");
-			expect(formatAudioDuration(0)).toBe("0:00");
-			expect(formatAudioDuration(-10)).toBe("0:00");
+			assert.equal(formatAudioDuration(undefined), "0:00");
+			assert.equal(formatAudioDuration(null), "0:00");
+			assert.equal(formatAudioDuration(0), "0:00");
+			assert.equal(formatAudioDuration(-10), "0:00");
 		});
 
 		it("formats under 1 minute duration with leading zero seconds", () => {
-			expect(formatAudioDuration(42)).toBe("0:42");
-			expect(formatAudioDuration(9)).toBe("0:09");
+			assert.equal(formatAudioDuration(42), "0:42");
+			assert.equal(formatAudioDuration(9), "0:09");
 		});
 
 		it("formats multi-minute durations accurately", () => {
-			expect(formatAudioDuration(65)).toBe("1:05");
-			expect(formatAudioDuration(150)).toBe("2:30");
-			expect(formatAudioDuration(600)).toBe("10:00");
+			assert.equal(formatAudioDuration(65), "1:05");
+			assert.equal(formatAudioDuration(150), "2:30");
+			assert.equal(formatAudioDuration(600), "10:00");
 		});
 	});
 
@@ -223,35 +219,37 @@ describe("Leads Kanban Focus Workspace & Clinical SLA Timers", () => {
 
 			const csv = exportLeadsToCsv(sampleLeads, "1. Новые");
 
-			// Starts with UTF-8 BOM
-			expect(csv.startsWith("\uFEFF")).toBe(true);
-			expect(csv).toContain("# Выгрузка этапа: 1. Новые");
-			expect(csv).toContain(
-				"ID;Имя пациента;Телефон;Источник рекламы;Статус;Выручка (₽);Время ожидания (SLA);Примечания / Жалобы;Клинические теги;Запись звонка (URL)",
+			assert.equal(csv.startsWith("\uFEFF"), true);
+			assert.equal(csv.includes("# Выгрузка этапа: 1. Новые"), true);
+			assert.equal(
+				csv.includes(
+					"ID;Имя пациента;Телефон;Источник рекламы;Статус;Выручка (₽);Время ожидания (SLA);Примечания / Жалобы;Клинические теги;Запись звонка (URL)",
+				),
+				true,
 			);
-			expect(csv).toContain("Иванов Иван \"\"Тест\"\"");
-			expect(csv).toContain("+7 999 123-45-67");
-			expect(csv).toContain("45000");
-			expect(csv).toContain("Острая боль ⚡, Имплантация");
-			expect(csv).toContain("https://telephony.clinic.ru/rec/001.mp3");
+			assert.equal(csv.includes('Иванов Иван ""Тест""'), true);
+			assert.equal(csv.includes("+7 999 123-45-67"), true);
+			assert.equal(csv.includes("45000"), true);
+			assert.equal(csv.includes("Острая боль ⚡, Имплантация"), true);
+			assert.equal(csv.includes("https://telephony.clinic.ru/rec/001.mp3"), true);
 		});
 	});
 
 	describe("5. Funnel Stage Transitions SSOT (NEXT_STAGE_MAP)", () => {
 		it("provides unbroken progressive stages for all canonical columns", () => {
-			expect(NEXT_STAGE_MAP.new?.status).toBe("contacted");
-			expect(NEXT_STAGE_MAP.new?.label).toContain("Квалифицировать");
+			assert.equal(NEXT_STAGE_MAP.new?.status, "contacted");
+			assert.equal(NEXT_STAGE_MAP.new?.label.includes("Квалифицировать"), true);
 
-			expect(NEXT_STAGE_MAP.contacted?.status).toBe("consult_booked");
-			expect(NEXT_STAGE_MAP.contacted?.label).toContain("консультацию");
+			assert.equal(NEXT_STAGE_MAP.contacted?.status, "consult_booked");
+			assert.equal(NEXT_STAGE_MAP.contacted?.label.includes("консультацию"), true);
 
-			expect(NEXT_STAGE_MAP.consult_booked?.status).toBe("showed_up");
-			expect(NEXT_STAGE_MAP.consult_booked?.label).toContain("дошёл");
+			assert.equal(NEXT_STAGE_MAP.consult_booked?.status, "showed_up");
+			assert.equal(NEXT_STAGE_MAP.consult_booked?.label.includes("дошёл"), true);
 		});
 
 		it("allows 1-click recovery from edge and terminal columns", () => {
-			expect(NEXT_STAGE_MAP.no_answer?.status).toBe("new");
-			expect(NEXT_STAGE_MAP.trash?.status).toBe("new");
+			assert.equal(NEXT_STAGE_MAP.no_answer?.status, "new");
+			assert.equal(NEXT_STAGE_MAP.trash?.status, "new");
 		});
 	});
 });
