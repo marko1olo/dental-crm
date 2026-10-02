@@ -1,15 +1,4 @@
-export type ToothState =
-	| "Caries"
-	| "Pulpitis"
-	| "Periodontitis"
-	| "Missing"
-	| "Crown"
-	| "Implant"
-	| "Filled"
-	| "Healthy"
-	| "Planned_Implant"
-	| "Retained"
-	| "Root";
+export type { ToothState } from "./chart/toothChartTypes";
 
 import type React from "react";
 import { useCallback, useEffect, memo, useRef, useState, useMemo } from "react";

@@ -11,6 +11,7 @@
  * Provides resilient, optimistic queueing of cash, card, and mixed payments when network is down.
  */
 
+import { kopecksToRub } from "@dental/shared";
 import {
 	enqueueOfflineMutation,
 	getPendingOfflineMutations,
@@ -122,7 +123,7 @@ export async function enqueueOfflinePayment(
 	const id = generateOfflinePaymentId();
 	const idempotencyKey = generatePaymentIdempotencyKey(input.patientId, input.totalKopecks);
 	const createdAt = new Date().toISOString();
-	const totalRub = Math.round(input.totalKopecks / 100);
+	const totalRub = kopecksToRub(input.totalKopecks);
 
 	let fiscalStatus: FiscalBufferStatus = "not_required";
 	let fiscalQueueId: string | undefined;
@@ -134,13 +135,20 @@ export async function enqueueOfflinePayment(
 				payload: {
 					items: input.items.map((it) => ({
 						name: it.name,
-						priceRub: Math.round(it.priceKopecks / 100),
+						priceRub: kopecksToRub(it.priceKopecks),
 						quantity: it.quantity,
 					})),
 					totalRub,
 					cashierName: input.cashierName || "Кассир",
 					patientEmailOrPhone: input.patientPhoneOrEmail,
-					paymentType: input.paymentType === "cash" ? "cash" : "card",
+					paymentType:
+						input.paymentType === "cash"
+							? "cash"
+							: input.paymentType === "sbp"
+								? "sbp"
+								: input.paymentType === "deposit"
+									? "deposit"
+									: "card",
 				},
 			});
 			if (fiscalRes.success) {
