@@ -1,4 +1,5 @@
 import type React from "react";
+import type { CrmToothState } from "@dental/shared";
 import {
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
@@ -36,18 +37,7 @@ function areSurfacesEqual(
 }
 export { areSurfacesEqual };
 
-export type ToothState =
-	| "Caries"
-	| "Pulpitis"
-	| "Periodontitis"
-	| "Missing"
-	| "Crown"
-	| "Implant"
-	| "Filled"
-	| "Healthy"
-	| "Planned_Implant"
-	| "Retained"
-	| "Root";
+export type ToothState = CrmToothState;
 
 /**
  * Русские названия состояний — для доступного имени зуба.

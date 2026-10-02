@@ -5,6 +5,9 @@ import {
 	parseKopecks,
 	percentageOfKopecks,
 	splitKopecks,
+	rubToKopecks,
+	kopecksToRub,
+	normalizePaymentMethod,
 } from "@dental/shared";
 import {
 	Banknote,
@@ -1917,11 +1920,11 @@ export function PaymentCapture({
 				<SberPosTerminalModal
 					isOpen={isSberPosModalOpen}
 					onClose={() => setIsSberPosModalOpen(false)}
-					totalBillKop={Math.round(
+					totalBillKop={rubToKopecks(
 						Number(
 							normalizeRubAmountInput(amount) ??
 								(remainingDebt && remainingDebt > 0 ? remainingDebt : 0),
-						) * 100,
+						),
 					)}
 					patientName={patientDefaults?.fullName || payerFullName || "Пациент"}
 					orderId={`CHK-2026-${
@@ -1934,9 +1937,7 @@ export function PaymentCapture({
 					}`}
 					initialOperation={method === "online" ? "sberpay_qr" : "sale"}
 					onSelectAlternativeMethod={(altMethod) => {
-						if (altMethod === "sbp") onMethodChange("online");
-						else if (altMethod === "deposit") onMethodChange("family_wallet");
-						else onMethodChange("cash");
+						onMethodChange(normalizePaymentMethod(altMethod));
 					}}
 					onTransactionSuccess={(response) => {
 						setIsSberPosModalOpen(false);
@@ -1948,7 +1949,7 @@ export function PaymentCapture({
 							onFiscalFpdChange(response.authCode);
 						}
 						showToast(
-							`Оплата ${(response.amountKop / 100).toLocaleString("ru-RU")} ₽ через терминал Сбербанка (${response.cardIssuer}) успешно зафиксирована. RRN: ${response.rrn}`,
+							`Оплата ${money(kopecksToRub(response.amountKop))} через терминал Сбербанка (${response.cardIssuer}) успешно зафиксирована. RRN: ${response.rrn}`,
 							"success",
 						);
 					}}
@@ -1977,7 +1978,7 @@ export function PaymentCapture({
 						setIsSplit5050Mode(false);
 						onAmountChange("");
 						const formattedAmount = paymentData.amountKopecks
-							? money(Math.round(paymentData.amountKopecks / 100))
+							? money(kopecksToRub(paymentData.amountKopecks))
 							: "";
 						showToast(
 							`Комбинированная оплата ${formattedAmount} успешно зафиксирована.`,
