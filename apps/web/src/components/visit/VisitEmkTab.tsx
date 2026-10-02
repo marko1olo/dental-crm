@@ -57,6 +57,7 @@ import { countLabel } from "../../lib/russianPlural";
 import { useVisitStore } from "../../store/visitStore";
 import { logger } from "../../utils/logger";
 import { specialtyLabels } from "../../workspaceUiLabels";
+import { StaffActionAuditService } from "../../services/audit/staffActionAuditService";
 import {
 	InformedConsentModal,
 	type SignedConsentPayload,
@@ -118,6 +119,7 @@ import {
 	EmkToolbar,
 	appendClinicalText,
 } from "./emk";
+import { staffTelemetryService } from "../../services/logging/staffTelemetryService";
 
 export interface DebouncedEmkTextareaProps {
 	fieldKey: string;
@@ -283,6 +285,15 @@ export function VisitEmkTab() {
 		dashboard?.activeAppointment?.id ||
 		"no-active-visit";
 
+	React.useEffect(() => {
+		if (activePatient?.id) {
+			StaffActionAuditService.logEmrOpen({
+				patientId: activePatient.id,
+				cardId: openVisitId !== "no-active-visit" ? openVisitId : undefined,
+			});
+		}
+	}, [activePatient?.id, openVisitId]);
+
 	const {
 		saveState: soloSaveState,
 		flushPendingSave: flushSoloPendingSave,
@@ -380,6 +391,21 @@ export function VisitEmkTab() {
 			if (acceptDraftToVisit) {
 				await acceptDraftToVisit();
 			}
+			if (isRevisingVisitNote) {
+				staffTelemetryService.logRevisionSaved(
+					activePatient?.id || openVisitId,
+					openVisitId,
+					"Исправленному верить",
+				);
+			} else {
+				staffTelemetryService.recordAction({
+					actionType: "custom_action",
+					entityType: "visit_note",
+					entityId: openVisitId,
+					patientId: activePatient?.id || null,
+					details: { savedAt: new Date().toISOString() },
+				});
+			}
 			showToast("Запись приёма успешно сохранена", "success", 3000);
 		} catch (error) {
 			logger.error("[VisitEmkTab] Ошибка сохранения черновика:", error);
@@ -391,6 +417,8 @@ export function VisitEmkTab() {
 		updateVisitNoteField,
 		flushSoloPendingSave,
 		acceptDraftToVisit,
+		isRevisingVisitNote,
+		activePatient,
 	]);
 
 	const handleCompleteVisitAndGenerateReceipt = React.useCallback(async () => {
@@ -424,6 +452,18 @@ export function VisitEmkTab() {
 					treatmentDescription: finalDiary.treatmentPlan,
 				},
 				additionalServices: [],
+			});
+
+			staffTelemetryService.recordAction({
+				actionType: "custom_action",
+				entityType: "visit",
+				entityId: openVisitId,
+				patientId: activePatient?.id || null,
+				details: {
+					status: "completed",
+					totalNetRub: result.totalNetRub,
+					receiptNumber: result.receiptNumber,
+				},
 			});
 
 			setCompletionResult(result);

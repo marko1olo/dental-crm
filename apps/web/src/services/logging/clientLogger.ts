@@ -12,14 +12,19 @@ import {
 	type LogContext,
 	type LogLevel,
 	type NetworkLogEntry,
+	type StaffActionAuditEntry,
+	type StaffActionType,
 	generateCorrelationId,
 	generateUuidV7,
+	sanitizeAuditPayload,
 	sanitizePayload,
 	sanitizeString,
 } from "@dental/shared";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export const MAX_SYSTEM_LOGS = 500;
 export const MAX_NETWORK_LOGS = 200;
+export const OFFLINE_STAFF_AUDIT_STORAGE_KEY = "dente_offline_staff_audit_buffer";
 
 export type LogListener = (entry: ClientLogEntry) => void;
 export type NetworkListener = (entry: NetworkLogEntry) => void;
@@ -27,6 +32,11 @@ export type NetworkListener = (entry: NetworkLogEntry) => void;
 class ClientLoggerService {
 	private systemLogs: ClientLogEntry[] = [];
 	private networkLogs: NetworkLogEntry[] = [];
+	private offlineStaffAuditBuffer: StaffActionAuditEntry[] = [];
+	private isFlushingStaffAudit = false;
+	private flushDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+	private renderJankEvents: Array<{ timestamp: string; durationMs: number }> = [];
+	private renderPacingInstalled = false;
 	private logListeners: Set<LogListener> = new Set();
 	private networkListeners: Set<NetworkListener> = new Set();
 	private fetchInterceptorInstalled = false;
@@ -34,9 +44,11 @@ class ClientLoggerService {
 
 	constructor() {
 		if (typeof window !== "undefined" && typeof window.document !== "undefined") {
+			this.loadOfflineAuditBuffer();
 			this.installFetchInterceptor();
 			this.installGlobalErrorListeners();
 			this.installNetworkStatusListeners();
+			this.installRenderPacingMonitor();
 		}
 	}
 
@@ -295,6 +307,259 @@ class ClientLoggerService {
 	}
 
 	/**
+	 * Загрузка сохраненного буфера аудита действий персонала из localStorage
+	 */
+	public loadOfflineAuditBuffer(): void {
+		const storage =
+			typeof window !== "undefined" && window.localStorage
+				? window.localStorage
+				: typeof localStorage !== "undefined"
+					? localStorage
+					: null;
+		if (!storage) return;
+		try {
+			const saved = storage.getItem(OFFLINE_STAFF_AUDIT_STORAGE_KEY);
+			if (saved) {
+				const parsed = JSON.parse(saved);
+				if (Array.isArray(parsed)) {
+					this.offlineStaffAuditBuffer = parsed;
+				}
+			}
+		} catch {
+			this.offlineStaffAuditBuffer = [];
+		}
+	}
+
+	/**
+	 * Сохранение локального буфера аудита действий персонала в localStorage
+	 */
+	private saveOfflineAuditBuffer(): void {
+		const storage =
+			typeof window !== "undefined" && window.localStorage
+				? window.localStorage
+				: typeof localStorage !== "undefined"
+					? localStorage
+					: null;
+		if (!storage) return;
+		try {
+			storage.setItem(
+				OFFLINE_STAFF_AUDIT_STORAGE_KEY,
+				JSON.stringify(this.offlineStaffAuditBuffer.slice(-300)),
+			);
+		} catch {
+			// Ignore quota exceeded or storage disabled
+		}
+	}
+
+	/**
+	 * Регистрация юридически значимого действия персонала (152-ФЗ / 323-ФЗ)
+	 * с гарантированным оффлайн-буферизированием и фоновой отправкой.
+	 */
+	public recordStaffAction(entry: {
+		actionType: StaffActionType;
+		entityType: string;
+		entityId: string;
+		patientId?: string | null | undefined;
+		actorUserId?: string | null | undefined;
+		actorRole?: string | null | undefined;
+		actorName?: string | null | undefined;
+		details?: Record<string, unknown> | undefined;
+		reason?: string | null | undefined;
+		organizationId?: string | undefined;
+	}): StaffActionAuditEntry {
+		let sanitizedDetails: Record<string, unknown> = {};
+		if (entry.details) {
+			try {
+				sanitizedDetails = sanitizeAuditPayload(entry.details) as Record<string, unknown>;
+			} catch {
+				sanitizedDetails = { error: "unserializable_details" };
+			}
+		}
+
+		const fullEntry: StaffActionAuditEntry = {
+			id: generateUuidV7(),
+			organizationId: entry.organizationId || "00000000-0000-0000-0000-000000000000",
+			actionType: entry.actionType,
+			entityType: sanitizeString(entry.entityType),
+			entityId: sanitizeString(entry.entityId),
+			patientId: entry.patientId || null,
+			actorUserId: entry.actorUserId || null,
+			actorRole: entry.actorRole ? sanitizeString(entry.actorRole) : null,
+			actorName: entry.actorName ? sanitizeString(entry.actorName) : null,
+			details: sanitizedDetails,
+			reason: entry.reason ? sanitizeString(entry.reason) : null,
+			clientTimestamp: new Date().toISOString(),
+		};
+
+		this.offlineStaffAuditBuffer.push(fullEntry);
+		if (this.offlineStaffAuditBuffer.length > 300) {
+			this.offlineStaffAuditBuffer.shift();
+		}
+		this.saveOfflineAuditBuffer();
+
+		// Логируем в локальный журнал
+		this.audit(
+			`[StaffAction] ${fullEntry.actionType} on ${fullEntry.entityType}:${fullEntry.entityId}`,
+			fullEntry.details,
+			{ module: "StaffAudit" },
+		);
+
+		// Запускаем отложенный сброс буфера на сервер
+		this.scheduleFlushStaffAuditBuffer();
+
+		return fullEntry;
+	}
+
+	/**
+	 * Планирование отправки буфера аудита на сервер (с дебаунсом 1.5 сек)
+	 */
+	public scheduleFlushStaffAuditBuffer(): void {
+		if (this.flushDebounceTimer) {
+			clearTimeout(this.flushDebounceTimer);
+		}
+		this.flushDebounceTimer = setTimeout(() => {
+			this.flushDebounceTimer = null;
+			void this.flushStaffAuditBuffer();
+		}, 1500);
+	}
+
+	/**
+	 * Пакетная отправка буфера аудита персонала на сервер (/api/audit/events/batch)
+	 */
+	public async flushStaffAuditBuffer(): Promise<number> {
+		if (this.isFlushingStaffAudit || this.offlineStaffAuditBuffer.length === 0) {
+			return 0;
+		}
+		if (typeof navigator !== "undefined" && !navigator.onLine) {
+			return 0;
+		}
+
+		this.isFlushingStaffAudit = true;
+		let flushedCount = 0;
+
+		try {
+			const batch = this.offlineStaffAuditBuffer.slice(0, 50);
+			if (batch.length === 0) return 0;
+
+			const response = await fetch("/api/audit/events/batch", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({ events: batch }),
+			});
+
+			if (response.ok) {
+				const sentIds = new Set(batch.map((e) => e.id));
+				this.offlineStaffAuditBuffer = this.offlineStaffAuditBuffer.filter(
+					(e) => !sentIds.has(e.id),
+				);
+				this.saveOfflineAuditBuffer();
+				flushedCount = batch.length;
+
+				// Если в буфере еще остались записи, отправляем следующую пачку
+				if (this.offlineStaffAuditBuffer.length > 0) {
+					setTimeout(() => void this.flushStaffAuditBuffer(), 200);
+				}
+			}
+		} catch (err) {
+			// Сохраняем в локальном буфере до восстановления связи
+			this.warn("Фоновая синхронизация журнала аудита отложена до восстановления сети", err, {
+				module: "StaffAudit",
+			});
+		} finally {
+			this.isFlushingStaffAudit = false;
+		}
+
+		return flushedCount;
+	}
+
+	public getPendingStaffAuditCount(): number {
+		return this.offlineStaffAuditBuffer.length;
+	}
+
+	/**
+	 * Измерение реальных операционных метрик сетевой задержки (Zero Math.random)
+	 */
+	public getRealLatencyMetrics(): {
+		count: number;
+		p50Ms: number;
+		p95Ms: number;
+		avgMs: number;
+		minMs: number;
+		maxMs: number;
+	} {
+		const validLogs = this.networkLogs.filter(
+			(l): l is NetworkLogEntry & { latencyMs: number } =>
+				typeof l.statusCode === "number" &&
+				l.statusCode > 0 &&
+				typeof l.latencyMs === "number" &&
+				l.latencyMs > 0,
+		);
+		if (validLogs.length === 0) {
+			return { count: 0, p50Ms: 0, p95Ms: 0, avgMs: 0, minMs: 0, maxMs: 0 };
+		}
+
+		const latencies: number[] = validLogs
+			.map((l) => l.latencyMs)
+			.sort((a: number, b: number) => a - b);
+		const count = latencies.length;
+		const p50Index = Math.floor(count * 0.5);
+		const p95Index = Math.min(count - 1, Math.floor(count * 0.95));
+		let sum = 0;
+		for (const val of latencies) {
+			sum += val;
+		}
+
+		return {
+			count,
+			p50Ms: latencies[p50Index] ?? 0,
+			p95Ms: latencies[p95Index] ?? 0,
+			avgMs: Number((sum / count).toFixed(1)),
+			minMs: latencies[0] ?? 0,
+			maxMs: latencies[count - 1] ?? 0,
+		};
+	}
+
+	/**
+	 * Мониторинг темпа отрисовки (Render Pacing) и микро-фризов интерфейса (>50мс)
+	 */
+	public installRenderPacingMonitor(): void {
+		if (this.renderPacingInstalled || typeof window === "undefined" || !window.requestAnimationFrame) {
+			return;
+		}
+		this.renderPacingInstalled = true;
+
+		let lastFrameTime = performance.now();
+		const checkFrame = (now: number) => {
+			const delta = now - lastFrameTime;
+			lastFrameTime = now;
+
+			// Если вкладка активна и кадр занял > 50мс (просадка ниже 20 fps)
+			if (typeof document !== "undefined" && !document.hidden && delta > 50) {
+				this.renderJankEvents.push({
+					timestamp: new Date().toISOString(),
+					durationMs: Math.round(delta),
+				});
+				if (this.renderJankEvents.length > 50) {
+					this.renderJankEvents.shift();
+				}
+			}
+
+			if (typeof window !== "undefined" && window.requestAnimationFrame) {
+				window.requestAnimationFrame(checkFrame);
+			}
+		};
+
+		window.requestAnimationFrame(checkFrame);
+	}
+
+	public getRenderJankCount(): number {
+		return this.renderJankEvents.length;
+	}
+
+	/**
 	 * Отслеживание событий подключения к сети (online/offline)
 	 */
 	public installNetworkStatusListeners(): void {
@@ -304,6 +569,7 @@ class ClientLoggerService {
 			this.info("Сеть восстановлена: клиент перешел в статус ONLINE", null, {
 				module: "NetworkState",
 			});
+			void this.flushStaffAuditBuffer();
 		});
 
 		window.addEventListener("offline", () => {

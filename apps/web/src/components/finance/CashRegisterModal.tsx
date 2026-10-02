@@ -29,6 +29,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { StaffActionAuditService } from "../../services/audit/staffActionAuditService";
 import {
 	compile54FzShiftCloseZReport,
 	type Ffd12ShiftCloseZReportSummary,
@@ -213,6 +214,11 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				await onOpenShift();
 			}
 			setLocalIsShiftOpen(true);
+			StaffActionAuditService.logShiftOpen({
+				cashRegisterId: "kkt_main",
+				shiftNumber,
+				openingCashKopecks: cashInDrawerKopecks,
+			});
 			showToast(`Кассовая смена №${shiftNumber} открыта на кассовом аппарате!`, "success", 4000);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : "Ошибка открытия смены";
@@ -220,7 +226,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		} finally {
 			setIsProcessing(false);
 		}
-	}, [isProcessing, onOpenShift, shiftNumber]);
+	}, [isProcessing, onOpenShift, shiftNumber, cashInDrawerKopecks]);
 
 	const handleCloseShiftAction = useCallback(async () => {
 		if (isProcessing) return;
@@ -230,6 +236,11 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				await onCloseShift(reportSummary);
 			}
 			setLocalIsShiftOpen(false);
+			StaffActionAuditService.logShiftClose({
+				cashRegisterId: "kkt_main",
+				shiftNumber,
+				totalRevenueKopecks: Math.round((reportSummary.netRevenueRub || 0) * 100),
+			});
 			showToast(
 				`Смена №${shiftNumber} успешно закрыта! Z-отчет отправлен в ОФД`,
 				"success",
@@ -255,6 +266,10 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			if (onPrintXReport) {
 				await onPrintXReport();
 			}
+			StaffActionAuditService.logDocumentPrint({
+				documentType: "x_report",
+				title: `X-отчет смены №${shiftNumber}`,
+			});
 			showToast(
 				`X-отчет напечатан на ККТ: выручка ${netRevenueRub.toLocaleString("ru-RU")} ₽`,
 				"success",
@@ -265,7 +280,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		} finally {
 			setIsProcessing(false);
 		}
-	}, [isProcessing, isShiftActive, onPrintXReport, netRevenueRub]);
+	}, [isProcessing, isShiftActive, onPrintXReport, netRevenueRub, shiftNumber, cashierFullName]);
 
 	const handleCopyTape = useCallback(async () => {
 		await navigator.clipboard.writeText(receiptTapeText);

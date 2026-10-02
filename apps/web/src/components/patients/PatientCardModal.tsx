@@ -30,6 +30,7 @@ import { PatientRadiologyTab } from "./tabs/PatientRadiologyTab";
 import { PatientDentalFormulaTab } from "./formula/PatientDentalFormulaTab";
 import { ToothMolar } from "../icons/DentalIcons";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { StaffActionAuditService } from "../../services/audit/staffActionAuditService";
 import {
 	STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
@@ -146,6 +147,15 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 			return { ...DEFAULT_SOMATIC_HEALTHY_NORM, ...effectiveInitialSafety };
 		});
 		const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState(false);
+
+		useEffect(() => {
+			if (isOpen && effectiveInitialPatient.id) {
+				StaffActionAuditService.logEmrOpen({
+					patientId: effectiveInitialPatient.id,
+					cardId: effectiveInitialPatient.id,
+				});
+			}
+		}, [isOpen, effectiveInitialPatient.id, effectiveInitialPatient.fullName]);
 
 		const isChildPatient = React.useMemo(() => {
 			if (patientData.birthDate) {

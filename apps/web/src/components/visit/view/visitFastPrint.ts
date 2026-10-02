@@ -1,5 +1,6 @@
 import { renderForm043uHtml } from "@dental/shared";
 import { generateInformedConsent1051nHtml } from "../../../lib/clinicalProtocols043";
+import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
 import { showToast } from "../../GlobalToast";
 
 export interface FastPrint043Params {
@@ -125,6 +126,11 @@ export function executeFastPrint043u({
 		}
 	}
 
+	StaffActionAuditService.logDocumentPrint({
+		documentType: "emr_card_043",
+		title: "Медицинская карта 043/у",
+		patientId: activePatient?.id,
+	});
 	showToast(
 		`Медицинская карта отправлена на печать (${watermarkText})`,
 		"success",
@@ -214,5 +220,10 @@ export function executeFastPrintInformedConsent({
 			}, 1000);
 		}, 150);
 	}
+	StaffActionAuditService.logDocumentPrint({
+		documentType: "informed_consent",
+		title: "Информированное добровольное согласие",
+		patientId: activePatient?.id,
+	});
 	showToast(`Согласие на лечение отправлено на печать (${watermarkText})`, "success", 4000);
 }

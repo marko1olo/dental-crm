@@ -17,6 +17,7 @@ import type {
 } from "./types";
 import { showToast } from "../GlobalToast";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { StaffActionAuditService } from "../../services/audit/staffActionAuditService";
 import { logger } from "../../utils/logger";
 import {
 	type CatalogServiceLookupItem,
@@ -308,7 +309,17 @@ export function useTreatmentPlanLogic({
 	};
 
 	const handleRemoveItem = (itemId: string) => {
+		const targetItem = stages.flatMap((s) => s.items).find((it) => it.id === itemId);
 		setCustomStages(removeItemFromStages(stages, itemId));
+		if (targetItem) {
+			StaffActionAuditService.logServiceRemove({
+				patientId,
+				planId: currentPlanId || "default_plan",
+				serviceCode: targetItem.code804n,
+				serviceName: targetItem.name,
+				amountKopecks: Math.round((targetItem.priceRub || 0) * 100),
+			});
+		}
 		showToast("Процедура удалена из этапа", "info");
 	};
 
@@ -608,7 +619,28 @@ export function useTreatmentPlanLogic({
 	) => {
 		const nextStages = addItemToPlanStages(stages, targetStageNumber, newItemData);
 		setCustomStages(nextStages);
+		StaffActionAuditService.logServiceAdd({
+			patientId,
+			planId: currentPlanId || "default_plan",
+			serviceCode: newItemData.code804n || "804n_service",
+			serviceName: newItemData.name || "Услуга",
+			amountKopecks: newItemData.priceRub ? Math.round(newItemData.priceRub * 100) : 0,
+			...(newItemData.toothNumber ? { toothNumber: newItemData.toothNumber } : {}),
+		});
 		showToast(`Услуга «${newItemData.name || "Услуга"}» добавлена в этап №${targetStageNumber}`, "success");
+	};
+
+	const handleApplyDiscount = (newDiscountPercent: number, reason?: string) => {
+		const oldDiscount = discountPercent;
+		setDiscountPercent(newDiscountPercent);
+		if (oldDiscount !== newDiscountPercent) {
+			StaffActionAuditService.logDiscountApply({
+				patientId,
+				planId: currentPlanId,
+				discountPercent: newDiscountPercent,
+				reason: reason ?? `План лечения: изменение скидки с ${oldDiscount}% на ${newDiscountPercent}%`,
+			});
+		}
 	};
 
 	const handleCreateNewStage = (
@@ -668,6 +700,7 @@ export function useTreatmentPlanLogic({
 		setSelectedTierId,
 		discountPercent,
 		setDiscountPercent,
+		handleApplyDiscount,
 		bonusPointsToUseRub,
 		setBonusPointsToUseRub,
 		planStatus,

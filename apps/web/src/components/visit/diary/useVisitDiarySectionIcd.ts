@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type React from "react";
 import type { DiaryState } from "../../useVisitDiaryLogic";
 import { ICD10_DICTIONARY } from "../../../lib/icd10";
+import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
 
 export interface UseVisitDiarySectionIcdParams {
 	readonly icdSearch: string;
@@ -22,7 +23,17 @@ export function useVisitDiarySectionIcd({
 }: UseVisitDiarySectionIcdParams) {
 	const handleIcdSelect = (code: string) => {
 		ensureRevisingIfLocked();
-		setDiary((prev) => ({ ...prev, diagnosisIcd10: code }));
+		setDiary((prev) => {
+			if (prev.diagnosisIcd10 !== code) {
+				StaffActionAuditService.logDiagnosisChange({
+					patientId: (prev as any).patientId || "current_patient",
+					oldDiagnosis: { icdCode: prev.diagnosisIcd10 },
+					newDiagnosis: { icdCode: code },
+					reason: "Выбор диагноза по МКБ-10 в дневнике приёма",
+				});
+			}
+			return { ...prev, diagnosisIcd10: code };
+		});
 		setIcdSearch(code);
 		setShowIcdDropdown(false);
 		scheduleDebouncedSave();

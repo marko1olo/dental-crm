@@ -39,6 +39,7 @@ import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders
 import { FiscalReceiptQueueManager } from "../../../services/hardware/fiscalReceiptQueueManager";
 import { showToast } from "../../GlobalToast";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
+import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
 
 let refundMutationSeq = 0;
 
@@ -326,6 +327,13 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 				} else {
 					showToast(`Чек возврата «Возврат прихода» №${finalDocNumber || "б/н"} успешно фискализирован!`, "success");
 				}
+				StaffActionAuditService.logPaymentRefund({
+					patientId,
+					billId: invoiceId,
+					amountKopecks: calculation.totalRefundKop,
+					reason: reasonText || "Возврат услуги",
+					paymentMethod: refundCashKopecks > 0 ? "cash" : "card",
+				});
 			} else {
 				const errData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
 				console.warn("[RefundServiceModal] /api/fiscal/refund returned status:", res.status, errData);

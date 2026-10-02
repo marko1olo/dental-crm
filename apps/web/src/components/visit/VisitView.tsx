@@ -26,6 +26,7 @@ import {
 	getDoctorChairSessionsStorageKey,
 } from "./clinicalVisitWorkflow";
 import { showToast } from "../GlobalToast";
+import { StaffActionAuditService } from "../../services/audit/staffActionAuditService";
 import { VisitView as BaseVisitView } from "../../VisitView";
 import type { VisitViewProps } from "../../VisitView";
 
@@ -91,6 +92,11 @@ export function ChairSwitcherBar({
 	const handleConfirmAbort = useCallback(() => {
 		if (activeSession && onAbortOrReschedule) {
 			const reasonText = abortReason.trim() || (abortMode === "aborted" ? "По клиническим показаниям" : "По согласованию с пациентом");
+			StaffActionAuditService.logAppointmentCancel({
+				appointmentId: activeSession.chairId,
+				patientId: (activeSession as any).patientId,
+				reason: reasonText,
+			});
 			onAbortOrReschedule(activeSession.chairId, abortMode, reasonText, rescheduleDate);
 			showToast(
 				abortMode === "aborted"

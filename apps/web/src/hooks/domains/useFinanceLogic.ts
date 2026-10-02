@@ -14,6 +14,7 @@ import {
 } from "../../rubAmountInput";
 import { useAppStore } from "../../store/appStore";
 import { useDocumentStore } from "../../store/documentStore";
+import { StaffActionAuditService } from "../../services/audit/staffActionAuditService";
 import { fetchWithHandling } from "../../utils/networkUtils";
 
 export type UseFinanceLogicOptions = {
@@ -258,6 +259,13 @@ export function useFinanceLogic({
 				return;
 			}
 			paymentMutationIdRef.current = null;
+			StaffActionAuditService.logPaymentReceive({
+				patientId: documentPatient.id,
+				billId: documentForPayment?.id || browserGeneratedId("pay"),
+				amountKopecks: Math.round(amountRub * 100),
+				paymentMethod: String(paymentMethod),
+				...(paymentFiscalReceiptNumber.trim() ? { fiscalReceiptNumber: paymentFiscalReceiptNumber.trim() } : {}),
+			});
 			setPaymentAmount("");
 			setPaymentFiscalReceiptNumber("");
 			setPaymentFiscalReceiptIssuedAt("");

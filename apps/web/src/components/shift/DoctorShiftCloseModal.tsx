@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { money } from "../../AppHelpers";
 import type { DoctorShiftStats } from "./DoctorShiftControlBar";
+import { StaffActionAuditService } from "../../services/audit/staffActionAuditService";
 
 export interface DoctorShiftCashSummary {
 	readonly cashRub: number;
@@ -78,6 +79,11 @@ export const DoctorShiftCloseModal: React.FC<DoctorShiftCloseModalProps> = ({
 	const hasUnsignedEmr = emrPending > 0;
 
 	const handlePrintShiftStatement = () => {
+		StaffActionAuditService.logDocumentPrint({
+			documentType: "doctor_shift_report_d1",
+			title: `Сменный отчет врача — ${doctorFullName}`,
+		});
+
 		const printWin = window.open("", "_blank", "width=800,height=900");
 		if (!printWin) {
 			window.print();
@@ -371,7 +377,15 @@ export const DoctorShiftCloseModal: React.FC<DoctorShiftCloseModalProps> = ({
 						</button>
 						<button
 							type="button"
-							onClick={onConfirmClose}
+							onClick={() => {
+								StaffActionAuditService.logShiftClose({
+									cashRegisterId: "main_cashier",
+									shiftNumber: shiftDateLabel || "today",
+									totalRevenueKopecks: Math.round(effectiveTotalCashRub * 100),
+									closingCashKopecks: Math.round(cashRub * 100),
+								});
+								onConfirmClose();
+							}}
 							className="min-h-[44px] px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 						>
 							<CheckCircle2 className="w-4 h-4" />
