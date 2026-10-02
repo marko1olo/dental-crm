@@ -7408,5 +7408,27 @@
   - `docs/competitive-audit/FEATURES_REGISTRY.md` (Волна 326)
   - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 326)
 
+### 2.10.423. Волна 327: Семантическая База Знаний CRM, Реестр Компонентов и Контекстная Интроспекция для ИИ-Агентов и Онбординга (Мандаты 8l, 8e, 8n, 8b, коммит `5146723e5`)
+- **Функционал**:
+  1. *Машиночитаемый семантический реестр 14 канонических компонентов CRM (Мандат 8l, 8b)*: строгие Zod-контракты (`crmComponentKnowledgeSchema`, `crmActionKnowledgeSchema`, `crmTroubleshootingItemSchema`, `crmFaqItemSchema`, `crmVisualGuideSchema`); декомпозиция реестра на изолированные субмодули строго <800 строк (`clinicalComponents.ts`, `diagnosticWarehouseComponents.ts`, `financeAdminComponents.ts`);
+  2. *Полнотекстовый и семантический движок поиска с нормализацией и релевантностью*: токенизация, точное совпадение ID и подстрок, фильтрация по ролям (`doctor`, `admin`, `nurse`, `owner`) и категориям;
+  3. *Генератор контекста для LLM и Copilot*: автоматическое форматирование операционных знаний в Markdown (`formatComponentForLLMContext`, `formatKnowledgeBaseOverviewForLLM`) с проверенными CSS-селекторами (`data-testid`), хоткеями, клиническими сценариями и шагами устранения проблем;
+  4. *Клиентский сервис знаний и пошаговый интерактивный тур*: `KnowledgeService.generateInteractiveTour` для игрового «ведения за руку» пользователя по любому компоненту с подсветкой и пульсирующими якорями;
+  5. *Интеграция с Copilot*: быстрые промпты базы знаний в `CopilotSuggestions.tsx` и экспорт `./knowledge` из `@dental/shared`; 100% покрытие целевым сьютом из 16 тестов (`crmComponentRegistry.test.ts`).
+- **Статус**: `[ЕСТЬ] / [ЗАКРЫТО] (100% выполнено)`.
+- **Задействованные компоненты и модули**:
+  - [`packages/shared/src/knowledge/schemas.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/knowledge/schemas.ts)
+  - [`packages/shared/src/knowledge/crmComponentRegistry.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/knowledge/crmComponentRegistry.ts)
+  - [`packages/shared/src/knowledge/registry/clinicalComponents.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/knowledge/registry/clinicalComponents.ts)
+  - [`packages/shared/src/knowledge/registry/diagnosticWarehouseComponents.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/knowledge/registry/diagnosticWarehouseComponents.ts)
+  - [`packages/shared/src/knowledge/registry/financeAdminComponents.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/knowledge/registry/financeAdminComponents.ts)
+  - [`packages/shared/src/knowledge/knowledgeSearchEngine.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/knowledge/knowledgeSearchEngine.ts)
+  - [`packages/shared/src/knowledge/index.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/knowledge/index.ts)
+  - [`apps/web/src/services/knowledge/knowledgeService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/services/knowledge/knowledgeService.ts)
+  - [`apps/web/src/components/copilot/CopilotSuggestions.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotSuggestions.tsx)
+  - [`packages/shared/src/tests/crmComponentRegistry.test.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/tests/crmComponentRegistry.test.ts)
+  - `docs/competitive-audit/OUR_CRM_MAP.md` (Волна 327)
+
+
 
 

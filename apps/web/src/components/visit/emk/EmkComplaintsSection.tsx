@@ -48,7 +48,7 @@ export function EmkComplaintsSection({
 							type="button"
 							data-testid="btn-emk-complaints-norm"
 							onClick={() => updateVisitNoteField("complaint", "Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).")}
-							disabled={isLocked}
+							disabled={false}
 							className="hidden"
 							title="0-Клик: Жалоб нет (плановый осмотр)"
 						>
@@ -82,7 +82,7 @@ export function EmkComplaintsSection({
 								key={idx}
 								type="button"
 								onClick={() => handleAddChip("complaint", chip)}
-								disabled={isLocked}
+								disabled={false}
 								className="px-2 py-1 rounded text-[11px] font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-all cursor-pointer inline-flex items-center gap-1.5 text-left w-full min-w-0 disabled:opacity-50"
 								title={chip}
 							>
@@ -107,7 +107,7 @@ export function EmkComplaintsSection({
 							type="button"
 							data-testid="btn-emk-anamnesis-norm"
 							onClick={() => updateVisitNoteField("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен. Перенесенные инфекционные заболевания со слов отрицает. Норма.")}
-							disabled={isLocked}
+							disabled={false}
 							className="hidden"
 							title="0-Клик: Соматически здоров / норма"
 						>
@@ -141,7 +141,7 @@ export function EmkComplaintsSection({
 								key={idx}
 								type="button"
 								onClick={() => handleAddChip("anamnesis", chip)}
-								disabled={isLocked}
+								disabled={false}
 								className="px-2 py-1 rounded text-[11px] font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--teal,var(--brand-primary))] text-[var(--ink)] transition-all cursor-pointer inline-flex items-center gap-1.5 text-left w-full min-w-0 disabled:opacity-50"
 								title={chip}
 							>

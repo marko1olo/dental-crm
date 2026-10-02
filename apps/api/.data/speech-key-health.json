@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-10-02T12:49:42.043Z",
+  "savedAt": "2026-10-02T13:21:58.050Z",
   "health": {
     "cloudflare_whisper:89d9d83a5665": {
       "cooldownUntil": 0,
@@ -8,6 +8,15 @@
       "consecutiveFailures": 0,
       "successes": 1,
       "lastUsedAt": 1790945382026,
+      "lastStatusCode": null,
+      "lastError": null
+    },
+    "google_speech:26987e457b44": {
+      "cooldownUntil": 0,
+      "failures": 0,
+      "consecutiveFailures": 0,
+      "successes": 1,
+      "lastUsedAt": 1790947318049,
       "lastStatusCode": null,
       "lastError": null
     },
