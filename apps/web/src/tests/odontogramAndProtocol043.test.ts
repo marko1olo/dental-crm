@@ -309,7 +309,6 @@ describe("Odontogram, Dental Formula & Form 043/u Inquisitor Suite (Mandates 8e,
 		const mockCatalog: readonly PlanPriceCatalogItem[] = [
 			{
 				id: "A11.07.012",
-				code: "A11.07.012",
 				title: "Местная анестезия (инфильтрационная)",
 				basePriceRub: 800,
 				category: "Анестезия",
@@ -317,7 +316,6 @@ describe("Odontogram, Dental Formula & Form 043/u Inquisitor Suite (Mandates 8e,
 			},
 			{
 				id: "A16.07.002.010",
-				code: "A16.07.002.010",
 				title: "Восстановление зуба пломбой светового отверждения (лечение кариеса)",
 				basePriceRub: 4500,
 				category: "Терапия",
@@ -410,13 +408,15 @@ describe("Odontogram, Dental Formula & Form 043/u Inquisitor Suite (Mandates 8e,
 			assert.equal(preset.surfaces, undefined, "Surfaces must be undefined when not explicitly passed");
 			assert.ok(!preset.statusLocalis.includes("O/MOD"), "Must not force O/MOD onto tooth 36");
 			assert.ok(preset.statusLocalis.startsWith("Зуб 36: Кариозная полость средней глубины"));
-			assert.equal(preset.service804n.title, "Восстановление зуба пломбой светового отверждения (лечение кариеса дентина) (Зуб 36)");
+			assert.ok(preset.service804n);
+			assert.equal(preset.service804n!.title, "Восстановление зуба пломбой светового отверждения (лечение кариеса дентина) (Зуб 36)");
 
 			// With explicit surfaces
 			const customPreset = build1ClickCariesPreset(16, "MOD");
 			assert.equal(customPreset.surfaces, "MOD");
 			assert.ok(customPreset.statusLocalis.includes("На поверхностях MOD"));
-			assert.ok(customPreset.service804n.title.includes("(поверхности MOD)"));
+			assert.ok(customPreset.service804n);
+			assert.ok(customPreset.service804n!.title.includes("(поверхности MOD)"));
 		});
 
 		it("buildChairsideSmartProtocol handles absence of surfaces cleanly without (UNDEFINED)", () => {

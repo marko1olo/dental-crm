@@ -113,7 +113,7 @@ const mockDashboard = {
 
 const targetDirs = [
   path.resolve("docs/screenshots/odontogram_audit"),
-  "C:/Users/Admin/.gemini/antigravity/brain/1bf10845-6db2-440d-8441-c66b02ce9b08",
+  "C:/Users/Admin/.gemini/antigravity/brain/4dfd11ca-49db-4abb-b809-71d15b1a5bc8",
 ];
 
 for (const d of targetDirs) {
@@ -323,28 +323,56 @@ async function run() {
     });
     await dPage.waitForTimeout(800);
 
-    // 1C. Open ToothRadialMenu on Tooth 16
-    console.log("[Desktop] Opening ToothRadialMenu on Tooth 16 via DOM click...");
+    // 1C. Active Stamp Tool (Caries Stamp 1-Click Mode)
+    console.log("[Desktop] Activating Caries Stamp tool via DOM click...");
+    await dPage.evaluate(() => {
+      const stampBtn = document.querySelector('[data-testid="quick-trigger-caries-btn"]');
+      if (stampBtn) stampBtn.click();
+    });
+    await dPage.waitForTimeout(600);
+
+    await setTheme(dPage, "light");
+    await saveProof(dPage, "05_stamp_caries_active_desktop_light.png", "Desktop Light Caries Stamp Tool Active with Banner");
+
+    await setTheme(dPage, "dark");
+    await saveProof(dPage, "06_stamp_caries_active_desktop_dark.png", "Desktop Dark Caries Stamp Tool Active with Banner");
+
+    // 1-Click tooth stamping test (Click tooth 16 to apply stamp immediately without modal)
+    console.log("[Desktop] Stamping tooth 16 with Caries stamp in 1 click...");
     await dPage.evaluate(() => {
       const t = document.querySelector('[data-tooth-id="16"]') ||
                 document.querySelector('.tooth-svg-wrapper[data-tooth="16"]') ||
                 document.querySelector('[data-testid="tooth-cell-16"]');
       if (t) t.click();
     });
+    await dPage.waitForTimeout(600);
+
+    // Deactivate stamp tool via Escape
+    await dPage.keyboard.press("Escape");
+    await dPage.waitForTimeout(400);
+
+    // 1D. Open ToothRadialMenu on Tooth 14 (when NO stamp is active)
+    console.log("[Desktop] Opening ToothRadialMenu on Tooth 14 via DOM click...");
+    await dPage.evaluate(() => {
+      const t = document.querySelector('[data-tooth-id="14"]') ||
+                document.querySelector('.tooth-svg-wrapper[data-tooth="14"]') ||
+                document.querySelector('[data-testid="tooth-cell-14"]');
+      if (t) t.click();
+    });
     await dPage.waitForTimeout(800);
 
     await setTheme(dPage, "light");
-    await saveProof(dPage, "05_tooth_radial_menu_desktop_light.png", "Desktop Light Tooth Radial Menu Open (Tooth 16)");
+    await saveProof(dPage, "07_tooth_radial_menu_desktop_light.png", "Desktop Light Tooth Radial Menu Open (Tooth 14)");
 
     await setTheme(dPage, "dark");
-    await saveProof(dPage, "06_tooth_radial_menu_desktop_dark.png", "Desktop Dark Tooth Radial Menu Open (Tooth 16)");
+    await saveProof(dPage, "08_tooth_radial_menu_desktop_dark.png", "Desktop Dark Tooth Radial Menu Open (Tooth 14)");
 
     // Test Escape hotkey to close radial menu
     console.log("[Desktop] Testing Escape key dismiss...");
     await dPage.keyboard.press("Escape");
     await dPage.waitForTimeout(600);
 
-    // 1D. Open OdontogramLiveInvoice (Click "Смета")
+    // 1E. Open OdontogramLiveInvoice (Click "Смета")
     console.log("[Desktop] Opening OdontogramLiveInvoice modal via DOM click...");
     await dPage.evaluate(() => {
       const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Смета'));
@@ -353,16 +381,16 @@ async function run() {
     await dPage.waitForTimeout(1000);
 
     await setTheme(dPage, "light");
-    await saveProof(dPage, "07_odontogram_live_invoice_desktop_light.png", "Desktop Light Odontogram Live Invoice (Order 804n)");
+    await saveProof(dPage, "09_odontogram_live_invoice_desktop_light.png", "Desktop Light Odontogram Live Invoice (Order 804n)");
 
     await setTheme(dPage, "dark");
-    await saveProof(dPage, "08_odontogram_live_invoice_desktop_dark.png", "Desktop Dark Odontogram Live Invoice (Order 804n)");
+    await saveProof(dPage, "10_odontogram_live_invoice_desktop_dark.png", "Desktop Dark Odontogram Live Invoice (Order 804n)");
 
     // Dismiss live invoice
     await dPage.keyboard.press("Escape");
     await dPage.waitForTimeout(600);
 
-    // 1E. Open Pediatric Mixed Dentition Modal via More Menu
+    // 1F. Open Pediatric Mixed Dentition Modal via More Menu
     console.log("[Desktop] Opening Pediatric Mixed Dentition Modal via DOM click...");
     await dPage.evaluate(() => {
       const moreBtn = document.querySelector('[data-testid="odontogram-toolbar-more-menu-btn"]') ||
@@ -378,10 +406,10 @@ async function run() {
     await dPage.waitForTimeout(1000);
 
     await setTheme(dPage, "light");
-    await saveProof(dPage, "09_pediatric_modal_desktop_light.png", "Desktop Light Pediatric Mixed Dentition Modal");
+    await saveProof(dPage, "11_pediatric_modal_desktop_light.png", "Desktop Light Pediatric Mixed Dentition Modal");
 
     await setTheme(dPage, "dark");
-    await saveProof(dPage, "10_pediatric_modal_desktop_dark.png", "Desktop Dark Pediatric Mixed Dentition Modal");
+    await saveProof(dPage, "12_pediatric_modal_desktop_dark.png", "Desktop Dark Pediatric Mixed Dentition Modal");
 
     await dPage.keyboard.press("Escape");
     await dPage.waitForTimeout(600);
@@ -433,10 +461,10 @@ async function run() {
 
     // 2A. Mobile Odontogram Light & Dark
     await setTheme(mPage, "light");
-    await saveProof(mPage, "11_odontogram_mobile_light.png", "Mobile Light Odontogram View (390x844)");
+    await saveProof(mPage, "13_odontogram_mobile_light.png", "Mobile Light Odontogram View (390x844)");
 
     await setTheme(mPage, "dark");
-    await saveProof(mPage, "12_odontogram_mobile_dark.png", "Mobile Dark Odontogram View (390x844)");
+    await saveProof(mPage, "14_odontogram_mobile_dark.png", "Mobile Dark Odontogram View (390x844)");
 
     // 2B. Mobile Tooth Radial Menu (Bottom Sheet)
     console.log("[Mobile] Opening Tooth Bottom Sheet on Tooth 16 via DOM click...");
@@ -449,13 +477,13 @@ async function run() {
     await mPage.waitForTimeout(800);
 
     await setTheme(mPage, "light");
-    await saveProof(mPage, "13_tooth_bottom_sheet_mobile_light.png", "Mobile Light Tooth Action Bottom Sheet (Tooth 16)");
+    await saveProof(mPage, "15_tooth_bottom_sheet_mobile_light.png", "Mobile Light Tooth Action Bottom Sheet (Tooth 16)");
 
     await setTheme(mPage, "dark");
-    await saveProof(mPage, "14_tooth_bottom_sheet_mobile_dark.png", "Mobile Dark Tooth Action Bottom Sheet (Tooth 16)");
+    await saveProof(mPage, "16_tooth_bottom_sheet_mobile_dark.png", "Mobile Dark Tooth Action Bottom Sheet (Tooth 16)");
 
     await mobileContext.close();
-    console.log("\n>>> ALL 14 RED TEAM PROOFS CAPTURED SUCCESSFULLY! <<<");
+    console.log("\n>>> ALL 16 RED TEAM PROOFS CAPTURED SUCCESSFULLY! <<<");
 
   } finally {
     await browser.close();

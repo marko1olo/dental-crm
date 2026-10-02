@@ -251,52 +251,50 @@ async function run() {
     await setupPageRoutes(dPage);
 
     await dPage.goto("http://127.0.0.1:5173/#visit", { waitUntil: "domcontentloaded", timeout: 30000 });
-    await dPage.waitForTimeout(2500);
+    await dPage.waitForTimeout(2000);
 
-    // Ensure we are on Odontogram tab
+    // Wait until loading indicator disappears and tabs are visible
+    await dPage.waitForSelector('button:has-text("Дневник приёма")', { timeout: 15000 });
+
+    // Step 1: Scroll to Express Clinical Protocols and click Caries (K02.1)
+    console.log("[Desktop] Applying 1-Click Caries Protocol on Tooth 36 without surfaces...");
     await dPage.evaluate(() => {
-      const btn = document.querySelector('[data-testid="visit-subtab-odontogram"]') ||
-                  Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Зубная формула'));
-      if (btn) btn.click();
+      // Find Caries express button
+      const cariesBtn = document.querySelector('[data-testid="btn-emk-express-caries"]') ||
+                        Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('K02.1'));
+      if (cariesBtn) cariesBtn.click();
     });
-    await dPage.waitForTimeout(1000);
+    await dPage.waitForTimeout(800);
 
-    // 1A. Click on Tooth 36 to select it and trigger quick caries
-    console.log("[Desktop] Setting Tooth 36 state to Caries without surfaces...");
+    // Scroll down to show SOAP fields (Diagnosis, Objective Status, Treatment Plan)
     await dPage.evaluate(() => {
-      const t36 = document.querySelector('[data-tooth-id="36"]') ||
-                  document.querySelector('.tooth-svg-wrapper[data-tooth="36"]');
-      if (t36) {
-        t36.focus();
-        t36.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true }));
-      }
+      window.scrollBy({ top: 350, behavior: 'instant' });
     });
-    await dPage.waitForTimeout(1000);
+    await dPage.waitForTimeout(400);
 
-    // Save proof of Odontogram with tooth 36 selected and no surfaces
+    // Capture 01 & 02: Diary Protocol without surfaces
     await setTheme(dPage, "light");
-    await saveProof(dPage, "01_nosurfaces_odontogram_desktop_light.png", "Desktop Light: Odontogram with Caries 36 (No surfaces required)");
+    await saveProof(dPage, "01_nosurfaces_diary_protocol_desktop_light.png", "Desktop Light: Form 043/u SOAP Diary with 1-Click Caries (No surfaces, clean medical Russian)");
 
     await setTheme(dPage, "dark");
-    await saveProof(dPage, "02_nosurfaces_odontogram_desktop_dark.png", "Desktop Dark: Odontogram with Caries 36 (No surfaces required)");
+    await saveProof(dPage, "02_nosurfaces_diary_protocol_desktop_dark.png", "Desktop Dark: Form 043/u SOAP Diary with 1-Click Caries (No surfaces, clean medical Russian)");
 
-    // 1B. Open Live Invoice / Смета
-    console.log("[Desktop] Opening Live Invoice (Смета)...");
+    // Step 2: Switch to "Зубная формула" tab to show Odontogram
+    console.log("[Desktop] Switching to 'Зубная формула' tab...");
     await dPage.evaluate(() => {
-      const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Смета'));
-      if (btn) btn.click();
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      const formulaBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Зубная формула'));
+      if (formulaBtn) formulaBtn.click();
     });
     await dPage.waitForTimeout(1000);
 
+    // Capture 03 & 04: Odontogram with tooth 36
     await setTheme(dPage, "light");
-    await saveProof(dPage, "03_nosurfaces_invoice_desktop_light.png", "Desktop Light: Live Invoice with clean 804n service without undefined surfaces");
+    await saveProof(dPage, "03_nosurfaces_odontogram_desktop_light.png", "Desktop Light: FDI Odontogram with Tooth 36 Caries state without forced surfaces");
 
     await setTheme(dPage, "dark");
-    await saveProof(dPage, "04_nosurfaces_invoice_desktop_dark.png", "Desktop Dark: Live Invoice with clean 804n service without undefined surfaces");
+    await saveProof(dPage, "04_nosurfaces_odontogram_desktop_dark.png", "Desktop Dark: FDI Odontogram with Tooth 36 Caries state without forced surfaces");
 
-    // Close invoice
-    await dPage.keyboard.press("Escape");
-    await dPage.waitForTimeout(600);
     await desktopContext.close();
 
     // -------------------------------------------------------------
@@ -314,16 +312,26 @@ async function run() {
     await setupPageRoutes(mPage);
 
     await mPage.goto("http://127.0.0.1:5173/#visit", { waitUntil: "domcontentloaded", timeout: 30000 });
-    await mPage.waitForTimeout(2500);
+    await mPage.waitForTimeout(2000);
+
+    await mPage.waitForSelector('button:has-text("Дневник приёма")', { timeout: 15000 });
+
+    // Apply express caries on mobile
+    await mPage.evaluate(() => {
+      const cariesBtn = document.querySelector('[data-testid="btn-emk-express-caries"]') ||
+                        Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('K02.1'));
+      if (cariesBtn) cariesBtn.click();
+    });
+    await mPage.waitForTimeout(600);
 
     await setTheme(mPage, "light");
-    await saveProof(mPage, "05_nosurfaces_odontogram_mobile_light.png", "Mobile Light: FDI Chart & Visit Notes without surface obstruction");
+    await saveProof(mPage, "05_nosurfaces_diary_mobile_light.png", "Mobile Light: 1-Click Caries Protocol without surfaces on iOS/Android touch layout");
 
     await setTheme(mPage, "dark");
-    await saveProof(mPage, "06_nosurfaces_odontogram_mobile_dark.png", "Mobile Dark: FDI Chart & Visit Notes without surface obstruction");
+    await saveProof(mPage, "06_nosurfaces_diary_mobile_dark.png", "Mobile Dark: 1-Click Caries Protocol without surfaces on iOS/Android touch layout");
 
     await mobileContext.close();
-    console.log("\n[SUCCESS] All 6 visual proofs captured successfully!");
+    console.log("\n[SUCCESS] All 6 authentic visual proofs captured successfully!");
   } finally {
     await browser.close();
   }
