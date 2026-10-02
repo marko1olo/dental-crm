@@ -1,0 +1,37 @@
+{
+  "role": "ONLINE BOOKING & PUBLIC PORTAL DEDUPLICATION INQUISITOR",
+  "status": "completed",
+  "started_at": "2026-10-02T10:33:00Z",
+  "completed_at": "2026-10-02T10:50:00Z",
+  "completed_steps": [
+    "mandatory_reading_complete",
+    "reconnaissance_booking_widgets",
+    "reconnaissance_patient_portal_vs_portal",
+    "audit_imports_across_codebase",
+    "deduplicate_booking_widgets",
+    "clean_human_language_and_touch_targets_booking",
+    "deduplicate_patient_portal_to_portal",
+    "run_vitest_booking_and_portal",
+    "run_typecheck_and_encoding_gates",
+    "final_verbatim_report"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "booking_widget_duplication": "apps/web/src/components/booking/PublicBookingWidget.tsx was an obsolete monolithic duplicate (840 lines) flagged as unmounted/orphaned by panelsAreMounted.test.ts, while PublicOnlineBookingWidget.tsx was the active widget. Unified both into PublicBookingWidget.tsx (700 lines, strictly < 800) as canonical SSOT with streamlined 1-screen 2-click UX (<30s), touch targets >= 44px, telephone callback notification, Telegram WebApp 1-tap support, zero Math.random(), and backwards-compatible pure facades for PublicOnlineBookingWidget.tsx and root PublicOnlineBookingWidget.tsx.",
+    "patient_portal_status": "apps/web/src/components/patient-portal/ was already refactored into thin facades (<= 25 lines each) pointing to canonical apps/web/src/components/portal/ SSOT, verified by portalSsotConsolidationInquisition.test.ts (all 5 tests passed).",
+    "reachability_inquisition": "Babel AST census via componentReachability() confirms both components/booking/PublicBookingWidget.tsx and pages/PublicBookingWidget.tsx are 'rendered' and reachable from main.tsx with zero orphans."
+  },
+  "verification_gates": {
+    "booking_and_portal_tests": "70 passed, 0 failed (node:test)",
+    "typecheck": "Exit Code 0 (npm run typecheck -w @dental/web)",
+    "encoding": "Exit Code 0 (npm run check:encoding, 6804 files clean)",
+    "radiology_boundary": "100% untouched and preserved"
+  },
+  "modified_files": [
+    "apps/web/src/components/booking/PublicBookingWidget.tsx",
+    "apps/web/src/components/booking/PublicOnlineBookingWidget.tsx",
+    "apps/web/src/components/booking/bookingUtils.ts",
+    "apps/web/src/components/PublicOnlineBookingWidget.tsx",
+    "apps/web/src/pages/PublicBookingWidget.tsx"
+  ]
+}

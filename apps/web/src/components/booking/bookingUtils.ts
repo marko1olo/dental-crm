@@ -115,6 +115,8 @@ export interface PublicOnlineBookingWidgetProps {
 	readonly flowMode?: "standard" | "rapid_solo" | undefined;
 	/** Optional atmospheric art background with glass surface (Mandates 8p, 8n) */
 	readonly artBackground?: boolean | undefined;
+	/** Compact mode for narrow sidebars or widgets */
+	readonly compact?: boolean | undefined;
 }
 
 // Clean non-mock fallbacks without hardcoded city data (Mandate 8a & 8k: Zero Mocks)

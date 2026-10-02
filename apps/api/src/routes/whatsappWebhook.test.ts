@@ -148,4 +148,33 @@ describe("WhatsApp Webhook HTTP Routes (Fastify Inject)", () => {
 			await app.close();
 		}
 	});
+
+	it("GET /api/whatsapp/webhook validates handshake identically on canonical path", async () => {
+		const app = await buildTestApp();
+		try {
+			const challengeStr = "canonical_challenge_123";
+			const res = await app.inject({
+				method: "GET",
+				url: `/api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=dente_whatsapp_verify_token&hub.challenge=${challengeStr}`,
+			});
+
+			assert.equal(res.statusCode, 200);
+			assert.equal(res.body, challengeStr);
+		} finally {
+			await app.close();
+		}
+	});
+
+	it("prevents double-registration collision when invoked twice on same app instance", async () => {
+		const app = Fastify();
+		try {
+			await registerWhatsappWebhookRoutes(app);
+			// Should silently succeed without 'Method already declared' FastifyError
+			await registerWhatsappWebhookRoutes(app);
+			await app.ready();
+		} finally {
+			await app.close();
+		}
+	});
 });
+

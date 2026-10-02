@@ -1,7 +1,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Calendar, User, QrCode, FileText, ArrowRight, ShieldCheck, Phone, KeyRound, LogOut } from "lucide-react";
-import { PublicOnlineBookingWidget } from "../components/booking/PublicOnlineBookingWidget";
+import { PublicBookingWidget as PublicOnlineBookingWidget } from "../components/booking/PublicBookingWidget";
 import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
 import { DEMO_PATIENT_CABINET } from "../components/portal/patientCabinet/patientCabinetPresets";
 import type { PatientPersonalCabinetData } from "../components/portal/patientCabinet/patientCabinetEngine";
