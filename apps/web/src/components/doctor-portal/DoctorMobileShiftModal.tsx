@@ -61,6 +61,8 @@ export interface DoctorMobileShiftModalProps {
 	readonly onShiftClose?: () => void;
 }
 
+const EMPTY_INITIAL_APPOINTMENTS: readonly DoctorShiftAppointment[] = [];
+
 export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 	isOpen,
 	onClose,
@@ -68,7 +70,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 	initialDoctorName = "Врач не выбран",
 	initialDoctorSpecialty = "Врач-стоматолог терапевт-ортопед",
 	initialShiftDateIso = new Date().toISOString().split("T")[0]!,
-	initialAppointments = [],
+	initialAppointments = EMPTY_INITIAL_APPOINTMENTS,
 	onAppointmentUpdate,
 	onEmergencyVisit,
 	onShiftClose,
@@ -90,7 +92,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 
 	// Sync when initialAppointments change
 	useEffect(() => {
-		setAppointments(initialAppointments);
+		setAppointments((prev) => (prev === initialAppointments ? prev : initialAppointments));
 	}, [initialAppointments]);
 
 	// Isolate current doctor's appointments
