@@ -217,7 +217,7 @@ export function generateBirthdayGreetingText(
 	bonusRub = 1000,
 	promoCode = "BIRTHDAY",
 ): string {
-	return `Здравствуйте, ${contact.fullName}!\nКоманда клиники ${clinicName} от всей души поздравляет вас с днем рождения! 🎂🎉\nЖелаем вам крепкого здоровья, сияющей улыбки и отличного настроения!\n\nВ честь праздника дарим вам бонус ${formatCurrencyRu(bonusRub)} (промокод: ${promoCode}) на любые процедуры клиники или профессиональную гигиену. Будем рады видеть вас!`;
+	return `Здравствуйте, ${contact.fullName}!\nКоманда клиники ${clinicName} от всей души поздравляет вас с днем рождения!\nЖелаем вам крепкого здоровья, сияющей улыбки и отличного настроения!\n\nВ честь праздника дарим вам бонус ${formatCurrencyRu(bonusRub)} (промокод: ${promoCode}) на любые процедуры клиники или профессиональную гигиену. Будем рады видеть вас!`;
 }
 
 export function generateHygieneRecallText(
@@ -369,7 +369,7 @@ export const DEFAULT_TEMPLATES: readonly OmnichannelTemplate[] = [
 		title: "Поздравление и праздничный бонус",
 		description: "Персональное поздравление пациента с днем рождения с начислением подарочных бонусов",
 		templateText:
-			"Здравствуйте, {patientName}!\nКоманда клиники {clinicName} поздравляет вас с днем рождения! 🎉\nЖелаем вам крепкого здоровья, отличного настроения и прекрасной улыбки!\n\nВ честь праздника дарим вам сертификат на {bonusAmount} (промокод: {promoCode}), действующий {validDays}.\nЖдем вас в гости!",
+			"Здравствуйте, {patientName}!\nКоманда клиники {clinicName} поздравляет вас с днем рождения!\nЖелаем вам крепкого здоровья, отличного настроения и прекрасной улыбки!\n\nВ честь праздника дарим вам сертификат на {bonusAmount} (промокод: {promoCode}), действующий {validDays}.\nЖдем вас в гости!",
 		interactiveButtons: [
 			{ id: "btn-bday-book", title: "Записаться на прием", action: "book_visit", variant: "primary" },
 			{ id: "btn-bday-call", title: "Связаться с клиникой", action: "call_clinic", variant: "secondary" },

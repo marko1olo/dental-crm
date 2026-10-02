@@ -17,6 +17,7 @@
 | Если твоя задача (Task Domain) | Читай обязательные документы (Target Docs) | Ключевые файлы кода в репозитории |
 |:---|:---|:---|
 | **Архитектура монорепо, шина WS, прокси** | 1. **[ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)**<br>2. **[00-product-architecture.md](file:///C:/Clinic_MVP/dental-crm/docs/00-product-architecture.md)** | `apps/api/src/server.ts`<br>`apps/api/src/services/websocketBroker.ts`<br>`packages/shared/` |
+| **Сетевая инфраструктура, VPN, WinRM, топология** | 1. **[NETWORK_TOPOLOGY.md](file:///C:/Clinic_MVP/dental-crm/.agents/NETWORK_TOPOLOGY.md)**<br>2. **[ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** | `apps/web/src/services/offline/lanP2PDispatcher.ts` |
 | **База данных PostgreSQL, Drizzle, RLS, миграции** | 1. **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)**<br>2. **[DATABASE_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/DATABASE_DEEP_MAP.md)** | `apps/api/src/db/schema.ts`<br>`apps/api/src/db/client.ts`<br>`drizzle/*.sql` |
 | **Развёртывание локальной БД, `uuidv7()`** | 1. **[DATABASE_SETUP.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md)**<br>2. **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** | `apps/api/src/scripts/migrate.ts`<br>`apps/api/drizzle.config.ts` |
 | **Бэкенд-маршруты Fastify, контроллеры, API** | 1. **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)**<br>2. **[API_ROUTES_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/API_ROUTES_DEEP_MAP.md)**<br>3. **[ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** | `apps/api/src/routes/*.ts`<br>`apps/api/src/services/` |
@@ -62,9 +63,10 @@
 13. **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** — Исчерпывающий каталог всех 771 роутов Fastify (14 доменов, параметры, Zod-валидация, RBAC, коды ответов).
 14. **[UI_STANDARDS.md](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)** — Стандарты 3-уровневой компоновки (Tier 1 Hot Path / Tier 2 Warm Context / Tier 3 Cold Backoffice), macOS/iOS HIG, правила God Context `useAppLogic.tsx`.
 15. **[FRONTEND_VIEWS_MAP.md](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)** — Полная карта всех 14 экранов, контекстных шторок (Drawers) и модальных окон клиентского приложения.
+16. **[NETWORK_TOPOLOGY.md](file:///C:/Clinic_MVP/dental-crm/.agents/NETWORK_TOPOLOGY.md)** — Сетевая топология клиники, маршрутизация WireGuard/AmneziaWG, карта IP-адресов, порты WinRM/SMB, регламент удаленного доступа.
 
 ### 3. Функциональные Модули CRM (`.agents/`)
-16. **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Движок клинических правил, проверка противопоказаний, триггеры услуг и связывание с Мандатом 8e (Zero-Friction для врача).
+17. **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Движок клинических правил, проверка противопоказаний, триггеры услуг и связывание с Мандатом 8e (Zero-Friction для врача).
 17. **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Реестр протоколов 043/у (K02–K08), клинических пакетов услуг «под ключ» 804н, циклов автоклавирования СанПиН 3.3686-21 и анестезии.
 18. **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Идемпотентность платежей по `clientMutationId`, касса 54-ФЗ без ИНН у физлиц, комбинированные оплаты, семейные кошельки, справка ФНС 1151156.
 19. **[WAREHOUSE_AND_SUPPLY.md](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md)** — Складской учёт, техкарты процедур (BOM), 1-клик списание пустых карпул медсестрой без комиссий, мягкий овердрафт при задержке накладных.

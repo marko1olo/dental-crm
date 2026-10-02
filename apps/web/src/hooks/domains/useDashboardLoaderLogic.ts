@@ -113,11 +113,11 @@ export function useDashboardLoaderLogic({
 				// обрабатывается прямо здесь (setAccessUnlockRequired выше) — именно
 				// этого добивались внешние .catch(), которые раньше не срабатывали.
 			}
-			void loadPersistenceHealthRef.current({
+			void loadPersistenceHealthRef.current?.({
 				silent: true,
 				adminSecret: options.adminSecret,
 			});
-			void refreshSpeechRuntimeRef.current({ silent: true });
+			void refreshSpeechRuntimeRef.current?.({ silent: true });
 		},
 		[
 			authRef,

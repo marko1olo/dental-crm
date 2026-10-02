@@ -201,7 +201,7 @@ export const BookingContactsSection: React.FC<BookingContactsSectionProps> = ({
 						htmlFor="privacy-checkbox"
 						className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-snug cursor-pointer py-2 flex items-center"
 					>
-						Я согласен на обработку персональных данных в соответствии с 152-ФЗ
+						Я согласен на обработку персональных данных для записи на приём
 					</label>
 				</div>
 

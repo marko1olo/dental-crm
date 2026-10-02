@@ -16,6 +16,7 @@ import {
 	createClinicalRuleInDb,
 	deleteClinicalRuleInDb,
 	evaluateClinicalRulesInDb,
+	getClinicalRules,
 	updateClinicalRuleInDb,
 } from "../db/clinicalQuery.js";
 import { ClinicalTaskOwnershipError } from "../db/clinicalTasksQuery.js";
@@ -154,6 +155,36 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			return reply.status(500).send({
 				error: "InternalServerError",
 				message: "Внутренняя ошибка сервера при расчете клинических правил.",
+			});
+		}
+	});
+
+	/**
+	 * Получение списка клинических правил организации (противопоказания, протоколы).
+	 *
+	 * Защищено обязательной проверкой прав клинического чтения (152-ФЗ / 323-ФЗ)
+	 * и строгой изоляцией по organizationId.
+	 */
+	app.get("/api/clinical/rules", async (request, reply) => {
+		try {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"clinical rules read",
+				))
+			)
+				return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const rules = await getClinicalRules(orgId);
+			return reply.status(200).send(rules);
+		} catch (error: any) {
+			request.log.error(error);
+			return reply.status(500).send({
+				error: "InternalServerError",
+				message: "Внутренняя ошибка сервера при получении клинических правил.",
 			});
 		}
 	});

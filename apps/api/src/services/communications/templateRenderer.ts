@@ -145,6 +145,30 @@ export const communicationTemplateVariables: readonly TemplateVariableDefinition
 			example: "Акт выполненных работ",
 			phi: true,
 		},
+		{
+			key: "discountPercent",
+			label: "Скидка (%)",
+			example: "15%",
+			phi: false,
+		},
+		{
+			key: "promoCode",
+			label: "Промокод",
+			example: "DENTE2026",
+			phi: false,
+		},
+		{
+			key: "validUntil",
+			label: "Срок действия акции",
+			example: "до 30 сентября",
+			phi: false,
+		},
+		{
+			key: "bonusAmount",
+			label: "Сумма бонуса",
+			example: "1 000 ₽",
+			phi: false,
+		},
 	];
 
 const variableByKey = new Map(

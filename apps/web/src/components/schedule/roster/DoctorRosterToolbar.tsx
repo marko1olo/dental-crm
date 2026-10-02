@@ -647,7 +647,6 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 						>
 							<FileSpreadsheet size={16} />
 							<span>Табель учёта времени</span>
-							<span className="text-[10px] opacity-60 ml-1 font-mono">Т-13</span>
 						</button>
 						<button
 							type="button"

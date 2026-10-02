@@ -227,7 +227,7 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 								<ArrowRight className="w-4 h-4" />
 							</button>
 							<p className="text-[11px] text-center text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-								Нажимая «Получить код входа», вы подтверждаете согласие на обработку персональных данных в соответствии с <span className="font-semibold text-slate-700 dark:text-slate-300">152-ФЗ РФ</span>
+								Нажимая «Получить код входа», вы подтверждаете согласие на обработку персональных данных для безопасного входа в личный кабинет.
 							</p>
 						</div>
 					) : (

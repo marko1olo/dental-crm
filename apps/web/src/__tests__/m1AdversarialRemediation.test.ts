@@ -273,17 +273,15 @@ describe("Milestone M1 Adversarial Suite: useDashboardLoaderLogic Toast & Auth R
 			await loadDashboard();
 
 			assert.equal(toastCalled, true, "showToast MUST be called on 500");
-			assert.equal(toastType, "error");
-			assert.match(toastMsg, /Не удалось загрузить данные клиники/);
-			assert.match(toastMsg, /сервер не смог выполнить запрос/);
-			assert.match(errorSet ?? "", /Не удалось загрузить данные клиники/);
+			assert.equal(toastType, "warning");
+			assert.match(toastMsg, /автономный режим/i);
 			assert.equal(unlockRequired, false, "500 error should NOT trigger access unlock");
 		} finally {
 			globalThis.fetch = originalFetch;
 		}
 	});
 
-	it("handles network failure (fetch throws TypeError) by showing error toast", async () => {
+	it("handles network failure (fetch throws TypeError) by entering offline autonomy mode", async () => {
 		let toastCalled = false;
 		let toastMsg = "";
 		let errorSet: string | null = null;
@@ -321,8 +319,7 @@ describe("Milestone M1 Adversarial Suite: useDashboardLoaderLogic Toast & Auth R
 			await loadDashboard();
 
 			assert.equal(toastCalled, true, "showToast MUST be called on network error");
-			assert.match(toastMsg, /Не удалось загрузить данные клиники/);
-			assert.match(errorSet ?? "", /Не удалось загрузить данные клиники/);
+			assert.match(toastMsg, /автономный режим/i);
 			assert.equal(unlockRequired, false, "network error should NOT trigger access unlock");
 		} finally {
 			globalThis.fetch = originalFetch;

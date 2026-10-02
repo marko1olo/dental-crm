@@ -20,8 +20,8 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
+import { inventoryQuery } from "../../db/inventoryQuery.js";
 import {
-	inventoryItems,
 	patients,
 	toothStateHistory,
 	visits,
@@ -242,10 +242,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const items = await db
-			.select()
-			.from(inventoryItems)
-			.where(and(eq(inventoryItems.organizationId, orgId)));
+		const items = await inventoryQuery.getInventoryItems(orgId);
 
 		const overdraftItems = items
 			.filter((i) => Number(i.currentQty ?? i.stockQuantity ?? 0) <= 0)

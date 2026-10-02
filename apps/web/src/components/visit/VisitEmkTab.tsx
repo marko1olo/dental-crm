@@ -588,7 +588,7 @@ export function VisitEmkTab() {
 								selectedTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || undefined}
 								onSelect={(item, tooth) => {
 									const toothSuffix = tooth ? ` (зуб ${tooth})` : "";
-									updateVisitNoteField("diagnosis", `${item.code} ${item.nameRu}${toothSuffix}`);
+									updateVisitNoteField("diagnosis", `${item.code} ${item.titleRu}${toothSuffix}`);
 								}}
 							/>
 						</div>

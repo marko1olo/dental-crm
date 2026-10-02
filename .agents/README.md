@@ -42,3 +42,4 @@
 15. **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Телефония UIS/Mango/Zadarma, тихий режим для врача, портал пациента.
 16. **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — WhatsApp WABA, Telegram Bot, VK MAX.
 17. **[COMMANDS_AND_TESTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md)** — Команды компиляции, typecheck, pre-commit гейты и E2E смоук-тесты.
+18. **[NETWORK_TOPOLOGY.md](file:///C:/Clinic_MVP/dental-crm/.agents/NETWORK_TOPOLOGY.md)** — Сетевая топология клиники, маршрутизация WireGuard/AmneziaWG, карта IP-адресов, порты WinRM/SMB, регламент удаленного доступа.

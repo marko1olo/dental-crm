@@ -1,6 +1,7 @@
 import { create } from "zustand";
+import type { UiLanguage } from "@dental/shared";
 
-export type UiLanguage = "ru" | "en";
+export type { UiLanguage };
 
 export type UiScale = "standard" | "large";
 
@@ -13,6 +14,10 @@ interface UiStore {
 	setUiScale: (scale: UiScale) => void;
 }
 
+/**
+ * @deprecated SSOT Mandate 8s: Canonical UI language is managed in `appStore.ts` via `loadUiPreferences()`,
+ * onboarding dismissal is managed in `settingsStore.ts`. This store is preserved for backwards compatibility.
+ */
 export const useUiStore = create<UiStore>((set) => ({
 	uiLanguage: "ru",
 	setUiLanguage: (lang) => set({ uiLanguage: lang }),

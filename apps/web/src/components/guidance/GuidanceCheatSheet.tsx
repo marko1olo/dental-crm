@@ -10,9 +10,9 @@ import { ChevronDown, ChevronUp, HelpCircle, Keyboard, Sparkles } from "lucide-r
 import { CLINICAL_SHORTCUTS, type ShortcutCategory } from "../../lib/keyboardShortcuts";
 
 export interface GuidanceCheatSheetProps {
-	readonly category?: ShortcutCategory;
-	readonly defaultExpanded?: boolean;
-	readonly onOpenFullModal?: () => void;
+	readonly category?: ShortcutCategory | undefined;
+	readonly defaultExpanded?: boolean | undefined;
+	readonly onOpenFullModal?: (() => void) | undefined;
 }
 
 export const GuidanceCheatSheet: React.FC<GuidanceCheatSheetProps> = React.memo(({

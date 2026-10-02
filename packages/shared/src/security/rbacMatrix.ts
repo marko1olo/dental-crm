@@ -528,6 +528,10 @@ export function normalizeStaffRole(rawRole: string | null | undefined): Granular
 	}
 }
 
+export interface HasPermissionOptions {
+	isSoloDoctor?: boolean;
+}
+
 /**
  * Проверяет наличие конкретного уровня доступа
  */
@@ -535,8 +539,23 @@ export function hasPermission(
 	role: string | null | undefined,
 	permissionKey: string,
 	minimumLevel: AccessLevel = "read",
+	options?: HasPermissionOptions,
 ): boolean {
 	const granularRole = normalizeStaffRole(role);
+	// Mandate 8e / 8n: Solo doctor sovereignty (full autonomy without roadblocks)
+	if (options?.isSoloDoctor && (granularRole === "doctor" || granularRole === "owner")) {
+		if (
+			permissionKey.startsWith("finance.") ||
+			permissionKey.startsWith("settings.") ||
+			permissionKey.startsWith("payroll.") ||
+			permissionKey.startsWith("patients.") ||
+			permissionKey.startsWith("clinical.") ||
+			permissionKey.startsWith("schedule.")
+		) {
+			return true;
+		}
+	}
+
 	const rolePermissions = GRANULAR_ROLE_MATRIX[granularRole];
 	if (!rolePermissions) return false;
 	const level = rolePermissions[permissionKey] ?? "none";

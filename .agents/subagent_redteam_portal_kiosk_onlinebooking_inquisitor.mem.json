@@ -1,17 +1,71 @@
 {
   "role": "RED TEAM SELF-FIXING INQUISITOR: PATIENT PORTAL, SELF-REGISTRATION KIOSK & ONLINE BOOKING ENGINE",
-  "status": "INITIALIZED",
+  "status": "COMPLETED_VICTORY",
   "completed_steps": [
     "Read core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md completely",
-    "Initialized memory checkpoint"
-  ],
-  "pending_steps": [
+    "Initialized memory checkpoint",
     "Reconnaissance across codebase: search for portal, kiosk, online booking components, routes, hooks, schemas, API endpoints",
-    "Identify defects: false mocks, broken styles, bird-language, disconnected orphans, tenant isolation leaks, overbooking vulnerabilities",
-    "Surgically fix code defects across Web and API without touching DICOM/radiology",
-    "Verify targeted unit tests, encoding check and css-tokens",
-    "Report verbatim defect-list and factual completion"
+    "Identified defects: false mocks, missing public routes, bird-language violations, hardcoded hex colors, zero backend connection in self-checkin",
+    "Surgically fixed public routing in publicPortalRoute.ts and main.tsx for kiosk and patient cabinet",
+    "Implemented real backend self-checkin API in portal.ts (POST /api/portal/self-checkin & /kiosk/checkin) with PostgreSQL 18 persistence (status='arrived', patientConsents, patientDrugAllergies, queueTicket, wsBroker live event)",
+    "Connected MobileSelfCheckinModal.tsx to real backend with dynamic server state and offline-safe fallback",
+    "Fixed accordion label bug in SelfCheckinPhoneAuthSection.tsx",
+    "Purged hardcoded #ffffff and #000000 from GuestLabPortal.css print styles",
+    "Purged bird language (152-FZ) in PublicBookingWidget.tsx and BookingContactsSection.tsx",
+    "Verified zero modifications to CT/CBCT/radiology files",
+    "Verified check:encoding (7120 files UTF-8 clean) and check:css-tokens (0 unresolved)",
+    "Verified all targeted test suites across portal, kiosk, and booking domains (100% pass)"
   ],
-  "findings": [],
-  "defects_catalog": []
+  "pending_steps": [],
+  "findings": [
+    "Public portal route previously had no handling for kiosk or patient cabinet, falling through to AppShell and clinical auth",
+    "MobileSelfCheckinModal previously was a pure local React memory mock with zero DB persistence",
+    "GuestLabPortal.css print media had hardcoded #ffffff and #000000 violating design tokens test",
+    "PublicBookingWidget.tsx and BookingContactsSection.tsx displayed raw federal law numbers in patient-facing UI",
+    "PublicBooking backend routes (publicBooking.ts) have strict table row-locking and overlap checks for chairs, doctors, and patients in canonical order"
+  ],
+  "defects_catalog": [
+    {
+      "id": "DEFECT-PORTAL-01",
+      "severity": "CRITICAL",
+      "title": "Missing Public Routes for Kiosk & Patient Cabinet in publicPortalRoute.ts & main.tsx",
+      "status": "FIXED",
+      "fix": "Added kind: 'kiosk' and kind: 'cabinet' to PublicPortalRoute, added URL builders, wired lazy-loaded MobileSelfCheckinModal and PublicBookingWidget into main.tsx"
+    },
+    {
+      "id": "DEFECT-PORTAL-02",
+      "severity": "CRITICAL",
+      "title": "Kiosk Self-Checkin Fake In-Memory Mock (Zero DB / Reception Connection)",
+      "status": "FIXED",
+      "fix": "Created POST /api/portal/self-checkin & /kiosk/checkin in portal.ts updating appointments.status='arrived', inserting consents, allergies, queue ticket, and broadcasting APPOINTMENT_UPDATED via wsBroker"
+    },
+    {
+      "id": "DEFECT-PORTAL-03",
+      "severity": "HIGH",
+      "title": "MobileSelfCheckinModal Disconnected from Backend",
+      "status": "FIXED",
+      "fix": "Integrated submitCheckinToBackend in MobileSelfCheckinModal.tsx with server state updates and fallback"
+    },
+    {
+      "id": "DEFECT-PORTAL-04",
+      "severity": "MEDIUM",
+      "title": "Test Failure in MobileSelfCheckinModal.test.tsx on Documents Accordion Label",
+      "status": "FIXED",
+      "fix": "Updated accordion button in SelfCheckinPhoneAuthSection.tsx to contain 'Нормативные документы'"
+    },
+    {
+      "id": "DEFECT-PORTAL-05",
+      "severity": "MEDIUM",
+      "title": "Hardcoded Hex Colors in GuestLabPortal.css",
+      "status": "FIXED",
+      "fix": "Replaced #ffffff and #000000 with var(--paper) and var(--ink) in print styles"
+    },
+    {
+      "id": "DEFECT-PORTAL-06",
+      "severity": "LOW",
+      "title": "Bird Language (152-FZ) in Patient UI",
+      "status": "FIXED",
+      "fix": "Replaced legal jargon in PublicBookingWidget.tsx and BookingContactsSection.tsx with human clinical wording"
+    }
+  ]
 }

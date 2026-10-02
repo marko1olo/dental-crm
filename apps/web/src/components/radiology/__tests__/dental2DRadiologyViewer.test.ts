@@ -5,10 +5,15 @@ import {
 	CLINICAL_2D_WL_PRESETS,
 	DEFAULT_MODALITY_PIXEL_SPACING,
 	FDI_QUADRANTS,
+	VATECH_DEVICE_CALIBRATION_PRESETS,
+	VATECH_EZDENT_IP_MODES,
+	calculateCursorCenteredZoom,
 	calculatePhysicalDistanceMm,
+	calculateUnsharpMaskWeights,
 	calibrateSpatialScale,
 	formatDistanceMm,
 	isValidFdiTooth,
+	resolveCalibratedPixelSpacing,
 } from "../dentalViewerMath";
 import {
 	createRvgGlRenderer,
@@ -269,6 +274,146 @@ describe("Dental 2D Radiology Engine — Clean Outpatient Tests", () => {
 				const restored = 1.0 - inverted;
 				assert.equal(restored, val);
 			}
+		});
+	});
+
+	describe("Vatech Hardware Sensor Calibration Matrix (Ground Truth from EzDent-i)", () => {
+		it("provides exact physical calibration for Vatech EzSensor 1.5 (35.0 microns = 0.0350 mm/px)", () => {
+			const preset = VATECH_DEVICE_CALIBRATION_PRESETS.ezsensor_standard;
+			assert.ok(preset);
+			assert.equal(preset.calMmPerPx, 0.0350);
+			assert.equal(preset.pixelPitchMicrons, 35.0);
+
+			// A 600-pixel root canal measured on EzSensor 1.5
+			const p1 = { x: 100, y: 100 };
+			const p2 = { x: 100, y: 700 }; // 600 px
+			const measuredLength = calculatePhysicalDistanceMm(p1, p2, preset.calMmPerPx);
+
+			// 600 * 0.0350 = 21.0 mm (Clinical ground truth)
+			assert.equal(measuredLength, 21.0);
+			assert.equal(formatDistanceMm(measuredLength), "21.0 мм");
+
+			// Contrast against naive 0.04 hardcode which produced 24.0 mm (3.0 mm dangerous overestimation)
+			const naiveDistance = calculatePhysicalDistanceMm(p1, p2, 0.04);
+			assert.equal(naiveDistance, 24.0);
+			assert.equal(naiveDistance - measuredLength, 3.0, "Naive hardcode causes dangerous 3.0 mm endodontic over-instrumentation error");
+		});
+
+		it("provides exact calibration for EzSensor Soft High Resolution (14.8 microns = 0.0148 mm/px)", () => {
+			const preset = VATECH_DEVICE_CALIBRATION_PRESETS.ezsensor_soft_hr;
+			assert.ok(preset);
+			assert.equal(preset.calMmPerPx, 0.0148);
+			assert.equal(preset.pixelPitchMicrons, 14.8);
+
+			const p1 = { x: 0, y: 0 };
+			const p2 = { x: 1000, y: 0 }; // 1000 px
+			const dist = calculatePhysicalDistanceMm(p1, p2, preset.calMmPerPx);
+			assert.equal(dist, 14.8);
+		});
+
+		it("provides exact calibration for PaX-i panoramic sensor (76.1 microns = 0.0761 mm/px)", () => {
+			const preset = VATECH_DEVICE_CALIBRATION_PRESETS.pax_i_pano;
+			assert.ok(preset);
+			assert.equal(preset.calMmPerPx, 0.0761);
+
+			// UHD mode is exactly 38.0 microns
+			const uhd = VATECH_DEVICE_CALIBRATION_PRESETS.pax_i_pano_uhd;
+			assert.equal(uhd.calMmPerPx, 0.0380);
+		});
+
+		it("correctly resolves calibrated pixel spacing from device name string", () => {
+			assert.equal(resolveCalibratedPixelSpacing("Vatech EzSensor 1.5 USB"), 0.0350);
+			assert.equal(resolveCalibratedPixelSpacing("EzSensor Soft HR"), 0.0148);
+			assert.equal(resolveCalibratedPixelSpacing("EzSensor Classic"), 0.0296);
+			assert.equal(resolveCalibratedPixelSpacing("PaX-i Pano"), 0.0761);
+			assert.equal(resolveCalibratedPixelSpacing("PaX-i UHD Pano"), 0.0380);
+			assert.equal(resolveCalibratedPixelSpacing("PaX-Reve3D Ceph"), 0.1108);
+			assert.equal(resolveCalibratedPixelSpacing(null), 0.0350); // Safe modern default
+		});
+	});
+
+	describe("Cursor-Centered Zoom Mathematics (Anti-Drift Invariant)", () => {
+		it("proves that zooming keeps the target anatomical point stationary under mouse cursor", () => {
+			const canvasWidth = 1000;
+			const canvasHeight = 800;
+			const currentZoom = 1.0;
+			const zoomFactor = 1.5; // Zoom in to 1.5x
+			const currentPanX = 0;
+			const currentPanY = 0;
+
+			// Doctor points at apex of tooth 36 located at screen (650, 480)
+			const cursorX = 650;
+			const cursorY = 480;
+
+			const result = calculateCursorCenteredZoom({
+				currentZoom,
+				zoomFactor,
+				cursorX,
+				cursorY,
+				canvasWidth,
+				canvasHeight,
+				currentPanX,
+				currentPanY,
+			});
+
+			assert.equal(result.nextZoom, 1.5);
+
+			// Center is (500, 400).
+			// Cursor offset from center = (150, 80).
+			// Ratio = 1.5. Next pan = 0 + (150) * (1 - 1.5) = -75. Next panY = (80) * (1 - 1.5) = -40.
+			assert.equal(result.nextPanX, -75);
+			assert.equal(result.nextPanY, -40);
+
+			// Verification: Image point under cursor before zoom:
+			// P_image_x = (cursorX - center - panOld) / zoomOld = (650 - 500 - 0) / 1.0 = 150
+			// Image point under cursor after zoom:
+			// P_image_x_after = (cursorX - center - panNew) / zoomNew = (650 - 500 - (-75)) / 1.5 = 225 / 1.5 = 150!
+			const beforeImageX = (cursorX - canvasWidth / 2 - currentPanX) / currentZoom;
+			const afterImageX = (cursorX - canvasWidth / 2 - result.nextPanX) / result.nextZoom;
+			assert.equal(Number(beforeImageX.toFixed(4)), Number(afterImageX.toFixed(4)), "Anatomical coordinate under cursor must be 100% identical before and after zoom");
+
+			const beforeImageY = (cursorY - canvasHeight / 2 - currentPanY) / currentZoom;
+			const afterImageY = (cursorY - canvasHeight / 2 - result.nextPanY) / result.nextZoom;
+			assert.equal(Number(beforeImageY.toFixed(4)), Number(afterImageY.toFixed(4)), "Y coordinate under cursor must be 100% identical before and after zoom");
+		});
+
+		it("performs pure centered zoom when cursor is at viewport center", () => {
+			const result = calculateCursorCenteredZoom({
+				currentZoom: 1.0,
+				zoomFactor: 2.0,
+				cursorX: 500,
+				cursorY: 400,
+				canvasWidth: 1000,
+				canvasHeight: 800,
+				currentPanX: 0,
+				currentPanY: 0,
+			});
+
+			assert.equal(result.nextZoom, 2.0);
+			assert.equal(result.nextPanX, 0);
+			assert.equal(result.nextPanY, 0);
+		});
+	});
+
+	describe("Vatech EzDent-i Multi-Scale Unsharp Masking Math", () => {
+		it("loads all canonical Vatech image processing modes from EzSensor.ini", () => {
+			assert.equal(VATECH_EZDENT_IP_MODES.length, 7);
+			const modeIds = VATECH_EZDENT_IP_MODES.map((m) => m.id);
+			assert.ok(modeIds.includes("ip1_molar_rc"));
+			assert.ok(modeIds.includes("ip3_molar_hc"));
+			assert.ok(modeIds.includes("ip8_caries_hc"));
+		});
+
+		it("calculates accurate unsharp mask weights and laplacian scaling", () => {
+			const molarWeights = calculateUnsharpMaskWeights("ip1_molar_rc");
+			assert.equal(molarWeights.amount, 150);
+			assert.equal(molarWeights.radius, 2.0);
+			assert.equal(molarWeights.laplacianWeight, 1.2); // (150 / 100) * 0.8 = 1.2
+			assert.equal(molarWeights.threshold, 80);
+
+			const cariesWeights = calculateUnsharpMaskWeights("ip8_caries_hc");
+			assert.equal(cariesWeights.amount, 200);
+			assert.equal(cariesWeights.laplacianWeight, 1.6);
 		});
 	});
 });

@@ -2151,6 +2151,7 @@ export type TelegramOutboxTemplateFilter =
 
 export const uiLanguageLabels: Record<UiLanguage, string> = {
 	ru: "Русский",
+	en: "English",
 };
 
 export type UiLanguageOption = {

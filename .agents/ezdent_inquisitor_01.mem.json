@@ -1,6 +1,6 @@
 {
   "agent": "red_team_inquisitor_01_ezdent_ui_architecture",
-  "status": "in_progress",
+  "status": "completed",
   "scope": [
     "C:\\Users\\Admin\\Desktop\\VATECH_DISTRIB\\02_EZDENT_PROGRAMS\\EzDent-i",
     "C:\\Users\\Admin\\Desktop\\VATECH_DISTRIB\\02_EZDENT_PROGRAMS\\Common"
@@ -8,9 +8,7 @@
   "target_doc": "docs/vatech_research/01_EZDENT_UI_ARCHITECTURE.md",
   "completed_steps": [
     "Read THE_HAMMER_MASTER_PROMPT.md, AGENTS.md, core.md",
-    "Verified VATECH_DISTRIB directory structure"
-  ],
-  "pending_steps": [
+    "Verified VATECH_DISTRIB directory structure",
     "Step 1: Deep scan of EzDent-i directories (Bin, Resources, Setting, Locale, Plugins, Addons, Tools)",
     "Step 2: Deep scan of Common directories (FM, PM)",
     "Step 3: Asset extraction & inventory (icons, tooth schemes, LUTs, palettes)",
@@ -20,5 +18,18 @@
     "Step 7: Author comprehensive 01_EZDENT_UI_ARCHITECTURE.md",
     "Step 8: Final review and report to orchestrator"
   ],
-  "findings": {}
+  "pending_steps": [],
+  "findings": {
+    "calibration_presets_count": 54,
+    "pixel_pitch_hr_rvg_mm": 0.0148,
+    "pixel_pitch_pano_mm": 0.07607583,
+    "fmx_sensor_rotations": {
+      "anterior_teeth": 0,
+      "posterior_teeth": 270
+    },
+    "dsp_pipeline_steps": 8,
+    "database_type": "PostgreSQL via libpq.dll (E2, IMPLANT_DB, SC_DB)",
+    "ipc_bridge": "VTEzBridge32.exe via CLI & Linkage.xml",
+    "anatomic_crown_source": "Common\\FM\\Resources\\VTToothLength.txt (Wheeler's Dental Anatomy)"
+  }
 }

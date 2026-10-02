@@ -278,8 +278,6 @@ export default defineConfig({
 						return "visit-store";
 					if (normalizedId.endsWith("/apps/web/src/store/appStore.ts"))
 						return "app-store";
-					if (normalizedId.endsWith("/apps/web/src/store/uiStore.ts"))
-						return "ui-store";
 					// Rollup's functional manualChunks добавляет в ручной чанк не только сам модуль,
 					// но и ВСЕ его ещё не занятые зависимости. Из-за этого правило
 					// components/settings/ ниже засасывало общие модули, которые к настройкам

@@ -823,8 +823,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 
 				<div className="hidden xl:block min-w-[220px] max-w-[300px]">
 					<PatientSearchAutocomplete
-						patients={patients}
-						onSelectPatient={(p) => setSelectedPatient(p)}
+						patients={props.filteredPatients}
+						onSelectPatient={(p) => setSelectedPatientId(p.id)}
 						placeholder="Быстрый поиск (ФИО / тел)..."
 					/>
 				</div>

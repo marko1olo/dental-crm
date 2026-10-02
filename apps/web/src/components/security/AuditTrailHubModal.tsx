@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
 	ShieldCheck,
 	ShieldAlert,
@@ -25,12 +25,15 @@ import {
 import {
 	AuditTrailEntry,
 	AuditEventType,
+	AuditEventCategory,
 	AuditSeverity,
 	AuditStatus,
 	AuditFilterCriteria,
 	ClinicComplianceMetadata,
 	DEFAULT_CLINIC_COMPLIANCE,
 	AUDIT_EVENT_METADATA,
+	createAuditEntry,
+	CreateAuditEntryParams,
 	verifyAuditChain,
 	detectAuditAnomalies,
 	filterAuditTrail,
@@ -39,6 +42,8 @@ import {
 	generate152FzAuditActText,
 	generate152FzAuditActHtml,
 } from './auditTrailEngine';
+import { denteAdminSecretRequestHeaders } from '../../lib/denteRequestHeaders';
+import clientLogger from '../../services/logging/clientLogger';
 import './auditTrail.css';
 
 export interface AuditTrailHubModalProps {
@@ -46,6 +51,79 @@ export interface AuditTrailHubModalProps {
 	readonly onClose: () => void;
 	readonly clinicInfo?: ClinicComplianceMetadata;
 	readonly initialEntries?: readonly AuditTrailEntry[];
+}
+
+function mapRawToAuditEntryParams(raw: Record<string, unknown>): CreateAuditEntryParams {
+	const action = String(raw.actionType || raw.action || raw.eventType || '').toLowerCase();
+	let eventType: AuditEventType = 'view_patient_card';
+	let eventCategory: AuditEventCategory = 'clinical';
+	let actionDesc = 'Действие в системе';
+
+	if (action.includes('emr') || action.includes('card') || action.includes('043')) {
+		eventType = 'view_patient_card';
+		eventCategory = 'patient_pii';
+		actionDesc = 'Просмотр медкарты 043/у';
+	} else if (action.includes('bill') || action.includes('payment') || action.includes('discount') || action.includes('price')) {
+		eventType = 'modify_bill';
+		eventCategory = 'financial';
+		actionDesc = 'Финансовая операция / прейскурант';
+	} else if (action.includes('refund')) {
+		eventType = 'delete_bill';
+		eventCategory = 'financial';
+		actionDesc = 'Возврат средств (54-ФЗ)';
+	} else if (action.includes('cancel') || action.includes('delete_appointment')) {
+		eventType = 'delete_appointment';
+		eventCategory = 'clinical';
+		actionDesc = 'Отмена / удаление приема';
+	} else if (action.includes('export')) {
+		eventType = 'export_patients_csv';
+		eventCategory = 'patient_pii';
+		actionDesc = 'Выгрузка персональных данных (152-ФЗ)';
+	} else if (action.includes('diagnosis') || action.includes('service')) {
+		eventType = 'emr_entry_edit';
+		eventCategory = 'clinical';
+		actionDesc = 'Клинические записи / диагноз МКБ-10';
+	} else if (action.includes('role') || action.includes('authority') || action.includes('credential')) {
+		eventType = 'role_permission_change';
+		eventCategory = 'auth_security';
+		actionDesc = 'Изменение полномочий персонала';
+	} else if (action.includes('login') || action.includes('auth')) {
+		eventType = 'login_attempt';
+		eventCategory = 'auth_security';
+		actionDesc = 'Авторизация в системе';
+	}
+
+	const details = (raw.details || raw.meta || {}) as Record<string, unknown>;
+
+	return {
+		id: typeof raw.id === 'string' ? raw.id : undefined,
+		timestamp: typeof raw.createdAt === 'string'
+			? raw.createdAt
+			: typeof raw.clientTimestamp === 'string'
+				? raw.clientTimestamp
+				: new Date().toISOString(),
+		eventType,
+		eventCategory,
+		severity: (raw.severity as AuditSeverity) || (action.includes('refund') || action.includes('export') ? 'critical' : 'info'),
+		status: 'success',
+		actor: {
+			userId: String(raw.actorUserId || raw.userId || 'system'),
+			fullName: String(raw.actorName || raw.actorLogin || raw.actorFullName || 'Сотрудник клиники'),
+			role: String(raw.actorRole || 'staff'),
+			ipAddress: String(raw.ipAddress || raw.ip || '127.0.0.1'),
+		},
+		entity: {
+			entityType: (raw.entityType as any) || 'patient',
+			entityId: String(raw.entityId || raw.id || 'unknown'),
+			patientId: raw.patientId ? String(raw.patientId) : undefined,
+		},
+		payload: {
+			actionDescriptionRu: String(raw.reason || details.reason || actionDesc),
+			oldValue: (details.oldState ?? raw.oldValue) as any,
+			newValue: (details.newState ?? raw.newValue) as any,
+			justificationReason: raw.reason ? String(raw.reason) : undefined,
+		},
+	};
 }
 
 export function AuditTrailHubModal({
@@ -57,6 +135,73 @@ export function AuditTrailHubModal({
 	const [entries, setEntries] = useState<readonly AuditTrailEntry[]>(() => {
 		return initialEntries ?? [];
 	});
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+
+	useEffect(() => {
+		if (!isOpen) return;
+		if (initialEntries && initialEntries.length > 0) {
+			setEntries(initialEntries);
+			return;
+		}
+
+		let isMounted = true;
+		setIsLoading(true);
+
+		async function fetchLiveAudit() {
+			try {
+				const headers = denteAdminSecretRequestHeaders({ 'Content-Type': 'application/json' });
+				const [logsRes, medRes] = await Promise.allSettled([
+					fetch('/api/audit/logs?limit=50', { headers }),
+					fetch('/api/audit/medical-access?limit=50', { headers }),
+				]);
+
+				const rawEvents: Array<Record<string, unknown>> = [];
+				if (logsRes.status === 'fulfilled' && logsRes.value.ok) {
+					const data = (await logsRes.value.json()) as { logs?: Array<Record<string, unknown>> };
+					if (Array.isArray(data.logs)) rawEvents.push(...data.logs);
+				}
+				if (medRes.status === 'fulfilled' && medRes.value.ok) {
+					const data = (await medRes.value.json()) as { logs?: Array<Record<string, unknown>> };
+					if (Array.isArray(data.logs)) rawEvents.push(...data.logs);
+				}
+
+				// Also include offline buffer from clientLogger
+				const offlineBuffer = clientLogger.getOfflineStaffAuditBuffer();
+				rawEvents.push(...(offlineBuffer as unknown as Array<Record<string, unknown>>));
+
+				// Sort chronologically (oldest first for blockchain chain building)
+				rawEvents.sort((a, b) => {
+					const ta = new Date(String(a.createdAt || a.clientTimestamp || a.timestamp || 0)).getTime();
+					const tb = new Date(String(b.createdAt || b.clientTimestamp || b.timestamp || 0)).getTime();
+					return ta - tb;
+				});
+
+				// Build cryptographic SHA-256 chain
+				let lastEntry: AuditTrailEntry | null = null;
+				const chained: AuditTrailEntry[] = [];
+				for (const raw of rawEvents) {
+					const params = mapRawToAuditEntryParams(raw);
+					const entry = createAuditEntry(params, lastEntry);
+					chained.push(entry);
+					lastEntry = entry;
+				}
+
+				if (isMounted) {
+					setEntries(chained.reverse()); // Newest first for display
+				}
+			} catch (err) {
+				console.warn('[AuditTrailHubModal] Ошибка загрузки журнала аудита:', err);
+			} finally {
+				if (isMounted) setIsLoading(false);
+			}
+		}
+
+		void fetchLiveAudit();
+
+		return () => {
+			isMounted = false;
+		};
+	}, [isOpen, initialEntries]);
 
 	const [searchQuery, setSearchQuery] = useState<string>('');
 	const [selectedEventType, setSelectedEventType] = useState<AuditEventType | 'all'>('all');

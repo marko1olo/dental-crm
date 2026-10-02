@@ -243,8 +243,9 @@ test("generateDoctorT51Html: generates compliant Unified Form T-51 payslip with 
 	assert.ok(html.includes("Ковалев Игорь Николаевич"));
 	assert.ok(html.includes("A16.07.004.001"));
 	assert.ok(html.includes("ЗТЛ-9901"));
-	assert.ok(html.includes("Гарантия (0 ₽)"));
 	assert.ok(html.includes("47") && html.includes("850"));
 	assert.ok(html.includes("Общеклинические расходники"));
+	assert.ok(html.includes("Удержания из заработной платы (ст. 137 ТК РФ"));
+	assert.ok(html.includes("7") && html.includes("150"), "Withholding table strictly reflects statutory NDFL of 7 150 ₽");
 });
 

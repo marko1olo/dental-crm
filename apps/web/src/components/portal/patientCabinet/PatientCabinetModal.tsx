@@ -48,6 +48,7 @@ import {
 } from "./sheets";
 import "./patientCabinet.css";
 import { AuthArtBackground } from "../../auth/AuthArtBackground";
+import { useOfflinePatientSync } from "../../../pwa/patientOfflineStorage";
 
 export type PatientCabinetTab =
 	| "overview"
@@ -105,6 +106,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	const [availableDoctors, setAvailableDoctors] = useState<
 		Array<{ id: string; fullName: string; specialties?: string[] | null }>
 	>([]);
+
+	const { isOnline, queuedBookingsCount, isSyncing, flushNow } = useOfflinePatientSync();
 
 	useEffect(() => {
 		if (!token) return;
@@ -633,6 +636,27 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 					<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
 						<div className="pc-header-badges">
+							{!isOnline && (
+								<span
+									className="pc-badge-bonus"
+									style={{ backgroundColor: "var(--amber-bg, #fef3c7)", color: "var(--amber-text, #92400e)" }}
+									title="Автономный режим (оффлайн)"
+								>
+									Оффлайн
+								</span>
+							)}
+							{queuedBookingsCount > 0 && (
+								<button
+									type="button"
+									className="pc-badge-bonus"
+									style={{ backgroundColor: "var(--sky-bg, #e0f2fe)", color: "var(--sky-text, #0369a1)", cursor: "pointer", border: "none" }}
+									onClick={() => void flushNow()}
+									title="В очереди на синхронизацию"
+								>
+									<RefreshCw size={12} className={isSyncing ? "animate-spin" : ""} />
+									<span>В очереди: {queuedBookingsCount}</span>
+								</button>
+							)}
 							<span className="pc-badge-bonus">
 								<Sparkles size={13} />
 								<span>{formatRubles(data.loyaltyBonusBalance)} бонусов</span>

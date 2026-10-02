@@ -383,6 +383,10 @@ class ClientLoggerService {
 		return staffTelemetryService.getQueuedEvents().length;
 	}
 
+	public getOfflineStaffAuditBuffer(): StaffActionAuditEntry[] {
+		return [...staffTelemetryService.getQueuedEvents()];
+	}
+
 	/**
 	 * Измерение реальных операционных метрик сетевой задержки (Zero Math.random)
 	 */

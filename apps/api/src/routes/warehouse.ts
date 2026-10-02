@@ -11,15 +11,13 @@
  *    and unparameterized master routes (/deduct, /deduct/visit, /soft-overdraft-deduct, /quick-carpule-disposal).
  */
 
-import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import type { z } from "zod";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
-import { db } from "../db/client.js";
-import { inventoryItems } from "../db/schema.js";
+import { inventoryQuery } from "../db/inventoryQuery.js";
 import {
 	executeQuickCarpuleDisposal,
 	executeSoftOverdraftDeduct,
@@ -264,11 +262,7 @@ export const warehouseRoutes: FastifyPluginAsync = async (
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			const items = await db
-				.select()
-				.from(inventoryItems)
-				.where(eq(inventoryItems.organizationId, organizationId))
-				.orderBy(inventoryItems.name);
+			const items = await inventoryQuery.getInventoryItems(organizationId);
 
 			return reply.send(items);
 		},
@@ -283,11 +277,7 @@ export const warehouseRoutes: FastifyPluginAsync = async (
 		);
 		if (!resolvedOrgId) return;
 
-		const items = await db
-			.select()
-			.from(inventoryItems)
-			.where(eq(inventoryItems.organizationId, resolvedOrgId))
-			.orderBy(inventoryItems.name);
+		const items = await inventoryQuery.getInventoryItems(resolvedOrgId);
 
 		return reply.send(items);
 	});

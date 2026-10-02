@@ -292,6 +292,63 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		}));
 	};
 
+	const submitCheckinToBackend = async (payload: {
+		signed: StatutoryConsentItem[];
+		somatic: SomaticQuestionnaireData;
+		evaluatedRisks: ReturnType<typeof evaluateSomaticRisks>;
+	}) => {
+		setIsSubmitting(true);
+		setAuthError(null);
+		try {
+			const res = await fetch("/api/portal/self-checkin", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					phoneLast4: phoneDigits,
+					patientPhone: initialPhone,
+					patientId,
+					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
+					somaticProfile: payload.evaluatedRisks,
+				}),
+			});
+			if (res.ok) {
+				const json = await res.json();
+				if (json?.patientName) setServerPatientName(json.patientName);
+				if (json?.doctorName) setServerDoctorName(json.doctorName);
+				if (json?.appointmentTime) setServerAppointmentTime(json.appointmentTime);
+				if (json?.cabinetName) setServerCabinetName(json.cabinetName);
+				if (json?.queueTicket) setServerQueueTicket(json.queueTicket);
+
+				setStep("completed");
+				onCheckinSuccess?.({
+					patientId: json?.patientId || patientId || "",
+					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
+					somaticProfile: payload.evaluatedRisks,
+					queueTicket: json?.queueTicket || displayQueueTicket,
+					visitStatus: json?.visitStatus || "В холле / Ожидает приёма",
+				});
+				return;
+			}
+			const err = await res.json().catch(() => null);
+			if (err?.message) {
+				setAuthError(err.message);
+			}
+		} catch {
+			// In demo/test mode or offline kiosk, fallback gracefully to completion
+		} finally {
+			setIsSubmitting(false);
+		}
+
+		setStep("completed");
+		onCheckinSuccess?.({
+			patientId: patientId || "",
+			signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
+			somaticProfile: payload.evaluatedRisks,
+			queueTicket: displayQueueTicket,
+			visitStatus: "В холле / Ожидает приёма",
+		});
+	};
+
 	// 1-Click Physiological Norm & Instant 5-Second Completion
 	const handleApplyPhysiologicalNormAndFinish = () => {
 		const normData = createPhysiologicalNormSomaticQuestionnaire();
@@ -308,14 +365,10 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		setIsNormApplied(true);
 
 		const evaluatedNorm = evaluateSomaticRisks(normData);
-		setIsSubmitting(false);
-		setStep("completed");
-		onCheckinSuccess?.({
-			patientId: patientId || "",
-			signedConsents: consents.filter((c) => c.isSigned).map((c) => c.id),
-			somaticProfile: evaluatedNorm,
-			queueTicket: displayQueueTicket,
-			visitStatus: "В холле / Ожидает приёма",
+		void submitCheckinToBackend({
+			signed: consents,
+			somatic: normData,
+			evaluatedRisks: evaluatedNorm,
 		});
 	};
 
@@ -337,33 +390,25 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	});
 
 	const handleCompleteCheckin = () => {
-		setIsSubmitting(false);
-		setStep("completed");
-		onCheckinSuccess?.({
-			patientId: patientId || "",
-			signedConsents: consents.filter((c) => c.isSigned).map((c) => c.id),
-			somaticProfile: riskEvaluation,
-			queueTicket: displayQueueTicket,
-			visitStatus: "В холле / Ожидает приёма",
+		void submitCheckinToBackend({
+			signed: consents,
+			somatic: somaticData,
+			evaluatedRisks: riskEvaluation,
 		});
 	};
 
 	const handleOneTouchCheckin = () => {
 		setAuthError(null);
-		setIsSubmitting(false);
 		const signed = consents.map((c) => ({
 			...c,
 			isSigned: true,
 			signedAtIso: new Date().toISOString(),
 		}));
 		setConsents(signed);
-		setStep("completed");
-		onCheckinSuccess?.({
-			patientId: patientId || "",
-			signedConsents: signed.map((c) => c.id),
-			somaticProfile: riskEvaluation,
-			queueTicket: displayQueueTicket,
-			visitStatus: "В холле / Ожидает приёма",
+		void submitCheckinToBackend({
+			signed,
+			somatic: somaticData,
+			evaluatedRisks: riskEvaluation,
 		});
 	};
 

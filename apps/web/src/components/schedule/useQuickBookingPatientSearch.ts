@@ -4,6 +4,7 @@ import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { logger } from "../../utils/logger";
 import { normalizePhoneToNational } from "../../utils/patientSearchUtils";
 import { showToast } from "../GlobalToast";
+import { useDebounce } from "../../hooks/useDebounce";
 import {
   findPotentialDuplicates,
   searchPatientsQuick,
@@ -111,12 +112,14 @@ export function useQuickBookingPatientSearch({
     }
   }, [isOpen, initialSlot, dashboard?.patients]);
 
+  const debouncedSearchQuery = useDebounce(searchQuery);
+
   const searchResults = useMemo(() => {
-    if (!searchQuery || typeof searchQuery !== "string" || !searchQuery.trim() || selectedPatient) {
+    if (!debouncedSearchQuery || typeof debouncedSearchQuery !== "string" || !debouncedSearchQuery.trim() || selectedPatient) {
       return [];
     }
-    return searchPatientsQuick(dashboard?.patients || [], searchQuery);
-  }, [searchQuery, selectedPatient, dashboard?.patients]);
+    return searchPatientsQuick(dashboard?.patients || [], debouncedSearchQuery);
+  }, [debouncedSearchQuery, selectedPatient, dashboard?.patients]);
 
   const selectPatient = useCallback((p: Patient) => {
     setSelectedPatient(p);

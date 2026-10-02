@@ -686,8 +686,40 @@ export function generateDoctorT51Html(payload: DoctorT51PrintPayload): string {
 		</tbody>
 	</table>
 
-	<!-- 2. Удержания -->
-	<div class="section-title">2. Удержания и налоги</div>
+	<!-- Справочно: Прямые клинические затраты -->
+	${(payload.withheldLabRub > 0 || payload.withheldMaterialRub > 0) ? `
+	<div class="section-title">2. Прямые клинические затраты, уменьшившие расчетную базу (ст. 129 ТК РФ)</div>
+	<table>
+		<thead>
+			<tr>
+				<th>Вид затрат</th>
+				<th>Основание списания</th>
+				<th style="text-align: right;">Сумма, руб.</th>
+			</tr>
+		</thead>
+		<tbody>
+			${payload.withheldLabRub > 0 ? `
+			<tr>
+				<td>Зуботехническая лаборатория (ЗТЛ)</td>
+				<td>Заказ-наряды сторонних лабораторий (за вычетом гарантийных)</td>
+				<td style="text-align: right; font-family: monospace;">${formatMoney(payload.withheldLabRub)}</td>
+			</tr>` : ""}
+			${payload.withheldMaterialRub > 0 ? `
+			<tr>
+				<td>Прямые расходные материалы</td>
+				<td>Имплантаты, мембраны, костные материалы (без салфеток и валиков)</td>
+				<td style="text-align: right; font-family: monospace;">${formatMoney(payload.withheldMaterialRub)}</td>
+			</tr>` : ""}
+			<tr style="background: #f8fafc; font-weight: bold;">
+				<td colspan="2" style="text-transform: uppercase;">Итого прямых клинических затрат:</td>
+				<td style="text-align: right; font-family: monospace; color: #475569;">${formatMoney(payload.withheldLabRub + payload.withheldMaterialRub)}</td>
+			</tr>
+		</tbody>
+	</table>
+	` : ""}
+
+	<!-- 2. Удержания из заработной платы -->
+	<div class="section-title">${(payload.withheldLabRub > 0 || payload.withheldMaterialRub > 0) ? "3" : "2"}. Удержания из заработной платы (ст. 137 ТК РФ, ст. 224 НК РФ)</div>
 	<table>
 		<thead>
 			<tr>
@@ -698,28 +730,18 @@ export function generateDoctorT51Html(payload: DoctorT51PrintPayload): string {
 		</thead>
 		<tbody>
 			<tr>
-				<td>Зуботехническая лаборатория (ЗТЛ)</td>
-				<td>Заказ-наряды сторонних лабораторий (за вычетом гарантийных)</td>
-				<td style="text-align: right; font-family: monospace;">${formatMoney(payload.withheldLabRub)}</td>
-			</tr>
-			<tr>
-				<td>Прямые расходные материалы</td>
-				<td>Имплантаты, мембраны, костные материалы (без салфеток и валиков)</td>
-				<td style="text-align: right; font-family: monospace;">${formatMoney(payload.withheldMaterialRub)}</td>
-			</tr>
-			<tr>
 				<td>НДФЛ (налог на доходы физлиц 13%)</td>
 				<td>Статья 224 НК РФ</td>
 				<td style="text-align: right; font-family: monospace;">${formatMoney(payload.ndflTaxRub)}</td>
 			</tr>
 			<tr style="background: #f8fafc; font-weight: bold;">
 				<td colspan="2" style="text-transform: uppercase;">Всего удержано:</td>
-				<td style="text-align: right; font-family: monospace; color: #b91c1c;">${formatMoney(payload.withheldLabRub + payload.withheldMaterialRub + payload.ndflTaxRub)}</td>
+				<td style="text-align: right; font-family: monospace; color: #b91c1c;">${formatMoney(payload.ndflTaxRub)}</td>
 			</tr>
 		</tbody>
 	</table>
 
-	<!-- 3. Итого к выплате -->
+	<!-- Итого к выплате -->
 	<div class="total-banner">
 		<span class="lbl">ИТОГО К ВЫПЛАТЕ («НА РУКИ»):</span>
 		<span class="val">${formatMoney(payload.netPayoutRub)}</span>

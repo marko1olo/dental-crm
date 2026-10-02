@@ -43,20 +43,20 @@ export interface CopilotChatPanelProps {
 	phase: CopilotPhase;
 	pending: PendingConfirmation | null;
 	nameCache: Record<string, string>;
-	nudges?: CopilotNudge[];
-	proactiveAlerts?: ProactiveAlertCardData[];
-	whatsappHitLCards?: WhatsAppApprovalCard[];
+	nudges?: CopilotNudge[] | undefined;
+	proactiveAlerts?: ProactiveAlertCardData[] | undefined;
+	whatsappHitLCards?: WhatsAppApprovalCard[] | undefined;
 	onSend: (text: string) => void;
 	onConfirm: ConfirmHandler;
 	onReset: () => void;
-	onDismissNudge?: (id: string) => void;
-	onDismissProactiveAlert?: (alertId: string) => void;
-	onApproveWhatsApp?: (approvalId: string, modifiedReply?: string) => void;
-	onRejectWhatsApp?: (approvalId: string, reason?: string) => void;
-	onSelectPatient?: SelectIdHandler;
-	onSelectAppointment?: SelectIdHandler;
-	onBookSlot?: BookSlotHandler;
-	embedMode?: boolean;
+	onDismissNudge?: ((id: string) => void) | undefined;
+	onDismissProactiveAlert?: ((alertId: string) => void) | undefined;
+	onApproveWhatsApp?: ((approvalId: string, modifiedReply?: string) => void) | undefined;
+	onRejectWhatsApp?: ((approvalId: string, reason?: string) => void) | undefined;
+	onSelectPatient?: SelectIdHandler | undefined;
+	onSelectAppointment?: SelectIdHandler | undefined;
+	onBookSlot?: BookSlotHandler | undefined;
+	embedMode?: boolean | undefined;
 }
 
 const formatShortPatientName = (fullName?: string | null) => {

@@ -10938,7 +10938,7 @@ export const smartImportModeSchema = z.enum([
 ]);
 export type SmartImportMode = z.infer<typeof smartImportModeSchema>;
 
-export const uiLanguageSchema = z.enum(["ru"]);
+export const uiLanguageSchema = z.enum(["ru", "en"]);
 export type UiLanguage = z.infer<typeof uiLanguageSchema>;
 
 export const onboardingStepSchema = z.enum([

@@ -32,6 +32,7 @@ import { POPULAR_STERILIZER_BRAND_PRESETS, type SterilizerEquipment } from "@den
 import { loadSavedClinicAutoclaves } from "./AutoclaveEquipmentModal";
 import { RetroactiveBatchHeroBanner } from "./RetroactiveBatchHeroBanner";
 import { RetroactiveBatchTable } from "./RetroactiveBatchTable";
+import { useSanpinScheduleSyncLogic } from "../../hooks/domains/useSanpinScheduleSyncLogic";
 
 export interface RetroactiveBatchTabProps {
 	readonly initialPreset?: PeriodPreset | undefined;
@@ -144,6 +145,11 @@ export function RetroactiveBatchTab({
 	const currentPeriodBounds = useMemo(() => {
 		return calculatePeriodDateRange(periodPreset, customStartDate, customEndDate);
 	}, [periodPreset, customStartDate, customEndDate]);
+
+	const scheduleSync = useSanpinScheduleSyncLogic({
+		defaultStartDate: customStartDate,
+		defaultEndDate: customEndDate,
+	});
 
 	// Auto-generate on initial mount for current month & load sterilizers
 	useEffect(() => {
@@ -505,6 +511,17 @@ export function RetroactiveBatchTab({
 							title="Экспорт в CSV"
 						>
 							<Download size={16} /> CSV
+						</button>
+
+						<button
+							type="button"
+							onClick={scheduleSync.handleExportCsv}
+							className="sanpin-btn sanpin-btn-secondary"
+							style={{ minHeight: "46px", padding: "0.6rem 0.9rem", fontSize: "0.85rem", cursor: "pointer" }}
+							title="Сводная ведомость стерилизационной нагрузки расписания (CSV)"
+							data-testid="export-schedule-sanpin-sync-csv-btn"
+						>
+							<Download size={16} /> Ведомость расписания (CSV)
 						</button>
 					</div>
 				</div>

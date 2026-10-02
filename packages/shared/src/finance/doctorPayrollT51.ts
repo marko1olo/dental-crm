@@ -293,8 +293,8 @@ export interface AssistantShiftLogItem {
 	readonly dateIso: string;
 	readonly shiftType: "standard_6h" | "full_12h" | "overtime_custom";
 	readonly hoursWorked: number;
-	readonly radiographsTakenCount: number;
-	readonly surgeriesAssistedCount: number;
+	readonly radiographsTakenCount?: number | undefined;
+	readonly surgeriesAssistedCount?: number | undefined;
 }
 
 export interface AssistantPayrollResult {

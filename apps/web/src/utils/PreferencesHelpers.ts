@@ -12,6 +12,7 @@ export const uiPreferencesServerPath = "/api/settings/preferences";
 
 export const uiLanguageLabels: Record<UiLanguage, string> = {
 	ru: "Русский",
+	en: "English",
 };
 
 export type UiLanguageOption = {

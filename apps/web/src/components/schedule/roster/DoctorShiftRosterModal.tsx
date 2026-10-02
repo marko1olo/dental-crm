@@ -250,7 +250,7 @@ export function DoctorShiftRosterModal(props: DoctorShiftRosterModalProps) {
 					<div
 						style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}
 					>
-						Баланс рабочего времени: 33 ч/нед (врачи) • Табель учёта времени <span className="opacity-60 font-mono">(Т-13)</span>
+						Баланс рабочего времени: 33 ч/нед (врачи) • Табель учёта времени
 					</div>
 					<div style={{ display: "flex", gap: "0.75rem" }}>
 						<button

@@ -44,6 +44,7 @@ import type {
 	TaxDeductionApplicationForm,
 	TaxDeductionApplicationRelationship,
 	TreatmentPlanAcceptanceVariant,
+	UiLanguage,
 	VisitNoteDraft,
 	XrayCbctReferralPregnancyStatus,
 	XrayCbctReferralPriority,
@@ -52,7 +53,6 @@ import type {
 import type { CSSProperties } from "react";
 import type { MprProjection, MprWindowPreset } from "./imagingUiLabels";
 import { readDenteClinicToken } from "./lib/safeLocalStorage";
-import type { UiLanguage } from "./store/uiStore";
 import type { AppView } from "./utils/routeUtils";
 
 export const imagingSourceLabels: Record<ImagingSourceKind, string> = {

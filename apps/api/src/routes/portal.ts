@@ -1,6 +1,6 @@
 import { createHash, randomInt } from "node:crypto";
 import { and, desc, eq, gt, gte, inArray, isNull, lt, notInArray, or, sql } from "drizzle-orm";
-import type { FastifyInstance, FastifyPluginAsync, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import {
 	namedDevelopmentModeActive,
 	requireAuthTokenSecret,
@@ -1293,14 +1293,15 @@ export const portalRoutes: FastifyPluginAsync = async (
 		// 6. Persist allergies if reported in somatic profile
 		if (targetPatient && somaticProfile) {
 			const allergies = somaticProfile.allergies as Record<string, unknown> | undefined;
-			if (allergies?.hasAllergies && typeof allergies.details === "string" && allergies.details.trim()) {
+			const detailsStr = typeof allergies?.details === "string" ? allergies.details.trim() : "";
+			if (allergies?.hasAllergies && detailsStr) {
 				await withTenantCtx(organizationId, async () => {
 					await db.insert(patientDrugAllergies).values({
 						organizationId,
 						patientId: targetPatient.id,
 						allergenGroup: "dental_anesthetics_or_antibiotics",
 						reactionSeverity: "high",
-						clinicalManifestations: allergies.details.trim().slice(0, 255),
+						clinicalManifestations: detailsStr.slice(0, 255),
 						notes: "Самочекин терминал",
 					});
 				});

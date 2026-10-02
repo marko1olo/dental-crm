@@ -37,16 +37,18 @@ function cleanPhoneDigits(phone?: string | null): string {
 }
 
 function detectChannelFromSource(source?: string | null): string {
-	if (!source) return "website_widget";
+	if (!source) return "telephony";
 	const s = source.toLowerCase().trim();
-	if (s.includes("yandex") || s.includes("яндекс") || s.includes("карт")) return "yandex_maps";
-	if (s.includes("2gis") || s.includes("2гис") || s.includes("gis")) return "gis_2";
-	if (s.includes("prodoctorov") || s.includes("продокторов") || s.includes("sber") || s.includes("доктор")) return "prodoctorov";
+	if (s.includes("2gis") || s.includes("2гис") || s.includes("gis") || s.includes("дубльгис")) return "gis_2";
+	if (s.includes("яндекс") || s.includes("yandex") || s.includes("карт") || s.includes("карты") || s.includes("гео")) return "yandex_maps";
+	if (s.includes("prodoctorov") || s.includes("продокторов") || s.includes("sber") || s.includes("сбер") || s.includes("docdoc") || s.includes("доктор")) return "prodoctorov";
 	if (s.includes("tg") || s.includes("telegr") || s.includes("телеграм")) return "tg_bot";
 	if (s.includes("wa") || s.includes("whats") || s.includes("ватсап") || s.includes("waba")) return "wa_bot";
-	if (s.includes("phone") || s.includes("call") || s.includes("звонок") || s.includes("тел") || s.includes("admin") || s.includes("регистратур")) return "telephony";
-	return "website_widget";
+	if (s.includes("site") || s.includes("сайт") || s.includes("widget") || s.includes("виджет") || s.includes("онлайн") || s.includes("самозапис") || s.includes("web")) return "website_widget";
+	if (s.includes("phone") || s.includes("call") || s.includes("звонок") || s.includes("тел") || s.includes("admin") || s.includes("регистратур") || s.includes("рецепшн") || s.includes("сарафан") || s.includes("рекомендац") || s.includes("знаком") || s.includes("родствен")) return "telephony";
+	return "telephony";
 }
+
 
 export async function registerMarketingRoutes(app: FastifyInstance) {
 	/**
@@ -113,15 +115,25 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				const cp = cleanPhoneDigits(p.phone);
 				if (cp && phoneToChannel.has(cp)) {
 					patientToChannel.set(p.id, phoneToChannel.get(cp)!);
-				} else if (p.notes && p.notes.includes("Источник:")) {
-					patientToChannel.set(p.id, detectChannelFromSource(p.notes));
-					const adminProfile = p.administrativeProfile as {
-						preferredAppointmentNote?: string | null;
-					} | null;
-					const note = adminProfile?.preferredAppointmentNote;
-					if (typeof note === "string" && note.startsWith("src:")) {
-						patientToChannel.set(p.id, detectChannelFromSource(note.slice(4)));
-					}
+					continue;
+				}
+
+				const adminProfile = p.administrativeProfile as {
+					preferredAppointmentNote?: string | null;
+					advertisingSource?: string | null;
+					marketingSource?: string | null;
+				} | null;
+
+				const explicitSource =
+					adminProfile?.advertisingSource ||
+					adminProfile?.marketingSource ||
+					(typeof adminProfile?.preferredAppointmentNote === "string" && adminProfile.preferredAppointmentNote.startsWith("src:")
+						? adminProfile.preferredAppointmentNote.slice(4)
+						: null) ||
+					(p.notes && p.notes.includes("Источник:") ? p.notes : null);
+
+				if (explicitSource) {
+					patientToChannel.set(p.id, detectChannelFromSource(explicitSource));
 				}
 			}
 

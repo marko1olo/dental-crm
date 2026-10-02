@@ -19,6 +19,9 @@ import {
 	type UseDomListPaginationReturn,
 	useDomListPagination,
 	useMemoryLeakGuard,
+	useSafeInterval,
+	useSafeObjectUrl,
+	useSafeTimeout,
 } from "./useMemoryLeakGuard.js";
 
 describe("Wave 252-Perf2: useMemoryLeakGuard & InvoicesView Virtualization Tests", () => {
@@ -177,6 +180,37 @@ describe("Wave 252-Perf2: useMemoryLeakGuard & InvoicesView Virtualization Tests
 				!html.includes('data-testid="invoices-dom-virtualization-bar"'),
 				"Virtualization bar should not show when total items <= 50",
 			);
+		});
+	});
+
+	describe("3. useSafeTimeout, useSafeInterval & useSafeObjectUrl API Contract", () => {
+		it("provides callable timeout and interval methods", () => {
+			let capturedTimeout: ReturnType<typeof useSafeTimeout> | null = null;
+			let capturedInterval: ReturnType<typeof useSafeInterval> | null = null;
+
+			function TestHooksComponent() {
+				capturedTimeout = useSafeTimeout();
+				capturedInterval = useSafeInterval();
+				return null;
+			}
+
+			renderToString(React.createElement(TestHooksComponent));
+			assert.ok(capturedTimeout !== null);
+			assert.ok(capturedInterval !== null);
+			assert.equal(typeof (capturedTimeout as any).setSafeTimeout, "function");
+			assert.equal(typeof (capturedTimeout as any).clearSafeTimeout, "function");
+			assert.equal(typeof (capturedInterval as any).setSafeInterval, "function");
+			assert.equal(typeof (capturedInterval as any).clearSafeInterval, "function");
+		});
+
+		it("provides useSafeObjectUrl hook returning string url", () => {
+			let capturedUrl = "";
+			function TestObjectUrlComponent() {
+				capturedUrl = useSafeObjectUrl("https://example.com/test.jpg");
+				return null;
+			}
+			renderToString(React.createElement(TestObjectUrlComponent));
+			assert.equal(capturedUrl, "https://example.com/test.jpg");
 		});
 	});
 });

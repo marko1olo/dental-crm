@@ -521,7 +521,7 @@ async function main() {
     if (fs.existsSync(primaryPath)) {
       try { fs.unlinkSync(primaryPath); } catch {}
     }
-    await page.screenshot({ path: primaryPath, fullPage: false, animations: "disabled", timeout: 15000 });
+    await page.screenshot({ path: primaryPath, fullPage: false, animations: "disabled", timeout: 30000 });
     for (let i = 1; i < targetDirs.length; i++) {
       fs.copyFileSync(primaryPath, path.join(targetDirs[i], fileName));
     }
@@ -563,7 +563,7 @@ async function main() {
     // 2. Дневник приёма / ЭМК 043/у (VisitView.tsx, subtab 'emk')
     // -------------------------------------------------------------------------
     await dPage.evaluate(() => { window.location.hash = "#visit"; });
-    await dPage.waitForSelector('[data-testid="visit-subtab-emk"], .visit-monolithic-header', { timeout: 20000 });
+    await dPage.waitForSelector('[data-testid="visit-subtab-emk"], .visit-monolithic-header, [data-testid="visit-view"]', { timeout: 35000 });
     await dPage.evaluate(() => {
       const btn = document.querySelector('[data-testid="visit-subtab-emk"]');
       if (btn) btn.click();
@@ -616,8 +616,12 @@ async function main() {
     // -------------------------------------------------------------------------
     // 5. Касса и чек 54-ФЗ (PaymentModal.tsx / FastCheckout)
     // -------------------------------------------------------------------------
-    await dPage.evaluate(() => { window.location.hash = "#finance"; });
-    await dPage.waitForSelector(".finance-panel, #finance", { timeout: 20000 });
+    await dPage.evaluate(() => {
+      const finLink = document.querySelector('a[href="#finance"]');
+      if (finLink) finLink.click();
+      else window.location.hash = "#finance";
+    });
+    await dPage.waitForSelector(".finance-panel, #finance, [data-testid='finance-view']", { timeout: 25000 }).catch(() => {});
     await dPage.waitForTimeout(1000);
 
     await dPage.evaluate(() => {
@@ -625,8 +629,8 @@ async function main() {
                        Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes("Сплит") || b.textContent?.includes("Принять оплату"));
       if (splitBtn) splitBtn.click();
     });
-    await dPage.waitForSelector('.payment-modal, [aria-labelledby="payment-modal-title"], [role="dialog"]', { timeout: 10000 }).catch(() => {});
-    await dPage.waitForTimeout(800);
+    await dPage.waitForSelector('.payment-modal, [aria-labelledby="payment-modal-title"], [role="dialog"]', { timeout: 15000 }).catch(() => {});
+    await dPage.waitForTimeout(1000);
 
     await applyTheme(dPage, "light");
     await takeScreen(dPage, "05_cash_54fz_desktop_light.png", "Касса и чек 54-ФЗ (Desktop Light)");
@@ -636,29 +640,33 @@ async function main() {
 
     // Close Payment Modal
     await dPage.keyboard.press("Escape");
-    await dPage.waitForTimeout(500);
+    await dPage.waitForTimeout(800);
 
     // -------------------------------------------------------------------------
     // 6. Настройки оборудования (SettingsView.tsx -> HardwareSettingsTab.tsx -> Audio DSP)
     // -------------------------------------------------------------------------
-    await dPage.evaluate(() => { window.location.hash = "#settings/hardware"; });
-    await dPage.waitForSelector('[data-testid="settings-view"], .settings-zone', { timeout: 20000 });
-    await dPage.waitForTimeout(800);
+    await dPage.evaluate(() => {
+      const setLink = document.querySelector('a[href="#settings"]');
+      if (setLink) setLink.click();
+      else window.location.hash = "#settings/hardware";
+    });
+    await dPage.waitForSelector('[data-testid="settings-view"], .settings-zone', { timeout: 25000 }).catch(() => {});
+    await dPage.waitForTimeout(1000);
 
     await dPage.evaluate(() => {
       const hwTab = document.getElementById("settings-tab-hardware") ||
                     Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes("Оборудование"));
       if (hwTab) hwTab.click();
     });
-    await dPage.waitForSelector('.hw-studio-container, [data-testid="hardware-studio-container"]', { timeout: 10000 }).catch(() => {});
-    await dPage.waitForTimeout(600);
+    await dPage.waitForSelector('.hw-studio-container, [data-testid="hardware-studio-container"]', { timeout: 15000 }).catch(() => {});
+    await dPage.waitForTimeout(800);
 
     await dPage.evaluate(() => {
       const audioTab = document.querySelector('[data-testid="domain-tab-audio"]');
       if (audioTab) audioTab.click();
     });
-    await dPage.waitForSelector('[data-testid="hardware-audio-section"]', { timeout: 10000 }).catch(() => {});
-    await dPage.waitForTimeout(600);
+    await dPage.waitForSelector('[data-testid="hardware-audio-section"]', { timeout: 15000 }).catch(() => {});
+    await dPage.waitForTimeout(800);
 
     await applyTheme(dPage, "light");
     await takeScreen(dPage, "06_hardware_settings_desktop_light.png", "Настройки оборудования (Desktop Light)");
@@ -696,7 +704,7 @@ async function main() {
 
     // Mobile 2: Visit EMK
     await mPage.evaluate(() => { window.location.hash = "#visit"; });
-    await mPage.waitForSelector('[data-testid="visit-subtab-emk"], .visit-monolithic-header', { timeout: 20000 }).catch(() => {});
+    await mPage.waitForSelector('[data-testid="visit-subtab-emk"], .visit-monolithic-header, [data-testid="visit-view"]', { timeout: 35000 }).catch(() => {});
     await mPage.evaluate(() => {
       const btn = document.querySelector('[data-testid="visit-subtab-emk"]');
       if (btn) btn.click();
@@ -737,40 +745,49 @@ async function main() {
     await mPage.waitForTimeout(600);
 
     // Mobile 5: Cash 54-FZ
-    await mPage.evaluate(() => { window.location.hash = "#finance"; });
-    await mPage.waitForSelector(".finance-panel, #finance", { timeout: 20000 }).catch(() => {});
+    await mPage.evaluate(() => {
+      const finLink = document.querySelector('a[href="#finance"]');
+      if (finLink) finLink.click();
+      else window.location.hash = "#finance";
+    });
+    await mPage.waitForSelector(".finance-panel, #finance, [data-testid='finance-view']", { timeout: 25000 }).catch(() => {});
     await mPage.waitForTimeout(1000);
     await mPage.evaluate(() => {
       const splitBtn = document.querySelector('[data-testid="payment-split-modal-button"]') ||
                        Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes("Сплит") || b.textContent?.includes("Принять оплату"));
       if (splitBtn) splitBtn.click();
     });
-    await mPage.waitForTimeout(800);
+    await mPage.waitForSelector('.payment-modal, [aria-labelledby="payment-modal-title"], [role="dialog"]', { timeout: 15000 }).catch(() => {});
+    await mPage.waitForTimeout(1000);
     await applyTheme(mPage, "light");
     await takeScreen(mPage, "05_cash_54fz_mobile_light.png", "Касса и чек 54-ФЗ (Mobile Light)");
     await applyTheme(mPage, "dark");
     await takeScreen(mPage, "05_cash_54fz_mobile_dark.png", "Касса и чек 54-ФЗ (Mobile Dark)");
 
     await mPage.keyboard.press("Escape");
-    await mPage.waitForTimeout(500);
+    await mPage.waitForTimeout(800);
 
     // Mobile 6: Hardware Settings (Audio DSP)
-    await mPage.evaluate(() => { window.location.hash = "#settings/hardware"; });
-    await mPage.waitForSelector('[data-testid="settings-view"], .settings-zone', { timeout: 20000 }).catch(() => {});
-    await mPage.waitForTimeout(800);
+    await mPage.evaluate(() => {
+      const setLink = document.querySelector('a[href="#settings"]');
+      if (setLink) setLink.click();
+      else window.location.hash = "#settings/hardware";
+    });
+    await mPage.waitForSelector('[data-testid="settings-view"], .settings-zone', { timeout: 25000 }).catch(() => {});
+    await mPage.waitForTimeout(1000);
     await mPage.evaluate(() => {
       const hwTab = document.getElementById("settings-tab-hardware") ||
                     Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes("Оборудование"));
       if (hwTab) hwTab.click();
     });
-    await mPage.waitForSelector('.hw-studio-container, [data-testid="hardware-studio-container"]', { timeout: 10000 }).catch(() => {});
-    await mPage.waitForTimeout(600);
+    await mPage.waitForSelector('.hw-studio-container, [data-testid="hardware-studio-container"]', { timeout: 15000 }).catch(() => {});
+    await mPage.waitForTimeout(800);
     await mPage.evaluate(() => {
       const audioTab = document.querySelector('[data-testid="domain-tab-audio"]');
       if (audioTab) audioTab.click();
     });
-    await mPage.waitForSelector('[data-testid="hardware-audio-section"]', { timeout: 10000 }).catch(() => {});
-    await mPage.waitForTimeout(600);
+    await mPage.waitForSelector('[data-testid="hardware-audio-section"]', { timeout: 15000 }).catch(() => {});
+    await mPage.waitForTimeout(800);
     await applyTheme(mPage, "light");
     await takeScreen(mPage, "06_hardware_settings_mobile_light.png", "Настройки оборудования (Mobile Light)");
     await applyTheme(mPage, "dark");

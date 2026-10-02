@@ -349,6 +349,17 @@ export async function getClinicSettingsFromDb(
 		updatedAt: org.updatedAt.toISOString(),
 	};
 
+	const mode = narrowClinicMode(org.clinicMode);
+	const activeDoctors = staff.filter(
+		(s) => s.isActive && (s.role === "doctor" || narrowStaffRole(s.role) === "doctor"),
+	);
+	const activeChairs = chairs.filter((c) => c.isActive);
+	const isSoloDoctor =
+		mode === "solo_doctor" ||
+		mode === "one_chair" ||
+		activeChairs.length <= 1 ||
+		activeDoctors.length <= 1;
+
 	return {
 		profile,
 		staff: staff.map((s) => ({
@@ -378,8 +389,11 @@ export async function getClinicSettingsFromDb(
 			 * не выдаёт ничего роли, которой в ней нет, а narrowStaffRole сводит
 			 * неизвестное значение к «assistant» и тем скрыл бы испорченную запись за
 			 * правами настоящей должности.
+			 *
+			 * Мандат 8e / 8n: При режиме solo_doctor или <= 1 кресле/враче,
+			 * врач получает полный суверенитет без блокировок интерфейса.
 			 */
-			...staffAuthorityFlags(s.role),
+			...staffAuthorityFlags(s.role, isSoloDoctor),
 			color: "#000000",
 			phone: s.phone || null,
 			email: s.email || null,
@@ -408,7 +422,7 @@ export async function getClinicSettingsFromDb(
 		workspaceProfiles: [],
 		roleAccessPolicies: [],
 		modeHints: [],
-		soloDoctorMode: false,
+		soloDoctorMode: isSoloDoctor,
 	};
 }
 

@@ -60,6 +60,8 @@ export interface PatientOmnichannelHubModalProps {
 	readonly onSendMessage?: ((message: OmnichannelMessage) => Promise<void> | void) | undefined;
 }
 
+let omnichannelMsgSeq = 0;
+
 export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProps> = ({
 	isOpen,
 	onClose,
@@ -90,6 +92,7 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 	const [inputChannel, setInputChannel] = useState<OmnichannelChannel>("whatsapp");
 	const [messageText, setMessageText] = useState<string>("");
 	const [selectedTemplateCategory, setSelectedTemplateCategory] = useState<string>("");
+	const [isSending, setIsSending] = useState<boolean>(false);
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 	const attachmentInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -180,7 +183,8 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 	};
 
 	// Отправка сообщения
-	const handleSendMessage = () => {
+	const handleSendMessage = async () => {
+		if (isSending) return;
 		const text = messageText.trim();
 		if (!text) {
 			const template = DEFAULT_TEMPLATES[0];
@@ -196,8 +200,9 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 			return;
 		}
 
+		setIsSending(true);
 		const newMsg: OmnichannelMessage = {
-			id: `msg-${Date.now()}`,
+			id: `msg-${Date.now()}-${++omnichannelMsgSeq}`,
 			patientId: selectedPatientId,
 			channel: inputChannel,
 			direction: "outbound",
@@ -216,8 +221,12 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 		setMessageText("");
 		setSelectedTemplateCategory("");
 
-		if (onSendMessage) {
-			onSendMessage(newMsg);
+		try {
+			if (onSendMessage) {
+				await onSendMessage(newMsg);
+			}
+		} finally {
+			setIsSending(false);
 		}
 	};
 
@@ -711,10 +720,10 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 												className="hub-btn-send min-h-[44px] min-w-[44px]"
 												style={{ minHeight: "44px", minWidth: "44px" }}
 												onClick={handleSendMessage}
-												disabled={false}
+												disabled={isSending}
 												aria-label="Отправить сообщение"
 											>
-												<Send size={15} /> Отправить
+												<Send size={15} /> {isSending ? "Отправка..." : "Отправить"}
 											</button>
 										</div>
 									</div>

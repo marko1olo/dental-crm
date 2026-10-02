@@ -6,7 +6,7 @@
 import { z } from "zod";
 
 /**
- * Насколько давно человек был в клинике (полоса диспансеризации).
+ * Насколько давно человек был в клинике (интервал планового профосмотра / гигиены).
  * due: Полгода без осмотра — пора на плановую профилактику (6–12 мес).
  * overdue: Больше года не был: пропущен как минимум один осмотр (12–24 мес).
  * probably_lost: Больше двух лет не был — скорее всего лечится в другом месте (24+ мес).
@@ -59,7 +59,7 @@ export const recallCandidateSchema = z.object({
 export type RecallCandidate = z.infer<typeof recallCandidateSchema>;
 
 /**
- * Сводный отчёт по диспансеризации.
+ * Сводный отчёт по плановым профосмотрам и профилактике (реколлам).
  */
 export const recallReportSchema = z.object({
 	candidates: z.array(recallCandidateSchema),
@@ -71,7 +71,7 @@ export const recallReportSchema = z.object({
 export type RecallReport = z.infer<typeof recallReportSchema>;
 
 /**
- * Запрос на отправку приглашения на диспансеризацию/осмотр.
+ * Запрос на отправку приглашения на плановый профосмотр / профгигиену.
  */
 export const recallInviteSchema = z.object({
 	patientId: z.string().min(1),

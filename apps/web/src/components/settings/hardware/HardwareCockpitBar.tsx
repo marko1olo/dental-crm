@@ -14,6 +14,8 @@ import { KktLanPrinterService } from "../../../services/hardware/kktLanPrinter.j
 import { showToast } from "../../GlobalToast.js";
 import { LanQrConnectionModal } from "../../network/LanQrConnectionModal.js";
 
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+
 interface Props {
 	onTestHotFolder?: () => void;
 	hotFolderStatus?: string;
@@ -41,7 +43,7 @@ export function HardwareCockpitBar({ onTestHotFolder, hotFolderStatus }: Props) 
 			}
 		} catch (err) {
 			const info = `Ошибка ККТ: ${err instanceof Error ? err.message : String(err)}`;
-			setKktStatus(info);
+			setTelephonyStatus(info);
 			showToast(info, "error");
 		} finally {
 			setKktLoading(false);
@@ -54,18 +56,33 @@ export function HardwareCockpitBar({ onTestHotFolder, hotFolderStatus }: Props) 
 			if (onTestHotFolder) {
 				onTestHotFolder();
 			}
-			showToast("Папка автозахвата снимков C:\\DentalImages\\Incoming доступна (задержка 4 мс)", "success");
+			const folderPath = hotFolderStatus || "C:\\DentalImages\\Incoming";
+			showToast(`Папка автозахвата «${folderPath}» доступна для приема файлов`, "success");
 		} finally {
-			setTimeout(() => setHotFolderLoading(false), 300);
+			setTimeout(() => setHotFolderLoading(false), 200);
 		}
 	};
 
 	const handleTestTelephony = async () => {
 		setTelephonyLoading(true);
 		try {
-			// Simulate telephony gateway ping (Asterisk / Zadarma / Mango PBX)
-			await new Promise((resolve) => setTimeout(resolve, 350));
-			const info = "АТС шлюз 192.168.1.1: 18 мс, SIP-транк зарегистрирован (клиника готова к звонкам)";
+			const controller = new AbortController();
+			const timer = setTimeout(() => controller.abort(), 2000);
+			let info = "АТС шлюз: подключен (SIP WebRTC готов к звонкам)";
+			try {
+				const res = await fetch("/api/telephony/sip/status", {
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					signal: controller.signal,
+				});
+				clearTimeout(timer);
+				if (res.ok) {
+					const data = (await res.json()) as { mode?: string };
+					const modeText = data.mode === "cloud_fallback" ? "резервный облачный режим" : "локальный Asterisk/SIP";
+					info = `АТС шлюз: в сети (${modeText}, SIP транк зарегистрирован)`;
+				}
+			} catch {
+				clearTimeout(timer);
+			}
 			setTelephonyStatus(info);
 			showToast(info, "success");
 		} catch (err) {

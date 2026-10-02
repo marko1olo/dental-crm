@@ -34,7 +34,7 @@ function useInMemory() {
  * первой. Порядок блокировок фиксированный — кресло, врач, пациент, — иначе
  * встречные вызовы могут заклиниться друг о друга.
  */
-export async function acquireHierarchyLocks(
+export async function lockAppointmentResources(
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	executor: any,
 	organizationId: string,
@@ -125,7 +125,7 @@ export async function acquireHierarchyLocks(
 	}
 }
 
-export const lockAppointmentResources = acquireHierarchyLocks;
+export const acquireHierarchyLocks = lockAppointmentResources;
 
 /**
  * Ищет приём, который пересекается по времени с кандидатом по любому из

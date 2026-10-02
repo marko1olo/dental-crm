@@ -5296,14 +5296,37 @@ export function buildClinicSettings(
 	state: DomainState = inMemoryDomainState,
 ): ClinicSettings {
 	const { clinicProfile, staffMembers, chairs } = state;
+	const activeDoctors = staffMembers.filter(
+		(s) => s.active && (s.role === "doctor" || (s.role as string) === "universal"),
+	);
+	const activeChairs = chairs.filter((c) => c.active);
+	const isSoloDoctor =
+		clinicProfile.mode === "solo_doctor" ||
+		clinicProfile.mode === "one_chair" ||
+		activeChairs.length <= 1 ||
+		activeDoctors.length <= 1;
+
+	const adjustedStaff = staffMembers.map((s) => {
+		if (isSoloDoctor && s.role === "doctor") {
+			return {
+				...s,
+				canSignMedicalRecords: true,
+				canManageMoney: true,
+				canManageImports: true,
+			};
+		}
+		return s;
+	});
+
 	return {
 		profile: repairMojibakeDeep(clinicProfile),
-		staff: repairMojibakeDeep(staffMembers),
+		staff: repairMojibakeDeep(adjustedStaff),
 		chairs: repairMojibakeDeep(chairs),
 		integrationPresets: repairMojibakeDeep(integrationPresets),
 		workspaceProfiles: repairMojibakeDeep(workspaceProfiles),
 		roleAccessPolicies: repairMojibakeDeep(roleAccessPolicies),
 		modeHints: repairMojibakeDeep(modeHints[clinicProfile.mode]),
+		soloDoctorMode: isSoloDoctor,
 	};
 }
 

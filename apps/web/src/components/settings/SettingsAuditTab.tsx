@@ -25,6 +25,7 @@ import { OfflineBackupVaultPanel } from "./OfflineBackupVaultPanel";
 const AuditTrailHubModal = lazy(() =>
 	import("../security/AuditTrailHubModal").then((m) => ({ default: m.AuditTrailHubModal }))
 );
+import { StaffActionJournalSection } from "./audit/StaffActionJournalSection";
 import { humanizeMigrationText } from "./SettingsViewHelpers";
 
 type BrowserContinuityCheck = { label: string; value: string; detail: string };
@@ -535,6 +536,8 @@ export function SettingsAuditTab(props: Record<string, any>) {
 					)}
 				</div>
 			</div>
+
+			<StaffActionJournalSection />
 
 			{isAuditTrailOpen && (
 				<Suspense fallback={null}>

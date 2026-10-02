@@ -164,6 +164,7 @@ import {
 import { communicationDocumentTaskActionLabels } from "./communicationTaskData";
 import { showToast } from "./components/GlobalToast";
 import { useAuthLogic } from "./hooks/domains/useAuthLogic";
+import { useDashboardLoaderLogic } from "./hooks/domains/useDashboardLoaderLogic";
 import { useClinicalVisitLogic } from "./hooks/domains/useClinicalVisitLogic";
 import { useCommunicationsQueries } from "./hooks/domains/useCommunicationsQueries";
 import { useDicomWorkbenchModule } from "./hooks/domains/useDicomWorkbenchModule";
@@ -984,12 +985,28 @@ export function useAppLogic(): any {
 	const _imagingViewerSaveTimerRef = useRef<number | null>(null);
 	const _mprWorkbenchSaveTimerRef = useRef<number | null>(null);
 
+	const authRef = useRef<any>(null);
+	const loadPersistenceHealthRef = useRef<any>(null);
+	const refreshSpeechRuntimeRef = useRef<any>(null);
+
+	const { loadDashboard } = useDashboardLoaderLogic({
+		authRef,
+		setDashboard,
+		setAccessUnlockRequired,
+		setAccessUnlockMessage,
+		showToast,
+		setError,
+		loadPersistenceHealthRef,
+		refreshSpeechRuntimeRef,
+	});
+
 	const auth = useAuthLogic({
 		setError,
 		loadDashboard,
 		loadTelegramControlPlane: (options) =>
 			telegramSettingsModule.loadTelegramControlPlane(options),
 	});
+	authRef.current = auth;
 
 	/*
 	 * Россыпь сеттеров формы оплаты сюда больше не передаётся: сброс при смене
@@ -1339,6 +1356,7 @@ export function useAppLogic(): any {
 		setImportPreview,
 		setImportCommit,
 	});
+	refreshSpeechRuntimeRef.current = refreshSpeechRuntime;
 
 	const schedule = useScheduleLogic({
 		dashboard,
@@ -1445,93 +1463,6 @@ export function useAppLogic(): any {
 		newAppointmentMissingFields,
 		createAppointmentFromDraft,
 	} = schedule;
-
-	async function loadDashboard(options: { adminSecret?: string } = {}) {
-		// БЫЛО: защиты от гонки не было, а loadDashboard вызывается из 34 мест.
-		// Сценарий: загрузка при открытии экрана ещё идёт, врач сохраняет запись
-		// приёма — сохранение тоже вызывает loadDashboard и получает свежие данные,
-		// но МЕДЛЕННЫЙ первый ответ приходит последним и перезаписывает состояние
-		// данными ДО сохранения. Только что записанный приём исчезал с экрана
-		// до ручного обновления страницы.
-		// Применяем только ответ последнего по времени запроса.
-		const requestId = ++dashboardRequestSeqRef.current;
-		const isStaleResponse = () => requestId !== dashboardRequestSeqRef.current;
-		try {
-			const response = await fetch("/api/dashboard", {
-				cache: "no-store",
-				headers: auth.denteClinicalReadHeaders({}, options.adminSecret),
-			});
-			if (!response.ok) {
-				const message = await responseErrorMessage(
-					response,
-					"Данные клиники не загружены",
-				);
-				throw new WorkflowResponseError(message, response.status);
-			}
-			const payload = (await response.json()) as Dashboard;
-			// Пока ждали ответ, стартовал более свежий запрос — его результат
-			// актуальнее, этот молча игнорируем.
-			if (isStaleResponse()) return;
-			setDashboard(payload);
-			cacheClinicDashboard(payload);
-			setOfflineAutonomyMode(false);
-			setAccessUnlockRequired(false);
-			setAccessUnlockMessage("");
-		} catch (err) {
-			if (isStaleResponse()) return;
-			logger.error("[Dente] Не удалось загрузить данные клиники:", err);
-			const isAuthError =
-				err instanceof Error &&
-				/401|403|Требуется авторизация|Сессия истекла/i.test(err.message);
-			if (isAuthError) {
-				setAccessUnlockRequired(true);
-				setAccessUnlockMessage(
-					"Сессия истекла. Войдите в кабинет клиники заново.",
-				);
-			} else {
-				// ОФФЛАЙН-СТОЙКОСТЬ (Мандаты 8e, 8n): поднимаем закэшированный снимок клиники
-				const cached = getCachedClinicDashboard();
-				if (cached) {
-					setDashboard(cached);
-					setOfflineAutonomyMode(true);
-					showToast(
-						"Связь с сервером прервана. Включён автономный режим (Локальная сеть).",
-						"warning",
-					);
-					setError("");
-				} else {
-					const fallback = createOfflineFallbackDashboard();
-					setDashboard(fallback);
-					setOfflineAutonomyMode(true);
-					showToast(
-						"Сервер клиники недоступен. Открыт автономный режим.",
-						"warning",
-					);
-					setError("");
-				}
-			}
-			// Прежнее состояние НЕ затираем: пусть на экране останутся последние
-			// корректные данные, а не подделка.
-			//
-			// Ошибку намеренно НЕ пробрасываем: loadDashboard вызывается из 34 мест,
-			// часть — через `void loadDashboard()`, и бросок превратился бы в
-			// необработанные отклонения промисов. Вместо этого истёкшая сессия
-			// обрабатывается прямо здесь (setAccessUnlockRequired выше) — именно
-			// этого добивались внешние .catch(), которые раньше не срабатывали.
-		}
-		const runBackgroundTasks = () => {
-			void loadPersistenceHealth({
-				silent: true,
-				adminSecret: options.adminSecret,
-			});
-			void refreshSpeechRuntime({ silent: true });
-		};
-		if (typeof window !== "undefined" && typeof (window as any).requestIdleCallback === "function") {
-			(window as any).requestIdleCallback(runBackgroundTasks, { timeout: 3000 });
-		} else {
-			setTimeout(runBackgroundTasks, 300);
-		}
-	}
 
 	const modalOrchestrator = useModalOrchestrator();
 	const scheduleFilterController = useScheduleFilterController({
@@ -2412,6 +2343,7 @@ export function useAppLogic(): any {
 			}
 		}
 	}
+	loadPersistenceHealthRef.current = loadPersistenceHealth;
 
 	async function downloadPersistenceExport() {
 		if (isPersistenceExporting) {
