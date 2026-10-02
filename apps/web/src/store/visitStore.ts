@@ -15,13 +15,20 @@ import {
 
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 
-export type ToothState =
+/**
+ * UI-статус зуба в контексте текущего визита (визуальная подсветка в плане/приеме).
+ * ВНИМАНИЕ: не путать с клиническим дефектом ToothState из ToothChart / @dental/shared
+ * ("Caries" | "Pulpitis" | "Filled" | "Missing" и др.).
+ */
+export type VisitToothUiState =
 	| "idle"
 	| "watch"
 	| "planned"
 	| "done"
 	| "missing"
 	| "treatment";
+
+export type ToothState = VisitToothUiState;
 
 export interface VisitStore {
 	selectedSpecialty: DentalSpecialty;
