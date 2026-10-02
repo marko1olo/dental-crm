@@ -23,6 +23,7 @@ import type {
 } from "./ffd12Types.js";
 import { kopecksToNumericString, kopecksToRub, rubToKopecks } from "./kopecksArithmetic.js";
 import { computePayloadHash } from "../sync/hashing.js";
+import { generateFiscalBatchId } from "../utils/idGenerators.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA TYPES & INTERFACES
@@ -81,6 +82,7 @@ export interface BankRegistryTransaction {
 }
 
 export interface ProcessOfflineFiscalBatchOptions {
+	readonly batchId?: string | undefined;
 	readonly startingShiftNumber?: number | undefined;
 	readonly startingFiscalDocNumber?: number | undefined;
 	readonly existingProcessedIds?: ReadonlySet<string> | readonly string[] | undefined;
@@ -125,6 +127,8 @@ export interface ProcessedFiscalReceiptRecord {
 	readonly advanceOffsetKopecks: number;
 	readonly creditPostpaymentRub: number;
 	readonly creditPostpaymentKopecks: number;
+	readonly certificateRub?: number | undefined;
+	readonly certificateKopecks?: number | undefined;
 	readonly fnsQrString: string;
 	readonly idempotencyKey: string;
 	readonly payloadSignature: string;
@@ -237,6 +241,8 @@ export interface OfflineFiscalBatchResult {
 	readonly totalElectronicRub: number;
 	readonly totalAdvanceOffsetKopecks: number;
 	readonly totalAdvanceOffsetRub: number;
+	readonly totalCertificateKopecks?: number | undefined;
+	readonly totalCertificateRub?: number | undefined;
 	readonly shifts: readonly BatchShiftContainer[];
 	readonly processedReceipts: readonly ProcessedFiscalReceiptRecord[];
 	readonly skippedDuplicates: readonly SkippedDuplicateFiscalRecord[];
@@ -268,6 +274,8 @@ function computeItemSignature(item: OfflineQueueFiscalItem): string {
 			cardKopecks: item.tenders.cardRub ? rubToKopecks(item.tenders.cardRub) : 0,
 			sbpKopecks: item.tenders.sbpRub ? rubToKopecks(item.tenders.sbpRub) : 0,
 			advanceKopecks: item.tenders.advanceOffsetRub ? rubToKopecks(item.tenders.advanceOffsetRub) : 0,
+			creditKopecks: item.tenders.creditPostpaymentRub ? rubToKopecks(item.tenders.creditPostpaymentRub) : 0,
+			certificateKopecks: item.tenders.certificateRub ? rubToKopecks(item.tenders.certificateRub) : 0,
 		},
 	};
 	return computePayloadHash(canonicalPayload);
@@ -590,7 +598,12 @@ export function processOfflineFiscalBatch(
 	queueItems: readonly OfflineQueueFiscalItem[],
 	options: ProcessOfflineFiscalBatchOptions = {},
 ): OfflineFiscalBatchResult {
-	const batchId = `BATCH-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const batchId =
+		options.batchId ??
+		generateFiscalBatchId({
+			seedKey: options.clinicInn ?? (queueItems.length > 0 ? queueItems[0]?.id : undefined),
+			timestampMs: Date.now(),
+		});
 	const processedAtIso = new Date().toISOString();
 	const maxShiftDuration = options.maxShiftDurationMs ?? MAX_SHIFT_24H_MS;
 
@@ -756,10 +769,11 @@ export function processOfflineFiscalBatch(
 			const sbpKop = item.tenders.sbpRub ? rubToKopecks(item.tenders.sbpRub) : 0;
 			const advanceKop = item.tenders.advanceOffsetRub ? rubToKopecks(item.tenders.advanceOffsetRub) : 0;
 			const creditKop = item.tenders.creditPostpaymentRub ? rubToKopecks(item.tenders.creditPostpaymentRub) : 0;
+			const certKop = item.tenders.certificateRub ? rubToKopecks(item.tenders.certificateRub) : 0;
 			const electronicTotalKop = cardKop + sbpKop;
 
-			const totalReceiptKop = cashKop + electronicTotalKop + advanceKop + creditKop > 0
-				? cashKop + electronicTotalKop + advanceKop + creditKop
+			const totalReceiptKop = cashKop + electronicTotalKop + advanceKop + creditKop + certKop > 0
+				? cashKop + electronicTotalKop + advanceKop + creditKop + certKop
 				: totalNetKop;
 
 			const totalRubFormatted = kopecksToNumericString(totalReceiptKop);
@@ -799,6 +813,8 @@ export function processOfflineFiscalBatch(
 				advanceOffsetKopecks: advanceKop,
 				creditPostpaymentRub: kopecksToRub(creditKop),
 				creditPostpaymentKopecks: creditKop,
+				certificateRub: kopecksToRub(certKop),
+				certificateKopecks: certKop,
 				fnsQrString,
 				idempotencyKey: item.idempotencyKey ?? `${item.id}#${signature}`,
 				payloadSignature: signature,
@@ -837,19 +853,23 @@ export function processOfflineFiscalBatch(
 	let totalCashKop = 0;
 	let totalElectronicKop = 0;
 	let totalAdvanceOffsetKop = 0;
+	let totalCertKop = 0;
 
 	for (const r of allProcessedReceipts) {
+		const certKop = r.certificateKopecks ?? 0;
 		if (r.operationType === "income") {
 			totalGrossKop += r.totalKopecks;
 			totalNetKop += r.totalKopecks;
 			totalCashKop += r.cashKopecks;
 			totalElectronicKop += r.electronicTotalKopecks;
 			totalAdvanceOffsetKop += r.advanceOffsetKopecks;
+			totalCertKop += certKop;
 		} else if (r.operationType === "income_return") {
 			totalNetKop -= r.totalKopecks;
 			totalCashKop -= r.cashKopecks;
 			totalElectronicKop -= r.electronicTotalKopecks;
 			totalAdvanceOffsetKop -= r.advanceOffsetKopecks;
+			totalCertKop -= certKop;
 		}
 	}
 
@@ -873,6 +893,8 @@ export function processOfflineFiscalBatch(
 		totalElectronicRub: kopecksToRub(totalElectronicKop),
 		totalAdvanceOffsetKopecks: totalAdvanceOffsetKop,
 		totalAdvanceOffsetRub: kopecksToRub(totalAdvanceOffsetKop),
+		totalCertificateKopecks: totalCertKop,
+		totalCertificateRub: kopecksToRub(totalCertKop),
 		shifts: batchShifts,
 		processedReceipts: allProcessedReceipts,
 		skippedDuplicates,

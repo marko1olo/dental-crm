@@ -74,6 +74,19 @@ export interface MedicalTourismQuoteInput {
 	readonly validDays?: number | undefined;
 	readonly clinicNameRu?: string | undefined;
 	readonly clinicNameEn?: string | undefined;
+	readonly quoteSequenceNumber?: number | undefined;
+	readonly quoteNumberOverride?: string | undefined;
+}
+
+let quoteSequentialCounter = 1000;
+
+export function resetMedicalTourismQuoteSequence(start = 1000): void {
+	quoteSequentialCounter = start;
+}
+
+export function getNextMedicalTourismQuoteSequence(): number {
+	quoteSequentialCounter += 1;
+	return quoteSequentialCounter;
 }
 
 export interface MedicalTourismQuoteResult {
@@ -147,8 +160,10 @@ export function calculateMedicalTourismQuote(input: MedicalTourismQuoteInput): M
 		const conv = convertRubToForeignCurrency({ amountRubKopecks: lineKop, targetCurrency: input.targetCurrency, bankSpreadPercent: input.bankSpreadPercent });
 		return { serviceNameRu: item.serviceNameRu, serviceNameEn: item.serviceNameEn, quantity: item.quantity || 1, priceRub: item.priceRub, totalRub: kopecksToRub(lineKop), totalForeignDecimal: conv.targetAmountDecimal, totalForeignFormatted: conv.targetFormatted };
 	});
+	const seq = input.quoteSequenceNumber ?? getNextMedicalTourismQuoteSequence();
+	const quoteNumber = input.quoteNumberOverride || `MED-TOUR-${now.getFullYear()}-${String(seq).padStart(4, "0")}`;
 	return {
-		quoteNumber: `MED-TOUR-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+		quoteNumber,
 		patientFullName: input.patientFullName, dateIso: now.toISOString().slice(0, 10), validUntilIso: validUntil.toISOString().slice(0, 10),
 		targetCurrency: input.targetCurrency, targetSymbol: netConv.targetSymbol, officialCbrRate: netConv.officialCbrRateRub, effectiveRate: netConv.effectiveRateRub,
 		totalGrossRub: kopecksToRub(grossKop), totalGrossRubKopecks: grossKop, discountRub: kopecksToRub(discountKop), totalNetRub: kopecksToRub(netKop), totalNetRubKopecks: netKop,
@@ -157,3 +172,4 @@ export function calculateMedicalTourismQuote(input: MedicalTourismQuoteInput): M
 		recommendedPaymentChannelsEn: ["UnionPay / Mir International Bank Cards (POS Terminal at clinic)", "Fast Payment System (SBP Dynamic QR Code)", "Direct Bank Wire Transfer (RUB / CNY invoice)", "Cash settlement in clinic cashier desk (RUB)"],
 	};
 }
+

@@ -1,0 +1,52 @@
+{
+  "subagent": "OFFLINE FISCAL BATCH & TAX DEDUCTION RECONCILER ZERO-MOCK INQUISITOR",
+  "status": "completed",
+  "started_at": "2026-10-02T10:40:00Z",
+  "completed_at": "2026-10-02T10:55:00Z",
+  "completed_steps": [
+    "Read core.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Analyzed packages/shared/src/utils/idGenerators.ts and implemented generateFiscalBatchId and generateFnsRegistryFileSuffix (CSPRNG via globalThis.crypto + deterministic seedKey FNV-1a)",
+    "Analyzed packages/shared/src/fiscal/offlineFiscalBatchReconciler.ts and eliminated Math.random() in batch ID generation, added options.batchId override support",
+    "Audited multi-tender exact kopeck aggregation in offlineFiscalBatchReconciler.ts; discovered and resolved dropped certificate tenders in gross/net totals and signature hashing",
+    "Analyzed packages/shared/src/finance/taxDeduction.ts and discovered timezone drift vulnerability in tax year filtering; implemented extractTaxYearFromDate immune to local server timezone shift",
+    "Eliminated all Math.random() calls in generateFnsTaxDeductionXml, generateFnsTaxDeductionBatchXml, and generateFnsNoMedoplXml",
+    "Analyzed packages/shared/src/fiscal/familyTaxBatchEngine.ts, eliminated Math.random() in generateFnsBatchNoMedoplXml, aligned optional KPP formatting for IP/individual clinics, and ensured tax year filtering uses extractTaxYearFromDate",
+    "Extended offlineFiscalBatchReconciler.test.ts (tests 1.9, 1.10, 1.11) and taxDeduction.test.ts (tax period isolation test across 2024-12-31, 2025-01-01, 2025-12-31, 2026-01-01)",
+    "Executed targeted unit tests: 28/28 tests passed (Exit Code 0)",
+    "Executed full @dental/shared TypeScript typecheck: clean compilation (Exit Code 0)",
+    "Verified zero modifications to radiology / CBCT / CT / DICOM domain (Iron Invariant strictly upheld)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "id": "SERVER_TIMEZONE_TAX_YEAR_LEAK",
+      "severity": "CRITICAL",
+      "description": "Using naive `new Date(dateIso).getFullYear()` caused receipts on Jan 1st (e.g., 2025-01-01T00:00:01Z) to evaluate to 2024 on any server running in a timezone west of UTC (e.g. UTC-5). Created `extractTaxYearFromDate` matching `YYYY-MM-DD` directly.",
+      "remediation": "Implemented and used `extractTaxYearFromDate` across all tax deduction engines and batch processors."
+    },
+    {
+      "id": "DROPPED_CERTIFICATE_TENDER_IN_OFFLINE_BATCH",
+      "severity": "HIGH",
+      "description": "Offline fiscal reconciler calculated `totalReceiptKop` as `cashKop + electronicTotalKop + advanceKop + creditKop`, completely omitting `certificateRub` / `certificateKopecks`. In multi-tender split payments with certificates, total receipt sum was undercounted, breaking accounting reconciliation.",
+      "remediation": "Added certificate tender parsing, receipt storage, and batch summary accumulation (`totalCertificateKopecks`, `totalCertificateRub`), included certificate in item hashing signature."
+    },
+    {
+      "id": "MATH_RANDOM_COLLISION_IN_FNS_BATCH_IDENTIFIERS",
+      "severity": "HIGH",
+      "description": "FNS registry XML file identifiers in `taxDeduction.ts` and `familyTaxBatchEngine.ts` were generating suffixes with `Math.random().toString(36).slice(2, 10)`, causing non-deterministic test failures and potential collision risk in high-throughput offline batch sync.",
+      "remediation": "Replaced with cryptographic/deterministic generator `generateFnsRegistryFileSuffix` and `generateFiscalBatchId` in `idGenerators.ts`."
+    },
+    {
+      "id": "SYNTHETIC_KPP_IN_BATCH_FILE_ID",
+      "severity": "MEDIUM",
+      "description": "Family tax batch XML generator forced fallback `770101001` for KPP even when clinic was an Individual Entrepreneur (IP, no KPP), generating illegal FNS file IDs for IP practices.",
+      "remediation": "Made `_KPP` conditional on `clinic.kpp` existence in fileId generation, matching statutory FNS specifications."
+    }
+  ],
+  "test_results": {
+    "offlineFiscalBatchReconciler.test.ts": "12/12 PASS (36ms)",
+    "taxDeduction.test.ts": "16/16 PASS (40ms)",
+    "total_tests": "28/28 PASS",
+    "typecheck_exit_code": 0
+  }
+}

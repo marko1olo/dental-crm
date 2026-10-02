@@ -407,4 +407,38 @@ describe("Chestny ZNAK & MDLP Pharma Verification Engine (packages/shared/src/te
 			assert.strictEqual(summary.uniqueSeriesCount, 2);
 		});
 	});
+
+	// ─── 6. GOST R ISO/IEC 16022 & Zero Math.random Verification ────────────────
+	describe("6. GOST R ISO/IEC 16022 & Zero Math.random Verification", () => {
+		test("validates statutory GOST R ISO/IEC 16022 DataMatrix code with full crypto tail", () => {
+			// GOST format: AI(01) 14 digits + AI(21) 13 chars + AI(91) 4 chars + AI(92) 44 chars (26 letters + 10 digits + 8 upper = 44)
+			const gostBarcode =
+				"010366479800001621RU13CHARSSN1\x1d91ABCD\x1d92abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGH";
+			const parsed = parseChestnyZnakBarcode(gostBarcode);
+
+			assert.strictEqual(parsed.gtin, "03664798000016");
+			assert.strictEqual(parsed.serialNumber, "RU13CHARSSN1");
+			assert.strictEqual(parsed.cryptoKey, "ABCD");
+			assert.strictEqual(
+				parsed.cryptoSignature,
+				"abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGH",
+			);
+			assert.strictEqual(parsed.cryptoKey.length, 4);
+			assert.strictEqual(parsed.cryptoSignature.length, 44);
+			assert.strictEqual(parsed.isValidGtinChecksum, true);
+			assert.strictEqual(parsed.status, "verified");
+		});
+
+		test("guarantees unique scanned item IDs without Math.random() using CSPRNG", () => {
+			const raw =
+				"010366479800001621SN1A2B3C4D5E6\x1d17280531\x1d10LOT1\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234";
+
+			const item1 = createChestnyZnakScannedItem(raw);
+			const item2 = createChestnyZnakScannedItem(raw);
+
+			assert.notEqual(item1.id, item2.id);
+			assert.match(item1.id, /^cz-\d+-[a-z0-9]{6}$/);
+			assert.match(item2.id, /^cz-\d+-[a-z0-9]{6}$/);
+		});
+	});
 });

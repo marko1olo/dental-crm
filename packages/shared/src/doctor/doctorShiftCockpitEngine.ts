@@ -33,9 +33,14 @@ import {
 } from "../utils/money.js";
 import { sha256Hex } from "../sync/hashing.js";
 import {
+	generateDeterministicOrSecureInteger,
+	generateDoctorShiftNumber,
+} from "../utils/idGenerators.js";
+import {
 	type DoctorAppointmentStatus,
 	type DoctorShiftAppointment,
 	type DoctorShiftServiceItem,
+	type DoctorShiftBreakInterval,
 	type Emr043CardStatus,
 	type EmrBatchSigningSession,
 	doctorAppointmentStatusSchema,
@@ -373,6 +378,7 @@ export interface NextPatientWaitingView {
 }
 
 export interface DoctorShiftQueueResult {
+	readonly shiftNumber: string;
 	readonly doctorId: string;
 	readonly shiftDateIso: string;
 	readonly currentPatient: CurrentPatientCockpitView | null;
@@ -394,6 +400,10 @@ export interface DoctorShiftQueueResult {
 		readonly totalGrossRevenueKop: Kopecks;
 		readonly totalEarnedPayoutKop: Kopecks;
 		readonly shiftDelayMinutes: number;
+		readonly actualWorkMinutes: number;
+		readonly totalSterilizationMinutes: number;
+		readonly totalBreakMinutes: number;
+		readonly chairUtilizationPercent: number;
 	};
 }
 
@@ -446,10 +456,15 @@ export function initiateBatchEmrSigningSha256(params: {
 	const expiresAt = new Date(now.getTime() + validitySec * 1000);
 	const timestampIso = now.toISOString();
 
+	// Generate 6-digit SMS verification code (100000 - 999999) via CSPRNG / deterministic seed (Mandates 8b, 8e)
 	let code = params.fixedSecretCode;
 	if (!code) {
-		const randomNum = Math.floor(100000 + Math.random() * 900000);
-		code = String(randomNum);
+		const secureCode = generateDeterministicOrSecureInteger(
+			100000,
+			999999,
+			params.doctorId,
+		);
+		code = String(secureCode);
 	}
 
 	const batchHash = generateBatchEmrProtocolHashSha256(
@@ -1087,6 +1102,10 @@ export interface CalculateDoctorShiftQueueParams {
 	readonly patientBalances?: Record<string, { depositBalanceKop: Kopecks; familyWalletBalanceKop?: Kopecks }>;
 	readonly pagerEvents?: readonly AssistantPagerEvent[];
 	readonly statutoryEmrDeadlineHours?: number; // Standard: 24h per Order 947n
+	readonly breaks?: readonly DoctorShiftBreakInterval[];
+	readonly defaultSterilizationMinutesPerVisit?: number; // Standard: 10 min per SanPiN 3.3686-21
+	readonly plannedShiftHours?: number; // Standard: 6.0 hours
+	readonly customShiftNumber?: string;
 }
 
 /**
@@ -1298,7 +1317,64 @@ export function calculateDoctorShiftQueue(
 
 	const overdueCardsCount = unclosedEmrCards.filter((c) => c.isOverdue).length;
 
+	// 9. Honest Clinical Time, Breaks & Sterilization Tracking (Mandate 8e, SanPiN 3.3686-21)
+	let actualWorkMinutes = 0;
+	for (const apt of doctorAppointments) {
+		const startMs = new Date(apt.startsAtIso).getTime();
+		const endMs = new Date(apt.endsAtIso).getTime();
+		const slotDuration = Math.max(0, Math.round((endMs - startMs) / 60000));
+
+		if (apt.status === "completed") {
+			if (typeof apt.actualDurationMinutes === "number" && apt.actualDurationMinutes > 0) {
+				actualWorkMinutes += apt.actualDurationMinutes;
+			} else if (apt.actualStartsAtIso && apt.actualEndsAtIso) {
+				const aStart = new Date(apt.actualStartsAtIso).getTime();
+				const aEnd = new Date(apt.actualEndsAtIso).getTime();
+				actualWorkMinutes += Math.max(1, Math.round((aEnd - aStart) / 60000));
+			} else {
+				actualWorkMinutes += slotDuration;
+			}
+		} else if (apt.status === "in_chair") {
+			if (currentPatient) {
+				actualWorkMinutes += currentPatient.timer.elapsedMinutes;
+			} else if (apt.actualStartsAtIso) {
+				const aStart = new Date(apt.actualStartsAtIso).getTime();
+				const nowMs = new Date(currentIso).getTime();
+				actualWorkMinutes += Math.max(1, Math.round((nowMs - aStart) / 60000));
+			} else {
+				actualWorkMinutes += Math.round(slotDuration / 2);
+			}
+		}
+	}
+
+	const explicitBreaks = params.breaks ?? [];
+	let totalBreakMinutes = 0;
+	let explicitSterilizationMins = 0;
+	for (const brk of explicitBreaks) {
+		if (brk.type === "cabinet_sterilization" || brk.type === "airing_sanpin") {
+			explicitSterilizationMins += brk.durationMinutes;
+		} else {
+			totalBreakMinutes += brk.durationMinutes;
+		}
+	}
+
+	const totalSterilizationMinutes = explicitSterilizationMins > 0
+		? explicitSterilizationMins
+		: completedList.length * (params.defaultSterilizationMinutesPerVisit ?? 10);
+
+	const plannedShiftHours = params.plannedShiftHours ?? 6.0;
+	const plannedShiftMinutes = Math.round(plannedShiftHours * 60);
+	const chairUtilizationPercent = plannedShiftMinutes > 0
+		? Math.min(100, Math.round((actualWorkMinutes / plannedShiftMinutes) * 100))
+		: 0;
+
+	const shiftNumber = generateDoctorShiftNumber(targetDate, {
+		seedKey: params.doctorId,
+		customShiftNumber: params.customShiftNumber,
+	});
+
 	return {
+		shiftNumber,
 		doctorId: params.doctorId,
 		shiftDateIso: targetDate,
 		currentPatient,
@@ -1320,6 +1396,10 @@ export function calculateDoctorShiftQueue(
 			totalGrossRevenueKop,
 			totalEarnedPayoutKop,
 			shiftDelayMinutes,
+			actualWorkMinutes,
+			totalSterilizationMinutes,
+			totalBreakMinutes,
+			chairUtilizationPercent,
 		},
 	};
 }

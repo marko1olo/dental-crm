@@ -781,4 +781,111 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 		assert.ok(noMedoplBatch.xmlContent.includes('НомСправ="502"'));
 		assert.ok(noMedoplBatch.xmlContent.includes('НомСправ="503"'));
 	});
+
+	it("enforces strict tax period isolation (Jan 1 – Dec 31) and zero Math.random in FNS file identifiers", () => {
+		const clinic = {
+			legalName: "ООО Стоматология ДЕНТЕ",
+			inn: "7841098765",
+			address: "г. Санкт-Петербург",
+		};
+		const payer = {
+			fullName: "Кузнецов Дмитрий Павлович",
+			inn: "780123456789",
+			relationship: "patient" as const,
+		};
+		const payments: TaxDeductionPaymentItem[] = [
+			// Boundary: Dec 31 of 2024
+			{
+				id: "pay-prev-year",
+				dateIso: "2024-12-31T23:59:59.000Z",
+				receiptNumber: "ФД-001",
+				fiscalDocumentNumber: "1",
+				fiscalSign: "111",
+				serviceName: "Осмотр 2024",
+				amountRub: 3000,
+				taxCode: "1",
+			},
+			// Boundary: Jan 1 of 2025
+			{
+				id: "pay-target-start",
+				dateIso: "2025-01-01T00:00:01.000Z",
+				receiptNumber: "ФД-002",
+				fiscalDocumentNumber: "2",
+				fiscalSign: "222",
+				serviceName: "Лечение 2025 старт",
+				amountRub: 15000,
+				taxCode: "1",
+			},
+			// Mid-year: Jun 15 of 2025
+			{
+				id: "pay-target-mid",
+				dateIso: "2025-06-15",
+				receiptNumber: "ФД-003",
+				fiscalDocumentNumber: "3",
+				fiscalSign: "333",
+				serviceName: "Имплантация 2025",
+				amountRub: 80000,
+				taxCode: "2",
+			},
+			// Boundary: Dec 31 of 2025
+			{
+				id: "pay-target-end",
+				dateIso: "2025-12-31T18:00:00.000Z",
+				receiptNumber: "ФД-004",
+				fiscalDocumentNumber: "4",
+				fiscalSign: "444",
+				serviceName: "Коронка 2025 финал",
+				amountRub: 35000,
+				taxCode: "1",
+			},
+			// Next year: Jan 1 of 2026
+			{
+				id: "pay-next-year",
+				dateIso: "2026-01-01T10:00:00.000Z",
+				receiptNumber: "ФД-005",
+				fiscalDocumentNumber: "5",
+				fiscalSign: "555",
+				serviceName: "Гигиена 2026",
+				amountRub: 5000,
+				taxCode: "1",
+			},
+		];
+
+		const cert: TaxDeductionCertificateParams = {
+			certificateNumber: "777",
+			issueDateIso: "2026-03-01",
+			taxYear: 2025,
+			taxOfficeCode: "7801",
+			clinic,
+			payer,
+			patient: payer,
+			payments,
+		};
+
+		// 1. Single XML: only 2025 checks included
+		const xmlRes = generateFnsTaxDeductionXml(cert);
+		assert.match(xmlRes.fileId, /^VO_SPRRECH_7801_7841098765_\d{8}_[A-Z0-9]{8}$/);
+		assert.ok(!xmlRes.xmlContent.includes("Осмотр 2024"));
+		assert.ok(!xmlRes.xmlContent.includes("Гигиена 2026"));
+		assert.ok(xmlRes.xmlContent.includes('СуммаКод1="50000.00"')); // 15000 + 35000
+		assert.ok(xmlRes.xmlContent.includes('СуммаКод2="80000.00"'));
+		assert.ok(xmlRes.xmlContent.includes('СуммаВсего="130000.00"'));
+
+		// 2. NO_MEDOPL format: zero Math.random and strict 2025 isolation
+		const noMedoplRes = generateFnsNoMedoplXml(cert);
+		assert.match(noMedoplRes.fileId, /^NO_MEDOPL_7801_7841098765_\d{8}_[A-Z0-9]{8}$/);
+		assert.ok(!noMedoplRes.xmlContent.includes("Осмотр 2024"));
+		assert.ok(!noMedoplRes.xmlContent.includes("Гигиена 2026"));
+
+		// 3. Batch NO_MEDOPL format
+		const batchRes = generateFnsBatchNoMedoplXml({
+			taxYear: 2025,
+			taxOfficeCode: "7801",
+			clinic,
+			certificates: [cert],
+		});
+		assert.match(batchRes.fileId, /^NO_MEDOPL_7801_7841098765_\d{8}_[A-Z0-9]{6}$/);
+		assert.ok(!batchRes.xmlContent.includes("Осмотр 2024"));
+		assert.ok(!batchRes.xmlContent.includes("Гигиена 2026"));
+	});
 });

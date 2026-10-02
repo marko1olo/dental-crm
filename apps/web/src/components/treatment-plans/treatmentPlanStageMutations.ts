@@ -206,8 +206,16 @@ export function addItemToPlanStages(
 						? "stage_5_periodontics"
 						: "stage_1_therapy";
 
+	const existingStage = stages.find((s) => s.stageNumber === targetStageNumber);
+	const stageItemIndex = (existingStage?.items.length ?? 0) + 1;
+	const serviceCodeClean = (newItemData.code804n || "A16_07_002").replace(/[^\w-]/g, "_");
+	const toothPart = newItemData.toothNumber !== undefined ? `_tooth_${newItemData.toothNumber}` : "";
+	const deterministicId =
+		newItemData.id ||
+		`stage_item_${targetStageNumber}_${serviceCodeClean}${toothPart}_seq_${stageItemIndex}_ts_${Date.now()}`;
+
 	const newItem: TreatmentPlanItem = {
-		id: `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+		id: deterministicId,
 		toothNumber: newItemData.toothNumber,
 		code804n: newItemData.code804n || "A16.07.002",
 		name: newItemData.name || "Медицинская услуга",
@@ -223,7 +231,6 @@ export function addItemToPlanStages(
 		isAuto: false,
 	};
 
-	const existingStage = stages.find((s) => s.stageNumber === targetStageNumber);
 	if (existingStage) {
 		return stages.map((s) => {
 			if (s.stageNumber !== targetStageNumber) return s;

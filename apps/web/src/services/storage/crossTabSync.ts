@@ -30,13 +30,29 @@ import type {
 export const CROSS_TAB_CHANNEL_NAME = "dente_cross_tab_sync_v1";
 export const LOCAL_STORAGE_CROSS_TAB_KEY = "dente_crosstab_sync_event_v1";
 
+function generateSecureUuid(): string {
+	if (typeof globalThis !== "undefined" && typeof globalThis.crypto?.randomUUID === "function") {
+		return globalThis.crypto.randomUUID();
+	}
+	if (typeof globalThis !== "undefined" && typeof globalThis.crypto?.getRandomValues === "function") {
+		const bytes = new Uint8Array(16);
+		globalThis.crypto.getRandomValues(bytes);
+		bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x40;
+		bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
+		const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+		return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+	}
+	return `uuid-${Date.now().toString(16)}-${(typeof performance !== "undefined" ? performance.now() : 0).toString(16).replace(".", "")}`;
+}
+
 let tabInstanceId = "";
 export function getCrossTabInstanceId(): string {
 	if (!tabInstanceId) {
-		tabInstanceId = `tab-${Math.random().toString(36).slice(2, 9)}-${Date.now()}`;
+		tabInstanceId = `tab-${generateSecureUuid()}-${Date.now()}`;
 	}
 	return tabInstanceId;
 }
+
 
 let broadcastChannelInstance: BroadcastChannel | null = null;
 let isStorageListenerAttached = false;
@@ -209,7 +225,7 @@ export function broadcastCrossTabEvent<T>(
 ): CrossTabSyncEvent<T> {
 	ensureCrossTabSyncInitialized();
 
-	const eventId = `cte-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+	const eventId = `cte-${Date.now()}-${generateSecureUuid()}`;
 	const event: CrossTabSyncEvent<T> = {
 		eventId,
 		type,

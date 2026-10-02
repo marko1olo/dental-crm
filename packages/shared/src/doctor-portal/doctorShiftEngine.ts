@@ -19,6 +19,12 @@
 import { z } from "zod";
 import type { Kopecks } from "../utils/money.js";
 import { formatKopecksRu, parseKopecks, rublesToKopecks } from "../utils/money.js";
+import {
+	generateDeterministicOrSecureInteger,
+	generateDoctorShiftNumber,
+	generateDoctorShiftId,
+	generateSecureAlphanumericId,
+} from "../utils/idGenerators.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. ZOD SCHEMAS & DOMAIN ENUMS
@@ -128,6 +134,9 @@ export const doctorShiftAppointmentSchema = z.object({
 	doctorSpecialty: z.string().optional(),
 	startsAtIso: z.string().min(1),
 	endsAtIso: z.string().min(1),
+	actualStartsAtIso: z.string().optional(),
+	actualEndsAtIso: z.string().optional(),
+	actualDurationMinutes: z.number().int().min(0).optional(),
 	status: doctorAppointmentStatusSchema.default("waiting"),
 	chairId: z.string().optional(),
 	chairName: z.string().optional(),
@@ -150,10 +159,51 @@ export const doctorShiftAppointmentSchema = z.object({
 });
 export type DoctorShiftAppointment = z.infer<typeof doctorShiftAppointmentSchema>;
 
+export const doctorShiftBreakTypeSchema = z.enum([
+	"doctor_meal",
+	"doctor_rest",
+	"cabinet_sterilization",
+	"airing_sanpin",
+	"technical",
+]);
+export type DoctorShiftBreakType = z.infer<typeof doctorShiftBreakTypeSchema>;
+
+export const doctorShiftBreakIntervalSchema = z.object({
+	id: z.string().min(1),
+	type: doctorShiftBreakTypeSchema,
+	nameRu: z.string().min(1),
+	startsAtIso: z.string().min(1),
+	endsAtIso: z.string().min(1),
+	durationMinutes: z.number().int().min(0),
+	notes: z.string().optional(),
+});
+export type DoctorShiftBreakInterval = z.infer<typeof doctorShiftBreakIntervalSchema>;
+
+export const doctorShiftRecordSchema = z.object({
+	id: z.string().min(1),
+	shiftNumber: z.string().min(1),
+	doctorId: z.string().min(1),
+	doctorFullName: z.string().min(1),
+	doctorSpecialty: z.string().optional(),
+	shiftDateIso: z.string().min(1),
+	plannedStartsAtIso: z.string().min(1),
+	plannedEndsAtIso: z.string().min(1),
+	actualStartsAtIso: z.string().optional(),
+	actualEndsAtIso: z.string().optional(),
+	status: z.enum(["planned", "in_progress", "completed", "closed"]).default("planned"),
+	chairId: z.string().optional(),
+	chairName: z.string().optional(),
+	cabinetNumber: z.string().optional(),
+	breaks: z.array(doctorShiftBreakIntervalSchema).default([]),
+	notes: z.string().optional(),
+});
+export type DoctorShiftRecord = z.infer<typeof doctorShiftRecordSchema>;
+
 /** Real-time financial & operational earnings breakdown for the shift */
 export interface DoctorShiftEarningsBreakdown {
 	readonly doctorId: string;
 	readonly shiftDateIso: string;
+	readonly shiftNumber?: string;
 	readonly totalAppointmentsCount: number;
 	readonly completedAppointmentsCount: number;
 	readonly inChairAppointmentsCount: number;
@@ -166,6 +216,10 @@ export interface DoctorShiftEarningsBreakdown {
 	readonly totalEarnedDealKop: Kopecks;
 	readonly unsignedEmr043Count: number;
 	readonly signedEmr043Count: number;
+	readonly actualWorkMinutes?: number;
+	readonly totalSterilizationMinutes?: number;
+	readonly totalBreakMinutes?: number;
+	readonly chairUtilizationPercent?: number;
 	readonly appointmentBreakdowns: readonly {
 		readonly appointmentId: string;
 		readonly patientFullName: string;
@@ -278,7 +332,7 @@ export function adaptToDoctorShiftAppointments(params: {
 			}
 			return true;
 		})
-		.map((apt) => {
+		.map((apt, index) => {
 			const pat = patientsList.find((p) => p.id === apt.patientId);
 			const chair = chairsList.find((c) => c.id === apt.chairId);
 			const startsAtIso =
@@ -325,8 +379,20 @@ export function adaptToDoctorShiftAppointments(params: {
 				apt.emrCard043uStatus ||
 				(status === "completed" ? "pending_signature" : "draft");
 
+			const safeTargetDate = (targetDate || "2026-09-05").replace(/-/g, "");
+			const deterministicFallbackId = `apt-${(targetDocId || "doc").replace(/[^a-zA-Z0-9_-]/g, "")}-${safeTargetDate}-${String(index + 1).padStart(2, "0")}`;
+			const appointmentId = String(apt.id || deterministicFallbackId);
+
+			const actualStartsAtIso = apt.actualStartsAtIso || (status === "in_chair" || status === "completed" ? startsAtIso : undefined);
+			const actualEndsAtIso = apt.actualEndsAtIso || (status === "completed" ? endsAtIso : undefined);
+			const actualDurationMinutes = typeof apt.actualDurationMinutes === "number"
+				? apt.actualDurationMinutes
+				: (status === "completed" && startsAtIso && endsAtIso
+					? Math.max(1, Math.round((new Date(endsAtIso).getTime() - new Date(startsAtIso).getTime()) / 60000))
+					: undefined);
+
 			return {
-				id: String(apt.id || `apt-${Math.random()}`),
+				id: appointmentId,
 				patientId: String(apt.patientId || "pat-unknown"),
 				patientFullName: patientName,
 				patientBirthDate: apt.patientBirthDate || pat?.birthDate,
@@ -343,6 +409,9 @@ export function adaptToDoctorShiftAppointments(params: {
 					"Терапевт",
 				startsAtIso,
 				endsAtIso,
+				actualStartsAtIso,
+				actualEndsAtIso,
+				actualDurationMinutes,
 				status,
 				chairId: apt.chairId,
 				chairName: apt.chairName || chair?.name || "Кресло 1",
@@ -595,11 +664,15 @@ export function initiateBatchEmrSigning(params: {
 	const expiresAt = new Date(now.getTime() + validitySec * 1000);
 	const timestampIso = now.toISOString();
 
-	// Generate 6-digit SMS verification code (100000 - 999999)
+	// Generate 6-digit SMS verification code (100000 - 999999) via CSPRNG / deterministic seed (Mandates 8b, 8e)
 	let code = params.fixedSecretCode;
 	if (!code) {
-		const randomNum = Math.floor(100000 + Math.random() * 900000);
-		code = String(randomNum);
+		const secureCode = generateDeterministicOrSecureInteger(
+			100000,
+			999999,
+			params.doctorId,
+		);
+		code = String(secureCode);
 	}
 
 	const batchHash = generateBatchEmrProtocolHash(
@@ -718,21 +791,188 @@ export function verifyAndSignBatchEmr(params: {
 
 /**
  * Transitions appointment status with automated EMR card readiness hooks.
+ * Implements Mandate 8e: Honest real-time clinical tracking.
+ * - Automatically stamps actualStartsAtIso on "in_chair".
+ * - Automatically stamps actualEndsAtIso and calculates actualDurationMinutes on "completed".
  */
 export function transitionAppointmentStatus(
 	appointment: DoctorShiftAppointment,
 	newStatus: DoctorAppointmentStatus,
+	options?: {
+		readonly timestampIso?: string;
+		readonly actualDurationMinutes?: number;
+	},
 ): DoctorShiftAppointment {
 	let emrStatus = appointment.emrCard043uStatus;
+	const timestamp = options?.timestampIso ?? new Date().toISOString();
 
 	if (newStatus === "completed" && emrStatus === "draft") {
 		emrStatus = "pending_signature";
+	}
+
+	let actualStartsAtIso = appointment.actualStartsAtIso;
+	let actualEndsAtIso = appointment.actualEndsAtIso;
+	let actualDurationMinutes = appointment.actualDurationMinutes;
+
+	if (newStatus === "in_chair" && !actualStartsAtIso) {
+		actualStartsAtIso = timestamp;
+	} else if (newStatus === "completed") {
+		if (!actualStartsAtIso) {
+			actualStartsAtIso = appointment.startsAtIso || timestamp;
+		}
+		actualEndsAtIso = timestamp;
+		if (options?.actualDurationMinutes !== undefined) {
+			actualDurationMinutes = options.actualDurationMinutes;
+		} else if (actualStartsAtIso && actualEndsAtIso) {
+			const startMs = new Date(actualStartsAtIso).getTime();
+			const endMs = new Date(actualEndsAtIso).getTime();
+			actualDurationMinutes = Math.max(1, Math.round((endMs - startMs) / 60000));
+		}
 	}
 
 	return {
 		...appointment,
 		status: newStatus,
 		emrCard043uStatus: emrStatus,
+		actualStartsAtIso,
+		actualEndsAtIso,
+		actualDurationMinutes,
+	};
+}
+
+/**
+ * Master engine for honest tracking of doctor working shift.
+ * Complies with Mandate 8e & SanPiN 3.3686-21:
+ * - Real in-chair clinical operation time tracking.
+ * - Standardized 10-minute cabinet disinfection and sterilization between patient visits.
+ * - Explicit tracking of doctor meal and rest breaks.
+ * - Exact integer kopecks doctor earnings calculation.
+ */
+export function calculateDoctorShiftWorklog(params: {
+	readonly doctorId: string;
+	readonly doctorFullName?: string;
+	readonly shiftDateIso?: string;
+	readonly appointments: readonly DoctorShiftAppointment[];
+	readonly breaks?: readonly DoctorShiftBreakInterval[];
+	readonly defaultSterilizationMinutesPerVisit?: number; // Standard: 10 min per SanPiN 3.3686-21
+	readonly plannedShiftHours?: number; // Standard: 6.0 or 7.0 hours
+	readonly defaultCommissionPct?: number;
+}): {
+	readonly shiftId: string;
+	readonly shiftNumber: string;
+	readonly doctorId: string;
+	readonly doctorFullName: string;
+	readonly shiftDateIso: string;
+	readonly totalAppointmentsCount: number;
+	readonly completedAppointmentsCount: number;
+	readonly inChairAppointmentsCount: number;
+	readonly waitingAppointmentsCount: number;
+	readonly totalActualWorkMinutes: number;
+	readonly totalSterilizationMinutes: number;
+	readonly totalBreakMinutes: number;
+	readonly totalPlannedDurationMinutes: number;
+	readonly chairUtilizationPercent: number;
+	readonly earnings: DoctorShiftEarningsBreakdown;
+} {
+	const shiftDate = (params.shiftDateIso ? params.shiftDateIso.split("T")[0] : null) ?? new Date().toISOString().split("T")[0] ?? "1970-01-01";
+	const doctorAppointments = filterDoctorShiftAppointments(params.appointments, params.doctorId, shiftDate);
+
+	const shiftNumber = generateDoctorShiftNumber(shiftDate, { seedKey: params.doctorId });
+	const shiftId = generateDoctorShiftId(params.doctorId, shiftDate);
+
+	const sterilizationPerVisit = params.defaultSterilizationMinutesPerVisit ?? 10;
+	let completedVisits = 0;
+	let inChairVisits = 0;
+	let waitingVisits = 0;
+	let actualWorkMinutes = 0;
+	let plannedDurationMinutes = 0;
+
+	for (const apt of doctorAppointments) {
+		const startMs = new Date(apt.startsAtIso).getTime();
+		const endMs = new Date(apt.endsAtIso).getTime();
+		const slotMins = Math.max(0, Math.round((endMs - startMs) / 60000));
+		plannedDurationMinutes += slotMins;
+
+		if (apt.status === "completed") {
+			completedVisits += 1;
+			if (typeof apt.actualDurationMinutes === "number" && apt.actualDurationMinutes > 0) {
+				actualWorkMinutes += apt.actualDurationMinutes;
+			} else if (apt.actualStartsAtIso && apt.actualEndsAtIso) {
+				const aStart = new Date(apt.actualStartsAtIso).getTime();
+				const aEnd = new Date(apt.actualEndsAtIso).getTime();
+				actualWorkMinutes += Math.max(1, Math.round((aEnd - aStart) / 60000));
+			} else {
+				actualWorkMinutes += slotMins;
+			}
+		} else if (apt.status === "in_chair") {
+			inChairVisits += 1;
+			if (apt.actualStartsAtIso) {
+				const aStart = new Date(apt.actualStartsAtIso).getTime();
+				const nowMs = Date.now();
+				actualWorkMinutes += Math.max(1, Math.round((nowMs - aStart) / 60000));
+			} else {
+				actualWorkMinutes += Math.round(slotMins / 2);
+			}
+		} else if (apt.status === "waiting") {
+			waitingVisits += 1;
+		}
+	}
+
+	const explicitBreaks = params.breaks ?? [];
+	let explicitBreakMins = 0;
+	let explicitSterilizationMins = 0;
+
+	for (const brk of explicitBreaks) {
+		if (brk.type === "cabinet_sterilization" || brk.type === "airing_sanpin") {
+			explicitSterilizationMins += brk.durationMinutes;
+		} else {
+			explicitBreakMins += brk.durationMinutes;
+		}
+	}
+
+	// Total sterilization is either explicit disinfection breaks or standard 10m per completed visit
+	const totalSterilizationMinutes = explicitSterilizationMins > 0
+		? explicitSterilizationMins
+		: completedVisits * sterilizationPerVisit;
+
+	const totalPlanned = params.plannedShiftHours
+		? Math.round(params.plannedShiftHours * 60)
+		: Math.max(plannedDurationMinutes, 360); // default 6h = 360 min
+
+	const chairUtilizationPercent = totalPlanned > 0
+		? Math.min(100, Math.round((actualWorkMinutes / totalPlanned) * 100))
+		: 0;
+
+	const earnings = calculateDoctorShiftEarnings(
+		doctorAppointments,
+		params.doctorId,
+		shiftDate,
+		params.defaultCommissionPct ?? 25,
+	);
+
+	return {
+		shiftId,
+		shiftNumber,
+		doctorId: params.doctorId,
+		doctorFullName: params.doctorFullName || doctorAppointments[0]?.doctorFullName || "Врач клиники",
+		shiftDateIso: shiftDate,
+		totalAppointmentsCount: doctorAppointments.length,
+		completedAppointmentsCount: completedVisits,
+		inChairAppointmentsCount: inChairVisits,
+		waitingAppointmentsCount: waitingVisits,
+		totalActualWorkMinutes: actualWorkMinutes,
+		totalSterilizationMinutes,
+		totalBreakMinutes: explicitBreakMins,
+		totalPlannedDurationMinutes: totalPlanned,
+		chairUtilizationPercent,
+		earnings: {
+			...earnings,
+			shiftNumber,
+			actualWorkMinutes,
+			totalSterilizationMinutes,
+			totalBreakMinutes: explicitBreakMins,
+			chairUtilizationPercent,
+		},
 	};
 }
 

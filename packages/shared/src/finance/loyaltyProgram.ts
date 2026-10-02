@@ -297,7 +297,32 @@ export function calculateLoyaltyRedemption54Fz(
 }
 
 /**
- * 3. Generates a 16-digit gift certificate serial number with Luhn check digit.
+ * Calculates the canonical Luhn Modulo-10 check digit for an incomplete 15-digit number string.
+ */
+export function calculateLuhnModulo10CheckDigit(digits15: string): number {
+	let sum = 0;
+	for (let i = 0; i < 15; i++) {
+		let d = parseInt(digits15[i] ?? "0", 10);
+		if (i % 2 === 0) {
+			d *= 2;
+			if (d > 9) d -= 9;
+		}
+		sum += d;
+	}
+	return (10 - (sum % 10)) % 10;
+}
+
+function getCspRngDigit(): number {
+	if (typeof globalThis !== "undefined" && globalThis.crypto?.getRandomValues) {
+		const buf = new Uint8Array(1);
+		globalThis.crypto.getRandomValues(buf);
+		return (buf[0] ?? 0) % 10;
+	}
+	return (Date.now() + 7) % 10;
+}
+
+/**
+ * 3. Generates a 16-digit gift certificate serial number with canonical Luhn Modulo-10 check digit.
  * Format: 7701-XXXX-XXXX-XXXC (7701 is Moscow Dental Clinic prefix)
  */
 export function generateLuhn16Certificate(randomSeed?: number): string {
@@ -307,22 +332,13 @@ export function generateLuhn16Certificate(randomSeed?: number): string {
 	for (let i = 0; i < 11; i++) {
 		const rand =
 			randomSeed !== undefined
-				? (randomSeed * (i + 1) * 7) % 10
-				: Math.floor(Math.random() * 10);
+				? Math.abs(Math.floor(randomSeed * (i + 1) * 7)) % 10
+				: getCspRngDigit();
 		digits += rand.toString();
 	}
 
-	// Compute Luhn checksum digit
-	let sum = 0;
-	for (let i = 0; i < 15; i++) {
-		let d = parseInt(digits[i]!, 10);
-		if (i % 2 === 0) {
-			d *= 2;
-			if (d > 9) d -= 9;
-		}
-		sum += d;
-	}
-	const checkDigit = (10 - (sum % 10)) % 10;
+	// Compute canonical Luhn Modulo-10 checksum digit
+	const checkDigit = calculateLuhnModulo10CheckDigit(digits);
 	digits += checkDigit.toString();
 
 	return `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8, 12)}-${digits.slice(12, 16)}`;
@@ -348,3 +364,4 @@ export function validateLuhn16Certificate(formattedSerial: string): boolean {
 	}
 	return sum % 10 === 0;
 }
+

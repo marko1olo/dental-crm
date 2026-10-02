@@ -19,9 +19,13 @@ import {
 	doctorShiftServiceItemSchema,
 	doctorShiftAppointmentSchema,
 	emrBatchSigningSessionSchema,
+	doctorShiftRecordSchema,
+	doctorShiftBreakIntervalSchema,
 	filterDoctorShiftAppointments,
+	adaptToDoctorShiftAppointments,
 	calculateServicePieceRateAccrual,
 	calculateDoctorShiftEarnings,
+	calculateDoctorShiftWorklog,
 	generateBatchEmrProtocolHash,
 	maskDoctorPhoneNumber,
 	initiateBatchEmrSigning,
@@ -31,6 +35,7 @@ import {
 	type DoctorShiftAppointment,
 	type DoctorShiftServiceItem,
 } from "../doctor-portal/doctorShiftEngine.js";
+import { generateDoctorShiftNumber } from "../utils/idGenerators.js";
 
 describe("Wave 21 Domain 2: Doctor Shift Engine & Mobile PWA Operations", () => {
 	describe("1. Zod Schemas & Domain Enums", () => {
@@ -337,6 +342,148 @@ describe("Wave 21 Domain 2: Doctor Shift Engine & Mobile PWA Operations", () => 
 			const updated = transitionAppointmentStatus(apt, "completed");
 			assert.equal(updated.status, "completed");
 			assert.equal(updated.emrCard043uStatus, "pending_signature");
+		});
+
+		it("5.3 tracks honest actualStartsAtIso and actualEndsAtIso with duration on completion", () => {
+			const apt = SAMPLE_DOCTOR_SHIFT_APPOINTMENTS[4]!; // waiting
+			const inChair = transitionAppointmentStatus(apt, "in_chair", {
+				timestampIso: "2026-08-29T15:35:00.000Z",
+			});
+			assert.equal(inChair.actualStartsAtIso, "2026-08-29T15:35:00.000Z");
+
+			const completed = transitionAppointmentStatus(inChair, "completed", {
+				timestampIso: "2026-08-29T16:15:00.000Z",
+			});
+			assert.equal(completed.actualStartsAtIso, "2026-08-29T15:35:00.000Z");
+			assert.equal(completed.actualEndsAtIso, "2026-08-29T16:15:00.000Z");
+			assert.equal(completed.actualDurationMinutes, 40); // 15:35 to 16:15 = 40 min
+		});
+	});
+
+	describe("6. Zero-Mock ID & Verification Engine (Mandates 8b, 8e)", () => {
+		it("6.1 generates deterministic non-random appointment IDs when id is missing", () => {
+			const rawAppointments = [
+				{
+					doctorId: "doc-1",
+					startsAt: "2026-08-29T09:00:00.000Z",
+					endsAt: "2026-08-29T10:00:00.000Z",
+					patientId: "pat-100",
+					patientFullName: "Тестов Тест Тестович",
+				},
+				{
+					doctorId: "doc-1",
+					startsAt: "2026-08-29T10:00:00.000Z",
+					endsAt: "2026-08-29T11:00:00.000Z",
+					patientId: "pat-101",
+					patientFullName: "Второй Пациент",
+				},
+			];
+
+			const adapted = adaptToDoctorShiftAppointments({
+				appointments: rawAppointments,
+				doctorId: "doc-1",
+				shiftDateIso: "2026-08-29",
+			});
+
+			assert.equal(adapted.length, 2);
+			assert.equal(adapted[0]?.id, "apt-doc-1-20260829-01");
+			assert.equal(adapted[1]?.id, "apt-doc-1-20260829-02");
+			assert.ok(!adapted[0]?.id.includes("NaN"));
+			assert.ok(!adapted[0]?.id.includes("undefined"));
+		});
+
+		it("6.2 generates 6-digit SMS verification code using CSPRNG without Math.random", () => {
+			const session = initiateBatchEmrSigning({
+				doctorId: "doc-1",
+				doctorName: "Д-р Смирнов",
+				doctorPhone: "+79265551234",
+				appointmentIds: ["apt-shift-01"],
+			});
+
+			assert.match(session.secretCode, /^\d{6}$/);
+			const codeNum = Number.parseInt(session.secretCode, 10);
+			assert.ok(codeNum >= 100000 && codeNum <= 999999);
+		});
+
+		it("6.3 generates official doctor shift number according to clinical standards (СМ-YYYYMMDD-NN)", () => {
+			const shiftNum1 = generateDoctorShiftNumber("2026-08-29", { sequenceNumber: 1 });
+			assert.equal(shiftNum1, "СМ-20260829-01");
+
+			const shiftNum2 = generateDoctorShiftNumber(new Date("2026-09-05T08:00:00Z"), { sequenceNumber: 5 });
+			assert.equal(shiftNum2, "СМ-20260905-05");
+
+			const custom = generateDoctorShiftNumber("2026-08-29", { customShiftNumber: "СМ-20260829-VIP" });
+			assert.equal(custom, "СМ-20260829-VIP");
+		});
+	});
+
+	describe("7. Honest Doctor Shift Worklog & SanPiN Sterilization (Mandate 8e)", () => {
+		it("7.1 calculates honest clinical worklog, cabinet sterilization, and doctor earnings", () => {
+			const worklog = calculateDoctorShiftWorklog({
+				doctorId: "doc-1",
+				shiftDateIso: "2026-08-29",
+				appointments: SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
+				plannedShiftHours: 6.0,
+				defaultSterilizationMinutesPerVisit: 10,
+				breaks: [
+					{
+						id: "brk-01",
+						type: "doctor_meal",
+						nameRu: "Обеденный перерыв",
+						startsAtIso: "2026-08-29T13:30:00.000Z",
+						endsAtIso: "2026-08-29T14:00:00.000Z",
+						durationMinutes: 30,
+					},
+				],
+			});
+
+			assert.equal(worklog.doctorId, "doc-1");
+			assert.equal(worklog.totalAppointmentsCount, 5);
+			assert.equal(worklog.completedAppointmentsCount, 3);
+			assert.equal(worklog.inChairAppointmentsCount, 1);
+			assert.equal(worklog.waitingAppointmentsCount, 1);
+
+			// Completed visits: 3 * 10 min = 30 min sterilization
+			assert.equal(worklog.totalSterilizationMinutes, 30);
+			// Explicit break: 30 min
+			assert.equal(worklog.totalBreakMinutes, 30);
+
+			// Planned shift: 6 hours = 360 min
+			assert.equal(worklog.totalPlannedDurationMinutes, 360);
+			assert.ok(worklog.totalActualWorkMinutes > 0);
+			assert.ok(worklog.chairUtilizationPercent > 0 && worklog.chairUtilizationPercent <= 100);
+
+			// Shift Number present
+			assert.ok(worklog.shiftNumber.startsWith("СМ-20260829-"));
+
+			// Financial exactness in integer kopecks
+			assert.equal(worklog.earnings.grossRevenueKop, 6660000);
+			assert.equal(worklog.earnings.totalEarnedDealKop, 1150000);
+		});
+
+		it("7.2 validates doctorShiftRecordSchema and doctorShiftBreakIntervalSchema", () => {
+			const record = {
+				id: "shift-001",
+				shiftNumber: "СМ-20260829-01",
+				doctorId: "doc-1",
+				doctorFullName: "Д-р Смирнов Алексей Петрович",
+				shiftDateIso: "2026-08-29",
+				plannedStartsAtIso: "2026-08-29T09:00:00.000Z",
+				plannedEndsAtIso: "2026-08-29T15:00:00.000Z",
+				status: "in_progress" as const,
+				breaks: [
+					{
+						id: "brk-01",
+						type: "doctor_meal" as const,
+						nameRu: "Обед",
+						startsAtIso: "2026-08-29T13:00:00.000Z",
+						endsAtIso: "2026-08-29T13:30:00.000Z",
+						durationMinutes: 30,
+					},
+				],
+			};
+
+			assert.doesNotThrow(() => doctorShiftRecordSchema.parse(record));
 		});
 	});
 });

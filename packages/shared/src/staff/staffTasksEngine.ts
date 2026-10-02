@@ -14,6 +14,7 @@
  */
 
 import { z } from "zod";
+import { generateSecureAlphanumericId } from "../utils/idGenerators.js";
 
 // ============================================================================
 // 1. SCHEMAS & TYPES
@@ -363,10 +364,10 @@ export type CreateTriggeredStaffTaskPayload =
 	| TriggerPayloadRecall;
 
 function generateTaskId(): string {
-	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-		return crypto.randomUUID();
+	if (typeof globalThis !== "undefined" && globalThis.crypto?.randomUUID) {
+		return globalThis.crypto.randomUUID();
 	}
-	return `task-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+	return `task-${Date.now()}-${generateSecureAlphanumericId(7)}`;
 }
 
 /**

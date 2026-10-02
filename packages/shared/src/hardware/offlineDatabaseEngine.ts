@@ -15,6 +15,10 @@ import type {
 	LocalClinicServerHealth,
 	LocalDatabaseEngineType,
 } from "./hardwareContracts.js";
+import {
+	generateSecureAlphanumericId,
+	getNextMonotonicSequence,
+} from "../utils/idGenerators.js";
 
 export interface LocalOfflineMutationRecord {
 	readonly id: string;
@@ -101,8 +105,9 @@ export class LocalOfflineDatabaseManager {
 		record: Omit<LocalOfflineMutationRecord, "id" | "createdAt" | "clientTimestamp" | "retryAttempts" | "synced">,
 	): LocalOfflineMutationRecord {
 		const now = new Date();
+		const seq = getNextMonotonicSequence();
 		const mutation: LocalOfflineMutationRecord = {
-			id: `mut-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+			id: `mut-${now.getTime()}-${seq}-${generateSecureAlphanumericId(4)}`,
 			...record,
 			createdAt: now.toISOString(),
 			clientTimestamp: now.getTime(),

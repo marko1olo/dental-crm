@@ -657,6 +657,19 @@ describe("Doctor Shift Cockpit Engine (Wave 21 / Doctor Workstation)", () => {
 			assert.ok(res.messageRu.includes("Срок действия СМС-кода истек"));
 			assert.equal(res.updatedSession.isExpired, true);
 		});
+
+		it("5.7 generates 6-digit SMS code via CSPRNG without Math.random", () => {
+			const session = initiateBatchEmrSigningSha256({
+				doctorId: "doc-shift-1",
+				doctorName: "Д-р Смирнов Алексей Петрович",
+				doctorPhone: "+7 (926) 111-22-33",
+				appointmentIds: ["apt-cockpit-02"],
+			});
+
+			assert.match(session.secretCode, /^\d{6}$/);
+			const codeNum = Number.parseInt(session.secretCode, 10);
+			assert.ok(codeNum >= 100000 && codeNum <= 999999);
+		});
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
@@ -677,6 +690,7 @@ describe("Doctor Shift Cockpit Engine (Wave 21 / Doctor Workstation)", () => {
 
 			assert.equal(result.doctorId, "doc-shift-1");
 			assert.equal(result.shiftDateIso, "2026-08-30");
+			assert.ok(result.shiftNumber.startsWith("СМ-20260830-"));
 
 			// Current Patient (apt-cockpit-02, in_chair)
 			assert.ok(result.currentPatient !== null);
@@ -706,6 +720,12 @@ describe("Doctor Shift Cockpit Engine (Wave 21 / Doctor Workstation)", () => {
 			assert.equal(result.metrics.totalGrossRevenueKop, 1450000);
 			// Earned payout: apt-01 (125000 kop) + apt-02 (187500 kop) = 312500 kop
 			assert.equal(result.metrics.totalEarnedPayoutKop, 312500);
+
+			// Honest Clinical Time & SanPiN Sterilization (Mandate 8e)
+			// 1 completed visit -> 10 minutes sterilization by default
+			assert.equal(result.metrics.totalSterilizationMinutes, 10);
+			assert.ok(result.metrics.actualWorkMinutes > 0);
+			assert.ok(result.metrics.chairUtilizationPercent > 0);
 		});
 
 		it("6.2 tracks unclosed EMR cards (043/у) and calculates statutory deadlines", () => {

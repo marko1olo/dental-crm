@@ -21,6 +21,7 @@ import {
 	type Ffd12VatRate,
 } from "../fiscal/ffd12Types.js";
 import { kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";
+import { generateSecureAlphanumericId } from "../utils/idGenerators.js";
 
 export interface Atol10ItemRequest {
 	readonly name: string;
@@ -167,7 +168,7 @@ export function buildAtol10ReceiptJson(
 	}));
 
 	return {
-		uuid: options.machineUuid || `dente-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+		uuid: options.machineUuid || `dente-${Date.now()}-${generateSecureAlphanumericId(6)}`,
 		request: {
 			type: operationMap[req.type] || "sell",
 			electronically: Boolean(req.electronical),

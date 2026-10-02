@@ -13,6 +13,7 @@ import { escapeXml } from "../cda/c14n.js";
 import { kopecksToRub } from "./kopecksArithmetic.js";
 import {
 	calculateTaxDeductionSummary,
+	extractTaxYearFromDate,
 	TAX_DEDUCTION_RELATIONSHIP_MAP,
 	type TaxDeductionBatchParams,
 	type TaxDeductionCertificateParams,
@@ -22,6 +23,7 @@ import {
 	type TaxDeductionRelationship,
 } from "../finance/taxDeduction.js";
 import { renderOfficialTaxCertificateKnd1151156Html } from "./fnsTaxDeductionEngine.js";
+import { generateFnsRegistryFileSuffix } from "../utils/idGenerators.js";
 
 export interface FamilyMemberPayerConfig {
 	readonly id: string;
@@ -89,7 +91,7 @@ export function generateFamilyTaxDeductionBatch(
 	const issueDateIso = options.issueDateIso || new Date().toISOString();
 	const taxOfficeCode = options.taxOfficeCode || "7701";
 	const yearPayments = options.payments.filter((p) => {
-		const year = new Date(p.dateIso).getFullYear();
+		const year = extractTaxYearFromDate(p.dateIso);
 		return year === options.taxYear;
 	});
 
@@ -460,12 +462,16 @@ export function generateFnsBatchNoMedoplXml(batch: TaxDeductionBatchParams): {
 	readonly certificatesCount: number;
 } {
 	const clinicInn = batch.clinic.inn.replace(/\D/g, "");
-	const clinicKpp = (batch.clinic.kpp || "").replace(/\D/g, "") || "770101001";
-	const taxOfficeCode = batch.taxOfficeCode || "7701";
+	const clinicKpp = batch.clinic.kpp ? `_${batch.clinic.kpp.replace(/[^A-Za-z0-9]/g, "")}` : "";
+	const clinicId = `${clinicInn}${clinicKpp}`;
+	const taxOfficeCode = (batch.taxOfficeCode || "7701").trim();
 	const now = new Date();
 	const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
-	const randomSuffix = Math.random().toString(36).slice(2, 8).toUpperCase();
-	const fileId = `NO_MEDOPL_${taxOfficeCode}_${clinicInn}_${clinicKpp}_${dateStr}_${randomSuffix}`;
+	const randomSuffix = generateFnsRegistryFileSuffix(
+		6,
+		`${taxOfficeCode}_${clinicId}_${dateStr}_${batch.taxYear}_${batch.certificates.length}`,
+	);
+	const fileId = `NO_MEDOPL_${taxOfficeCode}_${clinicId}_${dateStr}_${randomSuffix}`;
 	const fileName = `${fileId}.xml`;
 
 	const signerType = batch.signer?.signerType || "1";
@@ -490,7 +496,7 @@ export function generateFnsBatchNoMedoplXml(batch: TaxDeductionBatchParams): {
 			const patientBday = cert.patient.birthDate ? cert.patient.birthDate.slice(0, 10) : "";
 
 			const yearPayments = cert.payments.filter(
-				(p) => new Date(p.dateIso).getFullYear() === batch.taxYear
+				(p) => extractTaxYearFromDate(p.dateIso) === batch.taxYear
 			);
 
 			return `    <СведСправка НомСправ="${escapeXml(cert.certificateNumber)}" ДатаСправ="${escapeXml(issueDate)}" ПрПациент="${escapeXml(rel.samePatientFlag)}">

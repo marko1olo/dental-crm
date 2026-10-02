@@ -14,6 +14,7 @@ import { generateCode128Svg, generateFnsFormKnd1151156BarcodeSvg, type Code128Sv
 import { escapeXml } from "../cda/c14n.js";
 import { kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";
 import { formatSnils, isValidSnils, normalizeSnils } from "../utils/snils.js";
+import { generateFnsRegistryFileSuffix } from "../utils/idGenerators.js";
 
 /**
  * Нормативные константы регламента ФНС России № ЕА-7-11/824@
@@ -422,6 +423,23 @@ export interface TaxDeductionCalculationResult {
 }
 
 /**
+ * Safely extracts the tax calendar year from an ISO date string (YYYY-MM-DD...)
+ * completely immune to local server timezone shift bugs.
+ */
+export function extractTaxYearFromDate(dateIso: string): number {
+	if (!dateIso || typeof dateIso !== "string") {
+		return Number.NaN;
+	}
+	const trimmed = dateIso.trim();
+	const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+	if (match) {
+		return Number.parseInt(match[1]!, 10);
+	}
+	const d = new Date(trimmed);
+	return Number.isNaN(d.getTime()) ? Number.NaN : d.getFullYear();
+}
+
+/**
  * Расчет сумм по годам и категориям вычета (Код 01 / Код 02) с копеечной точностью.
  */
 export function calculateTaxDeductionSummary(
@@ -433,7 +451,8 @@ export function calculateTaxDeductionSummary(
 	>();
 
 	for (const p of payments) {
-		const year = new Date(p.dateIso).getFullYear();
+		const year = extractTaxYearFromDate(p.dateIso);
+		if (Number.isNaN(year)) continue;
 		const cat = p.taxCode || resolveTaxDeductionCategoryShared(p.code804n, p.serviceName);
 		const amountKop =
 			typeof p.amountKopecks === "number" && Number.isFinite(p.amountKopecks)
@@ -750,16 +769,15 @@ export function generateFnsTaxDeductionXml(params: TaxDeductionCertificateParams
 	const taxOfficeCode = (params.taxOfficeCode || "7701").trim();
 	const now = new Date();
 	const dateStamp = now.toISOString().slice(0, 10).replace(/-/g, "");
-	const randomSuffix =
-		typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-			? crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase()
-			: String(Date.now() % 100000000).padStart(8, "0");
-
 	// Формат ИдФайл по Приказу 824@: VO_SPRRECH_КодНО_ИНН_ГГГГММДД_GUID
 	const safeTaxOffice = taxOfficeCode.replace(/[^A-Za-z0-9]/g, "");
 	const safeInn = String(params.clinic.inn || "").replace(/[^0-9]/g, "");
 	const safeKpp = params.clinic.kpp ? `_${String(params.clinic.kpp).replace(/[^A-Za-z0-9]/g, "")}` : "";
 	const clinicId = `${safeInn}${safeKpp}`;
+	const randomSuffix = generateFnsRegistryFileSuffix(
+		8,
+		`${safeTaxOffice}_${clinicId}_${dateStamp}_${params.taxYear}_${params.certificateNumber}`,
+	);
 	const fileId = `VO_SPRRECH_${safeTaxOffice}_${clinicId}_${dateStamp}_${randomSuffix}`;
 	const fileName = `${fileId}.xml`;
 
@@ -776,7 +794,7 @@ export function generateFnsTaxDeductionXml(params: TaxDeductionCertificateParams
 
 	// Чеки по 54-ФЗ за отчетный год
 	const yearPayments = params.payments.filter(
-		(p) => new Date(p.dateIso).getFullYear() === params.taxYear
+		(p) => extractTaxYearFromDate(p.dateIso) === params.taxYear,
 	);
 
 	const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -823,12 +841,14 @@ export function generateFnsTaxDeductionBatchXml(batch: TaxDeductionBatchParams):
 	const taxOfficeCode = (batch.taxOfficeCode || "7701").trim();
 	const now = new Date();
 	const dateStamp = now.toISOString().slice(0, 10).replace(/-/g, "");
-	const randomSuffix = Math.random().toString(36).slice(2, 10).toUpperCase();
-
 	const safeTaxOffice = taxOfficeCode.replace(/[^A-Za-z0-9]/g, "");
 	const safeInn = String(batch.clinic.inn || "").replace(/[^0-9]/g, "");
 	const safeKpp = batch.clinic.kpp ? `_${String(batch.clinic.kpp).replace(/[^A-Za-z0-9]/g, "")}` : "";
 	const clinicId = `${safeInn}${safeKpp}`;
+	const randomSuffix = generateFnsRegistryFileSuffix(
+		8,
+		`${safeTaxOffice}_${clinicId}_${dateStamp}_${batch.taxYear}_${batch.certificates.length}`,
+	);
 	const fileId = `VO_SPRRECH_${safeTaxOffice}_${clinicId}_${dateStamp}_${randomSuffix}`;
 	const fileName = `${fileId}.xml`;
 
@@ -857,7 +877,7 @@ export function generateFnsTaxDeductionBatchXml(batch: TaxDeductionBatchParams):
 			const patientBday = cert.patient.birthDate ? formatDateToRussian(cert.patient.birthDate) : "";
 
 			const yearPayments = cert.payments.filter(
-				(p) => new Date(p.dateIso).getFullYear() === batch.taxYear
+				(p) => extractTaxYearFromDate(p.dateIso) === batch.taxYear
 			);
 
 			return `    <СведРасхУсл НомерСвед="${escapeXml(cert.certificateNumber)}" ДатаСвед="${escapeXml(issueDateFormatted)}" НомКорр="0" ПрПациент="${escapeXml(rel.samePatientFlag)}">
@@ -932,13 +952,14 @@ export function generateFnsNoMedoplXml(params: TaxDeductionCertificateParams): {
 	const taxOfficeCode = (params.taxOfficeCode || "7701").trim();
 	const now = new Date();
 	const dateStamp = now.toISOString().slice(0, 10).replace(/-/g, "");
-	const randomSuffix = Math.random().toString(36).slice(2, 10).toUpperCase();
-
-	// Каноническое имя файла ФНС: NO_MEDOPL_КодНО_ИННЮЛ+КПП_ГГГГММДД_N (санитизация для валидного имени файла)
 	const safeTaxOffice = taxOfficeCode.replace(/[^A-Za-z0-9]/g, "");
 	const safeInn = String(params.clinic.inn || "").replace(/[^0-9]/g, "");
 	const safeKpp = params.clinic.kpp ? `_${String(params.clinic.kpp).replace(/[^A-Za-z0-9]/g, "")}` : "";
 	const clinicId = `${safeInn}${safeKpp}`;
+	const randomSuffix = generateFnsRegistryFileSuffix(
+		8,
+		`${safeTaxOffice}_${clinicId}_${dateStamp}_${params.taxYear}_${params.certificateNumber}`,
+	);
 	const fileId = `NO_MEDOPL_${safeTaxOffice}_${clinicId}_${dateStamp}_${randomSuffix}`;
 	const fileName = `${fileId}.xml`;
 
@@ -954,7 +975,7 @@ export function generateFnsNoMedoplXml(params: TaxDeductionCertificateParams): {
 	const signerName = params.signer?.fullName || params.clinic.chiefDoctorName || "Главный врач";
 
 	const yearPayments = params.payments.filter(
-		(p) => new Date(p.dateIso).getFullYear() === params.taxYear
+		(p) => extractTaxYearFromDate(p.dateIso) === params.taxYear
 	);
 
 	const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -1066,7 +1087,7 @@ export function validateTaxCertificateParams(
 
 	// Payments check
 	const yearPayments = params.payments.filter(
-		(p) => new Date(p.dateIso).getFullYear() === params.taxYear,
+		(p) => extractTaxYearFromDate(p.dateIso) === params.taxYear,
 	);
 	if (yearPayments.length === 0) {
 		warnings.push(`Отсутствуют фискальные чеки за ${params.taxYear} год`);

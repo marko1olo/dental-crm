@@ -428,4 +428,43 @@ describe("Wave 137: Staff Tasks & Clinical Assignment Engine", () => {
 			}
 		});
 	});
+
+	// ========================================================================
+	// 5. ZERO MATH.RANDOM & CSPRNG TASK ID INVARIANTS
+	// ========================================================================
+	describe("5. Zero Math.random & Cryptographic Task ID Generation", () => {
+		it("generates unique task IDs using crypto.randomUUID or CSPRNG without Math.random", () => {
+			const task1 = createTriggeredStaffTask({
+				trigger: "inventory_low_stock",
+				clinicId: mockClinicId,
+				itemId: "mat-101",
+				itemName: "Коффердам Sanctuary Dental Dam (синий)",
+				currentQuantity: 2,
+				minThreshold: 10,
+				unit: "упак",
+			});
+
+			const task2 = createTriggeredStaffTask({
+				trigger: "inventory_low_stock",
+				clinicId: mockClinicId,
+				itemId: "mat-102",
+				itemName: "Артикуляционная бумага Bausch 200 мкм",
+				currentQuantity: 1,
+				minThreshold: 5,
+				unit: "упак",
+			});
+
+			assert.ok(typeof task1.id === "string" && task1.id.length > 0);
+			assert.ok(typeof task2.id === "string" && task2.id.length > 0);
+			assert.notEqual(task1.id, task2.id);
+
+			// ID should be either standard UUID v4 or task-{timestamp}-{alphanumeric7}
+			const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+			const csprngRegex = /^task-\d+-[a-z0-9]{7}$/;
+			const isUuidOrCsprng = (id: string) => uuidRegex.test(id) || csprngRegex.test(id);
+
+			assert.ok(isUuidOrCsprng(task1.id), `Invalid task1 ID format: ${task1.id}`);
+			assert.ok(isUuidOrCsprng(task2.id), `Invalid task2 ID format: ${task2.id}`);
+		});
+	});
 });

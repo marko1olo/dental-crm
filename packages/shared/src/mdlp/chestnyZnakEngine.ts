@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { escapeXml } from "../cda/c14n.js";
+import { generateSecureAlphanumericId } from "../utils/idGenerators.js";
 import { recognizeDentalMedication } from "./catalog.js";
 import {
 	computeGtinCheckDigit,
@@ -457,7 +458,7 @@ export function createChestnyZnakScannedItem(
 	} = {},
 ): ChestnyZnakScannedItem {
 	const parsed = parseChestnyZnakBarcode(rawInput, options.referenceDate);
-	const id = options.id ?? `cz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	const id = options.id ?? `cz-${Date.now()}-${generateSecureAlphanumericId(6)}`;
 
 	const tradeName =
 		parsed.recognizedDrug?.tradeName ??

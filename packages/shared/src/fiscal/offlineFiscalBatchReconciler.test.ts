@@ -459,4 +459,111 @@ describe("54-FZ (FFD 1.2) Offline Fiscal Batch Reconciler & Accounting Exports",
 		assert.equal(result.shifts[2]?.shiftNumber, 3);
 		assert.equal(result.shifts[2]?.zReport.incomeElectronicRub, 40000);
 	});
+
+	it("1.9 Zero-Mock batchId generation: adheres to statutory format and supports overrides", () => {
+		const queue: readonly OfflineQueueFiscalItem[] = [
+			{
+				id: "zero-mock-item-1",
+				patientId: "pat-zm",
+				timestampIso: "2026-09-01T10:00:00.000Z",
+				operationType: "income",
+				items: [{ name: "Осмотр", priceRub: 1500, quantity: 1 }],
+				tenders: { cashRub: 1500 },
+			},
+		];
+
+		// Automatic zero-mock batchId
+		const res1 = processOfflineFiscalBatch(queue, { clinicInn: "7707083893" });
+		assert.match(res1.batchId, /^BATCH-\d+-\d{4}$/);
+
+		// Explicit batchId override
+		const res2 = processOfflineFiscalBatch(queue, { batchId: "BATCH-STATUTORY-20260901-001" });
+		assert.equal(res2.batchId, "BATCH-STATUTORY-20260901-001");
+	});
+
+	it("1.10 Multi-tender exact kopecks aggregation across cash, card, sbp, advance, credit and certificate", () => {
+		const queue: readonly OfflineQueueFiscalItem[] = [
+			{
+				id: "item-all-tenders",
+				patientId: "pat-split",
+				timestampIso: "2026-09-01T12:00:00.000Z",
+				operationType: "income",
+				items: [
+					{ name: "Комплексное лечение", priceRub: 55555.55, quantity: 1 },
+				],
+				tenders: {
+					cashRub: 5555.55,
+					cardRub: 10000.00,
+					sbpRub: 10000.00,
+					advanceOffsetRub: 10000.00,
+					creditPostpaymentRub: 10000.00,
+					certificateRub: 10000.00,
+				},
+			},
+			{
+				id: "item-return-card",
+				patientId: "pat-split",
+				timestampIso: "2026-09-01T15:00:00.000Z",
+				operationType: "income_return",
+				items: [
+					{ name: "Возврат частичный", priceRub: 5000.00, quantity: 1 },
+				],
+				tenders: {
+					cardRub: 5000.00,
+				},
+			},
+		];
+
+		const res = processOfflineFiscalBatch(queue);
+		assert.equal(res.processedCount, 2);
+		assert.equal(res.totalGrossKopecks, 5555555);
+		assert.equal(res.totalGrossRub, 55555.55);
+
+		// Net = 55555.55 - 5000 = 50555.55 ₽ = 5055555 kop
+		assert.equal(res.totalNetKopecks, 5055555);
+		assert.equal(res.totalNetRub, 50555.55);
+
+		// Cash: 5555.55 ₽ = 555555 kop
+		assert.equal(res.totalCashKopecks, 555555);
+		assert.equal(res.totalCashRub, 5555.55);
+
+		// Electronic Net: Card (10000 - 5000) + SBP (10000) = 15000.00 ₽ = 1500000 kop
+		assert.equal(res.totalElectronicKopecks, 1500000);
+		assert.equal(res.totalElectronicRub, 15000.00);
+
+		// Advance: 10000.00 ₽ = 1000000 kop
+		assert.equal(res.totalAdvanceOffsetKopecks, 1000000);
+		assert.equal(res.totalAdvanceOffsetRub, 10000.00);
+	});
+
+	it("1.11 Bank reconciliation detects exact 1-kopeck discrepancy", () => {
+		const queue: readonly OfflineQueueFiscalItem[] = [
+			{
+				id: "item-penny",
+				patientId: "pat-1",
+				timestampIso: "2026-09-01T10:00:00.000Z",
+				operationType: "income",
+				items: [{ name: "Услуга", priceRub: 100.00, quantity: 1 }],
+				tenders: { cardRub: 100.00 },
+			},
+		];
+
+		// Bank has 100.01 ₽ (1 kopeck extra)
+		const bankRegistry: readonly BankRegistryTransaction[] = [
+			{
+				transactionId: "bank-penny-1",
+				dateIso: "2026-09-01T10:00:05.000Z",
+				amountRub: 100.01,
+				amountKopecks: 10001,
+				type: "card",
+			},
+		];
+
+		const res = processOfflineFiscalBatch(queue, { bankRegistry });
+		assert.equal(res.reconciliation.isMatched, false);
+		assert.equal(res.reconciliation.status, "discrepancy_detected");
+		assert.equal(res.reconciliation.discrepancyKopecks, 1);
+		assert.equal(res.reconciliation.discrepancyRub, 0.01);
+	});
 });
+
