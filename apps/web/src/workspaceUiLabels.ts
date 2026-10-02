@@ -434,6 +434,11 @@ export const workspaceTopbarLabels = {
 		label: "Рабочий стол",
 		title: "Рабочий стол врача (Doctor Shift Cockpit) — сменные показатели, сделка % и пакетная подпись медицинских карт",
 	},
+	/** Кнопка вызова Базы знаний и интерактивного обучения DENTE. */
+	learning: {
+		label: "Обучение",
+		title: "База знаний и интерактивное обучение DENTE",
+	},
 } as const;
 
 export const workloadStateLabels: Record<ResourceLoad["state"], string> = {

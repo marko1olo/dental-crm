@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import {
 	Activity,
 	BarChart3,
+	BookOpen,
 	Box,
 	CalendarClock,
 	CalendarDays,
@@ -1029,6 +1030,34 @@ export function WorkspaceTopbar({
 						aria-hidden="true"
 					/>{" "}
 					{workspaceTopbarLabels.copilot.label}
+				</button>
+
+				{/*
+          БАЗА ЗНАНИЙ И ОБУЧЕНИЕ — быстрый вызов интерактивного центра обучения и всех 12 руководств.
+        */}
+				<button
+					id="topbar-learning-hub-btn"
+					className="secondary-button topbar-learning-button hidden sm:inline-flex items-center gap-1.5"
+					type="button"
+					data-testid="topbar-learning-hub-btn"
+					title={workspaceTopbarLabels.learning.title}
+					onClick={() => {
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(new CustomEvent("dente:open-knowledge-hub"));
+						}
+					}}
+					style={{
+						backgroundColor: "rgba(13, 148, 136, 0.12)",
+						color: "var(--teal)",
+						borderColor: "var(--teal-surface, var(--teal))",
+						fontWeight: 600,
+					}}
+				>
+					<BookOpen
+						className="w-4 h-4 text-[var(--teal)] shrink-0"
+						aria-hidden="true"
+					/>
+					<span className="hidden xl:inline">{workspaceTopbarLabels.learning.label}</span>
 				</button>
 
 				{/*

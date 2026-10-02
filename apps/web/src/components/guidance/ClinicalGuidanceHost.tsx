@@ -13,10 +13,11 @@
  * - Event-bus decoupled integration (dente:open-shortcuts-overlay, dente:open-help, dente:close-modals)
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAppStore } from "../../store/appStore";
 import { HelpDrawer } from "../common/HelpDrawer";
 import type { ClinicalGuideTab } from "../help";
+import { KnowledgeBaseHubModal } from "../knowledge";
 import { DoctorClinicalTrainingTour } from "../workspace/DoctorClinicalTrainingTour";
 import { ClinicalGuidanceModal } from "./ClinicalGuidanceModal";
 
@@ -30,10 +31,14 @@ export const ClinicalGuidanceHost: React.FC = React.memo(() => {
 		setActiveHelpDrawerTab,
 	} = useAppStore();
 
+	const [isKnowledgeHubOpen, setKnowledgeHubOpen] = useState(false);
+	const [knowledgeHubTab, setKnowledgeHubTab] = useState<ClinicalGuideTab>("schedule");
+
 	// Global event listeners
 	useEffect(() => {
 		const handleOpenShortcuts = () => {
 			setHelpDrawerOpen(false);
+			setKnowledgeHubOpen(false);
 			setShortcutsModalOpen(true);
 		};
 
@@ -43,21 +48,35 @@ export const ClinicalGuidanceHost: React.FC = React.memo(() => {
 				setActiveHelpDrawerTab(customEvent.detail.tab);
 			}
 			setShortcutsModalOpen(false);
+			setKnowledgeHubOpen(false);
 			setHelpDrawerOpen(true);
+		};
+
+		const handleOpenKnowledgeHub = (e: Event) => {
+			const customEvent = e as CustomEvent<{ tab?: ClinicalGuideTab }>;
+			if (customEvent.detail?.tab) {
+				setKnowledgeHubTab(customEvent.detail.tab);
+			}
+			setShortcutsModalOpen(false);
+			setHelpDrawerOpen(false);
+			setKnowledgeHubOpen(true);
 		};
 
 		const handleCloseModals = () => {
 			setShortcutsModalOpen(false);
 			setHelpDrawerOpen(false);
+			setKnowledgeHubOpen(false);
 		};
 
 		window.addEventListener("dente:open-shortcuts-overlay", handleOpenShortcuts);
 		window.addEventListener("dente:open-help", handleOpenHelp);
+		window.addEventListener("dente:open-knowledge-hub", handleOpenKnowledgeHub);
 		window.addEventListener("dente:close-modals", handleCloseModals);
 
 		return () => {
 			window.removeEventListener("dente:open-shortcuts-overlay", handleOpenShortcuts);
 			window.removeEventListener("dente:open-help", handleOpenHelp);
+			window.removeEventListener("dente:open-knowledge-hub", handleOpenKnowledgeHub);
 			window.removeEventListener("dente:close-modals", handleCloseModals);
 		};
 	}, [setShortcutsModalOpen, setHelpDrawerOpen, setActiveHelpDrawerTab]);
@@ -82,6 +101,21 @@ export const ClinicalGuidanceHost: React.FC = React.memo(() => {
 				initialTab={activeHelpDrawerTab as ClinicalGuideTab}
 				onOpenShortcutsModal={() => {
 					setHelpDrawerOpen(false);
+					setShortcutsModalOpen(true);
+				}}
+				onOpenKnowledgeHub={() => {
+					setHelpDrawerOpen(false);
+					setKnowledgeHubTab((activeHelpDrawerTab as ClinicalGuideTab) || "schedule");
+					setKnowledgeHubOpen(true);
+				}}
+			/>
+
+			<KnowledgeBaseHubModal
+				isOpen={isKnowledgeHubOpen}
+				onClose={() => setKnowledgeHubOpen(false)}
+				initialTab={knowledgeHubTab}
+				onOpenShortcuts={() => {
+					setKnowledgeHubOpen(false);
 					setShortcutsModalOpen(true);
 				}}
 			/>
