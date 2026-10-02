@@ -12,6 +12,7 @@ import {
 import { MissedCallService } from "../services/telephony/missedCallService.js";
 import {
 	authenticatePbxWebhook,
+	detectMarketingAttribution,
 	isForbiddenPrivateIp,
 	normalizePhoneNumber,
 	type NormalizedPhone,
@@ -29,6 +30,7 @@ export {
 	type NormalizedPhone,
 	normalizePhoneNumber,
 	authenticatePbxWebhook,
+	detectMarketingAttribution,
 	isForbiddenPrivateIp,
 	validateSsrfSafeRecordingUrl,
 	telephonyOutboxService,
@@ -104,9 +106,7 @@ export const telephonyWebhookPayloadSchema = z.object({
 	ai_summary: z.string().optional(),
 });
 
-export type TelephonyWebhookPayload = z.infer<
-	typeof telephonyWebhookPayloadSchema
->;
+export type TelephonyWebhookPayload = z.infer<typeof telephonyWebhookPayloadSchema>;
 
 export const telephonySmsWebhookPayloadSchema = z.object({
 	from: z.string().optional(),
@@ -121,9 +121,7 @@ export const telephonySmsWebhookPayloadSchema = z.object({
 	timestamp: z.union([z.number(), z.string()]).optional(),
 });
 
-export type TelephonySmsWebhookPayload = z.infer<
-	typeof telephonySmsWebhookPayloadSchema
->;
+export type TelephonySmsWebhookPayload = z.infer<typeof telephonySmsWebhookPayloadSchema>;
 
 export const telephonyRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
@@ -369,70 +367,15 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 				let matchedLead: typeof crmLeads.$inferSelect | null = null;
 
 				// Marketing channel attribution resolution
-				let detectedMarketingChannel = "telephony";
-				let detectedChannelLabel = "Прямой звонок / ВАТС";
-
-				const utmRaw = `${data.utm_source || ""} ${data.utm_campaign || ""} ${data.utm_medium || ""}`
-					.trim()
-					.toLowerCase();
-				if (utmRaw) {
-					if (/yandex|direct|директ|рся|rsya/i.test(utmRaw)) {
-						detectedMarketingChannel = "yandex_direct";
-						detectedChannelLabel = "Яндекс.Директ";
-					} else if (/2gis|gis|2гис|дубльгис/i.test(utmRaw)) {
-						detectedMarketingChannel = "gis_2";
-						detectedChannelLabel = "2ГИС Карты";
-					} else if (/prodoctorov|продокторов/i.test(utmRaw)) {
-						detectedMarketingChannel = "prodoctorov";
-						detectedChannelLabel = "ПроДокторов";
-					} else if (/napopravku|напоправку/i.test(utmRaw)) {
-						detectedMarketingChannel = "napopravku";
-						detectedChannelLabel = "НаПоправку";
-					} else if (/site|сайт|seo|сео|органика|organic|google/i.test(utmRaw)) {
-						detectedMarketingChannel = "site_seo";
-						detectedChannelLabel = "Сайт / SEO";
-					} else if (/vk|vkontakte|telegram|tg|вк|инста|instagram/i.test(utmRaw)) {
-						detectedMarketingChannel = "social_media";
-						detectedChannelLabel = "Соцсети (VK / TG)";
-					}
-				}
-
-				if (detectedMarketingChannel === "telephony" && data.advertising_channel) {
-					const ch = data.advertising_channel.trim().toLowerCase();
-					if (/direct|яндекс|yandex/i.test(ch)) {
-						detectedMarketingChannel = "yandex_direct";
-						detectedChannelLabel = "Яндекс.Директ";
-					} else if (/2gis|2гис/i.test(ch)) {
-						detectedMarketingChannel = "gis_2";
-						detectedChannelLabel = "2ГИС Карты";
-					} else if (/prodoc/i.test(ch)) {
-						detectedMarketingChannel = "prodoctorov";
-						detectedChannelLabel = "ПроДокторов";
-					} else if (/napopr/i.test(ch)) {
-						detectedMarketingChannel = "napopravku";
-						detectedChannelLabel = "НаПоправку";
-					} else if (/site|seo|сайт/i.test(ch)) {
-						detectedMarketingChannel = "site_seo";
-						detectedChannelLabel = "Сайт / SEO";
-					} else {
-						detectedMarketingChannel = ch;
-						detectedChannelLabel = ch;
-					}
-				}
-
-				if (detectedMarketingChannel === "telephony" && targetRaw) {
-					const trLower = targetRaw.toLowerCase();
-					if (/direct|yandex|директ/i.test(trLower)) {
-						detectedMarketingChannel = "yandex_direct";
-						detectedChannelLabel = "Яндекс.Директ";
-					} else if (/2gis|2гис/i.test(trLower)) {
-						detectedMarketingChannel = "gis_2";
-						detectedChannelLabel = "2ГИС Карты";
-					} else if (/prodoc/i.test(trLower)) {
-						detectedMarketingChannel = "prodoctorov";
-						detectedChannelLabel = "ПроДокторов";
-					}
-				}
+				const attribution = detectMarketingAttribution({
+					utm_source: data.utm_source,
+					utm_campaign: data.utm_campaign,
+					utm_medium: data.utm_medium,
+					advertising_channel: data.advertising_channel,
+					targetRaw,
+				});
+				const detectedMarketingChannel = attribution.channel;
+				const detectedChannelLabel = attribution.channelLabel;
 
 				const virtualTrunkNumber = targetPhone.e164 || targetRaw || "";
 				const utmDetailStr = [

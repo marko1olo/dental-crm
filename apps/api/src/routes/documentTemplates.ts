@@ -643,3 +643,14 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 		},
 	);
 }
+
+/**
+ * Единая консолидированная точка монтирования шаблонов клиники:
+ * 1. Бланки официальных документов (ИДС, договоры, справки) -> /api/document-templates
+ * 2. Клинические протоколы приёма (дневник 043/у) -> /api/templates
+ */
+export async function registerAllTemplateRoutes(app: FastifyInstance) {
+	await registerDocumentTemplateRoutes(app);
+	const registerTemplateRoutes = (await import("./templates.js")).default;
+	await registerTemplateRoutes(app);
+}

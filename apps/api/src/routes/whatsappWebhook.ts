@@ -1,9 +1,23 @@
 /**
- * apps/api/src/routes/whatsappWebhook.ts
+ * whatsappWebhook.ts — Transparent facade & backward compatibility delegate.
  *
- * Canonical Facade per Mandate 8s (The Law of Single Indivisible Authority).
- * Transparently re-exports from whatsappWebhookRoutes to resolve Split-Brain.
+ * Consolidates all WhatsApp webhook processing into canonical `whatsappWebhookRoutes.ts`
+ * and `whatsappInteractiveActions.ts` while preserving 100% API and export parity.
  */
 
-export * from "./whatsappWebhookRoutes.js";
-export { registerWhatsappWebhookRoutes as default } from "./whatsappWebhookRoutes.js";
+export {
+	configuredWhatsappAppSecret,
+	isValidWhatsappSignature,
+	isWebhookPath,
+	parseIncomingAction,
+	processAppointmentCancellation,
+	processAppointmentConfirmation,
+	processRecallBooking,
+	processRecallSnooze,
+	registerWhatsappWebhookRoutes,
+	type ParsedWebhookAction,
+} from "./whatsappWebhookRoutes.js";
+
+export {
+	findTargetAppointment,
+} from "../services/messaging/whatsappInteractiveActions.js";

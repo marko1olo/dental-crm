@@ -1,0 +1,52 @@
+{
+  "agent": "BACKEND TEMPLATE, WEBHOOK & ROUTE DEDUPLICATION INQUISITOR",
+  "status": "completed",
+  "started_at": "2026-10-02T06:33:00Z",
+  "completed_at": "2026-10-02T07:32:00Z",
+  "completed_steps": [
+    "mandatory_reading_core_rules",
+    "mandatory_reading_gemini_md",
+    "mandatory_reading_the_hammer",
+    "mandatory_reading_agents_md",
+    "audit_server_ts_registrations",
+    "audit_whatsapp_routes",
+    "audit_template_routes",
+    "audit_telephony_routes",
+    "deduplicate_whatsapp_contour",
+    "deduplicate_template_contour",
+    "deduplicate_telephony_contour",
+    "verify_server_ts_integration",
+    "run_targeted_tests_and_typecheck",
+    "final_report"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "server_ts": "Removed redundant double registration of registerWhatsappWebhookRoutes (previously imported and called twice under duplicate names). All template routes consolidated cleanly under registerAllTemplateRoutes with backwards compatibility.",
+    "whatsapp_contour": "Separated interactive action button processing (parseIncomingAction, findTargetAppointment, confirmation, cancellation, recall booking/snooze) into dedicated service whatsappInteractiveActions.ts (527 lines). Consolidated canonical webhook handler into whatsappWebhookRoutes.ts (516 lines, down from 800+ lines). Maintained whatsappWebhook.ts as a 23-line backward-compatible facade re-exporting all canonical functions.",
+    "template_contour": "Separated three distinct template domains: 1) statutory legal documents (documentTemplates.ts - 656 lines), 2) outbox communication templates (messageTemplates.ts), 3) EMR protocol SOAP templates (templates.ts). Added registerAllTemplateRoutes in documentTemplates.ts for atomic registration.",
+    "telephony_contour": "Refactored telephony.ts (was 855 lines, violating Mandate 8b <=800 lines limit) down to 797 lines by extracting detectMarketingAttribution / UTM channel parsing into telephonySecurity.ts (422 lines). Complies 100% with Mandate 8b.",
+    "boundary_protection": "CBCT/X-ray/imaging routes (*xray*, *dicom*, imaging*) were strictly left untouched as mandated."
+  },
+  "file_line_counts": {
+    "apps/api/src/routes/telephony.ts": 797,
+    "apps/api/src/routes/whatsappWebhookRoutes.ts": 516,
+    "apps/api/src/routes/whatsappWebhook.ts": 23,
+    "apps/api/src/routes/documentTemplates.ts": 656,
+    "apps/api/src/services/messaging/whatsappInteractiveActions.ts": 527,
+    "apps/api/src/services/telephony/telephonySecurity.ts": 422
+  },
+  "verification_results": {
+    "typecheck": "npm run typecheck -w @dental/api -> EXIT 0 (tsc -p tsconfig.json --noEmit passed clean)",
+    "whatsapp_and_template_tests": "16 passed, 0 failed across whatsappWebhook.test.ts, documentTemplates.test.ts, templatesRefusalText.test.ts, messengerWebhookBody.test.ts",
+    "telephony_security_tests": "6 passed, 0 failed across IP Telephony Phone Normalization & SSRF Defense suites"
+  },
+  "modified_files": [
+    "apps/api/src/services/messaging/whatsappInteractiveActions.ts",
+    "apps/api/src/routes/whatsappWebhookRoutes.ts",
+    "apps/api/src/routes/whatsappWebhook.ts",
+    "apps/api/src/routes/documentTemplates.ts",
+    "apps/api/src/services/telephony/telephonySecurity.ts",
+    "apps/api/src/routes/telephony.ts",
+    "apps/api/src/server.ts"
+  ]
+}

@@ -133,7 +133,6 @@ import { registerWaitlistRoutes } from "./routes/waitlist.js";
 import { registerWaitlistMatchRoutes } from "./routes/waitlistMatches.js";
 import { registerWebsocketRoutes } from "./routes/websocket.js";
 import { registerWhatsappRoutes } from "./routes/whatsapp.js";
-import { registerWhatsappWebhookRoutes } from "./routes/whatsappWebhook.js";
 import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 import { registerLanNetworkRoutes } from "./routes/lanNetwork.js";
 import { registerXrayRoutes } from "./routes/xray.js";
@@ -436,8 +435,8 @@ export async function createDenteApiApp(
 		// клиентов. Включается явно, чтобы напрямую доступный API не доверял
 		// подделанному заголовку.
 		trustProxy: process.env.TRUST_PROXY === "1",
-		// Ограничение размера тела запроса: снимки и DICOM приходят base64.
-		bodyLimit: Number(process.env.API_BODY_LIMIT_BYTES ?? 256 * 1024 * 1024),
+		// Ограничение размера тела запроса: безопасный стриминг КТ и снимков до 1-2 ГБ
+		bodyLimit: Number(process.env.API_BODY_LIMIT_BYTES ?? 1024 * 1024 * 1024),
 	});
 
 	let rawWebOrigin = process.env.WEB_ORIGIN;
@@ -726,8 +725,8 @@ export async function createDenteApiApp(
 	await registerSterilizationRoutes(app);
 	await registerVkRoutes(app);
 	await registerWaitlistRoutes(app);
+	// registerWhatsappRoutes инкапсулирует канонический вебхук-контур (/api/whatsapp/webhook и /api/v1/webhooks/whatsapp)
 	await app.register(registerWhatsappRoutes);
-	await registerWhatsappWebhookRoutes(app);
 	await registerPatientRoutes(app);
 	await registerOrthodonticsRoutes(app);
 	await registerExportRoutes(app);
