@@ -1,0 +1,23 @@
+{
+  "role": "TREATMENT ESTIMATOR & ODONTOGRAM PRICING SSOT INQUISITOR",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "read_mandatory_rules",
+    "inspect_git_status",
+    "audit_treatment_plan_wizard_duplicates",
+    "audit_treatment_estimator_pricing_monolith",
+    "unify_treatment_plan_wizard_to_ssot",
+    "decompose_treatment_estimator_pricing",
+    "verify_exact_kopeck_math_and_odontogram_link",
+    "run_targeted_tests_and_typecheck",
+    "final_report"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Deduplicated TreatmentPlanWizard.tsx: canonical SSOT implementation is now at apps/web/src/components/treatment-plans/TreatmentPlanWizard.tsx (680 lines <= 800), and apps/web/src/components/odontogram/TreatmentPlanWizard.tsx is a transparent re-export facade.",
+    "Decomposed monolithic treatmentEstimatorPricing.ts (was 1936 lines) into 6 focused modules strictly <= 800 lines (Mandate 8b): treatmentEstimatorRules.ts (155 lines), treatmentEstimatorCatalogMatching.ts (376 lines), treatmentEstimatorMoney.ts (246 lines), treatmentEstimatorValidation.ts (220 lines), treatmentEstimatorStagesAndConflicts.ts (554 lines), treatmentEstimatorBundles.ts (173 lines), and master facade treatmentEstimatorPricing.ts (19 lines).",
+    "Preserved exact kopeck integer arithmetic (Kopecks) for VHI/DMS co-pay, 54-FZ cashier export, Star warranties (12/24/36 mo), ghost teeth conflict resolution, mixed dentition transitions (85 <-> 45), and 1-click seamless diagnosis-to-estimate transfer (caries 16 -> anesthesia + isolation + composite restoration).",
+    "All unit & parity tests pass: 55/55 in treatmentEstimatorPricing.test.ts, 70/70 in related test suite.",
+    "Zero TypeScript errors (tsc -b --noEmit EXIT 0), clean encoding (6854 files), zero unresolved CSS variables."
+  ]
+}

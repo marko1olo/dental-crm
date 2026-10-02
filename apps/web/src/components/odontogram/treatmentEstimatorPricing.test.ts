@@ -27,6 +27,7 @@ import type { PlanPriceCatalogItem } from "../treatment-plans/planPricing";
 import {
 	calculateTreatmentWarranty,
 	convertGhostItemToImplant,
+	createChairsideCariesBundle,
 	detectGhostTeethConflicts,
 	detectPlanItemCollisions,
 	type EstimatorToothInput,
@@ -38,6 +39,7 @@ import {
 	estimatorSaveBlock,
 	estimatorStagesBreakdown,
 	estimatorTotals,
+	expandToothDiagnosisToClinicalBundle,
 	exportEstimatorToCashier54Fz,
 	formatSurfacesText,
 	formatToothFdiLabel,
@@ -1322,5 +1324,95 @@ test("при сосуществовании имплантата и пломбы
 	assert.equal(allConflicts.length, 1);
 	assert.equal(allConflicts[0]?.itemName, "Пломбирование зуба");
 });
+
+test("бесшовный перенос кариеса одонтограммы в смету: кариес 16 -> анестезия + препарирование + световая пломба в 1 клик", () => {
+	const clinicCatalog: PlanPriceCatalogItem[] = [
+		{
+			id: "svc-anesth-01",
+			title: "Местная инфильтрационная анестезия Ubistesin",
+			category: "Анестезия",
+			basePriceRub: 900,
+			active: true,
+		},
+		{
+			id: "svc-isol-01",
+			title: "Наложение коффердама для абсолютной изоляции",
+			category: "Терапия",
+			basePriceRub: 1200,
+			active: true,
+		},
+		{
+			id: "svc-caries-01",
+			title: "Лечение кариеса с реставрацией Estelite Sigma Quick",
+			category: "Терапия",
+			basePriceRub: 4800,
+			active: true,
+		},
+		{
+			id: "svc-polish-01",
+			title: "Шлифовка и полировка пломбы микроабразивом",
+			category: "Терапия",
+			basePriceRub: 600,
+			active: true,
+		},
+	];
+
+	// 1. Создание пакета санации кариеса на зуб 16
+	const items = createChairsideCariesBundle(16, clinicCatalog, {
+		surfaces: ["MOD"],
+		includeAnesthesia: true,
+		includeIsolation: true,
+		includePolishing: true,
+	});
+
+	assert.equal(items.length, 4, "Должно быть создано 4 услуги (анестезия + изоляция/препарирование + пломба + полировка)");
+	assert.equal(items[0]?.name, "Местная инфильтрационная анестезия Ubistesin");
+	assert.equal(items[0]?.price, 900);
+	assert.equal(items[0]?.priceId, "svc-anesth-01");
+
+	assert.equal(items[1]?.name, "Наложение коффердама для абсолютной изоляции");
+	assert.equal(items[1]?.price, 1200);
+	assert.equal(items[1]?.priceId, "svc-isol-01");
+
+	assert.ok(items[2]?.name.includes("Лечение кариеса"));
+	assert.ok(items[2]?.name.includes("(Поверхности: MOD)"));
+	assert.equal(items[2]?.price, 4800);
+	assert.equal(items[2]?.priceId, "svc-caries-01");
+
+	assert.equal(items[3]?.name, "Шлифовка и полировка пломбы микроабразивом");
+	assert.equal(items[3]?.price, 600);
+
+	// 2. Копеечный расчет итогов плана (900 + 1200 + 4800 + 600 = 7500 ₽ = 750 000 коп)
+	const totals = estimatorTotals(items, null);
+	assert.equal(totals.payableKopecks, 750000);
+	assert.equal(totals.incompleteRows, 0);
+	assert.equal(totals.pricedRows, 4);
+
+	// 3. Через универсальный expandToothDiagnosisToClinicalBundle
+	const expanded = expandToothDiagnosisToClinicalBundle(16, "Caries", clinicCatalog, { surfaces: ["O"] });
+	assert.ok(expanded.length >= 2, "Кариес раскрывается в комплексный пакет");
+});
+
+test("декомпозиция сметчика на модули: каждый файл строго <= 800 строк (Мандат 8b)", () => {
+	const filesToCheck = [
+		"./treatmentEstimatorPricing.ts",
+		"./treatmentEstimatorRules.ts",
+		"./treatmentEstimatorCatalogMatching.ts",
+		"./treatmentEstimatorMoney.ts",
+		"./treatmentEstimatorValidation.ts",
+		"./treatmentEstimatorStagesAndConflicts.ts",
+		"./treatmentEstimatorBundles.ts",
+	];
+
+	for (const relPath of filesToCheck) {
+		const source = readFileSync(new URL(relPath, import.meta.url), "utf8");
+		const lineCount = source.split("\n").length;
+		assert.ok(
+			lineCount <= 800,
+			`Файл ${relPath} имеет ${lineCount} строк, что превышает жесткий лимит Мандата 8b (<= 800 строк)`
+		);
+	}
+});
+
 
 
