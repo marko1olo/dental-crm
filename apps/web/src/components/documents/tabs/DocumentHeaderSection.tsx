@@ -148,6 +148,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 						<button
 							type="button"
 							className="primary-button document-intake-quick-print-btn"
+							data-tour="print-contract-btn"
 							onClick={handleDirectPrintPrimaryIntake}
 							data-testid="btn-quick-print-primary-intake-package"
 							title="Сформировать и напечатать полный пакет первичного приёма (Договор + Согласие ИДС + Персональные данные + Анкета здоровья) со строками «________» для быстрой ручной подписи на стойке регистрации"
@@ -158,6 +159,7 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 						<button
 							type="button"
 							className="secondary-button document-intake-blank-contract-btn"
+							data-tour="print-blank-contract-btn"
 							onClick={() => {
 								void printBlankMedicalContract(
 									activePatient
