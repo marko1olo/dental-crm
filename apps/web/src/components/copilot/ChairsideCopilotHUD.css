@@ -88,7 +88,7 @@
 
 /* Expanded Main Panel */
 .chairside-hud-panel {
-  width: 460px;
+  width: 520px;
   max-width: calc(100% - 32px);
   max-height: min(85vh, 720px);
   display: flex;
@@ -99,12 +99,22 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
   overflow: hidden;
   box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
 }
 
-/* Header Toolbar (Sin 2: Strictly 1 row, 32-36px) */
+.chairside-hud-panel--compact {
+  width: auto;
+  max-width: calc(100% - 32px);
+  max-height: 48px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+}
+
+/* Header Toolbar & Capsule Bar (Mandate 8l & 8p: Strictly <= 44-48px) */
 .chairside-hud-header {
-  min-height: 34px;
-  height: 34px;
+  min-height: 44px;
+  height: 44px;
+  max-height: 48px;
   padding: 0 10px;
   display: flex;
   align-items: center;
@@ -113,6 +123,19 @@
   background-color: var(--paper-strong);
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.chairside-hud-panel--compact .chairside-hud-header {
+  border-bottom: none;
+  border-radius: 9999px;
+  padding: 0 12px;
+}
+
+.chairside-hud-capsule {
+  min-height: 44px;
+  height: 44px;
+  max-height: 48px;
   box-sizing: border-box;
 }
 
@@ -166,6 +189,246 @@
   border: 1px solid var(--line);
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+/* Quick Microphone Button in Capsule (Mandate 8l) */
+.chairside-hud-btn-mic-capsule {
+  min-width: 28px;
+  min-height: 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background-color: var(--paper-soft);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.chairside-hud-btn-mic-capsule:hover {
+  color: var(--ink);
+  border-color: var(--teal);
+  background-color: var(--paper);
+}
+
+.chairside-hud-btn-mic-capsule--active {
+  background-color: var(--bad-bg);
+  border-color: var(--bad-fg);
+  color: var(--bad-fg);
+  animation: chairside-pulse 1.5s infinite;
+}
+
+/* Live VU-Meter Sound Wave (Mandate 8l: Visual side-glance feedback) */
+.chairside-vu-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background-color: var(--paper-soft);
+  border: 1px solid var(--line);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.chairside-vu-meter--active {
+  background-color: var(--teal-soft);
+  border-color: var(--teal);
+}
+
+.chairside-vu-bar {
+  display: inline-block;
+  width: 3px;
+  height: 5px;
+  border-radius: 1.5px;
+  background-color: var(--muted);
+  transition: height 0.1s ease, background-color 0.15s ease;
+}
+
+.chairside-vu-meter--active .chairside-vu-bar {
+  background-color: var(--teal-dark);
+}
+
+.chairside-vu-meter--active .chairside-vu-bar--1 {
+  animation: chairside-vu-wave-1 0.75s ease-in-out infinite alternate;
+}
+
+.chairside-vu-meter--active .chairside-vu-bar--2 {
+  animation: chairside-vu-wave-2 0.55s ease-in-out infinite alternate;
+}
+
+.chairside-vu-meter--active .chairside-vu-bar--3 {
+  animation: chairside-vu-wave-3 0.85s ease-in-out infinite alternate;
+}
+
+.chairside-vu-meter--active .chairside-vu-bar--4 {
+  animation: chairside-vu-wave-4 0.65s ease-in-out infinite alternate;
+}
+
+.chairside-vu-meter--active .chairside-vu-bar--5 {
+  animation: chairside-vu-wave-5 0.95s ease-in-out infinite alternate;
+}
+
+@keyframes chairside-vu-wave-1 {
+  0% { height: 4px; }
+  100% { height: 14px; }
+}
+
+@keyframes chairside-vu-wave-2 {
+  0% { height: 6px; }
+  100% { height: 18px; }
+}
+
+@keyframes chairside-vu-wave-3 {
+  0% { height: 5px; }
+  100% { height: 16px; }
+}
+
+@keyframes chairside-vu-wave-4 {
+  0% { height: 7px; }
+  100% { height: 15px; }
+}
+
+@keyframes chairside-vu-wave-5 {
+  0% { height: 3px; }
+  100% { height: 12px; }
+}
+
+/* Interactive Live Entity Pills (Mandate 8l: 1-click removal) */
+.chairside-hud-live-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  max-width: 320px;
+  scrollbar-width: none;
+  flex-shrink: 1;
+}
+
+.chairside-hud-live-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.chairside-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  height: 24px;
+  padding: 0 6px 0 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background-color: var(--teal-soft);
+  border: 1px solid var(--teal);
+  color: var(--ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.chairside-live-pill--tooth {
+  background-color: var(--teal-soft);
+  border-color: var(--teal);
+}
+
+.chairside-live-pill--diagnosis {
+  background-color: var(--paper-soft);
+  border-color: var(--line);
+}
+
+.chairside-live-pill--anesthetic {
+  background-color: var(--paper-soft);
+  border-color: var(--teal);
+}
+
+.chairside-live-pill--services {
+  background-color: var(--teal-soft);
+  border-color: var(--line);
+}
+
+.chairside-live-pill--applied {
+  background-color: var(--ok-bg);
+  border-color: var(--ok-fg);
+  color: var(--ok-fg);
+}
+
+.chairside-live-pill-text {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chairside-live-pill-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+  transition: all 0.15s ease;
+}
+
+.chairside-live-pill-remove:hover {
+  background-color: var(--bad-bg);
+  color: var(--bad-fg);
+}
+
+/* Quick Apply Tooth to Scheme Button (Mandate 8l: 1-click or Enter) */
+.chairside-capsule-btn-apply {
+  min-height: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background-color: var(--teal-dark);
+  color: var(--paper);
+  border: 1px solid var(--teal-dark);
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.chairside-capsule-btn-apply:hover {
+  opacity: 0.92;
+}
+
+.chairside-capsule-btn-apply--applied {
+  background-color: var(--ok-bg);
+  color: var(--ok-fg);
+  border-color: var(--ok-fg);
+  cursor: default;
+}
+
+.chairside-capsule-kbd {
+  display: inline-block;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: monospace;
+  background-color: var(--paper-soft);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  line-height: 1.2;
 }
 
 .chairside-hud-header-actions {

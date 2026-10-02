@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import {
 	ALL_ADULT_TEETH_NUMBERS,
 	PEDIATRIC_TOP_TEETH,
@@ -37,6 +37,21 @@ export function useOdontogramQuickActions({
 	teethDataRef,
 	updateToothState,
 }: UseOdontogramQuickActionsProps) {
+	useEffect(() => {
+		const handleQuickApply = (e: Event) => {
+			const detail = (e as CustomEvent).detail as
+				| { toothNumber?: number; state?: ToothState; surfaces?: string[]; patientId?: string }
+				| undefined;
+			if (!detail?.toothNumber || !detail.state) return;
+			if (detail.patientId && patientId && detail.patientId !== patientId) return;
+			void updateToothState([detail.toothNumber], detail.state, detail.surfaces);
+		};
+		window.addEventListener("dente-quick-tooth-apply", handleQuickApply);
+		return () => {
+			window.removeEventListener("dente-quick-tooth-apply", handleQuickApply);
+		};
+	}, [updateToothState, patientId]);
+
 	const handleMarkAllHealthy = useCallback(() => {
 		const allTeeth = isPediatricMode
 			? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
@@ -68,7 +83,7 @@ export function useOdontogramQuickActions({
 
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
 			void navigator.clipboard.writeText(
-				`[Зубная формула 043/у]\nАнамнез: ${soap.anamnesis || "Без особенностей"}\nОбъективно: ${soap.statusLocalis || "Полость рта санирована"}\nДиагноз: ${soap.diagnosisIcd10 || "K02"}\nЛечение: ${soap.treatmentDescription || "Санация"}`,
+				`[Зубная формула: дневник приёма]\nАнамнез: ${soap.anamnesis || "Без особенностей"}\nОбъективно: ${soap.statusLocalis || "Полость рта санирована"}\nДиагноз: ${soap.diagnosisIcd10 || "K02"}\nЛечение: ${soap.treatmentDescription || "Санация"}`,
 			).catch(() => {
 				// Clipboard safe fallback
 			});

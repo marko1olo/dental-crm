@@ -37,7 +37,7 @@ import {
   Printer,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
-import { globalDentalVoiceEngine } from "../../services/voice";
+import { globalDentalVoiceEngine, parseDentalVoiceSpeech, type DentalVoiceIntent } from "../../services/voice";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import "./ChairsideCopilotHUD.css";
 
@@ -111,6 +111,8 @@ export interface ChairsideSafetyAlert {
 export interface ChairsideCopilotHUDProps {
   readonly initialOpen?: boolean | undefined;
   readonly initialDocked?: boolean | undefined;
+  readonly initialCompact?: boolean | undefined;
+  readonly initialDrawerOpen?: boolean | undefined;
   readonly activeTooth?: number | null | undefined;
   readonly patientId?: string | undefined;
   readonly visitId?: string | undefined;
@@ -129,6 +131,61 @@ export interface ChairsideCopilotHUDProps {
   readonly onApplyAll?: (() => void) | undefined;
   readonly onClose?: (() => void) | undefined;
   readonly className?: string | undefined;
+}
+
+/**
+ * Maps arbitrary clinical shortcodes and speech words to canonical ToothState.
+ * Prevents unknown status drops in useOdontogramSync, ToothChart, and ToothContextDrawer.
+ */
+export function mapToCanonicalToothState(state: string): string {
+  if (!state) return "Caries";
+  const s = state.trim().toLowerCase();
+  if (
+    s === "c2" ||
+    s === "c1" ||
+    s === "c3" ||
+    s === "c4" ||
+    s.includes("кариес") ||
+    s === "caries"
+  ) {
+    return "Caries";
+  }
+  if (s === "p" || s.includes("пульпит") || s === "pulpitis") {
+    return "Pulpitis";
+  }
+  if (s === "pt" || s.includes("периодонтит") || s === "periodontitis") {
+    return "Periodontitis";
+  }
+  if (
+    s === "norm" ||
+    s === "healthy" ||
+    s.includes("здоров") ||
+    s.includes("норма")
+  ) {
+    return "Healthy";
+  }
+  if (s === "missing" || s === "x" || s === "a" || s.includes("отсутств") || s === "адентия") {
+    return "Missing";
+  }
+  if (s === "crown" || s === "cr" || s === "k" || s.includes("коронк")) {
+    return "Crown";
+  }
+  if (s === "implant" || s === "impl" || s.includes("имплант")) {
+    return "Implant";
+  }
+  if (s === "planned_implant" || s.includes("план")) {
+    return "Planned_Implant";
+  }
+  if (s === "filled" || s.includes("пломб")) {
+    return "Filled";
+  }
+  if (s === "retained" || s.includes("ретин")) {
+    return "Retained";
+  }
+  if (s === "root" || s === "r" || s === "radix" || s.includes("корен")) {
+    return "Root";
+  }
+  return state;
 }
 
 // Canonical clinical presets
@@ -420,6 +477,8 @@ const defaultPreset: ClinicalPreset = CLINICAL_PRESETS[0]!;
 export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
   initialOpen = true,
   initialDocked = false,
+  initialCompact = false,
+  initialDrawerOpen = true,
   activeTooth = 16,
   patientId,
   visitId,
@@ -441,9 +500,11 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [isDocked, setIsDocked] = useState(initialDocked);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(initialCompact ? false : initialDrawerOpen);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isThoughtsExpanded, setIsThoughtsExpanded] = useState(true);
   const [isListening, setIsListening] = useState(false);
+  const [audioVolume, setAudioVolume] = useState(0);
   const [isThinking, setIsThinking] = useState(false);
   const [inputText, setInputText] = useState("");
   const [verdict, setVerdict] = useState<string>("");
@@ -738,39 +799,141 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
           return;
         }
       } catch (err) {
-        console.warn("[ChairsideCopilotHUD] API call failed, falling back to local clinical preset:", err);
-        const presetIdx = /пульпит|26|канал/i.test(text) ? 1 : /гигиен|чистк|налет|скейлинг/i.test(text) ? 2 : 0;
-        const preset = CLINICAL_PRESETS[presetIdx] ?? defaultPreset;
-        setActivePresetIndex(presetIdx);
-        setThoughts(preset.thoughts);
-        const targetTooth = Number(text.match(/\b([1-4][1-8])\b/)?.[1]) || activeTooth || preset.toothNumber;
-        setToothProposal({
-          toothNumber: targetTooth,
-          state: preset.toothState,
-          stateLabel: preset.toothStateLabel,
-          surfaces: preset.surfaces,
-          applied: false,
-        });
-        setServicesProposal(
-          preset.services.map((s) => ({
-            ...s,
+        console.warn("[ChairsideCopilotHUD] API call failed, analyzing with local clinical speech parser:", err);
+        const voiceIntent = parseDentalVoiceSpeech(text);
+        const hasIntentEntities =
+          voiceIntent.teethUpdates.length > 0 ||
+          Boolean(voiceIntent.anesthesia) ||
+          voiceIntent.procedures804n.length > 0 ||
+          Boolean(voiceIntent.soapNotes?.assessment);
+
+        if (hasIntentEntities) {
+          const firstToothUpdate = voiceIntent.teethUpdates[0];
+          const targetTooth =
+            firstToothUpdate?.toothNumber ||
+            voiceIntent.detectedTeeth[0] ||
+            Number(text.match(/\b([1-4][1-8])\b/)?.[1]) ||
+            activeTooth ||
+            16;
+          const toothState = firstToothUpdate?.state || "Caries";
+          const toothStateLabel = `${firstToothUpdate?.icd10Title || "Кариес"} (${targetTooth})`;
+          const toothSurfaces = firstToothUpdate?.surfaces || ["O"];
+
+          setToothProposal({
             toothNumber: targetTooth,
+            state: toothState,
+            stateLabel: toothStateLabel,
+            surfaces: toothSurfaces,
             applied: false,
-          }))
-        );
-        setSoapProposal({ ...preset.soap, applied: false });
-        setAnestheticProposal(preset.anesthetic ? { ...preset.anesthetic, applied: false } : null);
-        setConsentProposal(
-          preset.consent
-            ? {
-                ...preset.consent,
-                toothOrArea: `Зуб ${targetTooth}`,
+          });
+
+          if (voiceIntent.procedures804n.length > 0) {
+            setServicesProposal(
+              voiceIntent.procedures804n.map((p, idx) => ({
+                id: `voice-srv-${idx}-${p.code804n}`,
+                code804n: p.code804n,
+                title: p.name,
+                toothNumber: targetTooth,
+                quantity: 1,
+                priceRub: p.priceRub || 3500,
                 applied: false,
-              }
-            : null
-        );
-        setSafetyAlert({ ...preset.safetyAlert, acknowledged: false });
-        showToast("Автономный режим: сформированы предложения у кресла", "info");
+              }))
+            );
+          } else {
+            const presetIdx = /пульпит|канал/i.test(text) ? 1 : /гигиен|чистк|налет/i.test(text) ? 2 : 0;
+            const preset = CLINICAL_PRESETS[presetIdx] ?? defaultPreset;
+            setServicesProposal(
+              preset.services.map((s) => ({
+                ...s,
+                toothNumber: targetTooth,
+                applied: false,
+              }))
+            );
+          }
+
+          if (voiceIntent.soapNotes) {
+            const sn = voiceIntent.soapNotes;
+            setSoapProposal({
+              complaint: sn.subjective || `Жалобы в области зуба ${targetTooth}`,
+              anamnesis: "Со слов пациента, ранее зуб не лечен, симптомы возникли недавно.",
+              objectiveStatus: sn.objective || `При осмотре: кариозное поражение зуба ${targetTooth}.`,
+              diagnosis: sn.assessment || `${firstToothUpdate?.icd10Code || "K02.1"} ${firstToothUpdate?.icd10Title || "Кариес"}`,
+              treatmentPlan: sn.plan || "Проведено препарирование и пломбирование.",
+              recommendations: sn.recommendations || "Соблюдение гигиены полости рта. Контрольный осмотр через 6 месяцев.",
+              applied: false,
+            });
+          }
+
+          if (voiceIntent.anesthesia) {
+            const an = voiceIntent.anesthesia;
+            setAnestheticProposal({
+              drugName: an.tradeName,
+              carpulesCount: an.cartridgeCount,
+              patientWeightKg: 70,
+              maxCarpules: 7,
+              epinephrineMcg: 8.5 * an.cartridgeCount,
+              isCardiovascularRisk: false,
+              notes: `${an.technique === "conduction" ? "Проводниковая" : "Инфильтрационная"} анестезия ${an.displayName}`,
+              applied: false,
+            });
+          } else {
+            setAnestheticProposal(null);
+          }
+
+          setThoughts([
+            {
+              id: "step-voice-1",
+              stepNumber: 1,
+              title: "Голосовой парсер речи за креслом (MANDATE 8l)",
+              status: "done",
+              detail: `Распознан зуб ${targetTooth}, статус: ${toothStateLabel}`,
+              durationMs: 45,
+            },
+            {
+              id: "step-voice-2",
+              stepNumber: 2,
+              title: "Формирование дневника приёма и плана лечения",
+              status: "done",
+              detail: `Услуг: ${voiceIntent.procedures804n.length}, Анестезия: ${voiceIntent.anesthesia ? voiceIntent.anesthesia.displayName : "не требовалась"}`,
+              durationMs: 30,
+            },
+          ]);
+
+          showToast(`Голосом распознано: зуб ${targetTooth} (${toothStateLabel})`, "success");
+        } else {
+          const presetIdx = /пульпит|26|канал/i.test(text) ? 1 : /гигиен|чистк|налет|скейлинг/i.test(text) ? 2 : 0;
+          const preset = CLINICAL_PRESETS[presetIdx] ?? defaultPreset;
+          setActivePresetIndex(presetIdx);
+          setThoughts(preset.thoughts);
+          const targetTooth = Number(text.match(/\b([1-4][1-8])\b/)?.[1]) || activeTooth || preset.toothNumber;
+          setToothProposal({
+            toothNumber: targetTooth,
+            state: preset.toothState,
+            stateLabel: preset.toothStateLabel,
+            surfaces: preset.surfaces,
+            applied: false,
+          });
+          setServicesProposal(
+            preset.services.map((s) => ({
+              ...s,
+              toothNumber: targetTooth,
+              applied: false,
+            }))
+          );
+          setSoapProposal({ ...preset.soap, applied: false });
+          setAnestheticProposal(preset.anesthetic ? { ...preset.anesthetic, applied: false } : null);
+          setConsentProposal(
+            preset.consent
+              ? {
+                  ...preset.consent,
+                  toothOrArea: `Зуб ${targetTooth}`,
+                  applied: false,
+                }
+              : null
+          );
+          setSafetyAlert({ ...preset.safetyAlert, acknowledged: false });
+          showToast("Автономный режим: сформированы предложения у кресла", "info");
+        }
       } finally {
         setIsThinking(false);
       }
@@ -785,36 +948,54 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     ]
   );
 
-  // Hotkey & custom event listeners
-  useEffect(() => {
-    const handleToggleEvent = () => {
-      setIsOpen((prev) => !prev);
-      setIsMinimized(false);
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "c") || (e.altKey && e.key.toLowerCase() === "c")) {
-        e.preventDefault();
-        handleToggleEvent();
-      }
-    };
-
-    window.addEventListener("dente:toggle-chairside-hud", handleToggleEvent);
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("dente:toggle-chairside-hud", handleToggleEvent);
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
-  // Voice listener integration
+  // Voice listener integration (MANDATE 8l)
   useEffect(() => {
     const unsub = globalDentalVoiceEngine.addListener({
       onListeningChange: (isL) => setIsListening(isL),
+      onVolumeChange: (vol) => setAudioVolume(vol),
       onTranscriptChange: (_interim, final) => {
         if (final) {
           setInputText(final);
+        }
+      },
+      onIntentParsed: (intent) => {
+        if (intent && (intent.teethUpdates.length > 0 || intent.anesthesia || intent.procedures804n.length > 0)) {
+          const firstTooth = intent.teethUpdates[0];
+          if (firstTooth) {
+            setToothProposal((prev) => ({
+              ...prev,
+              toothNumber: firstTooth.toothNumber,
+              state: firstTooth.state,
+              stateLabel: `${firstTooth.icd10Title} (${firstTooth.toothNumber})`,
+              surfaces: firstTooth.surfaces || ["O"],
+              applied: false,
+            }));
+          }
+          if (intent.anesthesia) {
+            const an = intent.anesthesia;
+            setAnestheticProposal({
+              drugName: an.tradeName,
+              carpulesCount: an.cartridgeCount,
+              patientWeightKg: 70,
+              maxCarpules: 7,
+              epinephrineMcg: 8.5 * an.cartridgeCount,
+              isCardiovascularRisk: false,
+              notes: an.displayName,
+              applied: false,
+            });
+          }
+          if (intent.soapNotes?.assessment) {
+            const sn = intent.soapNotes;
+            setSoapProposal((prev) => ({
+              ...prev,
+              diagnosis: sn.assessment || prev.diagnosis,
+              complaint: sn.subjective || prev.complaint,
+              objectiveStatus: sn.objective || prev.objectiveStatus,
+              treatmentPlan: sn.plan || prev.treatmentPlan,
+              recommendations: sn.recommendations || prev.recommendations,
+              applied: false,
+            }));
+          }
         }
       },
     });
@@ -823,19 +1004,27 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
 
   // 1-Click apply tooth proposal with undo tracking (Mandate 8e)
   const handleApplyTooth = useCallback(() => {
+    if (!toothProposal.toothNumber || !toothProposal.state) return;
+    const canonicalState = mapToCanonicalToothState(toothProposal.state);
     setPreviousToothState(toothProposal.state);
     if (onUpdateToothStatus) {
-      onUpdateToothStatus(toothProposal.toothNumber, toothProposal.state, toothProposal.surfaces);
+      onUpdateToothStatus(toothProposal.toothNumber, canonicalState, toothProposal.surfaces);
     }
     if (onApplyToothState) {
-      onApplyToothState(toothProposal.toothNumber, toothProposal.state, toothProposal.surfaces);
+      onApplyToothState(toothProposal.toothNumber, canonicalState, toothProposal.surfaces);
     }
     try {
       window.dispatchEvent(
         new CustomEvent("dente-odontogram-update", {
           detail: {
             patientId,
-            states: [{ toothNumber: toothProposal.toothNumber, state: toothProposal.state }],
+            states: [
+              {
+                toothNumber: toothProposal.toothNumber,
+                state: canonicalState,
+                surfaces: toothProposal.surfaces,
+              },
+            ],
           },
         })
       );
@@ -843,7 +1032,17 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
         new CustomEvent("clinical-finding-detected", {
           detail: {
             toothNumber: toothProposal.toothNumber,
-            finding: toothProposal.state,
+            finding: canonicalState,
+          },
+        })
+      );
+      window.dispatchEvent(
+        new CustomEvent("dente-quick-tooth-apply", {
+          detail: {
+            toothNumber: toothProposal.toothNumber,
+            state: canonicalState,
+            surfaces: toothProposal.surfaces,
+            patientId,
           },
         })
       );
@@ -851,11 +1050,11 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       // safe fallback
     }
     setToothProposal((prev) => ({ ...prev, applied: true }));
-    showToast(`Зуб ${toothProposal.toothNumber} обновлен: ${toothProposal.stateLabel}`, "success");
+    showToast(`Зуб ${toothProposal.toothNumber} обновлен: ${toothProposal.stateLabel || canonicalState}`, "success");
   }, [toothProposal, onUpdateToothStatus, onApplyToothState, patientId]);
 
   const handleUndoTooth = useCallback(() => {
-    const revertState = previousToothState || "Norm";
+    const revertState = mapToCanonicalToothState(previousToothState || "Healthy");
     if (onUpdateToothStatus) {
       onUpdateToothStatus(toothProposal.toothNumber, revertState);
     }
@@ -868,6 +1067,15 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
           detail: {
             patientId,
             states: [{ toothNumber: toothProposal.toothNumber, state: revertState }],
+          },
+        })
+      );
+      window.dispatchEvent(
+        new CustomEvent("dente-quick-tooth-apply", {
+          detail: {
+            toothNumber: toothProposal.toothNumber,
+            state: revertState,
+            patientId,
           },
         })
       );
@@ -949,7 +1157,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       // safe fallback
     }
     setSoapProposal((prev) => ({ ...prev, applied: true }));
-    showToast("Протокол SOAP 043/у сохранен в ЭМК визита", "success");
+    showToast("Дневник приёма сохранён в медицинской карте", "success");
   }, [soapProposal, onApplySoapDiary, onApplySoapNotes]);
 
   const handleUndoSoap = useCallback(() => {
@@ -1089,7 +1297,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     if (onApplyAll) {
       onApplyAll();
     }
-    showToast("Все действия применены в 1 клик (одонтограмма, смета, дневник 043/у, карпула, ИДС)", "success");
+    showToast("Все действия применены в 1 клик (зубная формула, смета, дневник приёма, анестезия, согласие)", "success");
   }, [
     toothProposal.applied,
     servicesProposal,
@@ -1151,6 +1359,34 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
     showToast("Предложенные действия сброшены", "info");
   }, [anestheticProposal, consentProposal]);
 
+  // 1-Click interactive live pill tag removal handlers (Mandate 8l: Doctor Autonomy)
+  const handleRemoveToothPill = useCallback(() => {
+    setToothProposal((prev) => ({
+      ...prev,
+      toothNumber: 0,
+      state: "",
+      stateLabel: "",
+      surfaces: [],
+      applied: false,
+    }));
+    showToast("Зуб исключён из предложений", "info");
+  }, []);
+
+  const handleRemoveDiagnosisPill = useCallback(() => {
+    setSoapProposal((prev) => ({ ...prev, diagnosis: "" }));
+    showToast("Диагноз исключён из предложений", "info");
+  }, []);
+
+  const handleRemoveAnestheticPill = useCallback(() => {
+    setAnestheticProposal(null);
+    showToast("Анестезия исключена из предложений", "info");
+  }, []);
+
+  const handleRemoveServicesPill = useCallback(() => {
+    setServicesProposal([]);
+    showToast("Смета услуг очищена", "info");
+  }, []);
+
   // Handle submit text / query (Mandate 8e: Never disabled, fallback to clinical default)
   const handleFormSubmit = useCallback(
     (e?: React.FormEvent) => {
@@ -1178,6 +1414,44 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       showToast("Диктовка включена: говорите в микрофон", "info");
     }
   }, [isListening]);
+
+  // Hotkey & custom event listeners (Mandate 8l & 8e)
+  useEffect(() => {
+    const handleToggleEvent = () => {
+      setIsOpen((prev) => !prev);
+      setIsMinimized(false);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "c") || (e.altKey && e.key.toLowerCase() === "c")) {
+        e.preventDefault();
+        handleToggleEvent();
+        return;
+      }
+      if (e.key === "Enter" && !e.shiftKey) {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          handleApplyAll();
+        } else if (
+          document.activeElement === inputRef.current ||
+          (e.target as HTMLElement)?.closest?.(".chairside-copilot-hud")
+        ) {
+          if (toothProposal.toothNumber && toothProposal.state && !toothProposal.applied) {
+            e.preventDefault();
+            handleApplyTooth();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("dente:toggle-chairside-hud", handleToggleEvent);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("dente:toggle-chairside-hud", handleToggleEvent);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleApplyAll, handleApplyTooth, toothProposal]);
 
   if (!isOpen) {
     return null;
@@ -1221,9 +1495,9 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
       aria-label="Кресельный ИИ-Копилот ДЕНТА"
       data-testid="chairside-copilot-hud"
     >
-      <div className="chairside-hud-panel">
-        {/* Header Toolbar (Sin 2: Strictly 1 line, 32-36px) */}
-        <header className="chairside-hud-header" data-testid="chairside-hud-header">
+      <div className={`chairside-hud-panel ${!isDrawerOpen ? "chairside-hud-panel--compact" : ""}`}>
+        {/* Header Capsule Bar (Mandate 8l & 8p: Height <= 44-48px, Zero CLS) */}
+        <header className="chairside-hud-header chairside-hud-capsule" data-testid="chairside-hud-header">
           <div className="chairside-hud-header-brand">
             <div className="chairside-hud-header-icon" aria-hidden="true">
               <Sparkles size={14} />
@@ -1237,9 +1511,181 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
             <span className="chairside-hud-badge" data-testid="chairside-hud-badge-mode">
               В кресле
             </span>
+
+            {/* Quick Microphone Button in Capsule (Mandate 8l) */}
+            <button
+              type="button"
+              className={`chairside-hud-btn-mic-capsule ${isListening ? "chairside-hud-btn-mic-capsule--active" : ""}`}
+              onClick={handleToggleVoice}
+              title={isListening ? "Остановить запись микрофона" : "Включить голосовой ассистент у кресла"}
+              data-testid="btn-capsule-mic"
+              aria-label="Микрофон у кресла"
+            >
+              {isListening ? <MicOff size={13} /> : <Mic size={13} />}
+            </button>
+
+            {/* Live VU-Meter Sound Wave (Mandate 8l: Visual side-glance feedback) */}
+            <div
+              className={`chairside-vu-meter ${isListening ? "chairside-vu-meter--active" : ""}`}
+              aria-label="Индикатор звука микрофона"
+              data-testid="chairside-vu-meter"
+              title={isListening ? "Микрофон активен: идёт приём звука" : "Микрофон ожидает активации"}
+            >
+              <span
+                className="chairside-vu-bar chairside-vu-bar--1"
+                style={isListening && audioVolume > 0 ? { height: `${Math.max(4, Math.min(18, (audioVolume % 30) + 4))}px` } : undefined}
+              />
+              <span
+                className="chairside-vu-bar chairside-vu-bar--2"
+                style={isListening && audioVolume > 0 ? { height: `${Math.max(6, Math.min(20, (audioVolume % 50) + 6))}px` } : undefined}
+              />
+              <span
+                className="chairside-vu-bar chairside-vu-bar--3"
+                style={isListening && audioVolume > 0 ? { height: `${Math.max(5, Math.min(22, (audioVolume % 70) + 5))}px` } : undefined}
+              />
+              <span
+                className="chairside-vu-bar chairside-vu-bar--4"
+                style={isListening && audioVolume > 0 ? { height: `${Math.max(6, Math.min(18, (audioVolume % 40) + 6))}px` } : undefined}
+              />
+              <span
+                className="chairside-vu-bar chairside-vu-bar--5"
+                style={isListening && audioVolume > 0 ? { height: `${Math.max(4, Math.min(16, (audioVolume % 35) + 4))}px` } : undefined}
+              />
+            </div>
           </div>
 
+          {/* Interactive Live Entity Pills (Mandate 8l: 1-click remove cross if doctor mispoke) */}
+          <div className="chairside-hud-live-pills" data-testid="chairside-live-pills" role="toolbar" aria-label="Распознанные сущности">
+            {toothProposal.toothNumber && toothProposal.state ? (
+              <div
+                className={`chairside-live-pill chairside-live-pill--tooth ${toothProposal.applied ? "chairside-live-pill--applied" : ""}`}
+                data-testid="live-pill-tooth"
+                title={`Зуб ${toothProposal.toothNumber}: ${toothProposal.stateLabel}`}
+              >
+                <Activity size={12} className="shrink-0 text-[var(--teal)]" />
+                <span className="chairside-live-pill-text">
+                  Зуб {toothProposal.toothNumber}
+                  {toothProposal.surfaces.length > 0 ? ` (${toothProposal.surfaces.join("-")})` : ""}: {toothProposal.stateLabel}
+                </span>
+                <button
+                  type="button"
+                  className="chairside-live-pill-remove"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveToothPill();
+                  }}
+                  title="Удалить зуб из предложений (если оговорились)"
+                  aria-label="Удалить зуб"
+                  data-testid="btn-remove-pill-tooth"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ) : null}
+
+            {soapProposal.diagnosis ? (
+              <div
+                className={`chairside-live-pill chairside-live-pill--diagnosis ${soapProposal.applied ? "chairside-live-pill--applied" : ""}`}
+                data-testid="live-pill-diagnosis"
+                title={`Диагноз: ${soapProposal.diagnosis}`}
+              >
+                <FileText size={12} className="shrink-0 text-[var(--teal-dark)]" />
+                <span className="chairside-live-pill-text">{soapProposal.diagnosis}</span>
+                <button
+                  type="button"
+                  className="chairside-live-pill-remove"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveDiagnosisPill();
+                  }}
+                  title="Удалить диагноз из предложений"
+                  aria-label="Удалить диагноз"
+                  data-testid="btn-remove-pill-diagnosis"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ) : null}
+
+            {anestheticProposal ? (
+              <div
+                className={`chairside-live-pill chairside-live-pill--anesthetic ${anestheticProposal.applied ? "chairside-live-pill--applied" : ""}`}
+                data-testid="live-pill-anesthetic"
+                title={`Анестезия: ${anestheticProposal.drugName}`}
+              >
+                <Syringe size={12} className="shrink-0 text-[var(--teal)]" />
+                <span className="chairside-live-pill-text">
+                  {anestheticProposal.drugName} ({anestheticProposal.carpulesCount}к)
+                </span>
+                <button
+                  type="button"
+                  className="chairside-live-pill-remove"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveAnestheticPill();
+                  }}
+                  title="Удалить анестетик из предложений"
+                  aria-label="Удалить анестетик"
+                  data-testid="btn-remove-pill-anesthetic"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ) : null}
+
+            {servicesProposal.length > 0 ? (
+              <div
+                className={`chairside-live-pill chairside-live-pill--services ${servicesProposal.every((s) => s.applied) ? "chairside-live-pill--applied" : ""}`}
+                data-testid="live-pill-services"
+                title={`Смета: ${servicesProposal.length} услуг`}
+              >
+                <Receipt size={12} className="shrink-0 text-[var(--teal-dark)]" />
+                <span className="chairside-live-pill-text">
+                  {servicesProposal.length} усл. • {servicesTotalPrice.toLocaleString("ru-RU")} ₽
+                </span>
+                <button
+                  type="button"
+                  className="chairside-live-pill-remove"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveServicesPill();
+                  }}
+                  title="Удалить услуги из сметы"
+                  aria-label="Удалить услуги"
+                  data-testid="btn-remove-pill-services"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Quick Apply Tooth to Scheme Button (Mandate 8l: 1-click or Enter) */}
+          {toothProposal.toothNumber && toothProposal.state ? (
+            <button
+              type="button"
+              className={`chairside-capsule-btn-apply ${toothProposal.applied ? "chairside-capsule-btn-apply--applied" : ""}`}
+              onClick={handleApplyTooth}
+              data-testid="btn-capsule-apply-scheme"
+              title="Мгновенно обновить зуб на схеме (Enter)"
+            >
+              <Check size={13} />
+              <span>{toothProposal.applied ? "На схеме" : "Применить к схеме"}</span>
+              <kbd className="chairside-capsule-kbd">↵</kbd>
+            </button>
+          ) : null}
+
           <div className="chairside-hud-header-actions">
+            <button
+              type="button"
+              className="chairside-hud-btn-icon"
+              onClick={() => setIsDrawerOpen((d) => !d)}
+              title={isDrawerOpen ? "Свернуть в компактную капсулу" : "Развернуть подробности (SOAP, услуги, обоснование)"}
+              data-testid="btn-toggle-capsule-drawer"
+              aria-label="Подробности"
+            >
+              {isDrawerOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+            </button>
             <button
               type="button"
               className="chairside-hud-btn-icon"
@@ -1276,8 +1722,10 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
           </div>
         </header>
 
-        {/* Scrollable Body */}
-        <div className="chairside-hud-body" data-testid="chairside-hud-body">
+        {isDrawerOpen && (
+          <>
+            {/* Scrollable Body */}
+            <div className="chairside-hud-body" data-testid="chairside-hud-body">
           {/* Quick Presets Bar */}
           <div className="chairside-hud-presets" role="toolbar" aria-label="Клинические сценарии">
             {CLINICAL_PRESETS.map((preset, idx) => (
@@ -1505,7 +1953,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
               <div className="chairside-hud-card-head">
                 <div className="chairside-hud-card-title">
                   <FileText size={14} className="text-[var(--teal)] shrink-0" />
-                  <span>Дневник 043/у (SOAP)</span>
+                  <span>Дневник приёма</span>
                 </div>
                 <span className={`chairside-hud-card-badge ${soapProposal.applied ? "chairside-hud-card-badge--applied" : ""}`}>
                   {soapProposal.applied ? "Вставлено" : "Черновик"}
@@ -1820,6 +2268,8 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = ({
             <span>Автономия врача (Мандат 8e) • 0 блокировок • Обратимые действия</span>
           </div>
         </footer>
+          </>
+        )}
       </div>
     </aside>
   );

@@ -9,13 +9,34 @@
  * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ChairsideCopilotHUD } from "../ChairsideCopilotHUD";
+import { ChairsideCopilotHUD, mapToCanonicalToothState } from "../ChairsideCopilotHUD";
+
+const expect = (actual: any) => ({
+  toBe: (expected: any) => {
+    assert.strictEqual(actual, expected);
+  },
+  toContain: (expected: string) => {
+    assert.ok(
+      typeof actual === "string" && actual.includes(expected),
+      `Expected string to contain ${JSON.stringify(expected)}`,
+    );
+  },
+  toBeNull: () => {
+    assert.strictEqual(actual, null);
+  },
+  not: {
+    toMatch: (regex: RegExp) => {
+      assert.ok(!regex.test(String(actual)), `Expected string not to match ${regex}`);
+    },
+  },
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -120,7 +141,7 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     );
 
     expect(html).toContain("chairside-card-soap");
-    expect(html).toContain("Дневник 043/у (SOAP)");
+    expect(html).toContain("Дневник приёма");
     expect(html).toContain("Жалобы (S):");
     expect(html).toContain("Объективно (O):");
     expect(html).toContain("Диагноз (A):");
@@ -221,5 +242,92 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(cssContent).toContain("var(--ink");
     expect(cssContent).toContain("var(--teal");
     expect(cssContent).toContain("var(--ok-fg");
+  });
+
+  it("13. Mandate 8l check: renders 44px compact capsule bar with chairside-hud-capsule", () => {
+    const html = renderToString(
+      <ChairsideCopilotHUD
+        initialOpen={true}
+        initialCompact={true}
+        activeTooth={16}
+      />
+    );
+
+    expect(html).toContain("chairside-hud-capsule");
+    expect(html).toContain("chairside-hud-panel--compact");
+    expect(html).toContain("btn-toggle-capsule-drawer");
+    expect(html).toContain("btn-capsule-mic");
+  });
+
+  it("14. Mandate 8l check: renders live VU-meter sound wave with 5 equalizer bars", () => {
+    const html = renderToString(
+      <ChairsideCopilotHUD
+        initialOpen={true}
+        activeTooth={16}
+      />
+    );
+
+    expect(html).toContain("chairside-vu-meter");
+    expect(html).toContain("chairside-vu-bar--1");
+    expect(html).toContain("chairside-vu-bar--2");
+    expect(html).toContain("chairside-vu-bar--3");
+    expect(html).toContain("chairside-vu-bar--4");
+    expect(html).toContain("chairside-vu-bar--5");
+    expect(html).toContain("aria-label=\"Индикатор звука микрофона\"");
+  });
+
+  it("15. Mandate 8l check: renders interactive live entity pills with 1-click removal buttons", () => {
+    const html = renderToString(
+      <ChairsideCopilotHUD
+        initialOpen={true}
+        activeTooth={16}
+      />
+    );
+
+    expect(html).toContain("chairside-hud-live-pills");
+    // Tooth pill + remove button
+    expect(html).toContain("live-pill-tooth");
+    expect(html).toContain("btn-remove-pill-tooth");
+    expect(html).toContain("Зуб 16");
+
+    // Diagnosis pill + remove button
+    expect(html).toContain("live-pill-diagnosis");
+    expect(html).toContain("btn-remove-pill-diagnosis");
+
+    // Anesthetic pill + remove button
+    expect(html).toContain("live-pill-anesthetic");
+    expect(html).toContain("btn-remove-pill-anesthetic");
+
+    // Services pill + remove button
+    expect(html).toContain("live-pill-services");
+    expect(html).toContain("btn-remove-pill-services");
+  });
+
+  it("16. Mandate 8l check: renders quick apply button in capsule with Enter shortcut", () => {
+    const html = renderToString(
+      <ChairsideCopilotHUD
+        initialOpen={true}
+        activeTooth={16}
+      />
+    );
+
+    expect(html).toContain("btn-capsule-apply-scheme");
+    expect(html).toContain("Применить к схеме");
+    expect(html).toContain("chairside-capsule-kbd");
+    expect(html).toContain("↵");
+  });
+
+  it("17. Canonical tooth state mapping: converts clinical shortcodes to canonical ToothState", () => {
+    expect(mapToCanonicalToothState("C2")).toBe("Caries");
+    expect(mapToCanonicalToothState("C1")).toBe("Caries");
+    expect(mapToCanonicalToothState("C3")).toBe("Caries");
+    expect(mapToCanonicalToothState("P")).toBe("Pulpitis");
+    expect(mapToCanonicalToothState("Pt")).toBe("Periodontitis");
+    expect(mapToCanonicalToothState("CR")).toBe("Crown");
+    expect(mapToCanonicalToothState("K")).toBe("Crown");
+    expect(mapToCanonicalToothState("R")).toBe("Root");
+    expect(mapToCanonicalToothState("IMPL")).toBe("Implant");
+    expect(mapToCanonicalToothState("X")).toBe("Missing");
+    expect(mapToCanonicalToothState("NORM")).toBe("Healthy");
   });
 });

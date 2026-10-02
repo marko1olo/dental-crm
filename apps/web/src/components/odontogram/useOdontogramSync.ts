@@ -444,7 +444,10 @@ export function useOdontogramSync({
 			const detail = (e as CustomEvent).detail as
 				| { patientId?: unknown; states?: unknown }
 				| undefined;
-			if (detail?.patientId !== patientId || !Array.isArray(detail.states))
+			if (
+				(detail?.patientId && patientId && detail.patientId !== patientId) ||
+				!Array.isArray(detail?.states)
+			)
 				return;
 			const incoming = detail.states as ToothData[];
 			if (incoming.length === 0) return;
