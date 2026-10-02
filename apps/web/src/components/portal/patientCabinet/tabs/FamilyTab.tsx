@@ -108,6 +108,7 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 	const [newRelationship, setNewRelationship] = useState(RELATIONSHIP_OPTIONS[0] || "Супруг(а)");
 	const [newBirthDate, setNewBirthDate] = useState("");
 	const [newPhone, setNewPhone] = useState("");
+	const [newCardNumber, setNewCardNumber] = useState("");
 	const [newAllowSpend, setNewAllowSpend] = useState(true);
 	const [newAllowBooking, setNewAllowBooking] = useState(true);
 
@@ -167,13 +168,29 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 				.join("")
 				.toUpperCase();
 
+			// Честная привязка амбулаторной карты 043/у к пациенту и семье (без Math.random)
+			const memberSeq = members.length + 1;
+			const cleanCard = newCardNumber.trim();
+			const assignedCardNumber = cleanCard
+				? cleanCard
+				: data.cardNumber
+					? `${data.cardNumber}-${memberSeq}`
+					: data.patientId
+						? `043-${data.patientId.slice(0, 6).toUpperCase()}-${memberSeq}`
+						: `043-СЕМЬЯ-${memberSeq}`;
+
+			const memberId =
+				typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+					? `fam-member-${crypto.randomUUID()}`
+					: `fam-member-${data.patientId || "pat"}-${memberSeq}`;
+
 			const newMember: PatientCabinetFamilyMember = {
-				id: `fam-custom-${Date.now()}`,
+				id: memberId,
 				fullName: cleanName,
 				relationshipRu: newRelationship,
 				birthDate: newBirthDate || undefined,
 				phone: newPhone.trim() || undefined,
-				cardNumber: `043-${Math.floor(1000 + Math.random() * 9000)}`,
+				cardNumber: assignedCardNumber,
 				avatarInitials: initials || "ФС",
 				allowSpendFamilyBalance: newAllowSpend,
 				allowBooking: newAllowBooking,
@@ -184,9 +201,22 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 			setNewFullName("");
 			setNewBirthDate("");
 			setNewPhone("");
+			setNewCardNumber("");
 			onShowToast?.(`Член семьи ${cleanName} успешно добавлен в семейный профиль`);
 		},
-		[newFullName, newRelationship, newBirthDate, newPhone, newAllowSpend, newAllowBooking, onShowToast],
+		[
+			newFullName,
+			newRelationship,
+			newBirthDate,
+			newPhone,
+			newCardNumber,
+			newAllowSpend,
+			newAllowBooking,
+			data.cardNumber,
+			data.patientId,
+			members.length,
+			onShowToast,
+		],
 	);
 
 	return (
@@ -287,7 +317,8 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 						display: "inline-flex",
 						alignItems: "center",
 						gap: "6px",
-						padding: "6px 14px",
+						minHeight: "44px",
+						padding: "8px 16px",
 						borderRadius: "8px",
 						fontSize: "0.8125rem",
 						fontWeight: 600,
@@ -401,10 +432,30 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 								}}
 							/>
 						</div>
+
+						<div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+							<label style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--pc-text-muted, #64748b)" }}>
+								Номер медкарты 043/у (если уже оформлена)
+							</label>
+							<input
+								type="text"
+								value={newCardNumber}
+								onChange={(e) => setNewCardNumber(e.target.value)}
+								placeholder={data.cardNumber ? `Напр. ${data.cardNumber}-${members.length + 1}` : "043-..."}
+								style={{
+									padding: "7px 10px",
+									fontSize: "0.8125rem",
+									borderRadius: "6px",
+									border: "1px solid var(--pc-border, #cbd5e1)",
+									background: "var(--pc-surface, #ffffff)",
+									color: "var(--pc-text-main, #0f172a)",
+								}}
+							/>
+						</div>
 					</div>
 
 					<div style={{ display: "flex", flexWrap: "wrap", gap: "16px", marginTop: "4px" }}>
-						<label style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.8125rem", cursor: "pointer" }}>
+						<label style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.8125rem", cursor: "pointer", minHeight: "36px" }}>
 							<input
 								type="checkbox"
 								checked={newAllowSpend}
@@ -413,7 +464,7 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 							<span>Разрешить списание с общего баланса</span>
 						</label>
 
-						<label style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.8125rem", cursor: "pointer" }}>
+						<label style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.8125rem", cursor: "pointer", minHeight: "36px" }}>
 							<input
 								type="checkbox"
 								checked={newAllowBooking}
@@ -428,14 +479,14 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 							type="button"
 							className="pc-btn-secondary"
 							onClick={() => setIsAddingMember(false)}
-							style={{ padding: "6px 14px", fontSize: "0.8125rem" }}
+							style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.8125rem" }}
 						>
 							Отмена
 						</button>
 						<button
 							type="submit"
 							className="pc-btn-primary"
-							style={{ padding: "6px 16px", fontSize: "0.8125rem", fontWeight: 600 }}
+							style={{ minHeight: "44px", padding: "8px 18px", fontSize: "0.8125rem", fontWeight: 600 }}
 						>
 							Добавить в семью
 						</button>
@@ -639,11 +690,12 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
 									data-testid={`btn-book-for-${member.id}`}
 									style={{
 										width: "100%",
+										minHeight: "44px",
 										display: "inline-flex",
 										alignItems: "center",
 										justifyContent: "center",
 										gap: "6px",
-										padding: "7px 12px",
+										padding: "8px 14px",
 										borderRadius: "6px",
 										fontSize: "0.8125rem",
 										fontWeight: 600,

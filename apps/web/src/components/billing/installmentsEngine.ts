@@ -21,4 +21,5 @@ export {
 	recordInstallmentPayment,
 	generateInstallmentReminder,
 	createDefaultInternalInstallmentsPreset,
+	generateInstallmentContractNumber,
 } from "@dental/shared";

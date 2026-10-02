@@ -215,6 +215,54 @@ export const CompletedServicesChecklist: React.FC<
 			.filter(Boolean);
 	}, [planLines]);
 
+	// Слушатель внешних начислений (одонтограмма, пакеты, протоколы) для немедленной фиксации в плане приёма
+	React.useEffect(() => {
+		const handleExternalInvoiceServices = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			if (!detail || !updateVisitNoteField) return;
+			if (
+				detail.source === "chairside_express" ||
+				detail.source === "chairside_catalog" ||
+				detail.source === "chairside_bundle" ||
+				detail.source === "chairside_checklist_all"
+			) {
+				return;
+			}
+			const rawList = Array.isArray(detail.services)
+				? detail.services
+				: Array.isArray(detail.items)
+					? detail.items
+					: detail.service
+						? [detail.service]
+						: [];
+			if (rawList.length === 0) return;
+
+			const newLines: string[] = [];
+			for (const s of rawList) {
+				const tooth = s.toothCode ?? s.toothNumber ?? detail.toothCode ?? detail.toothNumber;
+				const formattedLine = formatCompletedServiceLine({
+					code804n: s.code804n || s.code || "A16.07.001",
+					title: s.title || s.name || s.nameRu || "Стоматологическая услуга",
+					priceRub: Number(s.priceRub ?? s.unitPriceRub ?? s.price ?? 0),
+					toothCode: tooth ? String(tooth) : null,
+				});
+				if (!planLines.includes(formattedLine)) {
+					newLines.push(formattedLine);
+				}
+			}
+			if (newLines.length > 0) {
+				const base = (planText ?? "").replace(/\s+$/, "");
+				const updatedPlan = base ? `${base}\n${newLines.join("\n")}` : newLines.join("\n");
+				updateVisitNoteField("treatmentPlan", updatedPlan);
+			}
+		};
+
+		window.addEventListener("dente-add-services-to-invoice", handleExternalInvoiceServices);
+		return () => {
+			window.removeEventListener("dente-add-services-to-invoice", handleExternalInvoiceServices);
+		};
+	}, [planText, planLines, updateVisitNoteField]);
+
 	// Переключение отметки позиции из предварительного плана
 	// biome-ignore lint/suspicious/noExplicitAny: generic service item from plan
 	const togglePlanItem = (item: any) => {

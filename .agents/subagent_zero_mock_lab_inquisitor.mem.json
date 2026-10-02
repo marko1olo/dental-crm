@@ -1,0 +1,40 @@
+{
+  "role": "ZERO-MOCK DENTAL LAB ZTL & ORTHOPEDIC TRACKER INQUISITOR",
+  "status": "COMPLETED",
+  "scope": [
+    "apps/web/src/components/lab/dentalLabOrderEngine.ts",
+    "apps/web/src/components/lab/labClinicalStages.ts",
+    "apps/web/src/components/lab/dentalLabDefinitions.ts",
+    "apps/web/src/components/lab/DentalLabPrintBlank.tsx",
+    "apps/web/src/components/lab/DentalLabOrderModal.tsx",
+    "apps/web/src/components/lab/LabTrackingDrawer.tsx",
+    "apps/web/src/components/lab/DentalLabOrdersTrackerModal.tsx",
+    "apps/web/src/components/orthopedics/OrthopedicsZtlSelectors.tsx",
+    "apps/web/src/components/orthopedics/DentalLabShadePicker.tsx",
+    "apps/web/src/components/orthopedics/OrthopedicsChairsidePanel.tsx",
+    "apps/web/src/components/lab/__tests__/dentalLabZeroMockInquisitor.test.tsx"
+  ],
+  "forbidden_scope": [
+    "apps/web/src/components/radiology/*"
+  ],
+  "completed_steps": [
+    "Read mandatory rules: core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Full inspection of all ZTL order engine and orthopedic components",
+    "Eradicated Math.random() in dentalLabOrderEngine.ts: implemented generateDeterministicLabOrderNumber and generateDeterministicLabOrderId with sequential counters and timestamp hashing",
+    "Engineered canonical 6-stage orthopedic lifecycle: «Снят слепок» -> «Отправлен курьером в ЗТЛ» -> «Каркас на примерку» -> «Нанесение керамики» -> «Готовая работа в клинике» -> «Фиксация в полости рта» (labClinicalStages.ts, dentalLabDefinitions.ts)",
+    "Verified and enforced integer-kopeck financial deduction: doctorWageBaseKopecks = Math.max(0, patientPriceKopecks - ztlCostKopecks) with strictly zero penny-drift",
+    "Refactored A4 printable courier order slip (DentalLabPrintBlank.tsx) with Anti-Muddy-Grey print stylesheet (print:bg-transparent, crisp black borders), clinicPhone, doctorPhone, deliveryTimeSlot, 6-stage lifecycle route sheet, and 3-way handover signatures (Doctor, Courier, Lab Technician)",
+    "Enforced Mandate 8d item 7: strictly 0 cartoon emojis in clinical documents and ZTL blanks",
+    "Created dedicated verification suite dentalLabZeroMockInquisitor.test.tsx (11/11 tests passing)",
+    "Executed 137 lab unit tests (100% pass) and 25 orthopedics unit tests (100% pass)",
+    "Verified tsc compiler output: zero type errors in components/lab and components/orthopedics"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "dentalLabOrderEngine.ts had 2 Math.random() calls for order numbers and IDs. Now replaced with 100% deterministic, monotonically increasing format ЗТЛ-YYYY-NNN (e.g. ЗТЛ-2026-101). File remains strictly at 800 lines.",
+    "Orthopedic lifecycle has been upgraded to canonical 6 clinical stages while preserving backward compatibility with 5-stage and 8-stage trackers.",
+    "Financial clearing guarantees doctor piece-rate base deduction is exact to the kopeck without floating-point inaccuracies.",
+    "A4 printable courier slip is optimized for physical laser printers: muddy grey background fills (bg-slate-50/100) are forced transparent in @media print with crisp black borders and high-contrast typography, saving toner and preventing unreadable printouts.",
+    "Zero cartoon emojis detected across all lab and orthopedic components."
+  ]
+}

@@ -33,6 +33,7 @@ export interface FiscalReceiptFooterProps {
 	oneCPatientAddress: string;
 	cashierFullName: string;
 	handleCopyActData: () => void;
+	handleCopyCertData?: (() => void) | undefined;
 	refundFiscalData: { totalRub: number };
 	fiscalReceipt: FiscalReceipt54FzResult;
 	handlePrintAct?: () => void;

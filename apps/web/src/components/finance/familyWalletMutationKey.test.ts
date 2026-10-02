@@ -4,6 +4,7 @@ import {
 	familyMutationId,
 	familyPayRequestKey,
 	familyTopupRequestKey,
+	familyRefundRequestKey,
 	type MutationTicketRef,
 } from "./familyWalletMutationKey";
 
@@ -174,5 +175,25 @@ describe("подписи операций", () => {
 			familyTopupRequestKey(IVANOV, FAMILY, 5000, "cash"),
 			familyTopupRequestKey(IVANOV, FAMILY, 5000, "cash"),
 		);
+	});
+
+	it("возврат на семейный депозит формирует стабильную подпись для повтора", () => {
+		const key1 = familyRefundRequestKey(IVANOV, FAMILY, 3500, "Отмена визита");
+		const key2 = familyRefundRequestKey(IVANOV, FAMILY, 3500, "Отмена визита");
+		assert.equal(key1, key2);
+
+		const ref: MutationTicketRef = { current: null };
+		const nextId = countingIds();
+		const mut1 = familyMutationId(ref, "family-refund", key1, nextId);
+		const mut2 = familyMutationId(ref, "family-refund", key2, nextId);
+		assert.equal(mut1, mut2, "Повтор возврата должен использовать тот же mutationId для защиты от дублирования");
+	});
+
+	it("разные причины или суммы возврата дают разные ключи", () => {
+		const key1 = familyRefundRequestKey(IVANOV, FAMILY, 3500, "Отмена визита");
+		const key2 = familyRefundRequestKey(IVANOV, FAMILY, 3500, "Изменение плана");
+		const key3 = familyRefundRequestKey(IVANOV, FAMILY, 2000, "Отмена визита");
+		assert.notEqual(key1, key2);
+		assert.notEqual(key1, key3);
 	});
 });

@@ -297,14 +297,26 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 		return Math.round(paidCostRub * 0.13);
 	}, [paidCostRub]);
 
-	// WhatsApp pre-filled emergency URL
+	// WhatsApp pre-filled emergency URL (честная привязка к пациенту и карте 043/у)
 	const whatsappUrl = useMemo(() => {
 		const cleanNumber = emergencyWhatsappNumber.replace(/\D/g, "");
+		const effectivePatientName = fullCabinetData?.fullName || patientName;
+		const effectiveCardNumber =
+			fullCabinetData?.cardNumber ||
+			cardNumber ||
+			(fullCabinetData?.patientId ? `043-${fullCabinetData.patientId.slice(0, 6).toUpperCase()}` : "043/у");
 		const text = encodeURIComponent(
-			`Здравствуйте! Я пациент клиники DENTE (${patientName}, карта № ${cardNumber}). После недавнего лечения у меня возникли болезненные ощущения / вопросы. Проконсультируйте, пожалуйста, дежурного врача.`,
+			`Здравствуйте! Я пациент клиники DENTE (${effectivePatientName}, карта № ${effectiveCardNumber}). После недавнего лечения у меня возникли болезненные ощущения / вопросы. Проконсультируйте, пожалуйста, дежурного врача.`,
 		);
 		return `https://wa.me/${cleanNumber}?text=${text}`;
-	}, [emergencyWhatsappNumber, patientName, cardNumber]);
+	}, [
+		emergencyWhatsappNumber,
+		patientName,
+		cardNumber,
+		fullCabinetData?.fullName,
+		fullCabinetData?.cardNumber,
+		fullCabinetData?.patientId,
+	]);
 
 	const handleTaxDownload = () => {
 		if (onDownloadTaxCertificate) {

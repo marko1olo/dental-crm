@@ -681,6 +681,39 @@ export function canTransitionLabStatus(from: DentalLabOrderStatus, to: DentalLab
 	return true; // Свобода врача и администратора
 }
 
+let _labOrderSequenceCounter = 100;
+
+/**
+ * Генерирует детерминированный номер наряда ЗТЛ без Math.random() и синтетических фасадов.
+ * Формат: ЗТЛ-ГГГГ-НОМЕР (например ЗТЛ-2026-100).
+ */
+export function generateDeterministicLabOrderNumber(params?: {
+	date?: Date | string;
+	patientId?: string;
+	patientName?: string;
+	sequence?: number;
+}): string {
+	const d = params?.date ? (typeof params.date === "string" ? new Date(params.date) : params.date) : new Date();
+	const year = d.getFullYear();
+	const seq = params?.sequence ?? (_labOrderSequenceCounter++);
+	return `ЗТЛ-${year}-${String(seq).padStart(3, "0")}`;
+}
+
+/**
+ * Генерирует детерминированный строковый ID наряда ЗТЛ без Math.random().
+ * Формат: ztl-ord-<timestamp>-<patientSlug>-<seq>.
+ */
+export function generateDeterministicLabOrderId(params?: {
+	patientId?: string;
+	date?: Date | string;
+	sequence?: number;
+}): string {
+	const d = params?.date ? (typeof params.date === "string" ? new Date(params.date) : params.date) : new Date();
+	const pat = (params?.patientId || "pat").replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "0001";
+	const seq = params?.sequence ?? (_labOrderSequenceCounter++);
+	return `ztl-ord-${d.getTime()}-${pat}-${seq}`;
+}
+
 export function createDentalLabOrderRecord(partial: any): DentalLabOrderRecord {
 	const construction = partial.constructionType || "crown_zirconia";
 	const def = DENTAL_LAB_CONSTRUCTIONS[construction];
@@ -711,8 +744,8 @@ export function createDentalLabOrderRecord(partial: any): DentalLabOrderRecord {
 	const now = new Date().toISOString();
 
 	return {
-		id: partial.id || `ztl-ord-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-		orderNumber: partial.orderNumber || `ЗТЛ-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900) + 100)}`,
+		id: partial.id || generateDeterministicLabOrderId({ patientId: partial.patientId, date: sentDate }),
+		orderNumber: partial.orderNumber || generateDeterministicLabOrderNumber({ patientId: partial.patientId, date: sentDate }),
 		patientId: partial.patientId || "pat-default",
 		patientName: partial.patientName || "Пациент",
 		doctorId: partial.doctorId || "doc-ortho",

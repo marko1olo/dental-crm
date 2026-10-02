@@ -36,6 +36,23 @@ import { OdontogramModalsLayer } from "./OdontogramModalsLayer";
 import { useOdontogramSync } from "./useOdontogramSync";
 import { useOdontogramAiIntegration } from "./useOdontogramAiIntegration";
 import { useOdontogramQuickActions } from "./useOdontogramQuickActions";
+import {
+	CLINICAL_SERVICE_BUNDLES,
+	type ClinicalServiceBundle,
+} from "../visit/clinicalServiceBundles";
+
+function getClinicalBundleForToothState(state: ToothState): ClinicalServiceBundle | null {
+	if (state === "Caries") {
+		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "caries") ?? null;
+	}
+	if (state === "Pulpitis" || state === "Periodontitis") {
+		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "endo_1") ?? null;
+	}
+	if (state === "Missing") {
+		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "surgery_extraction") ?? null;
+	}
+	return null;
+}
 
 // Re-exports for 100% backward compatibility
 export {
@@ -99,7 +116,6 @@ export const OdontogramModule = React.memo(({
 	} = useOdontogramSync({
 		patientId,
 		pediatricMode,
-		setAiPendingProposal: () => {}, // Managed below via useOdontogramAiIntegration
 		onClearMenu: clearMenu,
 	});
 
@@ -182,9 +198,10 @@ export const OdontogramModule = React.memo(({
 
 	useEffect(() => {
 		if (pediatricMode !== undefined) {
-			setDentitionMode(pediatricMode ? "pediatric" : "adult");
+			const target = pediatricMode ? "pediatric" : "adult";
+			setDentitionMode((prev) => (prev === target ? prev : target));
 		} else if (isPatientChild) {
-			setDentitionMode("pediatric");
+			setDentitionMode((prev) => (prev === "pediatric" ? prev : "pediatric"));
 		}
 	}, [pediatricMode, isPatientChild]);
 
@@ -234,12 +251,42 @@ export const OdontogramModule = React.memo(({
 						},
 					}),
 				);
+
+				const bundle = getClinicalBundleForToothState(state);
+				if (bundle) {
+					targets.forEach((tNum) => {
+						window.dispatchEvent(
+							new CustomEvent("dente-add-services-to-invoice", {
+								detail: {
+									bundleId: bundle.id,
+									bundleTitle: bundle.title,
+									toothNumber: tNum,
+									toothCode: String(tNum),
+									patientId,
+									source: "odontogram_bundle",
+									services: bundle.services.map((s, idx) => ({
+										id: `srv_${patientId || "pat"}_tooth_${tNum}_${bundle.id}_${s.code804n}_${idx}`,
+										code: s.code804n,
+										code804n: s.code804n,
+										title: s.title,
+										price: s.priceRub,
+										priceRub: s.priceRub,
+										unitPriceRub: s.priceRub,
+										quantity: 1,
+										toothCode: String(tNum),
+										toothNumber: tNum,
+									})),
+								},
+							}),
+						);
+					});
+				}
 			} catch {
 				// Safe event dispatch fallback
 			}
 			setMenuConfig(null);
 		},
-		[menuConfig, selectedTeeth, updateToothState, activeSurfaces],
+		[menuConfig, selectedTeeth, updateToothState, activeSurfaces, patientId],
 	);
 
 	// Hotkey handling for radial menu
@@ -410,11 +457,41 @@ export const OdontogramModule = React.memo(({
 						},
 					}),
 				);
+
+				const bundle = getClinicalBundleForToothState(state);
+				if (bundle) {
+					targets.forEach((tNum) => {
+						window.dispatchEvent(
+							new CustomEvent("dente-add-services-to-invoice", {
+								detail: {
+									bundleId: bundle.id,
+									bundleTitle: bundle.title,
+									toothNumber: tNum,
+									toothCode: String(tNum),
+									patientId,
+									source: "odontogram_bundle",
+									services: bundle.services.map((s, idx) => ({
+										id: `srv_${patientId || "pat"}_tooth_${tNum}_${bundle.id}_${s.code804n}_${idx}`,
+										code: s.code804n,
+										code804n: s.code804n,
+										title: s.title,
+										price: s.priceRub,
+										priceRub: s.priceRub,
+										unitPriceRub: s.priceRub,
+										quantity: 1,
+										toothCode: String(tNum),
+										toothNumber: tNum,
+									})),
+								},
+							}),
+						);
+					});
+				}
 			} catch {
 				// Safe event dispatch fallback
 			}
 		},
-		[updateToothState, teethDataRef],
+		[updateToothState, teethDataRef, patientId],
 	);
 
 	const handleOpenVoiceDictation = useCallback(() => setIsVoiceOpen(true), []);

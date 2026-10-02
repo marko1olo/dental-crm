@@ -41,6 +41,7 @@ import {
 	generateInstallmentReminder,
 	generateInstallmentSchedule,
 	recordInstallmentPayment,
+	generateInstallmentContractNumber,
 	TREATMENT_INSTALLMENT_PRESETS,
 } from "./installmentsEngine.js";
 import { formatKopecksRu, rublesToKopecks } from "@dental/shared";
@@ -253,9 +254,11 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 
 		const evalResult = evaluateInstallmentStatus(schedule, new Date().toISOString());
 
+		const contractNumber = generateInstallmentContractNumber(patientId, new Date().toISOString(), 1);
+
 		const newPlan: InstallmentPlan = {
 			id: `inst-plan-${selectedPreset}-${patientId}-${Date.now()}`,
-			contractNumber: `РАС-${new Date().getFullYear()}/${Math.floor(10 + Math.random() * 90)}`,
+			contractNumber,
 			patientId,
 			patientName,
 			patientPhone,

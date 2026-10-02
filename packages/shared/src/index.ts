@@ -1222,6 +1222,8 @@ export const imagingSourceKindSchema = z.enum([
 	"twain_wia",
 	"sensor_bridge",
 	"folder_watch",
+	"hot_folder",
+	"dicom_worklist",
 ]);
 export type ImagingSourceKind = z.infer<typeof imagingSourceKindSchema>;
 
@@ -5355,10 +5357,20 @@ export const documentAuditFactsSchema = z.object({
 });
 export type DocumentAuditFacts = z.infer<typeof documentAuditFactsSchema>;
 
+export const imagingStudyBindingStatusSchema = z.enum([
+	"auto_bound",
+	"manual_bound",
+	"pending_review",
+	"unassigned",
+]);
+export type ImagingStudyBindingStatus = z.infer<
+	typeof imagingStudyBindingStatusSchema
+>;
+
 export const imagingStudySchema = z.object({
 	id: z.string().uuid(),
 	organizationId: z.string().uuid(),
-	patientId: z.string().uuid(),
+	patientId: z.string().uuid().nullable(),
 	visitId: z.string().uuid().nullable(),
 	doctorId: z.string().uuid().nullable().optional(),
 	kind: imagingStudyKindSchema,
@@ -5370,6 +5382,21 @@ export const imagingStudySchema = z.object({
 	sourceName: z.string(),
 	storagePath: z.string().nullable().optional(),
 	dicomStudyUid: z.string().nullable().optional(),
+	studyInstanceUid: z.string().nullable().optional(),
+	seriesInstanceUid: z.string().nullable().optional(),
+	modality: z.string().nullable().optional(),
+	seriesDescription: z.string().nullable().optional(),
+	studyDate: z.string().nullable().optional(),
+	sliceCount: z.number().int().nullable().optional(),
+	dimensions: z.string().nullable().optional(),
+	voxelSpacing: z.string().nullable().optional(),
+	fileSizeBytes: z.number().int().nullable().optional(),
+	bindingStatus: imagingStudyBindingStatusSchema.optional(),
+	bindingConfidence: z.number().int().min(0).max(100).optional(),
+	dicomPatientName: z.string().nullable().optional(),
+	dicomPatientId: z.string().nullable().optional(),
+	dicomBirthDate: z.string().nullable().optional(),
+	patientFullName: z.string().nullable().optional(),
 	status: z.enum(["available", "needs_review", "failed"]),
 	aiSummary: z.string().nullable(),
 	previewUrl: z.string(),
@@ -7395,7 +7422,7 @@ export const imagingViewerSessionSchema = z.object({
 	id: z.string().uuid(),
 	organizationId: z.string().uuid(),
 	studyId: z.string().uuid(),
-	patientId: z.string().uuid(),
+	patientId: z.string().uuid().nullable(),
 	visitId: z.string().uuid().nullable(),
 	state: imagingViewerSessionStateSchema,
 	annotations: z.array(imagingViewerAnnotationSchema),

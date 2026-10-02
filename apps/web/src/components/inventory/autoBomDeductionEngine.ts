@@ -538,6 +538,34 @@ export function formatShiftCloseClassBWasteActHtml(
 </html>`;
 }
 
+let _classBWasteActCounter = 1;
+
+/**
+ * Детерминированный генератор реквизитов акта утилизации медотходов Класса Б.
+ * Исключает Math.random(); гарантирует уникальность и сквозной порядок.
+ */
+export function generateDeterministicWasteActIdentifiers(
+	actDateIso: string,
+	customSeq?: number,
+): {
+	readonly actNumber: string;
+	readonly sealNumber: string;
+	readonly barcode: string;
+} {
+	const raw = actDateIso ? new Date(actDateIso) : new Date();
+	const year = Number.isNaN(raw.getFullYear()) ? new Date().getFullYear() : raw.getFullYear();
+	const month = String(Number.isNaN(raw.getMonth()) ? new Date().getMonth() + 1 : raw.getMonth() + 1).padStart(2, "0");
+	const day = String(Number.isNaN(raw.getDate()) ? new Date().getDate() : raw.getDate()).padStart(2, "0");
+	const seq = customSeq ?? _classBWasteActCounter++;
+	const seqPadded = String(seq).padStart(4, "0");
+
+	return {
+		actNumber: `АКТ-ОТХОД-Б-${year}${month}${day}-${seqPadded}`,
+		sealNumber: `ПЛ-Б-${year}-${seqPadded}`,
+		barcode: `WASTE-CLASS_B-DENT-${year}${month}${day}-${seqPadded}`,
+	};
+}
+
 /**
  * 1-Click Batch Class B Waste Disposal at Shift Close (СанПиН 2.1.3684-21).
  * Logs used, broken, or partially used carpules and needles into the toxic medical waste disposal ledger in 1 click
@@ -548,14 +576,10 @@ export async function executeShiftCloseClassBWasteDisposal(
 ): Promise<ShiftCloseClassBWasteResult> {
 	const now = new Date();
 	const actDate = input.shiftDate || now.toISOString().slice(0, 10);
-	const year = now.getFullYear();
-	const month = String(now.getMonth() + 1).padStart(2, "0");
-	const day = String(now.getDate()).padStart(2, "0");
-	const seq = Math.floor(1000 + Math.random() * 9000);
-
-	const actNumber = `АКТ-ОТХОД-Б-${year}${month}${day}-${seq}`;
-	const sealNumber = `ПЛ-Б-${year}-${String(seq).padStart(5, "0")}`;
-	const barcode = `WASTE-CLASS_B-DENT-${year}${month}${day}-${seq}`;
+	const identifiers = generateDeterministicWasteActIdentifiers(actDate);
+	const actNumber = identifiers.actNumber;
+	const sealNumber = identifiers.sealNumber;
+	const barcode = identifiers.barcode;
 
 	const carpulesCount = Math.max(0, input.accumulatedCarpulesCount);
 	const brokenCarpulesCount = Math.max(0, input.brokenCarpulesCount ?? 0);

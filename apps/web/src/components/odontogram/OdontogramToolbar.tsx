@@ -143,7 +143,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 }) => {
 	return (
 		<div
-			className="odontogram-toolbar flex items-center justify-between gap-1.5 px-2 pr-6 py-0.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x min-h-[34px] h-[34px]"
+			className="odontogram-toolbar flex items-center justify-between gap-1 sm:gap-1.5 px-2 py-0.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x min-h-[34px] h-[34px]"
 			role="toolbar"
 			aria-label="Панель управления зубной формулой"
 		>
@@ -173,15 +173,18 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 								}`}
 							>
 								{option.icon}
-								<span className="hidden sm:inline truncate max-w-[130px] sm:max-w-none">
+								<span className="hidden 2xl:inline truncate max-w-[130px] sm:max-w-none">
 									{option.shortLabel}
+								</span>
+								<span className="hidden sm:inline 2xl:hidden font-bold text-xs truncate">
+									{option.compactLabel || option.mobileLabel || option.shortLabel}
 								</span>
 								<span className="sm:hidden font-bold text-xs truncate max-w-[85px]">
 									{option.mobileLabel || option.shortLabel}
 								</span>
 								{option.badge && (
 									<span
-										className={`hidden sm:inline text-xs px-1 py-0.2 rounded font-black tracking-tight ${
+										className={`hidden 2xl:inline text-xs px-1 py-0.2 rounded font-black tracking-tight ${
 											isActive
 												? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/25 font-mono"
 												: "bg-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink-muted,#64748b)]"
@@ -311,7 +314,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 								"adult"
 							}
 						>
-							<span>11–48 (32)</span>
+							<span>11–48<span className="hidden 2xl:inline"> (32)</span></span>
 						</button>
 						<button
 							type="button"
@@ -330,7 +333,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 								"pediatric"
 							}
 						>
-							<span>51–85 (20)</span>
+							<span>51–85<span className="hidden 2xl:inline"> (20)</span></span>
 						</button>
 						<button
 							type="button"

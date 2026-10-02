@@ -167,6 +167,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		doctorSpecialty,
 	} = useVisitDiaryPatientInfo({
 		patientId,
+		visitId,
 		initialTeethData: teethData,
 		activePatient,
 		activeDoctor,

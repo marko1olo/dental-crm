@@ -23,13 +23,13 @@ import { getInitialShowcaseTeeth } from "./odontogramModuleConstants";
 export interface UseOdontogramSyncProps {
 	patientId: string;
 	pediatricMode?: boolean | undefined;
-	setAiPendingProposal: React.Dispatch<
+	setAiPendingProposal?: React.Dispatch<
 		React.SetStateAction<{
 			source: "voice" | "vision" | "sensor";
 			title: string;
 			findings: Array<{ toothNumber: number; state: ToothState; surfaces?: string[] }>;
 		} | null>
-	>;
+	> | undefined;
 	onClearMenu?: () => void;
 }
 
@@ -40,6 +40,10 @@ export function useOdontogramSync({
 	onClearMenu,
 }: UseOdontogramSyncProps) {
 	const currentPatientIdRef = useRef<string>(patientId);
+	const setAiPendingProposalRef = useRef(setAiPendingProposal);
+	setAiPendingProposalRef.current = setAiPendingProposal;
+	const onClearMenuRef = useRef(onClearMenu);
+	onClearMenuRef.current = onClearMenu;
 	const [teethData, setTeethData] = useState<ToothData[]>(() => {
 		if (patientId) {
 			const cached = loadStoredTeethData(patientId);
@@ -159,7 +163,7 @@ export function useOdontogramSync({
 				}),
 			);
 
-			onClearMenu?.();
+			onClearMenuRef.current?.();
 			setSelectedTeeth((prev) => (prev.length > 0 ? [] : prev));
 
 			if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
@@ -210,7 +214,7 @@ export function useOdontogramSync({
 
 			setActiveSurfaces((prev) => (prev.length > 0 ? [] : prev));
 		},
-		[patientId, onClearMenu],
+		[patientId],
 	);
 
 	const updateToothStateRef = useRef(updateToothState);
@@ -247,7 +251,7 @@ export function useOdontogramSync({
 
 		setSelectedTeeth((prev) => (prev.length > 0 ? [] : prev));
 		setActiveSurfaces((prev) => (prev.length > 0 ? [] : prev));
-		onClearMenu?.();
+		onClearMenuRef.current?.();
 
 		const controller = new AbortController();
 		let cancelled = false;
@@ -311,6 +315,14 @@ export function useOdontogramSync({
 							if (!found) {
 								return cachedTooth;
 							}
+							const resolvedSurfaces =
+								found.surfaces && found.surfaces.length > 0
+									? found.surfaces
+									: cachedTooth.surfaces && cachedTooth.surfaces.length > 0
+										? cachedTooth.surfaces
+										: [];
+							const surfacePatch = { surfaces: [...resolvedSurfaces] };
+
 							if (
 								cachedTooth.state !== "Healthy" &&
 								(found.state === "Healthy" || (found.state as string) === "healthy")
@@ -319,6 +331,7 @@ export function useOdontogramSync({
 									...found,
 									...cachedTooth,
 									state: cachedTooth.state,
+									...surfacePatch,
 								};
 							}
 							if (cachedTooth.updatedAt) {
@@ -326,6 +339,7 @@ export function useOdontogramSync({
 									return {
 										...found,
 										...cachedTooth,
+										...surfacePatch,
 									};
 								}
 								const localTime = new Date(cachedTooth.updatedAt).getTime();
@@ -334,12 +348,14 @@ export function useOdontogramSync({
 									return {
 										...found,
 										...cachedTooth,
+										...surfacePatch,
 									};
 								}
 							}
 							return {
 								...cachedTooth,
 								...found,
+								...surfacePatch,
 							};
 						});
 						for (const item of incoming) {
@@ -373,7 +389,7 @@ export function useOdontogramSync({
 					setTeethLoad({ phase: "failed", status });
 				}
 			} catch (err) {
-				if (cancelled) return;
+				if (cancelled || (err instanceof Error && err.name === "AbortError") || (typeof err === "object" && err !== null && (err as { name?: string }).name === "AbortError")) return;
 				logger.error("[tooth states] запрос не выполнен", err);
 				const localCached = loadStoredTeethData(patientId);
 				if (localCached && localCached.length > 0) {
@@ -475,7 +491,7 @@ export function useOdontogramSync({
 				return;
 			}
 			const state = finding as ToothState;
-			setAiPendingProposal({
+			setAiPendingProposalRef.current?.({
 				source: "vision",
 				title: "Снимок / Визиограф (ИИ-распознавание)",
 				findings: [{ toothNumber, state }],
@@ -509,7 +525,7 @@ export function useOdontogramSync({
 			window.removeEventListener("keydown", handleKeyDown);
 			window.removeEventListener("keyup", handleKeyUp);
 		};
-	}, [patientId, teethReloadToken, onClearMenu, pediatricMode, setAiPendingProposal]);
+	}, [patientId, teethReloadToken, pediatricMode]);
 
 	return {
 		teethData,

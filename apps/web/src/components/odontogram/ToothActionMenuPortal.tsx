@@ -19,6 +19,7 @@ import {
 	generateSoapFromOdontogramFinding,
 } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
+import { CLINICAL_SERVICE_BUNDLES } from "../visit/clinicalServiceBundles";
 
 export interface ToothActionMenuConfig {
 	toothNumber: number;
@@ -310,6 +311,44 @@ export const ToothActionMenuPortal: React.FC<ToothActionMenuPortalProps> = ({
 								},
 							}),
 						);
+
+						const bundleId =
+							st === "Caries"
+								? "caries"
+								: st === "Pulpitis" || st === "Periodontitis"
+									? "endo_1"
+									: st === "Missing"
+										? "surgery_extraction"
+										: null;
+						const bundle = bundleId
+							? CLINICAL_SERVICE_BUNDLES.find((b) => b.id === bundleId)
+							: null;
+						if (bundle) {
+							window.dispatchEvent(
+								new CustomEvent("dente-add-services-to-invoice", {
+									detail: {
+										bundleId: bundle.id,
+										bundleTitle: bundle.title,
+										toothNumber: num,
+										toothCode: String(num),
+										source: "odontogram_bundle",
+										services: bundle.services.map((s, idx) => ({
+											id: `srv_tooth_${num}_${bundle.id}_${s.code804n}_${idx}`,
+											code: s.code804n,
+											code804n: s.code804n,
+											title: s.title,
+											price: s.priceRub,
+											priceRub: s.priceRub,
+											unitPriceRub: s.priceRub,
+											quantity: 1,
+											toothCode: String(num),
+											toothNumber: num,
+										})),
+									},
+								}),
+							);
+						}
+
 						showToast(`Протокол для зуба #${num} внесён в дневник приёма`, "success");
 						onClose();
 					}}

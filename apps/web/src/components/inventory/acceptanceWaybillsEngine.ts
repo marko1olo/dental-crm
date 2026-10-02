@@ -58,6 +58,10 @@ export function calculateDaysUntilExpiration(
 
 /**
  * Оценивает статус партии по регламенту FEFO.
+ * Светофор FEFO (Мандаты 8e, 8n):
+ * 1. Красный (< 30 дней или просрочен): критический срок или просрочка.
+ * 2. Желтый (1-6 месяцев, 31..180 дней): первая очередь расхода по FEFO.
+ * 3. Зеленый (> 6 месяцев, > 180 дней): свежая партия, плановое использование.
  */
 export function calculateFefoStatus(
 	expirationDateIso: string,
@@ -74,10 +78,10 @@ export function calculateFefoStatus(
 			daysRemaining: days,
 		};
 	}
-	if (days <= 60) {
+	if (days <= 30) {
 		return {
 			fefoStatus: "critical",
-			badgeLabelRu: `FEFO: ${days} дн. (срочно расходовать)`,
+			badgeLabelRu: `FEFO: ${days} дн. (критический срок < 30 дн., срочно расходовать)`,
 			hexColor: "var(--red, #ef4444)",
 			bgSoft: "rgba(239, 68, 68, 0.12)",
 			daysRemaining: days,
@@ -86,7 +90,7 @@ export function calculateFefoStatus(
 	if (days <= 180) {
 		return {
 			fefoStatus: "warning",
-			badgeLabelRu: `FEFO: ${days} дн. (первая очередь)`,
+			badgeLabelRu: `FEFO: ${days} дн. (1-6 мес., первая очередь)`,
 			hexColor: "var(--amber, #f59e0b)",
 			bgSoft: "rgba(245, 158, 11, 0.12)",
 			daysRemaining: days,
@@ -94,7 +98,7 @@ export function calculateFefoStatus(
 	}
 	return {
 		fefoStatus: "fresh",
-		badgeLabelRu: `Годен: ${days} дн.`,
+		badgeLabelRu: `Годен: ${days} дн. (> 6 мес.)`,
 		hexColor: "var(--teal, #0d9488)",
 		bgSoft: "rgba(13, 148, 136, 0.12)",
 		daysRemaining: days,
@@ -158,6 +162,21 @@ export function calculateWaybillTotals(
 	};
 }
 
+let _waybillItemCounter = 1;
+
+/**
+ * Детерминированный генератор ID позиции накладной.
+ * Исключает случайные числа; использует crypto.randomUUID() или монотонный счетчик времени.
+ */
+export function generateDeterministicWaybillItemId(prefix = "item"): string {
+	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+		return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
+	}
+	const timestamp = Date.now().toString(36);
+	const seq = (_waybillItemCounter++).toString(36);
+	return `${prefix}_${timestamp}_${seq}`;
+}
+
 /**
  * Создание готовой строки накладной из параметров.
  */
@@ -187,7 +206,7 @@ export function createWaybillItem(params: {
 	const fefo = calculateFefoStatus(params.expirationDate, params.referenceDateIso);
 
 	return {
-		id: params.id || `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+		id: params.id || generateDeterministicWaybillItemId(),
 		inventoryItemId: params.inventoryItemId,
 		name: params.name.trim(),
 		category: params.category || "Материалы",
@@ -349,22 +368,38 @@ export function formatKopecksToRublesPlain(kopecks: number): string {
 // ГЕНЕРАТОРЫ ЧЕРНОВИКОВ И ОБРАЗЦОВЫХ СТОМАТОЛОГИЧЕСКИХ НАКЛАДНЫХ
 // ---------------------------------------------------------------------------
 
+let _waybillSequenceCounter = 1;
+
 /**
- * Инициализирует пустой черновик накладной.
+ * Детерминированный генератор номера приходной накладной (ПН-ГГММДД-NNNN).
+ * Исключает случайные числа и симуляции; гарантирует последовательную нумерацию.
+ */
+export function generateDeterministicWaybillNumber(
+	receiptDateIso?: string,
+	sequence?: number,
+): string {
+	const rawDate = receiptDateIso || new Date().toISOString().slice(0, 10);
+	const dateCode = rawDate.replace(/-/g, "").slice(2); // YYMMDD
+	const seq = sequence ?? _waybillSequenceCounter++;
+	return `ПН-${dateCode}-${String(seq).padStart(4, "0")}`;
+}
+
+/**
+ * Инициализирует пустой черновик накладной с детерминированным номером ПН-ГГММДД-NNNN.
  */
 export function createDraftAcceptanceWaybill(
 	options?: Partial<AcceptanceWaybillDocument>,
 ): AcceptanceWaybillDocument {
 	const defaultSupplier = CANONICAL_DENTAL_SUPPLIERS[0]!;
 	const today = new Date().toISOString().slice(0, 10);
-	const docNum = `ПН-${today.replace(/-/g, "").slice(2)}-${Math.floor(100 + Math.random() * 900)}`;
+	const docNum = options?.waybillNumber || generateDeterministicWaybillNumber(options?.receiptDate || today);
 
 	const items = options?.items || [];
 	const totals = calculateWaybillTotals(items);
 
 	return {
-		id: options?.id || `wb_${Date.now()}`,
-		waybillNumber: options?.waybillNumber || docNum,
+		id: options?.id || generateDeterministicWaybillItemId("wb"),
+		waybillNumber: docNum,
 		receiptDate: options?.receiptDate || today,
 		supplier: options?.supplier || defaultSupplier,
 		warehouseId: options?.warehouseId || undefined,

@@ -9,4 +9,5 @@ export * from "./InvoicesView";
 export * from "./installmentsEngine";
 export * from "./PatientInstallmentsModal";
 export * from "./RetailProductsModal";
+export * from "./billingMath";
 

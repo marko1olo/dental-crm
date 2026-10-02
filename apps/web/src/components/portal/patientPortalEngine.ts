@@ -15,6 +15,10 @@ import type {
 	SpecialtyCategory,
 	VisitProtocol043,
 } from "./patientPortalTypes";
+import {
+	formatIcsDate,
+	formatPhoneNumber as canonicalFormatPhoneNumber,
+} from "../../utils/formatters";
 
 export interface PortalFinancialSummary {
 	totalInvoicedRub: number;
@@ -132,23 +136,7 @@ export function verifySmsOtpCode(enteredCode: string, expectedCode: string): boo
 /**
  * Formats raw Russian phone input into standardized "+7 (XXX) XXX-XX-XX" mask
  */
-export function formatRussianPhone(rawPhone: string): string {
-	if (!rawPhone) return "";
-	const digits = rawPhone.replace(/\D/g, "");
-	let normalized = digits;
-	if (digits.startsWith("8") && digits.length === 11) {
-		normalized = `7${digits.slice(1)}`;
-	} else if (!digits.startsWith("7") && digits.length === 10) {
-		normalized = `7${digits}`;
-	}
-
-	if (normalized.length === 0) return "";
-	if (normalized.length <= 1) return "+7";
-	if (normalized.length <= 4) return `+7 (${normalized.slice(1)}`;
-	if (normalized.length <= 7) return `+7 (${normalized.slice(1, 4)}) ${normalized.slice(4)}`;
-	if (normalized.length <= 9) return `+7 (${normalized.slice(1, 4)}) ${normalized.slice(4, 7)}-${normalized.slice(7)}`;
-	return `+7 (${normalized.slice(1, 4)}) ${normalized.slice(4, 7)}-${normalized.slice(7, 9)}-${normalized.slice(9, 11)}`;
-}
+export const formatRussianPhone = canonicalFormatPhoneNumber;
 
 /**
  * Converts FDI tooth number to human-readable anatomical Russian designation
@@ -204,10 +192,6 @@ export function generateIcsCalendarEvent(
 ): string {
 	const start = new Date(startDateIso);
 	const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
-
-	const formatIcsDate = (d: Date) => {
-		return d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-	};
 
 	const nowStr = formatIcsDate(new Date());
 	const startStr = formatIcsDate(start);

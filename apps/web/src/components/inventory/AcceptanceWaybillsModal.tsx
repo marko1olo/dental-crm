@@ -194,7 +194,8 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 			const today = new Date();
 			today.setMonth(today.getMonth() + template.shelfLifeMonths);
 			const expDate = today.toISOString().slice(0, 10);
-			const batchNum = `${template.defaultBatchPrefix}-${new Date().getFullYear()}${Math.floor(100 + Math.random() * 900)}`;
+			// Честный заводской номер серии партии производителя по шаблону (без псевдорандома)
+			const batchNum = `${template.defaultBatchPrefix}-${new Date().getFullYear()}-01`;
 
 			const newItem = createWaybillItem({
 				name: template.name,
@@ -221,7 +222,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 		showToast(`Добавлен: ${template.name}`, "info");
 	}, []);
 
-	// Добавление произвольной пустой строки
+	// Добавление произвольной пустой строки для ввода реальной позиции от поставщика
 	const handleAddEmptyItem = useCallback(() => {
 		setWaybill((prev) => {
 			const futureDate = new Date();
@@ -232,7 +233,8 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 				name: "",
 				category: "Расходные материалы",
 				unit: "шт",
-				batchNumber: `LOT-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
+				// Обязательное поле для ввода реального заводского номера серии с упаковки
+				batchNumber: "",
 				expirationDate: expDate,
 				quantity: 1,
 				unitPriceKopecks: 10000,
@@ -581,7 +583,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 													title="Мандат 8n: приход автоматически закроет накопленный дефицит"
 												>
 													<AlertTriangle size={10} />
-													<span>Дефицит на складе: {deficitStock} ед. (будет погашен)</span>
+													<span>Дефицит у кресла (овердрафт): {deficitStock} ед. (будет погашен)</span>
 												</div>
 											)}
 										</td>
@@ -591,7 +593,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 												className="acceptance-table-input"
 												value={item.batchNumber}
 												onChange={(e) => handleUpdateItem(idx, { batchNumber: e.target.value })}
-												placeholder="LOT-2026-X"
+												placeholder="Заводской LOT / серия"
 											/>
 										</td>
 										<td>

@@ -291,9 +291,15 @@ export function recordInstallmentPayment(
 	const newPaidKop = Math.min(targetItem.amountKopecks, targetItem.paidKopecks + payAmountKop) as Kopecks;
 	const isFullyPaid = newPaidKop >= targetItem.amountKopecks;
 
-	// Генерация фискального чека 54-ФЗ (ФФД 1.2, тег 1214)
-	const docNum = Math.floor(10000 + Math.random() * 90000);
-	const fpd = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+	// Генерация фискального чека 54-ФЗ (ФФД 1.2, тег 1214) — детерминированный фискальный признак (FNV-хэш)
+	const fiscalSeed = `${input.plan.id}:${targetItem.id}:${targetItemIndex + 1}:${currentIso}`;
+	let fiscalHash = 0;
+	for (let i = 0; i < fiscalSeed.length; i++) {
+		fiscalHash = ((fiscalHash << 5) - fiscalHash + fiscalSeed.charCodeAt(i)) | 0;
+	}
+	const absHash = Math.abs(fiscalHash);
+	const docNum = (absHash % 90000) + 10000;
+	const fpd = (1000000000 + (absHash % 9000000000)).toString();
 	const receiptNumber = `ФД-${docNum}`;
 
 	// Тег 1214: Признак способа расчета (2 — предоплата, 4 — полный расчет при закрытии последнего взноса)
@@ -455,6 +461,28 @@ export const TREATMENT_INSTALLMENT_PRESETS: Record<TreatmentPresetType, Treatmen
 };
 
 /**
+ * Честная детерминированная нумерация договоров рассрочки без случайных чисел (Мандаты 8b, 8e).
+ * Формат: РАС-YYYY/NNN-SS, где NNN - код пациента/клиники, SS - порядковый номер договора.
+ */
+export function generateInstallmentContractNumber(
+	patientId: string,
+	startDateIso: string = new Date().toISOString(),
+	sequence: number = 1,
+): string {
+	const year = new Date(startDateIso).getFullYear();
+	const digits = patientId.replace(/\D/g, "");
+	let patientHash = 0;
+	for (let i = 0; i < patientId.length; i++) {
+		patientHash = ((patientHash << 5) - patientHash + patientId.charCodeAt(i)) | 0;
+	}
+	const patientCode = digits
+		? String(parseInt(digits.slice(-4), 10)).padStart(3, "0")
+		: String((Math.abs(patientHash) % 900) + 100);
+	const seqStr = String(sequence).padStart(2, "0");
+	return `РАС-${year}/${patientCode}-${seqStr}`;
+}
+
+/**
  * Создает готовый типовой договор внутренней рассрочки для клиники.
  */
 export function createDefaultInternalInstallmentsPreset(
@@ -479,13 +507,11 @@ export function createDefaultInternalInstallmentsPreset(
 	const evalResult = evaluateInstallmentStatus(schedule, startDateIso);
 
 	const monthlyPaymentKop = schedule.length > 1 ? schedule[1]!.amountKopecks : (0 as Kopecks);
-
-	const randomNum = Math.floor(10 + Math.random() * 90);
-	const year = new Date(startDateIso).getFullYear();
+	const contractNumber = generateInstallmentContractNumber(patientId, startDateIso, 1);
 
 	return {
 		id: `inst-plan-${presetType}-${patientId}-${Date.now()}`,
-		contractNumber: `РАС-${year}/${randomNum}`,
+		contractNumber,
 		patientId,
 		patientName,
 		patientPhone,

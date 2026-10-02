@@ -15,6 +15,7 @@ export interface OdontogramViewOption {
 	mode: OdontogramViewMode;
 	label: string;
 	shortLabel: string;
+	compactLabel?: string;
 	mobileLabel?: string;
 	icon: React.ReactNode;
 	tooltip: string;
@@ -26,6 +27,7 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 		mode: "anatomical_svg",
 		label: "3D Анатомический",
 		shortLabel: "Анатомический",
+		compactLabel: "3D",
 		mobileLabel: "3D",
 		icon: <Sparkles size={14} className="text-indigo-500 shrink-0" />,
 		tooltip: "Векторная анатомическая визуализация коронок, корней и каналов",
@@ -35,7 +37,8 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 		mode: "compact_clinical",
 		label: "Клинический 6-поверхностный",
 		shortLabel: "6-Поверхностный FDI",
-		mobileLabel: "FDI 6-пов.",
+		compactLabel: "FDI 6-гр",
+		mobileLabel: "FDI",
 		icon: <Zap size={14} className="text-amber-500 shrink-0" />,
 		tooltip: "Быстрая разметка патологий по 6 граням зуба (O, V, L/P, M, D, C)",
 		badge: "FDI",
@@ -44,6 +47,7 @@ export const ODONTOGRAM_VIEW_MODES: readonly OdontogramViewOption[] = [
 		mode: "classic_gost",
 		label: "Классический ГОСТ",
 		shortLabel: "Классический",
+		compactLabel: "ГОСТ",
 		mobileLabel: "ГОСТ",
 		icon: <FileText size={14} className="text-[var(--teal)] shrink-0" />,
 		tooltip: "Табличная форма карты стоматологического пациента (Минздрав РФ)",

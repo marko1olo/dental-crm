@@ -77,6 +77,21 @@ export function familyTopupRequestKey(
 }
 
 /**
+ * Подпись возврата на семейный депозит. Причина и пациент входят в подпись,
+ * чтобы две разные отмены не слились в один ключ.
+ */
+export function familyRefundRequestKey(
+	patientId: string,
+	familyGroupId: string,
+	amountRub: number,
+	reason: string,
+): string {
+	return ["refund", patientId, familyGroupId, amountRub, reason].join(
+		FIELD_SEPARATOR,
+	);
+}
+
+/**
  * Выдать ключ идемпотентности для операции с такой подписью.
  *
  * Подпись совпала с сохранённой — это повтор той же попытки, ключ возвращается

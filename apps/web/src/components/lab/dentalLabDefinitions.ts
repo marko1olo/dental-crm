@@ -9,6 +9,10 @@ import {
 	CANONICAL_5_CLINICAL_LAB_STATUSES,
 	type Canonical5LabStatus,
 	type Canonical5LabStatusItem,
+	CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES,
+	mapTo6StageOrthopedicLifecycle,
+	type CanonicalOrthopedic6StageId,
+	type CanonicalOrthopedic6StageItem,
 	type DentalLabOrderData,
 } from "./labMath";
 
@@ -16,8 +20,13 @@ export {
 	CANONICAL_5_CLINICAL_LAB_STATUSES,
 	type Canonical5LabStatus,
 	type Canonical5LabStatusItem,
+	CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES,
+	mapTo6StageOrthopedicLifecycle,
+	type CanonicalOrthopedic6StageId,
+	type CanonicalOrthopedic6StageItem,
 	type DentalLabOrderData,
 };
+
 
 // ─── 1. ВИДЫ КОНСТРУКЦИЙ ЗТЛ ────────────────────────────────────────────────
 

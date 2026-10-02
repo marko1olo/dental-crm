@@ -18,11 +18,11 @@ export type ExpiryTrafficLight = FefoTrafficLightInfo;
 export interface FefoTrafficLightOptions {
 	/** Порог критического срока (красная зона) в днях. В складском учете: <= 30 дней. */
 	readonly redDays?: number;
-	/** Порог приближающегося срока (желтая зона) в днях. В складском учете: <= 90 дней. */
+	/** Порог приближающегося срока (желтая зона) в днях. В складском учете: <= 180 дней (1-6 месяцев). */
 	readonly yellowDays?: number;
 	/**
 	 * Включить складской режим FEFO:
-	 * Красный (<= 30 дней), Желтый (<= 90 дней), Зеленый (> 90 дней).
+	 * Красный (<= 30 дней), Желтый (31..180 дней, 1-6 месяцев), Зеленый (> 180 дней, > 6 месяцев).
 	 */
 	readonly warehouseMode?: boolean;
 }
@@ -124,7 +124,7 @@ export function getFefoTrafficLight(
 		options?.yellowDays !== undefined
 			? options.yellowDays
 			: isWarehouse
-				? 90
+				? 180
 				: 30;
 
 	// 1. Красный (Просрочен / истекает сегодня / критический срок <= redThreshold)
@@ -208,9 +208,9 @@ export function getFefoTrafficLight(
 
 /**
  * Складской FEFO-светофор срока годности (Мандаты 8e, 8n):
- * 1. Красный: <= 30 дней (критический срок / просрочено)
- * 2. Желтый: <= 90 дней (31..90 дней — FEFO приоритет)
- * 3. Зеленый: > 90 дней (срок в норме)
+ * 1. Красный: <= 30 дней (критический срок < 30 дн. / просрочено)
+ * 2. Желтый: 31..180 дней (1-6 месяцев — FEFO приоритет расхода)
+ * 3. Зеленый: > 180 дней (> 6 месяцев — срок в норме)
  */
 export function getWarehouseFefoTrafficLight(
 	expirationDateIso: string | null | undefined,

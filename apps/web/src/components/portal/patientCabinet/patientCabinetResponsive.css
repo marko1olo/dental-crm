@@ -692,3 +692,33 @@
 		width: 100%;
 	}
 }
+
+/* ============================================================
+   FAMILY TAB & MULTI-MEMBER LEDGER (MOBILE 375PX & TOUCH)
+   ============================================================ */
+.pc-family-tab {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+	.pc-family-summary-banner {
+		padding: 12px 14px !important;
+	}
+
+	.pc-family-member-card {
+		padding: 12px !important;
+	}
+
+	.pc-family-member-card button {
+		min-height: 44px;
+	}
+
+	.pc-btn-primary[data-testid="btn-toggle-add-family-member"],
+	.pc-btn-primary[data-testid="btn-add-family-member-empty"] {
+		width: 100%;
+		justify-content: center;
+		min-height: 44px;
+	}
+}
+

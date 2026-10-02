@@ -10,6 +10,8 @@ import {
 	formatJawScopeLabel,
 	CANONICAL_5_CLINICAL_LAB_STATUSES,
 	mapTo5StageLabStatus,
+	CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES,
+	mapTo6StageOrthopedicLifecycle,
 	calculateWorkingDaysRemaining,
 	formatPatientName152Fz,
 } from "./labMath";
@@ -20,6 +22,9 @@ export interface DentalLabPrintBlankProps {
 	formPatientName: string;
 	formDoctorName: string;
 	clinicName?: string;
+	clinicPhone?: string;
+	doctorPhone?: string;
+	deliveryTimeSlot?: string;
 	selectedTeeth: number[];
 	jawScope?: JawScope | null;
 	constructionType: string;
@@ -61,6 +66,9 @@ export function DentalLabPrintBlank({
 	formPatientName,
 	formDoctorName,
 	clinicName = "ООО «ДЕНТЕ» · Стоматологическая клиника",
+	clinicPhone = "+7 (495) 789-20-20",
+	doctorPhone = "+7 (926) 450-11-22",
+	deliveryTimeSlot = "12:00 – 15:00",
 	selectedTeeth,
 	jawScope,
 	constructionType,
@@ -98,6 +106,7 @@ export function DentalLabPrintBlank({
 	const active5Stage = mapTo5StageLabStatus(currentStage || status || "sent");
 	const currentStep =
 		CANONICAL_5_CLINICAL_LAB_STATUSES.find((s) => s.id === active5Stage)?.step ?? 1;
+
 
 	const finalShade =
 		shadeSystem === "3d_master"
@@ -149,6 +158,29 @@ export function DentalLabPrintBlank({
 						margin: 0 !important;
 						background: #ffffff !important;
 						color: #000000 !important;
+					}
+					#printable-lab-order-sheet,
+					#printable-lab-order-sheet * {
+						box-shadow: none !important;
+						text-shadow: none !important;
+					}
+					/* Anti-muddy grey backgrounds: strip dirty shaded fills on physical paper */
+					#printable-lab-order-sheet .bg-slate-50,
+					#printable-lab-order-sheet .bg-slate-100,
+					#printable-lab-order-sheet .bg-slate-200 {
+						background-color: transparent !important;
+						background: transparent !important;
+					}
+					#printable-lab-order-sheet .border-slate-200,
+					#printable-lab-order-sheet .border-slate-300,
+					#printable-lab-order-sheet .border-slate-400 {
+						border-color: #000000 !important;
+					}
+					#printable-lab-order-sheet .bg-slate-900 {
+						background-color: #ffffff !important;
+						color: #000000 !important;
+						border: 2px solid #000000 !important;
+						font-weight: 800 !important;
 					}
 					.break-inside-avoid,
 					tr,
@@ -206,10 +238,13 @@ export function DentalLabPrintBlank({
 							Дата сдачи слепка/скана: <strong>{formattedOrderDate}</strong>
 						</span>
 						{dueDate && (
-							<span className="text-xs font-bold text-rose-600 block mt-0.5">
+							<span className="text-xs font-bold text-rose-600 print:text-black block mt-0.5">
 								Срок сдачи: {new Date(dueDate).toLocaleDateString("ru-RU")}
 							</span>
 						)}
+						<span className="text-xs font-semibold block text-slate-700 print:text-black mt-0.5">
+							Окно курьера: <strong>{deliveryTimeSlot}</strong>
+						</span>
 						{deadlineInfo && (
 							<span
 								className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold border ${deadlineInfo.badgeClass}`}
@@ -251,10 +286,23 @@ export function DentalLabPrintBlank({
 						</div>
 						<div>
 							<strong>Врач-ортопед:</strong> <span className="font-bold">{formDoctorName}</span>
+							{doctorPhone && (
+								<span className="text-[11px] text-slate-600 print:text-black font-normal ml-1">
+									(Тел: <strong>{doctorPhone}</strong>)
+								</span>
+							)}
+						</div>
+						<div>
+							<strong>Клиника:</strong> <span className="font-bold">{clinicName}</span>
+							{clinicPhone && (
+								<span className="text-[11px] text-slate-600 print:text-black font-normal ml-1">
+									(Тел: <strong>{clinicPhone}</strong>)
+								</span>
+							)}
 						</div>
 						<div>
 							<strong>Зубная формула (FDI):</strong>{" "}
-							<span className="font-bold text-sm bg-slate-100 px-2 py-0.5 rounded">
+							<span className="font-bold text-sm bg-slate-100 print:bg-transparent px-2 py-0.5 rounded border border-slate-200 print:border-black">
 								{jawScope
 									? `Челюсть целиком: ${formatJawScopeLabel(jawScope)}`
 									: selectedTeeth.length > 0
@@ -293,8 +341,8 @@ export function DentalLabPrintBlank({
 				</div>
 
 				{/* Detailed Spec Box */}
-				<div className="p-3.5 bg-slate-50 border border-slate-300 rounded-lg text-xs space-y-2 break-inside-avoid print:break-inside-avoid" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
-					<div className="font-bold border-b border-slate-200 pb-1 uppercase tracking-wider text-[11px] text-slate-700">
+				<div className="p-3.5 bg-slate-50 border border-slate-300 rounded-lg text-xs space-y-2 break-inside-avoid print:break-inside-avoid print:bg-transparent print:border-black" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
+					<div className="font-bold border-b border-slate-200 pb-1 uppercase tracking-wider text-[11px] text-slate-700 print:border-black print:text-black">
 						Техническое задание зубному технику:
 					</div>
 					<div className="grid grid-cols-2 gap-2 text-xs">
@@ -315,7 +363,7 @@ export function DentalLabPrintBlank({
 					</div>
 
 					{/* Fitting and Due Dates */}
-					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-slate-200 text-xs">
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-slate-200 print:border-black text-xs">
 						<div>
 							<strong>Примерка каркаса:</strong>{" "}
 							{frameworkTrialDate
@@ -330,12 +378,13 @@ export function DentalLabPrintBlank({
 						</div>
 						<div>
 							<strong>Сдача готовой работы:</strong>{" "}
-							{dueDate ? new Date(dueDate).toLocaleDateString("ru-RU") : "Не назначена"}
+							{dueDate ? new Date(dueDate).toLocaleDateString("ru-RU") : "Не назначена"}{" "}
+							<span className="font-semibold text-slate-600 print:text-black">({deliveryTimeSlot})</span>
 						</div>
 					</div>
 
 					{clinicalNotes && (
-						<div className="pt-1.5 text-xs italic text-slate-800">
+						<div className="pt-1.5 text-xs italic text-slate-800 print:text-black">
 							<strong>Клинические указания:</strong> {clinicalNotes}
 						</div>
 					)}
@@ -343,13 +392,12 @@ export function DentalLabPrintBlank({
 
 				{/* 5-Stage Clinical Tracking Progression (ГОСТ Р 51087-97 / Мандаты 8e, 8s, 8k) */}
 				<div
-					className="p-3 bg-slate-50 border border-slate-300 rounded-lg text-xs space-y-2 break-inside-avoid print:break-inside-avoid"
-					style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+					className="p-3 bg-slate-50 border border-slate-300 rounded-lg text-xs space-y-2 break-inside-avoid print:break-inside-avoid print:bg-transparent print:border-black"
 					data-testid="lab-blank-5stage-tracker"
 				>
-					<div className="font-bold border-b border-slate-200 pb-1.5 uppercase tracking-wider text-[11px] text-slate-700 flex justify-between items-center">
+					<div className="font-bold border-b border-slate-200 pb-1.5 uppercase tracking-wider text-[11px] text-slate-700 flex justify-between items-center print:border-black print:text-black">
 						<span>Маршрутный лист и клинические этапы ЗТЛ (ГОСТ Р 51087-97):</span>
-						<span className="font-mono text-[10px] text-slate-500 font-semibold">5 ЭТАПОВ ТРЕКИНГА</span>
+						<span className="font-mono text-[10px] text-slate-500 print:text-black font-semibold">5 ЭТАПОВ ТРЕКИНГА</span>
 					</div>
 					<div className="grid grid-cols-5 gap-2 pt-1 text-center">
 						{CANONICAL_5_CLINICAL_LAB_STATUSES.map((item) => {
@@ -360,10 +408,10 @@ export function DentalLabPrintBlank({
 									key={item.id}
 									className={`p-2 rounded border text-center transition-all ${
 										isCurrent
-											? "bg-slate-900 text-white border-slate-900 font-bold shadow-xs ring-1 ring-slate-900"
+											? "bg-slate-900 text-white border-slate-900 font-bold shadow-xs ring-1 ring-slate-900 print:bg-white print:text-black print:border-black print:font-black"
 											: isPassed
-											? "bg-slate-100 text-slate-800 border-slate-300 font-semibold"
-											: "bg-white text-slate-400 border-slate-200"
+											? "bg-slate-100 text-slate-800 border-slate-300 font-semibold print:bg-transparent print:text-black print:border-black"
+											: "bg-white text-slate-400 border-slate-200 print:bg-transparent print:text-slate-600 print:border-slate-300"
 									}`}
 									data-testid={`ztl-blank-stage-${item.id}`}
 								>
@@ -380,22 +428,65 @@ export function DentalLabPrintBlank({
 					</div>
 				</div>
 
+				{/* 6-Stage Orthopedic Lifecycle & Courier Manifest (Mandates 8e, 8s) */}
+				<div
+					className="p-3 bg-slate-50 border border-slate-300 rounded-lg text-xs space-y-2 break-inside-avoid print:break-inside-avoid print:bg-transparent print:border-black"
+					data-testid="lab-blank-6stage-lifecycle"
+				>
+					<div className="font-bold border-b border-slate-200 pb-1.5 uppercase tracking-wider text-[11px] text-slate-700 flex justify-between items-center print:border-black print:text-black">
+						<span>Ортопедический жизненный цикл и курьерский трекинг (6 этапов):</span>
+						<span className="font-mono text-[10px] text-slate-600 print:text-black font-bold">
+							СЛОТ ДОСТАВКИ: {deliveryTimeSlot}
+						</span>
+					</div>
+					<div className="grid grid-cols-6 gap-1.5 pt-1 text-center">
+						{CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES.map((item) => {
+							const mapped6 = mapTo6StageOrthopedicLifecycle(currentStage || status || "sent");
+							const isCurrent = mapped6 === item.id;
+							const stepCurrent = CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES.find((s) => s.id === mapped6)?.step ?? 1;
+							const isPassed = stepCurrent >= item.step;
+
+							return (
+								<div
+									key={item.id}
+									className={`p-1.5 rounded border text-center text-[10px] transition-all ${
+										isCurrent
+											? "bg-slate-900 text-white border-slate-900 font-bold print:bg-white print:text-black print:border-black print:font-black"
+											: isPassed
+											? "bg-slate-100 text-slate-800 border-slate-300 font-semibold print:bg-transparent print:text-black print:border-black"
+											: "bg-white text-slate-400 border-slate-200 print:bg-transparent print:text-slate-600 print:border-slate-300"
+									}`}
+									data-testid={`ztl-blank-6stage-${item.id}`}
+								>
+									<div className="font-bold uppercase tracking-wider">
+										Эт. {item.step}
+									</div>
+									<div className="font-bold truncate mt-0.5">{item.shortLabelRu}</div>
+									<div className="opacity-80 mt-0.5">
+										{isCurrent ? "ТЕКУЩИЙ" : isPassed ? "ПРОЙДЕН" : "ОЖИДАНИЕ"}
+									</div>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+
 				{/* Disinfection & Authorization Mark */}
-				<div className="p-2.5 border border-dashed border-slate-300 rounded text-xs flex justify-between items-center text-slate-600 flex-wrap gap-2 break-inside-avoid print:break-inside-avoid" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
+				<div className="p-2.5 border border-dashed border-slate-300 print:border-black rounded text-xs flex justify-between items-center text-slate-600 print:text-black flex-wrap gap-2 break-inside-avoid print:break-inside-avoid" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
 					<span>
 						Оттиски и материалы дезинфицированы в клинике • Срок плана лечения (&gt;30 дн.) не блокирует наряды ЗТЛ • Наряд авторизован лечащим врачом
 					</span>
 					{totalLabPriceRub != null && totalLabPriceRub > 0 && (
-						<span className="font-bold text-slate-900">
+						<span className="font-bold text-slate-900 print:text-black">
 							Стоимость наряда: {money(totalLabPriceRub)}
 						</span>
 					)}
 				</div>
 
 				{/* Barcode & QR Code Section */}
-				<div className="flex justify-between items-center pt-2 border-t border-dashed border-slate-300 break-inside-avoid print:break-inside-avoid" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
+				<div className="flex justify-between items-center pt-2 border-t border-dashed border-slate-300 print:border-black break-inside-avoid print:break-inside-avoid" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
 					<div className="w-1/2">
-						<div className="text-xs uppercase font-bold text-slate-500 mb-1">
+						<div className="text-xs uppercase font-bold text-slate-500 print:text-black mb-1">
 							Штрихкод наряда
 						</div>
 						<div
@@ -406,10 +497,10 @@ export function DentalLabPrintBlank({
 
 					<div className="flex items-center gap-3 text-right">
 						<div>
-							<div className="text-xs uppercase font-bold text-slate-600">
+							<div className="text-xs uppercase font-bold text-slate-600 print:text-black">
 								Портал техника (QR)
 							</div>
-							<div className="text-xs text-slate-500">
+							<div className="text-xs text-slate-500 print:text-black">
 								Сканируйте для онлайн-статуса
 							</div>
 						</div>
@@ -420,13 +511,22 @@ export function DentalLabPrintBlank({
 					</div>
 				</div>
 
-				{/* Signatures */}
-				<div className="grid grid-cols-2 gap-8 pt-4 text-xs break-inside-avoid print:break-inside-avoid" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
-					<div className="border-t border-slate-400 pt-1">
-						Врач-ортопед: ___________________ / {formDoctorName} /
+				{/* Signatures & Courier Handover Slip */}
+				<div className="grid grid-cols-3 gap-6 pt-3 text-xs break-inside-avoid print:break-inside-avoid" style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
+					<div className="border-t border-slate-400 print:border-black pt-1 space-y-0.5">
+						<div className="font-semibold text-slate-700 print:text-black">Врач-ортопед:</div>
+						<div className="font-bold">/ {formDoctorName} /</div>
+						<div className="text-[10px] text-slate-500 print:text-black">Тел: {doctorPhone || clinicPhone}</div>
 					</div>
-					<div className="border-t border-slate-400 pt-1 text-right">
-						Зубной техник (ЗТЛ): ___________________ /
+					<div className="border-t border-slate-400 print:border-black pt-1 text-center space-y-0.5">
+						<div className="font-semibold text-slate-700 print:text-black">Курьер ЗТЛ (передача):</div>
+						<div className="font-bold">Слот: {deliveryTimeSlot}</div>
+						<div className="text-[10px] text-slate-500 print:text-black">Подпись: ___________________</div>
+					</div>
+					<div className="border-t border-slate-400 print:border-black pt-1 text-right space-y-0.5">
+						<div className="font-semibold text-slate-700 print:text-black">Прием лабораторией ЗТЛ:</div>
+						<div className="font-bold">Техник: ___________________</div>
+						<div className="text-[10px] text-slate-500 print:text-black">Дата/время: ________________</div>
 					</div>
 				</div>
 			</div>

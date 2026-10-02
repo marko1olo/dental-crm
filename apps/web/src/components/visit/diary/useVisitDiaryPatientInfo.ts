@@ -7,6 +7,7 @@ import type { RadiologySnapshotItem } from "../VisitSummaryModal";
 
 export interface UseVisitDiaryPatientInfoParams {
 	readonly patientId: string;
+	readonly visitId?: string;
 	readonly initialTeethData?: readonly {
 		toothNumber: number;
 		state: string;
@@ -22,6 +23,7 @@ export interface UseVisitDiaryPatientInfoParams {
 
 export function useVisitDiaryPatientInfo({
 	patientId,
+	visitId,
 	initialTeethData = [],
 	activePatient,
 	activeDoctor,
@@ -80,8 +82,13 @@ export function useVisitDiaryPatientInfo({
 						: [];
 				if (Array.isArray(raw)) {
 					const mapped: RadiologySnapshotItem[] = raw
-						.map((s: any) => ({
-							id: String(s.id || Math.random()),
+						.map((s: any, index: number) => ({
+							id: String(
+								s.id ||
+									(s.sliceId
+										? `slice_${s.sliceId}`
+										: `rad_${visitId || patientId}_${index}`),
+							),
 							label: String(
 								s.name || s.title || s.label || s.notes || "Снимок ОПТГ/КЛКТ",
 							),
@@ -96,7 +103,7 @@ export function useVisitDiaryPatientInfo({
 		return () => {
 			cancelled = true;
 		};
-	}, [patientId]);
+	}, [patientId, visitId]);
 
 	const selectedPatientId = realVisitFieldId(
 		activePatient && typeof activePatient === "object" && "id" in activePatient

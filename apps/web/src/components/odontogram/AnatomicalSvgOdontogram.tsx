@@ -7,7 +7,7 @@
  */
 
 import { Sparkles } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	DenteToothSvgDefs,
 	type ToothData,
@@ -272,45 +272,45 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 	};
 
 	useEffect(() => {
-		if (controlledQuadrant !== undefined) {
+		if (controlledQuadrant !== undefined && localQuadrant !== controlledQuadrant) {
 			setLocalQuadrant(controlledQuadrant);
 		}
 		if (archContainerRef.current) {
 			archContainerRef.current.scrollLeft = 0;
 		}
-	}, [controlledQuadrant, currentQuadrant]);
+	}, [controlledQuadrant, localQuadrant]);
 
-	const defaultTopTeeth = isMixedEffective
-		? MIXED_TOP_TEETH
-		: isPediatricEffective
-			? PEDIATRIC_TOP_TEETH
-			: TOP_TEETH;
-	const defaultBottomTeeth = isMixedEffective
-		? MIXED_BOTTOM_TEETH
-		: isPediatricEffective
-			? PEDIATRIC_BOTTOM_TEETH
-			: BOTTOM_TEETH;
+	const isWisdom = useCallback((n: number) => n === 18 || n === 28 || n === 38 || n === 48, []);
 
-	const rawTopTeethList =
-		Array.isArray(customTopTeeth) && customTopTeeth.length > 0
-			? customTopTeeth
-			: defaultTopTeeth;
-	const rawBottomTeethList =
-		Array.isArray(customBottomTeeth) && customBottomTeeth.length > 0
-			? customBottomTeeth
-			: defaultBottomTeeth;
+	const topTeethList = useMemo(() => {
+		if (Array.isArray(customTopTeeth) && customTopTeeth.length > 0) {
+			return showWisdomTeeth ? customTopTeeth : customTopTeeth.filter((n) => !isWisdom(n));
+		}
+		const defaultList = isMixedEffective
+			? MIXED_TOP_TEETH
+			: isPediatricEffective
+				? PEDIATRIC_TOP_TEETH
+				: TOP_TEETH;
+		return showWisdomTeeth ? defaultList : defaultList.filter((n) => !isWisdom(n));
+	}, [customTopTeeth, showWisdomTeeth, isMixedEffective, isPediatricEffective, isWisdom]);
 
-	const isWisdom = (n: number) => n === 18 || n === 28 || n === 38 || n === 48;
-	const topTeethList = Array.isArray(rawTopTeethList)
-		? (showWisdomTeeth ? rawTopTeethList : rawTopTeethList.filter((n) => !isWisdom(n)))
-		: defaultTopTeeth;
-	const bottomTeethList = Array.isArray(rawBottomTeethList)
-		? (showWisdomTeeth ? rawBottomTeethList : rawBottomTeethList.filter((n) => !isWisdom(n)))
-		: defaultBottomTeeth;
+	const bottomTeethList = useMemo(() => {
+		if (Array.isArray(customBottomTeeth) && customBottomTeeth.length > 0) {
+			return showWisdomTeeth ? customBottomTeeth : customBottomTeeth.filter((n) => !isWisdom(n));
+		}
+		const defaultList = isMixedEffective
+			? MIXED_BOTTOM_TEETH
+			: isPediatricEffective
+				? PEDIATRIC_BOTTOM_TEETH
+				: BOTTOM_TEETH;
+		return showWisdomTeeth ? defaultList : defaultList.filter((n) => !isWisdom(n));
+	}, [customBottomTeeth, showWisdomTeeth, isMixedEffective, isPediatricEffective, isWisdom]);
 
 	useEffect(() => {
 		const element = archContainerRef.current;
 		if (!element) return;
+
+		let rafId: number | null = null;
 
 		const recalculate = () => {
 			const el = archContainerRef.current;
@@ -338,20 +338,30 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 
 			const minScale = isQuadrantView ? (available < 420 ? 0.65 : (isShortHeight ? 0.8 : 0.95)) : (isShortHeight ? 0.52 : 0.65);
 			const widthScale = (available / baseNaturalWidth) * (isQuadrantView ? 1.15 : 0.96);
-			const targetScale = Math.min(
+			const rawTargetScale = Math.min(
 				1.8,
 				Math.max(minScale, widthScale * heightScaleFactor),
 			);
+			// Quantize to avoid scrollbar toggle oscillation
+			const targetScale = Math.round(rawTargetScale * 50) / 50;
 
-			if (Math.abs(appliedArchScaleRef.current - targetScale) < 0.005) return;
+			if (Math.abs(appliedArchScaleRef.current - targetScale) < 0.03) return;
 			appliedArchScaleRef.current = targetScale;
 			setArchScale(targetScale);
 		};
 
+		const debouncedRecalculate = () => {
+			if (rafId !== null) cancelAnimationFrame(rafId);
+			rafId = requestAnimationFrame(recalculate);
+		};
+
 		recalculate();
-		const observer = new ResizeObserver(recalculate);
+		const observer = new ResizeObserver(debouncedRecalculate);
 		observer.observe(element);
-		return () => observer.disconnect();
+		return () => {
+			if (rafId !== null) cancelAnimationFrame(rafId);
+			observer.disconnect();
+		};
 	}, [currentQuadrant, topTeethList, bottomTeethList, isPediatricEffective]);
 
 	// High-speed keyboard triggers: instant 1-key assigning without opening sub-menus

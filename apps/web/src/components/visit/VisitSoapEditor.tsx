@@ -513,16 +513,41 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			const complaint = incoming.complaint || incoming.complaints;
 
 			setValues((prev) => {
-				const next: VisitSoapNoteValues = {
-					...prev,
-					anamnesis: incoming.anamnesis ?? prev.anamnesis,
-					objectiveStatus: statusLocalis ?? prev.objectiveStatus,
-					complaint: complaint ?? prev.complaint,
-					diagnosis: incoming.diagnosis ?? prev.diagnosis,
-					treatmentPlan: incoming.treatmentPlan ?? prev.treatmentPlan,
-					recommendations: incoming.recommendations ?? prev.recommendations,
-					icd10: incoming.icd10 ?? incoming.diagnosisIcd10 ?? prev.icd10,
+				const isSmartAppend = detail.mode === "smart_append";
+				const appendField = (
+					baseVal: string | undefined,
+					incomingVal: string | undefined,
+					sep = "\n\n",
+				): string => {
+					const base = (baseVal || "").trim();
+					const inc = (incomingVal || "").trim();
+					if (!inc) return base;
+					if (!base) return inc;
+					if (base.includes(inc)) return base;
+					return `${base}${sep}${inc}`;
 				};
+
+				const next: VisitSoapNoteValues = isSmartAppend
+					? {
+							...prev,
+							anamnesis: appendField(prev.anamnesis, incoming.anamnesis),
+							objectiveStatus: appendField(prev.objectiveStatus, statusLocalis),
+							complaint: appendField(prev.complaint, complaint),
+							diagnosis: appendField(prev.diagnosis, incoming.diagnosis, "; "),
+							treatmentPlan: appendField(prev.treatmentPlan, incoming.treatmentPlan),
+							recommendations: appendField(prev.recommendations, incoming.recommendations),
+							icd10: incoming.icd10 ?? incoming.diagnosisIcd10 ?? prev.icd10,
+					  }
+					: {
+							...prev,
+							anamnesis: incoming.anamnesis ?? prev.anamnesis,
+							objectiveStatus: statusLocalis ?? prev.objectiveStatus,
+							complaint: complaint ?? prev.complaint,
+							diagnosis: incoming.diagnosis ?? prev.diagnosis,
+							treatmentPlan: incoming.treatmentPlan ?? prev.treatmentPlan,
+							recommendations: incoming.recommendations ?? prev.recommendations,
+							icd10: incoming.icd10 ?? incoming.diagnosisIcd10 ?? prev.icd10,
+					  };
 				valuesRef.current = next;
 				setSaveStatus("saved");
 				try {

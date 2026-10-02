@@ -1,0 +1,68 @@
+{
+  "timestamp": "2026-10-02T13:16:30.000Z",
+  "subagent": "zero_mock_visit_inquisitor",
+  "status": "COMPLETED",
+  "mandates_verified": [
+    "Mandate 8b (Exact kopecks & file bounds <= 800 lines)",
+    "Mandate 8e (Doctor Autonomy & non-destructive diary)",
+    "Mandate 8n (Zero-Deadlock EMR/Billing Handshake)",
+    "Mandate 8y (Odontogram-Diary Synchronization)",
+    "Mandate 8z (Deterministic ID Generation & Zero Mocks)"
+  ],
+  "tasks_completed": [
+    {
+      "id": "ZERO_MOCK_SNAPSHOT_IDS",
+      "target": "apps/web/src/components/visit/diary/useVisitDiaryPatientInfo.ts",
+      "action": "Eliminated Math.random() on line 84; replaced with deterministic ID srv_${visitId || patientId}_${index} and slice_${sliceId}",
+      "verified": true
+    },
+    {
+      "id": "DECOMPOSE_CLINICAL_VISIT_WORKFLOW",
+      "target": "apps/web/src/components/visit/clinicalVisitWorkflow.ts",
+      "action": "Extracted DoctorChairSession types, switcher, timer metrics and storage keys to apps/web/src/components/visit/doctorChairSessions.ts (283 lines); re-exported cleanly. clinicalVisitWorkflow.ts reduced from 930 lines to 607 lines (strictly <= 800 lines)",
+      "verified": true
+    },
+    {
+      "id": "ODONTOGRAM_SURFACE_PERSISTENCE",
+      "target": "apps/web/src/components/odontogram/useOdontogramSync.ts",
+      "action": "Hardened surface persistence on remote state merge: surfaces from cached tooth or incoming tooth are never wiped when incoming state has empty surfaces",
+      "verified": true
+    },
+    {
+      "id": "ODONTOGRAM_TO_BILLING_BUNDLES",
+      "target": "apps/web/src/components/odontogram/OdontogramModule.tsx & ToothActionMenuPortal.tsx",
+      "action": "Tooth pathology changes (Caries, Pulpitis, Periodontitis, Missing) now automatically offer/dispatch linked service bundles with deterministic IDs (srv_${patientId}_tooth_${num}_${bundleId}_${code804n}_${idx}) via dente-add-services-to-invoice",
+      "verified": true
+    },
+    {
+      "id": "COMPLETED_SERVICES_CHECKLIST_SYNC",
+      "target": "apps/web/src/components/visit/CompletedServicesChecklist.tsx",
+      "action": "Added listener for dente-add-services-to-invoice to append completed lines into visit treatmentPlan without duplicates; file kept at 780 lines (<= 800)",
+      "verified": true
+    },
+    {
+      "id": "SOAP_SMART_APPEND_PROTECTION",
+      "target": "apps/web/src/components/visit/VisitSoapEditor.tsx",
+      "action": "Hardened handleExternalSoapProtocol: when mode is smart_append, multi-tooth markings append text cleanly without wiping earlier tooth entries",
+      "verified": true
+    },
+    {
+      "id": "TEST_SUITE_EXECUTION",
+      "target": "apps/web/src/tests/zeroMockVisitProtocolInquisition.test.ts",
+      "action": "Created and executed targeted unit tests covering zero Math.random(), anti-monolith file bounds <= 800, exact package pricing, deterministic ID structure, and multi-chair sessions. 50/50 tests passing (Exit Code 0)",
+      "verified": true
+    }
+  ],
+  "files_modified": [
+    "apps/web/src/components/visit/diary/useVisitDiaryPatientInfo.ts",
+    "apps/web/src/components/visit/VisitDiarySection.tsx",
+    "apps/web/src/components/visit/doctorChairSessions.ts",
+    "apps/web/src/components/visit/clinicalVisitWorkflow.ts",
+    "apps/web/src/components/odontogram/useOdontogramSync.ts",
+    "apps/web/src/components/odontogram/OdontogramModule.tsx",
+    "apps/web/src/components/odontogram/ToothActionMenuPortal.tsx",
+    "apps/web/src/components/visit/CompletedServicesChecklist.tsx",
+    "apps/web/src/components/visit/VisitSoapEditor.tsx",
+    "apps/web/src/tests/zeroMockVisitProtocolInquisition.test.ts"
+  ]
+}

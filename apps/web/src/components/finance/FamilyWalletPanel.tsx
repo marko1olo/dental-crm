@@ -30,6 +30,7 @@ import {
 	familyMutationId,
 	familyPayRequestKey,
 	familyTopupRequestKey,
+	familyRefundRequestKey,
 	type MutationTicket,
 } from "./familyWalletMutationKey";
 import { FamilyCombinedBillingModal } from "./FamilyCombinedBillingModal";
@@ -104,6 +105,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 	const topupMutationRef = useRef<MutationTicket | null>(null);
 	const payMutationRef = useRef<MutationTicket | null>(null);
+	const refundMutationRef = useRef<MutationTicket | null>(null);
 
 	const isPatientDatabaseId = PATIENT_ID_PATTERN.test(patientId);
 	const requestGenerationRef = useRef(0);
@@ -460,9 +462,16 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 		setIsRefunding(true);
 		try {
-			const mutationId = `refund-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 			const targetRefundMember = (family.members ?? []).find((m) => m.id === refundTargetPatientId);
 			const targetName = targetRefundMember?.fullName?.trim() || "Пациент";
+			const effectiveTargetPatientId = refundTargetPatientId || patientId;
+			const cleanReason = refundReason.trim();
+
+			const mutationId = familyMutationId(
+				refundMutationRef,
+				"family-refund",
+				familyRefundRequestKey(effectiveTargetPatientId, family.id, refundAmount, cleanReason),
+			);
 
 			const res = await fetch("/api/finance/family/topup", {
 				method: "POST",
@@ -470,11 +479,11 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
-					patientId: refundTargetPatientId || patientId,
+					patientId: effectiveTargetPatientId,
 					familyGroupId: family.id,
 					amountRub: refundAmount,
 					method: "other",
-					comment: `Возврат средств на семейный депозит за пациента ${targetName}: ${refundReason.trim()}`,
+					comment: `Возврат средств на семейный депозит за пациента ${targetName}: ${cleanReason}`,
 					clientMutationId: mutationId,
 				}),
 			});
@@ -484,19 +493,20 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				showToast(errPayload?.message || "Не удалось вернуть средства на депозит", "error");
 				return;
 			}
+			refundMutationRef.current = null;
 
 			// Фиксация в семейном гроссбухе
 			setLedgerEntries((prev) => [
 				{
-					id: `refund-${Date.now()}`,
+					id: `ledger-${mutationId}`,
 					createdAt: new Date().toISOString(),
 					entryType: "refund_deposit",
 					amountRub: refundAmount,
 					amountKopecks: Math.round(refundAmount * 100),
 					payerFullName: headFullName,
-					targetPatientId: refundTargetPatientId,
+					targetPatientId: effectiveTargetPatientId,
 					targetPatientFullName: targetName,
-					notes: `Возврат на семейный депозит: ${refundReason.trim()}`,
+					notes: `Возврат на семейный депозит: ${cleanReason}`,
 					clientMutationId: mutationId,
 				},
 				...prev,
