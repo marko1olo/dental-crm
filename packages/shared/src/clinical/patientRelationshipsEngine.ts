@@ -12,6 +12,7 @@
  */
 
 import { z } from "zod";
+import { generateSecureUuid } from "../utils/idGenerators.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. RELATIONSHIP TYPES & INVERSION MATRIX
@@ -387,16 +388,7 @@ export interface AuthorizedSignersResolution {
 // 5. INTERNAL HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-function generateUUID(): string {
-	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-		return crypto.randomUUID();
-	}
-	return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-		const r = (Math.random() * 16) | 0;
-		const v = c === "x" ? r : (r & 0x3) | 0x8;
-		return v.toString(16);
-	});
-}
+const generateUUID = generateSecureUuid;
 
 function formatDateRu(dateStr?: string): string {
 	if (!dateStr) return "Не указана";

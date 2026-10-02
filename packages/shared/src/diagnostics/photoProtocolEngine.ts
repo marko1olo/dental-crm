@@ -24,6 +24,7 @@
  */
 
 import { z } from "zod";
+import { generateSecureUuid } from "../utils/idGenerators.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. DATA TYPES, ENUMS & ZOD SCHEMAS
@@ -382,7 +383,7 @@ export function createEmptyOrthodonticSession(params: {
 	notes?: string | undefined;
 }): OrthodonticPhotoSession {
 	const nowIso = new Date().toISOString();
-	const sessionId = params.id || `ortho-photo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+	const sessionId = params.id || generateSecureUuid();
 
 	const slots = {} as Record<OrthodonticAngleId, OrthodonticPhotoSlotRecord>;
 

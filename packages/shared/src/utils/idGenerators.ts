@@ -286,3 +286,121 @@ export function generateClassBWasteSealAndBarcode(
 
 	return { sealNumber, barcode };
 }
+
+/**
+ * Generates official Doctor Shift Number according to clinical standards.
+ * Format: СМ-YYYYMMDD-NN (01..99).
+ */
+export function generateDoctorShiftNumber(
+	shiftDate?: Date | string,
+	options?: {
+		readonly seedKey?: string | undefined;
+		readonly sequenceNumber?: number | undefined;
+		readonly customShiftNumber?: string | undefined;
+	},
+): string {
+	if (options?.customShiftNumber && options.customShiftNumber.trim().length > 0) {
+		return options.customShiftNumber.trim();
+	}
+	const d = shiftDate
+		? (typeof shiftDate === "string" ? new Date(shiftDate) : shiftDate)
+		: new Date();
+	const validDate = Number.isNaN(d.getTime()) ? new Date() : d;
+	const year = validDate.getFullYear();
+	const month = String(validDate.getMonth() + 1).padStart(2, "0");
+	const day = String(validDate.getDate()).padStart(2, "0");
+	const datePart = `${year}${month}${day}`;
+
+	const seq = options?.sequenceNumber !== undefined
+		? String(Math.abs(options.sequenceNumber) % 100).padStart(2, "0")
+		: String(generateDeterministicOrSecureInteger(1, 99, options?.seedKey)).padStart(2, "0");
+
+	return `СМ-${datePart}-${seq}`;
+}
+
+/**
+ * Generates Doctor Shift ID without Math.random.
+ */
+export function generateDoctorShiftId(doctorId: string, shiftDate?: Date | string): string {
+	const d = shiftDate
+		? (typeof shiftDate === "string" ? new Date(shiftDate) : shiftDate)
+		: new Date();
+	const validDate = Number.isNaN(d.getTime()) ? new Date() : d;
+	const datePart = validDate.toISOString().slice(0, 10).replace(/-/g, "");
+	const cleanDocId = doctorId.replace(/[^a-zA-Z0-9_-]/g, "");
+	return `shift_${cleanDocId}_${datePart}_${generateSecureAlphanumericId(6)}`;
+}
+
+/**
+ * Generates official 54-FZ Fiscal Batch ID without Math.random.
+ * Format: BATCH-{timestampMs}-{seq4}.
+ */
+export function generateFiscalBatchId(options?: {
+	readonly timestampMs?: number | undefined;
+	readonly seedKey?: string | undefined;
+	readonly sequenceNumber?: number | undefined;
+}): string {
+	const ts = options?.timestampMs ?? Date.now();
+	const num = generateDeterministicOrSecureInteger(1000, 9999, options?.seedKey, options?.sequenceNumber);
+	return `BATCH-${ts}-${num}`;
+}
+
+/**
+ * Generates an FNS electronic registry suffix (6 to 10 alphanumeric chars)
+ * without Math.random(), using CSPRNG or deterministic seed.
+ */
+export function generateFnsRegistryFileSuffix(length = 8, seedKey?: string): string {
+	if (seedKey !== undefined && seedKey.length > 0) {
+		const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		let hash = hashStringSeed(seedKey);
+		let res = "";
+		for (let i = 0; i < length; i++) {
+			res += charset[hash % charset.length];
+			hash = Math.imul(hash ^ (i + 1), 16777619) >>> 0;
+		}
+		return res;
+	}
+	return generateSecureAlphanumericId(length, false).toUpperCase();
+}
+
+/**
+ * Generates a cryptographically secure UUID v4 (RFC 4122) without Math.random().
+ * Uses native globalThis.crypto.randomUUID() when available, with Web Crypto CSPRNG fallback.
+ */
+export function generateSecureUuid(): string {
+	if (typeof globalThis !== "undefined" && typeof globalThis.crypto?.randomUUID === "function") {
+		return globalThis.crypto.randomUUID();
+	}
+	if (typeof globalThis !== "undefined" && typeof globalThis.crypto?.getRandomValues === "function") {
+		const bytes = new Uint8Array(16);
+		globalThis.crypto.getRandomValues(bytes);
+		bytes[6] = (bytes[6]! & 0x0f) | 0x40; // RFC 4122 version 4
+		bytes[8] = (bytes[8]! & 0x3f) | 0x80; // RFC 4122 variant 10xx
+		const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+		return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+	}
+	// Deterministic fallback if crypto is absent
+	const bytes = new Uint8Array(16);
+	for (let i = 0; i < 16; i++) {
+		bytes[i] = generateDeterministicOrSecureInteger(0, 255);
+	}
+	bytes[6] = (bytes[6]! & 0x0f) | 0x40;
+	bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+	const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/**
+ * Generates a deterministic or cryptographically secure bridge prosthesis identifier.
+ * Format: bridge_{sorted_teeth}_{patientId} or bridge_{sorted_teeth}_{alphanumeric6}.
+ * Zero Math.random().
+ */
+export function generateBridgeId(teethNumbers: readonly number[], patientId?: string): string {
+	const sorted = [...teethNumbers].sort((a, b) => a - b);
+	if (patientId && patientId.trim().length > 0) {
+		const cleanPatientId = patientId.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+		return `bridge_${sorted.join("_")}_${cleanPatientId}`;
+	}
+	return `bridge_${sorted.join("_")}_${generateSecureAlphanumericId(6)}`;
+}
+

@@ -573,4 +573,72 @@ describe("Wave 131: Odontogram Multi-Tooth Treatment Engine (DentalPin Reverse-E
 			assert.ok(text.includes("ФОРМА N 043/У"));
 		});
 	});
+
+	describe("9. Zero-Mock Deterministic Bridge IDs & Clinical Continuity Invariants", () => {
+		it("generates deterministic bridge ID from sorted teeth and patientId (Zero Math.random)", () => {
+			const base = createIntactOdontogram("adult");
+			const bridgeConfig: BridgeToothConfig[] = [
+				{ toothNumber: 16, role: "pillar" },
+				{ toothNumber: 15, role: "pontic" },
+				{ toothNumber: 14, role: "pillar" },
+			];
+
+			const updated = createBridgeTreatment(base, bridgeConfig, "Диоксид циркония", {
+				patientId: "pat-999",
+			});
+
+			assert.equal(updated.treatments[0]!.id, "bridge_14_15_16_pat-999");
+			assert.equal(updated.teeth[14]!.bridgeId, "bridge_14_15_16_pat-999");
+			assert.equal(updated.teeth[15]!.bridgeId, "bridge_14_15_16_pat-999");
+			assert.equal(updated.teeth[16]!.bridgeId, "bridge_14_15_16_pat-999");
+		});
+
+		it("rejects bridge with floating pontics on both ends (bilateral cantilever)", () => {
+			const base = createIntactOdontogram("adult");
+			// 14 pontic, 15 pillar, 16 pontic -> both ends are pontics
+			const floatingEndsConfig: BridgeToothConfig[] = [
+				{ toothNumber: 14, role: "pontic" },
+				{ toothNumber: 15, role: "pillar" },
+				{ toothNumber: 16, role: "pontic" },
+			];
+
+			assert.throws(
+				() => createBridgeTreatment(base, floatingEndsConfig),
+				/Bridge prosthesis must have abutments \(pillars\) on terminal ends; floating pontics on both ends are clinically invalid/,
+			);
+		});
+
+		it("rejects bridge with multi-unit cantilever (pontic-pontic-pillar)", () => {
+			const base = createIntactOdontogram("adult");
+			// 13 pontic, 14 pontic, 15 pillar -> double cantilever without distal abutment
+			const doubleCantileverConfig: BridgeToothConfig[] = [
+				{ toothNumber: 13, role: "pontic" },
+				{ toothNumber: 14, role: "pontic" },
+				{ toothNumber: 15, role: "pillar" },
+			];
+
+			assert.throws(
+				() => createBridgeTreatment(base, doubleCantileverConfig),
+				/Cantilever pontic on tooth 13 must be immediately supported by an adjacent pillar abutment/,
+			);
+		});
+
+		it("allows valid single-unit cantilever bridge (pillar 14, pontic 15)", () => {
+			const base = createIntactOdontogram("adult");
+			const cantileverConfig: BridgeToothConfig[] = [
+				{ toothNumber: 14, role: "pillar" },
+				{ toothNumber: 15, role: "pontic" },
+			];
+
+			const updated = createBridgeTreatment(base, cantileverConfig, "Металлокерамика", {
+				patientId: "pat-cantilever",
+			});
+
+			assert.equal(updated.treatments.length, 1);
+			assert.equal(updated.treatments[0]!.id, "bridge_14_15_pat-cantilever");
+			assert.equal(updated.teeth[14]!.bridgeRole, "pillar");
+			assert.equal(updated.teeth[15]!.bridgeRole, "pontic");
+			assert.equal(updated.teeth[15]!.generalCondition, "missing");
+		});
+	});
 });

@@ -15,6 +15,9 @@
  */
 
 import { z } from "zod";
+import { generateBridgeId } from "../utils/idGenerators.js";
+
+export { generateBridgeId };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FDI TOOTH CONSTANTS & QUADRANTS (ISO 3950)
@@ -403,6 +406,13 @@ export function applyToothCondition(
 	};
 }
 
+export interface CreateBridgeOptions {
+	patientId?: string;
+	bridgeId?: string;
+	status?: TreatmentStatus;
+	notes?: string;
+}
+
 /**
  * Validates and constructs a multi-tooth bridge treatment across abutments (pillars) and pontics.
  * Validates:
@@ -411,11 +421,14 @@ export function applyToothCondition(
  * 3. At least one pillar (abutment) tooth.
  * 4. All teeth must belong to the same dental arch (upper or lower).
  * 5. Teeth must form a strictly contiguous span along the dental arch without gaps.
+ * 6. Clinical continuity & distribution: no floating pontics on both terminal ends; cantilevers must be supported by an immediate adjacent pillar.
+ * 7. 100% Zero Math.random: deterministic ID derivation from tooth numbers and patientId, or CSPRNG.
  */
 export function createBridgeTreatment(
 	odontogram: OdontogramState,
 	teethConfig: BridgeToothConfig[],
 	material?: string,
+	options?: CreateBridgeOptions,
 ): OdontogramState {
 	if (!Array.isArray(teethConfig) || teethConfig.length < 2) {
 		throw new Error("Bridge construction requires at least 2 teeth");
@@ -470,13 +483,48 @@ export function createBridgeTreatment(
 		}
 	}
 
-	const bridgeId = `bridge-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	// Clinical continuity check: order teeth along anatomical arch
+	const sortedByArch = [...teethConfig].sort(
+		(a, b) => archSequence.indexOf(a.toothNumber) - archSequence.indexOf(b.toothNumber),
+	);
+
+	// 1. A bridge cannot have floating pontics on both terminal ends (bilateral floating cantilever)
+	const firstSpanTooth = sortedByArch[0]!;
+	const lastSpanTooth = sortedByArch[sortedByArch.length - 1]!;
+	if (firstSpanTooth.role === "pontic" && lastSpanTooth.role === "pontic") {
+		throw new Error(
+			"Bridge prosthesis must have abutments (pillars) on terminal ends; floating pontics on both ends are clinically invalid",
+		);
+	}
+
+	// 2. Cantilever pontic on terminal end must be supported by an immediate adjacent pillar
+	for (let i = 0; i < sortedByArch.length; i++) {
+		const current = sortedByArch[i]!;
+		if (current.role === "pontic") {
+			const prev = sortedByArch[i - 1];
+			const next = sortedByArch[i + 1];
+			if (i === 0 && (!next || (next.role !== "pillar" && next.role !== "cantilever"))) {
+				throw new Error(
+					`Cantilever pontic on tooth ${current.toothNumber} must be immediately supported by an adjacent pillar abutment`,
+				);
+			}
+			if (i === sortedByArch.length - 1 && (!prev || (prev.role !== "pillar" && prev.role !== "cantilever"))) {
+				throw new Error(
+					`Cantilever pontic on tooth ${current.toothNumber} must be immediately supported by an adjacent pillar abutment`,
+				);
+			}
+		}
+	}
+
+	// Deterministic or CSPRNG bridge ID without Math.random()
+	const bridgeId = options?.bridgeId || generateBridgeId(toothNums, options?.patientId);
 	const newTreatment: MultiToothTreatment = {
 		id: bridgeId,
 		type: "bridge",
 		material: material || "Металлокерамика",
-		status: "planned",
+		status: options?.status || "planned",
 		teeth: teethConfig.map((t) => ({ toothNumber: t.toothNumber, role: t.role })),
+		...(options?.notes ? { notes: options.notes } : {}),
 		createdAt: new Date().toISOString(),
 	};
 

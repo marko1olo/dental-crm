@@ -16,6 +16,8 @@ import {
 	generatePurchaseReceiptId,
 	generateTransferM11Id,
 	generateClassBWasteSealAndBarcode,
+	generateSecureUuid,
+	generateBridgeId,
 	resetSequenceCounter,
 } from "../idGenerators.js";
 
@@ -113,4 +115,27 @@ test("packages/shared/utils/idGenerators: Class B Medical Waste seal and barcode
 
 	assert.match(waste.sealNumber, /^ПЛ-Б-2026-\d{5}$/);
 	assert.match(waste.barcode, /^WASTE-CLASS_B-DENT-20261002-\d{4}$/);
+});
+
+test("packages/shared/utils/idGenerators: generateSecureUuid generates valid RFC 4122 v4 UUIDs without Math.random", () => {
+	const uuid1 = generateSecureUuid();
+	const uuid2 = generateSecureUuid();
+
+	assert.notEqual(uuid1, uuid2);
+	// RFC 4122 v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx where y in [8, 9, a, b]
+	const uuidv4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+	assert.match(uuid1, uuidv4Regex, `UUID ${uuid1} must match RFC 4122 v4`);
+	assert.match(uuid2, uuidv4Regex, `UUID ${uuid2} must match RFC 4122 v4`);
+});
+
+test("packages/shared/utils/idGenerators: generateBridgeId formats deterministic and CSPRNG identifiers", () => {
+	// Deterministic with patientId
+	const b1 = generateBridgeId([16, 15, 14], "pat-test-1");
+	const b2 = generateBridgeId([14, 15, 16], "pat-test-1");
+	assert.equal(b1, "bridge_14_15_16_pat-test-1");
+	assert.equal(b1, b2, "Sorted order guarantees deterministic ID irrespective of input order");
+
+	// CSPRNG without patientId
+	const bRand = generateBridgeId([24, 25, 26]);
+	assert.match(bRand, /^bridge_24_25_26_[a-z0-9]{6}$/);
 });
