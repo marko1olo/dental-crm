@@ -7,7 +7,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	Award,
@@ -54,6 +54,18 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 	const [praiseText, setPraiseText] = useState<string>(
 		"Награждается за невероятную храбрость, ослепительную улыбку и дружбу с Зубной Феей на приеме у врача-стоматолога!",
 	);
+
+	const heroDisplay = useMemo(() => {
+		const trimmed = heroName.trim();
+		if (!trimmed) return "Герой: Юный пациент";
+		return trimmed.startsWith("Герой:") ? trimmed : `Герой: ${trimmed}`;
+	}, [heroName]);
+
+	const doctorDisplay = useMemo(() => {
+		const trimmed = doctorName.trim();
+		if (!trimmed) return "Доктор: Врач-стоматолог";
+		return trimmed.startsWith("Доктор:") ? trimmed : `Доктор: ${trimmed}`;
+	}, [doctorName]);
 
 	const handlePrintDiploma = useCallback(() => {
 		const printWindow = window.open("", "_blank");
@@ -200,7 +212,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 					<div class="diploma-subtitle">Настоящему герою стоматологического кресла</div>
 
 					<div>
-						<div class="hero-name">${heroName}</div>
+						<div class="hero-name">${heroDisplay}</div>
 					</div>
 
 					<p class="diploma-text">
@@ -208,18 +220,21 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 					</p>
 
 					<div class="fairy-seal">
-						<span style="font-size: 16px;">★ ★ ★</span>
+						<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" style="margin-bottom: 2px;">
+							<circle cx="12" cy="8" r="7"/>
+							<polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+						</svg>
 						<span>Зубки</span>
 						<span>Здоровы!</span>
 					</div>
 
 					<div class="signatures">
 						<div class="sig-item">
-							<div class="sig-label">Врач-стоматолог:</div>
-							<div class="sig-value">${doctorName}</div>
+							<div class="sig-label">Врач:</div>
+							<div class="sig-value">${doctorDisplay}</div>
 						</div>
 						<div class="sig-item">
-							<div class="sig-label">Дата визита:</div>
+							<div class="sig-label">Дата:</div>
 							<div class="sig-value">${effectiveDate}</div>
 						</div>
 						<div class="sig-item right">
@@ -236,8 +251,23 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 			</html>
 		`);
 		printWindow.document.close();
-		showToast(`Диплом за храбрость для ${heroName} отправлен на печать!`, "success", 2500);
-	}, [clinicName, doctorName, effectiveDate, heroName, praiseText]);
+		showToast(`Диплом за храбрость для ${heroDisplay} отправлен на печать!`, "success", 2500);
+	}, [clinicName, doctorDisplay, effectiveDate, heroDisplay, praiseText]);
+
+	// Hotkey: Enter для моментальной печати диплома в 1 тап
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Enter" && !event.shiftKey && !event.ctrlKey && !event.altKey) {
+				const activeTag = (document.activeElement?.tagName || "").toLowerCase();
+				if (activeTag === "textarea") return;
+				event.preventDefault();
+				handlePrintDiploma();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, handlePrintDiploma]);
 
 	const handleCopyDiplomaText = useCallback(async () => {
 		const text = [
@@ -295,11 +325,11 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 							type="button"
 							onClick={handlePrintDiploma}
 							className="min-h-[36px] px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs shadow-sm flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
-							title="1-клик Печать диплома"
+							title="1-тап: Распечатать диплом за храбрость (Enter)"
 							data-testid="btn-print-bravery-diploma"
 						>
 							<Printer className="w-4 h-4" />
-							<span>1-клик Печать</span>
+							<span>Распечатать (Enter)</span>
 						</button>
 
 						<button
@@ -369,7 +399,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 
 						<div className="inline-block border-b-2 border-amber-500 px-6 py-1 my-2">
 							<span className="text-xl sm:text-2xl font-black text-[var(--ink,#0f172a)] font-serif">
-								{heroName}
+								{heroDisplay}
 							</span>
 						</div>
 
@@ -389,7 +419,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						<div className="mt-4 pt-3 border-t border-dashed border-amber-300 dark:border-amber-700 flex flex-wrap justify-between items-center text-[11px] text-[var(--muted,#64748b)]">
 							<div className="text-left">
 								<span className="block font-semibold">Врач:</span>
-								<strong className="text-[var(--ink,#0f172a)] font-bold">{doctorName}</strong>
+								<strong className="text-[var(--ink,#0f172a)] font-bold">{doctorDisplay}</strong>
 							</div>
 							<div className="text-center">
 								<span className="block font-semibold">Дата:</span>
@@ -425,9 +455,10 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 							onClick={handlePrintDiploma}
 							className="min-h-[36px] px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs shadow-sm flex items-center gap-1.5 cursor-pointer transition active:scale-95"
 							data-testid="btn-modal-print-diploma"
+							title="Распечатать диплом (Enter)"
 						>
 							<Printer className="w-4 h-4" />
-							<span>Печать диплома</span>
+							<span>Распечатать диплом (Enter)</span>
 						</button>
 					</div>
 				</div>

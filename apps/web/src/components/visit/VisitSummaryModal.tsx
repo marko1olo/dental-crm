@@ -41,6 +41,7 @@ import {
 	RadiologyZoomLightbox,
 } from "./VisitSummaryRadiologyGallery";
 import { VisitSummaryDiarySections } from "./VisitSummaryDiarySections";
+import { PatientMemoPrintModal } from "./PatientMemoPrintModal";
 
 export {
 	type RadiologySnapshotItem,
@@ -146,6 +147,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 	} | null>(null);
 	const [isProtocolGeneratorOpen, setIsProtocolGeneratorOpen] = useState(false);
 	const [synthesizedDiaryPreview, setSynthesizedDiaryPreview] = useState<VisitDiaryEntry043 | null>(null);
+	const [isMemoModalOpen, setIsMemoModalOpen] = useState(false);
 
 	const mappedOdontogramTeeth = useMemo<FdiToothRecord[]>(() => {
 		return (teethData ?? []).map((t) => ({
@@ -624,6 +626,16 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							<Sparkles className="w-4 h-4" />
 							<span>Сформировать дневник по МКБ-10 и формуле</span>
 						</button>
+						<button
+							type="button"
+							onClick={() => setIsMemoModalOpen(true)}
+							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer"
+							data-testid="summary-quick-memo-btn"
+							title="Открыть памятку пациенту с рекомендациями после приёма"
+						>
+							<FileText className="w-4 h-4" />
+							<span>📄 Памятка пациенту</span>
+						</button>
 					</div>
 
 					{/* Разделы Формы 043/у */}
@@ -732,6 +744,16 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						) : null}
 						<button
 							type="button"
+							onClick={() => setIsMemoModalOpen(true)}
+							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-sm font-bold hover:bg-indigo-500/20 transition-colors cursor-pointer"
+							data-testid="summary-print-memo-btn"
+							title="Распечатать памятку пациенту с рекомендациями после приёма"
+						>
+							<FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+							<span>📄 Памятка пациенту</span>
+						</button>
+						<button
+							type="button"
 							onClick={() => {
 								if (onPrint) {
 									onClose();
@@ -772,6 +794,37 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						</button>
 					</div>
 				</div>
+
+				{/* 1-Click Human Post-Op Memo Print Modal */}
+				<PatientMemoPrintModal
+					isOpen={isMemoModalOpen}
+					onClose={() => setIsMemoModalOpen(false)}
+					initialMemoId={
+						diary.treatmentDescription?.toLowerCase().includes("удален") ||
+						diary.diagnosisIcd10?.startsWith("K01")
+							? "surgery_extraction"
+							: diary.diagnosisIcd10?.startsWith("K04") ||
+							  diary.treatmentDescription?.toLowerCase().includes("канал")
+							? "endodontics"
+							: "anesthesia_caries"
+					}
+					patient={
+						patient
+							? {
+									fullName: formatPatientFullName(patient),
+									birthDate: patient.birthDate || patient.dateOfBirth,
+									phone: patient.phone,
+									cardNumber:
+										patient.cardNumber ||
+										patient.medicalCardNumber ||
+										patient.chartNumber,
+								}
+							: null
+					}
+					doctorName={doctorName}
+					doctorSpecialty={doctorSpecialty || "Врач-стоматолог"}
+					toothNumber={abnormalTeeth[0]?.toothNumber}
+				/>
 
 				{/* Zoom Lightbox In-Modal Overlay (Zero full-screen viewport nesting) */}
 				<RadiologyZoomLightbox

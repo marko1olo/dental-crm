@@ -127,12 +127,8 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 	}, [patientAge]);
 
 	const isPediatric = useMemo(() => {
-		return (
-			(patientAge !== null ? patientAge < 12 : false) ||
-			Boolean(workspaceFlags.hasPediatricMode) ||
-			Boolean(dashboard?.clinicSettings?.profile?.hasPediatricMode)
-		);
-	}, [patientAge, workspaceFlags.hasPediatricMode, dashboard?.clinicSettings?.profile?.hasPediatricMode]);
+		return patientAge !== null ? patientAge < 12 : false;
+	}, [patientAge]);
 
 	if (!activePatient?.id) {
 		return (

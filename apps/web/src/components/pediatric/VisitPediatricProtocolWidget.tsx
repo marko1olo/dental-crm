@@ -466,6 +466,8 @@ export interface VisitPediatricProtocolWidgetProps {
 	readonly somaticProfile?: SomaticRiskProfile | undefined;
 	/** Текстовые аллергии из карты */
 	readonly allergies?: string | undefined;
+	/** Опционально: показать аккордеон подробностей протокола сразу */
+	readonly initialShowDetails?: boolean;
 	/** Дополнительный CSS-класс контейнера */
 	readonly className?: string;
 }
@@ -491,6 +493,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 	representativeRole,
 	somaticProfile,
 	allergies,
+	initialShowDetails = false,
 	className = "",
 }) => {
 	// 1. Санитизация активного зуба (по умолчанию 54) с проверкой квадрантов FDI
@@ -646,7 +649,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 
 	// 7. Детали и спойлер параметров
 	const [showDetailsAccordion, setShowDetailsAccordion] =
-		useState<boolean>(false);
+		useState<boolean>(initialShowDetails);
 	const [isMemoModalOpen, setIsMemoModalOpen] = useState<boolean>(false);
 
 	// 8b. Ортодонтический статус первичного осмотра (норма по умолчанию согласно Мандату 8e)
@@ -750,7 +753,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 
 		const repLine = representativeText
 			? representativeText
-			: `Законный представитель несовершеннолетнего: ${representative.role} — ${representative.fullName || "Родитель (присутствует на приёме)"}${representative.phone ? `, тел: ${representative.phone}` : ""}, ${representative.statutoryDocument}${representative.consentSigned ? ", ИДС подписано" : ""}.`;
+			: `Родитель: ${representative.role === "Мать" ? "Мама" : representative.role === "Отец" ? "Папа" : representative.role}${representative.fullName ? ` (${representative.fullName}${representative.phone ? `, ${representative.phone}` : ""})` : ""}. Согласие на лечение получено.`;
 
 		const somaticLine = somaticText
 			? somaticText
@@ -759,7 +762,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 		const fullProtocolText043 = [
 			"ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)",
 			"────────────────────────────────────────────────────────────",
-			`1. Законный представитель:`,
+			`1. Родитель / Сопровождающий:`,
 			`   ${repLine}`,
 			"",
 			`2. Психоэмоциональный статус (Шкала Франкла): Рейтинг ${activeFrankl.rating} (${activeFrankl.symbol}) — ${activeFrankl.titleRu}`,
@@ -1182,6 +1185,19 @@ export const VisitPediatricProtocolWidget: React.FC<
 						<Sparkles className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
 						<span className="hidden sm:inline">1-клик Адаптация</span>
 						<span className="sm:hidden">Адаптация</span>
+					</button>
+
+					{/* 1-Тап Диплом за храбрость (Мандат 8e: печать грамоты маленькому пациенту) */}
+					<button
+						type="button"
+						onClick={() => setIsDiplomaModalOpen(true)}
+						className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200 hover:bg-amber-500/25 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 touch-manipulation"
+						title="1-тап: Диплом за храбрость маленькому пациенту (печать грамоты)"
+						data-testid="pediatric-toolbar-diploma-btn"
+					>
+						<Award className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+						<span className="hidden sm:inline">Диплом за храбрость</span>
+						<span className="sm:hidden">Диплом</span>
 					</button>
 
 					{/* Индикатор выбранного поведения по Франклу (1-клик смена) */}

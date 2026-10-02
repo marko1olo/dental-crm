@@ -39,6 +39,7 @@ import {
 import { sliceDomList } from "../../utils/domVirtualizationHelper";
 import { getOptimizedTiming } from "../../utils/lowSpecHddOptimizer";
 import { Icd10ClinicalSelector } from "../diagnostics/Icd10ClinicalSelector";
+import { showToast } from "../GlobalToast";
 
 export interface VisitSoapNoteValues {
 	complaint?: string | undefined;
@@ -812,6 +813,95 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 		onApplyFullDiary?.(fullText);
 	}, [selectedTooth, isLocked, isCorrectionMode, onSave, onChange, onApplyFullDiary, soapStorageKey]);
 
+	// 4 Экспресс-протокола дневника у кресла на русском языке (Кариес, Пульпит, Профгигиена, Удаление)
+	const handleApplyExpressProtocol = useCallback(
+		(presetType: "caries" | "pulpitis" | "hygiene" | "extraction") => {
+			if (isLocked && !isCorrectionMode) {
+				setIsCorrectionMode(true);
+			}
+			const toothLabel = selectedTooth ? `зуба ${selectedTooth}` : "зуба";
+			const toothObj = selectedTooth ? `Зуб ${selectedTooth}: ` : "";
+			const dateStr = new Date().toLocaleDateString("ru-RU", {
+				day: "2-digit",
+				month: "2-digit",
+				year: "numeric",
+				hour: "2-digit",
+				minute: "2-digit",
+			});
+			const auditStamp = isLocked ? `\n\n[Исправленному верить: ${dateStr}]` : "";
+
+			let next: VisitSoapNoteValues;
+			if (presetType === "caries") {
+				next = {
+					complaint: `Кратковременные боли от холодного и сладкого в области ${toothLabel}, быстро проходящие после устранения раздражителя. Застревание пищи, дефект пломбы.`,
+					anamnesis: "Соматически здоров. Аллергоанамнез не отягощен. Полость обнаружена около 1–2 месяцев назад. Ранее лечение не проводилось.",
+					objectiveStatus: `${toothObj}глубокая кариозная полость на окклюзионно-контактной поверхности в пределах околопульпарного дентина. Дно и стенки плотные, пигментированные. Зондирование дна слабо болезненно. Перкуссия безболезненна. Реакция на холод кратковременная. ЭОД 4 мкА.`,
+					diagnosis: `K02.1 Кариес дентина ${toothLabel}`.trim(),
+					treatmentPlan: `Анестезия инфильтрационная sol. Articaini 4% 1:200000 1.8 мл. Изоляция рабочего поля (коффердам). Препарирование кариозной полости с воздушно-водяным охлаждением, некрэктомия. Медикаментозная обработка 2% р-ром хлоргексидина. Протравливание эмали 37% ортофосфорной кислотой 15 сек. Адгезивная система V/VII поколения. Послойная реставрация светоотверждаемым наногибридным композитом. Шлифовка и полировка головками Enhance и дисками Sof-Lex. Окклюзия выверена копиркой, суперконтактов нет.${auditStamp}`,
+					recommendations: "Не принимать пищу в течение 2 часов. Щадящая гигиена, использование флосса. Профилактический осмотр через 6 месяцев.",
+					icd10: "K02.1",
+				};
+			} else if (presetType === "pulpitis") {
+				next = {
+					complaint: `Острая самопроизвольная приступообразная боль пульсирующего характера в области ${toothLabel}, усиливающаяся в ночное время и от температурных раздражителей.`,
+					anamnesis: "Боли возникли 1–2 суток назад, нарастают по интенсивности. Прием НПВП дает кратковременный неполный эффект. Аллергоанамнез не отягощен.",
+					objectiveStatus: `${toothObj}глубокая кариозная полость, сообщающаяся с полостью зуба. Зондирование вскрытой точки резко болезненно. Термометрия вызывает длительный болевой приступ. Перкуссия слабо болезненна. ЭОД 35 мкА.`,
+					diagnosis: `K04.0 Острый пульпит ${toothLabel}`.trim(),
+					treatmentPlan: `Проводниковая/инфильтрационная анестезия sol. Articaini 4% 1.8 мл. Коффердам. Препарирование кариозной полости, раскрытие полости зуба, ампутация и экстирпация пульпы. Инструментальная обработка корневых каналов машинными никель-титановыми файлами до апекса. Медикаментозная обработка 3% р-ром гипохлорита натрия с УЗ-активацией, 17% ЭДТА. Высушивание бумажными штифтами. Обтурация каналов гуттаперчей с эпоксидным силером методом латеральной/вертикальной конденсации. Рентген-контроль. Герметичная временная пломба.${auditStamp}`,
+					recommendations: "Щадящая диета 2 часа. При ноющей боли — Нимесил 100 мг или Нурофен 400 мг. Повторный визит назначен через 5–7 дней для постоянной реставрации.",
+					icd10: "K04.0",
+				};
+			} else if (presetType === "hygiene") {
+				next = {
+					complaint: "Кровоточивость десен при чистке зубов и твердой пище. Неприятный запах изо рта, темный налет и зубной камень.",
+					anamnesis: "Профгигиена не проводилась более 1 года. Соматически здоров. Аллергоанамнез без особенностей.",
+					objectiveStatus: "Слизистая оболочка десневого края гиперемирована, отечна, умеренно кровоточит при зондировании. Обильные над- и поддесневые зубные отложения, плотный пигментированный налет. Пародонтальные карманы до 2.5–3 мм. Индекс OHI-S = 2.2.",
+					diagnosis: "K03.6 Зубные отложения (наддесневой и поддесневой зубной камень)",
+					treatmentPlan: `Антисептическая обработка полости рта 0.05% хлоргексидином. Ультразвуковой скейлинг над- и поддесневых зубных отложений со всех поверхностей зубов. Удаление пигментированного налета воздушно-абразивным методом Air-Flow (порошок глицин). Полировка поверхностей зубов абразивными пастами и щеточками. Межзубная обработка штрипсами. Глубокое фторирование эмали лаком Bifluorid 12. Обучение гигиене полости рта.${auditStamp}`,
+					recommendations: "«Белая диета» 48 часов (исключить чай, кофе, ягоды, красящие продукты). Замена зубной щетки. Использование межзубных ершиков. Контрольный осмотр через 6 месяцев.",
+					icd10: "K03.6",
+				};
+			} else {
+				// extraction
+				next = {
+					complaint: `Разрушение коронковой части ${toothLabel}, подвижность, травмирование языка и слизистой оболочки, дискомфорт при накусывании.`,
+					anamnesis: "Зуб ранее лечен эндодонтически, разрушался в течение года. Обострение возникло несколько дней назад. Аллергологический анамнез уточнен.",
+					objectiveStatus: `${toothObj}коронковая часть разрушена ниже уровня десны более чем на 2/3, не подлежит восстановлению. Слизистая по переходной складке умеренно гиперемирована. Перкуссия болезненна. По данным рентгенографии — деструкция костной ткани у верхушки корня.`,
+					diagnosis: `K04.7 Периапикальный абсцесс / Разрушение ${toothLabel}`.trim(),
+					treatmentPlan: `Антисептическая обработка слизистой 0.05% хлоргексидином. Анестезия проводниковая + инфильтрационная sol. Articaini 4% 1:100000 1.8 мл. Синдесмотомия циркулярной связки. Атравматичное удаление корней элеватором и щипцами. Ревизия и кюретаж лунки. Гемостаз: формирование плотного кровяного сгустка, гемостатическая губка в лунку. Сближение краев лунки, марлевый тампон на 20 мин.${auditStamp}`,
+					recommendations: "Марлевый тампон удалить через 20 минут. Не есть 2 часа. 3 дня исключить горячую пищу, баню, сауну, физические нагрузки. Рот не полоскать! При боли — Нимесил 100 мг. Контрольный осмотр при необходимости.",
+					icd10: "K04.7",
+				};
+			}
+
+			setValues(next);
+			valuesRef.current = next;
+			setSaveStatus("saved");
+			try {
+				safeLocalStorageSetItem(soapStorageKey, JSON.stringify(next));
+			} catch (err) {
+				console.warn("[VisitSoapEditor] storage error:", err);
+			}
+			onSave?.(next);
+			onChange?.(next);
+
+			const targetTooth = selectedTooth ?? 16;
+			const fullText = [
+				`=== МЕДИЦИНСКАЯ КАРТА (ЗУБ ${targetTooth}) ===`,
+				`[Жалобы]: ${next.complaint}`,
+				`[Анамнез]: ${next.anamnesis}`,
+				`[Объективный статус]: ${next.objectiveStatus}`,
+				`[Диагноз]: [${next.icd10}] ${next.diagnosis}`,
+				`[Протокол лечения]: ${next.treatmentPlan}`,
+				`[Рекомендации]: ${next.recommendations}`,
+			].join("\n\n");
+			onApplyFullDiary?.(fullText);
+
+			showToast(`Экспресс-протокол «${next.diagnosis}» применён в 1 клик`, "success", 3000);
+		},
+		[isLocked, isCorrectionMode, selectedTooth, soapStorageKey, onSave, onChange, onApplyFullDiary],
+	);
+
 	// Ручное сохранение дневника в 1 клик (Мандат 8e: никогда не disabled)
 	const handleExplicitSave = useCallback(() => {
 		onChangeRef.current?.(values);
@@ -1341,7 +1431,62 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 			{/* ── ТЕЛО РЕДАКТОРА: ПОЛЯ SOAP ── */}
 			{activeViewMode === "fields" ? (
 				<div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 pb-[calc(env(safe-area-inset-bottom,0px)+80px)] md:pb-4">
-					{/* S1: Жалобы (Subjective) */}
+					{/* ── 4 БЫСТРЫХ ЭКСПРЕСС-ПРОТОКОЛА У КРЕСЛА (1 КЛИК, МАНДАТЫ 8E, 8K) ── */}
+					<div
+						className="col-span-full flex flex-wrap items-center justify-between gap-2 p-2 rounded-xl bg-gradient-to-r from-teal-500/10 via-[var(--paper-soft)] to-indigo-500/10 border border-[var(--teal,var(--brand-primary))]/30 shadow-2xs"
+						data-testid="soap-chairside-express-bar"
+					>
+						<div className="flex items-center gap-1.5 shrink-0">
+							<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
+							<span className="text-xs font-black text-[var(--ink)]">
+								Экспресс-протоколы у кресла (1 клик):
+							</span>
+						</div>
+						<div className="flex items-center gap-1.5 flex-wrap">
+							<button
+								type="button"
+								onClick={() => handleApplyExpressProtocol("caries")}
+								className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 hover:border-emerald-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+								data-testid="btn-soap-express-caries"
+								title="1-Клик протокол: Кариес дентина (K02.1) — анестезия, коффердам, композит светового отверждения, полировка"
+							>
+								<span>🦷</span>
+								<span>Кариес (K02.1)</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => handleApplyExpressProtocol("pulpitis")}
+								className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-500/40 hover:border-amber-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+								data-testid="btn-soap-express-pulpitis"
+								title="1-Клик протокол: Острый пульпит (K04.0) — анестезия, экстирпация, мех/мед обработка каналов, обтурация"
+							>
+								<span>⚡</span>
+								<span>Пульпит (K04.0)</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => handleApplyExpressProtocol("hygiene")}
+								className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-sky-50 dark:hover:bg-sky-950/40 text-sky-800 dark:text-sky-300 border border-sky-500/40 hover:border-sky-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+								data-testid="btn-soap-express-hygiene"
+								title="1-Клик протокол: Профгигиена (K03.6) — ультразвуковой скейлинг, Air-Flow, полировка пастой, фторирование"
+							>
+								<span>✨</span>
+								<span>Профгигиена (K03.6)</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => handleApplyExpressProtocol("extraction")}
+								className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-500/40 hover:border-rose-600 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+								data-testid="btn-soap-express-extraction"
+								title="1-Клик протокол: Удаление зуба (K04.7) — анестезия, элеватор/щипцы, кюретаж лунки, гемостаз"
+							>
+								<span>🩹</span>
+								<span>Удаление зуба</span>
+							</button>
+						</div>
+					</div>
+
+					{/* Жалобы */}
 					<div className="flex flex-col gap-1">
 						<div className="flex items-center justify-between">
 							<label
@@ -1365,7 +1510,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						/>
 					</div>
 
-					{/* S2: Анамнез заболевания и жизни */}
+					{/* Анамнез заболевания и жизни */}
 					<div className="flex flex-col gap-1">
 						<div className="flex items-center justify-between">
 							<label
@@ -1389,7 +1534,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						/>
 					</div>
 
-					{/* O: Осмотр и зубная формула */}
+					{/* Осмотр и зубная формула */}
 					<div className="flex flex-col gap-1 md:col-span-2">
 						<div className="flex items-center justify-between">
 							<label
@@ -1417,7 +1562,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						/>
 					</div>
 
-					{/* A: Клинический диагноз */}
+					{/* Клинический диагноз */}
 					<div className="flex flex-col gap-1 md:col-span-2">
 						<div className="flex items-center justify-between">
 							<label
@@ -1509,7 +1654,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						)}
 					</div>
 
-					{/* P1: Протокол лечения (Plan / Treatment) */}
+					{/* Протокол лечения */}
 					<div className="flex flex-col gap-1 md:col-span-2">
 						<div className="flex items-center justify-between">
 							<label

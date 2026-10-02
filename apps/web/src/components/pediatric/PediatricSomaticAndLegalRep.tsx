@@ -50,6 +50,23 @@ export const DEFAULT_LEGAL_REPRESENTATIVE: LegalRepresentativeData = {
 	consentSigned: true,
 };
 
+/**
+ * Человеческий медицинский формат представителя ребенка без птичьего языка
+ */
+export function formatPediatricRepresentativeText(rep: LegalRepresentativeData): string {
+	const repRole = rep.role === "Мать" ? "Мама" : rep.role === "Отец" ? "Папа" : rep.role;
+	const namePart = rep.fullName.trim();
+	const phonePart = rep.phone.trim();
+	const details = [namePart, phonePart].filter(Boolean).join(", ");
+	const consentPart = rep.consentSigned
+		? "Согласие на лечение получено"
+		: "ВНИМАНИЕ: требуется подписание согласия родителем";
+
+	return details
+		? `Родитель: ${repRole} (${details}). ${consentPart}.`
+		: `Родитель: ${repRole}. ${consentPart}.`;
+}
+
 export interface PediatricSomaticAndLegalRepProps {
 	/** Начальный соматический статус */
 	readonly initialSomatic?: Partial<PediatricSomaticStatus> | undefined;
@@ -136,14 +153,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 	});
 
 	const formatRepresentativeText = useCallback((rep: LegalRepresentativeData): string => {
-		const repName = rep.fullName.trim() ? rep.fullName.trim() : "Родитель (присутствует на приёме)";
-		const phonePart = rep.phone.trim() ? `, тел: ${rep.phone.trim()}` : "";
-		const docPart = rep.statutoryDocument.trim() ? ` [${rep.statutoryDocument.trim()}]` : "";
-		const consentPart = rep.consentSigned
-			? ", ИДС на медицинское вмешательство оформлено (ст. 20 323-ФЗ)"
-			: ", ВНИМАНИЕ: требуется подписание ИДС родителем перед инвазивным вмешательством (ст. 20 323-ФЗ)";
-
-		return `Законный представитель несовершеннолетнего: ${rep.role} — ${repName}${phonePart}${docPart}${consentPart}.`;
+		return formatPediatricRepresentativeText(rep);
 	}, []);
 
 	const handleUpdateRepresentative = useCallback((updates: Partial<LegalRepresentativeData>) => {
@@ -222,15 +232,16 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 					<div className="flex items-center gap-2">
 						<UserCheck className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
 						<span className="text-xs font-black uppercase tracking-wider text-[var(--ink,#0f172a)]">
-							Законный представитель (Форма 043/у, ст. 20 323-ФЗ, ст. 64 СК РФ):
+							Родитель / Законный представитель:
 						</span>
+						<span className="sr-only">Форма 043/у, ст. 20 323-ФЗ, ст. 64 СК РФ</span>
 					</div>
 
 					<button
 						type="button"
 						onClick={handle1ClickParentPresent}
 						className="min-h-[32px] sm:h-7 px-2 rounded-lg border border-teal-500/30 bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300 hover:bg-teal-100 text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0"
-						title="1-клик: Родитель присутствует, согласие оформлено без принуждения к заполнению лишних полей (ст. 20 323-ФЗ)"
+						title="1-клик: Родитель присутствует, согласие оформлено без лишней бюрократии"
 						data-testid="btn-parent-present-norm"
 					>
 						<Check className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
@@ -265,7 +276,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 				<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
 					<div>
 						<label htmlFor="rep-fullname-input" className="block text-[11px] font-semibold text-[var(--muted,#64748b)] mb-0.5">
-							ФИО родителя / представителя:
+							ФИО родителя:
 						</label>
 						<input
 							id="rep-fullname-input"
@@ -280,7 +291,7 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 
 					<div>
 						<label htmlFor="rep-phone-input" className="block text-[11px] font-semibold text-[var(--muted,#64748b)] mb-0.5">
-							Контактный телефон:
+							Телефон родителя:
 						</label>
 						<input
 							id="rep-phone-input"
@@ -298,9 +309,12 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 				<div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--muted,#64748b)] border-t border-[var(--line,#e2e8f0)] pt-1.5">
 					<div className="flex items-center gap-1.5">
 						<span className="font-semibold text-teal-800 dark:text-teal-300">
-							Правовое основание:
+							Статус:
 						</span>
-						<span className="font-mono text-[10px]">
+						<span className="font-semibold text-[var(--ink,#0f172a)]">
+							Законный представитель ребёнка
+						</span>
+						<span className="sr-only font-mono text-[10px]">
 							{representative.statutoryDocument}
 						</span>
 					</div>
@@ -313,7 +327,8 @@ export const PediatricSomaticAndLegalRep: React.FC<PediatricSomaticAndLegalRepPr
 							className="rounded border-[var(--line,#e2e8f0)] text-teal-600 focus:ring-teal-500"
 							data-testid="checkbox-rep-consent"
 						/>
-						<span>ИДС оформлено (ст. 20 323-ФЗ)</span>
+						<span>Согласие на приём оформлено</span>
+						<span className="sr-only">(ст. 20 323-ФЗ)</span>
 					</label>
 				</div>
 

@@ -56,7 +56,7 @@ export function EmkDiaryProtocolSection({
 				<div className="flex items-center justify-between gap-2">
 					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<Tag size={14} className="text-[var(--teal,var(--brand-primary))]" />
-						<span>Основной диагноз по МКБ-10 (Assessment)</span>
+						<span>Основной диагноз по МКБ-10</span>
 					</label>
 					<span className="text-[11px] text-[var(--muted)]">Код и расшифровка диагноза</span>
 				</div>
@@ -92,7 +92,7 @@ export function EmkDiaryProtocolSection({
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<FileCheck size={14} className="text-[var(--teal,var(--brand-primary))]" />
-						<span>Протокол лечения и манипуляций (Plan / Treatment)</span>
+						<span>Протокол лечения и манипуляций</span>
 					</label>
 
 					{/* 26px compact formatting toolbar */}

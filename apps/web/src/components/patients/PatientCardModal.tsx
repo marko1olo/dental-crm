@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	AlertOctagon,
+	Award,
 	CreditCard,
 	FileText,
 	HeartPulse,
@@ -12,6 +13,7 @@ import {
 	Users,
 	X,
 } from "lucide-react";
+import { PediatricBraveryDiplomaModal } from "../pediatric/PediatricBraveryDiplomaModal";
 import { showToast } from "../GlobalToast";
 import {
 	type PatientClinicalSafetyProfile,
@@ -139,6 +141,16 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 		const [safetyProfile, setSafetyProfile] = useState<PatientClinicalSafetyProfile>(() => {
 			return { ...DEFAULT_SOMATIC_HEALTHY_NORM, ...effectiveInitialSafety };
 		});
+		const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState(false);
+
+		const isChildPatient = React.useMemo(() => {
+			if (patientData.birthDate) {
+				const birthYear = new Date(patientData.birthDate).getFullYear();
+				const currentYear = new Date().getFullYear();
+				if (!Number.isNaN(birthYear) && currentYear - birthYear < 18) return true;
+			}
+			return !!patientData.representativeType;
+		}, [patientData.birthDate, patientData.representativeType]);
 
 		useEffect(() => {
 			if (initialPatient || initialPatientDataAlias) {
@@ -224,6 +236,20 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 						</div>
 
 						<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+							{isChildPatient && (
+								<button
+									type="button"
+									data-testid="btn-patient-card-diploma"
+									onClick={() => setIsDiplomaModalOpen(true)}
+									className="border border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200 hover:bg-amber-500/25 min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-bold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
+									title="Распечатать «Диплом за храбрость» маленькому пациенту"
+								>
+									<Award className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+									<span className="hidden sm:inline">Диплом за храбрость</span>
+									<span className="sm:hidden">Диплом</span>
+								</button>
+							)}
+
 							<button
 								type="button"
 								data-testid="btn-print-patient-card"
@@ -414,6 +440,15 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(
 							</button>
 						</div>
 					</div>
+					{/* 1-Тап Печать диплома за храбрость для ребенка */}
+					{isDiplomaModalOpen && (
+						<PediatricBraveryDiplomaModal
+							isOpen={isDiplomaModalOpen}
+							onClose={() => setIsDiplomaModalOpen(false)}
+							patientName={patientData.fullName || undefined}
+							doctorName="Врач-стоматолог детский"
+						/>
+					)}
 				</div>
 			</div>
 		);

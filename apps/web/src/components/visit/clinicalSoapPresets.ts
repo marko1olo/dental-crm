@@ -287,16 +287,16 @@ export function validateSoapPreset(preset: ClinicalSoapPreset): {
 		errors.push(`Некорректный код МКБ-10: ${preset.icd10}`);
 	}
 	if (!preset.complaint || preset.complaint.trim().length < 10) {
-		errors.push("Жалобы (Complaint) должны содержать развернутый клинический текст");
+		errors.push("Жалобы должны содержать развернутый клинический текст");
 	}
 	if (!preset.anamnesis || preset.anamnesis.trim().length < 10) {
-		errors.push("Анамнез (Anamnesis) должен содержать развернутый клинический текст");
+		errors.push("Анамнез должен содержать развернутый клинический текст");
 	}
 	if (!preset.statusLocalis || preset.statusLocalis.trim().length < 10) {
-		errors.push("Status Localis должен содержать объективное описание осмотра");
+		errors.push("Осмотр и зубная формула должны содержать объективное описание осмотра");
 	}
 	if (!preset.treatmentDescription || preset.treatmentDescription.trim().length < 15) {
-		errors.push("Описание лечения (Treatment) должно содержать протокол вмешательства");
+		errors.push("Протокол лечения должен содержать описание вмешательства");
 	}
 	if (preset.service804n && !/^[AB]\d{2}\.\d{2,3}\.\d{2,3}(?:\.\d{2,3})?$/i.test(preset.service804n.code804n)) {
 		errors.push(`Некорректный код номенклатуры 804н: ${preset.service804n.code804n}`);

@@ -542,11 +542,11 @@ export const CompletedServicesChecklist: React.FC<
 								>
 									<div className="flex-1 min-w-0 pr-2">
 										<div className="flex items-center gap-1.5">
-											<span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
-												[{item.code}]
-											</span>
 											<span className="text-xs font-medium text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 truncate">
 												{item.title}
+											</span>
+											<span className="font-mono text-[10px] text-slate-400 dark:text-slate-500 shrink-0">
+												[{item.code}]
 											</span>
 										</div>
 										{selectedTooth && (

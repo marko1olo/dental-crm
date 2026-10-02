@@ -1,0 +1,21 @@
+{
+  "task": "Pediatric 1-Click Parent & 1-Tap Bravery Diploma Inquisitor",
+  "status": "in_progress",
+  "completed_steps": [
+    "Read all mandatory rules: core.md, frontend.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Deep reading of all 5 in-scope files: PatientCreationModal.tsx, PatientGeneralInfoTab.tsx, PediatricBraveryDiplomaModal.tsx, PediatricSomaticAndLegalRep.tsx, VisitPediatricProtocolWidget.tsx",
+    "Analyzed patientStore, usePatientLogic, and API routes for representative mapping"
+  ],
+  "pending_steps": [
+    "Step 1: PatientCreationModal.tsx — 1-click parent binding (chips [Мама] [Папа] [Опекун], inputs Name & Phone with 'Взять телефон ребёнка', minor toggle/detection, zero bureaucracy)",
+    "Step 2: PatientGeneralInfoTab.tsx — simplify representative block with Mama/Papa/Guardian chips, Name and Phone upfront, clean human language without legalistic bloat",
+    "Step 3: PediatricSomaticAndLegalRep.tsx — purge bird language, remove raw law articles from clinical text, replace with clean Russian",
+    "Step 4: PediatricBraveryDiplomaModal.tsx & VisitPediatricProtocolWidget.tsx — instant 1-tap print with Enter key support, Hero: name auto-fill, clean gold medal/vector tooth, prominent toolbar placement",
+    "Step 5: Write and run targeted tests in pediatric and patient test directories",
+    "Step 6: Run typecheck verification and audit diff"
+  ],
+  "findings": {
+    "representative_fields": "legalRepresentativeRelationship, legalRepresentativeFullName, legalRepresentativePhone in administrativeProfile",
+    "bird_language_found": "References to 'ст. 20 323-ФЗ, ст. 64 СК РФ' and complex legalese in medical UI"
+  }
+}

@@ -40,12 +40,12 @@ export const CompletedServicesList: React.FC<CompletedServicesListProps> = ({
 							<div className="flex items-center gap-1.5 flex-1 min-w-0">
 								<Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
 								<span className="truncate">
+									<span className="font-medium text-slate-900 dark:text-slate-100">{entry.title}</span>
 									{entry.code804n && (
-										<span className="font-mono text-slate-400 mr-1">
+										<span className="font-mono text-[10px] text-slate-400 ml-1.5">
 											[{entry.code804n}]
 										</span>
 									)}
-									{entry.title}
 									{entry.toothCode && (
 										<span className="text-indigo-600 dark:text-indigo-400 font-medium ml-1">
 											(зуб {entry.toothCode})

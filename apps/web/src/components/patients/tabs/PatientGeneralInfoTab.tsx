@@ -645,7 +645,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 									})}
 								</div>
 
-								{/* Правовой вердикт по ст. 20 323-ФЗ и ст. 64 СК РФ */}
+								{/* Статус подписания согласий (понятный врачу язык без птичьего канцелярита) */}
 								{selectedRep && (
 									<div
 										className={`p-2.5 rounded-lg border text-xs font-semibold flex items-center justify-between gap-3 ${
@@ -664,11 +664,11 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 											<span className="text-[11px]">
 												{selectedRep.isLegalRepresentative ? (
 													<>
-														<strong>Законный представитель:</strong> Право подписи ИДС за несовершеннолетнего (ст. 20 323-ФЗ, ст. 64 СК РФ).
+														<strong>Законный представитель:</strong> Право подписи согласий на приём и лечение.
 													</>
 												) : (
 													<>
-														<strong>Член семьи:</strong> Подписание ИДС требует нотариальной доверенности (ст. 20 323-ФЗ, ст. 64 СК РФ).
+														<strong>Член семьи:</strong> Подписание согласий требует нотариальной доверенности от родителей.
 													</>
 												)}
 											</span>
@@ -680,7 +680,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 													: "bg-amber-600 text-white border-amber-700"
 											}`}
 										>
-											{selectedRep.isLegalRepresentative ? "ИДС: ДА" : "ИДС: доверенность"}
+											{selectedRep.isLegalRepresentative ? "Согласие: ДА" : "Требуется доверенность"}
 										</span>
 									</div>
 								)}

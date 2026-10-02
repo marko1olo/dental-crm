@@ -33,11 +33,11 @@ export function VisitDiaryRevisionsHistory({
 							prevBits.push({ label, text: text.trim() });
 						}
 					};
-					pushPrev("S (жалобы/анамнез)", rev.previousAnamnesis);
-					pushPrev("O (status localis)", rev.previousStatusLocalis);
-					pushPrev("A (МКБ-10)", rev.previousDiagnosisIcd10);
+					pushPrev("Жалобы/анамнез", rev.previousAnamnesis);
+					pushPrev("Осмотр (объективно)", rev.previousStatusLocalis);
+					pushPrev("Диагноз (МКБ-10)", rev.previousDiagnosisIcd10);
 					pushPrev("Зуб", rev.previousDiagnosisTooth);
-					pushPrev("P (лечение)", rev.previousTreatmentDescription);
+					pushPrev("Лечение", rev.previousTreatmentDescription);
 					pushPrev("Осложнения", rev.previousComplications);
 					pushPrev("Сопутствующие", rev.previousComorbidities);
 					return (

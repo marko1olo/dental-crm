@@ -16,6 +16,7 @@ import {
 } from "@dental/shared";
 import {
 	AlertTriangle,
+	Baby,
 	Calendar,
 	Check,
 	ExternalLink,
@@ -28,6 +29,7 @@ import {
 	ShieldCheck,
 	Stethoscope,
 	UserPlus,
+	Users,
 	X,
 	Zap,
 } from "lucide-react";
@@ -35,7 +37,7 @@ import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { printPrimaryIntakePackage } from "../documents/primaryIntakePackagePrintEngine";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { DictationHints } from "../../DictationHints";
 import { parsePatientDictationLocal } from "../../lib/smartPatientParser";
 import type { PatientCoreDraft } from "../../PatientsView";
@@ -75,6 +77,10 @@ export interface PatientCreationModalProps {
 	) => void;
 	/** Опциональное переопределение требований клиники */
 	readonly customRequirements?: PatientFieldRequirements;
+	/** Опционально: начальная дата рождения пациента */
+	readonly initialBirthDate?: string;
+	/** Опционально: начальный флаг режима ребёнка */
+	readonly initialIsChild?: boolean;
 }
 
 export function PatientCreationModal({
@@ -83,6 +89,8 @@ export function PatientCreationModal({
 	createPatient,
 	updatePatientCoreDraft,
 	customRequirements,
+	initialBirthDate,
+	initialIsChild = false,
 }: PatientCreationModalProps) {
 	const {
 		newPatientName,
@@ -97,7 +105,7 @@ export function PatientCreationModal({
 		setPatientAdministrativeProfileDraft,
 	} = usePatientStore();
 
-	const appLogic = useAppLogicContext();
+	const appLogic = useOptionalAppLogicContext();
 	const patients = appLogic?.dashboard?.patients ?? [];
 
 	// Active requirements from clinic settings / storage
@@ -144,15 +152,50 @@ export function PatientCreationModal({
 	const [isEmergencyOrPrimary, setIsEmergencyOrPrimary] = useState(true);
 	const [isSomaticNorm, setIsSomaticNorm] = useState(true);
 
+	const effectiveName =
+		newPatientName || usePatientStore.getState().newPatientName;
+	const effectivePhone =
+		newPatientPhone || usePatientStore.getState().newPatientPhone;
+	const effectiveBirthDate =
+		initialBirthDate ??
+		(newPatientBirthDate || usePatientStore.getState().newPatientBirthDate);
+
 	// Minor (< 14 years old) check for dynamic document labeling (birth certificate vs passport)
 	const patientAge = useMemo(() => {
-		if (!newPatientBirthDate?.trim()) return null;
-		const parsed = new Date(newPatientBirthDate);
+		if (!effectiveBirthDate?.trim()) return null;
+		const parsed = new Date(effectiveBirthDate);
 		if (Number.isNaN(parsed.getTime())) return null;
-		return calculateAge(newPatientBirthDate);
-	}, [newPatientBirthDate]);
+		return calculateAge(effectiveBirthDate);
+	}, [effectiveBirthDate]);
 
 	const isMinorUnder14 = patientAge !== null && patientAge < 14;
+	const isMinorUnder18 = patientAge !== null && patientAge < 18;
+	const [isChildManual, setIsChildManual] = useState(initialIsChild);
+	const isChild = isMinorUnder18 || isChildManual;
+
+	const [parentRole, setParentRole] = useState<string>(
+		patientAdministrativeProfileDraft.legalRepresentativeRelationship || "Мама",
+	);
+	const [parentName, setParentName] = useState<string>(
+		patientAdministrativeProfileDraft.legalRepresentativeFullName || "",
+	);
+	const [parentPhone, setParentPhone] = useState<string>(
+		patientAdministrativeProfileDraft.legalRepresentativePhone || "",
+	);
+
+	useEffect(() => {
+		if (isOpen) {
+			setParentRole(
+				patientAdministrativeProfileDraft.legalRepresentativeRelationship || "Мама",
+			);
+			setParentName(
+				patientAdministrativeProfileDraft.legalRepresentativeFullName || "",
+			);
+			setParentPhone(
+				patientAdministrativeProfileDraft.legalRepresentativePhone || "",
+			);
+		}
+	}, [isOpen, patientAdministrativeProfileDraft]);
 
 	const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -188,7 +231,7 @@ export function PatientCreationModal({
 			phone: newPatientPhone,
 			advertisingSource,
 			snils: patientAdministrativeProfileDraft.snils,
-			birthDate: newPatientBirthDate,
+			birthDate: effectiveBirthDate,
 			identityDocument: patientAdministrativeProfileDraft.identityDocument,
 			isAnonymous: patientAdministrativeProfileDraft.isAnonymous,
 			isEmergencyOrPrimary,
@@ -303,6 +346,14 @@ export function PatientCreationModal({
 					preferredAppointmentNote: `src:${advertisingSource}`,
 				}));
 			}
+			if (isChild && (parentName.trim() || parentPhone.trim() || parentRole)) {
+				setPatientAdministrativeProfileDraft((prev) => ({
+					...prev,
+					legalRepresentativeRelationship: parentRole || "Мама",
+					legalRepresentativeFullName: parentName.trim(),
+					legalRepresentativePhone: parentPhone.trim(),
+				}));
+			}
 			await createPatient();
 			onClose();
 			if (validationResult.missingRequiredLabels.length > 0) {
@@ -340,6 +391,14 @@ export function PatientCreationModal({
 				setPatientAdministrativeProfileDraft((prev) => ({
 					...prev,
 					preferredAppointmentNote: `src:${advertisingSource}`,
+				}));
+			}
+			if (isChild && (parentName.trim() || parentPhone.trim() || parentRole)) {
+				setPatientAdministrativeProfileDraft((prev) => ({
+					...prev,
+					legalRepresentativeRelationship: parentRole || "Мама",
+					legalRepresentativeFullName: parentName.trim(),
+					legalRepresentativePhone: parentPhone.trim(),
 				}));
 			}
 			const created = await createPatient();
@@ -405,6 +464,14 @@ export function PatientCreationModal({
 				setPatientAdministrativeProfileDraft((prev) => ({
 					...prev,
 					preferredAppointmentNote: `src:${advertisingSource}`,
+				}));
+			}
+			if (isChild && (parentName.trim() || parentPhone.trim() || parentRole)) {
+				setPatientAdministrativeProfileDraft((prev) => ({
+					...prev,
+					legalRepresentativeRelationship: parentRole || "Мама",
+					legalRepresentativeFullName: parentName.trim(),
+					legalRepresentativePhone: parentPhone.trim(),
 				}));
 			}
 			const created = await createPatient();
@@ -940,7 +1007,7 @@ export function PatientCreationModal({
 								autoComplete="tel"
 								title="Телефон нового пациента"
 								placeholder="+7 (999) 000-00-00"
-								value={newPatientPhone}
+								value={effectivePhone}
 								onChange={(event: ChangeEvent<HTMLInputElement>) =>
 									setNewPatientPhone(formatPhoneNumber(event.target.value))
 								}
@@ -956,25 +1023,41 @@ export function PatientCreationModal({
 						</div>
 
 						<div className="create-patient-form-field">
-							<label
-								htmlFor="patient-create-birth-date"
-								className="create-patient-label"
-							>
-								Дата рождения{" "}
-								{fieldRequirements.requireBirthDate ? (
-									<span className="text-rose-500 font-bold">*</span>
-								) : (
-									<span className="text-xs text-[var(--muted)] font-normal">
-										(опция)
-									</span>
-								)}
-							</label>
+							<div className="flex items-center justify-between">
+								<label
+									htmlFor="patient-create-birth-date"
+									className="create-patient-label"
+								>
+									Дата рождения{" "}
+									{fieldRequirements.requireBirthDate ? (
+										<span className="text-rose-500 font-bold">*</span>
+									) : (
+										<span className="text-xs text-[var(--muted)] font-normal">
+											(опция)
+										</span>
+									)}
+								</label>
+								<button
+									type="button"
+									onClick={() => setIsChildManual((prev) => !prev)}
+									data-testid="patient-create-child-toggle"
+									className={`text-[11px] font-bold px-2 py-0.5 rounded-full border transition cursor-pointer flex items-center gap-1 ${
+										isChild
+											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
+											: "bg-[var(--paper-strong)] text-[var(--muted)] border-[var(--glass-border)] hover:text-[var(--ink)]"
+									}`}
+									title="Переключить режим ребенка (<18 лет) для привязки родителя"
+								>
+									<Baby size={12} className="shrink-0" />
+									<span>{isChild ? "👶 Ребёнок (<18)" : "+ Ребёнок"}</span>
+								</button>
+							</div>
 							<input
 								id="patient-create-birth-date"
 								type="date"
 								autoComplete="bday"
 								title="Дата рождения нового пациента"
-								value={newPatientBirthDate}
+								value={effectiveBirthDate}
 								onChange={(event: ChangeEvent<HTMLInputElement>) =>
 									setNewPatientBirthDate(event.target.value)
 								}
@@ -989,6 +1072,106 @@ export function PatientCreationModal({
 							)}
 						</div>
 					</div>
+
+					{/* 1-Click Child Parent / Guardian Binding Section (Mandate 8e, 8n) */}
+					{isChild && (
+						<div
+							className="p-3 rounded-xl border border-teal-500/40 bg-teal-500/10 space-y-2.5 mt-2 animate-in fade-in duration-200"
+							data-testid="create-patient-child-rep-section"
+						>
+							<div className="flex items-center justify-between gap-2 flex-wrap">
+								<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
+									<Users size={14} className="text-[var(--teal)] shrink-0" />
+									<span>Привязка родителя / опекуна в 1 клик</span>
+								</div>
+								<span className="text-[11px] text-[var(--muted)]">
+									Без бюрократии • Для записи и звонков
+								</span>
+							</div>
+
+							{/* 1-Click Role Chips */}
+							<div className="flex items-center gap-1.5 flex-wrap">
+								{[
+									{ role: "Мама", label: "👩 Мама", testId: "chip-rep-role-mother" },
+									{ role: "Папа", label: "👨 Папа", testId: "chip-rep-role-father" },
+									{ role: "Опекун", label: "🛡 Опекун", testId: "chip-rep-role-guardian" },
+								].map((item) => (
+									<button
+										key={item.role}
+										type="button"
+										data-testid={item.testId}
+										onClick={() => setParentRole(item.role)}
+										className={`min-h-[30px] px-2.5 py-1 text-xs rounded-lg font-bold border transition cursor-pointer ${
+											parentRole === item.role
+												? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs"
+												: "bg-[var(--paper-strong)] text-[var(--ink)] border-[var(--glass-border)] hover:bg-[var(--paper-soft)]"
+										}`}
+									>
+										{item.label}
+									</button>
+								))}
+							</div>
+
+							{/* 2 Clean Inputs: Имя родителя + Телефон родителя */}
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+								<div className="create-patient-form-field">
+									<label
+										htmlFor="patient-create-parent-name"
+										className="create-patient-label text-xs"
+									>
+										Имя родителя
+									</label>
+									<input
+										id="patient-create-parent-name"
+										type="text"
+										placeholder="Например: Анна Смирнова"
+										value={parentName}
+										onChange={(e) => setParentName(e.target.value)}
+										className="create-patient-input text-xs"
+										data-testid="input-child-parent-name"
+									/>
+								</div>
+
+								<div className="create-patient-form-field">
+									<div className="flex items-center justify-between">
+										<label
+											htmlFor="patient-create-parent-phone"
+											className="create-patient-label text-xs"
+										>
+											Телефон родителя
+										</label>
+										{(effectivePhone || newPatientPhone) && (
+											<button
+												type="button"
+												onClick={() => setParentPhone(effectivePhone || newPatientPhone)}
+												className="text-[10px] text-[var(--teal)] hover:underline font-semibold bg-transparent border-0 cursor-pointer p-0"
+												title="Скопировать телефон ребенка родителю"
+												data-testid="btn-copy-child-phone"
+											>
+												Взять телефон ребёнка
+											</button>
+										)}
+									</div>
+									<input
+										id="patient-create-parent-phone"
+										type="tel"
+										inputMode="tel"
+										placeholder="+7 (999) 000-00-00"
+										value={parentPhone}
+										onChange={(e) => {
+											const formatted = formatPhoneNumber(e.target.value);
+											setParentPhone(formatted);
+											if (!newPatientPhone) {
+												setNewPatientPhone(formatted);
+											}
+										}}
+										className="create-patient-input text-xs"
+										data-testid="input-child-parent-phone"
+									/>
+								</div>
+							</div>
+						</div>
+					)}
 
 					{/* Marketing / Advertising Source Selection (Feature #28 & #35) */}
 					<div className="create-patient-form-field mt-2">

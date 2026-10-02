@@ -40,7 +40,7 @@ export function EmkComplaintsSection({
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<FileText size={14} className="text-[var(--teal,var(--brand-primary))]" />
-						<span>Жалобы пациента (Subjective)</span>
+						<span>Жалобы пациента</span>
 					</label>
 					<div className="flex items-center gap-1.5" data-testid="emk-complaint-norm-bar">
 						<span className="text-[11px] text-[var(--muted)] hidden md:inline">Симптомы со слов пациента</span>
@@ -99,7 +99,7 @@ export function EmkComplaintsSection({
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<FileText size={14} className="text-[var(--teal,var(--brand-primary))]" />
-						<span>Анамнез заболевания и жизни (Anamnesis morbi et vitae)</span>
+						<span>Анамнез заболевания и жизни</span>
 					</label>
 					<div className="flex items-center gap-1.5" data-testid="emk-anamnesis-norm-bar">
 						<span className="text-[11px] text-[var(--muted)] hidden md:inline">Развитие заболевания</span>
