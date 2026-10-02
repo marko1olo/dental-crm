@@ -20,7 +20,12 @@ import {
 	calculateArchTangentsAndNormals,
 	fitSmoothDentalArchSpline,
 } from "./cbctArchSplineMath";
-import type { GlSliceCoordinates } from "./mpr/webgl/CbctVolumeGlContext";
+export { calculateArchTangentsAndNormals };
+import {
+	type CbctVolumeGlContext,
+	type GlSliceCoordinates,
+	getSharedCbctGlContext,
+} from "./mpr/webgl/CbctVolumeGlContext";
 
 export interface CrossSectionRenderOptions {
 	readonly widthMm?: number | undefined;
@@ -36,6 +41,11 @@ export interface CrossSectionRenderOptions {
 	readonly invert?: boolean | undefined;
 	readonly offsetFromMidlineMm?: number | undefined;
 	readonly lut?: Uint8ClampedArray | Uint8Array | undefined;
+	readonly glContext?: CbctVolumeGlContext | null | undefined;
+	readonly useGpu?: boolean | undefined;
+	readonly gamma?: number | undefined;
+	readonly airCutoffHU?: number | undefined;
+	readonly softKnee?: boolean | import("./cbctLutMath").SoftKneeConfig | undefined;
 }
 
 export interface CrossSectionAffineBasis {
@@ -208,6 +218,7 @@ export interface CrossSectionSliceData {
 	readonly widthPx: number;
 	readonly heightPx: number;
 	readonly pixelData: Uint8ClampedArray; // RGBA grayscale
+	readonly rawHuData?: Int16Array | undefined;
 	readonly corticalCrestHeightMm?: number;
 	readonly alveolarRidgeWidthMm?: number;
 	readonly glCoordinates?: GlSliceCoordinates;
@@ -232,41 +243,79 @@ export function extractSingleCrossSectionSlice(
 		Number.isFinite(options.pixelSpacingMm) && (options.pixelSpacingMm ?? 0) > 0
 			? options.pixelSpacingMm!
 			: 0.25;
-	const windowWidth = options.windowWidth ?? volume.defaultWindowWidth ?? 4400;
-	const windowLevel = options.windowLevel ?? volume.defaultWindowLevel ?? 1300;
+	const windowWidth = options.windowWidth ?? (volume.defaultWindowWidth && volume.defaultWindowWidth >= 1000 ? volume.defaultWindowWidth : 4025);
+	const windowLevel = options.windowLevel ?? (volume.defaultWindowLevel !== undefined && volume.defaultWindowLevel <= 1000 ? volume.defaultWindowLevel : 525);
 	const invert = options.invert ?? false;
+	const gamma = options.gamma ?? 1.50;
+	const airCutoffHU = options.airCutoffHU ?? -500.0;
+	const softKnee = options.softKnee ?? false;
+	const slabThicknessMm = options.slabThicknessMm ?? 1.0;
+	const slabMode = options.slabMode ?? "single";
 
 	const basis = computeCrossSectionAffineBasis(volume, centerMm, normal2D, {
 		...options,
 		widthMm,
 		heightMm,
 		pixelSpacingMm,
+		slabMode,
+		slabThicknessMm,
 	});
 
 	const { widthPx, heightPx, unitNormal, unitTangent, vox00, stepVoxU, stepVoxVz } = basis;
-	const pixelData = new Uint8ClampedArray(widthPx * heightPx * 4);
-	const lut = options.lut ?? get16BitLut(windowWidth, windowLevel, invert);
+	let pixelData: Uint8ClampedArray | null = null;
+	let rawHuData: Int16Array | undefined = undefined;
 
-	// High-performance affine-basis rasterization:
-	// Zero heap allocations in the inner loop (no temporary objects or matrix conversions)
-	for (let y = 0; y < heightPx; y++) {
-		const curZ = vox00.z + y * stepVoxVz;
-		const rowStartX = vox00.x;
-		const rowStartY = vox00.y;
-		const rowIdx = y * widthPx * 4;
+	// Hardware GPU WebGL2 reslice acceleration when available
+	if (options.useGpu !== false) {
+		const gl = options.glContext ?? (typeof document !== "undefined" ? getSharedCbctGlContext() : null);
+		if (gl && gl.isAvailable() && !volume.isDisposed) {
+			const glRes = gl.renderCrossSectionOnGl(volume, centerMm, normal2D, {
+				widthMm,
+				heightMm,
+				pixelSpacingMm,
+				windowWidth,
+				windowLevel,
+				invert,
+				gamma,
+				airCutoffHU,
+				readPixels: true,
+				slabMode,
+				slabThicknessMm,
+			});
+			if (glRes?.pixelData && glRes.pixelData.length === widthPx * heightPx * 4) {
+				pixelData = glRes.pixelData;
+			}
+		}
+	}
 
-		for (let x = 0; x < widthPx; x++) {
-			const curX = rowStartX + x * stepVoxU.x;
-			const curY = rowStartY + x * stepVoxU.y;
+	if (!pixelData) {
+		pixelData = new Uint8ClampedArray(widthPx * heightPx * 4);
+		rawHuData = new Int16Array(widthPx * heightPx);
+		const lut = options.lut ?? get16BitLut(windowWidth, windowLevel, invert, gamma, softKnee ? { enabled: true, airCutoffHU } : { enabled: false, airCutoffHU });
 
-			const hu = sampleVoxelTrilinearHU(curX, curY, curZ, volume);
-			const gray = lut[(hu + 32768) & 0xffff]!;
+		// High-performance affine-basis rasterization fallback for headless environments:
+		// Zero heap allocations in the inner loop (no temporary objects or matrix conversions)
+		for (let y = 0; y < heightPx; y++) {
+			const curZ = vox00.z + y * stepVoxVz;
+			const rowStartX = vox00.x;
+			const rowStartY = vox00.y;
+			const rowIdx = y * widthPx * 4;
+			const huRowIdx = y * widthPx;
 
-			const idx = rowIdx + x * 4;
-			pixelData[idx] = gray;
-			pixelData[idx + 1] = gray;
-			pixelData[idx + 2] = gray;
-			pixelData[idx + 3] = 255;
+			for (let x = 0; x < widthPx; x++) {
+				const curX = rowStartX + x * stepVoxU.x;
+				const curY = rowStartY + x * stepVoxU.y;
+
+				const hu = sampleVoxelTrilinearHU(curX, curY, curZ, volume);
+				rawHuData[huRowIdx + x] = Math.max(-32768, Math.min(32767, Math.round(hu)));
+				const gray = lut[(hu + 32768) & 0xffff]!;
+
+				const idx = rowIdx + x * 4;
+				pixelData[idx] = gray;
+				pixelData[idx + 1] = gray;
+				pixelData[idx + 2] = gray;
+				pixelData[idx + 3] = 255;
+			}
 		}
 	}
 
@@ -291,6 +340,7 @@ export function extractSingleCrossSectionSlice(
 		widthPx,
 		heightPx,
 		pixelData,
+		rawHuData,
 		glCoordinates: {
 			widthPx: basis.widthPx,
 			heightPx: basis.heightPx,
@@ -415,6 +465,13 @@ export interface CrossSectionSeriesOptions {
 	readonly windowWidth?: number;
 	readonly windowLevel?: number;
 	readonly invert?: boolean;
+	readonly glContext?: CbctVolumeGlContext | null;
+	readonly useGpu?: boolean;
+	readonly gamma?: number;
+	readonly airCutoffHU?: number;
+	readonly softKnee?: boolean | import("./cbctLutMath").SoftKneeConfig | undefined;
+	readonly slabMode?: SlabProjectionMode | undefined;
+	readonly slabThicknessMm?: number | undefined;
 }
 
 /**
@@ -439,10 +496,17 @@ export function extractArchCrossSectionSeries(
 	if (vectorField.length === 0) return [];
 
 	// Pre-calculate 16-bit LUT once for the entire series to eliminate GC thrashing
-	const windowWidth = options.windowWidth ?? volume.defaultWindowWidth ?? 4400;
-	const windowLevel = options.windowLevel ?? volume.defaultWindowLevel ?? 1300;
+	// Canonical user contrast LUT: window 4025 HU / 525 HU, gamma 1.50, airCutoff -500 HU, softKnee false, slab 1.0 mm
+	const windowWidth = options.windowWidth ?? (volume.defaultWindowWidth && volume.defaultWindowWidth >= 1000 ? volume.defaultWindowWidth : 4025);
+	const windowLevel = options.windowLevel ?? (volume.defaultWindowLevel !== undefined && volume.defaultWindowLevel <= 1000 ? volume.defaultWindowLevel : 525);
 	const invert = options.invert ?? false;
-	const sharedLut = get16BitLut(windowWidth, windowLevel, invert);
+	const gamma = options.gamma ?? 1.50;
+	const airCutoffHU = options.airCutoffHU ?? -500.0;
+	const softKnee = options.softKnee ?? false;
+	const slabThicknessMm = options.slabThicknessMm ?? 1.0;
+	const sharedLut = options.slabMode === undefined || options.slabMode === "single"
+		? get16BitLut(windowWidth, windowLevel, invert, gamma, softKnee ? { enabled: true, airCutoffHU } : { enabled: false, airCutoffHU })
+		: get16BitLut(windowWidth, windowLevel, invert, gamma, softKnee ? { enabled: true, airCutoffHU } : { enabled: false, airCutoffHU });
 
 	const halfArchLength = archCurve.totalArcLengthMm > 0 ? archCurve.totalArcLengthMm / 2 : 55.0;
 	const slices: CrossSectionSliceData[] = [];
@@ -465,6 +529,12 @@ export function extractArchCrossSectionSeries(
 					...options,
 					offsetFromMidlineMm,
 					lut: sharedLut,
+					windowWidth,
+					windowLevel,
+					gamma,
+					airCutoffHU,
+					softKnee,
+					slabThicknessMm,
 				},
 			);
 			slices.push(slice);
@@ -485,14 +555,7 @@ export function generateCrossSectionSlices(
 	archCurve: DentalArchCurve,
 	stepMm = 2.0,
 	sliceCenterZMm = -10.0,
-	options: {
-		widthMm?: number;
-		heightMm?: number;
-		pixelSpacingMm?: number;
-		windowWidth?: number;
-		windowLevel?: number;
-		invert?: boolean;
-	} = {},
+	options: CrossSectionSeriesOptions = {},
 ): CrossSectionSliceData[] {
 	return extractArchCrossSectionSeries(volume, archCurve, {
 		stepMm,
@@ -647,3 +710,4 @@ export function findNearestAnchorToPoint(pointMm: Point2D, archCurve: DentalArch
 	}
 	return closest;
 }
+

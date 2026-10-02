@@ -312,51 +312,7 @@ export function drawPanoramicOverlay(
 		transform,
 	});
 
-	// Render FDI Tooth Badges along top of panorama
-	if (activePano.toothMarkersOnPano && activePano.toothMarkersOnPano.length > 0) {
-		const activeFdiStr = activeCrossSection?.nearestToothFdi;
-		ctx.save();
-		for (const marker of activePano.toothMarkersOnPano) {
-			const markerScreen = slicePxToScreenPx({ x: marker.xPx, y: 14 }, transform);
-			const isHovered = hoveredToothMarkerFdi !== null && String(hoveredToothMarkerFdi) === marker.toothFdi;
-			const isSelected = activeFdiStr === marker.toothFdi;
-
-			const labelText = `#${marker.toothFdi}`;
-			ctx.font = isHovered || isSelected ? "bold 9.5px monospace" : "8.5px monospace";
-			const textWidth = ctx.measureText(labelText).width;
-			const pillW = textWidth + 8;
-			const pillH = 15;
-			const pillX = markerScreen.x - pillW / 2;
-			const pillY = 4;
-
-			ctx.fillStyle = isSelected
-				? "rgba(16, 185, 129, 0.95)"
-				: isHovered
-					? "rgba(14, 165, 233, 0.95)"
-					: "rgba(15, 23, 42, 0.85)";
-			ctx.strokeStyle = isSelected
-				? "#34d399"
-				: isHovered
-					? "#38bdf8"
-					: "rgba(255, 255, 255, 0.25)";
-			ctx.lineWidth = isSelected || isHovered ? 1.5 : 0.8;
-
-			ctx.beginPath();
-			if (typeof ctx.roundRect === "function") {
-				ctx.roundRect(pillX, pillY, pillW, pillH, 3);
-			} else {
-				ctx.rect(pillX, pillY, pillW, pillH);
-			}
-			ctx.fill();
-			ctx.stroke();
-
-			ctx.fillStyle = "#ffffff";
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			ctx.fillText(labelText, markerScreen.x, pillY + pillH / 2);
-		}
-		ctx.restore();
-	}
+	// FDI tooth badges suppressed from user viewport overlay per mandate
 
 	if (panoImplantX !== null && panoImplantYEntry !== null && implant3DWorld) {
 		const pEntryScreen = slicePxToScreenPx(
@@ -617,17 +573,8 @@ export function drawCrossSectionOverlay(
 
 	ctx.restore();
 
-	// PASS 2: SCREEN-SPACE
-	drawCalibratedMillimeterRulers(ctx, {
-		widthPx: canvas.width,
-		heightPx: canvas.height,
-		pixelSpacingMmX: pxSpacing,
-		pixelSpacingMmY: pxSpacing,
-		showGrid: true,
-		showScaleBar: false,
-		invertColors,
-		transform,
-	});
+	// PASS 2: SCREEN-SPACE (Ruler 10, 20, 30 mm removed per user mandate to eliminate visual clutter on cross-sections)
+
 
 	if (crossSectionClearanceMidPoint) {
 		const midScreen = slicePxToScreenPx(

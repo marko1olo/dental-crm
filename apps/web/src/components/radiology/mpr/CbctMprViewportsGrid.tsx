@@ -19,7 +19,6 @@ import type { ImplantBrandKey } from "../implantSafetyEngine";
 import { CbctVolume3DViewport } from "./CbctVolume3DViewport";
 import { CbctViewportRulerToolbar, CbctQuickWlBar } from "./CbctViewportsRuler";
 import { CbctEmptyVolumeDropzone } from "./CbctEmptyVolumeDropzone";
-import { CbctPanoramicFdiRibbon } from "./CbctPanoramicFdiRibbon";
 import {
 	MprQuadWorkspace,
 	PanoramicWorkspace,
@@ -49,16 +48,11 @@ export interface CbctMprViewportsGridProps {
 	readonly activeViewport: CbctViewportType;
 	readonly setActiveViewport: (v: CbctViewportType) => void;
 	readonly handleToggleMaximize: (v: CbctViewportType) => void;
-	readonly axialBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
-	readonly axialOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
-	readonly coronalBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
-	readonly coronalOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
-	readonly sagittalBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
-	readonly sagittalOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
-	readonly panoBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
-	readonly panoOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
-	readonly crossSectionBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>;
-	readonly crossSectionOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly axialBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>; readonly axialOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly coronalBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>; readonly coronalOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly sagittalBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>; readonly sagittalOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly panoBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>; readonly panoOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+	readonly crossSectionBaseCanvasRef: React.RefObject<HTMLCanvasElement | null>; readonly crossSectionOverlayCanvasRef: React.RefObject<HTMLCanvasElement | null>;
 	readonly handleCanvasDoubleClick: (plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => void;
 	readonly handleCanvasMouseDown: (plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => void;
 	readonly handleCanvasMouseMove: (plane: MprPlane, e: React.MouseEvent<HTMLCanvasElement>) => void;
@@ -85,49 +79,35 @@ export interface CbctMprViewportsGridProps {
 	readonly handleCrossSectionMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void;
 	readonly handleCrossSectionMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => void;
 	readonly handleCrossSectionMouseUp: () => void;
-	readonly dragImplantPart: string | null;
-	readonly hoveredImplantPart: string | null;
+	readonly dragImplantPart: string | null; readonly hoveredImplantPart: string | null;
 	readonly activeCrossSection: CrossSectionSliceData | null | undefined;
-	readonly activeCrossSectionIdx: number;
-	readonly crossSections: CrossSectionSliceData[];
+	readonly activeCrossSectionIdx: number; readonly crossSections: CrossSectionSliceData[];
 	readonly onLoadDemoVolume?: (() => void) | undefined;
-	readonly activeTool?: string | undefined;
-	readonly onSelectTool?: ((tool: "ruler" | "crosshair") => void) | undefined;
-	readonly rulers?: readonly CbctMeasurementRuler[] | undefined;
-	readonly onClearRulers?: ((plane?: CbctViewportType) => void) | undefined;
+	readonly activeTool?: string | undefined; readonly onSelectTool?: ((tool: "ruler" | "crosshair") => void) | undefined;
+	readonly rulers?: readonly CbctMeasurementRuler[] | undefined; readonly onClearRulers?: ((plane?: CbctViewportType) => void) | undefined;
 	readonly onSelectQuickWlPreset?: ((preset: { windowWidth: number; windowLevel: number }) => void) | undefined;
 	readonly handleSelectTooth?: ((toothFdi: number | string) => void) | undefined;
-	readonly archCurve?: DentalArchCurve | undefined;
-	readonly jawType?: "mandible" | "maxilla" | undefined;
+	readonly archCurve?: DentalArchCurve | undefined; readonly jawType?: "mandible" | "maxilla" | undefined;
 	readonly onSwitchJaw?: ((jaw: "mandible" | "maxilla") => void) | undefined;
 	readonly activeToothFdi?: string | number | undefined;
-	readonly isUnsharpActive?: boolean | undefined;
-	readonly onToggleUnsharp?: (() => void) | undefined;
+	readonly isUnsharpActive?: boolean | undefined; readonly onToggleUnsharp?: (() => void) | undefined;
 	readonly onChangeCrossSectionIdx?: ((idx: number) => void) | undefined;
-	readonly selectedBrand?: ImplantBrandKey | undefined;
-	readonly onSelectBrand?: ((b: ImplantBrandKey) => void) | undefined;
-	readonly selectedDiameterMm?: number | undefined;
-	readonly onSelectDiameterMm?: ((d: number) => void) | undefined;
-	readonly selectedLengthMm?: number | undefined;
-	readonly onSelectLengthMm?: ((l: number) => void) | undefined;
-	readonly displayBoneClass?: string | undefined;
-	readonly displayMeanHU?: number | null | undefined;
-	readonly displayTorque?: string | undefined;
-	readonly displayNerveClearanceMm?: number | null | undefined;
-	readonly displayDrillingProtocol?: string | undefined;
+	readonly selectedBrand?: ImplantBrandKey | undefined; readonly onSelectBrand?: ((b: ImplantBrandKey) => void) | undefined;
+	readonly selectedDiameterMm?: number | undefined; readonly onSelectDiameterMm?: ((d: number) => void) | undefined;
+	readonly selectedLengthMm?: number | undefined; readonly onSelectLengthMm?: ((l: number) => void) | undefined;
+	readonly displayBoneClass?: string | undefined; readonly displayMeanHU?: number | null | undefined; readonly displayTorque?: string | undefined;
+	readonly displayNerveClearanceMm?: number | null | undefined; readonly displayDrillingProtocol?: string | undefined;
 	readonly nerveSafetyStatus?: "safe" | "warning" | "danger" | "unmeasured" | undefined;
-	readonly handleExportToEmr?: (() => void) | undefined;
-	readonly handleExportToPlan?: (() => void) | undefined;
-	readonly onChangeWindowWidth?: ((w: number) => void) | undefined;
-	readonly onChangeWindowLevel?: ((l: number) => void) | undefined;
-	readonly onChangeSlabThicknessMm?: ((th: number) => void) | undefined;
-	readonly onChangeSlabMode?: ((mode: SlabProjectionMode) => void) | undefined;
-	readonly onSelectClinicalPreset?: ((presetId: string) => void) | undefined;
-	readonly activePresetId?: string | undefined;
-	readonly panoThicknessMm?: number | undefined;
-	readonly onChangePanoThicknessMm?: ((th: number) => void) | undefined;
-	readonly panoProjectionMode?: string | undefined;
-	readonly onChangePanoProjectionMode?: ((mode: string) => void) | undefined;
+	readonly handleExportToEmr?: (() => void) | undefined; readonly handleExportToPlan?: (() => void) | undefined;
+	readonly onChangeWindowWidth?: ((w: number) => void) | undefined; readonly onChangeWindowLevel?: ((l: number) => void) | undefined;
+	readonly onChangeSlabThicknessMm?: ((th: number) => void) | undefined; readonly onChangeSlabMode?: ((mode: SlabProjectionMode) => void) | undefined;
+	readonly onSelectClinicalPreset?: ((presetId: string) => void) | undefined; readonly activePresetId?: string | undefined;
+	readonly panoThicknessMm?: number | undefined; readonly onChangePanoThicknessMm?: ((th: number) => void) | undefined;
+	readonly panoProjectionMode?: string | undefined; readonly onChangePanoProjectionMode?: ((mode: string) => void) | undefined;
+	readonly crossSectionStepMm?: number | undefined; readonly onChangeCrossSectionStepMm?: ((step: number) => void) | undefined;
+	readonly implantEntryXOffsetMm?: number | undefined; readonly onChangeImplantEntryXOffsetMm?: ((val: number) => void) | undefined;
+	readonly implantEntryDepthMm?: number | undefined; readonly onChangeImplantEntryDepthMm?: ((val: number) => void) | undefined;
+	readonly implantAngulationDeg?: number | undefined; readonly onChangeImplantAngulationDeg?: ((val: number) => void) | undefined;
 }
 
 export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
@@ -154,11 +134,12 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 	onChangeWindowWidth, onChangeWindowLevel, onChangeSlabThicknessMm, onChangeSlabMode,
 	onSelectClinicalPreset, activePresetId, panoThicknessMm, onChangePanoThicknessMm,
 	panoProjectionMode, onChangePanoProjectionMode,
+	crossSectionStepMm, onChangeCrossSectionStepMm,
+	implantEntryXOffsetMm, onChangeImplantEntryXOffsetMm,
+	implantEntryDepthMm, onChangeImplantEntryDepthMm,
+	implantAngulationDeg, onChangeImplantAngulationDeg,
 }) => {
 	const [fourthQuadrantMode, setFourthQuadrantMode] = useState<"volume3d" | "panoramic">("volume3d");
-
-	// Optional FDI tooth formula ribbon (Off by default per user mandate to prevent clutter)
-	const [showFdiRibbon, setShowFdiRibbon] = useState<boolean>(false);
 
 	useEffect(() => {
 		if (studioMode === "panoramic") {
@@ -296,6 +277,46 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 					className="absolute inset-0 w-full h-full object-contain z-10"
 					data-testid="cbct-overlay-canvas-axial"
 				/>
+				{onSwitchJaw && (
+					<div
+						className="absolute top-8 left-1.5 z-30 pointer-events-auto inline-flex items-center bg-zinc-950/90 border border-zinc-800 rounded p-0.5 shadow-md backdrop-blur-md gap-0.5 text-[10px]"
+						role="group"
+						aria-label="Выбор челюсти"
+					>
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								onSwitchJaw("maxilla");
+							}}
+							className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer ${
+								jawType === "maxilla"
+									? "bg-purple-600 text-white shadow-xs font-bold"
+									: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+							}`}
+							data-testid="cbct-axial-switch-maxilla-btn"
+							title="Верхняя челюсть (ВЧ): дуга и Z-срез"
+						>
+							ВЧ
+						</button>
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								onSwitchJaw("mandible");
+							}}
+							className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer ${
+								jawType === "mandible"
+									? "bg-cyan-600 text-white shadow-xs font-bold"
+									: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+							}`}
+							data-testid="cbct-axial-switch-mandible-btn"
+							title="Нижняя челюсть (НЧ): дуга и Z-срез"
+						>
+							НЧ
+						</button>
+					</div>
+				)}
 				<CbctViewportHud
 					viewportType="axial"
 					coordinateMm={{ z: crosshairMm.z }}
@@ -479,27 +500,6 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 				<Spline className="w-3 h-3 text-purple-300" />
 				<span>ОПТГ</span>
 			</button>
-
-			{/* Optional Compact FDI Tooth Ribbon Toggle Button */}
-			{fourthQuadrantMode === "panoramic" && handleSelectTooth && (
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						setShowFdiRibbon((prev) => !prev);
-					}}
-					className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
-						showFdiRibbon
-							? "bg-purple-600/90 text-white shadow-xs ring-1 ring-purple-400"
-							: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
-					}`}
-					data-testid="cbct-toggle-fdi-ribbon-btn"
-					title={showFdiRibbon ? "Скрыть зубную формулу FDI" : "Показать зубную формулу FDI"}
-				>
-					<Spline className="w-3 h-3 text-purple-300" />
-					<span>FDI</span>
-				</button>
-			)}
 		</div>
 	);
 
@@ -517,15 +517,6 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 			style={{ backgroundColor: "#000000" }}
 			data-testid="cbct-viewport-container-panoramic"
 		>
-			{/* Optional Compact FDI Tooth Navigation Ribbon (Toggleable in Settings, off by default per mandate) */}
-			{showFdiRibbon && handleSelectTooth && (
-				<CbctPanoramicFdiRibbon
-					activeToothFdi={activeCrossSection?.nearestToothFdi}
-					onSelectTooth={handleSelectTooth}
-					onClose={() => setShowFdiRibbon(false)}
-					archCurve={archCurve}
-				/>
-			)}
 
 			<div className="flex-1 flex items-center justify-center min-h-0 relative w-full h-full" style={{ backgroundColor: "#000000" }}>
 				{/* Top-left Mode Switcher (placed below clinical HUD badge to prevent overlap) */}
@@ -682,7 +673,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 						key={tab.id}
 						type="button"
 						onClick={() => onSelectMobileTab?.(tab.id as any)}
-						className={`flex-1 min-w-[56px] py-1.5 px-2 text-xs font-semibold rounded transition-colors text-center cursor-pointer ${
+						className={`flex-1 min-w-[56px] min-h-[44px] py-1.5 px-2 text-xs font-semibold rounded transition-colors text-center cursor-pointer flex items-center justify-center ${
 							mobileActiveTab === tab.id
 								? "bg-zinc-800 text-cyan-400 border border-cyan-500/60 shadow-xs font-bold"
 								: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60"
@@ -705,39 +696,24 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 				/>
 			) : studioMode === "panoramic" ? (
 				<PanoramicWorkspace
-					volume={volume}
-					renderers={renderers}
-					activeViewport={activeViewport}
-					setActiveViewport={setActiveViewport}
-					maximizedViewport={maximizedViewport}
-					handleToggleMaximize={handleToggleMaximize}
-					mobileActiveTab={mobileActiveTab}
-					patientDisplayName={patientDisplayName}
-					jawType={jawType ?? "mandible"}
-					onSwitchJaw={onSwitchJaw ?? (() => {})}
-					archCurve={archCurve}
-					activeCrossSection={activeCrossSection}
-					activeCrossSectionIdx={activeCrossSectionIdx}
-					crossSections={crossSections}
-					onChangeCrossSectionIdx={onChangeCrossSectionIdx}
-					handleSelectTooth={handleSelectTooth}
-					isUnsharpActive={isUnsharpActive}
-					onToggleUnsharp={onToggleUnsharp}
-					windowWidth={windowWidth}
-					onChangeWindowWidth={onChangeWindowWidth}
-					windowLevel={windowLevel}
-					onChangeWindowLevel={onChangeWindowLevel}
-					slabThicknessMm={slabThicknessMm}
-					onChangeSlabThicknessMm={onChangeSlabThicknessMm}
-					slabMode={slabMode}
-					onChangeSlabMode={onChangeSlabMode}
-					panoThicknessMm={panoThicknessMm}
-					onChangePanoThicknessMm={onChangePanoThicknessMm}
-					panoProjectionMode={panoProjectionMode}
-					onChangePanoProjectionMode={onChangePanoProjectionMode}
-					onSelectClinicalPreset={onSelectClinicalPreset}
-					activePresetId={activePresetId}
-				/>
+					volume={volume} renderers={renderers}
+					activeViewport={activeViewport} setActiveViewport={setActiveViewport}
+					maximizedViewport={maximizedViewport} handleToggleMaximize={handleToggleMaximize}
+					mobileActiveTab={mobileActiveTab} patientDisplayName={patientDisplayName}
+					jawType={jawType ?? "mandible"} onSwitchJaw={onSwitchJaw ?? (() => {})}
+					archCurve={archCurve} activeCrossSection={activeCrossSection}
+					activeCrossSectionIdx={activeCrossSectionIdx} crossSections={crossSections}
+					onChangeCrossSectionIdx={onChangeCrossSectionIdx} handleSelectTooth={handleSelectTooth}
+					isUnsharpActive={isUnsharpActive} onToggleUnsharp={onToggleUnsharp}
+					windowWidth={windowWidth} onChangeWindowWidth={onChangeWindowWidth}
+					windowLevel={windowLevel} onChangeWindowLevel={onChangeWindowLevel}
+					slabThicknessMm={slabThicknessMm} onChangeSlabThicknessMm={onChangeSlabThicknessMm}
+					slabMode={slabMode} onChangeSlabMode={onChangeSlabMode}
+					panoThicknessMm={panoThicknessMm} onChangePanoThicknessMm={onChangePanoThicknessMm}
+					panoProjectionMode={panoProjectionMode} onChangePanoProjectionMode={onChangePanoProjectionMode}
+					crossSectionStepMm={crossSectionStepMm} onChangeCrossSectionStepMm={onChangeCrossSectionStepMm}
+					onSelectClinicalPreset={onSelectClinicalPreset} activePresetId={activePresetId}
+					/>
 			) : studioMode === "endo" ? (
 				<EndoWorkspace
 					volume={volume}
@@ -758,45 +734,24 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = ({
 				/>
 			) : studioMode === "implant" ? (
 				<ImplantWorkspace
-					volume={volume}
-					renderers={renderers}
-					activeViewport={activeViewport}
-					setActiveViewport={setActiveViewport}
-					maximizedViewport={maximizedViewport}
-					handleToggleMaximize={handleToggleMaximize}
-					mobileActiveTab={mobileActiveTab}
-					patientDisplayName={patientDisplayName}
-					activeCrossSection={activeCrossSection}
-					activeCrossSectionIdx={activeCrossSectionIdx}
-					crossSections={crossSections}
-					onChangeCrossSectionIdx={onChangeCrossSectionIdx}
-					handleSelectTooth={handleSelectTooth}
-					selectedBrand={selectedBrand}
-					onSelectBrand={onSelectBrand}
-					selectedDiameterMm={selectedDiameterMm}
-					onSelectDiameterMm={onSelectDiameterMm}
-					selectedLengthMm={selectedLengthMm}
-					onSelectLengthMm={onSelectLengthMm}
-					displayBoneClass={displayBoneClass}
-					displayMeanHU={displayMeanHU}
-					displayTorque={displayTorque}
-					displayNerveClearanceMm={displayNerveClearanceMm}
-					displayDrillingProtocol={displayDrillingProtocol}
-					nerveSafetyStatus={nerveSafetyStatus}
-					handleExportToEmr={handleExportToEmr}
-					handleExportToPlan={handleExportToPlan}
+					volume={volume} renderers={renderers}
+					activeViewport={activeViewport} setActiveViewport={setActiveViewport}
+					maximizedViewport={maximizedViewport} handleToggleMaximize={handleToggleMaximize}
+					mobileActiveTab={mobileActiveTab} patientDisplayName={patientDisplayName} activeCrossSection={activeCrossSection} activeCrossSectionIdx={activeCrossSectionIdx}
+					crossSections={crossSections} onChangeCrossSectionIdx={onChangeCrossSectionIdx} crossSectionStepMm={crossSectionStepMm} onChangeCrossSectionStepMm={onChangeCrossSectionStepMm}
+					archCurve={archCurve} jawType={jawType} onSwitchJaw={onSwitchJaw} handleSelectTooth={handleSelectTooth} selectedBrand={selectedBrand} onSelectBrand={onSelectBrand}
+					selectedDiameterMm={selectedDiameterMm} onSelectDiameterMm={onSelectDiameterMm} selectedLengthMm={selectedLengthMm} onSelectLengthMm={onSelectLengthMm}
+					displayBoneClass={displayBoneClass} displayMeanHU={displayMeanHU} displayTorque={displayTorque} displayNerveClearanceMm={displayNerveClearanceMm} displayDrillingProtocol={displayDrillingProtocol}
+					nerveSafetyStatus={nerveSafetyStatus} handleExportToEmr={handleExportToEmr} handleExportToPlan={handleExportToPlan} isUnsharpActive={isUnsharpActive} onToggleUnsharp={onToggleUnsharp} crosshairMm={crosshairMm}
+					windowWidth={windowWidth} windowLevel={windowLevel} implantEntryXOffsetMm={implantEntryXOffsetMm} onChangeImplantEntryXOffsetMm={onChangeImplantEntryXOffsetMm}
+					implantEntryDepthMm={implantEntryDepthMm} onChangeImplantEntryDepthMm={onChangeImplantEntryDepthMm} implantAngulationDeg={implantAngulationDeg} onChangeImplantAngulationDeg={onChangeImplantAngulationDeg}
 				/>
 			) : (
 				<MprQuadWorkspace
-					volume={volume}
-					renderers={renderers}
-					activeViewport={activeViewport}
-					setActiveViewport={setActiveViewport}
-					maximizedViewport={maximizedViewport}
-					handleToggleMaximize={handleToggleMaximize}
-					mobileActiveTab={mobileActiveTab}
-					patientDisplayName={patientDisplayName}
-					viewLayout={viewLayout}
+					volume={volume} renderers={renderers}
+					activeViewport={activeViewport} setActiveViewport={setActiveViewport}
+					maximizedViewport={maximizedViewport} handleToggleMaximize={handleToggleMaximize}
+					mobileActiveTab={mobileActiveTab} patientDisplayName={patientDisplayName} viewLayout={viewLayout}
 				/>
 			)}
 			{dicomLoadingStatus && volume && (

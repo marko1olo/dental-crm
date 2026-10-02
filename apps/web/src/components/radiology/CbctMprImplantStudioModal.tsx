@@ -3,8 +3,7 @@ import { createPortal } from "react-dom";
 import {
 	type CbctVoxelVolume, type Point3D, type SlabProjectionMode, type ObliqueRotationAngles,
 	type ViewportTransform, type CbctMeasurementRuler, type CbctAngleMeasurement, type CbctProbeMarker, type CbctViewportType,
-	CBCT_HOUNSFIELD_PRESETS, DEFAULT_OBLIQUE_ROTATION, DEFAULT_VIEWPORT_TRANSFORM,
-	ROMEXIS_COLORS, disposeCbctVolume, getTissueNameFromHU, sampleVoxelHU, worldMmToVoxel,
+	CBCT_HOUNSFIELD_PRESETS, DEFAULT_OBLIQUE_ROTATION, DEFAULT_VIEWPORT_TRANSFORM, ROMEXIS_COLORS, disposeCbctVolume, getTissueNameFromHU, sampleVoxelHU, worldMmToVoxel,
 } from "./cbctMprMath";
 import { useCbctKeyboardShortcuts, applyStepZoom } from "./useCbctKeyboardShortcuts";
 import { CbctHotkeysStatusBar } from "./CbctHotkeysStatusBar";
@@ -40,9 +39,11 @@ import { CbctMprViewportsGrid } from "./mpr/CbctMprViewportsGrid";
 import { useCbctSliceRenderer } from "./mpr/useCbctSliceRenderer";
 import { useCbctInteractionHandlers } from "./mpr/useCbctInteractionHandlers";
 import { useCbctDicomLoader } from "./mpr/useCbctDicomLoader";
+import { useCbctClipboardSnapshot } from "./mpr/useCbctClipboardSnapshot";
 import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../utils/demoModeEngine.js";
-import { CLINICAL_RADIOLOGY_PRESETS } from "./cbctLutMath";
+import { CLINICAL_RADIOLOGY_PRESETS, loadDoctorCbctSettings } from "./cbctLutMath";
+import "./tuner/cbctTunerStyles.css";
 
 // Re-exports for zero-downtime backwards compatibility
 export type { StudioMode, ViewLayoutMode, CbctMprImplantStudioModalProps };
@@ -116,14 +117,15 @@ export const CbctMprImplantStudioModal: React.FC<
 		}
 		return null;
 	});
+	const [doctorDefaults] = useState(() => loadDoctorCbctSettings());
 	const [activePreset, setActivePreset] = useState<string>("standard");
-	const [windowWidth, setWindowWidth] = useState<number>(4400);
-	const [windowLevel, setWindowLevel] = useState<number>(1300);
+	const [windowWidth, setWindowWidth] = useState<number>(() => doctorDefaults.windowWidth);
+	const [windowLevel, setWindowLevel] = useState<number>(() => doctorDefaults.windowLevel);
 	const [invertColors, setInvertColors] = useState<boolean>(false);
 	const [slabMode, setSlabMode] = useState<SlabProjectionMode>("single");
-	const [slabThicknessMm, setSlabThicknessMm] = useState<number>(0.0);
-	const [panoThicknessMm, setPanoThicknessMm] = useState<number>(3.0);
-	const [panoProjectionMode, setPanoProjectionMode] = useState<string>("ray_sum");
+	const [slabThicknessMm, setSlabThicknessMm] = useState<number>(() => doctorDefaults.mprThicknessMm);
+	const [panoThicknessMm, setPanoThicknessMm] = useState<number>(() => doctorDefaults.panoThicknessMm);
+	const [panoProjectionMode, setPanoProjectionMode] = useState<string>("average");
 	const [loadedSliceCount, setLoadedSliceCount] = useState<number>(0);
 	const [patientDisplayName, setPatientDisplayName] = useState<string>(patientName || "3D КЛКТ исследование");
 
@@ -250,6 +252,23 @@ export const CbctMprImplantStudioModal: React.FC<
 		}
 	}, [studioMode, nerveAuditResult.shouldTriggerAudioAlarm, nerveAuditResult.safetyStatus, isAudioEnabled]);
 
+	// 1-Click Clipboard Snapshot Sharing (Mandate 8l, Zero-Friction Sharing Ctrl+C)
+	const clipboardSnapshot = useCbctClipboardSnapshot({
+		activeViewport,
+		patientDisplayName,
+		crossSectionBaseCanvasRef,
+		crossSectionOverlayCanvasRef,
+		panoBaseCanvasRef,
+		panoOverlayCanvasRef,
+		axialBaseCanvasRef,
+		axialOverlayCanvasRef,
+		coronalBaseCanvasRef,
+		coronalOverlayCanvasRef,
+		sagittalBaseCanvasRef,
+		sagittalOverlayCanvasRef,
+		isEnabled: isOpen,
+	});
+
 	// Auto-detect dental arch
 	const handleAutoDetectArch = useCallback(() => {
 		if (!volume) {
@@ -274,7 +293,7 @@ export const CbctMprImplantStudioModal: React.FC<
 	const handleSwitchJaw = useCallback((newJaw: "mandible" | "maxilla") => {
 		setJawType(newJaw);
 		if (!volume) {
-			showToast(newJaw === "maxilla" ? "Верхняя челюсть (Maxilla)" : "Нижняя челюсть (Mandible)", "info");
+			showToast(newJaw === "maxilla" ? "Верхняя челюсть (ВЧ)" : "Нижняя челюсть (НЧ)", "info");
 			return;
 		}
 		try {
@@ -290,9 +309,9 @@ export const CbctMprImplantStudioModal: React.FC<
 				archCenterY = detected.splinePointsMm[midIdx]?.y ?? 0;
 			}
 			setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
-			showToast(newJaw === "maxilla" ? "В/Ч (Maxilla): Z-срез и дуга обновлены" : "Н/Ч (Mandible): Z-срез и дуга обновлены", "success");
+			showToast(newJaw === "maxilla" ? "ВЧ: Z-срез и дуга обновлены" : "НЧ: Z-срез и дуга обновлены", "success");
 		} catch {
-			showToast(`Переключено на ${newJaw === "maxilla" ? "В/Ч (Maxilla)" : "Н/Ч (Mandible)"}`, "info");
+			showToast(`Переключено на ${newJaw === "maxilla" ? "ВЧ" : "НЧ"}`, "info");
 		}
 	}, [volume]);
 
@@ -310,6 +329,9 @@ export const CbctMprImplantStudioModal: React.FC<
 			focalTroughThicknessMm: panoThicknessMm,
 			projectionMode: panoProjectionMode,
 			sharpenAmount: isUnsharpActive ? 0.18 : 0.0,
+			gamma: 1.50,
+			useSoftKnee: false,
+			airCutoffHU: -500,
 		} as any);
 		setPanoramicData(panoRes);
 
@@ -323,8 +345,12 @@ export const CbctMprImplantStudioModal: React.FC<
 					sliceCenterZMm: crosshairMm.z,
 					widthMm: 24.0,
 					heightMm: 34.0,
-					windowWidth,
-					windowLevel,
+					windowWidth: windowWidth ?? 4025,
+					windowLevel: windowLevel ?? 525,
+					gamma: 1.50,
+					airCutoffHU: -500,
+					softKnee: false,
+					slabThicknessMm: slabThicknessMm ?? 1.0,
 					invert: invertColors,
 				},
 			})
@@ -338,8 +364,12 @@ export const CbctMprImplantStudioModal: React.FC<
 					const crossSlices = generateCrossSectionSlices(volume, archCurve, crossSectionStepMm, crosshairMm.z, {
 						widthMm: 24.0,
 						heightMm: 34.0,
-						windowWidth,
-						windowLevel,
+						windowWidth: windowWidth ?? 4025,
+						windowLevel: windowLevel ?? 525,
+						gamma: 1.50,
+						airCutoffHU: -500,
+						softKnee: false,
+						slabThicknessMm: slabThicknessMm ?? 1.0,
 						invert: invertColors,
 					});
 					setCrossSections(crossSlices);
@@ -644,9 +674,10 @@ export const CbctMprImplantStudioModal: React.FC<
 		<div
 			id={`cbct-modal-${modalId}`}
 			data-testid="cbct-studio-modal"
+			data-cbct-cockpit="true"
 			data-theme="dark"
 			style={{ colorScheme: "dark" }}
-			className={`fixed inset-0 z-50 flex flex-col bg-zinc-950 text-zinc-100 font-sans select-none overflow-hidden ${
+			className={`fixed inset-0 z-50 flex flex-col bg-zinc-950 text-zinc-100 font-sans select-none overflow-hidden cbct-dark-cockpit ${
 				isFullscreen ? "p-0" : "p-1 sm:p-2 bg-black/80 backdrop-blur-sm"
 			}`}
 		>
@@ -677,7 +708,9 @@ export const CbctMprImplantStudioModal: React.FC<
 					isUnsharpActive={isUnsharpActive} onToggleUnsharp={handleToggleUnsharp} sharpenAmount={isUnsharpActive ? 0.18 : 0.0}
 					windowWidth={windowWidth} onChangeWindowWidth={setWindowWidth} windowLevel={windowLevel} onChangeWindowLevel={setWindowLevel}
 					slabThicknessMm={slabThicknessMm} onChangeSlabThicknessMm={setSlabThicknessMm} slabMode={slabMode} onChangeSlabMode={setSlabMode}
+					panoThicknessMm={panoThicknessMm} onChangePanoThicknessMm={setPanoThicknessMm}
 					onSelectClinicalPreset={handleSelectClinicalPreset}
+					onCopySnapshotToClipboard={clipboardSnapshot.copySnapshotToClipboard}
 				/>
 
 				<main className="flex-1 flex min-h-0 w-full overflow-hidden relative">
@@ -723,6 +756,10 @@ export const CbctMprImplantStudioModal: React.FC<
 						onChangeWindowWidth={setWindowWidth} onChangeWindowLevel={setWindowLevel} onChangeSlabThicknessMm={setSlabThicknessMm} onChangeSlabMode={setSlabMode}
 						onSelectClinicalPreset={handleSelectClinicalPreset} activePresetId={activePreset}
 						panoThicknessMm={panoThicknessMm} onChangePanoThicknessMm={setPanoThicknessMm} panoProjectionMode={panoProjectionMode} onChangePanoProjectionMode={setPanoProjectionMode}
+						crossSectionStepMm={crossSectionStepMm} onChangeCrossSectionStepMm={setCrossSectionStepMm}
+						implantEntryXOffsetMm={implantEntryXOffsetMm} onChangeImplantEntryXOffsetMm={setImplantEntryXOffsetMm}
+						implantEntryDepthMm={implantEntryDepthMm} onChangeImplantEntryDepthMm={setImplantEntryDepthMm}
+						implantAngulationDeg={implantAngulationDeg} onChangeImplantAngulationDeg={setImplantAngulationDeg}
 					/>
 
 					<CbctRightSidebar
@@ -758,7 +795,5 @@ export const CbctMprImplantStudioModal: React.FC<
 		</div>
 	);
 
-	return typeof document !== "undefined" && document.body
-		? createPortal(modalContent, document.body)
-		: modalContent;
+	return typeof document !== "undefined" && document.body ? createPortal(modalContent, document.body) : modalContent;
 };
