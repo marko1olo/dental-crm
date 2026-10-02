@@ -1,18 +1,55 @@
 {
   "subagent": "RED_TEAM_FINANCE_BILLING_INQUISITOR",
-  "status": "INIT_AND_RECONNAISSANCE",
+  "status": "COMPLETED",
   "completed_steps": [
-    "Read core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md completely",
-    "Verified all mandates and invariants"
-  ],
-  "pending_steps": [
-    "Reconnaissance of financial, billing, cashier, 54-FZ, payroll, discounts modules in shared, api, web",
+    "Read core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md completely (Critical Law #0)",
+    "Mapped financial, billing, cashier, 54-FZ, payroll, discounts modules in @dental/shared, apps/api, apps/web",
     "Deep audit for duplicates, float/double money, 0.00 rub receipt bug on 100% guarantee, INN requirements on physical persons, payment split inconsistencies",
-    "Consolidate duplicated logic to single source of truth in shared/api/web",
-    "Implement fixes on disk with zero mocks and verified integrity",
-    "Run targeted tests and encoding/css checks",
-    "Verify no KLKT/DICOM was touched",
-    "Submit verbatim inquisition report to parent"
+    "Consolidated payment method mapping to single source of truth (SSOT) in @dental/shared (normalizePaymentMethod, resolveFfd12PaymentTag, STATUTORY_PAYMENT_METHOD_LABELS_RU, extendedPaymentMethodSchema)",
+    "Deduplicated duplicate declarations of paymentMethodSchema and paymentStatusSchema in packages/shared/src/index.ts",
+    "Eliminated float division and Math.round(*100) / (/100) arithmetic in PaymentCapture.tsx, fastCheckoutEngine.ts, usePaymentExecution.ts, and offlinePaymentQueue.ts, enforcing Integer Kopecks",
+    "Fixed broken test in apps/api/src/services/finance/payoutNegativeExplain.test.ts by restoring negative payout debt note branch in doctorPayouts.ts payoutRowNote",
+    "Decoupled apps/web/src/tests/stagePayment.test.ts from UI modal to allow pure test runner execution without CSS loader error",
+    "Executed full machine verification gates: check:encoding (7,112 files clean), check:css-tokens (164 css files clean, 0 unresolved tokens)",
+    "Executed 14 targeted domain test suites with 214/214 passing unit tests (0 failures)",
+    "Verified iron invariant: ZERO files matching KLKT / CT / DICOM / Radiology touched"
   ],
-  "findings": []
+  "pending_steps": [],
+  "findings": [
+    {
+      "id": "DEFECT-FIN-01",
+      "severity": "HIGH",
+      "title": "Payment method type fragmentation & duplicate schemas",
+      "description": "packages/shared/src/index.ts had duplicate copy-paste definitions of paymentMethodSchema and paymentStatusSchema, while UI components used ad-hoc switch cases ('deposit' vs 'family_wallet', 'sbp' vs 'online').",
+      "resolution": "Exported canonical SSOT converters normalizePaymentMethod, resolveFfd12PaymentTag, STATUTORY_PAYMENT_METHOD_LABELS_RU, and extendedPaymentMethodSchema from packages/shared/src/fiscal/fiscalReceiptSchemas.ts."
+    },
+    {
+      "id": "DEFECT-FIN-02",
+      "severity": "HIGH",
+      "title": "Float math and Math.round(/100) penny loss in split checkout and offline queue",
+      "description": "PaymentCapture.tsx, fastCheckoutEngine.ts, and offlinePaymentQueue.ts performed raw Math.round(x / 100) and float addition, losing fractional kopecks on multi-tender splits and offline billing.",
+      "resolution": "Replaced with exact rubToKopecks, kopecksToRub, and kopecksToNumericString from @dental/shared, ensuring zero penny loss."
+    },
+    {
+      "id": "DEFECT-FIN-03",
+      "severity": "MEDIUM",
+      "title": "Broken doctor payout debt explanation assertion",
+      "description": "Commit 99c07d261 accidentally suppressed the negative payout debt note in payoutRowNote, causing apps/api/src/services/finance/payoutNegativeExplain.test.ts to fail.",
+      "resolution": "Restored both payoutRub < 0 (debt note) and payoutRub === 0 (Labor Code RF minimum zero note) branches in doctorPayouts.ts."
+    },
+    {
+      "id": "DEFECT-FIN-04",
+      "severity": "LOW",
+      "title": "Test suite coupling to UI CSS in stagePayment.test.ts",
+      "description": "stagePayment.test.ts imported from components/treatment-plans/stagePayment/index.js which pulled in bankInstallment.css, breaking headless Node test execution.",
+      "resolution": "Decoupled stagePayment.test.ts to import directly from stagePaymentEngine.js and stagePaymentPresets.js."
+    }
+  ],
+  "verification": {
+    "test_count": 214,
+    "passed_count": 214,
+    "failed_count": 0,
+    "encoding_checked_files": 7112,
+    "css_tokens_unresolved": 0
+  }
 }
