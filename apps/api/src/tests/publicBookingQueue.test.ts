@@ -369,4 +369,19 @@ describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n
 		assert.equal(subsequentCheck.valid, false);
 		assert.match(subsequentCheck.error || "", /не запрашивался или устарел/);
 	});
+
+	it("12. Production Environment: Static Dev OTP Codes are strictly REJECTED", () => {
+		const prodPhone = "+7 (999) 000-11-22";
+		const savedEnv = process.env.NODE_ENV;
+		try {
+			process.env.NODE_ENV = "production";
+			const check1234 = publicBookingQueueService.verifyPhoneOtp(prodPhone, "1234");
+			assert.equal(check1234.valid, false, "Dev bypass code 1234 must be rejected in production");
+			const check0000 = publicBookingQueueService.verifyPhoneOtp(prodPhone, "000000");
+			assert.equal(check0000.valid, false, "Dev bypass code 000000 must be rejected in production");
+		} finally {
+			process.env.NODE_ENV = savedEnv;
+		}
+	});
 });
+

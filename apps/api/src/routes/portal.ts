@@ -13,11 +13,13 @@ import {
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	appointments,
+	familyGroups,
 	generatedDocuments,
 	organizations,
 	patientConsents,
 	patientDrugAllergies,
 	patientInvoices,
+	patientRelationships,
 	patients,
 	payments,
 	portalOtpCodes,
@@ -1217,12 +1219,158 @@ export const portalRoutes: FastifyPluginAsync = async (
 				administrativeProfile: safeAdminProfile,
 			};
 
+			// Appointments from schedule
+			const patientAppointments = await db
+				.select({
+					id: appointments.id,
+					doctorUserId: appointments.doctorUserId,
+					chairId: appointments.chairId,
+					startsAt: appointments.startsAt,
+					endsAt: appointments.endsAt,
+					status: appointments.status,
+					reason: appointments.reason,
+					comment: appointments.comment,
+				})
+				.from(appointments)
+				.where(
+					and(
+						eq(appointments.patientId, patient.id),
+						eq(appointments.organizationId, organizationId),
+					),
+				)
+				.orderBy(desc(appointments.startsAt));
+
+			// Clinic doctors for appointment names and online booking
+			const clinicDoctors = await db
+				.select({
+					id: users.id,
+					fullName: users.fullName,
+					specialties: users.specialties,
+				})
+				.from(users)
+				.where(
+					and(
+						eq(users.organizationId, organizationId),
+						eq(users.role, "doctor"),
+						eq(users.isActive, true),
+					),
+				);
+
+			const doctorMap = new Map(clinicDoctors.map((d) => [d.id, d]));
+			const enrichedAppointments = patientAppointments.map((apt) => {
+				const doc = apt.doctorUserId ? doctorMap.get(apt.doctorUserId) : null;
+				return {
+					...apt,
+					doctorName: doc?.fullName || "Лечащий врач",
+					doctorSpecialtyRu: doc?.specialties?.[0] || "Стоматолог",
+				};
+			});
+
+			// Family Group & Family Shared Balance
+			let familyGroupData: {
+				id: string;
+				name: string | null;
+				groupName: string;
+				balanceRub: number;
+			} | null = null;
+
+			if (patient.familyGroupId) {
+				const [fg] = await db
+					.select()
+					.from(familyGroups)
+					.where(
+						and(
+							eq(familyGroups.id, patient.familyGroupId),
+							eq(familyGroups.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+				if (fg) {
+					familyGroupData = {
+						id: fg.id,
+						name: fg.name,
+						groupName: fg.groupName,
+						balanceRub: Number(fg.balance || 0),
+					};
+				}
+			}
+
+			// Patient Relationships (Family Members)
+			const relationships = await db
+				.select()
+				.from(patientRelationships)
+				.where(
+					and(
+						eq(patientRelationships.organizationId, organizationId),
+						or(
+							eq(patientRelationships.patientId, patient.id),
+							eq(patientRelationships.relatedPatientId, patient.id),
+						),
+					),
+				);
+
+			let familyMembersList: Array<{
+				id: string;
+				fullName: string;
+				relationshipRu: string;
+				birthDate?: string;
+				phone?: string;
+				cardNumber?: string;
+				allowSpendFamilyBalance: boolean;
+				allowBooking: boolean;
+			}> = [];
+
+			if (relationships.length > 0) {
+				const relatedIds = relationships.map((r) =>
+					r.patientId === patient.id ? r.relatedPatientId : r.patientId,
+				);
+				const relPatients = await db
+					.select({
+						id: patients.id,
+						fullName: patients.fullName,
+						phone: patients.phone,
+						birthDate: patients.birthDate,
+						administrativeProfile: patients.administrativeProfile,
+					})
+					.from(patients)
+					.where(
+						and(
+							eq(patients.organizationId, organizationId),
+							inArray(patients.id, relatedIds),
+						),
+					);
+				const relMap = new Map(relPatients.map((p) => [p.id, p]));
+
+				familyMembersList = relationships.map((r) => {
+					const otherId = r.patientId === patient.id ? r.relatedPatientId : r.patientId;
+					const pInfo = relMap.get(otherId);
+					const adminProf = pInfo?.administrativeProfile as Record<string, unknown> | null;
+					const cardNum =
+						(adminProf?.cardNumber as string | undefined) ||
+						(pInfo?.id ? `043-${pInfo.id.slice(0, 6).toUpperCase()}` : undefined);
+					return {
+						id: otherId,
+						fullName: pInfo?.fullName || "Член семьи",
+						relationshipRu: r.relationshipType || "Родственник",
+						birthDate: pInfo?.birthDate ? String(pInfo.birthDate) : undefined,
+						phone: pInfo?.phone || undefined,
+						cardNumber: cardNum,
+						allowSpendFamilyBalance: Boolean(r.canSpendFamilyWallet),
+						allowBooking: true,
+					};
+				});
+			}
+
 			return {
 				patient: sanitizedPatient,
 				visits,
 				plans,
 				invoices,
 				documents,
+				appointments: enrichedAppointments,
+				familyGroup: familyGroupData,
+				familyMembers: familyMembersList,
+				doctors: clinicDoctors,
 			};
 		});
 	});
@@ -3095,6 +3243,108 @@ export const portalRoutes: FastifyPluginAsync = async (
 				reply.status(201);
 				return { success: true, appointment: created };
 			});
+		});
+	});
+
+	// 19. Cancel Patient Appointment (Protected)
+	server.patch<{
+		Params: { id: string };
+		Body: { reason?: unknown };
+	}>("/appointments/:id/cancel", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		const appointmentId = request.params.id;
+		const cancelReason =
+			typeof request.body?.reason === "string" && request.body.reason.trim()
+				? request.body.reason.trim()
+				: "Отменено пациентом через личный кабинет";
+
+		return withTenantCtx(auth.organizationId, async () => {
+			return db.transaction(async (tx) => {
+				const [appRow] = await tx
+					.select()
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.id, appointmentId),
+							eq(appointments.patientId, auth.patientId),
+							eq(appointments.organizationId, auth.organizationId),
+						),
+					)
+					.limit(1)
+					.for("update");
+
+				if (!appRow) {
+					reply.status(404);
+					return {
+						error: "AppointmentNotFound",
+						message: "Запись на приём не найдена.",
+					};
+				}
+
+				if (appRow.status === "cancelled") {
+					return { success: true, appointment: appRow, message: "Запись уже отменена." };
+				}
+
+				if (appRow.status === "completed") {
+					reply.status(400);
+					return {
+						error: "CannotCancelCompleted",
+						message: "Нельзя отменить уже завершённый приём.",
+					};
+				}
+
+				const [updated] = await tx
+					.update(appointments)
+					.set({
+						status: "cancelled",
+						comment: appRow.comment
+							? `${appRow.comment} | [Отмена: ${cancelReason}]`
+							: `[Отмена: ${cancelReason}]`,
+					})
+					.where(
+						and(
+							eq(appointments.id, appointmentId),
+							eq(appointments.organizationId, auth.organizationId),
+						),
+					)
+					.returning();
+
+				return { success: true, appointment: updated };
+			});
+		});
+	});
+
+	// 20. Get Clinic Doctors for Online Booking (Protected)
+	server.get("/doctors", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		return withTenantCtx(auth.organizationId, async () => {
+			const list = await db
+				.select({
+					id: users.id,
+					fullName: users.fullName,
+					specialties: users.specialties,
+				})
+				.from(users)
+				.where(
+					and(
+						eq(users.organizationId, auth.organizationId),
+						eq(users.role, "doctor"),
+						eq(users.isActive, true),
+					),
+				)
+				.limit(100);
+
+			return { success: true, doctors: list };
 		});
 	});
 };

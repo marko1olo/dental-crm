@@ -1,6 +1,7 @@
 import type {
 	GeneratedDocumentSummary,
 	PatientAppointment,
+	PatientCabinetFamilyMember,
 	PatientInvoiceItem,
 	PatientPersonalCabinetData,
 	PatientPrescriptionItem,
@@ -16,42 +17,97 @@ export function mapServerPortalMeToCabinetData(
 		plans?: Array<Record<string, unknown>>;
 		invoices?: Array<Record<string, unknown>>;
 		documents?: Array<Record<string, unknown>>;
+		appointments?: Array<Record<string, unknown>>;
+		familyGroup?: {
+			id: string;
+			name: string | null;
+			groupName: string;
+			balanceRub: number;
+		} | null;
+		familyMembers?: Array<PatientCabinetFamilyMember>;
+		doctors?: Array<{ id: string; fullName: string; specialties?: string[] | null }>;
 	},
 	serverConsents?: Array<Record<string, unknown>>,
 ): PatientPersonalCabinetData {
 	const p = payload.patient || {};
 	const adminProfile = ((p.administrativeProfile as Record<string, unknown> | null) || {}) as Record<string, unknown>;
 	const visits = Array.isArray(payload.visits) ? payload.visits : [];
+	const rawAppointments = Array.isArray(payload.appointments) ? payload.appointments : [];
 	const plans = Array.isArray(payload.plans) ? payload.plans : [];
 	const invoices = Array.isArray(payload.invoices) ? payload.invoices : [];
 	const documents = Array.isArray(payload.documents) ? payload.documents : [];
 
-	// Map appointments from visits
-	const appointments: PatientAppointment[] = visits.map((v, index) => {
-		const rawDate = v.visitDate || v.createdAt;
-		const vDate = rawDate ? new Date(rawDate as string) : new Date();
-		const dateIso = !Number.isNaN(vDate.getTime()) ? vDate.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
-		const timeRu = !Number.isNaN(vDate.getTime())
-			? vDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
-			: "12:00";
-		const isPast = vDate < new Date();
-		return {
-			id: (v.id as string) || `visit-${index}`,
-			dateIso,
-			timeRu,
-			doctorId: (v.doctorId as string) || "doc-main",
-			doctorName: (v.doctorName as string) || (adminProfile.curatorFullName as string) || "Врач-стоматолог",
-			doctorSpecialtyRu: "Терапевт-ортопед",
-			roomNumber: (v.roomNumber as string) || "Кабинет 3",
-			clinicName: "Стоматологическая клиника ДЕНТЕ",
-			clinicAddressRu: "г. Москва, ул. Клиническая, д. 10",
-			titleRu: (v.treatmentRendered as string) || (v.complaints as string) || "Приём стоматолога",
-			status: (v.status as any) || (isPast ? "completed" : "scheduled"),
-			priceRub: v.priceRub ? Number(v.priceRub) : undefined,
-			reminderSent: true,
-			reminderChannel: "sms",
-		};
-	});
+	// Map appointments from real schedule (payload.appointments) or fall back to visits
+	let appointments: PatientAppointment[] = [];
+	if (rawAppointments.length > 0) {
+		appointments = rawAppointments.map((apt, index) => {
+			const rawDate = apt.startsAt || apt.date;
+			const aDate = rawDate ? new Date(rawDate as string) : new Date();
+			const dateIso = !Number.isNaN(aDate.getTime())
+				? aDate.toISOString().slice(0, 10)
+				: new Date().toISOString().slice(0, 10);
+			const timeRu = !Number.isNaN(aDate.getTime())
+				? aDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+				: "12:00";
+			const isPast = aDate < new Date();
+			return {
+				id: (apt.id as string) || `apt-${index}`,
+				dateIso,
+				timeRu,
+				doctorId: (apt.doctorUserId as string) || (apt.doctorId as string) || "doc-main",
+				doctorName:
+					(apt.doctorName as string) ||
+					(adminProfile.curatorFullName as string) ||
+					"Лечащий врач",
+				doctorSpecialtyRu: (apt.doctorSpecialtyRu as string) || "Стоматолог-терапевт",
+				roomNumber: (apt.roomNumber as string) || "Кабинет 1",
+				clinicName: "Стоматологическая клиника ДЕНТЕ",
+				clinicAddressRu: "г. Москва, ул. Клиническая, д. 10",
+				titleRu:
+					(apt.reason as string) ||
+					(apt.titleRu as string) ||
+					(apt.comment as string) ||
+					"Приём стоматолога",
+				status:
+					apt.status === "cancelled"
+						? "cancelled"
+						: apt.status === "completed"
+							? "completed"
+							: isPast
+								? "completed"
+								: "scheduled",
+				priceRub: apt.priceRub ? Number(apt.priceRub) : undefined,
+				reminderSent: true,
+				reminderChannel: "sms",
+			};
+		});
+	} else {
+		appointments = visits.map((v, index) => {
+			const rawDate = v.visitDate || v.createdAt;
+			const vDate = rawDate ? new Date(rawDate as string) : new Date();
+			const dateIso = !Number.isNaN(vDate.getTime()) ? vDate.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+			const timeRu = !Number.isNaN(vDate.getTime())
+				? vDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+				: "12:00";
+			const isPast = vDate < new Date();
+			return {
+				id: (v.id as string) || `visit-${index}`,
+				dateIso,
+				timeRu,
+				doctorId: (v.doctorId as string) || "doc-main",
+				doctorName: (v.doctorName as string) || (adminProfile.curatorFullName as string) || "Врач-стоматолог",
+				doctorSpecialtyRu: "Терапевт-ортопед",
+				roomNumber: (v.roomNumber as string) || "Кабинет 3",
+				clinicName: "Стоматологическая клиника ДЕНТЕ",
+				clinicAddressRu: "г. Москва, ул. Клиническая, д. 10",
+				titleRu: (v.treatmentRendered as string) || (v.complaints as string) || "Приём стоматолога",
+				status: (v.status as any) || (isPast ? "completed" : "scheduled"),
+				priceRub: v.priceRub ? Number(v.priceRub) : undefined,
+				reminderSent: true,
+				reminderChannel: "sms",
+			};
+		});
+	}
 
 	// Map invoices
 	const mappedInvoices: PatientInvoiceItem[] = invoices.map((inv, index) => {
@@ -287,6 +343,18 @@ export function mapServerPortalMeToCabinetData(
 		loyaltyTierRu,
 		cashbackEarnedRub: bonusPoints > 0 ? bonusPoints * 10 : 0,
 		dmsInsuranceName: adminProfile.insurancePolicyNumber ? `Полис: ${adminProfile.insurancePolicyNumber}` : undefined,
+		familyBalanceRub:
+			payload.familyGroup?.balanceRub !== undefined
+				? Number(payload.familyGroup.balanceRub)
+				: p.familyBalanceRub !== undefined
+					? Number(p.familyBalanceRub)
+					: undefined,
+		familyBonusPool:
+			p.familyBonusPool !== undefined ? Number(p.familyBonusPool) : undefined,
+		familyMembers: payload.familyMembers ?? (p.familyMembers as any) ?? undefined,
+		familyMembersCount:
+			payload.familyMembers?.length ??
+			(p.familyMembersCount !== undefined ? Number(p.familyMembersCount) : undefined),
 		invoices: mappedInvoices,
 		appointments,
 		treatmentPlans: mappedPlans,

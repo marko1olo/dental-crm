@@ -1,5 +1,6 @@
 import { randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, eq, gt, lt, notInArray, or } from "drizzle-orm";
+import { namedDevelopmentModeActive } from "../accessGuard.js";
 import { withTenantCtx } from "../db/rls.js";
 import { appointments, chairs, patients, users } from "../db/schema.js";
 import { getNationalPhoneDigits } from "@dental/shared";
@@ -331,8 +332,20 @@ export class PublicBookingQueueService {
 		const cleanPhone = normalizePhoneDigits(phone);
 		const trimmedCode = code.trim();
 
-		// Bypass dev/test codes
-		if (trimmedCode === "0000" || trimmedCode === "1234" || trimmedCode === "000000" || trimmedCode === "123456") return { valid: true };
+		// Dev/test bypass: strictly allowed ONLY when explicitly running in test or development environment
+		const isDevOrTest =
+			namedDevelopmentModeActive() ||
+			process.env.NODE_ENV === "test" ||
+			process.env.NODE_ENV === "development";
+		if (
+			isDevOrTest &&
+			(trimmedCode === "0000" ||
+				trimmedCode === "1234" ||
+				trimmedCode === "000000" ||
+				trimmedCode === "123456")
+		) {
+			return { valid: true };
+		}
 
 		const challenge = otpChallenges.get(cleanPhone);
 		if (!challenge) {

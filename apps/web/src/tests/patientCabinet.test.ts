@@ -4,7 +4,7 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import {
@@ -13,6 +13,7 @@ import {
 	FamilyTab,
 } from "../components/portal/patientCabinet/tabs";
 import { PatientCabinetModal } from "../components/portal/patientCabinet/PatientCabinetModal";
+import { mapServerPortalMeToCabinetData } from "../components/portal/patientCabinet/patientCabinetMapper";
 import { MobileSelfCheckinModal } from "../components/portal/selfCheckin/MobileSelfCheckinModal";
 import { SelfCheckinPhoneAuthSection } from "../components/portal/selfCheckin/SelfCheckinPhoneAuthSection";
 import { setRuntimeDemoMode } from "../lib/demoMode";
@@ -562,6 +563,86 @@ describe("Dual-Mode Zero-Mock Inquisitor Batch 3 (Mandate 8y & Mandates 8za, 8zb
 		assert.equal(html.includes("Смирнова Анна Викторовна"), false);
 	});
 });
+
+describe("Red Team Inquisitor: SSOT Real Schedule, Family Balance & Booking Integrity", () => {
+	it("maps real scheduled appointments and family balances from server /api/portal/me payload", () => {
+		const serverPayload = {
+			patient: {
+				id: "patient-real-123",
+				fullName: "Кузнецов Иван Сергеевич",
+				phone: "+7 (916) 123-45-67",
+				cardNumber: "043-998811",
+				balance: "42500.50",
+				bonusPoints: "1500",
+			},
+			appointments: [
+				{
+					id: "apt-live-001",
+					startsAt: "2026-10-15T11:00:00.000Z",
+					endsAt: "2026-10-15T11:30:00.000Z",
+					doctorUserId: "doc-live-456",
+					doctorName: "Д-р Смирнов А. В.",
+					doctorSpecialtyRu: "Хирург-имплантолог",
+					reason: "Установка имплантата Straumann",
+					status: "planned",
+				},
+			],
+			familyGroup: {
+				id: "fam-group-777",
+				name: "Семья Кузнецовых",
+				groupName: "Кузнецовы",
+				balanceRub: 125000,
+			},
+			familyMembers: [
+				{
+					id: "fam-mem-child-1",
+					fullName: "Кузнецова Алиса Ивановна",
+					relationshipRu: "Дочь",
+					birthDate: "2018-05-14",
+					cardNumber: "043-998812",
+					allowSpendFamilyBalance: true,
+					allowBooking: true,
+				},
+			],
+			doctors: [
+				{
+					id: "doc-live-456",
+					fullName: "Д-р Смирнов А. В.",
+					specialties: ["Хирург-имплантолог"],
+				},
+			],
+		};
+
+		const mapped = mapServerPortalMeToCabinetData(serverPayload);
+
+		// Assert appointments mapped from real schedule, not visit diaries
+		assert.equal(mapped.appointments.length, 1);
+		assert.equal(mapped.appointments[0]?.id, "apt-live-001");
+		assert.equal(mapped.appointments[0]?.doctorName, "Д-р Смирнов А. В.");
+		assert.equal(mapped.appointments[0]?.doctorSpecialtyRu, "Хирург-имплантолог");
+		assert.equal(mapped.appointments[0]?.titleRu, "Установка имплантата Straumann");
+		assert.equal(mapped.appointments[0]?.status, "scheduled");
+
+		// Assert family balance and members correctly mapped
+		assert.equal(mapped.familyBalanceRub, 125000);
+		assert.equal(mapped.familyMembers?.length, 1);
+		assert.equal(mapped.familyMembers?.[0]?.fullName, "Кузнецова Алиса Ивановна");
+		assert.equal(mapped.familyMembers?.[0]?.relationshipRu, "Дочь");
+		assert.equal(mapped.familyMembers?.[0]?.allowSpendFamilyBalance, true);
+
+		// Render FamilyTab and verify real server values are presented
+		const familyHtml = renderToString(React.createElement(FamilyTab, { data: mapped }));
+		assert.ok(familyHtml.includes("Кузнецова Алиса Ивановна"));
+		assert.ok(familyHtml.includes("Дочь"));
+		assert.ok(familyHtml.includes("125"));
+
+		// Render AppointmentsTab and verify real schedule appointment is presented
+		const aptsHtml = renderToString(React.createElement(AppointmentsTab, { data: mapped }));
+		assert.ok(aptsHtml.includes("Установка имплантата Straumann"));
+		assert.ok(aptsHtml.includes("Д-р Смирнов А. В."));
+	});
+});
+
 
 
 

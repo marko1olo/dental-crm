@@ -18,11 +18,13 @@ export interface BookingSheetProps {
 	readonly curatingDoctor?: string;
 	readonly patientName?: string;
 	readonly patientPhone?: string;
+	readonly doctors?: readonly { id: string; fullName: string; specialties?: string[] | null }[] | undefined;
 	readonly onBookAppointment?: (req: {
 		specialty: string;
 		preferredDate: string;
 		note: string;
 		doctorName?: string;
+		doctorId?: string;
 	}) => void;
 	readonly onShowToast?: (msg: string) => void;
 	readonly data?: any;
@@ -45,6 +47,7 @@ export const BookingSheet: React.FC<BookingSheetProps> = ({
 	curatingDoctor,
 	patientName,
 	patientPhone,
+	doctors,
 	onBookAppointment,
 	onShowToast,
 	data,
@@ -62,8 +65,13 @@ export const BookingSheet: React.FC<BookingSheetProps> = ({
 
 	if (!isOpen) return null;
 
-	const resolvedDoctor = curatingDoctor || data?.curatingDoctor || "Лечащий врач";
+	const availableDocs = (doctors && doctors.length > 0 ? doctors : data?.doctors) as
+		| Array<{ id: string; fullName: string; specialties?: string[] | null }>
+		| undefined;
+	const resolvedDoctor = curatingDoctor || data?.curatingDoctor || availableDocs?.[0]?.fullName || "Лечащий врач";
+	const resolvedDoctorId = availableDocs?.[0]?.id || "doc-main";
 	const chosenDoctor = selectedDoctorMode === "curator" ? resolvedDoctor : "Дежурный врач (ближайшее окно)";
+	const chosenDoctorId = selectedDoctorMode === "curator" ? resolvedDoctorId : (availableDocs?.[1]?.id || resolvedDoctorId);
 	const resolvedName = patientName || data?.fullName || "Пациент";
 	const resolvedPhone = patientPhone || data?.phone || "";
 
@@ -74,6 +82,7 @@ export const BookingSheet: React.FC<BookingSheetProps> = ({
 				specialty: selectedSpecialty,
 				preferredDate: `${selectedDate} ${selectedTime}`,
 				doctorName: chosenDoctor,
+				doctorId: chosenDoctorId,
 				note: patientComment
 					? `${selectedSpecialty}. Пожелания: ${patientComment}`
 					: selectedSpecialty,
@@ -81,7 +90,8 @@ export const BookingSheet: React.FC<BookingSheetProps> = ({
 		} else if (onSubmit) {
 			onSubmit({
 				goalId: selectedSpecialty,
-				doctorId: chosenDoctor,
+				doctorId: chosenDoctorId,
+				doctorName: chosenDoctor,
 				date: selectedDate,
 				time: selectedTime,
 				comment: patientComment,
@@ -204,7 +214,7 @@ export const BookingSheet: React.FC<BookingSheetProps> = ({
 							>
 								<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
 									<User size={15} style={{ color: "var(--pc-primary)" }} />
-									<strong style={{ fontSize: "0.8125rem" }}>{curatingDoctor}</strong>
+									<strong style={{ fontSize: "0.8125rem" }}>{resolvedDoctor}</strong>
 								</div>
 								<span style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>Ваш лечащий врач</span>
 							</button>

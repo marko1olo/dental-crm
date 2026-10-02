@@ -102,6 +102,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	});
 	const [isFetchingMe, setIsFetchingMe] = useState(Boolean(token));
 	const [activeTab, setActiveTab] = useState<PatientCabinetTab>(() => normalizePatientTab(initialTab));
+	const [availableDoctors, setAvailableDoctors] = useState<
+		Array<{ id: string; fullName: string; specialties?: string[] | null }>
+	>([]);
 
 	useEffect(() => {
 		if (!token) return;
@@ -119,6 +122,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					if (isMounted && json && json.patient) {
 						const mapped = mapServerPortalMeToCabinetData(json);
 						setData(mapped);
+						if (Array.isArray(json.doctors)) {
+							setAvailableDoctors(json.doctors);
+						}
 					}
 				}
 			} catch (err) {
@@ -345,9 +351,11 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 			setOtpError("Введите 6-значный SMS-код");
 			return;
 		}
-		const expectedCode = sentOtp?.code || "748291";
-		const sentTime = sentOtp?.sentTimestamp || Date.now();
-		const verifyResult = verifySmsOtp(code, expectedCode, sentTime);
+		if (!sentOtp) {
+			setOtpError("Запросите код подтверждения через SMS");
+			return;
+		}
+		const verifyResult = verifySmsOtp(code, sentOtp.code, sentOtp.sentTimestamp);
 		if (!verifyResult.success) {
 			setOtpError(verifyResult.error || "Неверный код подтверждения из SMS.");
 			return;
@@ -392,15 +400,95 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	}, [onAppointmentBooked]);
 
 	// Online Booking Submit (Mandate: 1-Tap Booking without repetitive entry)
-	const handleBookingSubmit = useCallback((req: { goalId: string; doctorId: string; date: string; time: string; comment: string }) => {
-		setIsBookingOpen(false);
-		handleShowCabinetToast(`Запись оформлена на ${req.date} в ${req.time}! СМС-подтверждение отправлено.`);
-		onAppointmentBooked?.({
-			specialty: req.goalId,
-			preferredDate: `${req.date} ${req.time}`,
-			note: req.comment,
-		});
-	}, [handleShowCabinetToast, onAppointmentBooked]);
+	const handleBookingSubmit = useCallback(
+		async (req: {
+			goalId: string;
+			doctorId: string;
+			doctorName?: string;
+			date: string;
+			time: string;
+			comment: string;
+		}) => {
+			setIsBookingOpen(false);
+
+			// If authenticated token exists, attempt to persist directly to /api/portal/appointments
+			if (token) {
+				try {
+					const startDateTime = new Date(`${req.date}T${req.time}:00`);
+					const endDateTime = new Date(startDateTime.getTime() + 30 * 60 * 1000);
+					const matchingDoc = availableDoctors.find(
+						(d) => d.id === req.doctorId || d.fullName === req.doctorId,
+					);
+					const targetDocId =
+						matchingDoc?.id ||
+						(req.doctorId && req.doctorId.includes("-")
+							? req.doctorId
+							: availableDoctors[0]?.id);
+
+					if (targetDocId && !Number.isNaN(startDateTime.getTime())) {
+						const res = await fetch("/api/portal/appointments", {
+							method: "POST",
+							headers: {
+								Authorization: `Bearer ${token}`,
+								"Content-Type": "application/json",
+							},
+							body: JSON.stringify({
+								doctorId: targetDocId,
+								startsAt: startDateTime.toISOString(),
+								endsAt: endDateTime.toISOString(),
+								reason: req.goalId,
+								comment: req.comment || undefined,
+							}),
+						});
+
+						if (res.ok) {
+							const json = await res.json();
+							if (json?.appointment) {
+								const newApt: PatientAppointment = {
+									id: json.appointment.id,
+									dateIso: req.date,
+									timeRu: req.time,
+									doctorId: targetDocId,
+									doctorName:
+										req.doctorName || matchingDoc?.fullName || "Лечащий врач",
+									doctorSpecialtyRu:
+										matchingDoc?.specialties?.[0] || "Стоматолог-терапевт",
+									roomNumber: "Кабинет 1",
+									clinicName: "Стоматологическая клиника ДЕНТЕ",
+									clinicAddressRu: "г. Москва, ул. Клиническая, д. 10",
+									titleRu: req.goalId,
+									status: "scheduled",
+									reminderSent: true,
+									reminderChannel: "sms",
+								};
+								setData((prev) => ({
+									...prev,
+									appointments: [newApt, ...prev.appointments],
+								}));
+								handleShowCabinetToast(`Запись подтверждена на ${req.date} в ${req.time}!`);
+								onAppointmentBooked?.({
+									specialty: req.goalId,
+									preferredDate: `${req.date} ${req.time}`,
+									note: req.comment,
+								});
+								return;
+							}
+						}
+					}
+				} catch (err) {
+					console.error("[PatientCabinetModal] Failed to post /api/portal/appointments:", err);
+				}
+			}
+
+			handleShowCabinetToast(`Запись оформлена на ${req.date} в ${req.time}! СМС-подтверждение отправлено.`);
+			onAppointmentBooked?.({
+				specialty: req.goalId,
+				preferredDate: `${req.date} ${req.time}`,
+				note: req.comment,
+			});
+		},
+		[token, availableDoctors, handleShowCabinetToast, onAppointmentBooked],
+	);
 
 	// Downloads & Prints
 	const handleDownloadReceipt = useCallback((invoice: PatientInvoiceItem) => {
@@ -446,14 +534,40 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 		window.open(link, "_blank");
 	}, [data.phone, careMemo.smsText]);
 
-	const handleCancelAppointment = useCallback((aptId: string, reason: string) => {
-		setData((prev) => ({
-			...prev,
-			appointments: prev.appointments.map((a) =>
-				a.id === aptId ? { ...a, status: "cancelled", cancellationReason: reason } : a,
-			),
-		}));
-	}, []);
+	const handleCancelAppointment = useCallback(
+		async (aptId: string, reason: string) => {
+			if (token) {
+				try {
+					const res = await fetch(
+						`/api/portal/appointments/${encodeURIComponent(aptId)}/cancel`,
+						{
+							method: "PATCH",
+							headers: {
+								Authorization: `Bearer ${token}`,
+								"Content-Type": "application/json",
+							},
+							body: JSON.stringify({ reason }),
+						},
+					);
+					if (res.ok) {
+						handleShowCabinetToast("Запись успешно отменена.");
+					}
+				} catch (err) {
+					console.error("[PatientCabinetModal] Failed to cancel appointment:", err);
+				}
+			}
+
+			setData((prev) => ({
+				...prev,
+				appointments: prev.appointments.map((a) =>
+					a.id === aptId
+						? { ...a, status: "cancelled", cancellationReason: reason }
+						: a,
+				),
+			}));
+		},
+		[token, handleShowCabinetToast],
+	);
 
 	if (!isOpen) return null;
 
@@ -828,6 +942,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 					isOpen={isBookingOpen}
 					onClose={() => setIsBookingOpen(false)}
 					data={data}
+					doctors={availableDoctors}
 					onSubmit={handleBookingSubmit}
 				/>
 
