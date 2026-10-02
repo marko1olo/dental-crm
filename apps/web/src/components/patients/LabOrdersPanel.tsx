@@ -48,16 +48,13 @@ import {
 	mapToCanonicalStatus,
 	buildLabAppointmentDraft,
 	MATERIALS,
-	VITA_CLASSICAL_SHADES,
-	VITA_3D_MASTER_SHADES,
-	VITA_BLEACH_SHADES,
-	SHADE_SWATCH_MAP,
 	calculateMaterialTotalCostKopecks,
 	addWorkingDays,
 	ONE_CLICK_LAB_DEFAULTS,
 	EXPRESS_LAB_PRESETS,
 	type ExpressLabPreset,
 } from "../lab/labMath";
+import { DentalLabShadePicker } from "../lab/DentalLabShadePicker";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import "./LabOrdersPanel.css";
 
@@ -1088,159 +1085,16 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						</div>
 					</div>
 
-					{/* Interactive VITA Shade Palette with Tone Previews */}
-					<div className="space-y-2 p-2.5 rounded-lg bg-[var(--paper)]">
-						<div className="flex items-center justify-between flex-wrap gap-2">
-							<div className="flex items-center gap-1.5">
-								<span className="text-[11px] font-bold text-[var(--ink)]">
-									Цвет керамики VITA:
-								</span>
-								<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal)] border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
-									{colorVita}
-								</span>
-							</div>
-
-							{/* Shade Scale Tabs */}
-							<div className="flex items-center gap-1">
-								<button
-									type="button"
-									onClick={() => {
-										setShadeSystem("classical");
-										if (!VITA_CLASSICAL_SHADES.includes(colorVita as any)) setColorVita("A2");
-									}}
-									className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${
-										shadeSystem === "classical"
-											? "bg-[var(--teal)] text-white border-[var(--teal)]"
-											: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
-									}`}
-								>
-									VITA Classical
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setShadeSystem("3d_master");
-										if (!VITA_3D_MASTER_SHADES.includes(colorVita as any)) setColorVita("2M2");
-									}}
-									className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${
-										shadeSystem === "3d_master"
-											? "bg-[var(--teal)] text-white border-[var(--teal)]"
-											: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
-									}`}
-								>
-									3D-Master
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setShadeSystem("bleach");
-										if (!VITA_BLEACH_SHADES.includes(colorVita as any)) setColorVita("BL2");
-									}}
-									className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${
-										shadeSystem === "bleach"
-											? "bg-[var(--teal)] text-white border-[var(--teal)]"
-											: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
-									}`}
-								>
-									Bleach
-								</button>
-							</div>
-						</div>
-
-						{/* Swatch Chips Grid with Tone Previews */}
-						{shadeSystem === "classical" && (
-							<div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 pt-1">
-								{VITA_CLASSICAL_SHADES.map((s) => {
-									const swatch = SHADE_SWATCH_MAP[s];
-									const isSelected = colorVita === s;
-									return (
-										<button
-											key={s}
-											type="button"
-											onClick={() => setColorVita(s)}
-											className={`h-7 px-1.5 rounded-md border text-[11px] font-bold font-mono flex items-center justify-center gap-1.5 transition-all ${
-												isSelected
-													? "bg-[var(--teal)] text-white border-[var(--teal-dark)] ring-1 ring-[var(--teal)] shadow-xs"
-													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
-											}`}
-											title={`VITA ${s}: ${swatch?.desc || ""}`}
-										>
-											<span
-												className="w-2.5 h-2.5 rounded-full shrink-0 border"
-												style={{
-													backgroundColor: swatch?.bg || "#efe2d0",
-													borderColor: swatch?.border || "#ccc",
-												}}
-											/>
-											<span>{s}</span>
-										</button>
-									);
-								})}
-							</div>
-						)}
-
-						{shadeSystem === "3d_master" && (
-							<div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-9 gap-1.5 pt-1 max-h-36 overflow-y-auto pr-1">
-								{VITA_3D_MASTER_SHADES.map((s) => {
-									const swatch = SHADE_SWATCH_MAP[s];
-									const isSelected = colorVita === s;
-									return (
-										<button
-											key={s}
-											type="button"
-											onClick={() => setColorVita(s)}
-											className={`h-7 px-1.5 rounded-md border text-[10px] font-bold font-mono flex items-center justify-center gap-1 transition-all ${
-												isSelected
-													? "bg-[var(--teal)] text-white border-[var(--teal-dark)] ring-1 ring-[var(--teal)] shadow-xs"
-													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
-											}`}
-											title={`3D-Master ${s}: ${swatch?.desc || ""}`}
-										>
-											<span
-												className="w-2 h-2 rounded-full shrink-0 border"
-												style={{
-													backgroundColor: swatch?.bg || "#efe2d0",
-													borderColor: swatch?.border || "#ccc",
-												}}
-											/>
-											<span>{s}</span>
-										</button>
-									);
-								})}
-							</div>
-						)}
-
-						{shadeSystem === "bleach" && (
-							<div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5 pt-1">
-								{VITA_BLEACH_SHADES.map((s) => {
-									const swatch = SHADE_SWATCH_MAP[s];
-									const isSelected = colorVita === s;
-									return (
-										<button
-											key={s}
-											type="button"
-											onClick={() => setColorVita(s)}
-											className={`h-7 px-1.5 rounded-md border text-[11px] font-bold font-mono flex items-center justify-center gap-1.5 transition-all ${
-												isSelected
-													? "bg-[var(--teal)] text-white border-[var(--teal-dark)] ring-1 ring-[var(--teal)] shadow-xs"
-													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
-											}`}
-											title={`Bleach ${s}: ${swatch?.desc || ""}`}
-										>
-											<span
-												className="w-2.5 h-2.5 rounded-full shrink-0 border"
-												style={{
-													backgroundColor: swatch?.bg || "#ffffff",
-													borderColor: swatch?.border || "#eee",
-												}}
-											/>
-											<span>{s}</span>
-										</button>
-									);
-								})}
-							</div>
-						)}
-					</div>
+					{/* Канонический Single Source of Truth селектор расцветки VITA */}
+					<DentalLabShadePicker
+						shadeSystem={shadeSystem}
+						onShadeSystemChange={setShadeSystem}
+						selectedShade={colorVita}
+						onSelectShade={setColorVita}
+						selectedStumpShade={stumpShade}
+						onSelectStumpShade={setStumpShade}
+						showStumpSelector={true}
+					/>
 
 					{/* Deadlines & Clinical Notes */}
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">

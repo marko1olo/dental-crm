@@ -568,6 +568,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({
 				onCloseWarehouseTransfer={() => setIsWarehouseTransferOpen(false)}
 				isInventoryAuditOpen={isInventoryAuditOpen}
 				onCloseInventoryAudit={() => setIsInventoryAuditOpen(false)}
+				onOpenInventoryAudit={() => setIsInventoryAuditOpen(true)}
 				isMdlpDisposalOpen={isMdlpDisposalOpen}
 				onCloseMdlpDisposal={() => setIsMdlpDisposalOpen(false)}
 				isWarehouseManagerOpen={isWarehouseManagerOpen}

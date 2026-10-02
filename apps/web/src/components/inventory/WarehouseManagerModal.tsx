@@ -15,6 +15,7 @@
 import {
 	ArrowLeft,
 	CheckCircle2,
+	ClipboardCheck,
 	FileText,
 	Minus,
 	Package,
@@ -49,6 +50,7 @@ export interface WarehouseManagerModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly onConfirmWriteoff?: ((items: readonly WarehouseWriteoffItem[]) => void | Promise<void>) | undefined;
+	readonly onOpenInventoryAudit?: (() => void) | undefined;
 	readonly initialItems?: readonly InventoryItem[] | undefined;
 	readonly organizationId?: string | undefined;
 	readonly doctorName?: string | undefined;
@@ -110,6 +112,7 @@ export function WarehouseManagerModal({
 	isOpen,
 	onClose,
 	onConfirmWriteoff,
+	onOpenInventoryAudit,
 	initialItems,
 	organizationId,
 	doctorName = "Д-р Кузнецов А.В.",
@@ -347,16 +350,30 @@ export function WarehouseManagerModal({
 								К списку склада
 							</button>
 						) : (
-							<button
-								type="button"
-								className="h-9 px-3 text-xs font-semibold rounded-lg border border-teal-600 text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/40 flex items-center gap-1.5 transition-colors"
-								onClick={() => setActiveView("act_preview")}
-								data-testid="switch-to-act-btn"
-								title="Оформить акт списания единолично"
-							>
-								<FileText size={14} />
-								Акт списания ({activeWriteoffLines.length})
-							</button>
+							<>
+								{onOpenInventoryAudit && (
+									<button
+										type="button"
+										className="h-9 px-3 text-xs font-semibold rounded-lg border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)] flex items-center gap-1.5 transition-colors"
+										onClick={onOpenInventoryAudit}
+										data-testid="switch-to-inventory-audit-btn"
+										title="Перейти к сличительной ведомости (ИНВ-3 / ИНВ-19)"
+									>
+										<ClipboardCheck size={14} />
+										Инвентаризация (ИНВ-3/19)
+									</button>
+								)}
+								<button
+									type="button"
+									className="h-9 px-3 text-xs font-semibold rounded-lg border border-teal-600 text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/40 flex items-center gap-1.5 transition-colors"
+									onClick={() => setActiveView("act_preview")}
+									data-testid="switch-to-act-btn"
+									title="Оформить акт списания единолично"
+								>
+									<FileText size={14} />
+									Акт списания ({activeWriteoffLines.length})
+								</button>
+							</>
 						)}
 						<button
 							type="button"

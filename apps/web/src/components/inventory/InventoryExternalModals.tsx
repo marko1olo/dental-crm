@@ -62,6 +62,7 @@ export interface InventoryExternalModalsProps {
 	readonly onCloseWarehouseTransfer: () => void;
 	readonly isInventoryAuditOpen: boolean;
 	readonly onCloseInventoryAudit: () => void;
+	readonly onOpenInventoryAudit?: () => void;
 	readonly isMdlpDisposalOpen: boolean;
 	readonly onCloseMdlpDisposal: () => void;
 	readonly isWarehouseManagerOpen: boolean;
@@ -97,6 +98,7 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 	onCloseWarehouseTransfer,
 	isInventoryAuditOpen,
 	onCloseInventoryAudit,
+	onOpenInventoryAudit,
 	isMdlpDisposalOpen,
 	onCloseMdlpDisposal,
 	isWarehouseManagerOpen,
@@ -366,6 +368,10 @@ export const InventoryExternalModals: React.FC<InventoryExternalModalsProps> = (
 					<WarehouseManagerModal
 						isOpen={isWarehouseManagerOpen}
 						onClose={onCloseWarehouseManager}
+						onOpenInventoryAudit={() => {
+							onCloseWarehouseManager();
+							onOpenInventoryAudit?.();
+						}}
 						initialItems={items}
 						onConfirmWriteoff={async (writeoffLines) => {
 							try {

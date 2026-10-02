@@ -100,7 +100,7 @@ export function OrthopedicsChairsidePanel({
 	}, [activeToothFdi, selectedTeeth]);
 
 	// Стандартные наряды ЗТЛ, этапы изготовления и шкала VITA (Мандат 8i, 8k)
-	const [shadeSystem, setShadeSystem] = useState<"classical" | "3d_master">("classical");
+	const [shadeSystem, setShadeSystem] = useState<"classical" | "3d_master" | "bleach">("classical");
 	const [activeZtlPresetId, setActiveZtlPresetId] = useState<string>("zirconia");
 	const [preparationMargin, setPreparationMargin] = useState<string>("chamfer");
 	const [activeXrayUrl, setActiveXrayUrl] = useState<string | null>(recentToothXrayUrl ?? null);
