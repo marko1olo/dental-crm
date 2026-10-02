@@ -701,3 +701,24 @@ export async function dismissDuplicatePair(input: {
 
 	return { ok: true };
 }
+
+/**
+ * Единый человекочитаемый текст сводки успешного слияния карточек пациентов.
+ */
+export function formatMergeSummary(result: {
+	movedRows: Record<string, number>;
+	filledFields: readonly string[];
+}): string {
+	const movedTotal = Object.values(result.movedRows).reduce(
+		(total, count) => total + count,
+		0,
+	);
+	return (
+		`Карточки пациентов успешно объединены. Перенесено связанных записей: ${movedTotal}` +
+		(result.filledFields.length > 0
+			? `. Дозаполнено в основной карточке: ${result.filledFields.join(", ")}`
+			: "") +
+		". Вторая карточка архивирована с перенаправлением (152-ФЗ аудит сохранен)."
+	);
+}
+

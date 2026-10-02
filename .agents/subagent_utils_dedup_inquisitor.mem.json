@@ -1,0 +1,31 @@
+{
+  "role": "FRONTEND UTILS & INPUT SANITATION DEDUPLICATION INQUISITOR",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Read core.md, frontend.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md completely",
+    "Surveyed and audited files in apps/web/src/utils/, apps/web/src/lib/, and components across apps/web/src/ (strict exclusion of radiology/CBCT)",
+    "Identified 4 primary duplication clusters: Phone formatting (formatRussianPhone, formatPhoneRu, cleanPhoneDigits, maskRussianPhone), Money/Currency (money, formatRubles, formatCurrencyRu, formatKopecksRu, formatKopecksToRubles), Russian Dates/Times (formatRussianDate, formatRussianDateTime, formatRussianDateGost, formatIcsDate, formatGoogleDate, formatYandexDate), and Patient Documents (formatSnils, maskRussianSnils, formatRussianPassport, maskRussianPassport, formatOmsPolicy, formatTaxpayerInn)",
+    "Built canonical SSOT inputSanitation.ts with edge-case defenses (9XX direct mobile entry, +7/8 prefixes, paste normalization, 152-FZ privacy masking with unicode bullets or ASCII asterisks, SNILS PFR 192p checksums, 10-digit passports, 16-digit OMS, and Cyrillic ё/whitespace sanitization)",
+    "Built canonical SSOT formatters.ts uniting Mandate 8b exact kopecks arithmetic, non-breaking space typography, GOST DD.MM.YYYY, Russian text date formatting, timer durations, iCalendar UTC, and re-exporting input sanitation",
+    "Converted legacy facades to zero-downtime re-exports: apps/web/src/utils/financeUtils.ts, apps/web/src/utils/snils.ts, apps/web/src/utils/dateUtils.ts",
+    "Refactored components to eliminate redundant duplicate implementations: apps/web/src/components/booking/bookingUtils.ts, apps/web/src/components/booking/publicBookingEngine.ts, apps/web/src/components/messaging/omnichannelEngine.ts, apps/web/src/components/chairside/chairsideConsentEngine.ts, apps/web/src/components/portal/patientPortalEngine.ts, apps/web/src/components/recalls/recallSmsAndMessaging.ts",
+    "Created comprehensive unit test suite apps/web/src/tests/formatters.test.ts (32/32 tests passing)",
+    "Verified existing test suites: inputSanitation.test.ts (11/11), moneyFormat.test.ts (12/12), omnichannelEngine.test.ts (20/20), patientRecall.test.ts (35/35), dateTimeUtils.test.ts & dateInputValueLocalDay.test.ts (28/28)",
+    "Ran typecheck on @dental/web"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "radiology_isolation": "Verified untouched. No files in apps/web/src/components/radiology/* were touched.",
+    "sms_ascii_vs_ui_unicode_masking": "Identified critical rationale for omnichannel SMS masking: UI uses unicode bullets ('•') for high-aesthetic clinical presentation, while SMS/messenger channels use ASCII asterisks ('*') to avoid switching SMS encoding to UCS-2 Unicode (which cuts segment size from 160 to 70 characters and doubles clinic SMS costs). Both modes are now cleanly unified in maskRussianPhone.",
+    "zero_downtime_contracts": "All legacy utilities (financeUtils.ts, dateUtils.ts, snils.ts) preserve 100% of their exported signatures via transparent re-exports.",
+    "tests_passed": [
+      "apps/web/src/tests/formatters.test.ts (32/32 pass)",
+      "apps/web/src/tests/inputSanitation.test.ts (11/11 pass)",
+      "apps/web/src/tests/moneyFormat.test.ts (12/12 pass)",
+      "apps/web/src/components/messaging/__tests__/omnichannelEngine.test.ts (20/20 pass)",
+      "apps/web/src/tests/patientRecall.test.ts (35/35 pass)",
+      "apps/web/src/tests/dateTimeUtils.test.ts (28/28 pass)"
+    ]
+  },
+  "timestamp": "2026-10-02T11:40:00Z"
+}

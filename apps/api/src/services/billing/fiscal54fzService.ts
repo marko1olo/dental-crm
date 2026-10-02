@@ -85,6 +85,8 @@ import {
 	parseChestnyZnakDataMatrix,
 } from "@dental/shared";
 
+import { FiscalReceiptFactory } from "../kkt/FiscalReceiptFactory.js";
+
 // High-precision decimal arithmetic configuration for monetary calculations
 Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
 
@@ -306,82 +308,56 @@ export class Fiscal54FzService {
 	 * Resolves Tag 1214: Calculation Method (Признак способа расчета)
 	 */
 	public static resolveTag1214(method: Ffd12Tag1214Method): number {
-		const code = FFD12_TAG_1214_METHOD_CODES[method];
-		if (!code) {
-			return FFD12_TAG_1214_METHOD_CODES.full_payment;
-		}
-		return code;
+		return FiscalReceiptFactory.resolveTag1214(method);
 	}
 
 	/**
 	 * Resolves Tag 1212: Calculation Subject (Признак предмета расчета)
 	 */
 	public static resolveTag1212(subject: Ffd12Tag1212Subject): number {
-		const code = FFD12_TAG_1212_SUBJECT_CODES[subject];
-		if (!code) {
-			return FFD12_TAG_1212_SUBJECT_CODES.service;
-		}
-		return code;
+		return FiscalReceiptFactory.resolveTag1212(subject);
 	}
 
 	/**
 	 * Resolves Tag 1055: Taxation System (Применяемая СНО)
 	 */
 	public static resolveTag1055(taxation: Ffd12Tag1055Taxation): number {
-		const code = FFD12_TAG_1055_TAXATION_CODES[taxation];
-		if (!code) {
-			return FFD12_TAG_1055_TAXATION_CODES.usn_income;
-		}
-		return code;
+		return FiscalReceiptFactory.resolveTag1055(taxation);
 	}
 
 	/**
 	 * Resolves Tag 1057: Agent Sign in Receipt (Признак агента в чеке)
 	 */
 	public static resolveTag1057(agentSign?: Ffd12Tag1057AgentSign | null): number | null {
-		if (!agentSign) return null;
-		return FFD12_TAG_1057_AGENT_CODES[agentSign] ?? null;
+		return FiscalReceiptFactory.resolveTag1057(agentSign);
 	}
 
 	/**
 	 * Resolves Tag 1222: Agent Sign per Subject (Признак агента по предмету расчета)
 	 */
 	public static resolveTag1222(agentSign?: Ffd12Tag1057AgentSign | null): number | null {
-		if (!agentSign) return null;
-		return FFD12_TAG_1222_AGENT_CODES[agentSign] ?? null;
+		return FiscalReceiptFactory.resolveTag1222(agentSign);
 	}
 
 	/**
 	 * Resolves Tag 1054: Operation Type (Признак расчета)
 	 */
 	public static resolveTag1054(operation: Ffd12Tag1054Operation): number {
-		const code = FFD12_TAG_1054_OPERATION_CODES[operation];
-		if (!code) {
-			return FFD12_TAG_1054_OPERATION_CODES.income;
-		}
-		return code;
+		return FiscalReceiptFactory.resolveTag1054(operation);
 	}
 
 	/**
 	 * Resolves Tag 1199: VAT Rate (Ставка НДС)
 	 */
 	public static resolveTag1199(vatRate: Ffd12Tag1199Vat): number {
-		const code = FFD12_TAG_1199_VAT_CODES[vatRate];
-		if (!code) {
-			return FFD12_TAG_1199_VAT_CODES.vat_none; // Medical exemption
-		}
-		return code;
+		return FiscalReceiptFactory.resolveTag1199(vatRate);
 	}
 
 	/**
 	 * Resolves Tag 2108: Quantity Measure (Мера количества)
 	 */
 	public static resolveTag2108(measure: Ffd12Tag2108Measure): number {
-		const code = FFD12_TAG_2108_MEASURE_CODES[measure];
-		if (code === undefined) {
-			return FFD12_TAG_2108_MEASURE_CODES.piece;
-		}
-		return code;
+		return FiscalReceiptFactory.resolveTag2108(measure);
 	}
 
 	/**

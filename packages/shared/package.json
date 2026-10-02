@@ -165,6 +165,16 @@
 			"types": "./dist/leads/index.d.ts",
 			"import": "./dist/leads/index.js",
 			"default": "./dist/leads/index.js"
+		},
+		"./datetime": {
+			"types": "./dist/datetime/index.d.ts",
+			"import": "./dist/datetime/index.js",
+			"default": "./dist/datetime/index.js"
+		},
+		"./demo": {
+			"types": "./dist/demo/index.d.ts",
+			"import": "./dist/demo/index.js",
+			"default": "./dist/demo/index.js"
 		}
 	},
 	"scripts": {

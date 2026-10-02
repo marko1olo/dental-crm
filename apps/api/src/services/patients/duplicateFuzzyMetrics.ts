@@ -396,3 +396,80 @@ export function birthDateFuzzySimilarity(
 export function pairKey(left: string, right: string): string {
 	return left < right ? `${left}|${right}` : `${right}|${left}`;
 }
+
+export const QWERTY_TO_JCUKEN_MAP: Readonly<Record<string, string>> = {
+	q: "й", w: "ц", e: "у", r: "к", t: "е", y: "н", u: "г", i: "ш", o: "щ", p: "з",
+	"[": "х", "{": "Х", "]": "ъ", "}": "Ъ",
+	a: "ф", s: "ы", d: "в", f: "а", g: "п", h: "р", j: "о", k: "л", l: "д",
+	";": "ж", ":": "Ж", "'": "э", '"': "Э",
+	z: "я", x: "ч", c: "с", v: "м", b: "и", n: "т", m: "ь",
+	",": "б", "<": "Б", ".": "ю", ">": "Ю",
+	"`": "ё", "~": "Ё",
+};
+
+/**
+ * Преобразование ошибочного ввода на латинской раскладке клавиатуры в русскую (Qwerty -> Йцукен).
+ */
+export function convertQwertyMistype(raw: string): string {
+	return (raw ?? "").replace(/[a-zA-Z[\]{};':",.<>`~]/g, (char) => {
+		const lower = char.toLowerCase();
+		const mapped = QWERTY_TO_JCUKEN_MAP[lower];
+		if (!mapped) return char;
+		return char === char.toUpperCase() && char !== char.toLowerCase()
+			? mapped.toUpperCase()
+			: mapped;
+	});
+}
+
+export const LATIN_TO_CYR_RULES: readonly (readonly [RegExp, string])[] = [
+	[/shch/gi, "щ"],
+	[/yo/gi, "ё"],
+	[/zh/gi, "ж"],
+	[/ch/gi, "ч"],
+	[/sh/gi, "ш"],
+	[/yu/gi, "ю"],
+	[/ya/gi, "я"],
+	[/ts/gi, "ц"],
+	[/tc/gi, "ц"],
+	[/kh/gi, "х"],
+	[/ii\b/gi, "ий"],
+	[/iy\b/gi, "ий"],
+	[/yy\b/gi, "ый"],
+	[/([aeiouаеёиоуыэюя])i\b/gi, "$1й"],
+	[/([aeouаеоу])i(?=[b-df-hj-np-tv-zкнгшщзхфвпрлджчсмтб])/gi, "$1й"],
+	[/([aeiouyаеёиоуыэюя])y/gi, "$1й"],
+	[/y([aeiouаеёиоуыэюя])/gi, "й$1"],
+	[/a/gi, "а"], [/b/gi, "б"], [/v/gi, "в"], [/w/gi, "в"],
+	[/g/gi, "г"], [/d/gi, "д"], [/e/gi, "е"], [/z/gi, "з"],
+	[/i/gi, "и"], [/j/gi, "й"], [/k/gi, "к"], [/l/gi, "л"],
+	[/m/gi, "м"], [/n/gi, "н"], [/o/gi, "о"], [/p/gi, "п"],
+	[/r/gi, "р"], [/s/gi, "с"], [/t/gi, "т"], [/u/gi, "у"],
+	[/f/gi, "ф"], [/h/gi, "х"], [/c/gi, "к"], [/x/gi, "кс"],
+	[/y/gi, "ы"],
+];
+
+/**
+ * Транслитерация латиницы в кириллицу (например, Ivanov -> Иванов).
+ */
+export function transliterateLatinToCyrillic(raw: string): string {
+	let res = raw ?? "";
+	for (const [pattern, rep] of LATIN_TO_CYR_RULES) {
+		res = res.replace(pattern, (...args) => {
+			const match = args[0] as string;
+			let expanded = rep;
+			for (let i = 1; i < args.length - 2; i++) {
+				const group = args[i];
+				if (typeof group === "string") {
+					expanded = expanded.replaceAll(`$${i}`, group);
+				}
+			}
+			const firstChar = match.charAt(0);
+			if (firstChar && firstChar === firstChar.toUpperCase()) {
+				return expanded.charAt(0).toUpperCase() + expanded.slice(1);
+			}
+			return expanded;
+		});
+	}
+	return res;
+}
+

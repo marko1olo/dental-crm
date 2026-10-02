@@ -29,6 +29,7 @@ import {
 } from "../services/patients/duplicateDetection.js";
 import {
 	dismissDuplicatePair,
+	formatMergeSummary,
 	mergePatients,
 } from "../services/patients/patientMerge.js";
 
@@ -159,20 +160,10 @@ export async function registerPatientDuplicateRoutes(app: FastifyInstance) {
 				.code(409)
 				.send({ error: "PatientMergeRejected", message: result.reason });
 
-		const movedTotal = Object.values(result.movedRows).reduce(
-			(total, count) => total + count,
-			0,
-		);
 		return {
+			success: true,
 			...result,
-			// Человеческая сводка: администратор не должен читать таблицу счётчиков,
-			// чтобы понять, что произошло.
-			summary:
-				`Карточки объединены. Перенесено записей: ${movedTotal}` +
-				(result.filledFields.length > 0
-					? `. Дозаполнено в основной карточке: ${result.filledFields.join(", ")}`
-					: "") +
-				". Вторая карточка сохранена как архивная ссылка — ничего не удалено.",
+			summary: formatMergeSummary(result),
 		};
 	});
 

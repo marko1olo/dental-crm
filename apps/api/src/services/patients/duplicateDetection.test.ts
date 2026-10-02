@@ -8,6 +8,13 @@ import {
 	phoneKey,
 	surnameOf,
 } from "./duplicateDetection.js";
+import {
+	convertQwertyMistype,
+	transliterateLatinToCyrillic,
+	damerauLevenshteinDistance,
+	stringLevenshteinSimilarity,
+	nameFuzzySimilarity,
+} from "./duplicateFuzzyMetrics.js";
 
 describe("nameKey", () => {
 	test("should convert to lowercase", () => {
@@ -122,5 +129,38 @@ describe("pairKey", () => {
 		const id2 = "987e6543-e21b-34d3-a456-426614174000";
 		assert.equal(pairKey(id1, id2), `${id1}|${id2}`);
 		assert.equal(pairKey(id2, id1), `${id1}|${id2}`);
+	});
+});
+
+describe("Fuzzy Metrics & Mistype Resilience", () => {
+	test("convertQwertyMistype converts accidental English keyboard layout", () => {
+		assert.equal(convertQwertyMistype("Bdfyjd"), "Иванов");
+		assert.equal(convertQwertyMistype("Gtnhjd"), "Петров");
+		assert.equal(convertQwertyMistype("Cbljhjd"), "Сидоров");
+	});
+
+	test("transliterateLatinToCyrillic handles passport transliteration", () => {
+		assert.equal(transliterateLatinToCyrillic("Ivanov"), "Иванов");
+		assert.equal(transliterateLatinToCyrillic("Shcherbakov"), "Щербаков");
+		assert.equal(transliterateLatinToCyrillic("Chaikovskii"), "Чайковский");
+	});
+
+	test("damerauLevenshteinDistance correctly handles insertions, deletions, substitutions, and transpositions", () => {
+		assert.equal(damerauLevenshteinDistance("иванов", "иванов"), 0);
+		// Single typo
+		assert.equal(damerauLevenshteinDistance("иванов", "ивонов"), 1);
+		// Adjacent transposition
+		assert.equal(damerauLevenshteinDistance("иванов", "иавнов"), 1);
+		// Deletion
+		assert.equal(damerauLevenshteinDistance("иванов", "ивано"), 1);
+		// Insertion
+		assert.equal(damerauLevenshteinDistance("иванов", "иваново"), 1);
+	});
+
+	test("stringLevenshteinSimilarity and nameFuzzySimilarity calculate normalized similarity ratio", () => {
+		assert.equal(stringLevenshteinSimilarity("иванов", "иванов"), 1.0);
+		const scoreTypo = stringLevenshteinSimilarity("иванов", "ивонов");
+		assert.ok(scoreTypo > 0.8 && scoreTypo < 1.0);
+		assert.equal(nameFuzzySimilarity("Иванов Иван", "Иван Иванов"), 1.0);
 	});
 });

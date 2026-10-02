@@ -52,6 +52,7 @@ import {
 	visits,
 	organizations,
 } from "../../../db/schema.js";
+import { checkAppointmentConflict } from "../../schedule/scheduleConflictService.js";
 import {
 	Icd10ClinicalValidator,
 	VALID_FDI_PERMANENT_TEETH,
@@ -2197,39 +2198,19 @@ export const rescheduleAppointmentTool: ToolDefinition<
 		}
 
 		if (currentApp.doctorUserId || currentApp.chairId) {
-			const conflictConditions = [
-				...(currentApp.doctorUserId
-					? [eq(appointments.doctorUserId, currentApp.doctorUserId)]
-					: []),
-				...(currentApp.chairId
-					? [eq(appointments.chairId, currentApp.chairId)]
-					: []),
-			];
+			const conflict = await checkAppointmentConflict(targetDb, {
+				organizationId: ctx.organizationId,
+				startsAt: newStart,
+				endsAt: newEnd,
+				doctorUserId: currentApp.doctorUserId,
+				chairId: currentApp.chairId,
+				excludeAppointmentId: args.appointmentId,
+			});
 
-			if (conflictConditions.length > 0) {
-				const conflicts = await targetDb
-					.select({
-						id: appointments.id,
-						startsAt: appointments.startsAt,
-						endsAt: appointments.endsAt,
-					})
-					.from(appointments)
-					.where(
-						and(
-							eq(appointments.organizationId, ctx.organizationId),
-							ne(appointments.id, args.appointmentId),
-							ne(appointments.status, "cancelled"),
-							or(...conflictConditions),
-							sql`${appointments.startsAt} < ${newEnd} AND ${appointments.endsAt} > ${newStart}`,
-						),
-					)
-					.limit(1);
-
-				if (conflicts.length > 0) {
-					throw new Error(
-						`Конфликт расписания: выбранный интервал (${args.newStartsAt} — ${args.newEndsAt}) пересекается с другой записью врача или кресла.`,
-					);
-				}
+			if (conflict.hasConflict) {
+				throw new Error(
+					`Конфликт расписания: выбранный интервал (${args.newStartsAt} — ${args.newEndsAt}) пересекается с другой записью врача или кресла.`,
+				);
 			}
 		}
 

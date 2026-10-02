@@ -23,11 +23,7 @@ import {
 	schemaIssuePhrase,
 	schemaRefusalMessage,
 } from "../utils/schemaRefusalWords.js";
-
-/**
- * Статусы записей, которые НЕ занимают время в расписании.
- */
-const FREED_APPOINTMENT_STATUSES = ["cancelled", "no_show"] as const;
+import { FREED_APPOINTMENT_STATUSES } from "../services/schedule/scheduleConflictService.js";
 
 // --- Abuse protection for the public (unauthenticated) booking surface ---
 const RATE_LIMIT_WINDOW_MS = 60_000;

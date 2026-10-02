@@ -1,0 +1,25 @@
+{
+  "subagent": "deep_demo_inquisitor",
+  "status": "completed",
+  "completed_steps": [
+    "Read all mandatory constitutional files: core.md, frontend.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Verified existing demoModeEngine.ts, demoMode.ts, DemoTourSelector.tsx, DemoModeBanner.tsx, demoModeIsolationInquisition.test.ts, demoShowcaseHotPathInquisition.test.ts",
+    "Inspected dirty worktree: verified radiology isolation (zero modifications to radiology components)",
+    "Created apps/web/src/utils/demo/demoConstants.ts as Single Source of Truth for demo IDs preventing circular dependencies and TDZ errors",
+    "Created apps/web/src/utils/demo/demoClinicalCases.ts with rich clinical datasets for all 5 clinical roles (Therapist, Orthopedist, Orthodontist, Surgeon, Owner/Chief Doctor) + Diploma for bravery",
+    "Created apps/web/src/utils/demo/demoInteractiveSimulation.ts for instant zero-error mutations: appointment status change, odontogram tooth click, estimate item addition, role switcher, diploma print",
+    "Created apps/web/src/components/demo/DemoCaseViewerModal.tsx with tabs for clinical cases, SOAP 043/u diary, ZTL lab order, aligners, surgery protocol, executive KPIs & printable bravery diploma",
+    "Enriched apps/web/src/components/demo/DemoModeBanner.tsx with 1-click in-place clinical role switcher buttons and modal launcher",
+    "Enriched apps/web/src/components/auth/DemoTourSelector.tsx with 6 detailed cards (5 clinical roles + Senior Administrator)",
+    "Calibrated apps/web/src/utils/demoModeEngine.ts to 2.45M ₽ revenue, 78% occupancy, 6 200 ₽ check, and piecewise doctor payrolls (Therapist 25%, Orthopedist 20%, Surgeon 22%, Orthodontist 22%)",
+    "Executed and verified all tests with 100% pass: demoShowcaseHotPathInquisition.test.ts (10/10), demoModeIsolationInquisition.test.ts (7/7), universalAuthIdentity.test.ts (3/3), radiologyClinicalAutonomyAndDemoIsolation.test.ts (9/9)",
+    "Fixed all TypeScript exactOptionalPropertyTypes and type-safe invariants in demo files"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "radiology_isolation": "100% maintained, zero changes to apps/web/src/components/radiology/*",
+    "roles_coverage": "6 distinct roles supported (Therapist, Orthopedist, Orthodontist, Surgeon, Owner/Chief Doctor, Senior Administrator)",
+    "zero_dead_ends": "All interactive simulations (schedule status changes, tooth clicks, estimate calculations, role switches, diploma printing) operate fail-closed with zero network calls and zero TypeErrors",
+    "verification_status": "All 10 hot-path tests, 7 isolation tests, and 3 auth tests pass cleanly with Exit Code 0"
+  }
+}

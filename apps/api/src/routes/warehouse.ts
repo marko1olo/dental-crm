@@ -18,6 +18,9 @@ import {
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { inventoryItems, inventoryTransactions } from "../db/schema.js";
+import { FefoStockService } from "../services/inventory/fefoStockService.js";
+
+const fefoStockService = new FefoStockService();
 
 const quickCarpuleDisposalSchema = z.object({
 	drugName: z.string().min(1, "Название анестетика обязательно").default("Артикаин 4%"),
@@ -115,43 +118,22 @@ export const warehouseRoutes: FastifyPluginAsync = async (
 			let deficitCount = 0;
 
 			if (matchingItem) {
+				const fefoResult = await fefoStockService.deductFefo(tx, {
+					organizationId,
+					inventoryItemId: matchingItem.id,
+					requiredQty: data.carpulesCount,
+					visitId: data.visitId ?? null,
+					userId: (request.user as { id?: string } | undefined)?.id ?? null,
+					allowOverdraft: true,
+					transactionType: "treatment_consumable",
+					notes: `Списание пустых карпул в 1 клик (${data.carpulesCount} шт.) • ${data.nurseName} [СанПиН 3.3686-21]`,
+				});
+
 				const currentStock = Number(matchingItem.stockQuantity ?? matchingItem.currentQty ?? 0);
 				const newStock = Number((currentStock - data.carpulesCount).toFixed(3));
-				isOverdraft = newStock < 0;
+				isOverdraft = fefoResult.isOverdraft;
 				remainingStock = newStock;
-				if (isOverdraft) {
-					deficitCount = Math.abs(newStock);
-				}
-
-				await tx
-					.update(inventoryItems)
-					.set({
-						stockQuantity: String(newStock),
-						currentQty: String(newStock),
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(inventoryItems.id, matchingItem.id),
-							eq(inventoryItems.organizationId, organizationId),
-						),
-					);
-
-				await tx.insert(inventoryTransactions).values({
-					organizationId,
-					itemId: matchingItem.id,
-					inventoryItemId: matchingItem.id,
-					visitId: data.visitId ?? null,
-					quantityChanged: String(-data.carpulesCount),
-					qty: String(-data.carpulesCount),
-					unitCostRub: matchingItem.unitCostRub ?? "0",
-					transactionType: isOverdraft ? "emergency_overdraft" : "treatment_consumable",
-					isOverdraft,
-					notes: isOverdraft
-						? `Остаток 0: зафиксирован мягкий овердрафт партии (дефицит: ${deficitCount} карп., накладная поставщика ещё в пути) • ${data.nurseName} [СанПиН 3.3686-21]`
-						: `Списание пустых карпул в 1 клик (${data.carpulesCount} шт.) • ${data.nurseName} [СанПиН 3.3686-21]`,
-					userId: (request.user as { id?: string } | undefined)?.id ?? null,
-				});
+				deficitCount = fefoResult.deficitQty;
 			} else {
 				// Если карточка анестетика еще не заведена на складе:
 				// создаем виртуальную фиксацию дефицита без сбоя
@@ -234,40 +216,21 @@ export const warehouseRoutes: FastifyPluginAsync = async (
 				return { notFound: true as const };
 			}
 
+			const fefoResult = await fefoStockService.deductFefo(tx, {
+				organizationId,
+				inventoryItemId: item.id,
+				requiredQty: quantity,
+				visitId: visitId ?? null,
+				userId: (request.user as { id?: string } | undefined)?.id ?? null,
+				allowOverdraft: true,
+				transactionType: "treatment_consumable",
+				notes: reason || "Списание материала со склада",
+			});
+
 			const currentStock = Number(item.stockQuantity ?? item.currentQty ?? 0);
 			const newStock = Number((currentStock - quantity).toFixed(4));
-			const isOverdraft = newStock < 0;
-			const deficit = isOverdraft ? Math.abs(newStock) : 0;
-
-			await tx
-				.update(inventoryItems)
-				.set({
-					stockQuantity: String(newStock),
-					currentQty: String(newStock),
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(inventoryItems.id, item.id),
-						eq(inventoryItems.organizationId, organizationId),
-					),
-				);
-
-			await tx.insert(inventoryTransactions).values({
-				organizationId,
-				visitId: visitId ?? null,
-				itemId: item.id,
-				inventoryItemId: item.id,
-				quantityChanged: String(-quantity),
-				qty: String(-quantity),
-				unitCostRub: item.unitCostRub ?? null,
-				transactionType: isOverdraft ? "emergency_overdraft" : "treatment_consumable",
-				isOverdraft,
-				notes: isOverdraft
-					? `Остаток 0: зафиксирован мягкий овердрафт (дефицит: ${deficit} ${item.unit ?? "ед."}, накладная ещё не внесена)`
-					: (reason || "Списание материала со склада"),
-				userId: (request.user as { id?: string } | undefined)?.id ?? null,
-			});
+			const isOverdraft = fefoResult.isOverdraft;
+			const deficit = fefoResult.deficitQty;
 
 			return {
 				item,

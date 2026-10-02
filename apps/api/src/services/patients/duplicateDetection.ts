@@ -34,6 +34,7 @@ export * from "./duplicateFuzzyMetrics.js";
 import {
 	areSurnamesMatching,
 	birthDateFuzzySimilarity,
+	convertQwertyMistype,
 	nameFuzzySimilarity,
 	nameKey,
 	pairKey,
@@ -43,6 +44,7 @@ import {
 	snilsFuzzySimilarity,
 	snilsKey,
 	surnameOf,
+	transliterateLatinToCyrillic,
 } from "./duplicateFuzzyMetrics.js";
 
 import type {
@@ -584,3 +586,119 @@ export async function patientBelongsToOrganization(
 		.limit(1);
 	return Boolean(row);
 }
+
+export type PatientDuplicateOptions = {
+	requireDistinguishingData?: boolean;
+};
+
+export type PatientDuplicateCandidate = {
+	readonly id: string;
+	readonly status?: string | null | undefined;
+	readonly fullName: string;
+	readonly birthDate?: string | null | undefined;
+	readonly phone?: string | null | undefined;
+	readonly snils?: string | null | undefined;
+	readonly mergedIntoPatientId?: string | null | undefined;
+	readonly administrativeProfile?: Record<string, unknown> | null | undefined;
+};
+
+export type PatientDuplicateInput = {
+	readonly fullName?: string | null | undefined;
+	readonly birthDate?: string | null | undefined;
+	readonly phone?: string | null | undefined;
+	readonly snils?: string | null | undefined;
+	readonly administrativeProfile?: Record<string, unknown> | null | undefined;
+};
+
+export type PatientDuplicateResult = {
+	readonly isDuplicate: boolean;
+	readonly isNameOnlyDuplicate: boolean;
+	readonly candidate: PatientDuplicateCandidate;
+	readonly matchScore: number;
+	readonly matchConfidencePercent: number;
+	readonly reasons: string[];
+	readonly explanation: string;
+	readonly caution: string | null;
+};
+
+/**
+ * Строгий поиск вероятного дубля для входящих данных пациента.
+ * Поддерживает эвристики опечаток Qwerty/Йцукен и транслитерации латиницы.
+ */
+export function findPatientDuplicate(
+	patientsList: readonly PatientDuplicateCandidate[],
+	input: PatientDuplicateInput,
+	ignoredPatientId?: string,
+	options: PatientDuplicateOptions = {},
+): PatientDuplicateResult | null {
+	if (!input.fullName && !input.birthDate && !input.phone && !input.snils) {
+		return null;
+	}
+
+	const candidatesToTry: PatientDuplicateInput[] = [input];
+	if (input.fullName && /[a-zA-Z]/.test(input.fullName)) {
+		const qwertyConverted = convertQwertyMistype(input.fullName);
+		if (qwertyConverted !== input.fullName) {
+			candidatesToTry.push({ ...input, fullName: qwertyConverted });
+		}
+		const transliterated = transliterateLatinToCyrillic(input.fullName);
+		if (transliterated !== input.fullName && transliterated !== qwertyConverted) {
+			candidatesToTry.push({ ...input, fullName: transliterated });
+		}
+	}
+
+	let bestMatch: PatientDuplicateResult | null = null;
+
+	for (const trialInput of candidatesToTry) {
+		for (const patient of patientsList) {
+			if (patient.id === ignoredPatientId) continue;
+			if (patient.status !== "active" || patient.mergedIntoPatientId) continue;
+
+			const evaluation = evaluatePatientMatch(
+				{
+					id: patient.id,
+					fullName: patient.fullName,
+					birthDate: patient.birthDate,
+					phone: patient.phone,
+					snils:
+						patient.snils ??
+						(patient.administrativeProfile?.snils as string | undefined) ??
+						null,
+					status: patient.status,
+					mergedIntoPatientId: patient.mergedIntoPatientId,
+					administrativeProfile: patient.administrativeProfile,
+				},
+				{
+					fullName: trialInput.fullName ?? "",
+					birthDate: trialInput.birthDate,
+					phone: trialInput.phone,
+					snils:
+						trialInput.snils ??
+						(trialInput.administrativeProfile?.snils as string | undefined) ??
+						null,
+					administrativeProfile: trialInput.administrativeProfile,
+				},
+				options,
+			);
+
+			if (evaluation && evaluation.isDuplicate) {
+				if (!bestMatch || evaluation.matchScore > bestMatch.matchScore) {
+					bestMatch = {
+						isDuplicate: true,
+						isNameOnlyDuplicate: evaluation.isNameOnlyDuplicate,
+						candidate: patient,
+						matchScore: evaluation.matchScore,
+						matchConfidencePercent: evaluation.matchConfidencePercent,
+						reasons: evaluation.reasons,
+						explanation: evaluation.explanation,
+						caution: evaluation.caution,
+					};
+				}
+			}
+		}
+		if (bestMatch && bestMatch.matchScore >= 0.95) break;
+	}
+
+	return bestMatch;
+}
+

@@ -1,6 +1,20 @@
 import { z } from "zod";
 import { curatorFunnelStageSchema } from "./curator/index.js";
 import {
+	clockTimeSchema,
+	clockTimeToMinutes,
+	weekdayIndexSchema,
+	isValidDateParts,
+	isValidTimeParts,
+	isValidTimezoneOffset,
+	isDateLikeString,
+	normalizeDateOnlyString,
+	todayIsoDateOnly,
+	isPastOrTodayDateOnlyString,
+} from "./datetime/index.js";
+export * from "./datetime/index.js";
+export * from "./demo/index.js";
+import {
 	CLINICAL_TOOTH_STATE_VALUES,
 	type ClinicalToothState,
 } from "./clinical/stomtDefectsCatalog.js";
@@ -280,67 +294,29 @@ export function isHttpUrl(value: string): boolean {
 export const httpUrlSchema = z.string().url().refine(isHttpUrl, {
 	message: "адрес должен начинаться с http:// или https://",
 });
+import { patientStatusSchema, type PatientStatus } from "./patients/index.js";
+export { patientStatusSchema, type PatientStatus };
 
-export const patientStatusSchema = z.enum(["active", "archived"]);
-export type PatientStatus = z.infer<typeof patientStatusSchema>;
-
-export const appointmentStatusSchema = z.enum([
-	"planned",
-	"confirmed",
-	"arrived",
-	"in_treatment",
-	"completed",
-	"cancelled",
-	"no_show",
-]);
-export type AppointmentStatus = z.infer<typeof appointmentStatusSchema>;
+import { appointmentStatusSchema, type AppointmentStatus } from "./schedule/index.js";
+export { appointmentStatusSchema, type AppointmentStatus };
 
 export const visitStatusSchema = z.enum(["draft", "signed", "voided"]);
 export type VisitStatus = z.infer<typeof visitStatusSchema>;
 
-export const documentKindSchema = z.enum([
-	"paid_medical_services_contract",
-	"completed_works_act",
-	"tax_deduction_certificate",
-	"informed_consent",
-	"procedure_specific_consent_packet",
-	"treatment_plan",
-	"treatment_plan_acceptance",
-	"anesthesia_consent_log",
-	"prescription_medication_order",
-	"personal_data_processing_consent",
-	"minor_legal_representative_consent",
-	"photo_video_consent",
-	"medical_intervention_refusal",
-	"treatment_cost_estimate",
-	"payment_invoice",
-	"payment_receipt",
-	"installment_payment_schedule",
-	"post_visit_recommendations",
-	"outpatient_medical_card_025u",
-	"dental_medical_card_043u",
-	"orthodontic_medical_card_043_1u",
-	"daily_dentist_diary_037u",
-	"summary_dentist_statement_039u",
-	"medical_record_extract",
-	"medical_record_copy_request",
-	"medical_document_release_receipt",
-	"xray_cbct_referral",
-	"radiation_dose_sheet",
-	"lab_work_order",
-	"visit_attendance_certificate",
-	"warranty_service_memo",
-	"payment_refund_correction_request",
-	"tax_deduction_application",
-	"legacy_tax_deduction_certificate",
-	"tax_deduction_registry",
-	"patient_intake_questionnaire",
-]);
-export type DocumentKind = z.infer<typeof documentKindSchema>;
-
-export const legacyTaxDeductionCertificateMinYear = 2021;
-export const legacyTaxDeductionCertificateMaxYear = 2023;
-export const taxDeductionCertificateMinYear = 2024;
+import {
+	documentKindSchema,
+	type DocumentKind,
+	legacyTaxDeductionCertificateMinYear,
+	legacyTaxDeductionCertificateMaxYear,
+	taxDeductionCertificateMinYear,
+} from "./documents/index.js";
+export {
+	documentKindSchema,
+	type DocumentKind,
+	legacyTaxDeductionCertificateMinYear,
+	legacyTaxDeductionCertificateMaxYear,
+	taxDeductionCertificateMinYear,
+};
 
 export type DocumentKindGroup =
 	| "visit"
@@ -1978,17 +1954,6 @@ export type SpeechRecordingRecoveryList = z.infer<
 	typeof speechRecordingRecoveryListSchema
 >;
 
-export const clockTimeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
-export type ClockTime = z.infer<typeof clockTimeSchema>;
-
-export const weekdayIndexSchema = z.number().int().min(0).max(6);
-export type WeekdayIndex = z.infer<typeof weekdayIndexSchema>;
-
-function clockTimeToMinutes(value: string): number {
-	const [hours = "0", minutes = "0"] = value.split(":");
-	return Number.parseInt(hours, 10) * 60 + Number.parseInt(minutes, 10);
-}
-
 export const clinicScheduleDefaultsSchema = z
 	.object({
 		workdayStart: clockTimeSchema,
@@ -2674,91 +2639,24 @@ export const updateClinicalRuleSchema = createClinicalRuleBaseSchema
 		id: z.string(),
 	});
 export type UpdateClinicalRuleInput = z.infer<typeof updateClinicalRuleSchema>;
-
-const fiscalReceiptUrlSchema = z
-	.string()
-	.trim()
-	.url()
-	.max(500)
-	.refine(
-		(value) => /^https?:\/\//i.test(value),
-		"Ссылка ОФД должна начинаться с http:// или https://",
-	);
-
-const fiscalReceiptIssuedAtSchema = z
-	.string()
-	.trim()
-	.max(80)
-	.refine((value) => {
-		const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
-		if (iso) return !Number.isNaN(Date.parse(value));
-		const ru = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
-		if (ru)
-			return !Number.isNaN(Date.parse(`${ru[3]}-${ru[2]}-${ru[1]}T00:00:00Z`));
-		return false;
-	}, "Дата фискального чека должна быть корректной датой.");
-
-const strictFiscalReceiptIssuedAtSchema = fiscalReceiptIssuedAtSchema.refine(
-	isDateLikeString,
-	"Дата фискального чека должна быть реальной календарной датой.",
-);
-
-export const fiscalReceiptDetailsSchema = z.object({
-	fn: z.string().trim().max(32).nullable().optional(),
-	fd: z.string().trim().max(32).nullable().optional(),
-	fpd: z.string().trim().max(32).nullable().optional(),
-	cashierName: z.string().trim().max(160).nullable().optional(),
-	receiptUrl: fiscalReceiptUrlSchema.nullable().optional(),
-	operationType: z.enum(["income", "income_return"]).nullable().optional(),
-	/** Тег 1214: Признак способа расчета (предоплата, аванс, полный расчет, кредит) */
-	calculationMethod: z
-		.enum([
-			"full_prepayment",
-			"partial_prepayment",
-			"advance",
-			"full_settlement",
-			"credit",
-			"credit_settlement",
-		])
-		.nullable()
-		.optional(),
-	/** Тег 1212: Признак предмета расчета (услуга, платеж, товар) */
-	calculationSubject: z
-		.enum(["service", "payment", "goods"])
-		.nullable()
-		.optional(),
-	/** Тег 2108: Мера количества предмета расчета (0 = шт, 255 = иное) */
-	quantityMeasure: z.number().int().min(0).max(255).nullable().optional(),
-	/** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
-	advancePaymentRub: nonNegativeMoneyRubSchema.nullable().optional(),
-});
-export type FiscalReceiptDetails = z.infer<typeof fiscalReceiptDetailsSchema>;
-
-export const paymentSchema = z.object({
-	id: z.string().uuid(),
-	organizationId: z.string().uuid(),
-	patientId: z.string().uuid(),
-	visitId: z.string().uuid().nullable(),
-	documentId: z.string().uuid().nullable(),
-	amountRub: nonNegativeMoneyRubSchema,
-	method: paymentMethodSchema,
-	status: paymentStatusSchema,
-	paidAt: z.string().nullable(),
-	createdAt: z.string(),
-	fiscalReceiptNumber: z.string().nullable().optional(),
-	fiscalReceiptIssuedAt: z.string().nullable().optional(),
-	fiscalReceiptUrl: z.string().nullable().optional(),
-	fiscalReceipt: fiscalReceiptDetailsSchema.nullable().optional(),
-	clientMutationId: z.string().nullable().optional(),
-	payerFullName: z.string().nullable().optional(),
-	payerInn: z.string().nullable().optional(),
-	payerBirthDate: z.string().nullable().optional(),
-	payerIdentityDocument: z.string().nullable().optional(),
-	payerRelationship: z.string().nullable().optional(),
-	taxDeductionCode: z.enum(["1", "2"]).nullable().optional(),
-	note: z.string().nullable(),
-});
-export type Payment = z.infer<typeof paymentSchema>;
+import {
+	fiscalReceiptUrlSchema,
+	fiscalReceiptIssuedAtSchema,
+	strictFiscalReceiptIssuedAtSchema,
+	fiscalReceiptDetailsSchema,
+	type FiscalReceiptDetails,
+	paymentSchema,
+	type Payment,
+} from "./fiscal/index.js";
+export {
+	fiscalReceiptUrlSchema,
+	fiscalReceiptIssuedAtSchema,
+	strictFiscalReceiptIssuedAtSchema,
+	fiscalReceiptDetailsSchema,
+	type FiscalReceiptDetails,
+	paymentSchema,
+	type Payment,
+};
 
 /*
  * Финансовая сводка по пациенту.
@@ -3412,182 +3310,34 @@ export const communicationSummarySchema = z.object({
 	postVisitInstructions: z.number().int().nonnegative(),
 });
 export type CommunicationSummary = z.infer<typeof communicationSummarySchema>;
-
-const patientAdministrativeTextSchema = z
-	.string()
-	.trim()
-	.max(500)
-	.nullable()
-	.default(null);
-
-const patientAdministrativeProfileBaseSchema = z.object({
-	identityDocument: z.string().trim().max(240).nullable().default(null),
-	taxpayerInn: z
-		.string()
-		.trim()
-		.regex(/^\d{10}$|^\d{12}$/)
-		.nullable()
-		.default(null),
-	registrationAddress: patientAdministrativeTextSchema,
-	residentialAddress: patientAdministrativeTextSchema,
-	insurancePolicyNumber: z.string().trim().max(120).nullable().default(null),
-	snils: z.string().trim().max(40).nullable().default(null),
-	legalRepresentativeFullName: z
-		.string()
-		.trim()
-		.max(240)
-		.nullable()
-		.default(null),
-	legalRepresentativeRelationship: z
-		.string()
-		.trim()
-		.max(120)
-		.nullable()
-		.default(null),
-	legalRepresentativeIdentityDocument: z
-		.string()
-		.trim()
-		.max(240)
-		.nullable()
-		.default(null),
-	legalRepresentativePhone: z.string().trim().max(80).nullable().default(null),
-	preferredDocumentRecipient: z
-		.string()
-		.trim()
-		.max(240)
-		.nullable()
-		.default(null),
-	preferredAppointmentWeekdays: z.array(weekdayIndexSchema).max(7).default([]),
-	preferredAppointmentStart: clockTimeSchema.nullable().default(null),
-	preferredAppointmentEnd: clockTimeSchema.nullable().default(null),
-	preferredAppointmentNote: patientAdministrativeTextSchema,
-	dataProcessingBasisNote: patientAdministrativeTextSchema,
-	orthodonticProgress: patientAdministrativeTextSchema,
-	/*
-	 * Уровень лояльности (ручной выбор администратором).
-	 * БЫЛО: поля не было в patientAdministrativeProfileBaseSchema. UI
-	 * PatientLoyaltyHeader шлёт PUT .../administrative-profile с { loyaltyTier },
-	 * Zod вырезал ключ → HTTP 200, JSONB не менялся → после F5 tier сбрасывался.
-	 * СТАЛО: enum стандартных уровней + null (снять уровень). Неизвестные
-	 * строки отклоняются на контракте, а не молча проглатываются.
-	 */
-	loyaltyTier: z
-		.enum(["standard", "silver", "gold", "platinum"])
-		.nullable()
-		.optional()
-		.default(null),
-	/*
-	 * Закрепление куратора лечения за пациентом (Фича #27)
-	 */
-	curatorId: z.string().uuid().nullable().optional().default(null),
-	curatorFullName: z.string().trim().max(240).nullable().optional().default(null),
-	curatorAssignedAt: z.string().nullable().optional().default(null),
-	curatorFunnelStage: curatorFunnelStageSchema.nullable().optional().default(null),
-	curatorCommissionPercent: z.number().min(0).max(100).nullable().optional().default(null),
-	curatorNotes: z.string().trim().max(2000).nullable().optional().default(null),
-	curatorNextContactDate: z.string().nullable().optional().default(null),
-	/*
-	 * Режим «Анонимный пациент» (ПП РФ №659 от 30.05.2026, Rules of 2026).
-	 */
-	isAnonymous: z.boolean().nullable().optional(),
-	anonymousCode: z.string().trim().max(80).nullable().optional(),
-	decree659Compliance: z.record(z.unknown()).nullable().optional(),
-	gender: z.enum(["male", "female", "other"]).nullable().optional().default(null),
-	insuranceContractId: z.string().uuid().nullable().optional().default(null),
-});
-
-export const patientAdministrativeProfileSchema =
-	patientAdministrativeProfileBaseSchema.superRefine((value, context) => {
-		if (
-			value.preferredAppointmentStart &&
-			value.preferredAppointmentEnd &&
-			clockTimeToMinutes(String(value.preferredAppointmentEnd)) <=
-				clockTimeToMinutes(String(value.preferredAppointmentStart))
-		) {
-			context.addIssue({
-				code: "custom",
-				path: ["preferredAppointmentEnd"],
-				message: "Конец удобного времени приема должен быть позже начала",
-			});
-		}
-	});
-export type PatientAdministrativeProfile = z.infer<
-	typeof patientAdministrativeProfileSchema
->;
-
-export const patientSchema = z.object({
-	id: z.string().uuid(),
-	organizationId: z.string().uuid(),
-	status: patientStatusSchema,
-	fullName: z.string().min(1),
-	birthDate: z.string().nullable(),
-	gender: z.enum(["male", "female", "other"]).nullable().optional().default(null),
-	phone: z.string().nullable(),
-	email: z.string().email().nullable(),
-	notes: z.string().nullable(),
-	weightKg: z.number().positive().max(500).nullable().optional(),
-	isAnonymous: z.boolean().nullable().optional(),
-	anonymousCode: z.string().nullable().optional(),
-	administrativeProfile: patientAdministrativeProfileSchema
-		.nullable()
-		.default(null),
-	/*
-	 * Баланс пациента: оплачено минус запланировано. Отрицательное значение —
-	 * долг, поэтому здесь moneyRubSchema, а не nonNegative: знак был разрешён и
-	 * раньше, изменилась только дробная часть.
-	 *
-	 * Было z.number().int(). Считается баланс из платежей и позиций плана, и оба
-	 * слагаемых с копейками, поэтому целое значение никогда не сходилось с
-	 * фактом; сервер прятал расхождение через Math.round и дарил или отнимал у
-	 * пациента до 50 копеек.
-	 */
-	balanceRub: moneyRubSchema.default(0),
-	/*
-	 * Привязка пациента к семейной группе (общий кошелёк).
-	 *
-	 * БЫЛО: поля не было в patientSchema. Даже после записи family_group_id
-	 * в БД GET/PUT-ответ не отдавал familyGroupId клиенту — UI считал, что
-	 * пациент «без семьи», и семейный кошелёк/оплата ломались.
-	 *
-	 * СТАЛО: nullable UUID группы; null — пациент не состоит в семье.
-	 */
-	familyGroupId: z.string().uuid().nullable().optional(),
-	mergedIntoPatientId: z.string().uuid().nullable().optional(),
-	/*
-	 * 152-ФЗ / 323-ФЗ ст. 13: Врачебная тайна и клинические диагнозы.
-	 * Доступны ТОЛЬКО врачам и клиническому персоналу.
-	 * Для неклинических ролей (маркетологи, администраторы/ресепшн, сисадмины)
-	 * эти поля аппаратно вырезаются (Payload Stripping) на уровне API до отправки на клиент.
-	 */
-	diagnosis: z.string().nullable().optional(),
-	emr_records: z.array(z.unknown()).nullable().optional(),
-	odontogram: z.record(z.unknown()).nullable().optional(),
-	clinicalNotes: z.string().nullable().optional(),
-	mkb10: z.string().nullable().optional(),
-	createdAt: z.string(),
-	updatedAt: z.string(),
-});
-
-export type Patient = z.infer<typeof patientSchema>;
-
-export const patientInsightRiskSchema = z.enum(["low", "watch", "high"]);
-export type PatientInsightRisk = z.infer<typeof patientInsightRiskSchema>;
-
-export const patientInsightSchema = z.object({
-	patientId: z.string().uuid(),
-	riskLevel: patientInsightRiskSchema,
-	riskReasons: z.array(z.string()),
-	nextBestAction: z.string(),
-	recallDueAt: z.string().nullable(),
-	/* Долг для подсказки администратору — та же величина, что и totalDueRub. */
-	balanceDueRub: nonNegativeMoneyRubSchema,
-	openTasks: z.number().int().nonnegative(),
-	missingDocumentKinds: z.array(documentKindSchema),
-	clinicalFlags: z.array(z.string()),
-	adminFlags: z.array(z.string()),
-	lastActivityAt: z.string().nullable(),
-});
-export type PatientInsight = z.infer<typeof patientInsightSchema>;
+import {
+	patientAdministrativeTextSchema,
+	patientAdministrativeProfileBaseSchema,
+	patientAdministrativeProfileSchema,
+	type PatientAdministrativeProfile,
+	patientSchema,
+	type Patient,
+	patientInsightRiskSchema,
+	type PatientInsightRisk,
+	patientInsightSchema,
+	type PatientInsight,
+	birthDateInputSchema,
+	patientPhoneInputSchema,
+} from "./patients/index.js";
+export {
+	patientAdministrativeTextSchema,
+	patientAdministrativeProfileBaseSchema,
+	patientAdministrativeProfileSchema,
+	type PatientAdministrativeProfile,
+	patientSchema,
+	type Patient,
+	patientInsightRiskSchema,
+	type PatientInsightRisk,
+	patientInsightSchema,
+	type PatientInsight,
+	birthDateInputSchema,
+	patientPhoneInputSchema,
+};
 
 export const recommendedActionPrioritySchema = z.enum([
 	"routine",
@@ -3612,154 +3362,28 @@ export const recommendedActionSchema = z.object({
 });
 export type RecommendedAction = z.infer<typeof recommendedActionSchema>;
 
-export const appointmentSchema = z.object({
-	id: z.string().uuid(),
-	organizationId: z.string().uuid(),
-	patientId: z.string().uuid().nullable(),
-	doctorUserId: z.string().uuid().nullable(),
-	assistantUserId: z.string().uuid().nullable().optional(),
-	chairId: z.string().uuid().nullable(),
-	status: appointmentStatusSchema,
-	startsAt: z.string(),
-	endsAt: z.string(),
-	reason: z.string().nullable(),
-	comment: z.string().nullable(),
-});
-export type Appointment = z.infer<typeof appointmentSchema>;
-
-function parseStrictAppointmentDateTimeMs(value: string): number | null {
-	const trimmed = value.trim();
-	const match =
-		/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?(Z|[+-]\d{2}:\d{2})$/.exec(
-			trimmed,
-		);
-	if (!match) return null;
-
-	const [
-		,
-		yearPart,
-		monthPart,
-		dayPart,
-		hourPart,
-		minutePart,
-		secondPart = "00",
-	] = match;
-	const year = Number(yearPart);
-	const month = Number(monthPart);
-	const day = Number(dayPart);
-	const hour = Number(hourPart);
-	const minute = Number(minutePart);
-	const second = Number(secondPart);
-
-	if (!isValidDateParts(year, month, day)) return null;
-	if (
-		hour < 0 ||
-		hour > 23 ||
-		minute < 0 ||
-		minute > 59 ||
-		second < 0 ||
-		second > 59
-	)
-		return null;
-
-	const parsed = Date.parse(trimmed);
-	return Number.isFinite(parsed) ? parsed : null;
-}
-
-export const createAppointmentSchema = z
-	.object({
-		patientId: z.string().uuid().nullable().optional(),
-		doctorUserId: z.string().uuid(),
-		assistantUserId: z.string().uuid().nullable().optional(),
-		chairId: z.string().uuid(),
-		status: appointmentStatusSchema.default("planned"),
-		startsAt: z.string().trim().min(1),
-		endsAt: z.string().trim().min(1),
-		reason: z.string().trim().max(500).nullable().optional(),
-		comment: z.string().trim().max(1000).nullable().optional(),
-		allowOverbooking: z.boolean().optional(),
-		allowEmergencyOverride: z.boolean().optional(),
-	})
-	.superRefine((value, context) => {
-		const startsAt = parseStrictAppointmentDateTimeMs(value.startsAt);
-		const endsAt = parseStrictAppointmentDateTimeMs(value.endsAt);
-		if (startsAt === null) {
-			context.addIssue({
-				code: "custom",
-				path: ["startsAt"],
-				message:
-					"Начало записи должно быть реальной датой и временем в ISO-формате с часовым поясом",
-			});
-		}
-		if (endsAt === null) {
-			context.addIssue({
-				code: "custom",
-				path: ["endsAt"],
-				message:
-					"Окончание записи должно быть реальной датой и временем в ISO-формате с часовым поясом",
-			});
-		}
-		if (startsAt !== null && endsAt !== null && endsAt <= startsAt) {
-			context.addIssue({
-				code: "custom",
-				path: ["endsAt"],
-				message: "Окончание записи должно быть позже начала",
-			});
-		}
-	});
-export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
-
-export const updateAppointmentSchema = z
-	.object({
-		patientId: z.string().uuid().nullable().optional(),
-		doctorUserId: z.string().uuid().nullable().optional(),
-		assistantUserId: z.string().uuid().nullable().optional(),
-		chairId: z.string().uuid().nullable().optional(),
-		status: appointmentStatusSchema.optional(),
-		startsAt: z.string().trim().min(1).optional(),
-		endsAt: z.string().trim().min(1).optional(),
-		reason: z.string().trim().max(500).nullable().optional(),
-		comment: z.string().trim().max(1000).nullable().optional(),
-		allowOverbooking: z.boolean().optional(),
-		allowEmergencyOverride: z.boolean().optional(),
-	})
-	.superRefine((value, context) => {
-		const startsAt =
-			value.startsAt !== undefined
-				? parseStrictAppointmentDateTimeMs(value.startsAt)
-				: null;
-		const endsAt =
-			value.endsAt !== undefined
-				? parseStrictAppointmentDateTimeMs(value.endsAt)
-				: null;
-
-		if (value.startsAt !== undefined && startsAt === null) {
-			context.addIssue({
-				code: "custom",
-				path: ["startsAt"],
-				message:
-					"Начало записи должно быть реальной датой и временем в ISO-формате с часовым поясом",
-			});
-		}
-		if (value.endsAt !== undefined && endsAt === null) {
-			context.addIssue({
-				code: "custom",
-				path: ["endsAt"],
-				message:
-					"Окончание записи должно быть реальной датой и временем в ISO-формате с часовым поясом",
-			});
-		}
-		if (value.startsAt !== undefined && value.endsAt !== undefined) {
-			if (startsAt !== null && endsAt !== null && endsAt <= startsAt) {
-				context.addIssue({
-					code: "custom",
-					path: ["endsAt"],
-					message: "Окончание записи должно быть позже начала",
-				});
-			}
-		}
-	});
-export type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>;
+import {
+	appointmentSchema,
+	type Appointment,
+	parseStrictAppointmentDateTimeMs,
+	createAppointmentSchema,
+	type CreateAppointmentInput,
+	updateAppointmentSchema,
+	type UpdateAppointmentInput,
+	type BookingSlot,
+	toBookingSlot,
+} from "./schedule/index.js";
+export {
+	appointmentSchema,
+	type Appointment,
+	parseStrictAppointmentDateTimeMs,
+	createAppointmentSchema,
+	type CreateAppointmentInput,
+	updateAppointmentSchema,
+	type UpdateAppointmentInput,
+	type BookingSlot,
+	toBookingSlot,
+};
 
 export const appointmentReadinessStateSchema = z.enum([
 	"ready",
@@ -4236,134 +3860,6 @@ export const taxDeductionApplicationDeliveryChannelSchema = z.enum([
 export type TaxDeductionApplicationDeliveryChannel = z.infer<
 	typeof taxDeductionApplicationDeliveryChannelSchema
 >;
-
-function isValidDateParts(year: number, month: number, day: number): boolean {
-	const parsed = new Date(Date.UTC(year, month - 1, day));
-	return (
-		parsed.getUTCFullYear() === year &&
-		parsed.getUTCMonth() === month - 1 &&
-		parsed.getUTCDate() === day
-	);
-}
-
-function isValidTimeParts(
-	hourText?: string,
-	minuteText?: string,
-	secondText?: string,
-): boolean {
-	if (
-		hourText === undefined &&
-		minuteText === undefined &&
-		secondText === undefined
-	)
-		return true;
-	if (hourText === undefined || minuteText === undefined) return false;
-	const hour = Number(hourText);
-	const minute = Number(minuteText);
-	const second = secondText === undefined ? 0 : Number(secondText);
-	return (
-		Number.isInteger(hour) &&
-		Number.isInteger(minute) &&
-		Number.isInteger(second) &&
-		hour >= 0 &&
-		hour <= 23 &&
-		minute >= 0 &&
-		minute <= 59 &&
-		second >= 0 &&
-		second <= 59
-	);
-}
-
-function isValidTimezoneOffset(value?: string): boolean {
-	if (value === undefined || value === "Z") return true;
-	const match = /^([+-])(\d{2}):?(\d{2})$/.exec(value);
-	if (!match) return false;
-	const hour = Number(match[2]);
-	const minute = Number(match[3]);
-	return (
-		Number.isInteger(hour) &&
-		Number.isInteger(minute) &&
-		hour >= 0 &&
-		hour <= 23 &&
-		minute >= 0 &&
-		minute <= 59
-	);
-}
-
-function isDateLikeString(value: string): boolean {
-	const trimmed = value.trim();
-	const iso =
-		/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,3})?)?(Z|[+-]\d{2}:?\d{2})?)?$/.exec(
-			trimmed,
-		);
-	if (iso) {
-		return (
-			isValidDateParts(Number(iso[1]), Number(iso[2]), Number(iso[3])) &&
-			isValidTimeParts(iso[4], iso[5], iso[6]) &&
-			isValidTimezoneOffset(iso[7])
-		);
-	}
-	const ru =
-		/^(\d{2})\.(\d{2})\.(\d{4})(?:,?\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(
-			trimmed,
-		);
-	if (ru) {
-		return (
-			isValidDateParts(Number(ru[3]), Number(ru[2]), Number(ru[1])) &&
-			isValidTimeParts(ru[4], ru[5], ru[6])
-		);
-	}
-	return false;
-}
-
-function normalizeDateOnlyString(value: string): string | null {
-	const trimmed = value.trim();
-	const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
-	if (iso && isValidDateParts(Number(iso[1]), Number(iso[2]), Number(iso[3]))) {
-		return `${iso[1]}-${iso[2]}-${iso[3]}`;
-	}
-	const ru = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(trimmed);
-	if (ru && isValidDateParts(Number(ru[3]), Number(ru[2]), Number(ru[1]))) {
-		return `${ru[3]}-${ru[2]}-${ru[1]}`;
-	}
-	return null;
-}
-
-function todayIsoDateOnly(): string {
-	const now = new Date();
-	const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
-	return local.toISOString().slice(0, 10);
-}
-
-function isPastOrTodayDateOnlyString(value: string): boolean {
-	const normalized = normalizeDateOnlyString(value);
-	return Boolean(normalized && normalized <= todayIsoDateOnly());
-}
-
-const birthDateInputSchema = z
-	.string()
-	.trim()
-	.max(20)
-	.refine((value) => !value || isPastOrTodayDateOnlyString(value), {
-		message:
-			"Дата рождения должна быть реальной датой не позже сегодняшнего дня в формате ГГГГ-ММ-ДД или ДД.ММ.ГГГГ.",
-	})
-	.transform((value) =>
-		value ? (normalizeDateOnlyString(value) ?? value) : value,
-	)
-	.nullable()
-	.optional();
-
-const patientPhoneInputSchema = z
-	.string()
-	.trim()
-	.max(80)
-	.refine((value) => !value || value.replace(/\D/g, "").length >= 5, {
-		message:
-			"Телефон пациента должен содержать не меньше 5 цифр или быть пустым.",
-	})
-	.nullable()
-	.optional();
 
 const taxDateLikeStringSchema = z
 	.string()
@@ -5864,6 +5360,7 @@ export const imagingStudySchema = z.object({
 	organizationId: z.string().uuid(),
 	patientId: z.string().uuid(),
 	visitId: z.string().uuid().nullable(),
+	doctorId: z.string().uuid().nullable().optional(),
 	kind: imagingStudyKindSchema,
 	title: z.string(),
 	toothCode: z.string().nullable(),
@@ -6694,77 +6191,22 @@ export function calculateDmsGuaranteeSplit(
 }
 
 
-export const createPatientSchema = z.object({
-	fullName: z.string().trim().min(1).max(240),
-	birthDate: birthDateInputSchema,
-	phone: patientPhoneInputSchema,
-	email: z.string().trim().email().nullable().optional(),
-	notes: z.string().trim().max(1000).nullable().optional(),
-	weightKg: z.number().positive().max(500).nullable().optional(),
-	isAnonymous: z.boolean().optional().default(false),
-	anonymousCode: z.string().trim().max(80).optional().nullable(),
-	administrativeProfile: patientAdministrativeProfileSchema
-		.nullable()
-		.optional(),
-	allowDuplicate: z.boolean().optional(),
-});
-export type CreatePatientInput = z.infer<typeof createPatientSchema>;
-
-export const updatePatientSchema = z.object({
-	fullName: z.string().trim().min(1).max(240).optional(),
-	birthDate: birthDateInputSchema,
-	phone: patientPhoneInputSchema,
-	email: z.string().trim().email().nullable().optional(),
-	notes: z.string().trim().max(1000).nullable().optional(),
-	weightKg: z.number().positive().max(500).nullable().optional(),
-	isAnonymous: z.boolean().optional(),
-	anonymousCode: z.string().trim().max(80).optional().nullable(),
-	/*
-	 * Привязка к семейной группе (общий кошелёк). null — отвязать.
-	 *
-	 * БЫЛО: поля не было. PatientFamilyCard слал PUT /api/patients/:id с
-	 * familyGroupId, Zod вырезал незнакомый ключ, маршрут отвечал 200, а
-	 * patients.family_group_id не менялся. Создание семьи оставляло пустые
-	 * orphan-группы, привязка никогда не сохранялась, оплата с семейного
-	 * счёта за «привязанного» шла в никуда.
-	 */
-	familyGroupId: z.string().uuid().nullable().optional(),
-});
-export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
-
-export const updatePatientAdministrativeProfileSchema =
-	patientAdministrativeProfileBaseSchema
-		.partial()
-		.superRefine((value, context) => {
-			if (
-				(value.preferredAppointmentStart && !value.preferredAppointmentEnd) ||
-				(!value.preferredAppointmentStart && value.preferredAppointmentEnd)
-			) {
-				context.addIssue({
-					code: "custom",
-					path: value.preferredAppointmentStart
-						? ["preferredAppointmentEnd"]
-						: ["preferredAppointmentStart"],
-					message:
-						"Начало и конец удобного времени приема нужно указывать вместе",
-				});
-			}
-			if (
-				value.preferredAppointmentStart &&
-				value.preferredAppointmentEnd &&
-				clockTimeToMinutes(String(value.preferredAppointmentEnd)) <=
-					clockTimeToMinutes(String(value.preferredAppointmentStart))
-			) {
-				context.addIssue({
-					code: "custom",
-					path: ["preferredAppointmentEnd"],
-					message: "Конец удобного времени приема должен быть позже начала",
-				});
-			}
-		});
-export type UpdatePatientAdministrativeProfileInput = z.infer<
-	typeof updatePatientAdministrativeProfileSchema
->;
+import {
+	createPatientSchema,
+	type CreatePatientInput,
+	updatePatientSchema,
+	type UpdatePatientInput,
+	updatePatientAdministrativeProfileSchema,
+	type UpdatePatientAdministrativeProfileInput,
+} from "./patients/index.js";
+export {
+	createPatientSchema,
+	type CreatePatientInput,
+	updatePatientSchema,
+	type UpdatePatientInput,
+	updatePatientAdministrativeProfileSchema,
+	type UpdatePatientAdministrativeProfileInput,
+};
 
 export const updateClinicModeSchema = z.object({
 	mode: clinicModeSchema,
@@ -7110,6 +6552,7 @@ export type CompleteCommunicationTaskInput = z.infer<
 export const createImagingStudySchema = z.object({
 	patientId: z.string().uuid(),
 	visitId: z.string().uuid().nullable().optional(),
+	doctorId: z.string().uuid().nullable().optional(),
 	kind: imagingStudyKindSchema,
 	title: z.string().trim().min(1).max(180),
 	toothCode: z.string().trim().min(1).max(24).nullable().optional(),

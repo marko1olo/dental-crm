@@ -5,6 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+export * from "./documentKind.js";
 export * from "./forms043u.js";
 export * from "./forms043_1u.js";
 export * from "./forms037u.js";

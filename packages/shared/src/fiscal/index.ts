@@ -4,6 +4,7 @@
  */
 
 export * from "./ffd12Types.js";
+export * from "./fiscalReceiptSchemas.js";
 export * from "./markingValidation.js";
 export * from "./kopecksArithmetic.js";
 export * from "./validation.js";

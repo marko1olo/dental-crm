@@ -6,7 +6,12 @@ import {
 	type UpdatePatientInput,
 } from "@dental/shared";
 import { and, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
-import { canonicalizeHomoglyphs } from "../services/patients/duplicateDetection.js";
+import {
+	canonicalizeHomoglyphs,
+	convertQwertyMistype,
+	phoneKey,
+	transliterateLatinToCyrillic,
+} from "../services/patients/duplicateDetection.js";
 import {
 	buildPatientLedgers,
 	MoneyPrecisionError,
@@ -324,11 +329,30 @@ export async function getPatientsFromDb(
 		}
 		if (options.search && options.search.trim().length > 0) {
 			const qLower = options.search.trim().toLowerCase();
-			list = list.filter((p) => {
-				const nameMatch = p.fullName?.toLowerCase().includes(qLower);
-				const phoneMatch = p.phone?.toLowerCase().includes(qLower);
-				const emailMatch = p.email?.toLowerCase().includes(qLower);
-				return nameMatch || phoneMatch || emailMatch;
+			const qwertySearch = convertQwertyMistype(qLower);
+			const translitSearch = transliterateLatinToCyrillic(qLower);
+			const searchDigits = qLower.replace(/\D/g, "");
+			const searchPk = phoneKey(qLower);
+
+			list = list.filter((p: any) => {
+				const nameStr = typeof p.fullName === "string" ? p.fullName : "";
+				const nameLower = nameStr.toLowerCase();
+				const nameMatch =
+					nameLower.includes(qLower) ||
+					(qwertySearch !== qLower && nameLower.includes(qwertySearch)) ||
+					(translitSearch !== qLower && nameLower.includes(translitSearch));
+
+				const pPhone = typeof p.phone === "string" ? p.phone : "";
+				const phoneDigits = pPhone.replace(/\D/g, "");
+				const phonePk = phoneKey(pPhone);
+				const phoneMatch =
+					pPhone.toLowerCase().includes(qLower) ||
+					(searchDigits.length >= 4 && phoneDigits.includes(searchDigits)) ||
+					(searchPk !== null && phonePk !== null && searchPk === phonePk);
+
+				const pEmail = typeof p.email === "string" ? p.email : "";
+				const emailMatch = pEmail.toLowerCase().includes(qLower);
+				return Boolean(nameMatch || phoneMatch || emailMatch);
 			});
 		}
 		if (options.offset !== undefined && options.offset > 0) {
@@ -346,14 +370,27 @@ export async function getPatientsFromDb(
 			conditions.push(isNull(schema.patients.mergedIntoPatientId));
 		}
 		if (options.search && options.search.trim().length > 0) {
-			const s = `%${options.search.trim()}%`;
-			conditions.push(
-				or(
-					ilike(schema.patients.fullName, s),
-					ilike(schema.patients.phone, s),
-					ilike(schema.patients.email, s),
-				)!,
-			);
+			const raw = options.search.trim();
+			const s = `%${raw}%`;
+			const qwerty = convertQwertyMistype(raw);
+			const translit = transliterateLatinToCyrillic(raw);
+			const rawDigits = raw.replace(/\D/g, "");
+
+			const searchOr = [
+				ilike(schema.patients.fullName, s),
+				ilike(schema.patients.phone, s),
+				ilike(schema.patients.email, s),
+			];
+			if (qwerty !== raw) {
+				searchOr.push(ilike(schema.patients.fullName, `%${qwerty}%`));
+			}
+			if (translit !== raw && translit !== qwerty) {
+				searchOr.push(ilike(schema.patients.fullName, `%${translit}%`));
+			}
+			if (rawDigits.length >= 4) {
+				searchOr.push(ilike(schema.patients.phone, `%${rawDigits}%`));
+			}
+			conditions.push(or(...searchOr)!);
 		}
 		const whereClause = and(...conditions);
 		let ptsQuery: any = db

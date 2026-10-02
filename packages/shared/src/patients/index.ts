@@ -4,5 +4,6 @@
 
 export * from "./familyRelationshipsEngine.js";
 export * from "./patientRelationshipsSchema.js";
+export * from "./patientSchemas.js";
 export * from "./stomxPatientTagsCatalog.js";
 export * from "./duplicateTypes.js";

@@ -1401,116 +1401,19 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 						.returning({ id: chairs.id, name: chairs.name });
 				}
 
-				// Если withDemoData !== false — сеем 4 демо-пациента и 4 записи в расписании (Zero Dead-Ends)
+				// Если withDemoData !== false — сеем полноценный клинический демо-контекст:
+				// пациенты, приёмы, зубная формула (одонтограмма), дневник 043/у SOAP,
+				// план лечения, склад и серии партионного учёта FEFO (МАНДАТ 8y, 8n)
 				const primaryChair = createdChairs[0];
 				if (withDemoData !== false && primaryChair) {
-					const primaryChairId = primaryChair.id;
-					const demoPatientsList = [
-						{
-							organizationId,
-							fullName: "Иванов Алексей Сергеевич",
-							phone: "+7 (912) 345-67-89",
-							birthDate: "1988-04-12",
-							notes: "Первичный осмотр, жалоба на чувствительность 2.4",
-							status: "active" as const,
-						},
-						{
-							organizationId,
-							fullName: "Смирнова Елена Викторовна",
-							phone: "+7 (927) 876-54-32",
-							birthDate: "1994-09-23",
-							notes: "Профгигиена AirFlow и ремотерапия",
-							status: "active" as const,
-						},
-						{
-							organizationId,
-							fullName: "Кузнецов Дмитрий Павлович",
-							phone: "+7 (903) 555-43-21",
-							birthDate: "1979-11-05",
-							notes: "Лечение кариеса 3.6, анестезия артикаин",
-							status: "active" as const,
-						},
-						{
-							organizationId,
-							fullName: "Морозова Анна Дмитриевна",
-							phone: "+7 (987) 654-32-10",
-							birthDate: "2001-02-18",
-							notes: "Консультация ортодонта, слепки",
-							status: "active" as const,
-						},
-					];
-
-					const insertedPatients = await tx
-						.insert(patients)
-						.values(demoPatientsList)
-						.returning({ id: patients.id, fullName: patients.fullName });
-
-					const [p0, p1, p2, p3] = insertedPatients;
-					if (p0 && p1 && p2 && p3) {
-						const now = new Date();
-						const today10 = new Date(now);
-						today10.setHours(10, 0, 0, 0);
-						const today1045 = new Date(today10.getTime() + 45 * 60 * 1000);
-
-						const today12 = new Date(now);
-						today12.setHours(12, 0, 0, 0);
-						const today13 = new Date(today12.getTime() + 60 * 60 * 1000);
-
-						const today1530 = new Date(now);
-						today1530.setHours(15, 30, 0, 0);
-						const today1600 = new Date(today1530.getTime() + 30 * 60 * 1000);
-
-						const tomorrow11 = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-						tomorrow11.setHours(11, 0, 0, 0);
-						const tomorrow12 = new Date(tomorrow11.getTime() + 60 * 60 * 1000);
-
-						await tx.insert(appointments).values([
-							{
-								organizationId,
-								patientId: p0.id,
-								doctorUserId: ownerUser.id,
-								chairId: primaryChairId,
-								status: "planned",
-								startsAt: today10,
-								endsAt: today1045,
-								reason: "Консультация и диагностика",
-								comment: "Демо-запись: первичный приём",
-							},
-							{
-								organizationId,
-								patientId: p1.id,
-								doctorUserId: ownerUser.id,
-								chairId: primaryChairId,
-								status: "planned",
-								startsAt: today12,
-								endsAt: today13,
-								reason: "Профессиональная гигиена",
-								comment: "Демо-запись: плановый визит",
-							},
-							{
-								organizationId,
-								patientId: p2.id,
-								doctorUserId: ownerUser.id,
-								chairId: primaryChairId,
-								status: "planned",
-								startsAt: today1530,
-								endsAt: today1600,
-								reason: "Лечение кариеса",
-								comment: "Демо-запись: зуб 3.6",
-							},
-							{
-								organizationId,
-								patientId: p3.id,
-								doctorUserId: ownerUser.id,
-								chairId: primaryChairId,
-								status: "planned",
-								startsAt: tomorrow11,
-								endsAt: tomorrow12,
-								reason: "Ортодонтический приём",
-								comment: "Демо-запись: контрольный осмотр",
-							},
-						]);
-					}
+					const { seedDeepDemoData } = await import(
+						"../services/demo/deepDemoSeeder.js"
+					);
+					await seedDeepDemoData(tx, {
+						organizationId,
+						doctorUserId: ownerUser.id,
+						primaryChairId: primaryChair.id,
+					});
 				}
 
 				return { organization, owner: ownerUser };

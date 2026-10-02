@@ -2,6 +2,7 @@
  * @dental/shared/schedule — Multi-Chair Clinical Scheduling, Collision Detection & iCalendar/CalDAV Sync
  */
 
+export * from "./appointmentSchemas.js";
 export * from "./shiftCollisionEngine.js";
 export * from "./calDavTypes.js";
 export * from "./iCalGenerator.js";

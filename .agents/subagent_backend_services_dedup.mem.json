@@ -1,0 +1,62 @@
+{
+  "subagent": "backend_services_dedup_inquisitor",
+  "status": "completed",
+  "last_updated": "2026-10-02T07:58:00Z",
+  "scope": [
+    "apps/api/src/services/",
+    "apps/api/src/routes/"
+  ],
+  "prohibited": [
+    "apps/api/src/routes/*xray*",
+    "apps/api/src/routes/*dicom*",
+    "apps/api/src/routes/imaging*"
+  ],
+  "domains": {
+    "patient_dedup": "completed_ssot_unified",
+    "schedule_conflict": "completed_ssot_unified",
+    "material_writeoff": "completed_fefo_unified",
+    "fiscal_calculator": "completed_factory_unified",
+    "deep_demo_mode": "completed_seeder_unified"
+  },
+  "completed_steps": [
+    "Read all mandatory authority documents (core.md, engineering.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md, AGENTS.md)",
+    "Mapped services and routes in apps/api/src",
+    "Audited and unified patient deduplication across patients.ts, patientDuplicates.ts, duplicateDetection.ts and duplicateFuzzyMetrics.ts",
+    "Audited and unified appointment conflicts and chair occupancy into scheduleConflictService.ts SSOT",
+    "Audited and unified consumables write-off into fefoStockService.ts engine (Zero Dead-Ends overdraft warnings)",
+    "Audited and unified 54-FZ FFD 1.2 tag resolvers into FiscalReceiptFactory.ts",
+    "Implemented deep demo seeding service deepDemoSeeder.ts wired into /auth/login demo mode with 4 patients, appointments, 043/у SOAP diaries, toothStates, and FEFO warehouse items",
+    "Fixed enum and typing discrepancies in apps/api/src/db/appointmentsQuery.ts, apps/api/src/scripts/migrateStateToDb.ts, and telegramLegacyMemoryStore.ts",
+    "Verified npm run typecheck -w @dental/api (EXIT CODE 0)",
+    "Verified npm run typecheck:tests -w @dental/api (EXIT CODE 0)",
+    "Verified 53 targeted unit tests across duplicateDetection, scheduleConflictService, fefoStockService, and fiscalReceiptFactory (100% PASS)"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "domain": "patients",
+      "issue": "Duplicate inline qwerty mistype, transliteration and phoneKey implementations across routes/patients.ts and routes/patientDuplicates.ts",
+      "fix": "Extracted to duplicateFuzzyMetrics.ts and duplicateDetection.ts with Damerau-Levenshtein and token-sort SSOT"
+    },
+    {
+      "domain": "schedule",
+      "issue": "Dispersed schedule conflict checks and slot overlap conditions in agent tools, appointmentErrors.ts and booking routes",
+      "fix": "Consolidated into scheduleConflictService.ts SSOT with FREED_APPOINTMENT_STATUSES and hasTimeOverlap"
+    },
+    {
+      "domain": "warehouse",
+      "issue": "Inline carpule disposal and warehouse write-off routes did not update batch expiration tracking consistently",
+      "fix": "Delegated to fefoStockService.deductFefo() preserving soft overdraft warnings"
+    },
+    {
+      "domain": "fiscal",
+      "issue": "Redundant manual tag resolution switch statements in fiscal54fzService.ts duplicate FiscalReceiptFactory methods",
+      "fix": "Delegated all tag mappings to FiscalReceiptFactory"
+    },
+    {
+      "domain": "demo",
+      "issue": "Demo mode lacked realistic Form 043/у diaries, odontogram toothStates, and FEFO stock batches",
+      "fix": "Built deepDemoSeeder.ts seeding comprehensive clinical state on demo login"
+    }
+  ]
+}

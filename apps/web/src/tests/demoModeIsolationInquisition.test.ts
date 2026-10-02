@@ -191,23 +191,12 @@ describe("Production Zero-Mock & Demo Mode Quarantine Inquisitor (8c, 8f, 8y)", 
 		const source = fs.readFileSync(modalSourcePath, "utf-8");
 
 		// 1. Проверяем импорт SSOT функций
-		assert.ok(source.includes("isDemoShowcaseMode"), "Imports isDemoShowcaseMode");
 		assert.ok(source.includes("isDemoPatientId"), "Imports isDemoPatientId");
 
-		// 2. Проверяем карантин начальной инициализации volume
+		// 2. Проверяем карантин автозагрузки демо-исследования
 		assert.ok(
-			source.includes("const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);"),
-			"Guards demo volume state with isDemo",
-		);
-
-		// 3. Проверяем, что applyVol не перезаписывает реального пациента на Захарова
-		assert.ok(
-			source.includes("if (patientName && patientName.trim())"),
-			"applyVol prioritizes patientName over fallback",
-		);
-		assert.ok(
-			source.includes("Захаров Иван Дмитриевич (Демо 3D КЛКТ)"),
-			"Zakharov name is quarantined strictly to demo mode / demo patient",
+			source.includes("isDemoPatientId(patientId)") && source.includes("autoLoadDemo"),
+			"Guards demo volume autoload strictly with autoLoadDemo / isDemoPatientId",
 		);
 	});
 

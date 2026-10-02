@@ -16,6 +16,7 @@ import {
 	getDemoExecutiveAnalytics,
 	DEMO_SHOWCASE_ORG_ID,
 	DEMO_DOCTOR_1_ID,
+	DEMO_DOCTOR_ORTHOPEDIST_ID,
 	DEMO_DOCTOR_2_ID,
 	DEMO_DOCTOR_SURGEON_ID,
 	DEMO_OWNER_ID,
@@ -23,6 +24,12 @@ import {
 	DEMO_CHAIR_1_ID,
 	DEMO_CHAIR_2_ID,
 	DEMO_CHAIR_3_ID,
+	simulateDemoAppointmentStatusChange,
+	simulateDemoToothClick,
+	simulateDemoAddServiceToEstimate,
+	switchDemoRole,
+	getDemoRoleClinicalDetails,
+	generateDemoDiplomaForBravery,
 } from "../utils/demoModeEngine.js";
 import { DEMO_ROLES } from "../components/auth/DemoTourSelector.js";
 import { DemoModeBanner } from "../components/demo/DemoModeBanner.js";
@@ -65,12 +72,12 @@ describe("DEMO SHOWCASE & LIVE DOCTOR HOT-PATH INQUISITOR (8c, 8e, 8n, 8y)", () 
 		assert.equal(isDemoPatientId("real_patient_uuid_55"), false);
 	});
 
-	it("2. 5 CLINICAL DEMO ROLES: provides accurate roles, target views, and active patients", () => {
-		assert.equal(DEMO_ROLES.length, 5, "Must contain exactly 5 clinical roles for showcase");
+	it("2. 6 CLINICAL DEMO ROLES: provides accurate roles, target views, and active patients", () => {
+		assert.equal(DEMO_ROLES.length, 6, "Must contain exactly 6 clinical and operational roles for showcase");
 
 		const roleMap = new Map(DEMO_ROLES.map((r) => [r.id, r]));
 
-		// 1. Therapist / Orthopedist
+		// 1. Therapist
 		const therapist = roleMap.get("therapist");
 		assert.ok(therapist, "Therapist role must exist");
 		assert.equal(therapist.role, "doctor");
@@ -79,7 +86,16 @@ describe("DEMO SHOWCASE & LIVE DOCTOR HOT-PATH INQUISITOR (8c, 8e, 8n, 8y)", () 
 		assert.equal(therapist.targetPatientId, "01a00000-0000-0000-0000-000000000001");
 		assert.equal(therapist.staffId, DEMO_DOCTOR_1_ID);
 
-		// 2. Orthodontist
+		// 2. Orthopedist
+		const orthopedist = roleMap.get("orthopedist");
+		assert.ok(orthopedist, "Orthopedist role must exist");
+		assert.equal(orthopedist.role, "doctor");
+		assert.equal(orthopedist.doctorName, "Д-р Орлов А. В.");
+		assert.equal(orthopedist.targetView, "patients");
+		assert.equal(orthopedist.targetPatientId, "01a00000-0000-0000-0000-000000000002");
+		assert.equal(orthopedist.staffId, DEMO_DOCTOR_ORTHOPEDIST_ID);
+
+		// 3. Orthodontist
 		const orthodontist = roleMap.get("orthodontist");
 		assert.ok(orthodontist, "Orthodontist role must exist");
 		assert.equal(orthodontist.role, "doctor");
@@ -88,7 +104,7 @@ describe("DEMO SHOWCASE & LIVE DOCTOR HOT-PATH INQUISITOR (8c, 8e, 8n, 8y)", () 
 		assert.equal(orthodontist.targetPatientId, "01a00000-0000-0000-0000-000000000003");
 		assert.equal(orthodontist.staffId, DEMO_DOCTOR_2_ID);
 
-		// 3. Surgeon-implantologist
+		// 4. Surgeon-implantologist
 		const surgeon = roleMap.get("surgeon");
 		assert.ok(surgeon, "Surgeon role must exist");
 		assert.equal(surgeon.role, "doctor");
@@ -97,7 +113,7 @@ describe("DEMO SHOWCASE & LIVE DOCTOR HOT-PATH INQUISITOR (8c, 8e, 8n, 8y)", () 
 		assert.equal(surgeon.targetPatientId, "01a00000-0000-0000-0000-000000000004");
 		assert.equal(surgeon.staffId, DEMO_DOCTOR_SURGEON_ID);
 
-		// 4. Owner / Chief Doctor
+		// 5. Owner / Chief Doctor
 		const owner = roleMap.get("owner");
 		assert.ok(owner, "Owner role must exist");
 		assert.equal(owner.role, "owner");
@@ -105,7 +121,7 @@ describe("DEMO SHOWCASE & LIVE DOCTOR HOT-PATH INQUISITOR (8c, 8e, 8n, 8y)", () 
 		assert.equal(owner.targetView, "analytics");
 		assert.equal(owner.staffId, DEMO_OWNER_ID);
 
-		// 5. Senior Administrator
+		// 6. Senior Administrator
 		const admin = roleMap.get("admin");
 		assert.ok(admin, "Admin role must exist");
 		assert.equal(admin.role, "administrator", "Role must be canonical 'administrator', NOT legacy 'admin'");
@@ -127,10 +143,11 @@ describe("DEMO SHOWCASE & LIVE DOCTOR HOT-PATH INQUISITOR (8c, 8e, 8n, 8y)", () 
 
 	it("4. DEMO SHOWCASE STAFF ROSTER: guarantees 100% staff and appointment doctor references exist", () => {
 		const staff = getDemoShowcaseStaff();
-		assert.equal(staff.length, 5, "Must return 5 showcase staff members");
+		assert.equal(staff.length, 6, "Must return 6 showcase staff members");
 
 		const staffIds = new Set(staff.map((s) => s.id));
 		assert.ok(staffIds.has(DEMO_DOCTOR_1_ID));
+		assert.ok(staffIds.has(DEMO_DOCTOR_ORTHOPEDIST_ID));
 		assert.ok(staffIds.has(DEMO_DOCTOR_2_ID));
 		assert.ok(staffIds.has(DEMO_DOCTOR_SURGEON_ID));
 		assert.ok(staffIds.has(DEMO_OWNER_ID));
@@ -176,12 +193,13 @@ describe("DEMO SHOWCASE & LIVE DOCTOR HOT-PATH INQUISITOR (8c, 8e, 8n, 8y)", () 
 		setRuntimeDemoMode(true);
 		const demoDashboard = createOfflineFallbackDashboard();
 
-		assert.ok(demoDashboard.clinicSettings?.staff?.length === 5, "Staff must have all 5 demo doctors");
+		assert.equal(demoDashboard.clinicSettings?.staff?.length, 6, "Staff must have all 6 demo staff members");
 		assert.ok(demoDashboard.appointments?.length >= 4, "Appointments must be seeded with showcase grid");
 		assert.ok(demoDashboard.patients?.length >= 4, "Patients must be seeded with showcase roster");
 
 		const doctorNames = demoDashboard.clinicSettings?.staff?.map((s) => s.fullName);
 		assert.ok(doctorNames.includes("Д-р Соколов А. В."));
+		assert.ok(doctorNames.includes("Д-р Орлов А. В."));
 		assert.ok(doctorNames.includes("Д-р Морозова Е. И."));
 		assert.ok(doctorNames.includes("Д-р Громов К. Д."));
 		assert.ok(doctorNames.includes("Д-р Воронов М. С."));
@@ -282,5 +300,90 @@ describe("DEMO SHOWCASE & LIVE DOCTOR HOT-PATH INQUISITOR (8c, 8e, 8n, 8y)", () 
 		assert.ok(htmlDemo.includes("Ознакомительный режим:"), "Banner text must indicate 'Ознакомительный режим:'");
 
 		setRuntimeDemoMode(null);
+	});
+
+	it("9. EXECUTIVE ANALYTICS: calibrated 2.45M ₽ revenue, 78% occupancy, 6 200 ₽ check & piecewise payrolls", () => {
+		const analytics = getDemoDashboardAnalytics();
+		assert.equal(analytics.kpis.totalRevenue, 2450000, "Revenue must be calibrated to 2.45M ₽");
+		assert.equal(analytics.kpis.chairOccupancyRatePercent, 78, "Occupancy must be calibrated to 78%");
+		assert.equal(analytics.kpis.averageCheck, 6200, "Average check must be 6 200 ₽");
+		assert.ok(analytics.doctorProfitabilityJson.length >= 4, "Must track metrics for at least 4 doctors");
+
+		// Verify individual doctor share percentages
+		const therapistMetrics = analytics.doctorProfitabilityJson.find((d) => d.name.includes("Соколов"));
+		assert.ok(therapistMetrics, "Therapist metrics must be present");
+		assert.equal(therapistMetrics.revenue, 860000);
+		assert.equal(therapistMetrics.doctorPayrollRub, 215000); // 25%
+
+		const orthopedistMetrics = analytics.doctorProfitabilityJson.find((d) => d.name.includes("Орлов"));
+		assert.ok(orthopedistMetrics, "Orthopedist metrics must be present");
+		assert.equal(orthopedistMetrics.revenue, 750000);
+		assert.equal(orthopedistMetrics.doctorPayrollRub, 150000); // 20%
+
+		const surgeonMetrics = analytics.doctorProfitabilityJson.find((d) => d.name.includes("Громов"));
+		assert.ok(surgeonMetrics, "Surgeon metrics must be present");
+		assert.equal(surgeonMetrics.revenue, 420000);
+		assert.equal(surgeonMetrics.doctorPayrollRub, 92400); // 22%
+
+		const orthodontistMetrics = analytics.doctorProfitabilityJson.find((d) => d.name.includes("Морозова"));
+		assert.ok(orthodontistMetrics, "Orthodontist metrics must be present");
+		assert.equal(orthodontistMetrics.revenue, 300000);
+		assert.equal(orthodontistMetrics.doctorPayrollRub, 66000); // 22%
+	});
+
+	it("10. INTERACTIVE CLINICAL SIMULATOR: zero-dead-ends status changes, tooth clicks, estimate add & diploma", () => {
+		// 1. Appointment status mutation simulation
+		const appointments = getDemoShowcaseAppointments();
+		const targetApt = appointments[0]!;
+		const initialStatus = targetApt.status;
+		const nextStatus = initialStatus === "completed" ? "in_treatment" : "completed";
+
+		const statusChangeResult = simulateDemoAppointmentStatusChange(targetApt.id, nextStatus);
+		assert.equal(statusChangeResult.success, true);
+		assert.equal(statusChangeResult.appointment?.status, nextStatus);
+
+		// 2. Tooth click simulation
+		const patientId = "01a00000-0000-0000-0000-000000000001";
+		const updatedOdontogram = simulateDemoToothClick(patientId, 16, {
+			state: "filling",
+			titleRu: "Пломба световая композитная",
+			clinicalNote: "Пломба установлена успешно в демо-симуляторе",
+		});
+		const tooth16 = updatedOdontogram.find((t) => t.toothNumber === 16);
+		assert.ok(tooth16, "Tooth 16 must exist in odontogram");
+		assert.equal(tooth16.state, "filling");
+		assert.equal(tooth16.clinicalNote, "Пломба установлена успешно в демо-симуляторе");
+
+		// 3. Estimate item addition simulation
+		const updatedEstimate = simulateDemoAddServiceToEstimate(patientId, {
+			code: "A16.07.051",
+			name: "Профессиональная гигиена Air-Flow",
+			quantity: 1,
+			unitPriceRub: 4500,
+			discountRub: 0,
+			totalRub: 4500,
+		});
+		assert.ok(updatedEstimate.totalGrossRub >= 4500);
+		assert.ok(updatedEstimate.items.some((i) => i.code === "A16.07.051"));
+
+		// 4. Role switching
+		const switchResult = switchDemoRole("orthopedist");
+		assert.equal(switchResult.success, true);
+		assert.equal(switchResult.profile?.role, "doctor");
+		assert.equal(switchResult.profile?.doctorName, "Д-р Орлов А. В.");
+
+		// 5. Clinical details retrieval for all roles
+		const roles = ["therapist", "orthopedist", "orthodontist", "surgeon", "owner", "admin"];
+		for (const roleKey of roles) {
+			const details = getDemoRoleClinicalDetails(roleKey);
+			assert.ok(details.profile, `Details profile for ${roleKey} must exist`);
+			assert.ok(details.braveryDiploma, `Bravery diploma for ${roleKey} must generate cleanly`);
+		}
+
+		// 6. Bravery diploma generation
+		const diploma = generateDemoDiplomaForBravery("Иванов Петя (7 лет)");
+		assert.equal(diploma.patientName, "Иванов Петя (7 лет)");
+		assert.ok(diploma.diplomaNumber.includes("ДИПЛОМ"));
+		assert.ok(diploma.awardReasonRu.includes("мужество"));
 	});
 });

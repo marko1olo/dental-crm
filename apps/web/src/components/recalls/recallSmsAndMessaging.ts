@@ -4,6 +4,7 @@ import type {
 	RecallTemplateVariables,
 } from "./recallCycleCatalog";
 import { RECALL_CYCLE_CATALOG } from "./recallCycleCatalog";
+import { cleanPhoneDigits } from "../../utils/formatters";
 
 export interface SmsSegmentCalculation {
 	readonly characterCount: number;
@@ -116,14 +117,7 @@ export function extractPolitePatientName(fullName: string): string {
 	return parts[0] || "Пациент";
 }
 
-export function sanitizePhoneNumber(phone: string | null | undefined): string {
-	if (!phone) return "";
-	const digits = phone.replace(/\D/g, "");
-	if (digits.startsWith("8") && digits.length === 11) {
-		return `7${digits.slice(1)}`;
-	}
-	return digits;
-}
+export const sanitizePhoneNumber = cleanPhoneDigits;
 
 export function generate1ClickBookingLink(options: {
 	readonly baseUrl?: string | undefined;
