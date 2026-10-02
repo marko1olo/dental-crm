@@ -29,6 +29,18 @@ describe("sendWhatsappTextMessage & 152-FZ Secrecy Defense", () => {
 		assert.deepStrictEqual(creds, {
 			phoneNumberId: "123456",
 			accessToken: "abc_token",
+			appSecret: null,
+		});
+
+		const credsWithSecret = readWhatsappCredentials({
+			phoneNumberId: "123456",
+			accessToken: "abc_token",
+			appSecret: "secret_123",
+		});
+		assert.deepStrictEqual(credsWithSecret, {
+			phoneNumberId: "123456",
+			accessToken: "abc_token",
+			appSecret: "secret_123",
 		});
 
 		assert.strictEqual(readWhatsappCredentials({ phoneNumberId: "", accessToken: "abc" }), null);
