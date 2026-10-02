@@ -34,6 +34,10 @@ import {
 	paymentSchema,
 	paymentMethodSchema,
 	paymentStatusSchema,
+	STATUTORY_PAYMENT_METHOD_LABELS_RU,
+	normalizePaymentMethod,
+	resolveFfd12PaymentTag,
+	extendedPaymentMethodSchema,
 	// Datetime
 	clockTimeSchema,
 	clockTimeToMinutes,
@@ -237,6 +241,84 @@ describe("Consolidated Contracts & Schemas Deduplication Inquest", () => {
 			const parsed = paymentSchema.parse(payment);
 			assert.strictEqual(parsed.amountRub, 2750.25);
 			assert.strictEqual(parsed.status, "paid");
+		});
+
+		it("normalizes diverse UI/API payment aliases to canonical statutory PaymentMethod", () => {
+			assert.strictEqual(normalizePaymentMethod("cash"), "cash");
+			assert.strictEqual(normalizePaymentMethod("нал"), "cash");
+			assert.strictEqual(normalizePaymentMethod("наличные"), "cash");
+
+			assert.strictEqual(normalizePaymentMethod("card"), "card");
+			assert.strictEqual(normalizePaymentMethod("bank_card"), "card");
+			assert.strictEqual(normalizePaymentMethod("card_terminal"), "card");
+			assert.strictEqual(normalizePaymentMethod("карта"), "card");
+			assert.strictEqual(normalizePaymentMethod("терминал"), "card");
+
+			assert.strictEqual(normalizePaymentMethod("online"), "online");
+			assert.strictEqual(normalizePaymentMethod("sbp"), "online");
+			assert.strictEqual(normalizePaymentMethod("sbp_qr"), "online");
+			assert.strictEqual(normalizePaymentMethod("sberpay_qr"), "online");
+			assert.strictEqual(normalizePaymentMethod("сбп"), "online");
+
+			assert.strictEqual(normalizePaymentMethod("bank_transfer"), "bank_transfer");
+			assert.strictEqual(normalizePaymentMethod("bank_invoice"), "bank_transfer");
+
+			assert.strictEqual(normalizePaymentMethod("family_wallet"), "family_wallet");
+			assert.strictEqual(normalizePaymentMethod("family_balance"), "family_wallet");
+			assert.strictEqual(normalizePaymentMethod("family_deposit"), "family_wallet");
+			assert.strictEqual(normalizePaymentMethod("patient_deposit"), "family_wallet");
+			assert.strictEqual(normalizePaymentMethod("advance_deposit"), "family_wallet");
+			assert.strictEqual(normalizePaymentMethod("депозит"), "family_wallet");
+
+			assert.strictEqual(normalizePaymentMethod("insurance"), "insurance");
+			assert.strictEqual(normalizePaymentMethod("dms_insurance"), "insurance");
+			assert.strictEqual(normalizePaymentMethod("дмс"), "insurance");
+
+			assert.strictEqual(normalizePaymentMethod(null), "cash");
+			assert.strictEqual(normalizePaymentMethod(""), "cash");
+			assert.strictEqual(normalizePaymentMethod("unknown_crypto"), "other");
+		});
+
+		it("resolves exact statutory FFD 1.2 tags for all payment aliases", () => {
+			// Tag 1031 (Cash)
+			assert.strictEqual(resolveFfd12PaymentTag("cash"), 1031);
+			assert.strictEqual(resolveFfd12PaymentTag("наличные"), 1031);
+
+			// Tag 1081 (Electronic / Acquiring / SBP)
+			assert.strictEqual(resolveFfd12PaymentTag("card"), 1081);
+			assert.strictEqual(resolveFfd12PaymentTag("bank_card"), 1081);
+			assert.strictEqual(resolveFfd12PaymentTag("card_terminal"), 1081);
+			assert.strictEqual(resolveFfd12PaymentTag("sbp_qr"), 1081);
+			assert.strictEqual(resolveFfd12PaymentTag("online"), 1081);
+
+			// Tag 1215 (Advance offset / Prepayment / Deposit)
+			assert.strictEqual(resolveFfd12PaymentTag("family_wallet"), 1215);
+			assert.strictEqual(resolveFfd12PaymentTag("patient_deposit"), 1215);
+			assert.strictEqual(resolveFfd12PaymentTag("advance_deposit"), 1215);
+			assert.strictEqual(resolveFfd12PaymentTag("депозит"), 1215);
+
+			// Tag 1216 (Postpayment / Credit)
+			assert.strictEqual(resolveFfd12PaymentTag("credit"), 1216);
+
+			// Tag 1217 (Counter provision / Certificate / DMS)
+			assert.strictEqual(resolveFfd12PaymentTag("dms_insurance"), 1217);
+			assert.strictEqual(resolveFfd12PaymentTag("certificate_or_bonus"), 1217);
+			assert.strictEqual(resolveFfd12PaymentTag("loyalty_points"), 1217);
+		});
+
+		it("verifies statutory Russian labels contain FFD 1.2 tag codes", () => {
+			assert.ok(STATUTORY_PAYMENT_METHOD_LABELS_RU.cash.includes("1031"));
+			assert.ok(STATUTORY_PAYMENT_METHOD_LABELS_RU.card.includes("1081"));
+			assert.ok(STATUTORY_PAYMENT_METHOD_LABELS_RU.online.includes("1081"));
+			assert.ok(STATUTORY_PAYMENT_METHOD_LABELS_RU.family_wallet.includes("1215"));
+		});
+
+		it("validates extendedPaymentMethodSchema with split and mixed modes", () => {
+			assert.strictEqual(extendedPaymentMethodSchema.parse("cash"), "cash");
+			assert.strictEqual(extendedPaymentMethodSchema.parse("card"), "card");
+			assert.strictEqual(extendedPaymentMethodSchema.parse("split"), "split");
+			assert.strictEqual(extendedPaymentMethodSchema.parse("mixed"), "mixed");
+			assert.strictEqual(extendedPaymentMethodSchema.parse("deposit"), "deposit");
 		});
 	});
 
