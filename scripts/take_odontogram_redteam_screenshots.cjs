@@ -113,7 +113,7 @@ const mockDashboard = {
 
 const targetDirs = [
   path.resolve("docs/screenshots/odontogram_audit"),
-  "C:/Users/Admin/.gemini/antigravity/brain/4dfd11ca-49db-4abb-b809-71d15b1a5bc8",
+  "C:/Users/Admin/.gemini/antigravity/brain/c8b0a113-d724-454f-ada2-66f09061b986",
 ];
 
 for (const d of targetDirs) {
@@ -123,7 +123,13 @@ for (const d of targetDirs) {
 async function saveProof(page, fileName, description = "") {
   for (const dir of targetDirs) {
     const fullPath = path.join(dir, fileName);
-    await page.screenshot({ path: fullPath, fullPage: false, animations: "disabled" });
+    try {
+      await page.screenshot({ path: fullPath, fullPage: false, animations: "disabled", timeout: 10000 });
+    } catch (err) {
+      console.warn(`[WARN] Standard screenshot timed out (${err.message}), retrying without waiting for fonts...`);
+      await page.evaluate(() => document.fonts && document.fonts.ready).catch(() => {});
+      await page.screenshot({ path: fullPath, fullPage: false, animations: "disabled", timeout: 10000 });
+    }
     const stats = fs.statSync(fullPath);
     const md5 = crypto.createHash("md5").update(fs.readFileSync(fullPath)).digest("hex");
     console.log(`[PROOF] ${fileName} (${stats.size} B / ${(stats.size / 1024).toFixed(1)} KB, MD5: ${md5}) - ${description}`);
@@ -140,7 +146,9 @@ async function setTheme(page, theme) {
     document.documentElement.classList.toggle("dark", isDark);
     document.documentElement.classList.toggle("light", !isDark);
     document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-    localStorage.setItem("dente_theme_mode", th);
+    try {
+      localStorage.setItem("dente_theme_mode", th);
+    } catch (_) {}
   }, theme);
   const isDark = ["dark", "night", "ocean", "emerald", "cyber_xray"].includes(theme);
   await page.waitForFunction(

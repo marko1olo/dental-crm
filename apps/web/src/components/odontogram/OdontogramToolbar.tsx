@@ -149,15 +149,15 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 }) => {
 	return (
 		<div
-			className="odontogram-toolbar flex items-center justify-between gap-1 sm:gap-1.5 px-2 py-0.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x min-h-[34px] h-[34px]"
+			className="odontogram-toolbar flex items-center justify-between gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full select-none flex-nowrap overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x min-h-[36px] h-[36px]"
 			role="toolbar"
 			aria-label="Панель управления зубной формулой"
 		>
 			{/* Левая группа: Режимы схемы (3D / 6-гран / ГОСТ) + Палитра статусов + Прикус + Санирован */}
 			<div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap shrink-0">
-				{/* Segmented View Mode Radios: 3D / 6-гран. / ГОСТ */}
+				{/* Segmented View Mode Radios: 3D / FDI 6-гр / ГОСТ */}
 				<div
-					className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-8"
+					className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface)] border border-[var(--odontogram-border)] shrink-0 h-7 shadow-2xs"
 					role="radiogroup"
 					aria-label="Режимы схемы"
 				>
@@ -172,142 +172,113 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 								title={option.tooltip}
 								data-testid={`odontogram-mode-btn-${option.mode}`}
 								onClick={() => handleModeSwitch(option.mode)}
-								className={`h-7 flex items-center gap-1 px-2 rounded-md text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer select-none shrink-0 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
+								className={`h-6 flex items-center gap-1 px-2 rounded-md text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer select-none shrink-0 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
 									isActive
 										? "bg-[var(--odontogram-paper,#ffffff)] text-[var(--odontogram-ink,#0f172a)] shadow-xs font-black border border-[var(--odontogram-border,#cbd5e1)]"
-										: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-paper,#ffffff)]/60"
+										: "text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface-hover,#f1f5f9)]"
 								}`}
 							>
 								{option.icon}
-								<span className="hidden 2xl:inline truncate max-w-[130px] sm:max-w-none">
-									{option.shortLabel}
-								</span>
-								<span className="hidden sm:inline 2xl:hidden font-bold text-xs truncate">
+								<span className="truncate">
 									{option.compactLabel || option.mobileLabel || option.shortLabel}
 								</span>
-								<span className="sm:hidden font-bold text-xs truncate max-w-[85px]">
-									{option.mobileLabel || option.shortLabel}
-								</span>
-								{option.badge && (
-									<span
-										className={`hidden 2xl:inline text-xs px-1 py-0.2 rounded font-black tracking-tight ${
-											isActive
-												? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/25 font-mono"
-												: "bg-[var(--odontogram-border-subtle,#e2e8f0)] text-[var(--odontogram-ink-muted,#64748b)]"
-										}`}
-									>
-										{option.badge}
-									</span>
-								)}
 							</button>
 						);
 					})}
 				</div>
 
-				<div className="w-px h-5 bg-[var(--odontogram-border-subtle,#e2e8f0)] dark:bg-zinc-800 shrink-0" />
+				<div className="w-px h-4.5 bg-[var(--odontogram-border)] dark:bg-zinc-700 shrink-0 mx-0.5" />
 
-				{/* 1-Click Quick State Triggers (Палитра статусов в едином тулбаре 36px) */}
+				{/* 1-Click Quick State Triggers (Палитра статусов в едином тулбаре) */}
 				{onQuickStateChange && (
 					<div
-						className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-8 gap-0.5"
+						className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] shrink-0 h-7 gap-0.5 shadow-2xs"
 						role="group"
 						aria-label="Быстрые статусы патологий"
 					>
 						<button
 							type="button"
 							onClick={() => handleQuickTriggerState("Healthy")}
-							className={`h-7 px-1.5 sm:px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+							className={`h-6 px-1.5 rounded text-[11px] font-semibold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
 								activeStampTool === "Healthy"
-									? "bg-emerald-600 text-white font-black shadow-xs"
+									? "bg-emerald-600 text-white font-bold shadow-xs"
 									: "text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15"
 							}`}
 							title="Здоров: применить к выделенным зубам или включить штамп нормы"
 							data-testid="quick-trigger-healthy-btn"
 						>
-							<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-							<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">
-								Здоров
-							</span>
+							<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+							<span className="whitespace-nowrap"><span className="hidden md:inline">Здоров</span><span className="md:hidden">Зд</span></span>
 						</button>
 						<button
 							type="button"
 							onClick={() => handleQuickTriggerState("Caries")}
-							className={`h-7 px-1.5 sm:px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+							className={`h-6 px-1.5 rounded text-[11px] font-semibold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
 								activeStampTool === "Caries"
-									? "bg-amber-600 text-white font-black shadow-xs"
+									? "bg-amber-600 text-white font-bold shadow-xs"
 									: "text-amber-700 dark:text-amber-400 hover:bg-amber-500/15"
 							}`}
 							title="Кариес (К): применить к выделенным зубам или включить штамп кариеса"
 							data-testid="quick-trigger-caries-btn"
 						>
-							<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-							<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">
-								Кариес
-							</span>
+							<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+							<span className="whitespace-nowrap"><span className="hidden md:inline">Кариес</span><span className="md:hidden">К</span></span>
 						</button>
 						<button
 							type="button"
 							onClick={() => handleQuickTriggerState("Pulpitis")}
-							className={`h-7 px-1.5 sm:px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+							className={`h-6 px-1.5 rounded text-[11px] font-semibold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
 								activeStampTool === "Pulpitis"
-									? "bg-red-600 text-white font-black shadow-xs"
+									? "bg-red-600 text-white font-bold shadow-xs"
 									: "text-red-700 dark:text-red-400 hover:bg-red-500/15"
 							}`}
 							title="Пульпит (Ф): анатомический красный #ef4444, применить к выделенным зубам или включить штамп"
 							data-testid="quick-trigger-pulpitis-btn"
 						>
-							<span className="w-2 h-2 rounded-full bg-[#ef4444] shrink-0" />
-							<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">
-								Пульпит
-							</span>
+							<span className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shrink-0" />
+							<span className="whitespace-nowrap"><span className="hidden md:inline">Пульпит</span><span className="md:hidden">Пт</span></span>
 						</button>
 						<button
 							type="button"
 							onClick={() => handleQuickTriggerState("Filled")}
-							className={`h-7 px-1.5 sm:px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+							className={`h-6 px-1.5 rounded text-[11px] font-semibold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
 								activeStampTool === "Filled"
-									? "bg-sky-600 text-white font-black shadow-xs"
+									? "bg-sky-600 text-white font-bold shadow-xs"
 									: "text-sky-700 dark:text-sky-400 hover:bg-sky-500/15"
 							}`}
 							title="Пломба (П): применить к выделенным зубам или включить штамп пломбы"
 							data-testid="quick-trigger-filling-btn"
 						>
-							<span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
-							<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">
-								Пломба
-							</span>
+							<span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0" />
+							<span className="whitespace-nowrap"><span className="hidden md:inline">Пломба</span><span className="md:hidden">П</span></span>
 						</button>
 						<button
 							type="button"
 							onClick={() => handleQuickTriggerState("Crown")}
-							className={`h-7 px-1.5 sm:px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+							className={`h-6 px-1.5 rounded text-[11px] font-semibold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
 								activeStampTool === "Crown"
-									? "bg-purple-600 text-white font-black shadow-xs"
+									? "bg-purple-600 text-white font-bold shadow-xs"
 									: "text-purple-700 dark:text-purple-300 hover:bg-purple-500/15"
 							}`}
 							title="Коронка (Кр): применить к выделенным зубам или включить штамп коронки"
 							data-testid="quick-trigger-crown-btn"
 						>
-							<span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
-							<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">
-								Коронка
-							</span>
+							<span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+							<span className="whitespace-nowrap"><span className="hidden md:inline">Коронка</span><span className="md:hidden">Кр</span></span>
 						</button>
 						<button
 							type="button"
 							onClick={() => handleQuickTriggerState("Missing")}
-							className={`h-7 px-1.5 sm:px-2 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 flex-shrink-0 min-w-max flex items-center gap-1 ${
+							className={`h-6 px-1.5 rounded text-[11px] font-semibold transition-all cursor-pointer select-none shrink-0 flex items-center gap-1 ${
 								activeStampTool === "Missing"
-									? "bg-zinc-700 text-white font-black shadow-xs"
+									? "bg-zinc-700 text-white font-bold shadow-xs"
 									: "text-zinc-700 dark:text-zinc-200 hover:bg-zinc-500/20"
 							}`}
 							title="Удален (X): применить к выделенным зубам или включить штамп отсутствия"
 							data-testid="quick-trigger-extracted-btn"
 						>
-							<span className="w-2 h-2 rounded-full bg-zinc-500 dark:bg-zinc-300 shrink-0" />
-							<span className="whitespace-nowrap shrink-0 flex-shrink-0 min-w-max">
-								Удален
-							</span>
+							<span className="w-1.5 h-1.5 rounded-full bg-zinc-500 dark:bg-zinc-300 shrink-0" />
+							<span className="whitespace-nowrap"><span className="hidden md:inline">Удален</span><span className="md:hidden">X</span></span>
 						</button>
 					</div>
 				)}
@@ -341,17 +312,19 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 					</div>
 				)}
 
+				<div className="w-px h-4.5 bg-[var(--odontogram-border)] dark:bg-zinc-700 shrink-0 mx-0.5" />
+
 				{/* Segmented Dentition Formula 1-Click Toggle: 11-48 / 51-85 / Сменный */}
 				{onDentitionModeChange && (
 					<div
-						className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 h-8 gap-0.5"
+						className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] shrink-0 h-7 gap-0.5 shadow-2xs"
 						role="radiogroup"
 						aria-label="Тип прикуса"
 					>
 						<button
 							type="button"
 							onClick={() => onDentitionModeChange("adult")}
-							className={`h-7 px-2 sm:px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1 shrink-0 ${
+							className={`h-6 px-1.5 sm:px-2 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none flex items-center gap-1 shrink-0 ${
 								(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) ===
 								"adult"
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
@@ -365,12 +338,12 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 								"adult"
 							}
 						>
-							<span>11–48<span className="hidden 2xl:inline"> (32)</span></span>
+							<span>11–48</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => onDentitionModeChange("pediatric")}
-							className={`h-7 px-2 sm:px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1 shrink-0 ${
+							className={`h-6 px-1.5 sm:px-2 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none flex items-center gap-1 shrink-0 ${
 								(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) ===
 								"pediatric"
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
@@ -384,12 +357,12 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 								"pediatric"
 							}
 						>
-							<span>51–85<span className="hidden 2xl:inline"> (20)</span></span>
+							<span>51–85</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => onDentitionModeChange("mixed")}
-							className={`h-7 px-2 sm:px-2.5 rounded-md text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1 shrink-0 ${
+							className={`h-6 px-1.5 sm:px-2 rounded-md text-[11px] font-semibold transition-all cursor-pointer select-none flex items-center gap-1 shrink-0 ${
 								(dentitionMode ?? (pediatricMode ? "pediatric" : "adult")) ===
 								"mixed"
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs"
@@ -403,37 +376,39 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 								"mixed"
 							}
 						>
-							<span>Сменный</span>
+							<span><span className="hidden 2xl:inline">Сменный</span><span className="2xl:hidden">Смен.</span></span>
 						</button>
 					</div>
 				)}
+
+				<div className="w-px h-4.5 bg-[var(--odontogram-border)] dark:bg-zinc-700 shrink-0 mx-0.5" />
 
 				{/* 1-Click Total Sanitation */}
 				{onQuickStateChange && (
 					<button
 						type="button"
 						onClick={handleMarkIntactDentition}
-						className="h-8 px-2 sm:px-2.5 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1 sm:gap-1.5 shrink-0 active:scale-98 whitespace-nowrap"
+						className="h-7 px-2 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shadow-xs flex items-center gap-1 shrink-0 active:scale-98 whitespace-nowrap"
 						title="1-клик Санирован: вся зубная формула отмечается интактной"
 						data-testid="mark-intact-dentition-btn"
 					>
 						<Zap
-							size={13}
+							size={12}
 							className="text-emerald-600 dark:text-emerald-400 shrink-0"
 						/>
-						<span className="whitespace-nowrap shrink-0">Санирован</span>
+						<span className="whitespace-nowrap">Санирован</span>
 					</button>
 				)}
 			</div>
 
 			{/* Правая группа: 043/у + Касса/Смета + Аллергии + ЗТЛ + Смета + План + Пульт + Действия + Ещё */}
-			<div className="flex items-center gap-1 shrink-0 flex-nowrap min-w-0 ml-auto">
+			<div className="flex items-center gap-1 shrink-0 flex-nowrap min-w-0 ml-auto pr-1">
 				{/* 1-клик перенос клинического статуса зубной формулы в Дневник 043/у */}
 				{onSyncAllToDiary && (
 					<button
 						type="button"
 						onClick={onSyncAllToDiary}
-						className="h-7 px-2 rounded-md text-xs font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0 shadow-xs whitespace-nowrap"
+						className="h-7 px-2 rounded-md text-[11px] font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0 shadow-xs whitespace-nowrap"
 						title="Перенести клинический статус зубной формулы в дневник приёма в 1 клик"
 						aria-label="В дневник приёма"
 						data-testid="btn-hotpath-sync-all-to-diary"
@@ -470,15 +445,15 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 					</div>
 				)}
 
-				{/* Критический аллерго-бейдж безопасности */}
+				{/* Критический аллерго-бейдж безопасности (аккуратный, без обрезки текста) */}
 				{allergyText && (
 					<span
-						className="h-7 px-1.5 rounded-md bg-rose-600 text-white font-mono font-black text-xs inline-flex items-center gap-1 shrink-0 whitespace-nowrap"
+						className="h-7 px-2 rounded-md bg-rose-500/15 border border-rose-500/40 text-rose-700 dark:text-rose-300 font-bold text-xs inline-flex items-center gap-1 shrink-0 whitespace-nowrap shadow-2xs"
 						data-testid="badge-critical-allergy-tier1"
-						title={allergyText}
+						title={`Аллергия в анамнезе: ${allergyText}`}
 					>
-						<AlertTriangle size={12} className="shrink-0" />
-						<span className="truncate max-w-[100px]">{allergyText}</span>
+						<AlertTriangle size={12} className="shrink-0 text-rose-600 dark:text-rose-400" />
+						<span>Аллергия</span>
 					</span>
 				)}
 
@@ -522,7 +497,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 				<button
 					type="button"
 					onClick={() => setIsPlanWizardOpen(true)}
-					className="hidden sm:flex h-7 items-center gap-1 px-2 rounded-md text-xs font-black whitespace-nowrap border border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
+					className="hidden 2xl:flex h-7 items-center gap-1 px-2 rounded-md text-xs font-black whitespace-nowrap border border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
 					title="Сформировать черновой план лечения из услуг каталога"
 					data-testid="create-plan-from-pathologies-btn"
 				>
@@ -530,8 +505,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = React.memo(({
 						size={12}
 						className="text-indigo-600 dark:text-indigo-400"
 					/>
-					<span className="hidden 2xl:inline">План из патологий</span>
-					<span className="2xl:hidden">План</span>
+					<span>План</span>
 				</button>
 
 				<button
