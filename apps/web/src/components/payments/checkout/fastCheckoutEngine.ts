@@ -8,6 +8,7 @@ export {
 	type CheckoutPaymentMethodInfo,
 } from "./fastCheckoutPresets";
 
+import { rubToKopecks, kopecksToRub } from "@dental/shared";
 import { type CheckoutPaymentMethodType } from "./fastCheckoutPresets";
 
 export interface CheckoutSplitItem {
@@ -472,12 +473,12 @@ export function splitStateToCheckoutPayments(
 	split: Partial<FastCheckoutSplitState>,
 ): CheckoutSplitItem[] {
 	const items: CheckoutSplitItem[] = [];
-	const cardKop = Math.round(Math.max(0, split.cardRub ?? 0) * 100);
-	const cashKop = Math.round(Math.max(0, split.cashRub ?? 0) * 100);
-	const sbpKop = Math.round(Math.max(0, split.sbpRub ?? 0) * 100);
-	const depositKop = Math.round(Math.max(0, split.depositRub ?? 0) * 100);
-	const loyaltyKop = Math.round(Math.max(0, split.loyaltyRub ?? 0) * 100);
-	const dmsKop = Math.round(Math.max(0, split.dmsRub ?? 0) * 100);
+	const cardKop = split.cardRub !== undefined ? Math.max(0, rubToKopecks(split.cardRub)) : 0;
+	const cashKop = split.cashRub !== undefined ? Math.max(0, rubToKopecks(split.cashRub)) : 0;
+	const sbpKop = split.sbpRub !== undefined ? Math.max(0, rubToKopecks(split.sbpRub)) : 0;
+	const depositKop = split.depositRub !== undefined ? Math.max(0, rubToKopecks(split.depositRub)) : 0;
+	const loyaltyKop = split.loyaltyRub !== undefined ? Math.max(0, rubToKopecks(split.loyaltyRub)) : 0;
+	const dmsKop = split.dmsRub !== undefined ? Math.max(0, rubToKopecks(split.dmsRub)) : 0;
 
 	if (cardKop > 0) items.push({ method: "bank_card", amountKop: cardKop });
 	if (cashKop > 0) items.push({ method: "cash", amountKop: cashKop });
@@ -503,7 +504,7 @@ export function paymentsToSplitState(
 	let dmsRub = 0;
 
 	for (const p of payments) {
-		const rub = p.amountKop / 100;
+		const rub = kopecksToRub(p.amountKop);
 		switch (p.method) {
 			case "bank_card":
 				cardRub += rub;
@@ -527,12 +528,12 @@ export function paymentsToSplitState(
 	}
 
 	return {
-		cardRub: +cardRub.toFixed(2),
-		cashRub: +cashRub.toFixed(2),
-		sbpRub: +sbpRub.toFixed(2),
-		depositRub: +depositRub.toFixed(2),
-		loyaltyRub: +loyaltyRub.toFixed(2),
-		dmsRub: +dmsRub.toFixed(2),
+		cardRub: kopecksToRub(rubToKopecks(cardRub)),
+		cashRub: kopecksToRub(rubToKopecks(cashRub)),
+		sbpRub: kopecksToRub(rubToKopecks(sbpRub)),
+		depositRub: kopecksToRub(rubToKopecks(depositRub)),
+		loyaltyRub: kopecksToRub(rubToKopecks(loyaltyRub)),
+		dmsRub: kopecksToRub(rubToKopecks(dmsRub)),
 	};
 }
 

@@ -324,19 +324,18 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 		const effectiveBonusRub = splitBonusRub;
 
 		if (!isBalanced) {
-			const remainder = Math.max(
-				0,
-				Number(
-					(
-						totalDueRub -
-						(effectiveDepositRub + effectiveSbpRub + effectiveCertificateRub + effectiveBonusRub)
-					).toFixed(2),
-				),
-			);
+			const totalDueKop = rubToKopecks(totalDueRub);
+			const otherKop =
+				rubToKopecks(effectiveDepositRub) +
+				rubToKopecks(effectiveSbpRub) +
+				rubToKopecks(effectiveCertificateRub) +
+				rubToKopecks(effectiveBonusRub);
+			const remainderKop = Math.max(0, totalDueKop - otherKop);
 			if (effectiveCashRub > 0 && effectiveCardRub === 0) {
-				effectiveCashRub = remainder;
+				effectiveCashRub = kopecksToRub(remainderKop);
 			} else {
-				effectiveCardRub = Math.max(0, Number((remainder - effectiveCashRub).toFixed(2)));
+				const effectiveCashKop = rubToKopecks(effectiveCashRub);
+				effectiveCardRub = kopecksToRub(Math.max(0, remainderKop - effectiveCashKop));
 			}
 			setSplitCardRub(effectiveCardRub);
 			setSplitCashRub(effectiveCashRub);
@@ -367,8 +366,8 @@ export function usePaymentExecution(params: UsePaymentExecutionParams) {
 			if (effectiveCertificateRub > 0) parts.push(`сертификат ${effectiveCertificateRub} ₽`);
 			if (effectiveBonusRub > 0) parts.push(`бонусы ${effectiveBonusRub} ₽`);
 
-			const cashKop = Math.round(effectiveCashRub * 100);
-			const electronicKop = Math.round((effectiveCardRub + effectiveSbpRub) * 100);
+			const cashKop = rubToKopecks(effectiveCashRub);
+			const electronicKop = rubToKopecks(effectiveCardRub) + rubToKopecks(effectiveSbpRub);
 			const isSplitPayment = cashKop > 0 && electronicKop > 0;
 			const primaryMethod = isSplitPayment
 				? "split"
