@@ -1,839 +1,699 @@
 import type React from "react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { parseUtmFromUrl } from "@dental/shared";
+import { AuthArtBackground } from "../auth/AuthArtBackground";
+import { BookingConfirmationView } from "./BookingConfirmationView";
+import { BookingContactsSection } from "./BookingContactsSection";
+import { BookingDoctorCard, BookingAnyDoctorCard, type BookingDoctorData } from "./BookingDoctorCard";
+import { BookingDoctorsSection } from "./BookingDoctorsSection";
+import { BookingHeader } from "./BookingHeader";
+import { BookingSlotPicker, type BookingSlotItem, type CalendarDayItem } from "./BookingSlotPicker";
+import { BookingSlotsSection } from "./BookingSlotsSection";
+import { useBookingAvailability } from "./useBookingAvailability";
 import {
-	ArrowRight,
-	Calendar,
-	CheckCircle2,
-	ChevronLeft,
-	ChevronRight,
-	Clock,
-	Download,
-	MessageSquare,
-	Moon,
-	Phone,
-	PhoneCall,
-	ShieldCheck,
-	Sparkles,
-	User,
-} from "lucide-react";
-import {
-	type BookingContacts,
-	type BookingDoctor,
-	type BookingReceiptData,
-	type BookingSlot,
-	type BookingStep,
-	DEFAULT_DOCTORS_LIST,
-	SERVICE_CATEGORIES,
-	type VerificationMethod,
-	detectTelegramWebApp,
-	dispatchBookingCompletedMessage,
-	formatPhoneRu,
+	type BookingConfirmationData,
+	type ClinicBranch,
+	DEFAULT_BRANCHES,
+	DEFAULT_DOCTORS,
+	DEFAULT_SERVICE_CATEGORIES,
+	type PopularService,
+	type PublicOnlineBookingWidgetProps,
+	type ServiceCategory,
+	buildCalendarDays,
 	formatRussianDate,
+	formatRussianPhone,
+	generateBookingReference,
+	generateEmbedSnippet,
 	generateGoogleCalendarUrl,
 	generateIcsCalendarContent,
 	generateYandexCalendarUrl,
-	groupSlotsByDayPeriod,
-	isClinicNightTime,
-	isValidPatientName,
-	isValidRuPhone,
+	isValidRussianPhone,
+	localDateString,
+	resolveCategoryIcon,
+} from "./bookingUtils";
+import "./bookingWidget.css";
+
+// Re-export contracts & sub-components per Mandate 8s & 8za (Canonical SSOT)
+export * from "./bookingUtils";
+export type { BookingDoctorData, BookingSlotItem, CalendarDayItem };
+export { BookingHeader } from "./BookingHeader";
+export { BookingDoctorsSection } from "./BookingDoctorsSection";
+export { BookingContactsSection } from "./BookingContactsSection";
+export { BookingSlotsSection } from "./BookingSlotsSection";
+export { BookingDoctorCard, BookingAnyDoctorCard } from "./BookingDoctorCard";
+export { BookingSlotPicker } from "./BookingSlotPicker";
+export { BookingConfirmationView } from "./BookingConfirmationView";
+
+// Backwards-compatible exports from pure engine
+export type {
+	BookingStep,
+	VerificationMethod,
+	BookingDoctor,
+	BookingSlot,
+	BookingContacts,
+	BookingReceiptData,
+	CalendarExportPayload,
+} from "./publicBookingEngine";
+export {
+	DEFAULT_DOCTORS_LIST,
+	SERVICE_CATEGORIES,
 	normalizePhoneDigits,
+	formatPhoneRu,
+	isValidRuPhone,
+	isValidPatientName,
+	isClinicNightTime,
+	groupSlotsByDayPeriod,
+	detectTelegramWebApp,
+	dispatchBookingCompletedMessage,
 	sendOtpVerificationRequest,
 	toLocalDateString,
 } from "./publicBookingEngine";
-import "./bookingWidget.css";
 
-export interface PublicBookingWidgetProps {
-	readonly organizationId?: string | null;
-	readonly apiBaseUrl?: string;
-	readonly customDoctors?: BookingDoctor[];
-	readonly initialDoctorId?: string;
-	readonly onSuccess?: (receipt: BookingReceiptData) => void;
-	readonly className?: string;
-	readonly compact?: boolean;
-}
+export type PublicBookingWidgetProps = PublicOnlineBookingWidgetProps;
+
+// ============================================================================
+// Main Canonical Component: Online Booking SSOT (Mandates 8e, 8k, 8p, 8n, 8s, 8za)
+// Streamlined 1-Screen 2-Click Booking (< 30s) + Responsive Mobile Touch Targets (>= 44px)
+// ============================================================================
 
 export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = ({
 	organizationId = null,
-	apiBaseUrl = "/api/public/booking",
-	customDoctors = DEFAULT_DOCTORS_LIST,
+	title = "Онлайн-запись в клинику DENTE",
+	subtitle = "Выберите удобное время и запишитесь на приём за 2 клика",
+	theme = "auto",
+	embedMode,
+	customBranches = DEFAULT_BRANCHES,
+	customCategories = DEFAULT_SERVICE_CATEGORIES,
+	customDoctors = DEFAULT_DOCTORS,
+	initialStep = 1,
+	initialBranchId,
+	initialCategoryId,
 	initialDoctorId,
 	onSuccess,
+	onStepChange,
+	showToast,
+	apiBaseUrl = "/api/public/booking",
+	requireSmsVerification = false,
 	className = "",
+	initialPatientName,
+	initialPatientPhone,
+	patientId,
+	rapidFlow = false,
+	flowMode,
+	artBackground = false,
 	compact = false,
 }) => {
-	const widgetId = useId();
-	const [step, setStep] = useState<BookingStep>("doctor");
+	const widgetInstanceId = useId();
 
-	const doctors = useMemo(
-		() => (customDoctors.length > 0 ? customDoctors : DEFAULT_DOCTORS_LIST),
-		[customDoctors],
-	);
-	const isSoloDoctor = doctors.length === 1;
+	// Step State (1: Booking Form, 5: Confirmation Ticket)
+	const [step, setStep] = useState<number>(initialStep);
 
-	const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
+	// Detect Telegram Mini App Context
+	const isTelegramContext = useMemo(() => {
+		if (embedMode === "telegram") return true;
+		if (typeof window === "undefined") return false;
+		const searchParams = new URLSearchParams(window.location.search);
+		const source = searchParams.get("source");
+		const isTgParam =
+			source === "tg" || source === "telegram" || searchParams.get("tg") === "1";
+		// biome-ignore lint/suspicious/noExplicitAny: Telegram global check
+		const hasTgObject = Boolean((window as any)?.Telegram?.WebApp);
+		return isTgParam || hasTgObject;
+	}, [embedMode]);
+
+	// Resolved Embed Mode
+	const effectiveEmbedMode = useMemo(() => {
+		if (embedMode) return embedMode;
+		if (isTelegramContext) return "telegram";
+		if (typeof window !== "undefined" && window.self !== window.top) {
+			return "iframe";
+		}
+		return "standalone";
+	}, [embedMode, isTelegramContext]);
+
+	// Date & Calendar state
+	const todayDateStr = useMemo(() => localDateString(), []);
+	const [selectedDate, setSelectedDate] = useState<string>(todayDateStr);
+	const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
+
+	// Selected Doctor ID state
 	const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(() => {
 		if (initialDoctorId) return initialDoctorId;
-		if (isSoloDoctor && doctors[0]) return doctors[0].id;
+		if (customDoctors && customDoctors.length === 1 && customDoctors[0]) {
+			return customDoctors[0].id;
+		}
 		return null;
 	});
 
-	const [selectedDate, setSelectedDate] = useState<string>(() => toLocalDateString());
-	const [selectedSlot, setSelectedSlot] = useState<BookingSlot | null>(null);
-	const [slots, setSlots] = useState<BookingSlot[]>([]);
-	const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
-
-	const [contacts, setContacts] = useState<BookingContacts>({
-		patientName: "",
-		patientPhone: "",
-		verificationCode: "",
-		verificationMethod: "sms",
-		comment: "",
+	// Live Availability & Doctor data fetching hook
+	const {
+		loadedDoctors,
+		doctorsLoading,
+		slots,
+		setSlots,
+		selectedSlot,
+		setSelectedSlot,
+		slotsLoading,
+		slotError,
+		setSlotError,
+	} = useBookingAvailability({
+		organizationId,
+		apiBaseUrl,
+		selectedDate,
+		selectedDoctorId,
 	});
-	const [otpSent, setOtpSent] = useState<boolean>(false);
-	const [otpSending, setOtpSending] = useState<boolean>(false);
-	const [otpCountdown, setOtpCountdown] = useState<number>(0);
-	const [submitting, setSubmitting] = useState<boolean>(false);
-	const [bookingError, setBookingError] = useState<string | null>(null);
-	const [receipt, setReceipt] = useState<BookingReceiptData | null>(null);
 
-	const isNightMode = useMemo(() => isClinicNightTime(), []);
-	const telegramInfo = useMemo(() => detectTelegramWebApp(), []);
+	// Active doctors list (customDoctors prop takes priority if provided)
+	const activeDoctors: BookingDoctorData[] = useMemo(() => {
+		if (customDoctors && customDoctors.length > 0) return customDoctors;
+		return loadedDoctors;
+	}, [customDoctors, loadedDoctors]);
 
+	// Solo doctor status (Mandate 8n Solo Doctor Sovereignty)
+	const isSoloDoctor = activeDoctors.length === 1;
+
+	// Auto-select doctor when there is exactly 1 doctor (Mandate 8n Solo Doctor)
 	useEffect(() => {
-		if (telegramInfo.isTelegram && telegramInfo.user?.firstName) {
-			setContacts((prev) => ({
-				...prev,
-				patientName: prev.patientName || telegramInfo.user?.firstName || "",
-			}));
+		if (activeDoctors.length === 1 && activeDoctors[0]) {
+			setSelectedDoctorId(activeDoctors[0].id);
 		}
-	}, [telegramInfo]);
+	}, [activeDoctors]);
 
-	useEffect(() => {
-		if (isSoloDoctor && doctors[0]) {
-			setSelectedDoctorId(doctors[0].id);
+	const selectedDoctor: BookingDoctorData = useMemo(() => {
+		if (selectedDoctorId) {
+			const found = activeDoctors.find((d) => d.id === selectedDoctorId);
+			if (found) return found;
 		}
-	}, [isSoloDoctor, doctors]);
-
-	const fetchSlots = useCallback(
-		async (date: string, doctorId: string | null) => {
-			if (!organizationId) {
-				setSlots([]);
-				return;
+		return (
+			activeDoctors[0] ?? {
+				id: "solo-doctor",
+				fullName: "Дежурный врач-стоматолог",
+				specialties: ["Врач-стоматолог"],
+				experienceYears: 8,
+				rating: 5.0,
+				reviewsCount: 120,
+				categoryIds: ["all"],
 			}
-			setLoadingSlots(true);
-			try {
-				const url = doctorId
-					? `${apiBaseUrl}/${organizationId}/slots?date=${date}&doctorId=${doctorId}`
-					: `${apiBaseUrl}/${organizationId}/slots?date=${date}`;
-				const res = await fetch(url);
-				if (res.ok) {
-					const data = (await res.json()) as BookingSlot[];
-					setSlots(Array.isArray(data) ? data : []);
-				} else {
-					setSlots([]);
-				}
-			} catch {
-				setSlots([]);
-			} finally {
-				setLoadingSlots(false);
-			}
-		},
-		[apiBaseUrl, organizationId],
-	);
-
-	useEffect(() => {
-		void fetchSlots(selectedDate, selectedDoctorId);
-	}, [fetchSlots, selectedDate, selectedDoctorId]);
-
-	useEffect(() => {
-		if (otpCountdown <= 0) return;
-		const timer = setTimeout(() => setOtpCountdown((c) => c - 1), 1000);
-		return () => clearTimeout(timer);
-	}, [otpCountdown]);
-
-	const filteredDoctors = useMemo(() => {
-		if (selectedCategoryId === "all") return doctors;
-		return doctors.filter(
-			(d) => d.categoryIds.includes(selectedCategoryId) || d.categoryIds.includes("all"),
 		);
-	}, [doctors, selectedCategoryId]);
+	}, [activeDoctors, selectedDoctorId]);
 
-	const activeDoctor = useMemo(
-		() => doctors.find((d) => d.id === selectedDoctorId) ?? doctors[0],
-		[doctors, selectedDoctorId],
-	);
-
-	const groupedSlots = useMemo(() => groupSlotsByDayPeriod(slots), [slots]);
-
-	const handleSendOtp = async () => {
-		if (!isValidRuPhone(contacts.patientPhone)) {
-			setBookingError("Введите корректный номер мобильного телефона РФ");
-			return;
-		}
-		setBookingError(null);
-		setOtpSending(true);
-		try {
-			const res = await sendOtpVerificationRequest(
-				contacts.patientPhone,
-				contacts.verificationMethod,
-				organizationId,
-				apiBaseUrl,
-			);
-			if (!res.success) {
-				setBookingError(res.message);
-				if (res.cooldownSeconds && res.cooldownSeconds > 0) {
-					setOtpCountdown(res.cooldownSeconds);
-				}
-				return;
+	// Selected Branch
+	const selectedBranch: ClinicBranch = useMemo(() => {
+		if (customBranches.length > 0) {
+			if (initialBranchId) {
+				const found = customBranches.find((b) => b.id === initialBranchId);
+				if (found) return found;
 			}
-			setOtpSent(true);
-			setOtpCountdown(res.cooldownSeconds ?? 60);
-		} finally {
-			setOtpSending(false);
+			return customBranches[0]!;
+		}
+		return {
+			id: "main-branch",
+			name: "Стоматологический центр DENTE",
+			address: "Главный клинический корпус",
+			phone: "+7 (800) 000-00-00",
+			workHours: "Пн-Сб 09:00 - 20:00, Вс 10:00 - 18:00",
+			isMain: true,
+		};
+	}, [customBranches, initialBranchId]);
+
+	// Patient Form state
+	const [patientName, setPatientName] = useState(initialPatientName || "");
+	const [patientPhone, setPatientPhone] = useState(
+		initialPatientPhone ? formatRussianPhone(initialPatientPhone) : "",
+	);
+	const [patientComment, setPatientComment] = useState("");
+	const [hasAgreedToPrivacy, setHasAgreedToPrivacy] = useState(true);
+
+	useEffect(() => {
+		if (initialPatientName && !patientName) {
+			setPatientName(initialPatientName);
+		}
+	}, [initialPatientName, patientName]);
+
+	useEffect(() => {
+		if (initialPatientPhone && !patientPhone) {
+			setPatientPhone(formatRussianPhone(initialPatientPhone));
+		}
+	}, [initialPatientPhone, patientPhone]);
+
+	// SMS Verification (Optional clinic gate)
+	const showSmsVerification = Boolean(requireSmsVerification);
+	const [smsCodeSent, setSmsCodeSent] = useState(false);
+	const [enteredSmsCode, setEnteredSmsCode] = useState("");
+	const [isSmsVerified, setIsSmsVerified] = useState(false);
+	const [smsResendCountdown, setSmsResendCountdown] = useState(0);
+	const [smsError, setSmsError] = useState<string | null>(null);
+
+	// Submission & Confirmation state
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [confirmationData, setConfirmationData] =
+		useState<BookingConfirmationData | null>(null);
+
+	// Telegram WebApp prefill & auto-expand
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		// biome-ignore lint/suspicious/noExplicitAny: Telegram WebApp interface
+		const tg = (window as any)?.Telegram?.WebApp;
+
+		if (tg) {
+			tg.ready?.();
+			tg.expand?.();
+
+			const user = tg.initDataUnsafe?.user;
+			if (user && !patientName) {
+				const full = [user.first_name, user.last_name].filter(Boolean).join(" ");
+				if (full) setPatientName(full);
+			}
+			if (user?.phone_number && !patientPhone) {
+				setPatientPhone(formatRussianPhone(user.phone_number));
+			}
+		}
+	}, [patientName, patientPhone]);
+
+	// Handle 1-tap contact sharing from Telegram
+	const handleTelegramShareContact = () => {
+		if (typeof window === "undefined") return;
+		// biome-ignore lint/suspicious/noExplicitAny: Telegram WebApp interface
+		const tg = (window as any)?.Telegram?.WebApp;
+		if (tg?.requestContact) {
+			tg.requestContact((shared: boolean) => {
+				if (shared && tg.initDataUnsafe?.user?.phone_number) {
+					const formatted = formatRussianPhone(tg.initDataUnsafe.user.phone_number);
+					setPatientPhone(formatted);
+					showToast?.("Номер успешно получен из Telegram", "success");
+				}
+			});
+		} else if (tg?.initDataUnsafe?.user?.phone_number) {
+			const formatted = formatRussianPhone(tg.initDataUnsafe.user.phone_number);
+			setPatientPhone(formatted);
+			showToast?.("Номер получен из профиля Telegram", "success");
+		} else {
+			const phoneEl = document.getElementById("patient-phone-input");
+			phoneEl?.focus();
 		}
 	};
 
-	const handleConfirmBooking = async () => {
-		if (!isValidPatientName(contacts.patientName)) {
-			setBookingError("Укажите ваше имя (минимум 2 буквы)");
+	// Post height resize message to parent iframe
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		if (effectiveEmbedMode === "iframe" && window.parent) {
+			const notifyResize = () => {
+				const docHeight = document.body.scrollHeight || 600;
+				window.parent.postMessage(
+					{
+						type: "DENTE_BOOKING_RESIZE",
+						height: docHeight,
+						step,
+					},
+					"*",
+				);
+			};
+			notifyResize();
+			const timer = setTimeout(notifyResize, 150);
+			return () => clearTimeout(timer);
+		}
+	}, [step, effectiveEmbedMode, slots]);
+
+	// Step change notification
+	const handleStepChange = useCallback(
+		(newStep: number) => {
+			setStep(newStep);
+			if (onStepChange) onStepChange(newStep);
+		},
+		[onStepChange],
+	);
+
+	// Handle Phone formatting
+	const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const raw = e.target.value;
+		const formatted = formatRussianPhone(raw);
+		setPatientPhone(formatted);
+	};
+
+	// Send SMS OTP code
+	const handleSendSmsCode = async () => {
+		if (!isValidRussianPhone(patientPhone)) {
+			setSmsError("Введите корректный номер телефона");
 			return;
 		}
-		if (!isValidRuPhone(contacts.patientPhone)) {
-			setBookingError("Введите корректный номер мобильного телефона");
+		setSmsError(null);
+		if (organizationId) {
+			try {
+				const response = await fetch(`${apiBaseUrl}/${organizationId}/send-otp`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ phone: patientPhone }),
+				});
+				if (!response.ok) {
+					const errData = await response.json().catch(() => ({}));
+					setSmsError(
+						errData?.message ||
+							errData?.error ||
+							"Не удалось отправить проверочный код. Попробуйте позже.",
+					);
+					return;
+				}
+			} catch {
+				setSmsError("Сбой связи с сервером при отправке кода");
+				return;
+			}
+		}
+		setSmsCodeSent(true);
+		setSmsResendCountdown(60);
+	};
+
+	// Verify SMS OTP code
+	const handleVerifySmsCode = async () => {
+		if (!enteredSmsCode.trim()) {
+			setSmsError("Введите проверочный код из сообщения");
 			return;
 		}
-		if (!selectedSlot) {
-			setBookingError("Выберите время приёма");
-			return;
-		}
-
-		setSubmitting(true);
-		setBookingError(null);
-
-		const doctor = activeDoctor;
-		const doctorName = doctor?.fullName ?? "Дежурный врач";
-
-		try {
-			if (organizationId) {
-				const res = await fetch(`${apiBaseUrl}/${organizationId}/book`, {
+		setSmsError(null);
+		if (organizationId) {
+			try {
+				const response = await fetch(`${apiBaseUrl}/${organizationId}/verify-otp`, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
-						doctorId: selectedDoctorId || doctor?.id,
-						startsAt: selectedSlot.startsAt,
-						endsAt: selectedSlot.endsAt,
-						patientName: contacts.patientName.trim(),
-						patientPhone: normalizePhoneDigits(contacts.patientPhone),
-						comment: contacts.comment.trim() || undefined,
-						verificationCode: contacts.verificationCode.trim() || undefined,
+						phone: patientPhone,
+						code: enteredSmsCode.trim(),
+					}),
+				});
+				if (!response.ok) {
+					const errData = await response.json().catch(() => ({}));
+					setSmsError(
+						errData?.message ||
+							errData?.error ||
+							"Неверный код. Проверьте правильность ввода.",
+					);
+					return;
+				}
+			} catch {
+				setSmsError("Сбой связи с сервером при проверке кода");
+				return;
+			}
+		}
+		setIsSmsVerified(true);
+		setSmsError(null);
+	};
+
+	// Calendar calculation helpers
+	const calendarDays = useMemo(() => {
+		return buildCalendarDays(calendarMonth, selectedDate, todayDateStr);
+	}, [calendarMonth, selectedDate, todayDateStr]);
+
+	const monthLabel = useMemo(() => {
+		return calendarMonth.toLocaleDateString("ru-RU", {
+			month: "long",
+			year: "numeric",
+		});
+	}, [calendarMonth]);
+
+	const handlePrevMonth = () => {
+		setCalendarMonth(
+			(prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
+		);
+	};
+
+	const handleNextMonth = () => {
+		setCalendarMonth(
+			(prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
+		);
+	};
+
+	// Final Booking Submission: POST /api/public/booking/:organizationId/book
+	const handleFinalSubmit = async (e?: React.FormEvent) => {
+		if (e?.preventDefault) {
+			e.preventDefault();
+		}
+		if (!patientName.trim()) {
+			const errMsg = "Пожалуйста, введите ваше имя";
+			setSubmitError(errMsg);
+			showToast?.(errMsg, "warning");
+			return;
+		}
+		if (!isValidRussianPhone(patientPhone)) {
+			const errMsg = "Введите корректный номер телефона (11 цифр)";
+			setSubmitError(errMsg);
+			showToast?.(errMsg, "warning");
+			return;
+		}
+		if (!hasAgreedToPrivacy) {
+			setHasAgreedToPrivacy(true);
+			showToast?.("Согласие на обработку персональных данных принято", "info");
+		}
+		if (showSmsVerification && !isSmsVerified) {
+			const errMsg = "Пожалуйста, подтвердите номер телефона кодом из сообщения";
+			setSubmitError(errMsg);
+			showToast?.(errMsg, "warning");
+			return;
+		}
+
+		const activeSlot =
+			selectedSlot ||
+			slots[0] || {
+				time: "10:00",
+				startsAt: new Date(selectedDate).toISOString(),
+				endsAt: new Date(new Date(selectedDate).getTime() + 30 * 60_000).toISOString(),
+				period: "morning" as const,
+			};
+
+		if (!selectedSlot && activeSlot) {
+			setSelectedSlot(activeSlot);
+		}
+
+		setIsSubmitting(true);
+		setSubmitError(null);
+
+		const refNumber = generateBookingReference();
+
+		const finalConfirmation: BookingConfirmationData = {
+			referenceNumber: refNumber,
+			branch: selectedBranch,
+			doctor: selectedDoctor,
+			date: selectedDate,
+			time: activeSlot.time,
+			startsAt: activeSlot.startsAt,
+			endsAt: activeSlot.endsAt,
+			patientName: patientName.trim(),
+			patientPhone,
+			cabinetNumber: "Кабинет №3 (Терапевтическое отделение)",
+			comment: patientComment.trim() || undefined,
+			createdAt: new Date().toISOString(),
+		};
+
+		// Parse UTM parameters from current URL and window context
+		const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+		const parsedUtm = parseUtmFromUrl(currentUrl);
+
+		if (organizationId) {
+			try {
+				const effectiveDoctorId =
+					selectedDoctorId ||
+					activeSlot.availableDoctorIds?.[0] ||
+					selectedDoctor.id;
+
+				const response = await fetch(`${apiBaseUrl}/${organizationId}/book`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						doctorId: effectiveDoctorId,
+						patientId: patientId || undefined,
+						startsAt: activeSlot.startsAt,
+						endsAt: activeSlot.endsAt,
+						patientName: patientName.trim(),
+						patientPhone: patientPhone.trim(),
+						comment: patientComment.trim() || undefined,
+						utm_source: parsedUtm.utm_source || undefined,
+						utm_medium: parsedUtm.utm_medium || undefined,
+						utm_campaign: parsedUtm.utm_campaign || undefined,
+						utm_content: parsedUtm.utm_content || undefined,
+						utm_term: parsedUtm.utm_term || undefined,
+						referrer:
+							parsedUtm.referrer ||
+							(typeof document !== "undefined" ? document.referrer : undefined),
 					}),
 				});
 
-				if (!res.ok) {
-					const errJson = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
-					throw new Error(errJson?.message || errJson?.error || "Не удалось создать запись на приём");
+				if (!response.ok) {
+					if (response.status === 409) {
+						setSubmitError(
+							"Выбранное время только что заняли. Пожалуйста, выберите другое время в расписании.",
+						);
+						setIsSubmitting(false);
+						return;
+					}
+					const errData = await response.json().catch(() => ({}));
+					const errMsg =
+						errData?.message ||
+						errData?.error ||
+						`Не удалось завершить запись на сервере клиники. Пожалуйста, позвоните в регистратуру: ${selectedBranch.phone}`;
+					setSubmitError(errMsg);
+					setIsSubmitting(false);
+					return;
 				}
+			} catch {
+				setSubmitError(
+					`Сбой связи с сервером клиники при бронировании. Пожалуйста, проверьте подключение к интернету или позвоните в клинику: ${selectedBranch.phone}`,
+				);
+				setIsSubmitting(false);
+				return;
 			}
-
-			const referenceNumber = `BKG-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-			const receiptData: BookingReceiptData = {
-				bookingId: `bkg-${Date.now()}`,
-				referenceNumber,
-				status: isNightMode ? "PENDING_RESERVATION" : "CONFIRMED",
-				isNightMode,
-				message: isNightMode
-					? `Заявка принята! За вами зафиксировано время ${selectedSlot.time}. Администратор подтвердит запись в 08:30.`
-					: "Запись успешно подтверждена!",
-				doctorName,
-				specialty: doctor?.specialties.join(", "),
-				date: formatRussianDate(selectedDate),
-				time: selectedSlot.time,
-				morningConfirmTime: isNightMode ? "08:30" : undefined,
-				clinicAddress: "Клиника DENTE, главный корпус",
-				patientName: contacts.patientName.trim(),
-				patientPhone: contacts.patientPhone,
-				createdAt: new Date().toISOString(),
-			};
-
-			setReceipt(receiptData);
-			setStep("confirmation");
-			dispatchBookingCompletedMessage(receiptData);
-			onSuccess?.(receiptData);
-		} catch (err) {
-			setBookingError((err as Error).message || "Произошла ошибка при бронировании");
-		} finally {
-			setSubmitting(false);
 		}
+
+		// Trigger Telegram Haptic Feedback if available
+		if (typeof window !== "undefined") {
+			// biome-ignore lint/suspicious/noExplicitAny: Telegram WebApp interface
+			const tg = (window as any)?.Telegram?.WebApp;
+			tg?.HapticFeedback?.notificationOccurred?.("success");
+
+			if (window.parent) {
+				window.parent.postMessage(
+					{
+						type: "DENTE_BOOKING_SUCCESS",
+						booking: finalConfirmation,
+					},
+					"*",
+				);
+			}
+		}
+
+		// Proceed to Confirmation
+		setConfirmationData(finalConfirmation);
+		setIsSubmitting(false);
+		handleStepChange(5);
+		if (onSuccess) onSuccess(finalConfirmation);
 	};
 
-	const calendarPayload = useMemo(() => {
-		if (!receipt || !selectedSlot) return null;
-		return {
-			title: `Приём у стоматолога (${receipt.doctorName})`,
-			description: `Онлайн-запись DENTE. Номер брони: ${receipt.referenceNumber}. Пациент: ${receipt.patientName}.`,
-			location: receipt.clinicAddress,
-			startsAt: selectedSlot.startsAt,
-			endsAt: selectedSlot.endsAt,
-		};
-	}, [receipt, selectedSlot]);
-
-	const dateChips = useMemo(() => {
-		const items: Array<{ dateStr: string; dayName: string; dayNum: number }> = [];
-		const now = new Date();
-		for (let i = 0; i < 7; i++) {
-			const d = new Date(now.getTime() + i * 24 * 60 * 60_000);
-			const dateStr = toLocalDateString(d);
-			const dayName = i === 0 ? "Сегодня" : i === 1 ? "Завтра" : d.toLocaleDateString("ru-RU", { weekday: "short" });
-			items.push({ dateStr, dayName, dayNum: d.getDate() });
-		}
-		return items;
-	}, []);
+	// Reset widget state for a new booking
+	const handleResetBooking = () => {
+		setStep(1);
+		setSelectedSlot(null);
+		setPatientName("");
+		setPatientPhone("");
+		setPatientComment("");
+		setSmsCodeSent(false);
+		setIsSmsVerified(false);
+		setEnteredSmsCode("");
+		setConfirmationData(null);
+		handleStepChange(1);
+	};
 
 	return (
 		<div
-			id={`dente-widget-${widgetId}`}
-			className={`dente-booking-widget ${compact ? "compact-mode" : ""} ${className}`}
-			style={{
-				maxWidth: compact ? "440px" : "640px",
-				background: "var(--paper, #ffffff)",
-				color: "var(--ink, #0f172a)",
-				borderRadius: "14px",
-				border: "1px solid var(--glass-border, rgba(0,0,0,0.1))",
-				boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.08)",
-				padding: "20px",
-				margin: "0 auto",
-				boxSizing: "border-box",
-			}}
+			className={`dente-booking-widget ${compact ? "compact-mode" : ""} ${artBackground ? "dbw-with-art-bg" : ""} ${className}`}
+			data-theme={theme}
+			data-embed={effectiveEmbedMode}
+			data-art-bg={artBackground ? "true" : undefined}
+			id={`dente-booking-${widgetInstanceId}`}
 		>
-			{/* Widget Header & Step Indicator */}
-			<header style={{ borderBottom: "1px solid var(--glass-border, rgba(0,0,0,0.08))", paddingBottom: "12px", marginBottom: "16px" }}>
-				<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-						<span style={{ width: "10px", height: "10px", borderRadius: "50%", background: isNightMode ? "#f59e0b" : "#10b981", display: "inline-block" }} />
-						<span style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted, #64748b)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-							{isNightMode ? "Ночной приём 24/7" : "Онлайн-запись"}
-						</span>
-					</div>
-					{step !== "confirmation" && (
-						<span style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-							Шаг {step === "doctor" ? "1 из 3" : step === "slot" ? "2 из 3" : "3 из 3"}
-						</span>
-					)}
-				</div>
-				<h2 style={{ margin: "6px 0 2px", fontSize: "18px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
-					{step === "doctor" && "Выбор специалиста"}
-					{step === "slot" && "Выбор даты и времени"}
-					{step === "contacts" && "Подтверждение записи"}
-					{step === "confirmation" && "Квитанция записи"}
-				</h2>
-			</header>
+			{artBackground && <AuthArtBackground />}
+			{/* Top Glass Header (Strictly <= 110px on mobile, Mandate 8p) */}
+			<BookingHeader
+				title={title}
+				subtitle={subtitle}
+				isTelegramContext={isTelegramContext}
+			/>
 
-			{/* STEP 1: DOCTOR & SPECIALTY SELECTION */}
-			{step === "doctor" && (
-				<section>
-					{!isSoloDoctor && (
-						<div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "8px", marginBottom: "12px", scrollbarWidth: "none" }}>
-							{SERVICE_CATEGORIES.map((cat) => (
-								<button
-									key={cat.id}
-									type="button"
-									onClick={() => setSelectedCategoryId(cat.id)}
-									style={{
-										padding: "6px 12px",
-										borderRadius: "20px",
-										fontSize: "12px",
-										fontWeight: 600,
-										whiteSpace: "nowrap",
-										border: selectedCategoryId === cat.id ? "1px solid var(--primary, #0d9488)" : "1px solid var(--glass-border, rgba(0,0,0,0.1))",
-										background: selectedCategoryId === cat.id ? "var(--primary, #0d9488)" : "var(--paper-strong, #f8fafc)",
-										color: selectedCategoryId === cat.id ? "#ffffff" : "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-								>
-									{cat.label}
-								</button>
-							))}
-						</div>
-					)}
+			{/* Main Widget Body */}
+			<div className="dbw-body">
+				{/* ================================================================ */}
+				{/* 1-SCREEN 2-CLICK BOOKING FLOW (Mandates 8e, 8k, 8p, 8n)           */}
+				{/* ================================================================ */}
+				{step !== 5 && !confirmationData && (
+					<div className="dbw-streamlined-flow">
+						{/* Doctor Header: Solo Doctor or Doctor Choice (Mandate 8n) */}
+						<BookingDoctorsSection
+							isSoloDoctor={isSoloDoctor}
+							selectedDoctor={selectedDoctor}
+							activeDoctors={activeDoctors}
+							selectedDoctorId={selectedDoctorId}
+							onSelectDoctorId={(id) => setSelectedDoctorId(id)}
+						/>
 
-					<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-						{filteredDoctors.map((doc) => {
-							const isSelected = selectedDoctorId === doc.id;
-							return (
-								<div
-									key={doc.id}
-									role="button"
-									tabIndex={0}
-									onClick={() => { setSelectedDoctorId(doc.id); setStep("slot"); }}
-									onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setSelectedDoctorId(doc.id); setStep("slot"); } }}
-									style={{
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "space-between",
-										padding: "12px 14px",
-										borderRadius: "10px",
-										border: isSelected ? "2px solid var(--primary, #0d9488)" : "1px solid var(--glass-border, rgba(0,0,0,0.08))",
-										background: isSelected ? "var(--primary-light, rgba(13, 148, 136, 0.08))" : "var(--paper-strong, #f8fafc)",
-										cursor: "pointer",
-									}}
-								>
-									<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-										<div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "var(--primary, #0d9488)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "14px" }}>
-											{doc.fullName.split(" ").map((p) => p[0]).slice(0, 2).join("")}
-										</div>
-										<div>
-											<div style={{ fontWeight: 600, fontSize: "14px", color: "var(--ink, #0f172a)" }}>{doc.fullName}</div>
-											<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>{doc.specialties.join(" • ")}</div>
-											{doc.experienceYears && <div style={{ fontSize: "11px", color: "var(--muted, #64748b)", marginTop: "2px" }}>Стаж {doc.experienceYears} лет</div>}
-										</div>
-									</div>
-									<ChevronRight size={18} color="var(--muted, #64748b)" />
-								</div>
-							);
-						})}
-					</div>
-
-					{selectedDoctorId && !isSoloDoctor && (
-						<button
-							type="button"
-							onClick={() => setStep("slot")}
-							style={{
-								marginTop: "16px",
-								width: "100%",
-								padding: "10px",
-								borderRadius: "8px",
-								background: "var(--primary, #0d9488)",
-								color: "#ffffff",
-								fontWeight: 600,
-								fontSize: "14px",
-								border: "none",
-								cursor: "pointer",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "6px",
+						{/* Click 1: Date & Time slot picker with ribbon and period chips */}
+						<BookingSlotsSection
+							selectedDate={selectedDate}
+							onSelectDate={(date) => {
+								setSelectedDate(date);
+								setSelectedSlot(null);
+								setSlotError(null);
 							}}
-						>
-							Выбрать время приёма <ArrowRight size={16} />
-						</button>
-					)}
-				</section>
-			)}
-
-			{/* STEP 2: DATE & TIME SLOT PICKER */}
-			{step === "slot" && (
-				<section>
-					<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", borderRadius: "8px", background: "var(--paper-strong, #f8fafc)", marginBottom: "12px", fontSize: "13px" }}>
-						<div><span style={{ color: "var(--muted, #64748b)" }}>Врач: </span><strong>{activeDoctor?.fullName}</strong></div>
-						{!isSoloDoctor && (
-							<button type="button" onClick={() => setStep("doctor")} style={{ border: "none", background: "transparent", color: "var(--primary, #0d9488)", cursor: "pointer", fontWeight: 600, fontSize: "12px" }}>
-								Сменить
-							</button>
-						)}
-					</div>
-
-					{isNightMode && (
-						<div style={{ display: "flex", alignItems: "flex-start", gap: "8px", padding: "10px 12px", borderRadius: "8px", background: "rgba(245, 158, 11, 0.12)", border: "1px solid rgba(245, 158, 11, 0.3)", marginBottom: "14px", fontSize: "12px", color: "var(--ink, #0f172a)" }}>
-							<Moon size={16} color="#d97706" style={{ marginTop: "2px", flexShrink: 0 }} />
-							<div><strong>Ночной приём заявок:</strong> Клиника сейчас закрыта. Мы зафиксируем за вами мягкий слот, и администратор подтвердит запись в 08:30 утра.</div>
-						</div>
-					)}
-
-					<div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "8px", marginBottom: "14px", scrollbarWidth: "none" }}>
-						{dateChips.map((chip) => {
-							const isSelected = selectedDate === chip.dateStr;
-							return (
-								<button
-									key={chip.dateStr}
-									type="button"
-									onClick={() => { setSelectedDate(chip.dateStr); setSelectedSlot(null); }}
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										alignItems: "center",
-										justifyContent: "center",
-										minWidth: "64px",
-										padding: "8px 6px",
-										borderRadius: "8px",
-										border: isSelected ? "2px solid var(--primary, #0d9488)" : "1px solid var(--glass-border, rgba(0,0,0,0.1))",
-										background: isSelected ? "var(--primary, #0d9488)" : "var(--paper-strong, #f8fafc)",
-										color: isSelected ? "#ffffff" : "var(--ink, #0f172a)",
-										cursor: "pointer",
-									}}
-								>
-									<span style={{ fontSize: "11px", opacity: 0.85 }}>{chip.dayName}</span>
-									<span style={{ fontSize: "16px", fontWeight: 700 }}>{chip.dayNum}</span>
-								</button>
-							);
-						})}
-					</div>
-
-					{loadingSlots ? (
-						<div style={{ padding: "24px", textAlign: "center", color: "var(--muted, #64748b)", fontSize: "13px" }}>Загрузка свободных слотов...</div>
-					) : slots.length === 0 ? (
-						<div style={{ padding: "32px 16px", textAlign: "center", color: "var(--muted, #64748b)" }}>
-							<Calendar size={32} style={{ margin: "0 auto 8px auto", opacity: 0.5 }} />
-							<div style={{ fontWeight: 600, fontSize: "14px", color: "var(--ink, #0f172a)", marginBottom: "4px" }}>
-								На выбранную дату нет свободных слотов для записи
-							</div>
-							<div style={{ fontSize: "12px" }}>
-								Пожалуйста, выберите другую дату в календаре выше или свяжитесь с клиникой по телефону.
-							</div>
-						</div>
-					) : (
-						<div style={{ display: "flex", flexDirection: "column", gap: "12px", maxHeight: "250px", overflowY: "auto", paddingRight: "4px" }}>
-							{groupedSlots.morning.length > 0 && (
-								<div>
-									<div style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "6px" }}>УТРО (до 12:00)</div>
-									<div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px" }}>
-										{groupedSlots.morning.map((s) => (
-											<button
-												key={s.startsAt}
-												type="button"
-												onClick={() => setSelectedSlot(s)}
-												style={{
-													padding: "8px 4px",
-													borderRadius: "6px",
-													fontSize: "13px",
-													fontWeight: 600,
-													border: selectedSlot?.startsAt === s.startsAt ? "2px solid var(--primary, #0d9488)" : "1px solid var(--glass-border, rgba(0,0,0,0.1))",
-													background: selectedSlot?.startsAt === s.startsAt ? "var(--primary, #0d9488)" : "var(--paper-strong, #f8fafc)",
-													color: selectedSlot?.startsAt === s.startsAt ? "#ffffff" : "var(--ink, #0f172a)",
-													cursor: "pointer",
-												}}
-											>
-												{s.time}
-											</button>
-										))}
-									</div>
-								</div>
-							)}
-							{groupedSlots.afternoon.length > 0 && (
-								<div>
-									<div style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "6px" }}>ДЕНЬ (12:00 — 17:00)</div>
-									<div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px" }}>
-										{groupedSlots.afternoon.map((s) => (
-											<button
-												key={s.startsAt}
-												type="button"
-												onClick={() => setSelectedSlot(s)}
-												style={{
-													padding: "8px 4px",
-													borderRadius: "6px",
-													fontSize: "13px",
-													fontWeight: 600,
-													border: selectedSlot?.startsAt === s.startsAt ? "2px solid var(--primary, #0d9488)" : "1px solid var(--glass-border, rgba(0,0,0,0.1))",
-													background: selectedSlot?.startsAt === s.startsAt ? "var(--primary, #0d9488)" : "var(--paper-strong, #f8fafc)",
-													color: selectedSlot?.startsAt === s.startsAt ? "#ffffff" : "var(--ink, #0f172a)",
-													cursor: "pointer",
-												}}
-											>
-												{s.time}
-											</button>
-										))}
-									</div>
-								</div>
-							)}
-							{groupedSlots.evening.length > 0 && (
-								<div>
-									<div style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "6px" }}>ВЕЧЕР (после 17:00)</div>
-									<div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px" }}>
-										{groupedSlots.evening.map((s) => (
-											<button
-												key={s.startsAt}
-												type="button"
-												onClick={() => setSelectedSlot(s)}
-												style={{
-													padding: "8px 4px",
-													borderRadius: "6px",
-													fontSize: "13px",
-													fontWeight: 600,
-													border: selectedSlot?.startsAt === s.startsAt ? "2px solid var(--primary, #0d9488)" : "1px solid var(--glass-border, rgba(0,0,0,0.1))",
-													background: selectedSlot?.startsAt === s.startsAt ? "var(--primary, #0d9488)" : "var(--paper-strong, #f8fafc)",
-													color: selectedSlot?.startsAt === s.startsAt ? "#ffffff" : "var(--ink, #0f172a)",
-													cursor: "pointer",
-												}}
-											>
-												{s.time}
-											</button>
-										))}
-									</div>
-								</div>
-							)}
-						</div>
-					)}
-
-					<div style={{ display: "flex", justifyContent: "space-between", gap: "10px", marginTop: "16px" }}>
-						{!isSoloDoctor && (
-							<button type="button" onClick={() => setStep("doctor")} style={{ padding: "10px 14px", borderRadius: "8px", border: "1px solid var(--glass-border, rgba(0,0,0,0.1))", background: "var(--paper-strong, #f8fafc)", color: "var(--ink, #0f172a)", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
-								<ChevronLeft size={16} /> Назад
-							</button>
-						)}
-						<button
-							type="button"
-							disabled={!selectedSlot}
-							onClick={() => setStep("contacts")}
-							style={{
-								flex: 1,
-								padding: "10px 14px",
-								borderRadius: "8px",
-								border: "none",
-								background: selectedSlot ? "var(--primary, #0d9488)" : "var(--muted, #cbd5e1)",
-								color: "#ffffff",
-								fontSize: "13px",
-								fontWeight: 600,
-								cursor: selectedSlot ? "pointer" : "not-allowed",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "6px",
+							calendarMonth={calendarMonth}
+							onPrevMonth={handlePrevMonth}
+							onNextMonth={handleNextMonth}
+							calendarDays={calendarDays}
+							monthLabel={monthLabel}
+							slots={slots}
+							selectedSlot={selectedSlot}
+							onSelectSlot={(slot) => {
+								setSelectedSlot(slot);
+								setSlotError(null);
 							}}
-						>
-							Продолжить <ArrowRight size={16} />
-						</button>
-					</div>
-				</section>
-			)}
-
-			{/* STEP 3: PATIENT CONTACTS & VERIFICATION */}
-			{step === "contacts" && (
-				<section>
-					<div style={{ padding: "10px 12px", borderRadius: "8px", background: "var(--paper-strong, #f8fafc)", border: "1px solid var(--glass-border, rgba(0,0,0,0.08))", marginBottom: "14px", fontSize: "13px", display: "flex", flexDirection: "column", gap: "4px" }}>
-						<div><span style={{ color: "var(--muted, #64748b)" }}>Врач: </span><strong>{activeDoctor?.fullName}</strong></div>
-						<div><span style={{ color: "var(--muted, #64748b)" }}>Дата и время: </span><strong>{formatRussianDate(selectedDate)} в {selectedSlot?.time}</strong></div>
-					</div>
-
-					<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-						<div>
-							<label htmlFor="patientNameInput" style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px", color: "var(--ink, #0f172a)" }}>
-								Ваше имя и фамилия *
-							</label>
-							<input
-								id="patientNameInput"
-								type="text"
-								placeholder="Иван Иванов"
-								value={contacts.patientName}
-								onChange={(e) => setContacts((prev) => ({ ...prev, patientName: e.target.value }))}
-								style={{ width: "100%", padding: "9px 12px", borderRadius: "8px", border: "1px solid var(--glass-border, rgba(0,0,0,0.15))", background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", fontSize: "14px", boxSizing: "border-box" }}
-							/>
-						</div>
-
-						<div>
-							<label htmlFor="patientPhoneInput" style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px", color: "var(--ink, #0f172a)" }}>
-								Номер телефона *
-							</label>
-							<input
-								id="patientPhoneInput"
-								type="tel"
-								placeholder="+7 (___) ___-__-__"
-								value={contacts.patientPhone}
-								onChange={(e) => setContacts((prev) => ({ ...prev, patientPhone: formatPhoneRu(e.target.value) }))}
-								style={{ width: "100%", padding: "9px 12px", borderRadius: "8px", border: "1px solid var(--glass-border, rgba(0,0,0,0.15))", background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", fontSize: "14px", boxSizing: "border-box" }}
-							/>
-						</div>
-
-						<div>
-							<span style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "6px", color: "var(--ink, #0f172a)" }}>
-								Способ подтверждения
-							</span>
-							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-								<button
-									type="button"
-									onClick={() => setContacts((prev) => ({ ...prev, verificationMethod: "sms" }))}
-									style={{
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										gap: "6px",
-										padding: "8px",
-										borderRadius: "8px",
-										border: contacts.verificationMethod === "sms" ? "2px solid var(--primary, #0d9488)" : "1px solid var(--glass-border, rgba(0,0,0,0.1))",
-										background: contacts.verificationMethod === "sms" ? "var(--primary-light, rgba(13, 148, 136, 0.08))" : "var(--paper-strong, #f8fafc)",
-										color: "var(--ink, #0f172a)",
-										fontSize: "12px",
-										fontWeight: 600,
-										cursor: "pointer",
-									}}
-								>
-									<MessageSquare size={15} color="var(--primary, #0d9488)" /> SMS-код
-								</button>
-								<button
-									type="button"
-									onClick={() => setContacts((prev) => ({ ...prev, verificationMethod: "flash_call" }))}
-									style={{
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										gap: "6px",
-										padding: "8px",
-										borderRadius: "8px",
-										border: contacts.verificationMethod === "flash_call" ? "2px solid var(--primary, #0d9488)" : "1px solid var(--glass-border, rgba(0,0,0,0.1))",
-										background: contacts.verificationMethod === "flash_call" ? "var(--primary-light, rgba(13, 148, 136, 0.08))" : "var(--paper-strong, #f8fafc)",
-										color: "var(--ink, #0f172a)",
-										fontSize: "12px",
-										fontWeight: 600,
-										cursor: "pointer",
-									}}
-								>
-									<PhoneCall size={15} color="var(--primary, #0d9488)" /> Звонок-сброс
-								</button>
-							</div>
-						</div>
-
-						{!otpSent ? (
-							<button
-								type="button"
-								disabled={otpSending}
-								onClick={handleSendOtp}
-								style={{
-									padding: "8px 12px",
-									borderRadius: "8px",
-									border: "1px solid var(--primary, #0d9488)",
-									background: "transparent",
-									color: "var(--primary, #0d9488)",
-									fontWeight: 600,
-									fontSize: "12px",
-									cursor: otpSending ? "wait" : "pointer",
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									gap: "6px",
-								}}
-							>
-								{otpSending ? "Отправка..." : contacts.verificationMethod === "sms" ? "Отправить проверочный SMS-код" : "Заказать звонок-сброс (последние 4 цифры)"}
-							</button>
-						) : (
-							<div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-								<input
-									type="text"
-									maxLength={6}
-									placeholder={contacts.verificationMethod === "sms" ? "Код из SMS" : "4 цифры входящего номера"}
-									value={contacts.verificationCode}
-									onChange={(e) => setContacts((prev) => ({ ...prev, verificationCode: e.target.value.replace(/\D/g, "") }))}
-									style={{ flex: 1, padding: "9px 12px", borderRadius: "8px", border: "1px solid var(--glass-border, rgba(0,0,0,0.15))", fontSize: "14px", boxSizing: "border-box" }}
-								/>
-								{otpCountdown > 0 ? (
-									<span style={{ fontSize: "11px", color: "var(--muted, #64748b)", whiteSpace: "nowrap" }}>Повтор {otpCountdown}с</span>
-								) : (
-									<button type="button" disabled={otpSending} onClick={handleSendOtp} style={{ border: "none", background: "transparent", color: "var(--primary, #0d9488)", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}>
-										{otpSending ? "..." : "Запросить снова"}
-									</button>
-								)}
-							</div>
-						)}
-
-						<div>
-							<label htmlFor="patientCommentInput" style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px", color: "var(--ink, #0f172a)" }}>
-								Что вас беспокоит? (необязательно)
-							</label>
-							<textarea
-								id="patientCommentInput"
-								rows={2}
-								placeholder="Боль в зубе, профилактический осмотр, консультация..."
-								value={contacts.comment}
-								onChange={(e) => setContacts((prev) => ({ ...prev, comment: e.target.value }))}
-								style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid var(--glass-border, rgba(0,0,0,0.15))", background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", fontSize: "13px", boxSizing: "border-box", resize: "none" }}
-							/>
-						</div>
-					</div>
-
-					{bookingError && (
-						<div style={{ marginTop: "12px", padding: "8px 12px", borderRadius: "6px", background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#b91c1c", fontSize: "12px" }}>
-							{bookingError}
-						</div>
-					)}
-
-					<div style={{ display: "flex", justifyContent: "space-between", gap: "10px", marginTop: "16px" }}>
-						<button type="button" onClick={() => setStep("slot")} style={{ padding: "10px 14px", borderRadius: "8px", border: "1px solid var(--glass-border, rgba(0,0,0,0.1))", background: "var(--paper-strong, #f8fafc)", color: "var(--ink, #0f172a)", fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
-							<ChevronLeft size={16} /> Назад
-						</button>
-						<button
-							type="button"
-							disabled={submitting}
-							onClick={handleConfirmBooking}
-							style={{
-								flex: 1,
-								padding: "11px 16px",
-								borderRadius: "8px",
-								border: "none",
-								background: "var(--primary, #0d9488)",
-								color: "#ffffff",
-								fontSize: "14px",
-								fontWeight: 700,
-								cursor: submitting ? "wait" : "pointer",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "6px",
+							slotsLoading={slotsLoading}
+							slotError={slotError}
+							onNextStep={() => {
+								if (!selectedSlot && slots.length > 0) {
+									setSelectedSlot(slots[0] || null);
+								}
+								handleStepChange(4);
 							}}
-						>
-							{submitting ? "Оформление записи..." : "Записаться на приём"}
-						</button>
+						/>
+
+						{/* Click 2: Patient Name, Phone, and Book Button */}
+						<BookingContactsSection
+							isTelegramContext={isTelegramContext}
+							patientName={patientName}
+							setPatientName={setPatientName}
+							patientPhone={patientPhone}
+							handlePhoneChange={handlePhoneChange}
+							patientComment={patientComment}
+							setPatientComment={setPatientComment}
+							hasAgreedToPrivacy={hasAgreedToPrivacy}
+							setHasAgreedToPrivacy={setHasAgreedToPrivacy}
+							showSmsVerification={showSmsVerification}
+							smsCodeSent={smsCodeSent}
+							enteredSmsCode={enteredSmsCode}
+							setEnteredSmsCode={setEnteredSmsCode}
+							isSmsVerified={isSmsVerified}
+							smsResendCountdown={smsResendCountdown}
+							smsError={smsError}
+							handleSendSmsCode={handleSendSmsCode}
+							handleVerifySmsCode={handleVerifySmsCode}
+							handleTelegramShareContact={handleTelegramShareContact}
+							submitError={submitError}
+							setSubmitError={setSubmitError}
+							isSubmitting={isSubmitting}
+							onSubmit={handleFinalSubmit}
+						/>
 					</div>
-				</section>
-			)}
+				)}
 
-			{/* STEP 4: CONFIRMATION RECEIPT */}
-			{step === "confirmation" && receipt && (
-				<section style={{ textAlign: "center", padding: "10px 0" }}>
-					<div style={{ display: "inline-flex", padding: "12px", borderRadius: "50%", background: receipt.status === "CONFIRMED" ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)", marginBottom: "12px" }}>
-						{receipt.status === "CONFIRMED" ? <CheckCircle2 size={36} color="#10b981" /> : <Moon size={36} color="#f59e0b" />}
-					</div>
-
-					<h3 style={{ margin: "0 0 6px", fontSize: "18px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
-						{receipt.status === "CONFIRMED" ? "Запись подтверждена!" : "Заявка принята!"}
-					</h3>
-					<p style={{ margin: "0 0 16px", fontSize: "13px", color: "var(--muted, #64748b)", lineHeight: "1.4" }}>
-						{receipt.message}
-					</p>
-
-					<div style={{ textAlign: "left", padding: "14px", borderRadius: "10px", background: "var(--paper-strong, #f8fafc)", border: "1px dashed var(--glass-border, rgba(0,0,0,0.15))", marginBottom: "18px", fontSize: "13px", display: "flex", flexDirection: "column", gap: "8px" }}>
-						<div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--muted, #64748b)" }}>Бронь:</span><strong>{receipt.referenceNumber}</strong></div>
-						<div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--muted, #64748b)" }}>Врач:</span><strong>{receipt.doctorName}</strong></div>
-						<div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--muted, #64748b)" }}>Дата и время:</span><strong>{receipt.date}, {receipt.time}</strong></div>
-						<div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--muted, #64748b)" }}>Пациент:</span><span>{receipt.patientName}</span></div>
-					</div>
-
-					{calendarPayload && (
-						<div style={{ marginBottom: "16px" }}>
-							<div style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "8px", textTransform: "uppercase" }}>
-								Добавить напоминание в календарь
-							</div>
-							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px" }}>
-								<a href={generateGoogleCalendarUrl(calendarPayload)} target="_blank" rel="noreferrer" style={{ padding: "8px 6px", borderRadius: "6px", border: "1px solid var(--glass-border, rgba(0,0,0,0.1))", background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", fontSize: "11px", fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
-									<Calendar size={13} /> Google
-								</a>
-								<a href={generateYandexCalendarUrl(calendarPayload)} target="_blank" rel="noreferrer" style={{ padding: "8px 6px", borderRadius: "6px", border: "1px solid var(--glass-border, rgba(0,0,0,0.1))", background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", fontSize: "11px", fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
-									<Calendar size={13} /> Яндекс
-								</a>
-								<button
-									type="button"
-									onClick={() => {
-										const blob = new Blob([generateIcsCalendarContent(calendarPayload)], { type: "text/calendar;charset=utf-8" });
-										const url = URL.createObjectURL(blob);
-										const a = document.createElement("a");
-										a.href = url;
-										a.download = `dente-booking-${receipt.referenceNumber}.ics`;
-										a.click();
-										URL.revokeObjectURL(url);
-									}}
-									style={{ padding: "8px 6px", borderRadius: "6px", border: "1px solid var(--glass-border, rgba(0,0,0,0.1))", background: "var(--paper, #ffffff)", color: "var(--ink, #0f172a)", fontSize: "11px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}
-								>
-									<Download size={13} /> iCal (.ics)
-								</button>
-							</div>
-						</div>
-					)}
-
-					<button
-						type="button"
-						onClick={() => { setStep("doctor"); setSelectedSlot(null); setReceipt(null); setOtpSent(false); }}
-						style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border, rgba(0,0,0,0.15))", background: "var(--paper-strong, #f8fafc)", color: "var(--ink, #0f172a)", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
-					>
-						Записаться на другое время
-					</button>
-				</section>
-			)}
+				{/* ================================================================ */}
+				{/* STEP 5: DENTAL PASS / BOARDING PASS TICKET CARD                   */}
+				{/* ================================================================ */}
+				{(step === 5 || confirmationData) && (
+					<BookingConfirmationView
+						confirmationData={confirmationData}
+						selectedDate={selectedDate}
+						selectedSlot={selectedSlot}
+						selectedDoctor={selectedDoctor}
+						selectedBranch={selectedBranch}
+						patientName={patientName}
+						patientPhone={patientPhone}
+						onReset={handleResetBooking}
+						artPack="nature"
+						showArtBackdrop={artBackground}
+						theme={theme}
+						isFloating={true}
+					/>
+				)}
+			</div>
 		</div>
 	);
 };
+
+export const PublicOnlineBookingWidget = PublicBookingWidget;
+
+export default PublicBookingWidget;

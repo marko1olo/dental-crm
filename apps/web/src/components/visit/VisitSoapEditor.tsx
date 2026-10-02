@@ -29,6 +29,8 @@ import {
 	Sparkles,
 	Stethoscope,
 	X,
+	Zap,
+	Activity,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -1450,7 +1452,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								data-testid="btn-soap-express-caries"
 								title="1-Клик протокол: Кариес дентина (K02.1) — анестезия, коффердам, композит светового отверждения, полировка"
 							>
-								<span>🦷</span>
+								<Activity className="w-3.5 h-3.5" />
 								<span>Кариес (K02.1)</span>
 							</button>
 							<button
@@ -1460,7 +1462,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								data-testid="btn-soap-express-pulpitis"
 								title="1-Клик протокол: Острый пульпит (K04.0) — анестезия, экстирпация, мех/мед обработка каналов, обтурация"
 							>
-								<span>⚡</span>
+								<Zap className="w-3.5 h-3.5" />
 								<span>Пульпит (K04.0)</span>
 							</button>
 							<button
@@ -1470,7 +1472,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								data-testid="btn-soap-express-hygiene"
 								title="1-Клик протокол: Профгигиена (K03.6) — ультразвуковой скейлинг, Air-Flow, полировка пастой, фторирование"
 							>
-								<span>✨</span>
+								<Sparkles className="w-3.5 h-3.5" />
 								<span>Профгигиена (K03.6)</span>
 							</button>
 							<button
@@ -1480,7 +1482,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								data-testid="btn-soap-express-extraction"
 								title="1-Клик протокол: Удаление зуба (K04.7) — анестезия, элеватор/щипцы, кюретаж лунки, гемостаз"
 							>
-								<span>🩹</span>
+								<Scissors className="w-3.5 h-3.5" />
 								<span>Удаление зуба</span>
 							</button>
 						</div>

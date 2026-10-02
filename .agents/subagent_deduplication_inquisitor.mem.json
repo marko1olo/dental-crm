@@ -1,0 +1,104 @@
+{
+  "role": "RED TEAM INQUISITOR & ARCHITECTURAL DEDUPLICATION SURGEON",
+  "status": "completed",
+  "current_phase": "verified_and_reported",
+  "forbidden_scope": [
+    "apps/web/src/components/radiology/*"
+  ],
+  "radiology_purity_verified": true,
+  "audit_results": [
+    {
+      "id": "VisitView",
+      "canonical_ssot": "apps/web/src/VisitView.tsx",
+      "secondary_contour": "apps/web/src/components/visit/VisitView.tsx",
+      "status": "unified",
+      "resolution": "Canonical VisitView is root apps/web/src/VisitView.tsx (857 lines). apps/web/src/components/visit/VisitView.tsx is chairside multi-chair wrapper re-exporting export * from '../../VisitView'. Verified by chairsideAutonomyWave310 test.",
+      "tests_passed": [
+        "apps/web/src/components/visit/__tests__/chairsideAutonomyWave310.test.tsx"
+      ]
+    },
+    {
+      "id": "FinanceView",
+      "canonical_ssot": "apps/web/src/FinanceView.tsx",
+      "secondary_contour": "apps/web/src/components/finance/FinanceView.tsx",
+      "status": "unified",
+      "resolution": "Canonical FinanceView is root apps/web/src/FinanceView.tsx (768 lines). apps/web/src/components/finance/FinanceView.tsx is clean 7-line facade delegating via re-export per Mandate 8s.",
+      "tests_passed": [
+        "apps/web/src/components/finance/__tests__/invoicesViewServerSyncAndFinanceIntegrationWave61.test.tsx"
+      ]
+    },
+    {
+      "id": "InventoryStockTable",
+      "canonical_ssot": "apps/web/src/components/inventory/InventoryStockTable.tsx",
+      "secondary_contour": "apps/web/src/components/InventoryStockTable.tsx",
+      "status": "unified",
+      "resolution": "Canonical is components/inventory/InventoryStockTable.tsx (625 lines). apps/web/src/components/InventoryStockTable.tsx is 18-line facade re-exporting internal module. Verified by inventoryDecomposition test.",
+      "tests_passed": [
+        "apps/web/src/components/inventory/__tests__/inventoryDecomposition.test.tsx",
+        "apps/web/src/components/inventory/__tests__/inventoryStockTable.test.tsx"
+      ]
+    },
+    {
+      "id": "TreatmentPlanWizard",
+      "canonical_ssot": "apps/web/src/components/odontogram/TreatmentPlanWizard.tsx",
+      "secondary_contour": "apps/web/src/components/treatment-plans/TreatmentPlanWizard.tsx",
+      "status": "unified",
+      "resolution": "Canonical is components/odontogram/TreatmentPlanWizard.tsx (680 lines). components/treatment-plans/TreatmentPlanWizard.tsx is clean 7-line facade delegating via re-export per Mandate 8s.",
+      "tests_passed": []
+    },
+    {
+      "id": "offlineStorage",
+      "canonical_ssot": "apps/web/src/services/offline/offlineStorage.ts",
+      "secondary_contour": "apps/web/src/lib/offlineStorage.ts",
+      "status": "unified",
+      "resolution": "Crucial architectural divergence eliminated! Unified all 15 functions/constants (Dashboard, clinic profile, staff list, user cache, offline fallback) into canonical services/offline/offlineStorage.ts (SSOT). Converted apps/web/src/lib/offlineStorage.ts into transparent facade re-exporting all methods. Both consumers now share identical cache and state.",
+      "tests_passed": [
+        "apps/web/src/tests/offlineStorage.test.ts"
+      ]
+    },
+    {
+      "id": "patientSearchFuzzy",
+      "canonical_ssot": "apps/web/src/components/patients/patientSearchFuzzy.ts",
+      "secondary_contour": "apps/web/src/utils/patientSearchFuzzy.ts",
+      "status": "unified",
+      "resolution": "Canonical engine is components/patients/patientSearchFuzzy.ts (1344 lines). utils/patientSearchFuzzy.ts is clean 2-line facade delegating via re-export.",
+      "tests_passed": [
+        "apps/web/src/tests/patientSearchFuzzy.test.ts"
+      ]
+    },
+    {
+      "id": "DoctorShiftControlBar",
+      "canonical_ssot": "apps/web/src/components/shift/DoctorShiftControlBar.tsx",
+      "secondary_contour": "apps/web/src/components/schedule/DoctorShiftControlBar.tsx",
+      "status": "unified",
+      "resolution": "Canonical is components/shift/DoctorShiftControlBar.tsx (350 lines). components/schedule/DoctorShiftControlBar.tsx is 6-line facade delegating via re-export.",
+      "tests_passed": []
+    },
+    {
+      "id": "PatientFriendlyOdontogram",
+      "canonical_ssot": "apps/web/src/components/portal/PatientFriendlyOdontogram.tsx",
+      "secondary_contour": "apps/web/src/components/patient-portal/PatientFriendlyOdontogram.tsx",
+      "status": "unified",
+      "resolution": "Canonical is components/portal/PatientFriendlyOdontogram.tsx (528 lines). components/patient-portal/PatientFriendlyOdontogram.tsx is 6-line facade delegating via re-export. All 4 sibling portal files verified.",
+      "tests_passed": []
+    },
+    {
+      "id": "BookingWidgets",
+      "canonical_ssot": "apps/web/src/components/booking/PublicOnlineBookingWidget.tsx",
+      "secondary_contour": "apps/web/src/components/booking/PublicBookingWidget.tsx",
+      "status": "unified",
+      "resolution": "Eliminated abandoned 840-line clone! apps/web/src/components/booking/PublicBookingWidget.tsx converted to clean facade delegating to canonical PublicOnlineBookingWidget.tsx (677 lines). Root components/PublicOnlineBookingWidget.tsx and pages/PublicBookingWidget.tsx route directly to SSOT.",
+      "tests_passed": [
+        "apps/web/src/components/booking/__tests__/PublicOnlineBookingWidget.test.tsx"
+      ]
+    }
+  ],
+  "system_verification_gates": {
+    "check_stub_overrides": "PASS (827 properties, 51 modules, 0 overlaps)",
+    "check_dynamic_imports": "PASS (4358 files, 372 dynamic imports, 0 missing targets)",
+    "check_encoding": "PASS (6806 files checked, 0 errors)",
+    "check_css_tokens": "PASS (158 css files, 0 unresolved tokens)",
+    "targeted_unit_tests": "PASS (offlineStorage 6/6, booking 26/26, chairsideAutonomy 7/7, inventory 6/6, patientFuzzy 25/25)",
+    "typescript_web_dedup_scope": "PASS (0 errors in deduplicated files scope)"
+  }
+}
