@@ -16,6 +16,8 @@
 
 import { z } from "zod";
 import { lookupRemdErrorCode, type RemdErrorDiagnostic } from "./egiszRemdTransport.js";
+import { isValidSnils } from "../utils/snils.js";
+import { validateOgrn, validateFrmoOid, validateOid } from "../cda/cdaIdValidators.js";
 
 // ─── 1. Провайдеры и схемы конфигурации ─────────────────────────────────────
 
@@ -50,7 +52,7 @@ export const cloudOperatorConfigSchema = z.object({
 	provider: cloudOperatorProviderSchema,
 	endpointUrl: z.string().url(),
 	clinicOid: z.string().min(5, "OID клиники в ФРМО обязателен"),
-	clinicOgrn: z.string().regex(/^\d{13}$/, "ОГРН клиники должен содержать 13 цифр"),
+	clinicOgrn: z.string().regex(/^\d{13}$|^\d{15}$/, "ОГРН клиники должен содержать 13 цифр (15 цифр для ОГРНИП соло-врача)"),
 	apiKey: z.string().optional(),
 	secretToken: z.string().optional(),
 	senderName: z.string().min(2),
@@ -288,6 +290,94 @@ export function evaluateOperatorValidationErrors(
 	return result;
 }
 
+// ─── 4.1. Вспомогательные криптографические генераторы (Zero Math.random) ─────
+
+function generateSecure6DigitSeq(): string {
+	if (typeof globalThis !== "undefined" && globalThis.crypto?.getRandomValues) {
+		const buf = new Uint32Array(1);
+		globalThis.crypto.getRandomValues(buf);
+		return String(100000 + (buf[0]! % 900000));
+	}
+	return String(100000 + (Date.now() % 900000));
+}
+
+function generateOperatorTrackingId(): string {
+	if (typeof globalThis !== "undefined" && globalThis.crypto?.randomUUID) {
+		return `OP-TRK-${globalThis.crypto.randomUUID()}`;
+	}
+	return `OP-TRK-00000000-0000-4000-8000-${Date.now().toString(16).padStart(12, "0")}`;
+}
+
+// ─── 4.2. Честная валидация ГОСТ РЭМД СЭМД перед отправкой ───────────────────
+
+/**
+ * Валидирует реквизиты СЭМД перед отправкой в государственную систему РЭМД ЕГИСЗ:
+ * 1. СНИЛС врача: 11 цифр с алгоритмом проверки контрольного числа ПФР/СФР № 192п.
+ * 2. ОГРН клиники: 13 цифр mod 11 для юридических лиц или 15 цифр mod 13 для ИП.
+ * 3. OID клиники в ФРМО: синтаксис OID и принадлежность к Минздраву РФ (1.2.643.5.1.13...).
+ * 4. СНИЛС пациента (если указан): 11 цифр с контрольной суммой ПФР/СФР.
+ */
+export function validateSemdSubmissionPreflight(
+	config: CloudOperatorConfig,
+	payload: CloudSemdSubmissionPayload,
+): RemdErrorDiagnostic[] {
+	const errors: RemdErrorDiagnostic[] = [];
+
+	// 1. Проверка СНИЛС врача
+	if (!payload.doctorSnils || !isValidSnils(payload.doctorSnils)) {
+		const err = lookupRemdErrorCode("REMD_ERR_001");
+		errors.push({
+			...err,
+			title: "Невалидный СНИЛС врача (ошибка контрольной суммы ПФР/СФР)",
+			technicalDetail: `СНИЛС врача "${payload.doctorSnils}" не прошел проверку контрольного числа по официальному алгоритму ПФР № 192п. Регистрация в ФРМР невозможна.`,
+			remediation: "Исправьте СНИЛС врача в профиле сотрудника на валидный 11-значный номер с корректной контрольной суммой.",
+			affectedEntity: "DOCTOR",
+			isRetryable: false,
+		});
+	}
+
+	// 2. Проверка ОГРН / ОГРНИП клиники
+	if (!config.clinicOgrn || !validateOgrn(config.clinicOgrn)) {
+		const err = lookupRemdErrorCode("REMD_ERR_005");
+		errors.push({
+			...err,
+			title: "Невалидный ОГРН/ОГРНИП медицинской организации",
+			technicalDetail: `ОГРН клиники "${config.clinicOgrn}" имеет неверную длину или ошибку контрольного числа (остаток от деления на 11 для ЮЛ или на 13 для ИП). Проверка в ФРМО не пройдена.`,
+			remediation: "Укажите достоверный 13-значный ОГРН юрлица или 15-значный ОГРНИП в паспорте клиники.",
+			affectedEntity: "CLINIC",
+			isRetryable: false,
+		});
+	}
+
+	// 3. Проверка OID организации
+	if (!config.clinicOid || (!validateFrmoOid(config.clinicOid) && !validateOid(config.clinicOid))) {
+		const err = lookupRemdErrorCode("REMD_ERR_005");
+		errors.push({
+			...err,
+			title: "Некорректный OID медицинской организации",
+			technicalDetail: `OID клиники "${config.clinicOid}" не соответствует формату OID Минздрава РФ (ожидается 1.2.643.5.1.13.1.1.1... или 1.2.643.5.1.13.13.12.2...).`,
+			remediation: "Сверьте OID организации с паспортом МО в Федеральном реестре медицинских организаций (ФРМО).",
+			affectedEntity: "CLINIC",
+			isRetryable: false,
+		});
+	}
+
+	// 4. Проверка СНИЛС пациента (если передан)
+	if (payload.patientSnils && !isValidSnils(payload.patientSnils)) {
+		const err = lookupRemdErrorCode("REMD_ERR_010");
+		errors.push({
+			...err,
+			title: "Невалидный СНИЛС пациента (ошибка контрольной суммы)",
+			technicalDetail: `СНИЛС пациента "${payload.patientSnils}" не прошел проверку контрольной суммы алгоритма ПФР № 192п.`,
+			remediation: "Проверьте номер СНИЛС в карточке пациента.",
+			affectedEntity: "PATIENT",
+			isRetryable: false,
+		});
+	}
+
+	return errors;
+}
+
 // ─── 5. Движок диспетчеризации передачи документов в облако ─────────────────
 
 export function dispatchCloudSemdSubmission(
@@ -322,6 +412,25 @@ export function dispatchCloudSemdSubmission(
 		};
 	}
 
+	// Предварительная валидация ГОСТ РЭМД СЭМД перед отправкой в госсистему
+	const preflightErrors = validateSemdSubmissionPreflight(validConfig, validPayload);
+	if (preflightErrors.length > 0) {
+		return {
+			success: false,
+			transmissionId,
+			documentId: validPayload.documentId,
+			provider: validConfig.provider,
+			status: "REJECTED_VALIDATION",
+			httpStatusCode: 422,
+			remdRegistrationNumber: null,
+			registeredAt: null,
+			errors: preflightErrors,
+			retryCount: 0,
+			statutoryDisclaimerRu:
+				"Отправка СЭМД в государственную систему РЭМД ЕГИСЗ заблокирована: обнаружены критические ошибки валидации нормативных идентификаторов (СНИЛС врача / ОГРН / OID). Документ требует корректировки.",
+		};
+	}
+
 	// Сценарий 2: Ошибки при валидации на стороне облачного оператора
 	if (mockNetworkResponse?.forcedErrors && mockNetworkResponse.forcedErrors.length > 0) {
 		const diagnostics = evaluateOperatorValidationErrors(mockNetworkResponse.forcedErrors);
@@ -344,9 +453,7 @@ export function dispatchCloudSemdSubmission(
 	// Сценарий 3: Успешная регистрация в РЭМД через облачного оператора
 	const regNumber =
 		mockNetworkResponse?.forcedRegistrationNumber ??
-		`REMD-${new Date().getFullYear()}-${validConfig.clinicOid.replace(/\D/g, "").slice(-4)}-${Math.floor(
-			100000 + Math.random() * 900000,
-		)}`;
+		`REMD-${new Date().getFullYear()}-${validConfig.clinicOid.replace(/\D/g, "").slice(-4)}-${generateSecure6DigitSeq()}`;
 
 	return {
 		success: true,
@@ -358,7 +465,7 @@ export function dispatchCloudSemdSubmission(
 		remdRegistrationNumber: regNumber,
 		registeredAt: new Date().toISOString(),
 		errors: [],
-		rawOperatorTrackingId: `OP-TRK-${Math.floor(Math.random() * 1000000)}`,
+		rawOperatorTrackingId: generateOperatorTrackingId(),
 		retryCount: 0,
 		statutoryDisclaimerRu: `СЭМД успешно зарегистрирован в Федеральном РЭМД ЕГИСЗ Минздрава РФ через защищенный шлюз ${CLOUD_OPERATOR_LABELS_RU[validConfig.provider]}. Номер регистрации: ${regNumber}.`,
 	};
@@ -374,6 +481,25 @@ export async function dispatchCloudSemdSubmissionAsync(
 
 	if (validConfig.provider === "local_autonomous") {
 		return dispatchCloudSemdSubmission(validConfig, validPayload);
+	}
+
+	// Предварительная валидация ГОСТ РЭМД СЭМД перед отправкой в госсистему
+	const preflightErrors = validateSemdSubmissionPreflight(validConfig, validPayload);
+	if (preflightErrors.length > 0) {
+		return {
+			success: false,
+			transmissionId: `TX-${validConfig.provider.toUpperCase()}-${Date.now()}`,
+			documentId: validPayload.documentId,
+			provider: validConfig.provider,
+			status: "REJECTED_VALIDATION",
+			httpStatusCode: 422,
+			remdRegistrationNumber: null,
+			registeredAt: null,
+			errors: preflightErrors,
+			retryCount: 0,
+			statutoryDisclaimerRu:
+				"Отправка СЭМД в государственную систему РЭМД ЕГИСЗ заблокирована: обнаружены критические ошибки валидации нормативных идентификаторов (СНИЛС врача / ОГРН / OID). Документ требует корректировки.",
+		};
 	}
 
 	const activeFetch = fetchImpl ?? (typeof fetch !== "undefined" ? fetch : undefined);
@@ -438,9 +564,7 @@ export async function dispatchCloudSemdSubmissionAsync(
 
 		const regNumber =
 			data.registrationNumber ??
-			`REMD-${new Date().getFullYear()}-${validConfig.clinicOid.replace(/\D/g, "").slice(-4)}-${Math.floor(
-				100000 + Math.random() * 900000,
-			)}`;
+			`REMD-${new Date().getFullYear()}-${validConfig.clinicOid.replace(/\D/g, "").slice(-4)}-${generateSecure6DigitSeq()}`;
 
 		return {
 			success: true,
@@ -452,7 +576,7 @@ export async function dispatchCloudSemdSubmissionAsync(
 			remdRegistrationNumber: regNumber,
 			registeredAt: new Date().toISOString(),
 			errors: [],
-			rawOperatorTrackingId: data.trackingId ?? `OP-TRK-${Math.floor(Math.random() * 1000000)}`,
+			rawOperatorTrackingId: data.trackingId ?? generateOperatorTrackingId(),
 			retryCount: 0,
 			statutoryDisclaimerRu: `СЭМД успешно зарегистрирован через ${CLOUD_OPERATOR_LABELS_RU[validConfig.provider]}.`,
 		};
@@ -550,6 +674,8 @@ export const egiszCloudGatewayEngine = {
 	buildN3HealthRequestPackage,
 	buildMedElementRequestPackage,
 	evaluateOperatorValidationErrors,
+	validateSemdSubmissionPreflight,
+	generateOperatorTrackingId,
 	dispatchCloudSemdSubmission,
 	dispatchCloudSemdSubmissionAsync,
 	formatCloudGatewayAuditForm043A4Protocol,

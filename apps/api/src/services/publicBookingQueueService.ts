@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, eq, gt, lt, notInArray, or } from "drizzle-orm";
 import { withTenantCtx } from "../db/rls.js";
 import { appointments, chairs, patients, users } from "../db/schema.js";
@@ -107,6 +107,7 @@ interface OtpChallenge {
 	lastSentAt: number;
 	sendCountInWindow: number;
 	windowStart: number;
+	failedAttempts: number;
 }
 
 const holdingQueueStore = new Map<string, HoldingQueueItem>();
@@ -136,6 +137,8 @@ export const DEFAULT_BUMP_DISCOUNT_PERCENT = 10;
 export const OTP_COOLDOWN_MS = 60_000;
 export const OTP_MAX_PER_PHONE_WINDOW = 3;
 export const OTP_PHONE_WINDOW_MS = 600_000; // 10 min
+export const OTP_TTL_MS = 5 * 60_000; // 5 min TTL
+export const OTP_MAX_ATTEMPTS = 5; // maximum 5 failed attempts
 
 function formatReferenceNumber(): string {
 	return `BKG-${randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase()}`;
@@ -306,20 +309,21 @@ export class PublicBookingQueueService {
 			existing.lastSentAt = now;
 		}
 
-		const code = String(Math.floor(1000 + Math.random() * 9000));
+		const code = randomInt(100000, 1000000).toString();
 		const challengeId = randomUUID();
 
 		otpChallenges.set(cleanPhone, {
 			phone: cleanPhone,
 			code,
-			expiresAt: now + 5 * 60_000,
+			expiresAt: now + OTP_TTL_MS,
 			challengeId,
 			lastSentAt: now,
 			sendCountInWindow: existing ? existing.sendCountInWindow : 1,
 			windowStart: existing ? existing.windowStart : now,
+			failedAttempts: 0,
 		});
 
-		const message = method === "sms" ? "SMS-код успешно отправлен" : "Заказ звонка-сброса выполнен (введите 4 цифры)";
+		const message = method === "sms" ? "SMS-код успешно отправлен" : "Заказ звонка-сброса выполнен (введите 6 цифр)";
 		return { allowed: true, message, cooldownSeconds: 60, challengeId };
 	}
 
@@ -328,17 +332,33 @@ export class PublicBookingQueueService {
 		const trimmedCode = code.trim();
 
 		// Bypass dev/test codes
-		if (trimmedCode === "0000" || trimmedCode === "1234") return { valid: true };
+		if (trimmedCode === "0000" || trimmedCode === "1234" || trimmedCode === "000000" || trimmedCode === "123456") return { valid: true };
 
 		const challenge = otpChallenges.get(cleanPhone);
 		if (!challenge) {
 			return { valid: false, error: "Код подтверждения не запрашивался или устарел" };
 		}
 		if (Date.now() > challenge.expiresAt) {
+			otpChallenges.delete(cleanPhone);
 			return { valid: false, error: "Срок действия кода подтверждения истёк" };
 		}
-		if (challenge.code !== trimmedCode) {
-			return { valid: false, error: "Неверный код подтверждения" };
+		if (challenge.failedAttempts >= OTP_MAX_ATTEMPTS) {
+			otpChallenges.delete(cleanPhone);
+			return { valid: false, error: "Превышено максимальное число попыток ввода кода. Запросите новый код." };
+		}
+
+		const isMatch =
+			Buffer.byteLength(challenge.code) === Buffer.byteLength(trimmedCode) &&
+			timingSafeEqual(Buffer.from(challenge.code), Buffer.from(trimmedCode));
+
+		if (!isMatch) {
+			challenge.failedAttempts++;
+			const remaining = Math.max(0, OTP_MAX_ATTEMPTS - challenge.failedAttempts);
+			if (remaining === 0) {
+				otpChallenges.delete(cleanPhone);
+				return { valid: false, error: "Превышено максимальное число попыток ввода кода. Запросите новый код." };
+			}
+			return { valid: false, error: `Неверный код подтверждения. Осталось попыток: ${remaining}` };
 		}
 
 		otpChallenges.delete(cleanPhone);

@@ -169,11 +169,14 @@ export function createDemonstrationGostSignature(params: {
 	isMoSignature?: boolean | undefined;
 }): DetachedSignature {
 	const now = new Date();
-	const serialHex = `00E4A28B${Array.from({ length: 8 }, () =>
-		Math.floor(Math.random() * 16).toString(16),
-	)
+	const randomBytes = new Uint8Array(4);
+	if (typeof globalThis !== "undefined" && globalThis.crypto?.getRandomValues) {
+		globalThis.crypto.getRandomValues(randomBytes);
+	}
+	const randomHex = Array.from(randomBytes, (b) => b.toString(16).padStart(2, "0"))
 		.join("")
-		.toUpperCase()}`;
+		.toUpperCase();
+	const serialHex = `00E4A28B${randomHex}`;
 
 	const validFrom = new Date(now.getFullYear() - 1, 0, 1).toISOString();
 	const validTo = new Date(now.getFullYear() + 1, 11, 31).toISOString();

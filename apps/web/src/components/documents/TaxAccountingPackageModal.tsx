@@ -50,7 +50,7 @@ const TAX_ACCOUNTING_ITEMS: readonly TaxItem[] = [
 	{
 		kind: "tax_deduction_certificate",
 		title: "Справка для налогового вычета (13% НДФЛ)",
-		statutoryRef: "Приказ ФНС России от 08.11.2023 № ЕД-7-11/755@",
+		statutoryRef: "Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@ (КНД 1151156)",
 		description: "Официальная унифицированная справка для получения социального налогового вычета 13% (НДФЛ).",
 	},
 	{
@@ -261,7 +261,7 @@ export function TaxAccountingPackageModal({
 							<FileCode2 size={24} color="var(--brand-800, #115e59)" aria-hidden="true" />
 							<div>
 								<strong style={{ fontSize: "13px", color: "var(--brand-900, #134e4a)" }}>
-									Электронная выгрузка XML для ФНС (Приказ № ЕД-7-11/755@)
+									Электронная выгрузка XML для ФНС (Приказ № ЕА-7-11/824@ / КНД 1184043)
 								</strong>
 								<div style={{ fontSize: "12px", color: "var(--brand-800, #115e59)" }}>
 									Автоматическая проверка XSD-схемы, ИНН, СНИЛС и формирование файла для отправки через ТКС/ЛК

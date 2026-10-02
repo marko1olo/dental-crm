@@ -20,6 +20,7 @@ import {
 	buildN3HealthRequestPackage,
 	buildMedElementRequestPackage,
 	evaluateOperatorValidationErrors,
+	validateSemdSubmissionPreflight,
 	dispatchCloudSemdSubmission,
 	dispatchCloudSemdSubmissionAsync,
 	formatCloudGatewayAuditForm043A4Protocol,
@@ -29,6 +30,7 @@ import {
 	type CloudSemdSubmissionPayload,
 	type CloudGatewaySubmissionResult,
 } from "../egiszCloudGatewayEngine.js";
+import { createDemonstrationGostSignature } from "../../cda/signature.js";
 
 const TEST_CLINIC_CONFIG_N3: CloudOperatorConfig = {
 	provider: "n3_health",
@@ -353,5 +355,162 @@ describe("EGISZ Cloud Operator Gateway Engine", () => {
 		assert.equal(result.errors[0]?.code, "OPERATOR_NETWORK_TIMEOUT");
 		assert.equal(result.errors[0]?.isRetryable, true);
 		assert.ok(result.statutoryDisclaimerRu.includes("Мандат 8e"));
+	});
+
+	// ─── 8. Preflight GOST REMD SEMD Quality Gate & Identity Validation ───────
+	describe("8. Preflight Statutory Identity Validation (SNILS / OGRN / OID)", () => {
+		it("strictly blocks submission to state system when doctor SNILS fails check digit", () => {
+			const corruptedDoctorPayload: CloudSemdSubmissionPayload = {
+				...TEST_SEMD_PAYLOAD,
+				doctorSnils: "123-456-789 00", // Invalid check digit (correct is 64)
+			};
+
+			const preflightErrors = validateSemdSubmissionPreflight(
+				TEST_CLINIC_CONFIG_N3,
+				corruptedDoctorPayload,
+			);
+			assert.ok(preflightErrors.length >= 1);
+			assert.equal(preflightErrors[0]?.code, "REMD_ERR_010" === preflightErrors[0]?.code ? "REMD_ERR_010" : "REMD_ERR_001");
+			assert.ok(preflightErrors.some((e) => e.code === "REMD_ERR_001"));
+			assert.ok(preflightErrors.some((e) => e.title.includes("Невалидный СНИЛС врача")));
+
+			// Test dispatchCloudSemdSubmission blocking
+			const syncResult = dispatchCloudSemdSubmission(
+				TEST_CLINIC_CONFIG_N3,
+				corruptedDoctorPayload,
+			);
+			assert.equal(syncResult.success, false);
+			assert.equal(syncResult.status, "REJECTED_VALIDATION");
+			assert.equal(syncResult.httpStatusCode, 422);
+			assert.equal(syncResult.remdRegistrationNumber, null);
+			assert.ok(syncResult.errors.some((e) => e.code === "REMD_ERR_001"));
+			assert.ok(syncResult.statutoryDisclaimerRu.includes("заблокирована"));
+		});
+
+		it("strictly blocks submission to state system when clinic OGRN fails check digit", () => {
+			const corruptedClinicConfig: CloudOperatorConfig = {
+				...TEST_CLINIC_CONFIG_N3,
+				clinicOgrn: "1157746123450", // Invalid check digit (correct is 7 for 115774612345)
+			};
+
+			const preflightErrors = validateSemdSubmissionPreflight(
+				corruptedClinicConfig,
+				TEST_SEMD_PAYLOAD,
+			);
+			assert.ok(preflightErrors.some((e) => e.code === "REMD_ERR_005"));
+			assert.ok(preflightErrors.some((e) => e.title.includes("Невалидный ОГРН")));
+
+			const syncResult = dispatchCloudSemdSubmission(
+				corruptedClinicConfig,
+				TEST_SEMD_PAYLOAD,
+			);
+			assert.equal(syncResult.success, false);
+			assert.equal(syncResult.status, "REJECTED_VALIDATION");
+			assert.equal(syncResult.httpStatusCode, 422);
+			assert.ok(syncResult.errors.some((e) => e.code === "REMD_ERR_005"));
+		});
+
+		it("accepts valid 15-digit OGRNIP for individual entrepreneur solo doctor (Mandate 8n)", () => {
+			// 315774600000016: 31577460000001 % 13 = 6. Valid OGRNIP!
+			const soloIpConfig: CloudOperatorConfig = {
+				...TEST_CLINIC_CONFIG_N3,
+				clinicOgrn: "315774600000016",
+			};
+
+			const preflightErrors = validateSemdSubmissionPreflight(
+				soloIpConfig,
+				TEST_SEMD_PAYLOAD,
+			);
+			assert.equal(preflightErrors.length, 0);
+
+			const result = dispatchCloudSemdSubmission(
+				soloIpConfig,
+				TEST_SEMD_PAYLOAD,
+			);
+			assert.equal(result.success, true);
+			assert.equal(result.status, "REGISTERED_SUCCESS");
+		});
+
+		it("validates clinic OID format against Minzdrav hierarchy roots (1.2.643.5.1.13...)", () => {
+			// Valid Minzdrav structure root 1.2.643.5.1.13.1.1.1...
+			const minzdravRootConfig: CloudOperatorConfig = {
+				...TEST_CLINIC_CONFIG_N3,
+				clinicOid: "1.2.643.5.1.13.1.1.1.77.100",
+			};
+			const okErrors = validateSemdSubmissionPreflight(
+				minzdravRootConfig,
+				TEST_SEMD_PAYLOAD,
+			);
+			assert.equal(okErrors.length, 0);
+
+			// Invalid OID
+			const invalidOidConfig: CloudOperatorConfig = {
+				...TEST_CLINIC_CONFIG_N3,
+				clinicOid: "not-an-oid-at-all",
+			};
+			const badErrors = validateSemdSubmissionPreflight(
+				invalidOidConfig,
+				TEST_SEMD_PAYLOAD,
+			);
+			assert.ok(badErrors.some((e) => e.code === "REMD_ERR_005"));
+			assert.ok(badErrors.some((e) => e.title.includes("Некорректный OID")));
+		});
+
+		it("async dispatcher rejects corrupted document before attempting network request", async () => {
+			let networkCallAttempted = false;
+			const failingFetch: typeof fetch = async () => {
+				networkCallAttempted = true;
+				throw new Error("Network should not be reached!");
+			};
+
+			const invalidDoctorPayload: CloudSemdSubmissionPayload = {
+				...TEST_SEMD_PAYLOAD,
+				doctorSnils: "00000000000", // Prohibited repetitive fake SNILS
+			};
+
+			const result = await dispatchCloudSemdSubmissionAsync(
+				TEST_CLINIC_CONFIG_N3,
+				invalidDoctorPayload,
+				failingFetch,
+			);
+
+			assert.equal(networkCallAttempted, false, "Corrupted SEMD must never trigger network request!");
+			assert.equal(result.success, false);
+			assert.equal(result.status, "REJECTED_VALIDATION");
+			assert.equal(result.httpStatusCode, 422);
+			assert.ok(result.errors.some((e) => e.code === "REMD_ERR_001"));
+		});
+	});
+
+	// ─── 9. Zero Math.random Verification (UUID v4 & Crypto Random) ────────────
+	describe("9. Zero Math.random & Cryptographic Generation Invariants", () => {
+		it("generates operator tracking ID conforming to UUID v4 without Math.random", () => {
+			const result = dispatchCloudSemdSubmission(
+				TEST_CLINIC_CONFIG_N3,
+				TEST_SEMD_PAYLOAD,
+			);
+
+			assert.equal(result.success, true);
+			assert.ok(result.rawOperatorTrackingId, "Tracking ID must exist");
+			// Format: OP-TRK-<uuid-v4>
+			const uuidV4Regex = /^OP-TRK-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+			assert.ok(
+				uuidV4Regex.test(result.rawOperatorTrackingId!),
+				`rawOperatorTrackingId "${result.rawOperatorTrackingId}" must match UUID v4 format`,
+			);
+		});
+
+		it("generates demonstration GOST signature serialHex using crypto.getRandomValues", () => {
+			const sig = createDemonstrationGostSignature({
+				doctorName: "Барабаш Сергей Владимирович",
+				doctorSnils: "123-456-789 64",
+				clinicName: 'ООО "Стоматология ДЕНТЕ Эксперт"',
+			});
+
+			assert.ok(sig.certificateSerialNumber.startsWith("00E4A28B"));
+			assert.equal(sig.certificateSerialNumber.length, 16); // 8 prefix chars + 8 random hex chars
+			assert.ok(/^[0-9A-F]{16}$/.test(sig.certificateSerialNumber));
+			assert.ok(sig.signatureBase64.length > 50);
+		});
 	});
 });

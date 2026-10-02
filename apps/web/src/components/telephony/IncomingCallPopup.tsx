@@ -125,6 +125,7 @@ export function IncomingCallPopup() {
 		currentCall,
 		elapsedSeconds,
 		resolvedPatient,
+		patientCategory,
 		financialSummary,
 		lastVisitSummary,
 		upcomingAppointment,
@@ -169,6 +170,10 @@ export function IncomingCallPopup() {
 			setSelectedPatientId(resolvedPatient.id);
 		} else if (currentCall?.phone) {
 			setNewPatientPhone(currentCall.phone);
+			usePatientStore.getState().setPatientCoreDraft((d) => ({
+				...d,
+				phone: currentCall.phone,
+			}));
 		}
 		if (activeCall && activeCall.status === "ringing") {
 			connectCall();
@@ -204,6 +209,10 @@ export function IncomingCallPopup() {
 		} else {
 			if (currentCall?.phone) {
 				setNewPatientPhone(currentCall.phone);
+				usePatientStore.getState().setPatientCoreDraft((d) => ({
+					...d,
+					phone: currentCall.phone,
+				}));
 			}
 			setCurrentView("patients");
 			showToast(`Переход к созданию пациента по номеру ${formattedPhone}`, "info");
@@ -237,6 +246,10 @@ export function IncomingCallPopup() {
 			setSelectedPatientId(resolvedPatient.id);
 		} else if (currentCall?.phone) {
 			setNewPatientPhone(currentCall.phone);
+			usePatientStore.getState().setPatientCoreDraft((d) => ({
+				...d,
+				phone: currentCall.phone,
+			}));
 		}
 
 		setNewAppointmentDraft({
@@ -546,9 +559,11 @@ export function IncomingCallPopup() {
 								initials={initials}
 								avatarColors={avatarColors}
 								isKnownPatient={isKnownPatient}
+								patientCategory={patientCategory}
 								financialSummary={financialSummary}
 								somaticAlerts={somaticAlerts}
 								upcomingAppointment={upcomingAppointment}
+								lastVisitSummary={lastVisitSummary}
 								activeTreatmentPlan={activeTreatmentPlan}
 								callAttribution={callAttribution}
 								compact={true}
@@ -651,6 +666,7 @@ export function IncomingCallPopup() {
 				initials={initials}
 				avatarColors={avatarColors}
 				isKnownPatient={isKnownPatient}
+				patientCategory={patientCategory}
 				resolvedPatient={resolvedPatient}
 				financialSummary={financialSummary}
 				somaticAlerts={somaticAlerts}

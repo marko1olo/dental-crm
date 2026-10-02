@@ -19,6 +19,7 @@
  */
 
 import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import os from "node:os";
@@ -101,7 +102,7 @@ export async function runDisasterRecovery(options: DisasterRecoveryOptions): Pro
 	// ЗАЩИТА ОТ CRYPTOGRAPHIC DOOM PRINCIPLE:
 	// Ни один байт незаверенных данных не поступит в PostgreSQL, пока GCM Auth Tag не подтвержден!
 	log("⏳ Потоковое скачивание, дешифрация AES-256-GCM и декомпрессия gzip на диске...");
-	const recoveryTempDir = path.join(os.tmpdir(), `dente_dr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+	const recoveryTempDir = path.join(os.tmpdir(), `dente_dr_${Date.now()}_${randomUUID()}`);
 	await fsPromises.mkdir(recoveryTempDir, { recursive: true });
 	const targetVerifiedSqlPath = path.join(recoveryTempDir, "verified_database_dump.sql");
 

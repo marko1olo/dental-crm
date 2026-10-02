@@ -1051,90 +1051,34 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 			};
 		}
 
-		// 2. Fiscal Receipt: direct TCP or Serial COM on Desktop EXE, or thermal service on Web/Mobile
+		// 2. Fiscal Receipt: Statutory 54-FZ & 804n Zero-Mock execution pipeline
 		if (job.type === "fiscal_receipt") {
-			if (isDesktopExecutable() && job.kktConnection) {
-				const isSerial =
-					Boolean((job.kktConnection as any).serialPort) ||
-					/^COM\d+/i.test(job.kktConnection.host || "") ||
-					/^\/dev\/tty/i.test(job.kktConnection.host || "");
+			const {
+				extractAndValidateFiscalJobPayload,
+				executeStatutoryFiscalPipeline,
+			} = await import("./kktFiscalPipeline.js");
 
-				if (isSerial) {
-					const { printDesktopFiscalReceiptSerial } = await import("../native/desktopBridge.js");
-					try {
-						const port = (job.kktConnection as any).serialPort || job.kktConnection.host;
-						const res = await printDesktopFiscalReceiptSerial({
-							port,
-							baudRate: job.kktConnection.port || 115200,
-							protocol: (job.kktConnection.protocol === "shtrih" ? "shtrih" : "atol") as "atol" | "shtrih",
-							payload: JSON.parse(job.kktConnection.payloadJson),
-						});
-						return {
-							success: res.success,
-							methodUsed: "desktop_silent",
-							printedAt: res.printedAt || now,
-							...(res.fiscalSign ? { fiscalSign: res.fiscalSign } : {}),
-							...(res.fiscalDocNum ? { fiscalDocNum: res.fiscalDocNum } : {}),
-							...(res.kktSerialNumber ? { kktSerialNumber: res.kktSerialNumber } : {}),
-							...(res.error ? { error: res.error } : {}),
-						};
-					} catch (err: unknown) {
-						const message = err instanceof Error ? err.message : "Ошибка COM-печати ККТ";
-						return { success: false, methodUsed: "desktop_silent", printedAt: now, error: message };
-					}
-				}
-
-				const { printDesktopFiscalReceiptTcp } = await import("../native/desktopBridge.js");
-				try {
-					const res = await printDesktopFiscalReceiptTcp({
-						host: job.kktConnection.host,
-						port: job.kktConnection.port,
-						protocol: (job.kktConnection.protocol === "shtrih" ? "shtrih" : "atol") as "atol" | "shtrih",
-						payload: JSON.parse(job.kktConnection.payloadJson),
-					});
-					return {
-						success: res.success,
-						methodUsed: "desktop_silent",
-						printedAt: res.printedAt || now,
-						...(res.fiscalSign ? { fiscalSign: res.fiscalSign } : {}),
-						...(res.fiscalDocNum ? { fiscalDocNum: res.fiscalDocNum } : {}),
-						...(res.kktSerialNumber ? { kktSerialNumber: res.kktSerialNumber } : {}),
-						...(res.error ? { error: res.error } : {}),
-					};
-				} catch (err: unknown) {
-					const message = err instanceof Error ? err.message : "Ошибка TCP печати ККТ";
-					return { success: false, methodUsed: "desktop_silent", printedAt: now, error: message };
-				}
+			const validation = extractAndValidateFiscalJobPayload(job);
+			if (!validation.isValid || !validation.normalizedPayload) {
+				return {
+					success: false,
+					methodUsed: isDesktopExecutable() ? "desktop_silent" : "browser_print",
+					printedAt: now,
+					status: "failed",
+					error: validation.error || "Отсутствуют фискальные реквизиты чека",
+				};
 			}
 
-			// Fallback: print thermal receipt via hardwarePrinting pipeline
-			const { printThermalReceipt } = await import("./hardwarePrinting.js");
-			const dummyFiscalPayload = {
-				receiptNumber: `REC-${Date.now().toString().slice(-6)}`,
-				shiftNumber: 1,
-				cashierFullName: "Кассир",
-				operationType: "income" as const,
-				totalRub: 0,
-				taxSystem: "usn_income" as const,
-				items: [],
-				issuedAtIso: now,
-			};
-			const res = await printThermalReceipt(dummyFiscalPayload, {
+			const res = await executeStatutoryFiscalPipeline(validation.normalizedPayload, {
 				paperWidthMm: job.paperWidthMm ?? 58,
 				...(job.silent !== undefined ? { silent: job.silent } : {}),
 				...(job.printerName ? { printerName: job.printerName } : {}),
-				...(job.rawText ? { rawEscPos: job.rawText } : {}),
 				...(job.copies !== undefined ? { copies: job.copies } : {}),
+				...(job.rawText ? { rawText: job.rawText } : {}),
+				...(job.kktConnection ? { kktConnection: job.kktConnection } : {}),
 			});
-			return {
-				success: res.success,
-				methodUsed: res.method === "desktop_silent" ? "desktop_silent" : "browser_print",
-				printedAt: now,
-				...(res.fiscalSign ? { fiscalSign: res.fiscalSign } : {}),
-				...(res.fiscalDocNum ? { fiscalDocNum: res.fiscalDocNum } : {}),
-				...(res.kktSerialNumber ? { kktSerialNumber: res.kktSerialNumber } : {}),
-				...(res.error ? { error: res.error } : {}),
-			};
+
+			return res;
 		}
 
 		// 3. Thermal Receipt ESC/POS (Non-fiscal orders / lab stubs)

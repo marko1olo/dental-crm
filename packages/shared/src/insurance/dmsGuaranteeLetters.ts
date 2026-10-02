@@ -267,6 +267,8 @@ export interface DmsCoverageEvaluation {
 	readonly limitUsageRatioPercent: number; // 0..100%
 	readonly warning80PercentReached: boolean; // Soft warning flag
 	readonly limitExceeded: boolean; // Hard limit flag
+	readonly isDoctorWorkBlocked: false; // Mandates 8e & 8n: Doctor care is NEVER blocked
+	readonly coverageIndicatorRu: string; // Statutory clinical status indicator
 	readonly rejectionReasonRu?: string | undefined;
 	readonly warningMessageRu?: string | undefined;
 	readonly actionRecommendationsRu: readonly string[];
@@ -326,6 +328,8 @@ export function evaluateGuaranteeLetterCoverage(
 				: 100,
 			warning80PercentReached: true,
 			limitExceeded: requestedInsurerAmountKopecks > letter.remainingLimitKopecks,
+			isDoctorWorkBlocked: false,
+			coverageIndicatorRu: "Экстренная помощь (острая боль): приём разрешен без блокировок, требуется досылка гарантийного письма ДМС",
 			warningMessageRu: hasDiscrepancy
 				? "Требуется досылка гарантийного письма ДМС (оказание помощи при острой боли разрешено)"
 				: undefined,
@@ -358,6 +362,8 @@ export function evaluateGuaranteeLetterCoverage(
 				: 100,
 			warning80PercentReached: true,
 			limitExceeded: true,
+			isDoctorWorkBlocked: false,
+			coverageIndicatorRu: "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом",
 			rejectionReasonRu: `Гарантийное письмо неактивно: ${statusLabels[letter.status]}`,
 			actionRecommendationsRu: [
 				"Сумма переведена в счет оплаты пациентом в кассу клиники.",
@@ -381,6 +387,8 @@ export function evaluateGuaranteeLetterCoverage(
 				: 0,
 			warning80PercentReached: false,
 			limitExceeded: false,
+			isDoctorWorkBlocked: false,
+			coverageIndicatorRu: "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом",
 			rejectionReasonRu: `Дата услуги (${serviceDate}) предшествует началу действия гарантийного письма (${letter.validFrom})`,
 			actionRecommendationsRu: [
 				"Проверьте дату визита или свяжитесь с куратором страховой компании.",
@@ -400,6 +408,8 @@ export function evaluateGuaranteeLetterCoverage(
 			limitUsageRatioPercent: 100,
 			warning80PercentReached: true,
 			limitExceeded: true,
+			isDoctorWorkBlocked: false,
+			coverageIndicatorRu: "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом",
 			rejectionReasonRu: `Срок действия гарантийного письма истек ${letter.validTo} (дата услуги: ${serviceDate})`,
 			actionRecommendationsRu: [
 				"Запросите продление гарантийного письма у куратора ДМС.",
@@ -427,6 +437,8 @@ export function evaluateGuaranteeLetterCoverage(
 					: 0,
 				warning80PercentReached: false,
 				limitExceeded: false,
+				isDoctorWorkBlocked: false,
+				coverageIndicatorRu: "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом",
 				rejectionReasonRu: `Услуга ${code} (${options.serviceName ?? ""}) исключена из покрытия данным гарантийным письмом`,
 				actionRecommendationsRu: [
 					"Услуга не входит в программу ДМС застрахованного. Оплата производится пациентом.",
@@ -451,6 +463,8 @@ export function evaluateGuaranteeLetterCoverage(
 						: 0,
 					warning80PercentReached: false,
 					limitExceeded: false,
+					isDoctorWorkBlocked: false,
+					coverageIndicatorRu: "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом",
 					rejectionReasonRu: `Код услуги ${code} не соответствует разрешенным разделам программы (${letter.allowed804nPrefixes.join(", ")})`,
 					actionRecommendationsRu: [
 						"Согласуйте расширение гарантийного письма со страховой компанией.",
@@ -475,6 +489,8 @@ export function evaluateGuaranteeLetterCoverage(
 			limitUsageRatioPercent: 100,
 			warning80PercentReached: true,
 			limitExceeded: true,
+			isDoctorWorkBlocked: false,
+			coverageIndicatorRu: "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом",
 			rejectionReasonRu: `Лимит гарантийного письма полностью исчерпан (${formatKopecksRu(letter.limitKopecks)})`,
 			actionRecommendationsRu: [
 				"Лимит исчерпан на 100%. Оплата визита полностью переходит на пациента.",
@@ -514,6 +530,10 @@ export function evaluateGuaranteeLetterCoverage(
 		recommendations.push("Рекомендуется уведомить пациента и куратора ДМС о скором исчерпании лимита.");
 	}
 
+	const coverageIndicatorRu = limitExceeded
+		? `Превышен лимит ДМС: ${formatKopecksRu(approvedInsurer)} покрыто, остаток ${formatKopecksRu(overflowPatient)} переведен на пациента`
+		: "Покрывается ДМС в рамках гарантийного письма";
+
 	return {
 		letterId: letter.id,
 		status,
@@ -525,6 +545,8 @@ export function evaluateGuaranteeLetterCoverage(
 		limitUsageRatioPercent: Math.round(projectedUsageRatio),
 		warning80PercentReached,
 		limitExceeded,
+		isDoctorWorkBlocked: false,
+		coverageIndicatorRu,
 		warningMessageRu: warningMessage,
 		actionRecommendationsRu: recommendations,
 	};
@@ -533,6 +555,7 @@ export function evaluateGuaranteeLetterCoverage(
 /**
  * Deducts approved insurer amount from the guarantee letter and records an audit transaction.
  * Returns an updated immutable copy of the guarantee letter.
+ * Generates deterministic transaction IDs (zero Math.random).
  */
 export function applyGuaranteeLetterDeduction(
 	letter: DmsGuaranteeLetter,
@@ -542,6 +565,7 @@ export function applyGuaranteeLetterDeduction(
 		serviceDate: string;
 		descriptionRu: string;
 		doctorName?: string | undefined;
+		transactionId?: string | undefined;
 	},
 ): {
 	updatedLetter: DmsGuaranteeLetter;
@@ -563,8 +587,12 @@ export function applyGuaranteeLetterDeduction(
 	const newStatus: DmsGuaranteeLetterStatus =
 		newRemaining === 0 ? "exhausted" : letter.status;
 
+	const txIndex = (letter.transactions?.length ?? 0) + 1;
+	const sanitizedRef = meta.transactionRef.trim().replace(/[^a-zA-Z0-9_-]/g, "_");
+	const txId = meta.transactionId ?? `tx_${letter.id}_${txIndex}_${sanitizedRef}`;
+
 	const tx: DmsLetterTransaction = {
-		id: `tx_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+		id: txId,
 		letterId: letter.id,
 		dateIso: meta.serviceDate,
 		transactionRef: meta.transactionRef,
@@ -589,5 +617,156 @@ export function applyGuaranteeLetterDeduction(
 		actualDeductedKopecks: actualDeducted,
 		overflowToPatientKopecks: overflow,
 		transaction: tx,
+	};
+}
+
+/**
+ * Common dental services excluded from standard Russian DMS programs (СОГАЗ, Ингосстрах, АльфаСтрахование, РЕСО, ВСК).
+ * These services require separate guarantee letter approval or patient out-of-pocket payment.
+ */
+export const STANDARD_DMS_EXCLUDED_804N_SERVICES = [
+	{ code804n: "A16.07.003", nameRu: "Восстановление зуба керамическим виниром / виниринг", category: "veneers", reasonRu: "Эстетическая реставрация (виниры) исключена из стандартного покрытия ДМС" },
+	{ code804n: "A16.07.003.001", nameRu: "Керамический винир (E.max, полевой шпат)", category: "veneers", reasonRu: "Керамические виниры относятся к эстетической стоматологии и не покрываются базовым полисом ДМС" },
+	{ code804n: "A16.07.054", nameRu: "Внутрикостная дентальная имплантация", category: "implantology", reasonRu: "Дентальная имплантация исключена из стандартных программ ДМС (требуется спец. программа или оплата пациентом)" },
+	{ code804n: "A16.07.006", nameRu: "Установка дентального имплантата (хирургический этап)", category: "implantology", reasonRu: "Хирургическая установка имплантатов исключена из базового покрытия ДМС" },
+	{ code804n: "A16.07.050", nameRu: "Профессиональное отбеливание зубов", category: "whitening", reasonRu: "Косметическое отбеливание не входит в стандартный перечень страховых рисков ДМС" },
+	{ code804n: "A16.07.048", nameRu: "Ортодонтическая коррекция с применением брекет-систем", category: "orthodontics", reasonRu: "Исправление прикуса и брекет-системы не покрываются стандартным полисом ДМС" },
+] as const;
+
+/**
+ * Standard dental therapeutic and emergency services covered under Russian DMS programs.
+ */
+export const STANDARD_DMS_COVERED_804N_PREFIXES = [
+	"A16.07.002", // Лечение кариеса (пломбы)
+	"A16.07.030", // Эндодонтия: инструментальная обработка каналов
+	"A16.07.008", // Пломбирование корневых каналов
+	"A16.07.001", // Удаление зубов (хирургия)
+	"A11.07.010", // Анестезия инфильтрационная
+	"A11.07.011", // Анестезия проводниковая
+	"A11.07.012", // Анестезия аппликационная
+	"B01.003.004", // Прием врача-стоматолога
+	"A06.07.003", // Прицельная рентгенография
+	"A06.07.007", // Внутриротовая контактная рентгенография
+	"A16.07.051", // Профессиональная гигиена полости рта
+] as const;
+
+/**
+ * Result of checking an individual dental service against patient's DMS policy and guarantee letter.
+ * Non-blocking by design (Mandate 8e & 8n: Doctor work is never blocked).
+ */
+export interface DmsServiceCheckResult {
+	readonly isCovered: boolean;
+	readonly coverageIndicatorRu: string;
+	readonly isDoctorWorkBlocked: false;
+	readonly approvedInsurerKopecks: Kopecks;
+	readonly patientPortionKopecks: Kopecks;
+	readonly remainingLimitAfterKopecks: Kopecks;
+	readonly reasonRu: string;
+	readonly recommendationRu: string;
+}
+
+/**
+ * Evaluates service coverage for clinical assignment.
+ * When service is not covered (e.g., ceramic veneer, implant), returns clear indicator:
+ * «Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом»
+ * WITHOUT blocking doctor's work (Mandate 8n Zero Dead-Ends).
+ */
+export function checkServiceDmsCoverage(
+	letter: DmsGuaranteeLetter | null | undefined,
+	service: {
+		code804n: string;
+		nameRu?: string | undefined;
+		priceKopecks: Kopecks;
+		isEmergency?: boolean | undefined;
+		hasAcutePain?: boolean | undefined;
+		serviceDate?: string | undefined;
+	},
+): DmsServiceCheckResult {
+	const isUrgentCare = Boolean(service.isEmergency || service.hasAcutePain);
+
+	if (isUrgentCare) {
+		return {
+			isCovered: true,
+			coverageIndicatorRu: "Экстренная помощь (острая боль): приём разрешен без блокировок, требуется досылка гарантийного письма ДМС",
+			isDoctorWorkBlocked: false,
+			approvedInsurerKopecks: service.priceKopecks,
+			patientPortionKopecks: 0,
+			remainingLimitAfterKopecks: letter ? Math.max(0, letter.remainingLimitKopecks - service.priceKopecks) : 0,
+			reasonRu: "Экстренная медицинская помощь при острой зубной боли",
+			recommendationRu: "Окажите помощь пациенту. Запросите гарантийное письмо у страховой компании.",
+		};
+	}
+
+	const normalizedCode = service.code804n.trim();
+	const isKnownExcluded = STANDARD_DMS_EXCLUDED_804N_SERVICES.some(
+		(ex) => normalizedCode === ex.code804n || normalizedCode.startsWith(ex.code804n),
+	);
+
+	// Case 1: No guarantee letter present
+	if (!letter) {
+		if (isKnownExcluded) {
+			const excludedMeta = STANDARD_DMS_EXCLUDED_804N_SERVICES.find(
+				(ex) => normalizedCode === ex.code804n || normalizedCode.startsWith(ex.code804n),
+			);
+			return {
+				isCovered: false,
+				coverageIndicatorRu: "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом",
+				isDoctorWorkBlocked: false,
+				approvedInsurerKopecks: 0,
+				patientPortionKopecks: service.priceKopecks,
+				remainingLimitAfterKopecks: 0,
+				reasonRu: excludedMeta?.reasonRu ?? `Услуга ${normalizedCode} (${service.nameRu ?? ""}) исключена из стандартного ДМС`,
+				recommendationRu: "Услуга оплачивается пациентом в кассу или требуется отдельное гарантийное письмо от СМО.",
+			};
+		}
+
+		// Check if it's a standard covered therapeutic service
+		const isStandardCovered = STANDARD_DMS_COVERED_804N_PREFIXES.some((prefix) =>
+			normalizedCode.startsWith(prefix),
+		);
+
+		if (isStandardCovered) {
+			return {
+				isCovered: true,
+				coverageIndicatorRu: "Покрывается базовой программой ДМС",
+				isDoctorWorkBlocked: false,
+				approvedInsurerKopecks: service.priceKopecks,
+				patientPortionKopecks: 0,
+				remainingLimitAfterKopecks: 0,
+				reasonRu: `Услуга ${normalizedCode} входит в базовый терапевтический стандарт ДМС`,
+				recommendationRu: "Услуга направляется в реестр на возмещение страховой компанией.",
+			};
+		}
+
+		return {
+			isCovered: false,
+			coverageIndicatorRu: "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом",
+			isDoctorWorkBlocked: false,
+			approvedInsurerKopecks: 0,
+			patientPortionKopecks: service.priceKopecks,
+			remainingLimitAfterKopecks: 0,
+			reasonRu: `Услуга ${normalizedCode} не входит в стандартный объем без гарантийного письма`,
+			recommendationRu: "Услуга оплачивается пациентом либо запрашивается гарантийное письмо у страховой компании.",
+		};
+	}
+
+	// Case 2: Guarantee letter provided
+	const evaluation = evaluateGuaranteeLetterCoverage(letter, service.priceKopecks, {
+		serviceCode804n: service.code804n,
+		serviceName: service.nameRu,
+		serviceDate: service.serviceDate,
+		isEmergency: service.isEmergency,
+		hasAcutePain: service.hasAcutePain,
+	});
+
+	return {
+		isCovered: evaluation.isApproved,
+		coverageIndicatorRu: evaluation.coverageIndicatorRu,
+		isDoctorWorkBlocked: false,
+		approvedInsurerKopecks: evaluation.approvedInsurerKopecks,
+		patientPortionKopecks: evaluation.overflowToPatientKopecks,
+		remainingLimitAfterKopecks: evaluation.remainingLimitAfterKopecks,
+		reasonRu: evaluation.rejectionReasonRu ?? (evaluation.isApproved ? "Услуга согласована страховой компанией" : "Не согласовано"),
+		recommendationRu: evaluation.actionRecommendationsRu[0] ?? "Действуйте в соответствии с регламентом ДМС.",
 	};
 }

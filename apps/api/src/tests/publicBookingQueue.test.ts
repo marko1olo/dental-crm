@@ -344,4 +344,29 @@ describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n
 		});
 		assert.equal(receipt.status, "CONFIRMED");
 	});
+
+	it("11. 6-Digit CSPRNG Code Security & 5-Attempt Lockout Protection", () => {
+		const securePhone = "+7 (927) 888-00-11";
+		const ip = "192.168.1.120";
+
+		const req = publicBookingQueueService.requestPhoneVerification(securePhone, "sms", ip);
+		assert.equal(req.allowed, true);
+
+		// Multiple wrong attempts should decrement and lockout at 5 attempts
+		for (let attempt = 1; attempt <= 4; attempt++) {
+			const check = publicBookingQueueService.verifyPhoneOtp(securePhone, "999999");
+			assert.equal(check.valid, false);
+			assert.match(check.error || "", /Осталось попыток: \d/);
+		}
+
+		// 5th failed attempt must purge challenge and lockout
+		const fifthCheck = publicBookingQueueService.verifyPhoneOtp(securePhone, "999999");
+		assert.equal(fifthCheck.valid, false);
+		assert.match(fifthCheck.error || "", /Превышено максимальное число попыток/);
+
+		// Subsequent attempt returns challenge expired or not found
+		const subsequentCheck = publicBookingQueueService.verifyPhoneOtp(securePhone, "999999");
+		assert.equal(subsequentCheck.valid, false);
+		assert.match(subsequentCheck.error || "", /не запрашивался или устарел/);
+	});
 });

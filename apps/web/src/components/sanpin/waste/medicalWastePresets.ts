@@ -371,12 +371,12 @@ export const SANPIN_STORAGE_LOCATIONS: readonly WasteStorageLocationDefinition[]
 	},
 	{
 		id: "waste_refrigerator_2_8",
-		nameRu: "Специализированный холодильник для отходов (+2...+8°C)",
-		temperatureRangeRu: "+2...+8°C",
-		maxAllowedStorageHours: 168, // До 7 суток (7 * 24 = 168)
-		maxAllowedStorageDays: 7,
+		nameRu: "Специализированный холодильник для отходов (+2...+5°C)",
+		temperatureRangeRu: "+2...+5°C (не выше +5°C)",
+		maxAllowedStorageHours: 72, // Не более 72 часов (3 суток) per СанПиН 2.1.3684-21 п. 174
+		maxAllowedStorageDays: 3,
 		appliesToClasses: ["class_B"],
-		descriptionRu: "При использовании специализированного холодильного оборудования накопление отходов класса Б допускается до 7 суток.",
+		descriptionRu: "При использовании специализированного холодильного оборудования при температуре не выше +5°C накопление отходов класса Б допускается не более 3 суток (72 часов) per СанПиН 2.1.3684-21 п. 174.",
 	},
 	{
 		id: "waste_freezer_minus_18",

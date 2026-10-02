@@ -1,0 +1,30 @@
+{
+  "subagent": "zero_mock_insurance_dms_inquisitor",
+  "status": "completed",
+  "started_at": "2026-10-02T14:15:00Z",
+  "completed_at": "2026-10-02T14:28:30Z",
+  "completed_steps": [
+    "Read all mandatory instructions and rules (core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md)",
+    "Verified existing test suite and architecture in packages/shared and apps/web/src/components/insurance",
+    "Located exact Math.random usage in packages/shared/src/insurance/dmsGuaranteeLetters.ts:567",
+    "Eradicated Math.random in dmsGuaranteeLetters.ts: implemented deterministic sequential IDs tx_${letter.id}_${txIndex}_${sanitizedRef} with explicit meta.transactionId override",
+    "Implemented honest limit tracking for Russian health insurers (СОГАЗ, Ингосстрах, АльфаСтрахование, РЕСО-Гарантия, ВСК) in integer kopecks with exact penny balance",
+    "Enforced Mandates 8e & 8n (Doctor Autonomy & Zero Dead-Ends): uncovered services (veneers A16.07.003, implants A16.07.054, whitening A16.07.050) return explicit indicator ('Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом') with isDoctorWorkBlocked: false guaranteed across all branches",
+    "Added checkServiceDmsCoverage for 1-click clinical assignment checking without doctor blocking",
+    "Implemented generateDmsAcceptanceActA4Html in packages/shared/src/insurance/dmsRegistryExport.ts: statutory A4 landscape Acceptance Act with full 804n services table, kopeck totals, Russian words (amountToWordsRu), VAT exemption (пп. 2 п. 2 ст. 149 НК РФ), and signature blocks without emojis",
+    "Updated apps/web/src/components/insurance/insurancePrintAct.ts: added № Гар. письма column to bilateral act table",
+    "Added unit tests 2.7, 2.8, 2.9, and 3.6 to packages/shared/src/tests/dmsFranchiseEngine.test.ts",
+    "Verified isolated test suite passes: 21/21 PASS (0 failures) in packages/shared/src/tests/dmsFranchiseEngine.test.ts",
+    "Verified web insurance tests pass: 11/11 PASS (0 failures) in apps/web/src/components/insurance/insuranceMath.test.ts",
+    "Confirmed strict file size limit invariant: all modified files are strictly <= 800 lines (dmsGuaranteeLetters.ts: 773 lines, dmsRegistryExport.ts: 778 lines, insurancePrintAct.ts: 248 lines, dmsFranchiseEngine.test.ts: 784 lines)"
+  ],
+  "pending_steps": [],
+  "findings": {
+    "mathRandomFound": "packages/shared/src/insurance/dmsGuaranteeLetters.ts:567 - ERADICATED",
+    "insurersCatalog": "СОГАЗ, Ингосстрах, АльфаСтрахование, РЕСО-Гарантия, ВСК verified and supported with exact kopeck math",
+    "coverageLogic": "Mandates 8e/8n enforced: isDoctorWorkBlocked is strictly false; indicator: 'Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом'",
+    "acceptanceAct": "Statutory A4 landscape Bilateral Acceptance Act (generateDmsAcceptanceActA4Html) fully operational with exact kopeck sums and legal signatures",
+    "lineCountInvariant": "All files <= 800 lines verified",
+    "testResults": "21/21 shared DMS tests PASS, 11/11 web insurance tests PASS"
+  }
+}

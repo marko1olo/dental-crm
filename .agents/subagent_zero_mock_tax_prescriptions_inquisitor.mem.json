@@ -1,0 +1,51 @@
+{
+  "agent": "subagent_zero_mock_tax_prescriptions_inquisitor",
+  "status": "completed",
+  "current_phase": "delivered_and_verified",
+  "scope": [
+    "apps/web/src/components/documents/prescriptionPrintEngine.ts",
+    "apps/web/src/components/documents/taxCertificateEngine.ts",
+    "apps/web/src/components/documents/TaxCertificateModal.tsx",
+    "apps/web/src/components/documents/TaxAccountingPackageModal.tsx",
+    "apps/web/src/components/documents/taxApplicationBlockers.ts",
+    "apps/web/src/components/documents/__tests__/taxCertificateAndPrescriptionZeroMock.test.ts"
+  ],
+  "completed_steps": [
+    "read_mandatory_constitutions_and_rules",
+    "audit_tax_certificate_engine_and_modal",
+    "audit_prescription_print_engine",
+    "implement_strict_fns_knd_1151156_verification_and_aggregation",
+    "implement_rx_107_1_u_latin_inn_and_signa_enforcement",
+    "run_targeted_unit_tests",
+    "verify_clean_compilation_and_zero_mocks",
+    "verify_check_encoding_and_css_tokens"
+  ],
+  "pending_steps": [],
+  "findings": [
+    {
+      "area": "FNS KND 1151156 Statutory Compliance",
+      "status": "VERIFIED",
+      "details": "Implemented canonical FNS Order EA-7-11/824@ logic: 10-digit legal entity and 12-digit individual INN check-digit calculation with GOST/FNS weights; calendar tax year isolation; exact integer kopecks aggregation; Code 1 (standard capped at 150 000 ₽ for 2024+ / 120 000 ₽ pre-2024) vs Code 2 (expensive dental treatment per Decree No. 458, uncapped); net refund subtractions; full kinship support (patient, spouse, parent, child); official printable HTML with Code 128 barcode and verification QR."
+    },
+    {
+      "area": "Form 107-1/у Prescriptions Statutory Compliance",
+      "status": "VERIFIED",
+      "details": "Implemented strict Order of Minzdrav RF No. 1094n compliance: Latin MNN generation, strict dosage and quantity validation, rejection of vague/indefinite Signa ('по схеме', 'по назначению врача', 'как обычно'), official A5 portrait printable HTML with clinic stamp, doctor seal area ('М.П. ВРАЧ'), and prescription stamp ('ДЛЯ РЕЦЕПТОВ')."
+    },
+    {
+      "area": "Interactive UI Component",
+      "status": "VERIFIED",
+      "details": "Created TaxCertificateModal.tsx featuring tax year selection, relative taxpayer credentials, real-time INN validation status badge, fiscal payment list with Code 1 / Code 2 badge breakdown, summary cards, and 1-click print."
+    },
+    {
+      "area": "Purity & Architecture",
+      "status": "VERIFIED",
+      "details": "Zero synthetic mocks (zero Ivanovs, Petrs, Sidorovs), zero cartoon emojis (Mandate 8d pt 7), all files strictly under 800-line anti-monolith limit (607, 547, 466, 441 lines). Zero touches to CT / CBCT / radiology scope."
+    },
+    {
+      "area": "Test Suite",
+      "status": "VERIFIED",
+      "details": "26/26 unit tests passing (100% pass, 0 failures, duration ~2.2s)."
+    }
+  ]
+}

@@ -20,6 +20,7 @@ import type {
 	PatientSomaticAlert,
 	PatientUpcomingAppointmentSummary,
 	PatientLastVisitSummary,
+	TelephonyPatientCategory,
 } from "../../store/telephonyTypes";
 import { showToast } from "../GlobalToast";
 import {
@@ -39,6 +40,7 @@ export interface IncomingCallPatientDrawerProps {
 	initials: string;
 	avatarColors: { bg: string; text: string };
 	isKnownPatient: boolean;
+	patientCategory?: TelephonyPatientCategory | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: patient like compatibility
 	resolvedPatient: any | null;
 	financialSummary: PatientFinancialSummary;
@@ -79,6 +81,7 @@ export function IncomingCallPatientDrawer({
 	initials,
 	avatarColors,
 	isKnownPatient,
+	patientCategory,
 	resolvedPatient,
 	financialSummary,
 	somaticAlerts,
@@ -305,6 +308,7 @@ export function IncomingCallPatientDrawer({
 					initials={initials}
 					avatarColors={avatarColors}
 					isKnownPatient={isKnownPatient}
+					patientCategory={patientCategory}
 					birthDate={resolvedPatient?.birthDate}
 					financialSummary={financialSummary}
 					somaticAlerts={somaticAlerts}

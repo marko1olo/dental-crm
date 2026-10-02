@@ -1,0 +1,28 @@
+{
+  "role": "ZERO-MOCK SANPIN STERILIZATION & AZOPYRAM LOGS INQUISITOR",
+  "status": "COMPLETED",
+  "completed_steps": [
+    "Read core.md, frontend.md, engineering.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md",
+    "Verified scope: apps/web/src/components/sanpin/ and related zero-mock sanpin logs",
+    "Strict invariant: DO NOT TOUCH radiology/CBCT (verified: 0 changes in radiology)",
+    "Engine created: sanpinAzopyramEngine.ts (641 lines, <= 800) implementing SanPiN 3.3686-21 and MU 287-113 regulatory standards",
+    "Implemented 2-hour working solution lifespan ceiling for azopyram + 3% H2O2, with live minutes remaining and expiration guard",
+    "Implemented 100% batch rejection and quarantine protocols on positive occult blood or alkaline detergent detection",
+    "Implemented statutory sampling calculation (1% of batch, floor 3 standard, floor 5 surgical)",
+    "Engineered clean statutory A4 landscape Form № 366/у print generation for Rospotrebnadzor inspections",
+    "Created SterilizationCycleModal.tsx (739 lines, <= 800) with real clinic device selection (Class B, dry heat, glassperlen bead), 134°C/121°C/180°C/240°C regimes, class 4 & 5 chemical indicators (KT-1..KT-5), and kraft shelf-life calculation",
+    "Updated AutoclaveEquipmentModal.tsx with glassperlen bead sterilizer support",
+    "Wired SterilizationCycleModal into AutoclaveRegisterTable.tsx and AutoclaveRegisterTab.tsx",
+    "Updated AutoclaveLog257Modal.tsx to fetch live records from /api/registers/sterilization and eliminated synthetic mock records",
+    "Enhanced PsoRegisterTab.tsx modal with 1-click instrument category presets, reagent lot tracking, live 2-hour solution freshness timer, and quarantine alert block",
+    "Fixed Mandate 8d unicode cartoon symbol test violations (replaced unicode checkmark/cross with clean text)",
+    "Authored comprehensive unit tests in sanpinAzopyramEngine.test.ts (338 lines) covering all 6 regulatory domains",
+    "All 198 sanpin unit tests passing across all 12 test suites (Exit code 0)",
+    "Verified 0 TypeScript compiler errors in src/components/sanpin/*"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Azopyram solution oxidizes spontaneously after 120 minutes at room temperature, leading to false positives; hard guard prevents running/logging trials with expired solution.",
+    "Form 366/у and Form 257/у now strictly produce print-ready A4 landscape documents without grey artifacts or cartoon emojis."
+  ]
+}

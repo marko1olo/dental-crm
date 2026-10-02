@@ -30,6 +30,11 @@
 
 import { z } from "zod";
 import type { ReorderSuggestion } from "./inventoryReorderEngine.js";
+import {
+	generatePurchaseOrderNumber,
+	generatePurchaseOrderId,
+	generatePurchaseReceiptId,
+} from "../utils/idGenerators.js";
 
 // ─── 1. STATUSES & STATE MACHINE CONTRACTS ────────────────────────────────────
 
@@ -256,7 +261,9 @@ export function generatePurchaseOrderFromReorderSuggestions(
 	const currentYear = new Date().getFullYear();
 	const orderNumber =
 		params.orderNumber ??
-		`PO-${currentYear}-${String(Math.floor(Math.random() * 900) + 100)}`;
+		generatePurchaseOrderNumber(currentYear, {
+			seedKey: params.supplierId,
+		});
 
 	const lines: PurchaseOrderLineItem[] = [];
 	let totalAmountKopecks = 0;
@@ -784,7 +791,7 @@ export function createPurchaseOrderRecord(params: CreatePurchaseOrderParams): Pu
 		};
 	});
 
-	const orderId = params.id ?? `po-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+	const orderId = params.id ?? generatePurchaseOrderId();
 	const now = new Date().toISOString();
 
 	return {
@@ -852,7 +859,7 @@ export function receiveDeliveryBatch(
 		order.lines.map((l) => [l.id, { ...l }]),
 	);
 
-	const receiptId = batch.receiptId ?? `rcpt-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+	const receiptId = batch.receiptId ?? generatePurchaseReceiptId();
 	const receivedAt = batch.receivedAt ?? new Date().toISOString();
 	let receiptLineIdx = 1;
 

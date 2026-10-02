@@ -3,6 +3,7 @@ import {
 	type GeneralCleaningLog,
 } from "@dental/shared";
 import {
+	Calculator,
 	Download,
 	MoreHorizontal,
 	Plus,
@@ -14,6 +15,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { showToast } from "../GlobalToast";
+import { GeneralCleaningModal } from "./disinfection/GeneralCleaningModal";
 import { GeneralCleaningAddLogModal } from "./GeneralCleaningAddLogModal";
 import { GeneralCleaningLogTable } from "./GeneralCleaningLogTable";
 import {
@@ -29,6 +31,7 @@ export function GeneralCleaningRegisterTab() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [typeFilter, setTypeFilter] = useState<string>("all");
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isDisinfectionModalOpen, setIsDisinfectionModalOpen] = useState(false);
 	const [viewMode, setViewMode] = useState<"table" | "schedule">("table");
 	const [isAutopilotLoading, setIsAutopilotLoading] = useState(false);
 	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
@@ -264,6 +267,16 @@ export function GeneralCleaningRegisterTab() {
 
 					<button
 						type="button"
+						onClick={() => setIsDisinfectionModalOpen(true)}
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{ height: "36px", minHeight: "36px", padding: "0 0.85rem", fontSize: "0.825rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+						title="Честный расчет концентрации, расхода дезраствора и график генеральной уборки (СанПиН 3.3686-21)"
+					>
+						<Calculator size={15} className="text-[var(--teal,#0d9488)]" /> Расчет дезсредства
+					</button>
+
+					<button
+						type="button"
 						onClick={() => setIsModalOpen(true)}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{ height: "36px", minHeight: "36px", padding: "0 0.85rem", fontSize: "0.825rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
@@ -430,6 +443,12 @@ export function GeneralCleaningRegisterTab() {
 			<GeneralCleaningAddLogModal
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}
+				onSuccess={fetchLogs}
+			/>
+
+			<GeneralCleaningModal
+				isOpen={isDisinfectionModalOpen}
+				onClose={() => setIsDisinfectionModalOpen(false)}
 				onSuccess={fetchLogs}
 			/>
 		</div>

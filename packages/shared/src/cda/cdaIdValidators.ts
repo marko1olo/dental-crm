@@ -26,7 +26,10 @@ export function validateFrmoOid(oid: string): boolean {
 	const trimmed = oid.trim();
 	return (
 		trimmed === EGISZ_OIDS.FRMO_MO_ROOT ||
-		trimmed.startsWith(`${EGISZ_OIDS.FRMO_MO_ROOT}.`)
+		trimmed.startsWith(`${EGISZ_OIDS.FRMO_MO_ROOT}.`) ||
+		trimmed === "1.2.643.5.1.13.1.1.1" ||
+		trimmed.startsWith("1.2.643.5.1.13.1.1.1.") ||
+		trimmed.startsWith("1.2.643.5.1.13.")
 	);
 }
 

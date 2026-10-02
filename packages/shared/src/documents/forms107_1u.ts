@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { generatePrescriptionSeriesNumber } from "../utils/idGenerators.js";
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -1434,9 +1435,10 @@ export function generatePrescriptionPayloadFromSoap(options: {
 	readonly withStampAndSignature?: boolean;
 }): Form107_1uPayload {
 	const icd = (options.diagnosisIcd10 || "K02.1").toUpperCase().trim();
-	const seriesNum =
-		options.customSeriesNumber ||
-		`РЕЦ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const seriesNum = generatePrescriptionSeriesNumber("РЕЦ", {
+		customSeriesNumber: options.customSeriesNumber,
+		seedKey: `${options.patient.medicalCardNumber}:${options.patient.fullName}`,
+	});
 
 	let selectedDrugs: DentalPrescriptionDrugPreset[] = [];
 	const requestedDrugIds = options.drugIds || options.explicitDrugIds;
@@ -1518,9 +1520,10 @@ export function generateForm148_1u88Payload(options: {
 	readonly customSeriesNumber?: string;
 	readonly ukepSignature?: PrescriptionDoctorUkep | null;
 }): Form148_1u88Payload {
-	const seriesNum =
-		options.customSeriesNumber ||
-		`ПКУ-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+	const seriesNum = generatePrescriptionSeriesNumber("ПКУ", {
+		customSeriesNumber: options.customSeriesNumber,
+		seedKey: `${options.patient.medicalCardNumber}:${options.patient.fullName}`,
+	});
 
 	const fallbackDrug = CONTROLLED_DRUG_PRESETS[0] || DENTAL_PRESCRIPTION_DRUG_CATALOG[0]!;
 	const drug =
@@ -2013,9 +2016,10 @@ export function generatePrescriptionPayloadFromBundle(
 		penicillinAllergy: options.penicillinAllergy,
 	});
 
-	const seriesNum =
-		options.customSeriesNumber ||
-		`РЕЦ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const seriesNum = generatePrescriptionSeriesNumber("РЕЦ", {
+		customSeriesNumber: options.customSeriesNumber,
+		seedKey: `${options.patient.medicalCardNumber}:${options.patient.fullName}`,
+	});
 
 	return {
 		formNumber: "107-1/у",

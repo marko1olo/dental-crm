@@ -162,6 +162,29 @@ export function MedicalWasteAccumulateTab({
 				</div>
 			</div>
 
+			{/* Информационный баннер состава отходов Класса Б */}
+			{selectedClass === "class_B" && (
+				<div
+					style={{
+						padding: "0.75rem 1rem",
+						borderRadius: "10px",
+						background: "#fef3c7",
+						border: "1px solid #f59e0b",
+						color: "#92400e",
+						fontSize: "0.8rem",
+						lineHeight: 1.4,
+					}}
+				>
+					<div style={{ fontWeight: 800, marginBottom: "2px" }}>
+						Опасные стоматологические отходы (Класс Б, СанПиН 2.1.3684-21):
+					</div>
+					<div>
+						• <strong>Мягкие отходы:</strong> карпулы от анестетиков со следами крови, ватные валики, марлевые салфетки, латексные/нитриловые перчатки, удаленные зубы.<br />
+						• <strong>Острый инструментарий:</strong> карпульные инъекционные иглы, эндодонтические файлы, лезвия скальпелей — сбор строго в непрокалываемые желтые емкости с иглосъемником!
+					</div>
+				</div>
+			)}
+
 			{/* 2. Тара, весы и количество */}
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-line bg-paper-soft">
 				{/* Тара */}
@@ -177,7 +200,7 @@ export function MedicalWasteAccumulateTab({
 					>
 						{SANPIN_WASTE_PACKAGING_TYPES.filter((p) => p.wasteClass === selectedClass).map((pkg) => (
 							<option key={pkg.id} value={pkg.id}>
-								{pkg.nameRu} (тара {pkg.defaultTareWeightKg} кг)
+								{pkg.nameRu} (тара {pkg.defaultTareWeightKg} кг / {Math.round(pkg.defaultTareWeightKg * 1000)} г)
 							</option>
 						))}
 					</select>
@@ -199,22 +222,28 @@ export function MedicalWasteAccumulateTab({
 					/>
 				</div>
 
-				{/* Вес брутто */}
+				{/* Вес брутто по весам */}
 				<div>
-					<label htmlFor="waste-gross-weight" className="text-xs font-semibold text-muted block mb-1">
-						Вес брутто по весам (кг)
-					</label>
+					<div className="flex items-center justify-between mb-1">
+						<label htmlFor="waste-gross-weight" className="text-xs font-semibold text-muted">
+							Фактический вес брутто (по весам)
+						</label>
+					</div>
 					<div className="flex items-center gap-2">
-						<Scale size={20} className="text-[var(--teal,#0d9488)]" />
+						<Scale size={20} className="text-[var(--teal,#0d9488)] shrink-0" />
 						<input
 							id="waste-gross-weight"
 							type="number"
-							step="0.01"
-							min="0.01"
+							step="0.001"
+							min="0.001"
 							value={grossWeightInput}
-							onChange={(e) => setGrossWeightInput(Number(e.target.value))}
+							onChange={(e) => setGrossWeightInput(parseFloat(e.target.value) || 0)}
+							placeholder="Вес в кг (например 2.45 или 0.8)"
 							className="flex-1 h-10 px-3 rounded-lg border border-line bg-paper text-ink text-base font-extrabold focus:outline-none focus:ring-2 focus:ring-focus-ring"
 						/>
+						<span className="text-xs font-bold text-muted px-2 py-1 bg-paper rounded border border-line">
+							кг ({Math.round(grossWeightInput * 1000)} г)
+						</span>
 					</div>
 				</div>
 			</div>
@@ -223,16 +252,29 @@ export function MedicalWasteAccumulateTab({
 			<div className="waste-weight-display">
 				<div className="waste-weight-metric">
 					<span className="waste-weight-lbl">Брутто (с тарой)</span>
-					<span className="waste-weight-val">{currentWeights.grossKg.toFixed(2)} кг</span>
+					<span className="waste-weight-val">
+						{currentWeights.grossKg.toFixed(2)} кг <span className="text-xs font-normal text-muted">({Math.round(currentWeights.grossKg * 1000)} г)</span>
+					</span>
 				</div>
 				<div className="waste-weight-metric">
 					<span className="waste-weight-lbl">Тара (пакет/контейнер)</span>
-					<span className="waste-weight-val text-muted">{currentWeights.tareKg.toFixed(2)} кг</span>
+					<span className="waste-weight-val text-muted">
+						{currentWeights.tareKg.toFixed(2)} кг <span className="text-xs font-normal">({Math.round(currentWeights.tareKg * 1000)} г)</span>
+					</span>
 				</div>
 				<div className="waste-weight-metric">
 					<span className="waste-weight-lbl">Чистый вес нетто</span>
-					<span className="waste-weight-net-val">{currentWeights.netKg.toFixed(2)} кг</span>
+					<span className="waste-weight-net-val">
+						{currentWeights.netKg.toFixed(2)} кг <span className="text-xs font-normal">({Math.round(currentWeights.netKg * 1000)} г)</span>
+					</span>
 				</div>
+			</div>
+
+			{/* Норматив накопления СанПиН 2.1.3684-21 */}
+			<div className="text-xs text-muted px-1 flex items-center justify-between flex-wrap gap-2">
+				<span>
+					• Норматив временного накопления: <strong>не более 24 часов</strong> при комнатной температуре, <strong>до 72 часов</strong> при температуре не выше +5°C (п. 174 СанПиН 2.1.3684-21).
+				</span>
 			</div>
 
 			{/* 4. Обеззараживание, пломба и место хранения */}

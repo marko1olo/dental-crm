@@ -5,6 +5,7 @@ import type {
 	PatientNextVisitSummary,
 	PatientSomaticAlert,
 	PatientUpcomingAppointmentSummary,
+	TelephonyPatientCategory,
 } from "./types.js";
 
 export interface TelephonyPatientLike {
@@ -23,7 +24,7 @@ export interface TelephonyPatientInsightLike {
 	patientId: string;
 	balanceDueRub?: number | string | null | undefined;
 	clinicalFlags?: string[] | null | undefined;
-	riskLevel?: "low" | "medium" | "high" | null | undefined;
+	riskLevel?: "low" | "medium" | "high" | "watch" | string | null | undefined;
 	riskReasons?: string[] | null | undefined;
 }
 
@@ -506,3 +507,66 @@ export function resolvePatientNextVisit(
 		fullTextRu,
 	};
 }
+
+/**
+ * Resolves patient category ("VIP" | "Постоянный" | "Первичный")
+ * based on clinical profile, tags, loyalty tiers, notes, and visit history.
+ */
+export function resolvePatientCategory(
+	patient: TelephonyPatientLike | null | undefined,
+	lastVisitSummary?: PatientLastVisitSummary | null | undefined,
+	insight?: TelephonyPatientInsightLike | null | undefined,
+): TelephonyPatientCategory {
+	if (!patient) return "Первичный";
+
+	// 1. VIP classification: explicit flags, tags, notes, loyaltyTier, or risk reasons
+	const anyPatient = patient as any;
+	if (anyPatient.isVip === true || anyPatient.category === "VIP") {
+		return "VIP";
+	}
+	if (anyPatient.administrativeProfile?.loyaltyTier === "vip" || anyPatient.loyaltyTier === "vip") {
+		return "VIP";
+	}
+	if (
+		Array.isArray(anyPatient.tags) &&
+		anyPatient.tags.some((t: unknown) => typeof t === "string" && t.trim().toLowerCase() === "vip")
+	) {
+		return "VIP";
+	}
+	if (patient.notes && /(^|[^a-zA-Zа-яА-ЯёЁ0-9])(vip|вип)($|[^a-zA-Zа-яА-ЯёЁ0-9])/iu.test(patient.notes)) {
+		return "VIP";
+	}
+	if (
+		insight?.clinicalFlags &&
+		insight.clinicalFlags.some((f) =>
+			/(^|[^a-zA-Zа-яА-ЯёЁ0-9])(vip|вип)($|[^a-zA-Zа-яА-ЯёЁ0-9])/iu.test(f),
+		)
+	) {
+		return "VIP";
+	}
+	if (
+		insight?.riskReasons &&
+		insight.riskReasons.some((r) =>
+			/(^|[^a-zA-Zа-яА-ЯёЁ0-9])(vip|вип)($|[^a-zA-Zа-яА-ЯёЁ0-9])/iu.test(r),
+		)
+	) {
+		return "VIP";
+	}
+
+	// 2. Primary / New Patient vs Regular / Returning Patient
+	if (lastVisitSummary) {
+		if (lastVisitSummary.isNewPatient || !lastVisitSummary.lastVisitDate) {
+			return "Первичный";
+		}
+		return "Постоянный";
+	}
+
+	// 3. Fallback when visit summary is absent: check notes or default to "Постоянный"
+	if (patient.notes && /первичн/iu.test(patient.notes)) {
+		return "Первичный";
+	}
+
+	return "Постоянный";
+}
+
+export type { TelephonyPatientCategory };

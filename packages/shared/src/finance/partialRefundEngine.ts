@@ -17,6 +17,7 @@ import {
 	FFD12_TAG_2108_MEASURE_CODES,
 } from "../fiscal/ffd12Types.js";
 import { kopecksToNumericString, kopecksToRub } from "../fiscal/kopecksArithmetic.js";
+import { generatePartialRefundOperationNumber } from "../utils/idGenerators.js";
 
 export type RefundReasonCategory =
 	| "warranty_case" // Гарантийный случай (переделка/возврат)
@@ -174,7 +175,9 @@ export function calculatePartialRefund(
 ): PartialRefundCalculationResult {
 	const errors: string[] = [];
 	const dateIso = new Date().toISOString();
-	const refundOpNum = `ВЗВ-${dateIso.slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const refundOpNum = generatePartialRefundOperationNumber(dateIso, {
+		seedKey: input.invoiceId,
+	});
 
 	if (!input.invoiceId || input.invoiceId.trim().length === 0) {
 		errors.push("Не указан ID исходного счета.");

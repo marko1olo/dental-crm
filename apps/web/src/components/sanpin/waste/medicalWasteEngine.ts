@@ -117,6 +117,41 @@ export function calculateWasteWeights(
 }
 
 /**
+ * Расчет весовой структуры в граммах (г) с точной конвертацией в килограммы (кг).
+ * Исключает фиктивные округления: точность до 1 грамма.
+ */
+export function calculateWasteWeightsFromGrams(
+	grossGrams: number,
+	packagingType: MedicalWastePackagingTypeId,
+	customTareGrams?: number | undefined,
+): {
+	grossGrams: number;
+	tareGrams: number;
+	netGrams: number;
+	grossKg: number;
+	tareKg: number;
+	netKg: number;
+} {
+	const packaging = getMedicalWastePackaging(packagingType);
+	const defaultTareGrams = Math.round(packaging.defaultTareWeightKg * 1000);
+	const tareG = customTareGrams !== undefined && customTareGrams >= 0
+		? Math.round(customTareGrams)
+		: defaultTareGrams;
+
+	const grossG = Math.max(0, Math.round(Number(grossGrams) || 0));
+	const netG = Math.max(0, grossG - tareG);
+
+	return {
+		grossGrams: grossG,
+		tareGrams: tareG,
+		netGrams: netG,
+		grossKg: Math.round((grossG / 1000) * 1000) / 1000,
+		tareKg: Math.round((tareG / 1000) * 1000) / 1000,
+		netKg: Math.round((netG / 1000) * 1000) / 1000,
+	};
+}
+
+/**
  * 2. Генератор номера одноразовой пломбы-стяжки (СанПиН 2.1.3684-21)
  */
 export function generateWasteSealNumber(
@@ -438,15 +473,20 @@ export function generateWasteTransferActHtml(act: MedicalWasteTransferAct): stri
 	<title>Акт приема-передачи медицинских отходов № ${act.actNumber}</title>
 	<style>
 		@page { size: A4; margin: 15mm; }
-		body { font-family: 'Times New Roman', serif; font-size: 10pt; line-height: 1.3; color: #000; }
+		body { font-family: 'Times New Roman', serif; font-size: 10pt; line-height: 1.3; color: #000; background: #fff; }
 		.header { text-align: center; font-weight: bold; margin-bottom: 12px; }
 		.title { font-size: 13pt; text-transform: uppercase; margin-bottom: 4px; }
 		.parties { margin-bottom: 12px; }
-		table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-		th { border: 1px solid #000; padding: 5px; background: #f0f0f0; font-size: 9pt; }
+		table { width: 100%; border-collapse: collapse; margin-bottom: 14px; background: transparent; }
+		th { border: 1px solid #000; padding: 5px; background: #fff; font-size: 9pt; font-weight: bold; }
+		td { border: 1px solid #000; padding: 4px; background: #fff; }
 		.totals { margin-bottom: 16px; font-weight: bold; }
 		.signatures { display: flex; justify-content: space-between; margin-top: 30px; }
 		.sign-col { width: 46%; }
+		@media print {
+			body { background: #fff !important; color: #000 !important; }
+			table, th, td { border: 1px solid #000 !important; background: #fff !important; color: #000 !important; }
+		}
 	</style>
 </head>
 <body>
@@ -479,7 +519,7 @@ export function generateWasteTransferActHtml(act: MedicalWasteTransferAct): stri
 		</thead>
 		<tbody>
 			${rowsHtml}
-			<tr style="font-weight: bold; background: #f8f8f8;">
+			<tr style="font-weight: bold; background: #fff;">
 				<td colspan="5" style="border: 1px solid #000; padding: 5px; text-align: right;">ВСЕГО ПЕРЕДАНО:</td>
 				<td style="border: 1px solid #000; padding: 5px; text-align: center;">${act.totalPackagesCount}</td>
 				<td style="border: 1px solid #000; padding: 5px; text-align: right;">${act.totalNetWeightKg.toFixed(2)}</td>

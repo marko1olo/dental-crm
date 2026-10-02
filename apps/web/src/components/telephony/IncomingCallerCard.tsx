@@ -21,7 +21,9 @@ import type {
 	PatientSomaticAlert,
 	PatientUpcomingAppointmentSummary,
 	PatientActiveTreatmentPlanSummary,
+	TelephonyPatientCategory,
 } from "../../store/telephonyTypes";
+import { resolvePatientCategory } from "../../store/telephonyStore";
 import type { CallAttribution } from "./telephonyAttribution";
 import { CHANNEL_BADGE_COLORS } from "./telephonyAttribution";
 
@@ -32,6 +34,7 @@ export interface IncomingCallerCardProps {
 	initials: string;
 	avatarColors: { bg: string; text: string; border?: string | undefined };
 	isKnownPatient: boolean;
+	patientCategory?: TelephonyPatientCategory | undefined;
 	birthDate?: string | null | undefined;
 	financialSummary: PatientFinancialSummary;
 	somaticAlerts: PatientSomaticAlert[];
@@ -61,6 +64,7 @@ export function IncomingCallerCard({
 	initials,
 	avatarColors,
 	isKnownPatient,
+	patientCategory,
 	birthDate,
 	financialSummary,
 	somaticAlerts,
@@ -82,6 +86,66 @@ export function IncomingCallerCard({
 	const hasDms = financialSummary.hasInsurance;
 	const allergyAlerts = somaticAlerts.filter((a) => a.category === "allergy");
 	const acutePainAlerts = somaticAlerts.filter((a) => a.category === "pain");
+
+	const resolvedCategory: TelephonyPatientCategory =
+		patientCategory ||
+		(isKnownPatient
+			? resolvePatientCategory(
+					{ id: "patient", fullName: callerName, notes: undefined },
+					lastVisitSummary,
+					undefined,
+				)
+			: "Первичный");
+
+	const renderStatusBadge = () => {
+		if (isKnownPatient) {
+			if (resolvedCategory === "VIP") {
+				return (
+					<span
+						className="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 inline-flex items-center gap-1 shadow-xs"
+						data-testid="incoming-caller-status-vip"
+						title="VIP пациент клиники"
+					>
+						<Sparkles size={11} className="text-amber-600 dark:text-amber-400" />
+						VIP
+					</span>
+				);
+			}
+			if (resolvedCategory === "Первичный") {
+				return (
+					<span
+						className="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-800 inline-flex items-center gap-1"
+						data-testid="incoming-caller-status-new"
+						title="Первичный пациент"
+					>
+						<UserPlus size={11} className="text-sky-600 dark:text-sky-400" />
+						Первичный
+					</span>
+				);
+			}
+			return (
+				<span
+					className="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 inline-flex items-center gap-1"
+					data-testid="incoming-caller-status-regular"
+					title="Постоянный пациент клиники"
+				>
+					<UserCheck size={11} className="text-emerald-600 dark:text-emerald-400" />
+					Постоянный
+				</span>
+			);
+		}
+
+		return (
+			<span
+				className="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 inline-flex items-center gap-1"
+				data-testid="incoming-caller-status-unregistered"
+				title="Новый пациент (номер отсутствует в базе CRM)"
+			>
+				<UserPlus size={11} className="text-amber-600 dark:text-amber-400" />
+				Новый пациент
+			</span>
+		);
+	};
 
 	if (compact) {
 		return (
@@ -106,25 +170,21 @@ export function IncomingCallerCard({
 							>
 								{callerName}
 							</h3>
-							{isKnownPatient ? (
-								<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-									Пациент
-								</span>
-							) : (
+							{renderStatusBadge()}
+							{!isKnownPatient && callAttribution && (
 								<span
 									className="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0 inline-flex items-center gap-1"
 									style={{
 										backgroundColor:
-											callAttribution ? CHANNEL_BADGE_COLORS[callAttribution.channelKey].bg : undefined,
+											CHANNEL_BADGE_COLORS[callAttribution.channelKey].bg,
 										color:
-											callAttribution ? CHANNEL_BADGE_COLORS[callAttribution.channelKey].text : undefined,
-										border:
-											callAttribution ? `1px solid ${CHANNEL_BADGE_COLORS[callAttribution.channelKey].border}` : undefined,
+											CHANNEL_BADGE_COLORS[callAttribution.channelKey].text,
+										border: `1px solid ${CHANNEL_BADGE_COLORS[callAttribution.channelKey].border}`,
 									}}
 									data-testid="incoming-call-marketing-channel-badge"
-									title={`Канал рекламы: ${callAttribution?.channelLabel || "ВАТС"}${callAttribution?.virtualNumberDisplay ? ` • ВАТС: ${callAttribution.virtualNumberDisplay}` : ""}${callAttribution?.utmSummary ? ` • UTM: [${callAttribution.utmSummary}]` : ""}`}
+									title={`Канал рекламы: ${callAttribution.channelLabel}${callAttribution.virtualNumberDisplay ? ` • ВАТС: ${callAttribution.virtualNumberDisplay}` : ""}${callAttribution.utmSummary ? ` • UTM: [${callAttribution.utmSummary}]` : ""}`}
 								>
-									{callAttribution ? callAttribution.channelLabel : "Новый лид"}
+									{callAttribution.channelLabel}
 								</span>
 							)}
 						</div>
@@ -173,7 +233,7 @@ export function IncomingCallerCard({
 						</span>
 					)}
 
-					{/* Следующая запись */}
+					{/* Следующая запись или последний визит */}
 					{upcomingAppointment ? (
 						<span
 							className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] flex items-center gap-1 min-w-0 max-w-[220px]"
@@ -187,6 +247,16 @@ export function IncomingCallerCard({
 										? "Завтра"
 										: upcomingAppointment.formattedDate}{" "}
 								{upcomingAppointment.formattedTime}
+							</span>
+						</span>
+					) : lastVisitSummary && lastVisitSummary.lastVisitDate ? (
+						<span
+							className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] flex items-center gap-1 min-w-0 max-w-[220px]"
+							title={`Предыдущий визит: ${lastVisitSummary.formattedLastVisit} (${lastVisitSummary.doctorName || "Врач не указан"})`}
+						>
+							<Clock size={11} className="text-[var(--teal)] shrink-0" />
+							<span className="truncate">
+								Визит: {lastVisitSummary.formattedLastVisit.split(" в ")[0] || lastVisitSummary.formattedLastVisit}
 							</span>
 						</span>
 					) : (
@@ -249,9 +319,12 @@ export function IncomingCallerCard({
 					{initials}
 				</div>
 				<div className="min-w-0 flex-1">
-					<h3 className="text-base font-bold text-[var(--ink,#0f172a)] truncate">
-						{callerName}
-					</h3>
+					<div className="flex items-center gap-2 flex-wrap">
+						<h3 className="text-base font-bold text-[var(--ink,#0f172a)] truncate">
+							{callerName}
+						</h3>
+						{renderStatusBadge()}
+					</div>
 					<div className="flex items-center gap-2 mt-0.5 flex-wrap">
 						<span className="font-mono font-bold text-xs text-[var(--teal)]">
 							{formattedPhone}
@@ -275,6 +348,22 @@ export function IncomingCallerCard({
 					)}
 				</div>
 			</div>
+
+			{/* Unknown Caller: Prominent Registration Banner */}
+			{!isKnownPatient && (
+				<div
+					className="p-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 space-y-1 shadow-xs"
+					data-testid="incoming-call-new-patient-banner"
+				>
+					<div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+						<UserPlus size={14} className="text-amber-600 dark:text-amber-400" />
+						<span>Новый пациент</span>
+					</div>
+					<p className="text-[11px] text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+						Номер <strong className="font-mono">{formattedPhone}</strong> не найден в базе CRM клиники. Создайте карту пациента за 5 секунд или запишите на приём без ручного ввода номера.
+					</p>
+				</div>
+			)}
 
 			{/* Somatic & Allergy Alerts (Prominent Red Invariant) */}
 			{somaticAlerts.length > 0 && (

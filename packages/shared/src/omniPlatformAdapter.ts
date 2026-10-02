@@ -121,6 +121,38 @@ export const printJobTypeSchema = z.enum([
 ]);
 export type PrintJobType = z.infer<typeof printJobTypeSchema>;
 
+export interface FiscalReceiptJobItem {
+	readonly name: string;
+	readonly priceRub: number;
+	readonly quantity: number;
+	readonly amountRub: number;
+	readonly vatRate?: "vat_20" | "vat_10" | "vat_0" | "vat_none" | undefined;
+	readonly paymentMethod?: "full_payment" | "advance" | "prepayment" | "full_prepayment" | undefined;
+	readonly paymentSubject?: "service" | "commodity" | "goods_with_marking" | undefined;
+	readonly medicalServiceCode804n?: string | undefined;
+	readonly markingCode?: string | undefined;
+}
+
+export interface FiscalReceiptJobPayload {
+	readonly clinicName?: string | undefined;
+	readonly clientMutationId?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
+	readonly receiptNumber?: string | undefined;
+	readonly operationType: "income" | "income_return" | "expense" | "expense_return";
+	readonly customerContact?: string | undefined;
+	readonly cashierFullName: string;
+	readonly cashierInn?: string | undefined;
+	readonly items: FiscalReceiptJobItem[];
+	readonly totalRub: number;
+	readonly cashRub?: number | undefined;
+	readonly electronicRub?: number | undefined;
+	readonly sbpRub?: number | undefined;
+	readonly prepaidRub?: number | undefined;
+	readonly taxationSystem?: "usn_income" | "usn_income_expense" | "osn" | "psn" | undefined;
+	readonly taxDeductionCategory?: "code_1_standard" | "code_2_expensive_treatment" | undefined;
+}
+
 export interface UniversalPrintJobPayload {
 	readonly type: PrintJobType;
 	readonly title?: string | undefined;
@@ -145,6 +177,8 @@ export interface UniversalPrintJobPayload {
 		readonly protocol: "atol" | "shtrih" | "escpos";
 		readonly payloadJson: string;
 	} | undefined;
+	/** Real 54-FZ fiscal receipt payload (replaces any dummy mock objects) */
+	readonly fiscalPayload?: FiscalReceiptJobPayload | undefined;
 }
 
 export interface UniversalPrintResultContract {
@@ -155,6 +189,8 @@ export interface UniversalPrintResultContract {
 	readonly fiscalSign?: string | undefined;
 	readonly fiscalDocNum?: string | undefined;
 	readonly kktSerialNumber?: string | undefined;
+	readonly queueId?: string | undefined;
+	readonly status?: "printed" | "offline_buffered" | "failed" | undefined;
 	readonly error?: string | undefined;
 }
 

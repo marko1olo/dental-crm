@@ -1,5 +1,6 @@
 import assert from "node:assert";
-import { describe, test } from "node:test";
+import { describe, test, before, after } from "node:test";
+import { setRuntimeDemoMode } from "../../../utils/demoModeEngine";
 import {
 	calculatePaidContractGrandTotalKopecks,
 	calculatePaidContractServiceTotalKopecks,
@@ -20,6 +21,13 @@ import {
 } from "../paidContractEngine";
 
 describe("Paid Contract Engine (Постановление Правительства РФ № 736)", () => {
+	before(() => {
+		setRuntimeDemoMode(true);
+	});
+
+	after(() => {
+		setRuntimeDemoMode(null);
+	});
 	describe("1. Money and Kopecks formatting in words", () => {
 		test("pluralizeRu handles Russian declensions correctly", () => {
 			assert.strictEqual(pluralizeRu(1, "рубль", "рубля", "рублей"), "рубль");

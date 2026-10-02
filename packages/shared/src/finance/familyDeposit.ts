@@ -10,6 +10,7 @@
  */
 
 import { kopecksToNumericString, kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";
+import { generateFamilyDepositTransactionId } from "../utils/idGenerators.js";
 
 export type FamilyRelationship = "self" | "spouse" | "child" | "parent" | "relative";
 
@@ -200,7 +201,9 @@ export function calculateFamilyDepositCredit(
 	const nowIso = input.timestampIso ?? new Date().toISOString();
 
 	const transaction: FamilyDepositTransaction = {
-		id: `TX-DEP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+		id: generateFamilyDepositTransactionId("DEP", {
+			seedKey: `${input.account.familyGroupId}:${input.payerPatientId}`,
+		}),
 		familyGroupId: input.account.familyGroupId,
 		transactionType: "deposit",
 		patientId: input.payerPatientId,
@@ -319,7 +322,9 @@ export function calculateFamilyDepositDebit(
 	const nowIso = input.timestampIso ?? new Date().toISOString();
 
 	const transaction: FamilyDepositTransaction = {
-		id: `TX-DEB-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+		id: generateFamilyDepositTransactionId("DEB", {
+			seedKey: `${input.account.familyGroupId}:${member.patientId}`,
+		}),
 		familyGroupId: input.account.familyGroupId,
 		transactionType: "debit",
 		patientId: member.patientId,
@@ -387,7 +392,9 @@ export function calculateFamilyDepositRefund(params: {
 	const nowIso = new Date().toISOString();
 
 	const transaction: FamilyDepositTransaction = {
-		id: `TX-REF-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+		id: generateFamilyDepositTransactionId("REF", {
+			seedKey: `${params.account.familyGroupId}:${params.patientId}`,
+		}),
 		familyGroupId: params.account.familyGroupId,
 		transactionType: "refund",
 		patientId: params.patientId,

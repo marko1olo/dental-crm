@@ -3,6 +3,7 @@ import type {
 	TaxDeductionApplicationRelationship,
 } from "@dental/shared";
 import { isDateInputValue } from "../../AppHelpers";
+import { validateRussianInn } from "./taxCertificateEngine";
 
 /**
  * Что мешает создать заявление на налоговую справку — весь перечень сразу.
@@ -105,6 +106,12 @@ function innHint(input: TaxApplicationBlockersInput): string | null {
 	if (digits.length !== 10 && digits.length !== 12) {
 		return `в ИНН ${digits.length} цифр, а нужно 12 у человека или 10 у организации — проверьте номер`;
 	}
+
+	const innValidation = validateRussianInn(digits);
+	if (!innValidation.isValid) {
+		return innValidation.errorMessageRu || "неверная контрольная сумма ИНН — проверьте цифры";
+	}
+
 	return null;
 }
 

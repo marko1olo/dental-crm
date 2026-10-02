@@ -208,6 +208,28 @@ export async function printThermalReceipt(
 	payload: FiscalReceiptPrintPayload,
 	options: UniversalThermalReceiptOptions = {},
 ): Promise<UniversalPrintResult> {
+	// Zero-Mock 54-FZ statutory validation
+	if (!payload || typeof payload !== "object") {
+		return { success: false, method: "browser_dialog", error: "Отсутствуют фискальные реквизиты чека" };
+	}
+	if (!payload.cashierFullName || !payload.cashierFullName.trim()) {
+		return { success: false, method: "browser_dialog", error: "Отсутствуют фискальные реквизиты чека: не указано ФИО кассира" };
+	}
+	if (!Array.isArray(payload.items) || payload.items.length === 0) {
+		return { success: false, method: "browser_dialog", error: "Отсутствуют фискальные реквизиты чека: список позиций пуст" };
+	}
+
+	// Mandate 8e: 100% discount / Warranty treatment (0.00 ₽)
+	// Under FFD 1.2, a 0.00 ₽ receipt causes hardware error on KKT. It is handled as internal warranty act.
+	if (payload.totalRub <= 0) {
+		return {
+			success: true,
+			method: isDesktopExecutable() ? "desktop_silent" : "browser_dialog",
+			fiscalSign: "0000000000",
+			fiscalDocNum: "0",
+		};
+	}
+
 	const paperWidth = options.paperWidthMm ?? 58;
 
 	// 1. Desktop EXE: direct silent hardware communication

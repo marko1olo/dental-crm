@@ -49,7 +49,7 @@ export interface ClinicAutoclaveDevice {
 	brandModelRu: string;
 	serialNumber: string;
 	inventoryNumber?: string;
-	deviceType: "autoclave_class_b" | "autoclave_class_s" | "autoclave_class_n" | "dry_heat_air";
+	deviceType: "autoclave_class_b" | "autoclave_class_s" | "autoclave_class_n" | "dry_heat_air" | "glassperlen_bead";
 	chamberVolumeLiters: number;
 	locationRu: string;
 	lastMaintenanceDate: string;
@@ -97,6 +97,19 @@ export const DEFAULT_CLINIC_DEVICES: ClinicAutoclaveDevice[] = [
 		nextMaintenanceDate: "2027-01-01",
 		isOperational: true,
 		notes: "Сухожаровой стерилизатор 180°C",
+	},
+	{
+		id: "AUTO-04",
+		brandModelRu: "Гласперленовый стерилизатор Термоэст (шариковый)",
+		serialNumber: "GLS-2025-114",
+		inventoryNumber: "ИНВ-КАБ-004",
+		deviceType: "glassperlen_bead",
+		chamberVolumeLiters: 0.8,
+		locationRu: "Кабинет №1 (У кресла)",
+		lastMaintenanceDate: "2026-08-01",
+		nextMaintenanceDate: "2027-02-01",
+		isOperational: true,
+		notes: "Шариковый стерилизатор 240°C для быстрой обработки боров и эндо-файлов",
 	},
 ];
 
@@ -636,6 +649,7 @@ export function AutoclaveEquipmentModal({
 										<option value="autoclave_class_s">Паровой автоклав (Класс S)</option>
 										<option value="autoclave_class_n">Паровой автоклав (Класс N — гравитационный)</option>
 										<option value="dry_heat_air">Сухожаровой воздушный стерилизатор (180°C)</option>
+										<option value="glassperlen_bead">Гласперленовый шариковый стерилизатор (240°C)</option>
 									</select>
 								</div>
 								<div className="sanpin-form-group">

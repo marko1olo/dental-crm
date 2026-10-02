@@ -104,7 +104,7 @@ function createPairingTokenRecord(options: {
 } {
 	purgeExpiredPairingNonces();
 	const nonce = crypto.randomUUID();
-	const pin = Math.floor(1000 + Math.random() * 9000).toString();
+	const pin = crypto.randomInt(1000, 10000).toString();
 	const expiresAtMs = Date.now() + DEFAULT_PAIRING_TTL_SECONDS * 1000;
 
 	activePairingNonces.set(nonce, {
@@ -347,26 +347,31 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		// Lookup target user or first active doctor/assistant for the role
 		let matchedUser: { id: string; fullName: string; role: string } | null = null;
 
-		if (payload.staffUserId) {
-			const [user] = await withTenantCtx(orgId, async (tx) => {
-				return tx
-					.select({ id: users.id, fullName: users.fullName, role: users.role })
-					.from(users)
-					.where(eq(users.id, payload.staffUserId!))
-					.limit(1);
-			});
-			if (user) matchedUser = user;
-		}
+		try {
+			if (payload.staffUserId) {
+				const [user] = await withTenantCtx(orgId, async (tx) => {
+					return tx
+						.select({ id: users.id, fullName: users.fullName, role: users.role })
+						.from(users)
+						.where(eq(users.id, payload.staffUserId!))
+						.limit(1);
+				});
+				if (user) matchedUser = user;
+			}
 
-		if (!matchedUser) {
-			const [fallbackUser] = await withTenantCtx(orgId, async (tx) => {
-				return tx
-					.select({ id: users.id, fullName: users.fullName, role: users.role })
-					.from(users)
-					.where(eq(users.role, role === "assistant" ? "assistant" : "doctor"))
-					.limit(1);
-			});
-			if (fallbackUser) matchedUser = fallbackUser;
+			if (!matchedUser) {
+				const [fallbackUser] = await withTenantCtx(orgId, async (tx) => {
+					return tx
+						.select({ id: users.id, fullName: users.fullName, role: users.role })
+						.from(users)
+						.where(eq(users.role, role === "assistant" ? "assistant" : "doctor"))
+						.limit(1);
+				});
+				if (fallbackUser) matchedUser = fallbackUser;
+			}
+		} catch {
+			// Zero-Dead-Ends offline resilience: pairing succeeds even if database user lookup is temporarily unavailable
+			matchedUser = null;
 		}
 
 		// Generate staff token for 1-click autonomy (no manual login required)

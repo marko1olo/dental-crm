@@ -177,7 +177,7 @@ function saveBudgetToFile(budget: StoredPortalBudget): void {
 		const filePath = getFileCachePath();
 		const map = loadBudgetsFromFile();
 		map.set(budget.token, budget);
-		const tempPath = `${filePath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 6)}`;
+		const tempPath = `${filePath}.tmp.${Date.now()}.${randomUUID()}`;
 		fs.writeFileSync(tempPath, JSON.stringify(Array.from(map.values()), null, 2), "utf-8");
 		fs.renameSync(tempPath, filePath);
 	} catch {

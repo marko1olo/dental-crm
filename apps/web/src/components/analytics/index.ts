@@ -18,3 +18,7 @@ export * from "./MarketingRoiKpisGrid.js";
 export * from "./LostPatientCard.js";
 export * from "./LostPatientOfferModal.js";
 export * from "./LostPatientsRecallCohortsTable.js";
+export * from "./financialAnalyticsEngine.js";
+export * from "./chairUtilizationEngine.js";
+export * from "./doctorProductivityEngine.js";
+export * from "./ClinicAnalyticsDashboard.js";

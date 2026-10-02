@@ -8,6 +8,7 @@ export * from "../money.js";
 export * from "./dates.js";
 export * from "./strings.js";
 export * from "./snils.js";
+export * from "./idGenerators.js";
 export {
 	validateRussianInn,
 	validateRussianOgrn,

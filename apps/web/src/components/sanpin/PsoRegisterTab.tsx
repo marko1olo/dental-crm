@@ -29,6 +29,13 @@ import {
 	DEFAULT_DOM_PAGE_SIZE,
 	sliceDomList,
 } from "../../utils/domVirtualizationHelper";
+import {
+	DENTAL_PSO_INSTRUMENT_CATEGORIES,
+	STATUTORY_PSO_REAGENTS,
+	checkAzopyramSolutionFreshness,
+	evaluatePsoCleaningBatch,
+	generateStatutoryPsoForm366PrintHtml,
+} from "./sanpinAzopyramEngine";
 
 export function PsoRegisterTab() {
 	const appLogic = useOptionalAppLogicContext();
@@ -48,6 +55,8 @@ export function PsoRegisterTab() {
 	const [formPhenolNeg, setFormPhenolNeg] = useState(true);
 	const [formDetergent, setFormDetergent] = useState("Биолот 0.5% + Аламинол 1%");
 	const [formNurseName, setFormNurseName] = useState("Сотрудник клиники");
+	const [formReagentLot, setFormReagentLot] = useState<string>(STATUTORY_PSO_REAGENTS.azopyram.standardLotNumber);
+	const [formSolutionPreparedAt, setFormSolutionPreparedAt] = useState<string>(() => new Date().toISOString());
 	const [formNotes, setFormNotes] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 
@@ -80,23 +89,33 @@ export function PsoRegisterTab() {
 		fetchLogs();
 	}, []);
 
-	// Live regulatory sampling check
+	// Live regulatory sampling and reagent lifespan check (СанПиН 3.3686-21)
 	const liveEval = useMemo(() => {
-		return SanPiNRegulatoryEngine.evaluatePsoSampling(
-			formBatchCount,
-			formSampleCount,
-			formAzopyramNeg,
-			formPhenolNeg,
-		);
-	}, [formBatchCount, formSampleCount, formAzopyramNeg, formPhenolNeg]);
+		return evaluatePsoCleaningBatch({
+			batchItemCount: formBatchCount,
+			testedSampleCount: formSampleCount,
+			isAzopyramNegative: formAzopyramNeg,
+			isPhenolphthaleinNegative: formPhenolNeg,
+			azopyramSolutionPreparedAt: formSolutionPreparedAt,
+			azopyramReagentLot: formReagentLot,
+			detergentBrand: formDetergent,
+		});
+	}, [formBatchCount, formSampleCount, formAzopyramNeg, formPhenolNeg, formSolutionPreparedAt, formReagentLot, formDetergent]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (submitting) return;
+
+		if (liveEval.isSolutionExpired) {
+			showToast("Срок годности рабочего раствора азопирама истек (> 2 часов). Запрещено использовать старый раствор! Приготовьте свежую порцию 1:1 с 3% H2O2.", "error");
+			return;
+		}
+
 		try {
 			setSubmitting(true);
 			const clinicToken = readDenteClinicToken();
 			const staffToken = readDenteStaffToken();
+			const solutionTime = new Date(formSolutionPreparedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
 			const payload: CreatePsoCleaningLogDto = {
 				instrumentName: formInstrument,
@@ -106,7 +125,9 @@ export function PsoRegisterTab() {
 				isAzopyramNegative: formAzopyramNeg,
 				isPhenolphthaleinNegative: formPhenolNeg,
 				detergentBrand: formDetergent || undefined,
-				notes: formNotes || `[ЭЦП: ${formNurseName}]`,
+				notes: formNotes
+					? `${formNotes} | [Серия: ${formReagentLot}, Раствор: ${solutionTime}] [ЭЦП: ${formNurseName}]`
+					: `[Серия: ${formReagentLot}, Раствор: ${solutionTime}] [ЭЦП: ${formNurseName}]`,
 			};
 
 			const res = await fetch("/api/registers/pso", {
@@ -120,7 +141,12 @@ export function PsoRegisterTab() {
 			});
 
 			if (res.ok) {
-				showToast("Запись контроля ПСО внесена в журнал (Форма № 366/у)", "success");
+				showToast(
+					formAzopyramNeg && formPhenolNeg
+						? "Запись контроля ПСО внесена (норма, партия допущена)"
+						: "ВНИМАНИЕ: Зафиксирован БРАК ПСО! Партия направлена на повторную очистку.",
+					formAzopyramNeg && formPhenolNeg ? "success" : "warning",
+				);
 				setIsModalOpen(false);
 				fetchLogs();
 			} else {
@@ -234,17 +260,16 @@ export function PsoRegisterTab() {
 	}, [filteredLogs, displayLimit]);
 
 	const handleGenerateMonthlyForm366 = () => {
-		const recordsToPrint: PsoJournalRecord[] = logs.map((l, idx) => ({
+		const recordsToPrint = logs.map((l, idx) => ({
 			id: l.id || `pso-${idx}`,
 			timestamp: l.timestamp || l.createdAt || new Date().toISOString(),
 			instrumentName: l.instrumentName,
-			categoryId: "general",
 			batchItemCount: l.batchItemCount,
 			testedSampleCount: l.testedSampleCount,
-			testType: l.testType === "azopyram" ? "azopyram" : l.testType === "phenolphthalein" ? "phenolphthalein" : "both_standard",
+			reagentLot: l.notes?.match(/Серия:\s*([^,\]|]+)/)?.[1]?.trim() || formReagentLot,
+			solutionTimeRu: l.notes?.match(/Раствор:\s*([^,\]|]+)/)?.[1]?.trim() || "08:30 (годен до 2 ч)",
 			isAzopyramNegative: l.isAzopyramNegative ?? true,
 			isPhenolphthaleinNegative: l.isPhenolphthaleinNegative ?? true,
-			isSudanNegative: true,
 			detergentBrand: l.detergentBrand || "Биолот 0.5% + Аламинол 1%",
 			isBatchApproved: l.isBatchApproved ?? true,
 			rejectionReason: l.rejectionReason || undefined,
@@ -252,13 +277,22 @@ export function PsoRegisterTab() {
 				l.operatorName ||
 				(appLogic as any)?.activeDoctor?.fullName ||
 				(appLogic as any)?.activeDoctor?.name ||
+				formNurseName ||
 				"Сотрудник клиники",
-			operatorStaffPosition: "Сотрудник ЦСО / Врач",
-			electronicStampVerified: stampedRows[l.id] || true,
+			operatorStaffPosition: "Медсестра ЦСО / Врач",
+			electronicStampVerified: stampedRows[l.id] || Boolean(l.notes?.includes("ЭЦП")),
 			notes: l.notes || undefined,
 		}));
 
-		const html = generatePsoJournalPrintHtml({
+		const html = generateStatutoryPsoForm366PrintHtml({
+			clinicName: (appLogic as any)?.clinicInfo?.name || "ООО «ДЕНТЕ КЛИНИК»",
+			clinicAddress: (appLogic as any)?.clinicInfo?.address || "г. Москва, ул. Профсоюзная, д. 45",
+			ogrn: (appLogic as any)?.clinicInfo?.ogrn || "1187746123456",
+			inn: (appLogic as any)?.clinicInfo?.inn || "7728412345",
+			licenseInfo: "ЛО41-01137-77/00368412 от 14.10.2021",
+			chiefDoctorFullName: (appLogic as any)?.activeDoctor?.fullName || "Главный врач клиники",
+			headNurseFullName: formNurseName || "Главная медицинская сестра",
+			dateRangeTextRu: `Журнал за ${new Date().toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}`,
 			records: recordsToPrint,
 		});
 
@@ -269,7 +303,7 @@ export function PsoRegisterTab() {
 			printWin.focus();
 			setTimeout(() => printWin.print(), 500);
 		}
-		showToast("Сгенерирован официальный журнал ПСО (Форма 366/у) с ЭЦП и печатями ГОСТ!", "success");
+		showToast("Сформирован официальный регламентный журнал ПСО (Форма 366/у) для проверки Роспотребнадзора!", "success");
 	};
 
 	return (
@@ -646,6 +680,37 @@ export function PsoRegisterTab() {
 											<CheckCircle2 size={13} color="#16a34a" /> <span>Норма в 1 клик</span>
 										</button>
 									</div>
+
+									{/* Category presets per shift */}
+									<div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "0.5rem" }}>
+										{DENTAL_PSO_INSTRUMENT_CATEGORIES.map((cat) => (
+											<button
+												key={cat.id}
+												type="button"
+												onClick={() => {
+													setFormInstrument(cat.nameRu);
+													const minSample = cat.isSurgicalOrCritical ? 5 : 3;
+													if (formSampleCount < minSample) {
+														setFormSampleCount(minSample);
+													}
+												}}
+												className="sanpin-btn touch-manipulation"
+												style={{
+													fontSize: "0.75rem",
+													padding: "0.2rem 0.5rem",
+													borderRadius: "4px",
+													border: formInstrument === cat.nameRu ? "1.5px solid var(--brand-primary, #2563eb)" : "1px solid var(--border)",
+													background: formInstrument === cat.nameRu ? "rgba(37, 99, 235, 0.08)" : "var(--paper)",
+													color: formInstrument === cat.nameRu ? "var(--brand-primary, #2563eb)" : "var(--foreground)",
+													fontWeight: formInstrument === cat.nameRu ? 600 : 400,
+													cursor: "pointer",
+												}}
+											>
+												{cat.nameRu.split(" (")[0]}
+											</button>
+										))}
+									</div>
+
 									<input
 										type="text"
 										required
@@ -702,6 +767,59 @@ export function PsoRegisterTab() {
 									</div>
 								</div>
 
+								<div className="sanpin-form-row">
+									<div className="sanpin-form-group">
+										<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+											Серия азопирама / реактивов
+										</label>
+										<input
+											type="text"
+											required
+											value={formReagentLot}
+											onChange={(e) => setFormReagentLot(e.target.value)}
+											className="sanpin-input"
+											style={{ minHeight: "44px", fontSize: "0.9rem" }}
+											placeholder="АЗО-2026/08-114"
+										/>
+									</div>
+
+									<div className="sanpin-form-group">
+										<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+											<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600, margin: 0 }}>
+												Приготовлен (макс. 2 ч)
+											</label>
+											<button
+												type="button"
+												onClick={() => {
+													setFormSolutionPreparedAt(new Date().toISOString());
+													showToast("Приготовлен свежий рабочий раствор 1:1 с 3% H2O2. Срок 2 ч обновлен.", "success");
+												}}
+												className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+												style={{ fontSize: "0.75rem", padding: "0.15rem 0.4rem" }}
+												title="Обновить время приготовления раствора"
+											>
+												Свежий раствор
+											</button>
+										</div>
+										<div
+											style={{
+												minHeight: "44px",
+												display: "flex",
+												alignItems: "center",
+												padding: "0 0.75rem",
+												borderRadius: "0.375rem",
+												border: "1px solid var(--border)",
+												background: liveEval.isSolutionExpired ? "rgba(239, 68, 68, 0.1)" : "var(--paper)",
+												color: liveEval.isSolutionExpired ? "#dc2626" : "var(--foreground)",
+												fontSize: "0.82rem",
+												fontWeight: 600,
+											}}
+										>
+											{new Date(formSolutionPreparedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} — {liveEval.isSolutionExpired ? "Раствор просрочен (>2 ч)" : `Годен еще ${liveEval.solutionTimeRemainingMinutes} мин.`}
+										</div>
+									</div>
+								</div>
+
 								<div className="sanpin-form-group">
 									<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
 										Вид химической пробы
@@ -750,6 +868,36 @@ export function PsoRegisterTab() {
 									</div>
 								</div>
 
+								{/* Clinical Protocol on Positive Test */}
+								{(!formAzopyramNeg || !formPhenolNeg) && (
+									<div
+										style={{
+											padding: "0.85rem",
+											borderRadius: "0.5rem",
+											background: "rgba(239, 68, 68, 0.12)",
+											border: "1.5px solid #ef4444",
+											color: "#991b1b",
+											fontSize: "0.85rem",
+											lineHeight: "1.4",
+										}}
+									>
+										<div style={{ fontWeight: 700, marginBottom: "0.35rem", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+											<AlertTriangle size={16} color="#dc2626" />
+											КЛИНИЧЕСКИЙ РЕГЛАМЕНТ ПРИ ПОЛОЖИТЕЛЬНОЙ ПРОБЕ (МУ 287-113, СанПиН 3.3686-21):
+										</div>
+										{!formAzopyramNeg && (
+											<div style={{ marginBottom: "0.35rem" }}>
+												• <strong>Скрытая кровь (фиолетово-синее окрашивание):</strong> Вся партия изделий ({formBatchCount} шт.) бракуется на 100% и направляется на повторную дезинфекцию, ПСО и контроль качества.
+											</div>
+										)}
+										{!formPhenolNeg && (
+											<div>
+												• <strong>Щелочные остатки моющих средств (розовое окрашивание):</strong> Вся партия изделий ({formBatchCount} шт.) бракуется на 100% и направляется на повторное ополаскивание проточной и дистиллированной водой до нейтральной реакции.
+											</div>
+										)}
+									</div>
+								)}
+
 								<div className="sanpin-form-group">
 									<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
 										Моющее / дезинфицирующее средство
@@ -788,9 +936,9 @@ export function PsoRegisterTab() {
 												? "Партия соответствует нормативам и допущена к стерилизации"
 												: "ВНИМАНИЕ: Партия НЕ ДОПУСКАЕТСЯ к стерилизации"}
 										</div>
-										{liveEval.rejectionReason && (
+										{liveEval.rejectionReasons.length > 0 && (
 											<div style={{ marginTop: "0.35rem", fontSize: "0.85rem", color: "#dc2626" }}>
-												{liveEval.rejectionReason}
+												{liveEval.rejectionReasons.join("; ")}
 											</div>
 										)}
 									</div>

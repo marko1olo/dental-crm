@@ -17,6 +17,7 @@
 
 import { z } from "zod";
 import { formatKopecksRu } from "../utils/money.js";
+import { generateClassBWasteSealAndBarcode } from "../utils/idGenerators.js";
 import {
 	type ConsumableDeductedItem,
 	type ConsumableItemLink,
@@ -180,13 +181,9 @@ export function calculateClassBWasteFromItems(
 		contaminatedItemsCount,
 	);
 
-	const year = referenceDate.getFullYear();
-	const month = String(referenceDate.getMonth() + 1).padStart(2, "0");
-	const day = String(referenceDate.getDate()).padStart(2, "0");
-	const randomSeq = Math.floor(1000 + Math.random() * 9000);
-
-	const sealNumber = `ПЛ-Б-${year}-${String(randomSeq).padStart(5, "0")}`;
-	const barcode = `WASTE-CLASS_B-DENT-${year}${month}${day}-${randomSeq}`;
+	const { sealNumber, barcode } = generateClassBWasteSealAndBarcode(referenceDate, {
+		seedKey: items.map((i) => i.itemName).join(";"),
+	});
 	const packagingRecommended =
 		sharpsCount > 0 || carpulesCount > 0 ? "yellow_container_sharps" : "yellow_bag";
 

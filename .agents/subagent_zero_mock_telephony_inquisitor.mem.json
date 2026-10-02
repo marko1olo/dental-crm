@@ -1,0 +1,24 @@
+{
+  "role": "ZERO-MOCK TELEPHONY SIP & LIVE INCOMING CALL POPUP INQUISITOR",
+  "status": "completed",
+  "completed_steps": [
+    "Read all mandatory authority documents (core.md, frontend.md, engineering.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md)",
+    "Reconnaissance of telephony components, stores, patient matching, and SIP/WebRTC call reception modal",
+    "Identify all synthetic mocks, fake timers, fake waveform diorama, missing patient matching logic",
+    "Implement zero-mock E.164 normalization, real patient database lookup, balance/debt, next/last visit, attending doctor, 1-click open patient card",
+    "Implement new patient scenario: banner, 1-click create card/appointment with auto-filled phone number",
+    "Eliminate fake animations/timers, bind strictly to real SIP/WebRTC/WebSocket events and state",
+    "Run unit/integration tests and typecheck, ensure Exit Code 0 across all 8 telephony test suites (121 tests passed)",
+    "Final Red Team inquisition report and verification"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Fixed static patient badge ('Пациент') to honest dynamic classification ('VIP', 'Постоянный', 'Первичный') based on clinical profile, notes, tags, and visit history.",
+    "Fixed Cyrillic regex boundary issue in Russian text notes (\\b vs Unicode letter boundary) ensuring reliable VIP and primary match.",
+    "Implemented prominent 'Новый пациент' banner in full incoming call card and compact capsule with marketing channel attribution.",
+    "Implemented last visit & attending doctor summary fallback in compact card when no future appointment exists instead of blank 'Нет записей'.",
+    "Eliminated synthetic leaking interval timer: call timer halts immediately upon status === 'ended' / 'rejected' / 'missed' and preserves accurate durationSeconds.",
+    "Automated seamless phone number injection into patientCoreDraft and newPatientPhone without requiring manual phone typing during 1-click intake.",
+    "Normalized incoming phone numbers to E.164 format in triggerIncomingCall and maintained representative phone matching support."
+  ]
+}

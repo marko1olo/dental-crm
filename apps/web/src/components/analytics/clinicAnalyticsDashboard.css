@@ -1,0 +1,325 @@
+/**
+ * apps/web/src/components/analytics/clinicAnalyticsDashboard.css
+ *
+ * Стили для дашборда аналитики клиники (ClinicAnalyticsDashboard).
+ * Строгое соответствие дизайн-системе DENTE:
+ * - Все цвета через CSS-токены (var(--paper), var(--ink), var(--line), var(--teal), var(--accent)).
+ * - Десктопная плотность 32-36px, для сенсорных экранов (@media pointer: coarse) расширение до >= 44x44px.
+ * - Чистые контрастные шкалы без артефактов и белых бельм в темной теме.
+ */
+
+.cad-container {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	width: 100%;
+	padding: 1.25rem;
+	background-color: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-radius: 12px;
+	box-sizing: border-box;
+}
+
+/* Верхняя панель управления: 1 строка, 32-36px высота элементов */
+.cad-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	padding-bottom: 0.75rem;
+	border-bottom: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+}
+
+.cad-title-group {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+}
+
+.cad-title-icon {
+	width: 34px;
+	height: 34px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(135deg, var(--teal, #0d9488), var(--accent, #6366f1));
+	color: var(--on-teal, #ffffff);
+	flex-shrink: 0;
+}
+
+.cad-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	margin: 0;
+	letter-spacing: 0;
+	color: var(--ink, #f8fafc);
+}
+
+.cad-subtitle {
+	font-size: 0.75rem;
+	color: var(--muted, #94a3b8);
+	margin: 0.125rem 0 0 0;
+}
+
+.cad-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+/* Переключатели табов и периодов */
+.cad-pill-group {
+	display: inline-flex;
+	align-items: center;
+	background-color: var(--paper-strong, #1e293b);
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+	border-radius: 8px;
+	padding: 2px;
+	gap: 2px;
+}
+
+.cad-pill-btn {
+	height: 32px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: none;
+	background: transparent;
+	color: var(--muted, #94a3b8);
+	font-size: 0.8125rem;
+	font-weight: 500;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	transition: all 0.15s ease-in-out;
+}
+
+.cad-pill-btn:hover {
+	color: var(--ink, #f8fafc);
+	background-color: rgba(255, 255, 255, 0.05);
+}
+
+.cad-pill-btn.active {
+	background-color: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	font-weight: 600;
+}
+
+.cad-action-btn {
+	height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+	background-color: var(--paper-strong, #1e293b);
+	color: var(--ink, #f8fafc);
+	font-size: 0.8125rem;
+	font-weight: 500;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	transition: all 0.15s ease-in-out;
+}
+
+.cad-action-btn:hover {
+	border-color: var(--teal, #0d9488);
+	background-color: rgba(13, 148, 136, 0.1);
+}
+
+/* Сетка карточек KPI (Tier 1) */
+.cad-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 0.875rem;
+}
+
+.cad-kpi-card {
+	background-color: var(--paper-strong, #1e293b);
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+	border-radius: 10px;
+	padding: 0.875rem 1rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 0.5rem;
+	position: relative;
+	overflow: hidden;
+}
+
+.cad-kpi-card::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 3px;
+	background-color: var(--kpi-accent, var(--teal, #0d9488));
+}
+
+.cad-kpi-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.cad-kpi-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted, #94a3b8);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.cad-kpi-icon {
+	color: var(--kpi-accent, var(--teal, #0d9488));
+}
+
+.cad-kpi-value {
+	font-size: 1.375rem;
+	font-weight: 700;
+	color: var(--ink, #f8fafc);
+	font-family: monospace;
+}
+
+.cad-kpi-subtext {
+	font-size: 0.75rem;
+	color: var(--muted, #94a3b8);
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+}
+
+/* Панель с контентом */
+.cad-panel {
+	background-color: var(--paper-strong, #1e293b);
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+	border-radius: 10px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.cad-panel-title-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-bottom: 0.5rem;
+	border-bottom: 1px solid var(--line, rgba(255, 255, 255, 0.08));
+}
+
+.cad-panel-title {
+	font-size: 0.9375rem;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0;
+	color: var(--ink, #f8fafc);
+}
+
+.cad-badge {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background-color: rgba(13, 148, 136, 0.15);
+	color: var(--teal, #0d9488);
+}
+
+/* Таблицы высокой клинической плотности */
+.cad-table-wrap {
+	width: 100%;
+	overflow-x: auto;
+}
+
+.cad-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+}
+
+.cad-table th {
+	text-align: left;
+	padding: 8px 10px;
+	font-weight: 600;
+	font-size: 0.6875rem;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--muted, #94a3b8);
+	border-bottom: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+	background-color: var(--paper-soft, rgba(0, 0, 0, 0.2));
+}
+
+.cad-table td {
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--line, rgba(255, 255, 255, 0.06));
+	color: var(--ink, #f8fafc);
+}
+
+.cad-table tr:hover td {
+	background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Прогресс-бары загрузки кресел */
+.cad-progress-bar-bg {
+	width: 100%;
+	height: 8px;
+	background-color: rgba(255, 255, 255, 0.1);
+	border-radius: 4px;
+	overflow: hidden;
+	position: relative;
+}
+
+.cad-progress-bar-fill {
+	height: 100%;
+	border-radius: 4px;
+	transition: width 0.3s ease;
+}
+
+/* Честное пустое состояние */
+.cad-empty-state {
+	padding: 2rem;
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.75rem;
+	color: var(--muted, #94a3b8);
+}
+
+.cad-empty-icon {
+	color: var(--teal, #0d9488);
+	opacity: 0.8;
+}
+
+/* Медицинские нормативы СанПиН инфо-плашка */
+.cad-sanpin-note {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 0.75rem;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	background-color: rgba(13, 148, 136, 0.08);
+	border-left: 3px solid var(--teal, #0d9488);
+	color: var(--muted, #94a3b8);
+}
+
+/* Адаптивность для мобильных и планшетов (pointer: coarse) */
+@media (pointer: coarse) {
+	.cad-pill-btn,
+	.cad-action-btn {
+		height: 44px;
+		padding: 0 14px;
+		font-size: 0.875rem;
+	}
+
+	.cad-table td,
+	.cad-table th {
+		padding: 10px 12px;
+	}
+}

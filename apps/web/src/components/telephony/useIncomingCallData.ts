@@ -7,6 +7,7 @@ import type {
 	PatientUpcomingAppointmentSummary,
 	PatientLastVisitSummary,
 	PatientActiveTreatmentPlanSummary,
+	TelephonyPatientCategory,
 } from "../../store/telephonyTypes";
 import {
 	calculatePatientFinancialStatus,
@@ -18,6 +19,7 @@ import {
 	resolvePatientSomaticAlerts,
 	resolvePatientUpcomingAppointment,
 	resolvePatientActiveTreatmentPlan,
+	resolvePatientCategory,
 } from "../../store/telephonyStore";
 import {
 	resolveCallAdvertisingAttribution,
@@ -42,6 +44,7 @@ export interface UseIncomingCallDataResult {
 	initials: string;
 	avatarColors: { bg: string; text: string };
 	isKnownPatient: boolean;
+	patientCategory: TelephonyPatientCategory;
 	providerLabel: string;
 }
 
@@ -61,10 +64,31 @@ export function useIncomingCallData(
 
 	const currentCall = activeCall || lastCallRef.current;
 
-	// Live Call Duration Timer (ticks every second while activeCall exists)
+	// Live Call Duration Timer (ticks every second while activeCall exists and active)
 	useEffect(() => {
 		if (!activeCall) {
 			setElapsedSeconds(0);
+			return;
+		}
+
+		// Stop ticking if call is already ended/rejected/missed
+		if (
+			activeCall.status === "ended" ||
+			activeCall.status === "rejected" ||
+			activeCall.status === "missed"
+		) {
+			const finalSeconds =
+				typeof activeCall.durationSeconds === "number" && activeCall.durationSeconds >= 0
+					? activeCall.durationSeconds
+					: Math.max(
+							0,
+							Math.floor(
+								((activeCall.endedAt || Date.now()) -
+									(activeCall.callStartedAt || Date.now())) /
+									1000,
+							),
+						);
+			setElapsedSeconds(finalSeconds);
 			return;
 		}
 
@@ -212,6 +236,15 @@ export function useIncomingCallData(
 	const avatarColors = getAvatarColor(callerName);
 	const isKnownPatient = Boolean(resolvedPatient);
 
+	const patientCategory = useMemo(() => {
+		if (!resolvedPatient) return "Первичный";
+		return resolvePatientCategory(
+			resolvedPatient,
+			lastVisitSummary,
+			patientInsight,
+		);
+	}, [resolvedPatient, lastVisitSummary, patientInsight]);
+
 	const providerLabel =
 		currentCall?.provider === "mango"
 			? "Mango Telecom"
@@ -241,6 +274,7 @@ export function useIncomingCallData(
 		initials,
 		avatarColors,
 		isKnownPatient,
+		patientCategory,
 		providerLabel,
 	};
 }

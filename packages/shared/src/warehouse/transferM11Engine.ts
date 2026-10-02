@@ -18,6 +18,7 @@
 
 import { z } from "zod";
 import { type Kopecks, formatKopecksRu } from "../utils/money.js";
+import { generateTransferM11Id } from "../utils/idGenerators.js";
 import { kopecksToRub } from "../fiscal/kopecksArithmetic.js";
 import { escapeHtml } from "../communications/messageTemplates.js";
 
@@ -311,7 +312,7 @@ export function createTransferM11Draft(input: CreateTransferM11DraftInput): Tran
 		};
 	});
 
-	const docId = input.id ?? `m11_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+	const docId = input.id ?? generateTransferM11Id();
 
 	return {
 		id: docId,

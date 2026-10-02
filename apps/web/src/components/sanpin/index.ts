@@ -28,4 +28,5 @@ export * from "./kraft/chemicalIntegratorsCatalog";
 export * from "./kraft/KraftPackageBarcodeModal";
 export * from "./autoclave/index";
 export * from "./waste/index";
+export * from "./disinfection/index";
 export { SanpinRegisters as default } from "./SanpinRegisters";

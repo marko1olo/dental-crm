@@ -10,8 +10,10 @@ import {
 	getAvatarColor,
 	type IncomingCallPayload,
 	normalizePhoneDigits,
+	normalizePhone,
 	resolvePatientFromPhone,
 	resolvePatientLastVisit,
+	resolvePatientCategory,
 	useTelephonyStore,
 } from "../../../store/telephonyStore.js";
 
@@ -432,3 +434,121 @@ describe("5. Telephony Store Lifecycle & State Transitions", () => {
 		assert.equal(useTelephonyStore.getState().callHistory.length, 0);
 	});
 });
+
+describe("6. Patient Category Classification (VIP, Постоянный, Первичный)", () => {
+	test("classifies as VIP if patient has VIP in notes or tags or loyaltyTier", () => {
+		const base0 = mockPatients[0]!;
+		const vipPatient1 = {
+			...base0,
+			notes: "Особый ВИП пациент клиники",
+		};
+		assert.equal(resolvePatientCategory(vipPatient1), "VIP");
+
+		const base1 = mockPatients[1]!;
+		const vipPatient2 = {
+			...base1,
+			administrativeProfile: base1.administrativeProfile
+				? {
+						...base1.administrativeProfile,
+						loyaltyTier: "vip" as any,
+					}
+				: null,
+		};
+		assert.equal(resolvePatientCategory(vipPatient2 as any), "VIP");
+
+		const vipPatient3 = {
+			...base0,
+			tags: ["vip", "implantology"],
+		};
+		assert.equal(resolvePatientCategory(vipPatient3 as any), "VIP");
+	});
+
+	test("classifies as Первичный if visits are absent or lastVisitSummary.isNewPatient", () => {
+		const base1 = mockPatients[1]!;
+		const newPatient = {
+			...base1,
+			notes: "Первичный звонок",
+		};
+		const lastVisit = {
+			lastVisitDate: null,
+			formattedLastVisit: "Первичный приём (визитов нет)",
+			doctorName: null,
+			doctorSpecialty: null,
+			appointmentReason: null,
+			isNewPatient: true,
+		};
+		assert.equal(resolvePatientCategory(newPatient, lastVisit), "Первичный");
+	});
+
+	test("classifies as Постоянный if patient has past visits and not VIP", () => {
+		const base0 = mockPatients[0]!;
+		const regularPatient = {
+			...base0,
+			notes: "Обычный постоянный клиент без аллергий",
+		};
+		const lastVisit = {
+			lastVisitDate: "2026-05-14T14:30:00Z",
+			formattedLastVisit: "14 мая 2026",
+			doctorName: "Др. Петров",
+			doctorSpecialty: "therapist",
+			appointmentReason: "Осмотр",
+			isNewPatient: false,
+		};
+		assert.equal(resolvePatientCategory(regularPatient, lastVisit), "Постоянный");
+	});
+});
+
+describe("7. E.164 Inbound Normalization & Representative Phone Matching", () => {
+	test("normalizes raw phone in triggerIncomingCall to E.164", () => {
+		useTelephonyStore.getState().triggerIncomingCall({
+			phone: "8 (916) 123-45-67",
+			patientId: null,
+			patientName: "Иванов Иван",
+		});
+		const active = useTelephonyStore.getState().activeCall;
+		assert.equal(active?.phone, "+79161234567");
+	});
+
+	test("matches patient by legal representative phone", () => {
+		const base0 = mockPatients[0]!;
+		const patientWithRep = {
+			...base0,
+			id: "99998888-7777-6666-5555-444433332222",
+			fullName: "Ребёнок Иванов",
+			phone: "+79001112233",
+			administrativeProfile: base0.administrativeProfile
+				? {
+						...base0.administrativeProfile,
+						legalRepresentativeFullName: "Иванова Мать",
+						legalRepresentativePhone: "+7 (926) 555-44-33",
+					}
+				: null,
+		};
+		const found = resolvePatientFromPhone([patientWithRep], "89265554433");
+		assert.ok(found);
+		assert.equal(found?.id, "99998888-7777-6666-5555-444433332222");
+		assert.equal(found?.fullName, "Ребёнок Иванов");
+	});
+});
+
+describe("8. Synthetic Timer Elimination on Ended Calls", () => {
+	test("endCall sets endedAt and calculates durationSeconds without infinite ticking", () => {
+		const callStart = Date.now() - 30000;
+		useTelephonyStore.getState().triggerIncomingCall({
+			phone: "+79169998877",
+			patientId: null,
+			patientName: "Тестовый Вызов",
+			callStartedAt: callStart,
+			status: "answered",
+		});
+
+		useTelephonyStore.getState().endCall();
+		const history = useTelephonyStore.getState().callHistory[0];
+		assert.ok(history);
+		assert.equal(history?.status, "ended");
+		assert.ok(typeof history?.endedAt === "number");
+		assert.ok(typeof history?.durationSeconds === "number");
+		assert.ok(history.durationSeconds >= 29);
+	});
+});
+

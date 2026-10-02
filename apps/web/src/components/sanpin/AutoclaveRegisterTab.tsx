@@ -26,6 +26,7 @@ import {
 	handlePrintBatchPouches,
 	handlePrintSinglePouch,
 } from "./AutoclavePrintHelpers";
+import { SterilizationCycleModal } from "./SterilizationCycleModal";
 import { AutoclaveRegisterTable } from "./AutoclaveRegisterTable";
 
 export function AutoclaveRegisterTab() {
@@ -35,6 +36,7 @@ export function AutoclaveRegisterTab() {
 	const [deviceFilter, setDeviceFilter] = useState<string>("all");
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
+	const [isNewCycleModalOpen, setIsNewCycleModalOpen] = useState(false);
 	const [isWasteJournalOpen, setIsWasteJournalOpen] = useState(false);
 	const [kraftPrefill, setKraftPrefill] = useState<{
 		autoclaveId?: string | undefined;
@@ -267,11 +269,20 @@ export function AutoclaveRegisterTab() {
 				onOpenKraftForLog={openKraftForLog}
 				onQuickShiftBatch={handleQuickShiftBatch}
 				isLoggingBatch={isLoggingBatch}
+				onOpenNewCycleModal={() => setIsNewCycleModalOpen(true)}
 				onGenerateMonthlyForm257={handleGenerateMonthlyForm257}
 				onOpenJournal257Modal={() => setIsJournal257ModalOpen(true)}
 				onOpenKraftModal={() => setIsKraftModalOpen(true)}
 				onLoadMore={() => setDisplayLimit((prev) => prev + DEFAULT_DOM_CHUNK_STEP)}
 				onLoadAll={() => setDisplayLimit(logsSlice.totalCount)}
+			/>
+
+			{/* Official Sterilization Cycle Recording Modal (Form 257/u, Autoclave B / Dry Heat / Glassperlen) */}
+			<SterilizationCycleModal
+				isOpen={isNewCycleModalOpen}
+				onClose={() => setIsNewCycleModalOpen(false)}
+				onCycleCreated={fetchLogs}
+				clinicDevices={clinicDevices}
 			/>
 
 			{/* Kraft Package Barcode & Thermal Label Studio Modal */}

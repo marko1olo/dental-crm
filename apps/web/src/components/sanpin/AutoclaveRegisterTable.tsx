@@ -42,6 +42,7 @@ export interface AutoclaveRegisterTableProps {
 	readonly onOpenKraftForLog: (log: SterilizationLogRecord) => void;
 	readonly onQuickShiftBatch: () => void;
 	readonly isLoggingBatch: boolean;
+	readonly onOpenNewCycleModal?: () => void;
 	readonly onGenerateMonthlyForm257: () => void;
 	readonly onOpenJournal257Modal: () => void;
 	readonly onOpenKraftModal: () => void;
@@ -67,6 +68,7 @@ export function AutoclaveRegisterTable({
 	onOpenKraftForLog,
 	onQuickShiftBatch,
 	isLoggingBatch,
+	onOpenNewCycleModal,
 	onGenerateMonthlyForm257,
 	onOpenJournal257Modal,
 	onOpenKraftModal,
@@ -266,6 +268,37 @@ export function AutoclaveRegisterTable({
 									gap: "0.2rem",
 								}}
 							>
+								{/* Внести цикл вручную (Форма № 257/у) */}
+								{onOpenNewCycleModal && (
+									<button
+										type="button"
+										onClick={() => {
+											setIsMoreMenuOpen(false);
+											onOpenNewCycleModal();
+										}}
+										className="sanpin-dropdown-item"
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "0.5rem",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "6px",
+											background: "none",
+											border: "none",
+											width: "100%",
+											textAlign: "left",
+											fontSize: "0.825rem",
+											fontWeight: 600,
+											color: "var(--ink, #0f172a)",
+											cursor: "pointer",
+										}}
+										data-testid="open-new-cycle-modal-btn"
+									>
+										<Plus size={15} color="#0284c7" />
+										<span>Внести цикл (параметры, КТ-1..5)</span>
+									</button>
+								)}
+
 								{/* Сгенерировать Форму 257/у за месяц */}
 								<button
 									type="button"
@@ -388,11 +421,12 @@ export function AutoclaveRegisterTable({
 										<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center" }}>
 											<button
 												type="button"
-												onClick={onOpenJournal257Modal}
+												onClick={onOpenNewCycleModal || onOpenJournal257Modal}
 												className="sanpin-btn sanpin-btn-primary"
 												style={{ minHeight: "38px", padding: "0.4rem 1rem", fontSize: "0.825rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+												data-testid="empty-state-new-cycle-btn"
 											>
-												<Plus size={14} /> Запустить цикл стерилизации
+												<Plus size={14} /> Внести цикл стерилизации (Форма 257/у)
 											</button>
 											<button
 												type="button"

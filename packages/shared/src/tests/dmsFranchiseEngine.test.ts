@@ -21,6 +21,8 @@ import {
 	dmsGuaranteeLetterSchema,
 	evaluateGuaranteeLetterCoverage,
 	applyGuaranteeLetterDeduction,
+	checkServiceDmsCoverage,
+	STANDARD_DMS_EXCLUDED_804N_SERVICES,
 } from "../insurance/dmsGuaranteeLetters.js";
 
 import {
@@ -29,6 +31,7 @@ import {
 	generateDmsRegistryXml,
 	generateDmsRegistryCsv,
 	generateDmsRegistryA4Html,
+	generateDmsAcceptanceActA4Html,
 	dmsRegistryDataSchema,
 } from "../insurance/dmsRegistryExport.js";
 
@@ -472,6 +475,159 @@ describe("DMS Guarantee Letters & Coverage Limits (dmsGuaranteeLetters.ts)", () 
 
 		assert.equal(dmsGuaranteeLetterSchema.safeParse(validLetter).success, true);
 	});
+
+	it("2.7 Generates deterministic transaction IDs (zero Math.random) and allows transactionId override", () => {
+		const letter: DmsGuaranteeLetter = {
+			id: "let-det-1",
+			letterNumber: "ГП-СОГАЗ-901",
+			issueDate: "2026-08-01",
+			validFrom: "2026-08-01",
+			validTo: "2026-08-31",
+			companyId: "sogaz",
+			companyName: "АО «СОГАЗ»",
+			policyNumber: "СГЗ-111",
+			patientFullName: "Соколов Артем Павлович",
+			patientBirthDate: "1990-05-15",
+			limitKopecks: 10000000,
+			usedKopecks: 0,
+			remainingLimitKopecks: 10000000,
+			defaultFranchisePercent: 0,
+			status: "active",
+		};
+
+		// 1. First deduction produces deterministic sequential ID
+		const step1 = applyGuaranteeLetterDeduction(letter, 1500000, {
+			transactionRef: "VISIT-20260810-01",
+			serviceDate: "2026-08-10",
+			descriptionRu: "Лечение кариеса",
+		});
+		assert.equal(step1.transaction.id, "tx_let-det-1_1_VISIT-20260810-01");
+
+		// Repeated execution produces EXACT identical ID (no Math.random drift)
+		const step1Repeat = applyGuaranteeLetterDeduction(letter, 1500000, {
+			transactionRef: "VISIT-20260810-01",
+			serviceDate: "2026-08-10",
+			descriptionRu: "Лечение кариеса",
+		});
+		assert.equal(step1Repeat.transaction.id, step1.transaction.id);
+
+		// 2. Second sequential deduction increments index
+		const step2 = applyGuaranteeLetterDeduction(step1.updatedLetter, 2000000, {
+			transactionRef: "VISIT-20260812-02",
+			serviceDate: "2026-08-12",
+			descriptionRu: "Эндодонтия 1.6",
+		});
+		assert.equal(step2.transaction.id, "tx_let-det-1_2_VISIT-20260812-02");
+
+		// 3. Allows explicit transactionId override
+		const stepCustom = applyGuaranteeLetterDeduction(step2.updatedLetter, 500000, {
+			transactionRef: "VISIT-20260815-03",
+			serviceDate: "2026-08-15",
+			descriptionRu: "Прицельный снимок",
+			transactionId: "custom_uuid_888492048",
+		});
+		assert.equal(stepCustom.transaction.id, "custom_uuid_888492048");
+	});
+
+	it("2.8 Enforces Mandate 8n Zero Dead-Ends & Doctor Autonomy (isDoctorWorkBlocked is strictly false)", () => {
+		const sampleLetter: DmsGuaranteeLetter = {
+			id: "let-autonomy",
+			letterNumber: "ГП-ИНГОС-992",
+			issueDate: "2026-08-01",
+			validFrom: "2026-08-01",
+			validTo: "2026-08-15",
+			companyId: "ingosstrakh",
+			companyName: "СПАО «Ингосстрах»",
+			policyNumber: "ИНГ-888",
+			patientFullName: "Федоров Алексей Викторович",
+			patientBirthDate: "1987-09-09",
+			limitKopecks: 5000000,
+			usedKopecks: 5000000,
+			remainingLimitKopecks: 0, // Exhausted
+			defaultFranchisePercent: 0,
+			allowed804nPrefixes: ["A16.07.002"],
+			excluded804nCodes: ["A16.07.003", "A16.07.054"],
+			status: "exhausted",
+		};
+
+		// 1. Exhausted limit
+		const evalExhausted = evaluateGuaranteeLetterCoverage(sampleLetter, 300000, { serviceDate: "2026-08-10" });
+		assert.equal(evalExhausted.isDoctorWorkBlocked, false);
+		assert.equal(evalExhausted.coverageIndicatorRu, "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом");
+
+		// 2. Excluded service code (e.g. ceramic veneers A16.07.003)
+		const evalExcluded = evaluateGuaranteeLetterCoverage(
+			{ ...sampleLetter, remainingLimitKopecks: 5000000, usedKopecks: 0, status: "active" },
+			2500000,
+			{ serviceDate: "2026-08-10", serviceCode804n: "A16.07.003" },
+		);
+		assert.equal(evalExcluded.isDoctorWorkBlocked, false);
+		assert.equal(evalExcluded.coverageIndicatorRu, "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом");
+
+		// 3. Expired letter
+		const evalExpired = evaluateGuaranteeLetterCoverage(
+			{ ...sampleLetter, remainingLimitKopecks: 5000000, usedKopecks: 0, status: "active" },
+			2500000,
+			{ serviceDate: "2026-08-25" }, // Past validTo
+		);
+		assert.equal(evalExpired.isDoctorWorkBlocked, false);
+		assert.equal(evalExpired.coverageIndicatorRu, "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом");
+
+		// 4. Acute pain / emergency override
+		const evalEmergency = evaluateGuaranteeLetterCoverage(sampleLetter, 450000, {
+			serviceDate: "2026-08-10",
+			hasAcutePain: true,
+		});
+		assert.equal(evalEmergency.isDoctorWorkBlocked, false);
+		assert.equal(evalEmergency.isApproved, true);
+		assert.ok(evalEmergency.coverageIndicatorRu.includes("Экстренная помощь"));
+	});
+
+	it("2.9 Evaluates clinical service assignment coverage (checkServiceDmsCoverage) for veneers, implants and therapy", () => {
+		// 1. Ceramic veneer without guarantee letter -> clear non-blocking indicator, 100% patient portion
+		const veneerCheck = checkServiceDmsCoverage(null, {
+			code804n: "A16.07.003.001",
+			nameRu: "Керамический винир E.max",
+			priceKopecks: 3500000, // 35,000.00 RUB
+		});
+		assert.equal(veneerCheck.isCovered, false);
+		assert.equal(veneerCheck.isDoctorWorkBlocked, false);
+		assert.equal(veneerCheck.coverageIndicatorRu, "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом");
+		assert.equal(veneerCheck.approvedInsurerKopecks, 0);
+		assert.equal(veneerCheck.patientPortionKopecks, 3500000);
+
+		// 2. Dental implantation without guarantee letter -> clear non-blocking indicator
+		const implantCheck = checkServiceDmsCoverage(null, {
+			code804n: "A16.07.054",
+			nameRu: "Внутрикостная дентальная имплантация",
+			priceKopecks: 4500000,
+		});
+		assert.equal(implantCheck.isCovered, false);
+		assert.equal(implantCheck.isDoctorWorkBlocked, false);
+		assert.equal(implantCheck.coverageIndicatorRu, "Услуга не покрывается ДМС, требуется согласование страховой или оплата пациентом");
+
+		// 3. Base therapy without guarantee letter -> covered by standard DMS therapy
+		const therapyCheck = checkServiceDmsCoverage(null, {
+			code804n: "A16.07.002.001",
+			nameRu: "Лечение кариеса",
+			priceKopecks: 450000,
+		});
+		assert.equal(therapyCheck.isCovered, true);
+		assert.equal(therapyCheck.isDoctorWorkBlocked, false);
+		assert.equal(therapyCheck.approvedInsurerKopecks, 450000);
+		assert.equal(therapyCheck.patientPortionKopecks, 0);
+
+		// 4. Acute pain with inactive letter -> approved without blocking (Mandate 8e)
+		const acuteCheck = checkServiceDmsCoverage(null, {
+			code804n: "A16.07.030.001",
+			nameRu: "Депульпирование зуба по острой боли",
+			priceKopecks: 600000,
+			hasAcutePain: true,
+		});
+		assert.equal(acuteCheck.isCovered, true);
+		assert.equal(acuteCheck.isDoctorWorkBlocked, false);
+		assert.ok(acuteCheck.coverageIndicatorRu.includes("Экстренная помощь"));
+	});
 });
 
 describe("DMS Claim Registry Generator (dmsRegistryExport.ts)", () => {
@@ -506,52 +662,22 @@ describe("DMS Claim Registry Generator (dmsRegistryExport.ts)", () => {
 		},
 		records: [
 			{
-				recordId: "REC-001",
-				serviceDate: "2026-08-10",
-				patientFullName: "Смирнова Елена Александровна",
-				patientBirthDate: "1988-04-12",
-				patientGender: "Ж",
-				patientSnils: "123-456-789 00",
-				policyNumber: "7700-12345678-01",
-				guaranteeLetterNumber: "ГП-2026/08-00124",
-				guaranteeLetterDate: "2026-08-01",
-				icd10Code: "K02.1",
-				icd10DescriptionRu: "Кариес дентина",
-				toothNumberFdi: 26,
-				serviceCode804n: "A16.07.002.001",
-				serviceNameRu: "Наложение пломбы светового отверждения (Filtek Z350 XT)",
-				doctorFullName: "Барабаш С.В.",
-				doctorSpecialtyRu: "Врач-стоматолог терапевт",
-				quantity: 1,
-				unitPriceKopecks: 450000, // 4,500.00 RUB
-				totalGrossKopecks: 450000,
-				franchisePercent: 20,
-				patientPaidKopecks: 90000, // 900.00 RUB
-				insurerClaimKopecks: 360000, // 3,600.00 RUB
+				recordId: "REC-001", serviceDate: "2026-08-10", patientFullName: "Смирнова Елена Александровна",
+				patientBirthDate: "1988-04-12", patientGender: "Ж", patientSnils: "123-456-789 00", policyNumber: "7700-12345678-01",
+				guaranteeLetterNumber: "ГП-2026/08-00124", guaranteeLetterDate: "2026-08-01", icd10Code: "K02.1",
+				icd10DescriptionRu: "Кариес дентина", toothNumberFdi: 26, serviceCode804n: "A16.07.002.001",
+				serviceNameRu: "Наложение пломбы светового отверждения (Filtek Z350 XT)", doctorFullName: "Барабаш С.В.",
+				doctorSpecialtyRu: "Врач-стоматолог терапевт", quantity: 1, unitPriceKopecks: 450000, totalGrossKopecks: 450000,
+				franchisePercent: 20, patientPaidKopecks: 90000, insurerClaimKopecks: 360000,
 			},
 			{
-				recordId: "REC-002",
-				serviceDate: "2026-08-12",
-				patientFullName: "Иванов Петр Сергеевич",
-				patientBirthDate: "1975-11-23",
-				patientGender: "М",
-				patientSnils: "987-654-321 99",
-				policyNumber: "ИНГ-998822",
-				guaranteeLetterNumber: "ГП-ИНГОС-4491",
-				guaranteeLetterDate: "2026-08-05",
-				icd10Code: "K04.0",
-				icd10DescriptionRu: "Пульпит острый очаговый",
-				toothNumberFdi: 15,
-				serviceCode804n: "A16.07.030.001",
-				serviceNameRu: "Инструментальная и медикаментозная обработка корневого канала",
-				doctorFullName: "Смирнов А.П.",
-				doctorSpecialtyRu: "Врач-стоматолог терапевт",
-				quantity: 2,
-				unitPriceKopecks: 120000, // 1,200.00 * 2 = 2,400.00 RUB
-				totalGrossKopecks: 240000,
-				franchisePercent: 0, // 0% franchise
-				patientPaidKopecks: 0,
-				insurerClaimKopecks: 240000, // 2,400.00 RUB
+				recordId: "REC-002", serviceDate: "2026-08-12", patientFullName: "Иванов Петр Сергеевич",
+				patientBirthDate: "1975-11-23", patientGender: "М", patientSnils: "987-654-321 99", policyNumber: "ИНГ-998822",
+				guaranteeLetterNumber: "ГП-ИНГОС-4491", guaranteeLetterDate: "2026-08-05", icd10Code: "K04.0",
+				icd10DescriptionRu: "Пульпит острый очаговый", toothNumberFdi: 15, serviceCode804n: "A16.07.030.001",
+				serviceNameRu: "Инструментальная и медикаментозная обработка корневого канала", doctorFullName: "Смирнов А.П.",
+				doctorSpecialtyRu: "Врач-стоматолог терапевт", quantity: 2, unitPriceKopecks: 120000, totalGrossKopecks: 240000,
+				franchisePercent: 0, patientPaidKopecks: 0, insurerClaimKopecks: 240000,
 			},
 		],
 	};
@@ -632,5 +758,26 @@ describe("DMS Claim Registry Generator (dmsRegistryExport.ts)", () => {
 
 	it("3.5 Validates Zod schema for DMS registry payload", () => {
 		assert.equal(dmsRegistryDataSchema.safeParse(sampleRegistryData).success, true);
+	});
+
+	it("3.6 Generates statutory A4 Bilateral Acceptance Act without emojis and with exact Russian kopeck totals", () => {
+		const actHtml = generateDmsAcceptanceActA4Html(sampleRegistryData);
+
+		assert.ok(actHtml.includes("<!DOCTYPE html>"));
+		assert.ok(actHtml.includes("size: A4 landscape"));
+		assert.ok(actHtml.includes("Акт сдачи-приемки оказанных медицинских услуг ДМС"));
+		assert.ok(actHtml.includes("ООО «Стоматологический центр ДЕНТЕ»"));
+		assert.ok(actHtml.includes("АО «СОГАЗ»"));
+		assert.ok(actHtml.includes("A16.07.002.001"));
+		assert.ok(actHtml.includes("Наложение пломбы светового отверждения"));
+		assert.ok(actHtml.includes("ГП-2026/08-00124"));
+		assert.ok(actHtml.includes("К возмещению Страховщиком:"));
+		assert.ok(actHtml.includes("Шесть тысяч рублей"));
+		assert.ok(actHtml.includes("пп. 2 п. 2 ст. 149 Налогового кодекса РФ"));
+		assert.ok(actHtml.includes("Главный врач"));
+		assert.ok(actHtml.includes("Главный бухгалтер"));
+		assert.ok(actHtml.includes("М.П."));
+		// Strict invariant: no emojis in statutory legal/medical acts
+		assert.equal(/[\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(actHtml), false);
 	});
 });

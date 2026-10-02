@@ -37,6 +37,7 @@ export interface IncomingCallPayload {
 	clinicPhone?: string | undefined;
 	recordingUrl?: string | undefined;
 	callStartedAt?: number | undefined;
+	endedAt?: number | undefined;
 	lineId?: 1 | 2 | undefined;
 	direction?: "inbound" | "outbound" | undefined;
 }
@@ -186,3 +187,5 @@ export interface PatientNextVisitSummary {
 	readonly startsAt: string | null;
 	readonly fullTextRu: string;
 }
+
+export type TelephonyPatientCategory = "VIP" | "Постоянный" | "Первичный";

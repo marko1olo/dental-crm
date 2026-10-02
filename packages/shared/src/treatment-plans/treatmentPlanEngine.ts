@@ -29,6 +29,10 @@ import {
 	formatKopecksRu,
 } from "../utils/money.js";
 import {
+	generateTreatmentPlanId,
+	generateTreatmentPlanNumber,
+} from "../utils/idGenerators.js";
+import {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 	resolveTaxDeductionCategoryShared,
 } from "../finance/taxDeduction.js";
@@ -714,8 +718,12 @@ export function buildMultiOptionTreatmentPlan(
 	const validUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 дней срок действия сметы
 	const validUntilIso = input.validUntilIso || validUntil.toISOString();
 
-	const planId = input.planId || `plan_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-	const planNumber = input.planNumber || `ПЛ-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const planId = input.planId || generateTreatmentPlanId();
+	const planNumber =
+		input.planNumber ||
+		generateTreatmentPlanNumber(now, {
+			seedKey: `${input.patientId}:${input.doctorFullName}`,
+		});
 	const clinicId = input.clinicId || "clinic_main";
 
 	const clinicRequisites: ClinicLegalRequisites = {

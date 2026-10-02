@@ -1,0 +1,38 @@
+{
+  "role": "ZERO-MOCK CLINIC ANALYTICS & CHAIR UTILIZATION INQUISITOR",
+  "status": "completed",
+  "scope": [
+    "apps/web/src/components/analytics/ClinicAnalyticsDashboard.tsx",
+    "apps/web/src/components/analytics/chairUtilizationEngine.ts",
+    "apps/web/src/components/analytics/financialAnalyticsEngine.ts",
+    "apps/web/src/components/analytics/doctorProductivityEngine.ts",
+    "apps/web/src/components/analytics/clinicAnalyticsDashboard.css",
+    "apps/web/src/components/analytics/index.ts",
+    "apps/web/src/components/analytics/__tests__/clinicAnalyticsEngines.test.ts"
+  ],
+  "forbidden_scope": [
+    "apps/web/src/components/radiology/*"
+  ],
+  "completed_steps": [
+    "Read all mandatory constitutional documents (core.md, frontend.md, AGENTS.md, GEMINI.md, THE_HAMMER_MASTER_PROMPT.md)",
+    "Audited analytics domain for fake Math.sin, synthetic [12000, 15000] arrays, and deceptive mock states",
+    "Created financialAnalyticsEngine.ts: integer kopeck math, honest revenue from real payments, refunds subtraction, accounts receivable from open invoices with overdue detection, P&L (COGS 18%, ФОТ 40%, накладные 15%, маркетинг, EBITDA, налог УСН 6%, чистая прибыль), честный средний чек = чистая выручка / завершенные визиты",
+    "Created chairUtilizationEngine.ts: authentic chair utilization = (∑ минуты реальных приемов + санобработка 15 мин по СанПиН 3.3686-21) / фонд смен * 100%, учет простоев (idle minutes), capacity yield на кресло-час, разбивка по креслам (Кресло 1 Терапия, Кресло 2 Ортопедия, Хирургический кабинет с 20 мин буфером), детектирование перегрузки >= 90%",
+    "Created doctorProductivityEngine.ts: выработка врача по начисленным актам, доля первичных/повторных, attendance rate % (доходимость по расписанию = явившиеся / назначенные * 100%), средний чек врача, часовая выработка, ранжирование клиники",
+    "Created clinicAnalyticsDashboard.css: дизайн-токены DENTE (var(--paper), var(--ink), var(--teal), var(--on-teal), var(--line)), 32-36px desktop density, touch >= 44x44px, 100% theme-clean",
+    "Created ClinicAnalyticsDashboard.tsx: полномасштабный аналитический пульт клиники, 4 вкладки (Обзор, Финансы, Кресла, Врачи), селекторы периодов (День, Неделя, Месяц, Квартал, Год), честные Empty States без псевдо-данных, строгая изоляция демо-режима",
+    "Updated apps/web/src/components/analytics/index.ts with exports for engines and dashboard",
+    "Created comprehensive unit test suite apps/web/src/components/analytics/__tests__/clinicAnalyticsEngines.test.ts (8 tests, node:test, 100% passing in 440ms)",
+    "Verified apps/web/src/components/analytics/analyticsWidgetData.test.ts (19 tests, 100% passing)",
+    "Verified npm run check:encoding (6906 files checked, Exit Code 0)",
+    "Verified npm run check:css-tokens (0 unresolved tokens, 0 light-slab fallbacks, Exit Code 0)",
+    "Verified tsc -b --noEmit for apps/web: zero TypeScript errors in apps/web/src/components/analytics/*",
+    "Verified radiology files strictly untouched"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "Pre-existing code in analytics lacked granular chair time tracking with SanPiN 3.3686-21 turnover buffers and doctor attendance rate % calculations.",
+    "CSS token check identified --paper-contrast with light fallback #ffffff; replaced with canonical --on-teal token resolving check:css-tokens with 0 errors across light/dark/night themes.",
+    "TypeScript exactOptionalPropertyTypes required explicit | undefined on optional interface fields; updated engines and props accordingly with zero type errors in the analytics domain."
+  ]
+}

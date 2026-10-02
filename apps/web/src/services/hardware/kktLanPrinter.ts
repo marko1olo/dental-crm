@@ -143,7 +143,7 @@ export class KktLanPrinterService {
 				fnPresent: false,
 				fnFiscalized: false,
 				latencyMs: 0,
-				error: "Кассовый аппарат временно недоступен (защита от сбоев). Повторная проверка через несколько секунд.",
+				error: "Кассовый аппарат временно недоступен (Circuit Breaker OPEN — защита от сбоев). Повторная проверка через несколько секунд.",
 				checkedAt: nowIso,
 			};
 		}
@@ -343,7 +343,7 @@ export class KktLanPrinterService {
 				fnSerial,
 				qrString,
 				ofdVerificationUrl: ofdUrl,
-				error: "Кассовый аппарат временно недоступен (защита от сбоев). Чек помещен в буфер отложенной печати.",
+				error: "Кассовый аппарат временно недоступен (Circuit Breaker OPEN — защита от сбоев). Чек помещен в буфер отложенной печати.",
 			};
 		}
 

@@ -13,6 +13,10 @@ import type {
 	AnesthesiaPkuSummaryLedger,
 	PreoperativeVitalsChecklist,
 } from "./types.js";
+import {
+	generateAnesthesiaPkuRecordId,
+	generateAnesthesiaPkuRecordNumber,
+} from "../utils/idGenerators.js";
 
 /**
  * Рассчитывает дату срока годности по умолчанию (+N лет от текущей или референсной даты).
@@ -302,10 +306,13 @@ export function createAnesthesiaPkuRecord(
 		recordNumber?: string | undefined;
 	},
 ): AnesthesiaPkuDisposalRecord {
-	const genId = params.id || `pku_an_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+	const genId = params.id || generateAnesthesiaPkuRecordId();
 	const year = new Date().getFullYear();
-	const randomNum = Math.floor(100 + Math.random() * 900);
-	const recordNumber = params.recordNumber || `ПКУ-АН-${year}/${randomNum}`;
+	const recordNumber =
+		params.recordNumber ||
+		generateAnesthesiaPkuRecordNumber(year, {
+			seedKey: `${params.patientFullName}:${params.batchNumber}`,
+		});
 
 	return {
 		...params,

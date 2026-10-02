@@ -19,8 +19,9 @@ import {
 	Sparkles,
 	X,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
+import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 import { AutoclaveJournal257Tab } from "./AutoclaveJournal257Tab.js";
 import "./autoclaveLog.css";
 import {
@@ -186,6 +187,56 @@ export function AutoclaveLog257Modal({
 	const [bioRecords, setBioRecords] = useState<BiologicalControlTestRecord[]>(() =>
 		isDemo ? [...INITIAL_BIO_RECORDS] : [],
 	);
+
+	useEffect(() => {
+		if (isDemo || !isOpen) return;
+		let cancelled = false;
+		const fetchLiveRecords = async () => {
+			try {
+				const clinicToken = readDenteClinicToken();
+				const staffToken = readDenteStaffToken();
+				const res = await fetch("/api/registers/sterilization", {
+					headers: {
+						...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+						...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+					},
+				});
+				if (!res.ok) return;
+				const data = await res.json();
+				if (Array.isArray(data) && data.length > 0 && !cancelled) {
+					const mapped: Form257Record[] = data.map((item: any, idx: number) => {
+						const dateStr = item.timestamp ? item.timestamp.split("T")[0] : new Date().toISOString().split("T")[0];
+						return createForm257Record({
+							date: dateStr,
+							cycleNumber: item.cycleNumber || (idx + 1),
+							sterilizerId: item.autoclaveId || "autoclave-melag-vacuklav-23b",
+							regimeId: item.temperatureCelsius >= 180 ? "dry_heat_180_60min" : "steam_134_5min",
+							sensors: {
+								actualTemperatureCelsius: item.temperatureCelsius || 134,
+								actualPressureBar: item.pressureBar || 2.1,
+								actualExposureMinutes: item.durationMin || 5,
+							},
+							itemsDescriptionRu: item.itemsDescription || "Стоматологический инструментарий",
+							packsCount: 1,
+							packagingType: "kraft_pouch_sealed",
+							chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", item.status === "passed"),
+							operatorStaffFullName: item.operatorName || "Сотрудник ЦСО",
+							operatorStaffPosition: "Сотрудник ЦСО / Врач",
+							isHeadNurseVerified: item.status === "passed",
+							notes: item.notes || undefined,
+						});
+					});
+					setRecords(mapped);
+				}
+			} catch (e) {
+				console.error("Failed to load sterilization records for Form 257", e);
+			}
+		};
+		fetchLiveRecords();
+		return () => {
+			cancelled = true;
+		};
+	}, [isOpen, isDemo]);
 
 	if (!isOpen) return null;
 
