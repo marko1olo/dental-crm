@@ -31,7 +31,7 @@ export const EmrProtocolSoapPanels: React.FC<EmrProtocolSoapPanelsProps> = React
 						{/* S */}
 						<div className="p-3.5 rounded-xl border border-blue-500/30 bg-blue-500/5 space-y-1">
 							<div className="font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider text-[11px]">
-								S (Subjective) — Жалобы и анамнез
+								Жалобы и анамнез
 							</div>
 							<p className="text-sm text-[var(--ink,#0f172a)] leading-relaxed">
 								{synthesizedDiary.subjectiveComplaints}
@@ -41,7 +41,7 @@ export const EmrProtocolSoapPanels: React.FC<EmrProtocolSoapPanelsProps> = React
 						{/* O */}
 						<div className="p-3.5 rounded-xl border border-purple-500/30 bg-purple-500/5 space-y-1.5">
 							<div className="font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider text-[11px]">
-								O (Objective) — Status Localis и диагностические тесты
+								Осмотр и диагностические тесты
 							</div>
 							<p className="text-sm text-[var(--ink,#0f172a)] leading-relaxed">
 								{synthesizedDiary.objectiveStatusLocalis}
@@ -64,7 +64,7 @@ export const EmrProtocolSoapPanels: React.FC<EmrProtocolSoapPanelsProps> = React
 						{/* A */}
 						<div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-1">
 							<div className="font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider text-[11px]">
-								A (Assessment) — Клинический диагноз
+								Диагноз
 							</div>
 							<div className="text-sm font-bold text-[var(--ink,#0f172a)]">
 								<span className="font-mono text-amber-600 mr-2">
@@ -77,7 +77,7 @@ export const EmrProtocolSoapPanels: React.FC<EmrProtocolSoapPanelsProps> = React
 						{/* P */}
 						<div className="p-3.5 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,#f0fdfa)] space-y-2">
 							<div className="font-bold text-[var(--teal,#0d9488)] uppercase tracking-wider text-[11px]">
-								P (Plan & Procedure) — Протокол вмешательства
+								Протокол лечения
 							</div>
 							<p className="text-xs text-[var(--ink,#0f172a)] whitespace-pre-wrap leading-relaxed font-mono bg-[var(--paper,#ffffff)] p-3 rounded-lg border border-[var(--line,#e2e8f0)]">
 								{synthesizedDiary.procedureProtocol}

@@ -58,8 +58,8 @@ export const SURGICAL_STATUTORY_ITEMS: readonly SurgicalItem[] = [
 	{
 		kind: "dental_medical_card_043u",
 		title: "Хирургический протокол операции в карте пациента",
-		statutoryRef: "Приказ Минздрава России от 15.12.2014 № 834н",
-		description: "Официальный протокол хода операции, гемостаза, наложения швов, используемых шовных и костных материалов.",
+		statutoryRef: "Протокол операции",
+		description: "Протокол хода операции, гемостаза, наложения швов, используемых шовных и костных материалов.",
 		required: true,
 	},
 	{
@@ -71,8 +71,8 @@ export const SURGICAL_STATUTORY_ITEMS: readonly SurgicalItem[] = [
 	},
 	{
 		kind: "prescription_medication_order",
-		title: "Рецептурный бланк (Форма № 107-1/у: антибиотики и НПВС)",
-		statutoryRef: "Приказ Минздрава России от 24.11.2021 № 1094н",
+		title: "Рецептурный бланк (антибиотики и НПВС)",
+		statutoryRef: "Назначение лекарств",
 		description: "Назначение превентивной антибактериальной, противовоспалительной, обезболивающей и антигистаминной терапии.",
 		required: true,
 	},

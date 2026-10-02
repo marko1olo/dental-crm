@@ -1348,7 +1348,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								htmlFor="soap-complaints"
 								className="text-xs font-bold text-[var(--ink)]"
 							>
-								Жалобы (Subjective / Complaints)
+								Жалобы
 							</label>
 							<span className="text-[10px] text-[var(--muted)]">Дневник</span>
 						</div>
@@ -1372,7 +1372,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								htmlFor="soap-anamnesis"
 								className="text-xs font-bold text-[var(--ink)]"
 							>
-								Анамнез заболевания и жизни (Anamnesis)
+								Анамнез и противопоказания
 							</label>
 							<span className="text-[10px] text-[var(--muted)]">Аллергоанамнез</span>
 						</div>
@@ -1389,14 +1389,14 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						/>
 					</div>
 
-					{/* O: Объективный статус / Status Localis */}
+					{/* O: Осмотр и зубная формула */}
 					<div className="flex flex-col gap-1 md:col-span-2">
 						<div className="flex items-center justify-between">
 							<label
 								htmlFor="soap-objective"
 								className="text-xs font-bold text-[var(--ink)]"
 							>
-								Объективное исследование (Objective / Status Localis)
+								Осмотр и зубная формула
 							</label>
 							<span className="text-[10px] text-[var(--muted)]">
 								Зондирование, перкуссия, ЭОД, КЛКТ
@@ -1417,14 +1417,14 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 						/>
 					</div>
 
-					{/* A: Клинический диагноз (Assessment) */}
+					{/* A: Клинический диагноз */}
 					<div className="flex flex-col gap-1 md:col-span-2">
 						<div className="flex items-center justify-between">
 							<label
 								htmlFor="soap-diagnosis"
 								className="text-xs font-bold text-[var(--ink)]"
 							>
-								Клинический диагноз по МКБ-10 (Assessment)
+								Диагноз (МКБ-10)
 							</label>
 							<span className="text-[10px] text-[var(--teal,var(--brand-primary))] font-semibold">
 								{values.icd10 || "МКБ-10"}
@@ -1516,7 +1516,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 								htmlFor="soap-treatment"
 								className="text-xs font-bold text-[var(--ink)]"
 							>
-								Протокол лечения и манипуляции (Plan / Treatment Protocol)
+								Протокол лечения
 							</label>
 							<span className="text-[10px] text-[var(--muted)]">
 								Анестезия, препарирование, пломба/коронка/удаление
@@ -1543,7 +1543,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							htmlFor="soap-recommendations"
 							className="text-xs font-bold text-[var(--ink)]"
 						>
-							Назначения и рекомендации пациенту (Recommendations)
+							Рекомендации и назначения
 						</label>
 						<textarea
 							id="soap-recommendations"
@@ -1636,13 +1636,13 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							{values.complaint || "Не предъявляет."}
 						</div>
 						<div>
-							<span className="font-bold">Анамнез заболевания и жизни: </span>
+							<span className="font-bold">Анамнез и противопоказания: </span>
 							{values.anamnesis ||
 								"Соматически здоров. Аллергоанамнез спокойный."}
 						</div>
 						<div>
 							<span className="font-bold">
-								Данные объективного исследования:{" "}
+								Осмотр и зубная формула:{" "}
 							</span>
 							{values.objectiveStatus || "Патологических изменений не выявлено."}
 						</div>
@@ -1652,7 +1652,7 @@ export const VisitSoapEditor: React.FC<VisitSoapEditorProps> = ({
 							{values.diagnosis || "Z01.2 Стоматологическое обследование."}
 						</div>
 						<div>
-							<span className="font-bold">Протокол проведенного лечения: </span>
+							<span className="font-bold">Протокол лечения: </span>
 							{values.treatmentPlan || "Консультация, осмотр."}
 						</div>
 						<div>

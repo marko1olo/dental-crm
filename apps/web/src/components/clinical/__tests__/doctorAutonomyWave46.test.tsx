@@ -157,7 +157,7 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 			assert.strictEqual(result.executed, true);
 			assert.strictEqual(openedPatientId, mockPatient.id);
 			assert.strictEqual(switchedView, "visit");
-			assert.ok(toastMsg.includes("043/у"), "Toast confirms opening outpatient visit 043/u");
+			assert.ok(toastMsg.includes("Открыт приём"), "Toast confirms opening outpatient visit");
 		});
 
 		it("VisitView executeApplySomaticNormAutonomy populates anamnesis and objective inspection", () => {
@@ -289,15 +289,17 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 
 		it("OdontogramViewContainer.tsx uses Lucide Check instead of raw text ✓ glyphs", () => {
 			const containerPath = path.join(webSrcRoot, "components/odontogram/OdontogramViewContainer.tsx");
+			const moreMenuPath = path.join(webSrcRoot, "components/odontogram/OdontogramToolbarMoreMenu.tsx");
 			const containerContent = fs.readFileSync(containerPath, "utf8");
+			const moreMenuContent = fs.existsSync(moreMenuPath) ? fs.readFileSync(moreMenuPath, "utf8") : "";
 
 			assert.strictEqual(
-				containerContent.includes('<span className="text-[10px]">✓</span>'),
+				containerContent.includes('<span className="text-[10px]">✓</span>') || moreMenuContent.includes('<span className="text-[10px]">✓</span>'),
 				false,
 				"Must not use raw text ✓ glyphs",
 			);
 			assert.ok(
-				containerContent.includes("<Check size={12}"),
+				containerContent.includes("<Check size={12}") || moreMenuContent.includes("<Check size={12}"),
 				"Must use Lucide Check icon",
 			);
 		});

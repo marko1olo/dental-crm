@@ -346,10 +346,10 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						data-testid="diary-print-043"
 						className="vde-043__btn"
 						onClick={() => setShowPreview(true)}
-						title="Предпросмотр и печать амбулаторной карты 043/у"
+						title="Предпросмотр и печать медицинской карты"
 					>
 						<Printer className="w-4 h-4" />
-						<span className="hidden sm:inline">Печать 043/у</span>
+						<span className="hidden sm:inline">Печать карты</span>
 					</button>
 					<div className="relative inline-block" ref={moreActionsRef} style={{ position: "relative" }}>
 						<button

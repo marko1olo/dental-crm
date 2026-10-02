@@ -113,7 +113,7 @@ export const Form043AnamnesisTab: React.FC<Form043AnamnesisTabProps> = React.mem
 					<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "8px" }}>
 						<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
 							<HeartPulse className="w-4 h-4 text-sky-600" />
-							2. Анамнез жизни и заболевания (Anamnesis vitae et morbi)
+							2. Анамнез жизни и заболевания
 						</h3>
 						<button
 							type="button"
@@ -134,11 +134,11 @@ export const Form043AnamnesisTab: React.FC<Form043AnamnesisTabProps> = React.mem
 							<div className="emr043-field-value">{formData.anamnesis.chiefComplaint}</div>
 						</div>
 						<div style={{ gridColumn: "1 / -1" }}>
-							<div className="emr043-field-label">Анамнез развития настоящего заболевания (Anamnesis morbi):</div>
+							<div className="emr043-field-label">История настоящего заболевания:</div>
 							<div className="emr043-field-value">{formData.anamnesis.historyOfPresentIllness}</div>
 						</div>
 						<div style={{ gridColumn: "1 / -1" }}>
-							<div className="emr043-field-label">Анамнез жизни (Anamnesis vitae):</div>
+							<div className="emr043-field-label">Анамнез жизни:</div>
 							<div className="emr043-field-value">{formData.anamnesis.medicalHistoryVitae}</div>
 						</div>
 						<div>

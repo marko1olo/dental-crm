@@ -1501,7 +1501,7 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 
 							<div className="mt-1">
 								<label className="text-xs font-bold text-[var(--muted)] block mb-1">
-									Соматический анамнез (Anamnesis Vitae):
+									Соматический анамнез:
 								</label>
 								<textarea
 									className="w-full p-2.5 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]"

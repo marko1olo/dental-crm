@@ -266,14 +266,14 @@ export function executeOpenPatientVisitAutonomy({
 }) {
 	if (!selectedPatient) {
 		showToastFn(
-			"Выберите пациента из списка слева для открытия приёма 043/у",
+			"Выберите пациента из списка слева для открытия приёма",
 			"info",
 		);
 		return { executed: false, reason: "no_patient" as const };
 	}
 	setSelectedPatientId(selectedPatient.id);
 	setCurrentView("visit");
-	showToastFn(`Открыт приём 043/у: ${selectedPatient.fullName}`, "success");
+	showToastFn(`Открыт приём: ${selectedPatient.fullName}`, "success");
 	return { executed: true, reason: "visit_opened" as const };
 }
 

@@ -140,7 +140,7 @@ export function EmkPrintableForm043({
 						</div>
 						{visitNoteForm?.anamnesis && (
 							<div>
-								<strong>Анамнез заболевания и жизни (Anamnesis morbi & vitae):</strong>{" "}
+								<strong>Анамнез заболевания и жизни:</strong>{" "}
 								{visitNoteForm.anamnesis}
 							</div>
 						)}
@@ -150,7 +150,7 @@ export function EmkPrintableForm043({
 				{/* II. Объективный статус */}
 				<div className="border border-slate-300 rounded-md overflow-hidden" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
 					<div className="bg-slate-100 px-3 py-1.5 font-bold text-xs uppercase tracking-wide border-b border-slate-300 text-purple-900 flex items-center gap-1.5">
-						<span>II. Данные объективного исследования (Status localis)</span>
+						<span>II. Данные объективного исследования</span>
 					</div>
 					<div className="p-2.5 text-xs text-slate-900 whitespace-pre-wrap">
 						{visitNoteForm?.objectiveStatus ||

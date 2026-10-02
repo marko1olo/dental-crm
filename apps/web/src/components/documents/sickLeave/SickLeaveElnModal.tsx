@@ -319,7 +319,7 @@ export function SickLeaveElnModal({
 				clinicalDiagnosis: formState.diagnosisText,
 				icd10Code: formState.icd10Code,
 				clinicalSubstantiation:
-					'Тяжелое клиническое течение одонтогенного процесса с интоксикацией и замедленной регенерацией костной ткани. Необходимость продления нетрудоспособности свыше 15 дней (Приказ № 1089н).',
+					'Тяжелое клиническое течение одонтогенного процесса с интоксикацией и замедленной регенерацией костной ткани. Необходимость продления нетрудоспособности свыше 15 дней.',
 				expertDecision: `Продлить временную нетрудоспособность по ЭЛН № ${formState.elnNumber}. Режим амбулаторный. Назначен контрольный осмотр.`,
 				extensionDays: 7,
 				extensionDateFrom: lastPeriod?.dateFrom || formState.issueDate,
@@ -361,9 +361,9 @@ export function SickLeaveElnModal({
 			onApplyToDiary(snippet, formState);
 		}
 		if (isDraft) {
-			showToast("В дневник 043/у вставлен черновик ЭЛН (требуется завершить оформление)", "info");
+			showToast("В дневник приёма вставлен черновик ЭЛН (требуется завершить оформление)", "info");
 		} else {
-			showToast("Запись об ЭЛН успешно вставлена в дневник 043/у", "success");
+			showToast("Запись об ЭЛН успешно вставлена в дневник приёма", "success");
 		}
 		onClose();
 	};
@@ -372,7 +372,7 @@ export function SickLeaveElnModal({
 		if (!validation.isValid) {
 			const errorList = validation.errors.length > 0
 				? validation.errors.join("; ")
-				: "Не заполнены обязательные реквизиты для передачи в СФР (Приказ 1089н)";
+				: "Не заполнены обязательные реквизиты для передачи в СФР";
 			showToast(`Невозможно отправить в СФР: ${errorList}`, "warning", 6000);
 			return;
 		}
@@ -453,7 +453,7 @@ export function SickLeaveElnModal({
 				<div className="sick-leave-presets-bar">
 					<span className="sick-leave-presets-label">
 						<Sparkles size={13} />
-						Шаблоны 1089н:
+						Клинические шаблоны:
 					</span>
 					{Object.entries(DENTAL_CLINICAL_PRESETS).map(([key, preset]) => (
 						<button
@@ -845,10 +845,10 @@ export function SickLeaveElnModal({
 								<div>
 									<h4 className="sick-leave-section-title">
 										<UserCheck size={16} />
-										Заседание Врачебной комиссии (ВК) по Приказу Минздрава РФ № 1089н
+										Заседание врачебной комиссии (ВК)
 									</h4>
 									<p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--muted, #64748b)' }}>
-										Обязательно при суммарной нетрудоспособности свыше 15 календарных дней (п. 19 Приказа № 1089н).
+										Обязательно при суммарной нетрудоспособности свыше 15 календарных дней.
 									</p>
 								</div>
 								<button
@@ -1067,7 +1067,7 @@ export function SickLeaveElnModal({
 					<div className="sick-leave-body">
 						<div className="sick-leave-code-container">
 							<div className="sick-leave-code-header">
-								<span>XML СЭМД ЭЛН v2.0 (Социальный фонд России / Приказ 1089н)</span>
+								<span>XML СЭМД ЭЛН v2.0 (Социальный фонд России)</span>
 								<button
 									type="button"
 									className="sick-leave-btn secondary"
@@ -1106,7 +1106,7 @@ export function SickLeaveElnModal({
 					<div className="sick-leave-footer-right">
 						<button type="button" className="sick-leave-btn secondary" onClick={handleCopyDiarySnippet}>
 							{isCopiedDiary ? <Check size={16} /> : <Copy size={16} />}
-							{isCopiedDiary ? 'Скопировано в буфер' : 'Копировать в карту 043/у'}
+							{isCopiedDiary ? 'Скопировано в буфер' : 'Копировать в карту'}
 						</button>
 
 						<button
@@ -1124,7 +1124,7 @@ export function SickLeaveElnModal({
 								type="button"
 								className="sick-leave-btn primary"
 								onClick={handleApplyDiary}
-								title="Вставить запись в медицинскую карту 043/у (автономия врача: черновик вставляется без блокировок)"
+								title="Вставить запись в медицинскую карту (автономия врача: черновик вставляется без блокировок)"
 							>
 								<Check size={16} />
 								{!validation.isValid ? 'Вставить в дневник (Черновик)' : 'Вставить в дневник приема'}

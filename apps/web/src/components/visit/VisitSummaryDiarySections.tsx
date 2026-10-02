@@ -32,7 +32,7 @@ export const VisitSummaryDiarySections: React.FC<VisitSummaryDiarySectionsProps>
 			{/* II - Объективно */}
 			<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
 				<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-					<span className="font-mono font-black">II</span> — Объективно / Status Localis
+					<span className="font-mono font-black">II</span> — Осмотр и зубная формула
 				</div>
 				<p className="text-sm text-[var(--ink)] whitespace-pre-wrap leading-relaxed">
 					{synthesizedDiaryPreview?.objectiveStatusLocalis || diary.statusLocalis || "—"}

@@ -59,7 +59,7 @@ export function EmkObjectiveStatusSection({
 				<div className="flex items-center justify-between gap-2">
 					<label className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<Stethoscope size={14} className="text-[var(--teal,var(--brand-primary))]" />
-						<span>Объективный статус (Objective / Status localis)</span>
+						<span>Осмотр и зубная формула</span>
 					</label>
 					<span className="text-[11px] text-[var(--muted)]">Внешний осмотр, СОПР, зубные ряды</span>
 				</div>

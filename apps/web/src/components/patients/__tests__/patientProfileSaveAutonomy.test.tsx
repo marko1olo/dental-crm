@@ -250,7 +250,7 @@ describe("Patient Profile Save Autonomy & Non-blocking Guidance", () => {
 		expect(resNoPatient.executed).toBe(false);
 		expect(resNoPatient.reason).toBe("no_patient");
 		expect(mockToast).toHaveBeenCalledWith(
-			"Выберите пациента из списка слева для открытия приёма 043/у",
+			"Выберите пациента из списка слева для открытия приёма",
 			"info",
 		);
 		expect(mockSetPatientId).not.toHaveBeenCalled();
@@ -268,7 +268,7 @@ describe("Patient Profile Save Autonomy & Non-blocking Guidance", () => {
 		expect(mockSetPatientId).toHaveBeenCalledWith("pat-123");
 		expect(mockSetCurrentView).toHaveBeenCalledWith("visit");
 		expect(mockToast).toHaveBeenCalledWith(
-			"Открыт приём 043/у: Смирнов Алексей Владимирович",
+			"Открыт приём: Смирнов Алексей Владимирович",
 			"success",
 		);
 	});

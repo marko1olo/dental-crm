@@ -567,7 +567,7 @@ export function VoiceDictationAssistantModal({
 									{parseResult.soapNote.objective && (
 										<div className="dnt-voice-soap-item">
 											<div className="dnt-voice-soap-item-label">
-												II. Объективный статус (Status localis)
+												II. Осмотр и зубная формула
 											</div>
 											<div className="dnt-voice-soap-item-text">
 												{parseResult.soapNote.objective}

@@ -776,9 +776,9 @@ export const VisitPediatricProtocolWidget: React.FC<
 			"",
 			`5. Объект вмешательства: Зуб #${currentTooth} (${PEDIATRIC_TEETH_NAMES[currentTooth] ?? `Зуб ${currentTooth}`})`,
 			`   Диагноз (МКБ-10): ${diagnosisIcd10} — ${diagnosisNameRu}`,
-			`   Услуги (Номенклатура 804н): ${services.map((s) => `${s.code} ${s.nameRu}`).join("; ")}`,
+			`   Услуги: ${services.map((s) => `${s.code} ${s.nameRu}`).join("; ")}`,
 			"",
-			"6. Status localis:",
+			"6. Осмотр и зубная формула:",
 			`   ${statusLocalis}`,
 			"",
 			"7. Протокол вмешательства и манипуляции:",
@@ -787,7 +787,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			"8. Назначения и рекомендации родителям:",
 			`   ${recommendations}`,
 			"────────────────────────────────────────────────────────────",
-			"Документ оформлен в соответствии с Приказами МЗ РФ №804н и №834н.",
+			"Протокол осмотра и лечения в медицинской карте пациента.",
 		].join("\n");
 
 		return {
@@ -960,9 +960,9 @@ export const VisitPediatricProtocolWidget: React.FC<
 			"",
 			"3. Объект осмотра: Временный прикус (зубы 51..85)",
 			`   Диагноз (МКБ-10): ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.diagnosisIcd10} — ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.diagnosisNameRu}`,
-			`   Услуги (Номенклатура 804н): ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceCode804n} ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceName804n}`,
+			`   Услуги: ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceCode804n} ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.serviceName804n}`,
 			"",
-			"4. Status localis:",
+			"4. Осмотр и зубная формула:",
 			`   ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.statusLocalisRu}`,
 			"",
 			"5. Протокол профилактического приема:",
@@ -971,7 +971,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			"6. Назначения и рекомендации родителям:",
 			`   ${PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION.recommendationsRu}`,
 			"────────────────────────────────────────────────────────────",
-			"Документ оформлен в соответствии с Приказами МЗ РФ №804н и №834н.",
+			"Протокол осмотра и лечения в медицинской карте пациента.",
 		].join("\n");
 
 		onApplyProtocolText?.(fullText);
@@ -1044,9 +1044,9 @@ export const VisitPediatricProtocolWidget: React.FC<
 			"",
 			"3. Объект осмотра: Адаптационный приём без препарирования (зубы 51..85)",
 			"   Диагноз (МКБ-10): Z01.2 — Стоматологическое обследование / адаптация к стоматологическому приему (Z01.2)",
-			"   Услуги (Номенклатура 804н): A01.07.001 Прием (осмотр, консультация) врача-стоматолога детского первичный; A14.07.003 Обучение гигиене полости рта",
+			"   Услуги: A01.07.001 Прием (осмотр, консультация) врача-стоматолога детского первичный; A14.07.003 Обучение гигиене полости рта",
 			"",
-			"4. Status localis:",
+			"4. Осмотр и зубная формула:",
 			"   Временный прикус. Слизистая оболочка полости рта бледно-розовая, чистая, влажная. Состояние зубов удовлетворительное. Зубные ряды правильной формы. Окклюзионные взаимоотношения гармоничны.",
 			"",
 			"5. Протокол адаптационного приема (без сверления):",
@@ -1055,7 +1055,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 			"6. Назначения и рекомендации родителям:",
 			"   1. Поддерживать позитивное отношение к стоматологу дома (без пугающих фраз). 2. Чистка зубов 2 раза в день фторидной пастой (1000 ppm) под контролем родителей. 3. Повторный визит через 3–4 недели для планового осмотра / лечения.",
 			"────────────────────────────────────────────────────────────",
-			"Документ оформлен в соответствии с Приказами МЗ РФ №804н и №834н.",
+			"Протокол осмотра и лечения в медицинской карте пациента.",
 		].join("\n");
 
 		onApplyProtocolText?.(fullText);

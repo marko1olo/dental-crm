@@ -137,7 +137,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 			onSyncToDiary(diaryText);
 		}
 		navigator.clipboard?.writeText?.(diaryText).catch(() => {});
-		showToast("Запись перенесена в дневник 043/у", "success", 3000);
+		showToast("Запись перенесена в дневник приёма", "success", 3000);
 	}, [diaryText, onSyncToDiary]);
 
 	return (
@@ -166,7 +166,7 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 					</div>
 					<div>
 						<h4 className="text-sm font-bold text-[var(--ink,#0f172a)] dark:text-white m-0">
-							Соматический анамнез и факторы риска (043/у)
+							Соматический анамнез и факторы риска
 						</h4>
 						<p className="text-xs text-[var(--muted,#64748b)] m-0">
 							{patientName ? `Пациент: ${patientName} • ` : ""}
@@ -663,10 +663,10 @@ export const SomaticAnamnesisCard: React.FC<SomaticAnamnesisCardProps> = ({
 						onClick={handleSyncToDiary}
 						className="inline-flex items-center gap-1.5 px-3.5 py-1.5 h-8 sm:h-9 min-h-[32px] sm:min-h-[36px] rounded-xl text-xs font-semibold bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
 						data-testid="sync-diary-btn"
-						title="Перенести текущую формулировку в дневник Формы 043/у"
+						title="Перенести текущую формулировку в дневник приёма"
 					>
 						<FileText className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-						<span>В дневник 043/у</span>
+						<span>В дневник приёма</span>
 					</button>
 
 					<button

@@ -451,8 +451,8 @@ export const PatientWorkspaceModals: React.FC<PatientWorkspaceModalsProps> = Rea
 							patientName={patientName || undefined}
 							medicalCardNumber={
 								patientId
-									? `043/у-${String(patientId || "").slice(0, 8)}`
-									: "043/у"
+									? `№ ${String(patientId || "").slice(0, 8)}`
+									: "—"
 							}
 						/>
 					</Suspense>

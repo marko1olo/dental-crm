@@ -947,11 +947,11 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 							setIsOrderModalOpen(true);
 						}}
 						className="lab-btn-32 is-primary"
-						title="Оформить наряд в зуботехническую лабораторию"
+						title="Оформить заказ в лабораторию"
 						data-testid="btn-create-lab-order"
 					>
 						<Plus className="w-3.5 h-3.5" />
-						<span>+ Наряд в ЗТЛ</span>
+						<span>+ Заказ в лабораторию</span>
 					</button>
 				</div>
 			</div>
@@ -1342,10 +1342,10 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				>
 					<FlaskConical size={36} color="var(--teal, #0d9488)" />
 					<div style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--ink)" }}>
-						Нет оформленных нарядов в зуботехническую лабораторию
+						Нет оформленных заказов в лабораторию
 					</div>
 					<div style={{ fontSize: "0.825rem", color: "var(--muted)", maxWidth: "420px" }}>
-						Оформите заказ-наряд на изготовление коронок, виниров, вкладок или съемных протезов по данному пациенту.
+						Оформите заказ на изготовление коронок, виниров, вкладок или протезов для этого пациента.
 					</div>
 					<button
 						type="button"
@@ -1357,7 +1357,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						data-testid="empty-state-add-first-patient-lab-order-btn"
 					>
 						<Plus size={15} />
-						<span>Оформить заказ-наряд в лабораторию</span>
+						<span>Оформить заказ в лабораторию</span>
 					</button>
 				</div>
 			) : (
@@ -1445,17 +1445,17 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 											type="button"
 											onClick={() => handleOpenPrintOrder(order)}
 											className="lab-btn-32 is-primary"
-											title="Распечатать бланк наряда ЗТЛ-1 для лаборатории"
+											title="Распечатать бланк заказа для лаборатории"
 										>
 											<Printer className="w-3.5 h-3.5" />
-											<span>Печать ЗТЛ-1</span>
+											<span>Печать заказа</span>
 										</button>
 
 										<button
 											type="button"
 											onClick={() => handleOpenTrackingDrawer(order)}
 											className="lab-btn-32"
-											title="Сменить этап/статус и открыть трекинг ЗТЛ"
+											title="Сменить этап/статус и открыть трекинг заказа"
 										>
 											<Layers className="w-3.5 h-3.5 text-indigo-500" />
 											<span>Этап/статус</span>

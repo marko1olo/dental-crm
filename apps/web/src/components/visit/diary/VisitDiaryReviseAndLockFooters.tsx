@@ -113,9 +113,9 @@ export function VisitDiaryReviseAndLockFooters({
 					data-testid="diary-form-043-open"
 					onClick={() => setShowPreview(true)}
 					className="vde-043__btn"
-					title="Печать официальной формы 043/у"
+					title="Печать медицинской карты"
 				>
-					Печать 043/у
+					Печать карты
 				</button>
 			</div>
 		</div>

@@ -128,7 +128,7 @@ export function VisitDiarySoapFields({
 						handleAutoResize(e);
 						ensureRevisingIfLocked();
 					}}
-					placeholder="Жалобы пациента, анамнез развития заболевания (morbi) и жизни (vitae)..."
+					placeholder="Жалобы пациента, история заболевания, соматический статус и анамнез..."
 				/>
 				{COMPLAINT_QUICK_CHIPS.length > 0 && (
 					<div
@@ -187,7 +187,7 @@ export function VisitDiarySoapFields({
 				<label className="vde-043__label" htmlFor="diary-status-localis">
 					<Search className="w-3 h-3 text-purple-600 dark:text-purple-400" />
 					<span className="vde-043__letter vde-043__letter--o">II</span> —
-					Объективно (Status Localis)
+					Осмотр и зубная формула
 					{!fieldsDisabled && (
 						<div className="vde-043__label-mic">
 							<SmartMicrophoneButton

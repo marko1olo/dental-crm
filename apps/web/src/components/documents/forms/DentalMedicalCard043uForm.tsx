@@ -581,7 +581,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 			<div className="document-form-container form-043u-wrapper">
 				<DocumentPayloadCard
 					title="Медицинская карта стоматологического пациента"
-					description="Официальная форма Минздрава РФ с зубной формулой FDI, индексами КПУ/CPITN, анамнезом жизни, СОПР и дневниками приёма"
+					description="Электронная карта стоматологического пациента: зубная формула, анамнез, индексы и протоколы приёмов"
 				>
 					<div
 						className="document-form-nav-tabs"
@@ -1302,7 +1302,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 							</div>
 
 							<div style={{ marginBottom: "16px" }}>
-								<label style={{ display: "block", marginBottom: "4px", fontWeight: 600 }}>Анамнез настоящего заболевания (Anamnesis Morbi):</label>
+								<label style={{ display: "block", marginBottom: "4px", fontWeight: 600 }}>История настоящего заболевания:</label>
 								<textarea
 									value={historyOfPresentIllness}
 									onChange={(e) => setHistoryOfPresentIllness(e.target.value)}
@@ -1314,7 +1314,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 							</div>
 
 							<h5 style={{ marginBottom: "12px", borderTop: "1px solid var(--doc-border, #cbd5e1)", paddingTop: "14px" }}>
-								Анамнез жизни и соматический статус (Anamnesis Vitae)
+								Анамнез жизни и соматический статус
 							</h5>
 							<div className="document-payload-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
 								<label>
